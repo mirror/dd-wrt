@@ -184,6 +184,9 @@ endif
 ifeq ($(CONFIG_RTL930X),y)
 	cp $(LINUXDIR)/.config_rtl930x $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_RTL931X),y)
+	cp $(LINUXDIR)/.config_rtl931x $(LINUXDIR)/.config
+endif
 
 ifeq ($(CONFIG_OPTIMIZE_FOR_SPEED),y)
 	sed -i 's/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
@@ -245,13 +248,25 @@ wndr:
 	-$(MAKE) -f Makefile.pb42 validate MAXIMUM_SIZE=26214400 EX_PATH=$(ARCH)-uclibc/wndr4300-factory.img
 
 compress_lzma:
+ifeq ($(CONFIG_RTL931X),y)
+	lzma e -pb2 -lc1 -lp2 $(ARCH)-uclibc/vmlinux.bin lzma-loader/realtek_rtl931x/vmlinux.lzma
+	make -C lzma-loader/realtek_rtl931x clean LOADER_DATA=$(TOP)/lzma-loader/realtek_rtl931x/vmlinux.lzma SUBTARGET=rtl839x
+	make -C lzma-loader/realtek_rtl931x LOADER_DATA=$(TOP)/lzma-loader/realtek_rtl931x/vmlinux.lzma SUBTARGET=rtl839x
+#	tools/realtek/libdeflate-gzip -f -12 -c $(TOP)/lzma-loader/realtek/loader.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+	cp $(TOP)/lzma-loader/realtek_rtl931x/loader.bin $(ARCH)-uclibc/vmlinux.bin.deflate
+	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate of=$(TOP)/lzma-loader/realtek_rtl931x/loader.bin bs=64k conv=sync
+	dd if=/dev/zero count=65472 bs=1 >> $(TOP)/lzma-loader/realtek_rtl931x/loader.bin
+	cp $(TOP)/lzma-loader/realtek_rtl931x/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
+else
 	lzma e -pb2 -lc1 -lp2 $(ARCH)-uclibc/vmlinux.bin lzma-loader/realtek/vmlinux.lzma
 	make -C lzma-loader/realtek clean LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 	make -C lzma-loader/realtek LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 #	tools/realtek/libdeflate-gzip -f -12 -c $(TOP)/lzma-loader/realtek/loader.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
-	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate of=$(TOP)/lzma-loader/realtek/loader.bin bs=64 conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate of=$(TOP)/lzma-loader/realtek/loader.bin bs=64k conv=sync
+	dd if=/dev/zero count=65472 bs=1 >> $(TOP)/lzma-loader/realtek/loader.bin
 	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
+endif
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -440,6 +455,21 @@ endif
 	
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 
+
+
+ifeq ($(CONFIG_RTL931X),y)
+	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9313_edgecore_ecs4125-10p.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p.dtb $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+#	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80220000 -e 0x80220000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p bs=64k conv=sync
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-edgecore_ecs4125-10p.trx $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p
+else
 ifeq ($(CONFIG_RTL930X),y)
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -636,10 +666,8 @@ ifneq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_hpe_1920-48g.dtb $(ARCH)-uclibc/image-rtl8393_hpe_1920-48g.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8393_hpe_1920-48g.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-48g bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-48g
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-48g \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-48g.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -655,10 +683,8 @@ ifneq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_hpe_1920-48g-poe.dtb $(ARCH)-uclibc/image-rtl8393_hpe_1920-48g-poe.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8393_hpe_1920-48g-poe.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -667,6 +693,9 @@ ifneq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-48g-poe.trx $(ARCH)-uclibc/vmlinux-hpe_1920-48g-poe.vfs
 endif
 ifeq ($(CONFIG_RTL838X),y)
@@ -675,10 +704,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g-poe-180w.dtb $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g-poe-180w.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g-poe-180w.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -687,6 +714,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-8g-poe-180w.trx $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-180w.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -694,10 +724,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g-poe-65w.dtb $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g-poe-65w.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g-poe-65w.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -706,6 +734,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-8g-poe-65w.trx $(ARCH)-uclibc/vmlinux-hpe_1920-8g-poe-65w.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -713,10 +744,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g.dtb $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_hpe_1920-8g.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-8g bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-8g
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-8g \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-8g.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -725,6 +754,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-8g.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-8g.trx $(ARCH)-uclibc/vmlinux-hpe_1920-8g.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -732,10 +764,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_hpe_1920-16g.dtb $(ARCH)-uclibc/image-rtl8382_hpe_1920-16g.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_hpe_1920-16g.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-16g bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-16g
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-16g \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-16g.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -744,6 +774,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-16g.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-16g.trx $(ARCH)-uclibc/vmlinux-hpe_1920-16g.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -751,10 +784,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g.dtb $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-24g bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-24g
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-24g \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-24g.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -763,6 +794,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-24g.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-24g.trx $(ARCH)-uclibc/vmlinux-hpe_1920-24g.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -770,10 +804,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g-poe-180w.dtb $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g-poe-180w.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g-poe-180w.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -782,6 +814,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-24g-poe-180w.trx $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-180w.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -789,10 +824,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g-poe-370w.dtb $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g-poe-370w.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_hpe_1920-24g-poe-370w.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	$(TOP)/tools/realtek/7zr a $(ARCH)-uclibc/vmlinux.bin.7z -t7z -m0=lzma $(ARCH)-uclibc/vmlinux.bin
-	dd if=$(ARCH)-uclibc/vmlinux.bin.7z of=$(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w
 	$(TOP)/tools/realtek/mkh3cimg \
-		-i $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w \
+		-i $(ARCH)-uclibc/vmlinux.bin.7z \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.h3cimage \
 		-c 7z \
 		-p 0x3c010501 \
@@ -801,6 +834,9 @@ ifeq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-24g-poe-370w.trx $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs
 endif
 ifneq ($(CONFIG_RTL838X),y)
@@ -1077,9 +1113,9 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tpp-v1
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tpp-v1 bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tpp-v1
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tpp-v1.trx $(ARCH)-uclibc/vmlinux-gs110tpp-v1
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -1124,7 +1160,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	tools/realtek/belkin-header.py $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image $(ARCH)-uclibc/vmlinux-lgs310c.belkin 0x07800001 BKS-RTL83xx
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-lgs310c.trx $(ARCH)-uclibc/vmlinux-lgs310c
 endif
-
+endif
 
 include rules/all.mk
 
