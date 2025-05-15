@@ -4705,7 +4705,7 @@ void stop_wan(void)
 		sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n", nvram_safe_get("3gcontrol"));
 	}
 	if (nvram_match("3gdata", "mbim")) {
-		sysprintf("/jffs/bin/stop-mbim.sh", nvram_safe_get("3gcontrol"));
+		sysprintf("/jffs/bin/stop-mbim.sh");
 	}
 // todo:
 // #ifdef HAVE_UQMI
