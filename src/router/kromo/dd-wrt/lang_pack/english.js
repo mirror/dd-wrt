@@ -1569,6 +1569,7 @@ portserv.h2="Port Services";
 // ** Networking.asp **//
 var networking=new Object();
 networking.hfiltering="Bridge VLAN Filtering";
+networking.portstatus="Port Status";
 networking.flegend="VLAN Filters";
 networking.settings="Settings";
 networking.trunking="Trunking";
