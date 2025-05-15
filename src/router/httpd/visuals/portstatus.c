@@ -23,28 +23,43 @@
 static void show_portif_row(webs_t wp, char ifname[4][32])
 {
 	int i;
+	struct portstatus status;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"portif\" id=\"portif_table\" class=\"table\"><thead><tr>\n");
-	for (i = 0; i < 4; i++) {
-		websWrite(wp, "<th width=\"25%%\">%s</th>\n", ifname[i][0] ? ifname[i] : "");
+	for (i = 0; i < 16; i++) {
+		websWrite(wp, "<th width=\"6,25%%\">%s</th>\n", ifname[i][0] ? ifname[i] : "");
 	}
 	websWrite(wp, "</tr></thead>\n");
 	websWrite(wp, "<tbody>\n");
 	websWrite(wp, "<tr>\n");
 
 	char buf[128];
-	for (i = 0; i < 4; i++) {
-		websWrite(wp, "<td>\n");
+	for (i = 0; i < 16; i++) {
 		if (ifname[i][0]) {
-			websWrite(
-				wp,"1000");
+			if (getLanPortStatus(ifname[i], &status)) {
+				websWrite(wp, "<td class=\"status_red center\">\n");
+				websWrite(wp, "error");
+			} else {
+				if (status.link) {
+					if (status.speed == 10)
+						websWrite(wp, "<td class=\"status_orange center\">\n");
+					else if (status.speed == 100)
+						websWrite(wp, "<td class=\"status_yellow center\">\n");
+					else if (status.speed >= 1000)
+						websWrite(wp, "<td class=\"status_green center\">\n");
+					websWrite(wp, "%d %s", status.speed, status.fd ? "HD" : "FD");
+				} else {
+					websWrite(wp, "<td class=\"status_red center\">\n");
+					websWrite(wp, "down");
+				}
+				websWrite(wp, "</td>\n");
+			}
 		}
-		websWrite(wp, "</td>\n");
 	}
 	websWrite(wp, "</tbody>\n");
 	websWrite(wp, "</table>\n");
 }
 struct portcontext {
-	char ifname[4][32];
+	char ifname[16][32];
 	int count;
 };
 
@@ -55,7 +70,7 @@ static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname)
 	}
 	strlcpy(ctx->ifname[ctx->count], ifname, 32);
 	ctx->count++;
-	if (ctx->count == 4) {
+	if (ctx->count == 16) {
 		ctx->count = 0;
 		show_portif_row(wp, ctx->ifname);
 	}
@@ -76,14 +91,14 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	int globresult;
 	int c;
 	struct portcontext ctx;
-	memset(&ctx,0,sizeof(ctx));
+	memset(&ctx, 0, sizeof(ctx));
 	websWrite(wp, "<h2>%s</h2>\n", tran_string(buf, sizeof(buf), "networking.portstatus"));
 	websWrite(wp, "<fieldset>\n");
 	getIfLists(eths, sizeof(eths));
 
 	foreach(var, eths, next) {
-		if (strstr(var, "lan") || strstr(var, "wan") || strstr(var, "eth"))
-		show_portif(wp, &ctx, var);
+		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3))
+			show_portif(wp, &ctx, var);
 	}
 	if (ctx.count > 0) {
 		show_portif_row(wp, ctx.ifname);

@@ -88,7 +88,7 @@ struct SENSORS {
 static struct SENSORS *sensors = NULL;
 static int opencount = 0;
 
-static FILE *my_fopen(char *file, char *mode)
+static FILE *my_fopen(const char *file, char *mode)
 {
 	FILE *fp = fopen(file, mode);
 	if (fp)
