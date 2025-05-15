@@ -11,33 +11,35 @@
 #include <stddef.h>
 #include "config.h"
 
-#define READREG(r)	*(volatile unsigned int *)(r)
-#define WRITEREG(r,v)	*(volatile unsigned int *)(r) = v
+#define READREG(r) *(volatile unsigned int *)(r)
+#define WRITEREG(r, v) *(volatile unsigned int *)(r) = v
 
-#define UART_BASE	0xb8020000
+#define UART_BASE 0xb8020000
 
-#define UART_TX		0
-#define UART_LSR	5
+#define UART_TX 0
+#define UART_LSR 5
 
-#define UART_LSR_THRE   0x20
+#define UART_LSR_THRE 0x20
 
-#define UART_READ(r)		READREG(UART_BASE + 4 * (r))
-#define UART_WRITE(r,v)		WRITEREG(UART_BASE + 4 * (r), (v))
+#define UART_READ(r) READREG(UART_BASE + 4 * (r))
+#define UART_WRITE(r, v) WRITEREG(UART_BASE + 4 * (r), (v))
 
 void board_putc(int ch)
 {
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
+	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0)
+		;
 	UART_WRITE(UART_TX, ch);
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
+	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0)
+		;
 }
 
 void puts(char *str)
 {
-int cnt=0;
-while(str[cnt])
-    board_putc(str[cnt++]);
-board_putc('\r');
-board_putc('\n');
+	int cnt = 0;
+	while (str[cnt])
+		board_putc(str[cnt++]);
+	board_putc('\r');
+	board_putc('\n');
 }
 void board_init(void)
 {

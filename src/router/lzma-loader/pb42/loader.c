@@ -27,39 +27,41 @@
 void puts(char *str);
 #include "LzmaDecode.h"
 
-#define AR71XX_FLASH_START	0x1f000000
-#define AR71XX_FLASH_END	0x1fe00000
+#define AR71XX_FLASH_START 0x1f000000
+#define AR71XX_FLASH_END 0x1fe00000
 
-#define KSEG0			0x80000000
-#define KSEG1			0xa0000000
+#define KSEG0 0x80000000
+#define KSEG1 0xa0000000
 
-#define KSEG1ADDR(a)		((((unsigned)(a)) & 0x1fffffffU) | KSEG1)
+#define KSEG1ADDR(a) ((((unsigned)(a)) & 0x1fffffffU) | KSEG1)
 
 #undef LZMA_DEBUG
 
 #ifdef LZMA_DEBUG
-#  define DBG(f, a...)	printf(f, ## a)
+#define DBG(f, a...) printf(f, ##a)
 #else
-#  define DBG(f, a...)	do {} while (0)
+#define DBG(f, a...) \
+	do {         \
+	} while (0)
 #endif
 
-#define IH_MAGIC_OKLI		0x4f4b4c49	/* 'OKLI' */
+#define IH_MAGIC_OKLI 0x4f4b4c49 /* 'OKLI' */
 
-#define IH_NMLEN		32	/* Image Name Length		*/
+#define IH_NMLEN 32 /* Image Name Length		*/
 
 typedef struct image_header {
-	uint32_t	ih_magic;	/* Image Header Magic Number	*/
-	uint32_t	ih_hcrc;	/* Image Header CRC Checksum	*/
-	uint32_t	ih_time;	/* Image Creation Timestamp	*/
-	uint32_t	ih_size;	/* Image Data Size		*/
-	uint32_t	ih_load;	/* Data	 Load  Address		*/
-	uint32_t	ih_ep;		/* Entry Point Address		*/
-	uint32_t	ih_dcrc;	/* Image Data CRC Checksum	*/
-	uint8_t		ih_os;		/* Operating System		*/
-	uint8_t		ih_arch;	/* CPU architecture		*/
-	uint8_t		ih_type;	/* Image Type			*/
-	uint8_t		ih_comp;	/* Compression Type		*/
-	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+	uint32_t ih_magic; /* Image Header Magic Number	*/
+	uint32_t ih_hcrc; /* Image Header CRC Checksum	*/
+	uint32_t ih_time; /* Image Creation Timestamp	*/
+	uint32_t ih_size; /* Image Data Size		*/
+	uint32_t ih_load; /* Data	 Load  Address		*/
+	uint32_t ih_ep; /* Entry Point Address		*/
+	uint32_t ih_dcrc; /* Image Data CRC Checksum	*/
+	uint8_t ih_os; /* Operating System		*/
+	uint8_t ih_arch; /* CPU architecture		*/
+	uint8_t ih_type; /* Image Type			*/
+	uint8_t ih_comp; /* Compression Type		*/
+	uint8_t ih_name[IH_NMLEN]; /* Image Name		*/
 } image_header_t;
 
 /* beyond the image end, size not known in advance */
@@ -73,7 +75,7 @@ static unsigned long lzma_outsize;
 static unsigned long kernel_la;
 
 #ifdef CONFIG_KERNEL_CMDLINE
-#define kernel_argc	2
+#define kernel_argc 2
 static const char kernel_cmdline[] = CONFIG_KERNEL_CMDLINE;
 static const char *kernel_argv[] = {
 	NULL,
@@ -85,17 +87,15 @@ static const char *kernel_argv[] = {
 static void halt(void)
 {
 	puts("\nSystem halted!\n");
-	for(;;);
+	for (;;)
+		;
 }
 
 static __inline__ unsigned long get_be32(void *buf)
 {
 	unsigned char *p = buf;
 
-	return (((unsigned long) p[0] << 24) +
-	        ((unsigned long) p[1] << 16) +
-	        ((unsigned long) p[2] << 8) +
-	        (unsigned long) p[3]);
+	return (((unsigned long)p[0] << 24) + ((unsigned long)p[1] << 16) + ((unsigned long)p[2] << 8) + (unsigned long)p[3]);
 }
 
 static __inline__ unsigned char lzma_get_byte(void)
@@ -119,17 +119,14 @@ static int lzma_init_props(void)
 		props[i] = lzma_get_byte();
 
 	/* read the lower half of uncompressed size in the header */
-	lzma_outsize = ((SizeT) lzma_get_byte()) +
-		       ((SizeT) lzma_get_byte() << 8) +
-		       ((SizeT) lzma_get_byte() << 16) +
-		       ((SizeT) lzma_get_byte() << 24);
+	lzma_outsize = ((SizeT)lzma_get_byte()) + ((SizeT)lzma_get_byte() << 8) + ((SizeT)lzma_get_byte() << 16) +
+		       ((SizeT)lzma_get_byte() << 24);
 
 	/* skip rest of the header (upper half of uncompressed size) */
 	for (i = 0; i < 4; i++)
 		lzma_get_byte();
 
-	res = LzmaDecodeProperties(&lzma_state.Properties, props,
-					LZMA_PROPERTIES_SIZE);
+	res = LzmaDecodeProperties(&lzma_state.Properties, props, LZMA_PROPERTIES_SIZE);
 	return res;
 }
 
@@ -138,16 +135,14 @@ static int lzma_decompress(unsigned char *outStream)
 	SizeT ip, op;
 	int ret;
 
-	lzma_state.Probs = (CProb *) workspace;
+	lzma_state.Probs = (CProb *)workspace;
 
-	ret = LzmaDecode(&lzma_state, lzma_data, lzma_datasize, &ip, outStream,
-			 lzma_outsize, &op);
+	ret = LzmaDecode(&lzma_state, lzma_data, lzma_datasize, &ip, outStream, lzma_outsize, &op);
 
 	if (ret != LZMA_RESULT_OK) {
 		int i;
 
-		DBG("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n",
-		    ret, lzma_data + ip, lzma_outsize, ip, op);
+		DBG("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n", ret, lzma_data + ip, lzma_outsize, ip, op);
 
 		for (i = 0; i < 16; i++)
 			DBG("%02x ", lzma_data[ip + i]);
@@ -177,20 +172,18 @@ static void lzma_init_data(void)
 	unsigned long kernel_ofs;
 	unsigned long kernel_size;
 
-	flash_base = (unsigned char *) KSEG1ADDR(AR71XX_FLASH_START);
+	flash_base = (unsigned char *)KSEG1ADDR(AR71XX_FLASH_START);
 
 	puts("Looking for OpenWrt image... ");
 
-	for (flash_ofs = CONFIG_FLASH_OFFS;
-	     flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX);
-	     flash_ofs += CONFIG_FLASH_STEP) {
+	for (flash_ofs = CONFIG_FLASH_OFFS; flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX); flash_ofs += CONFIG_FLASH_STEP) {
 		unsigned long magic;
 		unsigned char *p;
 
 		p = flash_base + flash_ofs;
 		magic = get_be32(p);
 		if (magic == IH_MAGIC_OKLI) {
-			hdr = (struct image_header *) p;
+			hdr = (struct image_header *)p;
 			break;
 		}
 	}
@@ -211,11 +204,9 @@ static void lzma_init_data(void)
 }
 #endif /* (LZMA_WRAPPER) */
 
-void loader_main(unsigned long reg_a0, unsigned long reg_a1,
-		 unsigned long reg_a2, unsigned long reg_a3)
+void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a2, unsigned long reg_a3)
 {
-	void (*kernel_entry) (unsigned long, unsigned long, unsigned long,
-			      unsigned long);
+	void (*kernel_entry)(unsigned long, unsigned long, unsigned long, unsigned long);
 	int res;
 
 	board_init();
@@ -233,7 +224,7 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	puts("Decompressing kernel... ");
 
-	res = lzma_decompress((unsigned char *) kernel_la);
+	res = lzma_decompress((unsigned char *)kernel_la);
 	if (res != LZMA_RESULT_OK) {
 		puts("failed, ");
 		switch (res) {
@@ -254,11 +245,11 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 #ifdef CONFIG_KERNEL_CMDLINE
 	reg_a0 = kernel_argc;
-	reg_a1 = (unsigned long) kernel_argv;
+	reg_a1 = (unsigned long)kernel_argv;
 	reg_a2 = 0;
 	reg_a3 = 0;
 #endif
 
-	kernel_entry = (void *) kernel_la;
+	kernel_entry = (void *)kernel_la;
 	kernel_entry(reg_a0, reg_a1, reg_a2, reg_a3);
 }
