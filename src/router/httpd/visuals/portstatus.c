@@ -20,12 +20,12 @@
  * $Id:
  */
 
-static void show_portif_row(webs_t wp, char ifname[4][32])
+static void show_portif_row(webs_t wp, char ifname[4][32], int max)
 {
 	int i;
 	struct portstatus status;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"portif\" id=\"portif_table\" class=\"table\"><thead><tr>\n");
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < max; i++) {
 		websWrite(wp, "<th width=\"6,25%%\">%s</th>\n", ifname[i][0] ? ifname[i] : "");
 	}
 	websWrite(wp, "</tr></thead>\n");
@@ -33,7 +33,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 	websWrite(wp, "<tr>\n");
 
 	char buf[128];
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < max; i++) {
 		if (ifname[i][0]) {
 			if (getLanPortStatus(ifname[i], &status)) {
 				websWrite(wp, "<td class=\"status_red center\">\n");
@@ -63,7 +63,7 @@ struct portcontext {
 	int count;
 };
 
-static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname)
+static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname, int max)
 {
 	if (!ctx->count) {
 		memset(ctx->ifname, 0, sizeof(ctx->ifname));
@@ -72,7 +72,7 @@ static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname)
 	ctx->count++;
 	if (ctx->count == 16) {
 		ctx->count = 0;
-		show_portif_row(wp, ctx->ifname);
+		show_portif_row(wp, ctx->ifname, max);
 	}
 }
 
@@ -95,13 +95,20 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<h2>%s</h2>\n", tran_string(buf, sizeof(buf), "networking.portstatus"));
 	websWrite(wp, "<fieldset>\n");
 	getIfLists(eths, sizeof(eths));
+	int max = 0;
+	foreach(var, eths, next) {
+		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3))
+			max++;
+	}
+	if (max > 16)
+		max = 16;
 
 	foreach(var, eths, next) {
 		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3))
-			show_portif(wp, &ctx, var);
+			show_portif(wp, &ctx, var, max);
 	}
 	if (ctx.count > 0) {
-		show_portif_row(wp, ctx.ifname);
+		show_portif_row(wp, ctx.ifname, max);
 	}
 	websWrite(wp, "</fieldset>\n");
 }
