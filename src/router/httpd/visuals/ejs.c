@@ -1489,6 +1489,7 @@ EJ_VISIBLE void ej_get_totaltraff(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
+#include "portstatus.c"
 #include "bandwidth.c"
 #include "menu.c"
 #include "pagehead.c"
