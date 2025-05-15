@@ -72,12 +72,6 @@
 #define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
 #define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 
-struct mii_ioctl_data {
-	unsigned short phy_id;
-	unsigned short reg_num;
-	unsigned short val_in;
-	unsigned short val_out;
-};
 
 void setWifiPass(void)
 {
@@ -1050,7 +1044,6 @@ int getIfByIdx(char *ifname, int index)
 	}
 #endif
 }
-
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
@@ -2505,5 +2498,54 @@ next:;
 void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv))
 {
 	internal_sysctl_apply("/proc/sys", priv, callback);
+}
+#include <linux/mii.h>
+
+static int mdio_read(int skfd, struct ifreq *ifr, int location)
+{
+	struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr->ifr_data;
+	mii->reg_num = location;
+	if (ioctl(skfd, SIOCGMIIREG, ifr) < 0) {
+		fprintf(stderr, "SIOCGMIIREG on %s failed: %s\n", ifr->ifr_name, strerror(errno));
+		return -1;
+	}
+	return mii->val_out;
+}
+
+int getLanPortStatus(const char *ifname, struct portstatus *status)
+{
+	//fallback
+	int skfd;
+	struct ifreq ifr;
+	unsigned bmcr, bmsr, advert, lkpar, bmcr2, lpa2;
+
+	if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		return -1;
+	}
+	struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(skfd, SIOCGMIIPHY, &ifr) < 0) {
+		return -1;
+	}
+	bmcr = mdio_read(skfd, &ifr, MII_BMCR);
+	bmsr = mdio_read(skfd, &ifr, MII_BMSR);
+	advert = mdio_read(skfd, &ifr, MII_ADVERTISE);
+	lkpar = mdio_read(skfd, &ifr, MII_LPA);
+	bmcr2 = mdio_read(skfd, &ifr, MII_CTRL1000);
+	lpa2 = mdio_read(skfd, &ifr, MII_STAT1000);
+	status->speed = ((bmcr2 & (ADVERTISE_1000HALF | ADVERTISE_1000FULL)) & lpa2 >> 2) ? 1000 : (bmcr & BMCR_SPEED100) ? 100 : 10;
+	status->fd = (bmcr & BMCR_FULLDPLX);
+	status->link = (bmsr & BMSR_LSTATUS);
+	close(skfd);
+	char path[64];
+	sprintf(path, "/sys/class/net/%s/speed", ifname);
+	FILE *fp = fopen(path, "rb");
+	if (fp) {
+		char speed[64];
+		fgets(speed, sizeof(speed), fp);
+		status->speed = atoi(speed);
+		fclose(fp);
+	}
+	return 0;
 }
 #endif
