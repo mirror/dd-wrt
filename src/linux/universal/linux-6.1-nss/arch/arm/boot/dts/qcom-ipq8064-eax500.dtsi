@@ -145,6 +145,18 @@
 			devinfo@f40000 {
 				label = "devinfo";
 				reg = <0x0f40000 0x0040000>;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 			
 			linux@f80000 { 
@@ -306,6 +318,9 @@
 
 	phy-handle = <&phy0>;
 
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -321,6 +336,9 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 	phy-handle = <&phy4>;
+
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
