@@ -253,8 +253,8 @@ ifeq ($(CONFIG_RTL931X),y)
 	make -C lzma-loader/realtek_rtl931x clean LOADER_DATA=$(TOP)/lzma-loader/realtek_rtl931x/vmlinux.lzma SUBTARGET=rtl839x
 	make -C lzma-loader/realtek_rtl931x LOADER_DATA=$(TOP)/lzma-loader/realtek_rtl931x/vmlinux.lzma SUBTARGET=rtl839x
 #	tools/realtek/libdeflate-gzip -f -12 -c $(TOP)/lzma-loader/realtek/loader.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	cp $(TOP)/lzma-loader/realtek_rtl931x/loader.bin $(ARCH)-uclibc/vmlinux.bin.deflate
-	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate of=$(TOP)/lzma-loader/realtek_rtl931x/loader.bin bs=64k conv=sync
+	cp $(TOP)/lzma-loader/realtek_rtl931x/loader.bin $(ARCH)-uclibc/vmlinux.bin.deflate.webflash
+	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate.webflash of=$(TOP)/lzma-loader/realtek_rtl931x/loader.bin bs=64k conv=sync
 	dd if=/dev/zero count=65472 bs=1 >> $(TOP)/lzma-loader/realtek_rtl931x/loader.bin
 	cp $(TOP)/lzma-loader/realtek_rtl931x/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
 else
@@ -262,8 +262,8 @@ else
 	make -C lzma-loader/realtek clean LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 	make -C lzma-loader/realtek LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 #	tools/realtek/libdeflate-gzip -f -12 -c $(TOP)/lzma-loader/realtek/loader.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
-	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate of=$(TOP)/lzma-loader/realtek/loader.bin bs=64k conv=sync
+	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate.webflash
+	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate.webflash of=$(TOP)/lzma-loader/realtek/loader.bin bs=64k conv=sync
 	dd if=/dev/zero count=65472 bs=1 >> $(TOP)/lzma-loader/realtek/loader.bin
 	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
 endif
@@ -467,8 +467,11 @@ ifeq ($(CONFIG_RTL931X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80220000 -e 0x80220000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80220000 -e 0x80220000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-edgecore_ecs4125-10p.trx $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-edgecore_ecs4125-10p.trx $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p.webflash
 else
 ifeq ($(CONFIG_RTL930X),y)
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
@@ -480,10 +483,15 @@ ifeq ($(CONFIG_RTL930X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x93001250  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x93001250  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-xgs1250-12 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-xgs1250-12.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-xgs1250-12.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-xgs1250-12
 	(echo -n "V9.99(ABWE.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-xgs1250-12
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-xgs1250-12.trx $(ARCH)-uclibc/vmlinux-xgs1250-12
+	echo VERS >> $(ARCH)-uclibc/vmlinux-xgs1250-12.webflash
+	(echo -n "V9.99(ABWE.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-xgs1250-12.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-xgs1250-12.trx $(ARCH)-uclibc/vmlinux-xgs1250-12.webflash
 endif
 
 ifneq ($(CONFIG_RTL838X),y)
@@ -496,10 +504,15 @@ ifneq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-48 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-48.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-48.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48
 	(echo -n "V9.99(AAHN.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-48
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-48.trx $(ARCH)-uclibc/vmlinux-gs1900-48
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48.webflash
+	(echo -n "V9.99(AAHN.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-48.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-48.trx $(ARCH)-uclibc/vmlinux-gs1900-48.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48hp-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8393_zyxel_gs1900-48hp-v2.dts
@@ -507,12 +520,17 @@ ifneq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48hp-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-48hp-v2 bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-48hp-v2.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2
 	(echo -n "V9.99(ABTQ.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-48hp-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2.webflash
+	(echo -n "V9.99(ABTQ.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-48hp-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2.webflash
 endif
 ifeq ($(CONFIG_RTL838X),y)
 
@@ -524,10 +542,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-16 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-16.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-16.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-16
 	(echo -n "V9.99(AAHJ.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-16
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-16.trx $(ARCH)-uclibc/vmlinux-gs1900-16
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-16.webflash
+	(echo -n "V9.99(AAHJ.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-16.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-16.trx $(ARCH)-uclibc/vmlinux-gs1900-16.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_zyxel_gs1900-24-v1.dts
@@ -537,10 +560,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24-v1 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-24-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1
 	(echo -n "V9.99(AAHL.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-24-v1
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1.webflash
+	(echo -n "V9.99(AAHL.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-24-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24e.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_zyxel_gs1900-24e.dts
@@ -550,10 +578,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24e bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-24e.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24e.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24e
 	(echo -n "V9.99(AAHK.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24e
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24e.trx $(ARCH)-uclibc/vmlinux-gs1900-24e
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24e.webflash
+	(echo -n "V9.99(AAHK.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24e.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24e.trx $(ARCH)-uclibc/vmlinux-gs1900-24e.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24ep.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_zyxel_gs1900-24ep.dts
@@ -563,10 +596,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24ep bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-24ep.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24ep.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24ep
 	(echo -n "V9.99(ABTO.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24ep
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24ep.trx $(ARCH)-uclibc/vmlinux-gs1900-24ep
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24ep.webflash
+	(echo -n "V9.99(ABTO.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24ep.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24ep.trx $(ARCH)-uclibc/vmlinux-gs1900-24ep.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24hp-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_zyxel_gs1900-24hp-v1.dts
@@ -576,10 +614,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24hp-v1 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-24hp-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1
 	(echo -n "V9.99(AAHM.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24hp-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1.webflash
+	(echo -n "V9.99(AAHM.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24hp-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24hp-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_zyxel_gs1900-24hp-v2.dts
@@ -589,10 +632,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24hp-v2 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-24hp-v2.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2
 	(echo -n "V9.99(ABTP.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24hp-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2.webflash
+	(echo -n "V9.99(ABTP.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-24hp-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-10hp.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_zyxel_gs1900-10hp.dts
@@ -602,10 +650,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-10hp bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-10hp.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-10hp.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-10hp
 	(echo -n "V9.99(AAZI.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-10hp
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-10hp.trx $(ARCH)-uclibc/vmlinux-gs1900-10hp
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-10hp.webflash
+	(echo -n "V9.99(AAZI.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-10hp.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-10hp.trx $(ARCH)-uclibc/vmlinux-gs1900-10hp.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_zyxel_gs1900-8-v1.dts
@@ -615,10 +668,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8-v1 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-8-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1
 	(echo -n "V9.99(AAHH.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-8-v1
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1.webflash
+	(echo -n "V9.99(AAHH.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-8-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_zyxel_gs1900-8-v2.dts
@@ -628,10 +686,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8-v2 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-8-v2.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2
 	(echo -n "V9.99(AAHH.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-8-v2
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2.webflash
+	(echo -n "V9.99(AAHH.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-8-v2.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8hp-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_zyxel_gs1900-8hp-v1.dts
@@ -641,10 +704,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8hp-v1 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-8hp-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1
 	(echo -n "V9.99(AAHI.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8hp-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1.webflash
+	(echo -n "V9.99(AAHI.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8hp-v1.trx $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8hp-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_zyxel_gs1900-8hp-v2.dts
@@ -654,10 +722,15 @@ ifeq ($(CONFIG_RTL838X),y)
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8hp-v2 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs1900-8hp-v2.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2.webflash
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2
 	(echo -n "V9.99(AAHI.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8hp-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2.webflash
+	(echo -n "V9.99(AAHI.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-8hp-v2.trx $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2.webflash
 endif
 ifneq ($(CONFIG_RTL838X),y)
 
@@ -676,6 +749,9 @@ ifneq ($(CONFIG_RTL838X),y)
 		-i $(ARCH)-uclibc/vmlinux-hpe_1920-48g.h3cimage \
 		-o $(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs \
 		-f dd-wrt-kernel.bin
+	dd if=$(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs of=$(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs.pad bs=64k conv=sync
+	mv -f $(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs.pad $(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-48g.trx $(ARCH)-uclibc/vmlinux-hpe_1920-48g.vfs
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -1095,8 +1171,11 @@ ifneq ($(CONFIG_RTL838X),y)
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x174e4741  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x174e4741  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs750e bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs750e.trx $(ARCH)-uclibc/vmlinux-gs750e
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs750e.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs750e.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs750e.trx $(ARCH)-uclibc/vmlinux-gs750e.webflash
 endif
 ifeq ($(CONFIG_RTL838X),y)
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
@@ -1106,17 +1185,23 @@ ifeq ($(CONFIG_RTL838X),y)
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs108t-v3 bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs108t-v3.trx $(ARCH)-uclibc/vmlinux-gs108t-v3
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs108t-v3.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs108t-v3.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs108t-v3.trx $(ARCH)-uclibc/vmlinux-gs108t-v3.webflash
+
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs110tpp-v1.dts
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tpp-v1
-	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tpp-v1 bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tpp-v1.trx $(ARCH)-uclibc/vmlinux-gs110tpp-v1
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs110tpp-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tpp-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tpp-v1.trx $(ARCH)-uclibc/vmlinux-gs110tpp-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs110tup-v1.dts
@@ -1125,8 +1210,11 @@ ifeq ($(CONFIG_RTL838X),y)
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tup-v1 bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tup-v1.trx $(ARCH)-uclibc/vmlinux-gs110tup-v1
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs110tup-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tup-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tup-v1.trx $(ARCH)-uclibc/vmlinux-gs110tup-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs308t-v1.dts
@@ -1135,8 +1223,11 @@ ifeq ($(CONFIG_RTL838X),y)
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs308t-v1 bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs308t-v1.trx $(ARCH)-uclibc/vmlinux-gs308t-v1
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs308t-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs308t-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs308t-v1.trx $(ARCH)-uclibc/vmlinux-gs308t-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs310tp-v1.dts
@@ -1145,8 +1236,11 @@ ifeq ($(CONFIG_RTL838X),y)
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs310tp-v1 bs=64k conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs310tp-v1.trx $(ARCH)-uclibc/vmlinux-gs310tp-v1
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-gs310tp-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs310tp-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs310tp-v1.trx $(ARCH)-uclibc/vmlinux-gs310tp-v1.webflash
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_linksys_lgs310c.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_linksys_lgs310c.dts
@@ -1155,10 +1249,16 @@ ifeq ($(CONFIG_RTL838X),y)
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-lgs310c bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-lgs310c.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-lgs310c.webflash
 	tools/realtek/linksys-image.sh $(ARCH)-uclibc/vmlinux-lgs310c $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image 60402060
 	tools/realtek/belkin-header.py $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image $(ARCH)-uclibc/vmlinux-lgs310c.belkin 0x07800001 BKS-RTL83xx
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-lgs310c.trx $(ARCH)-uclibc/vmlinux-lgs310c
+
+	tools/realtek/linksys-image.sh $(ARCH)-uclibc/vmlinux-lgs310c.webflash $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image.webflash 60402060
+	tools/realtek/belkin-header.py $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image.webflash $(ARCH)-uclibc/vmlinux-lgs310c.belkin.webflash 0x07800001 BKS-RTL83xx
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-lgs310c.trx $(ARCH)-uclibc/vmlinux-lgs310c.webflash
 endif
 endif
 
