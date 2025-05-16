@@ -1032,19 +1032,6 @@ Bridge VLAN filtering
   the specified MAC address from the specified VLAN ID if it was mapped into
   this port forwarding database.
 
-- ``port_mdb_active``: bridge layer function invoked when the bridge starts (or
-  stops) to actively apply multicast snooping to multicast payload, i.e. when
-  multicast snooping is enabled and a multicast querier is present on the link
-  for a particular protocol family (or not). A switch should (by default) ensure:
-  To flood multicast packets for the given protocol family if multicast snooping
-  is inactive - to avoid multicast (and consequently also IPv6 unicast, which
-  depends on multicast for NDP) packet loss. And should (by default) avoid
-  forwarding to an active port if there is no listener or multicast router on it.
-
-- ``port_mdb_set_mrouter``: bridge layer function invoked when the bridge wants
-  to (un)install a multicast router on a specific port. The switch hardware should
-  be programmed to forward all multicast packets to this port.
-
 Link aggregation
 ----------------
 

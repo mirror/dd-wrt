@@ -100,7 +100,7 @@ netdev_tx_t br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 
 		mdst = br_mdb_get(brmctx, skb, vid);
 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
-		    br_multicast_snooping_active(brmctx, eth_hdr(skb), mdst))
+		    br_multicast_querier_exists(brmctx, eth_hdr(skb), mdst))
 			br_multicast_flood(mdst, skb, brmctx, false, true);
 		else
 			br_flood(br, skb, BR_PKT_MULTICAST, false, true, vid);
@@ -182,10 +182,7 @@ static int br_dev_open(struct net_device *dev)
 	netdev_update_features(dev);
 	netif_start_queue(dev);
 	br_stp_enable_bridge(br);
-
-	spin_lock_bh(&br->multicast_lock);
 	br_multicast_open(br);
-	spin_unlock_bh(&br->multicast_lock);
 
 	if (br_opt_get(br, BROPT_MULTICAST_ENABLED))
 		br_multicast_join_snoopers(br);

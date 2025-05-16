@@ -1719,16 +1719,12 @@ static int br_fill_info(struct sk_buff *skb, const struct net_device *brdev)
 			br->multicast_ctx.multicast_startup_query_count) ||
 	    nla_put_u8(skb, IFLA_BR_MCAST_IGMP_VERSION,
 		       br->multicast_ctx.multicast_igmp_version) ||
-	    nla_put_u8(skb, IFLA_BR_MCAST_ACTIVE_V4,
-		       br->multicast_ctx.ip4_active) ||
 	    br_multicast_dump_querier_state(skb, &br->multicast_ctx,
 					    IFLA_BR_MCAST_QUERIER_STATE))
 		return -EMSGSIZE;
 #if IS_ENABLED(CONFIG_IPV6)
 	if (nla_put_u8(skb, IFLA_BR_MCAST_MLD_VERSION,
-		       br->multicast_ctx.multicast_mld_version) ||
-	    nla_put_u8(skb, IFLA_BR_MCAST_ACTIVE_V6,
-		       br->multicast_ctx.ip6_active))
+		       br->multicast_ctx.multicast_mld_version))
 		return -EMSGSIZE;
 #endif
 	clockval = jiffies_to_clock_t(br->multicast_ctx.multicast_last_member_interval);

@@ -652,16 +652,6 @@ static int dsa_switch_host_mdb_del(struct dsa_switch *ds,
 	return err;
 }
 
-static int dsa_switch_mdb_active(struct dsa_switch *ds,
-				 struct dsa_notifier_mdb_active_info *info)
-{
-	if (!ds->ops->port_mdb_active)
-		return -EOPNOTSUPP;
-
-	return ds->ops->port_mdb_active(ds, info->dp->index, info->mc_active,
-					info->extack, info->handled);
-}
-
 /* Port VLANs match on the targeted port and on all DSA ports */
 static bool dsa_port_vlan_match(struct dsa_port *dp,
 				struct dsa_notifier_vlan_info *info)
@@ -1035,9 +1025,6 @@ static int dsa_switch_event(struct notifier_block *nb,
 		break;
 	case DSA_NOTIFIER_HOST_MDB_DEL:
 		err = dsa_switch_host_mdb_del(ds, info);
-		break;
-	case DSA_NOTIFIER_MDB_ACTIVE:
-		err = dsa_switch_mdb_active(ds, info);
 		break;
 	case DSA_NOTIFIER_VLAN_ADD:
 		err = dsa_switch_vlan_add(ds, info);
