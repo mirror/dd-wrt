@@ -179,7 +179,7 @@ static void watchdog(void)
 //#endif
 //#endif
 #ifdef HAVE_REALTEK
-		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
+		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F") || nvram_match("DD_BOARD", "XGS1250-12")) {
 			int psu = 0;
 			FILE *tempfp;
 			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");

@@ -107,6 +107,11 @@ void start_sysinit(void)
 			}
 		}
 		break;
+	case ROUTER_ZYXEL_XGS1250:
+		mtd = getMTD("u-boot-env");
+		if (mtd != -1)
+			set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
+		break;
 	default:
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
@@ -123,7 +128,7 @@ void start_sysinit(void)
 		}
 		break;
 	}
-	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
+	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F") || nvram_match("DD_BOARD", "XGS1250-12")) {
 		sysprintf("echo 1 > /sys/class/hwmon/hwmon0/pwm1_enable");
 		sysprintf("echo 250 > /sys/class/hwmon/hwmon0/pwm1");
 	}
