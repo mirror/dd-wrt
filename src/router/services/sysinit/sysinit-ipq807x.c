@@ -1024,7 +1024,6 @@ void start_sysinit(void)
 			maddr = tempaddr;
 			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
 				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
-			MAC_ADD(maddr);
 		}
 	}
 	wait_for_eth("wan");
@@ -1038,6 +1037,17 @@ void start_sysinit(void)
 
 		sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff,
 			newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		MAC_SUB(maddr);
+		MAC_SUB(maddr);
+		MAC_SUB(maddr);
+		MAC_SUB(maddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		MAC_ADD(maddr);
+		MAC_ADD(maddr);
+		MAC_ADD(maddr);
+		MAC_ADD(maddr);
+		MAC_ADD(maddr);
 		nvram_set("et0macaddr", ethaddr);
 		nvram_set("et0macaddr_safe", ethaddr);
 		set_hwaddr("wan", ethaddr);
