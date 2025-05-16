@@ -63,6 +63,7 @@ static SENSORMAPS maps[] = {
 	{ "Thermal Zone9", "nss0" },
 	{ "Thermal Zone10", "nss1" },
 	{ "90000mdio100", "Aquantia Phy0" },
+	{ "90000mdio107", "Aquantia Phy1" },
 	{ "90000mdio108", "Aquantia Phy1" },
 };
 
