@@ -82,7 +82,7 @@ void EJ_VISIBLE ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	int globresult;
 	int c;
 	struct bwcontext ctx;
-	memset(&ctx,0,sizeof(ctx));
+	memset(&ctx, 0, sizeof(ctx));
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "status_band.h2"));
 	show_bwif(wp, &ctx, nvram_safe_get("lan_ifname"), "LAN");

@@ -49,10 +49,10 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.stp", "<th width=\"5%%\">", "</th>\n");
 #ifdef HAVE_MSTP
 	char *stpoptions = "Off STP RSTP MSTP";
-	char *stpoptions_trans[] = { "share.off", "share.stp", "share.rstp", "share.mstp"  };
+	char *stpoptions_trans[] = { "share.off", "share.stp", "share.rstp", "share.mstp" };
 #else
 	char *stpoptions = "Off STP";
-	char *stpoptions_trans[] = { "share.off", "share.stp"  };
+	char *stpoptions_trans[] = { "share.off", "share.stp" };
 #endif
 	//	if (vlan)
 	//		show_caption_pp(wp, NULL, "networking.vlan_forwarding", "<th>", "</th>\n");
@@ -123,8 +123,10 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			  bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
-		websWrite(wp, "<td style=\"vertical-align:top\" class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n",
-			  bridge_name, nvram_safe_get(bridge_name));
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\" class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n",
+			bridge_name, nvram_safe_get(bridge_name));
 
 		websWrite(
 			wp,

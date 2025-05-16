@@ -36,13 +36,16 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<fieldset>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targets", "<legend>", "</legend>\n");
 
-		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table\"><thread><tr>\n");
+		websWrite(
+			wp,
+			"<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table\"><thread><tr>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetip", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_weight", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "wl_basic.masquerade", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thread><tbody>\n");
+		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">",
+				"</th></tr></thread><tbody>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
 

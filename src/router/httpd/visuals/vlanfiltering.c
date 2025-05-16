@@ -45,7 +45,8 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 
 		int totalcount = 0;
 		int realcount = nvram_default_geti("vlan_filtercount", 0);
-		websWrite(wp, "<table cellspacing=\"4\" summary=\"filters\" id=\"filters_table\" class=\"table\"><thead><tr>\n");
+		websWrite(wp,
+			  "<table cellspacing=\"4\" summary=\"filters\" id=\"vlanfilters_table\" class=\"table\"><thead><tr>\n");
 		show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.pvid", "<th>", "</th>\n");
@@ -143,6 +144,11 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
 		websWrite(wp, "</tbody></table>\n");
+		websWrite(wp, "<script type=\"text/javascript\">\n");
+		websWrite(wp, "//<![CDATA[");
+		websWrite(wp, "var t = new SortableTable(document.getElementById('vlanfilters_table'), 1000);");
+		websWrite(wp, "//]]>");
+		websWrite(wp, "</script>");
 
 		websWrite(wp, "</fieldset><br />\n");
 	}
