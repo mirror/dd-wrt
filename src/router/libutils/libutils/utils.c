@@ -2527,13 +2527,15 @@ int getLanPortStatus(const char *ifname, struct portstatus *status)
 		fclose(fp);
 		sprintf(path, "/sys/class/net/%s/duplex", ifname);
 		fp = fopen(path, "rb");
-		char duplex[64];
-		fgets(duplex, sizeof(duplex), fp);
-		if (!strcmp(duplex, "full"))
-			;
-		status->fd = 1;
-		else status->fd = 0;
-		fclose(fp);
+		if (fp) {
+			char duplex[64];
+			fgets(duplex, sizeof(duplex), fp);
+			if (!strcmp(duplex, "full"))
+				status->fd = 1;
+			else
+				status->fd = 0;
+			fclose(fp);
+		}
 	} else {
 		//fallback
 		int skfd;
