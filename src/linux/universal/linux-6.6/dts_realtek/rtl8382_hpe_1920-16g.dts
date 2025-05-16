@@ -12,16 +12,16 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT(8, 1, internal)
-		SWITCH_PORT(9, 2, internal)
-		SWITCH_PORT(10, 3, internal)
-		SWITCH_PORT(11, 4, internal)
-		SWITCH_PORT(12, 5, internal)
-		SWITCH_PORT(13, 6, internal)
-		SWITCH_PORT(14, 7, internal)
-		SWITCH_PORT(15, 8, internal)
+		SWITCH_PORT(8, 01, internal)
+		SWITCH_PORT(9, 02, internal)
+		SWITCH_PORT(10, 03, internal)
+		SWITCH_PORT(11, 04, internal)
+		SWITCH_PORT(12, 05, internal)
+		SWITCH_PORT(13, 06, internal)
+		SWITCH_PORT(14, 07, internal)
+		SWITCH_PORT(15, 08, internal)
 
-		SWITCH_PORT(16, 9, qsgmii)
+		SWITCH_PORT(16, 09, qsgmii)
 		SWITCH_PORT(17, 10, qsgmii)
 		SWITCH_PORT(18, 11, qsgmii)
 		SWITCH_PORT(19, 12, qsgmii)

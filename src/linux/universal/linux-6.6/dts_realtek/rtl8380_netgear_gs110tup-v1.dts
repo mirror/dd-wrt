@@ -52,7 +52,7 @@
 
 &switch0 {
 	ports {
-		SWITCH_PORT(16, 9, qsgmii)
+		SWITCH_PORT(16, 09, qsgmii)
 		SWITCH_SFP_PORT(24, 10, rgmii-id)
 	};
 };
