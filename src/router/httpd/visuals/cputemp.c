@@ -500,7 +500,7 @@ static int show_temp(webs_t wp, char *name)
 static int show_temp(webs_t wp, char *name)
 {
 	char sysfs[128];
-	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon0/temp1_input");
+	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon1/temp1_input");
 	return showsensor(wp, sysfs, NULL, name, 1000, CELSIUS, NULL);
 }
 #endif
