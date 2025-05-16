@@ -88,7 +88,6 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 	int i;
 	int max = 0;
 	char buf[128];
-	struct portstatus status;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"portif\" id=\"portif_table\" class=\"table\"><thead><tr>\n");
 	for (i = 0; i < MAXCOL; i++) {
 		if (ifname[i][0]) {
@@ -103,6 +102,7 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 	websWrite(wp, "<tr>\n");
 	for (i = 0; i < MAXCOL; i++) {
 		if (ifname[i][0]) {
+			struct portstatus status;
 			int r = getLanPortStatus(ifname[i], &status);
 			if (r) {
 				websWrite(wp, "<td class=\"status_red center\">");

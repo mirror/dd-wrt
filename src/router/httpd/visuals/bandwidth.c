@@ -111,12 +111,16 @@ void EJ_VISIBLE ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 				goto skip;
 		}
 #endif
-		if (isbridge(var)) {
-			snprintf(name, sizeof(name), "BRIDGE (%s)", getNetworkLabel(wp, var));
-		} else
-			snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp, var));
+		struct portstatus status;
+		int r = getLanPortStatus(var, &status);
+		if (!r && status.link) {
+			if (isbridge(var)) {
+				snprintf(name, sizeof(name), "BRIDGE (%s)", getNetworkLabel(wp, var));
+			} else
+				snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp, var));
 
-		show_bwif(wp, &ctx, var, name);
+			show_bwif(wp, &ctx, var, name);
+		}
 skip:;
 	}
 	if (!nvram_match("wan_proto", "disabled")) {
@@ -126,13 +130,17 @@ skip:;
 		} else
 			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, safe_get_wan_face(wan_if_buffer)));
 
-		show_bwif(wp, &ctx, safe_get_wan_face(wan_if_buffer), name);
+		struct portstatus status;
+		int r = getLanPortStatus(var, &status);
+		if (!r && status.link) {
+			show_bwif(wp, &ctx, safe_get_wan_face(wan_if_buffer), name);
 
-		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
-			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
-				show_bwif(wp, &ctx, "eth2.0008", "IPTV");
-			else
-				show_bwif(wp, &ctx, "eth0.0008", "IPTV");
+			if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
+				if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
+					show_bwif(wp, &ctx, "eth2.0008", "IPTV");
+				else
+					show_bwif(wp, &ctx, "eth0.0008", "IPTV");
+			}
 		}
 	}
 #ifdef HAVE_MADWIFI
