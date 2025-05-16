@@ -1124,6 +1124,52 @@ static int rtl8214fc_get_port(struct phy_device *phydev)
 	return PORT_MII;
 }
 
+static int rtl8214fc_get_features(struct phy_device *phydev)
+{
+	int ret = 0;
+
+	ret = genphy_read_abilities(phydev);
+	if (ret)
+		return ret;
+	/*
+	 * The RTL8214FC only advertises TP capabilities in the standard registers. This is
+	 * independent from what fibre/copper combination is currently activated. For now just
+	 * announce the superset of all possible features.
+	 */
+	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported);
+
+	return 0;
+}
+
+static int rtl8214fc_read_status(struct phy_device *phydev)
+{
+	bool changed;
+	int ret;
+
+	if (rtl8214fc_media_is_fibre(phydev)) {
+		phydev->port = PORT_FIBRE;
+		ret = genphy_c37_read_status(phydev, &changed);
+	} else {
+		phydev->port = PORT_MII; /* for now aligend with rest of code */
+		ret = genphy_read_status(phydev);
+	}
+
+	return ret;
+}
+
+static int rtl8214fc_config_aneg(struct phy_device *phydev)
+{
+	int ret;
+
+	if (rtl8214fc_media_is_fibre(phydev))
+		ret = genphy_c37_config_aneg(phydev);
+	else
+		ret = genphy_config_aneg(phydev);
+
+	return ret;
+}
+
 /* Enable EEE on the RTL8218B PHYs
  * The method used is not the preferred way (which would be based on the MAC-EEE state,
  * but the only way that works since the kernel first enables EEE in the MAC
@@ -3754,7 +3800,15 @@ int rtl931x_link_sts_get(u32 sds)
 
 static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 {
+	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
+	DECLARE_PHY_INTERFACE_MASK(interfaces);
 	struct phy_device *phydev = upstream;
+	phy_interface_t iface;
+
+	sfp_parse_support(phydev->sfp_bus, id, support, interfaces);
+	iface = sfp_select_interface(phydev->sfp_bus, support);
+
+	dev_info(&phydev->mdio.dev, "%s SFP module inserted\n", phy_modes(iface));
 
 	rtl8214fc_media_set(phydev, true);
 
@@ -3817,30 +3871,19 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
-#define RTL8390_LED_SW_P_EN_CTRL_ADDR(port)                                                                    (0x12C + (((port / 10) << 2))) /* port: 0-51 */
-  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port)                                                 ((port % 0xA) * 3)
-  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(port)                                                   (0x7 << RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port))
-
-
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
 	int addr = phydev->mdio.addr;
-	uint32_t value;
+
 	/* All base addresses of the PHYs start at multiples of 8 */
 	devm_phy_package_join(dev, phydev, addr & (~7),
 				sizeof(struct rtl83xx_shared_private));
-/*	pr_info("probe %s\n", __func__,__LINE__);
-	if (soc_info.family == RTL8390_FAMILY_ID) {
-		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
-		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-	}*/
 
 	if (!(addr % 8)) {
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8218B (external)";
-		if (soc_info.family == RTL8390_FAMILY_ID) {
+		if (soc_info.family == RTL8380_FAMILY_ID) {
 			/* Configuration must be done while patching still possible */
 			return rtl8380_configure_ext_rtl8218b(phydev);
 		}
@@ -3961,22 +4004,22 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 	},
 	{
 		.match_phy_device = rtl8214fc_match_phy_device,
 		.name		= "Realtek RTL8214FC",
-		.features	= PHY_GBIT_FIBRE_FEATURES,
+		.config_aneg	= rtl8214fc_config_aneg,
+		.get_eee	= rtl8214fc_get_eee,
+		.get_features	= rtl8214fc_get_features,
+		.get_port	= rtl8214fc_get_port,
 		.probe		= rtl8214fc_phy_probe,
 		.read_page	= rtl821x_read_page,
-		.write_page	= rtl821x_write_page,
-		.suspend	= rtl8214fc_suspend,
+		.read_status    = rtl8214fc_read_status,
 		.resume		= rtl8214fc_resume,
-		.set_loopback	= genphy_loopback,
-		.set_port	= rtl8214fc_set_port,
-		.get_port	= rtl8214fc_get_port,
 		.set_eee	= rtl8214fc_set_eee,
-		.get_eee	= rtl8214fc_get_eee,
+		.set_port	= rtl8214fc_set_port,
+		.suspend	= rtl8214fc_suspend,
+		.write_page	= rtl821x_write_page,
 	},
 	{
 		.match_phy_device = rtl8218b_ext_match_phy_device,
@@ -3987,7 +4030,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.set_eee	= rtl8218b_set_eee,
 		.get_eee	= rtl8218b_get_eee,
 	},
@@ -4000,7 +4042,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.set_eee	= rtl8218d_set_eee,
 		.get_eee	= rtl8218d_get_eee,
 	},
@@ -4010,7 +4051,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.features       = PHY_GBIT_FEATURES,
 		.suspend        = genphy_suspend,
 		.resume         = genphy_resume,
-		.set_loopback   = genphy_loopback,
 		.read_page      = rtl821x_read_page,
 		.write_page     = rtl821x_write_page,
 		.read_status    = rtl8226_read_status,
@@ -4024,7 +4064,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.features	= PHY_GBIT_FEATURES,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
 		.read_status	= rtl8226_read_status,
@@ -4041,7 +4080,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.set_eee	= rtl8218b_set_eee,
 		.get_eee	= rtl8218b_get_eee,
 	},
@@ -4054,7 +4092,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.read_status	= rtl8380_read_status,
 	},
 	{
@@ -4066,7 +4103,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.read_status	= rtl8393_read_status,
 	},
 	{
@@ -4078,7 +4114,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.probe		= rtl8390_serdes_probe,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL9300_I),
@@ -4089,7 +4124,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.probe		= rtl9300_serdes_probe,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.set_loopback	= genphy_loopback,
 		.read_status	= rtl9300_read_status,
 #ifdef CONFIG_RTL931X		
 		.config_aneg	= rtl9300_config_aneg,

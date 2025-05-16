@@ -1988,12 +1988,6 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
-#define RTL8390_LED_SW_P_EN_CTRL_ADDR(port)                                                                    (0x12C + (((port / 10) << 2))) /* port: 0-51 */
-  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port)                                                 ((port % 0xA) * 3)
-  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(port)                                                   (0x7 << RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port))
-
-
-
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
 	pr_debug("%s called\n", __func__);
@@ -2009,14 +2003,6 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
 {
-	uint32_t value, oldvalue;
-/*	int addr;
-	for (addr = 0;addr < RTL839X_CPU_PORT;addr++) {
-		oldvalue = value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-		value &= ~RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
-		pr_info("led was 0x%08X is now %0x08X\n", oldvalue, value);
-		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-	}*/
 	return 0;
 
 	pr_debug("%s called\n", __func__);
@@ -2026,7 +2012,6 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL + 4);
 	/* Disable PHY polling via SoC */
 	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
-
 
 	/* Probably should reset all PHYs here... */
 	return 0;
@@ -2700,7 +2685,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int rtl838x_eth_remove(struct platform_device *pdev)
+static void rtl838x_eth_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -2714,8 +2699,6 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 		for (int i = 0; i < priv->rxrings; i++)
 			netif_napi_del(&priv->rx_qs[i].napi);
 	}
-
-	return 0;
 }
 
 static const struct of_device_id rtl838x_eth_of_ids[] = {
@@ -2726,7 +2709,7 @@ MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
 
 static struct platform_driver rtl838x_eth_driver = {
 	.probe = rtl838x_eth_probe,
-	.remove = rtl838x_eth_remove,
+	.remove_new = rtl838x_eth_remove,
 	.driver = {
 		.name = "rtl838x-eth",
 		.pm = NULL,
