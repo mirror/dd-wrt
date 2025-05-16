@@ -22,6 +22,7 @@
 
 #define PROC_DEV "/proc/net/dev"
 
+#define MAXCOL 8
 static void get_ifstat(char *ifname, char *buffer, size_t len)
 {
 	char line[256];
@@ -89,12 +90,13 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 	char buf[128];
 	struct portstatus status;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"portif\" id=\"portif_table\" class=\"table\"><thead><tr>\n");
-	for (i = 0; i < 12; i++) {
+	for (i = 0; i < MAXCOL; i++) {
 		if (ifname[i][0])
 			max++;
 	}
 	for (i = 0; i < max; i++) {
-		websWrite(wp, "<th class=\"center\" width=\"8%%\">%s</th>\n", ifname[i][0] ? ifname[i] : "");
+		char *label = nvram_safe_nget("%s_label", ifname[i]);
+		websWrite(wp, "<th class=\"center\" width=\"%d%%\">%s</th>\n", 100 / MAXCOL, *label ? label : ifname[i]);
 	}
 	websWrite(wp, "</tr></thead>\n");
 	websWrite(wp, "<tbody>\n");
@@ -126,7 +128,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 	websWrite(wp, "</table>\n");
 }
 struct portcontext {
-	char ifname[12][32];
+	char ifname[MAXCOL][32];
 	int count;
 };
 
@@ -137,7 +139,7 @@ static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname)
 	}
 	strlcpy(ctx->ifname[ctx->count], ifname, 32);
 	ctx->count++;
-	if (ctx->count == 12) {
+	if (ctx->count == MAXCOL) {
 		ctx->count = 0;
 		show_portif_row(wp, ctx->ifname);
 	}
