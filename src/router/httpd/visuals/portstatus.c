@@ -95,7 +95,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 			max++;
 	}
 	for (i = 0; i < max; i++) {
-		char *label = nvram_safe_nget("%s_label", ifname[i]);
+		char *label = nvram_nget("%s_label", ifname[i]);
 		websWrite(wp, "<th class=\"center\" width=\"%d%%\">%s</th>\n", 100 / MAXCOL, *label ? label : ifname[i]);
 	}
 	websWrite(wp, "</tr></thead>\n");
