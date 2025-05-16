@@ -164,9 +164,20 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	int c;
 	struct portcontext ctx;
 	memset(&ctx, 0, sizeof(ctx));
+	getIfLists(eths, sizeof(eths));
+	int lancount = 0;
+	int ethcount = 0;
+	foreach(var, eths, next) {
+		if (!strncmp(var, "lan", 3))
+			lancount++;
+		if (!strncmp(var, "eth", 3))
+			ethcount++;
+	}
+	if (!lancount && ethcount < 2)
+		return;
 	websWrite(wp, "<h2>%s</h2>\n", tran_string(buf, sizeof(buf), "networking.portstatus"));
 	websWrite(wp, "<fieldset>\n");
-	getIfLists(eths, sizeof(eths));
+
 	foreach(var, eths, next) {
 		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3) || !strncmp(var, "10g", 3))
 			show_portif(wp, &ctx, var);
