@@ -56,7 +56,7 @@
 
 &switch0 {
 	ports {
-		SWITCH_SFP_PORT(24, 9, rgmii-id)
+		SWITCH_SFP_PORT(24, 09, rgmii-id)
 		SWITCH_SFP_PORT(26, 10, rgmii-id)
 	};
 };

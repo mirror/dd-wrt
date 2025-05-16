@@ -214,7 +214,7 @@
 		SWITCH_PORT(14, 07, internal)
 		SWITCH_PORT(15, 08, internal)
 
-		SWITCH_SFP_PORT(24, 9, 1000base-x)
+		SWITCH_SFP_PORT(24, 09, 1000base-x)
 
 		port@26 {
 			reg = <26>;
