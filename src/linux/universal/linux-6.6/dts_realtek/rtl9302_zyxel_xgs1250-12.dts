@@ -323,56 +323,56 @@
 
 		port@0 {
 			reg = <0>;
-			label = "lan1";
+			label = "lan01";
 			phy-handle = <&phy0>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@1 {
 			reg = <1>;
-			label = "lan2";
+			label = "lan02";
 			phy-handle = <&phy1>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@2 {
 			reg = <2>;
-			label = "lan3";
+			label = "lan03";
 			phy-handle = <&phy2>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@3 {
 			reg = <3>;
-			label = "lan4";
+			label = "lan04";
 			phy-handle = <&phy3>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@4 {
 			reg = <4>;
-			label = "lan5";
+			label = "lan05";
 			phy-handle = <&phy4>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@5 {
 			reg = <5>;
-			label = "lan6";
+			label = "lan06";
 			phy-handle = <&phy5>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@6 {
 			reg = <6>;
-			label = "lan7";
+			label = "lan07";
 			phy-handle = <&phy6>;
 			phy-mode = "xgmii";
 			led-set = <0>;
 		};
 		port@7 {
 			reg = <7>;
-			label = "lan8";
+			label = "lan08";
 			phy-handle = <&phy7>;
 			phy-mode = "xgmii";
 			led-set = <0>;
@@ -380,7 +380,7 @@
 
 		port@24 {
 			reg = <24>;
-			label = "lan9";
+			label = "lan09";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy24>;
 			led-set = <1>;
