@@ -32,7 +32,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 			max++;
 	}
 	for (i = 0; i < max; i++) {
-		websWrite(wp, "<th width=\"8,33%%\">%s</th>\n", ifname[i][0] ? ifname[i] : "");
+		websWrite(wp, "<th class=\"center\" width=\"8%%\">%s</th>\n", ifname[i][0] ? ifname[i] : "");
 	}
 	websWrite(wp, "</tr></thead>\n");
 	websWrite(wp, "<tbody>\n");
@@ -40,7 +40,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 	for (i = 0; i < max; i++) {
 		int r = getLanPortStatus(ifname[i], &status);
 		if (r) {
-			websWrite(wp, "<td class=\"status_red center\">\n");
+			websWrite(wp, "<td class=\"status_red center\">");
 			websWrite(wp, "error %d", r);
 		} else {
 			if (status.link) {
@@ -52,7 +52,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 					websWrite(wp, "<td class=\"status_green center\">\n");
 				websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
 			} else {
-				websWrite(wp, "<td class=\"status_red center\">\n");
+				websWrite(wp, "<td class=\"status_red center\">");
 				websWrite(wp, "down");
 			}
 			websWrite(wp, "</td>\n");
