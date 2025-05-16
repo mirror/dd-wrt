@@ -16,18 +16,6 @@
 #define CMIS_MODULE_STATE_MODULE_PWR_DN		0x04
 #define CMIS_MODULE_STATE_MODULE_FAULT		0x05
 
-/* Module Flags (Page 0) */
-#define CMIS_VCC_AW_OFFSET			0x09
-#define CMIS_VCC_LWARN_STATUS			0x80
-#define CMIS_VCC_HWARN_STATUS			0x40
-#define CMIS_VCC_LALARM_STATUS			0x20
-#define CMIS_VCC_HALARM_STATUS			0x10
-#define CMIS_TEMP_AW_OFFSET			0x09
-#define CMIS_TEMP_LWARN_STATUS			0x08
-#define CMIS_TEMP_HWARN_STATUS			0x04
-#define CMIS_TEMP_LALARM_STATUS			0x02
-#define CMIS_TEMP_HALARM_STATUS			0x01
-
 #define CMIS_MODULE_TYPE_OFFSET			0x55
 #define CMIS_MT_MMF				0x01
 #define CMIS_MT_SMF				0x02
@@ -40,6 +28,10 @@
 #define CMIS_MODULE_CONTROL_OFFSET		0x1A
 #define CMIS_LOW_PWR_ALLOW_REQUEST_HW_MASK	0x40
 #define CMIS_LOW_PWR_REQUEST_SW_MASK		0x10
+
+/* Module Active Firmware Version (Page 0) */
+#define CMIS_MODULE_ACTIVE_FW_MAJOR_OFFSET	0x27
+#define CMIS_MODULE_ACTIVE_FW_MINOR_OFFSET	0x28
 
 /* Module Fault Information (Page 0) */
 #define CMIS_MODULE_FAULT_OFFSET		0x29
@@ -111,28 +103,16 @@
 
 /* Media interface technology */
 #define CMIS_MEDIA_INTF_TECH_OFFSET		0xD4
-#define CMIS_850_VCSEL				0x00
-#define CMIS_1310_VCSEL				0x01
-#define CMIS_1550_VCSEL				0x02
-#define CMIS_1310_FP				0x03
-#define CMIS_1310_DFB				0x04
-#define CMIS_1550_DFB				0x05
-#define CMIS_1310_EML				0x06
-#define CMIS_1550_EML				0x07
-#define CMIS_OTHERS				0x08
-#define CMIS_1490_DFB				0x09
-#define CMIS_COPPER_UNEQUAL			0x0A
-#define CMIS_COPPER_PASS_EQUAL			0x0B
-#define CMIS_COPPER_NF_EQUAL			0x0C
-#define CMIS_COPPER_F_EQUAL			0x0D
-#define CMIS_COPPER_N_EQUAL			0x0E
-#define CMIS_COPPER_LINEAR_EQUAL		0x0F
 
 /*-----------------------------------------------------------------------
  * Upper Memory Page 0x01: contains advertising fields that define properties
  * that are unique to active modules and cable assemblies.
  * GlobalOffset = 2 * 0x80 + LocalOffset
  */
+
+/* Module Inactive Firmware Version (Page 1) */
+#define CMIS_MODULE_INACTIVE_FW_MAJOR_OFFSET	0x80
+#define CMIS_MODULE_INACTIVE_FW_MINOR_OFFSET	0x81
 
 /* Supported Link Length (Page 1) */
 #define CMIS_SMF_LEN_OFFSET			0x84
@@ -170,10 +150,6 @@
 #define CMIS_DIAG_FL_RX_LOS			(1 << 1)
 
 /* Supported Monitors Advertisement (Page 1) */
-#define CMIS_DIAG_CHAN_ADVER_OFFSET		0xA0
-#define CMIS_TX_BIAS_MON_MASK			0x01
-#define CMIS_TX_PWR_MON_MASK			0x02
-#define CMIS_RX_PWR_MON_MASK			0x04
 #define CMIS_TX_BIAS_MUL_MASK			0x18
 #define CMIS_TX_BIAS_MUL_1			0x00
 #define CMIS_TX_BIAS_MUL_2			0x08
@@ -182,6 +158,17 @@
 /* Signal integrity controls */
 #define CMIS_SIG_INTEG_TX_OFFSET		0xA1
 #define CMIS_SIG_INTEG_RX_OFFSET		0xA2
+
+/* CDB Messaging Support Advertisement */
+#define CMIS_CDB_ADVER_OFFSET			0xA3
+#define CMIS_CDB_ADVER_INSTANCES_MASK		0xC0
+#define CMIS_CDB_ADVER_MODE_MASK		0x20
+#define CMIS_CDB_ADVER_EPL_MASK			0x0F
+
+#define CMIS_CDB_ADVER_RW_LEN_OFFSET		0xA4
+
+#define CMIS_CDB_ADVER_TRIGGER_OFFSET		0xA5
+#define CMIS_CDB_ADVER_TRIGGER_MASK		0x80
 
 /*-----------------------------------------------------------------------
  * Upper Memory Page 0x02: Optional Page that informs about module-defined
@@ -211,39 +198,6 @@
 #define CMIS_RX_PWR_LALRM_OFFSET		0xC2
 #define CMIS_RX_PWR_HWARN_OFFSET		0xC4
 #define CMIS_RX_PWR_LWARN_OFFSET		0xC6
-
-/*-----------------------------------------------------------------------
- * Upper Memory Page 0x11: Optional Page that contains lane dynamic status
- * bytes.
- */
-
-/* Media Lane-Specific Flags (Page 0x11) */
-#define CMIS_TX_FAIL_OFFSET			0x87
-#define CMIS_TX_LOS_OFFSET			0x88
-#define CMIS_TX_LOL_OFFSET			0x89
-#define CMIS_TX_EQ_FAIL_OFFSET			0x8a
-#define CMIS_TX_PWR_AW_HALARM_OFFSET		0x8B
-#define CMIS_TX_PWR_AW_LALARM_OFFSET		0x8C
-#define CMIS_TX_PWR_AW_HWARN_OFFSET		0x8D
-#define CMIS_TX_PWR_AW_LWARN_OFFSET		0x8E
-#define CMIS_TX_BIAS_AW_HALARM_OFFSET		0x8F
-#define CMIS_TX_BIAS_AW_LALARM_OFFSET		0x90
-#define CMIS_TX_BIAS_AW_HWARN_OFFSET		0x91
-#define CMIS_TX_BIAS_AW_LWARN_OFFSET		0x92
-#define CMIS_RX_LOS_OFFSET			0x93
-#define CMIS_RX_LOL_OFFSET			0x94
-#define CMIS_RX_PWR_AW_HALARM_OFFSET		0x95
-#define CMIS_RX_PWR_AW_LALARM_OFFSET		0x96
-#define CMIS_RX_PWR_AW_HWARN_OFFSET		0x97
-#define CMIS_RX_PWR_AW_LWARN_OFFSET		0x98
-
-/* Media Lane-Specific Monitors (Page 0x11) */
-#define CMIS_TX_PWR_OFFSET			0x9A
-#define CMIS_TX_BIAS_OFFSET			0xAA
-#define CMIS_RX_PWR_OFFSET			0xBA
-
-#define YESNO(x) (((x) != 0) ? "Yes" : "No")
-#define ONOFF(x) (((x) != 0) ? "On" : "Off")
 
 void cmis_show_all_ioctl(const __u8 *id);
 

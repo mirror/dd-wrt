@@ -117,7 +117,7 @@
 .  hy \\n(HY
 ..
 .
-.TH ETHTOOL 8 "May 2024" "Ethtool version @VERSION@"
+.TH ETHTOOL 8 "April 2025" "Ethtool version @VERSION@"
 .SH NAME
 ethtool \- query or control network driver and hardware settings
 .
@@ -137,10 +137,17 @@ ethtool \- query or control network driver and hardware settings
 .BN --debug
 .I args
 .HP
+.B ethtool [--disable-netlink]
+.I args
+.HP
 .B ethtool [--json]
 .I args
 .HP
 .B ethtool [-I | --include-statistics]
+.I args
+.HP
+.B ethtool
+.BN --phy
 .I args
 .HP
 .B ethtool \-\-monitor
@@ -335,6 +342,20 @@ ethtool \- query or control network driver and hardware settings
 .HP
 .B ethtool \-T|\-\-show\-time\-stamping
 .I devname
+.RB [ index
+.IR N
+.BI qualifier
+.IR precise|approx ]
+.HP
+.B ethtool \-\-get\-hwtimestamp\-cfg
+.I devname
+.HP
+.B ethtool \-\-set\-hwtimestamp\-cfg
+.I devname
+.RB [ index
+.IR N
+.BI qualifier
+.IR precise|approx ]
 .HP
 .B ethtool \-x|\-\-show\-rxfh\-indir|\-\-show\-rxfh
 .I devname
@@ -536,6 +557,19 @@ ethtool \- query or control network driver and hardware settings
 .I devname
 .RB [ podl\-pse\-admin\-control
 .BR enable | disable ]
+.RB [ c33\-pse\-admin\-control
+.BR enable | disable ]
+.BN c33\-pse\-avail\-pw\-limit N
+.HP
+.B ethtool \-\-flash\-module\-firmware
+.I devname
+.BI file
+.IR FILE
+.RB [ pass
+.IR PASS ]
+.HP
+.B ethtool \-\-show\-phys
+.I devname
 .
 .\" Adjust lines (i.e. full justification) and hyphenate.
 .ad
@@ -572,6 +606,9 @@ lB	l.
 0x10  Structure of netlink messages
 .TE
 .TP
+.BI \-\-disable-netlink
+Do not use netlink and fall back to the ioctl interface if possible.
+.TP
 .BI \-\-json
 Output results in JavaScript Object Notation (JSON). Only a subset of
 options support this. Those which do not will continue to output
@@ -580,6 +617,23 @@ plain text in the presence of this option.
 .B \-I \-\-include\-statistics
 Include command-related statistics in the output. This option allows
 displaying relevant device statistics for selected get commands.
+.TP
+.BI \-\-phy \ N
+Target a PHY within the interface. The PHY index can be retrieved with
+.B \-\-show\-phys. PHY index 0 targets the phy device directly attached to
+the ethernet MAC, if any.
+The following commands can accept a PHY index:
+.TS
+nokeep;
+lB	l.
+\-\-cable\-test
+\-\-cable\-test\-tdr
+\-\-get\-plca\-cfg
+\-\-set\-plca\-cfg
+\-\-get\-plca\-status
+\-\-show-pse
+\-\-set-pse
+.TE
 .TP
 .B \-a \-\-show\-pause
 Queries the specified Ethernet device for pause parameter information.
@@ -852,6 +906,7 @@ lB	l	lB.
 0x8000000000000000000000000	10baseT1S Full
 0x10000000000000000000000000	10baseT1S Half
 0x20000000000000000000000000	10baseT1S_P2MP Half
+0x40000000000000000000000000	10baseT1BRR Full
 0x004	100baseT Half
 0x008	100baseT Full
 0x80000000000000000	100baseT1 Full
@@ -1159,6 +1214,10 @@ Specifies the RSS context to spread packets over multiple queues; either
 for the default RSS context, or a value returned by
 .BI ethtool\ -X\  ... \ context
 .BR new .
+If combined with
+.BR action \ or\  queue ,
+the Rx queue specified will be added to the value read from the RSS indirection
+table to produce the actual Rx queue to deliver to.
 .TP
 .BI vf \ N
 Specifies the Virtual Function the filter applies to. Not compatible with action.
@@ -1188,7 +1247,32 @@ Sets the dump flag for the device.
 .TP
 .B \-T \-\-show\-time\-stamping
 Show the device's time stamping capabilities and associated PTP
-hardware clock.
+hardware clock. Show the capabilities of the currently selected time
+stamping if no \fBindex\fR and \fBqualifier\fR is provided.
+.RS 4
+.TP
+.BI index \ N
+Index of the ptp hardware clock
+.TP
+.BI qualifier \ precise | approx
+Qualifier of the ptp hardware clock. Mainly "precise" the default one is
+for IEEE 1588 quality and "approx" is for NICs DMA point.
+.RE
+.TP
+.B \-\-get\-hwtimestamp\-cfg
+Show the selected time stamping PTP hardware clock configuration.
+.TP
+.B \-\-set\-hwtimestamp\-cfg
+Select the device's time stamping PTP hardware clock.
+.RS 4
+.TP
+.BI index \ N
+Index of the ptp hardware clock
+.TP
+.BI qualifier \ precise | approx
+Qualifier of the ptp hardware clock. Mainly "precise" the default one is
+for IEEE 1588 quality and "approx" is for NICs DMA point.
+.RE
 .TP
 .B \-x \-\-show\-rxfh\-indir \-\-show\-rxfh
 Retrieves the receive flow hash indirection table and/or RSS hash key.
@@ -1760,7 +1844,51 @@ status depend on internal PSE state machine and automatic PD classification
 support. It corresponds to IEEE 802.3-2018 30.15.1.1.3
 (aPoDLPSEPowerDetectionStatus) with potential values being
 .B disabled, searching, delivering power, sleep, idle, error
-.RE
+.TP
+.B c33-pse-admin-state
+This attribute indicates the operational status of c33 PSE functions, which
+can be modified using the
+.B c33-pse-admin-control
+parameter. It corresponds to IEEE 802.3-2022 30.9.1.1.2 (aPSEAdminState),
+with potential values being
+.B enabled, disabled
+.TP
+.B c33-pse-power-detection-status
+This attribute indicates the power detection status of the c33 PSE. The
+status depend on internal PSE state machine and automatic PD classification
+support. It corresponds to IEEE 802.3-2022 30.9.1.1.5
+(aPSEPowerDetectionStatus) with potential values being
+.B disabled, searching, delivering power, test, fault, other fault
+.TP
+.B c33-pse-extended-state
+This attribute indicates the Extended state of the c33 PSE. The extended
+state correlated with the c33 PSE Extended Substate allows to have more
+detail on the c33 PSE current error state.
+It corresponds to IEEE 802.3-2022 33.2.4.4 Variables.
+.TP
+.B c33-pse-extended-substate
+This attribute indicates the Extended substate of the c33 PSE. Correlated
+with the c33 PSE Extended state value, it allows to have more detail on the
+c33 PSE current error state.
+.TP
+.B c33-pse-power-class
+This attribute identifies the power class of the c33 PSE. It depends on
+the class negotiated between the PSE and the PD. It corresponds to
+IEEE 802.3-2022 30.9.1.1.8 (aPSEPowerClassification).
+.TP
+.B c33-pse-actual-power
+This attribute identifies the actual power drawn by the c33 PSE. It
+corresponds to ``IEEE 802.3-2022`` 30.9.1.1.23 (aPSEActualPower). Actual
+power is reported in mW.
+.TP
+.B c33-pse-available-power-limit
+This attribute identifies the configured c33 PSE power limit in mW.
+.TP
+.B c33-pse-power-limit-ranges
+This attribute specifies the allowed power limit ranges in mW for
+configuring the c33-pse-avail-pw-limit parameter. It defines the valid
+power levels that can be assigned to the c33 PSE in compliance with the
+c33 standard.
 
 .RE
 .TP
@@ -1771,6 +1899,70 @@ Set Power Sourcing Equipment (PSE) parameters.
 .A2 podl-pse-admin-control \ enable disable
 This parameter manages PoDL PSE Admin operations in accordance with the IEEE
 802.3-2018 30.15.1.2.1 (acPoDLPSEAdminControl) specification.
+.TP
+.A2 c33-pse-admin-control \ enable disable
+This parameter manages c33 PSE Admin operations in accordance with the IEEE
+802.3-2022 30.9.1.2.1 (acPSEAdminControl) specification.
+.TP
+.B c33-pse-avail-pw-limit \ N
+This parameter manages c33 PSE Available Power Limit in mW, in accordance
+with the IEEE 802.3-2022 33.2.4.4 Variables (pse_available_power)
+specification.
+
+.RE
+.TP
+.B \-\-flash\-module\-firmware
+Flash the transceiver module's firmware. The firmware update process is
+composed from three logical steps. Downloading a firmware image to the
+transceiver module, running the image and committing the image so that it is
+run upon reset. When flash command is given, the firmware update process is
+performed in its entirety in that order.
+.RS 4
+.TP
+.BI file \ FILE
+Specifies the filename of the transceiver module firmware image. The firmware
+must first be installed in one of the directories where the kernel firmware
+loader or firmware agent will look, such as /lib/firmware. The firmware image
+is downloaded to the transceiver module, validated, run and committed.
+.RE
+.RS 4
+.TP
+.BI pass \ PASS
+Optional transceiver module password that might be required as part of the
+transceiver module firmware update process.
+
+.RE
+.TP
+.B \-\-show\-phys
+Show the PHY devices attached to an interface, and the way they link together.
+.RS 4
+.TP
+.B phy_index
+The PHY's index, that identifies it within the network interface. If the
+interface has multiple PHYs, they will each have a unique index on that
+interface. This index can then be used for commands that targets PHYs.
+.TP
+.B drvname
+The name of the driver bound to this PHY device.
+.TP
+.B name
+The PHY's device name, matching the name found in sysfs.
+.TP
+.B downstream_sfp_name
+If the PHY drives an SFP cage, this field contains the name of the associated
+SFP bus.
+.TP
+.B upstream_type \ mac | phy
+Indicates the nature of the device the PHY is attached to.
+.TP
+.B upstream_index
+If the PHY's upstream_type is
+.B phy
+, this field indicates the phy_index of the upstream phy.
+.TP
+.B upstream_sfp_name
+If the PHY is withing an SFP/SFF module, this field contains the name of the
+upstream SFP bus.
 
 .SH BUGS
 Not supported (in part or whole) on all network drivers.

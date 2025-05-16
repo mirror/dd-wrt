@@ -57,80 +57,6 @@
 
 #define	SFF8636_LOL_AW_OFFSET	0x05
 
-/* Module Monitor Interrupt Flags - 6-8 */
-#define	SFF8636_TEMP_AW_OFFSET	0x06
-#define	 SFF8636_TEMP_HALARM_STATUS		(1 << 7)
-#define	 SFF8636_TEMP_LALARM_STATUS		(1 << 6)
-#define	 SFF8636_TEMP_HWARN_STATUS		(1 << 5)
-#define	 SFF8636_TEMP_LWARN_STATUS		(1 << 4)
-
-#define	SFF8636_VCC_AW_OFFSET	0x07
-#define	 SFF8636_VCC_HALARM_STATUS		(1 << 7)
-#define	 SFF8636_VCC_LALARM_STATUS		(1 << 6)
-#define	 SFF8636_VCC_HWARN_STATUS		(1 << 5)
-#define	 SFF8636_VCC_LWARN_STATUS		(1 << 4)
-
-/* Channel Monitor Interrupt Flags - 9-21 */
-#define	SFF8636_RX_PWR_12_AW_OFFSET	0x09
-#define	 SFF8636_RX_PWR_1_HALARM		(1 << 7)
-#define	 SFF8636_RX_PWR_1_LALARM		(1 << 6)
-#define	 SFF8636_RX_PWR_1_HWARN			(1 << 5)
-#define	 SFF8636_RX_PWR_1_LWARN			(1 << 4)
-#define	 SFF8636_RX_PWR_2_HALARM		(1 << 3)
-#define	 SFF8636_RX_PWR_2_LALARM		(1 << 2)
-#define	 SFF8636_RX_PWR_2_HWARN			(1 << 1)
-#define	 SFF8636_RX_PWR_2_LWARN			(1 << 0)
-
-#define	SFF8636_RX_PWR_34_AW_OFFSET	0x0A
-#define	 SFF8636_RX_PWR_3_HALARM		(1 << 7)
-#define	 SFF8636_RX_PWR_3_LALARM		(1 << 6)
-#define	 SFF8636_RX_PWR_3_HWARN			(1 << 5)
-#define	 SFF8636_RX_PWR_3_LWARN			(1 << 4)
-#define	 SFF8636_RX_PWR_4_HALARM		(1 << 3)
-#define	 SFF8636_RX_PWR_4_LALARM		(1 << 2)
-#define	 SFF8636_RX_PWR_4_HWARN			(1 << 1)
-#define	 SFF8636_RX_PWR_4_LWARN			(1 << 0)
-
-#define	SFF8636_TX_BIAS_12_AW_OFFSET	0x0B
-#define	 SFF8636_TX_BIAS_1_HALARM		(1 << 7)
-#define	 SFF8636_TX_BIAS_1_LALARM		(1 << 6)
-#define	 SFF8636_TX_BIAS_1_HWARN		(1 << 5)
-#define	 SFF8636_TX_BIAS_1_LWARN		(1 << 4)
-#define	 SFF8636_TX_BIAS_2_HALARM		(1 << 3)
-#define	 SFF8636_TX_BIAS_2_LALARM		(1 << 2)
-#define	 SFF8636_TX_BIAS_2_HWARN		(1 << 1)
-#define	 SFF8636_TX_BIAS_2_LWARN		(1 << 0)
-
-#define	SFF8636_TX_BIAS_34_AW_OFFSET	0xC
-#define	 SFF8636_TX_BIAS_3_HALARM		(1 << 7)
-#define	 SFF8636_TX_BIAS_3_LALARM		(1 << 6)
-#define	 SFF8636_TX_BIAS_3_HWARN		(1 << 5)
-#define	 SFF8636_TX_BIAS_3_LWARN		(1 << 4)
-#define	 SFF8636_TX_BIAS_4_HALARM		(1 << 3)
-#define	 SFF8636_TX_BIAS_4_LALARM		(1 << 2)
-#define	 SFF8636_TX_BIAS_4_HWARN		(1 << 1)
-#define	 SFF8636_TX_BIAS_4_LWARN		(1 << 0)
-
-#define	SFF8636_TX_PWR_12_AW_OFFSET	0x0D
-#define	 SFF8636_TX_PWR_1_HALARM		(1 << 7)
-#define	 SFF8636_TX_PWR_1_LALARM		(1 << 6)
-#define	 SFF8636_TX_PWR_1_HWARN			(1 << 5)
-#define	 SFF8636_TX_PWR_1_LWARN			(1 << 4)
-#define	 SFF8636_TX_PWR_2_HALARM		(1 << 3)
-#define	 SFF8636_TX_PWR_2_LALARM		(1 << 2)
-#define	 SFF8636_TX_PWR_2_HWARN			(1 << 1)
-#define	 SFF8636_TX_PWR_2_LWARN			(1 << 0)
-
-#define	SFF8636_TX_PWR_34_AW_OFFSET	0x0E
-#define	 SFF8636_TX_PWR_3_HALARM		(1 << 7)
-#define	 SFF8636_TX_PWR_3_LALARM		(1 << 6)
-#define	 SFF8636_TX_PWR_3_HWARN			(1 << 5)
-#define	 SFF8636_TX_PWR_3_LWARN			(1 << 4)
-#define	 SFF8636_TX_PWR_4_HALARM		(1 << 3)
-#define	 SFF8636_TX_PWR_4_LALARM		(1 << 2)
-#define	 SFF8636_TX_PWR_4_HWARN			(1 << 1)
-#define	 SFF8636_TX_PWR_4_LWARN			(1 << 0)
-
 /* Module Monitoring Values - 22-33 */
 #define	SFF8636_TEMP_CURR		0x16
 #define	SFF8636_TEMP_MSB_OFFSET		0x16
@@ -381,40 +307,6 @@
 
 /* Device Technology - 147 */
 #define	SFF8636_DEVICE_TECH_OFFSET	0x93
-/* Transmitter Technology */
-#define	 SFF8636_TRANS_TECH_MASK		0xF0
-/* Copper cable, linear active equalizers */
-#define	 SFF8636_TRANS_COPPER_LNR_EQUAL		(15 << 4)
-/* Copper cable, near end limiting active equalizers */
-#define	 SFF8636_TRANS_COPPER_NEAR_EQUAL	(14 << 4)
-/* Copper cable, far end limiting active equalizers */
-#define	 SFF8636_TRANS_COPPER_FAR_EQUAL		(13 << 4)
-/* Copper cable, near & far end limiting active equalizers */
-#define	 SFF8636_TRANS_COPPER_LNR_FAR_EQUAL	(12 << 4)
-/* Copper cable, passive equalized */
-#define	 SFF8636_TRANS_COPPER_PAS_EQUAL		(11 << 4)
-/* Copper cable, unequalized */
-#define	 SFF8636_TRANS_COPPER_PAS_UNEQUAL	(10 << 4)
-/* 1490 nm DFB */
-#define	 SFF8636_TRANS_1490_DFB			(9 << 4)
-/* Others */
-#define	 SFF8636_TRANS_OTHERS			(8 << 4)
-/* 1550 nm EML */
-#define	 SFF8636_TRANS_1550_EML			(7 << 4)
-/* 1310 nm EML */
-#define	 SFF8636_TRANS_1310_EML			(6 << 4)
-/* 1550 nm DFB */
-#define	 SFF8636_TRANS_1550_DFB			(5 << 4)
-/* 1310 nm DFB */
-#define	 SFF8636_TRANS_1310_DFB			(4 << 4)
-/* 1310 nm FP */
-#define	 SFF8636_TRANS_1310_FP			(3 << 4)
-/* 1550 nm VCSEL */
-#define	 SFF8636_TRANS_1550_VCSEL		(2 << 4)
-/* 1310 nm VCSEL */
-#define	 SFF8636_TRANS_1310_VCSEL		(1 << 4)
-/* 850 nm VCSEL */
-#define	 SFF8636_TRANS_850_VCSEL		(0 << 4)
 
  /* Active/No wavelength control */
 #define	 SFF8636_DEV_TECH_ACTIVE_WAVE_LEN	(1 << 3)

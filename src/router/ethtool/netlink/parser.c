@@ -996,7 +996,7 @@ static void tmp_buff_destroy(struct tmp_buff *head)
  *               and their handlers; the array must be terminated by null
  *               element {}
  * @dest:        optional destination to copy parsed data to (at
- *               param_parser::offset)
+ *               param_parser::offset); buffer should start with presence bitmap
  * @group_style: defines if identifiers in .group represent separate messages,
  *               nested attributes or are not allowed
  * @msgbuffs:    (only used for @group_style = PARSER_GROUP_MSG) array to store
@@ -1096,7 +1096,14 @@ int nl_parser(struct nl_context *nlctx, const struct param_parser *params,
 			buff = tmp_buff_find(buffs, parser->group);
 		msgbuff = buff ? buff->msgbuff : &nlsk->msgbuff;
 
-		param_dest = dest ? ((char *)dest + parser->dest_offset) : NULL;
+		if (dest) {
+			unsigned long index = parser - params;
+
+			param_dest = ((char *)dest + parser->dest_offset);
+			set_bit(index, (unsigned long *)dest);
+		} else {
+			param_dest = NULL;
+		}
 		ret = parser->handler(nlctx, parser->type, parser->handler_data,
 				      msgbuff, param_dest);
 		if (ret < 0)

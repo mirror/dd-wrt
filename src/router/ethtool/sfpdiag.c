@@ -12,7 +12,7 @@
 #include <math.h>
 #include <arpa/inet.h>
 #include "internal.h"
-#include "sff-common.h"
+#include "module-common.h"
 
 /* Offsets in decimal, for direct comparison with the SFF specs */
 
@@ -241,41 +241,55 @@ static void sff8472_parse_eeprom(const __u8 *id, struct sff_diags *sd)
 
 void sff8472_show_all(const __u8 *id)
 {
+	char *rx_power_type_string = NULL;
 	struct sff_diags sd = {0};
-	char *rx_power_string = NULL;
 	int i;
 
 	sff8472_parse_eeprom(id, &sd);
 
-	if (!sd.supports_dom) {
-		printf("\t%-41s : No\n", "Optical diagnostics support");
-		return;
-	}
-	printf("\t%-41s : Yes\n", "Optical diagnostics support");
+	module_print_any_bool("Optical diagnostics support",
+			      "optical_diagnostics_support",
+			      sd.supports_dom, YESNO(sd.supports_dom));
 
-	PRINT_BIAS("Laser bias current", sd.bias_cur[MCURR]);
-	PRINT_xX_PWR("Laser output power", sd.tx_power[MCURR]);
+	if (!sd.supports_dom)
+		return;
+
+	PRINT_BIAS_ALL("Laser bias current", "laser_bias_current",
+		       sd.bias_cur[MCURR]);
+	PRINT_xX_PWR_ALL("Laser output power", "laser_output_power",
+			 sd.tx_power[MCURR]);
 
 	if (!sd.rx_power_type)
-		rx_power_string = "Receiver signal OMA";
+		rx_power_type_string = "Receiver signal OMA";
 	else
-		rx_power_string = "Receiver signal average optical power";
+		rx_power_type_string = "Receiver signal average optical power";
 
-	PRINT_xX_PWR(rx_power_string, sd.rx_power[MCURR]);
+	open_json_object("rx_power");
+	PRINT_xX_PWR_ALL(rx_power_type_string, "value", sd.rx_power[MCURR]);
+	if (is_json_context())
+		module_print_any_string("type", rx_power_type_string);
+	close_json_object();
 
-	PRINT_TEMP("Module temperature", sd.sfp_temp[MCURR]);
-	PRINT_VCC("Module voltage", sd.sfp_voltage[MCURR]);
+	module_show_dom_mod_lvl_monitors(&sd);
 
-	printf("\t%-41s : %s\n", "Alarm/warning flags implemented",
-	       (sd.supports_alarms ? "Yes" : "No"));
+	module_print_any_bool("Alarm/warning flags implemented",
+			      "alarm/warning_flags_implemented",
+			      sd.supports_alarms, YESNO(sd.supports_alarms));
+
 	if (sd.supports_alarms) {
 
 		for (i = 0; sff8472_aw_flags[i].str; ++i) {
-			printf("\t%-41s : %s\n", sff8472_aw_flags[i].str,
-			       id[SFF_A2_BASE + sff8472_aw_flags[i].offset]
-			       & sff8472_aw_flags[i].value ? "On" : "Off");
+			bool value;
+
+			value = id[SFF_A2_BASE + sff8472_aw_flags[i].offset] &
+				sff8472_aw_flags[i].value;
+			module_print_any_bool(sff8472_aw_flags[i].str, NULL,
+					      value, ONOFF(value));
 		}
-		sff_show_thresholds(sd);
+		if (is_json_context())
+			sff_show_thresholds_json(sd);
+		else
+			sff_show_thresholds(sd);
 	}
 }
 

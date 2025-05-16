@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>org.kernel.software.network.ethtool</id>
+  <metadata_license>MIT</metadata_license>
+  <name>ethtool</name>
+  <summary>display or change Ethernet device settings</summary>
+  <description>
+    <p>ethtool can be used to query and change settings such as speed,
+    auto- negotiation and checksum offload on many network devices,
+    especially Ethernet devices.</p>
+  </description>
+  <url type="homepage">https://www.kernel.org/pub/software/network/ethtool/</url>
+  <provides>
+    <modalias>pci:v*d*sv*sd*bc02sc80i*</modalias>
+  </provides>
+</component>

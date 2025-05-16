@@ -29,277 +29,115 @@ double convert_mw_to_dbm(double mw)
 	return (10. * log10(mw / 1000.)) + 30.;
 }
 
-void sff_show_value_with_unit(const __u8 *id, unsigned int reg,
-			      const char *name, unsigned int mult,
-			      const char *unit)
+void sff_print_any_hex_field(const char *field_name,
+			     const char *json_field_name, u8 value,
+			     const char *desc)
 {
-	unsigned int val = id[reg];
+	char desc_name[SFF_MAX_FIELD_LEN];
 
-	printf("\t%-41s : %u%s\n", name, val * mult, unit);
-}
-
-void sff_show_ascii(const __u8 *id, unsigned int first_reg,
-		    unsigned int last_reg, const char *name)
-{
-	unsigned int reg, val;
-
-	printf("\t%-41s : ", name);
-	while (first_reg <= last_reg && id[last_reg] == ' ')
-		last_reg--;
-	for (reg = first_reg; reg <= last_reg; reg++) {
-		val = id[reg];
-		putchar(((val >= 32) && (val <= 126)) ? val : '_');
-	}
-	printf("\n");
-}
-
-void sff_show_lane_status(const char *name, unsigned int lane_cnt,
-			  const char *yes, const char *no, unsigned int value)
-{
-	printf("\t%-41s : ", name);
-	if (!value) {
-		printf("None\n");
-		return;
-	}
-
-	printf("[");
-	while (lane_cnt--) {
-		printf(" %s%c", value & 1 ? yes : no, lane_cnt ? ',': ' ');
-		value >>= 1;
-	}
-	printf("]\n");
-}
-
-void sff8024_show_oui(const __u8 *id, int id_offset)
-{
-	printf("\t%-41s : %02x:%02x:%02x\n", "Vendor OUI",
-		      id[id_offset], id[(id_offset) + 1],
-		      id[(id_offset) + 2]);
-}
-
-void sff8024_show_identifier(const __u8 *id, int id_offset)
-{
-	printf("\t%-41s : 0x%02x", "Identifier", id[id_offset]);
-	switch (id[id_offset]) {
-	case SFF8024_ID_UNKNOWN:
-		printf(" (no module present, unknown, or unspecified)\n");
-		break;
-	case SFF8024_ID_GBIC:
-		printf(" (GBIC)\n");
-		break;
-	case SFF8024_ID_SOLDERED_MODULE:
-		printf(" (module soldered to motherboard)\n");
-		break;
-	case SFF8024_ID_SFP:
-		printf(" (SFP)\n");
-		break;
-	case SFF8024_ID_300_PIN_XBI:
-		printf(" (300 pin XBI)\n");
-		break;
-	case SFF8024_ID_XENPAK:
-		printf(" (XENPAK)\n");
-		break;
-	case SFF8024_ID_XFP:
-		printf(" (XFP)\n");
-		break;
-	case SFF8024_ID_XFF:
-		printf(" (XFF)\n");
-		break;
-	case SFF8024_ID_XFP_E:
-		printf(" (XFP-E)\n");
-		break;
-	case SFF8024_ID_XPAK:
-		printf(" (XPAK)\n");
-		break;
-	case SFF8024_ID_X2:
-		printf(" (X2)\n");
-		break;
-	case SFF8024_ID_DWDM_SFP:
-		printf(" (DWDM-SFP)\n");
-		break;
-	case SFF8024_ID_QSFP:
-		printf(" (QSFP)\n");
-		break;
-	case SFF8024_ID_QSFP_PLUS:
-		printf(" (QSFP+)\n");
-		break;
-	case SFF8024_ID_CXP:
-		printf(" (CXP)\n");
-		break;
-	case SFF8024_ID_HD4X:
-		printf(" (Shielded Mini Multilane HD 4X)\n");
-		break;
-	case SFF8024_ID_HD8X:
-		printf(" (Shielded Mini Multilane HD 8X)\n");
-		break;
-	case SFF8024_ID_QSFP28:
-		printf(" (QSFP28)\n");
-		break;
-	case SFF8024_ID_CXP2:
-		printf(" (CXP2/CXP28)\n");
-		break;
-	case SFF8024_ID_CDFP:
-		printf(" (CDFP Style 1/Style 2)\n");
-		break;
-	case SFF8024_ID_HD4X_FANOUT:
-		printf(" (Shielded Mini Multilane HD 4X Fanout Cable)\n");
-		break;
-	case SFF8024_ID_HD8X_FANOUT:
-		printf(" (Shielded Mini Multilane HD 8X Fanout Cable)\n");
-		break;
-	case SFF8024_ID_CDFP_S3:
-		printf(" (CDFP Style 3)\n");
-		break;
-	case SFF8024_ID_MICRO_QSFP:
-		printf(" (microQSFP)\n");
-		break;
-	case SFF8024_ID_QSFP_DD:
-		printf(" (QSFP-DD Double Density 8X Pluggable Transceiver (INF-8628))\n");
-		break;
-	case SFF8024_ID_OSFP:
-		printf(" (OSFP 8X Pluggable Transceiver)\n");
-		break;
-	case SFF8024_ID_DSFP:
-		printf(" (DSFP Dual Small Form Factor Pluggable Transceiver)\n");
-		break;
-	case SFF8024_ID_QSFP_PLUS_CMIS:
-		printf(" (QSFP+ or later with Common Management Interface Specification (CMIS))\n");
-		break;
-	case SFF8024_ID_SFP_DD_CMIS:
-		printf(" (SFP-DD Double Density 2X Pluggable Transceiver with Common Management Interface Specification (CMIS))\n");
-		break;
-	case SFF8024_ID_SFP_PLUS_CMIS:
-		printf(" (SFP+ and later with Common Management Interface Specification (CMIS))\n");
-		break;
-	default:
-		printf(" (reserved or unknown)\n");
-		break;
-	}
-}
-
-void sff8024_show_connector(const __u8 *id, int ctor_offset)
-{
-	printf("\t%-41s : 0x%02x", "Connector", id[ctor_offset]);
-	switch (id[ctor_offset]) {
-	case  SFF8024_CTOR_UNKNOWN:
-		printf(" (unknown or unspecified)\n");
-		break;
-	case SFF8024_CTOR_SC:
-		printf(" (SC)\n");
-		break;
-	case SFF8024_CTOR_FC_STYLE_1:
-		printf(" (Fibre Channel Style 1 copper)\n");
-		break;
-	case SFF8024_CTOR_FC_STYLE_2:
-		printf(" (Fibre Channel Style 2 copper)\n");
-		break;
-	case SFF8024_CTOR_BNC_TNC:
-		printf(" (BNC/TNC)\n");
-		break;
-	case SFF8024_CTOR_FC_COAX:
-		printf(" (Fibre Channel coaxial headers)\n");
-		break;
-	case SFF8024_CTOR_FIBER_JACK:
-		printf(" (FibreJack)\n");
-		break;
-	case SFF8024_CTOR_LC:
-		printf(" (LC)\n");
-		break;
-	case SFF8024_CTOR_MT_RJ:
-		printf(" (MT-RJ)\n");
-		break;
-	case SFF8024_CTOR_MU:
-		printf(" (MU)\n");
-		break;
-	case SFF8024_CTOR_SG:
-		printf(" (SG)\n");
-		break;
-	case SFF8024_CTOR_OPT_PT:
-		printf(" (Optical pigtail)\n");
-		break;
-	case SFF8024_CTOR_MPO:
-		printf(" (MPO Parallel Optic)\n");
-		break;
-	case SFF8024_CTOR_MPO_2:
-		printf(" (MPO Parallel Optic - 2x16)\n");
-		break;
-	case SFF8024_CTOR_HSDC_II:
-		printf(" (HSSDC II)\n");
-		break;
-	case SFF8024_CTOR_COPPER_PT:
-		printf(" (Copper pigtail)\n");
-		break;
-	case SFF8024_CTOR_RJ45:
-		printf(" (RJ45)\n");
-		break;
-	case SFF8024_CTOR_NO_SEPARABLE:
-		printf(" (No separable connector)\n");
-		break;
-	case SFF8024_CTOR_MXC_2x16:
-		printf(" (MXC 2x16)\n");
-		break;
-	case SFF8024_CTOR_CS_OPTICAL:
-		printf(" (CS optical connector)\n");
-		break;
-	case SFF8024_CTOR_CS_OPTICAL_MINI:
-		printf(" (Mini CS optical connector)\n");
-		break;
-	case SFF8024_CTOR_MPO_2X12:
-		printf(" (MPO 2x12)\n");
-		break;
-	case SFF8024_CTOR_MPO_1X16:
-		printf(" (MPO 1x16)\n");
-		break;
-	default:
-		printf(" (reserved or unknown)\n");
-		break;
+	if (is_json_context()) {
+		print_uint(PRINT_JSON, json_field_name, "%u", value);
+		if (desc) {
+			snprintf(desc_name, SFF_MAX_FIELD_LEN,
+				 "%s_description", json_field_name);
+			print_string(PRINT_JSON, desc_name, "%s", desc);
+		}
+	} else {
+		printf("\t%-41s : 0x%02x", field_name, value);
+		if (desc)
+			printf(" (%s)", desc);
+		print_nl();
 	}
 }
 
 void sff8024_show_encoding(const __u8 *id, int encoding_offset, int sff_type)
 {
-	printf("\t%-41s : 0x%02x", "Encoding", id[encoding_offset]);
+	char encoding_desc[64];
+
 	switch (id[encoding_offset]) {
 	case SFF8024_ENCODING_UNSPEC:
-		printf(" (unspecified)\n");
+		strncpy(encoding_desc, "unspecified", 64);
 		break;
 	case SFF8024_ENCODING_8B10B:
-		printf(" (8B/10B)\n");
+		strncpy(encoding_desc, "8B/10B", 64);
 		break;
 	case SFF8024_ENCODING_4B5B:
-		printf(" (4B/5B)\n");
+		strncpy(encoding_desc, "4B/5B", 64);
 		break;
 	case SFF8024_ENCODING_NRZ:
-		printf(" (NRZ)\n");
+		strncpy(encoding_desc, "NRZ", 64);
 		break;
 	case SFF8024_ENCODING_4h:
 		if (sff_type == ETH_MODULE_SFF_8472)
-			printf(" (Manchester)\n");
+			strncpy(encoding_desc, "Manchester", 64);
 		else if (sff_type == ETH_MODULE_SFF_8636)
-			printf(" (SONET Scrambled)\n");
+			strncpy(encoding_desc, "SONET Scrambled", 64);
 		break;
 	case SFF8024_ENCODING_5h:
 		if (sff_type == ETH_MODULE_SFF_8472)
-			printf(" (SONET Scrambled)\n");
+			strncpy(encoding_desc, "SONET Scrambled", 64);
 		else if (sff_type == ETH_MODULE_SFF_8636)
-			printf(" (64B/66B)\n");
+			strncpy(encoding_desc, "64B/66B", 64);
 		break;
 	case SFF8024_ENCODING_6h:
 		if (sff_type == ETH_MODULE_SFF_8472)
-			printf(" (64B/66B)\n");
+			strncpy(encoding_desc, "64B/66B", 64);
 		else if (sff_type == ETH_MODULE_SFF_8636)
-			printf(" (Manchester)\n");
+			strncpy(encoding_desc, "Manchester", 64);
 		break;
 	case SFF8024_ENCODING_256B:
-		printf(" ((256B/257B (transcoded FEC-enabled data))\n");
+		strncpy(encoding_desc,
+			"256B/257B (transcoded FEC-enabled data)", 64);
 		break;
 	case SFF8024_ENCODING_PAM4:
-		printf(" (PAM4)\n");
+		strncpy(encoding_desc, "PAM4", 64);
 		break;
 	default:
-		printf(" (reserved or unknown)\n");
+		strncpy(encoding_desc, "reserved or unknown", 64);
 		break;
 	}
+
+	sff_print_any_hex_field("Encoding", "encoding", id[encoding_offset],
+				encoding_desc);
+}
+
+
+void sff_show_thresholds_json(struct sff_diags sd)
+{
+	open_json_object("laser_bias_current");
+	PRINT_BIAS_JSON("high_alarm_threshold", sd.bias_cur[HALRM]);
+	PRINT_BIAS_JSON("low_alarm_threshold", sd.bias_cur[LALRM]);
+	PRINT_BIAS_JSON("high_warning_threshold", sd.bias_cur[HWARN]);
+	PRINT_BIAS_JSON("low_warning_threshold", sd.bias_cur[LWARN]);
+	close_json_object();
+
+	open_json_object("laser_output_power");
+	PRINT_xX_PWR_JSON("high_alarm_threshold", sd.tx_power[HALRM]);
+	PRINT_xX_PWR_JSON("low_alarm_threshold", sd.tx_power[LALRM]);
+	PRINT_xX_PWR_JSON("high_warning_threshold", sd.tx_power[HWARN]);
+	PRINT_xX_PWR_JSON("low_warning_threshold", sd.tx_power[LWARN]);
+	close_json_object();
+
+	open_json_object("module_temperature");
+	PRINT_TEMP_JSON("high_alarm_threshold", sd.sfp_temp[HALRM]);
+	PRINT_TEMP_JSON("low_alarm_threshold", sd.sfp_temp[LALRM]);
+	PRINT_TEMP_JSON("high_warning_threshold", sd.sfp_temp[HWARN]);
+	PRINT_TEMP_JSON("low_warning_threshold", sd.sfp_temp[LWARN]);
+	close_json_object();
+
+	open_json_object("module_voltage");
+	PRINT_VCC_JSON("high_alarm_threshold", sd.sfp_voltage[HALRM]);
+	PRINT_VCC_JSON("low_alarm_threshold", sd.sfp_voltage[LALRM]);
+	PRINT_VCC_JSON("high_warning_threshold", sd.sfp_voltage[HWARN]);
+	PRINT_VCC_JSON("low_warning_threshold", sd.sfp_voltage[LWARN]);
+	close_json_object();
+
+	open_json_object("laser_rx_power");
+	PRINT_xX_PWR_JSON("high_alarm_threshold", sd.rx_power[HALRM]);
+	PRINT_xX_PWR_JSON("low_alarm_threshold", sd.rx_power[LALRM]);
+	PRINT_xX_PWR_JSON("high_warning_threshold", sd.rx_power[HWARN]);
+	PRINT_xX_PWR_JSON("low_warning_threshold", sd.rx_power[LWARN]);
+	close_json_object();
 }
 
 void sff_show_thresholds(struct sff_diags sd)
@@ -348,40 +186,4 @@ void sff_show_thresholds(struct sff_diags sd)
 		     sd.rx_power[HWARN]);
 	PRINT_xX_PWR("Laser rx power low warning threshold",
 		     sd.rx_power[LWARN]);
-}
-
-void sff_show_revision_compliance(const __u8 *id, int rev_offset)
-{
-	static const char *pfx =
-		"\tRevision Compliance                       :";
-
-	switch (id[rev_offset]) {
-	case SFF8636_REV_UNSPECIFIED:
-		printf("%s Revision not specified\n", pfx);
-		break;
-	case SFF8636_REV_8436_48:
-		printf("%s SFF-8436 Rev 4.8 or earlier\n", pfx);
-		break;
-	case SFF8636_REV_8436_8636:
-		printf("%s SFF-8436 Rev 4.8 or earlier\n", pfx);
-		break;
-	case SFF8636_REV_8636_13:
-		printf("%s SFF-8636 Rev 1.3 or earlier\n", pfx);
-		break;
-	case SFF8636_REV_8636_14:
-		printf("%s SFF-8636 Rev 1.4\n", pfx);
-		break;
-	case SFF8636_REV_8636_15:
-		printf("%s SFF-8636 Rev 1.5\n", pfx);
-		break;
-	case SFF8636_REV_8636_20:
-		printf("%s SFF-8636 Rev 2.0\n", pfx);
-		break;
-	case SFF8636_REV_8636_27:
-		printf("%s SFF-8636 Rev 2.5/2.6/2.7\n", pfx);
-		break;
-	default:
-		printf("%s Unallocated\n", pfx);
-		break;
-	}
 }

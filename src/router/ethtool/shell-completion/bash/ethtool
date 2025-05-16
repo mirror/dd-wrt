@@ -1164,6 +1164,32 @@ _ethtool_set_module()
 	COMPREPLY=( $( compgen -W "${!settings[*]}" -- "$cur" ) )
 }
 
+# Completion for ethtool --flash-module-firmware
+_ethtool_flash_module_firmware()
+{
+	local -A settings=(
+		[file]=1
+		[pass]=1
+	)
+
+	case "$prev" in
+		file)
+			_ethtool_firmware
+			return ;;
+		pass)
+			# Number
+			return ;;
+	esac
+
+	# Remove settings which have been seen
+	local word
+	for word in "${words[@]:3:${#words[@]}-4}"; do
+		unset "settings[$word]"
+	done
+
+	COMPREPLY=( $( compgen -W "${!settings[*]}" -- "$cur" ) )
+}
+
 # Complete any ethtool command
 _ethtool()
 {
@@ -1217,6 +1243,7 @@ _ethtool()
 		[--test]=test
 		[--set-module]=set_module
 		[--show-module]=devname
+		[--flash-module-firmware]=flash_module_firmware
 	)
 	local -A other_funcs=(
 		[--config-ntuple]=config_nfc

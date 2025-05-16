@@ -138,6 +138,32 @@ struct nlattr *ethnla_nest_start(struct nl_msg_buff *msgbuff, uint16_t type)
 	return NULL;
 }
 
+static bool __ethnla_fill_header_phy(struct nl_msg_buff *msgbuff, uint16_t type,
+				     const char *devname, uint32_t phy_index,
+				     uint32_t flags)
+{
+	struct nlattr *nest;
+
+	nest = ethnla_nest_start(msgbuff, type);
+	if (!nest)
+		return true;
+
+	if ((devname &&
+	     ethnla_put_strz(msgbuff, ETHTOOL_A_HEADER_DEV_NAME, devname)) ||
+	    (flags &&
+	     ethnla_put_u32(msgbuff, ETHTOOL_A_HEADER_FLAGS, flags)) ||
+	    (phy_index &&
+	     ethnla_put_u32(msgbuff, ETHTOOL_A_HEADER_PHY_INDEX, phy_index)))
+		goto err;
+
+	ethnla_nest_end(msgbuff, nest);
+	return false;
+
+err:
+	ethnla_nest_cancel(msgbuff, nest);
+	return true;
+}
+
 /**
  * ethnla_fill_header() - write standard ethtool request header to message
  * @msgbuff: message buffer
@@ -150,24 +176,26 @@ struct nlattr *ethnla_nest_start(struct nl_msg_buff *msgbuff, uint16_t type)
 bool ethnla_fill_header(struct nl_msg_buff *msgbuff, uint16_t type,
 			const char *devname, uint32_t flags)
 {
-	struct nlattr *nest;
+	return __ethnla_fill_header_phy(msgbuff, type, devname, 0, flags);
+}
 
-	nest = ethnla_nest_start(msgbuff, type);
-	if (!nest)
-		return true;
-
-	if ((devname &&
-	     ethnla_put_strz(msgbuff, ETHTOOL_A_HEADER_DEV_NAME, devname)) ||
-	    (flags &&
-	     ethnla_put_u32(msgbuff, ETHTOOL_A_HEADER_FLAGS, flags)))
-		goto err;
-
-	ethnla_nest_end(msgbuff, nest);
-	return false;
-
-err:
-	ethnla_nest_cancel(msgbuff, nest);
-	return true;
+/**
+ * ethnla_fill_header_phy() - write standard ethtool request header to message,
+ *			      targetting a device's phy
+ * @msgbuff: message buffer
+ * @type:    attribute type for header nest
+ * @devname: device name (NULL to omit)
+ * @phy_index: phy index to target (0 to omit)
+ * @flags:   request flags (omitted if 0)
+ *
+ * Return: pointer to the nest attribute or null of error
+ */
+bool ethnla_fill_header_phy(struct nl_msg_buff *msgbuff, uint16_t type,
+			    const char *devname, uint32_t phy_index,
+			    uint32_t flags)
+{
+	return __ethnla_fill_header_phy(msgbuff, type, devname, phy_index,
+					flags);
 }
 
 /**

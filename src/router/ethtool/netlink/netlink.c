@@ -470,6 +470,11 @@ void netlink_run_handler(struct cmd_context *ctx, nl_chk_t nlchk,
 	const char *reason;
 	int ret;
 
+	if (ctx->nl_disable) {
+		reason = "netlink disabled";
+		goto no_support;
+	}
+
 	if (nlchk && !nlchk(ctx)) {
 		reason = "ioctl-only request";
 		goto no_support;

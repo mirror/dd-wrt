@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include "internal.h"
 
+#define SFF_MAX_DESC_LEN   120
+#define SFF_MAX_FIELD_LEN  64
+
 /* Revision compliance */
 #define  SFF8636_REV_UNSPECIFIED		0x00
 #define  SFF8636_REV_8436_48			0x01
@@ -35,73 +38,6 @@
 #define  SFF8636_REV_8636_15			0x05
 #define  SFF8636_REV_8636_20			0x06
 #define  SFF8636_REV_8636_27			0x07
-
-#define  SFF8024_ID_OFFSET				0x00
-#define  SFF8024_ID_UNKNOWN				0x00
-#define  SFF8024_ID_GBIC				0x01
-#define  SFF8024_ID_SOLDERED_MODULE		0x02
-#define  SFF8024_ID_SFP					0x03
-#define  SFF8024_ID_300_PIN_XBI			0x04
-#define  SFF8024_ID_XENPAK				0x05
-#define  SFF8024_ID_XFP					0x06
-#define  SFF8024_ID_XFF					0x07
-#define  SFF8024_ID_XFP_E				0x08
-#define  SFF8024_ID_XPAK				0x09
-#define  SFF8024_ID_X2					0x0A
-#define  SFF8024_ID_DWDM_SFP			0x0B
-#define  SFF8024_ID_QSFP				0x0C
-#define  SFF8024_ID_QSFP_PLUS			0x0D
-#define  SFF8024_ID_CXP					0x0E
-#define  SFF8024_ID_HD4X				0x0F
-#define  SFF8024_ID_HD8X				0x10
-#define  SFF8024_ID_QSFP28				0x11
-#define  SFF8024_ID_CXP2				0x12
-#define  SFF8024_ID_CDFP				0x13
-#define  SFF8024_ID_HD4X_FANOUT			0x14
-#define  SFF8024_ID_HD8X_FANOUT			0x15
-#define  SFF8024_ID_CDFP_S3				0x16
-#define  SFF8024_ID_MICRO_QSFP			0x17
-#define  SFF8024_ID_QSFP_DD				0x18
-#define  SFF8024_ID_OSFP				0x19
-#define  SFF8024_ID_DSFP				0x1B
-#define  SFF8024_ID_QSFP_PLUS_CMIS			0x1E
-#define  SFF8024_ID_SFP_DD_CMIS				0x1F
-#define  SFF8024_ID_SFP_PLUS_CMIS			0x20
-#define  SFF8024_ID_LAST				SFF8024_ID_SFP_PLUS_CMIS
-#define  SFF8024_ID_UNALLOCATED_LAST	0x7F
-#define  SFF8024_ID_VENDOR_START		0x80
-#define  SFF8024_ID_VENDOR_LAST			0xFF
-
-#define  SFF8024_CTOR_UNKNOWN			0x00
-#define  SFF8024_CTOR_SC				0x01
-#define  SFF8024_CTOR_FC_STYLE_1		0x02
-#define  SFF8024_CTOR_FC_STYLE_2		0x03
-#define  SFF8024_CTOR_BNC_TNC			0x04
-#define  SFF8024_CTOR_FC_COAX			0x05
-#define  SFF8024_CTOR_FIBER_JACK		0x06
-#define  SFF8024_CTOR_LC				0x07
-#define  SFF8024_CTOR_MT_RJ				0x08
-#define  SFF8024_CTOR_MU				0x09
-#define  SFF8024_CTOR_SG				0x0A
-#define  SFF8024_CTOR_OPT_PT			0x0B
-#define  SFF8024_CTOR_MPO				0x0C
-#define  SFF8024_CTOR_MPO_2				0x0D
-/* 0E-1Fh --- Reserved */
-#define  SFF8024_CTOR_HSDC_II			0x20
-#define  SFF8024_CTOR_COPPER_PT			0x21
-#define  SFF8024_CTOR_RJ45				0x22
-#define  SFF8024_CTOR_NO_SEPARABLE		0x23
-#define  SFF8024_CTOR_MXC_2x16			0x24
-#define  SFF8024_CTOR_CS_OPTICAL		0x25
-#define  SFF8024_CTOR_CS_OPTICAL_MINI		0x26
-#define  SFF8024_CTOR_MPO_2X12			0x27
-#define  SFF8024_CTOR_MPO_1X16			0x28
-#define  SFF8024_CTOR_LAST			SFF8024_CTOR_MPO_1X16
-
-#define  SFF8024_CTOR_NO_SEP_QSFP_DD		0x6F
-#define  SFF8024_CTOR_UNALLOCATED_LAST		0x7F
-#define  SFF8024_CTOR_VENDOR_START		0x80
-#define  SFF8024_CTOR_VENDOR_LAST		0xFF
 
 /* ENCODING Values */
 #define  SFF8024_ENCODING_UNSPEC		0x00
@@ -138,18 +74,52 @@
 		      (double)((var) / 10000.),                           \
 		       convert_mw_to_dbm((double)((var) / 10000.)))
 
+#define PRINT_xX_PWR_JSON(string, var)				\
+		print_float(PRINT_JSON, string, "%.2f",		\
+			    (double)((var) / 10000.))
+
+#define PRINT_xX_PWR_ALL(string, json_string, var)		\
+		is_json_context() ?				\
+		PRINT_xX_PWR_JSON(json_string, var) :		\
+		PRINT_xX_PWR(string, var)
+
 #define PRINT_BIAS(string, bias_cur)                             \
 		printf("\t%-41s : %.3f mA\n", (string),                       \
 		      (double)(bias_cur / 500.))
+
+#define PRINT_BIAS_JSON(string, bias_cur)			\
+		print_float(PRINT_JSON, string, "%.3f",		\
+			    (double)(bias_cur / 500.))
+
+#define PRINT_BIAS_ALL(string, json_string, bias_cur)		\
+		is_json_context() ?				\
+		PRINT_BIAS_JSON(json_string, bias_cur) :	\
+		PRINT_BIAS(string, bias_cur)
 
 #define PRINT_TEMP(string, temp)                                   \
 		printf("\t%-41s : %.2f degrees C / %.2f degrees F\n", \
 		      (string), (double)(temp / 256.),                \
 		      (double)(temp / 256. * 1.8 + 32.))
 
+#define PRINT_TEMP_JSON(string, temp)				\
+		print_float(PRINT_JSON, string, "%.2f", (double)(temp / 256.))
+
+#define PRINT_TEMP_ALL(string, json_string, temp)		\
+		is_json_context() ?				\
+		PRINT_TEMP_JSON(json_string, temp) : PRINT_TEMP(string, temp)
+
 #define PRINT_VCC(string, sfp_voltage)          \
 		printf("\t%-41s : %.4f V\n", (string),       \
 		      (double)(sfp_voltage / 10000.))
+
+#define PRINT_VCC_JSON(string, sfp_voltage)			\
+		print_float(PRINT_JSON, string, "%.4f",		\
+			    (double)(sfp_voltage / 10000.))
+
+#define PRINT_VCC_ALL(string, json_string, sfp_voltage)		\
+		is_json_context() ? 				\
+		PRINT_VCC_JSON(json_string, sfp_voltage) :	\
+		PRINT_VCC(string, sfp_voltage)
 
 # define PRINT_xX_THRESH_PWR(string, var, index)                       \
 		PRINT_xX_PWR(string, (var)[(index)])
@@ -196,19 +166,12 @@ struct sff_diags {
 };
 
 double convert_mw_to_dbm(double mw);
-void sff_show_value_with_unit(const __u8 *id, unsigned int reg,
-			      const char *name, unsigned int mult,
-			      const char *unit);
-void sff_show_ascii(const __u8 *id, unsigned int first_reg,
-		    unsigned int last_reg, const char *name);
-void sff_show_lane_status(const char *name, unsigned int lane_cnt,
-			  const char *yes, const char *no, unsigned int value);
+void sff_print_any_hex_field(const char *field_name,
+			     const char *json_field_name, u8 value,
+			     const char *desc);
 void sff_show_thresholds(struct sff_diags sd);
+void sff_show_thresholds_json(struct sff_diags sd);
 
-void sff8024_show_oui(const __u8 *id, int id_offset);
-void sff8024_show_identifier(const __u8 *id, int id_offset);
-void sff8024_show_connector(const __u8 *id, int ctor_offset);
 void sff8024_show_encoding(const __u8 *id, int encoding_offset, int sff_type);
-void sff_show_revision_compliance(const __u8 *id, int rev_offset);
 
 #endif /* SFF_COMMON_H__ */

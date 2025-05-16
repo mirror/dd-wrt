@@ -11,7 +11,7 @@
 #include <math.h>
 #include <errno.h>
 #include "internal.h"
-#include "sff-common.h"
+#include "module-common.h"
 #include "cmis.h"
 #include "netlink/extapi.h"
 
@@ -36,93 +36,19 @@ struct cmis_memory_map {
 #define CMIS_PAGE_SIZE		0x80
 #define CMIS_I2C_ADDRESS	0x50
 
-static struct {
-	const char *str;
-	int offset;
-	__u8 value;	/* Alarm is on if (offset & value) != 0. */
-} cmis_aw_mod_flags[] = {
-	{ "Module temperature high alarm",
-	  CMIS_TEMP_AW_OFFSET, CMIS_TEMP_HALARM_STATUS },
-	{ "Module temperature low alarm",
-	  CMIS_TEMP_AW_OFFSET, CMIS_TEMP_LALARM_STATUS },
-	{ "Module temperature high warning",
-	  CMIS_TEMP_AW_OFFSET, CMIS_TEMP_HWARN_STATUS },
-	{ "Module temperature low warning",
-	  CMIS_TEMP_AW_OFFSET, CMIS_TEMP_LWARN_STATUS },
-
-	{ "Module voltage high alarm",
-	  CMIS_VCC_AW_OFFSET, CMIS_VCC_HALARM_STATUS },
-	{ "Module voltage low alarm",
-	  CMIS_VCC_AW_OFFSET, CMIS_VCC_LALARM_STATUS },
-	{ "Module voltage high warning",
-	  CMIS_VCC_AW_OFFSET, CMIS_VCC_HWARN_STATUS },
-	{ "Module voltage low warning",
-	  CMIS_VCC_AW_OFFSET, CMIS_VCC_LWARN_STATUS },
-
-	{ NULL, 0, 0 },
-};
-
-static struct {
-	const char *fmt_str;
-	int offset;
-	int adver_offset;	/* In Page 01h. */
-	__u8 adver_value;	/* Supported if (offset & value) != 0. */
-} cmis_aw_chan_flags[] = {
-	{ "Laser bias current high alarm   (Chan %d)",
-	  CMIS_TX_BIAS_AW_HALARM_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_BIAS_MON_MASK },
-	{ "Laser bias current low alarm    (Chan %d)",
-	  CMIS_TX_BIAS_AW_LALARM_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_BIAS_MON_MASK },
-	{ "Laser bias current high warning (Chan %d)",
-	  CMIS_TX_BIAS_AW_HWARN_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_BIAS_MON_MASK },
-	{ "Laser bias current low warning  (Chan %d)",
-	  CMIS_TX_BIAS_AW_LWARN_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_BIAS_MON_MASK },
-
-	{ "Laser tx power high alarm   (Channel %d)",
-	  CMIS_TX_PWR_AW_HALARM_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_PWR_MON_MASK },
-	{ "Laser tx power low alarm    (Channel %d)",
-	  CMIS_TX_PWR_AW_LALARM_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_PWR_MON_MASK },
-	{ "Laser tx power high warning (Channel %d)",
-	  CMIS_TX_PWR_AW_HWARN_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_PWR_MON_MASK },
-	{ "Laser tx power low warning  (Channel %d)",
-	  CMIS_TX_PWR_AW_LWARN_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_TX_PWR_MON_MASK },
-
-	{ "Laser rx power high alarm   (Channel %d)",
-	  CMIS_RX_PWR_AW_HALARM_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_RX_PWR_MON_MASK },
-	{ "Laser rx power low alarm    (Channel %d)",
-	  CMIS_RX_PWR_AW_LALARM_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_RX_PWR_MON_MASK },
-	{ "Laser rx power high warning (Channel %d)",
-	  CMIS_RX_PWR_AW_HWARN_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_RX_PWR_MON_MASK },
-	{ "Laser rx power low warning  (Channel %d)",
-	  CMIS_RX_PWR_AW_LWARN_OFFSET,
-	  CMIS_DIAG_CHAN_ADVER_OFFSET, CMIS_RX_PWR_MON_MASK },
-
-	{ NULL, 0, 0, 0 },
-};
-
 static void cmis_show_identifier(const struct cmis_memory_map *map)
 {
-	sff8024_show_identifier(map->lower_memory, CMIS_ID_OFFSET);
+	module_show_identifier(map->lower_memory, CMIS_ID_OFFSET);
 }
 
 static void cmis_show_connector(const struct cmis_memory_map *map)
 {
-	sff8024_show_connector(map->page_00h, CMIS_CTOR_OFFSET);
+	module_show_connector(map->page_00h, CMIS_CTOR_OFFSET);
 }
 
 static void cmis_show_oui(const struct cmis_memory_map *map)
 {
-	sff8024_show_oui(map->page_00h, CMIS_VENDOR_OUI_OFFSET);
+	module_show_oui(map->page_00h, CMIS_VENDOR_OUI_OFFSET);
 }
 
 /**
@@ -136,7 +62,15 @@ static void cmis_show_rev_compliance(const struct cmis_memory_map *map)
 	int major = (rev >> 4) & 0x0F;
 	int minor = rev & 0x0F;
 
-	printf("\t%-41s : Rev. %d.%d\n", "Revision compliance", major, minor);
+	if (is_json_context()) {
+		open_json_object("revision_compliance");
+		print_uint(PRINT_JSON, "major", "%u", major);
+		print_uint(PRINT_JSON, "minor", "%u", minor);
+		close_json_object();
+	} else {
+		printf("\t%-41s : Rev. %d.%d\n", "Revision compliance", major,
+		       minor);
+	}
 }
 
 static void
@@ -154,7 +88,7 @@ cmis_show_signals_one(const struct cmis_memory_map *map, const char *name,
 		v |= map->upper_memory[i][0x11][off] << (i * 8);
 
 	if (map->page_01h[ioff] & imask)
-		sff_show_lane_status(name, i * 8, "Yes", "No", v);
+		module_show_lane_status(name, i * 8, "Yes", "No", v);
 }
 
 static void cmis_show_signals(const struct cmis_memory_map *map)
@@ -197,8 +131,8 @@ static void cmis_show_power_info(const struct cmis_memory_map *map)
 	base_power = map->page_00h[CMIS_PWR_MAX_POWER_OFFSET];
 	max_power = base_power * 0.25f;
 
-	printf("\t%-41s : %d\n", "Power class", power_class + 1);
-	printf("\t%-41s : %.02fW\n", "Max power", max_power);
+	module_print_any_uint("Power class", power_class + 1, NULL);
+	module_print_any_float("Max power", max_power, "W");
 }
 
 /**
@@ -217,7 +151,7 @@ static void cmis_show_cbl_asm_len(const struct cmis_memory_map *map)
 
 	/* Check if max length */
 	if (map->page_00h[CMIS_CBL_ASM_LEN_OFFSET] == CMIS_6300M_MAX_LEN) {
-		printf("\t%-41s : > 6.3km\n", fn);
+		module_print_any_string(fn, "> 6.3km");
 		return;
 	}
 
@@ -242,7 +176,7 @@ static void cmis_show_cbl_asm_len(const struct cmis_memory_map *map)
 	/* Get base value from first 6 bits and multiply by mul */
 	val = (map->page_00h[CMIS_CBL_ASM_LEN_OFFSET] & CMIS_LEN_VAL_MASK);
 	val = (float)val * mul;
-	printf("\t%-41s : %0.2fm\n", fn, val);
+	module_print_any_float(fn, val, "m");
 }
 
 /**
@@ -276,7 +210,7 @@ static void cmis_print_smf_cbl_len(const struct cmis_memory_map *map)
 	/* Get base value from first 6 bits and multiply by mul */
 	val = (map->page_01h[CMIS_SMF_LEN_OFFSET] & CMIS_LEN_VAL_MASK);
 	val = (float)val * mul;
-	printf("\t%-41s : %0.2fkm\n", fn, val);
+	module_print_any_float(fn, val, "km");
 }
 
 /**
@@ -286,22 +220,26 @@ static void cmis_print_smf_cbl_len(const struct cmis_memory_map *map)
  */
 static void cmis_show_sig_integrity(const struct cmis_memory_map *map)
 {
+	bool value;
+
 	if (!map->page_01h)
 		return;
 
 	/* CDR Bypass control: 2nd bit from each byte */
-	printf("\t%-41s : ", "Tx CDR bypass control");
-	printf("%s\n", YESNO(map->page_01h[CMIS_SIG_INTEG_TX_OFFSET] & 0x02));
+	value = map->page_01h[CMIS_SIG_INTEG_TX_OFFSET] & 0x02;
+	module_print_any_bool("Tx CDR bypass control", NULL, value,
+			      YESNO(value));
 
-	printf("\t%-41s : ", "Rx CDR bypass control");
-	printf("%s\n", YESNO(map->page_01h[CMIS_SIG_INTEG_RX_OFFSET] & 0x02));
+	value = map->page_01h[CMIS_SIG_INTEG_RX_OFFSET] & 0x02;
+	module_print_any_bool("Rx CDR bypass control", NULL, value,
+			      YESNO(value));
 
 	/* CDR Implementation: 1st bit from each byte */
-	printf("\t%-41s : ", "Tx CDR");
-	printf("%s\n", YESNO(map->page_01h[CMIS_SIG_INTEG_TX_OFFSET] & 0x01));
+	value = map->page_01h[CMIS_SIG_INTEG_TX_OFFSET] & 0x01;
+	module_print_any_bool("Tx CDR", NULL, value, YESNO(value));
 
-	printf("\t%-41s : ", "Rx CDR");
-	printf("%s\n", YESNO(map->page_01h[CMIS_SIG_INTEG_RX_OFFSET] & 0x01));
+	value = map->page_01h[CMIS_SIG_INTEG_RX_OFFSET] & 0x01;
+	module_print_any_bool("Rx CDR", NULL, value, YESNO(value));
 }
 
 /**
@@ -316,78 +254,30 @@ static void cmis_show_sig_integrity(const struct cmis_memory_map *map)
  */
 static void cmis_show_mit_compliance(const struct cmis_memory_map *map)
 {
-	static const char *cc = " (Copper cable,";
+	u16 value = map->page_00h[CMIS_MEDIA_INTF_TECH_OFFSET];
 
-	printf("\t%-41s : 0x%02x", "Transmitter technology",
-	       map->page_00h[CMIS_MEDIA_INTF_TECH_OFFSET]);
+	module_show_mit_compliance(value);
 
-	switch (map->page_00h[CMIS_MEDIA_INTF_TECH_OFFSET]) {
-	case CMIS_850_VCSEL:
-		printf(" (850 nm VCSEL)\n");
-		break;
-	case CMIS_1310_VCSEL:
-		printf(" (1310 nm VCSEL)\n");
-		break;
-	case CMIS_1550_VCSEL:
-		printf(" (1550 nm VCSEL)\n");
-		break;
-	case CMIS_1310_FP:
-		printf(" (1310 nm FP)\n");
-		break;
-	case CMIS_1310_DFB:
-		printf(" (1310 nm DFB)\n");
-		break;
-	case CMIS_1550_DFB:
-		printf(" (1550 nm DFB)\n");
-		break;
-	case CMIS_1310_EML:
-		printf(" (1310 nm EML)\n");
-		break;
-	case CMIS_1550_EML:
-		printf(" (1550 nm EML)\n");
-		break;
-	case CMIS_OTHERS:
-		printf(" (Others/Undefined)\n");
-		break;
-	case CMIS_1490_DFB:
-		printf(" (1490 nm DFB)\n");
-		break;
-	case CMIS_COPPER_UNEQUAL:
-		printf("%s unequalized)\n", cc);
-		break;
-	case CMIS_COPPER_PASS_EQUAL:
-		printf("%s passive equalized)\n", cc);
-		break;
-	case CMIS_COPPER_NF_EQUAL:
-		printf("%s near and far end limiting active equalizers)\n", cc);
-		break;
-	case CMIS_COPPER_F_EQUAL:
-		printf("%s far end limiting active equalizers)\n", cc);
-		break;
-	case CMIS_COPPER_N_EQUAL:
-		printf("%s near end limiting active equalizers)\n", cc);
-		break;
-	case CMIS_COPPER_LINEAR_EQUAL:
-		printf("%s linear active equalizers)\n", cc);
-		break;
-	}
-
-	if (map->page_00h[CMIS_MEDIA_INTF_TECH_OFFSET] >= CMIS_COPPER_UNEQUAL) {
-		printf("\t%-41s : %udb\n", "Attenuation at 5GHz",
-		       map->page_00h[CMIS_COPPER_ATT_5GHZ]);
-		printf("\t%-41s : %udb\n", "Attenuation at 7GHz",
-		       map->page_00h[CMIS_COPPER_ATT_7GHZ]);
-		printf("\t%-41s : %udb\n", "Attenuation at 12.9GHz",
-		       map->page_00h[CMIS_COPPER_ATT_12P9GHZ]);
-		printf("\t%-41s : %udb\n", "Attenuation at 25.8GHz",
-		       map->page_00h[CMIS_COPPER_ATT_25P8GHZ]);
+	if (value >= CMIS_COPPER_UNEQUAL) {
+		module_print_any_uint("Attenuation at 5GHz",
+				      map->page_00h[CMIS_COPPER_ATT_5GHZ], "db");
+		module_print_any_uint("Attenuation at 7GHz",
+				      map->page_00h[CMIS_COPPER_ATT_7GHZ], "db");
+		module_print_any_uint("Attenuation at 12.9GHz",
+				      map->page_00h[CMIS_COPPER_ATT_12P9GHZ],
+				      "db");
+		module_print_any_uint("Attenuation at 25.8GHz",
+				      map->page_00h[CMIS_COPPER_ATT_25P8GHZ],
+				      "db");
 	} else if (map->page_01h) {
-		printf("\t%-41s : %.3lfnm\n", "Laser wavelength",
-		       (((map->page_01h[CMIS_NOM_WAVELENGTH_MSB] << 8) |
-			  map->page_01h[CMIS_NOM_WAVELENGTH_LSB]) * 0.05));
-		printf("\t%-41s : %.3lfnm\n", "Laser wavelength tolerance",
-		       (((map->page_01h[CMIS_WAVELENGTH_TOL_MSB] << 8) |
-			  map->page_01h[CMIS_WAVELENGTH_TOL_LSB]) * 0.005));
+		module_print_any_float("Laser wavelength",
+				       (((map->page_01h[CMIS_NOM_WAVELENGTH_MSB] << 8) |
+				        map->page_01h[CMIS_NOM_WAVELENGTH_LSB]) * 0.05),
+				       "nm");
+		module_print_any_float("Laser wavelength tolerance",
+				       (((map->page_01h[CMIS_WAVELENGTH_TOL_MSB] << 8) |
+				        map->page_01h[CMIS_NOM_WAVELENGTH_LSB]) * 0.05),
+				       "nm");
 	}
 }
 
@@ -403,14 +293,14 @@ static void cmis_show_link_len(const struct cmis_memory_map *map)
 	cmis_print_smf_cbl_len(map);
 	if (!map->page_01h)
 		return;
-	sff_show_value_with_unit(map->page_01h, CMIS_OM5_LEN_OFFSET,
-				 "Length (OM5)", 2, "m");
-	sff_show_value_with_unit(map->page_01h, CMIS_OM4_LEN_OFFSET,
-				 "Length (OM4)", 2, "m");
-	sff_show_value_with_unit(map->page_01h, CMIS_OM3_LEN_OFFSET,
-				 "Length (OM3 50/125um)", 2, "m");
-	sff_show_value_with_unit(map->page_01h, CMIS_OM2_LEN_OFFSET,
-				 "Length (OM2 50/125um)", 1, "m");
+	module_show_value_with_unit(map->page_01h, CMIS_OM5_LEN_OFFSET,
+				    "Length (OM5)", 2, "m");
+	module_show_value_with_unit(map->page_01h, CMIS_OM4_LEN_OFFSET,
+				    "Length (OM4)", 2, "m");
+	module_show_value_with_unit(map->page_01h, CMIS_OM3_LEN_OFFSET,
+				    "Length (OM3)", 2, "m");
+	module_show_value_with_unit(map->page_01h, CMIS_OM2_LEN_OFFSET,
+				    "Length (OM2)", 1, "m");
 }
 
 /**
@@ -422,23 +312,25 @@ static void cmis_show_vendor_info(const struct cmis_memory_map *map)
 {
 	const char *clei;
 
-	sff_show_ascii(map->page_00h, CMIS_VENDOR_NAME_START_OFFSET,
-		       CMIS_VENDOR_NAME_END_OFFSET, "Vendor name");
+	module_show_ascii(map->page_00h, CMIS_VENDOR_NAME_START_OFFSET,
+			  CMIS_VENDOR_NAME_END_OFFSET, "Vendor name");
 	cmis_show_oui(map);
-	sff_show_ascii(map->page_00h, CMIS_VENDOR_PN_START_OFFSET,
-		       CMIS_VENDOR_PN_END_OFFSET, "Vendor PN");
-	sff_show_ascii(map->page_00h, CMIS_VENDOR_REV_START_OFFSET,
-		       CMIS_VENDOR_REV_END_OFFSET, "Vendor rev");
-	sff_show_ascii(map->page_00h, CMIS_VENDOR_SN_START_OFFSET,
-		       CMIS_VENDOR_SN_END_OFFSET, "Vendor SN");
-	sff_show_ascii(map->page_00h, CMIS_DATE_YEAR_OFFSET,
-		       CMIS_DATE_VENDOR_LOT_OFFSET + 1, "Date code");
+	module_show_ascii(map->page_00h, CMIS_VENDOR_PN_START_OFFSET,
+			  CMIS_VENDOR_PN_END_OFFSET, "Vendor PN");
+	module_show_ascii(map->page_00h, CMIS_VENDOR_REV_START_OFFSET,
+			  CMIS_VENDOR_REV_END_OFFSET, "Vendor rev");
+	module_show_ascii(map->page_00h, CMIS_VENDOR_SN_START_OFFSET,
+			  CMIS_VENDOR_SN_END_OFFSET, "Vendor SN");
+	module_show_ascii(map->page_00h, CMIS_DATE_YEAR_OFFSET,
+			  CMIS_DATE_VENDOR_LOT_OFFSET + 1, "Date code");
 
 	clei = (const char *)(map->page_00h + CMIS_CLEI_START_OFFSET);
 	if (*clei && strncmp(clei, CMIS_CLEI_BLANK, CMIS_CLEI_LEN))
-		sff_show_ascii(map->page_00h, CMIS_CLEI_START_OFFSET,
-			       CMIS_CLEI_END_OFFSET, "CLEI code");
+		module_show_ascii(map->page_00h, CMIS_CLEI_START_OFFSET,
+				  CMIS_CLEI_END_OFFSET, "CLEI code");
 }
+
+#define CMIS_MAX_DESC_LEN	64
 
 /* Print the current Module State. Relevant documents:
  * [1] CMIS Rev. 5, pag. 57, section 6.3.2.2, Figure 6-3
@@ -447,31 +339,40 @@ static void cmis_show_vendor_info(const struct cmis_memory_map *map)
  */
 static void cmis_show_mod_state(const struct cmis_memory_map *map)
 {
+	char mod_state_description[CMIS_MAX_DESC_LEN];
 	__u8 mod_state;
 
 	mod_state = (map->lower_memory[CMIS_MODULE_STATE_OFFSET] &
 		     CMIS_MODULE_STATE_MASK) >> 1;
-	printf("\t%-41s : 0x%02x", "Module State", mod_state);
 	switch (mod_state) {
 	case CMIS_MODULE_STATE_MODULE_LOW_PWR:
-		printf(" (ModuleLowPwr)\n");
+		strncpy(mod_state_description, "ModuleLowPwr",
+			CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_STATE_MODULE_PWR_UP:
-		printf(" (ModulePwrUp)\n");
+		strncpy(mod_state_description, "ModulePwrUp",
+			CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_STATE_MODULE_READY:
-		printf(" (ModuleReady)\n");
+		strncpy(mod_state_description, "ModuleReady",
+			CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_STATE_MODULE_PWR_DN:
-		printf(" (ModulePwrDn)\n");
+		strncpy(mod_state_description, "ModulePwrDn",
+			CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_STATE_MODULE_FAULT:
-		printf(" (ModuleFault)\n");
+		strncpy(mod_state_description, "ModuleFault",
+			CMIS_MAX_DESC_LEN);
 		break;
 	default:
-		printf(" (reserved or unknown)\n");
+		strncpy(mod_state_description, "reserved or unknown",
+			CMIS_MAX_DESC_LEN);
 		break;
 	}
+
+	sff_print_any_hex_field("Module state", "module_state",
+				mod_state, mod_state_description);
 }
 
 /* Print the Module Fault Information. Relevant documents:
@@ -480,6 +381,7 @@ static void cmis_show_mod_state(const struct cmis_memory_map *map)
  */
 static void cmis_show_mod_fault_cause(const struct cmis_memory_map *map)
 {
+	char fault_cause_description[CMIS_MAX_DESC_LEN];
 	__u8 mod_state, fault_cause;
 
 	mod_state = (map->lower_memory[CMIS_MODULE_STATE_OFFSET] &
@@ -488,24 +390,31 @@ static void cmis_show_mod_fault_cause(const struct cmis_memory_map *map)
 		return;
 
 	fault_cause = map->lower_memory[CMIS_MODULE_FAULT_OFFSET];
-	printf("\t%-41s : 0x%02x", "Module Fault Cause", fault_cause);
 	switch (fault_cause) {
 	case CMIS_MODULE_FAULT_NO_FAULT:
-		printf(" (No fault detected / not supported)\n");
+		strncpy(fault_cause_description,
+			"No fault detected / not supported", CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_FAULT_TEC_RUNAWAY:
-		printf(" (TEC runaway)\n");
+		strncpy(fault_cause_description, "TEC runaway",
+			CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_FAULT_DATA_MEM_CORRUPTED:
-		printf(" (Data memory corrupted)\n");
+		strncpy(fault_cause_description, "Data memory corrupted",
+			CMIS_MAX_DESC_LEN);
 		break;
 	case CMIS_MODULE_FAULT_PROG_MEM_CORRUPTED:
-		printf(" (Program memory corrupted)\n");
+		strncpy(fault_cause_description, "Program memory corrupted",
+			CMIS_MAX_DESC_LEN);
 		break;
 	default:
-		printf(" (reserved or unknown)\n");
+		strncpy(fault_cause_description, "reserved or unknown",
+			CMIS_MAX_DESC_LEN);
 		break;
 	}
+
+	sff_print_any_hex_field("Module Fault Cause", "module_fault_cause",
+				fault_cause, fault_cause_description);
 }
 
 /* Print the current Module-Level Controls. Relevant documents:
@@ -514,12 +423,17 @@ static void cmis_show_mod_fault_cause(const struct cmis_memory_map *map)
  */
 static void cmis_show_mod_lvl_controls(const struct cmis_memory_map *map)
 {
-	printf("\t%-41s : ", "LowPwrAllowRequestHW");
-	printf("%s\n", ONOFF(map->lower_memory[CMIS_MODULE_CONTROL_OFFSET] &
-			     CMIS_LOW_PWR_ALLOW_REQUEST_HW_MASK));
-	printf("\t%-41s : ", "LowPwrRequestSW");
-	printf("%s\n", ONOFF(map->lower_memory[CMIS_MODULE_CONTROL_OFFSET] &
-			     CMIS_LOW_PWR_REQUEST_SW_MASK));
+	bool value;
+
+	value = map->lower_memory[CMIS_MODULE_CONTROL_OFFSET] &
+		CMIS_LOW_PWR_ALLOW_REQUEST_HW_MASK;
+	module_print_any_bool("LowPwrAllowRequestHW", "low_pwr_allow_request_hw",
+			      value, ONOFF(value));
+
+	value = map->lower_memory[CMIS_MODULE_CONTROL_OFFSET] &
+		CMIS_LOW_PWR_REQUEST_SW_MASK;
+	module_print_any_bool("LowPwrRequestSW", "low_pwr_request_sw", value,
+			      ONOFF(value));
 }
 
 static void cmis_parse_dom_power_type(const struct cmis_memory_map *map,
@@ -670,15 +584,6 @@ static void cmis_parse_dom(const struct cmis_memory_map *map,
 	cmis_parse_dom_chan_lvl_thresh(map, sd);
 }
 
-/* Print module-level monitoring values. Relevant documents:
- * [1] CMIS Rev. 5, page 110, section 8.2.5, Table 8-9
- */
-static void cmis_show_dom_mod_lvl_monitors(const struct sff_diags *sd)
-{
-	PRINT_TEMP("Module temperature", sd->sfp_temp[MCURR]);
-	PRINT_VCC("Module voltage", sd->sfp_voltage[MCURR]);
-}
-
 /* Print channel Tx laser bias current. Relevant documents:
  * [1] CMIS Rev. 5, page 165, section 8.9.4, Table 8-79
  */
@@ -692,14 +597,22 @@ cmis_show_dom_chan_lvl_tx_bias_bank(const struct cmis_memory_map *map,
 	if (!page_11h)
 		return;
 
+	open_json_array("laser_tx_bias_current", "");
+
 	for (i = 0; i < CMIS_CHANNELS_PER_BANK; i++) {
 		int chan = bank * CMIS_CHANNELS_PER_BANK + i;
 		char fmt_str[80];
 
-		snprintf(fmt_str, 80, "%s (Channel %d)",
-			 "Laser tx bias current", chan + 1);
-		PRINT_BIAS(fmt_str, sd->scd[chan].bias_cur);
+		if (is_json_context()) {
+			print_float(PRINT_JSON, NULL, "%.3f",
+				    (double)sd->scd[chan].bias_cur / 500.);
+		} else {
+			snprintf(fmt_str, 80, "%s (Channel %d)",
+				 "Laser tx bias current", chan + 1);
+			PRINT_BIAS(fmt_str, sd->scd[chan].bias_cur);
+		}
 	}
+	close_json_array("");
 }
 
 static void cmis_show_dom_chan_lvl_tx_bias(const struct cmis_memory_map *map,
@@ -728,14 +641,22 @@ cmis_show_dom_chan_lvl_tx_power_bank(const struct cmis_memory_map *map,
 	if (!page_11h)
 		return;
 
+	open_json_array("transmit_avg_optical_power", "");
+
 	for (i = 0; i < CMIS_CHANNELS_PER_BANK; i++) {
 		int chan = bank * CMIS_CHANNELS_PER_BANK + i;
 		char fmt_str[80];
 
-		snprintf(fmt_str, 80, "%s (Channel %d)",
-			 "Transmit avg optical power", chan + 1);
-		PRINT_xX_PWR(fmt_str, sd->scd[chan].tx_power);
+		if (is_json_context()) {
+			print_float(PRINT_JSON, NULL, "%.4f",
+				    (double)sd->scd[chan].tx_power / 10000.);
+		} else {
+			snprintf(fmt_str, 80, "%s (Channel %d)",
+				 "Transmit avg optical power", chan + 1);
+			PRINT_xX_PWR(fmt_str, sd->scd[chan].tx_power);
+		}
 	}
+	close_json_array("");
 }
 
 static void cmis_show_dom_chan_lvl_tx_power(const struct cmis_memory_map *map,
@@ -758,25 +679,38 @@ cmis_show_dom_chan_lvl_rx_power_bank(const struct cmis_memory_map *map,
 				     const struct sff_diags *sd, int bank)
 {
 	const __u8 *page_11h = map->upper_memory[bank][0x11];
+	char *rx_power_type_str;
 	int i;
 
 	if (!page_11h)
 		return;
 
+	if (!sd->rx_power_type)
+		rx_power_type_str = "Receiver signal OMA";
+	else
+		rx_power_type_str = "Rcvr signal avg optical power";
+
+	open_json_object("rx_power");
+
+	open_json_array("values", "");
 	for (i = 0; i < CMIS_CHANNELS_PER_BANK; i++) {
 		int chan = bank * CMIS_CHANNELS_PER_BANK + i;
-		char *rx_power_str;
 		char fmt_str[80];
 
-		if (!sd->rx_power_type)
-			rx_power_str = "Receiver signal OMA";
-		else
-			rx_power_str = "Rcvr signal avg optical power";
-
-		snprintf(fmt_str, 80, "%s (Channel %d)", rx_power_str,
-			 chan + 1);
-		PRINT_xX_PWR(fmt_str, sd->scd[chan].rx_power);
+		if (is_json_context()) {
+			print_float(PRINT_JSON, NULL, "%.4f",
+				    (double)sd->scd[chan].rx_power / 10000.);
+		} else {
+			snprintf(fmt_str, 80, "%s (Channel %d)",
+				 rx_power_type_str, chan + 1);
+			PRINT_xX_PWR(fmt_str, sd->scd[chan].rx_power);
+		}
 	}
+	close_json_array("");
+
+	if (is_json_context())
+		module_print_any_string("type", rx_power_type_str);
+	close_json_object();
 }
 
 static void cmis_show_dom_chan_lvl_rx_power(const struct cmis_memory_map *map,
@@ -806,10 +740,14 @@ static void cmis_show_dom_mod_lvl_flags(const struct cmis_memory_map *map)
 {
 	int i;
 
-	for (i = 0; cmis_aw_mod_flags[i].str; i++) {
-		printf("\t%-41s : %s\n", cmis_aw_mod_flags[i].str,
-		       map->lower_memory[cmis_aw_mod_flags[i].offset] &
-		       cmis_aw_mod_flags[i].value ? "On" : "Off");
+	for (i = 0; module_aw_mod_flags[i].str; i++) {
+		if (module_aw_mod_flags[i].type == MODULE_TYPE_CMIS) {
+			bool value = map->lower_memory[module_aw_mod_flags[i].offset] &
+					module_aw_mod_flags[i].value;
+
+			module_print_any_bool(module_aw_mod_flags[i].str, NULL,
+					      value, ONOFF(value));
+		}
 	}
 }
 
@@ -817,23 +755,25 @@ static void cmis_show_dom_mod_lvl_flags(const struct cmis_memory_map *map)
  * [1] CMIS Rev. 5, page 162, section 8.9.3, Table 8-77
  * [1] CMIS Rev. 5, page 164, section 8.9.3, Table 8-78
  */
-static void cmis_show_dom_chan_lvl_flags_chan(const struct cmis_memory_map *map,
-					      int bank, int chan)
+static void cmis_show_dom_chan_lvl_flag(const struct cmis_memory_map *map,
+					int bank, int flag)
 {
 	const __u8 *page_11h = map->upper_memory[bank][0x11];
 	int i;
 
-	for (i = 0; cmis_aw_chan_flags[i].fmt_str; i++) {
+	for (i = 0; i < CMIS_CHANNELS_PER_BANK; i++) {
+		int chan = bank * CMIS_CHANNELS_PER_BANK + i;
 		char str[80];
+		bool value;
 
-		if (!(map->page_01h[cmis_aw_chan_flags[i].adver_offset] &
-		      cmis_aw_chan_flags[i].adver_value))
-			continue;
-
-		snprintf(str, 80, cmis_aw_chan_flags[i].fmt_str, chan + 1);
-		printf("\t%-41s : %s\n", str,
-		       page_11h[cmis_aw_chan_flags[i].offset] & chan ?
-		       "On" : "Off");
+		value = page_11h[module_aw_chan_flags[flag].offset] & chan;
+		if (is_json_context()) {
+			print_bool(PRINT_JSON, NULL, NULL, value);
+		} else {
+			snprintf(str, 80, "%s (Chan %d)",
+				 module_aw_chan_flags[flag].fmt_str, chan + 1);
+			printf("\t%-41s : %s\n", str, ONOFF(value));
+		}
 	}
 }
 
@@ -842,15 +782,25 @@ cmis_show_dom_chan_lvl_flags_bank(const struct cmis_memory_map *map,
 				  int bank)
 {
 	const __u8 *page_11h = map->upper_memory[bank][0x11];
-	int i;
+	int flag;
 
 	if (!page_11h)
 		return;
 
-	for (i = 0; i < CMIS_CHANNELS_PER_BANK; i++) {
-		int chan = bank * CMIS_CHANNELS_PER_BANK + i;
+	for (flag = 0; module_aw_chan_flags[flag].fmt_str; flag++) {
+		char json_str[80] = {};
 
-		cmis_show_dom_chan_lvl_flags_chan(map, bank, chan);
+		if (module_aw_chan_flags[flag].type == MODULE_TYPE_CMIS) {
+			if (!(map->page_01h[module_aw_chan_flags[flag].adver_offset] &
+			   module_aw_chan_flags[flag].adver_value))
+				continue;
+
+			convert_json_field_name(module_aw_chan_flags[flag].fmt_str,
+						json_str);
+			open_json_array(json_str, "");
+			cmis_show_dom_chan_lvl_flag(map, bank, flag);
+			close_json_array("");
+		}
 	}
 }
 
@@ -876,12 +826,150 @@ static void cmis_show_dom(const struct cmis_memory_map *map)
 
 	cmis_parse_dom(map, &sd);
 
-	cmis_show_dom_mod_lvl_monitors(&sd);
+	module_show_dom_mod_lvl_monitors(&sd);
 	cmis_show_dom_chan_lvl_monitors(map, &sd);
 	cmis_show_dom_mod_lvl_flags(map);
 	cmis_show_dom_chan_lvl_flags(map);
-	if (sd.supports_alarms)
-		sff_show_thresholds(sd);
+	if (sd.supports_alarms) {
+		if (is_json_context())
+			sff_show_thresholds_json(sd);
+		else
+			sff_show_thresholds(sd);
+	}
+}
+
+/* Print active and inactive firmware versions. Relevant documents:
+ * [1] CMIS Rev. 5, page 115, section 8.2.9, Table 8-14
+ * [2] CMIS Rev. 5, page 127, section 8.4.1, Table 8-37
+ */
+static void cmis_show_fw_version_common(const char *name, __u8 major,
+					__u8 minor)
+{
+	char json_fn[32] = "";
+
+	if (major == 0 && minor == 0) {
+		return;
+	} else if (major == 0xFF && minor == 0xFF) {
+		module_print_any_string(name, "Invalid");
+		return;
+	}
+
+	if (is_json_context()) {
+		convert_json_field_name(name, json_fn);
+		open_json_object(json_fn);
+		print_uint(PRINT_JSON, "major", "%u", major);
+		print_uint(PRINT_JSON, "minor", "%u", minor);
+		close_json_object();
+	} else {
+		printf("\t%-41s : %d.%d\n", name, major, minor);
+	}
+}
+
+static void cmis_show_fw_active_version(const struct cmis_memory_map *map)
+{
+	__u8 major = map->lower_memory[CMIS_MODULE_ACTIVE_FW_MAJOR_OFFSET];
+	__u8 minor = map->lower_memory[CMIS_MODULE_ACTIVE_FW_MINOR_OFFSET];
+
+	cmis_show_fw_version_common("Active firmware version", major, minor);
+}
+
+static void cmis_show_fw_inactive_version(const struct cmis_memory_map *map)
+{
+	__u8 major;
+	__u8 minor;
+
+	if (!map->page_01h)
+		return;
+
+	major = map->page_01h[CMIS_MODULE_INACTIVE_FW_MAJOR_OFFSET];
+	minor = map->page_01h[CMIS_MODULE_INACTIVE_FW_MINOR_OFFSET];
+	cmis_show_fw_version_common("Inactive firmware version", major, minor);
+}
+
+static void cmis_show_fw_version(const struct cmis_memory_map *map)
+{
+	cmis_show_fw_active_version(map);
+	cmis_show_fw_inactive_version(map);
+}
+
+static u8 cmis_cdb_instances_get(const struct cmis_memory_map *map)
+{
+	return (map->page_01h[CMIS_CDB_ADVER_OFFSET] &
+		CMIS_CDB_ADVER_INSTANCES_MASK) >> 6;
+}
+
+static bool cmis_cdb_is_supported(const struct cmis_memory_map *map)
+{
+	__u8 cdb_instances = cmis_cdb_instances_get(map);
+
+	/* Up to two CDB instances are supported. */
+	return cdb_instances == 1 || cdb_instances == 2;
+}
+
+static void cmis_show_cdb_instances(const struct cmis_memory_map *map)
+{
+	__u8 cdb_instances = cmis_cdb_instances_get(map);
+
+	module_print_any_uint("CDB instances", cdb_instances, NULL);
+}
+
+static void cmis_show_cdb_mode(const struct cmis_memory_map *map)
+{
+	__u8 mode = map->page_01h[CMIS_CDB_ADVER_OFFSET] &
+		    CMIS_CDB_ADVER_MODE_MASK;
+
+	module_print_any_string("CDB background mode",
+			        mode ? "Supported" : "Not supported");
+}
+
+static void cmis_show_cdb_epl_pages(const struct cmis_memory_map *map)
+{
+	__u8 epl_pages = map->page_01h[CMIS_CDB_ADVER_OFFSET] &
+			 CMIS_CDB_ADVER_EPL_MASK;
+
+	module_print_any_uint("CDB EPL pages", epl_pages, NULL);
+}
+
+static void cmis_show_cdb_rw_len(const struct cmis_memory_map *map)
+{
+	__u16 rw_len = map->page_01h[CMIS_CDB_ADVER_RW_LEN_OFFSET];
+
+	/* Maximum read / write length for CDB EPL pages and the LPL page in
+	 * units of 8 bytes, in addition to the minimum 8 bytes.
+	 */
+	rw_len = (rw_len + 1) * 8;
+	module_print_any_uint("CDB Maximum EPL RW length", rw_len, NULL);
+	module_print_any_uint("CDB Maximum LPL RW length",
+			      rw_len > CMIS_PAGE_SIZE ? CMIS_PAGE_SIZE : rw_len,
+			      NULL);
+}
+
+static void cmis_show_cdb_trigger(const struct cmis_memory_map *map)
+{
+	__u8 trigger = map->page_01h[CMIS_CDB_ADVER_TRIGGER_OFFSET] &
+		       CMIS_CDB_ADVER_TRIGGER_MASK;
+
+	/* Whether a CDB command can be triggered in a single write to the LPL
+	 * page, or by multiple writes ending with the writing of the CDB
+	 * Command Code (CMDID).
+	 */
+	module_print_any_string("CDB trigger method",
+				trigger ? "Single write" : "Multiple writes");
+}
+
+/* Print CDB messaging support advertisement. Relevant documents:
+ * [1] CMIS Rev. 5, page 133, section 8.4.11
+ */
+static void cmis_show_cdb_adver(const struct cmis_memory_map *map)
+{
+	if (!map->page_01h || !cmis_cdb_is_supported(map))
+		return;
+
+	cmis_show_cdb_instances(map);
+	cmis_show_cdb_mode(map);
+	cmis_show_cdb_epl_pages(map);
+	cmis_show_cdb_rw_len(map);
+	cmis_show_cdb_trigger(map);
 }
 
 static void cmis_show_all_common(const struct cmis_memory_map *map)
@@ -900,6 +988,8 @@ static void cmis_show_all_common(const struct cmis_memory_map *map)
 	cmis_show_mod_fault_cause(map);
 	cmis_show_mod_lvl_controls(map);
 	cmis_show_dom(map);
+	cmis_show_fw_version(map);
+	cmis_show_cdb_adver(map);
 }
 
 static void cmis_memory_map_init_buf(struct cmis_memory_map *map,
@@ -1032,10 +1122,16 @@ int cmis_show_all_nl(struct cmd_context *ctx)
 	struct cmis_memory_map map = {};
 	int ret;
 
+	new_json_obj(ctx->json);
+	open_json_object(NULL);
+
 	ret = cmis_memory_map_init_pages(ctx, &map);
 	if (ret < 0)
 		return ret;
 	cmis_show_all_common(&map);
+
+	close_json_object();
+	delete_json_obj();
 
 	return 0;
 }

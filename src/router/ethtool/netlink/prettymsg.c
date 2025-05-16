@@ -15,6 +15,8 @@
 #include <linux/if_link.h>
 #include <libmnl/libmnl.h>
 
+#include "../internal.h"
+#include "netlink.h"
 #include "prettymsg.h"
 
 #define __INDENT 4
@@ -113,6 +115,9 @@ static int pretty_print_attr(const struct nlattr *attr,
 		break;
 	case NLA_U64:
 		printf("%" PRIu64, mnl_attr_get_u64(attr));
+		break;
+	case NLA_UINT:
+		printf("%" PRIu64, attr_get_uint(attr));
 		break;
 	case NLA_X8:
 		printf("0x%02x", mnl_attr_get_u8(attr));

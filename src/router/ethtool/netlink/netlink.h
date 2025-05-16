@@ -98,7 +98,7 @@ int module_reply_cb(const struct nlmsghdr *nlhdr, void *data);
 int dump_link_modes(struct nl_context *nlctx, const struct nlattr *bitset,
 		    bool mask, unsigned int class, const char *before,
 		    const char *between, const char *after,
-		    const char *if_none);
+		    const char *if_none, const char *json_key);
 
 static inline void show_u32(const char *key,
 			    const char *fmt,
@@ -173,6 +173,22 @@ static inline int netlink_init_rtnl_socket(struct nl_context *nlctx)
 	if (nlctx->rtnl_socket)
 		return 0;
 	return nlsock_init(nlctx, &nlctx->rtnl_socket, NETLINK_ROUTE);
+}
+
+static inline uint64_t attr_get_uint(const struct nlattr *attr)
+{
+	switch (mnl_attr_get_payload_len(attr)) {
+	case sizeof(uint8_t):
+		return mnl_attr_get_u8(attr);
+	case sizeof(uint16_t):
+		return mnl_attr_get_u16(attr);
+	case sizeof(uint32_t):
+		return mnl_attr_get_u32(attr);
+	case sizeof(uint64_t):
+		return mnl_attr_get_u64(attr);
+	}
+
+	return -1ULL;
 }
 
 #endif /* ETHTOOL_NETLINK_INT_H__ */

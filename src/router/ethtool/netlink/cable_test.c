@@ -18,7 +18,7 @@ struct cable_test_context {
 };
 
 static int nl_get_cable_test_result(const struct nlattr *nest, uint8_t *pair,
-				    uint16_t *code)
+				    uint16_t *code, uint32_t *src)
 {
 	const struct nlattr *tb[ETHTOOL_A_CABLE_RESULT_MAX+1] = {};
 	DECLARE_ATTR_TB_INFO(tb);
@@ -32,12 +32,15 @@ static int nl_get_cable_test_result(const struct nlattr *nest, uint8_t *pair,
 
 	*pair = mnl_attr_get_u8(tb[ETHTOOL_A_CABLE_RESULT_PAIR]);
 	*code = mnl_attr_get_u8(tb[ETHTOOL_A_CABLE_RESULT_CODE]);
+	if (tb[ETHTOOL_A_CABLE_RESULT_SRC])
+		*src = mnl_attr_get_u32(tb[ETHTOOL_A_CABLE_RESULT_SRC]);
 
 	return 0;
 }
 
 static int nl_get_cable_test_fault_length(const struct nlattr *nest,
-					  uint8_t *pair, unsigned int *cm)
+					  uint8_t *pair, unsigned int *cm,
+					  uint32_t *src)
 {
 	const struct nlattr *tb[ETHTOOL_A_CABLE_FAULT_LENGTH_MAX+1] = {};
 	DECLARE_ATTR_TB_INFO(tb);
@@ -51,6 +54,8 @@ static int nl_get_cable_test_fault_length(const struct nlattr *nest,
 
 	*pair = mnl_attr_get_u8(tb[ETHTOOL_A_CABLE_FAULT_LENGTH_PAIR]);
 	*cm = mnl_attr_get_u32(tb[ETHTOOL_A_CABLE_FAULT_LENGTH_CM]);
+	if (tb[ETHTOOL_A_CABLE_FAULT_LENGTH_SRC])
+		*src = mnl_attr_get_u32(tb[ETHTOOL_A_CABLE_FAULT_LENGTH_SRC]);
 
 	return 0;
 }
@@ -88,33 +93,54 @@ static char *nl_pair2txt(uint8_t pair)
 	}
 }
 
+static char *nl_src2txt(uint32_t src)
+{
+	switch (src) {
+	case ETHTOOL_A_CABLE_INF_SRC_TDR:
+		return "TDR";
+	case ETHTOOL_A_CABLE_INF_SRC_ALCD:
+		return "ALCD";
+	default:
+		return "Unknown";
+	}
+}
+
 static int nl_cable_test_ntf_attr(struct nlattr *evattr)
 {
 	unsigned int cm;
+	uint32_t src = UINT32_MAX;
 	uint16_t code;
 	uint8_t pair;
 	int ret;
 
 	switch (mnl_attr_get_type(evattr)) {
 	case ETHTOOL_A_CABLE_NEST_RESULT:
-		ret = nl_get_cable_test_result(evattr, &pair, &code);
+		ret = nl_get_cable_test_result(evattr, &pair, &code, &src);
 		if (ret < 0)
 			return ret;
 
 		open_json_object(NULL);
 		print_string(PRINT_ANY, "pair", "%s ", nl_pair2txt(pair));
-		print_string(PRINT_ANY, "code", "code %s\n", nl_code2txt(code));
+		print_string(PRINT_ANY, "code", "code %s", nl_code2txt(code));
+		if (src != UINT32_MAX)
+			print_string(PRINT_ANY, "src", ", source: %s",
+				     nl_src2txt(src));
+		print_nl();
 		close_json_object();
 		break;
 
 	case ETHTOOL_A_CABLE_NEST_FAULT_LENGTH:
-		ret = nl_get_cable_test_fault_length(evattr, &pair, &cm);
+		ret = nl_get_cable_test_fault_length(evattr, &pair, &cm, &src);
 		if (ret < 0)
 			return ret;
 		open_json_object(NULL);
 		print_string(PRINT_ANY, "pair", "%s, ", nl_pair2txt(pair));
-		print_float(PRINT_ANY, "length", "fault length: %0.2fm\n",
+		print_float(PRINT_ANY, "length", "fault length: %0.2fm",
 			    (float)cm / 100);
+		if (src != UINT32_MAX)
+			print_string(PRINT_ANY, "src", ", source: %s",
+				     nl_src2txt(src));
+		print_nl();
 		close_json_object();
 		break;
 	}
@@ -572,8 +598,8 @@ int nl_cable_test_tdr(struct cmd_context *ctx)
 	if (ret < 0)
 		return 2;
 
-	if (ethnla_fill_header(msgbuff, ETHTOOL_A_CABLE_TEST_TDR_HEADER,
-			       ctx->devname, 0))
+	if (ethnla_fill_header_phy(msgbuff, ETHTOOL_A_CABLE_TEST_TDR_HEADER,
+				   ctx->devname, ctx->phy_index, 0))
 		return -EMSGSIZE;
 
 	ret = nl_parser(nlctx, tdr_params, NULL, PARSER_GROUP_NEST, NULL);

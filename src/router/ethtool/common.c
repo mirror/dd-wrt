@@ -5,6 +5,7 @@
  */
 
 #include "internal.h"
+#include "json_print.h"
 #include "common.h"
 
 #ifndef HAVE_NETIF_MSG
@@ -129,21 +130,28 @@ static char *unparse_wolopts(int wolopts)
 
 int dump_wol(struct ethtool_wolinfo *wol)
 {
-	fprintf(stdout, "	Supports Wake-on: %s\n",
-		unparse_wolopts(wol->supported));
-	fprintf(stdout, "	Wake-on: %s\n",
-		unparse_wolopts(wol->wolopts));
+	print_string(PRINT_ANY, "supports-wake-on",
+		    "	Supports Wake-on: %s\n", unparse_wolopts(wol->supported));
+	print_string(PRINT_ANY, "wake-on",
+		    "	Wake-on: %s\n", unparse_wolopts(wol->wolopts));
+
 	if (wol->supported & WAKE_MAGICSECURE) {
 		int i;
 		int delim = 0;
 
-		fprintf(stdout, "        SecureOn password: ");
+		open_json_array("secureon-password", "");
+		if (!is_json_context())
+			fprintf(stdout, "        SecureOn password: ");
 		for (i = 0; i < SOPASS_MAX; i++) {
-			fprintf(stdout, "%s%02x", delim ? ":" : "",
-				wol->sopass[i]);
+			__u8 sopass = wol->sopass[i];
+
+			if (!is_json_context())
+				fprintf(stdout, "%s%02x", delim ? ":" : "", sopass);
+			else
+				print_hex(PRINT_JSON, NULL, "%02u", sopass);
 			delim = 1;
 		}
-		fprintf(stdout, "\n");
+		close_json_array("\n");
 	}
 
 	return 0;
@@ -151,26 +159,52 @@ int dump_wol(struct ethtool_wolinfo *wol)
 
 void dump_mdix(u8 mdix, u8 mdix_ctrl)
 {
-	fprintf(stdout, "	MDI-X: ");
+	bool mdi_x = false;
+	bool mdi_x_forced = false;
+	bool mdi_x_auto = false;
+
 	if (mdix_ctrl == ETH_TP_MDI) {
-		fprintf(stdout, "off (forced)\n");
+		mdi_x = false;
+		mdi_x_forced = true;
 	} else if (mdix_ctrl == ETH_TP_MDI_X) {
-		fprintf(stdout, "on (forced)\n");
+		mdi_x = true;
+		mdi_x_forced = true;
 	} else {
 		switch (mdix) {
 		case ETH_TP_MDI:
-			fprintf(stdout, "off");
 			break;
 		case ETH_TP_MDI_X:
-			fprintf(stdout, "on");
+			mdi_x = true;
 			break;
 		default:
-			fprintf(stdout, "Unknown");
-			break;
+			print_string(PRINT_FP, NULL, "\tMDI-X: %s\n", "Unknown");
+			return;
 		}
 		if (mdix_ctrl == ETH_TP_MDI_AUTO)
-			fprintf(stdout, " (auto)");
-		fprintf(stdout, "\n");
+			mdi_x_auto = true;
+	}
+
+	if (is_json_context()) {
+		print_bool(PRINT_JSON, "mdi-x", NULL, mdi_x);
+		print_bool(PRINT_JSON, "mdi-x-forced", NULL, mdi_x_forced);
+		print_bool(PRINT_JSON, "mdi-x-auto", NULL, mdi_x_auto);
+	} else {
+		fprintf(stdout, "	MDI-X: ");
+		if (mdi_x_forced) {
+			if (mdi_x)
+				fprintf(stdout, "on (forced)\n");
+			else
+				fprintf(stdout, "off (forced)\n");
+		} else {
+			if (mdi_x)
+				fprintf(stdout, "on");
+			else
+				fprintf(stdout, "off");
+
+			if (mdi_x_auto)
+				fprintf(stdout, " (auto)");
+			fprintf(stdout, "\n");
+		}
 	}
 }
 

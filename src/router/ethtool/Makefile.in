@@ -93,9 +93,10 @@ sbin_PROGRAMS = ethtool$(EXEEXT)
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  fec.c fec_8xx.c fsl_enetc.c ibm_emac.c ixgb.c ixgbe.c \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  natsemi.c pcnet32.c realtek.c tg3.c marvell.c vioc.c \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  smsc911x.c at76c50x-usb.c sfc.c stmmac.c	\
-@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  sff-common.c sff-common.h sfpid.c sfpdiag.c	\
-@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  ixgbevf.c tse.c vmxnet3.c qsfp.c qsfp.h fjes.c lan78xx.c \
-@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  igc.c cmis.c cmis.h bnxt.c cpsw.c lan743x.c hns3.c
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  sff-common.c sff-common.h module-common.c module-common.h \
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  sfpid.c sfpdiag.c ixgbevf.c tse.c vmxnet3.c qsfp.c qsfp.h \
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  fjes.c lan78xx.c igc.c cmis.c cmis.h bnxt.c cpsw.c lan743x.c \
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@		  hns3.c
 
 @ETHTOOL_ENABLE_NETLINK_TRUE@am__append_2 = \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/netlink.c netlink/netlink.h netlink/extapi.h \
@@ -106,14 +107,17 @@ sbin_PROGRAMS = ethtool$(EXEEXT)
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/permaddr.c netlink/prettymsg.c netlink/prettymsg.h \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/features.c netlink/privflags.c netlink/rings.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/channels.c netlink/coalesce.c netlink/pause.c \
-@ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/eee.c netlink/tsinfo.c netlink/fec.c \
+@ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/eee.c netlink/tsinfo.c netlink/ts.h netlink/fec.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/stats.c netlink/mm.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/desc-ethtool.c netlink/desc-genlctrl.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/module-eeprom.c netlink/module.c netlink/rss.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/desc-rtnl.c netlink/cable_test.c netlink/tunnels.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/plca.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/pse-pd.c \
+@ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/phy.c \
+@ETHTOOL_ENABLE_NETLINK_TRUE@		  netlink/tsconfig.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  uapi/linux/ethtool_netlink.h \
+@ETHTOOL_ENABLE_NETLINK_TRUE@		  uapi/linux/ethtool_netlink_generated.h \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  uapi/linux/netlink.h uapi/linux/genetlink.h \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  uapi/linux/rtnetlink.h uapi/linux/if_link.h \
 @ETHTOOL_ENABLE_NETLINK_TRUE@		  uapi/linux/if.h uapi/linux/hdlc/ioctl.h
@@ -133,7 +137,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(am__configure_deps) $(am__dist_bashcompletion_DATA_DIST) \
-	$(am__DIST_COMMON)
+	$(dist_metainfo_DATA) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
@@ -142,7 +146,7 @@ CONFIG_CLEAN_FILES = ethtool.spec ethtool.8
 CONFIG_CLEAN_VPATH_FILES =
 @ETHTOOL_ENABLE_NETLINK_FALSE@am__EXEEXT_1 = test-features$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" \
-	"$(DESTDIR)$(bashcompletiondir)"
+	"$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(metainfodir)"
 PROGRAMS = $(sbin_PROGRAMS)
 am__ethtool_SOURCES_DIST = ethtool.c uapi/linux/const.h \
 	uapi/linux/ethtool.h internal.h uapi/linux/net_tstamp.h \
@@ -156,23 +160,26 @@ am__ethtool_SOURCES_DIST = ethtool.c uapi/linux/const.h \
 	e100.c e1000.c et131x.c igb.c fec.c fec_8xx.c fsl_enetc.c \
 	ibm_emac.c ixgb.c ixgbe.c natsemi.c pcnet32.c realtek.c tg3.c \
 	marvell.c vioc.c smsc911x.c at76c50x-usb.c sfc.c stmmac.c \
-	sff-common.c sff-common.h sfpid.c sfpdiag.c ixgbevf.c tse.c \
-	vmxnet3.c qsfp.c qsfp.h fjes.c lan78xx.c igc.c cmis.c cmis.h \
-	bnxt.c cpsw.c lan743x.c hns3.c netlink/netlink.c \
-	netlink/netlink.h netlink/extapi.h netlink/msgbuff.c \
-	netlink/msgbuff.h netlink/nlsock.c netlink/nlsock.h \
-	netlink/strset.c netlink/strset.h netlink/monitor.c \
-	netlink/bitset.c netlink/bitset.h netlink/settings.c \
-	netlink/parser.c netlink/parser.h netlink/permaddr.c \
-	netlink/prettymsg.c netlink/prettymsg.h netlink/features.c \
-	netlink/privflags.c netlink/rings.c netlink/channels.c \
-	netlink/coalesce.c netlink/pause.c netlink/eee.c \
-	netlink/tsinfo.c netlink/fec.c netlink/stats.c netlink/mm.c \
-	netlink/desc-ethtool.c netlink/desc-genlctrl.c \
-	netlink/module-eeprom.c netlink/module.c netlink/rss.c \
-	netlink/desc-rtnl.c netlink/cable_test.c netlink/tunnels.c \
-	netlink/plca.c netlink/pse-pd.c uapi/linux/ethtool_netlink.h \
-	uapi/linux/netlink.h uapi/linux/genetlink.h
+	sff-common.c sff-common.h module-common.c module-common.h \
+	sfpid.c sfpdiag.c ixgbevf.c tse.c vmxnet3.c qsfp.c qsfp.h \
+	fjes.c lan78xx.c igc.c cmis.c cmis.h bnxt.c cpsw.c lan743x.c \
+	hns3.c netlink/netlink.c netlink/netlink.h netlink/extapi.h \
+	netlink/msgbuff.c netlink/msgbuff.h netlink/nlsock.c \
+	netlink/nlsock.h netlink/strset.c netlink/strset.h \
+	netlink/monitor.c netlink/bitset.c netlink/bitset.h \
+	netlink/settings.c netlink/parser.c netlink/parser.h \
+	netlink/permaddr.c netlink/prettymsg.c netlink/prettymsg.h \
+	netlink/features.c netlink/privflags.c netlink/rings.c \
+	netlink/channels.c netlink/coalesce.c netlink/pause.c \
+	netlink/eee.c netlink/tsinfo.c netlink/ts.h netlink/fec.c \
+	netlink/stats.c netlink/mm.c netlink/desc-ethtool.c \
+	netlink/desc-genlctrl.c netlink/module-eeprom.c \
+	netlink/module.c netlink/rss.c netlink/desc-rtnl.c \
+	netlink/cable_test.c netlink/tunnels.c netlink/plca.c \
+	netlink/pse-pd.c netlink/phy.c netlink/tsconfig.c \
+	uapi/linux/ethtool_netlink.h \
+	uapi/linux/ethtool_netlink_generated.h uapi/linux/netlink.h \
+	uapi/linux/genetlink.h
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@am__objects_1 = amd8111e.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	de2104x.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	dsa.$(OBJEXT) e100.$(OBJEXT) \
@@ -195,6 +202,7 @@ am__ethtool_SOURCES_DIST = ethtool.c uapi/linux/const.h \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	sfc.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	stmmac.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	sff-common.$(OBJEXT) \
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	module-common.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	sfpid.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	sfpdiag.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	ixgbevf.$(OBJEXT) \
@@ -238,7 +246,9 @@ am__dirstamp = $(am__leading_dot)dirstamp
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/cable_test.$(OBJEXT) \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/tunnels.$(OBJEXT) \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/plca.$(OBJEXT) \
-@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/pse-pd.$(OBJEXT)
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/pse-pd.$(OBJEXT) \
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/phy.$(OBJEXT) \
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/tsconfig.$(OBJEXT)
 am_ethtool_OBJECTS = ethtool.$(OBJEXT) rxclass.$(OBJEXT) \
 	common.$(OBJEXT) json_writer.$(OBJEXT) json_print.$(OBJEXT) \
 	$(am__objects_1) $(am__objects_2)
@@ -259,23 +269,26 @@ am__test_cmdline_SOURCES_DIST = test-cmdline.c test-common.c ethtool.c \
 	e100.c e1000.c et131x.c igb.c fec.c fec_8xx.c fsl_enetc.c \
 	ibm_emac.c ixgb.c ixgbe.c natsemi.c pcnet32.c realtek.c tg3.c \
 	marvell.c vioc.c smsc911x.c at76c50x-usb.c sfc.c stmmac.c \
-	sff-common.c sff-common.h sfpid.c sfpdiag.c ixgbevf.c tse.c \
-	vmxnet3.c qsfp.c qsfp.h fjes.c lan78xx.c igc.c cmis.c cmis.h \
-	bnxt.c cpsw.c lan743x.c hns3.c netlink/netlink.c \
-	netlink/netlink.h netlink/extapi.h netlink/msgbuff.c \
-	netlink/msgbuff.h netlink/nlsock.c netlink/nlsock.h \
-	netlink/strset.c netlink/strset.h netlink/monitor.c \
-	netlink/bitset.c netlink/bitset.h netlink/settings.c \
-	netlink/parser.c netlink/parser.h netlink/permaddr.c \
-	netlink/prettymsg.c netlink/prettymsg.h netlink/features.c \
-	netlink/privflags.c netlink/rings.c netlink/channels.c \
-	netlink/coalesce.c netlink/pause.c netlink/eee.c \
-	netlink/tsinfo.c netlink/fec.c netlink/stats.c netlink/mm.c \
-	netlink/desc-ethtool.c netlink/desc-genlctrl.c \
-	netlink/module-eeprom.c netlink/module.c netlink/rss.c \
-	netlink/desc-rtnl.c netlink/cable_test.c netlink/tunnels.c \
-	netlink/plca.c netlink/pse-pd.c uapi/linux/ethtool_netlink.h \
-	uapi/linux/netlink.h uapi/linux/genetlink.h
+	sff-common.c sff-common.h module-common.c module-common.h \
+	sfpid.c sfpdiag.c ixgbevf.c tse.c vmxnet3.c qsfp.c qsfp.h \
+	fjes.c lan78xx.c igc.c cmis.c cmis.h bnxt.c cpsw.c lan743x.c \
+	hns3.c netlink/netlink.c netlink/netlink.h netlink/extapi.h \
+	netlink/msgbuff.c netlink/msgbuff.h netlink/nlsock.c \
+	netlink/nlsock.h netlink/strset.c netlink/strset.h \
+	netlink/monitor.c netlink/bitset.c netlink/bitset.h \
+	netlink/settings.c netlink/parser.c netlink/parser.h \
+	netlink/permaddr.c netlink/prettymsg.c netlink/prettymsg.h \
+	netlink/features.c netlink/privflags.c netlink/rings.c \
+	netlink/channels.c netlink/coalesce.c netlink/pause.c \
+	netlink/eee.c netlink/tsinfo.c netlink/ts.h netlink/fec.c \
+	netlink/stats.c netlink/mm.c netlink/desc-ethtool.c \
+	netlink/desc-genlctrl.c netlink/module-eeprom.c \
+	netlink/module.c netlink/rss.c netlink/desc-rtnl.c \
+	netlink/cable_test.c netlink/tunnels.c netlink/plca.c \
+	netlink/pse-pd.c netlink/phy.c netlink/tsconfig.c \
+	uapi/linux/ethtool_netlink.h \
+	uapi/linux/ethtool_netlink_generated.h uapi/linux/netlink.h \
+	uapi/linux/genetlink.h
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@am__objects_3 = test_cmdline-amd8111e.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-de2104x.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-dsa.$(OBJEXT) \
@@ -300,6 +313,7 @@ am__test_cmdline_SOURCES_DIST = test-cmdline.c test-common.c ethtool.c \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-sfc.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-stmmac.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-sff-common.$(OBJEXT) \
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-module-common.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-sfpid.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-sfpdiag.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_cmdline-ixgbevf.$(OBJEXT) \
@@ -344,7 +358,9 @@ am__test_cmdline_SOURCES_DIST = test-cmdline.c test-common.c ethtool.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-cable_test.$(OBJEXT) \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-tunnels.$(OBJEXT) \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-plca.$(OBJEXT) \
-@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-pse-pd.$(OBJEXT)
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-pse-pd.$(OBJEXT) \
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-phy.$(OBJEXT) \
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_cmdline-tsconfig.$(OBJEXT)
 am__objects_5 = test_cmdline-ethtool.$(OBJEXT) \
 	test_cmdline-rxclass.$(OBJEXT) test_cmdline-common.$(OBJEXT) \
 	test_cmdline-json_writer.$(OBJEXT) \
@@ -370,23 +386,26 @@ am__test_features_SOURCES_DIST = test-features.c test-common.c \
 	e100.c e1000.c et131x.c igb.c fec.c fec_8xx.c fsl_enetc.c \
 	ibm_emac.c ixgb.c ixgbe.c natsemi.c pcnet32.c realtek.c tg3.c \
 	marvell.c vioc.c smsc911x.c at76c50x-usb.c sfc.c stmmac.c \
-	sff-common.c sff-common.h sfpid.c sfpdiag.c ixgbevf.c tse.c \
-	vmxnet3.c qsfp.c qsfp.h fjes.c lan78xx.c igc.c cmis.c cmis.h \
-	bnxt.c cpsw.c lan743x.c hns3.c netlink/netlink.c \
-	netlink/netlink.h netlink/extapi.h netlink/msgbuff.c \
-	netlink/msgbuff.h netlink/nlsock.c netlink/nlsock.h \
-	netlink/strset.c netlink/strset.h netlink/monitor.c \
-	netlink/bitset.c netlink/bitset.h netlink/settings.c \
-	netlink/parser.c netlink/parser.h netlink/permaddr.c \
-	netlink/prettymsg.c netlink/prettymsg.h netlink/features.c \
-	netlink/privflags.c netlink/rings.c netlink/channels.c \
-	netlink/coalesce.c netlink/pause.c netlink/eee.c \
-	netlink/tsinfo.c netlink/fec.c netlink/stats.c netlink/mm.c \
-	netlink/desc-ethtool.c netlink/desc-genlctrl.c \
-	netlink/module-eeprom.c netlink/module.c netlink/rss.c \
-	netlink/desc-rtnl.c netlink/cable_test.c netlink/tunnels.c \
-	netlink/plca.c netlink/pse-pd.c uapi/linux/ethtool_netlink.h \
-	uapi/linux/netlink.h uapi/linux/genetlink.h
+	sff-common.c sff-common.h module-common.c module-common.h \
+	sfpid.c sfpdiag.c ixgbevf.c tse.c vmxnet3.c qsfp.c qsfp.h \
+	fjes.c lan78xx.c igc.c cmis.c cmis.h bnxt.c cpsw.c lan743x.c \
+	hns3.c netlink/netlink.c netlink/netlink.h netlink/extapi.h \
+	netlink/msgbuff.c netlink/msgbuff.h netlink/nlsock.c \
+	netlink/nlsock.h netlink/strset.c netlink/strset.h \
+	netlink/monitor.c netlink/bitset.c netlink/bitset.h \
+	netlink/settings.c netlink/parser.c netlink/parser.h \
+	netlink/permaddr.c netlink/prettymsg.c netlink/prettymsg.h \
+	netlink/features.c netlink/privflags.c netlink/rings.c \
+	netlink/channels.c netlink/coalesce.c netlink/pause.c \
+	netlink/eee.c netlink/tsinfo.c netlink/ts.h netlink/fec.c \
+	netlink/stats.c netlink/mm.c netlink/desc-ethtool.c \
+	netlink/desc-genlctrl.c netlink/module-eeprom.c \
+	netlink/module.c netlink/rss.c netlink/desc-rtnl.c \
+	netlink/cable_test.c netlink/tunnels.c netlink/plca.c \
+	netlink/pse-pd.c netlink/phy.c netlink/tsconfig.c \
+	uapi/linux/ethtool_netlink.h \
+	uapi/linux/ethtool_netlink_generated.h uapi/linux/netlink.h \
+	uapi/linux/genetlink.h
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@am__objects_6 = test_features-amd8111e.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-de2104x.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-dsa.$(OBJEXT) \
@@ -411,6 +430,7 @@ am__test_features_SOURCES_DIST = test-features.c test-common.c \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-sfc.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-stmmac.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-sff-common.$(OBJEXT) \
+@ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-module-common.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-sfpid.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-sfpdiag.$(OBJEXT) \
 @ETHTOOL_ENABLE_PRETTY_DUMP_TRUE@	test_features-ixgbevf.$(OBJEXT) \
@@ -455,7 +475,9 @@ am__test_features_SOURCES_DIST = test-features.c test-common.c \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-cable_test.$(OBJEXT) \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-tunnels.$(OBJEXT) \
 @ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-plca.$(OBJEXT) \
-@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-pse-pd.$(OBJEXT)
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-pse-pd.$(OBJEXT) \
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-phy.$(OBJEXT) \
+@ETHTOOL_ENABLE_NETLINK_TRUE@	netlink/test_features-tsconfig.$(OBJEXT)
 am__objects_8 = test_features-ethtool.$(OBJEXT) \
 	test_features-rxclass.$(OBJEXT) test_features-common.$(OBJEXT) \
 	test_features-json_writer.$(OBJEXT) \
@@ -542,7 +564,7 @@ man8dir = $(mandir)/man8
 NROFF = nroff
 MANS = $(man_MANS)
 am__dist_bashcompletion_DATA_DIST = shell-completion/bash/ethtool
-DATA = $(dist_bashcompletion_DATA)
+DATA = $(dist_bashcompletion_DATA) $(dist_metainfo_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
 	$(LISP)ethtool-config.h.in
 # Read a list of newline-separated strings from the standard input,
@@ -860,7 +882,11 @@ AM_CFLAGS = -Wall -Wextra -D_POSIX_C_SOURCE=200809L
 AM_CPPFLAGS = -I$(top_srcdir)/uapi $(am__append_3)
 LDADD = -lm $(am__append_4)
 man_MANS = ethtool.8
-EXTRA_DIST = LICENSE ethtool.8 ethtool.spec.in aclocal.m4 ChangeLog autogen.sh
+EXTRA_DIST = LICENSE ethtool.8 ethtool.spec.in aclocal.m4 ChangeLog autogen.sh \
+             org.kernel.software.network.ethtool.metainfo.xml
+
+dist_metainfo_DATA = org.kernel.software.network.ethtool.metainfo.xml
+metainfodir = $(datarootdir)/metainfo
 ethtool_SOURCES = ethtool.c uapi/linux/const.h uapi/linux/ethtool.h \
 	internal.h uapi/linux/net_tstamp.h uapi/linux/if.h \
 	uapi/linux/hdlc/ioctl.h uapi/linux/if_addr.h \
@@ -874,9 +900,9 @@ ethtool_SOURCES = ethtool.c uapi/linux/const.h uapi/linux/ethtool.h \
 @ENABLE_BASH_COMPLETION_TRUE@bashcompletiondir = $(BASH_COMPLETION_DIR)
 @ENABLE_BASH_COMPLETION_TRUE@dist_bashcompletion_DATA = shell-completion/bash/ethtool
 test_cmdline_SOURCES = test-cmdline.c test-common.c $(ethtool_SOURCES) 
-test_cmdline_CFLAGS = -DTEST_ETHTOOL
+test_cmdline_CFLAGS = -D_POSIX_C_SOURCE=200809L -DTEST_ETHTOOL
 @ETHTOOL_ENABLE_NETLINK_FALSE@test_features_SOURCES = test-features.c test-common.c $(ethtool_SOURCES) 
-@ETHTOOL_ENABLE_NETLINK_FALSE@test_features_CFLAGS = -DTEST_ETHTOOL
+@ETHTOOL_ENABLE_NETLINK_FALSE@test_features_CFLAGS = -D_POSIX_C_SOURCE=200809L -DTEST_ETHTOOL
 all: ethtool-config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1047,6 +1073,10 @@ netlink/plca.$(OBJEXT): netlink/$(am__dirstamp) \
 	netlink/$(DEPDIR)/$(am__dirstamp)
 netlink/pse-pd.$(OBJEXT): netlink/$(am__dirstamp) \
 	netlink/$(DEPDIR)/$(am__dirstamp)
+netlink/phy.$(OBJEXT): netlink/$(am__dirstamp) \
+	netlink/$(DEPDIR)/$(am__dirstamp)
+netlink/tsconfig.$(OBJEXT): netlink/$(am__dirstamp) \
+	netlink/$(DEPDIR)/$(am__dirstamp)
 
 ethtool$(EXEEXT): $(ethtool_OBJECTS) $(ethtool_DEPENDENCIES) $(EXTRA_ethtool_DEPENDENCIES) 
 	@rm -f ethtool$(EXEEXT)
@@ -1112,6 +1142,10 @@ netlink/test_cmdline-tunnels.$(OBJEXT): netlink/$(am__dirstamp) \
 netlink/test_cmdline-plca.$(OBJEXT): netlink/$(am__dirstamp) \
 	netlink/$(DEPDIR)/$(am__dirstamp)
 netlink/test_cmdline-pse-pd.$(OBJEXT): netlink/$(am__dirstamp) \
+	netlink/$(DEPDIR)/$(am__dirstamp)
+netlink/test_cmdline-phy.$(OBJEXT): netlink/$(am__dirstamp) \
+	netlink/$(DEPDIR)/$(am__dirstamp)
+netlink/test_cmdline-tsconfig.$(OBJEXT): netlink/$(am__dirstamp) \
 	netlink/$(DEPDIR)/$(am__dirstamp)
 
 test-cmdline$(EXEEXT): $(test_cmdline_OBJECTS) $(test_cmdline_DEPENDENCIES) $(EXTRA_test_cmdline_DEPENDENCIES) 
@@ -1179,6 +1213,10 @@ netlink/test_features-plca.$(OBJEXT): netlink/$(am__dirstamp) \
 	netlink/$(DEPDIR)/$(am__dirstamp)
 netlink/test_features-pse-pd.$(OBJEXT): netlink/$(am__dirstamp) \
 	netlink/$(DEPDIR)/$(am__dirstamp)
+netlink/test_features-phy.$(OBJEXT): netlink/$(am__dirstamp) \
+	netlink/$(DEPDIR)/$(am__dirstamp)
+netlink/test_features-tsconfig.$(OBJEXT): netlink/$(am__dirstamp) \
+	netlink/$(DEPDIR)/$(am__dirstamp)
 
 test-features$(EXEEXT): $(test_features_OBJECTS) $(test_features_DEPENDENCIES) $(EXTRA_test_features_DEPENDENCIES) 
 	@rm -f test-features$(EXEEXT)
@@ -1219,6 +1257,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lan743x.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lan78xx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/marvell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/module-common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/natsemi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcnet32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qsfp.Po@am__quote@
@@ -1258,6 +1297,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-lan743x.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-lan78xx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-marvell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-module-common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-natsemi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-pcnet32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cmdline-qsfp.Po@am__quote@
@@ -1303,6 +1343,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-lan743x.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-lan78xx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-marvell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-module-common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-natsemi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-pcnet32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_features-qsfp.Po@am__quote@
@@ -1344,6 +1385,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/pause.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/permaddr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/phy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/plca.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/prettymsg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/privflags.Po@am__quote@
@@ -1373,6 +1415,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-pause.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-permaddr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-phy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-plca.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-prettymsg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-privflags.Po@am__quote@
@@ -1382,6 +1425,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-settings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-stats.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-strset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-tsconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-tsinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_cmdline-tunnels.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-bitset.Po@am__quote@
@@ -1404,6 +1448,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-pause.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-permaddr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-phy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-plca.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-prettymsg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-privflags.Po@am__quote@
@@ -1413,8 +1458,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-settings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-stats.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-strset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-tsconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-tsinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/test_features-tunnels.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/tsconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/tsinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@netlink/$(DEPDIR)/tunnels.Po@am__quote@
 
@@ -1867,6 +1914,20 @@ test_cmdline-sff-common.obj: sff-common.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sff-common.c' object='test_cmdline-sff-common.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o test_cmdline-sff-common.obj `if test -f 'sff-common.c'; then $(CYGPATH_W) 'sff-common.c'; else $(CYGPATH_W) '$(srcdir)/sff-common.c'; fi`
+
+test_cmdline-module-common.o: module-common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT test_cmdline-module-common.o -MD -MP -MF $(DEPDIR)/test_cmdline-module-common.Tpo -c -o test_cmdline-module-common.o `test -f 'module-common.c' || echo '$(srcdir)/'`module-common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_cmdline-module-common.Tpo $(DEPDIR)/test_cmdline-module-common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module-common.c' object='test_cmdline-module-common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o test_cmdline-module-common.o `test -f 'module-common.c' || echo '$(srcdir)/'`module-common.c
+
+test_cmdline-module-common.obj: module-common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT test_cmdline-module-common.obj -MD -MP -MF $(DEPDIR)/test_cmdline-module-common.Tpo -c -o test_cmdline-module-common.obj `if test -f 'module-common.c'; then $(CYGPATH_W) 'module-common.c'; else $(CYGPATH_W) '$(srcdir)/module-common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_cmdline-module-common.Tpo $(DEPDIR)/test_cmdline-module-common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module-common.c' object='test_cmdline-module-common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o test_cmdline-module-common.obj `if test -f 'module-common.c'; then $(CYGPATH_W) 'module-common.c'; else $(CYGPATH_W) '$(srcdir)/module-common.c'; fi`
 
 test_cmdline-sfpid.o: sfpid.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT test_cmdline-sfpid.o -MD -MP -MF $(DEPDIR)/test_cmdline-sfpid.Tpo -c -o test_cmdline-sfpid.o `test -f 'sfpid.c' || echo '$(srcdir)/'`sfpid.c
@@ -2498,6 +2559,34 @@ netlink/test_cmdline-pse-pd.obj: netlink/pse-pd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o netlink/test_cmdline-pse-pd.obj `if test -f 'netlink/pse-pd.c'; then $(CYGPATH_W) 'netlink/pse-pd.c'; else $(CYGPATH_W) '$(srcdir)/netlink/pse-pd.c'; fi`
 
+netlink/test_cmdline-phy.o: netlink/phy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT netlink/test_cmdline-phy.o -MD -MP -MF netlink/$(DEPDIR)/test_cmdline-phy.Tpo -c -o netlink/test_cmdline-phy.o `test -f 'netlink/phy.c' || echo '$(srcdir)/'`netlink/phy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_cmdline-phy.Tpo netlink/$(DEPDIR)/test_cmdline-phy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/phy.c' object='netlink/test_cmdline-phy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o netlink/test_cmdline-phy.o `test -f 'netlink/phy.c' || echo '$(srcdir)/'`netlink/phy.c
+
+netlink/test_cmdline-phy.obj: netlink/phy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT netlink/test_cmdline-phy.obj -MD -MP -MF netlink/$(DEPDIR)/test_cmdline-phy.Tpo -c -o netlink/test_cmdline-phy.obj `if test -f 'netlink/phy.c'; then $(CYGPATH_W) 'netlink/phy.c'; else $(CYGPATH_W) '$(srcdir)/netlink/phy.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_cmdline-phy.Tpo netlink/$(DEPDIR)/test_cmdline-phy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/phy.c' object='netlink/test_cmdline-phy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o netlink/test_cmdline-phy.obj `if test -f 'netlink/phy.c'; then $(CYGPATH_W) 'netlink/phy.c'; else $(CYGPATH_W) '$(srcdir)/netlink/phy.c'; fi`
+
+netlink/test_cmdline-tsconfig.o: netlink/tsconfig.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT netlink/test_cmdline-tsconfig.o -MD -MP -MF netlink/$(DEPDIR)/test_cmdline-tsconfig.Tpo -c -o netlink/test_cmdline-tsconfig.o `test -f 'netlink/tsconfig.c' || echo '$(srcdir)/'`netlink/tsconfig.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_cmdline-tsconfig.Tpo netlink/$(DEPDIR)/test_cmdline-tsconfig.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/tsconfig.c' object='netlink/test_cmdline-tsconfig.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o netlink/test_cmdline-tsconfig.o `test -f 'netlink/tsconfig.c' || echo '$(srcdir)/'`netlink/tsconfig.c
+
+netlink/test_cmdline-tsconfig.obj: netlink/tsconfig.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -MT netlink/test_cmdline-tsconfig.obj -MD -MP -MF netlink/$(DEPDIR)/test_cmdline-tsconfig.Tpo -c -o netlink/test_cmdline-tsconfig.obj `if test -f 'netlink/tsconfig.c'; then $(CYGPATH_W) 'netlink/tsconfig.c'; else $(CYGPATH_W) '$(srcdir)/netlink/tsconfig.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_cmdline-tsconfig.Tpo netlink/$(DEPDIR)/test_cmdline-tsconfig.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/tsconfig.c' object='netlink/test_cmdline-tsconfig.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_cmdline_CFLAGS) $(CFLAGS) -c -o netlink/test_cmdline-tsconfig.obj `if test -f 'netlink/tsconfig.c'; then $(CYGPATH_W) 'netlink/tsconfig.c'; else $(CYGPATH_W) '$(srcdir)/netlink/tsconfig.c'; fi`
+
 test_features-test-features.o: test-features.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT test_features-test-features.o -MD -MP -MF $(DEPDIR)/test_features-test-features.Tpo -c -o test_features-test-features.o `test -f 'test-features.c' || echo '$(srcdir)/'`test-features.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_features-test-features.Tpo $(DEPDIR)/test_features-test-features.Po
@@ -2931,6 +3020,20 @@ test_features-sff-common.obj: sff-common.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sff-common.c' object='test_features-sff-common.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o test_features-sff-common.obj `if test -f 'sff-common.c'; then $(CYGPATH_W) 'sff-common.c'; else $(CYGPATH_W) '$(srcdir)/sff-common.c'; fi`
+
+test_features-module-common.o: module-common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT test_features-module-common.o -MD -MP -MF $(DEPDIR)/test_features-module-common.Tpo -c -o test_features-module-common.o `test -f 'module-common.c' || echo '$(srcdir)/'`module-common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_features-module-common.Tpo $(DEPDIR)/test_features-module-common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module-common.c' object='test_features-module-common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o test_features-module-common.o `test -f 'module-common.c' || echo '$(srcdir)/'`module-common.c
+
+test_features-module-common.obj: module-common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT test_features-module-common.obj -MD -MP -MF $(DEPDIR)/test_features-module-common.Tpo -c -o test_features-module-common.obj `if test -f 'module-common.c'; then $(CYGPATH_W) 'module-common.c'; else $(CYGPATH_W) '$(srcdir)/module-common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_features-module-common.Tpo $(DEPDIR)/test_features-module-common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module-common.c' object='test_features-module-common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o test_features-module-common.obj `if test -f 'module-common.c'; then $(CYGPATH_W) 'module-common.c'; else $(CYGPATH_W) '$(srcdir)/module-common.c'; fi`
 
 test_features-sfpid.o: sfpid.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT test_features-sfpid.o -MD -MP -MF $(DEPDIR)/test_features-sfpid.Tpo -c -o test_features-sfpid.o `test -f 'sfpid.c' || echo '$(srcdir)/'`sfpid.c
@@ -3561,6 +3664,34 @@ netlink/test_features-pse-pd.obj: netlink/pse-pd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/pse-pd.c' object='netlink/test_features-pse-pd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o netlink/test_features-pse-pd.obj `if test -f 'netlink/pse-pd.c'; then $(CYGPATH_W) 'netlink/pse-pd.c'; else $(CYGPATH_W) '$(srcdir)/netlink/pse-pd.c'; fi`
+
+netlink/test_features-phy.o: netlink/phy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT netlink/test_features-phy.o -MD -MP -MF netlink/$(DEPDIR)/test_features-phy.Tpo -c -o netlink/test_features-phy.o `test -f 'netlink/phy.c' || echo '$(srcdir)/'`netlink/phy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_features-phy.Tpo netlink/$(DEPDIR)/test_features-phy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/phy.c' object='netlink/test_features-phy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o netlink/test_features-phy.o `test -f 'netlink/phy.c' || echo '$(srcdir)/'`netlink/phy.c
+
+netlink/test_features-phy.obj: netlink/phy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT netlink/test_features-phy.obj -MD -MP -MF netlink/$(DEPDIR)/test_features-phy.Tpo -c -o netlink/test_features-phy.obj `if test -f 'netlink/phy.c'; then $(CYGPATH_W) 'netlink/phy.c'; else $(CYGPATH_W) '$(srcdir)/netlink/phy.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_features-phy.Tpo netlink/$(DEPDIR)/test_features-phy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/phy.c' object='netlink/test_features-phy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o netlink/test_features-phy.obj `if test -f 'netlink/phy.c'; then $(CYGPATH_W) 'netlink/phy.c'; else $(CYGPATH_W) '$(srcdir)/netlink/phy.c'; fi`
+
+netlink/test_features-tsconfig.o: netlink/tsconfig.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT netlink/test_features-tsconfig.o -MD -MP -MF netlink/$(DEPDIR)/test_features-tsconfig.Tpo -c -o netlink/test_features-tsconfig.o `test -f 'netlink/tsconfig.c' || echo '$(srcdir)/'`netlink/tsconfig.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_features-tsconfig.Tpo netlink/$(DEPDIR)/test_features-tsconfig.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/tsconfig.c' object='netlink/test_features-tsconfig.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o netlink/test_features-tsconfig.o `test -f 'netlink/tsconfig.c' || echo '$(srcdir)/'`netlink/tsconfig.c
+
+netlink/test_features-tsconfig.obj: netlink/tsconfig.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -MT netlink/test_features-tsconfig.obj -MD -MP -MF netlink/$(DEPDIR)/test_features-tsconfig.Tpo -c -o netlink/test_features-tsconfig.obj `if test -f 'netlink/tsconfig.c'; then $(CYGPATH_W) 'netlink/tsconfig.c'; else $(CYGPATH_W) '$(srcdir)/netlink/tsconfig.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) netlink/$(DEPDIR)/test_features-tsconfig.Tpo netlink/$(DEPDIR)/test_features-tsconfig.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netlink/tsconfig.c' object='netlink/test_features-tsconfig.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_features_CFLAGS) $(CFLAGS) -c -o netlink/test_features-tsconfig.obj `if test -f 'netlink/tsconfig.c'; then $(CYGPATH_W) 'netlink/tsconfig.c'; else $(CYGPATH_W) '$(srcdir)/netlink/tsconfig.c'; fi`
 install-man8: $(man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
@@ -3625,6 +3756,27 @@ uninstall-dist_bashcompletionDATA:
 	@list='$(dist_bashcompletion_DATA)'; test -n "$(bashcompletiondir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(bashcompletiondir)'; $(am__uninstall_files_from_dir)
+install-dist_metainfoDATA: $(dist_metainfo_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_metainfo_DATA)'; test -n "$(metainfodir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(metainfodir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(metainfodir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(metainfodir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(metainfodir)" || exit $$?; \
+	done
+
+uninstall-dist_metainfoDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_metainfo_DATA)'; test -n "$(metainfodir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(metainfodir)'; $(am__uninstall_files_from_dir)
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -4027,7 +4179,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(MANS) $(DATA) ethtool-config.h
 installdirs:
-	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(bashcompletiondir)"; do \
+	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(metainfodir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -4089,7 +4241,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dist_bashcompletionDATA install-man
+install-data-am: install-dist_bashcompletionDATA \
+	install-dist_metainfoDATA install-man
 
 install-dvi: install-dvi-am
 
@@ -4136,7 +4289,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dist_bashcompletionDATA uninstall-man \
+uninstall-am: uninstall-dist_bashcompletionDATA \
+	uninstall-dist_metainfoDATA uninstall-man \
 	uninstall-sbinPROGRAMS
 
 uninstall-man: uninstall-man8
@@ -4152,15 +4306,17 @@ uninstall-man: uninstall-man8
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-dist_bashcompletionDATA \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-man8 install-pdf install-pdf-am install-ps \
-	install-ps-am install-sbinPROGRAMS install-strip installcheck \
+	install-dist_metainfoDATA install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-man8 \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am recheck tags tags-am \
 	uninstall uninstall-am uninstall-dist_bashcompletionDATA \
-	uninstall-man uninstall-man8 uninstall-sbinPROGRAMS
+	uninstall-dist_metainfoDATA uninstall-man uninstall-man8 \
+	uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 

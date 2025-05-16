@@ -14,6 +14,7 @@
 #include "netlink.h"
 #include "bitset.h"
 #include "parser.h"
+#include "../json_writer.h"
 
 /* EEE_GET */
 
@@ -21,13 +22,13 @@ int eee_reply_cb(const struct nlmsghdr *nlhdr, void *data)
 {
 	const struct nlattr *tb[ETHTOOL_A_EEE_MAX + 1] = {};
 	DECLARE_ATTR_TB_INFO(tb);
-	bool enabled, active, tx_lpi_enabled;
+	bool enabled, active, tx_lpi_enabled, status_support;
 	struct nl_context *nlctx = data;
 	bool silent;
 	int err_ret;
 	int ret;
 
-	silent = nlctx->is_dump || nlctx->is_monitor;
+	silent = nlctx->is_dump || nlctx->is_monitor || is_json_context();
 	err_ret = silent ? MNL_CB_OK : MNL_CB_ERROR;
 	ret = mnl_attr_parse(nlhdr, GENL_HDRLEN, attr_cb, &tb_info);
 	if (ret < 0)
@@ -46,42 +47,43 @@ int eee_reply_cb(const struct nlmsghdr *nlhdr, void *data)
 	active = mnl_attr_get_u8(tb[ETHTOOL_A_EEE_ACTIVE]);
 	enabled = mnl_attr_get_u8(tb[ETHTOOL_A_EEE_ENABLED]);
 	tx_lpi_enabled = mnl_attr_get_u8(tb[ETHTOOL_A_EEE_TX_LPI_ENABLED]);
+	status_support = bitset_is_empty(tb[ETHTOOL_A_EEE_MODES_OURS], true, &ret);
 
 	if (silent)
 		putchar('\n');
-	printf("EEE settings for %s:\n", nlctx->devname);
-	printf("\tEEE status: ");
-	if (bitset_is_empty(tb[ETHTOOL_A_EEE_MODES_OURS], true, &ret)) {
-		printf("not supported\n");
+	print_string(PRINT_ANY, "ifname", "EEE settings for %s:\n", nlctx->devname);
+	print_string(PRINT_FP, NULL, "\tEEE status: ", NULL);
+	if (status_support) {
+		print_string(PRINT_ANY, "status", "%s\n", "not supported");
 		return MNL_CB_OK;
 	}
 	if (!enabled)
-		printf("disabled\n");
+		print_string(PRINT_ANY, "status", "%s\n", "disabled");
 	else
-		printf("enabled - %s\n", active ? "active" : "inactive");
-	printf("\tTx LPI: ");
+		print_string(PRINT_ANY, "status", "enabled - %s\n", active ? "active" : "inactive");
+	print_string(PRINT_FP, NULL, "\tTx LPI: ", NULL);
 	if (tx_lpi_enabled)
-		printf("%u (us)\n",
+		print_uint(PRINT_ANY, "tx-lpi", "%u (us)\n",
 		       mnl_attr_get_u32(tb[ETHTOOL_A_EEE_TX_LPI_TIMER]));
 	else
-		printf("disabled\n");
+		print_string(PRINT_FP, NULL, "%s\n", "disabled");
 
 	ret = dump_link_modes(nlctx, tb[ETHTOOL_A_EEE_MODES_OURS], true,
 			      LM_CLASS_REAL,
 			      "Supported EEE link modes:  ", NULL, "\n",
-			      "Not reported");
+			      "Not reported", "supported-eee-link-modes");
 	if (ret < 0)
 		return err_ret;
 	ret = dump_link_modes(nlctx, tb[ETHTOOL_A_EEE_MODES_OURS], false,
 			      LM_CLASS_REAL,
 			      "Advertised EEE link modes:  ", NULL, "\n",
-			      "Not reported");
+			      "Not reported", "advertised-eee-link-modes");
 	if (ret < 0)
 		return err_ret;
 	ret = dump_link_modes(nlctx, tb[ETHTOOL_A_EEE_MODES_PEER], false,
 			      LM_CLASS_REAL,
 			      "Link partner advertised EEE link modes:  ", NULL,
-			      "\n", "Not reported");
+			      "\n", "Not reported", "link-partner-advertised-eee-link-modes");
 	if (ret < 0)
 		return err_ret;
 
@@ -102,11 +104,18 @@ int nl_geee(struct cmd_context *ctx)
 		return 1;
 	}
 
+	new_json_obj(ctx->json);
+	open_json_object(NULL);
+
 	ret = nlsock_prep_get_request(nlsk, ETHTOOL_MSG_EEE_GET,
 				      ETHTOOL_A_EEE_HEADER, 0);
 	if (ret < 0)
-		return ret;
-	return nlsock_send_get_request(nlsk, eee_reply_cb);
+		goto out;
+	ret =  nlsock_send_get_request(nlsk, eee_reply_cb);
+out:
+	close_json_object();
+	delete_json_obj();
+	return ret;
 }
 
 /* EEE_SET */

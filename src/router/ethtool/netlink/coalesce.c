@@ -39,9 +39,9 @@ int coalesce_reply_cb(const struct nlmsghdr *nlhdr, void *data)
 		show_cr();
 	print_string(PRINT_ANY, "ifname", "Coalesce parameters for %s:\n",
 		     nlctx->devname);
-	show_bool("rx", "Adaptive RX: %s  ",
+	show_bool("adaptive-rx", "Adaptive RX: %s  ",
 		  tb[ETHTOOL_A_COALESCE_USE_ADAPTIVE_RX]);
-	show_bool("tx", "TX: %s\n", tb[ETHTOOL_A_COALESCE_USE_ADAPTIVE_TX]);
+	show_bool("adaptive-tx", "TX: %s\n", tb[ETHTOOL_A_COALESCE_USE_ADAPTIVE_TX]);
 	show_u32("stats-block-usecs", "stats-block-usecs:\t",
 		 tb[ETHTOOL_A_COALESCE_STATS_BLOCK_USECS]);
 	show_u32("sample-interval", "sample-interval:\t",
@@ -85,9 +85,9 @@ int coalesce_reply_cb(const struct nlmsghdr *nlhdr, void *data)
 	show_u32("tx-frame-high", "tx-frame-high:\t",
 		 tb[ETHTOOL_A_COALESCE_TX_MAX_FRAMES_HIGH]);
 	show_cr();
-	show_bool("rx", "CQE mode RX: %s  ",
+	show_bool("cqe-mode-rx", "CQE mode RX: %s  ",
 		  tb[ETHTOOL_A_COALESCE_USE_CQE_MODE_RX]);
-	show_bool("tx", "TX: %s\n", tb[ETHTOOL_A_COALESCE_USE_CQE_MODE_TX]);
+	show_bool("cqe-mode-tx", "TX: %s\n", tb[ETHTOOL_A_COALESCE_USE_CQE_MODE_TX]);
 	show_cr();
 	show_u32("tx-aggr-max-bytes", "tx-aggr-max-bytes:\t",
 		 tb[ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES]);

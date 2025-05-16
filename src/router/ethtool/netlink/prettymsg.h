@@ -18,6 +18,7 @@ enum pretty_nla_format {
 	NLA_U16,
 	NLA_U32,
 	NLA_U64,
+	NLA_UINT,
 	NLA_X8,
 	NLA_X16,
 	NLA_X32,
@@ -67,6 +68,7 @@ struct pretty_nlmsg_desc {
 #define NLATTR_DESC_U16(_name)		NLATTR_DESC(_name, NLA_U16)
 #define NLATTR_DESC_U32(_name)		NLATTR_DESC(_name, NLA_U32)
 #define NLATTR_DESC_U64(_name)		NLATTR_DESC(_name, NLA_U64)
+#define NLATTR_DESC_UINT(_name)		NLATTR_DESC(_name, NLA_UINT)
 #define NLATTR_DESC_X8(_name)		NLATTR_DESC(_name, NLA_X8)
 #define NLATTR_DESC_X16(_name)		NLATTR_DESC(_name, NLA_X16)
 #define NLATTR_DESC_X32(_name)		NLATTR_DESC(_name, NLA_X32)

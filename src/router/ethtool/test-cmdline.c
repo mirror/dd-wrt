@@ -25,6 +25,7 @@ static struct test_case {
 	{ 1, "" },
 	{ 0, "devname" },
 	{ 0, "15_char_devname" },
+	{ !IS_NL, "--json devname" },
 	/* netlink interface allows names up to 127 characters */
 	{ !IS_NL, "16_char_devname!" },
 	{ !IS_NL, "127_char_devname0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde" },

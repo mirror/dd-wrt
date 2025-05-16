@@ -1,3 +1,45 @@
+Version 6.14 - April 7, 2025
+	* Feature: list PHYs (--show-phys)
+	* Feature: target a specific PHY with some commands (--phy)
+	* Feature: more attributes for C33 PSE (--show-pse, --set-pse)
+	* Feature: source information for cable tests (--cable-test[-tdr])
+	* Feature: JSON output for module info (-m)
+	* Feature: misc RSS hash info improvements (-x)
+	* Feature: tsinfo hwtstamp provider (--{get,set}-hwtimestamp-cfg)
+	* Fix: fix wrong auto-negotiation state (no option)
+	* Fix: more explicit RSS context action (-n)
+	* Fix: print PHY address as decimal (no option)
+	* Fix: fix return value on flow hashing error (-N)
+	* Fix: fix JSON output for IRQ coalescing
+	* Fix: fix MDI-X info output (no option)
+	* Misc: code cleanup in module parsers
+	* Misc: provide module_info JSON schema
+	* Misc: add '-j' alias for --json
+	* Misc: provide AppStream metainfo XML
+	* Misc: update message descriptions for debugging output
+
+Version 6.11 - October 8, 2024
+	* Feature: cmis: print active and inactive firmware versions
+	* Feature: flash transceiver module firmware (--flash-module-firmware)
+	* Feature: add T1BRR 10Mb/s mode to link mode tables
+	* Feature: support for disabling netlink from command line
+	* Fix: fix lanes parameter format specifier
+	* Fix: add missing clause 33 PSE manual description
+	* Fix: qsf: Better handling of Page A2h netlink read failure
+	* Fix: rss: retrieve ring count using ETHTOOL_GRXRINGS ioctl (-x)
+	* Misc: man page formatting fix
+
+Version 6.10 - August 9, 2024
+	* Feature: suport for PoE in PSE (--show-pse and --set-pse)
+	* Feature: add statistics support to tsinfo (-T)
+	* Feature: add JSON output to base command (no option)
+	* Feature: add JSON output to EEE info (--show-eee)
+	* Fix: qsfp: better handling on page 03h read failure (-m)
+	* Fix: handle zero arguments for module eeprom dump (-m)
+	* Fix: check for missing arguments in do_srxfh() (-X)
+	* Misc: compiler warnings in "make check"
+	* Misc: more descriptive error when JSON output is not available
+
 Version 6.9 - May 23, 2024
 	* Feature: support for rx-flow-hash gtp (-N)
 	* Feature: support for RSS input transformation (-X)

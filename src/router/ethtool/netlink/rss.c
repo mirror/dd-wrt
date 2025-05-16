@@ -47,43 +47,48 @@ void dump_json_rss_info(struct cmd_context *ctx, u32 *indir_table,
 			if (hfunc & (1 << i)) {
 				print_string(PRINT_JSON, "rss-hash-function",
 					     NULL, get_string(hash_funcs, i));
-				open_json_object("rss-input-transformation");
-				print_bool(PRINT_JSON, "symmetric-xor", NULL,
-					   (input_xfrm & RXH_XFRM_SYM_XOR) ?
-					   true : false);
-
-				close_json_object();
 				break;
 			}
 		}
+
+		if (i == get_count(hash_funcs))
+			print_uint(PRINT_JSON, "rss-hash-function-raw", NULL, hfunc);
 	}
+
+	open_json_object("rss-input-transformation");
+	print_bool(PRINT_JSON, "symmetric-xor", NULL,
+		   (input_xfrm & RXH_XFRM_SYM_XOR) ? true : false);
+	if (input_xfrm & ~RXH_XFRM_SYM_XOR)
+		print_uint(PRINT_JSON, "raw", NULL, input_xfrm);
+
+	close_json_object();
 
 	close_json_object();
 }
 
-int get_channels_cb(const struct nlmsghdr *nlhdr, void *data)
+/* There is no netlink equivalent for ETHTOOL_GRXRINGS. */
+static int get_num_rings(struct cb_args *args)
 {
-	const struct nlattr *tb[ETHTOOL_A_CHANNELS_MAX + 1] = {};
-	DECLARE_ATTR_TB_INFO(tb);
-	struct cb_args *args = data;
 	struct nl_context *nlctx = args->nlctx;
-	bool silent;
-	int err_ret;
+	struct cmd_context *ctx = nlctx->ctx;
+	struct ethtool_rxnfc ring_count = {
+		.cmd = ETHTOOL_GRXRINGS,
+	};
 	int ret;
 
-	silent = nlctx->is_dump || nlctx->is_monitor;
-	err_ret = silent ? MNL_CB_OK : MNL_CB_ERROR;
-	ret = mnl_attr_parse(nlhdr, GENL_HDRLEN, attr_cb, &tb_info);
-	if (ret < 0)
-		return err_ret;
-	nlctx->devname = get_dev_name(tb[ETHTOOL_A_CHANNELS_HEADER]);
-	if (!dev_ok(nlctx))
-		return err_ret;
-	if (tb[ETHTOOL_A_CHANNELS_COMBINED_COUNT])
-		args->num_rings = mnl_attr_get_u32(tb[ETHTOOL_A_CHANNELS_COMBINED_COUNT]);
-	if (tb[ETHTOOL_A_CHANNELS_RX_COUNT])
-		args->num_rings += mnl_attr_get_u32(tb[ETHTOOL_A_CHANNELS_RX_COUNT]);
-	return MNL_CB_OK;
+	ret = ioctl_init(ctx, false);
+	if (ret)
+		return ret;
+
+	ret = send_ioctl(ctx, &ring_count);
+	if (ret) {
+		perror("Cannot get RX ring count");
+		return ret;
+	}
+
+	args->num_rings = (u32)ring_count.data;
+
+	return 0;
 }
 
 int rss_reply_cb(const struct nlmsghdr *nlhdr, void *data)
@@ -142,22 +147,7 @@ int rss_reply_cb(const struct nlmsghdr *nlhdr, void *data)
 	if (ret < 0)
 		return silent ? MNL_CB_OK : MNL_CB_ERROR;
 
-	nlctx->devname = get_dev_name(tb[ETHTOOL_A_RSS_HEADER]);
-	if (!dev_ok(nlctx))
-		return MNL_CB_OK;
-
-	/* Fetch ring count info into args->num_rings */
-	ret = nlsock_prep_get_request(nlctx->ethnl2_socket,
-				      ETHTOOL_MSG_CHANNELS_GET,
-				      ETHTOOL_A_CHANNELS_HEADER, 0);
-	if (ret < 0)
-		return MNL_CB_ERROR;
-
-	ret = nlsock_sendmsg(nlctx->ethnl2_socket, NULL);
-	if (ret < 0)
-		return MNL_CB_ERROR;
-
-	ret = nlsock_process_reply(nlctx->ethnl2_socket, get_channels_cb, args);
+	ret = get_num_rings(args);
 	if (ret < 0)
 		return MNL_CB_ERROR;
 
@@ -178,10 +168,18 @@ int rss_reply_cb(const struct nlmsghdr *nlhdr, void *data)
 		for (unsigned int i = 0; i < get_count(hash_funcs); i++) {
 			printf("    %s: %s\n", get_string(hash_funcs, i),
 			       (rss_hfunc & (1 << i)) ? "on" : "off");
+			rss_hfunc &= ~(1 << i);
 		}
+		if (rss_hfunc)
+			printf("    Unknown hash function: 0x%x\n", rss_hfunc);
+
 		printf("RSS input transformation:\n");
 		printf("    symmetric-xor: %s\n",
 		       (input_xfrm & RXH_XFRM_SYM_XOR) ? "on" : "off");
+		input_xfrm &= ~RXH_XFRM_SYM_XOR;
+
+		if (input_xfrm)
+			printf("    Unknown bits in RSS input transformation: 0x%x\n", input_xfrm);
 	}
 
 	return MNL_CB_OK;
