@@ -83,7 +83,7 @@ static void get_ifstat(char *ifname, char *buffer, size_t len)
 	return;
 }
 
-static void show_portif_row(webs_t wp, char ifname[4][32])
+static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 {
 	int i;
 	int max = 0;
@@ -91,37 +91,40 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 	struct portstatus status;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"portif\" id=\"portif_table\" class=\"table\"><thead><tr>\n");
 	for (i = 0; i < MAXCOL; i++) {
-		if (ifname[i][0])
-			max++;
-	}
-	for (i = 0; i < max; i++) {
-		char *label = nvram_nget("%s_label", ifname[i]);
-		websWrite(wp, "<th class=\"center\" width=\"%d%%\">%s</th>\n", 100 / MAXCOL, *label ? label : ifname[i]);
+		if (ifname[i][0]) {
+			char *label = nvram_nget("%s_label", ifname[i]);
+			websWrite(wp, "<th class=\"center\" width=\"%d%%\">%s</th>\n", 100 / MAXCOL, *label ? label : ifname[i]);
+		} else {
+			websWrite(wp, "<th class=\"center\" width=\"%d%%\">&nbsp;</th>\n", 100 / MAXCOL);
+		}
 	}
 	websWrite(wp, "</tr></thead>\n");
 	websWrite(wp, "<tbody>\n");
 	websWrite(wp, "<tr>\n");
-	for (i = 0; i < max; i++) {
-		int r = getLanPortStatus(ifname[i], &status);
-		if (r) {
-			websWrite(wp, "<td class=\"status_red center\">");
-			websWrite(wp, "error %d", r);
-		} else {
-			if (status.link) {
-				char buffer[128];
-				get_ifstat(ifname[i], buffer, sizeof(buffer));
-				if (status.speed == 10)
-					websWrite(wp, "<td title=\"%s\" class=\"status_orange center\">\n", buffer);
-				else if (status.speed == 100)
-					websWrite(wp, "<td title=\"%s\" class=\"status_yellow center\">\n", buffer);
-				else if (status.speed >= 1000)
-					websWrite(wp, "<td title=\"%s\" class=\"status_green center\">\n", buffer);
-				websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
-			} else {
+	for (i = 0; i < MAXCOL; i++) {
+		if (ifname[i][0]) {
+			int r = getLanPortStatus(ifname[i], &status);
+			if (r) {
 				websWrite(wp, "<td class=\"status_red center\">");
-				websWrite(wp, "down");
+				websWrite(wp, "error %d", r);
+			} else {
+				if (status.link) {
+					char buffer[128];
+					get_ifstat(ifname[i], buffer, sizeof(buffer));
+					if (status.speed == 10)
+						websWrite(wp, "<td title=\"%s\" class=\"status_orange center\">", buffer);
+					else if (status.speed == 100)
+						websWrite(wp, "<td title=\"%s\" class=\"status_yellow center\">", buffer);
+					else if (status.speed >= 1000)
+						websWrite(wp, "<td title=\"%s\" class=\"status_green center\">", buffer);
+					websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
+				} else {
+					websWrite(wp, "<td class=\"status_red center\">Down");
+				}
 			}
 			websWrite(wp, "</td>\n");
+		} else {
+			websWrite(wp, "<td>&nbsp;</td>\n");
 		}
 	}
 	websWrite(wp, "</tbody>\n");
