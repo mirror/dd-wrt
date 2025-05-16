@@ -99,7 +99,7 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<fieldset>\n");
 	getIfLists(eths, sizeof(eths));
 	foreach(var, eths, next) {
-		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3))
+		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3) || !strncmp(var, "10g", 3))
 			show_portif(wp, &ctx, var);
 	}
 	if (ctx.count > 0) {
