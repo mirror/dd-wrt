@@ -57,6 +57,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		}
 		websWrite(wp, "</select></div>\n");
 	}
+	websWrite(wp, "</fieldset><br />\n");
 	getIfListB(bufferif, sizeof(bufferif), NULL, BRIDGESONLY, 1);
 	foreach(var, eths, next) {
 		int isb = 0;
@@ -360,5 +361,4 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</fieldset><br />\n");
 skip:;
 	}
-	websWrite(wp, "</fieldset><br />\n");
 }
