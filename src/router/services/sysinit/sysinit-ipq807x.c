@@ -1017,7 +1017,7 @@ void start_sysinit(void)
 		FILE *fp = fopen(mtdpath, "rb");
 		if (fp) {
 			fseek(fp, 0x1000 + 14, SEEK_SET);
-			unsigned int newmac2[6];
+			unsigned char newmac2[6];
 			fread(newmac2, 6, 1, fp);
 			fclose(fp);
 			static char tempaddr[32];
