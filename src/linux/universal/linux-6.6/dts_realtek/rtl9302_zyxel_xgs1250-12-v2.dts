@@ -10,7 +10,7 @@
 
 / {
 	compatible = "zyxel,xgs1250-12", "realtek,rtl838x-soc";
-	model = "Zyxel XGS1250-12 V1";
+	model = "Zyxel XGS1250-12 V2";
 
 	aliases {
 		led-boot = &led_pwr_sys;
@@ -278,7 +278,7 @@
 		phy24: ethernet-phy@24 {
 			reg = <24>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 8>;
+			rtl9300,smi-address = <1 0>;
 			sds = < 6 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
@@ -288,7 +288,7 @@
 		phy25: ethernet-phy@25 {
 			reg = <25>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <2 8>;
+			rtl9300,smi-address = <2 1>;
 			sds = < 7 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
@@ -298,7 +298,7 @@
 		phy26: ethernet-phy@26 {
 			reg = <26>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 8>;
+			rtl9300,smi-address = <3 2>;
 			sds = < 8 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
