@@ -59,8 +59,6 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-
-
 #ifdef HAVE_IPV6
 #include <ifaddrs.h>
 #endif
@@ -74,7 +72,6 @@
 
 #define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
 #define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
-
 
 void setWifiPass(void)
 {
@@ -2516,30 +2513,6 @@ static int mdio_read(int skfd, struct ifreq *ifr, int location)
 
 int getLanPortStatus(const char *ifname, struct portstatus *status)
 {
-	//fallback
-	int skfd;
-	struct ifreq ifr;
-	unsigned bmcr, bmsr, advert, lkpar, bmcr2, lpa2;
-	memset(&ifr, 0, sizeof(ifr));
-	if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		return -1;
-	}
-	struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-	if (ioctl(skfd, SIOCGMIIPHY, &ifr) < 0) {
-		close(skfd);
-		return -1;
-	}
-	bmcr = mdio_read(skfd, &ifr, MII_BMCR);
-	bmsr = mdio_read(skfd, &ifr, MII_BMSR);
-	advert = mdio_read(skfd, &ifr, MII_ADVERTISE);
-	lkpar = mdio_read(skfd, &ifr, MII_LPA);
-	bmcr2 = mdio_read(skfd, &ifr, MII_CTRL1000);
-	lpa2 = mdio_read(skfd, &ifr, MII_STAT1000);
-	status->speed = ((bmcr2 & (ADVERTISE_1000HALF | ADVERTISE_1000FULL)) & lpa2 >> 2) ? 1000 : (bmcr & BMCR_SPEED100) ? 100 : 10;
-	status->fd = (bmcr & BMCR_FULLDPLX);
-	status->link = (bmsr & BMSR_LSTATUS);
-	close(skfd);
 	char path[64];
 	sprintf(path, "/sys/class/net/%s/speed", ifname);
 	FILE *fp = fopen(path, "rb");
@@ -2547,7 +2520,47 @@ int getLanPortStatus(const char *ifname, struct portstatus *status)
 		char speed[64];
 		fgets(speed, sizeof(speed), fp);
 		status->speed = atoi(speed);
+		if (status->speed < 10)
+			status->link = 0;
+		else
+			status->link = 1;
 		fclose(fp);
+		sprintf(path, "/sys/class/net/%s/duplex", ifname);
+		fp = fopen(path, "rb");
+		char duplex[64];
+		fgets(duplex, sizeof(duplex), fp);
+		if (!strcmp(duplex, "full"))
+			;
+		status->fd = 1;
+		else status->fd = 0;
+		fclose(fp);
+	} else {
+		//fallback
+		int skfd;
+		struct ifreq ifr;
+		unsigned bmcr, bmsr, advert, lkpar, bmcr2, lpa2;
+		memset(&ifr, 0, sizeof(ifr));
+		if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+			return -1;
+		}
+		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+		if (ioctl(skfd, SIOCGMIIPHY, &ifr) < 0) {
+			close(skfd);
+			return -1;
+		}
+		bmcr = mdio_read(skfd, &ifr, MII_BMCR);
+		bmsr = mdio_read(skfd, &ifr, MII_BMSR);
+		advert = mdio_read(skfd, &ifr, MII_ADVERTISE);
+		lkpar = mdio_read(skfd, &ifr, MII_LPA);
+		bmcr2 = mdio_read(skfd, &ifr, MII_CTRL1000);
+		lpa2 = mdio_read(skfd, &ifr, MII_STAT1000);
+		status->speed = ((bmcr2 & (ADVERTISE_1000HALF | ADVERTISE_1000FULL)) & lpa2 >> 2) ? 1000 :
+				(bmcr & BMCR_SPEED100)						  ? 100 :
+												    10;
+		status->fd = (bmcr & BMCR_FULLDPLX);
+		status->link = (bmsr & BMSR_LSTATUS);
+		close(skfd);
 	}
 	return 0;
 }
