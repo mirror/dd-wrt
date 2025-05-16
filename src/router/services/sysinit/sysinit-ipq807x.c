@@ -1016,7 +1016,7 @@ void start_sysinit(void)
 	if (brand == ROUTER_ASUS_AX89X) {
 		FILE *fp = fopen(mtdpath, "rb");
 		if (fp) {
-			fseek(fp, 14, SEEK_SET);
+			fseek(fp, 0x1000 + 14, SEEK_SET);
 			unsigned int newmac2[6];
 			fread(newmac2, 6, 1, fp);
 			fclose(fp);
