@@ -20,6 +20,68 @@
  * $Id:
  */
 
+#define PROC_DEV "/proc/net/dev"
+
+static void get_ifstat(char *ifname, char *buffer, size_t len)
+{
+	char line[256];
+	FILE *fp;
+	struct dev_info {
+		unsigned long long int rx_bytes;
+		unsigned long long int rx_pks;
+		unsigned long long int rx_errs;
+		unsigned long long int rx_drops;
+		unsigned long long int tx_bytes;
+		unsigned long long int tx_pks;
+		unsigned long long int tx_errs;
+		unsigned long long int tx_drops;
+		unsigned long long int tx_colls;
+	} info;
+	info.rx_pks = info.rx_errs = info.rx_drops = 0;
+	info.tx_pks = info.tx_errs = info.tx_drops = info.tx_colls = 0;
+	if ((fp = fopen(PROC_DEV, "r")) == NULL) {
+		return;
+	} else {
+		/*
+		 * Inter-| Receive | Transmit face |bytes packets errs drop fifo
+		 * frame compressed multicast|bytes packets errs drop fifo colls
+		 * carrier compressed lo: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 eth0:
+		 * 674829 5501 0 0 0 0 0 0 1249130 1831 0 0 0 0 0 0 eth1: 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0 0 0 0 0 eth2: 0 0 0 0 0 719 0 0 1974 16 295 0 0 0 0 0
+		 * br0: 107114 1078 0 0 0 0 0 0 910094 1304 0 0 0 0 0 0
+		 * 
+		 */
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			int ifl = 0;
+			if (!strchr(line, ':'))
+				continue;
+			while (line[ifl] != ':')
+				ifl++;
+			line[ifl] = 0; /* interface */
+			char ifnamecopy[32];
+			int l = 0;
+			int i;
+			int len = strlen(line);
+			for (i = 0; i < len; i++) {
+				if (line[i] == ' ')
+					continue;
+				ifnamecopy[l++] = line[i];
+			}
+			ifnamecopy[l] = 0;
+			if (!strcmp(ifnamecopy, ifname)) {
+				sscanf(line + ifl + 1,
+				       "%llu %llu %llu %llu %*llu %*llu %*llu %*llu %llu %llu %llu %llu %*llu %llu %*llu %*llu",
+				       &info.rx_bytes, &info.rx_pks, &info.rx_errs, &info.rx_drops, &info.tx_bytes, &info.tx_pks,
+				       &info.tx_errs, &info.tx_drops, &info.tx_colls);
+			}
+		}
+		fclose(fp);
+	}
+	snprintf(buffer, len, "RX:%lld MiB TX:%lld MiB", info.rx_bytes >> 20, info.tx_bytes >> 20);
+
+	return;
+}
+
 static void show_portif_row(webs_t wp, char ifname[4][32])
 {
 	int i;
@@ -44,12 +106,14 @@ static void show_portif_row(webs_t wp, char ifname[4][32])
 			websWrite(wp, "error %d", r);
 		} else {
 			if (status.link) {
+				char buffer[128];
+				get_ifstat(ifname[i], buffer, sizeof(buffer));
 				if (status.speed == 10)
-					websWrite(wp, "<td class=\"status_orange center\">\n");
+					websWrite(wp, "<td title=\"%s\" class=\"status_orange center\">\n", buffer);
 				else if (status.speed == 100)
-					websWrite(wp, "<td class=\"status_yellow center\">\n");
+					websWrite(wp, "<td title=\"%s\" class=\"status_yellow center\">\n", buffer);
 				else if (status.speed >= 1000)
-					websWrite(wp, "<td class=\"status_green center\">\n");
+					websWrite(wp, "<td title=\"%s\" class=\"status_green center\">\n", buffer);
 				websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
 			} else {
 				websWrite(wp, "<td class=\"status_red center\">");
