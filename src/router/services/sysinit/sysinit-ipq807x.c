@@ -1031,6 +1031,9 @@ void start_sysinit(void)
 	unsigned int newmac[6];
 	char ethaddr[32];
 	if (maddr) {
+		wait_for_eth("lan8");
+		wait_for_eth("10gcopper");
+		wait_for_eth("10gsfp");
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
 		sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
