@@ -46,12 +46,12 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 		int totalcount = 0;
 		int realcount = nvram_default_geti("vlan_filtercount", 0);
 		websWrite(wp,
-			  "<table cellspacing=\"4\" summary=\"filters\" id=\"vlanfilters_table\" class=\"table\"><thead><tr>\n");
-		show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "networking.pvid", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "networking.untagged", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thead><tbody>\n");
+			  "<table cellspacing=\"4\" summary=\"filters\" id=\"vlanfilters_table\" class=\"table\"><tbody><tr>\n");
+		show_caption_pp(wp, NULL, "networking.iface", "<th sortdir=\"up\"> ", "</th>\n");
+		show_caption_pp(wp, NULL, "networking.tg_number", "<th sortdir=\"up\">", "</th>\n");
+		show_caption_pp(wp, NULL, "networking.pvid", "<th sortdir=\"up\">", "</th>\n");
+		show_caption_pp(wp, NULL, "networking.untagged", "<th sortdir=\"up\">", "</th>\n");
+		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\"  sortdir=\"up\" width=\"10%%\">", "</th></tr>\n");
 
 		wordlist = nvram_safe_get("vlan_filters");
 		foreach(word, wordlist, next) {
@@ -125,9 +125,8 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 
 			websWrite(
 				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"filter_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"filter_del_submit(this.form,%d)\\\" />\");</td>\n//]]>\n</script>\n",
 				i);
-			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
 			totalcount++;
 		}
@@ -144,11 +143,11 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
 		websWrite(wp, "</tbody></table>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n");
-		websWrite(wp, "//<![CDATA[");
-		websWrite(wp, "var t = new SortableTable(document.getElementById('vlanfilters_table'), 1000);");
-		websWrite(wp, "//]]>");
-		websWrite(wp, "</script>");
+/*		websWrite(wp, "<script type=\"text/javascript\">\n");
+		websWrite(wp, "//<![CDATA[\n");
+		websWrite(wp, "var t = new SortableTable(document.getElementById('vlanfilters_table'), 1000);\n");
+		websWrite(wp, "//]]>\n");*/
+		websWrite(wp, "</script>\n");
 
 		websWrite(wp, "</fieldset><br />\n");
 	}
