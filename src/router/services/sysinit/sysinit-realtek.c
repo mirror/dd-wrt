@@ -111,9 +111,12 @@ void start_sysinit(void)
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
 			set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
-#if 0
-		eval("fw_setenv","bootcmd", "rtk network on; boota");
-#endif
+		char *bootcmd = getUEnv("bootcmd");
+		if (!bootcmd || !strstr(bootcmd, "rtk network on")) {
+			fprintf(stderr, "change bootcmd to fix networking\n");
+			eval("fw_setenv","bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1250.bin");
+			eval("fw_setenv","bootcmd", "rtk network on; run bootnet; boota");
+		}
 		mac = getUEnv("ethaddr");
 		if (mac) {
 			char name[32];
