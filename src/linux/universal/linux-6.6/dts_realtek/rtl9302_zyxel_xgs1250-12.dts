@@ -403,7 +403,7 @@
 		port@27 {
 			reg = <27>;
 			label = "lan12";
-			phy-mode = "1000base-x";
+			phy-mode = "10gbase-r";
 			pseudo-phy-handle = <&phy27>;
 			sfp = <&sfp0>;
 			led-set = <2>;
