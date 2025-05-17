@@ -229,7 +229,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		/* External RTL8218D PHY */
+		/* External RTL8218E PHY */
 		phy0: ethernet-phy@0 {
 			reg = <0>;
 			compatible = "ethernet-phy-ieee802.3-c22";
@@ -274,7 +274,7 @@
 			rtl9300,smi-address = <0 7>;
 		};
 
-		/* External Aquantia 113C PHYs */
+		/* External RTL8261N PHYs */
 		phy24: ethernet-phy@24 {
 			reg = <24>;
 			compatible = "ethernet-phy-ieee802.3-c45";
