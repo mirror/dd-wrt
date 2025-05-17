@@ -716,6 +716,7 @@ void *getUEnv(char *name)
 #elif HAVE_VENTANA
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #elif HAVE_REALTEK
+	int brand = getRouterBrand();
 	FILE *fp;
 	switch (brand) {
 	case ROUTER_ZYXEL_XGS1250:
