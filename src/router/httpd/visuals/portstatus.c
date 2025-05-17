@@ -111,14 +111,12 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 				if (status.link) {
 					char buffer[128];
 					get_ifstat(ifname[i], buffer, sizeof(buffer));
-					char area_label[64];
-					sprintf(area_label, "%d%s %s",status.speed, status.fd ? "HD" : "FD", buffer);
 					if (status.speed == 10)
-						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_orange center\"><p class=\"visually-hidden\">%s</p>", area_label, buffer, area_label);
+						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_orange center\"><p class=\"visually-hidden\">%s</p>", buffer, buffer, buffer);
 					else if (status.speed == 100)
-						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_yellow center\"><p class=\"visually-hidden\">%s</p>", area_label, buffer, area_label);
+						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_yellow center\"><p class=\"visually-hidden\">%s</p>", buffer, buffer, buffer);
 					else if (status.speed >= 1000)
-						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_green center\"><p class=\"visually-hidden\">%s</p>", area_label, buffer, area_label);
+						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_green center\"><p class=\"visually-hidden\">%s</p>", buffer, buffer, buffer);
 
 					if (status.speed <= 1000)
 						websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
