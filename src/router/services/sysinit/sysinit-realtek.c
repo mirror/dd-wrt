@@ -111,12 +111,25 @@ void start_sysinit(void)
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
 			set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
+#if 0
+		eval("fw_setenv","bootcmd", "rtk network on; boota");
+#endif
+		mac = getUEnv("ethaddr");
+		if (mac) {
+			char name[32];
+			int i;
+			for (i = 1; i < 12; i++) {
+				sprintf(name, "lan%02d", i);
+				set_hwaddr(name, mac);
+				MAC_ADD(mac);
+			}
+		}
 		break;
 	default:
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
 			set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
-		char *mac = getUEnv("mac_start");
+		mac = getUEnv("mac_start");
 		if (mac) {
 			char name[32];
 			int i;
@@ -128,7 +141,8 @@ void start_sysinit(void)
 		}
 		break;
 	}
-	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F") || nvram_match("DD_BOARD", "XGS1250-12")) {
+	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F") ||
+	    nvram_match("DD_BOARD", "Zyxel XGS1250-12")) {
 		sysprintf("echo 1 > /sys/class/hwmon/hwmon0/pwm1_enable");
 		sysprintf("echo 250 > /sys/class/hwmon/hwmon0/pwm1");
 	}
