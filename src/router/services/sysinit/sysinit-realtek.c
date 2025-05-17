@@ -121,6 +121,7 @@ void start_sysinit(void)
 		if (mac) {
 			char name[32];
 			int i;
+			set_hwaddr("eth0", mac);
 			for (i = 1; i < 13; i++) {
 				sprintf(name, "lan%02d", i);
 				set_hwaddr(name, mac);
