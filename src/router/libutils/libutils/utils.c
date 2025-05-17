@@ -2539,7 +2539,7 @@ int getLanPortStatus(const char *ifname, struct portstatus *status)
 		if (fp) {
 			char duplex[64];
 			fgets(duplex, sizeof(duplex), fp);
-			if (!strcmp(duplex, "full"))
+			if (strstr(duplex, "full"))
 				status->fd = 1;
 			else
 				status->fd = 0;
