@@ -67,8 +67,7 @@ static int rtkphy_config_init(struct phy_device *phydev)
         case REALTEK_PHY_ID_RTL8261N:
         case REALTEK_PHY_ID_RTL8264B:
             phydev_info(phydev, "%s:%u [RTL8261N/RTL826XB] phy_id: 0x%X PHYAD:%d\n", __FUNCTION__, __LINE__, phydev->drv->phy_id, phydev->mdio.addr);
-
-
+	    return 0;
           #if 1 /* toggle reset */
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 1);
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 0);
