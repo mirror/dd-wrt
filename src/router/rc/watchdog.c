@@ -179,10 +179,24 @@ static void watchdog(void)
 //#endif
 //#endif
 #ifdef HAVE_REALTEK
-		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F") || nvram_match("DD_BOARD", "XGS1250-12")) {
+		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12")) {
 			int psu = 0;
 			FILE *tempfp;
 			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+			if (tempfp) {
+				fscanf(tempfp, "%d", &psu);
+				fclose(tempfp);
+				if (psu >= 51000) {
+					sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1");
+				} else {
+					sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon0/pwm1");
+				}
+			}
+		}
+		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
+			int psu = 0;
+			FILE *tempfp;
+			tempfp = fopen("/sys/class/hwmon/hwmon1/temp0_input", "rb");
 			if (tempfp) {
 				fscanf(tempfp, "%d", &psu);
 				fclose(tempfp);
