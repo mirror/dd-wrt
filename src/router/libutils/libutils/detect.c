@@ -273,6 +273,10 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-8HP v2");
 		return ROUTER_ZYXEL_GS1900;
 	}
+	if (!strcmp(modelstr, "XGS1250-12") && !strcmp(version,"V2")) {
+		setRouter("Zyxel XGS1250-12 v2");
+		return ROUTER_ZYXEL_XGS1250;
+	}
 	if (!strcmp(modelstr, "XGS1250-12")) {
 		setRouter("Zyxel XGS1250-12");
 		return ROUTER_ZYXEL_XGS1250;
