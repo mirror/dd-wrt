@@ -114,11 +114,11 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 					char area_label[64];
 					sprintf(area_label, "%d%s %s",status.speed, status.fd ? "HD" : "FD", buffer);
 					if (status.speed == 10)
-						websWrite(wp, "<td aria-label=\"%s\" title=\"%s\" class=\"status_orange center\">", area_label, buffer);
+						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_orange center\">", area_label, buffer);
 					else if (status.speed == 100)
-						websWrite(wp, "<td aria-label=\"%s\" title=\"%s\" class=\"status_yellow center\">", area_label, buffer);
+						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_yellow center\">", area_label, buffer);
 					else if (status.speed >= 1000)
-						websWrite(wp, "<td aria-label=\"%s\" title=\"%s\" class=\"status_green center\">", area_label, buffer);
+						websWrite(wp, "<td aria-describeby=\"%s\" title=\"%s\" class=\"status_green center\">", area_label, buffer);
 
 					if (status.speed <= 1000)
 						websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
