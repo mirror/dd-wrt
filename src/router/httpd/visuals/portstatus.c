@@ -115,9 +115,18 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 						websWrite(wp, "<td title=\"%s\" class=\"status_orange center\">", buffer);
 					else if (status.speed == 100)
 						websWrite(wp, "<td title=\"%s\" class=\"status_yellow center\">", buffer);
-					else if (status.speed >= 1000)
+					else if (status.speed == 1000)
 						websWrite(wp, "<td title=\"%s\" class=\"status_green center\">", buffer);
-					websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
+					if (status.speed <= 1000)
+						websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
+					else if (status.speed == 2500) {
+						websWrite(wp, "2.5Gbit");
+					} else if (status.speed == 5000) {
+						websWrite(wp, "5Gbit");
+					} else if (status.speed == 10000) {
+						websWrite(wp, "10Gbit");
+					}
+
 				} else {
 					websWrite(wp, "<td class=\"status_red center\">Down");
 				}
