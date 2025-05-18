@@ -644,7 +644,7 @@ rewrite:;
 	if (writeubiformat) {
 		close(mtd_fd);
 		mtd_fd = -1;
-		char cmdline[64];
+		char cmdline[128];
 		sprintf(cmdline, "ubiformat /dev/mtd%d -y -q -f - --image-size=%d", getMTD(mtd),
 			ROUNDUP(trx.len, mtd_info.erasesize));
 		p = popen(cmdline, "wb");
