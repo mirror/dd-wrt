@@ -23,7 +23,7 @@ RM		:= rm -f
 
 CC	?= gcc
 
-CFLAGS	= $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF
+CFLAGS	= $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF
 # When debugging, use the following instead
 #CFLAGS	:= -O -g
 CFLAGS	+= -Wall
