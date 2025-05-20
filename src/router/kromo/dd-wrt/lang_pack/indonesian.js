@@ -878,7 +878,6 @@ pforward.to="Port Ke";
 
 //help container
 hpforward.right2="Beberapa aplikasi mungkin perlu membuka port spesifik untuk berfungsi dengan benar. Contoh dari aplikasi berikut mencakup server dan beberapa permainan daring. Saat permintaan untuk port tertentu datang dari Internet, router akan merutekan data ke perangkat yang anda pilih. Karena masalah keamanan, anda mungkin ingin membatasi penerusan port ke port yang hanya digunakan, dan hilangkan centang <em>Aktifkan</em> setelah anda selesai.";
-Beberapa aplikasi memerlukan port terbuka spesifik untuk berfungsi dengan benar. Contoh dari aplikasi berikut mencakup tapi tidak terbatas ke server atau permainan daring. Saat router menerima permintaan dari Internet untuk port tertentu, data lalu dirutekan ke perangkat yang anda pilih. Karena masalah keamanan, anda mungkin ingin membatasi penerusan port ke port yang hanya digunakan, dan nonaktifkan jika anda selesai.";
 
 // help page
 hpforward.page1="<dd>Penerusan Jarak Port mengizinkan anda untuk mengatur layanan publik di jaringan anda, seperti server Web, server FTP, server email, atau aplikasi Internet spesial lainnya. Aplikasi Internet spesial adalah aplikasi yang menggunakan akses Internet untuk melakukan fungsi seperti videokonferensi atau permainan daring. Saat pengguna mengirim tipe permintaan ini ke jaringan via Internet, router akan meneruskan permintaan tersebut ke komputer / perangkat yang tepat.<br /><br />Jika anda ingin meneruskan banyak port, lihat <a href=\"HForward.asp\">";
