@@ -1361,6 +1361,7 @@ management.lang_spanish="Spanisch";
 management.lang_swedish="Schwedisch";
 management.lang_japanese="Japanisch";
 management.lang_hungarian="Ungarisch";
+management.lang_indonsian="Indonesisch";
 management.lang_latvian="Lettisch";
 management.net_legend="Network Stack Tuning";
 management.net_conctrl="TCP Staukontroll-Mechanismus";

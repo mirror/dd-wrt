@@ -1,509 +1,504 @@
 ////////////////////////////////////////////////////////////////////////////////////
-//     English reference translation file - DD-WRT V3 -  Updated on 29/10/2022    //
+//     Indonesian translation, by SynthFidelity131 - DD-WRT V3 - 18/05/2025       //
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-var lang_charset=new Object();
 lang_charset.set="utf-8";
 
-var share=new Object();
-share.packets="Packets";
-share.annex="Annex Type";
+share.packets="Paket";
+share.annex="Jenis Annex";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Dial String";
-share.mode_3g="Connection Type";
-share.mode_3g_auto="Auto LTE-4G / 3G / 2G";
-share.mode_3g_4g="Force LTE-4G";
-share.mode_3g_3g="Force 3G";
-share.mode_3g_2g="Force 2G";
-share.mode_3g_prefer_3g="Prefer 3G";
-share.mode_3g_prefer_2g="Prefer 2G";
-share.mode_3g_3g2g="3G First, on Error 2G";
+share.mode_3g="Jenis Koneksi";
+share.mode_3g_auto="Otomatis LTE-4G / 3G / 2G";
+share.mode_3g_4g="Paksa LTE-4G";
+share.mode_3g_3g="Paksa 3G";
+share.mode_3g_2g="Paksa 2G";
+share.mode_3g_prefer_3g="Lebih memilih 3G";
+share.mode_3g_prefer_2g="Lebih memilih 2G";
+share.mode_3g_3g2g="3G Terlebih dulu, Jika error 2G";
 share.firmware="Firmware";
-share.time="Time";
-share.interipaddr="WAN IP Address";
+share.time="Waktu";
+share.interipaddr="Alamat IP WAN";
 // choice dd-wrt.c line 1442
-share.choice="Please Choose";
-share.more="more...";
-share.help="Help";
-share.enable="Enable";
-share.enabled="Enabled";
-share.disable="Disable";
-share.disabled="Disabled";
+share.choice="Mohon memolih";
+share.more="lain...";
+share.help="Bantuan";
+share.enable="Aktifkan";
+share.enabled="Diaktifkan";
+share.disable="Nonaktifkan";
+share.disabled="Dinonaktifkan";
 //not set used in src/router/openvpn/config2/openvpn.webvpn
-share.notset="Not Set";
-share.usrname="Username";
+share.notset="Tidak diatur";
+share.usrname="Nama pengguna";
 share.token="Token";
-share.passwd="Password";
-share.hostname="Hostname";
-share.advanced="Advanced Settings";
-share.vdsl="Advanced VLAN Tagging";
-share.vdslvlan7="T-Online VLAN 7 Support";
-share.vdslvlan8="T-Online VLAN 8 Support";
-share.vdslbng="T-Online BNG support";
-share.wan_vlantag="VLAN Tag ID";
-share.wan_dualaccess="Dual-Access Mode";
-share.compression="PPP Compression (MPPC)";
-share.mlppp="Single Line Multi Link";
+share.passwd="Kata sandi";
+share.hostname="Nama host";
+share.advanced="Pengaturan lanjutan";
+share.vdsl="VLAN Tagging lanjutan";
+share.vdslvlan7="Dukungan T-Online VLAN 7";
+share.vdslvlan8="Dukungan T-Online VLAN 8";
+share.vdslbng="Dukungan T-Online BNG";
+share.wan_vlantag="ID Tag VLAN";
+share.wan_dualaccess="Mode Dual-Access";
+share.compression="Kompresi PPP (MPPC)";
+share.mlppp="Satu Jalur Multi Link";
 share.vpi_vci="VPI / VCI";
-share.encaps="Encapsulation";
-share.payload="Payload Type";
-share.domainname="Domain Name";
-share.wandomainname="WAN Domain Name";
-share.landomainname="LAN Domain Name";
+share.encaps="Enkapsulasi";
+share.payload="Jenis Payload";
+share.domainname="Nama Domain";
+share.wandomainname="Nama Domain WAN";
+share.landomainname="Nama Domain LAN";
 share.statu="Status";
-share.start="Start";
-share.end="End";
-share.proto="Protocol";
-share.ip="IP Address";
-share.ipaddrmask="IP Addresses / Netmask (CIDR)";
-share.ipv4="IPv4 Address";
-share.ipv6="IPv6 Address";
-share.localip="Local IP";
-share.remoteip="Remote IP";
-share.mac="MAC Address";
-share.none="None";
-share.none2="no";
-share.both="Both";
-share.add="Add";
-share.del="Delete";
-share.remove="Remove";
-share.descr="Description";
-share.from="From";
-share.to="To";
-share.about="About";
-share.everyday="Everyday";
-share.sun="Sunday";
-share.sun_s="Sun";
-share.sun_s1="S";
-share.mon="Monday";
-share.mon_s="Mon";
-share.mon_s1="M";
-share.tue="Tuesday";
-share.tue_s="Tue";
-share.tue_s1="T";
-share.wed="Wednesday";
-share.wed_s="Wed";
-share.wed_s1="W";
-share.thu="Thursday";
-share.thu_s="Thu";
-share.thu_s1="T";
-share.fri="Friday";
-share.fri_s="Fri";
-share.fri_s1="F";
-share.sat="Saturday";
-share.sat_s="Sat";
+share.start="Mulai";
+share.end="Akhir";
+share.proto="Protokol";
+share.ip="Alamat IP";
+share.ipaddrmask="Alamat IP / Netmask (CIDR)";
+share.ipv4="Alamat IPv4";
+share.ipv6="Alamat IPv6";
+share.localip="IP Lokal";
+share.remoteip="IP Remot";
+share.mac="Alamat MAC";
+share.none="Tidak ada";
+share.none2="tidak";
+share.both="Keduanya";
+share.add="Tambah";
+share.del="Hapus";
+share.remove="Hapus";
+share.descr="Deskripsi";
+share.from="Dari";
+share.to="Ke";
+share.about="Tentang";
+share.everyday="Setiap hari";
+share.sun="Minggu";
+share.sun_s="Min";
+share.sun_s1="M";
+share.mon="Senin";
+share.mon_s="Sen";
+share.mon_s1="S";
+share.tue="Selasa";
+share.tue_s="Sel";
+share.tue_s1="S";
+share.wed="Rabu";
+share.wed_s="Rab";
+share.wed_s1="R";
+share.thu="Kamis";
+share.thu_s="Kam";
+share.thu_s1="K";
+share.fri="Jum'at";
+share.fri_s="Jum";
+share.fri_s1="J";
+share.sat="Sabtu";
+share.sat_s="Sab";
 share.sat_s1="S";
-share.jan="January";
-share.feb="February";
-share.mar="March";
+share.jan="Januari";
+share.feb="Februari";
+share.mar="Maret";
 share.apr="April";
-share.may="May";
-share.jun="June";
-share.jul="July";
-share.aug="August";
+share.may="Mei";
+share.jun="Juni";
+share.jul="Juli";
+share.aug="Agustus";
 share.sep="September";
-share.oct="October";
+share.oct="Oktober";
 share.nov="November";
-share.dec="December";
-share.expires="Expires";
-share.yes="Yes";
-share.no="No";
-share.filter="Filter";
-share.deny="Deny";
-share.range="Range";
-share.use="Use";
-share.mins="min";
-share.secs="s";
-share.seconds="seconds";
+share.dec="Desember";
+share.expires="Tenggat";
+share.yes="Ya";
+share.no="Tidak";
+share.filter="Saring";
+share.deny="Tolak";
+share.range="Jarak";
+share.use="Gunakan";
+share.mins="mnt";
+share.secs="d";
+share.seconds="detik";
 share.ms="ms";
-share.routername="Router Name";
+share.routername="Nama Router";
 share.manual="Manual";
 share.port="Port";
 // dd-wrt.c line 2873
-share.guest_port="Guest Port";
+share.guest_port="Port Tamu";
 share.ssid="SSID";
 share.channel="Channel";
-share.stations="Stations";
-share.frequency="Frequency";
-share.max_frequency="Max Frequency";
-share.fix_frequency="Fix Frequency";
+share.stations="Stasiun";
+share.frequency="Frekuensi";
+share.max_frequency="Frekuensi Maks";
+share.fix_frequency="Perbaiki Frekuensi";
 share.rssi="RSSI";
-share.signal="Signal";
-share.noise="Noise";
-share.quality="Quality";
+share.signal="Sinyal";
+share.noise="Bising";
+share.quality="Kualitas";
 share.beacon="Beacon";
-share.openn="Open";
+share.openn="Buka";
 share.dtim="DTIM";
 share.rates="Rate";
 share.rate="Rate";
-share.txrate="TX Rate";
-share.rxrate="RX Rate";
-share.low="Low";
-share.medium="Medium";
-share.high="High";
-share.option="Options";
-share.rule="Rule";
+share.txrate="Tingkat TX";
+share.rxrate="Tingkat RX";
+share.low="Rendah";
+share.medium="Sedang";
+share.high="Tinggi";
+share.option="Opsi";
+share.rule="Aturan";
 share.lan="LAN";
-share.point2point="Point to Point";
+share.point2point="Poin ke Poin";
 share.nat="NAT";
 share.subnet="Subnet Mask";
 share.unmask="Unmask";
-share.deflt="Default";  //don't use share.default!!!
-share.reboot="Reboot after change";
-share.all="All";
-share.auto="Auto";
-share.desired="Desired";
-share.required="Required";
-share.requiremts="Requirements";
-share.right="Right";
-share.left="Left";
-share.share_key="Shared Key";
+share.deflt="Bawaan";  //don't use share.default!!!
+share.reboot="Mulai ulang setelah mengubah";
+share.all="Semua";
+share.auto="Otomatis";
+share.desired="Diinginkan";
+share.required="Diperlukan";
+share.requiremts="Persyaratan";
+share.right="Kanan";
+share.left="Kiri";
+share.share_key="Kunci Berbagi";
 share.inter="Interval";
-share.srv="Service Name";
+share.srv="Nama Layanan";
 share.host_uniq="Host Uniq";
-share.port_range="Port Range";
-share.priority="Priority";
+share.port_range="Jarak Port";
+share.priority="Prioritas";
 share.gateway="Gateway";
-share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
+share.intrface="Antarmuka";  //don't use share.interface, Mozilla problem!!!
 share.iftbl="IF";
-share.input="In";
-share.output="Out";
+share.input="Masuk";
+share.output="Keluar";
 share.total="Total";
-share.radioname="Name";
+share.radioname="Nama";
 share.ccq="CCQ";
-share.pintrface="Physical Interface";
-share.vintrface="Virtual Interfaces";
+share.pintrface="Antarmuka Fisik";
+share.vintrface="Antarmuka Virtual";
 share.router="Router";
-share.static_lease="Static Leases";
-share.srvip="Server IP";
-share.srvipname="Server IP / Name";
-share.localdns="Local DNS";
-share.minutes="min";
-share.oui="OUI Search";
-share.sttic="Static";
-share.off="Off";
-share.on="On";
-share.forwarding="Forwarding";
+share.static_lease="Lease Statis";
+share.srvip="IP Server ";
+share.srvipname="IP / Nama Server";
+share.localdns="DNS Lokal";
+share.minutes="mnt";
+share.oui="Pencarian OUI";
+share.sttic="Statis";
+share.off="Mati";
+share.on="Nyala";
+share.forwarding="Penerusan";
 share.stp="STP";
 share.mstp="MSTP";
 share.rstp="RSTP";
-share.dynamic="Dynamic";
-share.connecting="Connecting";
-share.connect="Connect";
-share.connected="Connected";
-share.disconnect="Disconnect";
-share.disconnected="Disconnected";
-share.info="Information";
+share.dynamic="Dinamis";
+share.connecting="Menghubungkan";
+share.connect="Hubungkan";
+share.connected="Terhubung";
+share.disconnect="Putuskan";
+share.disconnected="Terputus";
+share.info="Informasi";
 share.infotbl="Info";
-share.state="State";
-share.mode="Radio Mode";
-share.encrypt="Encryption";
-share.key="Key";
+share.state="Status";
+share.mode="Mode Radio";
+share.encrypt="Enkripsi";
+share.key="Kunci";
 share.wireless="Wireless";
 share.dhcp="DHCP";
-share.styl="Select a Style";
-share.theme="Select a Theme";
-share.styl_dark="Enable Dark Styles";
-share.styl_opt="Enable Sticky Footer";
-share.err="error";
-share.errs="errors";
-share.meters="meters";
+share.styl="Pilih Gaya";
+share.theme="Pilih Tema";
+share.styl_dark="Aktifkan Gaya Gelap";
+share.styl_opt="Aktifkan Sticky Footer";
+share.err="kesalahan";
+share.errs="kesalahan";
+share.meters="meter";
 share.vht80plus80="80+80 MHz";
 share.vht160="160 MHz";
 share.vht80="80 MHz";
-share.ht40="Wide (40 MHz)";
-share.ht20="Full (20 MHz)";
-share.dynamicturbo="Dynamic (20/40 MHz)";
+share.ht40="Lebar (40 MHz)";
+share.ht20="Penuh (20 MHz)";
+share.dynamicturbo="Dinamis (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
-share.full="Full (20 MHz)";
-share.half="Half (10 MHz)";
-share.quarter="Quarter (5 MHz)";
-share.subquarter="Eighth (2.5 MHz)";
-share.seealso="See also";
-share.never="never";
-share.unknown="Unknown";
-share.empty="Empty";
-share.expired="expired";
-share.logout="Logout";
-share.nmounted="Not mounted";
-share.fssize="Total / Free Size";
-share.src="Source Address";
-share.dst="Remote Address";
-share.name_resolution="Name Resolution";
-share.timeout="Timeout (s)";
-share.detail="Click to see detail";
-share.tmpmem="Temporary Memory";
-share._1h="Every hour";
-share._2h="Every 2 hours";
-share._3h="Every 3 hours";
-share._4h="Every 4 hours";
-share._5h="Every 5 hours";
-share._6h="Every 6 hours";
-share._12h="Every 12 hours";
-share._24h="Every day";
-share._48h="Every 2 days";
-share._168h="Every week";
-share.days="Days";
+share.full="Penuh (20 MHz)";
+share.half="Setengah (10 MHz)";
+share.quarter="Seperempat (5 MHz)";
+share.subquarter="Seperdelapan (2.5 MHz)";
+share.seealso="Lihat juga";
+share.never="tidak pernah";
+share.unknown="Tidak diketahui";
+share.empty="Kosong";
+share.expired="kadaluarsa";
+share.logout="Log keluar";
+share.nmounted="Tidak terpasang";
+share.fssize="Ukuran Total / Bebas";
+share.src="Alamat Sumber";
+share.dst="Alamat Tujuan";
+share.name_resolution="Resolusi Nama";
+share.timeout="Waktu habis (d)";
+share.detail="Klik untuk melihat rincian";
+share.tmpmem="Memori Sementara";
+share._1h="Setiap jam";
+share._2h="Setiap 2 jam";
+share._3h="Setiap 3 jam";
+share._4h="Setiap 4 jam";
+share._5h="Setiap 5 jam";
+share._6h="Setiap 6 jam";
+share._12h="Setiap 12 jam";
+share._24h="Setiap hari";
+share._48h="Setiap 2 hari";
+share._168h="Setiap minggu";
+share.days="Hari";
 share.from2=share.from;
 share.to2=share.to;
 share.days_genetive=share.days;
-share.standard="Standard";
-share.execscript="Execute script";
-share.user="User";
-share.privatekey="Private Key";
+share.standard="Standar";
+share.execscript="Eksekusi skrip";
+share.user="Pengguna";
+share.privatekey="Kunci Privat";
 share.bytes="B";
 share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
-share.preempt="Preemption";
-share.acktiming="ACK Timing";
-share.broadcast="Broadcast Support";
+share.preempt="Pendahuluan";
+share.acktiming="Timing ACK";
+share.broadcast="Dukungan Broadcast";
 share.secondcharacter="s";
-share.change="User Password Change";
-share.copy="Copy";
-share.paste="Paste";
-share.bad_request="BAD REQUEST";
-share.unauthorized="UNAUTHORIZED";
-share.tcp_error="TCP ERROR";
-share.request_timeout="REQUEST TIMEOUT";
-share.not_implemented="NOT IMPLEMENTED";
-share.not_found="NOT FOUND";
-share.file_not_found=" The file %s was not found.";
-share.auth_required=" Authorization required. Wrong username and/or password!";
-share.unexpected_connection_close=" Unexpected connection close in initial request.";
-share.unexpected_connection_close_2=" Unexpected connection close.";
-share.request_timeout_desc=" No request appeared within a reasonable time period.";
-share.cant_parse_no_path=" Cannot parse request. (no path given)";
-share.cant_parse_no_proto=" Cannot parse request. (no protocol given)";
-share.method_unimpl=" Method %s is not implemented.";
-share.no_slash=" Bad filename. (no leading slash)";
-share.threaten_fs=" Illegal filename. (filename will threaten local filesystem)";
-share.cross_site=" Cross Site Action detected!";
-share.cross_site_ref=" Cross Site Action detected! (referer %s)";
-share.no_wifi_access=" Cannot use the wireless interface to access Web UI.";
-share.sysloglegend="System Log";
-share.syslogdisabled="No messages available, syslogd is not enabled!";
-share.actiontbl="Action";
-share.show="Show";
-share.hide="Hide";
-share.down="down";
-share.excluded="Excluded";
-share.not_prefered="Not prefered";
-share.prefered="Prefered";
+share.change="Perubahan Kata Sandi Pengguna";
+share.copy="Salin";
+share.paste="Tempel";
+share.bad_request="PERMINTAAN BURUK";
+share.unauthorized="TIDAK DIIZINKAN";
+share.tcp_error="KESALAHAN TCP";
+share.request_timeout="PERMINTAAN WAKTU HABIS";
+share.not_implemented="TIDAK DIIMPLEMENTASIKAN";
+share.not_found="TIDAK DITEMUKAN";
+share.file_not_found=" Berkas %s tidak ditemukan.";
+share.auth_required=" Otorisasi diperlukan. Nama pengguna dan/atau kata sandi salah!";
+share.unexpected_connection_close=" Koneksi tak terduga ditutup pada permintaan awal.";
+share.unexpected_connection_close_2=" Koneksi tak terduga ditutup.";
+share.request_timeout_desc=" Tidak ada permintaan yang muncul dalam jangka waktu yang wajar.";
+share.cant_parse_no_path=" Tidak dapat mengurai permintaan. (tidak ada jalur yang diberikan)";
+share.cant_parse_no_proto=" Tidak dapat mengurai permintaan. (tidak ada protokol yang diberikan)";
+share.method_unimpl=" Metode %s tidak diimplementasikan.";
+share.no_slash=" Nama berkas salah. (tanpa garis miring di awal)";
+share.threaten_fs=" Nama berkas ilegal. (nama berkas akan mengancam sistem berkas lokal)";
+share.cross_site=" Tindakan Lintas Situs terdeteksi!";
+share.cross_site_ref=" Tindakan Lintas Situs terdeteksi! (referer %s)";
+share.no_wifi_access=" Tidak bisa menggunakan antarmuka wireless untuk mengakses Web UI.";
+share.sysloglegend="Log Sistem";
+share.syslogdisabled="Tidak ada pesan tersedia, syslogd tidak diaktifkan!";
+share.actiontbl="Tindakan";
+share.show="Tampilan";
+share.hide="Sembunyikan";
+share.down="bawah";
+share.excluded="Dikecualikan";
+share.not_prefered="Tidak disukai";
+share.prefered="Disukai";
 share.normal="Normal";
-share.high="High";
-share.veryhigh="Very High";
+share.high="Tinggi";
+share.veryhigh="Sangat Tinggi";
 
-var sbutton=new Object();
-sbutton.save="Save";
-sbutton.download_config="Export Peer Config";
-sbutton.savetitle="Only save settings without commit";
-sbutton.apply="Save & Apply";
-sbutton.applied="Applying Settings";
-sbutton.applytitle="Apply settings immediately";
-sbutton.saving="Saved";
-sbutton.cmd="Executing";
-sbutton.cancel="Cancel Changes";
-sbutton.canceltitle="Cancel changes in this form only";
-sbutton.refres="Refresh";
-sbutton.clos="Close";
-sbutton.scrub="Scrub";
-sbutton.del="Delete";
-sbutton.continu="Continue";
-sbutton.add="Add";
-sbutton.remove="Remove";
-sbutton.modify="Modify";
-sbutton.deleted="Deleted";
-sbutton.delall="Delete All";
-sbutton.autorefresh="Auto Refresh is On";
-sbutton.backup="Backup";
-sbutton.restore="Restore";
-sbutton.restored="Restoring";
-sbutton.cptotext="Edit";
-sbutton.runcmd="Run Commands";
-sbutton.startup="Save Startup";
-sbutton.shutdown="Save Shutdown";
-sbutton.firewall="Save Firewall";
-sbutton.custom="Save Custom";
-sbutton.usb="Save USB";
-sbutton.wol="Wake Up";
-sbutton.add_wol="Add Host";
-sbutton.manual_wol="Manual Wake Up";
-sbutton.summary="Summary";
-sbutton.filterIP="Edit Filter List";
-sbutton.filterMac="Edit MAC Filter List";
-sbutton.filterSer="Add/Edit Service";
-sbutton.reboot="Reboot Router";
-//sbutton.help="   Help  ";
-sbutton.wl_client_mac="Wireless Client MAC List";
-sbutton.update_filter="Update Filter List";
-sbutton.join="Join";
-sbutton.log_in="Incoming Log";
-sbutton.log_out="Outgoing Log";
-sbutton.edit_srv="Add/Edit Service";
-sbutton.routingtab="Show Routing Table";
-sbutton.policytab="Show Policy Table";
-sbutton.wanmac="Get Current PC MAC Address";
-sbutton.dhcprel="DHCP Release";
-sbutton.dhcpren="DHCP Renew";
-sbutton.spectral_survey="Spectrum";
-sbutton.survey="Site Survey";
-sbutton.csurvey="Channel Survey";
-sbutton.wsurvey="Wiviz Survey";
-sbutton.upgrading="Upgrading";
-sbutton.upgrade="Upgrade";
-sbutton.preview="Preview";
-sbutton.allways_on="Always On";
-sbutton.allways_off="Always Off";
-sbutton.download="Download";
-sbutton.next="Next ›";
-sbutton.prev="‹ Previous";
+sbutton.save="Simpan";
+sbutton.download_config="Ekspor Konfigurasi Peer";
+sbutton.savetitle="Hanya simpan pengaturan tanpa komit";
+sbutton.apply="Simpan & Terapkan";
+sbutton.applied="Menerapkan setelan";
+sbutton.applytitle="Segera terapkan setelan";
+sbutton.saving="Disimpan";
+sbutton.cmd="Mengeksekusi";
+sbutton.cancel="Batalkan Perubahan";
+sbutton.canceltitle="Batalkan perubahan di form ini saja";
+sbutton.refres="Muat ulang";
+sbutton.clos="Tutup";
+sbutton.scrub="Gosok";
+sbutton.del="Hapus";
+sbutton.continu="Lanjutkan";
+sbutton.add="Tambah";
+sbutton.remove="Hapus";
+sbutton.modify="Ubah";
+sbutton.deleted="Dihapus";
+sbutton.delall="Hapus Semua";
+sbutton.autorefresh="Muat Ulang Otomatis Aktif";
+sbutton.backup="Cadangkan";
+sbutton.restore="Pulihkan";
+sbutton.restored="Memulihkan";
+sbutton.cptotext="Ubah";
+sbutton.runcmd="Jalankan perintah";
+sbutton.startup="Simpan Mulai";
+sbutton.shutdown="Simpan Matikan";
+sbutton.firewall="Simpan Firewall";
+sbutton.custom="Simpan Kustom";
+sbutton.usb="Simpan USB";
+sbutton.wol="Bangunkan";
+sbutton.add_wol="Tambah Host";
+sbutton.manual_wol="Bangunkan Manual";
+sbutton.summary="Ringkasan";
+sbutton.filterIP="Ubah Daftar Filter";
+sbutton.filterMac="Ubah Daftar Filter MAC";
+sbutton.filterSer="Tambah/Ubah Layanan";
+sbutton.reboot="Mulai Ulang Router";
+//sbutton.help="   Bantuan  ";
+sbutton.wl_client_mac="Daftar MAC Klien Nirkabel";
+sbutton.update_filter="Perbarui Daftar Filter";
+sbutton.join="Gabung";
+sbutton.log_in="Log Masuk";
+sbutton.log_out="Log Keluar";
+sbutton.edit_srv="Tambah/Ubah Layanan";
+sbutton.routingtab="Tampilkan Tabel Rute";
+sbutton.policytab="Tampilkan Tabel Kebijakan";
+sbutton.wanmac="Dapatkan Alamat MAC PC Saat Ini";
+sbutton.dhcprel="DHCP Lepas";
+sbutton.dhcpren="DHCP Perbarui";
+sbutton.spectral_survey="Spektrum";
+sbutton.survey="Survey Situs";
+sbutton.csurvey="Survey Channel";
+sbutton.wsurvey="Survey Wiviz";
+sbutton.upgrading="Memperbarui";
+sbutton.upgrade="Perbarui";
+sbutton.preview="Pratinjau";
+sbutton.allways_on="Selalu Aktif";
+sbutton.allways_off="Selalu Nonaktif";
+sbutton.download="Untuk";
+sbutton.next="Berikut ›";
+sbutton.prev="‹ Sebelum";
 
 // ** COMMON ERROR MESSAGES  **//
-var errmsg=new Object();
-errmsg.err0="You must input a username.";
-errmsg.err1="You must input a Router Name.";
-errmsg.err2="Out of range, please adjust the start IP address or the number of maximum DHCP users.";
-errmsg.err3="You must at least select a day.";
-errmsg.err4="The end time must be bigger than start time.";
-errmsg.err5="The MAC Address length is not correct.";
-errmsg.err6="You must input a password.";
-errmsg.err7="You must input a hostname.";
-errmsg.err8="You must input an IP Address or Domain Name.";
-errmsg.err9="Illegal DMZ IP Address.";
-errmsg.err10="Confirmed password did not match the entered password. Please re-enter password.";
-errmsg.err11="No spaces are allowed in the password value";
-errmsg.err12="You must input a command to run.";
-errmsg.err13="Upgrade failed.";
-errmsg.err45="Not available in HTTPS! Please connect in HTTP mode.";
-errmsg.err46="Not available in HTTPS";
+errmsg.err0="Anda harus memasukkan nama pengguna.";
+errmsg.err1="Anda harus memasukkan nama Router.";
+errmsg.err2="Di luar jangkauan, harap sesuaikan alamat IP awal atau jumlah pengguna DHCP maksimum.";
+errmsg.err3="Anda harus memilih setidaknya satu hari.";
+errmsg.err4="Waktu berakhir harus lebih besar dari waktu mulai.";
+errmsg.err5="Panjang Alamat MAC tidak benar.";
+errmsg.err6="Anda harus memasukkan kata sandi.";
+errmsg.err7="Anda harus memasukkan nama host.";
+errmsg.err8="Anda harus memasukkan Alamat IP or Nama Domain.";
+errmsg.err9="Alamat IP DMZ Illegal.";
+errmsg.err10="Kata sandi yang dikonfirmasi tidak cocok dengan kata sandi yang dimasukkan. Silakan masukkan kembali kata sandi.";
+errmsg.err11="Tidak ada spasi yang diizinkan dalam nilai kata sandi";
+errmsg.err12="Anda harus memasukkan perintah untuk menjalankannya.";
+errmsg.err13="Pembaruan gagal.";
+errmsg.err45="Tidak tersedia dalam HTTPS! Silakan terhubung dalam mode HTTP.";
+errmsg.err46="Tidak tersedia dalam HTTPS";
 
 //common.js error messages
-errmsg.err14=" value is out of range [";
-errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
-errmsg.err16="The second character of MAC must be even number: [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="The MAC Address is not correct.";
-errmsg.err18="The MAC Address length is not correct.";
-errmsg.err19="The MAC Address cannot be the broadcast address.";
-errmsg.err20="Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.";
-errmsg.err21="Invalid MAC address format.";
-errmsg.err22="The WAN MAC Address is not correct.";
-errmsg.err23="Invalid hex value ";
-errmsg.err24=" found in MAC address ";
-errmsg.err25="The key value is not correct.";
-errmsg.err26="The key length is not correct.";
-errmsg.err27="Illegal subnet mask.";
-errmsg.err28=" contained illegal characters, must be [ 0 - 9 ].";
-errmsg.err29=" contained illegal ASCII code.";
-errmsg.err30=" contained illegal hexadecimal digits.";
-errmsg.err31=" value is illegal.";
-errmsg.err32="IP address and gateway is not at same subnet mask.";
-errmsg.err33="IP address and gateway cannot be same.";
-errmsg.err34=" is not allowed to contain a space.";
-errmsg.err110="End number must be greater than the start number";
-errmsg.err111="Invalid IP address";
-errmsg.err112="Invalid input characters \"<invchars>\" in field \"<fieldname>\"";
-errmsg.err113="The mobility domain must be a 4 digit hex value";
+errmsg.err14=" nilai berada di luar jangkauan [";
+errmsg.err15="Alamat MAC WAN berada di luar jangkauan [00 - ff].";
+errmsg.err16="Karakter kedua MAC harus berupa angka genap: [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="Alamat MAC tidak benar.";
+errmsg.err18="panjang Alamat MAC tidak benar.";
+errmsg.err19="Alamat MAC tidak bisa menggunakan alamat broadcast.";
+errmsg.err20="Masukkan alamat MAC dalam format (xx:xx:xx:xx:xx:xx).";
+errmsg.err21="Format alamat MAC tidak valid.";
+errmsg.err22="Alamat MAC WAN tidak benar.";
+errmsg.err23="nilai hex tidak valid ";
+errmsg.err24=" ditemukan di alamat MAC ";
+errmsg.err25="Nilai kunci tidak benar.";
+errmsg.err26="Panjang kunci tidak benar.";
+errmsg.err27="Subnet mask illegal.";
+errmsg.err28=" mengandung karakter illegal, must be [ 0 - 9 ].";
+errmsg.err29=" mengandung kode ASCII illegal.";
+errmsg.err30=" mengandung digit heksadesimal illegal.";
+errmsg.err31=" nilai illegal.";
+errmsg.err32="Alamat IP dan gateway tidak berada pada subnet mask yang sama.";
+errmsg.err33="Alamat IP dan gateway tidak boleh sama.";
+errmsg.err34=" tidak diperbolehkan mengandung spasi.";
+errmsg.err110="Nomor akhir harus lebih besar dari nomor awal";
+errmsg.err111="Alamat IP tidak valid";
+errmsg.err112="Karakter masukan tidak valid \"<invchars>\" di kolom \"<fieldname>\"";
+errmsg.err113="Domain mobilitas harus berupa nilai heksadesimal 4 digit";
 
 //Wol.asp error messages
-errmsg.err35="You must input a MAC address to run.";
-errmsg.err36="You must input a network broadcast address to run.";
-errmsg.err37="You must input a UDP port to run.";
+errmsg.err35="Anda harus memasukkan alamat MAC untuk menjalankan.";
+errmsg.err36="Anda harus memasukkan alamat broadcast jaringan untuk menjalankan.";
+errmsg.err37="Anda harus memasukkan port UDP untuk menjalankan.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits";
-errmsg.err40="You have to enter a key for Key ";
-errmsg.err41="Invalid Length in key ";
-errmsg.err43="Rekey interval";
+errmsg.err38="Silakan masukkan Kunci Bersama!";
+errmsg.err39="Kunci tidak valid, harus antara 8 dan 63 karakter ASCII atau 64 digit heksadesimal";
+errmsg.err40="Anda harus memasukkan kunci untuk Kunci ";
+errmsg.err41="Panjang Tidak Valid dalam kunci ";
+errmsg.err43="Interval Rekey";
 
 //config.asp error messages
-errmsg.err42="Please select a configuration file to restore.";
+errmsg.err42="Silakan pilih file konfigurasi untuk dipulihkan.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="The total checks exceed 256 counts.";
+errmsg.err44="Total pemeriksaan melebihi 256 hitungan.";
 
 //Site_Survey.asp error messages
-errmsg.err47="invalid SSID.";
+errmsg.err47="SSID tidak valid.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B Only mode is not supported under WDS";
+errmsg.err48="WDS tidak kompatibel dengan konfigurasi router saat ini. Harap periksa poin-poin berikut :\n * Mode Nirkabel harus diatur ke AP \n * WPA2 tidak didukung di bawah WDS \n * Mode Jaringan Nirkabel B Saja tidak didukung di bawah WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="RADIUS is only available when radio is in AP mode.";
+errmsg.err49="RADIUS hanya tersedia saat radio berada dalam mode AP.";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="You must input a SSID.";
+errmsg.err50="Anda harus memasukan SSID.";
 
 // Management.asp error messages
-errmsg.err51="The router is currently set to the default username and password. As a security precaution, you must enter a new username and password before the Remote Management feature can be enabled. Click the OK button to change your username/password. Click the <em>Cancel</em> button to leave the Remote Management feature disabled.";
-errmsg.err52="Password confirmation does not match.";
+errmsg.err51="Router saat ini diatur ke nama pengguna dan kata sandi default. Sebagai tindakan pencegahan keamanan, Anda harus memasukkan nama pengguna dan kata sandi baru sebelum fitur Manajemen Jarak Jauh dapat diaktifkan. Klik tombol OK untuk mengubah nama pengguna/kata sandi Anda. Klik tombol <em>Batal</em> untuk membiarkan fitur Manajemen Jarak Jauh dinonaktifkan.";
+errmsg.err52="Konfirmasi kata sandi tidak cocok.";
 
 // Port_Services.asp error messages
 // err53 browser dialog box no HTML support
-errmsg.err53="After completing all actions, click the " + sbutton.apply + " button to save the settings.";
-errmsg.err54="You must input a Service Name.";
-errmsg.err55="The Service Name exists.";
+errmsg.err53="Setelah menyelesaikan semua tindakan, klik tombol " + sbutton.apply + " untuk menyimpan pengaturan.";
+errmsg.err54="Anda harus memasukan Nama Layanan.";
+errmsg.err55="Nama Layanan ada.";
 
 // QoS.asp error messages
-errmsg.err56="Port value is out of range [0 - 65535]";
+errmsg.err56="Nilai Port berada di luar jangkauan [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="Delete the Entry?";
-errmsg.err103=" must be lower than ";
+errmsg.err57="Hapus Entri?";
+errmsg.err103=" harus lebih rendah dari ";
 
 // Status_Lan.asp error messages
-errmsg.err58="Click to remove static lease entry";
-errmsg.err581="Click to disconnect PPTP client";
-errmsg.err582="Click to add entry to static leases";
+errmsg.err58=" Klik untuk hapus entri lease statis";
+errmsg.err581="Klik untuk putuskan sambungan klien PPTP";
+errmsg.err582="Klik untuk tambahkan entrii ke lease statis";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Not available! Please enable the Wireless Network.";
+errmsg.err59="Tidak tersedia! Harap aktifkan Jaringan Nirkabel.";
 
 //Upgrade.asp error messages
-errmsg.err60="Please select a firmware file to upgrade.";
-errmsg.err61="Incorrect firmware file!";
+errmsg.err60="Silakan pilih berkas firmware untuk upgrade.";
+errmsg.err61="Berkas firmware salah!";
 
 //Services.asp error messages
-errmsg.err62=" is already defined as a static lease.";
+errmsg.err62=" sudah didefinisikan sebagai lease statis.";
 
 //Saving message
-errmsg.err100="Processing...<br />Please wait.";
-errmsg.err101="Restoring configuration file...<br />Please wait.";
-errmsg.err102="Upgrading firmware...<br />Please wait.";
-errmsg.err103="Invalid symbol detected";
+errmsg.err100="Memproses...<br />Mohon tunggu.";
+errmsg.err101="Mengembalikan berkas konfigurasi...<br />Mohon tunggu.";
+errmsg.err102="Upgrading firmware...<br />Mohon tunggu.";
+errmsg.err103="Simbol tidak valid terdeteksi";
 
-errmsg.err104="scanning is not supported in AP mode on this device";
+errmsg.err104="memindai tidak didukung di mode AP di perangkat ini";
 
 // **  COMMON MENU ENTRIES  **//
-var bmenu= new Object();
-bmenu.setup="Setup";
-bmenu.setupbasic="Basic Setup";
+bmenu.setup="Pengaturan";
+bmenu.setupbasic="Pengaturan Dasar";
 bmenu.setupipv6="IPv6";
 bmenu.setupddns="DDNS";
-bmenu.setupmacclone="MAC Address Clone";
-bmenu.setuprouting="Advanced Routing";
-bmenu.setupvlan="Switch Config";
-bmenu.setupeop="Tunnels";
-bmenu.networking="Networking";
+bmenu.setupmacclone="Klon Alamat MAC";
+bmenu.setuprouting="Rute Lanjutan";
+bmenu.setupvlan="Konfigurasi Switch";
+bmenu.setupeop="Terowongan";
+bmenu.networking="Jaringan";
 
-bmenu.wireless="Wireless";
-bmenu.wirelessBasic="Basic Settings";
+bmenu.wireless="Nirkabel";
+bmenu.wirelessBasic="Pengaturan Dasar";
 bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
-bmenu.wirelessSecurity="Wireless Security";
+bmenu.wirelessSecurity="Keamanan Nirkabel";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
 bmenu.wirelessWPS="WPS";
-bmenu.wirelessMac="MAC Filter";
-bmenu.wirelessAdvanced="Advanced Settings";
-bmenu.wirelessAdvancedwl0="wl0-Advanced";
-bmenu.wirelessAdvancedwl1="wl1-Advanced";
-bmenu.wirelessAdvancedwl2="wl2-Advanced";
+bmenu.wirelessMac="Saring MAC";
+bmenu.wirelessAdvanced="Pengaturan Lanjutan";
+bmenu.wirelessAdvancedwl0="wl0-Lanjutan";
+bmenu.wirelessAdvancedwl1="wl1-Lanjutan";
+bmenu.wirelessAdvancedwl2="wl2-Lanjutan";
 bmenu.wirelessWds="WDS";
 bmenu.wirelessWds0="wlan0-WDS";
 bmenu.wirelessWds1="wlan1-WDS";
@@ -513,655 +508,615 @@ bmenu.wirelessWdswl0="wl0-WDS";
 bmenu.wirelessWdswl1="wl1-WDS";
 bmenu.wirelessWdswl2="wl2-WDS";
 bmenu.wirelessRoaming="Roaming";
-bmenu.security="Security";
+bmenu.security="Keamanan";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN Passthrough";
+bmenu.vpn="Passthrough VPN";
 
-bmenu.accrestriction="Access Restrictions";
-bmenu.webaccess="WAN Access";
+bmenu.accrestriction="Pembatasan Akses";
+bmenu.webaccess="Akses WAN";
 
 bmenu.applications="NAT / QoS";
-bmenu.applicationsprforwarding="Port Range Forwarding";
-bmenu.applicationspforwarding="Port Forwarding";
-bmenu.applicationsipforwarding="IP Forwarding (1:1 NAT)";
-bmenu.applicationsptriggering="Port Triggering";
+bmenu.applicationsprforwarding="Penerusan Jarak Port";
+bmenu.applicationspforwarding="Penerusan Port";
+bmenu.applicationsipforwarding="Penerusan IP (1:1 NAT)";
+bmenu.applicationsptriggering="Pemicu Port";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
 
 bmenu.sipath="SIPatH";
-bmenu.sipathoverview="Overview";
-bmenu.sipathphone="Phonebook";
+bmenu.sipathoverview="Ikhtisar";
+bmenu.sipathphone="Buku Telepon";
 bmenu.sipathstatus="Status";
 
-bmenu.admin="Administration";
-bmenu.adminManagement="Management";
-bmenu.adminAlive="Keep Alive";
+bmenu.admin="Administrasi";
+bmenu.adminManagement="Manajemen";
+bmenu.adminAlive="Tetap Hidup";
 bmenu.adminSysctl="Sysctl";
 bmenu.adminLog="Log";
-bmenu.adminDiag="Commands";
+bmenu.adminDiag="Perintah";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Factory Defaults";
-bmenu.adminUpgrade="Firmware Upgrade";
-bmenu.adminBackup="Backup";
+bmenu.adminFactory="Bawaan Pabrik";
+bmenu.adminUpgrade="Perbarui Firmware";
+bmenu.adminBackup="Cadangkan";
 
-bmenu.services="Services";
-bmenu.servicesServices="Services";
+bmenu.services="Layanan";
+bmenu.servicesServices="Layanan";
 bmenu.servicesRadius="FreeRADIUS";
-bmenu.servicesPppoesrv="PPPoE Server";
+bmenu.servicesPppoesrv="Server PPPoE";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesPrivoxy="Ad Blocking";
+bmenu.servicesPrivoxy="Pemblokiran Iklan";
 bmenu.servicesSpeedchecker="SpeedChecker";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuWLAN="Wireless";
+bmenu.statuWLAN="Nirkabel";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
-bmenu.statuSysInfo="Sys Info";
-bmenu.statuActivate="Activate";
-bmenu.statuMyPage="My Page";
-bmenu.statuGpio="GPIO I/O";
+bmenu.statuSysInfo="Informasi sistem";
+bmenu.statuActivate="Aktivasi";
+bmenu.statuMyPage="Laman Saya";
+bmenu.statuGpio="I/O GPIO";
 bmenu.statuSyslog="Syslog";
-bmenu.setupnetw="Network";
-bmenu.adminman="Management";
+bmenu.setupnetw="Jaringan";
+bmenu.adminman="Manajemen";
 
 // sysctl.asp
-var sysctl=new Object();
-sysctl.titl="Sysctl Configuration";
+sysctl.titl="Konfigurasi Sysctl";
 
 // ** Alive.asp **//
-var alive=new Object();
-alive.titl="Keep Alive";
-alive.h2="Keep Alive Management";
-alive.legend="Schedule Reboot";
-alive.sevr1="Enable Schedule";
-alive.hour="At a Set Time";
-alive.legend2="WDS / Connection Watchdog";
-alive.sevr2="Enable Watchdog";
-alive.IP="IP Addresses";
-alive.legend3="Proxy / Connection Watchdog";
+alive.titl="Tetap Hidup";
+alive.h2="Manajemen Tetap Hidup";
+alive.legend="Jadwalkan Mulai Ulang";
+alive.sevr1="Aktifkan Jadwal";
+alive.hour="Pada Waktu Tertentu";
+alive.legend2="WDS / Pengawas Koneksi";
+alive.sevr2="Aktifkan Pengawas";
+alive.IP="Alamat IP";
+alive.legend3="Proksi / Pengawas Koneksi";
 alive.sevr3="Enable Watchdog";
-alive.IP2="Proxy IP Address";
-alive.port="Proxy Port";
-alive.mode0="Any Dropped IPs for Reboot";
-alive.mode1="All Dropped IPs for Reboot";
-alive.timeout="Ping Timeout";
+alive.IP2="Proksi Alamat IP";
+alive.port="Proksi Port";
+alive.mode0="IP apa saja yang Dihapus untuk Mulai Ulang";
+alive.mode1="Semua IP yang Dihapus untuk Mulai Ulang";
+alive.timeout="Waktu habis Ping";
 
 //help container
-var halive=new Object();
-halive.right2="Choose a schedule when to reboot the router. Cron <b>must be enabled</b> in the management tab.";
-halive.right4="<b>" + alive.IP + "</b>: Only a maximum of <b>three</b> IP addresses separated by a <em>SPACE</em> are allowed.";
+halive.right2="Pilih jadwal kapan router akan di-boot ulang. Cron <b>harus diaktifkan</b> di tab manajemen.";
+halive.right4="<b>" + alive.IP + "</b>: Hanya maksimal <b>tiga</b> alamat IP yang dipisahkan oleh <em>SPASI</em> yang diizinkan.";
 
 //help page
-halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after the set amount of seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
-halive.page2="<dd></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot +"</em> button to reboot the router immediately.</dd>";
+halive.page1="<dd>Anda dapat menjadwalkan mulai ulang rutin untuk router:<ul><li>Secara rutin setelah jumlah detik yang ditetapkan.</li><li>Pada waktu tanggal tertentu setiap minggu atau setiap hari.</li></ul><br /><div class=\"note\"><h4>Catatan:</h4><div>Untuk reboot berdasarkan tanggal, Cron harus diaktifkan. Lihat <a href=\"HManagement.asp\">Manajemen</a> untuk aktivasi Cron.</div></div></dd>";
+halive.page2="<dd></dd><dd>Periksa semua nilai dan klik tombol <em>" + sbutton.save + "</em> untuk menyimpan pengaturan Anda. Klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan. Klik tombol <em>" + sbutton.reboot +"</em> untuk memulai ulang router segera.</dd>";
 
 // ** config.asp **//
-var config=new Object();
-config.titl="Backup & Restore";
-config.h2="Backup Configuration";
-config.legend="Backup Settings";
-config.mess1="Click the <em>" + sbutton.backup + "</em> button to download your current configuration settings file to disk.";
-config.h22="Restore Configuration";
-config.legend2="Restore Settings";
-config.mess2="Select a file to restore";
-config.mess3="W A R N I N G";
-config.mess4="Only upload a backup file generated with DD-WRT's firmware and from the same model of router.<br />Do not upload any backup configuration files that were not created by this interface!";
-config.force="Ignore router model check";
-config.keepip="Keep Router IP";
-config.keepsettings="Keep previous existing settings";
+config.titl="Cadangkan & Pulihkan";
+config.h2="Cadangkan Konfigurasi";
+config.legend="Cadangkan Pengaturan";
+config.mess1="Klik tombol <em>" + sbutton.backup + "</em> untuk mengunduh file pengaturan konfigurasi Anda saat ini ke disk.";
+config.h22="Pulihkan Konfigurasi";
+config.legend2="Pulihkan Pengaturan";
+config.mess2="Pilih file untuk dipulihkan";
+config.mess3="P E R I N G A T A N";
+config.mess4="Hanya unggah file cadangan yang dibuat dengan firmware DD-WRT dan dari model router yang sama.<br />Jangan unggah file konfigurasi cadangan apa pun yang tidak dibuat oleh antarmuka ini!";
+config.force="Abaikan pemeriksaan model router";
+config.keepip="Pertahankan IP Router";
+config.keepsettings="Pertahankan pengaturan yang ada sebelumnya";
 
 //help container
-var hconfig=new Object();
-hconfig.right2="You may backup your current configuration in case you need to reset the router back to factory default settings.<br /><br />Tip: Over terminal type <b>nvram show > /tmp/mybackup.txt</b> and grab that file to your desktop for a human readable backup of your current configuration, which can be used for reference purposes only.";
-hconfig.right4="Click the <em>Browse...</em> button to search for a backup configuration file that you have previously saved to disk.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite <b>all current configuration settings</b> with the values in the backup file.";
+hconfig.right2="Anda dapat mencadangkan konfigurasi Anda saat ini jika Anda perlu mengatur ulang router kembali ke pengaturan default pabrik.<br /><br />Tips: Ketik <b>nvram show > /tmp/mybackup.txt</b> di terminal dan ambil file tersebut ke desktop Anda untuk membuat cadangan konfigurasi Anda saat ini yang dapat dibaca manusia, yang dapat digunakan hanya untuk tujuan referensi.";
+hconfig.right4="Klik tombol <em>Telusuri...</em> untuk mencari berkas konfigurasi cadangan yang sebelumnya telah Anda simpan ke dalam disk.<br /><br />Klik tombol <em>" + sbutton.restore + "</em> untuk menimpa <b>semua pengaturan konfigurasi saat ini</b> dengan nilai dalam berkas cadangan.";
 
 // help page
-hconfig.page1="<dd>You may backup your current configuration in case you need to reset the router back to factory default settings.</dd><dt>";
-hconfig.page2="</dt><dd>Click the <em>" + sbutton.backup + "</em> button to backup your current configuration to a file saved to disk.<br /> Tip: Over terminal type <b>nvram show > /tmp/mybackup.txt</b> and grab that file to desktop for a human readable backup of your current configuration.</dd>";
-hconfig.page3="<dd>Click the <i>Browse...</i> button to search for a backup configuration file that you have previously saved to disk.<br>Click the <em>" + sbutton.restore + "</em> button to overwrite <b>all current configuration settings</b> with the values in the backup file.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Only upload a backup file generated with DD-WRT's firmware and from the same model of router.</dd></div></dd>";
+hconfig.page1="<dd>Anda dapat mencadangkan konfigurasi Anda saat ini jika Anda perlu mengatur ulang router kembali ke pengaturan default pabrik.</dd><dt>";
+hconfig.page2="</dt><dd>Klik tombol <em>" + sbutton.backup + "</em> untuk mencadangkan konfigurasi Anda saat ini ke file yang disimpan di disk.<br /> Tip: Pada terminal, ketik <b>nvram show > /tmp/mybackup.txt</b> dan ambil file itu ke desktop untuk cadangan yang dapat dibaca manusia dari konfigurasi Anda saat ini.</dd>";
+hconfig.page3="<dd>Klik tombol <i>Telusuri...</i> untuk mencari berkas konfigurasi cadangan yang sebelumnya telah Anda simpan ke dalam disk.<br>Klik tombol <em>" + sbutton.restore + "</em> untuk menimpa <b>semua pengaturan konfigurasi saat ini</b> dengan nilai dalam berkas cadangan.<br /><br /><div class=\"note\"><h4>Catatan:</h4><div>Hanya unggah file cadangan yang dibuat dengan firmware DD-WRT dan dari model router yang sama.</dd></div></dd>";
 
 // ** DDNS.asp **//
-var ddns=new Object();
-ddns.titl="Dynamic DNS";
-ddns.h2="Dynamic Domain Name System (DDNS)";
-ddns.legend="DDNS Configuration";
-ddns.srv="Enable Service";
-ddns.emailaddr="Email Address";
-ddns.typ="Type";
-ddns.custom="Custom";
+ddns.titl="DNS Dinamis";
+ddns.h2="Sistem Nama Domain Dinamis (DDNS)";
+ddns.legend="Konfiguradi DDNS";
+ddns.srv="Aktifkan Layanan";
+ddns.emailaddr="Alamat Email";
+ddns.typ="Jenis";
+ddns.custom="Kustom";
 ddns.wildcard="Wildcard";
-ddns.statu="Service Status";
-ddns.system="Dynamic DNS Server";
-ddns.options="Additional Options";
-ddns.forceupd="Force Update Interval";
-ddns.wanip="Use External IP Check";
-ddns.hlp="DDNS Service";
-ddns.ssl="Use SSL";
-ddns.ipv6_only="Update only IPv6 Address";
+ddns.statu="Status Layanan";
+ddns.system="Server DNS Dinamis";
+ddns.options="Opsi Tambahan";
+ddns.forceupd="Interval Pembaruan Paksa";
+ddns.wanip="Gunakan Pemeriksaan IP Eksternal";
+ddns.hlp="Layanan DDNS";
+ddns.ssl="Gunakan SSL";
+ddns.ipv6_only="Perbarui hanya Alamat IPv6";
 
-var ddnsm=new Object();
-ddnsm.all_closed="The DDNS server is currently closed";
-ddnsm.all_resolving="Resolving domain name";
-ddnsm.all_errresolv="Domain name resolve failed";
-ddnsm.all_connecting="Connecting to server";
-ddnsm.all_success="Success";
-ddnsm.all_connectfail="Connect to server failed";
-ddnsm.all_disabled="DDNS function is disabled";
-ddnsm.all_noip="No WAN connection";
+ddnsm.all_closed="Server DDNS saat ini ditutup";
+ddnsm.all_resolving="Menyelesaikan nama domain";
+ddnsm.all_errresolv="Penyelesaian nama domain gagal";
+ddnsm.all_connecting="Menghubungkan ke server";
+ddnsm.all_success="Sukses";
+ddnsm.all_connectfail="Koneksi ke server gagal";
+ddnsm.all_disabled="Fungsi DDNS dinonaktifkan";
+ddnsm.all_noip="Tidak ada koneksi WAN";
 
 //help container
-var hddns=new Object();
-hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manager changes IP addresses and updates your domain information dynamically. You must sign up for services through e.g. DynDNS.org, freedns.afraid.org or other similar dynamic DNS service.";
-hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automatically when your IP address has changed. Be aware of your DNS provider's update abuse policy to avoid having your hostname or domain blocked.";
+hddns.right2="DDNS memungkinkan Anda mengakses jaringan menggunakan nama domain, bukan alamat IP. Pengelola layanan mengubah alamat IP dan memperbarui informasi domain Anda secara dinamis. Anda harus mendaftar untuk layanan melalui misalnya DynDNS.org, freedns.afraid.org atau layanan DNS dinamis serupa lainnya.";
+hddns.right4="Ketikkan angka integer di kotak untuk mengatur interval pembaruan paksa (dalam hari). Pembaruan hanya boleh dilakukan secara otomatis saat alamat IP Anda berubah. Ketahui kebijakan penyalahgunaan pembaruan penyedia DNS Anda untuk menghindari pemblokiran nama host atau domain Anda.";
 
 //help page
-hddns.page1="<dd>The router offers a Dynamic Domain Name System (DDNS) feature. DDNS lets you assign a fixed host and domain name to a dynamic external IP address. It is useful when you are hosting your own website, or any other server behind the router which is accessible via the Internet. To use this feature, you need to sign up for DDNS service at e.g. <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, one of the several DDNS service provider supported by DD-WRT.</dd>";
-hddns.page2="<dd>To disable DDNS service, keep the default setting, <em>" + share.disable + "</em>. To enable DDNS service, follow these instructions:<ol class=\"wide\"><li>Sign up for DDNS service at e.g. <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, and write down your User Name, Password, and Host Name information.</li><li>On the DDNS screen, select the <i>DynDNS.org</i> option from the drop down menu.</li><li>Complete the <em>" + share.usrname + "</em>, <em>" + share.passwd + "</em>, and <em>" + share.hostname + "</em> fields.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel unsaved changes.</li></ol><br />You can now access your router from the Internet with the domain you have chosen.</dd>";
-hddns.page3="<dd>The <em>Static</em> DNS service is similar to the <em>Dynamic</em> DNS service, in that it allows a hostname such as yourname.dyndns.org to point to your IP address. Unlike a <em>Dynamic</em> DNS host, a <em>Static</em> DNS host does not expire after 35 days without updates, but updates take longer to propagate though the DNS system.<br />DynDNS' <em>Custom</em> DNS service provides a managed primary DNS solution, giving you complete control over an entire domain name and providing a unified primary/secondary DNS service. A web-based interface provides two levels of control over your domain, catering to average or power users.</dd>";
-hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname.</dd>";
-hddns.page5="<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>";
-hddns.page6="<dd>The status of the DDNS service connection is displayed here.</dd>";
+hddns.page1="<dd>Router menawarkan fitur Dynamic Domain Name System (DDNS). DDNS memungkinkan Anda menetapkan host dan nama domain tetap ke alamat IP eksternal yang dinamis. Fitur ini berguna saat Anda menghosting situs web Anda sendiri, atau server lain di belakang router yang dapat diakses melalui Internet. Untuk menggunakan fitur ini, Anda perlu mendaftar ke layanan DDNS di misalnya <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, salah satu dari beberapa penyedia layanan DDNS yang didukung oleh DD-WRT.</dd>";
+hddns.page2="<dd>Untuk menonaktifkan layanan DDNS, pertahankan pengaturan default, <em>" + share.disable + "</em>. Untuk mengaktifkan layanan DDNS, ikuti petunjuk berikut:<ol class=\"wide\"><li>Daftar untuk layanan DDNS di misalnya <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, dan tuliskan informasi Nama Pengguna, Kata Sandi, dan Nama Host Anda.</li><li>Di layar DDNS, pilih opsi <i>DynDNS.org</i> dari menu drop down.</li><li>Isi kolom <em>" + share.usrname + "</em>, <em>" + share.passwd + "</em>, dan <em>" + share.hostname + "</em></li><li>Klik tombol <em>" + sbutton.save + "</em> untuk menyimpan perubahan. Klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan.</li></ol><br />Anda sekarang dapat mengakses router Anda dari Internet dengan domain yang telah Anda pilih.</dd>";
+hddns.page3="<dd>Layanan DNS <em>Statis</em> mirip dengan layanan DNS <em>Dinamis</em>, yang memungkinkan nama host seperti namaanda.dyndns.org untuk menunjuk ke alamat IP Anda. Tidak seperti host DNS <em>Dinamis</em>, host DNS <em>Statis</em> tidak kedaluwarsa setelah 35 hari tanpa pembaruan, tetapi pembaruan memerlukan waktu lebih lama untuk disebarkan melalui sistem DNS.<br />Layanan DNS <em>Kustom</em> DynDNS menyediakan solusi DNS primer terkelola, yang memberi Anda kendali penuh atas seluruh nama domain dan menyediakan layanan DNS primer/sekunder terpadu. Antarmuka berbasis web menyediakan dua tingkat kendali atas domain Anda, yang melayani pengguna rata-rata atau pengguna berpengalaman.</dd>";
+hddns.page4="<dd>Mengaktifkan fitur wildcard untuk host Anda menyebabkan *.hostanda.dyndns.org diberi alias ke alamat IP yang sama dengan hostanda.dyndns.org. Fitur ini berguna jika Anda ingin dapat menggunakan, misalnya, www.hostanda.dyndns.org dan tetap dapat mengakses nama host Anda.</dd>";
+hddns.page5="<dd>Ketikkan angka integer di kotak untuk mengatur interval pembaruan paksa (dalam hari). Pembaruan paksa adalah pembaruan yang akan dilakukan meskipun alamat IP Anda masih sama. Pembaruan paksa diperlukan, terutama bagi pengguna non-donator dyndns.org, untuk menghindari nama host dihapus.</dd>";
+hddns.page6="<dd>Status dari koneksi layanan DDNS ditampilkan disini.</dd>";
 
 // ** Diagnostics.asp **//
-var diag=new Object();
-diag.titl="Diagnostics and Commands";
-diag.h2="Diagnostics and Commands";
-diag.legend="Command Shell";
-diag.cmd="Commands";
-diag.output="Output";
-diag.startup="Startup";
-diag.shutdown="Shutdown";
+diag.titl="Diagnostik dan Perintah";
+diag.h2="Diagnostik dan Perintah";
+diag.legend="Shell Perintah";
+diag.cmd="Perintah";
+diag.output="Keluaran";
+diag.startup="Mulai";
+diag.shutdown="Matikan";
 diag.firewall="Firewall";
-diag.usb="USB Script";
-diag.custom="Custom Script";
-diag.running="Running";
-diag.stopped="Stopped";
+diag.usb="Skrip USB";
+diag.custom="Skrip Kustom";
+diag.running="Berjalan";
+diag.stopped="Dihentikan";
 
 //help container
-var hdiag=new Object();
-hdiag.right2="You can run commands via the Web interface. Fill the input area with the desired command and click the <em>" + sbutton.runcmd + "</em> button to execute.<br/><b>Recommended</b>: a terminal connection via SSH/Telnet is a more suitable, flexible, faster and reliable for some commands.";
+hdiag.right2="Anda dapat menjalankan perintah melalui antarmuka Web. Isi area input dengan perintah yang diinginkan dan klik tombol <em>" + sbutton.runcmd + "</em> untuk menjalankannya.<br/><b>Direkomendasikan</b>: koneksi terminal melalui SSH/Telnet lebih cocok, fleksibel, cepat, dan andal untuk beberapa perintah.";
 
 //help page
-hdiag.page1="<dd><b>Recommended</b>: A terminal connection via SSH/Telnet is a more suitable, flexible, faster and reliable for some commands.</dd>";
-hdiag.page2="<dd>Fill the input area with the desired command and click the <em>" + sbutton.runcmd + "</em> button to execute command.</dd>";
-hdiag.page3="<dd>You can specify certain commands to be executed during router startup. Fill the input area with the desired commands (only one command per row) and click the <em>" + sbutton.startup + "</em> button.</dd>";
-hdiag.page4="<dd>Each time the firewall is started custom firewall rules can added to the chain. Fill the input area with additional iptables/ip6tables commands (only one command per row) and click the <em>" + sbutton.firewall + "</em> button.</dd>";
-hdiag.page5="<dd>A custom script is stored in <b>/tmp/.rc_custom</b>. You can run it manually or use Cron to execute the contents. Fill the input area with the desired commands (only one command per row) and click the <em>" + sbutton.custom + "</em> button.<br /><br /><div class=\"note\"><h4>Note:</h4><div><ul><li>Startup commands are stored in NVRAM rc_startup variable</li><li>Firewall commands are stored in NVRAM rc_firewall variable</li><li>Custom script is stored in NVRAM rc_custom variable</li></ul></div></div></dd>";
+hdiag.page1="<dd><b>Direkomendasikan</b>: koneksi terminal melalui SSH/Telnet lebih cocok, fleksibel, cepat, dan andal untuk beberapa perintah.</dd>";
+hdiag.page2="<dd>Isi area input dengan perintah yang diinginkan dan klik tombol <em>" + sbutton.runcmd + "</em> untuk menjalankan perintah.</dd>";
+hdiag.page3="<dd>Anda dapat menentukan perintah tertentu untuk dijalankan selama router dinyalakan. Isi area input dengan perintah yang diinginkan (hanya satu perintah per baris) dan klik tombol <em>" + sbutton.startup + "</em>.</dd>";
+hdiag.page4="<dd>Setiap kali firewall dimulai, aturan firewall khusus dapat ditambahkan ke rantai. Isi area input dengan perintah iptables/ip6tables tambahan (hanya satu perintah per baris) dan klik tombol <em>" + sbutton.firewall + "</em>.</dd>";
+hdiag.page5="<dd>Skrip kustom disimpan di <b>/tmp/.rc_custom</b>. Anda dapat menjalankannya secara manual atau menggunakan Cron untuk menjalankan isinya. Isi area input dengan perintah yang diinginkan (hanya satu perintah per baris) dan klik tombol <em>" + sbutton.custom + "</em>.<br /><br /><div class=\"note\"><h4>Catatan:</h4><div><ul><li>Mulai disimpan dalam variabel NVRAM rc_startup</li><li>Firewall disimpan dalam variabel NVRAM rc_firewall</li><li>Skrip kustom is disimpan dalam variabel NVRAM rc_custom</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
-var dmz=new Object();
 dmz.titl="DMZ";
-dmz.h2="Demilitarized Zone (DMZ)";
-dmz.legend="Perimeter Network";
-dmz.serv="Enable DMZ";
-dmz.host="DMZ Host IP Address";
+dmz.h2="Zona Demiliterisasi (DMZ)";
+dmz.legend="Jaringan Perimeter";
+dmz.serv="Aktifkan DMZ";
+dmz.host="Alamat IP Host DMZ";
 
 //help container
-var hdmz=new Object();
-hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
+hdmz.right2="Mengaktifkan opsi ini akan mengekspos host yang ditentukan ke Internet. Semua port akan dapat diakses dari Internet.";
 
 //help page
-hdmz.page1="<dd>The DMZ (Demilitarized Zone) hosting feature allows one local user to be exposed to the Internet for use of a special-purpose service such as Internet gaming or videoconferencing. DMZ hosting forwards all the ports at the same time to one device. The Port Forwarding feature is more secure because it only opens the ports you want to have opened, while DMZ hosting opens all the ports of one computer, exposing the device so the Internet can see it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any device whose port is being forwarded must have a new static IP address assigned to it because the IP address may change when using the DHCP function.</div></div></dd>";
-hdmz.page2="<dd>To expose one device to the Internet, select <em>" + share.enable + "</em> and enter the computer's IP address in the <em>" + dmz.host + "</em> field.<br /><br />To disable the DMZ, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+hdmz.page1="<dd>Fitur hosting DMZ (Zona Demiliterisasi) memungkinkan satu pengguna lokal untuk terhubung ke Internet guna menggunakan layanan khusus seperti permainan Internet atau konferensi video. Hosting DMZ meneruskan semua port pada saat yang sama ke satu perangkat. Fitur Port Forwarding lebih aman karena hanya membuka port yang ingin Anda buka, sedangkan hosting DMZ membuka semua port pada satu komputer, sehingga perangkat tersebut dapat dilihat oleh Internet.<br /><br /><div class=\"note\"><h4>Catatan:</h4><div>Perangkat apa pun yang port-nya diteruskan harus memiliki alamat IP statis baru yang ditetapkan padanya karena alamat IP dapat berubah saat menggunakan fungsi DHCP.</div></div></dd>";
+hdmz.page2="<dd>Untuk mengekspos satu perangkat ke Internet, pilih <em>" + share.enable + "</em> dan masukkan alamat IP komputer di kolom <em>" + dmz.host + "</em>.<br /><br />Untuk menonaktifkan DMZ, pertahankan pengaturan default, <em>" + share.disable + "</em>.</dd><dd>Klik tombol <em>" + sbutton.save + "</em> untuk menyimpan pengaturan Anda atau klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan.</dd>";
 
 // ** Factory_Defaults.asp **//
-var factdef=new Object();
-factdef.titl="Factory Defaults";
-factdef.h2="Configuration Management";
-factdef.legend="NVRAM Settings";
-factdef.restore="Restore to Factory Defaults";
-factdef.mess1="Warning! By clicking the OK button, the device will be reset to the factory default settings, erasing the current configuration.";
+factdef.titl="Bawaan Pabrik";
+factdef.h2="Manajemen Konfigurasi";
+factdef.legend="Pengaturan NVRAM";
+factdef.restore="Pulihkan ke Bawaan Pabrik";
+factdef.mess1="Peringatan! Dengan mengklik tombol OK, perangkat akan diatur ulang ke pengaturan default pabrik, menghapus konfigurasi saat ini.";
 
 //help container
-var hfactdef=new Object();
-hfactdef.right1="This will reset all current NVRAM settings back to the DD-WRT's default values. <b>All of your current settings will be erased</b>.";
+hfactdef.right1="Ini akan mengatur ulang semua pengaturan NVRAM saat ini kembali ke nilai default DD-WRT. <b>Semua pengaturan Anda saat ini akan dihapus</b>.";
 
 // help page
-hfactdef.page1="<dd>If you are having problems with your router (which might be the result of changing certain settings) you can restore the factory defaults.</dd>";
-hfactdef.page2="<dd>Click the <em>" + share.yes + "</em> button to reset all configuration settings to their default values. Then click the <em>" + sbutton.apply + "</em> button.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any settings you have saved will be lost when the default settings are restored. After resetting to defaults the router will reboot and will become accessible via the default IP address 192.168.1.1 and entering a new username and password is required before proceeding to the Web interface.</div></div></dd>";
+hfactdef.page1="<dd>Jika Anda mengalami masalah dengan router Anda (yang mungkin disebabkan oleh perubahan pengaturan tertentu), Anda dapat mengembalikan pengaturan default pabrik.</dd>";
+hfactdef.page2="<dd>Klik tombol <em>" + share.yes + "</em> untuk mengatur ulang semua pengaturan konfigurasi ke nilai defaultnya. Lalu klik tombol <em>" + sbutton.apply + "</em>.<br /><br /><div class=\"note\"><h4>Catatan:</h4><div>Semua pengaturan yang telah Anda simpan akan hilang saat pengaturan default dikembalikan. Setelah pengaturan ulang ke default, router akan melakukan boot ulang dan dapat diakses melalui alamat IP default 192.168.1.1 dan memasukkan nama pengguna dan kata sandi baru diperlukan sebelum melanjutkan ke antarmuka Web..</div></div></dd>";
 
 // ** FilterIPMAC.asp **//
-var filterIP=new Object();
-filterIP.titl="List of Clients";
-filterIP.h2="List of Clients";
-filterIP.legend1="Enter MAC Address of the clients in this format: xx:xx:xx:xx:xx:xx";
-filterIP.legend2="Enter the IP Address of the clients";
-filterIP.legend3="Enter the IP Range of the clients";
-filterIP.ip_range="IP Range";
+filterIP.titl="Daftar Klien";
+filterIP.h2="Daftar Klien";
+filterIP.legend1="Masukkan Alamat MAC klien dalam format ini: xx:xx:xx:xx:xx:xx";
+filterIP.legend2="Masukkan Alamat IP klien";
+filterIP.legend3="Masukkan Rentang IP klien";
+filterIP.ip_range="Jarak IP";
 
 // ** Filter.asp **//
-var filter=new Object();
-filter.titl="Access Restrictions";
-filter.h2="WAN Access";
-filter.legend="Access Policy";
-filter.pol="Policy";
-filter.polname="Policy Name";
-filter.pcs="List of Clients";
-filter.polallow="Internet access on the selected day(s) or time period.";
-filter.legend2="Day(s)";
-filter.time="Time Period";
+filter.titl="Pembatasan Akses";
+filter.h2="Akses WAN";
+filter.legend="Kebijakan Akses";
+filter.pol="Kebijakan";
+filter.polname="Nama Kebijakan";
+filter.pcs="Daftar Klien";
+filter.polallow="Akses Internet pada hari atau periode waktu yang dipilih.";
+filter.legend2="Hari";
+filter.time="Periode Waktu";
 filter.h24="24-Hour";
-filter.legend3="Blocked Services";
-filter.catchall="Catch all P2P Protocols";
-filter.legend4="Website Blocking by URL";
-filter.legend5="Website Blocking by Keyword";
-filter.legend6="Server Blocking by Country";
-filter.mess1="Delete the Policy?";
-filter.mess2="You must select a day or days.";
-filter.mess3="The selected end time must be greater than the start time.";
+filter.legend3="Layanan yang diblokir";
+filter.catchall="Tangkap semua protokol P2P";
+filter.legend4="Pemblokiran Situs Web oleh URL";
+filter.legend5="Pemblokiran Situs Web oleh Keyword";
+filter.legend6="Pemblokiran Server oleh Country";
+filter.mess1="Hapus Kebijakan?";
+filter.mess2="Anda harus memilih hari.";
+filter.mess3="Waktu akhir yang dipilih harus lebih besar dari waktu mulai.";
 filter.none="";
-filter.packetcount="Filtered Packets";
+filter.packetcount="Paket yang disaring";
 
 // ** FilterSummary.asp **//
-var filterSum=new Object();
-filterSum.titl="Access Restrictions Summary";
-filterSum.h2="Internet Policy Summary";
+filterSum.titl="Ringkasan Pembatasan Akses";
+filterSum.h2="Ringkasan Kebijakan Internet";
 filterSum.polnum="No.";
 filterSum.polday=filter.time;
 
 //help container
-var hfilter=new Object();
-hfilter.right2="You may define up to 20 access policies.<br />Click the <em>" + sbutton.del + "</em> button to delete a policy or the <em>" + sbutton.summary + "</em> button to see a summary of the policy.";
-hfilter.right4="Enable or disable a policy.";
-hfilter.right6="You may assign a name to your policy.";
-hfilter.right8="Choose the day of the week you would like your policy to be applied.";
-hfilter.right10="Enter the time of the day you would like your policy to apply.";
-hfilter.right12="You may choose to block access to certain services. Click the <em>" + sbutton.filterSer + "</em> button to modify these settings.";
-hfilter.right14="You can block access to certain websites by entering their URL.";
-hfilter.right16="You can block access to certain websites by the keywords contained in their Web page.";
-hfilter.pageintro="<dd>This screen allows you to block or allow specific kinds of Internet usage. You can set up Internet access policies for specific computers and set up filters by using network port numbers.</dd>";
-hfilter.page1="<dd>This feature allows you to customize up to ten different Internet Access Policies for particular devices, which are identified by their IP or MAC addresses. For each policy designated devices, during the days and time periods specified.<br /><br />To create or edit a policy, follow these instructions:<ol class=\"wide\"><li>Select the policy number (1-20) from the dropdown menu.</li><li>Enter a name into the <em>" + filter.polname + "</em> field.</li><li>Click the <em>" + sbutton.filterIP + "</em> button.</li><li>On the <em>" + filterIP.titl + "</em> screen, specify computers by IP address or MAC address. Enter the appropriate IP addresses into the <i>IP</i> fields. If you have a range of IP addresses to filter, complete the appropriate <i>IP Range</i> fields. Enter the appropriate MAC addresses into the <i>MAC</i> fields.</li><li>Click the <em>" + sbutton.apply + "</em> button to apply your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.clos + "</em> button to return to the <b>"+ bmenu.accrestriction + "</b> screen.</li><li>If you want to block the listed computers from Internet access during the designated days and time, then keep the default setting, <em>" + share.deny + "</em>. If you want the listed computers to have Internet filtered during the designated days and time, then click the radio button next to <em>" + share.filter + "</em>.</li><li>Set the days when access will be filtered. Select <em>" + share.everyday + "</em> or the appropriate days of the week.</li><li>Set the time when access will be filtered. Select <em>" + filter.h24 + "</em>, or check the box next to <i>From</i> and use the dropdown menus to designate a specific time period.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes and activate it.</li><li>To create or edit additional policies, repeat steps 1-9.</li></ol><br />To delete an Internet Access Policy, select the policy number, and click the <em>" + share.del + "</em> button.</dd>";
-hfilter.page2="<dd>To see a summary of all the policies, click the <em>" + sbutton.summary + "</em> button. The <em>" + filterSum.titl + "</em> screen will show each policy's in a ordered list, Policy Number, Name, Days, and Time of Day. To delete a policy, select the relevant checkbox, and then click the <em>" + share.del + "</em> button. Click the <em>" + sbutton.clos + "</em> button to return to the <b>"+ bmenu.accrestriction + "</b> screen.</dd>";
+hfilter.right2="Anda dapat menetapkan hingga 20 kebijakan akses.<br />Klik tombol <em>" + sbutton.del + "</em> untuk menghapus kebijakan atau tombol <em>" + sbutton.summary + "</em> untuk melihat ringkasan kebijakan.";
+hfilter.right4="Aktifkan atau nonaktifkan kebijakan.";
+hfilter.right6="Anda dapat menetapkan nama untuk kebijakan Anda.";
+hfilter.right8="Pilih hari dalam seminggu di mana Anda ingin kebijakan Anda diterapkan.";
+hfilter.right10="Masukkan waktu di hari Anda ingin kebijakan Anda berlaku.";
+hfilter.right12="Anda dapat memilih untuk memblokir akses ke layanan tertentu. Klik tombol <em>" + sbutton.filterSer + "</em> untuk mengubah pengaturan ini.";
+hfilter.right14="Anda dapat memblokir akses ke situs web tertentu dengan memasukkan URL mereka.";
+hfilter.right16="Anda dapat memblokir akses ke situs web tertentu dengan kata kunci yang terkandung dalam situs Web mereka.";
+hfilter.pageintro="<dd>Layar ini memungkinkan Anda untuk memblokir atau mengizinkan penggunaan Internet jenis tertentu. Anda dapat mengatur kebijakan akses Internet untuk komputer tertentu dan mengatur filter dengan menggunakan nomor port jaringan..</dd>";
+hfilter.page1="<dd>Fitur ini memungkinkan Anda untuk menyesuaikan hingga sepuluh Kebijakan Akses Internet yang berbeda untuk perangkat tertentu, yang diidentifikasi berdasarkan alamat IP atau MAC. Untuk setiap kebijakan, perangkat yang ditunjuk akan ditentukan pada hari dan periode waktu yang ditentukan.<br /><br />Untuk membuat atau mengedit kebijakan, ikuti petunjuk berikut:<ol class=\"wide\"><li>Pilih nomor kebijakan (1-20) dari menu tarik-turun.</li><li>Masukkan nama ke dalam kolom <em>" + filter.polname + "</em>.</li><li>Klik tombol <em>" + sbutton.filterIP + "</em>.</li><li>Pada layar <em>" + filterIP.titl + "</em>, tentukan komputer berdasarkan alamat IP atau alamat MAC. Masukkan alamat IP yang sesuai ke dalam kolom <i>IP</i>. Jika Anda memiliki rentang alamat IP untuk difilter, lengkapi kolom <i>Rentang IP</i> yang sesuai. Masukkan alamat MAC yang sesuai ke dalam kolom <i>MAC</i>.</li><li>Klik tombol <em>" + sbutton.apply + "</em> untuk menerapkan perubahan Anda. Klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan. Klik tombol <em>" + sbutton.clos + "</em> untuk kembali ke layar <b>"+ bmenu.accrestriction + "</b>.</li><li>Jika Anda ingin memblokir komputer yang terdaftar dari akses Internet selama hari dan waktu yang ditentukan, maka pertahankan pengaturan default, <em>" + share.deny + "</em>. Jika Anda ingin komputer yang terdaftar memiliki Internet yang difilter selama hari dan waktu yang ditentukan, maka klik tombol radio di sebelah <em>" + share.filter + "</em>.</li><li>Tetapkan hari-hari ketika akses akan difilter. Pilih <em>" + share.everyday + "</em> atau hari-hari yang sesuai dalam seminggu.</li><li>Tetapkan waktu ketika akses akan difilter. Pilih <em>" + filter.h24 + "</em>, atau centang kotak di sebelah <i>From</i> dan gunakan menu tarik-turun untuk menetapkan periode waktu tertentu.</li><li>Klik tombol <em>" + s.save + "</em> untuk menyimpan perubahan dan mengaktifkannya.</li><li>Untuk membuat atau mengedit kebijakan tambahan, ulangi langkah 1-9.</li></ol><br />Untuk menghapus Kebijakan Akses Internet, pilih nomor kebijakan, dan klik tombol <em>" + share.del + "</em>.</dd>";
+hfilter.page2="<dd>Untuk melihat ringkasan semua polis, klik tombol <em>" + sbutton.summary + "</em>. Layar <em>" + filterSum.titl + "</em> akan menampilkan setiap polis dalam daftar berurutan, Nomor Polis, Nama, Hari, dan Waktu. Untuk menghapus polis, pilih kotak centang yang relevan, lalu klik tombol <em>" + share.del + "</em>. Klik tombol <em>" + sbutton.clos + "</em> untuk kembali ke layar <b>"+ bmenu.accrestriction + "</b>.</dd>";
 
 // ** Firewall.asp **//
-var firewall=new Object();
 firewall.titl="Firewall";
-firewall.h2="Security";
-firewall.legend="Firewall Protection";
-firewall.firewall="SPI Firewall";
-firewall.legend2="Additional filters";
-firewall.proxy="Filter proxy";
-firewall.cookies="Filter cookies";
-firewall.applet="Filter Java applets";
+firewall.h2="Keamanan";
+firewall.legend="Perlindungan Firewall";
+firewall.firewall="Firewall SPI";
+firewall.legend2="Filters tambahan";
+firewall.proxy="Filter proksi";
+firewall.cookies="Filter kuki";
+firewall.applet="Filter applet Java ";
 firewall.activex="Filter ActiveX";
-firewall.legend3="Block WAN requests";
-firewall.legend4="Impede WAN DoS / bruteforce";
-firewall.ping="Anonymous WAN requests (ping)";
-firewall.portscan="Detect and Block Port Scanners";
-firewall.tarpit="Slowdown connection attempts (Tarpit)";
-firewall.syncflood="Filter TCP-SYN floods";
-firewall.udpflood="Filter UDP floods";
-firewall.pod="Filter Ping Echo request floods";
+firewall.legend3="Blokir permintaan WAN";
+firewall.legend4="Menghambat WAN DoS / bruteforce";
+firewall.ping="Permintaan WAN anonim (ping)";
+firewall.portscan="Deteksi dan Blokir Pemindai Port";
+firewall.tarpit="Upaya koneksi melambat (Tarpit)";
+firewall.syncflood="Filter banjir TCP-SYN";
+firewall.udpflood="Filter banjir UDP";
+firewall.pod="Filter banjir permintaan Ping Echo";
 firewall.tcp_maxhit="Pkts/m";
 firewall.udp_maxhit="Pkts/s";
 firewall.icmp_maxhit="Pkts/s";
-firewall.multicast="Multicast communication";
-firewall.ssh="Limit SSH access";
-firewall.telnet="Limit Telnet access";
-firewall.pptp="Limit PPTP Server access";
-firewall.ftp="Limit FTP Server access";
-firewall.arp_spoofing="ARP spoofing protection";
+firewall.multicast="Komunikasi multicast";
+firewall.ssh="Batasi akses SSH";
+firewall.telnet="Batasi akses Telnet";
+firewall.pptp="Batasi akses Server PPTP";
+firewall.ftp="Batasi akses Server FTP";
+firewall.arp_spoofing="Perlindungan spoofing ARP";
 firewall.filter_tos="Filter ToS / DSCP";
-firewall.filter_invalid="Filter invalid packets";
-firewall.geoip_whitelist="Country Whitelist";
-firewall.geoip_blacklist="Country Blacklist";
+firewall.filter_invalid="Filter paket tidak valid";
+firewall.geoip_whitelist="Daftar putih negara";
+firewall.geoip_blacklist="Daftar hitam negara";
 
 
-filter.nat="WAN NAT Redirection";
+filter.nat="Pengalihan NAT WAN";
 filter.port113="IDENT (Port 113)";
-filter.snmp="WAN SNMP Access";
+filter.snmp="Akses SNMP WAN";
 
 // ** Firewall.asp **//
-var log=new Object();
-log.label="Firewall Log";
-log.h2="Log Management";
+log.label="Log Firewall";
+log.h2="Manajemen Log";
 log.legend="Log";
-log.lvl="Log Level";
-log.drop="Dropped";
-log.reject="Rejected";
-log.accept="Accepted";
+log.lvl="Tingkat Log";
+log.drop="Dijatuhkan";
+log.reject="Ditolak";
+log.accept="Diterima";
 
 // ** Log_incoming.asp **//
-var log_in=new Object();
-log_in.titl="Incoming Log Table";
-log_in.h2="Incoming Log Table";
-log_in.th_ip="Source IP";
-log_in.th_port="Destination Port Number";
+log_in.titl="Tabel Log Masuk";
+log_in.h2="Tabel Log Masuk";
+log_in.th_ip="IP Sumber";
+log_in.th_port="Nomor Port Tujuan";
 
 // ** Log_outgoing.asp **//
-var log_out=new Object();
-log_out.titl="Outgoing Log Table";
-log_out.h2="Outgoing Log Table";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL / IP";
-log_out.th_port="Service / Port Number";
+log_out.titl="Tabel Log Keluar";
+log_out.h2="Tabel Log Keluar";
+log_out.th_lanip="IP LAN";
+log_out.th_wanip="URL / IP Tujuan";
+log_out.th_port="Layanan / Nomor Port";
 
 //help container
-var hfirewall=new Object();
-hfirewall.right2="Enable or disable the SPI firewall.";
+hfirewall.right2="Aktifkan atau nonaktifkan firewall SPI.";
 
 // help page
-hfirewall.page1="<dd>Blocks HTTP requests containing the &quot;<i>Host:</i>&quot; string.</dd>";
-hfirewall.page2="<dd>Identifies HTTP requests that contain the &quot;<i>Cookie:</i>&quot; string and mangle the cookie. Attempts to stop cookies from being used.</dd>";
-hfirewall.page3="<dd>Blocks HTTP requests containing an URL ending in &quot;<i>.js</i>&quot; or &quot;<i>.class</i>&quot;.</dd>";
-hfirewall.page4="<dd>Blocks HTTP requests containing an URL ending in &quot;<i>.ocx</i>&quot; or &quot;<i>.cab</i>&quot;.</dd>";
-hfirewall.page5="<dd>Stops the router from responding to &quot;pings&quot; from the WAN.</dd>";
-hfirewall.page14="<dd>Detects and blocks the source ip of a port scanning attempt for 60 minutes. this means no management service or port forwarding is reachable anymore for the origin of this attempt</dd>";
-hfirewall.page15="<dd>Tarpit tries to switch a incomming connection into persist state to keep it alive as long as possible without allowing any data to be send. The main approach here is to annoy brute force attackers and slow them down by stealing resources of them. Such a connection freeze can last between 12 and 24 minutes. Consider, if you enable that feature all ports may look open from outside even if they are not in fact. Its basicly a trap for attackers. For real fun with annoying such attackers, keep port scan detection disabled</dd>";
-hfirewall.page16="<dd>Block TCP-SYN floods by rate limiting TCP-SYN connection attempts. the limit is reached when the configured value is reached within 1 minute. The blocking lasts for another 60 seconds. use with care if you are running a server in your network</dd>";
-hfirewall.page17="<dd>Block UDP floods by rate limiting incomming UDP packets to the configured value per second. do not enable it if you are running any UDP based server in your network like Wireguard</dd>";
-hfirewall.page18="<dd>Block too frequent ping echo requests to the configured value per second.</dd>";
-hfirewall.page6="<dd>Prevents multicast packets from reaching the LAN.</dd>";
-hfirewall.page7="<dd>Prevents hosts on LAN from using WAN address of router to contact servers on the LAN (which have been configured using port redirection).</dd>";
-hfirewall.page8="<dd>Prevents WAN access to port 113.</dd>";
-hfirewall.page9="<dd>The router can keep logs of all incoming or outgoing traffic for your Internet connection.</dd>";
-hfirewall.page10="<dd>To keep activity logs, select <em>" + share.enable + "</em>. To stop logging, select <em>" + share.disable + "</em>.</dd>";
-hfirewall.page11="<dd>Set this to the required amount of information. Set <em>" + log.lvl + "</em> higher to log more actions.</dd>";
-hfirewall.page12="<dd>To see a temporary log of the router's most recent incoming traffic, click the <em>" + sbutton.log_in + "</em> button.</dd>";
-hfirewall.page13="<dd>To see a temporary log of the router's most recent outgoing traffic, click the <em>" + sbutton.log_out + "</em> button.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+hfirewall.page1="<dd>Memblokir permintaan HTTP yang mengandung string &quot;<i>Host:</i>&quot;.</dd>";
+hfirewall.page2="<dd>Memblokir permintaan HTTP yang mengandung string &quot;<i>Cookie:</i>&quot; dan mangle kukinya. Mencoba untuk menghentikan pengunaan kuki.</dd>";
+hfirewall.page3="<dd>Memblokir permintaan HTTP ysng mengandung URL yang diakhiri dengan &quot;<i>.js</i>&quot; atau &quot;<i>.class</i>&quot;.</dd>";
+hfirewall.page4="<dd>Memblokir permintaan HTTP ysng mengandung URL yang diakhiri dengan &quot;<i>.ocx</i>&quot; atau &quot;<i>.cab</i>&quot;.</dd>";
+hfirewall.page5="<dd>Menghentikan router dari merespon ke &quot;ping&quot; dari WAN.</dd>";
+hfirewall.page14="<dd>Mendeteksi dan memblokir ip sumber dari percobaan pemindai port selama 60 menit. ini berarti tidak ada layanan manajemen atau penerusan port yang bisa dicapai lagii untuk sumber dari percobaan ini</dd>";
+hfirewall.page15="<dd>Tarpit mencoba untuk mengubah koneksi masuk ke status persist untuk menjaganya tetap hidup selama mungkin tanpa mengizinkan data apapun terkirim. Tujuan utamanya adalah untuk menggangu penyerang brute force dan memperlambat mereka dengan mengambil sumber daya mereka. Koneksi terhenti seperti itu bisa bertahan antara 12 dan 24 menit. Coba, jika anda mengaktifkan fitur ini semua port mungkin terlihat terbuka dari luar bahkan jika pada faktanya tidak. Pada dasarnya ini jebakan untuk penyerang. Untuk lebih senang dengan menganggu penyerang seperti itu, biarkan deteksi pemindai port dinonaktifkan</dd>";
+hfirewall.page16="<dd>Blokir banjir TCP-SYN dengan membatasi percobaan koneksi TCP-SYN. batas akan tercapai saat nilai yang dikongurasi dicapai dalam kurun waktu 1 menit. Blokir bertahan untuk 60 detik lagi. gunakan dengan hati hati jika anda menjalankan server di jaringan anda</dd>";
+hfirewall.page17="<dd>Blokir banjir UDP dengan membatasi koneksi UDP packets ke nilai yang dikonfigurasi per detik. jangan nyalakan ini jika anda menjalankan server berbasis UDP di jaringan anda seperti Wireguard</dd>";
+hfirewall.page18="<dd>Blokit permintaan echo ping yang terlalu sering ke nilai yang dikonfigurasi per detik.</dd>";
+hfirewall.page6="<dd>Mencegah paket multicast dari mencapai ke LAN.</dd>";
+hfirewall.page7="<dd>Mencegah host di LAN dari menggunakan alamat WAN address dari router untuk menghubungi server di LAN (ysng sudah dikonfigurasi menggunakan penerusan port).</dd>";
+hfirewall.page8="<dd>Mencegah akses WAN ke port 113.</dd>";
+hfirewall.page9="<dd>Router bisa menyimpan log dari semua koneksi masuk atau keluar untuk koneksi Internet anda.</dd>";
+hfirewall.page10="<dd>Untuk menyimpan log aktivitas, pilih <em>" + share.enable + "</em>. Untuk berhenti mencatat, pilih <em>" + share.disable + "</em>.</dd>";
+hfirewall.page11="<dd>Atur nilai ini ke jumlah informasi yang diperlukan. Atur <em>" + log.lvl + "</em> lebih tinggi untuk mencatat lebih banyak tindakan.</dd>";
+hfirewall.page12="<dd>Untuk melihat catatan sementara dari data masuk paling baru dari router, klik tombol <em>" + sbutton.log_in + "</em>.</dd>";
+hfirewall.page13="<dd>Untuk melihat catatan sementara dari data keluar paling baru dari router, klik tombol <em>" + sbutton.log_out + "</em>.</dd><dd>Periksa semua nilai dan klik tombol <em>" + sbutton.save + "</em> untuk menyimpan pengaturan anda. Klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan.</dd>";
 // ** Forward.asp **//
-var prforward=new Object();
-prforward.titl="Port Range Forwarding";
-prforward.h2="Port Range Forwarding";
-prforward.legend="Forwards";
-prforward.app="Application";
+prforward.titl="Penerusan Jarak Port";
+prforward.h2="Penerusan Jarak Port";
+prforward.legend="Penerusan";
+prforward.app="Aplikasi";
 
 //help container
-var hprforward=new Object();
-hprforward.right2="Some applications require specific open ports in order to function correctly. Examples of these applications include but are not limited to servers or online games. When the router receives a request from the Internet for a specific port, the data is then routed to the device you specify. Due to security concerns, you may want to limit port forwarding to only those ports in use, and disable them when you are finished.";
+hprforward.right2="Beberapa aplikasi memerlukan port terbuka spesifik untuk berfungsi dengan benar. Contoh dari aplikasi berikut mencakup tapi tidak terbatas ke server atau permainan daring. Saat router menerima permintaan dari Internet untuk port tertentu, data lalu dirutekan ke perangkat yang anda pilih. Karena masalah keamanan, anda mungkin ingin membatasi penerusan port ke port yang hanya digunakan, dan nonaktifkan jika anda selesai.";
 
 //help page
-hprforward.page1="<dd>Port Range Forwarding allows you to set up public services on your network, such as Web servers, FTP servers, email servers, or other specialized Internet applications. Specialized Internet applications are any applications that use Internet access to perform functions such as videoconferencing or online gaming. When this type of request is sent to the network via the Internet, the router will forward those requests to the appropriate device.<br /><br />If you only want to forward a single port, see <a href=\"HForward.asp\">Port Forwarding</a>.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any device whose port is being forwarded must have a static IP address assigned to it because the IP address may change when using the default dynamic DHCP setup.</div></div></dd><dd>To add a new Port Range Forwarding rule, click the <em>" + share.add + "</em> button and fill in the fields below. To remove the last rule, click the  <i>remove</i> icon.</dd>";
-hprforward.page2="<dd>Enter the name of the application in the field provided.</dd>";
-hprforward.page3="<dd>Enter the number of the first port of the range you want to seen by users on the Internet and forwarded to your device.</dd>";
-hprforward.page4="<dd>Enter the number of the last port of the range you want to seen by users on the Internet and forwarded to your device.</dd>";
-hprforward.page5="<dd>Choose the right protocol <i>TCP</i>, <i>UDP</i> or <i>Both</i>. Set this to what the application requires.</dd>";
-hprforward.page6="<dd>Enter the IP Address of the device running the application.</dd>";
-hprforward.page7="<dd>Click the <em>" + share.enable + "</em> checkbox to enable port forwarding for the application.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another forwarding rule.</div></div></dd>";
+hprforward.page1="<dd>Penerusan Jarak Port mengizinkan anda untuk mengatur layanan publik di jaringan anda, seperti server Web, server FTP, server email, atau aplikasi Internet spesial lainnya. Aplikasi Internet spesial adalah aplikasi yang menggunakan akses Internet untuk melakukan fungsi seperti videokonferensi atau permainan daring. Saat tipe permintaan ini di kirim ke jaringan via Internet, router akan meneruskan permintaan tersebut ke perangkat yang tepat.<br /><br />Jika anda hanya ingin meneruskan satu port, lihat <a href=\"HForward.asp\">Penerusan Port</a>.<br /><br /><div class=\"note\"><h4>Catatan:</h4><div>Perangkat apapun yang portnya diteruskan harus memiliki IP statis karena alamat IP mungkin berubah saat menggunakan pengaturan DHCP dinamis bawaan.</div></div></dd><dd>Untuk menambahkan aturan Penerusan Jarak Port baru, klik tombol <em>" + share.add + "</em> dan isi kolom dibawah. Untuk menghapus aturan terakhir, klik ikon <i>hapus</i>.</dd>";
+hprforward.page2="<dd>Masukan nama aplikasi di kolom yang disediakan.</dd>";
+hprforward.page3="<dd>Masukan nomor port pertama dari jarak anda ingin untuk terlihat oleh pengguna di Internet dan diteruskan ke perangkat anda.</dd>";
+hprforward.page4="<dd>Masukan nomor port terakhir dari jarak anda ingin untuk terlihat oleh pengguna di Internet dan diteruskan ke perangkat anda.</dd>";
+hprforward.page5="<dd>Plih protokol yang benar <i>TCP</i>, <i>UDP</i> atau <i>Keduanya</i>. Atur ini ke apa yang diperlukan aplikasi.</dd>";
+hprforward.page6="<dd>Masukan alamat IP dari perangkat yang menjalankan aplikasi.</dd>";
+hprforward.page7="<dd>Klik kotak centang <em>" + share.enable + "</em> untuk mengaktifkan penerusan port untuk aplikasi.</dd><dd>Periksa semua nilai dan klik tombol <em>" + sbutton.save + "</em> untuk menyimpan pengaturan. Klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan.<br /><br /><div class=\"note\"><h4>Catatan:</h4><div>Ingat untuk menyimpan perubahan anda sebelum menambahkan aturan penerusan lain.</div></div></dd>";
 
 // ** P2P.asp **//
-var p2p=new Object();
-p2p.titl="Peer-to-Peer Apps";
-p2p.h2="BitTorrent Client";
+p2p.titl="Aplikasi Peer-to-Peer";
+p2p.h2="Klien BitTorrent";
 p2p.legend="CTorrent";
-p2p.ctorrent_srv="Ctorrent Service";
+p2p.ctorrent_srv="Layanan Ctorrent";
 
 //help container
-//var hp2p=new Object();
 //hpp2p.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the device you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
 
 // ** ForwardSpec.asp **//
-var pforward=new Object();
-pforward.titl="Port Forwarding";
-pforward.h2="Port Forwarding";
-pforward.legend="Forwards";
-pforward.app="Application";
-pforward.src="Source Net";
-pforward.from="Port From";
-pforward.to="Port To";
+pforward.titl="Penerusan Port";
+pforward.h2="Penerusan Port";
+pforward.legend="Penerusan";
+pforward.app="Aplikasi";
+pforward.src="Net Sumber";
+pforward.from="Port Dari";
+pforward.to="Port Ke";
 
 //help container
-var hpforward=new Object();
-hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the device you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>Enable</em> checkbox after you are finished.";
+hpforward.right2="Beberapa aplikasi mungkin perlu membuka port spesifik untuk berfungsi dengan benar. Contoh dari aplikasi berikut mencakup server dan beberapa permainan daring. Saat permintaan untuk port tertentu datang dari Internet, router akan merutekan data ke perangkat yang anda pilih. Karena masalah keamanan, anda mungkin ingin membatasi penerusan port ke port yang hanya digunakan, dan hilangkan centang <em>Aktifkan</em> setelah anda selesai.";
+Beberapa aplikasi memerlukan port terbuka spesifik untuk berfungsi dengan benar. Contoh dari aplikasi berikut mencakup tapi tidak terbatas ke server atau permainan daring. Saat router menerima permintaan dari Internet untuk port tertentu, data lalu dirutekan ke perangkat yang anda pilih. Karena masalah keamanan, anda mungkin ingin membatasi penerusan port ke port yang hanya digunakan, dan nonaktifkan jika anda selesai.";
 
 // help page
-hpforward.page1="<dd>Port Forwarding allows you to set up public services on your network, such as Web servers, FTP servers, email servers, or other specialized Internet applications. Specialized Internet applications are any applications that use Internet access to perform functions such as videoconferencing or online gaming. When users send this type of request to your network via the Internet, the router will forward those requests to the appropriate computer / device.<br /><br />If you want to forward a whole range of ports, see <a href=\"HForward.asp\">";
-hpforward.page2="</a>.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any device whose port is being forwarded must have a static IP address assigned to it because the IP address may change when using the DHCP function.</div></div></dd><dd>To add a new Port Forwarding rule, click the <em>" + sbutton.add + "</em> and fill in the fields below. To remove the last rule, click the <i>remove</i> icon.</dd>";
-hpforward.page3="<dd>Enter the name of the application in the field provided.</dd>";
-hpforward.page4="<dd>Chose the right protocol <i>TCP</i>, <i>UDP</i> or <i>Both</i>. Set this to what the application requires.</dd>";
-hpforward.page5="<dd>Forward only if sender matches this ip/net (example 192.168.1.0/24).</dd>";
-hpforward.page6="<dd>Enter the number of the external port (the port number seen by users on the Internet).</dd>";
-hpforward.page7="<dd>Enter the IP Address of the device running the application.</dd>";
-hpforward.page8="<dd>Enter the number of the internal port (the port number used by the application).</dd>";
-hpforward.page9="<dd>Click the <em>" + share.enable + "</em> checkbox to enable port forwarding for the application.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another forwarding rule.</div></div></dd>";
+hpforward.page1="<dd>Penerusan Jarak Port mengizinkan anda untuk mengatur layanan publik di jaringan anda, seperti server Web, server FTP, server email, atau aplikasi Internet spesial lainnya. Aplikasi Internet spesial adalah aplikasi yang menggunakan akses Internet untuk melakukan fungsi seperti videokonferensi atau permainan daring. Saat pengguna mengirim tipe permintaan ini ke jaringan via Internet, router akan meneruskan permintaan tersebut ke komputer / perangkat yang tepat.<br /><br />Jika anda ingin meneruskan banyak port, lihat <a href=\"HForward.asp\">";
+hpforward.page2="</a>.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Perangkat apapun yang portnya diteruskan harus memiliki IP statis karena alamat IP mungkin berubah saat menggunakan fungsi DHCP.</div></div></dd><dd>Untuk menambahkan aturan Penerusan Port baru, klik tombol <em>" + sbutton.add + "</em> dan isi kolom dibawah. Untuk menghapus aturan terakhir, klik ikon <i>hapus</i>.</dd>";
+hpforward.page3="<dd>Masukan nama aplikasi di kolom yang disediakan.</dd>";
+hpforward.page4="<dd>Plih protokol yang benar <i>TCP</i>, <i>UDP</i> atau <i>Keduanya</i>. Atur ini ke apa yang diperlukan aplikasi.</dd>";
+hpforward.page5="<dd>Hanya teruskan jika pengirim cocok dengan ip/net ini (contoh 192.168.1.0/24).</dd>";
+hpforward.page6="<dd>Masukan nomor port eksternal (nomor port number yang terlihat oleh pengguna di Internet).</dd>";
+hpforward.page7="<dd>Masukan alamat IP dari perangkat yang menjalankan aplikasi.</dd>";
+hpforward.page8="<dd>Masukan nomor port internal (nomor port number yang digunakan oleh aplikasi).</dd>";
+hpforward.page9="<dd>Klik kotak centang <em>" + share.enable + "</em> untuk mengaktifkan penerusan port untuk aplikasi.</dd><dd>Periksa semua nilai dan klik tombol <em>" + sbutton.save + "</em> untuk menyimpan pengaturan. Klik tombol <em>" + sbutton.cancel + "</em> untuk membatalkan perubahan yang belum disimpan.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another forwarding rule.</div></div></dd>";
 
 // ** IP Forward - 1:1 NAT **//
-var pforwardip=new Object();
-pforwardip.titl="IP Forward";
-pforwardip.h2="IP Forward - 1:1 NAT";
-pforwardip.legend="Forwards";
-pforwardip.name="Name";
-pforwardip.src="Source IP";
-pforwardip.dest="Destination IP";
+pforwardip.titl="Penerusan IP";
+pforwardip.h2="Penerusan IP - NAT 1:1";
+pforwardip.legend="Penerusan";
+pforwardip.name="Nama";
+pforwardip.src="IP Sumber";
+pforwardip.dest="IP Tujuan";
 
 // ** USB.asp **//
-var usb=new Object();
 usb.titl="USB";
-usb.usb_legend="USB Support";
-usb.usb_core="Core USB Support";
-usb.usb_uhci="USB 1.1 Support (UHCI)";
-usb.usb_ohci="USB 1.1 Support (OHCI)";
-usb.usb_ehci="USB 2.0 Support";
-usb.usb_storage="USB Storage Support";
-usb.usb_ip="USB over IP";
-usb.usb_printer="USB Printer Support";
-usb.usb_automnt="Automatic Drive Mount";
-usb.usb_mntpoint="Disk Mount Point";
-usb.usb_runonmount="Run on Mount Script Name";
-usb.usb_diskinfo="Disk Info";
-usb.usb_diskspace="Disk Space";
-usb.usb_mntjffs="Mount Partition to /jffs";
-usb.usb_mntopt="Mount Partition to /opt";
-usb.usb_ses_umount="Use SES Button to Remove Drives";
-usb.drive_ra="Drive Read-Ahead Buffer";
-usb.drive_ra_sectors="sectors";
+usb.usb_legend="Dukungan USB";
+usb.usb_core="Dukungan USB Inti";
+usb.usb_uhci="Dukungan USB 1.1 (UHCI)";
+usb.usb_ohci="Dukungan USB 1.1 (OHCI)";
+usb.usb_ehci="Dukungan USB 2.0";
+usb.usb_storage="Dukungan Penyimpanan USB";
+usb.usb_ip="USB lewat IP";
+usb.usb_printer="Dukungan Printer USB";
+usb.usb_automnt="Otomatis Mount Drive";
+usb.usb_mntpoint="Titik Mount Disk";
+usb.usb_runonmount="Nama Skrip Jalankan saat Mount";
+usb.usb_diskinfo="Info Disk";
+usb.usb_diskspace="Ruang Disk";
+usb.usb_mntjffs="Mount Partisi ke /jffs";
+usb.usb_mntopt="Mount Partisi ke /opt";
+usb.usb_ses_umount="Gunakan Tombol SES untuk Melepas Drive";
+usb.drive_ra="Buffer Read-Ahead Drive";
+usb.drive_ra_sectors="sektor";
 
 //help page
-var husb=new Object();
-husb.page1="<dd><ul><li>Enable USB Support</li></ul></dd>";
-husb.page2="<dd><ul><li>Enable Printer Support</li></ul></dd>";
-husb.page3="<dd><ul><li>Enable support for external drives</li></ul></dd>";
-husb.page4="<dd><ul><li>Auto mount connected drives</li></ul></dd>";
-husb.page5="<dt>Options</dt><dd><ul><li>Run script from the specified path whenever a drive is mounted by automount</li><li>Mount partition with given UUID to specified mount point e.g. /opt</li><li>Use SES Button to un mount drives before disconnecting them</li></ul></dd>";
-husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if set, as well as UUID e.g. <i>B965FA66-CC65-4DK8-1254-DD0A78D19A90</i> for all connected drives</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>Automount by default mounts all drives to /mnt/<devname> e.g. <i>/mnt/sda1</i> <br />If your volume name is <b>opt</b> the partition will be mounted to <b>/opt</b>, if set to jffs -> <b>/jffs</b>.<br />You can override this by entering a partitions UUID in the option fields.</div></div><br />";
+husb.page1="<dd><ul><li>Aktifkan Dukungan USB</li></ul></dd>";
+husb.page2="<dd><ul><li>Aktifkan Dukungan Printer</li></ul></dd>";
+husb.page3="<dd><ul><li>Aktifkan dukungan untuk drive eksternal</li></ul></dd>";
+husb.page4="<dd><ul><li>Mount otomatis drive yang tersambung</li></ul></dd>";
+husb.page5="<dt>Opsi</dt><dd><ul><li>Jalankan skrip dari jalur yang ditentukan saat drive di mount oleh mount otomatis</li><li>Mount partisi dengan UUID yang diberikan ke titik mount yang ditentukan mis. /opt</li><li>Gunakan Tombol SES untuk un mount drive sebelum memutuskannya</li></ul></dd>";
+husb.page6="<dd><ul><li>Menampilkan info disk mis. ukuran partisi, nama volume jika diatur, dan juga UUID mis. <i>B965FA66-CC65-4DK8-1254-DD0A78D19A90</i> untuk semua drive yang tersambung</li></ul></dd><div class=\"note\"><h4>Catatan:</h4><div>Mount otomatis secara bawaan memount semua drive ke /mnt/<namadev> mis. <i>/mnt/sda1</i> <br />Jika nama volume adalah <b>opt</b> partisi akan dimount ke <b>/opt</b>, jika diatur ke jffs -> <b>/jffs</b>.<br />Anda bisa mengubah ini dengan memasukan UUID partisi dalam kolom opsi.</div></div><br />";
 
 // ** NAS.asp **//
-var nas=new Object();
 nas.titl="NAS";
-nas.h2="Network Attached Storage (NAS)";
-nas.proftpd_legend="FTP Access";
-nas.proftpd_srv="ProFTPD Server";
-nas.proftpd_srv_label="Enable Server";
-nas.proftpd_port="Server Port";
-nas.proftpd_dir="Files Directory";
-nas.proftpd_passw="User Password List";
-nas.proftpd_writeen="Allow Write";
-nas.proftpd_anon="Anonymous Login (Read-only)";
-nas.proftpd_anon_dir="Anonymous Home Directory";
+nas.h2="Penyimpanan yang Dikaitkan ke Jaringan (NAS)";
+nas.proftpd_legend="Akses FTP";
+nas.proftpd_srv="Server ProFTPD";
+nas.proftpd_srv_label="Aktifkan Server";
+nas.proftpd_port="Port Server";
+nas.proftpd_dir="Directori Berkas";
+nas.proftpd_passw="Daftar Kata Sandi Pengguna";
+nas.proftpd_writeen="Izinkan Menulis";
+nas.proftpd_anon="Login Anonim (Hanya-baca)";
+nas.proftpd_anon_dir="Direktori Rumah Anonim";
 
-nas.samba3="Samba Server";
-nas.samba3_legend="File Sharing";
-nas.samba3_legend1="Share Configuration";
-nas.samba3_legend2="Samba Configuration";
+nas.samba3="Server Samba";
+nas.samba3_legend="Berbagi Berkas";
+nas.samba3_legend1="Konfigurasi Berbagi";
+nas.samba3_legend2="Konfigurasi Samba";
 nas.samba3_srv_label=nas.proftpd_srv_label;
-nas.nfs="Network File System Server (NFS)";
-nas.rsync="Remote Synchronisation";
+nas.nfs="Server File Sistem Jaringan (NFS)";
+nas.rsync="Sinkronisasi Remot";
 
 // ** DLNA **
-nas.dlna_legend="DLNA Server";
+nas.dlna_legend="Server DLNA";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_label=nas.proftpd_srv_label;
-nas.dlna_merge="Merge Media Dirs";
-nas.dlna_no_art="Ignore Album Art";
-nas.dlna_subtitles="Enable Subtitles";
-nas.dlna_thumb="Include Cover Artwork";
-nas.dlna_dir="Files Directory";
-nas.dlna_cleandb="Clean Database";
-nas.dlna_metadata="Keep Metadata on Storage";
-nas.dlna_rescan="Cyclic Rescan of Folders";
+nas.dlna_merge="Gabungkan Direktori Media";
+nas.dlna_no_art="Hiraukan Lukisan Album";
+nas.dlna_subtitles="Aktifkan Subjudul";
+nas.dlna_thumb="Sertakan Lukisan Cover";
+nas.dlna_dir="Directori Berkas";
+nas.dlna_cleandb="Bersihkan Basis Data";
+nas.dlna_metadata="Jaga Metadata di Penyimpanan";
+nas.dlna_rescan="Pemindaian ulang Cyclic Folder";
 
 // ** Common **
-nas.shareadd="Add Share";
-nas.sharedel="Remove";
-nas.useradd="Add User";
-nas.userdel="Remove";
-nas.perm_rw="Read / Write";
-nas.perm_ro="Read Only";
-nas.uname="User Name";
-nas.pwd="Password";
+nas.shareadd="Tambah Berbagi";
+nas.sharedel="Hapus";
+nas.useradd="Tambah Pengguna";
+nas.userdel="Hapus";
+nas.perm_rw="Baca / Tulis";
+nas.perm_ro="Hanya Baca";
+nas.uname="Nama Pengguna";
+nas.pwd="Kata Sandi";
 nas.format="Format";
-nas.raidmanager="RAID Storage Manager";
-nas.raidmember="RAID Member";
-nas.raidnametbl="Name";
+nas.raidmanager="Pengelola Penyimpanan RAID";
+nas.raidmember="Member RAID";
+nas.raidnametbl="Nama";
 nas.raidleveltbl="Level";
 nas.raiddeduptbl="Dedup";
-nas.mirror="Mirror";
-nas.fs="File System";
-nas.drivemanager="Drive Manager";
+nas.mirror="Cermin";
+nas.fs="File Sistem";
+nas.drivemanager="Pengelola Drive";
 nas.drive="Drive";
-nas.compression="Compression";
+nas.compression="Kompresi";
 
 // Help container
-var hnas=new Object();
-hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to <b>/jffs</b> the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
+hnas.right2="Untuk berbagi sumber daya tambahkan berbagi baru dengan menyertakan jalur dan nama berbagi. Definisikan pengguna yang bisa mengakses berbagi melalui FTP atau Samba.<br /><br /><b>Peringatan MiniDLNA:</b> Kecuali anda mount partisi untuk <b>/jffs</b> DB indeks akan disimpan di RAM. Hal ini bisa memenuhi RAM anda dan akan memulai indeks ulang DB setiap boot.";
 
 //help page
-hnas.page1="<dd>A FTP server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>Over - LAN / WLAN</li></ul></dd>";
-hnas.page2="<dd>A DLNA server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
-hnas.page3="<dd>A Samba server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
-hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <span class=\"link\" onclick=\"window.open('../USB.asp')\">Disk Info</span></li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. <b>\\router\name</b> </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <span class=\"link\" onclick=\"window.open('../USB.asp')\">USB</span> settings page.<br /><b>/dev/sdX</b> equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
+hnas.page1="<dd>Server FTP memungkinkan anda untuk berbagi berkas: <br /><ul><li>Lewat Internet - WAN</li><li>Lewat - LAN / WLAN</li></ul></dd>";
+hnas.page2="<dd>Server DLNA memungkinkan anda untuk berbagi media: <br /><ul><li>Anda memerlukan klien yang memiliki DLNA mis. TV untuk melihat berkas yang diberikan router.</li></ul></dd>";
+hnas.page3="<dd>Server Samba memungkinkan anda untuk mengakses berkas: <br /><ul><li>Via penjelajah berkas di perangkat klien anda berbagi anda telah mengatur dan telah menghubungkan ke port USB router.</li></ul></dd>";
+hnas.page4="<dd><ul><li>Jalur: Jalur ke partisi yang dimount. Lihat disk yang saat ini dimount di <span class=\"link\" onclick=\"window.open('../USB.asp')\">Info Disk</span></li><li>Subdir: Nama direktori di partisi yang diberikan mis. publik atau folder/sub_folder/sub_sub_folder </li><li>Nama: Nama berbagi ditampilkan saat menjelajahi berbagi jaringan mis. <b>namarouter</b> </li><li>Publik: Semua orang bisa mengakses berbagi ini. Tidak perlu akun pengguna.</li></ul></dd><div class=\"note\"><h4>Catatan:</h4><div>Untuk Pengguna Windows: drive USB yang tersambung muncul di Windows dibawah mis. <b>D:</b> dan mengandung dua direktori <i>public dan secret</i>.<br />Anda ingin berbagi <i>D:\public</i>. Untuk melakukan hal ini sambungkan drive USB dan lihat atau tentukan titik kait dibawah laman pengaturan <span class=\"link\" onclick=\"window.open('../USB.asp')\">USB</span>.<br /><b>/dev/sdX</b> sama dengan titik kait dibawah Linux. Untuk berbagi <i>D:\public</i>, pilih titik kait saat ini dan tentukan subdir <i>public</i> berikan nama mis. <i>Tamu dan atur izin akses</i>.</div></div><br />";
 
 //** Privoxy.asp **//
-var privoxy=new Object();
-privoxy.titl="Adblocking";
-privoxy.legend="Filtering Proxy Server";
+privoxy.titl="Pemblokir Iklan";
+privoxy.legend="Server Proksi Penyaringan";
 privoxy.server="Privoxy";
-privoxy.server_label="Enable Web Proxy";
-privoxy.pac="Provide Proxy Autoconfig";
-privoxy.transp="Transparent Mode";
-privoxy.exclude="Exclude IP";
-privoxy.whitel="Whitelist";
-privoxy.custom="Custom Configuration";
-privoxy.maxclient="Max Client Connections";
+privoxy.server_label="Aktifkan Proksi Web";
+privoxy.pac="Sediakan Konfigurasi Otomatis Proksi";
+privoxy.transp="Mode Transparan";
+privoxy.exclude="Kecualikan IP";
+privoxy.whitel="Daftar Putih";
+privoxy.custom="Konfigurasi Kustom";
+privoxy.maxclient="Koneksi Maksimum Klien";
 
-var hprivoxy=new Object();
-hprivoxy.right2="Enable Privoxy and configure your clients proxy settings.<br /><br />Proxy IP = <b>router IP</b><br />Proxy Port = <b>8118</b>";
+hprivoxy.right2="Aktifkan Privoxy dan konfigurasi setelan proksi klien anda.<br /><br />IP Proksi = <b>IP router</b><br />Port Proksi = <b>8118</b>";
 
 //help page
-hprivoxy.page1="<dd>Is a <i>privacy enhancing proxy</i>, filtering web pages and removing common advertisements.</dd>";
-hprivoxy.page2="<dd><br /><ul><li>Publishes a WPAD / PAC file that clients use to automatically setup proxy details.</li><li>On some clients you need to set the option to use automatic proxy config</li><li>If your client is part of a domain you need to setup dnsmasq to send the local domain via DHCP to the client</li></ul></dd>";
-hprivoxy.page3="<dd><br /><ul><li>Traffic to Port 80 is intercepted by Privoxy even if the client did not configure any proxy settings.</li><li>Thus you can enforce ad filtering.</li></ul></br /><div class=\"note\"><h4>Note:</h4> Transparent mode cannot intercept HTTPS connections. All HTTPS traffic will still bypass Privoxy unless the client uses the <b>proxy autoconfig</b> which pipes these HTTPS connections through the proxy</div></dd>";
-hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and paths to filters stored on external media e.g. a USB disk</li></dd>";
+hprivoxy.page1="<dd>Adalah <i>proksi yang meningkatkan privasi</i>, menyaring situs web dan menghapus iklan umum.</dd>";
+hprivoxy.page2="<dd><br /><ul><li>Mempublikasi berkas WPAD / PAC yang klien bisa gunakan untuk mengatur rincian proksi secara otomatis.</li><li>Di beberapa klien anda perlu mengatur opsi untuk menggunakan konfigurasi proksi otomatis</li><li>Jika klien anda adalah bagian dari domain anda perlu untuk mengatur dnsmasq untuk mengirim domain lokal via DHCP ke klien</li></ul></dd>";
+hprivoxy.page3="<dd><br /><ul><li>Data ke Port 80 diambil alih oleh Privoxy bahkan jika klien tidak mengonfigurasi setelan proksi apapun.</li><li>Dengan begitu anda bisa meneggakan penyaringan iklan.</li></ul></br /><div class=\"note\"><h4>Catatan:</h4> Mode transparan tidak bisa mengambil alih koneksi HTTPS. Semua data HTTPS akan tetap lewat Privoxy kecuali klien menggunakan <b>konfigurasi otomatis proksi</b> yang mengarahkan koneksi HTTPS melalui proksi</div></dd>";
+hprivoxy.page4="<dd><br /><ul><li>Memungkinkan anda untuk mengatur setelan dan jalur kustom ke filter yanf disimpan di media external mis. Disk USB</li></dd>";
 
 //** Lighttpd.asp **//
-var lighttpd=new Object();
-lighttpd.titl="Web Server";
-lighttpd.legend="Lighttpd Web Server";
+lighttpd.titl="Server Web";
+lighttpd.legend="Server Web Lighttpd";
 lighttpd.server=nas.proftpd_srv_label;
-lighttpd.port="HTTP Port";
-lighttpd.sslport="HTTPS Port";
-lighttpd.wan="WAN Access";
+lighttpd.port="Port HTTP";
+lighttpd.sslport="Port HTTPS";
+lighttpd.wan="Akses WAN";
 lighttpd.url="URL";
 
-var hlighttpd=new Object();
-hlighttpd.right2="Enable lighttpd and configure the HTTP or HTTPS ports where lighttpd will listen for a request.<br /><br />The default Web server's root is located on <b>/jffs/www</b> where you can place your website's files.";
+hlighttpd.right2="Aktifkan lighttpd dan konfigurasi port HTTP atau HTTPS dimana lighttpd akan mendengar untuk permintaan.<br /><br />Jalur utama Server Web terletak di <b>/jffs/www</b> dimana anda bisa meletakkan berkas situs anda.";
 
-var lltd=new Object();
-lltd.legend="Link Layer Topology Discovery (LLTD)";
-lltd.srv_label="Enable Discovery";
+lltd.legend="Penemuan Topologi Lapisan Link (LLTD)";
+lltd.srv_label="Aktifkan Penemuan";
 
 // ** Hotspot.asp **//
-var hotspot=new Object();
 hotspot.titl="Hotspot";
-hotspot.h2="Hotspot Portal";
+hotspot.h2="Portal Hotspot";
 hotspot.legend="CoovaChilli";
-hotspot.label="Enable Portal";
+hotspot.label="Aktifkan Portal";
 hotspot.hotspot="CoovaChilli";
-hotspot.nowifibridge="Separate WiFi from the LAN Bridge";
+hotspot.nowifibridge="Pisahkan WiFi dari jembatan LAN";
 
-hotspot.pserver="Primary RADIUS Server IP / DNS";
-hotspot.bserver="Backup RADIUS Server IP / DNS";
-hotspot.dns="DNS Server IP";
-hotspot.url="Redirect URL";
-hotspot.dhcp="DHCP Interface";
-hotspot.radnas="RADIUS NAS ID";
-hotspot.net="Hotspot Network";
-hotspot.uam="UAM Secret";
-hotspot.uamserver="UAM Server";
-hotspot.uamport="UAM Port";
-hotspot.uamdns="UAM any DNS";
-hotspot.allowuam="UAM Allowed (comma separated)";
-hotspot.allowuad="UAM Domains (space separated)";
-hotspot.macauth="MAC Authentication";
-hotspot.macpasswd="MAC Password";
-hotspot.sec8021Xauth="802.1X Authentication (EAP)";
-hotspot.option="Additional Options";
-hotspot.fon_chilli="Local User Management";
-hotspot.fon_user="User List";
-hotspot.http_legend="HTTP Redirect";
-hotspot.http_srv="Enable Redirect";
-hotspot.http_ip="Destination IP";
-hotspot.http_port="Destination Port";
-hotspot.http_net="Source Network";
+hotspot.pserver="IP / DNS Server RADIUS Server Utama";
+hotspot.bserver="IP / DNS Server RADIUS Server Cadangan";
+hotspot.dns="IP Server DNS";
+hotspot.url="Arahkan URL";
+hotspot.dhcp="Antarmuka DHCP";
+hotspot.radnas="ID NAS RADIUS";
+hotspot.net="Jaringan Hotspot";
+hotspot.uam="Rahasia UAM";
+hotspot.uamserver="Server UAM";
+hotspot.uamport="Port UAM";
+hotspot.uamdns="UAM DNS apapun";
+hotspot.allowuam="Izinkan UAM (dipisahkan koma)";
+hotspot.allowuad="Domain UAM (dipisahkan spasi)";
+hotspot.macauth="Otentikasi MAC";
+hotspot.macpasswd="Kata Sandi MAC";
+hotspot.sec8021Xauth="Otentikasi 802.1X (EAP)";
+hotspot.option="Opsi Lanjutan";
+hotspot.fon_chilli="Pengelola Pengguna Lokal";
+hotspot.fon_user="Daftar Pengguna";
+hotspot.http_legend="Arahkan HTTP";
+hotspot.http_srv="Aktifkan Pengarahan";
+hotspot.http_ip="IP Tujuan";
+hotspot.http_port="Port Tujuan";
+hotspot.http_net="Jaringan Sumber";
 
 hotspot.nodog_legend="NoDogSplash";
-hotspot.nodog_srv="Enable Portal";
-hotspot.nodog_gateway="Gateway Name";
-hotspot.nodog_gatewayport="Gateway Port";
-hotspot.nodog_gatewayaddr="Gateway IP";
-hotspot.nodog_gatewayiprange="Gateway IP Range";
-hotspot.nodog_home="Homepage";
-hotspot.nodog_extifname="External Interface";
-hotspot.nodog_ifname="Internal Interface";
-hotspot.nodog_redirect="Homepage Redirection";
-hotspot.nodog_allowweb="Allowed Web Hosts";
-hotspot.nodog_docroot="Document Root";
-hotspot.nodog_splash="Splash URL";
-hotspot.nodog_port="Exclude Ports";
-hotspot.nodog_timeout="Login Timeout";
-hotspot.nodog_verbose="Verbosity";
-hotspot.nodog_route="Route Only";
-hotspot.nodog_MAClist="MAC Whitelist";
-hotspot.nodog_maxclients="Max Number of Clients";
-hotspot.nodog_downloadlimit="Download Limit";
-hotspot.nodog_uploadlimit="Upload Limit";
+hotspot.nodog_srv="Aktifkan Portal";
+hotspot.nodog_gateway="Nama Gateway";
+hotspot.nodog_gatewayport="Port Gateway";
+hotspot.nodog_gatewayaddr="IP Gateway";
+hotspot.nodog_gatewayiprange="Jarak IP Gateway";
+hotspot.nodog_home="Laman Beranda";
+hotspot.nodog_extifname="Antarmuka Eksternal";
+hotspot.nodog_ifname="Antarmuka Internal";
+hotspot.nodog_redirect="Arahkan Homepage";
+hotspot.nodog_allowweb="Host Web yang diizinkan";
+hotspot.nodog_docroot="Root Dokumen";
+hotspot.nodog_splash="URL Splash";
+hotspot.nodog_port="Kecualikan Port";
+hotspot.nodog_timeout="Waktu habis Login";
+hotspot.nodog_verbose="Verbositas";
+hotspot.nodog_route="Hanya Rute";
+hotspot.nodog_MAClist="Daftar Putih MAC";
+hotspot.nodog_maxclients="Maksimum Jumlah Klien";
+hotspot.nodog_downloadlimit="Batas Unduhan";
+hotspot.nodog_uploadlimit="Batas Unggahan";
 
-hotspot.smtp_legend="SMTP Redirect";
-hotspot.smtp_srv="Enable Redirect";
-hotspot.smtp_ip="Destination IP";
-hotspot.smtp_net="Source Network";
+hotspot.smtp_legend="Arahkan SMTP";
+hotspot.smtp_srv="Aktifkan pengarahan";
+hotspot.smtp_ip="IP Tujuan";
+hotspot.smtp_net="Jaringan Sumber";
 
-hotspot.shat_legend="Zero IP Configuration";
+hotspot.shat_legend="Konfigurasi Zero IP";
 hotspot.shat_srv="Zero IP";
-hotspot.shat_srv2="Enable Service";
+hotspot.shat_srv2="Aktifkan Layanan";
 
 hotspot.wifidog_legend="WiFiDog";
-hotspot.wifidog_srv="Enable Gateway";
-hotspot.wifidog_id="Gateway ID";
-hotspot.wifidog_url="Portal URL";
+hotspot.wifidog_srv="Aktifkan Gateway";
+hotspot.wifidog_id="ID Gateway";
+hotspot.wifidog_url="URL Portal";
 hotspot.wifidog_port="Port";
-hotspot.wifidog_httpdname="Webserver Name";
-hotspot.wifidog_httpdconn="Max Users";
-hotspot.wifidog_checkinter="Check Interval(s)";
-hotspot.wifidog_checktimeout="Client Timeout";
-hotspot.wifidog_tmaclist="Trusted MAC List";
-hotspot.wifidog_authsrv="AuthServer Hostname";
-hotspot.wifidog_authsrvssl="Enable SSL AuthServer";
-hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
-hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
-hotspot.wifidog_authsrvpath="AuthServer Path";
-hotspot.wifidog_config="Firewall Ruleset";
-hotspot.wifidog_messagefile="HTML Message File";
-hotspot.wifidog_realm="HTTP Server Realm";
-hotspot.wifidog_username="HTTP Server Username";
-hotspot.wifidog_password="HTTP Server Password";
-hotspot.wifidog_auth="Server Authentication Support";
+hotspot.wifidog_httpdname="Nama Server Web";
+hotspot.wifidog_httpdconn="Pengguna Maks";
+hotspot.wifidog_checkinter="Interval Pemeriksaan";
+hotspot.wifidog_checktimeout="Waktu habis Klien";
+hotspot.wifidog_tmaclist="Daftar MAC Terpercaya";
+hotspot.wifidog_authsrv="Nama host AuthServer";
+hotspot.wifidog_authsrvssl="Aktifkan SSL AuthServer";
+hotspot.wifidog_authsrvsslport="Port SSL AuthServer";
+hotspot.wifidog_authsrvhttpport="Port HTTP AuthServer";
+hotspot.wifidog_authsrvpath="Jalur AuthServer";
+hotspot.wifidog_config="Aturan Firewall";
+hotspot.wifidog_messagefile="Berkas Pesan HTML";
+hotspot.wifidog_realm="Realm Server HTTP";
+hotspot.wifidog_username="Nama Pengguna Server HTTP";
+hotspot.wifidog_password="Kata Sandi Server HTTP";
+hotspot.wifidog_auth="Dukungan Otentikasi Server";
 
 //help container
-var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br />When USB or JFFS2 is mounted to <b>/jffs</b>, connection scripts are accessible at <b>/jffs/etc/chilli/</b><br />Local Users:<br />When only local users are used, set the primary RADIUS to <b>127.0.0.1</b>";
+hstatus_hots.right1="conup/condown:<br />Saat USB atau JFFS2 dimount ke <b>/jffs</b>, skrip koneksi bisa diakses di <b>/jffs/etc/chilli/</b><br />Pengguna Lokal:<br />Saat hanya pengguna lokal yang digunakan, atur RADIUS utama ke <b>127.0.0.1</b>";
 
 // help page
-hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication and accounting (RADIUS). CoovaChilli is an opensource captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports Web based login while also supporting Wireless Protected Access (WPA). Authentication, authorization and accounting (AAA) is handled by your RADIUS server.</dd>";
+hstatus_hots.page1="<dd>Anda bisa menggunakan router sebagai gateway Hotspot (solusi CoovaChilli) dengan otentikasi dan akunting (RADIUS). CoovaChilli adalah portal kaptif sumber terbuka atau kontroller titik akses LAN nirkabel. CoovaChilli digunakan untuk mrngotentikasi pengguna LAN nirkabel. CoovaChilli mendukung login berbasis Web selagi juga mendukung Akses Nirkabel Terlindungi (WPA). Otentikasi, otorisasi dan akunting (AAA) diproses oleh server RADIUS.</dd>";
 hstatus_hots.page2="<dd>You can have your hotspot portal managed by HotspotSystem.com. They provide free and pay-per-use hotspot solutions with billing. For more information please visit <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>The Operator Username which you have registered at <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page4="<dd>The number of the location you would like to set up.</dd>";
@@ -1193,7 +1148,6 @@ hstatus_hots.page29="<dd>Log verbosity (to syslogd and /tmp/nocat.log). Syslogd 
 hstatus_hots.page30="<dd>Required only if you DO NOT want your gateway to act as a NAT. Enable this only if you are running a strictly routed network, and do not need the gateway to enable NAT for you. You would not normally use this option. So if you do not understand it, leave it Disabled</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 // ** Hotspotsystem **//
-var hotspotsys=new Object();
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Separate WiFi from LAN Bridge";
 hotspotsys.uamenable="Special Settings";
@@ -1209,7 +1163,6 @@ hotspotsys.net="Remote Network";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 
 // ** Info.htm **//
-var info=new Object();
 info.titl="Info";
 info.h2="System Information";
 info.wlanmac="Wireless MAC";
@@ -1218,7 +1171,6 @@ info.ap="Access Point";
 info.mesh="Mesh Nodes";
 
 // ** index_heartbeat.asp **//
-var idx_h=new Object();
 idx_h.srv="Heartbeat Server";
 idx_h.con_strgy="Connection Strategy";
 idx_h.max_idle="Connect on Demand: Max Idle Time";
@@ -1226,7 +1178,6 @@ idx_h.alive="Keep Alive: Redial Period";
 idx_h.reconnect="Force Reconnect";
 
 // ** index_l2tp.asp **//
-var idx_l=new Object();
 idx_l.srv="Gateway (L2TP Server)";
 idx_l.req_chap="Require CHAP";
 idx_l.ref_pap="Refuse PAP";
@@ -1234,11 +1185,9 @@ idx_l.req_auth="Require Authentication";
 idx_l.iptv="Receive IPTV";
 
 // ** index_pppoe.asp **//
-var idx_pppoe=new Object();
 idx_pppoe.use_rp="Use RP-PPPoE";
 
 // ** index_pptp.asp **//
-var idx_pptp=new Object();
 idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="WAN IP Address";
 idx_pptp.gateway="Gateway (PPTP Server)";
@@ -1248,11 +1197,9 @@ idx_pptp.addopt="Additional Options";
 idx_pptp.iptv="Receive IPTV";
 
 // ** index_static.asp **//
-var idx_static=new Object();
 idx_static.dns="Static DNS";
 
 // ** index.asp **//
-var idx=new Object();
 idx.titl="Setup";
 idx.h2="WAN Setup";
 idx.h22="Wireless Setup";
@@ -1323,7 +1270,6 @@ idx.ntp_client="Enable Client";
 idx.ntp_timer="Update Interval";
 
 //help container
-var hidx=new Object();
 hidx.right2="This setting is most commonly used by cable operators.";
 hidx.right4="Enter the hostname provided by your ISP.";
 hidx.right6="Enter the domain name provided by your ISP.";
@@ -1367,11 +1313,9 @@ hidx.auth_dnsmasq="<dd>DHCP-Authoritative should be set when DD-WRT is the only 
 hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LAN to external DNS servers to be redirected to DD-WRT's internal dnsmasq server.</dd>";
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
-var hipv6=new Object();
 hipv6.right2="IPv6 is a the most recent Internet Protocol standard used by electronic devices to exchange data across a packet-switched network.<br /><br />Changes over IPv4 fall primarily under the following categories:<ul style=\"margin-left: -1.5rem\"><br /><li>Expanded addressing capabilities</li><li>Header format simplification</li><li>Improved support for extensions & options</li><li>Flow labeling capability</li><li>Authentication & privacy capabilities</li></ul>";
 
 // ** DSL ** //
-var dsl=new Object();
 dsl.status="DSL Status";
 dsl.annex=" DSL Annex";
 dsl.iface_status="Connection Status";
@@ -1379,13 +1323,11 @@ dsl.datarate="Connection Speed (up/down)";
 dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
-var join=new Object();
 //sshd.webservices
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
 
 // ** Management.asp **//
-var management=new Object();
 management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Your router is currently not protected and uses an unsafe default username and password combination; please change it using the following dialog!";
@@ -1492,7 +1434,6 @@ management.lang_serbian="Serbian";
 management.lang_swedish="Swedish";
 management.lang_japanese="Japanese";
 management.lang_hungarian="Hungarian";
-management.lang_indonesian="Indonesian";
 management.lang_korean="Korean";
 management.lang_latvian="Latvian";
 management.net_legend="Network Stack Tuning";
@@ -1542,7 +1483,6 @@ management.boot_fail_open="Open WiFi after Bootfail";
 management.boot_fail_keepip="Keep IP after Bootfail";
 
 //help container
-var hmanagement=new Object();
 hmanagement.right1=management.web_refresh + ":";
 hmanagement.right2="Adjust the Web interface refresh interval. Enter a value of <b>0</b> to disable this feature.<br/>The default value is <b>3</b> seconds.";
 hmanagement.right3=management.jffs_legend + ":";
@@ -1563,12 +1503,10 @@ hmanagement.page9="<dd>This feature controls the resetbuttond process. The reset
 hmanagement.page10="<dd>The TCP Congestion Control algorithm availability is router dependant and provided by the kernel. When the router is the endpoint, and if enabled the Transmission Bitorrent client, Webserver (lighttpd) or VPN connections e.g. PPPoE etc..., can be affected by the selected congestion control algorithm.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The selected congestion control algorithm will benefit mostly slow links or slower low end routers to prevent network congestion occuring in case of traffic overloading and it will <b>not</b> increase link speed.</div></div><br />For peer-to-peer (P2P) applications running on the network/router, dependant on your router hardware capabilities, either increase or decrease the maximum connections number and lower the TCP / UDP timeout. This may help maintain router stability since peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Connections: 4096/32768</li><li>TCP Timeout: 300&nbsp;seconds</li><li>UDP Timeout: 60&nbsp;seconds</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
-var portserv=new Object();
 portserv.titl="Port Services";
 portserv.h2="Port Services";
 
 // ** Networking.asp **//
-var networking=new Object();
 networking.hfiltering="Bridge VLAN Filtering";
 networking.portstatus="Port Status";
 networking.flegend="VLAN Filters";
@@ -1649,7 +1587,6 @@ networking.arpd_num_of_bcast="Number of broadcasts";
 
 
 //help container
-var hnetworking=new Object();
 hnetworking.right1=networking.legend5;
 hnetworking.right2="To use multiple DHCP servers, first enable dnsmasq as a DHCP server.";
 
@@ -1660,7 +1597,6 @@ hnetworking.page3="<dd>Creates a new empty network bridge for later use. STP mea
 hnetworking.page4="<dd>Allows you to assign any valid interface to a network bridge. Consider setting the Wireless Interface options to Bridged if you want to assign any Wireless Interface here. Any system specific bridge setting can be overridden here in this field. </dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** QoS.asp **//
-var qos=new Object();
 qos.titl="Quality of Service";
 qos.h2="Quality Of Service (QoS)";
 qos.legend="QoS Settings";
@@ -1708,7 +1644,6 @@ qos.down="Down";
 qos.service="Service";
 
 //help container
-var hqos=new Object();
 hqos.right1="";
 hqos.right2="Uplink:<br />Set this to 85% - 95% (max) of your total upload limit.<br />Downlink:<br />Set this to 85% - 100% (max) of your total download limit.";
 hqos.right3="";
@@ -1726,7 +1661,6 @@ hqos.page4="<dd>In order to use QoS you must enter bandwidth values for your upl
 hqos.page5="<dd>Bandwidth classification based on the four categories will be enabled first on the hardware ports, then on MAC addresses, then netmasks and finally services. For example, if you enable classification based on a MAC address, this will override netmask and service classifications. However, the LAN port based classification will work together with MAC, netmask and service classifications, and will not override them.<ul class=\"wide\"><li>Maximum - (75% - 100%) This class offers maximum priority and should be used sparingly.</li><li>Premium - (50% - 100%) Second highest bandwidth class, by default handshaking and ICMP packets fall into this class. Most VoIP and video services will function good in this class if Express is insufficient.</li><li>Express - (25% - 100%) The Express class is for interactive applications that require bandwidth above standard services so that interactive apps run smoothly.</li><li>Standard - (15% - 100%) All services that are not specifically classed will fall under standard class.</li><li>Bulk - (5% - 100%) The bulk class is only allocated remaining bandwidth when the remaining classes are idle. If the line is full of traffic from other classes, Bulk will only be allocated 1% of total set limit. Use this class for P2P and downloading services like FTP.</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings without taking effect, or click the <em>" + sbutton.apply + "</em> button to permanently save your changes taking effect immediately. Clicking the <em>" + sbutton.cancel + "</em> button will cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another QoS rule.</div></div></dd>";
 
 // ** RouteTable.asp **//
-var routetbl=new Object();
 routetbl.titl="Routing Table";
 routetbl.h2="Routing Table Entry List";
 routetbl.h3="Policy Rules Entry List";
@@ -1754,7 +1688,6 @@ routetbl.dport="Destination Port Range";
 routetbl.ipproto="IP Protocol";
 
 // ** Routing.asp **//
-var route=new Object();
 route.rule_name="Policy Name";
 route.global="Global";
 route.nowhere="Nowhere";
@@ -1819,7 +1752,6 @@ route.rules="Routing Policies";
 route.static_name="Route Name";
 
 //help container
-var hroute=new Object();
 hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select the <em>Router</em> mode.";
 hroute.right4="This is the unique router number; you may set up to 50 routes.";
 hroute.right6="Enter the name you would like to assign to this route.";
@@ -1834,7 +1766,6 @@ hroute.page4="<dd>A static route is a pre-determined pathway that network inform
 hroute.page5="<dd>Click the <i>Show Routing Table</i> button to view all of the valid route entries in use. The following data will be displayed for each entry.<ul class=\"wide\"><li>Destination IP Address – The Destination IP Address is the address of the network or host to which the static route is assigned.</li><li>Subnet Mask – The Subnet Mask determines which portion of an IP address is the network portion, and which portion is the host portion.</li><li>Gateway – This is the IP address of the gateway device that allows for contact between the router and the network or host.</li><li>Interface – This interface tells you whether the Destination IP Address is on the LAN &amp; WLAN (internal wired and wireless networks), the WAN (Internet), or Loopback (a dummy network in which one device acts like a network, necessary for certain software programs).</li></ul><br />Click the <i>Refresh</i> button to refresh the data displayed. Click the <em>" + sbutton.clos + "</em> button to return to the Routing screen.</dd>";
 
 // ** Site_Survey.asp **//
-var survey=new Object();
 survey.titl="Site Survey";
 survey.titl2="Channel Survey";
 survey.h2="Neighbor's Wireless Networks";
@@ -1842,7 +1773,6 @@ survey.h3="Channel Survey and Qualities";
 survey.thjoin="Join Site";
 
 // ** Services.asp **//
-var service=new Object();
 service.titl="Services";
 service.h2="Services Management";
 
@@ -1983,7 +1913,6 @@ service.pppoesrv_chaps="Local User Management (CHAP-Secrets)";
 service.wired_8021x_server="Enable Wired 802.1X Server";
 
 //help container
-var hpppoesrv=new Object();
 hpppoesrv.right2="IP: 0.0.0.0 -> You will serve IP addresses from the pool";
 hpppoesrv.right3="You <em><b>must</b></em> set the correct amount of associated clients according to your IP range";
 
@@ -2106,7 +2035,6 @@ service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or mo
 service.ssh_keydownload="Click the " + sbutton.apply + " button after downloading to restart SSHD!\nThe private key is downloaded in the OpenSSH format.\nIf you wish to use PuTTY, the key must first be converted to a compatible format with PuTTYgen (see help more...).";
 
 //help page
-var hservice=new Object();
 hservice.right1="Before enabling storage for Client Lease DB into JFFS2 flash storage, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Management tab.";
 hservice.right2="The servers you define within the <b><em>" + service.dns_smartdns_option + "</em></b> below will be used exclusively.";
 hservice.sshshelp="To generate a key, choose the desired keysize, then click the <em>" + service.ssh_keygenerate + "</em> button to begin. Click OK and be patient. After key generation has completed you can choose to download the private key in the default OpenSSH format by clicking the <em>" + service.ssh_download + "</em> button. For further information on key usage <span class=\"link\" onclick=\"javascript:openHelpWindow('HServices.asp');\">click here</span>.";
@@ -2132,7 +2060,6 @@ hservice.page8="<dd>Enable Syslogd to capture system messages. By default they w
 hservice.page9="<dd>Enable the telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the current router's password.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If you are using the router in an untrusted environment e.g. a public hotspot, it is strongly recommended to use SSHd and deactivate telnet.</div></div></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 //help container
-var hstatus_vpn=new Object();
 hstatus_vpn.right1="<b>Policy-based Routing</b>:<br />Add IPs / NETs in the following format 0.0.0.0/0 to force clients to use the tunnel as the default gateway. Enter one IP / NET per line.<br /><b>IP Address / Netmask</b>:<br />Must be set when using DHCP-Proxy mode and local TAP is <b>not</b> bridged</i>";
 hstatus_vpn.cfg_xp="Click the <em>" + service.vpnd_export + "</em> button to download your current OpenVPN client settings. DD-WRT cannot generate Client Key / Certificate at this time, you will need to manually edit and insert these in the file. To read documentation on how-to / adjust settings <span class=\"link\" onclick=\"window.open('https:\/\/forum.dd-wrt.com/phpBB2/viewtopic.php&quest;t=327398')\">click here</span>.";
 hstatus_vpn.right2="<b>Additional Configuration</b>:<br />To push routes to clients add <i>'push \"route IP mask gateway\"'</i>, to push DNS / WINS add <i>'push \"dhcp-option DNS (or WINS) IP\"'</i> to the config.<br />Client connect directory:<br />When either USB or JFFS2 are mounted to <b>/jffs</b>, scripts will be called from <b>/jffs/etc/openvpn/ccd/</b>";
@@ -2289,7 +2216,6 @@ service.antaira_agent_configuration_url="Configuration URL";
 service.antaira_agent_token=share.token;
 
 // ** eop-tunnel.asp **//
-var eoip=new Object();
 eoip.titl="Tunnels";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet and IP Tunneling";
@@ -2386,17 +2312,14 @@ eoip.importt="Import Configuration";
 eoip.filepicker="Upload / Adapt & Apply";
 
 // help page
-var heoip=new Object();
 heoip.page1="<dd>Ethernet over IP (EoIP) Tunneling enables you to create an Ethernet tunnel between two routers on top of an IP connection. The EoIP interface appears as an Ethernet interface. When the bridging function of the router is enabled, all Ethernet traffic (all Ethernet protocols) will be bridged just as if there where a physical Ethernet interface and cable between the two routers (with bridging enabled).<br /><br />Network setups with EoIP interfaces : <br /><ul><li>Possibility to bridge LANs over the Internet</li><li>Possibility to bridge LANs over encrypted tunnels</li><li>Possibility to bridge LANs over 802.11b 'ad-hoc' wireless networks</li></ul></dd>";
 
 // ** Sipath.asp + cgi **//
-var sipath=new Object();
 sipath.titl="SiPath Overview";
 sipath.phone_titl="Phonebook";
 sipath.status_titl="Status";
 
 // ** Status_Lan.asp **//
-var status_lan=new Object();
 status_lan.titl="LAN Status";
 status_lan.h2="Local Area Network (LAN)";
 status_lan.legend="LAN Status";
@@ -2410,7 +2333,6 @@ status_lan.concount="Connections";
 status_lan.conratio="Ratio";
 
 //help container
-var hstatus_lan=new Object();
 hstatus_lan.right2="This is the router's MAC address, as seen on your local Ethernet network.";
 hstatus_lan.right4="This shows the router's IP address as it appears on your local Ethernet network.";
 hstatus_lan.right6="When the router is using a subnet mask, it is shown here.";
@@ -2421,7 +2343,6 @@ hstatus_lan.right10="By clicking on any MAC address, you will obtain the organiz
 hstatus_lan.page1="<dd>This page displays the LAN status and configuration. All information is read-only.</dd><dt>MAC Address</dt><dd>The MAC Address of the LAN interface is displayed here.</dd><dt>IP Address and Subnet Mask</dt><dd>The current IP Address and Subnet Mask of the router, as seen by users on your local area network (LAN), are displayed here.</dd><dt>DHCP Server</dt><dd>The status of the router's DHCP server function is displayed here.</dd><dt>Start/End IP Address</dt><dd>The first and the last IP address the DHCP server can hand out to clients.</dd><dt>DHCP Client List</dt><dd>To show the current IP address leases by the DHCP server, click the <i>DHCP Clients Table</i> button.</dd>";
 
 // ** Status_Bandwidth.asp **//
-var status_band=new Object();
 status_band.titl="Bandwidth Monitoring";
 status_band.h2="Bandwidth Monitoring";
 status_band.chg_unit="Switch to ";
@@ -2434,13 +2355,11 @@ status_band.follow="follow";
 status_band.up="up";
 
 //help container
-var hstatus_band=new Object();
 hstatus_band.svg="A browser that supports SVG is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (B/s or bit/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 
 // ** Status_Router.asp **//
-var status_router=new Object();
 status_router.titl="Router Status";
 status_router.h2="Router Information";
 status_router.legend="System";
@@ -2474,7 +2393,6 @@ status_router.inpvolt="Board Input Voltage";
 status_router.cputemp="Sensors";
 
 //help container
-var hstatus_router=new Object();
 hstatus_router.right2="This is the specified router name, you had input on the <i>Setup</i> tab under the <i>" + share.routername + "</i> field.";
 hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
 hstatus_router.right6="This is the router's current firmware.";
@@ -2486,7 +2404,6 @@ hstatus_router.right12="This is obtained from the three numbers that represent t
 hstatus_router.page1="<dd>This status screen displays the router's current status and configuration. All information is read-only.</dd><dt>" + share.routername + "</dt><dd>Shows the configured name of the router.</dd><dt>" + status_router.sys_model + "</dt><dd>Shows the router's vendor, model and other hardware revision details.</dd><dt>" + status_router.sys_firmver + "</dt><dd>The version / revision number and compilation date of the currently installed firmware. It is recommended to visit <a href=\"https:\/\/dd-wrt.com/support/other-downloads/?path=betas\" target=\"_new\">https:\/\/dd-wrt.com/downloads/betas</a> regularly to find updated firmware files.</dd><dt>" + status_router.sys_kernel + "</dt><dd>The current kernel version and build details is displayed here.</dd><dt>" + share.mac + "</dt><dd>The MAC Address of the WAN interface is displayed here.</dd><dt>" + share.hostname + "</dt><dd>The Hostname is the name of the router.</dd><dt>" + share.wandomainname + "</dt><dd>The currently configured WAN domain name is displayed here.</dd><dt>" + share.landomainname + "</dt><dd>The currently configured LAN domain name is displayed here.</dd><dt>" + status_router.sys_time + "</dt><dd>The current date and time is displayed here.</dd><dt>" + status_router.sys_up + "</dt><dd>The total uptime the router has been operating since last reboot is displayed here.</dd><dt>" + status_router.legend2 + "</dt><dd>This section shows various details about your CPU like its model, revision, number of cores, features supported, clock speed, load average and temperature(s) which may include the WiFi radios, if temperature monitoring is supported.</dd><dt>" + status_router.legend3 + "</dt><dd>Shows detailed RAM information starting with the available, free, used, buffer allocated, cached, active and inactive.</dd>";
 
 // ** Status_Internet.asp **//
-var status_inet=new Object();
 status_inet.titl="WAN Status";
 status_inet.h11="WAN";
 status_inet.conft="Configuration Type";
@@ -2516,7 +2433,6 @@ status_inet.latency="Latency";
 status_inet.test="Run Test";
 
 //help container
-var hstatus_inet=new Object();
 hstatus_inet.right2="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
 hstatus_inet.right4="This shows your router's Internet traffic since last reboot.";
 hstatus_inet.right6="This shows your router's Internet traffic by month. Drag the mouse over graph to see daily data. Data is stored in NVRAM.";
@@ -2524,12 +2440,10 @@ hstatus_inet.right6="This shows your router's Internet traffic by month. Drag th
 hstatus_inet.page1="<dt>" + status_inet.conft + "</dt><br /><dt>" + idx.conn_type + "</dt><dd>Will display the selected type of connection:<ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><dt>" + status_inet.wanuptime + "</dt></dd><dd> Will show the current WAN uptime total.</dd><dt>" + share.ipv4 + " and / or " + share.ipv6 + "</dt><dd>The current WAN IP/subnet mask or prefix in case you have IPv6 enabled.</dd><dt>" + share.gateway + "</dt><dd>Shows the router's current IP address.</dd></dt><br /><dt>IPv4 and / or IPv6 DNS 0 / 1 / 2</dt><dd>The Domain Name System (DNS) IP Addresses currently setup and in use by the router are shown here. Up to three DNS IPs are allowed. In most cases, the first available DNS entry is used.</dd><dt>" + status_inet.leasetime + "</dt><dd>The router's remaining lease time assigned to you by the ISP equipment is displayed here.</dd><dt>" + status_inet.traff + "</dt><dd>The router's Internet traffic (total since last reboot or by month).</dd><dt>" + status_inet.traffin + "</dt><dd> The current incoming traffic amount in MiB is displayed here.</dd><dt>" + status_inet.traffout + "</dt><dd> The current outgoing traffic amount in MiB is displayed here.</dd><dt>" + status_inet.traff_mon + "</dt><dd>A graphical representation of incoming / outgoing traffic by month is displayed here, you can view the current or at your choice view the previous or follwoing months when and if this data has already been captured.</dd><dt>" + status_inet.dataadmin + "</dt><dd>This section will allow you to backup / restore or delete the desired captured data.</dd>";
 
 // ** Status_Conntrack.asp **//
-var status_conn=new Object();
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
 
 // ** Status_Wireless.asp **//
-var status_wireless=new Object();
 status_wireless.titl="Wireless Status";
 status_wireless.h2="Wireless";
 status_wireless.legend="Wireless Status";
@@ -2550,7 +2464,6 @@ status_wireless.tx_time="Transmission Time";
 status_wireless.assoc_count="Connected Clients";
 status_wireless.chaininfo="Chain Info";
 // ** GPS info **//
-var status_gpsi=new Object();
 status_gpsi.legend="GPS Info";
 status_gpsi.status="Status";
 status_gpsi.lon="Longitude";
@@ -2561,7 +2474,6 @@ status_gpsi.ant_conn="Antenna Connected";
 status_gpsi.ant_disc="Antenna Disconnected";
 status_gpsi.na="Unavailable";
 //help container
-var hstatus_wireless=new Object();
 hstatus_wireless.right2="This is the router's MAC address, as seen on your local, wireless network.";
 hstatus_wireless.right4="As selected from the wireless tab, this will display the wireless mode (Mixed, G Only, B Only or Disabled) used by the network.";
 
@@ -2576,15 +2488,12 @@ hstatus_wireless.page7="<dd>The current wireless transfer rate is displayed here
 hstatus_wireless.page8="<dd>The status of the encryption is displayed here.</dd><dd>Click the <i>Survey</i> button to show all wireless networks in your neighbourhood reachable by your router.</dd>";
 
 // ** Status_OpenVPN.asp **//
-var status_openvpn=new Object();
 status_openvpn.titl="OpenVPN Status";
 
 // ** Status_CWMP.asp **//
-var status_cwmp=new Object();
 status_cwmp.titl="CWMP (TR-069) Status";
 
 // ** Triggering.asp **//
-var trforward=new Object();
 trforward.titl="Port Triggering";
 trforward.h2="Port Triggering";
 trforward.legend="Forwards";
@@ -2593,7 +2502,6 @@ trforward.fwdrange="Forwarded Port Range";
 trforward.app="Application";
 
 //help container
-var htrforward=new Object();
 htrforward.right2="Enter the application name of the trigger.";
 htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
 htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
@@ -2605,7 +2513,6 @@ htrforward.page1="<dd>Port Triggering allows you to do port forwarding without s
 htrforward.page2="</a> Or <a href=\"Forward_range.asp\">Port Range Forwarding</a>.</dd><dd>To add a new Port Triggering rule, click the <em>" + sbutton.add + "</em> button and fill in the fields below.<br />To remove the last rule, click the <i>remove</i> icon.</dd><dt>Application</dt><dd>Enter the name of the application in the field provided.</dd><dt>Triggered Range</dt><dd>Enter the number of the first and the last port of the range, which should be triggered. If a device sends outbound traffic from those ports, incoming traffic on the <i>Forwarded Range</i> will be forwarded to that device.</dd><dt>Forwarded Range</dt><dd>Enter the number of the first and the last port of the range, which should be forwarded from the Internet to the device, which falls within the <i>Triggered Range</i>.</dd><dt>Enable</dt><dd>Check the <em>" + share.enable + "</em> checkbox to enable port triggering for the application.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another triggering rule.</div></div></dd>";
 
 // ** Upgrade.asp **//
-var upgrad=new Object();
 upgrad.titl="Firmware Upgrade";
 upgrad.h2="Firmware and Reset Management";
 upgrad.legend="Firmware Upgrade and Reset";
@@ -2617,14 +2524,12 @@ upgrad.warning="W A R N I N G";
 upgrad.mess1="Upgrading the firmware may take a few minutes.<br />Do not turn off the power or press the reset button!";
 
 //help container
-var hupgrad=new Object();
 hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> Click the <em>Upgrade</em> button to begin the upgrade process. The upgrade must not be interrupted.";
 
 //help page
 hupgrad.page1="<dd>New firmware versions are posted at <a href=\"https:\/\/dd-wrt.com/support/other-downloads/?path=betas\" target=\"_new\">https:\/\/dd-wrt.com/downloads/betas</a> and can be downloaded for free.<br />Valid reasons to upgrade to a more recent firmware version include, <b>a new feature, a bug or security fixes</b>.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Ensure you have a backup of your current settings before you upgrade the router's firmware, in case you lose the configuration settings you can restore the backup.</div></div></dd><dd>To upgrade the router's firmware:<ol class=\"wide\"><li>Download the firmware upgrade file from the website.</li><li>Click the <i>Browse...</i> button and choose the firmware upgrade file form the directory you saved the upgrade file to.</li><li>Click the <em>" + sbutton.upgrade + "</em> button and wait until the upgrade has finished and router has rebooted.</li></ol><br /><div class=\"note\"><h4>Note:</h4><div>DO NOT POWER OFF THE ROUTER OR PRESS THE RESET BUTTON WHILE THE FIRMWARE IS BEING UPGRADED.</div></div></dd><dt>Reset Options</dt><dd>If you want to reset the router to the default settings for the firmware version you are upgrading to, select from the dropdown menu the <em>" + upgrad.resetOn + "</em> option.<br /><br /></dd>";
 
 // ** UPnP.asp **//
-var upnp=new Object();
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Active Port Forwards";
@@ -2634,7 +2539,6 @@ upnp.msg1="Click to delete port forward";
 upnp.msg2="Delete all port forwards?";
 
 //help container
-var hupnp=new Object();
 hupnp.right2="Click the remove icon to delete an individual entry.<br /> Click the <em>" + sbutton.delall + "</em> button to remove all entries.";
 hupnp.right4="Allows applications to automatically configure port forwarding.";
 
@@ -2644,7 +2548,6 @@ hupnp.page2="<dd>The UPnP forwards table shows all open ports forwarded automati
 hupnp.page3="<dd>Allows applications to automatically setup port forwarding rules.</dd>";
 
 // ** VPN.asp **//
-var vpn=new Object();
 vpn.titl="VPN Passthrough";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPN Passthrough";
@@ -2653,7 +2556,6 @@ vpn.pptp="PPTP Passthrough";
 vpn.l2tp="L2TP Passthrough";
 
 //help container
-var hvpn=new Object();
 hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
 
 //help page
@@ -2663,7 +2565,6 @@ hvpn.page3="<dd>Point-to-Point Tunneling Protocol is the method used to enable V
 hvpn.page4="<dd>Layer 2 Tunneling Protocol, an extension to the PPP protocol that enables ISPs to operate VPNs. L2TP merges the best features of two other tunneling protocols: PPTP from Microsoft and L2F from Cisco Systems. To allow L2TP tunnels to passthrough the router, L2TP Passthrough is enabled by default. To disable L2TP Passthrough, select <em>" + share.disable + "</em>.</dd>";
 
 // ** Vlan.asp **//
-var vlan=new Object();
 vlan.titl="Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN Configuration";
@@ -2682,7 +2583,6 @@ vlan.eee="802.3az EEE";
 vlan.flow="Flow control";
 
 // ** WEP.asp **//
-var wep=new Object();
 wep.defkey="Default Transmit Key";
 wep.passphrase="Passphrase";
 wep.opt_64="64-bit 10 Hex Digits";
@@ -2690,7 +2590,6 @@ wep.opt_128="128-bit 26 Hex Digits";
 wep.generate="Generate";
 
 // ** WOL.asp **//
-var wol=new Object();
 wol.titl="WOL";
 wol.h2="Wake-on-LAN (WOL)";
 wol.legend="Available Hosts";
@@ -2708,7 +2607,6 @@ wol.srv="Enable Daemon";
 wol.pass="SecureOn Password";
 
 //help container
-var hwol=new Object();
 hwol.right2="This page allows you to <b><em>" + sbutton.wol + "</em></b> hosts on your local network. You can manually wake up hosts by clicking the <em>" + sbutton.wol + "</em> button or alternatively by programing an automatic wake up schedule provided by the " + wol.legend5 + ".";
 hwol.right4="MAC address(es) are entered in the format e.g. 01:23:45:67:89:AB and must be separated by a <em>SPACE</em>.";
 hwol.right6="The IP address is typically the broadcast address for the local network, it could also be a remote address when e.g. the target host is not a LAN client.";
@@ -2723,7 +2621,6 @@ hwol.page6="<dd class=\"definition\">Broadcast to this " + wol.udp + ".</dd>";
 hwol.page7="<dd class=\"definition\">Besides attempting to <b>" + sbutton.wol + "</b> the manually specified host(s), by clicking on the <em>" + sbutton.wol + "</em> button will save the MAC address(es), network broadcast, and " + wol.udp + " values into the respective <b>manual_wol_mac</b>, <b>manual_wol_network</b>, and <b>manual_wol_port</b> NVRAM variables and commits them to memory.</dd>";
 
 // ** WanMAC.asp **//
-var wanmac=new Object();
 wanmac.titl="MAC Address Clone";
 wanmac.h2="MAC Address Clone";
 wanmac.legend="MAC Clone";
@@ -2731,14 +2628,12 @@ wanmac.wan="Clone WAN MAC";
 wanmac.wlan="Clone Wireless MAC";
 
 //help container
-var hwanmac=new Object();
 hwanmac.right2="Some ISPs will require you to register your MAC address. If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
 
 //help page
 hwanmac.page1="<dd>The router's MAC address is a 12-digit code assigned to a unique piece of hardware for identification. Some ISPs require that you register the MAC address of your network card/adapter, which was connected to your cable or DSL modem during installation.</dd>";
 hwanmac.page2="<dd>To clone your network adapter's MAC address onto the router, select <em>" + share.enable + "</em> and enter your adapter's MAC address in the <i>Clone WAN MAC</i> field or click the <em>" + sbutton.wanmac + "</em> button to automatically fill in the MAC address of the device you are using. Then save your changes by clicking on the <em>" + sbutton.save + "</em> button.<br /><br />To disable MAC address cloning, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Find your adapter's MAC address by following the instructions for your computers operating system.<br /><br /><b>Microsoft Windows:</b><ol class=\"wide\"><li>Click the Start button, and select Run or the<em>Windows key</em>+<em>R</em> shortcut.</li><li>Type <tt>cmd</tt> in the field provided, and press the OK button.</li><li>At the command prompt, run <tt>ipconfig /all</tt>, and look at your adapter's physical address.</li><li>Write down your adapter's MAC address.</li></ol><br /><b>Linux:</b><ol class=\"wide\"><li>Click <em>CTRL</em>+<em>ALT</em>+<em>T</em>, to open a terminal.</li><li>Type <tt>ifconfig -a</tt>, and press Enter</li><li>Look for the Ethernet adapter you are using, the MAC address is in this format <b>xx:xx:xx:xx:xx:xx</b>.</li><li>Write down your adapter's MAC address.</li></ol><br /></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
-var roaming=new Object();
 
 roaming.debug_level="Debug Level";
 roaming.local_mode="Disable Network Communication";
@@ -2802,7 +2697,6 @@ roaming.prefer_5ghz="Prefer 5 GHz";
 roaming.prefer_he="Prefer 802.11ax";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
-var wpa=new Object();
 wpa.titl="Wireless Security";
 wpa.h2="Wireless Security";
 wpa.secmode="Security Mode";
@@ -2851,7 +2745,6 @@ wpa.owe="OWE Opportunistic Wireless Encryption";
 wpa.owe_ifname="OWE Transition Interface";
 wpa.ssid_protection="SSID protection in 4-way handshake";
 
-var aoss=new Object();
 aoss.titl="AOSS Security";
 aoss.aoss="AOSS";
 aoss.service="AOSS Service";
@@ -2882,7 +2775,6 @@ aoss.externalregistrar="PIN Method";
 aoss.release="Release";
 aoss.configure="Configure";
 
-var olupgrade=new Object();
 olupgrade.avail_updates="Available Updates";
 olupgrade.version="Version";
 olupgrade.release="Release";
@@ -2890,14 +2782,11 @@ olupgrade.readme="Readme";
 olupgrade.choose="Choose";
 olupgrade.retrieve_error="Error retrieving update information";
 
-var nintendo=new Object();
 nintendo.titl="Nintendo";
-nintendo.spotpass=new Object();
 nintendo.spotpass.titl="Nintendo SpotPass";
 nintendo.spotpass.enable="Enable Nintendo SpotPass";
 nintendo.spotpass.servers="Allow Servers";
 
-var sec80211x=new Object();
 sec80211x.xsuptype="Xsupplicant Type";
 sec80211x.keyxchng="EAP Key-Management";
 sec80211x.servercertif="Public Server Certificate";
@@ -2911,7 +2800,6 @@ sec80211x.peap="EAP-PEAP Settings";
 sec80211x.tls="EAP-TLS Settings";
 sec80211x.ttls="EAP-TTLS Settings";
 //help container
-var hwpa=new Object();
 hwpa.right2="You may choose from; Disabled, WEP, WPA Personal, WPA Enterprise or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES.";
 
 //help page
@@ -2924,13 +2812,11 @@ hwpa.page6="<dd>RADIUS utilizes either a RADIUS server for authentication or WEP
 hwpa.page7="<dd>There are two levels of WEP encryption, 64-bit and 128-bit. To utilize WEP, select the desired encryption bit, and enter a passphrase or up to four WEP key in hexadecimal format. If you are using 64-bit (40-bit), then each key must consist of exactly 10 hexadecimal characters. For 128-bit, each key must consist of exactly 26 hexadecimal characters. Valid hexadecimal characters are \"0\"-\"9\" and \"A\"-\"F\". Check your wireless clients to see which encryption level it supports.<br /><br />Use of WEP is discouraged due to security weaknesses, and one of the WPA modes should be used whenever possible. Only use WEP if you have clients that can only support WEP (usually older, 802.11b-only clients).</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** WL_FilterTable.asp **//
-var wl_filter=new Object();
 wl_filter.titl="MAC Address Filter List";
 wl_filter.h2="MAC Address Filter List";
 wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 // ** WL_ActiveTable.asp **//
-var wl_active=new Object();
 wl_active.titl="Wireless Active Client MAC List";
 wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
@@ -2938,7 +2824,6 @@ wl_active.active="Active Clients";
 wl_active.inactive="Inactive Clients";
 
 // ** Wireless_WDS.asp **//
-var wds=new Object();
 wds.titl="WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="WDS Settings";
@@ -2952,11 +2837,9 @@ wds.subnet="Subnet";
 wds.legend2="Extra Options";
 
 //help page
-var hwds=new Object();
 hwds.page1="<dd>WDS (Wireless Distribution System) is a Wireless Access Point mode that enables wireless bridging in which WDS APs communicate only with each other only (without allowing for wireless clients or stations to access them), and/or wireless repeating in which APs communicate both with each other and with wireless stations (at the expense of half the throughput). This firmware currently supports two types of WDS, LAN and Point to Point.</dd><dt>LAN-type WDS</dt><dd>This is the easiest, and currently most common, type of WDS used for linking LANs. It is very simple to setup and requires no extra routing protocols or knowledge of networking. Simply put, it is pure bridging. A simple example would be extending the range of an existing AP by setting up a 2nd AP and connecting it to the first using LAN-type WDS.<ol class=\"wide\"><li>Make sure you are using the same <a href=\"HWireless.asp\">Wireless Settings</a> on both routers and not any type of <a href=\"HWPA.asp\">" + wpa.titl + "</a>.</li><li>Find a dropdown selection that has <i>Disabled</i> displayed. Click this and select <i>LAN</i>, do the same on the other router.</li><li>On the first router, take the numbers next to <i>Wireless MAC</i> and enter them in to the second router on the same line that you set to \"LAN\".</li><li>Take the Wireless MAC from the second router and enter them on the first router.</li><li>Check for any typing errors and then click the <em>" + sbutton.save + "</em> button.</li><li>Go to the <a href=\"HStatusWireless.asp\">Wireless Status</a> page. You should see <i>WDS Link</i> and the Wireless MAC of the other router listed, with a signal reading. If the signal is \"0dBm\" then there may be something wrong. Check your antenna connections and configuration settings, and try again.</li><li>Once you have a good signal (-70dBm to -30dBm, -70dBm being lowest), you can change the <i>Internet Connection Type</i> on the <a href=\"HSetup.asp\">Basic Setup</a> page of the second router to <i>Disabled</i> and set the <em>Gateway</em> to the LAN IP Address of the first router. You can now run normal tests to check if you are connected (like <tt>ping</tt>).</li></ol><br /><div class=\"note\"><h4>Note:</h4><div>WDS is only available in <em>AP</em> mode. Also Wireless encryption <em>WPA2</em> and Wireless network mode <em>B-Only</em> are not supported under WDS.</div></div></dd>";
 
 // ** Wireless_radauth.asp **//
-var radius=new Object();
 radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="RADIUS";
@@ -2981,7 +2864,6 @@ radius.label18="Accounting";
 radius.local_ip="Force Client IP";
 
 // help page
-var hradauth=new Object();
 hradauth.page1="<dd>RADIUS is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note:</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
 hradauth.page2="<dd>When sending the authentication request to the RADIUS server, the wireless client use the MAC address as the username. This would be received by the RADIUS server in the following format :<ul class=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></dd> ";
 hradauth.page3="<dd>The RADIUS server IP address and TCP port.</dd>";
@@ -2991,7 +2873,6 @@ hradauth.page6="<dd>Transactions between the client and RADIUS accounting server
 hradauth.page7="<dd>If the RADIUS server becomes unavailable then the authentication will be disabled until the server becomes available. This allows wireless remote administration of an Access Point in fail scenarios.</dd>";
 
 // ** Wireless_MAC.asp **//
-var wl_mac=new Object();
 wl_mac.titl="MAC Filter";
 wl_mac.h2="Wireless MAC Filter";
 wl_mac.legend="MAC Filter";
@@ -3001,11 +2882,9 @@ wl_mac.deny="Blacklisted Network Clients";
 wl_mac.allow="Whitelisted Network Clients";
 
 //help page
-var hwl_mac=new Object();
 hwl_mac.page1="<dd>The Wireless MAC Filter allows you to control which wireless equipped computers/devices may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from computers, see <a href=\"HWanMAC.asp\">MAC Address Cloning</a> for detailed instructions.</dd><dd>To set up a filter, click <em>" + share.enable + "</em>, and follow these example instructions:<ol class=\"wide\"><li>If you want to block specific wireless-equipped devices from communicating with the router, then keep the default setting, <i>" + wl_mac.deny + "</i>. If you want to allow specific wireless-equipped devices to communicate with the router, then click the radio button next to <i>" + wl_mac.allow + "</i>.</li><li>Click the <em>" + sbutton.filterMac + "</em> button. Enter the appropriate MAC addresses into the MAC fields.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The MAC address should be entered in this format: xx:xx:xx:xx:xx:xx (the x's represent the actual characters of the target MAC address).</div></div></li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.clos + "</em> button to return to the previous screen without saving changes.</li></ol><br />To disable the Wireless MAC Filter, keep the default setting, <em>" + share.disable + "</em>.</dd>";
 
 // ** WiMAX
-var wl_wimax=new Object();
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
 wl_wimax.downstream="Downstream Frequency";
@@ -3016,14 +2895,12 @@ wl_wimax.mode="Operation Mode";
 wl_wimax.mac="Subscriber MAC Address";
 
 // ** Gpio **//
-var gpio=new Object();
 gpio.titl="GPIO Inputs / Outputs";
 gpio.h2="GPIO Inputs / Outputs";
 gpio.oplegend="GPIO Outputs";
 gpio.iplegend="GPIO Inputs";
 
 // ** FreeRadius.asp **//
-var freeradius=new Object();
 freeradius.titl="FreeRADIUS";
 freeradius.h2="FreeRADIUS";
 freeradius.legend="FreeRADIUS Server";
@@ -3058,11 +2935,9 @@ freeradius.gencertime="Generating %d%%, this may take a while to complete...";
 freeradius.gencerdone="Certicate generation completed!";
 
 //help container
-var hfreeradius=new Object();
 hfreeradius.right2="Before starting the FreeRADIUS Server, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Management tab.";
 
 // ** Wireless_Advanced.asp **//
-var wl_adv=new Object();
 wl_adv.titl="Advanced Wireless Settings";
 wl_adv.h2="Advanced Wireless Settings";
 wl_adv.legend="Advanced Settings";
@@ -3139,7 +3014,6 @@ wl_adv.shrt="Short"; 				//************* don't use .short! **************//
 wl_adv.mbps="Mbit/s";
 
 //help container
-var hwl_adv=new Object();
 hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
 
 //help page
@@ -3173,7 +3047,6 @@ hwl_adv.page27="<dd>The Arbitration Inter-Frame Spacing Number specifies a wait 
 hwl_adv.page28="<dd>Transmission Opportunity for \"a\" \"b\" and \"g\" modes is an interval of time when a WME AP has the right to initiate transmissions onto the wireless medium (WM). This value specifies (in milliseconds) the Transmission Opportunity (TXOP) for the AP; that is, the interval of time when the WMM AP has the right to initiate transmissions on the wireless network.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** Wireless_Basic.asp **//
-var wl_basic=new Object();
 wl_basic.titl="Wireless";
 wl_basic.h2="Wireless";
 wl_basic.cardtype="Card Type";
@@ -3383,7 +3256,6 @@ wl_basic.cell_density="Cell Density";
 wl_basic.legacy="Legacy Rates (11b)";
 
 //help container
-var hwl_basic=new Object();
 hwl_basic.right2="<b>Attention:</b> It is recommended that you click the <em>" + sbutton.apply + "</em> button after you change a value in order to update the fields with the corresponding parameters.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ACK timing. <b>0</b> disables ACK timing completely on Broadcom based firmware. On Atheros based firmware, <b>0</b> enables auto ACK timing mode.";
@@ -3402,7 +3274,6 @@ hwl_basic.page7="<dd>Check all values and click the <em>" + sbutton.save + "</em
 hwl_basic.antaira="<dt class=\"term\"><b>AP mode</b></dt><dd class=\"definition\">This is the default mode, also called Infrastructure mode</dd><dt class=\"term\"><b>Client mode</b></dt><dd class=\"definition\">The radio is used to connect wirelessly to another AP</dd><dt class=\"term\"><b>Client bridged (Routed no NAT) mode</b></dt><dd class=\"definition\">The radio is used to connect wirelessly to another AP</dd><dt class=\"term\"><b>Ad-Hoc mode</b></dt><dd class=\"definition\">This is for peer to peer wireless connections.</dd><dt class=\"term\"><b>Wireless Channel</b></dt><dd class=\"definition\">Select the appropriate channel top operate on.</dd><dt class=\"term\"><b>SSID Broadcast</b></dt><dd class=\"definition\">When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router.</dd><dt class=\"term\"><b>Sensitivity Range (ACK Timing)</b></dt><dd class=\"definition\">Adjusts the ACK timing based on the maximum distance in meters.</dd> ";
 
 // SuperChannel **//
-var superchan=new Object();
 superchan.legend="SuperChannel Activation";
 superchan.h2feat="Feature";
 superchan.featxt="<p>SuperChannel allows the use of special frequencies on <b>capable devices only</b>.<br />These frequencies range between 2192 Mhz to 2732 Mhz for the 802.11g band and 4915 Mhz to 6100 Mhz for the 802.11a band.<br /><b>This feature is not yet enabled.</b></p>";
@@ -3412,12 +3283,10 @@ superchan.lsyskey="System Key";
 superchan.lactkey="Activation Key";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
-var fail=new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
 
 // ** Success*.asp / Reboot.asp  **//
-var success=new Object();
 success.saved="Settings saved.";
 success.restore="Settings restored.<br />Unit is rebooting now. Please wait a moment...";
 success.upgrade="Upgrade successful.<br />Unit is rebooting now. Please wait a moment...";
@@ -3430,11 +3299,9 @@ success.alert2="If you have changed your router's IP address, please note that y
 success.alert3="If you are connected via WLAN, please join the network and then click the <em>" + sbutton.continu + "</em> button.";
 
 // ** Logout.asp  **//
-var logout=new Object();
 logout.message="You have successfully logged out.<br />Thank you for using DD-WRT!";
 
 // ** Setup Assistant **//
-var sas=new Object();
 sas.title="Setup Assistant";
 sas.internet_connection="Internet Connection";
 sas.network_settings="Network Settings";
@@ -3442,7 +3309,6 @@ sas.wireless_settings="Wireless Settings";
 sas.other_settings="Other Settings";
 sas.hwan="WAN Setup";
 
-var hsas=new Object();
 hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the Internet and you only need an access point then set the WAN mode to \"Disabled\".";
 hsas.h_routerip="Router IP";
 hsas.routerip="This is the IP address assigned to the router in your internal network. If you change this address you also have to use it to access the Router Management after applying the changes.";
@@ -3459,12 +3325,10 @@ hsas.wireless="Wireless help text";
 hsas.other="Other Settings help text";
 
 // ** AOSS **//
-var haoss=new Object();
 haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
 haoss.securitymodes="AOSS security modes define what client security modes are accepted for AOSS negotiation. If a client only supports security modes that are not enabled, it cannot connect.";
 haoss.wps="WPS enables support for WiFi Protected Setup using the button on your router or the PIN that came with your client device.";
 
-var ias=new Object();
 ias.title="Setup";
 ias.card_info="Setup Card";
 ias.edit_note="Click on any information in the Setup Card to edit it.";
@@ -3482,7 +3346,6 @@ ias.hl_for_conf="For Configuration";
 ias.hl_guest_card="Guest Card";
 
 // ** Speedchecker.asp **//
-var speedchecker=new Object();
 speedchecker.titl="Speedchecker";
 speedchecker.legend="Speedchecker";
 speedchecker.server="Speedchecker Service";
@@ -3494,30 +3357,24 @@ speedchecker.nfeath4title="WiFi Speedchecker";
 speedchecker.nfeath4txt="Is your WiFi slowing you down? One-click speed test for both Internet and WiFi speed.";
 speedchecker.nfeatbutton="&nbsp;&nbsp;Click here to test your speed&nbsp;&nbsp;";
 
-var dnscrypt=new Object();
 dnscrypt.nfeath4title="DNSCrypt";
 dnscrypt.nfeath4txt="<a href=\"https:\/\/www.dnscrypt.org\">DNSCrypt</a> authenticates communications between a DNS client and a DNS resolver. It prevents DNS spoofing.";
 dnscrypt.nfeatbutton="&nbsp;&nbsp;Go to the Services Tab&nbsp;&nbsp;";
 
-var features=new Object();
 features.legend="Display New Features";
 features.label="Show Features";
 
-var featureshead=new Object();
 featureshead.h2title="Check out the new Features!&nbsp;&nbsp;";
 featureshead.hidebtn="Hide this Box";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
-var dhcp=new Object();
 dhcp.titl="DHCP Active IP Table";
 dhcp.h2="DHCP Active IP Table";
 dhcp.server="DHCP Server IP Address :";
 dhcp.tclient="Client Hostname";
 
-var donate=new Object();
 donate.mb="You may also donate through the Moneybookers account mb@dd-wrt.com";
 
-var reg=new Object();
 reg.not_reg="The system is not activated. Please contact your local dealer to obtain a valid Activation Key related to the displayed System Key.";
 reg.sys_key="System Key";
 reg.act_key="Activation Key";
