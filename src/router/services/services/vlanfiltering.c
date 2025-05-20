@@ -97,8 +97,8 @@ void start_vlanfiltering(void)
 			args[cnt++] = NULL;
 			char tmp[256];
 			char *bridge = getBridge(ifname, tmp);
-			if (nvram_nmatch("1","%s_vlan",bridge) {
-				eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid",
+			if (nvram_nmatch("1", "%s_vlan", bridge)) {
+				eval("bridge", "vlan", "del", "dev", bridge, "vid",
 				     "1"); /* del default pvid if custom vlans are defined */
 				//			eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
 				//			     "self"); /* allow bridge to receive vlan with vid X */
