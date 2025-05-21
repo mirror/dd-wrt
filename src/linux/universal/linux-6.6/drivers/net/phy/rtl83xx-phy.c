@@ -113,7 +113,11 @@ static u64 disable_polling(int port)
 		sw_w32_mask(BIT(port), 0, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		saved_state = sw_r32(RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		saved_state <<= 32;
+		saved_state |= sw_r32(RTL931X_SMI_PORT_POLLING_CTRL);
+		sw_w32_mask(BIT(port % 32), 0,
+			    RTL931X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
 		break;
 	}
 
@@ -138,7 +142,8 @@ static int resume_polling(u64 saved_state)
 		sw_w32(saved_state, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		sw_w32(saved_state >> 32, RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		sw_w32(saved_state, RTL931X_SMI_PORT_POLLING_CTRL);
 		break;
 	}
 
@@ -268,6 +273,7 @@ void rtl9300_sds_rst(int sds_num, u32 mode)
 
 	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
 	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
+
 }
 
 void rtl9300_sds_set(int sds_num, u32 mode)
@@ -1530,7 +1536,7 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 
 		for (l = 0; l < 100; l++) {
 			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
+			if (val & 0x80)
 				break;
 		}
 		if (l >= 100) {
@@ -3202,24 +3208,82 @@ u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
 	return (v >> start_bit) & (BIT(l) - 1);
 }
 
-static void rtl931x_sds_rst(u32 sds)
+/* Reset the SerDes by powering it off, setting its mode to off (0x9f), setting the new mode
+ * and turning it on again. Modes are:
+ * 0x06: QSGMII		0x10: XSGMII		0x0d: USXGMII
+ * 0x12: HISGMII	0x09: XSMII		0x02: SGMII
+ * 0x1f: OFF
+ */
+void rtl9310_sds_rst(int sds_num, phy_interface_t mode)
+{
+	u32 sds_ps, val;
+//	int pos = sds_num % 4;
+
+	int pos = ((sds_num & 0x3) << 3);
+
+	switch (mode) {
+	case PHY_INTERFACE_MODE_QSGMII:
+		val = 0x6;
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		val = 0x2;
+		break;
+	case PHY_INTERFACE_MODE_HSGMII:
+		val = 0x12;
+		break;
+
+	case PHY_INTERFACE_MODE_1000BASEX:
+		/* serdes mode FIBER1G */
+		val = 0x9;
+		break;
+
+	case PHY_INTERFACE_MODE_10GBASER:
+	case PHY_INTERFACE_MODE_10GKR:
+		val = 0x35;
+		break;
+//	case MII_10GR1000BX_AUTO:
+//		val = 0x39;
+//		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+		val = 0xd;
+		break;
+	default:
+		val = 0x25;
+	}
+
+	// Switch Serdes Off
+	sds_ps = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	sw_w32(sds_ps | BIT(sds_num), RTL931X_PS_SERDES_OFF_MODE_CTRL);
+
+	// Change SerDes mode to off and then set new mode
+	sw_w32_mask(0xff << pos, 0x9f << pos, RTL931X_SERDES_MODE_CTRL(sds_num));
+	msleep(10);
+	// New mode, need to set BIT(7)
+	val |= BIT(7);
+	sw_w32_mask(0xff << pos, val << pos, RTL931X_SERDES_MODE_CTRL(sds_num));
+
+	// Return to inital power state
+	sw_w32(sds_ps, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+}
+
+/*static void rtl931x_sds_rst(u32 sds)
 {
 	u32 o, v, o_mode;
 	int shift = ((sds & 0x3) << 3);
 
-	/* TODO: We need to lock this! */
-
+	// TODO: We need to lock this!
+	
 	o = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	v = o | BIT(sds);
 	sw_w32(v, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 
-	o_mode = sw_r32(RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	v = BIT(7) | 0x1F;
-	sw_w32_mask(0xff << shift, v << shift, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	sw_w32(o_mode, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	o_mode = sw_r32(RTL931X_SERDES_MODE_CTRL(sds));
+	v = (1 << 7) | 0x1F;
+	sw_w32_mask(0xff << shift, v << shift, RTL931X_SERDES_MODE_CTRL(sds));
+	sw_w32(o_mode, RTL931X_SERDES_MODE_CTRL(sds));
 
 	sw_w32(o, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-}
+}*/
 
 static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
 {
@@ -3277,20 +3341,28 @@ void rtl931x_sds_fiber_disable(u32 sds)
 
 	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, v);
 }
-
+#if 1
 static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 {
+	int pos;
 	u32 val, asds = rtl931x_get_analog_sds(sds);
 
 	/* clear symbol error count before changing mode */
 	rtl931x_symerr_clear(sds, mode);
 
+	pos = ((sds & 0x3) << 3);
 	val = 0x9F;
-	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	sw_w32(val, RTL931X_SERDES_MODE_CTRL(sds));
 
 	switch (mode) {
+	case PHY_INTERFACE_MODE_QSGMII:
+		val = 0x6;
+		break;
 	case PHY_INTERFACE_MODE_SGMII:
 		val = 0x5;
+		break;
+	case PHY_INTERFACE_MODE_HSGMII:
+		val = 0x25;
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX:
@@ -3302,23 +3374,23 @@ static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 	case PHY_INTERFACE_MODE_10GKR:
 		val = 0x35;
 		break;
-/*	case MII_10GR1000BX_AUTO:
-		val = 0x39;
-		break; */
-
-
+//	case MII_10GR1000BX_AUTO:
+//		val = 0x39;
+//		break;
 	case PHY_INTERFACE_MODE_USXGMII:
-		val = 0x1B;
+		val = 0x1b;
 		break;
 	default:
 		val = 0x25;
 	}
 
+	pr_info("%s writing analog SerDes Mode value was %02x\n", __func__, rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6));
 	pr_info("%s writing analog SerDes Mode value %02x\n", __func__, val);
 	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, val);
 
 	return;
 }
+#endif
 
 static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
 {
@@ -3332,7 +3404,7 @@ static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
 /*	case MII_HISGMII_5G: */
 /*		return 0x2a; */
 	case PHY_INTERFACE_MODE_QSGMII:
-		return 0x2a;			/* Code also has 0x34 */
+		return 0x34;			/* Code also has 0x34 */
 	case PHY_INTERFACE_MODE_XAUI:		/* MII_RXAUI_LITE: */
 		return 0x2c;
 	case PHY_INTERFACE_MODE_XGMII:		/* MII_XSGMII */
@@ -3472,6 +3544,18 @@ static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
 {
 	u32 val;
 
+	int shift = ((sds & 0x3) << 3);
+
+	// TODO: We need to lock this!
+	
+/*	o = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	v = o | BIT(sds);
+	sw_w32(v, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+
+	o_mode = sw_r32(RTL931X_SERDES_MODE_CTRL(sds));
+	v = (1 << 7) | 0x1F;
+	sw_w32_mask(0xff << shift, v << shift, RTL931X_SERDES_MODE_CTRL(sds));*/
+
 	switch (mode) {
 	case PHY_INTERFACE_MODE_QSGMII:
 		val = 0x6;
@@ -3495,7 +3579,7 @@ static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
 
 	val |= (1 << 7);
 
-	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	sw_w32_mask(0xff << shift, val << shift, RTL931X_SERDES_MODE_CTRL(sds));
 }
 
 static sds_config sds_config_10p3125g_type1[] = {
@@ -3522,7 +3606,7 @@ static sds_config sds_config_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
 };
 
-void rtl931x_sds_init(u32 sds, phy_interface_t mode)
+void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 {
 	u32 board_sds_tx_type1[] = {
 		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
@@ -3553,7 +3637,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 			rtl931x_read_sds_phy(asds, 0x24, 0x9), asds);
 	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
 			rtl931x_read_sds_phy(asds & ~1, 0x20, 0x12), asds & ~1);
-	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL(sds));
 	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x24, 0x7));
 	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x26, 0x7));
 	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
@@ -3712,11 +3796,12 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 
-	if (mode == PHY_INTERFACE_MODE_XGMII ||
+/*	if (mode == PHY_INTERFACE_MODE_XGMII ||
 	    mode == PHY_INTERFACE_MODE_QSGMII ||
 	    mode == PHY_INTERFACE_MODE_HSGMII ||
 	    mode == PHY_INTERFACE_MODE_SGMII ||
-	    mode == PHY_INTERFACE_MODE_USXGMII) {
+	    mode == PHY_INTERFACE_MODE_10GBASER ||
+	    mode == PHY_INTERFACE_MODE_USXGMII)*/ {
 		if (mode == PHY_INTERFACE_MODE_XGMII)
 			rtl931x_sds_mii_mode_set(sds, mode);
 		else
@@ -3744,7 +3829,7 @@ int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mod
 
 	rtl9310_sds_field_w(asds, page, 0x7, 4, 0, band);
 
-	rtl931x_sds_rst(sds);
+	rtl9310_sds_rst(sds, mode);
 
 	return 0;
 }
@@ -4007,7 +4092,8 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 
 static int rtl9300_serdes_probe(struct phy_device *phydev)
 {
-	if (soc_info.family != RTL9300_FAMILY_ID)
+
+	if (soc_info.family != RTL9300_FAMILY_ID && soc_info.family != RTL9310_FAMILY_ID)
 		return -ENODEV;
 
 	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
@@ -4151,9 +4237,12 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL9300_I),
 		.name		= "REALTEK RTL9300 SERDES",
+		.phy_id_mask	= RTL9300_PHY_ID_MASK,
 		.features	= PHY_GBIT_FIBRE_FEATURES,
+//#ifndef CONFIG_RTL931X		
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
+//#endif
 		.probe		= rtl9300_serdes_probe,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
