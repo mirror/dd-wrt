@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 		}
 		nvram_seti("ntp_success", 0);
 
-		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds", NTP_M_TIMER);
+		dd_logdebug("process_monitor", "We need to re-update after %d seconds", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;
 

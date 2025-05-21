@@ -974,7 +974,7 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 	case 1:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON");
+		dd_logdebug("resetbutton", "XXXXXXXX: TURN LED ON");
 		set_gpio(1, 1);
 #endif
 #endif
@@ -988,7 +988,7 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 	case 0:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF");
+		dd_logdebug("resetbutton", "XXXXXXXX: TURN LED OFF");
 		set_gpio(1, 0);
 #endif
 #endif
@@ -1071,7 +1071,7 @@ static void handle_ses(void)
 		case 1:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON");
+			dd_logdebug("resetbutton", "XXXXXXXX: TURN LED ON");
 			set_gpio(0, 1);
 			set_gpio(1, 1);
 #endif
@@ -1081,7 +1081,7 @@ static void handle_ses(void)
 		case 0:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF");
+			dd_logdebug("resetbutton", "XXXXXXXX: TURN LED OFF");
 			set_gpio(0, 0);
 			set_gpio(1, 0);
 #endif

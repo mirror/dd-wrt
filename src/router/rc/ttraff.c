@@ -31,7 +31,7 @@ void remove_oldest_entry(int cur_month, int cur_year)
 			snprintf(old, sizeof(old), "traff-%02u-%u", month, year);
 			len = strlen(nvram_safe_get(old));
 			if (len > 0) {
-				dd_syslog(LOG_DEBUG, "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year,
+				dd_logdebug("ttraff", "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year,
 					  len + 15);
 				nvram_unset(old);
 				return;
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 	 * now we can loop and collect data 
 	 */
 
-	dd_syslog(LOG_DEBUG, "ttraff: data collection started\n");
+	dd_logdebug("ttraff", "ttraff: data collection started\n");
 
 	do {
 		time(&tloc);
@@ -301,7 +301,7 @@ int main(int argc, char **argv)
 			nvram_async_commit();
 			commited = 1;
 			needcommit = 0;
-			dd_syslog(LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", day, month, year);
+			dd_logdebug("ttraff", "ttraff: data for %d-%d-%d commited to nvram\n", day, month, year);
 		}
 
 		sleep(58);
