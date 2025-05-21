@@ -1826,6 +1826,116 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	return 0;
 }
 
+void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
+{
+	int l = end_bit - start_bit + 1;
+	u32 data = v;
+
+	if (l < 32) {
+		u32 mask = BIT(l) - 1;
+
+		data = rtl930x_read_sds_phy(sds, page, reg);
+		data &= ~(mask << start_bit);
+		data |= (v & mask) << start_bit;
+	}
+
+	rtl931x_write_sds_phy(sds, page, reg, data);
+}
+
+u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
+{
+	int l = end_bit - start_bit + 1;
+	u32 v = rtl931x_read_sds_phy(sds, page, reg);
+
+	if (l >= 32)
+		return v;
+
+	return (v >> start_bit) & (BIT(l) - 1);
+}
+
+
+static u32 rtl931x_get_analog_sds(u32 sds)
+{
+	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+
+	if (sds < 14)
+		return sds_map[sds];
+
+	return sds;
+}
+
+int rtl931x_link_sts_get(u32 sds)
+{
+	u32 sts, sts1, latch_sts, latch_sts1;
+	if (0){
+		u32 xsg_sdsid_0, xsg_sdsid_1;
+
+		xsg_sdsid_0 = sds < 2 ? sds : (sds - 1) * 2;
+		xsg_sdsid_1 = xsg_sdsid_0 + 1;
+
+		sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 29, 8, 0);
+		sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 29, 8, 0);
+		latch_sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
+		latch_sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
+	} else {
+		u32  asds, dsds;
+
+		asds = rtl931x_get_analog_sds(sds);
+		sts = rtl9310_sds_field_r(asds, 0x5, 0, 12, 12);
+		latch_sts = rtl9310_sds_field_r(asds, 0x4, 1, 2, 2);
+
+		dsds = sds < 2 ? sds : (sds - 1) * 2;
+		latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
+		sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
+	}
+
+	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
+		sds, sts, sts1, latch_sts, latch_sts1);
+
+	return sts1;
+}
+
+static int rtl9310_read_status(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int phy_addr = phydev->mdio.addr;
+	struct device_node *dn;
+	u32 sds_num = 0, status, latch_status, mode;
+
+	if (dev->of_node) {
+		dn = dev->of_node;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+		pr_debug("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	if (sds_num < 0)
+		return 0;
+
+	latch_status = rtl931x_link_sts_get(sds_num);
+
+
+	if (latch_status) {
+		phydev->link = true;
+		phydev->speed = SPEED_10000;
+		phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+		phydev->duplex = DUPLEX_FULL;
+	}
+
+	return 0;
+}
+
+static int rtl93xx_read_status(struct phy_device *phydev){
+	if (soc_info.family == RTL9300_FAMILY_ID)
+		return rtl9300_read_status(phydev);
+	else
+		return rtl9310_read_status(phydev);
+}
+
 void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 {
 	int page = 0x2e; /* 10GR and USXGMII */
@@ -3162,7 +3272,7 @@ int rtl9300_sds_cmu_band_get(int sds)
 	u32 en;
 	u32 cmu_band;
 
-/*	page = rtl9300_sds_cmu_page_get(sds); */
+//	page = rtl931x_sds_cmu_page_get(mode);
 	page = 0x25; /* 10GR and 1000BX */
 	sds = (sds % 2) ? (sds - 1) : (sds);
 
@@ -3179,33 +3289,6 @@ int rtl9300_sds_cmu_band_get(int sds)
 	}
 
 	return cmu_band;
-}
-
-void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
-{
-	int l = end_bit - start_bit + 1;
-	u32 data = v;
-
-	if (l < 32) {
-		u32 mask = BIT(l) - 1;
-
-		data = rtl930x_read_sds_phy(sds, page, reg);
-		data &= ~(mask << start_bit);
-		data |= (v & mask) << start_bit;
-	}
-
-	rtl931x_write_sds_phy(sds, page, reg, data);
-}
-
-u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
-{
-	int l = end_bit - start_bit + 1;
-	u32 v = rtl931x_read_sds_phy(sds, page, reg);
-
-	if (l >= 32)
-		return v;
-
-	return (v >> start_bit) & (BIT(l) - 1);
 }
 
 /* Reset the SerDes by powering it off, setting its mode to off (0x9f), setting the new mode
@@ -3324,16 +3407,6 @@ static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
 	return;
 }
 
-static u32 rtl931x_get_analog_sds(u32 sds)
-{
-	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
-
-	if (sds < 14)
-		return sds_map[sds];
-
-	return sds;
-}
-
 void rtl931x_sds_fiber_disable(u32 sds)
 {
 	u32 v = 0x3F;
@@ -3341,7 +3414,7 @@ void rtl931x_sds_fiber_disable(u32 sds)
 
 	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, v);
 }
-#if 1
+
 static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 {
 	int pos;
@@ -3369,7 +3442,6 @@ static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 		/* serdes mode FIBER1G */
 		val = 0x9;
 		break;
-
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
 		val = 0x35;
@@ -3390,7 +3462,6 @@ static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 
 	return;
 }
-#endif
 
 static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
 {
@@ -3795,7 +3866,9 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 	val = ori & ~BIT(sds);
 	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
-
+	if (mode == PHY_INTERFACE_MODE_HSGMII)
+		rtl9310_sds_field_w(asds, 0x2a, 7, 15, 15, 0);
+	
 /*	if (mode == PHY_INTERFACE_MODE_XGMII ||
 	    mode == PHY_INTERFACE_MODE_QSGMII ||
 	    mode == PHY_INTERFACE_MODE_HSGMII ||
@@ -3849,38 +3922,6 @@ int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 	pr_info("%s band is: %d\n", __func__, band);
 
 	return band;
-}
-
-
-int rtl931x_link_sts_get(u32 sds)
-{
-	u32 sts, sts1, latch_sts, latch_sts1;
-	if (0){
-		u32 xsg_sdsid_0, xsg_sdsid_1;
-
-		xsg_sdsid_0 = sds < 2 ? sds : (sds - 1) * 2;
-		xsg_sdsid_1 = xsg_sdsid_0 + 1;
-
-		sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 29, 8, 0);
-		sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 29, 8, 0);
-		latch_sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
-		latch_sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
-	} else {
-		u32  asds, dsds;
-
-		asds = rtl931x_get_analog_sds(sds);
-		sts = rtl9310_sds_field_r(asds, 0x5, 0, 12, 12);
-		latch_sts = rtl9310_sds_field_r(asds, 0x4, 1, 2, 2);
-
-		dsds = sds < 2 ? sds : (sds - 1) * 2;
-		latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
-		sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
-	}
-
-	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
-		sds, sts, sts1, latch_sts, latch_sts1);
-
-	return sts1;
 }
 
 static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
@@ -4239,16 +4280,14 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.name		= "REALTEK RTL9300 SERDES",
 		.phy_id_mask	= RTL9300_PHY_ID_MASK,
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-//#ifndef CONFIG_RTL931X		
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
-//#endif
 		.probe		= rtl9300_serdes_probe,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
-		.read_status	= rtl9300_read_status,
+		.read_status	= rtl93xx_read_status,
 #ifdef CONFIG_RTL931X		
-		.config_aneg	= rtl9300_config_aneg,
+//		.config_aneg	= rtl9300_config_aneg,
 #endif
 	},
 };
