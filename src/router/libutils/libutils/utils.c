@@ -722,6 +722,9 @@ void *getUEnv(char *name)
 	case ROUTER_ZYXEL_XGS1250:
 		fp = fopen("/dev/mtdblock/1", "rb");
 		break;
+	case ROUTER_EDGECORE_ECS4125:
+		fp = fopen("/dev/mtdblock/1", "rb");
+		break;
 	default:
 		fp = fopen("/dev/mtdblock/2", "rb");
 		break;

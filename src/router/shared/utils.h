@@ -841,6 +841,8 @@
 
 #define ROUTER_ZYXEL_XGS1250 0x126116
 
+#define ROUTER_EDGECORE_ECS4125 0x1270ff
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

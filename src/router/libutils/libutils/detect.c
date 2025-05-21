@@ -384,6 +384,10 @@ int internal_getRouterBrand()
 		setRouter("Linksys LGS310C");
 		return ROUTER_LINKSYS_LGS;
 	}
+	if (!strcmp(modelstr, "ECS4125-12P")) {
+		setRouter("Edgecore ECS4125-12P");
+		return ROUTER_EDGECORE_ECS4125;
+	}
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
