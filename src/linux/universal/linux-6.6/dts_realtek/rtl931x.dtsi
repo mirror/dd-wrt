@@ -89,11 +89,13 @@
 			#size-cells = <0>;
 		};
 
+		
 		crypto0: crypto@c000 {
 			compatible = "realtek,realtek-crypto";
 			reg = <0xc000 0x10>;
-			interrupt-parent = <&intc>;
-			interrupts = <22 3>;
+			interrupt-parent = <&gic>;
+			interrupt-names = "sec";
+			interrupts = <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
 		watchdog0: watchdog@3260 {
