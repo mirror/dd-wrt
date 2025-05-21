@@ -70,7 +70,9 @@
 #define RTL822X_VND1_SERDES_OPTION			0x697a
 #define RTL822X_VND1_SERDES_OPTION_MODE_MASK		GENMASK(5, 0)
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII		0
+#define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII	1
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX		2
+#define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_HSGMII	3
 
 #define RTL822X_VND1_SERDES_CTRL3			0x7580
 #define RTL822X_VND1_SERDES_CTRL3_MODE_MASK		GENMASK(5, 0)
@@ -840,10 +842,20 @@ static int rtl822x_probe(struct phy_device *phydev)
 
 static int rtl822xb_config_init(struct phy_device *phydev)
 {
-	bool has_2500, has_sgmii;
+	bool has_2500, has_sgmii, has_hsgmii;
 	int ret, val;
 	u16 mode;
-
+//        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0xa430 ,phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xa430));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n",0x75f3, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x75f3));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", RTL822X_VND1_SERDES_OPTION, phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_OPTION));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0x6a04, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x6a04));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0x6f10, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x6f10));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0x6f11, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x6f11));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", RTL8221B_PHYCR1, phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL8221B_PHYCR1));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0x7588, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x7588));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0x7589, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x7589));
+        printk(KERN_INFO "reg dummp 0x%08X = 0x%08X\n", 0x7587, phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x7587));
+//        return 0;
 	has_2500 = test_bit(PHY_INTERFACE_MODE_2500BASEX,
 			    phydev->host_interfaces) ||
 		   phydev->interface == PHY_INTERFACE_MODE_2500BASEX;
@@ -852,33 +864,55 @@ static int rtl822xb_config_init(struct phy_device *phydev)
 			     phydev->host_interfaces) ||
 		    phydev->interface == PHY_INTERFACE_MODE_SGMII;
 
+	has_hsgmii = test_bit(PHY_INTERFACE_MODE_HSGMII,
+			     phydev->host_interfaces) ||
+		    phydev->interface == PHY_INTERFACE_MODE_HSGMII;
+
+	printk(KERN_INFO "has 2500 %d has_sgmii %d has_hsgmii %d\n", has_2500, has_sgmii, has_hsgmii);
 	/* disable listening on MDIO broadcast address (0) */
-	ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2, 0xa430, BIT(13));
-	if (ret < 0)
-		return ret;
+//	ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2, 0xa430, BIT(13));
+//	if (ret < 0)
+//		return ret;
 
 	/* fill in possible interfaces */
 	__assign_bit(PHY_INTERFACE_MODE_2500BASEX, phydev->possible_interfaces,
 		     has_2500);
 	__assign_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces,
 		     has_sgmii);
+	__assign_bit(PHY_INTERFACE_MODE_HSGMII, phydev->possible_interfaces,
+		     has_hsgmii);
 
-	if (!has_2500 && !has_sgmii)
+	if (!has_2500 && !has_sgmii && !has_hsgmii)
 		return 0;
 
 	/* determine SerDes option mode */
-	if (has_2500 && !has_sgmii) {
+	if (has_2500 && !has_sgmii && !has_hsgmii) {
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
 		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_2500 && has_sgmii && !has_hsgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_sgmii && has_hsgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_hsgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_2500) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_sgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
 	} else {
-		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII;
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
 		phydev->rate_matching = RATE_MATCH_NONE;
 	}
-
+	printk(KERN_INFO "init mode %d\n", mode);
 	/* the following sequence with magic numbers sets up the SerDes
 	 * option mode
 	 */
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x75f3, 0);
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x75f3, 0x2);
 	if (ret < 0)
 		return ret;
 
@@ -889,6 +923,14 @@ static int rtl822xb_config_init(struct phy_device *phydev)
 	if (ret < 0)
 		return ret;
 
+ 
+ 	if (ret < 0)
+ 		return ret;
+ 
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x6a04, 0x0503);
+ 	if (ret < 0)
+ 		return ret;
+ 
 	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x6a04, 0x0503);
 	if (ret < 0)
 		return ret;
@@ -911,22 +953,22 @@ static int rtl822xb_config_init(struct phy_device *phydev)
 		return ret;
 
 	/* Disable SGMII AN */
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7588, 0x2);
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7588, 0xce);
 	if (ret < 0)
 		return ret;
 
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7589, 0x71d0);
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7589, 0x35a);
 	if (ret < 0)
 		return ret;
 
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7587, 0x3);
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7587, 0x2);
 	if (ret < 0)
 		return ret;
 
-	ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1, 0x7587,
-					val, !(val & BIT(0)), 500, 100000, false);
-	if (ret < 0)
-		return ret;
+//	ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1, 0x7587,
+//					val, !(val & BIT(0)), 500, 100000, false);
+//	if (ret < 0)
+//		return ret;
 
 	return 0;
 }
@@ -1612,11 +1654,11 @@ static struct phy_driver realtek_drvs[] = {
 		.name           = "RTL8221B-VB-CG 2.5Gbps PHY (C22)",
 		.config_intr	= rtl8221b_config_intr,
 		.handle_interrupt = rtl8221b_handle_interrupt,
-		.soft_reset     = genphy_soft_reset,
+//		.soft_reset     = genphy_soft_reset,
 		.probe		= rtl822x_probe,
 		.get_features   = rtl822x_get_features,
 		.config_aneg    = rtl822x_config_aneg,
-		.config_init    = rtl822xb_config_init,
+//		.config_init    = rtl822xb_config_init,
 		.get_rate_matching = rtl822xb_get_rate_matching,
 		.read_status    = rtl822xb_read_status,
 		.suspend        = genphy_suspend,
@@ -1628,9 +1670,9 @@ static struct phy_driver realtek_drvs[] = {
 		.name           = "RTL8221B-VB-CG 2.5Gbps PHY (C45)",
 		.config_intr	= rtl8221b_config_intr,
 		.handle_interrupt = rtl8221b_handle_interrupt,
-		.soft_reset     = genphy_soft_reset,
+//		.soft_reset     = genphy_soft_reset,
 		.probe		= rtl822x_probe,
-		.config_init    = rtl822xb_config_init_war,
+//		.config_init    = rtl822xb_config_init_war,
 		.get_rate_matching = rtl822xb_get_rate_matching,
 		.get_features   = rtl822x_c45_get_features,
 		.config_aneg    = rtl822x_c45_config_aneg,
@@ -1658,9 +1700,9 @@ static struct phy_driver realtek_drvs[] = {
 		.name           = "RTL8221B-VN-CG 2.5Gbps PHY (C45)",
 		.config_intr	= rtl8221b_config_intr,
 		.handle_interrupt = rtl8221b_handle_interrupt,
-		.soft_reset     = genphy_soft_reset,
+//		.soft_reset     = genphy_soft_reset,
 		.probe		= rtl822x_probe,
-		.config_init    = rtl822xb_config_init_war,
+//		.config_init    = rtl822xb_config_init_war,
 		.get_rate_matching = rtl822xb_get_rate_matching,
 		.get_features   = rtl822x_c45_get_features,
 		.config_aneg    = rtl822x_c45_config_aneg,
