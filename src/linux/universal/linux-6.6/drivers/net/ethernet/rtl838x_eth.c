@@ -155,6 +155,9 @@ static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
+	h->cpu_tag[2] = 0;
+	if (prio >= 0)
+		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set  Priority Queue
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
 	if (dest_port >= 32) {
@@ -165,10 +168,6 @@ static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[6] = BIT(dest_port) >> 16;
 		h->cpu_tag[7] = BIT(dest_port) & 0xffff;
 	}
-
-	/* Enable (AS_QID) and set priority queue (QID) */
-	if (prio >= 0)
-		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
 // Currently unused
@@ -646,9 +645,9 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	u32 reset_mask;
 
 	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
+
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 	mdelay(100);
-
 	/* Disable and clear interrupts */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
 		sw_w32(0x00000000, priv->r->dma_if_intr_rx_runout_msk);
@@ -677,9 +676,9 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 
 	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-		reset_mask = 0x6;
+		reset_mask = 0x06;
 	else
-		reset_mask = 0xc;
+		reset_mask = 0x0c;
 
 	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
@@ -802,14 +801,14 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	/* Enable DMA */
 	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, priv->r->dma_if_ctrl);
 
+
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
-
-	if (priv->family_id == RTL9300_FAMILY_ID)
+	if (priv->family_id == RTL9300_FAMILY_ID) {
 		sw_w32_mask(0, BIT(priv->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
-	else
+	} else {
 		sw_w32_mask(0, BIT(priv->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
-
+	}
 	if (priv->family_id == RTL9300_FAMILY_ID)
 		sw_w32(0x217, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	else
@@ -2222,6 +2221,7 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 
 	return 0;
 }
+void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode);
 
 static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 {
@@ -2321,8 +2321,6 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 
 		if (of_property_read_u32(dn, "sds", &bus_priv->sds_id[pn]))
 			bus_priv->sds_id[pn] = -1;
-		else
-			pr_info("set sds port %d to %d\n", pn, bus_priv->sds_id[pn]);
 
 		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
 			bus_priv->smi_bus[pn] = 0;
@@ -2500,6 +2498,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	u8 mac_addr[ETH_ALEN];
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
+	int i;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
 		(u32)pdev, (u32)(&(pdev->dev)));
