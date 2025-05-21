@@ -63,10 +63,53 @@ const char *get_system_type(void)
 	return soc_info.name;
 }
 
+
+void prom_console_init(void)
+{
+	/* UART 16550A is initialized by the bootloader */
+}
+
+#ifdef CONFIG_EARLY_PRINTK
+#define rtl838x_r8(reg)		__raw_readb(reg)
+#define rtl838x_w8(val, reg)	__raw_writeb(val, reg)
+
+void unregister_prom_console(void)
+{
+
+}
+
+void disable_early_printk(void)
+{
+
+}
+
+void prom_putchar(char c)
+{
+	unsigned int retry = 0;
+
+	do {
+		if (retry++ >= 30000) {
+			/* Reset Tx FIFO */
+			rtl838x_w8(TXRST | CHAR_TRIGGER_14, UART0_FCR);
+			return;
+		}
+	} while ((rtl838x_r8(UART0_LSR) & LSR_THRE) == TxCHAR_AVAIL);
+
+	/* Send Character */
+	rtl838x_w8(c, UART0_THR);
+}
+
+char prom_getchar(void)
+{
+	return '\0';
+}
+#endif
+
 void __init prom_free_prom_memory(void)
 {
 
 }
+
 
 void __init device_tree_init(void)
 {
@@ -125,6 +168,9 @@ void __init identify_rtl9302(void)
 void __init prom_init(void)
 {
 	uint32_t model;
+
+	/* uart0 */
+	setup_8250_early_printk_port(0xb8002000, 2, 0);
 
 	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	pr_info("RTL838X model is %x\n", model);
