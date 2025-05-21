@@ -3814,6 +3814,13 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 		rtl9310_sds_field_w(asds, 0x1f, 13, 15, 0, 0x109e);
 		rtl9310_sds_field_w(asds, 0x1f, 0x6, 14, 10, 0x8);
 		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
+		
+		//tx polarity change
+		rtl9310_sds_field_w(asds, 0x6, 0x2, 14, 14, 1);
+
+
+//		rtl931x_sds_rx_rst(sds);
+
 		break;
 
 	case PHY_INTERFACE_MODE_HSGMII:

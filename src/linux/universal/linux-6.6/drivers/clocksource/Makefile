@@ -60,7 +60,7 @@ obj-$(CONFIG_SPRD_TIMER)	+= timer-sprd.o
 obj-$(CONFIG_NPCM7XX_TIMER)	+= timer-npcm7xx.o
 obj-$(CONFIG_RDA_TIMER)		+= timer-rda.o
 obj-$(CONFIG_REALTEK_OTTO_TIMER)	+= timer-rtl-otto.o
-
+#obj-$(CONFIG_REALTEK_EXT_TIMER)	+= cevt_external_timer.o
 obj-$(CONFIG_ARC_TIMERS)		+= arc_timer.o
 obj-$(CONFIG_ARM_ARCH_TIMER)		+= arm_arch_timer.o
 obj-$(CONFIG_ARM_GLOBAL_TIMER)		+= arm_global_timer.o

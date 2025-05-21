@@ -276,8 +276,10 @@ void __init prom_init(void)
 
 	mips_cpc_probe();
 
-	if (!register_cps_smp_ops())
+	if (!register_cps_smp_ops()) { 
+		pr_info("Use CPS SMP\n");
 		return;
+	}
 
 #ifdef CONFIG_MIPS_MT_SMP
 	if (cpu_has_mipsmt) {
@@ -287,6 +289,6 @@ void __init prom_init(void)
 		return;
 	}
 #endif
-
 	register_up_smp_ops();
+
 }

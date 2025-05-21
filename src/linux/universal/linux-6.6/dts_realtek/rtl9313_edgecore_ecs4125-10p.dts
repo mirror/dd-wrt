@@ -214,19 +214,17 @@
 		};
 
 		/* RTL9313 Internal Serdes */
-		phy52: ethernet-phy@8 {
-			compatible = "ethernet-phy-ieee802.3-c45";
+		phy52: ethernet-phy@52 {
+			compatible = "ethernet-phy-ieee802.3-c22";
 			phy-is-integrated;
 			reg = <52>;
-//			rtl9300,smi-address = <2 0>;
 			sds = < 10 >;
 		};
 
-		phy53: ethernet-phy@9 {
-			compatible = "ethernet-phy-ieee802.3-c45";
+		phy53: ethernet-phy@53 {
+			compatible = "ethernet-phy-ieee802.3-c22";
 			phy-is-integrated;
 			reg = <53>;
-//			rtl9300,smi-address = <3 0>;
 			sds = < 11 >;
 		};
 	};
@@ -291,36 +289,27 @@
 
 		/* RTL9313 Internal SerDes */
 
- 		port@52 {
- 			reg = <52>;
- 			label = "lan09";
- 			phy-mode = "10gbase-r";
-			phy-handle = <&phy52>;
- 			sfp = <&sfp0>;
-			fixed-link {
-				managed;
-				in-band-status;
-				speed = <10000>;
-				full-duplex;
-				pause;
-			};
- 		};
+		port@52 {
+			reg = <52>;
+			label = "lan09";
+			phy-mode = "10gbase-r";
+			pseudo-phy-handle = <&phy52>;
+			sfp = <&sfp0>;
+//			led-set = <2>;
+			managed = "in-band-status";
+		};
 
- 		port@53 {
- 			reg = <53>;
- 			label = "lan10";
- 			phy-mode = "10gbase-r";
-			phy-handle = <&phy53>;
- 			sfp = <&sfp1>;
-			fixed-link {
-				managed;
-				in-band-status;
-				speed = <10000>;
-				full-duplex;
-				pause;
-			};
- 		};
+		port@53 {
+			reg = <53>;
+			label = "lan10";
+			phy-mode = "10gbase-r";
+			pseudo-phy-handle = <&phy53>;
+			sfp = <&sfp1>;
+//			led-set = <2>;
+			managed = "in-band-status";
+		};
 
+ 
 		/* CPU-Port */
 		port@56 {
 			ethernet = <&ethernet0>;

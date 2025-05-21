@@ -249,7 +249,7 @@ void __init plat_time_init(void)
 		plat_time_init_fallback();
 
 #ifdef CONFIG_CLKSRC_MIPS_GIC
-	update_gic_frequency_dt(mips_hpt_frequency);
+	update_gic_frequency_dt(700000000);
 #endif
 	timer_probe();
 }
