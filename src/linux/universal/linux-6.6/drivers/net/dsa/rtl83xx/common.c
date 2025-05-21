@@ -804,6 +804,8 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 {
 	struct rtl83xx_route *r;
 	struct rhlist_head *tmp, *list;
+	if (!priv->r->route_read)
+		return -ENOENT;
 
 	rcu_read_lock();
 	list = rhltable_lookup(&priv->routes, &ip_addr, route_ht_params);
@@ -1178,7 +1180,7 @@ static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 	return free_mac;
 }
 
-static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
+int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 			    struct fib_entry_notifier_info *info)
 {
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
@@ -1601,11 +1603,12 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	for (int i = 0; i <= priv->cpu_port; i++)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
-	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
 
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
+
+	/* Enable link and media change interrupts. Are the SERDES masks needed? */
+	sw_w32_mask(0, 3, priv->r->isr_glb_src);
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
@@ -1680,7 +1683,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* TODO: put this into l2_setup() */
 	/* Flood BPDUs to all ports including cpu-port */
-	if (soc_info.family != RTL9300_FAMILY_ID) {
+	if (soc_info.family != RTL9300_FAMILY_ID || soc_info.family != RTL9310_FAMILY_ID) {
 		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
 		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
 

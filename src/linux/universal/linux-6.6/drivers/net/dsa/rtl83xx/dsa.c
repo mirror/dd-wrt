@@ -698,6 +698,20 @@ static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
 }
 
+u8 port_sds[RTL931X_CPU_PORT] = {2, 0, 0, 0, 0, 0, 0, 0,
+				 3, 0, 0, 0, 0, 0, 0, 0,
+				 4, 0, 0, 0, 0, 0, 0, 0,
+				 5, 0, 0, 0, 0, 0, 0, 0,
+				 6, 0, 0, 0, 0, 0, 0, 0,
+				 7, 0, 0, 0, 0, 0, 0, 0,
+				 8, 0, 9, 0, 0, 0, 0, 0};
+
+void rtl931x_set_sds(int port, u32 sds) {
+	port_sds[port] = sds;
+}
+
+void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode);
+
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					unsigned int mode,
 					const struct phylink_link_state *state)
@@ -726,7 +740,25 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	} else {
 		mcr &= ~RTL838X_NWAY_EN;
 	}
+
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+}
+
+void rtl9310_sds_mode_usxgmii(int sds_num)
+{
+	u32 a[12] = {0x13a4, 0x13a4, 0x13a8, 0x13a8, 0x13AC, 0x13B0, 0x13B4, 0x13B4,
+			0x13B8, 0x13B8, 0x13B8, 0x13B8};
+	u32 o[12] = {0, 16, 0, 16, 0, 0, 0, 16, 0, 4, 8, 12};
+	u32 v[12] = {0x5101, 0x5101, 0x5101, 0x5101, 0x5101, 0x50101, 0x55, 0x55, 0xf, 0xf, 0xf, 0xf};
+// uboot uses
+//	u32 v[12] = {0x4101, 0x4101, 0x4101, 0x4101, 0x4101, 0x40101, 0x45, 0x45, 0x9, 0x9, 0x9, 0x9};
+	u32 m[12] = {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x7ffff, 0xff, 0xff, 0xf, 0xf, 0xf, 0xf};
+	int n = sds_num - 2;
+
+	if (sds_num < 0 || sds_num > 13)
+		return;
+
+	sw_w32_mask(m[n] << o[n], v[n] << o[n], a[n]);
 }
 
 static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
@@ -738,42 +770,38 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	u32 reg, band;
 
 	sds_num = priv->ports[port].sds_num;
-	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
+#if 0
+
+//	sds_num = port_sds[port];
+	pr_info("%s: speed %d %d %d\n", __func__, state->speed, state->interface, port);
 
 	switch (state->interface) {
 	case PHY_INTERFACE_MODE_HSGMII:
 		pr_info("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_HSGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_HSGMII);
-		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_HSGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_HSGMII);
 		break;
 	case PHY_INTERFACE_MODE_1000BASEX:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_1000BASEX);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_1000BASEX);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_1000BASEX);
 		break;
 	case PHY_INTERFACE_MODE_XGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_XGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_XGMII);
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_10GBASER);
+		pr_info("%s setting mode PHY_INTERFACE_MODE_10GBASE\n", __func__);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_10GBASER);
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 		/* Translates to MII_USXGMII_10GSXGMII */
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_USXGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_USXGMII);
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
 		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_SGMII);
-		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_SGMII);
 		break;
 	case PHY_INTERFACE_MODE_QSGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_QSGMII);
+		pr_info("%s setting mode PHY_INTERFACE_MODE_QSGMII\n", __func__);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_QSGMII);
 		break;
 	default:
 		pr_err("%s: unknown serdes mode: %s\n",
@@ -781,8 +809,75 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		return;
 	}
 
+	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
+		rtl9310_sds_mode_usxgmii(port_sds[port]);
+#endif
+#if 0
+	switch (state->speed) {
+	case SPEED_10000:
+		rtl931x_sds_init(sds_num,port, PHY_INTERFACE_MODE_XGMII);		
+		break;
+	case SPEED_2500:
+		rtl931x_sds_init(sds_num,port, PHY_INTERFACE_MODE_HSGMII);
+		break;
+	case SPEED_5000:
+		rtl931x_sds_init(sds_num,port, PHY_INTERFACE_MODE_QSGMII);
+		break;
+	case SPEED_1000:
+		rtl931x_sds_init(sds_num,port, PHY_INTERFACE_MODE_SGMII);
+		break;
+	default:
+		rtl931x_sds_init(sds_num,port, PHY_INTERFACE_MODE_SGMII);
+		break;
+	}
+#endif
+	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
+#if 1
+	switch (state->interface) {
+	case PHY_INTERFACE_MODE_HSGMII:
+		pr_info("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_HSGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_HSGMII);
+		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_HSGMII);
+		break;
+	case PHY_INTERFACE_MODE_1000BASEX:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_1000BASEX);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_1000BASEX);
+		break;
+	case PHY_INTERFACE_MODE_XGMII:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_XGMII);
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+	case PHY_INTERFACE_MODE_10GKR:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_10GBASER);
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+		/* Translates to MII_USXGMII_10GSXGMII */
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_USXGMII);
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
+//		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_SGMII);
+//		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
+		break;
+	case PHY_INTERFACE_MODE_QSGMII:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_QSGMII);
+		break;
+	default:
+		pr_err("%s: unknown serdes mode: %s\n",
+			__func__, phy_modes(state->interface));
+		return;
+	}
+
+	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
+		rtl9310_sds_mode_usxgmii(port_sds[port]);
+
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
-	pr_info("%s reading FORCE_MODE_CTRL: %08x\n", __func__, reg);
 
 	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
 
@@ -798,7 +893,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		reg |= RTL931X_DUPLEX_MODE;
 
 	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
-
+#endif
 }
 
 static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
@@ -847,14 +942,19 @@ static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 	u32 v = 0;
 
 	/* Stop TX/RX to port */
+
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
 
 	/* No longer force link */
-	if (priv->family_id == RTL9300_FAMILY_ID)
+	if (priv->family_id == RTL9300_FAMILY_ID) {
 		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
-	else if (priv->family_id == RTL9310_FAMILY_ID)
-		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
-	sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
+		sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
+	}
+	else if (priv->family_id == RTL9310_FAMILY_ID) {
+//	pr_info("%s reading FORCE_MODE_CTRL: %08x, %d\n", __func__, sw_r32(priv->r->mac_force_mode_ctrl(port)), (sw_r32(priv->r->mac_force_mode_ctrl(port)) >> RTL931X_SPEED_SHIFT) & 0xf);
+//		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
+//		sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
+	}
 }
 
 static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
@@ -877,6 +977,8 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
 
+	pr_debug("%s portread %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
 	if (priv->family_id == RTL8380_FAMILY_ID) {
 		mcr &= ~RTL838X_RX_PAUSE_EN;
 		mcr &= ~RTL838X_TX_PAUSE_EN;
@@ -894,7 +996,8 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 		if (dsa_port_is_cpu(dp))
 			mcr |= RTL83XX_FORCE_EN;
 
-	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+	} 
+	else if (priv->family_id == RTL8390_FAMILY_ID) {
 		mcr &= ~RTL839X_RX_PAUSE_EN;
 		mcr &= ~RTL839X_TX_PAUSE_EN;
 		mcr &= ~RTL839X_DUPLEX_MODE;
@@ -915,6 +1018,7 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+
 
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
@@ -962,14 +1066,49 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 			mcr |= RTL930X_DUPLEX_MODE;
 		if (dsa_port_is_cpu(dp) || !priv->ports[port].phy_is_integrated)
 			mcr |= RTL930X_FORCE_EN;
-	}
-
-	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
-
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+//	pr_info("%s restart port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+//		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	} 
+	else {
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+//	pr_info("%s mac port ctrl %08X\n", __func__, priv->r->mac_port_ctrl(port));
+//	pr_info("%s reading FORCE_MODE_CTRL: %08x, speed %d %d\n", __func__, mcr, (mcr >> RTL931X_SPEED_SHIFT) & 0xf, spdsel);
+//	pr_info("%s mac port ctrl %08X\n", __func__, priv->r->mac_port_ctrl(port));
+
+#if 0
+
+//	mcr | RTL931X_FORCE_EN;
+//	mcr | RTL931X_FORCE_LINK_EN
+		mcr &= ~RTL931X_RX_PAUSE_EN;
+		mcr &= ~RTL931X_TX_PAUSE_EN;
+		mcr &= ~RTL931X_DUPLEX_MODE;
+		mcr &= ~RTL931X_SPEED_MASK;
+		mcr |= RTL931X_FORCE_LINK_EN;
+		mcr |= spdsel << RTL931X_SPEED_SHIFT;
+
+		mcr |= RTL931X_FORCE_LINK_EN;
+
+		if (tx_pause)
+			mcr |= RTL931X_TX_PAUSE_EN;
+		if (rx_pause)
+			mcr |= RTL931X_RX_PAUSE_EN;
+		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+			mcr |= RTL931X_DUPLEX_MODE;
+		if (dsa_port_is_cpu(dp) || !priv->ports[port].phy_is_integrated)
+			mcr |= RTL931X_FORCE_EN;
+//	pr_info("%s port %d writing FORCE_MODE_CTRL: %08x speed %d\n", __func__, port, mcr, (mcr >> RTL931X_SPEED_SHIFT) & 0xf);
+//	pr_info("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+#endif
+//	pr_info("%s restart port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+//		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	}
+
 }
 
 static void rtl83xx_get_strings(struct dsa_switch *ds,

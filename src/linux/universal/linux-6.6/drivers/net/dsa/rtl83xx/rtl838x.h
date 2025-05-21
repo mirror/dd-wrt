@@ -151,6 +151,7 @@
 #define RTL_SPEED_5000				6
 #define RTL_SPEED_10000				4
 
+
 #define RTL83XX_FORCE_EN			(1 << 0)
 #define RTL83XX_FORCE_LINK_EN			(1 << 1)
 
@@ -173,17 +174,20 @@
 #define RTL930X_FORCE_LINK_EN			(1 << 1)
 #define RTL930X_DUPLEX_MODE			(1 << 2)
 #define RTL930X_SPEED_SHIFT			(3)
-#define RTL930X_SPEED_MASK			(15 << RTL930X_SPEED_SHIFT)
+#define RTL930X_SPEED_MASK			(0xf << RTL930X_SPEED_SHIFT)
 #define RTL930X_TX_PAUSE_EN			(1 << 7)
 #define RTL930X_RX_PAUSE_EN			(1 << 8)
 #define RTL930X_MAC_FORCE_FC_EN			(1 << 9)
 
+#define RTL931X_SPEED_SHIFT			(12)
+#define RTL931X_SPEED_MASK			(0xf << RTL931X_SPEED_SHIFT)
 #define RTL931X_FORCE_EN			(1 << 9)
 #define RTL931X_FORCE_LINK_EN			(1 << 0)
 #define RTL931X_DUPLEX_MODE			(1 << 2)
 #define RTL931X_MAC_FORCE_FC_EN			(1 << 4)
 #define RTL931X_TX_PAUSE_EN			(1 << 16)
 #define RTL931X_RX_PAUSE_EN			(1 << 17)
+
 
 /* EEE */
 #define RTL838X_MAC_EEE_ABLTY			(0xa1a8)
@@ -577,6 +581,19 @@ typedef enum {
 #define RTL930X_L3_HW_LU_KEY_IP_CTRL		(0xACA0)
 #define RTL930X_L3_HW_LU_CTRL			(0xACC0)
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
+
+#define RTL931X_L3_HOST_TBL_CTRL                                                                          (0xF004)
+#define RTL931X_L3_IPUC_ROUTE_CTRL                                                                        (0xF008)
+#define RTL931X_L3_IP6UC_ROUTE_CTRL                                                                       (0xF00C)
+#define RTL931X_L3_IPMC_ROUTE_CTRL                                                                        (0xF010)
+#define RTL931X_L3_IP6MC_ROUTE_CTRL                                                                       (0xF014)
+#define RTL931X_L3_IP_MTU_CTRL()                                                                     	  (0xF1E0 + (((i) << 2)))
+#define RTL931X_L3_IP6_MTU_CTRL()                                                                     	  (0xF220 + (((i) << 2)))
+
+#define RTL931X_L3_HW_LU_KEY_CTRL                                                                         (0xAC9C)
+#define RTL931X_L3_HW_LU_KEY_IP_CTRL                                                                     (0xF2A0)
+#define RTL931X_L3_HW_LU_KEY_DIP_CTRL                                                                     (0xF2B0)
+#define RTL931X_L3_HW_LU_CTRL                                                                             (0xF2C0)
 
 /* Port LED Control */
 #define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))

@@ -2,6 +2,7 @@
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include <linux/etherdevice.h>
+#include <linux/inetdevice.h>
 
 #include "rtl83xx.h"
 
@@ -81,7 +82,7 @@ enum template_field_id {
  */
 #define TEMPLATE_FIELD_VLAN TEMPLATE_FIELD_ITAG
 
-/* Number of fixed templates predefined in the RTL9300 SoC */
+/* Number of fixed templates predefined in the RTL9310 SoC */
 #define N_FIXED_TEMPLATES 5
 /* RTL931x specific predefined templates */
 static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS_RTL931X] =
@@ -404,7 +405,7 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
 
 	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | regnum, RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	sw_w32(devnum << 16 | (regnum & 0xffff), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
 
 	v = type << 2 | BIT(0); /* MMD-access-type | EXEC */
 	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
@@ -432,21 +433,22 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
 	u32 v;
-	int type = 2;
+	int type = 1;
 	u64 pm;
 
 	mutex_lock(&smi_lock);
 
 	/* Set PHY to access via port-mask */
-	pm = (u64)1 << port;
-	sw_w32((u32)pm, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
-	sw_w32((u32)(pm >> 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
+	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
+//	pm = (u64)1 << port;
+//	sw_w32((u32)pm, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
+//	sw_w32((u32)(pm >> 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
 
 	/* Set data to write */
 	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
 
 	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | regnum, RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	sw_w32(devnum << 16 | (regnum & 0xffff), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
 
 	v = BIT(4) | type << 2 | BIT(0); /* WRITE | MMD-access-type | EXEC */
 	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
@@ -460,6 +462,631 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	mutex_unlock(&smi_lock);
 
 	return err;
+}
+#define HASH_PICK(val, lsb, len)   ((val & (((1 << len) - 1) << lsb)) >> lsb)
+
+static u32 rtl931x_l3_hash4(u32 ip, int algorithm, bool move_dip)
+{
+	u32 rows[4];
+	u32 hash;
+	u32 s0, s1, pH;
+
+	memset(rows, 0, sizeof(rows));
+
+	rows[0] = HASH_PICK(ip, 27, 5);
+	rows[1] = HASH_PICK(ip, 18, 9);
+	rows[2] = HASH_PICK(ip, 9, 9);
+
+	if (!move_dip)
+		rows[3] = HASH_PICK(ip, 0, 9);
+
+	if (!algorithm) {
+		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
+	} else {
+		s0 = rows[0] + rows[1] + rows[2];
+		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
+		pH = (s1 & 0x1ff) + ((s1 & (0x1ff << 9)) >> 9);
+		hash = pH ^ rows[3];
+	}
+	return hash;
+}
+
+// Currently not used
+// static u32 rtl930x_l3_hash6(struct in6_addr *ip6, int algorithm, bool move_dip)
+// {
+// 	u32 rows[16];
+// 	u32 hash;
+// 	u32 s0, s1, pH;
+
+// 	rows[0] = (HASH_PICK(ip6->s6_addr[0], 6, 2) << 0);
+// 	rows[1] = (HASH_PICK(ip6->s6_addr[0], 0, 6) << 3) | HASH_PICK(ip6->s6_addr[1], 5, 3);
+// 	rows[2] = (HASH_PICK(ip6->s6_addr[1], 0, 5) << 4) | HASH_PICK(ip6->s6_addr[2], 4, 4);
+// 	rows[3] = (HASH_PICK(ip6->s6_addr[2], 0, 4) << 5) | HASH_PICK(ip6->s6_addr[3], 3, 5);
+// 	rows[4] = (HASH_PICK(ip6->s6_addr[3], 0, 3) << 6) | HASH_PICK(ip6->s6_addr[4], 2, 6);
+// 	rows[5] = (HASH_PICK(ip6->s6_addr[4], 0, 2) << 7) | HASH_PICK(ip6->s6_addr[5], 1, 7);
+// 	rows[6] = (HASH_PICK(ip6->s6_addr[5], 0, 1) << 8) | HASH_PICK(ip6->s6_addr[6], 0, 8);
+// 	rows[7] = (HASH_PICK(ip6->s6_addr[7], 0, 8) << 1) | HASH_PICK(ip6->s6_addr[8], 7, 1);
+// 	rows[8] = (HASH_PICK(ip6->s6_addr[8], 0, 7) << 2) | HASH_PICK(ip6->s6_addr[9], 6, 2);
+// 	rows[9] = (HASH_PICK(ip6->s6_addr[9], 0, 6) << 3) | HASH_PICK(ip6->s6_addr[10], 5, 3);
+// 	rows[10] = (HASH_PICK(ip6->s6_addr[10], 0, 5) << 4) | HASH_PICK(ip6->s6_addr[11], 4, 4);
+// 	if (!algorithm) {
+// 		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5) |
+// 		           (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
+// 		rows[12] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6) |
+// 		           (HASH_PICK(ip6->s6_addr[13], 2, 6) << 0);
+// 		rows[13] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7) |
+// 		           (HASH_PICK(ip6->s6_addr[14], 1, 7) << 0);
+// 		if (!move_dip) {
+// 			rows[14] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8) |
+// 			           (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
+// 		}
+// 		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^
+// 		       rows[5] ^ rows[6] ^ rows[7] ^ rows[8] ^ rows[9] ^
+// 		       rows[10] ^ rows[11] ^ rows[12] ^ rows[13] ^ rows[14];
+// 	} else {
+// 		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5);
+// 		rows[12] = (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
+// 		rows[13] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6) |
+// 		           HASH_PICK(ip6->s6_addr[13], 2, 6);
+// 		rows[14] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7) |
+// 		           HASH_PICK(ip6->s6_addr[14], 1, 7);
+// 		if (!move_dip) {
+// 			rows[15] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8) |
+// 			           (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
+// 		}
+// 		s0 = rows[12] + rows[13] + rows[14];
+// 		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
+// 		pH = (s1 & 0x1ff) + ((s1 & (0x1ff << 9)) >> 9);
+// 		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^
+// 		       rows[5] ^ rows[6] ^ rows[7] ^ rows[8] ^ rows[9] ^
+// 		       rows[10] ^ rows[11] ^ pH ^ rows[15];
+// 	}
+// 	return hash;
+// }
+
+/* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
+ * We currently only support IPv4 and IPv6 unicast route
+ */
+static void rtl931x_route_read(int idx, struct rtl83xx_route *rt)
+{
+	u32 v, ip4_m;
+	bool host_route, default_route;
+	struct in6_addr ip6_m;
+
+	/* Read L3_PREFIX_ROUTE_IPUC table (2) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 2);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 11 registers */
+	rt->attr.valid = !!(sw_r32(rtl_table_data(r, 0)) & BIT(31));
+	if (!rt->attr.valid)
+		goto out;
+
+	rt->attr.type = (sw_r32(rtl_table_data(r, 0)) >> 29) & 0x3;
+
+	v = sw_r32(rtl_table_data(r, 10));
+	host_route = !!(v & BIT(21));
+	default_route = !!(v & BIT(20));
+	rt->prefix_len = -1;
+	pr_debug("%s: host route %d, default_route %d\n", __func__, host_route, default_route);
+
+	switch (rt->attr.type) {
+	case 0: /* IPv4 Unicast route */
+		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
+		ip4_m = sw_r32(rtl_table_data(r, 9));
+		pr_debug("%s: Read ip4 mask: %08x\n", __func__, ip4_m);
+		rt->prefix_len = host_route ? 32 : -1;
+		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
+		if (rt->prefix_len < 0)
+			rt->prefix_len = inet_mask_len(ip4_m);
+		break;
+	case 2: /* IPv6 Unicast route */
+		ipv6_addr_set(&rt->dst_ip6,
+			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)));
+		ipv6_addr_set(&ip6_m,
+			      sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)),
+			      sw_r32(rtl_table_data(r, 8)), sw_r32(rtl_table_data(r, 9)));
+		rt->prefix_len = host_route ? 128 : 0;
+		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
+		if (rt->prefix_len < 0)
+			rt->prefix_len = find_last_bit((unsigned long int *)&ip6_m.s6_addr32,
+							 128);
+		break;
+	case 1: /* IPv4 Multicast route */
+	case 3: /* IPv6 Multicast route */
+		pr_warn("%s: route type not supported\n", __func__);
+		goto out;
+	}
+
+	rt->attr.hit = !!(v & BIT(22));
+	rt->attr.action = (v >> 18) & 3;
+	rt->nh.id = (v >> 7) & 0x7ff;
+	rt->attr.ttl_dec = !!(v & BIT(6));
+	rt->attr.ttl_check = !!(v & BIT(5));
+	rt->attr.dst_null = !!(v & BIT(4));
+	rt->attr.qos_as = !!(v & BIT(3));
+	rt->attr.qos_prio =  v & 0x7;
+	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
+	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
+		__func__, rt->nh.id, rt->attr.hit, rt->attr.action,
+		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
+	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
+out:
+	rtl_table_release(r);
+}
+
+static void rtl931x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
+{
+	int o, b;
+	/* Define network mask */
+	o = prefix_len >> 3;
+	b = prefix_len & 0x7;
+	memset(ip6_m->s6_addr, 0xff, o);
+	ip6_m->s6_addr[o] |= b ? 0xff00 >> b : 0x00;
+}
+
+/* Read a host route entry from the table using its index
+ * We currently only support IPv4 and IPv6 unicast route
+ */
+static void rtl931x_host_route_read(int idx, struct rtl83xx_route *rt)
+{
+	u32 v;
+	/* Read L3_HOST_ROUTE_IPUC table (1) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 1);
+
+	idx = ((idx / 6) * 8) + (idx % 6);
+
+	pr_debug("In %s, physical index %d\n", __func__, idx);
+	rtl_table_read(r, idx);
+	/* The table has a size of 5 (for UC, 11 for MC) registers */
+	v = sw_r32(rtl_table_data(r, 0));
+	rt->attr.valid = !!(v & BIT(31));
+	if (!rt->attr.valid)
+		goto out;
+	rt->attr.type = (v >> 29) & 0x3;
+	switch (rt->attr.type) {
+	case 0: /* IPv4 Unicast route */
+		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
+		break;
+	case 2: /* IPv6 Unicast route */
+		ipv6_addr_set(&rt->dst_ip6,
+			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 2)),
+			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 0)));
+		break;
+	case 1: /* IPv4 Multicast route */
+	case 3: /* IPv6 Multicast route */
+		pr_warn("%s: route type not supported\n", __func__);
+		goto out;
+	}
+
+	rt->attr.hit = !!(v & BIT(20));
+	rt->attr.dst_null = !!(v & BIT(19));
+	rt->attr.action = (v >> 17) & 3;
+	rt->nh.id = (v >> 6) & 0x7ff;
+	rt->attr.ttl_dec = !!(v & BIT(5));
+	rt->attr.ttl_check = !!(v & BIT(4));
+	rt->attr.qos_as = !!(v & BIT(3));
+	rt->attr.qos_prio =  v & 0x7;
+	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
+	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
+		__func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
+		rt->attr.dst_null);
+	pr_debug("%s: Destination: %pI4\n", __func__, &rt->dst_ip);
+
+out:
+	rtl_table_release(r);
+}
+
+/* Write a host route entry from the table using its index
+ * We currently only support IPv4 and IPv6 unicast route
+ */
+static void rtl931x_host_route_write(int idx, struct rtl83xx_route *rt)
+{
+	u32 v;
+	/* Access L3_HOST_ROUTE_IPUC table (1) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 1);
+	/* The table has a size of 5 (for UC, 11 for MC) registers */
+
+	idx = ((idx / 6) * 8) + (idx % 6);
+
+	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
+	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
+		__func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
+		rt->attr.dst_null);
+	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
+
+	v = BIT(31); /* Entry is valid */
+	v |= (rt->attr.type & 0x3) << 29;
+	v |= rt->attr.hit ? BIT(20) : 0;
+	v |= rt->attr.dst_null ? BIT(19) : 0;
+	v |= (rt->attr.action & 0x3) << 17;
+	v |= (rt->nh.id & 0x7ff) << 6;
+	v |= rt->attr.ttl_dec ? BIT(5) : 0;
+	v |= rt->attr.ttl_check ? BIT(4) : 0;
+	v |= rt->attr.qos_as ? BIT(3) : 0;
+	v |= rt->attr.qos_prio & 0x7;
+
+	sw_w32(v, rtl_table_data(r, 0));
+	switch (rt->attr.type) {
+	case 0: /* IPv4 Unicast route */
+		sw_w32(0, rtl_table_data(r, 1));
+		sw_w32(0, rtl_table_data(r, 2));
+		sw_w32(0, rtl_table_data(r, 3));
+		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
+		break;
+	case 2: /* IPv6 Unicast route */
+		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
+		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
+		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
+		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
+		break;
+	case 1: /* IPv4 Multicast route */
+	case 3: /* IPv6 Multicast route */
+		pr_warn("%s: route type not supported\n", __func__);
+		goto out;
+	}
+
+	rtl_table_write(r, idx);
+
+out:
+	rtl_table_release(r);
+}
+
+/* Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
+ * using hardware offload.
+ */
+static int rtl931x_route_lookup_hw(struct rtl83xx_route *rt)
+{
+	u32 ip4_m, v;
+	struct in6_addr ip6_m;
+
+	if (rt->attr.type == 1 || rt->attr.type == 3) /* Hardware only supports UC routes */
+		return -1;
+
+	sw_w32_mask(0x3 << 22, rt->attr.type, RTL931X_L3_HW_LU_KEY_CTRL);
+	if (rt->attr.type) { /* IPv6 */
+		rtl931x_net6_mask(rt->prefix_len, &ip6_m);
+		for (int i = 0; i < 4; i++)
+			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
+			       RTL931X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
+	} else { /* IPv4 */
+		ip4_m = inet_make_mask(rt->prefix_len);
+		sw_w32(0, RTL931X_L3_HW_LU_KEY_IP_CTRL);
+		sw_w32(0, RTL931X_L3_HW_LU_KEY_IP_CTRL + 4);
+		sw_w32(0, RTL931X_L3_HW_LU_KEY_IP_CTRL + 8);
+		v = rt->dst_ip & ip4_m;
+		pr_debug("%s: searching for %pI4\n", __func__, &v);
+		sw_w32(v, RTL931X_L3_HW_LU_KEY_IP_CTRL + 12);
+	}
+
+	/* Execute CAM lookup in SoC */
+	sw_w32(BIT(15), RTL931X_L3_HW_LU_CTRL);
+
+	/* Wait until execute bit clears and result is ready */
+	do {
+		v = sw_r32(RTL931X_L3_HW_LU_CTRL);
+	} while (v & BIT(15));
+
+	pr_debug("%s: found: %d, index: %d\n", __func__, !!(v & BIT(14)), v & 0x1ff);
+
+	/* Test if search successful (BIT 14 set) */
+	if (v & BIT(14))
+		return v & 0x1ff;
+
+	return -1;
+}
+
+static int rtl931x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
+{
+	int slot_width, algorithm, addr, idx;
+	u32 hash;
+	struct rtl83xx_route route_entry;
+
+	/* IPv6 entries take up 3 slots */
+	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
+
+	for (int t = 0; t < 2; t++) {
+		algorithm = (sw_r32(RTL931X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
+		hash = rtl931x_l3_hash4(rt->dst_ip, algorithm, false);
+
+		pr_debug("%s: table %d, algorithm %d, hash %04x\n", __func__, t, algorithm, hash);
+
+		for (int s = 0; s < 6; s += slot_width) {
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
+			pr_debug("%s physical address %d\n", __func__, addr);
+			idx = ((addr / 8) * 6) + (addr % 8);
+			pr_debug("%s logical address %d\n", __func__, idx);
+
+			rtl931x_host_route_read(idx, &route_entry);
+			pr_debug("%s route valid %d, route dest: %pI4, hit %d\n", __func__,
+				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
+			if (!must_exist && rt->attr.valid)
+				return idx;
+			if (must_exist && route_entry.dst_ip == rt->dst_ip)
+				return idx;
+		}
+	}
+
+	return -1;
+}
+
+/* Write a prefix route into the routing table CAM at position idx
+ * Currently only IPv4 and IPv6 unicast routes are supported
+ */
+static void rtl931x_route_write(int idx, struct rtl83xx_route *rt)
+{
+	u32 v, ip4_m;
+	struct in6_addr ip6_m;
+	/* Access L3_PREFIX_ROUTE_IPUC table (2) via register RTL9310_TBL_3 */
+	/* The table has a size of 11 registers (20 for MC) */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 2);
+
+	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
+	pr_debug("%s: nexthop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
+		__func__, rt->nh.id, rt->attr.hit, rt->attr.action,
+		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
+	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
+
+	v = rt->attr.valid ? BIT(31) : 0;
+	v |= (rt->attr.type & 0x3) << 29;
+	sw_w32(v, rtl_table_data(r, 0));
+
+	v = rt->attr.hit ? BIT(22) : 0;
+	v |= (rt->attr.action & 0x3) << 18;
+	v |= (rt->nh.id & 0x7ff) << 7;
+	v |= rt->attr.ttl_dec ? BIT(6) : 0;
+	v |= rt->attr.ttl_check ? BIT(5) : 0;
+	v |= rt->attr.dst_null ? BIT(6) : 0;
+	v |= rt->attr.qos_as ? BIT(6) : 0;
+	v |= rt->attr.qos_prio & 0x7;
+	v |= rt->prefix_len == 0 ? BIT(20) : 0; /* set default route bit */
+
+	/* set bit mask for entry type always to 0x3 */
+	sw_w32(0x3 << 29, rtl_table_data(r, 5));
+
+	switch (rt->attr.type) {
+	case 0: /* IPv4 Unicast route */
+		sw_w32(0, rtl_table_data(r, 1));
+		sw_w32(0, rtl_table_data(r, 2));
+		sw_w32(0, rtl_table_data(r, 3));
+		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
+
+		v |= rt->prefix_len == 32 ? BIT(21) : 0; /* set host-route bit */
+		ip4_m = inet_make_mask(rt->prefix_len);
+		sw_w32(0, rtl_table_data(r, 6));
+		sw_w32(0, rtl_table_data(r, 7));
+		sw_w32(0, rtl_table_data(r, 8));
+		sw_w32(ip4_m, rtl_table_data(r, 9));
+		break;
+	case 2: /* IPv6 Unicast route */
+		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
+		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
+		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
+		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
+
+		v |= rt->prefix_len == 128 ? BIT(21) : 0; /* set host-route bit */
+
+		rtl931x_net6_mask(rt->prefix_len, &ip6_m);
+
+		sw_w32(ip6_m.s6_addr32[0], rtl_table_data(r, 6));
+		sw_w32(ip6_m.s6_addr32[1], rtl_table_data(r, 7));
+		sw_w32(ip6_m.s6_addr32[2], rtl_table_data(r, 8));
+		sw_w32(ip6_m.s6_addr32[3], rtl_table_data(r, 9));
+		break;
+	case 1: /* IPv4 Multicast route */
+	case 3: /* IPv6 Multicast route */
+		pr_warn("%s: route type not supported\n", __func__);
+		rtl_table_release(r);
+		return;
+	}
+	sw_w32(v, rtl_table_data(r, 10));
+
+	pr_debug("%s: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n", __func__,
+		sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+		sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
+		sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)), sw_r32(rtl_table_data(r, 8)),
+		sw_r32(rtl_table_data(r, 9)), sw_r32(rtl_table_data(r, 10)));
+
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}
+
+
+/* Get the destination MAC and L3 egress interface ID of a nexthop entry from
+ * the SoC's L3_NEXTHOP table
+ */
+static void rtl931x_get_l3_nexthop(int idx, u16 *dmac_id, u16 *interface)
+{
+	u32 v;
+	/* Read L3_NEXTHOP table (3) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 3);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 1 register */
+	v = sw_r32(rtl_table_data(r, 0));
+	rtl_table_release(r);
+
+	*dmac_id = (v >> 7) & 0x7fff;
+	*interface = v & 0x7f;
+}
+
+// Currently not used
+// static int rtl930x_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
+// {
+// 	int i;
+
+// 	for (i = 0; i < MAX_INTF_MTUS; i++) {
+// 		if (mtu == priv->intf_mtus[i])
+// 			break;
+// 	}
+// 	if (i >= MAX_INTF_MTUS || !priv->intf_mtu_count[i]) {
+// 		pr_err("%s: No MTU slot found for MTU: %d\n", __func__, mtu);
+// 		return -EINVAL;
+// 	}
+
+// 	priv->intf_mtu_count[i]--;
+// }
+
+// Currently not used
+// static int rtl930x_l3_mtu_add(struct rtl838x_switch_priv *priv, int mtu)
+// {
+// 	int i, free_mtu;
+// 	int mtu_id;
+
+// 	/* Try to find an existing mtu-value or a free slot */
+// 	free_mtu = MAX_INTF_MTUS;
+// 	for (i = 0; i < MAX_INTF_MTUS && priv->intf_mtus[i] != mtu; i++) {
+// 		if ((!priv->intf_mtu_count[i]) && (free_mtu == MAX_INTF_MTUS))
+// 			free_mtu = i;
+// 	}
+// 	i = (i < MAX_INTF_MTUS) ? i : free_mtu;
+// 	if (i < MAX_INTF_MTUS) {
+// 		mtu_id = i;
+// 	} else {
+// 		pr_err("%s: No free MTU slot available!\n", __func__);
+// 		return -EINVAL;
+// 	}
+
+// 	priv->intf_mtus[i] = mtu;
+// 	pr_debug("Writing MTU %d to slot %d\n", priv->intf_mtus[i], i);
+// 	/* Set MTU-value of the slot TODO: distinguish between IPv4/IPv6 routes / slots */
+// 	sw_w32_mask(0xffff << ((i % 2) * 16), priv->intf_mtus[i] << ((i % 2) * 16),
+// 		    RTL930X_L3_IP_MTU_CTRL(i));
+// 	sw_w32_mask(0xffff << ((i % 2) * 16), priv->intf_mtus[i] << ((i % 2) * 16),
+// 		    RTL930X_L3_IP6_MTU_CTRL(i));
+
+// 	priv->intf_mtu_count[i]++;
+
+// 	return mtu_id;
+// }
+
+
+// Currently not used
+// /* Creates an interface for a route by setting up the HW tables in the SoC
+// static int rtl930x_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_l3_intf *intf)
+// {
+// 	int i, intf_id, mtu_id;
+// 	/* number of MTU-values < 16384 *\/
+
+// 	/* Use the same IPv6 mtu as the ip4 mtu for this route if unset */
+// 	intf->ip6_mtu = intf->ip6_mtu ? intf->ip6_mtu : intf->ip4_mtu;
+
+// 	mtu_id = rtl930x_l3_mtu_add(priv, intf->ip4_mtu);
+// 	pr_debug("%s: added mtu %d with mtu-id %d\n", __func__, intf->ip4_mtu, mtu_id);
+// 	if (mtu_id < 0)
+// 		return -ENOSPC;
+// 	intf->ip4_mtu_id = mtu_id;
+// 	intf->ip6_mtu_id = mtu_id;
+
+// 	for (i = 0; i < MAX_INTERFACES; i++) {
+// 		if (!priv->interfaces[i])
+// 			break;
+// 	}
+// 	if (i >= MAX_INTERFACES) {
+// 		pr_err("%s: cannot find free interface entry\n", __func__);
+// 		return -EINVAL;
+// 	}
+// 	intf_id = i;
+// 	priv->interfaces[i] = kzalloc(sizeof(struct rtl838x_l3_intf), GFP_KERNEL);
+// 	if (!priv->interfaces[i]) {
+// 		pr_err("%s: no memory to allocate new interface\n", __func__);
+// 		return -ENOMEM;
+// 	}
+// }
+
+/* Set the destination MAC and L3 egress interface ID for a nexthop entry in the SoC's
+ * L3_NEXTHOP table. The nexthop entry is identified by idx.
+ * dmac_id is the reference to the L2 entry in the L2 forwarding table, special values are
+ * 0x7ffe: TRAP2CPU
+ * 0x7ffd: TRAP2MASTERCPU
+ * 0x7fff: DMAC_ID_DROP
+ */
+static void rtl931x_set_l3_nexthop(int idx, u16 dmac_id, u16 interface)
+{
+	/* Access L3_NEXTHOP table (3) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 3);
+
+	pr_debug("%s: Writing to L3_NEXTHOP table, index %d, dmac_id %d, interface %d\n",
+		__func__, idx, dmac_id, interface);
+	sw_w32(((dmac_id & 0x7fff) << 7) | (interface & 0x7f), rtl_table_data(r, 0));
+
+	pr_debug("%s: %08x\n", __func__, sw_r32(rtl_table_data(r,0)));
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}
+
+/* Reads a MAC entry for L3 termination as entry point for routing
+ * from the hardware table
+ * idx is the index into the L3_ROUTER_MAC table
+ */
+static void rtl931x_get_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
+{
+	u32 v, w;
+	/* Read L3_ROUTER_MAC table (0) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 0);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 7 registers, 64 entries */
+	v = sw_r32(rtl_table_data(r, 0));
+	w = sw_r32(rtl_table_data(r, 3));
+	m->valid = !!(v & BIT(20));
+	if (!m->valid)
+		goto out;
+
+	m->p_type = !!(v & BIT(19));
+	m->p_id = (v >> 13) & 0x3f;  /* trunk id of port */
+	m->vid = v & 0xfff;
+	m->vid_mask = w & 0xfff;
+	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
+	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL) |
+	              (sw_r32(rtl_table_data(r, 4)));
+	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL) |
+	         (sw_r32(rtl_table_data(r, 2)));
+	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
+
+out:
+	rtl_table_release(r);
+}
+
+/* Writes a MAC entry for L3 termination as entry point for routing
+ * into the hardware table
+ * idx is the index into the L3_ROUTER_MAC table
+ */
+static void rtl931x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
+{
+	u32 v, w;
+	/* Read L3_ROUTER_MAC table (0) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 0);
+
+	/* The table has a size of 7 registers, 64 entries */
+	v = BIT(20); /* mac entry valid, port type is 0: individual */
+	v |= (m->p_id & 0x3f) << 13;
+	v |= (m->vid & 0xfff); /* Set the interface_id to the vlan id */
+
+	w = m->vid_mask;
+	w |= (m->p_id_mask & 0x3f) << 13;
+
+	sw_w32(v, rtl_table_data(r, 0));
+	sw_w32(w, rtl_table_data(r, 3));
+
+	/* Set MAC address, L3_INTF (bit 12 in register 1) needs to be 0 */
+	sw_w32((u32)(m->mac), rtl_table_data(r, 2));
+	sw_w32(m->mac >> 32, rtl_table_data(r, 1));
+
+	/* Set MAC address mask, BMSK_L3_INTF (bit 12 in register 5) needs to be 0 */
+	sw_w32((u32)(m->mac_mask >> 32), rtl_table_data(r, 4));
+	sw_w32((u32)m->mac_mask, rtl_table_data(r, 5));
+
+	sw_w32(m->action & 0x7, rtl_table_data(r, 6));
+
+	pr_debug("%s writing index %d: %08x %08x %08x %08x %08x %08x %08x\n", __func__, idx,
+		sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+		sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
+		sw_r32(rtl_table_data(r, 6))
+	);
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
 }
 
 void rtl931x_print_matrix(void)
@@ -904,7 +1531,6 @@ static void rtl931x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-
 static int rtl931x_set_ageing_time(unsigned long msec)
 {
 	int t = sw_r32(RTL931X_L2_AGE_CTRL);
@@ -934,7 +1560,7 @@ static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
 
 /* Fills the data in the intermediate representation in the pie_rule structure
  * into a data field for a given template field field_type
- * TODO: This function looks very similar to the function of the rtl9300, but
+ * TODO: This function looks very similar to the function of the RTL9310, but
  * since it uses the physical template_field_id, which are different for each
  * SoC and there are other field types, it is actually not. If we would also use
  * an intermediate representation for a field type, we would could have one
@@ -1090,10 +1716,10 @@ int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr
 /* Reads the intermediate representation of the templated match-fields of the
  * PIE rule in the pie_rule structure and fills in the raw data fields in the
  * raw register space r[].
- * The register space configuration size is identical for the RTL8380/90 and RTL9300,
+ * The register space configuration size is identical for the RTL8380/90 and RTL9310,
  * however the RTL931X has 2 more registers / fields and the physical field-ids are different
  * on all SoCs
- * On the RTL9300 the mask fields are not word-aligend!
+ * On the RTL9310 the mask fields are not word-aligend!
  */
 static void rtl931x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
@@ -1102,7 +1728,7 @@ static void rtl931x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 
 		rtl931x_pie_data_fill(t[i], pr, &data, &data_m);
 
-		/* On the RTL9300, the mask fields are not word aligned! */
+		/* On the RTL9310, the mask fields are not word aligned! */
 		if (!(i % 2)) {
 			r[5 - i / 2] = data;
 			r[12 - i / 2] |= ((u32)data_m << 8);
@@ -1251,6 +1877,77 @@ void rtl931x_pie_rule_dump_raw(u32 r[])
 	pr_debug("Fixed M: %06x\n", ((r[12] << 16) | (r[13] >> 16)) & 0xffffff);
 	pr_debug("Valid / not / and1 / and2 : %1x\n", (r[13] >> 12) & 0xf);
 	pr_debug("r 13-16: %08x %08x %08x %08x\n", r[13], r[14], r[15], r[16]);
+}
+
+/* Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
+ * from the SoC's L3_EGR_INTF_MAC table
+ * Indexes 0-2047 are DMACs, 2048+ are SMACs
+ */
+static u64 rtl931x_get_l3_egress_mac(u32 idx)
+{
+	u64 mac;
+	/* Read L3_EGR_INTF_MAC table (2) via register RTL9310_TBL_2 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 2);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 2 registers */
+	mac = sw_r32(rtl_table_data(r, 0));
+	mac <<= 32;
+	mac |= sw_r32(rtl_table_data(r, 1));
+	rtl_table_release(r);
+
+	return mac;
+}
+
+/* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
+ * in the SoC's L3_EGR_INTF_MAC table
+ * Indexes 0-2047 are DMACs, 2048+ are SMACs
+ */
+static void rtl931x_set_l3_egress_mac(u32 idx, u64 mac)
+{
+	/* Access L3_EGR_INTF_MAC table (2) via register RTL9310_TBL_2 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 2);
+
+	/* The table has a size of 2 registers */
+	sw_w32(mac >> 32, rtl_table_data(r, 0));
+	sw_w32(mac, rtl_table_data(r, 1));
+
+	pr_debug("%s: setting index %d to %016llx\n", __func__, idx, mac);
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}
+
+/* Sets up an egress interface for L3 actions
+ * Actions for ip4/6_icmp_redirect, ip4/6_pbr_icmp_redirect are:
+ * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU 5: COPY2MASTERCPU
+ * 6: HARDDROP
+ * idx is the index in the HW interface table: idx < 0x80
+ */
+static void rtl931x_set_l3_egress_intf(int idx, struct rtl838x_l3_intf *intf)
+{
+	u32 u, v;
+	/* Read L3_EGR_INTF table (4) via register RTL9310_TBL_3 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_3, 4);
+
+	/* The table has 2 registers */
+	u = (intf->vid & 0xfff) << 9;
+	u |= (intf->smac_idx & 0x3f) << 3;
+	u |= (intf->ip4_mtu_id & 0x7);
+
+	v = (intf->ip6_mtu_id & 0x7) << 28;
+	v |= (intf->ttl_scope & 0xff) << 20;
+	v |= (intf->hl_scope & 0xff) << 12;
+	v |= (intf->ip4_icmp_redirect & 0x7) << 9;
+	v |= (intf->ip6_icmp_redirect & 0x7)<< 6;
+	v |= (intf->ip4_pbr_icmp_redirect & 0x7) << 3;
+	v |= (intf->ip6_pbr_icmp_redirect & 0x7);
+
+	sw_w32(u, rtl_table_data(r, 0));
+	sw_w32(v, rtl_table_data(r, 1));
+
+	pr_debug("%s writing to index %d: %08x %08x\n", __func__, idx, u, v);
+	rtl_table_write(r, idx & 0x7f);
+	rtl_table_release(r);
 }
 
 static int rtl931x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
@@ -1641,7 +2338,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = rtl931x_set_ageing_time,
-	/* .smi_poll_ctrl does not exist */
+	.smi_poll_ctrl = RTL931X_SMI_PORT_POLLING_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl931x_exec_tbl0_cmd,
 	.exec_tbl1_cmd = rtl931x_exec_tbl1_cmd,
@@ -1692,4 +2389,16 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtl931x_led_init,
+	.set_l3_nexthop = rtl931x_set_l3_nexthop,
+	.get_l3_nexthop = rtl931x_get_l3_nexthop,
+	.get_l3_egress_mac = rtl931x_get_l3_egress_mac,
+	.set_l3_egress_mac = rtl931x_set_l3_egress_mac,
+	.route_read = rtl931x_route_read,
+	.route_write = rtl931x_route_write,
+	.host_route_write = rtl931x_host_route_write,
+	.find_l3_slot = rtl931x_find_l3_slot,
+	.route_lookup_hw = rtl931x_route_lookup_hw,
+	.get_l3_router_mac = rtl931x_get_l3_router_mac,
+	.set_l3_router_mac = rtl931x_set_l3_router_mac,
+	.set_l3_egress_intf = rtl931x_set_l3_egress_intf,
 };
