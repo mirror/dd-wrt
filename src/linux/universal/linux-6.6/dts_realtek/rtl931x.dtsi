@@ -45,14 +45,6 @@
 		clock-frequency = <200000000>;
 	};
 
-	cpuclock: cpuclock@0 {
-		#clock-cells = <0>;
-		compatible = "fixed-clock";
-
-		/* FIXME: there should be way to detect this */
-		clock-frequency = <1000000000>;
-	};
-
 	cpuintc: cpuintc {
 		compatible = "mti,cpu-interrupt-controller";
 		#address-cells = <0>;
@@ -78,7 +70,6 @@
 		timer {
 			compatible = "mti,gic-timer";
 			interrupts = <GIC_LOCAL 1 IRQ_TYPE_NONE>;
-			clocks = <&cpuclock>;
 		};
 	};
 
