@@ -42,6 +42,7 @@ int rtl9310_cpuExtTimerIRQ_get(u32 cpu, u32 *irq_num)
 	if (irq_num == NULL)
 		return -1;
 
+	sprintf(name, "rtk_tc%d", cpu + 2);
 	dn = of_find_compatible_node(NULL, NULL, name);
 	if (!dn) {
 		sw_w32(1, RTL931X_RST_GLB_CTRL);
