@@ -330,7 +330,6 @@ int r4k_clockevent_init(void)
 	 * interrupt number of its liking.
 	 */
 	irq = get_c0_compare_int();
-
 	if (request_irq(irq, c0_compare_interrupt, flags, "timer",
 			c0_compare_interrupt))
 		pr_err("Failed to request irq %d (timer)\n", irq);

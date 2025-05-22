@@ -2552,6 +2552,20 @@ void free_percpu_nmi(unsigned int irq, void __percpu *dev_id)
 	kfree(__free_percpu_irq(irq, dev_id));
 }
 
+int setup_irq(unsigned int irq, struct irqaction *act)
+{
+	int retval;
+	struct irq_desc *desc = irq_to_desc(irq);
+
+	if (WARN_ON(irq_settings_is_per_cpu_devid(desc)))
+		return -EINVAL;
+
+	retval = __setup_irq(irq, desc, act);
+
+	return retval;
+}
+EXPORT_SYMBOL_GPL(setup_irq);
+
 /**
  *	setup_percpu_irq - setup a per-cpu interrupt
  *	@irq: Interrupt line to setup

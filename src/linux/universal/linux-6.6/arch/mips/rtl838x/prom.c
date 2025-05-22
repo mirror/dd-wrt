@@ -29,6 +29,17 @@ extern char arcs_cmdline[];
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
+
+void plat_smp_init_secondary(void)
+{
+#ifdef CONFIG_MIPS_GIC
+    set_c0_cause(CAUSEF_DC);
+    write_c0_count(0);
+#endif
+    change_c0_status(ST0_IM, 0xff00);
+}
+
+
 #ifdef CONFIG_MIPS_MT_SMP
 extern const struct plat_smp_ops vsmp_smp_ops;
 static struct plat_smp_ops rtl_smp_ops;
@@ -274,6 +285,7 @@ void __init prom_init(void)
 
 	fw_init_cmdline();
 
+	mips_cm_probe();
 	mips_cpc_probe();
 
 	if (!register_cps_smp_ops()) { 

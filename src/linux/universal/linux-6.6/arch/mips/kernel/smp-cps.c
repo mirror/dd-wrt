@@ -354,32 +354,11 @@ out:
 
 static void cps_init_secondary(void)
 {
-	int core = cpu_core(&current_cpu_data);
-
 	/* Disable MT - we only want to run 1 TC per VPE */
 	if (cpu_has_mipsmt)
 		dmt();
 
-	if (mips_cm_revision() >= CM_REV_CM3) {
-		unsigned int ident = read_gic_vl_ident();
-
-		/*
-		 * Ensure that our calculation of the VP ID matches up with
-		 * what the GIC reports, otherwise we'll have configured
-		 * interrupts incorrectly.
-		 */
-		BUG_ON(ident != mips_cm_vp_id(smp_processor_id()));
-	}
-
-	if (core > 0 && !read_gcr_cl_coherence())
-		pr_warn("Core %u is not in coherent domain\n", core);
-
-	if (cpu_has_veic)
-		clear_c0_status(ST0_IM);
-	else
-		change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 |
-					 STATUSF_IP4 | STATUSF_IP5 |
-					 STATUSF_IP6 | STATUSF_IP7);
+	plat_smp_init_secondary();
 }
 
 static void cps_smp_finish(void)

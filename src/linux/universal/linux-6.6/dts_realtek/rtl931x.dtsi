@@ -14,12 +14,14 @@
 		frequency = <1000000000>;
 
 		cpu@0 {
-			compatible = "mti,interaptive";
+			compatible = "mti,interaptiv";
+            		device_type = "cpu";
 			reg = <0>;
 		};
 
 		cpu@1 {
-			compatible = "mti,interaptive";
+			compatible = "mti,interaptiv";
+            		device_type = "cpu";
 			reg = <1>;
 		};
 	};
@@ -54,7 +56,7 @@
 
 	gic: interrupt-controller@1ddc0000 {
 		compatible = "mti,gic";
-		reg = <0x1ddc0000 0x20000>;
+		reg = <0x1bdc0000 0x20000>;
 
 		interrupt-controller;
 		#interrupt-cells = <3>;
@@ -66,12 +68,18 @@
 		 * controller & should be probed first.
 		 */
 		interrupt-parent = <&cpuintc>;
+		interrupts = <2>;
 
-		timer {
+    		timer {
+        		compatible = "rtk,cevt-ext";
+    		};
+
+/*		timer {
 			compatible = "mti,gic-timer";
 			interrupts = <GIC_LOCAL 1 IRQ_TYPE_NONE>;
-		};
+		};*/
 	};
+    	
 
 	soc: soc {
 		compatible = "simple-bus";
@@ -89,6 +97,65 @@
 			#size-cells = <0>;
 		};
 
+        	rtl9310_tc0: rtl9310_tc0@0 {
+            		compatible = "rtk_tc0";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 0 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_tc1: rtl9310_tc1@0 {
+            		compatible = "rtk_tc1";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 1 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_tc2: rtl9310_tc2@0 {
+            		compatible = "rtk_tc2";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_tc3: rtl9310_tc3@0 {
+            		compatible = "rtk_tc3";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_tc4: rtl9310_tc4@0 {
+            		compatible = "rtk_tc4";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 4 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_tc5: rtl9310_tc5@0 {
+            		compatible = "rtk_tc5";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 5 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_tc6: rtl9310_tc6@0 {
+            		compatible = "rtk_tc6";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 6 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_del_tc4: rtl9310_del_tc4@0 {
+            		compatible = "rtk_del_tc4";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 28 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_del_tc5: rtl9310_del_tc5@0 {
+            		compatible = "rtk_del_tc5";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>;
+        	};
+
+        	rtl9310_del_tc6: rtl9310_del_tc6@0 {
+            		compatible = "rtk_del_tc6";
+            		interrupt-parent = <&gic>;
+            		interrupts = <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>;
+        	};
 		
 		crypto0: crypto@c000 {
 			compatible = "realtek,realtek-crypto";
