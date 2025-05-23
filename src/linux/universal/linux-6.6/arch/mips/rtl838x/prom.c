@@ -30,6 +30,24 @@ extern char arcs_cmdline[];
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
+#define RTL9310_MIPSIA_L2SIZE_OFFSET    (4)
+#define RTL9310_MIPSIA_L2SIZE_MASK      (0x0f)
+#define RTL9310_MIPSIA_L2_LINESIZE_0    (0x0)
+#define RTL9310_MIPSIA_L2_LINESIZE_256  (0x7)
+
+extern void init_l2_cache(void);
+static unsigned int l2_linesize;
+void rtl9310_l2cache_init(void)
+{
+    unsigned long config2;
+    config2 = read_c0_config2();
+    l2_linesize = (config2 >> RTL9310_MIPSIA_L2SIZE_OFFSET) & RTL9310_MIPSIA_L2SIZE_MASK;
+    /*if enable l2_bypass mode, linesize will be 0       */
+    /*if arch not implement L2cache, linesize will be 0  */
+    if (RTL9310_MIPSIA_L2_LINESIZE_0 < l2_linesize && l2_linesize <= RTL9310_MIPSIA_L2_LINESIZE_256){ //Scache linesize >0 and <=256 (B)
+        init_l2_cache();
+    }
+}
 
 void plat_smp_init_secondary(void)
 {
@@ -191,9 +209,13 @@ void __init prom_init(void)
 {
 	uint32_t model;
 
+#ifdef CONFIG_MIPS_GIC
+	rtl9310_l2cache_init();
+#endif
 	/* uart0 */
 	setup_8250_early_printk_port(0xb8002000, 2, 0);
 
+	pr_info("L2 linesize is %d\n",1<<l2_linesize);
 	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	pr_info("RTL838X model is %x\n", model);
 	model = model >> 16 & 0xFFFF;

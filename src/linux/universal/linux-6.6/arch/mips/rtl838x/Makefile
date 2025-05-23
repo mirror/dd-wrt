@@ -3,4 +3,4 @@
 #
 
 obj-y := setup.o prom.o
-#obj-$(CONFIG_REALTEK_EXT_TIMER) += cevt_external_timer.o
+obj-y += init_l2cache.o
