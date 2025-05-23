@@ -156,7 +156,7 @@ static int mdiobb_read_common(struct mii_bus *bus, int phy)
 	 * PHY is listed in phy_ignore_ta_mask as having broken TA, skip that
 	 */
 	if (mdiobb_get_bit(ctrl) != 0 &&
-	    !(bus->phy_ignore_ta_mask & (1 << phy))) {
+	    !(bus->phy_ignore_ta_mask & BIT_ULL(phy))) {
 		/* PHY didn't drive TA low -- flush any bits it
 		 * may be trying to send.
 		 */

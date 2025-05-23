@@ -467,7 +467,7 @@ struct dsa_switch {
 	/*
 	 * Slave mii_bus and devices for the individual ports.
 	 */
-	u32			phys_mii_mask;
+	u64			phys_mii_mask;
 	struct mii_bus		*slave_mii_bus;
 
 	/* Ageing Time limits in msecs */
@@ -599,24 +599,24 @@ static inline bool dsa_is_user_port(struct dsa_switch *ds, int p)
 	dsa_switch_for_each_port_continue_reverse((_dp), (_ds)) \
 		if (dsa_port_is_cpu((_dp)))
 
-static inline u32 dsa_user_ports(struct dsa_switch *ds)
+static inline u64 dsa_user_ports(struct dsa_switch *ds)
 {
 	struct dsa_port *dp;
-	u32 mask = 0;
+	u64 mask = 0;
 
 	dsa_switch_for_each_user_port(dp, ds)
-		mask |= BIT(dp->index);
+		mask |= BIT_ULL(dp->index);
 
 	return mask;
 }
 
-static inline u32 dsa_cpu_ports(struct dsa_switch *ds)
+static inline u64 dsa_cpu_ports(struct dsa_switch *ds)
 {
 	struct dsa_port *cpu_dp;
-	u32 mask = 0;
+	u64 mask = 0;
 
 	dsa_switch_for_each_cpu_port(cpu_dp, ds)
-		mask |= BIT(cpu_dp->index);
+		mask |= BIT_ULL(cpu_dp->index);
 
 	return mask;
 }
