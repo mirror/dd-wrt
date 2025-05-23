@@ -117,7 +117,7 @@ static int unimac_mdio_read(struct mii_bus *bus, int phy_id, int reg)
 	 * that condition here and ignore the MDIO controller read failure
 	 * indication.
 	 */
-	if (!(bus->phy_ignore_ta_mask & BIT_ULL(addr)) && (cmd & MDIO_READ_FAIL))
+	if (!(bus->phy_ignore_ta_mask & BIT_ULL(phy_id)) && (cmd & MDIO_READ_FAIL))
 		return -EIO;
 
 	return cmd & 0xffff;
