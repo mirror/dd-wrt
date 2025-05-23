@@ -99,6 +99,9 @@ void start_jffs2(void)
 		break;
 	}
 #endif
+#ifdef CONFIG_REALTEK
+	rwpart = "rootfs_data";
+#endif
 	nvram_seti("jffs_mounted", 0);
 	if (!nvram_matchi("enable_jffs2", 1) || nvram_matchi("clean_jffs2", 1)) {
 		umount2("/jffs2", MNT_DETACH);
