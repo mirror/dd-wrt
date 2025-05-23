@@ -2636,9 +2636,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
-		netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
+		netif_threaded_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
 	}
-
 	platform_set_drvdata(pdev, dev);
 
 	phy_mode = PHY_INTERFACE_MODE_NA;
