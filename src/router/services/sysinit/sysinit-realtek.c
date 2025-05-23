@@ -74,6 +74,7 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 	FILE *fp;
+	char *bootcmd;
 
 	/*
 	 * Setup console 
@@ -111,7 +112,7 @@ void start_sysinit(void)
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
 			set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
-		char *bootcmd = getUEnv("bootcmd");
+		bootcmd = getUEnv("bootcmd");
 		if (!bootcmd || !strstr(bootcmd, "rtk network on")) {
 			fprintf(stderr, "change bootcmd to fix networking\n");
 			eval("fw_setenv","bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1250.bin");
@@ -123,6 +124,28 @@ void start_sysinit(void)
 			int i;
 			set_hwaddr("eth0", mac);
 			for (i = 1; i < 13; i++) {
+				sprintf(name, "lan%02d", i);
+				set_hwaddr(name, mac);
+				MAC_ADD(mac);
+			}
+		}
+		break;
+	case ROUTER_EDGECORE_ECS4125:
+		mtd = getMTD("u-boot-env");
+		if (mtd != -1)
+			set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
+//		bootcmd = getUEnv("bootcmd");
+//		if (!bootcmd || !strstr(bootcmd, "rtk network on")) {
+//			fprintf(stderr, "change bootcmd to fix networking\n");
+//			eval("fw_setenv","bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1250.bin");
+//			eval("fw_setenv","bootcmd", "rtk network on; run bootnet; boota");
+//		}
+		mac = getUEnv("ethaddr");
+		if (mac) {
+			char name[32];
+			int i;
+			set_hwaddr("eth0", mac);
+			for (i = 1; i < 11; i++) {
 				sprintf(name, "lan%02d", i);
 				set_hwaddr(name, mac);
 				MAC_ADD(mac);
