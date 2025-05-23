@@ -263,7 +263,8 @@ static int gic_set_affinity(struct irq_data *d, const struct cpumask *cpumask,
 	unsigned long flags;
 	unsigned int cpu;
 
-	cpu = cpumask_first_and(cpumask, cpu_online_mask);
+//	cpu = cpumask_first_and(cpumask, cpu_online_mask);
+	cpu = cpumask_first(cpumask);
 	if (cpu >= NR_CPUS)
 		return -EINVAL;
 
