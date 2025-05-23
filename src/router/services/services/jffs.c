@@ -36,6 +36,8 @@ void stop_jffs2(void)
 	int mtd = getMTD("ddwrt");
 	if (mtd == -1)
 		mtd = getMTD("jffs2");
+	if (mtd == -1)
+		mtd = getMTD("rootfs_data");
 #endif
 	if (mtd == -1)
 		return;
@@ -99,8 +101,9 @@ void start_jffs2(void)
 		break;
 	}
 #endif
-#ifdef CONFIG_REALTEK
+#ifdef HAVE_REALTEK
 	rwpart = "rootfs_data";
+	mtd = getMTD("rootfs_data");
 #endif
 	nvram_seti("jffs_mounted", 0);
 	if (!nvram_matchi("enable_jffs2", 1) || nvram_matchi("clean_jffs2", 1)) {
