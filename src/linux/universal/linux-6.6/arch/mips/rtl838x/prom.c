@@ -6,6 +6,7 @@
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
  * Copyright (C) 2020 B. Koblitz
+ * Copyright (C) 2025 Sebastian Gottschall
  *
  */
 
@@ -38,6 +39,16 @@ void plat_smp_init_secondary(void)
 #endif
     change_c0_status(ST0_IM, 0xff00);
 }
+
+#ifdef CONFIG_MIPS_CM
+
+#define CPC_BASE_ADDR		0x1bde0000
+
+phys_addr_t mips_cpc_default_phys_base(void)
+{
+    return CPC_BASE_ADDR;
+}
+#endif
 
 
 #ifdef CONFIG_MIPS_MT_SMP
