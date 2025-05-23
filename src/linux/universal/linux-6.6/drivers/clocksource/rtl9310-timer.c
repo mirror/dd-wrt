@@ -42,7 +42,7 @@ int rtl9310_cpuExtTimerIRQ_get(u32 cpu, u32 *irq_num)
 	if (irq_num == NULL)
 		return -1;
 
-	sprintf(name, "rtk_tc%d", cpu + 2);
+	sprintf(name, "rtk_tc%d", cpu);
 	dn = of_find_compatible_node(NULL, NULL, name);
 	if (!dn) {
 		sw_w32(1, RTL931X_RST_GLB_CTRL);
@@ -62,11 +62,11 @@ int rtl9310_cpuExtTimerID_get(u32 cpu, u32 *timer_id)
 	int cpu_num = 0;
 
 #ifdef CONFIG_SMP
-	cpu_num = 2;
+	cpu_num = 4;
 #else
 	cpu_num = 1;
 #endif
-	*timer_id = cpu + 2;
+	*timer_id = cpu;
 
 	return 0;
 }
@@ -115,7 +115,7 @@ void rtl9310_cpuExtTimer_init(void)
 	int ret;
 
 #ifdef CONFIG_SMP
-	cpu_num = 2;
+	cpu_num = 4;
 #else
 	cpu_num = 1;
 #endif
@@ -215,7 +215,7 @@ int cevt_extTimerIntr_setup(int cpu)
 		sw_w32(0x101, RTL931X_RST_GLB_CTRL);
 		return ret;
 	}
-
+	pr_info("rtl9310-timer: core %d uses irq %d", cpu, tc_irq); 
 	return 0;
 }
 
@@ -265,6 +265,7 @@ static int ext_clockevent_init_notify(unsigned int cpu)
 	int ret;
 	unsigned int tc_irq;
 	u32 v;
+	pr_info("rtl9310-timer:init timer for cpu %d\n", cpu);
 	/* init per cpu clockevent device*/
 	ret = cevt_clockevent_init(this_cpu_ptr(&ext_clockevent_device));
 
