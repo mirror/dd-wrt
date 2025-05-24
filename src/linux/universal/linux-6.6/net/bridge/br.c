@@ -393,7 +393,6 @@ static int __init br_init(void)
 		pr_err("bridge: can't register sap for STP\n");
 		return err;
 	}
-
 	err = br_fdb_init();
 	if (err)
 		goto err_out;

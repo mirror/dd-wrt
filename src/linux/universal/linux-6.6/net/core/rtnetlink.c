@@ -60,7 +60,7 @@
 
 #include "dev.h"
 
-#define RTNL_MAX_TYPE		50
+#define RTNL_MAX_TYPE		52
 #define RTNL_SLAVE_MAX_TYPE	45
 
 struct rtnl_link {
