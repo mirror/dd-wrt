@@ -5,6 +5,10 @@
 
 #include <net/dsa.h>
 
+
+#define PHY_PAGE_2	2
+#define PHY_PAGE_4	4
+
 /* Register definition */
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
@@ -142,6 +146,36 @@
 #define RTL931X_MAC_RX_PAUSE_STS		(0x0F00)
 #define RTL930X_MAC_LINK_MEDIA_STS		(0xCB14)
 #define RTL931X_MAC_LINK_MEDIA_STS		(0x0EC8)
+#define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
+#define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2))
+#define RTL931X_PS_SERDES_OFF_MODE_CTRL		(0x13f4)
+#define RTL931X_SERDES_MODE_CTRL(sds)		(0x13CC + (((sds >> 2) << 2)))
+#define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
+#define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
+
+#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
+
+/* Registers of the internal Serdes of the 9300 */
+#define RTL930X_SDS_INDACS_CMD			(0x03B0)
+#define RTL930X_SDS_INDACS_DATA			(0x03B4)
+
+/* RTL930X SerDes supports the following modes:
+ * 0x02: SGMII		0x04: 1000BX_FIBER	0x05: FIBER100
+ * 0x06: QSGMII		0x09: RSGMII		0x0d: USXGMII
+ * 0x10: XSGMII		0x12: HISGMII		0x16: 2500Base_X
+ * 0x17: RXAUI_LITE	0x19: RXAUI_PLUS	0x1a: 10G Base-R
+ * 0x1b: 10GR1000BX_AUTO			0x1f: OFF
+ */
+#define RTL930X_SDS_MODE_SGMII		0x02
+#define RTL930X_SDS_MODE_1000BASEX	0x04
+#define RTL930X_SDS_MODE_USXGMII	0x0d
+#define RTL930X_SDS_MODE_XGMII		0x10
+#define RTL930X_SDS_MODE_HSGMII		0x12
+#define RTL930X_SDS_MODE_2500BASEX	0x16
+#define RTL930X_SDS_MODE_10GBASER	0x1a
+#define RTL930X_SDS_OFF			0x1f
+#define RTL930X_SDS_MASK		0x1f
+
 
 /* MAC link state bits */
 #define RTL_SPEED_10				0
@@ -1133,6 +1167,12 @@ struct rtl838x_switch_priv {
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];
 };
+
+typedef struct {
+	u8 page;
+	u8 reg;
+	u16 data;
+} sds_config;
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
