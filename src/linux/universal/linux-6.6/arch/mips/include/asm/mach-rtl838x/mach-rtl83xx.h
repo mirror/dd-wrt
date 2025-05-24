@@ -443,6 +443,30 @@ struct rtl83xx_soc_info {
 	int cpu_port;
 };
 
+static inline u32 rtl931x_get_analog_sds(u32 sds)
+{
+	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+
+	if (sds < 14)
+		return sds_map[sds];
+
+	return sds;
+}
+
+u32 rtl9300_sds_mode_get(int sds_num);
+
+int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
+int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
+int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
+int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
+u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit);
+void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v);
+
+void rtl9300_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v);
+u32 rtl9300_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit);
+
 /* rtl83xx-related functions used across subsystems */
 int rtl838x_smi_wait_op(int timeout);
 int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
