@@ -30,44 +30,46 @@ extern char arcs_cmdline[];
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
-#define RTL9310_MIPSIA_L2SIZE_OFFSET    (4)
-#define RTL9310_MIPSIA_L2SIZE_MASK      (0x0f)
-#define RTL9310_MIPSIA_L2_LINESIZE_0    (0x0)
-#define RTL9310_MIPSIA_L2_LINESIZE_256  (0x7)
+#define RTL9310_MIPSIA_L2SIZE_OFFSET (4)
+#define RTL9310_MIPSIA_L2SIZE_MASK (0x0f)
+#define RTL9310_MIPSIA_L2_LINESIZE_0 (0x0)
+#define RTL9310_MIPSIA_L2_LINESIZE_256 (0x7)
 
 extern void init_l2_cache(void);
 static unsigned int l2_linesize;
-void rtl9310_l2cache_init(void)
+void __init rtl9310_l2cache_init(void)
 {
-    unsigned long config2;
-    config2 = read_c0_config2();
-    l2_linesize = (config2 >> RTL9310_MIPSIA_L2SIZE_OFFSET) & RTL9310_MIPSIA_L2SIZE_MASK;
-    /*if enable l2_bypass mode, linesize will be 0       */
-    /*if arch not implement L2cache, linesize will be 0  */
-    if (RTL9310_MIPSIA_L2_LINESIZE_0 < l2_linesize && l2_linesize <= RTL9310_MIPSIA_L2_LINESIZE_256){ //Scache linesize >0 and <=256 (B)
-        init_l2_cache();
-    }
+	unsigned long config2;
+	config2 = read_c0_config2();
+	l2_linesize = (config2 >> RTL9310_MIPSIA_L2SIZE_OFFSET) &
+		      RTL9310_MIPSIA_L2SIZE_MASK;
+	/*if enable l2_bypass mode, linesize will be 0       */
+	/*if arch not implement L2cache, linesize will be 0  */
+	if (RTL9310_MIPSIA_L2_LINESIZE_0 < l2_linesize &&
+	    l2_linesize <=
+		    RTL9310_MIPSIA_L2_LINESIZE_256) { //Scache linesize >0 and <=256 (B)
+		init_l2_cache();
+	}
 }
 
 void plat_smp_init_secondary(void)
 {
 #ifdef CONFIG_MIPS_GIC
-    set_c0_cause(CAUSEF_DC);
-    write_c0_count(0);
+	set_c0_cause(CAUSEF_DC);
+	write_c0_count(0);
 #endif
-    change_c0_status(ST0_IM, 0xff00);
+	change_c0_status(ST0_IM, 0xff00);
 }
 
 #ifdef CONFIG_MIPS_CM
 
-#define CPC_BASE_ADDR		0x1bde0000
+#define CPC_BASE_ADDR 0x1bde0000
 
 phys_addr_t mips_cpc_default_phys_base(void)
 {
-    return CPC_BASE_ADDR;
+	return CPC_BASE_ADDR;
 }
 #endif
-
 
 #ifdef CONFIG_MIPS_MT_SMP
 extern const struct plat_smp_ops vsmp_smp_ops;
@@ -76,7 +78,7 @@ static struct plat_smp_ops rtl_smp_ops;
 static void rtl_init_secondary(void)
 {
 #ifndef CONFIG_CEVT_R4K
-/*
+	/*
  * These devices are low on resources. There might be the chance that CEVT_R4K
  * is not enabled in kernel build. Nevertheless the timer and interrupt 7 might
  * be active by default after startup of secondary VPE. With no registered
@@ -86,13 +88,14 @@ static void rtl_init_secondary(void)
 	write_c0_cause(read_c0_cause() | CAUSEF_DC);
 	write_c0_compare(0);
 #endif /* CONFIG_CEVT_R4K */
-/*
+	/*
  * Enable all CPU interrupts, as everything is managed by the external
  * controller. TODO: Standard vsmp_init_secondary() has special treatment for
  * Malta if external GIC is available. Maybe we need this too.
  */
 	if (mips_gic_present())
-		pr_warn("%s: GIC present. Maybe interrupt enabling required.\n", __func__);
+		pr_warn("%s: GIC present. Maybe interrupt enabling required.\n",
+			__func__);
 	else
 		set_c0_status(ST0_IM);
 }
@@ -103,24 +106,21 @@ const char *get_system_type(void)
 	return soc_info.name;
 }
 
-
 void prom_console_init(void)
 {
 	/* UART 16550A is initialized by the bootloader */
 }
 
 #ifdef CONFIG_EARLY_PRINTK
-#define rtl838x_r8(reg)		__raw_readb(reg)
-#define rtl838x_w8(val, reg)	__raw_writeb(val, reg)
+#define rtl838x_r8(reg) __raw_readb(reg)
+#define rtl838x_w8(val, reg) __raw_writeb(val, reg)
 
 void unregister_prom_console(void)
 {
-
 }
 
 void disable_early_printk(void)
 {
-
 }
 
 void prom_putchar(char c)
@@ -147,9 +147,7 @@ char prom_getchar(void)
 
 void __init prom_free_prom_memory(void)
 {
-
 }
-
 
 void __init device_tree_init(void)
 {
@@ -215,13 +213,13 @@ void __init prom_init(void)
 	/* uart0 */
 	setup_8250_early_printk_port(0xb8002000, 2, 0);
 
-	pr_info("L2 linesize is %d\n",1<<l2_linesize);
+	pr_info("L2 linesize is %d\n", 1 << l2_linesize);
 	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	pr_info("RTL838X model is %x\n", model);
 	model = model >> 16 & 0xFFFF;
 
-	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332)
-	    && (model != 0x8380) && (model != 0x8382) && (model != 0x8381)) {
+	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332) &&
+	    (model != 0x8380) && (model != 0x8382) && (model != 0x8381)) {
 		model = sw_r32(RTL839X_MODEL_NAME_INFO);
 		pr_info("RTL839X model is %x\n", model);
 		model = model >> 16 & 0xFFFF;
@@ -321,7 +319,7 @@ void __init prom_init(void)
 	mips_cm_probe();
 	mips_cpc_probe();
 
-	if (!register_cps_smp_ops()) { 
+	if (!register_cps_smp_ops()) {
 		return;
 	}
 
@@ -334,5 +332,4 @@ void __init prom_init(void)
 	}
 #endif
 	register_up_smp_ops();
-
 }
