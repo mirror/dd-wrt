@@ -214,18 +214,18 @@
 		};
 
 		/* RTL9313 Internal Serdes */
-		phy52: ethernet-phy@52 {
+		phy54: ethernet-phy@54 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			phy-is-integrated;
-			reg = <52>;
-			sds = < 10 >;
+			reg = <54>;
+			sds = < 12 >;
 		};
 
-		phy53: ethernet-phy@53 {
+		phy55: ethernet-phy@55 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			phy-is-integrated;
-			reg = <53>;
-			sds = < 11 >;
+			reg = <55>;
+			sds = < 13 >;
 		};
 	};
 };
@@ -288,22 +288,21 @@
 		};
 
 		/* RTL9313 Internal SerDes */
-
-		port@52 {
-			reg = <52>;
+		port@54 {
+			reg = <54>;
 			label = "lan09";
 			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy52>;
+			pseudo-phy-handle = <&phy54>;
 			sfp = <&sfp0>;
 //			led-set = <2>;
 			managed = "in-band-status";
 		};
 
-		port@53 {
-			reg = <53>;
+		port@55 {
+			reg = <55>;
 			label = "lan10";
 			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy53>;
+			pseudo-phy-handle = <&phy55>;
 			sfp = <&sfp1>;
 //			led-set = <2>;
 			managed = "in-band-status";
