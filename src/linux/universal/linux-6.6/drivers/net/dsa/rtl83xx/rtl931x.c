@@ -2320,7 +2320,113 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		pr_debug("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
+u8 port_sds[RTL931X_CPU_PORT] = {2, 0, 0, 0, 0, 0, 0, 0,
+				 3, 0, 0, 0, 0, 0, 0, 0,
+				 4, 0, 0, 0, 0, 0, 0, 0,
+				 5, 0, 0, 0, 0, 0, 0, 0,
+				 6, 0, 0, 0, 0, 0, 0, 0,
+				 7, 0, 0, 0, 0, 0, 0, 0,
+				 8, 0, 9, 0, 0, 0, 0, 0};
+
+static void rtl9310_sds_mode_usxgmii(int sds_num)
+{
+	u32 a[12] = {0x13a4, 0x13a4, 0x13a8, 0x13a8, 0x13AC, 0x13B0, 0x13B4, 0x13B4,
+			0x13B8, 0x13B8, 0x13B8, 0x13B8};
+	u32 o[12] = {0, 16, 0, 16, 0, 0, 0, 16, 0, 4, 8, 12};
+	u32 v[12] = {0x5101, 0x5101, 0x5101, 0x5101, 0x5101, 0x50101, 0x55, 0x55, 0xf, 0xf, 0xf, 0xf};
+// uboot uses
+//	u32 v[12] = {0x4101, 0x4101, 0x4101, 0x4101, 0x4101, 0x40101, 0x45, 0x45, 0x9, 0x9, 0x9, 0x9};
+	u32 m[12] = {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x7ffff, 0xff, 0xff, 0xf, 0xf, 0xf, 0xf};
+	int n = sds_num - 2;
+
+	if (sds_num < 0 || sds_num > 13)
+		return;
+
+	sw_w32_mask(m[n] << o[n], v[n] << o[n], a[n]);
+}
+
+static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
+					unsigned int mode,
+					const struct phylink_link_state *state)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int sds_num;
+	u32 reg, band;
+
+	/* Nothing to be done for the CPU-port */
+	if (port == priv->cpu_port)
+		return;
+
+	sds_num = priv->ports[port].sds_num;
+	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
+
+	switch (state->interface) {
+	case PHY_INTERFACE_MODE_HSGMII:
+		pr_info("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_HSGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_HSGMII);
+		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_HSGMII);
+		break;
+	case PHY_INTERFACE_MODE_1000BASEX:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_1000BASEX);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_1000BASEX);
+		break;
+	case PHY_INTERFACE_MODE_XGMII:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_XGMII);
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		pr_info("%s setting mode PHY_INTERFACE_MODE_10BASER\n", __func__);
+	case PHY_INTERFACE_MODE_10GKR:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_10GBASER);
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+		/* Translates to MII_USXGMII_10GSXGMII */
+		pr_info("%s setting mode PHY_INTERFACE_MODE_USXGMII\n", __func__);
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_USXGMII);
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_SGMII);
+		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
+		break;
+	case PHY_INTERFACE_MODE_QSGMII:
+		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
+		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_QSGMII);
+		break;
+	default:
+		pr_err("%s: unknown serdes mode: %s\n",
+			__func__, phy_modes(state->interface));
+		return;
+	}
+
+	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
+		rtl9310_sds_mode_usxgmii(port_sds[port]);
+
+	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
+
+	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
+
+	reg &= ~(0xf << 12);
+	reg |= 0x2 << 12; /* Set SMI speed to 0x2 */
+
+	reg |= RTL931X_TX_PAUSE_EN | RTL931X_RX_PAUSE_EN;
+
+	if (priv->lagmembers & BIT_ULL(port))
+		reg |= RTL931X_DUPLEX_MODE;
+
+	if (state->duplex == DUPLEX_FULL)
+		reg |= RTL931X_DUPLEX_MODE;
+
+	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+
+}
+
 const struct rtl838x_reg rtl931x_reg = {
+	.phylink_mac_config = rtl931x_phylink_mac_config,
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,

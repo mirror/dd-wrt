@@ -2478,7 +2478,29 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		pr_debug("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
+static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
+					unsigned int mode,
+					const struct phylink_link_state *state)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int sds_num;
+
+	/* Nothing to be done for the CPU-port */
+	if (port == priv->cpu_port)
+		return;
+
+	sds_num = priv->ports[port].sds_num;
+	pr_info("%s SDS is %d\n", __func__, sds_num);
+	if (sds_num >= 0 &&
+	    (state->interface == PHY_INTERFACE_MODE_1000BASEX ||
+	     state->interface == PHY_INTERFACE_MODE_SGMII ||
+	     state->interface == PHY_INTERFACE_MODE_10GBASER))
+		rtl9300_serdes_setup(port, sds_num, state->interface);
+}
+
+
 const struct rtl838x_reg rtl930x_reg = {
+	.phylink_mac_config = rtl93xx_phylink_mac_config,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,

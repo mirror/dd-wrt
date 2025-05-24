@@ -1083,6 +1083,7 @@ struct rtl838x_reg {
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
+	void (*phylink_mac_config)(struct dsa_switch *ds, int port, unsigned int mode, const struct phylink_link_state *state);
 };
 
 struct rtl838x_switch_priv {
