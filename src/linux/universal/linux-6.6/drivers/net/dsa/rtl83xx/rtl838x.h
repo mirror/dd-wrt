@@ -153,6 +153,7 @@
 #define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
 #define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
 
+
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 
 /* Registers of the internal Serdes of the 9300 */
@@ -239,7 +240,19 @@
 
 #define RTL930X_MAC_EEE_ABLTY			(0xCB34)
 #define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
-#define RTL930X_EEEP_PORT_CTRL(p)		(0x3278 + ((p) << 6))
+#define RTL930X_EEE_PORT_CTRL(p)		(0x3278 + ((p) << 6))
+
+#define RTL931X_EEE_PORT_TX_EN(port)                                                          (0x5644 + (((port >> 5) << 2)))
+#define RTL931X_EEE_PORT_TX_EN_OFFSET(port)                                                   (port % 0x20)
+#define RTL931X_EEE_PORT_TX_EN_MASK(port)                                                     (0x1 << RTL931X_EEE_PORT_TX_EN_OFFSET(port))
+
+#define RTL931X_EEE_PORT_RX_EN(port)                                                          (0x564C + (((port >> 5) << 2)))
+#define RTL931X_EEE_PORT_RX_EN_OFFSET(port)                                                   (port % 0x20)
+#define RTL931X_EEE_PORT_RX_EN_MASK(port)                                                     (0x1 << RTL931X_EEE_PORT_RX_EN_OFFSET(port))
+
+#define RTL931X_MAC_EEE_ABLTY(port)                                                                       (0xF08 + (((port >> 5) << 2))) /* port: 0-56 */
+#define RTL931X_MAC_EEE_ABLTY_OFFSET(port)                                                         (port % 0x20)
+#define RTL931X_MAC_EEE_ABLTY_MASK(port)                                                           (0x1 << RTL931X_MAC_EEE_ABLTY_OFFSET(port))
 
 /* L2 functionality */
 #define RTL838X_L2_CTRL_0			(0x3200)

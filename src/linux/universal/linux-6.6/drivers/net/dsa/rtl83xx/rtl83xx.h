@@ -134,8 +134,8 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
-void rtl9300_sds_rst(int sds_num, u32 mode);
-void rtl9310_sds_rst(int sds_num, phy_interface_t phy_mode);
+void rtl930x_sds_rst(int sds_num, u32 mode);
+void rtl931x_sds_rst(int sds_num, phy_interface_t phy_mode);
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
 void rtl930x_print_matrix(void);
 
