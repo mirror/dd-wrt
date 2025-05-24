@@ -1608,20 +1608,20 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	if (sds_num < 0)
 		return 0;
 
-	mode = rtl9300_sds_mode_get(sds_num);
+	mode = rtl930x_sds_mode_get(sds_num);
 	pr_debug("%s got SDS mode %02x\n", __func__, mode);
 	if (mode == RTL930X_SDS_OFF)
-		mode = rtl9300_sds_field_r(sds_num, 0x1f, 9, 11, 7);
+		mode = rtl930x_sds_field_r(sds_num, 0x1f, 9, 11, 7);
 	if (mode == RTL930X_SDS_MODE_10GBASER) { /* 10GR mode */
-		status = rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
-		latch_status = rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
-		status |= rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
-		latch_status |= rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
+		status = rtl930x_sds_field_r(sds_num, 0x5, 0, 12, 12);
+		latch_status = rtl930x_sds_field_r(sds_num, 0x4, 1, 2, 2);
+		status |= rtl930x_sds_field_r(sds_num, 0x5, 0, 12, 12);
+		latch_status |= rtl930x_sds_field_r(sds_num, 0x4, 1, 2, 2);
 	} else {
-		status = rtl9300_sds_field_r(sds_num, 0x1, 29, 8, 0);
-		latch_status = rtl9300_sds_field_r(sds_num, 0x1, 30, 8, 0);
-		status |= rtl9300_sds_field_r(sds_num, 0x1, 29, 8, 0);
-		latch_status |= rtl9300_sds_field_r(sds_num, 0x1, 30, 8, 0);
+		status = rtl930x_sds_field_r(sds_num, 0x1, 29, 8, 0);
+		latch_status = rtl930x_sds_field_r(sds_num, 0x1, 30, 8, 0);
+		status |= rtl930x_sds_field_r(sds_num, 0x1, 29, 8, 0);
+		latch_status |= rtl930x_sds_field_r(sds_num, 0x1, 30, 8, 0);
 	}
 
 	pr_debug("%s link status: status: %d, latch %d\n", __func__, status, latch_status);
@@ -1651,20 +1651,20 @@ int rtl931x_link_sts_get(u32 sds)
 		xsg_sdsid_0 = sds < 2 ? sds : (sds - 1) * 2;
 		xsg_sdsid_1 = xsg_sdsid_0 + 1;
 
-		sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 29, 8, 0);
-		sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 29, 8, 0);
-		latch_sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
-		latch_sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
+		sts = rtl931x_sds_field_r(xsg_sdsid_0, 0x1, 29, 8, 0);
+		sts1 = rtl931x_sds_field_r(xsg_sdsid_1, 0x1, 29, 8, 0);
+		latch_sts = rtl931x_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
+		latch_sts1 = rtl931x_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
 	} else {
 		u32  asds, dsds;
 
 		asds = rtl931x_get_analog_sds(sds);
-		sts = rtl9310_sds_field_r(asds, 0x5, 0, 12, 12);
-		latch_sts = rtl9310_sds_field_r(asds, 0x4, 1, 2, 2);
+		sts = rtl931x_sds_field_r(asds, 0x5, 0, 12, 12);
+		latch_sts = rtl931x_sds_field_r(asds, 0x4, 1, 2, 2);
 
 		dsds = sds < 2 ? sds : (sds - 1) * 2;
-		latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
-		sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
+		latch_sts1 = rtl931x_sds_field_r(dsds, 0x2, 1, 2, 2);
+		sts1 = rtl931x_sds_field_r(dsds, 0x2, 1, 2, 2);
 	}
 
 	pr_debug("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
