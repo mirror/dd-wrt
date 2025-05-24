@@ -2358,7 +2358,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		return;
 
 	sds_num = priv->ports[port].sds_num;
-	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
+	pr_debug("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 
@@ -2366,7 +2366,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	switch (state->interface) {
 	case PHY_INTERFACE_MODE_HSGMII:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
+		pr_debug("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_HSGMII);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_HSGMII);
 		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_HSGMII);
@@ -2380,7 +2380,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_XGMII);
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_10BASER\n", __func__);
+		pr_debug("%s setting mode PHY_INTERFACE_MODE_10BASER\n", __func__);
 	case PHY_INTERFACE_MODE_10GKR:
 //		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_10GBASER);
@@ -2388,12 +2388,12 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 		/* Translates to MII_USXGMII_10GSXGMII */
-		pr_info("%s setting mode PHY_INTERFACE_MODE_USXGMII\n", __func__);
+		pr_debug("%s setting mode PHY_INTERFACE_MODE_USXGMII\n", __func__);
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_USXGMII);
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
+		pr_debug("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_SGMII);
 		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
@@ -2666,8 +2666,6 @@ static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 		val = 0x25;
 	}
 
-	pr_info("%s writing analog SerDes Mode value was %02x\n", __func__, rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6));
-	pr_info("%s writing analog SerDes Mode value %02x\n", __func__, val);
 	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, val);
 
 	return;
@@ -2751,7 +2749,7 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 		break;
 
 	default:
-		pr_info("SerDes %d mode is invalid\n", asds);
+		pr_warn("%s: SerDes %d mode is invalid\n", __func__, asds);
 		return;
 	}
 
@@ -2770,13 +2768,13 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 
 	evenSds = asds - lane;
 
-	pr_info("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d lane %d asds %d\n",
+	pr_debug("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d lane %d asds %d\n",
 	        __func__, cmu_type, cmu_page, frc_cmu_spd, lane, asds);
 
 	if (cmu_type == 1) {
-		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+		pr_debug("%s A CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
 		rtl9310_sds_field_w(asds, cmu_page, 0x7, 15, 15, 0);
-		pr_info("%s B CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+		pr_debug("%s B CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
 		if (chiptype) {
 			rtl9310_sds_field_w(asds, cmu_page, 0xd, 14, 14, 0);
 		}
@@ -2788,7 +2786,7 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 		rtl9310_sds_field_w(evenSds, 0x20, 0x12, 15, 13, frc_cmu_spd);
 	}
 
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+	pr_debug("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
 	return;
 }
 
@@ -2909,28 +2907,25 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 	if (sds > 13)
 		return;
 
-	pr_info("%s: set sds %d to mode %d\n", __func__, sds, mode);
+	pr_debug("%s: set sds %d to mode %d\n", __func__, sds, mode);
 	val = rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6);
 
-	pr_info("%s: fibermode %08X stored mode 0x%x analog SDS %d", __func__,
+	pr_debug("%s: fibermode %08X stored mode 0x%x analog SDS %d", __func__,
 			rtl931x_read_sds_phy(asds, 0x1f, 0x9), val, asds);
-	pr_info("%s: SGMII mode %08X in 0x24 0x9 analog SDS %d", __func__,
+	pr_debug("%s: SGMII mode %08X in 0x24 0x9 analog SDS %d", __func__,
 			rtl931x_read_sds_phy(asds, 0x24, 0x9), asds);
-	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
+	pr_debug("%s: CMU mode %08X stored even SDS %d", __func__,
 			rtl931x_read_sds_phy(asds & ~1, 0x20, 0x12), asds & ~1);
-	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL(sds));
-	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x24, 0x7));
-	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x26, 0x7));
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
-	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dSds, 0x0, 0xe));
-	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dSds + 1, 0x0, 0xe));
+	pr_debug("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL(sds));
+	pr_debug("%s CMU page 0x24 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x24, 0x7));
+	pr_debug("%s CMU page 0x26 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x26, 0x7));
+	pr_debug("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+	pr_debug("%s XSG page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dSds, 0x0, 0xe));
+	pr_debug("%s XSG2 page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dSds + 1, 0x0, 0xe));
 
 	model_info = sw_r32(RTL93XX_MODEL_NAME_INFO);
 	if ((model_info >> 4) & 0x1) {
-		pr_info("detected chiptype 1\n");
 		chiptype = 1;
-	} else {
-		pr_info("detected chiptype 0\n");
 	}
 
 	if (sds < 2)
@@ -2938,10 +2933,10 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 	else
 		dSds = (sds - 1) * 2;
 
-	pr_info("%s: 2.5gbit %08X dsds %d", __func__,
+	pr_debug("%s: 2.5gbit %08X dsds %d", __func__,
 	        rtl931x_read_sds_phy(dSds, 0x1, 0x14), dSds);
 
-	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
+	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 	ori = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	val = ori | (1 << sds);
 	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
@@ -3068,7 +3063,7 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 
 	case PHY_INTERFACE_MODE_QSGMII:
 	default:
-		pr_info("%s: PHY mode %s not supported by SerDes %d\n",
+		pr_warn("%s: PHY mode %s not supported by SerDes %d\n",
 		        __func__, phy_modes(mode), sds);
 		return;
 	}
@@ -3155,7 +3150,6 @@ int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 
 	rtl9310_sds_field_w(asds, page, 0x5, 15, 15, 1);
 	band = rtl9310_sds_field_r(asds, 0x1f, 0x15, 8, 3);
-	pr_info("%s band is: %d\n", __func__, band);
 
 	return band;
 }

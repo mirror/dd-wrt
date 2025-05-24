@@ -45,7 +45,6 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 			v |= BIT_ULL(i);
 	}
 
-	pr_info("%s: %16llx\n", __func__, v);
 	priv->r->set_port_reg_le(v, priv->r->smi_poll_ctrl);
 
 	/* PHY update complete, there is no global PHY polling enable bit on the 9300 */
@@ -137,11 +136,11 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 {
 	struct rtl838x_vlan_info info;
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 
 	priv->r->vlan_profile_setup(0);
 	priv->r->vlan_profile_setup(1);
-	pr_info("UNKNOWN_MC_PMASK: %016llx\n", priv->r->read_mcast_pmask(UNKNOWN_MC_PMASK));
+	pr_debug("UNKNOWN_MC_PMASK: %016llx\n", priv->r->read_mcast_pmask(UNKNOWN_MC_PMASK));
 	priv->r->vlan_profile_dump(0);
 
 	info.fid = 0;			/* Default Forwarding ID / MSTI */
@@ -271,7 +270,7 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 
 	/* Disable MAC polling the PHY so that we can start configuration */
 	if (priv->family_id == RTL9300_FAMILY_ID)
@@ -1262,7 +1261,7 @@ void rtl931x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_info("%s port %d\n", __func__, port);
+	pr_debug("%s port %d\n", __func__, port);
 	mutex_lock(&priv->reg_mutex);
 	sw_w32(port << 11, RTL931X_L2_TBL_FLUSH_CTRL + 4);
 
@@ -1792,7 +1791,7 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 	pr_debug("In %s, port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
 
 	if (priv->is_lagmember[port]) {
-		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
+		pr_warn("%s: %d is lag slave. ignore\n", __func__, port);
 		return 0;
 	}
 
@@ -2059,7 +2058,7 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 	}
 
 	if (group == -1) {
-		pr_info("port_lag_leave: port %d is not a member\n", port);
+		pr_warn("port_lag_leave: port %d is not a member\n", port);
 		err = -EINVAL;
 		goto out;
 	}
