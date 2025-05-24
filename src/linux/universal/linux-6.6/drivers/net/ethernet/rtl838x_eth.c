@@ -1240,9 +1240,9 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		int len;
 
 		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
-			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
-				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-				    r, (uint32_t)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
+			if (&ring->rx_r[r][ring->c_rx[r]] != last && net_ratelimit()) {
+					netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
+					    r, (uint32_t)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
 			}
 			break;
 		}
