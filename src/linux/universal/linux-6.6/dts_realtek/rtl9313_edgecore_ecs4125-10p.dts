@@ -215,14 +215,14 @@
 
 		/* RTL9313 Internal Serdes */
 		phy54: ethernet-phy@54 {
-			compatible = "ethernet-phy-ieee802.3-c22";
+			compatible = "ethernet-phy-ieee802.3-c45";
 			phy-is-integrated;
 			reg = <54>;
 			sds = < 12 >;
 		};
 
 		phy55: ethernet-phy@55 {
-			compatible = "ethernet-phy-ieee802.3-c22";
+			compatible = "ethernet-phy-ieee802.3-c45";
 			phy-is-integrated;
 			reg = <55>;
 			sds = < 13 >;
