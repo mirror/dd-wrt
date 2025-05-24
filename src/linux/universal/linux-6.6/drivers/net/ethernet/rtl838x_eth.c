@@ -33,8 +33,8 @@ extern struct rtl83xx_soc_info soc_info;
  * available in total for all queues.
  */
 #define MAX_RXRINGS	32
-#define MAX_RXLEN	300
-#define MAX_ENTRIES	(300 * 8)
+#define MAX_RXLEN	400
+#define MAX_ENTRIES	(400 * 8)
 #define TXRINGS		2
 #define TXRINGLEN	160
 #define NOTIFY_EVENTS	10
@@ -2200,7 +2200,6 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 
 	return 0;
 }
-void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode);
 
 static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 {
