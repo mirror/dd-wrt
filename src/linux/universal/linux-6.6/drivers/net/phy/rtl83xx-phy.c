@@ -436,7 +436,7 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	int ret = 0;
 	u32 v;
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 
 	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE);
 	if (v < 0)
@@ -534,7 +534,7 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	bool an_enabled;
 	u32 val;
 
-	pr_info("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
+	pr_debug("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
 
 	poll_state = disable_polling(port);
 
@@ -924,7 +924,7 @@ static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 	static int reg[] = {16, 19, 20, 21};
 	int val;
 
-	pr_info("%s: port %d, set_fibre: %d\n", __func__, mac, set_fibre);
+	pr_debug("%s: port %d, set_fibre: %d\n", __func__, mac, set_fibre);
 	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
 	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
 
@@ -1133,7 +1133,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	val = phy_read(phydev, MII_BMCR);
 	an_enabled = val & BMCR_ANENABLE;
 
-	pr_info("%s: aneg: %d\n", __func__, an_enabled);
+	pr_debug("%s: aneg: %d\n", __func__, an_enabled);
 	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 	val &= ~BIT(5);  /* Use MAC-based EEE */
 	phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
@@ -1152,7 +1152,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 
 	/* Restart AN if enabled */
 	if (an_enabled) {
-		pr_info("%s: doing aneg\n", __func__);
+		pr_debug("%s: doing aneg\n", __func__);
 		val = phy_read(phydev, MII_BMCR);
 		val |= BMCR_ANRESTART;
 		phy_write(phydev, MII_BMCR, val);
@@ -1187,7 +1187,7 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	u32 val;
 	bool an_enabled;
 
-	pr_info("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
+	pr_debug("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
 
 	poll_state = disable_polling(port);
 
@@ -1228,7 +1228,7 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	/* GPHY page back to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
-	pr_info("%s done\n", __func__);
+	pr_debug("%s done\n", __func__);
 	resume_polling(poll_state);
 
 	return 0;
@@ -1239,7 +1239,7 @@ static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	int addr = phydev->mdio.addr;
 	u64 poll_state;
 
-	pr_info("In %s, port %d, enabled %d\n", __func__, addr, e->eee_enabled);
+	pr_debug("In %s, port %d, enabled %d\n", __func__, addr, e->eee_enabled);
 
 	poll_state = disable_polling(addr);
 
@@ -1423,12 +1423,12 @@ static int rtl9300_config_aneg(struct phy_device *phydev)
 	u32 sds_num = 0, dsds;
 	u32 v;
 
-	pr_info("In %s WARNING DONT CALL ME FOR RTL9300\n", __func__);
+	pr_debug("In %s WARNING DONT CALL ME FOR RTL9300\n", __func__);
 	if (dev->of_node) {
 		dn = dev->of_node;
 		if (of_property_read_u32(dn, "sds", &sds_num))
 			sds_num = -1;
-		pr_info("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
+		pr_debug("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
 	} else {
 		dev_err(dev, "No DT node.\n");
 		return -EINVAL;
@@ -1492,7 +1492,7 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 
 	/* Back up serdes power off value */
 	sds_conf_value = sw_r32(RTL838X_SDS_CFG_REG);
-	pr_info("SDS power down value: %x\n", sds_conf_value);
+	pr_debug("SDS power down value: %x\n", sds_conf_value);
 
 	/* take serdes into reset */
 	i = 0;
@@ -1522,7 +1522,7 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	v |= 0x4 << 5 | 0x4;
 	sw_w32(v, RTL838X_SDS_MODE_SEL);
 
-	pr_info("PLL control register: %x\n", sw_r32(RTL838X_PLL_CML_CTRL));
+	pr_debug("PLL control register: %x\n", sw_r32(RTL838X_PLL_CML_CTRL));
 	sw_w32_mask(0xfffffff0, 0xaaaaaaaf & 0xf, RTL838X_PLL_CML_CTRL);
 	i = 0;
 	while (rtl8380_sds01_qsgmii_6275b[2 * i]) {
@@ -1561,10 +1561,10 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 		i++;
 	}
 
-	pr_info("SDS power down value now: %x\n", sw_r32(RTL838X_SDS_CFG_REG));
+	pr_debug("SDS power down value now: %x\n", sw_r32(RTL838X_SDS_CFG_REG));
 	sw_w32(sds_conf_value, RTL838X_SDS_CFG_REG);
 
-	pr_info("Configuration of SERDES done\n");
+	pr_debug("Configuration of SERDES done\n");
 
 	return 0;
 }
@@ -1667,7 +1667,7 @@ int rtl931x_link_sts_get(u32 sds)
 		sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
 	}
 
-	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
+	pr_debug("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
 		sds, sts, sts1, latch_sts, latch_sts1);
 
 	return sts1;
@@ -1898,7 +1898,7 @@ static int rtl8393_serdes_probe(struct phy_device *phydev)
 {
 	int addr = phydev->mdio.addr;
 
-	pr_info("%s: id: %d\n", __func__, addr);
+	pr_debug("%s: id: %d\n", __func__, addr);
 	if (soc_info.family != RTL8390_FAMILY_ID)
 		return -ENODEV;
 

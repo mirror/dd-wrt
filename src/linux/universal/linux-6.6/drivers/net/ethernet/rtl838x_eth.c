@@ -991,7 +991,7 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
-	pr_info("in %s\n", __func__);
+	pr_debug("in %s\n", __func__);
 
 	phylink_stop(priv->phylink);
 	rtl838x_hw_stop(priv);
@@ -1418,7 +1418,7 @@ static void rtl838x_mac_config(struct phylink_config *config,
 	 * i.e. the CPU-Port. We don't need to do anything.
 	 */
 
-	pr_info("In %s, mode %x\n", __func__, mode);
+	pr_debug("In %s, mode %x\n", __func__, mode);
 }
 
 static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
@@ -1443,12 +1443,12 @@ static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
 	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
 	int port = priv->cpu_port;
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 
 	state->link = priv->r->get_mac_link_sts(port) ? 1 : 0;
 	state->duplex = priv->r->get_mac_link_dup_sts(port) ? 1 : 0;
 
-	pr_info("%s link status is %d\n", __func__, state->link);
+	pr_debug("%s link status is %d\n", __func__, state->link);
 	speed = priv->r->get_mac_link_spd_sts(port);
 	switch (speed) {
 	case 0:
@@ -1569,7 +1569,7 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 	if (priv->family_id != 0x8380)
 		return 0;
 
-	pr_info("%s\n", __func__);
+	pr_debug("%s\n", __func__);
 	/* fix timer for EEE */
 	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
 	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
@@ -2038,7 +2038,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= BIT(i + 16);
 
-	pr_info("c45_mask: %08x\n", c45_mask);
+	pr_debug("c45_mask: %08x\n", c45_mask);
 	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
 
 	/* Set the MAC type of each port according to the PHY-interface */
@@ -2111,7 +2111,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	u32 poll_ctrl = 0;
 	bool mdc_on[4];
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	/* Disable port polling for configuration purposes */
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL);
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
@@ -2136,13 +2136,13 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 
 	/* Configure which SMI bus is behind which port number */
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
-		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
+		pr_debug("poll sel %d, %08x\n", i, poll_sel[i]);
 		sw_w32(poll_sel[i], RTL931X_SMI_PORT_POLLING_SEL + (i * 4));
 	}
 
 	/* Configure which SMI busses */
-	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
-	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
+	pr_debug("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
+	pr_debug("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
@@ -2152,8 +2152,8 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
 	}
 
-	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
-	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
+	pr_debug("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
+	pr_debug("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 
 	/* We have a 10G PHY enable polling
 	 * sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
@@ -2167,22 +2167,22 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 
 static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 {
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 
 	/* Initialize Encapsulation memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
 	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
-	pr_info("%s: init ENCAP done\n", __func__);
+	pr_debug("%s: init ENCAP done\n", __func__);
 
 	/* Initialize Managemen Information Base memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
 	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
-	pr_info("%s: init MIB done\n", __func__);
+	pr_debug("%s: init MIB done\n", __func__);
 
 	/* Initialize ACL (PIE) memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
 	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
-	pr_info("%s: init ACL done\n", __func__);
+	pr_debug("%s: init ACL done\n", __func__);
 
 	/* Initialize ALE memory and wait until finished */
 	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
@@ -2190,7 +2190,7 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
 	sw_w32(0x7ff, RTL931X_MEM_ALE_INIT_2);
 	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
-	pr_info("%s: init ALE done\n", __func__);
+	pr_debug("%s: init ALE done\n", __func__);
 
 	/* Enable ESD auto recovery */
 	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
