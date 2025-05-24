@@ -3801,6 +3801,7 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 
 	case PHY_INTERFACE_MODE_10GBASER: /* MII_10GR / MII_10GR1000BX_AUTO: */
 	                                  /* configure 10GR fiber mode=1 */
+	        /* init 10gr */
 		rtl9310_sds_field_w(asds, 0x1f, 0xb, 1, 1, 1);
 
 		/* init fiber_1g */
@@ -3814,12 +3815,24 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 		rtl9310_sds_field_w(asds, 0x1f, 13, 15, 0, 0x109e);
 		rtl9310_sds_field_w(asds, 0x1f, 0x6, 14, 10, 0x8);
 		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
+
+		/* sds rx config */
+		rtl931x_write_sds_phy(asds, 0x2e, 0x12, 0x27c0);
+		rtl931x_write_sds_phy(asds, 0x2f, 0x0, 0xc000);
+		rtl931x_write_sds_phy(asds, 0x2f, 0x2, 0x6010);
+
+
+		rtl931x_write_sds_phy(asds, 0x20, 0x0, 0xc30);		
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 9, 0, 0x30);
+		rtl9310_sds_field_w(asds, 0x2A, 0x12, 7, 6, 0x3);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x1);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
 		
 		//tx polarity change
-		rtl9310_sds_field_w(asds, 0x6, 0x2, 14, 14, 1);
+//		rtl9310_sds_field_w(asds, 0x6, 0x2, 14, 14, 1);
 
 
-//		rtl931x_sds_rx_rst(sds);
+		rtl931x_sds_rx_rst(sds);
 
 		break;
 
@@ -3887,6 +3900,12 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 		else
 			rtl931x_sds_fiber_mode_set(sds, mode);
 	}
+
+/*
+	//check
+        osal_time_mdelay(10);
+        SDS_FIELD_W(unit, aSds, 0x20, 0x0, 11, 10, 0x1);
+        SDS_FIELD_W(unit, aSds, 0x20, 0x0, 11, 10, 0x3);*/
 }
 
 int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode)

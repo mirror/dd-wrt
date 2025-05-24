@@ -2360,6 +2360,10 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
+	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
+
+	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
+
 	switch (state->interface) {
 	case PHY_INTERFACE_MODE_HSGMII:
 		pr_info("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
@@ -2378,8 +2382,9 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	case PHY_INTERFACE_MODE_10GBASER:
 		pr_info("%s setting mode PHY_INTERFACE_MODE_10BASER\n", __func__);
 	case PHY_INTERFACE_MODE_10GKR:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
+//		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_10GBASER);
+//		reg |= RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 		/* Translates to MII_USXGMII_10GSXGMII */
@@ -2406,12 +2411,9 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
 		rtl9310_sds_mode_usxgmii(port_sds[port]);
 
-	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
-
-	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
 
 	reg &= ~(0xf << 12);
-	reg |= 0x2 << 12; /* Set SMI speed to 0x2 */
+	reg |= RTL_SPEED_1000 << 12; /* Set SMI speed to 0x2 */
 
 	reg |= RTL931X_TX_PAUSE_EN | RTL931X_RX_PAUSE_EN;
 

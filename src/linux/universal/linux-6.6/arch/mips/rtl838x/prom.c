@@ -322,7 +322,6 @@ void __init prom_init(void)
 	mips_cpc_probe();
 
 	if (!register_cps_smp_ops()) { 
-		pr_info("Use CPS SMP\n");
 		return;
 	}
 
