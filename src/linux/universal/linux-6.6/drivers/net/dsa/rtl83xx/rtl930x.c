@@ -722,7 +722,7 @@ void rtl930x_traffic_disable(int source, int dest)
 	rtl_table_release(r);
 }
 
-void rtl930xdump_debug(void)
+void rtl930x_dump_debug(void)
 {
 	u16 r = RTL930X_STAT_PRVTE_DROP_COUNTER0;
 
@@ -2638,7 +2638,7 @@ static int rtl930x_sds_10g_idle(int sds_num)
 }
 
 
-sds_config rtl930xa_sds_10gr_lane0[] =
+sds_config rtl930x_a_sds_10gr_lane0[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2686,7 +2686,7 @@ sds_config rtl930xa_sds_10gr_lane0[] =
 	{0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x76E1},
 };
 
-sds_config rtl930xa_sds_10gr_lane1[] =
+sds_config rtl930x_a_sds_10gr_lane1[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2732,16 +2732,16 @@ sds_config rtl930xa_sds_10gr_lane1[] =
 static void rtl930x_serdes_patch(int sds_num)
 {
 	if (sds_num % 2) {
-		for (int i = 0; i < sizeof(rtl930xa_sds_10gr_lane1) / sizeof(sds_config); ++i) {
-			rtl930x_write_sds_phy(sds_num, rtl930xa_sds_10gr_lane1[i].page,
-					      rtl930xa_sds_10gr_lane1[i].reg,
-					      rtl930xa_sds_10gr_lane1[i].data);
+		for (int i = 0; i < sizeof(rtl930x_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
+			rtl930x_write_sds_phy(sds_num, rtl930x_a_sds_10gr_lane1[i].page,
+					      rtl930x_a_sds_10gr_lane1[i].reg,
+					      rtl930x_a_sds_10gr_lane1[i].data);
 		}
 	} else {
-		for (int i = 0; i < sizeof(rtl930xa_sds_10gr_lane0) / sizeof(sds_config); ++i) {
-			rtl930x_write_sds_phy(sds_num, rtl930xa_sds_10gr_lane0[i].page,
-					      rtl930xa_sds_10gr_lane0[i].reg,
-					      rtl930xa_sds_10gr_lane0[i].data);
+		for (int i = 0; i < sizeof(rtl930x_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
+			rtl930x_write_sds_phy(sds_num, rtl930x_a_sds_10gr_lane0[i].page,
+					      rtl930x_a_sds_10gr_lane0[i].reg,
+					      rtl930x_a_sds_10gr_lane0[i].data);
 		}
 	}
 }
