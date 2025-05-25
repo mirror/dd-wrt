@@ -1858,7 +1858,70 @@ void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
+static void rtl839x_phylink_mac_link_up(struct dsa_switch *ds, int port,
+				   unsigned int mode,
+				   phy_interface_t interface,
+				   struct phy_device *phydev,
+				   int speed, int duplex,
+				   bool tx_pause, bool rx_pause)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+	mcr = sw_r32(rtl839x_mac_force_mode_ctrl(port));
+
+	pr_debug("%s portread %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	mcr &= ~RTL839X_RX_PAUSE_EN;
+	mcr &= ~RTL839X_TX_PAUSE_EN;
+	mcr &= ~RTL839X_DUPLEX_MODE;
+	mcr &= ~RTL839X_SPEED_MASK;
+	mcr |= RTL83XX_FORCE_LINK_EN;
+	mcr |= spdsel << RTL839X_SPEED_SHIFT;
+
+	if (tx_pause)
+		mcr |= RTL839X_TX_PAUSE_EN;
+	if (rx_pause)
+		mcr |= RTL839X_RX_PAUSE_EN;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL839X_DUPLEX_MODE;
+	if (dsa_port_is_cpu(dp))
+		mcr |= RTL83XX_FORCE_EN;
+
+	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, rtl839x_mac_force_mode_ctrl(port));
+
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, rtl839x_mac_port_ctrl(port));
+}
+
+static void rtl839x_phylink_mac_link_down(struct dsa_switch *ds, int port,
+				     unsigned int mode,
+				     phy_interface_t interface)
+{
+	int mask = 0;
+
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, rtl839x_mac_port_ctrl(port));
+
+	/* No longer force link */
+	mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN;
+	sw_w32_mask(mask, 0, rtl839x_mac_force_mode_ctrl(port));
+}
+
 const struct rtl838x_reg rtl839x_reg = {
+	.phylink_mac_link_down = rtl839x_phylink_mac_link_down,
+	.phylink_mac_link_up = rtl839x_phylink_mac_link_up,
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,
@@ -1905,8 +1968,6 @@ const struct rtl838x_reg rtl839x_reg = {
 	.set_static_move_action = rtl839x_set_static_move_action,
 	.stp_get = rtl839x_stp_get,
 	.stp_set = rtl839x_stp_set,
-	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
-	.mac_port_ctrl = rtl839x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl839x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl839x_l2_port_new_sa_fwd,
 	.mir_ctrl = RTL839X_MIR_CTRL,

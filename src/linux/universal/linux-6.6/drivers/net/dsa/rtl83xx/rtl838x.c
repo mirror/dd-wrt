@@ -638,7 +638,7 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 	v = enable ? 0x3 : 0x0;
 
 	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
-	sw_w32_mask(0x3 << 9, v << 9, priv->r->mac_force_mode_ctrl(port));
+	sw_w32_mask(0x3 << 9, v << 9, rtl838x_mac_force_mode_ctrl(port));
 
 	/* Set TX/RX EEE state */
 	if (enable) {
@@ -1756,7 +1756,136 @@ void rtl83xx_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
+static void rtl838x_phylink_mac_link_up(struct dsa_switch *ds, int port,
+				   unsigned int mode,
+				   phy_interface_t interface,
+				   struct phy_device *phydev,
+				   int speed, int duplex,
+				   bool tx_pause, bool rx_pause)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+	mcr = sw_r32(rtl838x_mac_force_mode_ctrl(port));
+
+	pr_debug("%s portread %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	mcr &= ~RTL838X_RX_PAUSE_EN;
+	mcr &= ~RTL838X_TX_PAUSE_EN;
+	mcr &= ~RTL838X_DUPLEX_MODE;
+	mcr &= ~RTL838X_SPEED_MASK;
+	mcr |= RTL83XX_FORCE_LINK_EN;
+	mcr |= spdsel << RTL838X_SPEED_SHIFT;
+
+	if (tx_pause)
+		mcr |= RTL838X_TX_PAUSE_EN;
+	if (rx_pause)
+		mcr |= RTL838X_RX_PAUSE_EN;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL838X_DUPLEX_MODE;
+	if (dsa_port_is_cpu(dp))
+		mcr |= RTL83XX_FORCE_EN;
+
+
+	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, rtl838x_mac_force_mode_ctrl(port));
+
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, rtl838x_mac_port_ctrl(port));
+}
+
+static void rtl838x_phylink_mac_link_down(struct dsa_switch *ds, int port,
+				     unsigned int mode,
+				     phy_interface_t interface)
+{
+	int mask = 0;
+
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, rtl838x_mac_port_ctrl(port));
+
+	/* No longer force link */
+	mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN;
+	sw_w32_mask(mask, 0, rtl838x_mac_force_mode_ctrl(port));
+}
+
+static void rtl83xx_config_interface(int port, phy_interface_t interface)
+{
+	u32 old, int_shift, sds_shift;
+
+	switch (port) {
+	case 24:
+		int_shift = 0;
+		sds_shift = 5;
+		break;
+	case 26:
+		int_shift = 3;
+		sds_shift = 0;
+		break;
+	default:
+		return;
+	}
+
+	old = sw_r32(RTL838X_SDS_MODE_SEL);
+	switch (interface) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+		if ((old >> sds_shift & 0x1f) == 4)
+			return;
+		sw_w32_mask(0x7 << int_shift, 1 << int_shift, RTL838X_INT_MODE_CTRL);
+		sw_w32_mask(0x1f << sds_shift, 4 << sds_shift, RTL838X_SDS_MODE_SEL);
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		if ((old >> sds_shift & 0x1f) == 2)
+			return;
+		sw_w32_mask(0x7 << int_shift, 2 << int_shift, RTL838X_INT_MODE_CTRL);
+		sw_w32_mask(0x1f << sds_shift, 2 << sds_shift, RTL838X_SDS_MODE_SEL);
+		break;
+	default:
+		return;
+	}
+	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
+}
+
+static void rtl838x_phylink_mac_config(struct dsa_switch *ds, int port,
+					unsigned int mode,
+					const struct phylink_link_state *state)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	u32 mcr;
+	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
+
+	if (dsa_port_is_cpu(dp)) {
+		/* allow CRC errors on CPU-port */
+		sw_w32_mask(0, 0x8, rtl838x_mac_port_ctrl(port));
+		return;
+	}
+
+	mcr = sw_r32(rtl838x_mac_force_mode_ctrl(port));
+	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
+		pr_debug("port %d PHY autonegotiates\n", port);
+		rtl83xx_config_interface(port, state->interface);
+		mcr |= RTL838X_NWAY_EN;
+	} else {
+		mcr &= ~RTL838X_NWAY_EN;
+	}
+
+	sw_w32(mcr, rtl838x_mac_force_mode_ctrl(port));
+
+}
+
 const struct rtl838x_reg rtl838x_reg = {
+	.phylink_mac_config = rtl838x_phylink_mac_config,
+	.phylink_mac_link_down = rtl838x_phylink_mac_link_down,
+	.phylink_mac_link_up = rtl838x_phylink_mac_link_up,
 	.fast_age = rtl83xx_fast_age,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1788,7 +1917,6 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_tables_read = rtl838x_vlan_tables_read,
 	.vlan_set_tagged = rtl838x_vlan_set_tagged,
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
-	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
 	.vlan_profile_get = rtl838x_vlan_profile_get,
 	.vlan_profile_dump = rtl838x_vlan_profile_dump,
 	.vlan_profile_setup = rtl838x_vlan_profile_setup,
@@ -1802,7 +1930,6 @@ const struct rtl838x_reg rtl838x_reg = {
 	.set_static_move_action = rtl838x_set_static_move_action,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
-	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
 	.mir_ctrl = RTL838X_MIR_CTRL,

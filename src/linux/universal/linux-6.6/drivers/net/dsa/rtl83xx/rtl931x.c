@@ -1232,7 +1232,7 @@ static void rtl931x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 	v = enable ? eee_mask : 0x0;
 	
 	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
-	sw_w32_mask(eee_mask, v, priv->r->mac_force_mode_ctrl(port));
+	sw_w32_mask(eee_mask, v, rtl931x_mac_force_mode_ctrl(port));
 
 	/* Set TX/RX EEE state */
 	if (enable) {
@@ -2485,7 +2485,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	sds_num = priv->ports[port].sds_num;
 	pr_debug("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
-	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	reg = sw_r32(rtl931x_mac_force_mode_ctrl(port));
 
 	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
 
@@ -2548,7 +2548,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	if (state->duplex == DUPLEX_FULL)
 		reg |= RTL931X_DUPLEX_MODE;
 
-	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+	sw_w32(reg, rtl931x_mac_force_mode_ctrl(port));
 
 }
 
@@ -3294,7 +3294,46 @@ void rtl931x_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
+static void rtl931x_phylink_mac_link_up(struct dsa_switch *ds, int port,
+				   unsigned int mode,
+				   phy_interface_t interface,
+				   struct phy_device *phydev,
+				   int speed, int duplex,
+				   bool tx_pause, bool rx_pause)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_10000)
+		spdsel = RTL_SPEED_10000;
+	else if (speed == SPEED_5000)
+		spdsel = RTL_SPEED_5000;
+	else if (speed == SPEED_2500)
+		spdsel = RTL_SPEED_2500;
+	else if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, rtl931x_mac_port_ctrl(port));
+
+}
+
+static void rtl931x_phylink_mac_link_down(struct dsa_switch *ds, int port,
+				     unsigned int mode,
+				     phy_interface_t interface)
+{
+	u32 v = 0;
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, rtl931x_mac_port_ctrl(port));
+}
+
 const struct rtl838x_reg rtl931x_reg = {
+	.phylink_mac_link_down = rtl931x_phylink_mac_link_down,
+	.phylink_mac_link_up = rtl931x_phylink_mac_link_up,
 	.phylink_mac_config = rtl931x_phylink_mac_config,
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -3330,8 +3369,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
 	.stp_get = rtl931x_stp_get,
 	.stp_set = rtl931x_stp_set,
-	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
-	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
 	.mir_ctrl = RTL931X_MIR_CTRL,

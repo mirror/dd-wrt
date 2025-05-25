@@ -1167,8 +1167,6 @@ struct rtl838x_reg {
 	void (*set_static_move_action)(int port, bool forward);
 	void (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
-	int  (*mac_force_mode_ctrl)(int port);
-	int  (*mac_port_ctrl)(int port);
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
@@ -1223,6 +1221,8 @@ struct rtl838x_reg {
 	void (*phylink_mac_config)(struct dsa_switch *ds, int port, unsigned int mode, const struct phylink_link_state *state);
 	int (*pcs_config)(struct phylink_pcs *pcs, unsigned int neg_mode, phy_interface_t interface, const unsigned long *advertising,bool permit_pause_to_mac);
 	void (*fast_age)(struct dsa_switch *ds, int port);
+	void (*phylink_mac_link_up)(struct dsa_switch *ds, int port, unsigned int mode, phy_interface_t interface, struct phy_device *phydev, int speed, int duplex, bool tx_pause, bool rx_pause);
+	void (*phylink_mac_link_down)(struct dsa_switch *ds, int port, unsigned int mode, phy_interface_t interface);
 };
 
 struct rtl838x_switch_priv {

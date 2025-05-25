@@ -4135,7 +4135,71 @@ void rtl930x_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
+static void rtl930x_phylink_mac_link_up(struct dsa_switch *ds, int port,
+				   unsigned int mode,
+				   phy_interface_t interface,
+				   struct phy_device *phydev,
+				   int speed, int duplex,
+				   bool tx_pause, bool rx_pause)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_10000)
+		spdsel = RTL_SPEED_10000;
+	else if (speed == SPEED_5000)
+		spdsel = RTL_SPEED_5000;
+	else if (speed == SPEED_2500)
+		spdsel = RTL_SPEED_2500;
+	else if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+
+	mcr = sw_r32(rtl930x_mac_force_mode_ctrl(port));
+	mcr &= ~RTL930X_RX_PAUSE_EN;
+	mcr &= ~RTL930X_TX_PAUSE_EN;
+	mcr &= ~RTL930X_DUPLEX_MODE;
+	mcr &= ~RTL930X_SPEED_MASK;
+	mcr |= RTL930X_FORCE_LINK_EN;
+	mcr |= spdsel << RTL930X_SPEED_SHIFT;
+
+	if (tx_pause)
+		mcr |= RTL930X_TX_PAUSE_EN;
+	if (rx_pause)
+		mcr |= RTL930X_RX_PAUSE_EN;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL930X_DUPLEX_MODE;
+	if (dsa_port_is_cpu(dp) || !priv->ports[port].phy_is_integrated)
+		mcr |= RTL930X_FORCE_EN;
+	sw_w32(mcr, rtl930x_mac_force_mode_ctrl(port));
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, rtl930x_mac_port_ctrl(port));
+
+}
+static void rtl930x_phylink_mac_link_down(struct dsa_switch *ds, int port,
+				     unsigned int mode,
+				     phy_interface_t interface)
+{
+	u32 v = 0;
+
+	/* Stop TX/RX to port */
+
+	sw_w32_mask(0x3, 0, rtl930x_mac_port_ctrl(port));
+
+	/* No longer force link */
+	v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
+	sw_w32_mask(v, 0, rtl930x_mac_force_mode_ctrl(port));
+}
+
 const struct rtl838x_reg rtl930x_reg = {
+	.phylink_mac_link_down = rtl930x_phylink_mac_link_down,
+	.phylink_mac_link_up = rtl930x_phylink_mac_link_up,
 	.pcs_config = rtl93xx_pcs_config,
 	.phylink_mac_config = rtl93xx_phylink_mac_config,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
@@ -4176,8 +4240,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_vlan_egr_filter = rtl930x_set_egr_filter,
 	.stp_get = rtl930x_stp_get,
 	.stp_set = rtl930x_stp_set,
-	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
-	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl930x_l2_port_new_sa_fwd,
 	.mir_ctrl = RTL930X_MIR_CTRL,
