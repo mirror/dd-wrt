@@ -1225,7 +1225,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
 	struct sk_buff *skb;
-	unsigned long flags;
 	int i, len, work_done = 0, idx;
 	unsigned int val;
 	struct p_hdr *h;
@@ -1233,7 +1232,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct dsa_tag tag;
 
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
-	spin_lock_irqsave(&priv->lock, flags);
 
 	idx = ring->c_rx[r];
 	while (!(ring->rx_r[r][idx] & 0x1) && (work_done < budget)) {
@@ -1295,8 +1293,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 
 	ring->c_rx[r] = idx;
 
-	spin_unlock_irqrestore(&priv->lock, flags);
-
 	return work_done;
 }
 
@@ -1307,7 +1303,9 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 	int work_done = 0;
 	int r = rx_q->id;
 	int work;
+	unsigned long flags;
 
+	spin_lock_irqsave(&priv->lock, flags);
 	while (work_done < budget) {
 		work = rtl838x_hw_receive(priv->netdev, r, budget - work_done);
 		if (!work)
@@ -1324,6 +1322,8 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 		else
 			sw_w32_mask(0, 0xf00ff | BIT(r + 8), priv->r->dma_if_intr_msk);
 	}
+	spin_unlock_irqrestore(&priv->lock, flags);
+
 
 	return work_done;
 }
@@ -2602,8 +2602,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
-		//netif_threaded_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
-		netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
+		netif_threaded_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
+		//netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
 	}
 	platform_set_drvdata(pdev, dev);
 
