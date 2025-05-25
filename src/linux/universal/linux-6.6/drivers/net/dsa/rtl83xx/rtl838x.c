@@ -659,7 +659,10 @@ static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 	u64 link;
 
 	if (port >= 24)
-		return 0;
+		return -ENOTSUPP;
+
+	e->supported = SUPPORTED_100baseT_Full |
+	               SUPPORTED_1000baseT_Full;
 
 	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
 	if (!(link & BIT(port)))
@@ -674,7 +677,6 @@ static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
 		e->lp_advertised = ADVERTISED_100baseT_Full;
 		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		return 1;
 	}
 
 	return 0;
@@ -1729,7 +1731,33 @@ static void rtl838x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6);
 }
 
+void rtl83xx_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int s = priv->family_id == RTL8390_FAMILY_ID ? 2 : 0;
+
+	pr_debug("FAST AGE port %d\n", port);
+	mutex_lock(&priv->reg_mutex);
+	/* RTL838X_L2_TBL_FLUSH_CTRL register bits, 839x has 1 bit larger
+	 * port fields:
+	 * 0-4: Replacing port
+	 * 5-9: Flushed/replaced port
+	 * 10-21: FVID
+	 * 22: Entry types: 1: dynamic, 0: also static
+	 * 23: Match flush port
+	 * 24: Match FVID
+	 * 25: Flush (0) or replace (1) L2 entries
+	 * 26: Status of action (1: Start, 0: Done)
+	 */
+	sw_w32(1 << (26 + s) | 1 << (23 + s) | port << (5 + (s / 2)), priv->r->l2_tbl_flush_ctrl);
+
+	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26 + s));
+
+	mutex_unlock(&priv->reg_mutex);
+}
+
 const struct rtl838x_reg rtl838x_reg = {
+	.fast_age = rtl83xx_fast_age,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,

@@ -877,21 +877,11 @@ static int rtldsa_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			     const unsigned long *advertising,
 			     bool permit_pause_to_mac)
 {
-	return 0;
-}
-
-static int rtl93xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			      phy_interface_t interface,
-			      const unsigned long *advertising,
-			      bool permit_pause_to_mac)
-{
 	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
 	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	int sds_num = priv->ports[port].sds_num;
 
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		rtl930x_sds_set_autoneg(sds_num, neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED);
+	if (priv->r->pcs_config)
+		return priv->r->pcs_config(pcs, neg_mode, interface, advertising, permit_pause_to_mac);
 
 	return 0;
 }
@@ -1561,38 +1551,20 @@ static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port,
+static int rtldsa_get_mac_eee(struct dsa_switch *ds, int port,
 			       struct ethtool_eee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret = 0;
 
-	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
+	ret = priv->r->eee_port_ability(priv, e, port);
 
-	priv->r->eee_port_ability(priv, e, port);
+	if (!ret) {
+		e->eee_enabled = priv->ports[port].eee_enabled;
+		e->eee_active = !!(e->advertised & e->lp_advertised);
+	}
 
-	e->eee_enabled = priv->ports[port].eee_enabled;
-
-	e->eee_active = !!(e->advertised & e->lp_advertised);
-
-	return 0;
-}
-
-static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port,
-			       struct ethtool_eee *e)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	e->supported = SUPPORTED_100baseT_Full |
-	               SUPPORTED_1000baseT_Full |
-	               SUPPORTED_2500baseX_Full;
-
-	priv->r->eee_port_ability(priv, e, port);
-
-	e->eee_enabled = priv->ports[port].eee_enabled;
-
-	e->eee_active = !!(e->advertised & e->lp_advertised);
-
-	return 0;
+	return ret;
 }
 
 static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
@@ -1748,64 +1720,14 @@ void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl83xx_fast_age(struct dsa_switch *ds, int port)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int s = priv->family_id == RTL8390_FAMILY_ID ? 2 : 0;
-
-	pr_debug("FAST AGE port %d\n", port);
-	mutex_lock(&priv->reg_mutex);
-	/* RTL838X_L2_TBL_FLUSH_CTRL register bits, 839x has 1 bit larger
-	 * port fields:
-	 * 0-4: Replacing port
-	 * 5-9: Flushed/replaced port
-	 * 10-21: FVID
-	 * 22: Entry types: 1: dynamic, 0: also static
-	 * 23: Match flush port
-	 * 24: Match FVID
-	 * 25: Flush (0) or replace (1) L2 entries
-	 * 26: Status of action (1: Start, 0: Done)
-	 */
-	sw_w32(1 << (26 + s) | 1 << (23 + s) | port << (5 + (s / 2)), priv->r->l2_tbl_flush_ctrl);
-
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26 + s));
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
-void rtl931x_fast_age(struct dsa_switch *ds, int port)
+void rtldsa_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_debug("%s port %d\n", __func__, port);
-	mutex_lock(&priv->reg_mutex);
-	sw_w32(port << 11, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+	if (priv->r->fast_age)
+		priv->r->fast_age(ds, port);
 
-	sw_w32(BIT(24) | BIT(28), RTL931X_L2_TBL_FLUSH_CTRL);
-
-	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
-
-	mutex_unlock(&priv->reg_mutex);
 }
-
-void rtl930x_fast_age(struct dsa_switch *ds, int port)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		return rtl931x_fast_age(ds, port);
-
-	pr_debug("FAST AGE port %d\n", port);
-	mutex_lock(&priv->reg_mutex);
-	sw_w32(port << 11, RTL930X_L2_TBL_FLUSH_CTRL + 4);
-
-	sw_w32(BIT(26) | BIT(30), RTL930X_L2_TBL_FLUSH_CTRL);
-
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
 static int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 				 bool vlan_filtering,
 				 struct netlink_ext_ack *extack)
@@ -2874,7 +2796,7 @@ rtldsa_port_mdb_set_mrouter(struct dsa_switch *ds, int port, bool mrouter,
 	return 0;
 }
 
-static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
+static int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
 				   struct dsa_mall_mirror_tc_entry *mirror,
 				   bool ingress, struct netlink_ext_ack *extack)
 {
@@ -2934,7 +2856,7 @@ static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_mirror_del(struct dsa_switch *ds, int port,
+static void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
 				    struct dsa_mall_mirror_tc_entry *mirror)
 {
 	int group = 0;
@@ -3196,14 +3118,14 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.get_mac_eee		= rtl83xx_get_mac_eee,
+	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtldsa_port_stp_state_set,
-	.port_fast_age		= rtl83xx_fast_age,
+	.port_fast_age		= rtldsa_fast_age,
 
 	.port_vlan_filtering	= rtldsa_vlan_filtering,
 	.port_vlan_add		= rtldsa_vlan_add,
@@ -3218,8 +3140,8 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_mdb_active	= rtldsa_port_mdb_active,
 	.port_mdb_set_mrouter	= rtldsa_port_mdb_set_mrouter,
 
-	.port_mirror_add	= rtl83xx_port_mirror_add,
-	.port_mirror_del	= rtl83xx_port_mirror_del,
+	.port_mirror_add	= rtldsa_port_mirror_add,
+	.port_mirror_del	= rtldsa_port_mirror_del,
 
 	.port_lag_change	= rtldsa_port_lag_change,
 	.port_lag_join		= rtldsa_port_lag_join,
@@ -3233,7 +3155,7 @@ const struct phylink_pcs_ops rtl93xx_pcs_ops = {
 	.pcs_an_restart		= rtldsa_pcs_an_restart,
  	.pcs_validate		= rtl93xx_pcs_validate,
  	.pcs_get_state		= rtl93xx_pcs_get_state,
-	.pcs_config		= rtl93xx_pcs_config,
+	.pcs_config		= rtldsa_pcs_config,
 };
 
 const struct dsa_switch_ops rtl930x_switch_ops = {
@@ -3262,14 +3184,14 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.get_mac_eee		= rtl93xx_get_mac_eee,
+	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtldsa_port_stp_state_set,
-	.port_fast_age		= rtl930x_fast_age,
+	.port_fast_age		= rtldsa_fast_age,
 
 	.port_vlan_filtering	= rtldsa_vlan_filtering,
 	.port_vlan_add		= rtldsa_vlan_add,
@@ -3283,6 +3205,9 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_mdb_del		= rtldsa_port_mdb_del,
 	.port_mdb_active	= rtldsa_port_mdb_active,
 	.port_mdb_set_mrouter	= rtldsa_port_mdb_set_mrouter,
+
+	.port_mirror_add	= rtldsa_port_mirror_add,
+	.port_mirror_del	= rtldsa_port_mirror_del,
 
 	.port_lag_change	= rtldsa_port_lag_change,
 	.port_lag_join		= rtldsa_port_lag_join,

@@ -1255,6 +1255,11 @@ static int rtl931x_eee_port_ability(struct rtl838x_switch_priv *priv,
 	if (port >= 56)
 		return -ENOTSUPP;
 
+	e->supported = SUPPORTED_100baseT_Full |
+	               SUPPORTED_1000baseT_Full |
+	               SUPPORTED_2500baseX_Full |
+	               SUPPORTED_10000baseT_Full;
+
 	pr_debug("In %s, port %d\n", __func__, port);
 	link = sw_r32(RTL931X_MAC_LINK_STS);
 	link = sw_r32(RTL931X_MAC_LINK_STS);
@@ -3274,6 +3279,21 @@ int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 	return band;
 }
 
+void rtl931x_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	pr_debug("%s port %d\n", __func__, port);
+	mutex_lock(&priv->reg_mutex);
+	sw_w32(port << 11, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+
+	sw_w32(BIT(24) | BIT(28), RTL931X_L2_TBL_FLUSH_CTRL);
+
+	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
+
+	mutex_unlock(&priv->reg_mutex);
+}
+
 const struct rtl838x_reg rtl931x_reg = {
 	.phylink_mac_config = rtl931x_phylink_mac_config,
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
@@ -3359,4 +3379,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.get_l3_router_mac = rtl931x_get_l3_router_mac,
 	.set_l3_router_mac = rtl931x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl931x_set_l3_egress_intf,
+	.fast_age = rtl931x_fast_age,
 };

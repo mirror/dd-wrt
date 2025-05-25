@@ -919,7 +919,10 @@ int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 	u64 link, a;
 
 	if (port >= 48)
-		return 0;
+		return -ENOTSUPP;
+
+	e->supported = SUPPORTED_100baseT_Full |
+	               SUPPORTED_1000baseT_Full;
 
 	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 	if (!(link & BIT_ULL(port)))
@@ -936,7 +939,6 @@ int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 	if (rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY) & BIT_ULL(port)) {
 		e->lp_advertised = ADVERTISED_100baseT_Full;
 		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		return 1;
 	}
 
 	return 0;
@@ -1942,4 +1944,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.fast_age = rtl83xx_fast_age,
 };

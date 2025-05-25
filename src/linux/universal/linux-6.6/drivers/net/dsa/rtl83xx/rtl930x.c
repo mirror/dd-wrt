@@ -964,6 +964,11 @@ int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 	if (port >= 26)
 		return -ENOTSUPP;
 
+	e->supported = SUPPORTED_100baseT_Full |
+	               SUPPORTED_1000baseT_Full |
+	               SUPPORTED_2500baseX_Full |
+	               SUPPORTED_10000baseT_Full;
+
 	pr_debug("In %s, port %d\n", __func__, port);
 	link = sw_r32(RTL930X_MAC_LINK_STS);
 	link = sw_r32(RTL930X_MAC_LINK_STS);
@@ -4099,8 +4104,39 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 		rtl930x_serdes_setup(port, sds_num, state->interface);
 }
 
+static int rtl93xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			      phy_interface_t interface,
+			      const unsigned long *advertising,
+			      bool permit_pause_to_mac)
+{
+	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
+	struct rtl838x_switch_priv *priv = rtpcs->priv;
+	int port = rtpcs->port;
+	int sds_num = priv->ports[port].sds_num;
+
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		rtl930x_sds_set_autoneg(sds_num, neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED);
+
+	return 0;
+}
+
+void rtl930x_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	pr_debug("FAST AGE port %d\n", port);
+	mutex_lock(&priv->reg_mutex);
+	sw_w32(port << 11, RTL930X_L2_TBL_FLUSH_CTRL + 4);
+
+	sw_w32(BIT(26) | BIT(30), RTL930X_L2_TBL_FLUSH_CTRL);
+
+	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
+
+	mutex_unlock(&priv->reg_mutex);
+}
 
 const struct rtl838x_reg rtl930x_reg = {
+	.pcs_config = rtl93xx_pcs_config,
 	.phylink_mac_config = rtl93xx_phylink_mac_config,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -4190,4 +4226,5 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
+	.fast_age = rtl930x_fast_age,
 };

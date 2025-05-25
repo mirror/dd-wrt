@@ -1221,6 +1221,8 @@ struct rtl838x_reg {
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
 	void (*phylink_mac_config)(struct dsa_switch *ds, int port, unsigned int mode, const struct phylink_link_state *state);
+	int (*pcs_config)(struct phylink_pcs *pcs, unsigned int neg_mode, phy_interface_t interface, const unsigned long *advertising,bool permit_pause_to_mac);
+	void (*fast_age)(struct dsa_switch *ds, int port);
 };
 
 struct rtl838x_switch_priv {
