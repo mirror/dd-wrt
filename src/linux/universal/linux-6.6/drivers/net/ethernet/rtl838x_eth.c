@@ -241,6 +241,7 @@ void rtl839x_update_cntr(int r, int released)
 	/* This feature is not available on RTL839x SoCs */
 }
 
+
 void rtl930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
@@ -2443,6 +2444,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	u8 mac_addr[ETH_ALEN];
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
+	cpumask_t affinity_mask;
 	int i;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
@@ -2556,6 +2558,9 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 			   __func__, err);
 		return err;
 	}
+	/* run irq only on fixed cpu to prevent stalls */
+	cpumask_set_cpu(0, &affinity_mask);
+	irq_set_affinity_and_hint(dev->irq, &affinity_mask);
 
 	rtl8380_init_mac(priv);
 
@@ -2602,7 +2607,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
-//		netif_threaded_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
 		netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
 	}
 	platform_set_drvdata(pdev, dev);
