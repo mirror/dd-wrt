@@ -11,6 +11,70 @@
 #define RTL8390_VERSION_A 'A'
 #define RTL8380_VERSION_B 'B'
 
+enum mib_reg {
+	MIB_REG_INVALID = 0,
+	MIB_REG_STD,
+	MIB_REG_PRV
+};
+
+#define MIB_ITEM(_reg, _offset, _size) \
+		{.reg = _reg, .offset = _offset, .size = _size}
+
+#define MIB_LIST_ITEM(_name, _item) \
+		{.name = _name, .item = _item}
+
+struct rtl83xx_mib_item {
+	enum mib_reg reg;
+	unsigned int offset;
+	unsigned int size;
+};
+
+struct rtl83xx_mib_list_item {
+	const char *name;
+	struct rtl83xx_mib_item item;
+};
+
+struct rtl83xx_mib_desc {
+	struct rtl83xx_mib_item symbol_errors;
+
+	struct rtl83xx_mib_item if_in_octets;
+	struct rtl83xx_mib_item if_out_octets;
+	struct rtl83xx_mib_item if_in_ucast_pkts;
+	struct rtl83xx_mib_item if_in_mcast_pkts;
+	struct rtl83xx_mib_item if_in_bcast_pkts;
+	struct rtl83xx_mib_item if_out_ucast_pkts;
+	struct rtl83xx_mib_item if_out_mcast_pkts;
+	struct rtl83xx_mib_item if_out_bcast_pkts;
+	struct rtl83xx_mib_item if_out_discards;
+	struct rtl83xx_mib_item single_collisions;
+	struct rtl83xx_mib_item multiple_collisions;
+	struct rtl83xx_mib_item deferred_transmissions;
+	struct rtl83xx_mib_item late_collisions;
+	struct rtl83xx_mib_item excessive_collisions;
+	struct rtl83xx_mib_item crc_align_errors;
+	struct rtl83xx_mib_item rx_pkts_over_max_octets;
+
+	struct rtl83xx_mib_item unsupported_opcodes;
+
+	struct rtl83xx_mib_item rx_undersize_pkts;
+	struct rtl83xx_mib_item rx_oversize_pkts;
+	struct rtl83xx_mib_item rx_fragments;
+	struct rtl83xx_mib_item rx_jabbers;
+
+	struct rtl83xx_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct rtl83xx_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct ethtool_rmon_hist_range rmon_ranges[ETHTOOL_RMON_HIST_MAX];
+
+	struct rtl83xx_mib_item drop_events;
+	struct rtl83xx_mib_item collisions;
+
+	struct rtl83xx_mib_item rx_pause_frames;
+	struct rtl83xx_mib_item tx_pause_frames;
+
+	size_t list_count;
+	const struct rtl83xx_mib_list_item *list;
+};
+
 struct fdb_update_work {
 	struct work_struct work;
 	struct net_device *ndev;
@@ -127,6 +191,7 @@ int rtl9300_sds_power(int mac, int val);
 void rtl930x_sds_rst(int sds_num, u32 mode);
 void rtl931x_sds_rst(int sds_num, phy_interface_t phy_mode);
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
+void rtl930x_sds_set_autoneg(int sds_num, bool autoneg);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */

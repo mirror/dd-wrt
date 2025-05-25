@@ -376,34 +376,71 @@ static int rtl821x_write_page(struct phy_device *phydev, int page)
 	return __phy_write(phydev, RTL8XXX_PAGE_SELECT, page);
 }
 
+static int rtl8226_config_init(struct phy_device *phydev)
+{
+	__set_bit(PHY_INTERFACE_MODE_HSGMII, phydev->possible_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces);
+
+	// TODO: Serdes option mode should be configured here!
+
+	return 0;
+}
+
+static int rtl8226_get_features(struct phy_device *phydev)
+{
+	linkmode_set_bit(ETHTOOL_LINK_MODE_TP_BIT, phydev->supported);
+
+	return genphy_c45_pma_read_abilities(phydev);
+}
+
+static void rtl8226_update_interface(struct phy_device *phydev)
+{
+	int val;
+
+	if (!phydev->link)
+		return;
+
+	/* Change interface according to serdes mode */
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x7580);
+	if (val < 0)
+		return;
+
+	switch (val & 0x1f) {
+	case 0x12:
+		phydev->interface = PHY_INTERFACE_MODE_HSGMII;
+		break;
+	case 0x2:
+		phydev->interface = PHY_INTERFACE_MODE_SGMII;
+		break;
+	}
+}
+
 static int rtl8226_read_status(struct phy_device *phydev)
 {
-	int ret = 0;
-	u32 val;
+	int ret, val;
 
-/* TODO: ret = genphy_read_status(phydev);
- * 	if (ret < 0) {
- * 		pr_info("%s: genphy_read_status failed\n", __func__);
- * 		return ret;
- * 	}
- */
+	/* Vendor register as C45 has no standardized support for 1000BaseT */
+	if (phydev->autoneg == AUTONEG_ENABLE && genphy_c45_aneg_done(phydev)) {
+		val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA414);
+		if (val < 0)
+			return val;
+	} else {
+		val = 0;
+	}
+	mii_stat1000_mod_linkmode_lpa_t(phydev->lp_advertising, val);
 
-	/* Link status must be read twice */
-	for (int i = 0; i < 2; i++)
-		val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA402);
+	ret = genphy_c45_read_status(phydev);
+	if (ret < 0)
+		return ret;
 
-	phydev->link = val & BIT(2) ? 1 : 0;
 	if (!phydev->link)
-		goto out;
-
-	/* Read duplex status */
-	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
-	if (val < 0)
-		goto out;
-	phydev->duplex = !!(val & BIT(3));
+		return 0;
 
 	/* Read speed */
 	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
+	if (val < 0)
+		return val;
+
 	switch (val & 0x0630) {
 	case 0x0000:
 		phydev->speed = SPEED_10;
@@ -414,96 +451,43 @@ static int rtl8226_read_status(struct phy_device *phydev)
 	case 0x0020:
 		phydev->speed = SPEED_1000;
 		break;
-	case 0x0200:
-		phydev->speed = SPEED_10000;
-		break;
 	case 0x0210:
 		phydev->speed = SPEED_2500;
-		break;
-	case 0x0220:
-		phydev->speed = SPEED_5000;
 		break;
 	default:
 		break;
 	}
 
-out:
-	return ret;
-}
+	rtl8226_update_interface(phydev);
 
-static int rtl8226_advertise_aneg(struct phy_device *phydev)
-{
-	int ret = 0;
-	u32 v;
-
-	pr_debug("In %s\n", __func__);
-
-	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE);
-	if (v < 0)
-		goto out;
-
-	v |= ADVERTISE_10HALF;
-	v |= ADVERTISE_10FULL;
-	v |= ADVERTISE_100HALF;
-	v |= ADVERTISE_100FULL;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE, v);
-
-	/* Allow 1GBit */
-	v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA412);
-	if (v < 0)
-		goto out;
-	v |= ADVERTISE_1000FULL;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA412, v);
-	if (ret < 0)
-		goto out;
-
-	/* Allow 2.5G */
-	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL);
-	if (v < 0)
-		goto out;
-
-	v |= MDIO_AN_10GBT_CTRL_ADV2_5G;
-	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL, v);
-
-out:
-	return ret;
+	return 0;
 }
 
 static int rtl8226_config_aneg(struct phy_device *phydev)
 {
-	int ret = 0;
-	u32 v;
+	bool changed = false;
+	int ret, val;
 
-	pr_debug("In %s\n", __func__);
-	if (phydev->autoneg == AUTONEG_ENABLE) {
-		ret = rtl8226_advertise_aneg(phydev);
-		if (ret)
-			goto out;
-		/* AutoNegotiationEnable */
-		v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1);
-		if (v < 0)
-			goto out;
+	if (phydev->autoneg == AUTONEG_DISABLE)
+		return genphy_c45_pma_setup_forced(phydev);
 
-		v |= MDIO_AN_CTRL1_ENABLE; /* Enable AN */
-		ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1, v);
-		if (ret < 0)
-			goto out;
+	ret = genphy_c45_an_config_aneg(phydev);
+	if (ret < 0)
+		return ret;
+	if (ret > 0)
+		changed = true;
 
-		/* RestartAutoNegotiation */
-		v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
-		if (v < 0)
-			goto out;
-		v |= MDIO_AN_CTRL1_RESTART;
+	val = linkmode_adv_to_mii_ctrl1000_t(phydev->advertising);
 
-		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, v);
-	}
+	/* Vendor register as C45 has no standardized support for 1000BaseT */
+	ret = phy_modify_mmd_changed(phydev, MDIO_MMD_VEND2, 0xA412,
+				     ADVERTISE_1000FULL, val);
+	if (ret < 0)
+		return ret;
+	if (ret > 0)
+		changed = true;
 
-/*	TODO: ret = __genphy_config_aneg(phydev, ret); */
-
-out:
-	return ret;
+	return genphy_c45_check_and_restart_aneg(phydev, changed);
 }
 
 static int rtl8226_get_eee(struct phy_device *phydev,
@@ -534,7 +518,7 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	bool an_enabled;
 	u32 val;
 
-	pr_debug("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
+	pr_info("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
 
 	poll_state = disable_polling(port);
 
@@ -559,9 +543,11 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2, val);
 
 	/* RestartAutoNegotiation */
-	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
-	val |= MDIO_AN_CTRL1_RESTART;
-	phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, val);
+	if (an_enabled) {
+		val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
+		val |= MDIO_AN_CTRL1_RESTART;
+		phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, val);
+	}
 
 	resume_polling(poll_state);
 
@@ -1998,9 +1984,11 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8221B),
 		.name           = "REALTEK RTL8221B",
-		.features       = PHY_GBIT_FEATURES,
-		.suspend        = genphy_suspend,
-		.resume         = genphy_resume,
+		.config_init	= rtl8226_config_init,
+		.get_features	= rtl8226_get_features,
+		.suspend        = genphy_c45_pma_suspend,
+		.resume         = genphy_c45_pma_resume,
+		.set_loopback   = genphy_c45_loopback,
 		.read_page      = rtl821x_read_page,
 		.write_page     = rtl821x_write_page,
 		.read_status    = rtl8226_read_status,
@@ -2011,9 +1999,11 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8226),
 		.name		= "REALTEK RTL8226",
-		.features	= PHY_GBIT_FEATURES,
-		.suspend	= genphy_suspend,
-		.resume		= genphy_resume,
+		.config_init	= rtl8226_config_init,
+		.get_features	= rtl8226_get_features,
+		.suspend	= genphy_c45_pma_suspend,
+		.resume		= genphy_c45_pma_resume,
+		.set_loopback	= genphy_c45_loopback,
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
 		.read_status	= rtl8226_read_status,
