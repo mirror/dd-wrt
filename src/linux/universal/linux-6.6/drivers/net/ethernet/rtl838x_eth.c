@@ -223,7 +223,17 @@ extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
  */
 void rtl838x_update_cntr(int r, int released)
 {
-	/* This feature is not available on RTL838x SoCs */
+	int pos = r * 4;
+	u32 reg = rtl838x_dma_if_rx_ring_cntr(r);
+
+	/*
+	 * The RTL838X counter modifications are not atomic. A decrement
+	 * from the CPU might get lost when new packets arrive and the counter
+	 * is increased in the same moment from the SOC. As software buffers
+	 * are much larger than the maximum possible value of 15 it is no
+	 * problem to clear the counter.
+	 */
+	sw_w32(sw_r32(reg) & (0xf << pos), reg);
 }
 
 void rtl839x_update_cntr(int r, int released)
@@ -234,24 +244,17 @@ void rtl839x_update_cntr(int r, int released)
 void rtl930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
-	u32 reg = RTL930X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
+	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
 
-	v = (v >> pos) & 0x3ff;
-	pr_debug("RX: Work done %d, old value: %d, pos %d, reg %04x\n", released, v, pos, reg);
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 void rtl931x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
-	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
+	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
 
-	v = (v >> pos) & 0x3ff;
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 struct dsa_tag {
@@ -1194,6 +1197,7 @@ txdone:
 	return ret;
 }
 
+
 /* Return queue number for TX. On the RTL83XX, these queues have equal priority
  * so we do round-robin
  */
@@ -1216,78 +1220,52 @@ u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 
 	return 0;
 }
-
 static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
-	LIST_HEAD(rx_list);
+	struct sk_buff *skb;
 	unsigned long flags;
-	int work_done = 0;
-	u32	*last;
+	int i, len, work_done = 0, idx;
+	unsigned int val;
+	struct p_hdr *h;
 	bool dsa = netdev_uses_dsa(dev);
+	struct dsa_tag tag;
 
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
 	spin_lock_irqsave(&priv->lock, flags);
-	last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 
-	do {
-		struct sk_buff *skb;
-		struct dsa_tag tag;
-		struct p_hdr *h;
-		u8 *skb_data;
-		u8 *data;
-		int len;
+	idx = ring->c_rx[r];
+	while (!(ring->rx_r[r][idx] & 0x1) && (work_done < budget)) {
+		 /* Update counters in advance for more speed on RTL838X */
+		priv->r->update_cntr(r, 1);
 
-		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
-			if (&ring->rx_r[r][ring->c_rx[r]] != last && net_ratelimit()) {
-					netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-					    r, (uint32_t)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
-			}
-			break;
-		}
-
-		h = &ring->rx_header[r][ring->c_rx[r]];
-		data = (u8 *)KSEG1ADDR(h->buf);
+		h = &ring->rx_header[r][idx];
 		len = h->len;
 		if (!len)
 			break;
 		work_done++;
 
-		len -= 4; /* strip the CRC */
-		/* Add 4 bytes for cpu_tag */
-		if (dsa)
-			len += 4;
+		/* Reuse CRC for DSA tag or strip it otherwise */
+		if (!dsa)
+			len -= 4;
 
-		skb = netdev_alloc_skb(dev, len + 4);
-		skb_reserve(skb, NET_IP_ALIGN);
+		skb = napi_alloc_skb(&priv->rx_qs[r].napi, len);
 
 		if (likely(skb)) {
-			/* BUG: Prevent bug on RTL838x SoCs */
-			if (priv->family_id == RTL8380_FAMILY_ID) {
-				sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
-				for (int i = 0; i < priv->rxrings; i++) {
-					unsigned int val;
-
-					/* Update each ring cnt */
-					val = sw_r32(priv->r->dma_if_rx_ring_cntr(i));
-					sw_w32(val, priv->r->dma_if_rx_ring_cntr(i));
-				}
-			}
-
-			skb_data = skb_put(skb, len);
-			/* Make sure data is visible */
+			/* Make new data visible for CPU */
 			mb();
-			memcpy(skb->data, (u8 *)KSEG1ADDR(data), len);
+			dma_sync_single_for_device(&priv->pdev->dev, CPHYSADDR(h->buf), len, DMA_FROM_DEVICE);
+			skb_put_data(skb, (u8 *)KSEG0ADDR(h->buf), len);
 			/* Overwrite CRC with cpu_tag */
 			if (dsa) {
 				priv->r->decode_tag(h, &tag);
-				skb->data[len - 4] = 0x80;
-				skb->data[len - 3] = tag.port;
-				skb->data[len - 2] = 0x10;
-				skb->data[len - 1] = 0x00;
+				skb->data[len-4] = 0x80;
+				skb->data[len-3] = tag.port;
+				skb->data[len-2] = 0x10;
+				skb->data[len-1] = 0x00;
 				if (tag.l2_offloaded)
-					skb->data[len - 3] |= 0x40;
+					skb->data[len-3] |= 0x40;
 			}
 
 			if (tag.queue >= 0)
@@ -1301,32 +1279,21 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 				else
 					skb->ip_summed = CHECKSUM_UNNECESSARY;
 			}
+			napi_gro_receive(&priv->rx_qs[r].napi, skb);
+
 			dev->stats.rx_packets++;
 			dev->stats.rx_bytes += len;
-
-			list_add_tail(&skb->list, &rx_list);
 		} else {
 			if (net_ratelimit())
 				dev_warn(&dev->dev, "low on memory - packet dropped\n");
 			dev->stats.rx_dropped++;
 		}
 
-		/* Reset header structure */
-		memset(h, 0, sizeof(struct p_hdr));
-		h->buf = data;
-		h->size = RING_BUFFER;
+		ring->rx_r[r][idx] |= 0x1;
+		idx = (idx + 1) % priv->rxringlen;
+	};
 
-		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
-		                               WRAP :
-		                               0x1);
-		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
-		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
-	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
-
-	netif_receive_skb_list(&rx_list);
-
-	/* Update counters */
-	priv->r->update_cntr(r, 0);
+	ring->c_rx[r] = idx;
 
 	spin_unlock_irqrestore(&priv->lock, flags);
 
@@ -2635,7 +2602,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
-		netif_threaded_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
+		//netif_threaded_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
+		netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx);
 	}
 	platform_set_drvdata(pdev, dev);
 
