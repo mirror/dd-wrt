@@ -231,6 +231,7 @@ static int phylink_interface_max_speed(phy_interface_t interface)
 	case PHY_INTERFACE_MODE_GMII:
 		return SPEED_1000;
 
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 		return SPEED_2500;
 
@@ -239,7 +240,6 @@ static int phylink_interface_max_speed(phy_interface_t interface)
 
 	case PHY_INTERFACE_MODE_XGMII:
 	case PHY_INTERFACE_MODE_RXAUI:
-	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_XAUI:
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
@@ -540,6 +540,7 @@ unsigned long phylink_get_capabilities(phy_interface_t interface,
 		caps |= MAC_1000FD;
 		break;
 
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 		caps |= MAC_2500FD;
 		break;
@@ -549,7 +550,6 @@ unsigned long phylink_get_capabilities(phy_interface_t interface,
 		break;
 
 	case PHY_INTERFACE_MODE_XGMII:
-	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_RXAUI:
 	case PHY_INTERFACE_MODE_XAUI:
 	case PHY_INTERFACE_MODE_10GBASER:
@@ -945,6 +945,10 @@ static int phylink_parse_mode(struct phylink *pl,
 			phylink_set(pl->supported, 1000baseX_Full);
 			break;
 
+		case PHY_INTERFACE_MODE_HSGMII:
+			phylink_set(pl->supported, 2500baseT_Full);
+			break;
+
 		case PHY_INTERFACE_MODE_2500BASEX:
 			phylink_set(pl->supported, 2500baseX_Full);
 			break;
@@ -960,7 +964,6 @@ static int phylink_parse_mode(struct phylink *pl,
 			fallthrough;
 		case PHY_INTERFACE_MODE_USXGMII:
 		case PHY_INTERFACE_MODE_10GKR:
-		case PHY_INTERFACE_MODE_HSGMII:
 		case PHY_INTERFACE_MODE_10GBASER:
 			phylink_set(pl->supported, 10baseT_Half);
 			phylink_set(pl->supported, 10baseT_Full);
