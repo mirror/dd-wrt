@@ -144,7 +144,7 @@ static int rtkphy_c45_resume(struct phy_device *phydev)
     return rtk_phylib_c45_power_normal(phydev);
 #else
     return 0;
-#endf
+#endif
 }
 
 static int rtkphy_c45_config_aneg(struct phy_device *phydev)
