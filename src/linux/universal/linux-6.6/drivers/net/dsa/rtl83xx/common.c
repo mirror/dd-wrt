@@ -846,7 +846,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 			int slot = priv->r->find_l3_slot(r, false);
 
 			pr_info("%s: Got slot for route: %d\n", __func__, slot);
-			priv->r->host_route_write(slot, r);
+			//priv->r->host_route_write(slot, r);
 		} else {
 			priv->r->route_write(r->id, r);
 			r->pr.fwd_sel = true;
