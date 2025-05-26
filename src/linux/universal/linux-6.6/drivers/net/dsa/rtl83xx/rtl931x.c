@@ -298,7 +298,7 @@ static inline int rtl931x_mac_link_spd_sts(int p)
 
 static inline int rtl931x_mac_port_ctrl(int p)
 {
-	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
+	return RTL931X_MAC_L2_PORT_CTRL(p);
 }
 
 static inline int rtl931x_l2_port_new_salrn(int p)

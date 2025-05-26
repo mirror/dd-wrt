@@ -13,10 +13,10 @@
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
 #define RTL930X_MAC_PORT_CTRL(port)		(0x3260 + (((port) << 6)))
-#define RTL931X_MAC_PORT_CTRL			(0x6004)
+#define RTL931X_MAC_PORT_CTRL(port)		(0x6004 + (((port) << 7)))
 
 #define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
-#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
+#define RTL931X_MAC_L2_PORT_CTRL(port)		(0x6000 + (((port) << 7)))
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
