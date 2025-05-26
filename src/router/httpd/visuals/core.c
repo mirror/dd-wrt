@@ -28,6 +28,22 @@
 #include <wlutils.h>
 #include <ddnvram.h>
 
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
+{
+	char *buf;
+	if (class)
+		asprintf(&buf, "%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n",
+			 pre ? pre : "", class, caption, post ? post : "");
+	else {
+		asprintf(&buf, "%s<script type=\"text/javascript\">Capture(%s)</script>%s", pre ? pre : "", caption,
+			 post ? post : "");
+	}
+	if (buf) {
+		websWrite(wp, buf);
+		debug_free(buf);
+	}
+}
+
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext)
 {
 	show_caption_pp(wp, class, caption, NULL, ext);
@@ -130,7 +146,7 @@ void showInputNum(webs_t wp, char *propname, char *nvname, int size, int maxsize
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(wp, "<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n", nvname, maxsize, size,
+	websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(%s)</script>\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n", propname, nvname, maxsize, size,
 		  nvram_default_geti(nvname, def));
 	websWrite(wp, "</div>\n");
 }
@@ -139,7 +155,7 @@ void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, c
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(wp, "<input class=\"num\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n", nvname, maxsize, size,
+	websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(%s)</script>\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n", propname, nvname, maxsize, size,
 		  nvram_default_get(nvname, def));
 	websWrite(wp, "</div>\n");
 }

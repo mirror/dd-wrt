@@ -148,22 +148,6 @@ int is_mesh(const char *prefix)
 	return nvram_match(sta, "mesh");
 }
 
-void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
-{
-	char *buf;
-	if (class)
-		asprintf(&buf, "%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n",
-			 pre ? pre : "", class, caption, post ? post : "");
-	else {
-		asprintf(&buf, "%s<script type=\"text/javascript\">Capture(%s)</script>%s", pre ? pre : "", caption,
-			 post ? post : "");
-	}
-	if (buf) {
-		websWrite(wp, buf);
-		debug_free(buf);
-	}
-}
-
 EJ_VISIBLE void ej_show_routing(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
