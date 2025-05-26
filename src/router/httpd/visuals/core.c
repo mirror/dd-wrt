@@ -146,7 +146,7 @@ void showInputNum(webs_t wp, char *propname, char *nvname, int size, int maxsize
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(%s)</script>\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n", propname, nvname, maxsize, size,
+	websWrite(wp, "<input class=\"num\" aria-labeledby=\"Capture(%s)\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%d\" />\n", propname, nvname, maxsize, size,
 		  nvram_default_geti(nvname, def));
 	websWrite(wp, "</div>\n");
 }
@@ -155,7 +155,7 @@ void showInput(webs_t wp, char *propname, char *nvname, int size, int maxsize, c
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(%s)</script>\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n", propname, nvname, maxsize, size,
+	websWrite(wp, "<input class=\"num\" aria-labeledby=\"Capture(%s)\" name=\"%s\" maxlength=\"%d\" size=\"%d\" value=\"%s\" />\n", propname, nvname, maxsize, size,
 		  nvram_default_get(nvname, def));
 	websWrite(wp, "</div>\n");
 }

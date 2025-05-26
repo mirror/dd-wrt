@@ -59,7 +59,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
 		websWrite(wp, "<td>");
-		websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.tg_number)</script>\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, port);
+		websWrite(wp, "<input class=\"num\" aria-labeledby=\"Capture(networking.tg_number)\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, port);
 		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", count);
@@ -97,7 +97,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 		sprintf(vlan_name, "vlantag%d", i);
 		//tag number
 		websWrite(wp, "<td>");
-		websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.tg_number)</script>\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
+		websWrite(wp, "<input class=\"num\" aria-labeledby=\"Capture(networking.tg_number)\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
 		websWrite(wp, "</td>\n");
 		//priority
 		sprintf(vlan_name, "vlanprio%d", i);
