@@ -70,18 +70,18 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 			//tag number
 			sprintf(vlan_name, "filtertag%d", count);
 			websWrite(wp, "<td>");
-			websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.tg_number)</script>\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, vlan);
+			websWrite(wp, "<input class=\"num\" aria-labeledby=\"Capture(networking.tg_number)\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, vlan);
 			websWrite(wp, "</td>\n");
 			//pvid
 			sprintf(vlan_name, "filterpvid%d", count);
 			websWrite(wp, "<td>");
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.pvid)</script>\" name=\"%s\" value=\"1\" %s>\n", vlan_name,
+			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.pvid)\" name=\"%s\" value=\"1\" %s>\n", vlan_name,
 				  !strcmp(pvid, "1") ? "checked" : "");
 			websWrite(wp, "</td>\n");
 			//untagged
 			sprintf(vlan_name, "filteruntagged%d", count);
 			websWrite(wp, "<td>");
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.untagged)</script>\" name=\"%s\" value=\"1\" %s>\n", vlan_name,
+			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.untagged)\" name=\"%s\" value=\"1\" %s>\n", vlan_name,
 				  !strcmp(untagged, "1") ? "checked" : "");
 			websWrite(wp, "</td>\n");
 			websWrite(
@@ -108,19 +108,19 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 			//tag number
 			sprintf(vlan_name, "filtertag%d", count);
 			websWrite(wp, "<td>");
-			websWrite(wp, "<input class=\"num\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.tg_number)</script>\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
+			websWrite(wp, "<input class=\"num\" aria-labeledby=\"Capture(networking.tg_number)\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
 			websWrite(wp, "</td>\n");
 
 			//pvid
 			sprintf(vlan_name, "filterpvid%d", count);
 			websWrite(wp, "<td>");
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.pvid)</script>\" name=\"%s\" value=\"1\">\n", vlan_name);
+			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.pvid)\" name=\"%s\" value=\"1\">\n", vlan_name);
 			websWrite(wp, "</td>\n");
 
 			//untagged
 			sprintf(vlan_name, "filteruntagged%d", count);
 			websWrite(wp, "<td>");
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"<script type=\\\"text/javascript\\\">Capture(networking.untagged)</script>\" name=\"%s\" value=\"1\">\n", vlan_name);
+			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.untagged)\" name=\"%s\" value=\"1\">\n", vlan_name);
 			websWrite(wp, "</td>\n");
 
 			websWrite(
