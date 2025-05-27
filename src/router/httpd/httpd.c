@@ -227,13 +227,7 @@ static void *handle_request(void *conn_fp);
 #define SEM_POST sem_post
 #define SEM_INIT sem_init
 
-static int http_maxconn = 16;
-#ifdef _SC_NPROCESSORS_ONLN
-#define HTTP_MAXCONN sysconf(_SC_NPROCESSORS_ONLN) * 4 > 16 ? 16 : sysconf(_SC_NPROCESSORS_ONLN) * 4
-#else
 #define HTTP_MAXCONN 16
-#endif
-
 static sem_t semaphore;
 #ifdef __UCLIBC__
 static pthread_mutex_t crypt_mutex;
@@ -242,7 +236,6 @@ static pthread_mutex_t crypt_mutex;
 static pthread_mutex_t httpd_mutex;
 #endif
 static pthread_mutex_t input_mutex;
-static pthread_mutex_t accept_mutex;
 
 #ifdef __UCLIBC__
 #define CRYPT_MUTEX_INIT pthread_mutex_init
@@ -403,19 +396,19 @@ static void setnaggle(webs_t wp, int on)
 	int r;
 
 	if (!DO_SSL(wp)) {
-#if defined(TCP_CORK)
+#if defined(TCP_NOPUSH)
 		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
 		 ** delay between sending the headers and sending the data.  A better
 		 ** solution is writev() (as used in thttpd), or send the headers with
 		 ** send(MSG_MORE) (only available in Linux so far).
 		 */
 		r = on;
-		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
+		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
 #endif
-//		if (on) {
-//			r = 1;
-//			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
-//		}
+		if (on) {
+			r = 1;
+			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+		}
 	}
 }
 
@@ -909,7 +902,6 @@ static void *handle_request(void *arg)
 	size_t content_length = 0;
 	char *line;
 	long method_type;
-
 	conn_fp->p = &global_vars;
 	if (!conn_fp->p->filter_id)
 		conn_fp->p->filter_id = 1;
@@ -931,7 +923,7 @@ static void *handle_request(void *arg)
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
-	setnaggle(conn_fp, 0);
+	setnaggle(conn_fp, 1);
 
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
@@ -1404,12 +1396,13 @@ out:;
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
+	SEM_POST(&semaphore);
+
 	wfflush(conn_fp);
 	wfclose(conn_fp);
 	bzero(conn_fp,
 	      sizeof(webs)); // erase to delete any traces of stored passwords or usernames
-	conn_fp->dead = 1;
-	SEM_POST(&semaphore);
+	debug_free(conn_fp);
 	return NULL;
 }
 
@@ -1427,20 +1420,15 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
-static int settimeouts(webs_t wp, int secs)
+static void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
-	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_SNDTIMEO)");
-		return -1;
-	}
-	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_RCVTIMEO)");
-		return -1;
-	}
-	return 0;
 }
 
 static void handle_sigchld(int sig)
@@ -1517,43 +1505,6 @@ static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datale
 sslKeys_t *keys;
 #endif
 
-#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
-webs_t get_connection(void)
-{
-	static webs_t pool[16 * 2] = { NULL };
-	static int count;
-	if (pool[0] == NULL) {
-		int i;
-		for (i = 0; i < http_maxconn * 2; i++) {
-			pool[i] = safe_malloc(sizeof(webs));
-			pool[i]->dead = 1;
-		}
-	}
-again:;
-	webs_t conn_fp = pool[count++];
-	if (!conn_fp)
-		conn_fp = safe_malloc(sizeof(webs));
-	if (count >= http_maxconn * 2)
-		count = 0;
-	if (conn_fp->dead == 0) {
-		dd_logdebug("httpd", "connection mem pool is full!");
-		usleep(100 * 1000);
-		goto again;
-	}
-	conn_fp->dead = 0;
-	memset(conn_fp, 0, sizeof(*conn_fp));
-	return conn_fp;
-}
-#else
-webs_t get_connection(void)
-{
-	static webs_t pool = NULL;
-	
-	if (!pool)
-		pool = safe_malloc(sizeof(webs));
-	return pool;
-}
-#endif
 int main(int argc, char **argv)
 {
 	usockaddr host_addr4;
@@ -1597,16 +1548,12 @@ int main(int argc, char **argv)
 	ctr_drbg_context ctr_drbg;
 	const char *pers = "ssl_server";
 #endif
-#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
-	http_maxconn = HTTP_MAXCONN;
-#endif
 
 	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
-	SEM_INIT(&semaphore, 0, http_maxconn);
+	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
 #endif
-	PTHREAD_MUTEX_INIT(&accept_mutex, NULL);
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
@@ -1838,15 +1785,13 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-		SEM_WAIT(&semaphore);
-		PTHREAD_MUTEX_LOCK(&accept_mutex);
-		webs_t conn_fp = get_connection();
+		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
-			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
-			SEM_POST(&semaphore);
 			continue;
 		}
+		bzero(conn_fp, sizeof(webs));
+		SEM_WAIT(&semaphore);
 		errno = 0; // workaround for musl bug
 		FD_ZERO(&lfdset);
 		maxfd = -1;
@@ -1882,12 +1827,10 @@ int main(int argc, char **argv)
 		dd_logdebug("httpd", "select() %d", maxfd + 1);
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue; /* try again */
 			}
 			perror("select");
-			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1914,7 +1857,6 @@ int main(int argc, char **argv)
 		if (conn_fp->conn_fd < 0) {
 			dd_logdebug("httpd", "error on accept errno %d", errno);
 			perror("accept");
-			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1923,25 +1865,18 @@ int main(int argc, char **argv)
 		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
-		if (settimeouts(conn_fp, timeout)) {
-			close(conn_fp->conn_fd);
-			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
-			SEM_POST(&semaphore);
-			continue;
-		}
+		settimeouts(conn_fp, timeout);
 		//              fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
 		int action = check_action();
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			close(conn_fp->conn_fd);
-			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			SEM_POST(&semaphore);
 			continue;
 		}
 		get_client_ip_mac(conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
-			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1950,70 +1885,12 @@ int main(int argc, char **argv)
 			if (action == ACT_WEB_UPGRADE) { // We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "http(s)d: nothing to do...\n");
 				close(conn_fp->conn_fd);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
 #ifdef HAVE_OPENSSL
-			const char *allowedCiphers = "ECDHE-ECDSA-AES128-GCM-SHA256:"
-						     "ECDHE-RSA-AES128-GCM-SHA256:"
-						     "ECDHE-ECDSA-AES256-GCM-SHA384:"
-						     "ECDHE-RSA-AES256-GCM-SHA384:"
-						     "ECDHE-ECDSA-CHACHA20-POLY1305:"
-						     "ECDHE-RSA-CHACHA20-POLY1305:"
-						     "DHE-RSA-AES128-GCM-SHA256:"
-						     "DHE-RSA-AES256-GCM-SHA384"
-						     "!aNULL:"
-						     "!eNULL:"
-						     "!EXPORT:"
-						     "!DES:"
-						     "!RC4:"
-						     "!MD5:"
-						     "!PSK:"
-						     "!aECDH:"
-						     "!EDH-DSS-DES-CBC3-SHA:"
-						     "!EDH-RSA-DES-CBC3-SHA:"
-						     "!KRB5-DES-CBC3-SHA";
-#if 0
-			const char *allowedCiphers = "ECDHE-RSA-AES128-GCM-SHA256:"
-						     "ECDHE-ECDSA-AES128-GCM-SHA256:"
-						     "ECDHE-RSA-AES256-GCM-SHA384:"
-						     "ECDHE-ECDSA-AES256-GCM-SHA384:"
-						     "DHE-RSA-AES128-GCM-SHA256:"
-						     "DHE-DSS-AES128-GCM-SHA256:"
-						     "ECDHE-RSA-AES128-SHA256:"
-						     "ECDHE-ECDSA-AES128-SHA256:"
-						     "ECDHE-RSA-AES128-SHA:"
-						     "ECDHE-ECDSA-AES128-SHA:"
-						     "ECDHE-RSA-AES256-SHA384:"
-						     "ECDHE-ECDSA-AES256-SHA384:"
-						     "ECDHE-RSA-AES256-SHA:"
-						     "ECDHE-ECDSA-AES256-SHA:"
-						     "DHE-RSA-AES128-SHA256:"
-						     "DHE-RSA-AES128-SHA:"
-						     "DHE-DSS-AES128-SHA256:"
-						     "DHE-RSA-AES256-SHA256:"
-						     "DHE-DSS-AES256-SHA:"
-						     "DHE-RSA-AES256-SHA:"
-						     "AES128-GCM-SHA256:"
-						     "AES256-GCM-SHA384:"
-						     "AES128-SHA256:"
-						     "AES256-SHA256:"
-						     "AES128-SHA:"
-						     "AES256-SHA:"
-						     "AES:"
-						     "!aNULL:"
-						     "!eNULL:"
-						     "!EXPORT:"
-						     "!DES:"
-						     "!RC4:"
-						     "!MD5:"
-						     "!PSK:"
-						     "!aECDH:"
-						     "!EDH-DSS-DES-CBC3-SHA:"
-						     "!EDH-RSA-DES-CBC3-SHA:"
-						     "!KRB5-DES-CBC3-SHA";
-#endif
+			const char *allowedCiphers =
+				"ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA";
 			conn_fp->ssl = SSL_new(ctx);
 
 #ifdef NID_X9_62_prime256v1
@@ -2041,7 +1918,6 @@ int main(int argc, char **argv)
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2058,7 +1934,6 @@ int main(int argc, char **argv)
 			if ((ret = ssl_init(&conn_fp->ssl)) != 0) {
 				printf("ssl_init failed\n");
 				close(conn_fp->conn_fd);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2078,7 +1953,6 @@ int main(int argc, char **argv)
 			if (ret != 0) {
 				printf("ssl_server_start failed\n");
 				close(conn_fp->conn_fd);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2091,7 +1965,6 @@ int main(int argc, char **argv)
 			    action == ACT_WEBS_UPGRADE) { // We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 				close(conn_fp->conn_fd);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2100,14 +1973,12 @@ int main(int argc, char **argv)
 			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
 			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
-				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2135,7 +2006,6 @@ int main(int argc, char **argv)
 #else
 		handle_request(conn_fp);
 #endif
-		PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 	}
 
 	if (listen4_fd != -1) {
