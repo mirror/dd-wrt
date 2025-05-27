@@ -92,8 +92,7 @@ static void show_svg(webs_t wp, int speed, int fd, char *color, char *shadow)
 		sprintf(spd, "%d%s", speed, fd ? "HD" : "FD");
 	websWrite(
 		wp,
-		"<iframe title=\"\" src=\"/port.svg?%s,%s,%s\" width=\"%d%%\" height=\"%d%%\" frameborder=\"0\" type=\"image/svg+xml\"></iframe>",
-		spd, color, shadow, 100, 50 / MAXCOL);
+		"<img src=\"/port.svg?%s,%s,%s\">", spd, color, shadow, 100, 50 / MAXCOL);
 }
 static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 {
