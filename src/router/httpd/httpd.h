@@ -121,7 +121,7 @@ typedef struct {
 	persistent_vars *p;
 	/* CGI hash table */
 	struct hsearch_data htab;
-	dd_atomic8_t dead;
+	int dead;
 } webs;
 
 #ifdef HAVE_HTTPS

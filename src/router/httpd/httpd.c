@@ -236,6 +236,7 @@ static pthread_mutex_t crypt_mutex;
 static pthread_mutex_t httpd_mutex;
 #endif
 static pthread_mutex_t input_mutex;
+static pthread_mutex_t pool_mutex;
 
 #ifdef __UCLIBC__
 #define CRYPT_MUTEX_INIT pthread_mutex_init
@@ -1509,6 +1510,7 @@ webs_t get_connection(void)
 {
 	static webs_t pool[16 * 2] = { NULL };
 	static int count;
+	PTHREAD_MUTEX_LOCK(&pool_mutex);
 	if (pool[0] == NULL) {
 		int i;
 		for (i = 0; i < 16 * 2; i++) {
@@ -1529,6 +1531,7 @@ again:;
 	}
 	conn_fp->dead = 0;
 	memset(conn_fp, 0, sizeof(*conn_fp));
+	PTHREAD_MUTEX_UNLOCK(&pool_mutex);
 	return conn_fp;
 }
 #else
@@ -1596,6 +1599,7 @@ int main(int argc, char **argv)
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
 #endif
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
+	PTHREAD_MUTEX_INIT(&pool_mutex, NULL);
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
 #ifdef HAVE_WIVIZ
