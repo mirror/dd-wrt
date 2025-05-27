@@ -2555,30 +2555,36 @@ static int getLanPortStatus_fallback(const char *ifname, struct portstatus *stat
 int getLanPortStatus(const char *ifname, struct portstatus *status)
 {
 	char path[64];
-	sprintf(path, "/sys/class/net/%s/speed", ifname);
+	sprintf(path, "/sys/class/net/%s/carrier", ifname);
 	FILE *fp = fopen(path, "rb");
 	if (fp) {
-		char speed[64];
-		fgets(speed, sizeof(speed), fp);
+		char carrier[64];
+		fgets(carrier, sizeof(carrier), fp);
 		fclose(fp);
-		if (!strlen(speed)) {
-			return getLanPortStatus_fallback(ifname, status);
-		}
-		status->speed = atoi(speed);
-		if (status->speed < 10)
-			status->link = 0;
-		else
-			status->link = 1;
-		sprintf(path, "/sys/class/net/%s/duplex", ifname);
+		status->link = atoi(carrier);
+		if (status->link == 0)
+			return 0;
+		sprintf(path, "/sys/class/net/%s/speed", ifname);
 		fp = fopen(path, "rb");
 		if (fp) {
-			char duplex[64];
-			fgets(duplex, sizeof(duplex), fp);
-			if (strstr(duplex, "full"))
-				status->fd = 1;
-			else
-				status->fd = 0;
+			char speed[64];
+			fgets(speed, sizeof(speed), fp);
 			fclose(fp);
+			if (!strlen(speed)) {
+				return getLanPortStatus_fallback(ifname, status);
+			}
+			status->speed = atoi(speed);
+			sprintf(path, "/sys/class/net/%s/duplex", ifname);
+			fp = fopen(path, "rb");
+			if (fp) {
+				char duplex[64];
+				fgets(duplex, sizeof(duplex), fp);
+				if (strstr(duplex, "full"))
+					status->fd = 1;
+				else
+					status->fd = 0;
+				fclose(fp);
+			}
 		}
 	} else {
 		return getLanPortStatus_fallback(ifname, status);
