@@ -1396,12 +1396,13 @@ out:;
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
-	SEM_POST(&semaphore);
 
 	wfflush(conn_fp);
 	wfclose(conn_fp);
 	bzero(conn_fp,
 	      sizeof(webs)); // erase to delete any traces of stored passwords or usernames
+	conn_fp->dead = 1;
+	SEM_POST(&semaphore);
 	debug_free(conn_fp);
 	return NULL;
 }
@@ -1499,6 +1500,46 @@ static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datale
 	return datalen;
 }
 
+#endif
+
+
+
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
+webs_t get_connection(void)
+{
+	static webs_t pool[16 * 2] = { NULL };
+	static int count;
+	if (pool[0] == NULL) {
+		int i;
+		for (i = 0; i < http_maxconn * 2; i++) {
+			pool[i] = safe_malloc(sizeof(webs));
+			pool[i]->dead = 1;
+		}
+	}
+again:;
+	webs_t conn_fp = pool[count++];
+	if (!conn_fp)
+		conn_fp = safe_malloc(sizeof(webs));
+	if (count >= 16 * 2)
+		count = 0;
+	if (conn_fp->dead == 0) {
+		dd_logdebug("httpd", "connection mem pool is full!");
+		usleep(100 * 1000);
+		goto again;
+	}
+	conn_fp->dead = 0;
+	memset(conn_fp, 0, sizeof(*conn_fp));
+	return conn_fp;
+}
+#else
+webs_t get_connection(void)
+{
+	static webs_t pool = NULL;
+	
+	if (!pool)
+		pool = safe_malloc(sizeof(webs));
+	return pool;
+}
 #endif
 
 #ifdef HAVE_MATRIXSSL
@@ -1785,7 +1826,7 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-		webs_t conn_fp = safe_malloc(sizeof(webs));
+		webs_t conn_fp = get_connection();
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
 			continue;
