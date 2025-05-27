@@ -2551,44 +2551,41 @@ static int getLanPortStatus_fallback(const char *ifname, struct portstatus *stat
 	status->fd = (bmcr & BMCR_FULLDPLX);
 	status->link = (bmsr & BMSR_LSTATUS);
 	close(skfd);
+	return 0;
 }
-int getLanPortStatus(const char *ifname, struct portstatus *status)
+static char *getclassnetstring(const char *ifname, const char *fieldname, char *ret, size_t retlen)
 {
 	char path[64];
-	sprintf(path, "/sys/class/net/%s/carrier", ifname);
+	snprintf(path, sizeof(path), "/sys/class/net/%s/%s", ifname, fieldname);
 	FILE *fp = fopen(path, "rb");
-	if (fp) {
-		char carrier[64];
-		fgets(carrier, sizeof(carrier), fp);
-		fclose(fp);
-		status->link = atoi(carrier);
-		if (status->link == 0)
-			return 0;
-		sprintf(path, "/sys/class/net/%s/speed", ifname);
-		fp = fopen(path, "rb");
-		if (fp) {
-			char speed[64];
-			fgets(speed, sizeof(speed), fp);
-			fclose(fp);
-			if (!strlen(speed)) {
-				return getLanPortStatus_fallback(ifname, status);
-			}
-			status->speed = atoi(speed);
-			sprintf(path, "/sys/class/net/%s/duplex", ifname);
-			fp = fopen(path, "rb");
-			if (fp) {
-				char duplex[64];
-				fgets(duplex, sizeof(duplex), fp);
-				if (strstr(duplex, "full"))
-					status->fd = 1;
-				else
-					status->fd = 0;
-				fclose(fp);
-			}
-		}
-	} else {
+	if (!fp)
+		return NULL;
+	fgets(ret, retlen, fp);
+	fclose(fp);
+	return ret;
+}
+static int getclassnetint(const char *ifname, const char *fieldname)
+{
+	char buf[64];
+	if (!getclassnetstring(ifname, fieldname, buf, sizeof(buf)))
+		return -1;
+	return atoi(buf);
+}
+
+int getLanPortStatus(const char *ifname, struct portstatus *status)
+{
+	int carrier = getclassnetint(ifname, "carrier");
+	if (carrier == -1)
 		return getLanPortStatus_fallback(ifname, status);
-	}
+	int speed = getclassnetint(ifname, "speed");
+	if (speed < 10)
+		return getLanPortStatus_fallback(ifname, status);
+	status->link = carrier;
+	status->speed = speed;
+	char duplex[64];
+	if (!getclassnetstring(ifname, "duplex", duplex, sizeof(duplex)))
+		return getLanPortStatus_fallback(ifname, status);
+	status->fd = !strncmp(duplex, "full", 4);
 	return 0;
 }
 
