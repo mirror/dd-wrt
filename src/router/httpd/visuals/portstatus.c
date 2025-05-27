@@ -128,7 +128,7 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 							buffer, buffer);
 
 					if (status.speed <= 1000)
-						websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
+						websWrite(wp, "%d%s", status.speed, status.fd ? "FD" : "HD");
 					else if (status.speed == 2500) {
 						websWrite(wp, "2.5Gbit");
 					} else if (status.speed == 5000) {
