@@ -1511,7 +1511,7 @@ webs_t get_connection(void)
 	static int count;
 	if (pool[0] == NULL) {
 		int i;
-		for (i = 0; i < http_maxconn * 2; i++) {
+		for (i = 0; i < 16 * 2; i++) {
 			pool[i] = safe_malloc(sizeof(webs));
 			pool[i]->dead = 1;
 		}
@@ -1868,10 +1868,12 @@ int main(int argc, char **argv)
 		dd_logdebug("httpd", "select() %d", maxfd + 1);
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue; /* try again */
 			}
 			perror("select");
+			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1898,6 +1900,7 @@ int main(int argc, char **argv)
 		if (conn_fp->conn_fd < 0) {
 			dd_logdebug("httpd", "error on accept errno %d", errno);
 			perror("accept");
+			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1912,12 +1915,14 @@ int main(int argc, char **argv)
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			close(conn_fp->conn_fd);
+			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
 		get_client_ip_mac(conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
+			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1926,6 +1931,7 @@ int main(int argc, char **argv)
 			if (action == ACT_WEB_UPGRADE) { // We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "http(s)d: nothing to do...\n");
 				close(conn_fp->conn_fd);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -1959,6 +1965,7 @@ int main(int argc, char **argv)
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -1975,6 +1982,7 @@ int main(int argc, char **argv)
 			if ((ret = ssl_init(&conn_fp->ssl)) != 0) {
 				printf("ssl_init failed\n");
 				close(conn_fp->conn_fd);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -1994,6 +2002,7 @@ int main(int argc, char **argv)
 			if (ret != 0) {
 				printf("ssl_server_start failed\n");
 				close(conn_fp->conn_fd);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2006,6 +2015,7 @@ int main(int argc, char **argv)
 			    action == ACT_WEBS_UPGRADE) { // We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 				close(conn_fp->conn_fd);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2014,12 +2024,14 @@ int main(int argc, char **argv)
 			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
 			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
+				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2037,6 +2049,7 @@ int main(int argc, char **argv)
 		pthread_t thread;
 		dd_logdebug("httpd", "createthread()");
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0) {
+			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			fprintf(stderr, "Failed to create thread\n");
 		}
