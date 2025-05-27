@@ -236,7 +236,6 @@ static pthread_mutex_t crypt_mutex;
 static pthread_mutex_t httpd_mutex;
 #endif
 static pthread_mutex_t input_mutex;
-static pthread_mutex_t pool_mutex;
 
 #ifdef __UCLIBC__
 #define CRYPT_MUTEX_INIT pthread_mutex_init
@@ -1397,13 +1396,12 @@ out:;
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
+	SEM_POST(&semaphore);
 
 	wfflush(conn_fp);
 	wfclose(conn_fp);
 	bzero(conn_fp,
 	      sizeof(webs)); // erase to delete any traces of stored passwords or usernames
-	conn_fp->dead = 1;
-	SEM_POST(&semaphore);
 	debug_free(conn_fp);
 	return NULL;
 }
@@ -1503,48 +1501,6 @@ static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datale
 
 #endif
 
-
-
-#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
-webs_t get_connection(void)
-{
-	static webs_t pool[16 * 2] = { NULL };
-	static int count;
-	PTHREAD_MUTEX_LOCK(&pool_mutex);
-	if (pool[0] == NULL) {
-		int i;
-		for (i = 0; i < 16 * 2; i++) {
-			pool[i] = safe_malloc(sizeof(webs));
-			pool[i]->dead = 1;
-		}
-	}
-again:;
-	webs_t conn_fp = pool[count++];
-	if (!conn_fp)
-		conn_fp = safe_malloc(sizeof(webs));
-	if (count >= 16 * 2)
-		count = 0;
-	if (conn_fp->dead == 0) {
-		dd_logdebug("httpd", "connection mem pool is full!");
-		usleep(100 * 1000);
-		goto again;
-	}
-	conn_fp->dead = 0;
-	memset(conn_fp, 0, sizeof(*conn_fp));
-	PTHREAD_MUTEX_UNLOCK(&pool_mutex);
-	return conn_fp;
-}
-#else
-webs_t get_connection(void)
-{
-	static webs_t pool = NULL;
-	
-	if (!pool)
-		pool = safe_malloc(sizeof(webs));
-	return pool;
-}
-#endif
-
 #ifdef HAVE_MATRIXSSL
 sslKeys_t *keys;
 #endif
@@ -1599,7 +1555,6 @@ int main(int argc, char **argv)
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
 #endif
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
-	PTHREAD_MUTEX_INIT(&pool_mutex, NULL);
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
 #ifdef HAVE_WIVIZ
@@ -1830,7 +1785,7 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-		webs_t conn_fp = get_connection();
+		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
 			continue;
@@ -1872,12 +1827,10 @@ int main(int argc, char **argv)
 		dd_logdebug("httpd", "select() %d", maxfd + 1);
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue; /* try again */
 			}
 			perror("select");
-			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1904,7 +1857,6 @@ int main(int argc, char **argv)
 		if (conn_fp->conn_fd < 0) {
 			dd_logdebug("httpd", "error on accept errno %d", errno);
 			perror("accept");
-			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1919,14 +1871,12 @@ int main(int argc, char **argv)
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			close(conn_fp->conn_fd);
-			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
 		get_client_ip_mac(conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
-			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			continue;
 		}
@@ -1935,7 +1885,6 @@ int main(int argc, char **argv)
 			if (action == ACT_WEB_UPGRADE) { // We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "http(s)d: nothing to do...\n");
 				close(conn_fp->conn_fd);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -1969,7 +1918,6 @@ int main(int argc, char **argv)
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -1986,7 +1934,6 @@ int main(int argc, char **argv)
 			if ((ret = ssl_init(&conn_fp->ssl)) != 0) {
 				printf("ssl_init failed\n");
 				close(conn_fp->conn_fd);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2006,7 +1953,6 @@ int main(int argc, char **argv)
 			if (ret != 0) {
 				printf("ssl_server_start failed\n");
 				close(conn_fp->conn_fd);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2019,7 +1965,6 @@ int main(int argc, char **argv)
 			    action == ACT_WEBS_UPGRADE) { // We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 				close(conn_fp->conn_fd);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2028,14 +1973,12 @@ int main(int argc, char **argv)
 			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
 			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
-				conn_fp->dead = 1;
 				SEM_POST(&semaphore);
 				continue;
 			}
@@ -2053,7 +1996,6 @@ int main(int argc, char **argv)
 		pthread_t thread;
 		dd_logdebug("httpd", "createthread()");
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0) {
-			conn_fp->dead = 1;
 			SEM_POST(&semaphore);
 			fprintf(stderr, "Failed to create thread\n");
 		}
