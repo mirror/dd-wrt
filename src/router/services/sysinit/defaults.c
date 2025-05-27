@@ -313,8 +313,11 @@ struct nvram_param srouter_defaults[] = {
 	{ "lan_lease", "86400" },	/* LAN lease time in seconds */
 	// {"lan_lease", "1440"}, /* LAN lease time in seconds */
 
+#ifdef HAVE_REALTEK
+	{ "sfe", "0" },
+#else
 	{ "sfe", "1" },
-
+#endif
 	/*
 	 * WAN H/W parameters 
 	 */
