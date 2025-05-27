@@ -54,8 +54,15 @@ struct wg_peer *wg_peer_create(struct wg_device *wg,
 	skb_queue_head_init(&peer->staged_packet_queue);
 	wg_noise_reset_last_sent_handshake(&peer->last_sent_handshake);
 	set_bit(NAPI_STATE_NO_BUSY_POLL, &peer->napi.state);
-	netif_napi_add(wg->dev, &peer->napi, wg_packet_rx_poll,
-		       NAPI_POLL_WEIGHT);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+	netif_threaded_napi_add(wg->dev, &peer->napi, wg_packet_rx_poll, NAPI_POLL_WEIGHT);
+#else
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+	netif_napi_add(wg->dev, &peer->napi, wg_packet_rx_poll, NAPI_POLL_WEIGHT);
+#else
+	netif_threaded_napi_add_weight(wg->dev, &peer->napi, wg_packet_rx_poll, NAPI_POLL_WEIGHT);
+#endif
+#endif
 	napi_enable(&peer->napi);
 	list_add_tail(&peer->peer_list, &wg->peer_list);
 	INIT_LIST_HEAD(&peer->allowedips_list);
