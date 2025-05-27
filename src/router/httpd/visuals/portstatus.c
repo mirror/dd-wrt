@@ -182,6 +182,9 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	int globresult;
 	int c;
 	struct portcontext ctx;
+#ifdef HAVE_PB42
+	return; // this platform does not support sane mii values
+#endif
 	memset(&ctx, 0, sizeof(ctx));
 	getIfLists(eths, sizeof(eths));
 	int lancount = 0;
