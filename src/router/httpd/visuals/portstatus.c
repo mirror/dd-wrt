@@ -78,7 +78,8 @@ static void get_ifstat(char *ifname, char *buffer, size_t len)
 		}
 		fclose(fp);
 	}
-	snprintf(buffer, len, "RX:%lld MiB errors:%lld drops:%lld TX:%lld MiB errors:%lld drops:%lld colls:%lld", info.rx_bytes >> 20, info.rx_errs, info.rx_drops, info.tx_bytes >> 20, info.tx_errs, info.tx_drops, info.tx_colls);
+	snprintf(buffer, len, "RX:%lld MiB errors:%lld drops:%lld TX:%lld MiB errors:%lld drops:%lld colls:%lld",
+		 info.rx_bytes >> 20, info.rx_errs, info.rx_drops, info.tx_bytes >> 20, info.tx_errs, info.tx_drops, info.tx_colls);
 	return;
 }
 
@@ -111,11 +112,20 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 					char buffer[256];
 					get_ifstat(ifname[i], buffer, sizeof(buffer));
 					if (status.speed == 10)
-						websWrite(wp, "<td title=\"%s\" class=\"status_orange center\"><p class=\"visually-hidden\">%s</p>", buffer, buffer);
+						websWrite(
+							wp,
+							"<td title=\"%s\" class=\"status_orange center\"><p class=\"visually-hidden\">%s</p>",
+							buffer, buffer);
 					else if (status.speed == 100)
-						websWrite(wp, "<td title=\"%s\" class=\"status_yellow center\"><p class=\"visually-hidden\">%s</p>", buffer, buffer);
+						websWrite(
+							wp,
+							"<td title=\"%s\" class=\"status_yellow center\"><p class=\"visually-hidden\">%s</p>",
+							buffer, buffer);
 					else if (status.speed >= 1000)
-						websWrite(wp, "<td title=\"%s\" class=\"status_green center\"><p class=\"visually-hidden\">%s</p>", buffer, buffer);
+						websWrite(
+							wp,
+							"<td title=\"%s\" class=\"status_green center\"><p class=\"visually-hidden\">%s</p>",
+							buffer, buffer);
 
 					if (status.speed <= 1000)
 						websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
@@ -177,10 +187,12 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	int lancount = 0;
 	int ethcount = 0;
 	foreach(var, eths, next) {
-		if (!strncmp(var, "lan", 3))
-			lancount++;
-		if (!strncmp(var, "eth", 3))
-			ethcount++;
+		if (!strchr(var, '.')) {
+			if (!strncmp(var, "lan", 3))
+				lancount++;
+			if (!strncmp(var, "eth", 3))
+				ethcount++;
+		}
 	}
 	if (!lancount && ethcount < 2)
 		return;
@@ -188,7 +200,8 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<fieldset>\n");
 
 	foreach(var, eths, next) {
-		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3) || !strncmp(var, "10g", 3))
+		if (!strchr(var, '.') &&
+		    (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3) || !strncmp(var, "10g", 3)))
 			show_portif(wp, &ctx, var);
 	}
 	if (ctx.count > 0) {

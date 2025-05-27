@@ -93,7 +93,7 @@ static void show_svg(webs_t wp, int speed, int fd, char *color, char *shadow)
 	websWrite(
 		wp,
 		"<iframe title=\"\" src=\"/port.svg?%s,%s,%s\" width=\"%d%%\" height=\"%d%%\" frameborder=\"0\" type=\"image/svg+xml\"></iframe>",
-		spd, color,shadow, 100, 50 / MAXCOL);
+		spd, color, shadow, 100, 50 / MAXCOL);
 }
 static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 {
@@ -128,14 +128,14 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 						show_svg(wp, 10, status.fd, "fea543", "ff9000");
 					} else if (status.speed == 100) {
 						websWrite(wp, "<td title=\"%s\">", buffer);
-						show_svg(wp, 100, status.fd, "eec900","eea100");
+						show_svg(wp, 100, status.fd, "eec900", "eea100");
 					} else if (status.speed >= 1000) {
 						websWrite(wp, "<td title=\"%s\">", buffer);
 						show_svg(wp, status.speed, status.fd, "35ee00", "35a000");
 					}
 				} else {
 					websWrite(wp, "<td>");
-					show_svg(wp, 0, 0, "660000","440000");
+					show_svg(wp, 0, 0, "660000", "440000");
 				}
 			}
 			websWrite(wp, "</td>\n");
@@ -184,10 +184,12 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	int lancount = 0;
 	int ethcount = 0;
 	foreach(var, eths, next) {
-		if (!strncmp(var, "lan", 3))
-			lancount++;
-		if (!strncmp(var, "eth", 3))
-			ethcount++;
+		if (!strchr(var, '.')) {
+			if (!strncmp(var, "lan", 3))
+				lancount++;
+			if (!strncmp(var, "eth", 3))
+				ethcount++;
+		}
 	}
 	if (!lancount && ethcount < 2)
 		return;
@@ -195,7 +197,8 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<fieldset>\n");
 
 	foreach(var, eths, next) {
-		if (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3) || !strncmp(var, "10g", 3))
+		if (!strchr(var, '.') &&
+		    (!strncmp(var, "lan", 3) || !strncmp(var, "wan", 3) || !strncmp(var, "eth", 3) || !strncmp(var, "10g", 3)))
 			show_portif(wp, &ctx, var);
 	}
 	if (ctx.count > 0) {
