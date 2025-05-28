@@ -55,7 +55,8 @@
 static unsigned int qca4019_clocks[] = { 48, 200, 384, 413, 448, 500, 512, 537, 565, 597, 632, 672, 716, 768, 823, 896, 0 };
 #endif
 #ifdef HAVE_REALTEK
-static unsigned int realtek_clocks[] = { 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 0 };
+static unsigned int realtek_rtl839x_clocks[] = { 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 0 };
+static unsigned int realtek_rtl838x_clocks[] = { 325, 350, 375, 400, 425, 450, 475, 500, 0 };
 #endif
 #ifdef HAVE_ALPINE
 static unsigned int alpine_clocks[] = {
@@ -135,11 +136,22 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	}
 	c = qca4019_clocks;
 #elif defined(HAVE_REALTEK)
-	if (!*oclk) {
-		oclk = "750";
-		nvram_set("clkfreq", "750");
-	}
-	c = realtek_clocks;
+	char *str = cpustring();
+	if (!strncmp(str, "RTL839", 6)) {
+		if (!*oclk) {
+			oclk = "750";
+			nvram_set("clkfreq", "750");
+		}
+		c = realtek_rtl839x_clocks;
+	} else if (!strncmp(str, "RTL838", 6)) {
+		if (!*oclk) {
+			oclk = "500";
+			nvram_set("clkfreq", "500");
+		}
+		c = realtek_rtl838x_clocks;
+	} else
+		nvram_unset("clkfreq");
+
 #elif defined(HAVE_NORTHSTAR)
 	switch (rev) {
 	case 11:
