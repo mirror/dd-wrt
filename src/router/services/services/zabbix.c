@@ -70,6 +70,7 @@ void start_zabbix(void)
 		fprintf(fp, "UserParameter=clients.wl1, /usr/sbin/wclients eth2\n");
 		fprintf(fp, "UserParameter=clients.wl2, /usr/sbin/wclients eth3\n");
 #else
+		/* todo, write temperature sensor tool for zabbix for qca devices */
 		fprintf(fp, "UserParameter=temperature.wlan0, /usr/sbin/temps wlan0 2> /dev/null\n");
 		fprintf(fp, "UserParameter=temperature.wlan1, /usr/sbin/temps wlan1 2> /dev/null\n");
 		fprintf(fp, "UserParameter=temperature.wlan2, /usr/sbin/temps wlan2 2> /dev/null\n");
