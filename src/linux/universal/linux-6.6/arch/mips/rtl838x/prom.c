@@ -51,6 +51,7 @@ void __init rtl9310_l2cache_init(void)
 		    RTL9310_MIPSIA_L2_LINESIZE_256) { //Scache linesize >0 and <=256 (B)
 		init_l2_cache();
 	}
+	config2 = read_c0_config2();
 	l2_linesize = (config2 >> RTL9310_MIPSIA_L2SIZE_OFFSET) &
 		      RTL9310_MIPSIA_L2SIZE_MASK;
 	pr_info("L2 linesize is %d\n", 1 << l2_linesize);
