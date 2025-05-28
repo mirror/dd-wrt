@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -169,7 +164,7 @@ class CControllerPopupAcknowledgeCreate extends CController {
 			'object' => EVENT_OBJECT_TRIGGER
 		]);
 
-		return ($events == count($eventids));
+		return $events == count($eventids);
 	}
 
 	protected function doAction() {
@@ -243,8 +238,8 @@ class CControllerPopupAcknowledgeCreate extends CController {
 		while ($eventid_groups['readable']) {
 			$data = $this->getAcknowledgeOptions($eventid_groups);
 			/*
-			 * No actions to perform. This can happen only if user has selected action he has no permissions to do
-			 * for any of selected events. This can happen, when you will perform one action on multiple problems,
+			 * No actions to perform. This can happen only if user has selected an action they do not have permission to
+			 * do for any of selected events. This can happen, when user performs one action on multiple problems,
 			 * where only some of these problems can perform this action (ex. close problem).
 			 */
 			if ($data['action'] == ZBX_PROBLEM_UPDATE_NONE) {
@@ -333,7 +328,7 @@ class CControllerPopupAcknowledgeCreate extends CController {
 		// Select details for all affected events.
 		$events = API::Event()->get([
 			'output' => ['eventid', 'objectid', 'acknowledged', 'r_eventid'],
-			'select_acknowledges' => $this->close_problems || $this->suppress || $this->unsuppress ? ['action'] : null,
+			'selectAcknowledges' => $this->close_problems || $this->suppress || $this->unsuppress ? ['action'] : null,
 			'selectSuppressionData' => $this->unsuppress ? ['maintenanceid'] : null,
 			'eventids' => $eventids,
 			'source' => EVENT_SOURCE_TRIGGERS,

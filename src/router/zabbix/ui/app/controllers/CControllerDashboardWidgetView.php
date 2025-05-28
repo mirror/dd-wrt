@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -39,7 +34,8 @@ class CControllerDashboardWidgetView extends CController {
 		$this->disableCsrfValidation();
 		$this->setValidationRules([
 			'name' => 'string',
-			'fields' => 'array'
+			'fields' => 'array',
+			'templateid' => 'db dashboard.templateid'
 		]);
 	}
 
@@ -62,13 +58,7 @@ class CControllerDashboardWidgetView extends CController {
 	protected function checkInput(): bool {
 		$this->widget = APP::ModuleManager()->getActionModule();
 
-		$validation_rules = $this->validation_rules;
-
-		if ($this->widget->hasTemplateSupport()) {
-			$validation_rules['templateid'] = 'db dashboard.templateid';
-		}
-
-		$ret = $this->validateInput($validation_rules);
+		$ret = $this->validateInput($this->validation_rules);
 
 		if ($ret) {
 			$this->form = $this->widget->getForm($this->getInput('fields', []),
@@ -107,10 +97,14 @@ class CControllerDashboardWidgetView extends CController {
 
 	protected function doAction(): void {
 		$this->setResponse(new CControllerResponseData([
-			'name' => $this->getInput('name', $this->widget->getName()),
+			'name' => $this->getInput('name', $this->widget->getDefaultName()),
 			'user' => [
 				'debug_mode' => $this->getDebugMode()
 			]
 		]));
+	}
+
+	protected function isTemplateDashboard(): bool {
+		return $this->hasInput('templateid');
 	}
 }

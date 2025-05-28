@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -58,7 +53,7 @@ class CWebUser {
 			}
 
 			API::getWrapper()->auth = [
-				'type' => CJsonRpc::AUTH_TYPE_FRONTEND,
+				'type' => CJsonRpc::AUTH_TYPE_COOKIE,
 				'auth' => self::$data['sessionid']
 			];
 
@@ -67,7 +62,7 @@ class CWebUser {
 				throw new Exception();
 			}
 
-			if (isset(self::$data['attempt_failed']) && self::$data['attempt_failed']) {
+			if (self::$data['mfaid'] == 0 && isset(self::$data['attempt_failed']) && self::$data['attempt_failed']) {
 				CProfile::init();
 				CProfile::update('web.login.attempt.failed', self::$data['attempt_failed'], PROFILE_TYPE_INT);
 				CProfile::update('web.login.attempt.ip', self::$data['attempt_ip'], PROFILE_TYPE_STR);
@@ -96,40 +91,16 @@ class CWebUser {
 	}
 
 	public static function checkAuthentication(string $sessionid): bool {
-		try {
-			self::$data = API::User()->checkAuthentication([
-				'sessionid' => $sessionid,
-				'extend' => self::$extend_session
-			]);
+		self::$data = API::User()->checkAuthentication([
+			'sessionid' => $sessionid,
+			'extend' => self::$extend_session
+		]);
 
-			if (empty(self::$data)) {
-				CMessageHelper::clear();
-				self::$data = API::User()->login([
-					'username' => ZBX_GUEST_USER,
-					'password' => '',
-					'userData' => true
-				]);
-
-				if (empty(self::$data)) {
-					throw new Exception();
-				}
-			}
-
-			if (self::$data['gui_access'] == GROUP_GUI_ACCESS_DISABLED) {
-				throw new Exception();
-			}
-
-			return true;
-		}
-		catch (Exception $e) {
-			return false;
-		}
+		return self::$data && self::$data['gui_access'] != GROUP_GUI_ACCESS_DISABLED;
 	}
 
 	/**
 	 * Checks access of authenticated user to specific access rule.
-	 *
-	 * @static
 	 *
 	 * @param string $rule_name  Rule name.
 	 *
@@ -147,16 +118,14 @@ class CWebUser {
 
 	/**
 	 * Sets user data defaults.
-	 *
-	 * @static
 	 */
 	public static function setDefault(): void {
 		self::$data = [
 			'sessionid' => CEncryptHelper::generateKey(),
 			'username' => ZBX_GUEST_USER,
 			'userid' => 0,
-			'lang' => CSettingsHelper::getGlobal(CSettingsHelper::DEFAULT_LANG),
-			'theme' => CSettingsHelper::getGlobal(CSettingsHelper::DEFAULT_THEME),
+			'lang' => CSettingsHelper::getPublic(CSettingsHelper::DEFAULT_LANG),
+			'theme' => CSettingsHelper::getPublic(CSettingsHelper::DEFAULT_THEME),
 			'type' => 0,
 			'gui_access' => GROUP_GUI_ACCESS_SYSTEM,
 			'debug_mode' => false,
@@ -167,8 +136,6 @@ class CWebUser {
 
 	/**
 	 * Returns the type of the current user.
-	 *
-	 * @static
 	 *
 	 * @return int
 	 */
@@ -243,5 +210,14 @@ class CWebUser {
 	 */
 	public static function getIp(): string {
 		return $_SERVER['REMOTE_ADDR'];
+	}
+
+	/**
+	 * Check whether user has enabled autologin.
+	 *
+	 * @return bool
+	 */
+	public static function isAutologinEnabled(): bool {
+		return (CWebUser::$data['autologin'] === '1');
 	}
 }

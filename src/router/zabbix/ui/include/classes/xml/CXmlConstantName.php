@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -52,6 +47,10 @@ class CXmlConstantName {
 	const SNMP = 'SNMP';
 	const IPMI = 'IPMI';
 	const JMX = 'JMX';
+
+	const SERVER = 'SERVER';
+	const PROXY = 'PROXY';
+	const PROXY_GROUP = 'PROXY_GROUP';
 
 	// const DISABLED = 'DISABLED'; // Duplicate.
 	const MANUAL = 'MANUAL';
@@ -237,12 +236,15 @@ class CXmlConstantName {
 	const DEPENDENT = 'DEPENDENT';
 	const HTTP_AGENT = 'HTTP_AGENT';
 	const SNMP_AGENT = 'SNMP_AGENT';
+	// const SCRIPT = 'SCRIPT'; // Duplicate.
+	const BROWSER = 'BROWSER';
 
 	const FLOAT = 'FLOAT';
 	const CHAR = 'CHAR';
 	const LOG = 'LOG';
 	const UNSIGNED = 'UNSIGNED';
 	const TEXT = 'TEXT';
+	const BINARY = 'BINARY';
 
 	const ORIGINAL_ERROR = 'ORIGINAL_ERROR';
 	const DISCARD_VALUE = 'DISCARD_VALUE';
@@ -280,6 +282,7 @@ class CXmlConstantName {
 	const XML_TO_JSON = 'XML_TO_JSON';
 	const SNMP_WALK_VALUE = 'SNMP_WALK_VALUE';
 	const SNMP_WALK_TO_JSON = 'SNMP_WALK_TO_JSON';
+	const SNMP_GET_VALUE = 'SNMP_GET_VALUE';
 
 	const AND_OR = 'AND_OR';
 	const XML_AND = 'AND';
@@ -307,8 +310,8 @@ class CXmlConstantName {
 	const SMTP_AUTHENTICATION_NONE = 'NONE';
 	const SMTP_AUTHENTICATION_PASSWORD = 'PASSWORD';
 
-	const CONTENT_TYPE_TEXT = 'TEXT'; // Duplicate.
-	const CONTENT_TYPE_HTML = 'HTML';
+	const MESSAGE_FORMAT_TEXT = 'TEXT'; // Duplicate.
+	const MESSAGE_FORMAT_HTML = 'HTML';
 
 	const TRIGGERS = 'TRIGGERS';
 	const DISCOVERY = 'DISCOVERY';
@@ -323,6 +326,14 @@ class CXmlConstantName {
 	const MACRO_TYPE_TEXT = 'TEXT';
 	const MACRO_TYPE_SECRET = 'SECRET_TEXT';
 	const MACRO_TYPE_VAULT = 'VAULT';
+
+	// Constants for low-level discovery rules.
+	const LLD_DELETE_AFTER = 'DELETE_AFTER';
+	const LLD_DELETE_NEVER = 'DELETE_NEVER';
+	const LLD_DELETE_IMMEDIATELY = 'DELETE_IMMEDIATELY';
+	const LLD_DISABLE_AFTER = 'DISABLE_AFTER';
+	const LLD_DISABLE_NEVER = 'DISABLE_NEVER';
+	const LLD_DISABLE_IMMEDIATELY = 'DISABLE_IMMEDIATELY';
 
 	// Constants for low-level discovery rule overrides.
 	const LLD_OVERRIDE_STOP_NO = 'NO_STOP';
@@ -356,6 +367,12 @@ class CXmlConstantName {
 	const DASHBOARD_WIDGET_FIELD_TYPE_ITEM_PROTOTYPE = 'ITEM_PROTOTYPE';
 	const DASHBOARD_WIDGET_FIELD_TYPE_GRAPH = 'GRAPH';
 	const DASHBOARD_WIDGET_FIELD_TYPE_GRAPH_PROTOTYPE = 'GRAPH_PROTOTYPE';
+	const DASHBOARD_WIDGET_FIELD_TYPE_MAP = 'MAP';
+	const DASHBOARD_WIDGET_FIELD_TYPE_SERVICE = 'SERVICE';
+	const DASHBOARD_WIDGET_FIELD_TYPE_SLA = 'SLA';
+	const DASHBOARD_WIDGET_FIELD_TYPE_USER = 'USER';
+	const DASHBOARD_WIDGET_FIELD_TYPE_ACTION = 'ACTION';
+	const DASHBOARD_WIDGET_FIELD_TYPE_MEDIA_TYPE = 'MEDIA_TYPE';
 
 	// Constants for value map mapping type.
 	const MAPPING_EQUAL = 'EQUAL';

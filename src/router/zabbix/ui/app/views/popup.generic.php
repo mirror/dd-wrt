@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -70,7 +65,7 @@ if (array_key_exists('hosts', $data['filter'])) {
 	$multiselect_options['popup']['parameters']['dstfrm'] = $header_form->getId();
 
 	$host_ms = (new CMultiSelect($multiselect_options))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH);
-	if ($multiselect_options['disabled']) {
+	if ($multiselect_options['readonly']) {
 		$host_ms->setTitle(_('You cannot switch hosts for current selection.'));
 	}
 	$controls[] = (new CFormList())->addRow(new CLabel(_('Host'), 'popup_host_ms'), $host_ms);
@@ -94,6 +89,39 @@ if (array_key_exists('templates', $data['filter'])) {
 
 // Show Type dropdown in header for help items.
 if ($data['popup_type'] === 'help_items') {
+	switch ($options['itemtype']) {
+		case ITEM_TYPE_ZABBIX:
+		case ITEM_TYPE_ZABBIX_ACTIVE:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_ZABBIX_AGENT;
+			break;
+
+		case ITEM_TYPE_SIMPLE:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_SIMPLE_CHECK;
+			break;
+
+		case ITEM_TYPE_SNMPTRAP:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_SNMP_TRAP;
+			break;
+
+		case ITEM_TYPE_INTERNAL:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_ZABBIX_INTERNAL;
+			break;
+
+		case ITEM_TYPE_DB_MONITOR:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_DB_MONITOR;
+			break;
+
+		case ITEM_TYPE_IPMI:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_IPMI_AGENT;
+			break;
+
+		case ITEM_TYPE_JMX:
+			$popup_doc_url = CDocHelper::ITEM_TYPES_JMX_AGENT;
+			break;
+	}
+
+	$output['doc_url'] = CDocHelper::getUrl($popup_doc_url);
+
 	$types_select = (new CSelect('itemtype'))
 		->setId('itemtype')
 		->setFocusableElementId('label-itemtype')
@@ -144,7 +172,7 @@ if ($data['multiselect'] && $form !== null) {
 $table = (new CTableInfo())->setHeader(array_merge($table_columns, $data['table_columns']));
 
 if ($data['preselect_required']) {
-	$table->setNoDataMessage(_('Specify some filter condition to see the values.'));
+	$table->setNoDataMessage(_('Filter is not set'), _('Use the filter to display results'), ZBX_ICON_FILTER_LARGE);
 }
 
 // Output table rows.
@@ -152,7 +180,9 @@ switch ($data['popup_type']) {
 	case 'hosts':
 	case 'template_groups':
 	case 'host_groups':
+	case 'host_inventory':
 	case 'proxies':
+	case 'proxy_groups':
 	case 'host_templates':
 	case 'templates':
 	case 'drules':
@@ -295,37 +325,14 @@ switch ($data['popup_type']) {
 				$description = new CLabel($trigger['description']);
 			}
 
-			if ($data['multiselect']) {
-				$description
-					->setAttribute('data-reference', $options['reference'])
-					->setAttribute('data-triggerid', $trigger['triggerid'])
-					->setAttribute('data-parentid', $options['parentid'])
-					->onClick('
-						addValue(this.dataset.reference, this.dataset.triggerid, this.dataset.parentid ?? null);
-						popup_generic.closePopup(event);
-					');
-			}
-			else {
-				$values = [];
-
-				if ($options['dstfld1'] !== '' && $options['srcfld1'] !== '') {
-					$values[$options['dstfld1']] = $trigger[$options['srcfld1']];
-				}
-				if ($options['dstfld2'] !== '' && $options['srcfld2'] !== '') {
-					$values[$options['dstfld2']] = $trigger[$options['srcfld2']];
-				}
-				if ($options['dstfld3'] !== '' && $options['srcfld3'] !== '') {
-					$values[$options['dstfld3']] = $trigger[$options['srcfld3']];
-				}
-
-				$description
-					->setAttribute('data-dstfrm', $options['dstfrm'])
-					->setAttribute('data-values', json_encode($values))
-					->onClick('
-						addValues(this.dataset.dstfrm, JSON.parse(this.dataset.values));
-						popup_generic.closePopup(event);
-					');
-			}
+			$description
+				->setAttribute('data-reference', $options['reference'])
+				->setAttribute('data-triggerid', $trigger['triggerid'])
+				->setAttribute('data-parentid', $options['parentid'])
+				->onClick('
+					addValue(this.dataset.reference, this.dataset.triggerid, this.dataset.parentid ?? null);
+					popup_generic.closePopup(event);
+				');
 
 			if ($trigger['dependencies']) {
 				$description = [$description, BR(), bold(_('Depends on')), BR()];
@@ -349,17 +356,19 @@ switch ($data['popup_type']) {
 					->addClass(triggerIndicatorStyle($trigger['status'], $trigger['state']))
 			]);
 
-			if ($data['multiselect']) {
-				$trigger = [
-					'id' => $trigger['triggerid'],
-					'name' => $trigger['description'],
-					'triggerid' => $trigger['triggerid'],
-					'description' => $trigger['description'],
-					'expression' => $trigger['expression'],
-					'priority' => $trigger['priority'],
-					'status' => $trigger['status'],
-					'host' => $trigger['hostname']
-				];
+			$trigger = [
+				'id' => $trigger['triggerid'],
+				'name' => $trigger['description'],
+				'triggerid' => $trigger['triggerid'],
+				'description' => $trigger['description'],
+				'expression' => $trigger['expression'],
+				'priority' => $trigger['priority'],
+				'status' => $trigger['status'],
+				'host' => $trigger['hostname']
+			];
+
+			if ($data['popup_type'] === 'trigger_prototypes') {
+				$trigger['prototype'] = '1';
 			}
 		}
 		unset($trigger);
@@ -390,7 +399,7 @@ switch ($data['popup_type']) {
 						.getElementById(this.dataset.dstfld1)
 						.dispatchEvent(new CustomEvent("help_items.paste"));
 
-					updateItemFormElements();
+					window.updateItemFormElements && updateItemFormElements();
 
 					if (this.dataset.dstfld2 in values) {
 						popup_generic.setPopupOpenerFieldValues({[this.dataset.dstfld2]: values[this.dataset.dstfld2]});
@@ -398,7 +407,14 @@ switch ($data['popup_type']) {
 
 					popup_generic.closePopup(event);
 				');
-			$table->addRow([$name, $item['description']]);
+
+			$documentation_link = (new CLink(null, CDocHelper::getUrl($item['documentation_link'])))
+				->addClass(ZBX_STYLE_BTN_ICON)
+				->addClass(ZBX_ICON_HELP)
+				->setTitle(_('Help'))
+				->setTarget('_blank');
+
+			$table->addRow([$name, $item['description'], $documentation_link]);
 		}
 		unset($data['table_records']);
 		break;
@@ -407,7 +423,9 @@ switch ($data['popup_type']) {
 		foreach ($data['table_records'] as $d_rule) {
 			foreach ($d_rule['dchecks'] as $d_check) {
 				$name = $d_rule['name'].
-					NAME_DELIMITER.discovery_check2str($d_check['type'], $d_check['key_'], $d_check['ports']);
+					NAME_DELIMITER.discovery_check2str($d_check['type'], $d_check['key_'], $d_check['ports'],
+						$d_check['allow_redirect']
+					);
 
 				$values = [
 					$options['dstfld1'] => $d_check[$options['srcfld1']]
@@ -446,7 +464,6 @@ switch ($data['popup_type']) {
 	case 'items':
 	case 'template_items':
 	case 'item_prototypes':
-
 		if ($options['srcfld2'] !== '' && $options['dstfld2'] !== '') {
 			// TODO: this condition must be removed after all item and item_prototype fields changing to multiselect
 			foreach ($data['table_records'] as &$item) {
@@ -494,8 +511,16 @@ switch ($data['popup_type']) {
 
 				$table->addRow([
 					$data['multiselect'] ? new CCheckBox('item['.$checkbox_key.']', $item['itemid']) : null,
-					$description,
-					(new CDiv($item['key_']))->addClass(ZBX_STYLE_WORDWRAP),
+					(new CDiv($description))
+						->addClass(ZBX_STYLE_WORDBREAK)
+						->addClass(ZBX_STYLE_LINE_CLAMP)
+						->addStyle('--line-clamp: 4;')
+						->setTitle($item['name']),
+					(new CDiv($item['key_']))
+						->addClass(ZBX_STYLE_WORDWRAP)
+						->addClass(ZBX_STYLE_LINE_CLAMP)
+						->addStyle('--line-clamp: 4;')
+						->setTitle($item['key_']),
 					item_type2str($item['type']),
 					itemValueTypeString($item['value_type']),
 					($data['popup_type'] === 'items')
@@ -522,22 +547,31 @@ switch ($data['popup_type']) {
 		else {
 			foreach ($data['table_records'] as &$item) {
 				$host = reset($item['hosts']);
-				$item_pattern = array_key_exists('pattern', $item) ? $item['pattern'] : $item['itemid'];
+				$item_pattern = $options['patternselect'] ? $item['name'] : $item['itemid'];
 
 				$table->addRow([
 					$data['multiselect']
 						? new CCheckBox('item['.$item['itemid'].']', $item_pattern)
 						: null,
-					(new CLink($item['name']))
-						->setAttribute('data-reference', $options['reference'])
-						->setAttribute('data-pattern', $item_pattern)
-						->setAttribute('data-parentid', $options['parentid'])
-						->onClick('
-							addValue(this.dataset.reference, this.dataset.pattern, this.dataset.parentid ?? null);
-							popup_generic.closePopup(event);
-						')
-						->addClass(ZBX_STYLE_WORDBREAK),
-					(new CDiv($item['key_']))->addClass(ZBX_STYLE_WORDWRAP),
+					(new CDiv(
+						(new CLink($item['name']))
+							->setAttribute('data-reference', $options['reference'])
+							->setAttribute('data-pattern', $item_pattern)
+							->setAttribute('data-parentid', $options['parentid'])
+							->onClick('
+								addValue(this.dataset.reference, this.dataset.pattern, this.dataset.parentid ?? null);
+								popup_generic.closePopup(event);
+							')
+					))
+						->addClass(ZBX_STYLE_WORDBREAK)
+						->addClass(ZBX_STYLE_LINE_CLAMP)
+						->addStyle('--line-clamp: 4;')
+						->setTitle($item['name']),
+					(new CDiv($item['key_']))
+						->addClass(ZBX_STYLE_WORDWRAP)
+						->addClass(ZBX_STYLE_LINE_CLAMP)
+						->addStyle('--line-clamp: 4;')
+						->setTitle($item['key_']),
 					item_type2str($item['type']),
 					itemValueTypeString($item['value_type']),
 					($data['popup_type'] === 'items')
@@ -560,6 +594,10 @@ switch ($data['popup_type']) {
 				];
 			}
 			unset($item);
+
+			if ($options['patternselect']) {
+				$data['table_records'] = array_column($data['table_records'], null, 'name');
+			}
 		}
 		break;
 
@@ -846,13 +884,16 @@ $types = [
 	'hosts',
 	'host_templates',
 	'host_groups',
+	'host_inventory',
 	'template_groups',
 	'items',
 	'item_prototypes',
 	'media_types',
 	'proxies',
+	'proxy_groups',
 	'roles',
 	'templates',
+	'template_triggers',
 	'users',
 	'usrgrp',
 	'sla',
@@ -874,7 +915,7 @@ $output['script_inline'] = $this->readJsFile('popup.generic.js.php').
 
 if ($form) {
 	// Enable form submitting on Enter.
-	$form->addItem((new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
+	$form->addItem((new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
 
 	$form->addItem($table);
 

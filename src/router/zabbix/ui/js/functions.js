@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -50,35 +45,6 @@ function delete_expression(id, type) {
 	}
 }
 
-/**
- * Insert expression part into input field.
- *
- * @param string id		Expression temporary ID.
- * @param number type	Expression (type = 0) or recovery expression (type = 1).
- */
-function copy_expression(id, type) {
-	// If type is expression.
-	if (type == 0) {
-		var element = document.getElementsByName('expr_temp')[0];
-	}
-	// Type is recovery expression.
-	else {
-		var element = document.getElementsByName('recovery_expr_temp')[0];
-	}
-
-	if (element.value.length > 0 && !confirm(t('Do you wish to replace the conditional expression?'))) {
-		return null;
-	}
-
-	var src = document.getElementById(id);
-	if (typeof src.textContent != 'undefined') {
-		element.value = src.textContent;
-	}
-	else {
-		element.value = src.innerText;
-	}
-}
-
 function testUserSound(idx) {
 	var element = document.getElementById(idx);
 	var sound = element.options[element.selectedIndex].value;
@@ -96,11 +62,13 @@ function testUserSound(idx) {
 	}
 }
 
-/**
- * Converts all HTML symbols into HTML entities.
- */
-jQuery.escapeHtml = function(html) {
-	return jQuery('<div>').text(html).html();
+function escapeHtml(string) {
+	return string
+		.replace(/&/g,'&amp;')
+		.replace(/</g,'&lt;')
+		.replace(/>/g,'&gt;')
+		.replace(/\"/g,'&quot;')
+		.replace(/\'/g,'&apos;');
 }
 
 function validateNumericBox(obj, allowempty, allownegative) {
@@ -470,32 +438,33 @@ function overlayPreloaderDestroy(id) {
 }
 
 /**
- * Function to close overlay dialogue and moves focus to IU element that was clicked to open it.
+ * Close and destroy overlay dialogue and move focus to IU element that was clicked to open it.
  *
- * @param string   dialogueid	Dialogue identifier to identify dialogue.
+ * @param {string} dialogueid
+ * @param {string} close_by    Indicates the initiator of closing action.
  */
-function overlayDialogueDestroy(dialogueid) {
-	if (typeof dialogueid !== 'undefined') {
-		var overlay = overlays_stack.getById(dialogueid)
-		if (!overlay) {
-			return;
-		}
+function overlayDialogueDestroy(dialogueid, close_by = Overlay.prototype.CLOSE_BY_SCRIPT) {
+	const overlay = overlays_stack.getById(dialogueid);
 
-		if (typeof overlay.xhr !== 'undefined') {
-			overlay.xhr.abort();
-			delete overlay.xhr;
-		}
-
-		if (overlay instanceof Overlay) {
-			overlay.unmount();
-		}
-
-		jQuery('[data-dialogueid='+dialogueid+']').remove();
-
-		removeFromOverlaysStack(dialogueid);
-
-		overlay.$dialogue[0].dispatchEvent(new CustomEvent('overlay.close', {detail: {dialogueid}}));
+	if (overlay === undefined) {
+		return;
 	}
+
+	if (overlay.xhr !== undefined) {
+		overlay.xhr.abort();
+
+		delete overlay.xhr;
+	}
+
+	if (overlay instanceof Overlay) {
+		overlay.unmount();
+	}
+
+	jQuery(`[data-dialogueid="${dialogueid}"]`).remove();
+
+	removeFromOverlaysStack(dialogueid);
+
+	overlay.$dialogue[0].dispatchEvent(new CustomEvent('dialogue.close', {detail: {dialogueid, close_by}}));
 }
 
 /**
@@ -542,67 +511,6 @@ function overlayDialogue(params, trigger_elmnt) {
 	addToOverlaysStack(overlay);
 
 	return overlay;
-}
-
-/**
- * Execute script.
- *
- * @param string scriptid			Script ID.
- * @param string confirmation		Confirmation text.
- * @param {Node} trigger_element	UI element that was clicked to open overlay dialogue.
- * @param string hostid				Host ID.
- * @param string eventid			Event ID.
- * @param string csrf_token			CSRF token.
- */
-function executeScript(scriptid, confirmation, trigger_element, hostid = null, eventid = null, csrf_token) {
-	var execute = function() {
-		var popup_options = {scriptid: scriptid};
-
-		if (hostid !== null) {
-			popup_options.hostid = hostid;
-		}
-
-		if (eventid !== null) {
-			popup_options.eventid = eventid;
-		}
-
-		if (Object.keys(popup_options).length === 2) {
-			popup_options._csrf_token = csrf_token;
-
-			PopUp('popup.scriptexec', popup_options, {dialogue_class: 'modal-popup-medium', trigger_element});
-		}
-	};
-
-	if (confirmation.length > 0) {
-		overlayDialogue({
-			'title': t('Execution confirmation'),
-			'content': jQuery('<span>')
-				.addClass('confirmation-msg')
-				.text(confirmation),
-			'class': 'modal-popup modal-popup-small position-middle',
-			'buttons': [
-				{
-					'title': t('Cancel'),
-					'class': 'btn-alt',
-					'focused': (hostid === null && eventid === null),
-					'action': function() {}
-				},
-				{
-					'title': t('Execute'),
-					'enabled': (hostid !== null || eventid !== null),
-					'focused': (hostid !== null || eventid !== null),
-					'action': function() {
-						execute();
-					}
-				}
-			]
-		}, trigger_element);
-
-		return false;
-	}
-	else {
-		execute();
-	}
 }
 
 (function($) {
@@ -720,57 +628,39 @@ function parseUrlString(url_string) {
  * @return {jQuery}
  */
 function makeMessageBox(type, messages, title = null, show_close_box = true, show_details = null) {
-	var classes = {good: 'msg-good', bad: 'msg-bad', warning: 'msg-warning'},
-		msg_class = classes[type];
+	const classes = {good: 'msg-good', bad: 'msg-bad', warning: 'msg-warning'};
+	const aria_labels = {good: t('Success message'), bad: t('Error message'), warning: t('Warning message')};
 
 	if (show_details === null) {
 		show_details = type === 'bad' || type === 'warning';
 	}
 
-	var	$list = jQuery('<ul>')
-			.addClass('list-dashed'),
-		$msg_details = jQuery('<div>')
-			.addClass('msg-details')
-			.append($list),
-		aria_labels = {good: t('Success message'), bad: t('Error message'), warning: t('Warning message')},
+	var	$list = jQuery('<ul>', {class: 'list-dashed'}),
+		$msg_details = jQuery('<div>', {class: 'msg-details'}).append($list),
 		$msg_box = jQuery('<output>')
-			.addClass(msg_class).attr('role', 'contentinfo')
+			.addClass(classes[type])
+			.attr('role', 'contentinfo')
 			.attr('aria-label', aria_labels[type]),
-		$details_arrow = jQuery('<span>')
-			.attr('id', 'details-arrow')
-			.addClass(show_details ? 'arrow-up' : 'arrow-down'),
 		$link_details = jQuery('<a>')
-			.text(t('Details') + ' ')
 			.addClass('link-action')
-			.attr('href', 'javascript:void(0)')
+			.attr('aria-expanded', show_details ? 'true' : 'false')
 			.attr('role', 'button')
-			.append($details_arrow)
-			.attr('aria-expanded', show_details ? 'true' : 'false');
+			.attr('href', 'javascript:void(0)')
+			.append(t('Details'), jQuery('<span>', {class: show_details ? 'arrow-up' : 'arrow-down'}));
 
-		$link_details.click(function() {
-			showHide(jQuery(this)
-				.siblings('.msg-details')
-				.find('.msg-details-border')
-			);
-			jQuery('#details-arrow', jQuery(this)).toggleClass('arrow-up arrow-down');
-			jQuery(this).attr('aria-expanded', jQuery(this)
-				.find('.arrow-down')
-				.length == 0
-			);
-		});
+		$link_details.click((e) => toggleMessageBoxDetails(e.target));
 
 	if (title !== null) {
 		if (Array.isArray(messages) && messages.length > 0) {
 			$msg_box.prepend($link_details);
+			$msg_box.addClass(ZBX_STYLE_COLLAPSIBLE);
 		}
 		jQuery('<span>')
 			.text(title)
 			.appendTo($msg_box);
 
-		$list.addClass('msg-details-border');
-
 		if (!show_details) {
-			$list.hide();
+			$msg_box.addClass(ZBX_STYLE_COLLAPSED);
 		}
 	}
 
@@ -786,33 +676,45 @@ function makeMessageBox(type, messages, title = null, show_close_box = true, sho
 	}
 
 	if (show_close_box) {
-		var $button = jQuery('<button>')
-				.addClass('overlay-close-btn')
+		$msg_box.append(
+			jQuery('<button>')
+				.addClass('btn-overlay-close')
 				.attr('type', 'button')
 				.attr('title', t('Close'))
 				.click(function() {
 					jQuery(this)
-						.closest('.' + msg_class)
+						.closest(`.${classes[type]}`)
 						.remove();
-				});
-		$msg_box.append($button);
+				})
+		);
 	}
 
 	return $msg_box;
 }
 
+function toggleMessageBoxDetails(element) {
+	const parent = element.parentElement;
+	const arrow = element.querySelector('span');
+
+	parent.classList.toggle(ZBX_STYLE_COLLAPSED);
+	element.setAttribute('aria-expanded', !parent.classList.contains(ZBX_STYLE_COLLAPSED));
+	arrow.classList.toggle('arrow-down');
+	arrow.classList.toggle('arrow-up');
+}
+
 /**
- * Download svg graph as .png image.
+ * Download svg as .png image.
  *
  * @param {SVGElement} svg
  * @param {string}     file_name
+ * @param {string}     legend_class
  */
-function downloadSvgImage(svg, file_name) {
+function downloadSvgImage(svg, file_name, legend_class = '') {
 	var $dom_node = jQuery(svg),
 		canvas = document.createElement('canvas'),
-		labels = $dom_node.next('.svg-graph-legend'),
+		labels = $dom_node.next(legend_class),
 		$clone = $dom_node.clone(),
-		$container = $dom_node.closest('.dashboard-grid-widget-content'),
+		$container = $dom_node.closest('.dashboard-grid-widget-contents'),
 		image = new Image,
 		a = document.createElement('a'),
 		style = document.createElementNS('http://www.w3.org/1999/xhtml', 'style'),
@@ -820,13 +722,15 @@ function downloadSvgImage(svg, file_name) {
 		labels_height = labels.length ? labels.height() : 0,
 		context2d;
 
-	// Clone only svg graph styles.
+	// Clone only svg styles.
 	style.innerText = jQuery.map(document.styleSheets[0].cssRules, function (rule) {
 		return rule.selectorText && rule.selectorText.substr(0, 5) == '.svg-' ? rule.cssText : '';
 	}).join('');
 
 	jQuery.map(['background-color', 'font-family', 'font-size', 'color'], function (key) {
-		$clone.css(key, $container.css(key));
+		if ($clone.css(key) === '') {
+			$clone.css(key, $container.css(key));
+		}
 	});
 
 	canvas.width = $dom_node.width()
@@ -948,12 +852,23 @@ function urlEncodeData(parameters, prefix = '') {
  *
  * @param {HTMLFormElement} form
  *
- * @return {object}
+ * @return {Object}
  */
 function getFormFields(form) {
+	return searchParamsToObject(new FormData(form));
+}
+
+/**
+ * Convert URL search parameters into nested object.
+ *
+ * @param search_params  An object implementing iterator protocol (URLSearchParams).
+ *
+ * @returns {Object}
+ */
+function searchParamsToObject(search_params) {
 	const fields = {};
 
-	for (let [key, value] of new FormData(form)) {
+	for (let [key, value] of search_params) {
 		value = value.replace(/\r?\n/g, '\r\n');
 
 		const key_parts = [...key.matchAll(/[^\[\]]+|\[\]/g)];
@@ -963,7 +878,7 @@ function getFormFields(form) {
 		for (let i = 0; i < key_parts.length; i++) {
 			const key_part = key_parts[i][0];
 
-			if (i == key_parts.length - 1) {
+			if (i === key_parts.length - 1) {
 				if (key_part === '[]') {
 					key_fields.push(value);
 				}
@@ -991,4 +906,74 @@ function getFormFields(form) {
 	}
 
 	return fields;
+}
+
+/**
+ * Convert nested data object into URL search parameters object.
+ *
+ * @param {Object|Array} object
+ *
+ * @returns {URLSearchParams}
+ */
+function objectToSearchParams(object) {
+	const combine = (data, search_params = new URLSearchParams(), name_prefix = '') => {
+		if (Array.isArray(data)) {
+			for (const [index, datum] of data.entries()) {
+				combine(datum, search_params, name_prefix !== '' ? `${name_prefix}[${index}]` : index);
+			}
+		}
+		else if (typeof data === 'object') {
+			for (const [name, datum] of Object.entries(data)) {
+				combine(datum, search_params, name_prefix !== '' ? `${name_prefix}[${name}]` : name);
+			}
+		}
+		else {
+			search_params.append(name_prefix, data);
+		}
+
+		return search_params;
+	};
+
+	return combine(object);
+}
+
+/**
+ * Convert RGB encoded color into HSL encoded color.
+ *
+ * @param {number} r  Red component in range of 0-1.
+ * @param {number} g  Green component in range of 0-1.
+ * @param {number} b  Blue component in range of 0-1.
+ *
+ * @returns [{number}, {number}, {number}]  Hue, saturation and lightness components.
+ */
+function convertRGBToHSL(r, g, b) {
+	const v = Math.max(r, g, b);
+	const c = v - Math.min(r, g, b);
+	const f = 1 - Math.abs(v * 2 - c - 1);
+	const h = c && ((v === r) ? (g - b) / c : ((v === g) ? 2 + (b - r) / c : 4 + (r - g) / c));
+
+	return [60 * (h < 0 ? h + 6 : h), f ? c / f : 0, (v * 2 - c) / 2];
+}
+
+/**
+ * Convert HSL encoded color into RGB encoded color.
+ *
+ * @param {number} h  Hue component in range of 0-360.
+ * @param {number} s  Saturation component in range of 0-1.
+ * @param {number} l  Lightness component in range of 0-1.
+ *
+ * @returns [{number}, {number}, {number}]  Red, green and blue components in range 0-1.
+ */
+function convertHSLToRGB(h, s, l) {
+	const a = s * Math.min(l, 1 - l);
+	const f = (n, k = (n + h / 30) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+
+	return [f(0), f(8), f(4)];
+}
+
+/**
+ * Check if given value is valid color hex code.
+ */
+function isColorHex(value) {
+	return /^#([0-9A-F]{6})$/i.test(value);
 }

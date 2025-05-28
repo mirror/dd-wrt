@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -190,6 +185,46 @@ class CControllerActionOperationCheck extends CController {
 					return false;
 				}
 				break;
+
+			case OPERATION_TYPE_HOST_TAGS_ADD:
+			case OPERATION_TYPE_HOST_TAGS_REMOVE:
+				// At least one tag must exist with name and must be unique. Skips checking completely empty rows.
+
+				$tags = [];
+
+				if (array_key_exists('optag', $operation)) {
+					foreach ($operation['optag'] as $optag) {
+						$tag = trim($optag['tag']);
+						$value = trim($optag['value']);
+
+						if ($tag === '' && $value === '') {
+							continue;
+						}
+
+						if ($tag === '' && $value !== '') {
+							error(_s('Incorrect value for field "%1$s": %2$s.', _('Tag'), _('cannot be empty')));
+
+							return false;
+						}
+
+						if (array_key_exists($tag, $tags) && $tags[$tag] === $value) {
+							error(_s('Incorrect value for field "%1$s": %2$s.', _('Tag'),
+								_s('value "%1$s" already exists', '(tag, value)=('.$tag.', '.$value.')'))
+							);
+
+							return false;
+						}
+
+						$tags[$tag] = $value;
+					}
+				}
+
+				if (!$tags) {
+					error(_s('Incorrect value for field "%1$s": %2$s.', _('Tag'), _('cannot be empty')));
+
+					return false;
+				}
+				break;
 		}
 
 		return true;
@@ -239,6 +274,24 @@ class CControllerActionOperationCheck extends CController {
 				unset($operation['opmessage']['subject'], $operation['opmessage']['message']);
 			}
 		}
+
+		// When tags are added or removed, trim tag names and values, and remove empty rows.
+		if ($operationtype == OPERATION_TYPE_HOST_TAGS_ADD || $operationtype == OPERATION_TYPE_HOST_TAGS_REMOVE) {
+			foreach ($operation['optag'] as $idx => &$optag) {
+				$tag = trim($optag['tag']);
+				$value = trim($optag['value']);
+
+				if ($tag === '' && $value === '') {
+					unset($operation['optag'][$idx]);
+					continue;
+				}
+
+				$optag['tag'] = $tag;
+				$optag['value'] = $value;
+			}
+			unset($optag);
+		}
+
 		$operation['operationtype'] = $operationtype;
 		$data['operation'] = $operation;
 		$data['operation']['row_index'] = $this->getInput('row_index');

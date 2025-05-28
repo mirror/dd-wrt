@@ -1,27 +1,24 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxtasks.h"
 
-#include "log.h"
-#include "zbxdbhigh.h"
 #include "zbxjson.h"
+#include "zbxalgo.h"
+#include "zbxdb.h"
+#include "zbxnum.h"
+#include "zbxstr.h"
 
 ZBX_PTR_VECTOR_IMPL(tm_task, zbx_tm_task_t *)
 
@@ -272,13 +269,13 @@ zbx_tm_data_result_t	*zbx_tm_data_result_create(zbx_uint64_t parent_taskid, int 
  *             status       - [IN] the task status (see ZBX_TM_STATUS_*)      *
  *             clock        - [IN] the task creation time                     *
  *             ttl          - [IN] the task expiration period in seconds      *
- *             proxy_hostid - [IN] the destination proxy identifier (or 0)    *
+ *             proxyid      - [IN] the destination proxy identifier (or 0)    *
  *                                                                            *
  * Return value: The created task.                                            *
  *                                                                            *
  ******************************************************************************/
 zbx_tm_task_t	*zbx_tm_task_create(zbx_uint64_t taskid, unsigned char type, unsigned char status, int clock, int ttl,
-		zbx_uint64_t proxy_hostid)
+		zbx_uint64_t proxyid)
 {
 	zbx_tm_task_t	*task;
 
@@ -289,7 +286,7 @@ zbx_tm_task_t	*zbx_tm_task_create(zbx_uint64_t taskid, unsigned char type, unsig
 	task->status = status;
 	task->clock = clock;
 	task->ttl = ttl;
-	task->proxy_hostid = proxy_hostid;
+	task->proxyid = proxyid;
 	task->data = NULL;
 
 	return task;
@@ -560,7 +557,7 @@ static int	tm_save_tasks(zbx_tm_task_t **tasks, int tasks_num)
 			tasks[i]->taskid = taskid++;
 	}
 
-	zbx_db_insert_prepare(&db_insert, "task", "taskid", "type", "status", "clock", "ttl", "proxy_hostid", (char *)NULL);
+	zbx_db_insert_prepare(&db_insert, "task", "taskid", "type", "status", "clock", "ttl", "proxyid", (char *)NULL);
 
 	for (i = 0; i < tasks_num; i++)
 	{
@@ -568,7 +565,7 @@ static int	tm_save_tasks(zbx_tm_task_t **tasks, int tasks_num)
 			continue;
 
 		zbx_db_insert_add_values(&db_insert, tasks[i]->taskid, (int)tasks[i]->type, (int)tasks[i]->status,
-				tasks[i]->clock, tasks[i]->ttl, tasks[i]->proxy_hostid);
+				tasks[i]->clock, tasks[i]->ttl, tasks[i]->proxyid);
 	}
 
 	ret = zbx_db_insert_execute(&db_insert);
@@ -1150,19 +1147,19 @@ void	zbx_tm_json_deserialize_tasks(const struct zbx_json_parse *jp, zbx_vector_t
  *                                                                            *
  * Parameters: data         - [IN] task data                                  *
  *             len          - [IN] length of data                             *
- *             proxy_hostid - [IN] proxy identifier                           *
+ *             proxyid - [IN] proxy identifier                           *
  *                                                                            *
  * Return value: The created data task id or 0 on failure.                    *
  *                                                                            *
  ******************************************************************************/
-static zbx_uint64_t	zbx_create_task_data(const char *data, size_t len, zbx_uint64_t proxy_hostid)
+static zbx_uint64_t	zbx_create_task_data(const char *data, size_t len, zbx_uint64_t proxyid)
 {
 	zbx_tm_task_t	*task;
 	zbx_uint64_t	taskid;
 
 	taskid = zbx_db_get_maxid("task");
 
-	task = zbx_tm_task_create(taskid, ZBX_TM_TASK_DATA, ZBX_TM_STATUS_NEW, time(NULL), ZBX_DATA_TTL, proxy_hostid);
+	task = zbx_tm_task_create(taskid, ZBX_TM_TASK_DATA, ZBX_TM_STATUS_NEW, time(NULL), ZBX_DATA_TTL, proxyid);
 
 	task->data = zbx_tm_data_create(task->taskid, data, len, ZBX_TM_DATA_TYPE_TEST_ITEM);
 
@@ -1191,8 +1188,8 @@ static zbx_uint64_t	zbx_create_task_data(const char *data, size_t len, zbx_uint6
  ******************************************************************************/
 static int	zbx_tm_task_result_wait(zbx_uint64_t taskid, char **info)
 {
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 	int		ret, time_start;
 
 	for (time_start = time(NULL); ZBX_DATA_TTL > time(NULL) - time_start; sleep(1))
@@ -1227,18 +1224,18 @@ static int	zbx_tm_task_result_wait(zbx_uint64_t taskid, char **info)
  *                                                                            *
  * Parameters: data         - [IN] task data                                  *
  *             len          - [IN] length of data                             *
- *             proxy_hostid - [IN] proxy identifier                           *
+ *             proxyid - [IN] proxy identifier                           *
  *             info         - [OUT] task result or error reason               *
  *                                                                            *
  * Return value: SUCCEED - if task was executed without errors                *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
-int	zbx_tm_execute_task_data(const char *data, size_t len, zbx_uint64_t proxy_hostid, char **info)
+int	zbx_tm_execute_task_data(const char *data, size_t len, zbx_uint64_t proxyid, char **info)
 {
 	zbx_uint64_t	taskid;
 
-	if (0 == (taskid = zbx_create_task_data(data, len, proxy_hostid)))
+	if (0 == (taskid = zbx_create_task_data(data, len, proxyid)))
 	{
 		*info = zbx_strdup(NULL, "Cannot create task.");
 		return FAIL;

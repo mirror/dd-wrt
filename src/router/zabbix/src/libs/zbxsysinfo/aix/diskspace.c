@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
@@ -23,8 +18,10 @@
 #include "inodes.h"
 
 #include "zbxjson.h"
-#include "log.h"
 #include "zbxalgo.h"
+
+#include <sys/vfs.h>
+#include <sys/vmount.h>
 
 static int	get_fs_size_stat(const char *fs, zbx_uint64_t *total, zbx_uint64_t *free,
 		zbx_uint64_t *used, double *pfree, double *pused, char **error)
@@ -210,8 +207,6 @@ int	vfs_fs_size(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 static const char	*zbx_get_vfs_name_by_type(int type)
 {
-	extern struct vfs_ent	*getvfsbytype(int type);
-
 	struct vfs_ent		*vfs;
 	static char		**vfs_names = NULL;
 	static size_t		vfs_names_alloc = 0;
@@ -295,10 +290,8 @@ static int	vfs_fs_get_local(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int			rc, sz, i, ret = SYSINFO_RET_FAIL;
 	struct vmount		*vms = NULL, *vm;
 	struct zbx_json		j;
-	zbx_uint64_t		total, not_used, used;
-	zbx_uint64_t		itotal, inot_used, iused;
-	double			pfree, pused;
-	double			ipfree, ipused;
+	zbx_uint64_t		total, not_used, used, itotal, inot_used, iused;
+	double			pfree, pused, ipfree, ipused;
 	char			*error;
 	zbx_vector_ptr_t	mntpoints;
 	zbx_mpoint_t		*mntpoint;

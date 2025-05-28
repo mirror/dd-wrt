@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -31,7 +26,7 @@ $form = (new CForm())
 	->addVar('operation[recovery]', $data['recovery']);
 
 // Enable form submitting on Enter.
-$form->addItem((new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
+$form->addItem((new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
 
 $form_grid = (new CFormGrid());
 $operation = $data['operation'];
@@ -57,6 +52,15 @@ else {
 			->setId('operation-type-select')
 	]))->setId('operation-type');
 }
+
+if ($data['scripts_with_warning']) {
+	$select_operationtype->addItem(
+		makeWarningIcon(_('Global script execution on Zabbix server is disabled by server configuration.'))
+			->addClass('js-script-warning-icon')
+			->addStyle('display: none;')
+	);
+}
+
 $form_grid->addItem([
 	(new CLabel(_('Operation'), 'operationtype'))->setId('operation-type-label'),
 	$select_operationtype
@@ -153,7 +157,7 @@ $form_grid->addItem([
 	)->setId('operation-message-users')
 ]);
 
-array_unshift($data['mediatype_options'], ['name' => '- '._('All').' -', 'mediatypeid' => 0, 'status' => 0]);
+array_unshift($data['mediatype_options'], ['name' => _('All available'), 'mediatypeid' => 0, 'status' => 0]);
 
 $mediatypes = [];
 foreach ($data['mediatype_options'] as $mediatype) {
@@ -182,7 +186,7 @@ $select_opmessage_mediatype = (new CSelect('operation[opmessage][mediatypeid]'))
 	->setValue($operation['opmessage']['mediatypeid'] ?? 0);
 
 $form_grid->addItem([
-	(new CLabel(_('Send only to'), $select_opmessage_mediatype->getFocusableElementId()))
+	(new CLabel(_('Send to media type'), $select_opmessage_mediatype->getFocusableElementId()))
 		->setId('operation-message-mediatype-only-label'),
 	(new CFormField($select_opmessage_mediatype))
 		->setId('operation-message-mediatype-only')
@@ -331,6 +335,47 @@ $form_grid->addItem([
 	)->setId('operation-attr-hostgroups')
 ]);
 
+// Operation Add/Remove host tags.
+$form_grid->addItem(
+	(new CFormField([
+		(new CTable())
+			->setId('tags-table')
+			->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_CONTAINER)
+			->setHeader([_('Name'), _('Value'), ''])
+			->setFooter(new CCol(
+				(new CButton('tag_add', _('Add')))
+					->addClass(ZBX_STYLE_BTN_LINK)
+					->addClass('element-table-add')
+			)),
+		(new CTemplateTag('operation-host-tags-row-tmpl'))
+			->addItem(
+				(new CRow([
+					(new CCol(
+						(new CTextAreaFlexible('operation[optag][#{row_index}][tag]', '#{tag}',
+							['add_post_js' => false]
+						))
+							->setWidth(ZBX_TEXTAREA_TAG_WIDTH)
+							->setAttribute('placeholder', _('tag'))
+					))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+					(new CCol(
+						(new CTextAreaFlexible('operation[optag][#{row_index}][value]', '#{value}',
+							['add_post_js' => false]
+						))
+							->setWidth(ZBX_TEXTAREA_TAG_VALUE_WIDTH)
+							->setAttribute('placeholder', _('value'))
+					))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+					(new CCol(
+						(new CSimpleButton(_('Remove')))
+							->addClass(ZBX_STYLE_BTN_LINK)
+							->addClass('element-table-remove')
+					))->addClass(ZBX_STYLE_NOWRAP)
+				]))
+					->addClass('form_row')
+					->setAttribute('data-id','#{row_index}')
+			)
+	]))->setId('operation-host-tags')
+);
+
 // Link / unlink templates attribute row.
 $form_grid->addItem([
 	(new CLabel(_('Templates'), 'operation_optemplate__templateid_ms'))
@@ -397,10 +442,9 @@ $conditions_table->addItem(
 	(new CTag('tfoot', true))
 		->addItem(
 			(new CCol(
-				(new CSimpleButton(_('Add')))
-					->setAttribute('data-eventsource', $data['eventsource'])
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Add')))
 					->addClass('operation-condition-list-footer')
+					->setAttribute('data-eventsource', $data['eventsource'])
 			))->setColSpan(4)
 		)
 );
@@ -419,9 +463,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS && $data['recovery'] == ACTION
 						->addClass('label'),
 					new CCol('#{name}'),
 					(new CCol([
-						(new CButton(null, _('Remove')))
-							->addClass(ZBX_STYLE_BTN_LINK)
-							->addClass('js-remove'),
+						(new CButtonLink(_('Remove')))->addClass('js-remove'),
 						(new CInput('hidden'))
 							->setAttribute('value', '#{conditiontype}')
 							->setName('operation[opconditions][#{row_index}][conditiontype]'),
@@ -465,6 +507,7 @@ $output = [
 			'eventsource' => $data['eventsource'],
 			'recovery_phase' => $data['recovery'],
 			'data' => $operation,
+			'scripts_with_warning' => $data['scripts_with_warning'],
 			'actionid' => $data['actionid']
 		]).');'
 ];

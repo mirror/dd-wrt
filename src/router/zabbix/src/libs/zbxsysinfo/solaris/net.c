@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
@@ -23,7 +18,6 @@
 #include "zbx_sysinfo_kstat.h"
 
 #include "zbxjson.h"
-#include "log.h"
 #include "zbxnum.h"
 
 static int	get_kstat_named_field(const char *name, const char *field, zbx_uint64_t *field_value, char **error)
@@ -321,7 +315,7 @@ int	net_tcp_listen(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 	zbx_snprintf(command, sizeof(command), "netstat -an -P tcp | grep '\\.%hu[^.].*LISTEN' | wc -l", port);
 
-	if (SYSINFO_RET_FAIL == (res = execute_int(command, result)))
+	if (SYSINFO_RET_FAIL == (res = execute_int(command, result, request->timeout)))
 		return res;
 
 	if (1 < result->ui64)
@@ -352,7 +346,7 @@ int	net_udp_listen(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 	zbx_snprintf(command, sizeof(command), "netstat -an -P udp | grep '\\.%hu[^.].*Idle' | wc -l", port);
 
-	if (SYSINFO_RET_FAIL == (res = execute_int(command, result)))
+	if (SYSINFO_RET_FAIL == (res = execute_int(command, result, request->timeout)))
 		return res;
 
 	if (1 < result->ui64)

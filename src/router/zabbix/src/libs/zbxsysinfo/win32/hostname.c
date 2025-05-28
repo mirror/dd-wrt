@@ -1,38 +1,29 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
 #include "../sysinfo.h"
 
-#include "log.h"
+#include "zbxlog.h"
 #include "zbxstr.h"
-
-ZBX_METRIC	parameter_hostname =
-/*	KEY			FLAG		FUNCTION		TEST PARAMETERS */
-	{"system.hostname",     CF_HAVEPARAMS,  system_hostname,        NULL};
 
 static void	retrieve_hostname(char *buffer, int len, char **error)
 {
 	if (SUCCEED != gethostname(buffer, len))
 	{
-		zabbix_log(LOG_LEVEL_ERR, "gethostname() failed: %s", strerror_from_system(WSAGetLastError()));
-		*error = zbx_dsprintf(NULL, "Cannot obtain host name: %s", strerror_from_system(WSAGetLastError()));
+		zabbix_log(LOG_LEVEL_ERR, "gethostname() failed: %s", zbx_strerror_from_system(WSAGetLastError()));
+		*error = zbx_dsprintf(NULL, "Cannot obtain host name: %s", zbx_strerror_from_system(WSAGetLastError()));
 	}
 }
 
@@ -60,10 +51,10 @@ int	system_hostname(AGENT_REQUEST *request, AGENT_RESULT *result)
 		if (0 == GetComputerName(computerName, &dwSize))
 		{
 			zabbix_log(LOG_LEVEL_ERR, "GetComputerName() failed: %s",
-					strerror_from_system(GetLastError()));
+					zbx_strerror_from_system(GetLastError()));
 
 			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain computer name: %s",
-					strerror_from_system(GetLastError())));
+					zbx_strerror_from_system(GetLastError())));
 
 			return SYSINFO_RET_FAIL;
 		}
@@ -98,6 +89,23 @@ int	system_hostname(AGENT_REQUEST *request, AGENT_RESULT *result)
 			}
 
 			name = zbx_strdup(NULL, buffer);
+		}
+		else if (0 == strcmp(type, "fqdn"))
+		{
+			DWORD	size = 0;
+
+			GetComputerNameExA(ComputerNameDnsFullyQualified, NULL, &size);
+			name = zbx_malloc(NULL, size);
+
+			if (0 == GetComputerNameExA(ComputerNameDnsFullyQualified, name, &size))
+			{
+				zbx_free(name);
+				SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain FQDN: %s",
+						zbx_strerror_from_system(WSAGetLastError())));
+				return SYSINFO_RET_FAIL;
+			}
+
+			zbx_rtrim(name, " \r\n.");
 		}
 		else
 		{

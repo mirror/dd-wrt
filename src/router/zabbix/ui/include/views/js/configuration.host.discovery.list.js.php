@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -28,55 +23,69 @@
 	const view = {
 		checkbox_object: null,
 		checkbox_hash: null,
+		token: null,
 
-		init({checkbox_hash, checkbox_object}) {
+		init({checkbox_hash, checkbox_object, context, token, form_name}) {
 			this.checkbox_hash = checkbox_hash;
 			this.checkbox_object = checkbox_object;
+			this.context = context;
+			this.token = token;
+			this.form = document.forms[form_name];
 
-			// Disable the status filter when using the state filter.
-			$('#filter_state')
-				.on('change', () => {
-					$('input[name=filter_status]').prop('disabled', $('input[name=filter_state]:checked').val() != -1);
-				})
-				.trigger('change');
+			this.initEvents();
+			this.initPopupListeners();
 		},
 
-		editHost(e, hostid) {
-			e.preventDefault();
-			const host_data = {hostid};
+		initEvents() {
+			if (this.context === 'host') {
+				document.getElementById('filter_state').addEventListener('change', e => this.updateFieldsVisibility());
+				document.querySelector('.js-massexecute-item')
+					.addEventListener('click', (e) => this.executeNow(e.target));
+			}
 
-			this.openHostPopup(host_data);
-		},
-
-		openHostPopup(host_data) {
-			const original_url = location.href;
-			const overlay = PopUp('popup.host.edit', host_data, {
-				dialogueid: 'host_edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
+			document.querySelectorAll('#filter_lifetime_type, #filter_enabled_lifetime_type').forEach(element => {
+				element.addEventListener('change', () => this.updateLostResourcesFields());
 			});
 
-			overlay.$dialogue[0].addEventListener('dialogue.create', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.update', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.delete', this.events.hostDelete, {once: true});
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-			}, {once: true});
+			this.updateLostResourcesFields();
 		},
 
-		massCheckNow(button) {
+		updateFieldsVisibility() {
+			const disabled = document.querySelector('[name="filter_state"]:checked').value != -1;
+
+			document.querySelectorAll('[name="filter_status"]').forEach(radio => radio.disabled = disabled);
+		},
+
+		updateLostResourcesFields() {
+			const lifetime_type = document.querySelector('[name="filter_lifetime_type"]:checked').value;
+			const enabled_lifetime_type = document.querySelector('[name="filter_enabled_lifetime_type"]:checked').value;
+
+			document.querySelectorAll('[name="filter_enabled_lifetime_type"]').forEach(radio =>
+				radio.disabled = lifetime_type == <?= ZBX_LLD_DELETE_IMMEDIATELY ?>
+			);
+
+			document.getElementById('filter_lifetime').disabled = lifetime_type != <?= ZBX_LLD_DELETE_AFTER ?>;
+			document.getElementById('filter_enabled_lifetime').disabled =
+				enabled_lifetime_type != <?= ZBX_LLD_DISABLE_AFTER ?>
+					|| lifetime_type == <?= ZBX_LLD_DELETE_IMMEDIATELY ?>;
+		},
+
+		executeNow(button) {
 			button.classList.add('is-loading');
 
 			const curl = new Curl('zabbix.php');
-			curl.setArgument('action', 'item.masscheck_now');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('item')) ?>
-			);
+			curl.setArgument('action', 'item.execute');
+
+			const data = {
+				itemids: Object.keys(chkbxRange.getSelectedIds()),
+				discovery_rule: 1
+			}
+			data[this.token[0]] = this.token[1];
 
 			fetch(curl.getUrl(), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({itemids: Object.keys(chkbxRange.getSelectedIds()), discovery_rule: 1})
+				body: JSON.stringify(data)
 			})
 				.then((response) => response.json())
 				.then((response) => {
@@ -109,37 +118,14 @@
 				});
 		},
 
-		events: {
-			hostSuccess(e) {
-				const data = e.detail;
-
-				if ('success' in data) {
-					postMessageOk(data.success.title);
-
-					if ('messages' in data.success) {
-						postMessageDetails('success', data.success.messages);
-					}
-				}
-
-				location.href = location.href;
-			},
-
-			hostDelete(e) {
-				const data = e.detail;
-
-				if ('success' in data) {
-					postMessageOk(data.success.title);
-
-					if ('messages' in data.success) {
-						postMessageDetails('success', data.success.messages);
-					}
-				}
-
-				const curl = new Curl('zabbix.php');
-				curl.setArgument('action', 'host.list');
-
-				location.href = curl.getUrl();
-			}
+		initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: () => uncheckTableRows('host_discovery_' + view.checkbox_hash, [], false)
+			});
 		}
 	};
 </script>

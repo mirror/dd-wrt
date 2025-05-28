@@ -1,27 +1,22 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxmutexs.h"
 
 #ifdef _WINDOWS
 #	include "zbxsysinfo.h"
-#	include "log.h"
+#	include "zbxlog.h"
 #else
 #ifdef HAVE_PTHREAD_PROCESS_SHARED
 typedef struct
@@ -47,7 +42,7 @@ static int			shm_id, locks_disabled;
 #		define HAVE_SEMUN 1
 #	endif	/* HAVE_SEMUN */
 
-#	include "cfg.h"
+#	include "zbxcfg.h"
 #	include "zbxthreads.h"
 
 	static int		ZBX_SEM_LIST_ID = -1;
@@ -186,11 +181,14 @@ void	zbx_locks_destroy(void)
 	for (i = 0; i < ZBX_RWLOCK_COUNT; i++)
 		(void)pthread_rwlock_destroy(&shared_lock->rwlocks[i]);
 
-	shmdt(shared_lock);
+	if (-1 == shmdt(shared_lock))
+		zabbix_log(LOG_LEVEL_TRACE, "cannot detach shared lock memory: %s", zbx_strerror(errno));
+
 	shared_lock = NULL;
 	shm_id = 0;
 #else
-	(void)semctl(ZBX_SEM_LIST_ID, 0, IPC_RMID, 0);
+	if (-1 == semctl(ZBX_SEM_LIST_ID, 0, IPC_RMID, 0))
+		zabbix_log(LOG_LEVEL_TRACE, "cannot remove semaphore set %d: %s", ZBX_SEM_LIST_ID, zbx_strerror(errno));
 #endif
 }
 
@@ -386,7 +384,7 @@ int	zbx_mutex_create(zbx_mutex_t *mutex, zbx_mutex_name_t name, char **error)
 #ifdef _WINDOWS
 	if (NULL == (*mutex = CreateMutex(NULL, FALSE, name)))
 	{
-		*error = zbx_dsprintf(*error, "error on mutex creating: %s", strerror_from_system(GetLastError()));
+		*error = zbx_dsprintf(*error, "error on mutex creating: %s", zbx_strerror_from_system(GetLastError()));
 		return FAIL;
 	}
 #else
@@ -443,7 +441,7 @@ void	__zbx_mutex_lock(const char *filename, int line, zbx_mutex_t mutex)
 			exit(EXIT_FAILURE);
 		default:
 			zbx_error("[file:'%s',line:%d] lock failed: %s",
-				filename, line, strerror_from_system(GetLastError()));
+				filename, line, zbx_strerror_from_system(GetLastError()));
 			exit(EXIT_FAILURE);
 	}
 #else
@@ -497,7 +495,7 @@ void	__zbx_mutex_unlock(const char *filename, int line, zbx_mutex_t mutex)
 	if (0 == ReleaseMutex(mutex))
 	{
 		zbx_error("[file:'%s',line:%d] unlock failed: %s",
-				filename, line, strerror_from_system(GetLastError()));
+				filename, line, zbx_strerror_from_system(GetLastError()));
 		exit(EXIT_FAILURE);
 	}
 #else
@@ -541,7 +539,7 @@ void	zbx_mutex_destroy(zbx_mutex_t *mutex)
 		return;
 
 	if (0 == CloseHandle(*mutex))
-		zbx_error("error on mutex destroying: %s", strerror_from_system(GetLastError()));
+		zbx_error("error on mutex destroying: %s", zbx_strerror_from_system(GetLastError()));
 #endif
 	*mutex = ZBX_MUTEX_NULL;
 }

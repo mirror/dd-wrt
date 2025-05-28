@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -30,8 +25,8 @@ use Zabbix\Widgets\Fields\{
 	CWidgetFieldCheckBox,
 	CWidgetFieldCheckBoxList,
 	CWidgetFieldColor,
-	CWidgetFieldIntegerBox,
 	CWidgetFieldMultiSelectItem,
+	CWidgetFieldMultiSelectOverrideHost,
 	CWidgetFieldRadioButtonList,
 	CWidgetFieldSelect,
 	CWidgetFieldTimeZone
@@ -44,12 +39,23 @@ use Widgets\Clock\Widget;
  */
 class WidgetForm extends CWidgetForm {
 
-	private const SIZE_PERCENT_MIN = 1;
-	private const SIZE_PERCENT_MAX = 100;
+	public function validate(bool $strict = false): array {
+		$errors = parent::validate($strict);
 
-	private const DEFAULT_DATE_SIZE = 20;
-	private const DEFAULT_TIME_SIZE = 30;
-	private const DEFAULT_TIMEZONE_SIZE = 20;
+		if ($errors) {
+			return $errors;
+		}
+
+		if ($this->getFieldValue('time_type') == TIME_TYPE_HOST && !$this->getFieldValue('itemid')) {
+			$errors[] = _s('Invalid parameter "%1$s": %2$s.', _('Item'), _('cannot be empty'));
+		}
+
+		if ($this->getFieldValue('clock_type') == Widget::TYPE_DIGITAL && !$this->getFieldValue('show')) {
+			$errors[] = _s('Invalid parameter "%1$s": %2$s.', _('Show'), _('at least one option must be selected'));
+		}
+
+		return $errors;
+	}
 
 	public function addFields(): self {
 		$time_type = array_key_exists('time_type', $this->values) ? $this->values['time_type'] : null;
@@ -62,11 +68,10 @@ class WidgetForm extends CWidgetForm {
 					TIME_TYPE_HOST => _('Host time')
 				]))->setDefault(TIME_TYPE_LOCAL)
 			)
-			->addField($time_type == TIME_TYPE_HOST
-				? (new CWidgetFieldMultiSelectItem('itemid', _('Item'), $this->templateid))
-					->setFlags(CWidgetField::FLAG_NOT_EMPTY | CWidgetField::FLAG_LABEL_ASTERISK)
+			->addField(
+				(new CWidgetFieldMultiSelectItem('itemid', _('Item')))
+					->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
 					->setMultiple(false)
-				: null
 			)
 			->addField(
 				(new CWidgetFieldRadioButtonList('clock_type', _('Clock type'), [
@@ -84,24 +89,13 @@ class WidgetForm extends CWidgetForm {
 					->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
 			)
 			->addField(
-				new CWidgetFieldCheckBox('adv_conf', _('Advanced configuration'))
-			)
-			->addField(
 				(new CWidgetFieldColor('bg_color', _('Background color')))->allowInherited()
-			)
-			->addField(
-				(new CWidgetFieldIntegerBox('date_size', _('Size'), self::SIZE_PERCENT_MIN, self::SIZE_PERCENT_MAX))
-					->setDefault(self::DEFAULT_DATE_SIZE)
 			)
 			->addField(
 				new CWidgetFieldCheckBox('date_bold', _('Bold'))
 			)
 			->addField(
 				(new CWidgetFieldColor('date_color', _('Color')))->allowInherited()
-			)
-			->addField(
-				(new CWidgetFieldIntegerBox('time_size', _('Size'), self::SIZE_PERCENT_MIN, self::SIZE_PERCENT_MAX))
-					->setDefault(self::DEFAULT_TIME_SIZE)
 			)
 			->addField(
 				new CWidgetFieldCheckBox('time_bold', _('Bold'))
@@ -119,10 +113,6 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(Widget::HOUR_24)
 			)
 			->addField(
-				(new CWidgetFieldIntegerBox('tzone_size', _('Size'), self::SIZE_PERCENT_MIN, self::SIZE_PERCENT_MAX))
-					->setDefault(self::DEFAULT_TIMEZONE_SIZE)
-			)
-			->addField(
 				new CWidgetFieldCheckBox('tzone_bold', _('Bold'))
 			)
 			->addField(
@@ -137,6 +127,9 @@ class WidgetForm extends CWidgetForm {
 					Widget::TIMEZONE_SHORT => _('Short'),
 					Widget::TIMEZONE_FULL => _('Full')
 				]))->setDefault(Widget::TIMEZONE_SHORT)
+			)
+			->addField(
+				new CWidgetFieldMultiSelectOverrideHost()
 			);
 	}
 }

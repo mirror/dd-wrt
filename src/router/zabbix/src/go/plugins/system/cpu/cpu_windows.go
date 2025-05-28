@@ -1,32 +1,29 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package cpu
 
 import (
 	"errors"
+	"sync"
+	"time"
 	"unsafe"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"git.zabbix.com/ap/plugin-support/zbxerr"
-	"zabbix.com/pkg/win32"
+	"golang.zabbix.com/agent2/pkg/win32"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
+	"golang.zabbix.com/sdk/zbxerr"
 )
 
 const (
@@ -42,6 +39,8 @@ type Plugin struct {
 	plugin.Base
 	cpus      []*cpuUnit
 	collector *pdhCollector
+	cpusMu    sync.Mutex
+	stop      chan struct{}
 }
 
 func init() {
@@ -94,7 +93,7 @@ func numCPU() (numCpu int) {
 	return
 }
 
-func (p *Plugin) getCpuLoad(params []string) (result interface{}, err error) {
+func (p *Plugin) getCPULoad(params []string) (result any, err error) {
 	split := 1
 
 	period := historyIndex(defaultIndex)
@@ -118,10 +117,13 @@ func (p *Plugin) getCpuLoad(params []string) (result interface{}, err error) {
 		return nil, zbxerr.ErrorTooManyParameters
 	}
 
+	p.cpusMu.Lock()
+	defer p.cpusMu.Unlock()
+
 	return p.cpus[0].counterAverage(counterLoad, period, split), nil
 }
 
-func (p *Plugin) Collect() (err error) {
+func (p *Plugin) collectCpuData() (err error) {
 	ok, err := p.collector.collect()
 	if err != nil || !ok {
 		return
@@ -136,6 +138,7 @@ func (p *Plugin) Collect() (err error) {
 		}
 		slot.util += p.collector.cpuUtil(i)
 
+		p.cpusMu.Lock()
 		if cpu.tail = cpu.tail.inc(); cpu.tail == cpu.head {
 			cpu.head = cpu.head.inc()
 		}
@@ -143,6 +146,7 @@ func (p *Plugin) Collect() (err error) {
 		// can be added to it resulting in incrementing counter
 		nextSlot := &cpu.history[cpu.tail]
 		*nextSlot = *slot
+		p.cpusMu.Unlock()
 	}
 	return
 }
@@ -155,11 +159,36 @@ func (p *Plugin) Start() {
 	}
 	p.cpus = p.newCpus(numCpus)
 	p.collector.open(numCpus, numGroups)
+
+	p.stop = make(chan struct{})
+
+	go func() {
+		t := time.NewTicker(1 * time.Second)
+		defer t.Stop()
+		for {
+			select {
+			case <-p.stop:
+				return
+			case <-t.C:
+				p.Debugf("starting to collect CPU performance data")
+
+				err := p.collectCpuData()
+				if err != nil {
+					p.Warningf("failed to get CPU performance data: '%s'", err)
+					continue
+				}
+
+				p.Debugf("collected CPU performance data")
+			}
+		}
+	}()
 }
 
 func (p *Plugin) Stop() {
 	p.collector.close()
 	p.cpus = nil
+
+	p.stop <- struct{}{}
 }
 
 func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider) (result interface{}, err error) {
@@ -171,7 +200,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 	case "system.cpu.discovery":
 		return p.getCpuDiscovery(params)
 	case "system.cpu.load":
-		return p.getCpuLoad(params)
+		return p.getCPULoad(params)
 	case "system.cpu.num":
 		if len(params) > 0 && params[0] == "max" {
 			return nil, errors.New("Invalid first parameter.")
@@ -182,4 +211,10 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 	default:
 		return nil, plugin.UnsupportedMetricError
 	}
+}
+
+func (p *Plugin) getCounterAverage(cpu *cpuUnit, counter cpuCounter, period historyIndex) any {
+	p.cpusMu.Lock()
+	defer p.cpusMu.Unlock()
+	return cpu.counterAverage(counter, period, 1)
 }

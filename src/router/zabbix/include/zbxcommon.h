@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_COMMON_H
@@ -76,10 +71,6 @@
 #define OFF	0
 
 #if defined(_WINDOWS)
-#	define	ZBX_SERVICE_NAME_LEN	64
-extern char ZABBIX_SERVICE_NAME[ZBX_SERVICE_NAME_LEN];
-extern char ZABBIX_EVENT_SOURCE[ZBX_SERVICE_NAME_LEN];
-
 #	pragma warning (disable: 4996)	/* warning C4996: <function> was declared deprecated */
 #endif
 
@@ -104,9 +95,12 @@ const char	*zbx_result_string(int result);
 
 #define ZBX_MAX_UINT64		(~__UINT64_C(0))
 #define ZBX_MAX_UINT64_LEN	21
+#define ZBX_MAX_UINT32_LEN	11
 #define ZBX_MAX_DOUBLE_LEN	24
 
 #define ZBX_SIZE_T_MAX	(~(size_t)0)
+
+#define ZBX_MALLOC_TRIM (128 * ZBX_KIBIBYTE)
 
 /******************************************************************************
  *                                                                            *
@@ -146,25 +140,10 @@ typedef enum
 	ITEM_TYPE_DEPENDENT,
 	ITEM_TYPE_HTTPAGENT,
 	ITEM_TYPE_SNMP,
-	ITEM_TYPE_SCRIPT	/* 21 */
+	ITEM_TYPE_SCRIPT,
+	ITEM_TYPE_BROWSER	/* 22 */
 }
 zbx_item_type_t;
-
-typedef enum
-{
-	INTERFACE_TYPE_UNKNOWN = 0,
-	INTERFACE_TYPE_AGENT,
-	INTERFACE_TYPE_SNMP,
-	INTERFACE_TYPE_IPMI,
-	INTERFACE_TYPE_JMX,
-	INTERFACE_TYPE_OPT = 254,
-	INTERFACE_TYPE_ANY = 255
-}
-zbx_interface_type_t;
-const char	*zbx_interface_type_string(zbx_interface_type_t type);
-
-#define INTERFACE_TYPE_COUNT	4	/* number of interface types */
-extern const int	INTERFACE_TYPE_PRIORITY[INTERFACE_TYPE_COUNT];
 
 #define SNMP_BULK_DISABLED	0
 #define SNMP_BULK_ENABLED	1
@@ -218,7 +197,8 @@ typedef enum
 	DOBJECT_STATUS_UP = 0,
 	DOBJECT_STATUS_DOWN,
 	DOBJECT_STATUS_DISCOVER,
-	DOBJECT_STATUS_LOST
+	DOBJECT_STATUS_LOST,
+	DOBJECT_STATUS_FINALIZED
 }
 zbx_dstatus_t;
 
@@ -230,9 +210,9 @@ typedef enum
 	ITEM_VALUE_TYPE_LOG,
 	ITEM_VALUE_TYPE_UINT64,
 	ITEM_VALUE_TYPE_TEXT,
-	/* the number of defined value types */
-	ITEM_VALUE_TYPE_MAX,
-	ITEM_VALUE_TYPE_NONE,
+	ITEM_VALUE_TYPE_BIN,	/* Last real value. In some places it is also used in size of array or */
+				/* upper bound for iteration. Do not forget to update when adding new types. */
+	ITEM_VALUE_TYPE_NONE	/* Artificial value, not written into DB, used internally in server. */
 }
 zbx_item_value_type_t;
 const char	*zbx_item_value_type_string(zbx_item_value_type_t value_type);
@@ -249,12 +229,13 @@ zbx_log_value_t;
 
 /* value for not supported items */
 #define ZBX_NOTSUPPORTED	"ZBX_NOTSUPPORTED"
+/* value for item not having any data */
+#define ZBX_NODATA		"ZBX_NODATA"
 /* the error message for not supported items when reason is unknown */
 #define ZBX_NOTSUPPORTED_MSG	"Unknown error."
 
 /* Zabbix Agent non-critical error (agents older than 2.0) */
 #define ZBX_ERROR		"ZBX_ERROR"
-
 
 /* program type */
 #define ZBX_PROGRAM_TYPE_SERVER		0x01
@@ -265,6 +246,9 @@ zbx_log_value_t;
 #define ZBX_PROGRAM_TYPE_SENDER		0x10
 #define ZBX_PROGRAM_TYPE_GET		0x20
 const char	*get_program_type_string(unsigned char program_type);
+
+#define ZBX_PROGRAM_VARIANT_AGENT	1
+#define ZBX_PROGRAM_VARIANT_AGENT2	2
 
 /* process type */
 #define ZBX_PROCESS_TYPE_POLLER			0
@@ -306,13 +290,19 @@ const char	*get_program_type_string(unsigned char program_type);
 #define ZBX_PROCESS_TYPE_ODBCPOLLER		36
 #define ZBX_PROCESS_TYPE_CONNECTORMANAGER	37
 #define ZBX_PROCESS_TYPE_CONNECTORWORKER	38
-#define ZBX_PROCESS_TYPE_COUNT			39	/* number of process types */
+#define ZBX_PROCESS_TYPE_DISCOVERYMANAGER	39
+#define ZBX_PROCESS_TYPE_HTTPAGENT_POLLER	40
+#define ZBX_PROCESS_TYPE_AGENT_POLLER		41
+#define ZBX_PROCESS_TYPE_SNMP_POLLER		42
+#define ZBX_PROCESS_TYPE_INTERNAL_POLLER	43
+#define ZBX_PROCESS_TYPE_DBCONFIGWORKER		44
+#define ZBX_PROCESS_TYPE_PG_MANAGER		45
+#define ZBX_PROCESS_TYPE_BROWSERPOLLER		46
+#define ZBX_PROCESS_TYPE_HA_MANAGER		47
+#define ZBX_PROCESS_TYPE_COUNT			48	/* number of process types */
 
 /* special processes that are not present worker list */
-#define ZBX_PROCESS_TYPE_EXT_FIRST		126
-#define ZBX_PROCESS_TYPE_HA_MANAGER		126
-#define ZBX_PROCESS_TYPE_MAIN			127
-#define ZBX_PROCESS_TYPE_EXT_LAST		127
+#define ZBX_PROCESS_TYPE_MAIN			126
 
 #define ZBX_PROCESS_TYPE_UNKNOWN		255
 
@@ -345,40 +335,8 @@ typedef enum
 }
 zbx_user_permission_t;
 
-typedef struct
-{
-	unsigned char	type;
-	unsigned char	execute_on;
-	char		*port;
-	unsigned char	authtype;
-	char		*username;
-	char		*password;
-	char		*publickey;
-	char		*privatekey;
-	char		*command;
-	char		*command_orig;
-	zbx_uint64_t	scriptid;
-	unsigned char	host_access;
-	int		timeout;
-}
-zbx_script_t;
-
-#define ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT	0
-#define ZBX_SCRIPT_TYPE_IPMI		1
-#define ZBX_SCRIPT_TYPE_SSH		2
-#define ZBX_SCRIPT_TYPE_TELNET		3
-#define ZBX_SCRIPT_TYPE_WEBHOOK		5
-
-#define ZBX_SCRIPT_SCOPE_ACTION	1
-#define ZBX_SCRIPT_SCOPE_HOST	2
-#define ZBX_SCRIPT_SCOPE_EVENT	4
-
-#define ZBX_SCRIPT_EXECUTE_ON_AGENT	0
-#define ZBX_SCRIPT_EXECUTE_ON_SERVER	1
-#define ZBX_SCRIPT_EXECUTE_ON_PROXY	2	/* fall back to execution on server if target not monitored by proxy */
-
 #define POLLER_DELAY		5
-#define DISCOVERER_DELAY	60
+#define DISCOVERER_DELAY	5
 
 #define HOUSEKEEPER_STARTUP_DELAY	30	/* in minutes */
 
@@ -408,6 +366,12 @@ char	*zbx_strdup2(const char *filename, int line, char *old, const char *str);
 
 void	*zbx_guaranteed_memset(void *v, int c, size_t n);
 
+#if defined(_WINDOWS) || defined(__MINGW32__)
+#	define zbx_get_thread_id()	(long int)GetCurrentThreadId()
+#else
+#	define zbx_get_thread_id()	(long int)getpid()
+#endif
+
 #define zbx_free(ptr)		\
 				\
 do				\
@@ -432,39 +396,44 @@ do				\
 }				\
 while (0)
 
+void	zbx_this_should_never_happen_backtrace(void);
+
 #define THIS_SHOULD_NEVER_HAPPEN										\
 														\
 do														\
 {														\
-	zbx_error("ERROR [file and function: <%s,%s>, revision:%s, line:%d] Something impossible has just"	\
-			" happened.", __FILE__, __func__, ZABBIX_REVISION, __LINE__);				\
-	zbx_backtrace();											\
+	zbx_this_should_never_happen_backtrace();								\
+	zbx_error("ERROR [file and function: <%s,%s>, revision:%s, line:%d] Something unexpected has just "	\
+			"happened.", __FILE__, __func__, ZABBIX_REVISION, __LINE__);				\
 }														\
 while (0)
 
-/* to avoid dependency on libzbxnix.a */
-#define	THIS_SHOULD_NEVER_HAPPEN_NO_BACKTRACE									\
-	zbx_error("ERROR [file and function: <%s,%s>, revision:%s, line:%d] Something impossible has just"	\
-			" happened.", __FILE__, __func__, ZABBIX_REVISION, __LINE__);				\
-
-extern const char	*progname;
-extern const char	title_message[];
-extern const char	syslog_app_name[];
-extern const char	*usage_message[];
-extern const char	*help_message[];
+#ifdef HAVE___VA_ARGS__
+#	define THIS_SHOULD_NEVER_HAPPEN_MSG(...)								\
+														\
+	do													\
+	{													\
+		THIS_SHOULD_NEVER_HAPPEN;									\
+		zbx_error(__VA_ARGS__);									\
+	}													\
+	while (0)
+#else
+#	define THIS_SHOULD_NEVER_HAPPEN_MSG									\
+			THIS_SHOULD_NEVER_HAPPEN;								\
+			zbx_error
+#endif
 
 #define ARRSIZE(a)	(sizeof(a) / sizeof(*a))
 
-void	zbx_help(void);
-void	zbx_usage(void);
-void	zbx_version(void);
+void	zbx_print_version(const char *title_message);
 
-const char	*get_program_name(const char *path);
+const char		*get_program_name(const char *path);
 typedef unsigned char	(*zbx_get_program_type_f)(void);
 typedef const char	*(*zbx_get_progname_f)(void);
 typedef int		(*zbx_get_config_forks_f)(unsigned char process_type);
 typedef const char	*(*zbx_get_config_str_f)(void);
 typedef int		(*zbx_get_config_int_f)(void);
+typedef void		(*zbx_backtrace_f)(void);
 
 typedef enum
 {
@@ -478,10 +447,12 @@ typedef enum
 	ZBX_TASK_INSTALL_SERVICE,
 	ZBX_TASK_UNINSTALL_SERVICE,
 	ZBX_TASK_START_SERVICE,
-	ZBX_TASK_STOP_SERVICE
+	ZBX_TASK_STOP_SERVICE,
+	ZBX_TASK_SET_SERVICE_STARTUP_TYPE,
 #else
-	ZBX_TASK_RUNTIME_CONTROL
+	ZBX_TASK_RUNTIME_CONTROL,
 #endif
+	ZBX_TASK_TEST_CONFIG
 }
 zbx_task_t;
 
@@ -496,12 +467,16 @@ typedef enum
 }
 zbx_httptest_auth_t;
 
-#define ZBX_TASK_FLAG_MULTIPLE_AGENTS	0x01
-#define ZBX_TASK_FLAG_FOREGROUND	0x02
-
 typedef struct
 {
 	zbx_task_t	task;
+#define ZBX_TASK_FLAG_MULTIPLE_AGENTS	0x01
+#define ZBX_TASK_FLAG_FOREGROUND	0x02
+#ifdef _WINDOWS
+	#define ZBX_TASK_FLAG_SERVICE_ENABLED		0x04
+	#define ZBX_TASK_FLAG_SERVICE_AUTOSTART		0x08
+	#define ZBX_TASK_FLAG_SERVICE_AUTOSTART_DELAYED	0x10
+#endif
 	unsigned int	flags;
 	int		data;
 	char		*opts;
@@ -557,26 +532,42 @@ zbx_proxy_suppress_t;
 #define ZBX_JAN_1970_IN_SEC	2208988800.0	/* 1970 - 1900 in seconds */
 
 #define ZBX_MAX_RECV_DATA_SIZE		(1 * ZBX_GIBIBYTE)
-#if defined(_WINDOWS)
-#define ZBX_MAX_RECV_LARGE_DATA_SIZE	(1 * ZBX_GIBIBYTE)
-#else
+#if (4 < SIZEOF_SIZE_T)
 #define ZBX_MAX_RECV_LARGE_DATA_SIZE	(__UINT64_C(16) * ZBX_GIBIBYTE)
+#else
+#define ZBX_MAX_RECV_LARGE_DATA_SIZE	(1 * ZBX_GIBIBYTE)
 #endif
 
 /* max length of base64 data */
 #define ZBX_MAX_B64_LEN		(16 * ZBX_KIBIBYTE)
 
-#define ZBX_STRQUOTE_DEFAULT		1
-#define ZBX_STRQUOTE_SKIP_BACKSLASH	0
-
 /* string functions that could not be moved into libzbxstr.a because they */
 /* are used by libzbxcommon.a */
 
-/* used by log which will be part of common*/
+/* used by log which will be part of common */
 #if defined(__GNUC__) || defined(__clang__)
 #	define __zbx_attr_format_printf(idx1, idx2) __attribute__((__format__(__printf__, (idx1), (idx2))))
+#	if defined(HAVE_TESTS)
+#		define	__zbx_attr_weak		__attribute__((weak))
+#		define	__zbx_static
+#	endif
 #else
 #	define __zbx_attr_format_printf(idx1, idx2)
+#endif
+
+/* function override support for mock tests */
+
+#if (defined(__GNUC__) || defined(__clang__)) && defined(HAVE_TESTS)
+#	define	__zbx_attr_weak		__attribute__((weak))
+#	define	__zbx_static
+#endif
+
+#if !defined(__zbx_attr_weak)
+#	define __zbx_attr_weak
+#endif
+
+#if !defined(__zbx_static)
+#	define	__zbx_static	static
 #endif
 
 /* used by cuid and also by log */
@@ -592,6 +583,8 @@ int	zbx_hpux_vsnprintf_is_c99(void);
 
 /* used by log */
 size_t	zbx_vsnprintf(char *str, size_t count, const char *fmt, va_list args);
+
+int	zbx_vsnprintf_check_len(const char *fmt, va_list args);
 
 /* used by log */
 char	*zbx_dsprintf(char *dest, const char *f, ...) __zbx_attr_format_printf(2, 3);
@@ -613,16 +606,17 @@ wchar_t	*zbx_oemcp_to_unicode(const char *oemcp_string);
 /* string functions that could not be moved into libzbxstr.a because they */
 /* are used by libzbxcommon.a END */
 
-/* future proctitle library */
+char	**zbx_setproctitle_init(int argc, char **argv);
 void	zbx_setproctitle(const char *fmt, ...) __zbx_attr_format_printf(1, 2);
-/* future proctitle library END */
+void	zbx_setproctitle_deinit(void);
+#if !defined(_WINDOWS) && !defined(__MINGW32__)
+void	zbx_unsetenv(const char *envname);
+#endif
 
 void	zbx_error(const char *fmt, ...) __zbx_attr_format_printf(1, 2);
 
 /* misc functions */
 int	zbx_validate_hostname(const char *hostname);
-
-void	zbx_backtrace(void);
 
 int	get_nearestindex(const void *p, size_t sz, int num, zbx_uint64_t id);
 int	uint64_array_add(zbx_uint64_t **values, int *alloc, int *num, zbx_uint64_t value, int alloc_step);
@@ -636,41 +630,11 @@ void	zbx_wmi_get(const char *wmi_namespace, const char *wmi_query, double timeou
 #if defined(_WINDOWS) || defined(__MINGW32__)
 typedef struct __stat64	zbx_stat_t;
 int	__zbx_stat(const char *path, zbx_stat_t *buf);
-int	__zbx_open(const char *pathname, int flags);
 #else
 typedef struct stat	zbx_stat_t;
 #endif	/* _WINDOWS */
 
-typedef struct
-{
-	zbx_fs_time_t	modification_time;	/* time of last modification */
-	zbx_fs_time_t	access_time;		/* time of last access */
-	zbx_fs_time_t	change_time;		/* time of last status change */
-}
-zbx_file_time_t;
-
-int	zbx_get_file_time(const char *path, int sym, zbx_file_time_t *time);
-void	zbx_find_cr_lf_szbyte(const char *encoding, const char **cr, const char **lf, size_t *szbyte);
-char	*zbx_find_buf_newline(char *p, char **p_next, const char *p_end, const char *cr, const char *lf,
-		size_t szbyte);
-#define ZBX_READ_ERR		-1
-#define ZBX_READ_WRONG_ENCODING	-2
-int	zbx_read_text_line_from_file(int fd, char *buf, size_t count, const char *encoding);
-int	zbx_is_regular_file(const char *path);
-char	*zbx_fgets(char *buffer, int size, FILE *fp);
-int	zbx_write_all(int fd, const char *buf, size_t n);
-
-ssize_t	zbx_buf_readln(int fd, char *buf, size_t bufsz, const char *encoding, char **value, void **saveptr);
-
 int	MAIN_ZABBIX_ENTRY(int flags);
-
-zbx_uint64_t	zbx_letoh_uint64(zbx_uint64_t data);
-zbx_uint64_t	zbx_htole_uint64(zbx_uint64_t data);
-
-zbx_uint32_t	zbx_letoh_uint32(zbx_uint32_t data);
-zbx_uint32_t	zbx_htole_uint32(zbx_uint32_t data);
-
-unsigned char	get_interface_type_by_item_type(unsigned char type);
 
 #define ZBX_SESSION_ACTIVE		0
 #define ZBX_SESSION_PASSIVE		1
@@ -736,54 +700,15 @@ int	zbx_alarm_timed_out(void);
 #define ZBX_PREPROC_STR_REPLACE			25
 #define ZBX_PREPROC_VALIDATE_NOT_SUPPORTED	26
 #define ZBX_PREPROC_XML_TO_JSON			27
-#define ZBX_PREPROC_SNMP_WALK_TO_VALUE		28
+#define ZBX_PREPROC_SNMP_WALK_VALUE		28
 #define ZBX_PREPROC_SNMP_WALK_TO_JSON		29
+#define ZBX_PREPROC_SNMP_GET_VALUE		30
 
 /* custom on fail actions */
 #define ZBX_PREPROC_FAIL_DEFAULT	0
 #define ZBX_PREPROC_FAIL_DISCARD_VALUE	1
 #define ZBX_PREPROC_FAIL_SET_VALUE	2
 #define ZBX_PREPROC_FAIL_SET_ERROR	3
-
-#define ZBX_HTTPFIELD_HEADER		0
-#define ZBX_HTTPFIELD_VARIABLE		1
-#define ZBX_HTTPFIELD_POST_FIELD	2
-#define ZBX_HTTPFIELD_QUERY_FIELD	3
-
-#define ZBX_POSTTYPE_RAW		0
-#define ZBX_POSTTYPE_FORM		1
-#define ZBX_POSTTYPE_JSON		2
-#define ZBX_POSTTYPE_XML		3
-#define ZBX_POSTTYPE_NDJSON		4
-
-#define ZBX_RETRIEVE_MODE_CONTENT	0
-#define ZBX_RETRIEVE_MODE_HEADERS	1
-#define ZBX_RETRIEVE_MODE_BOTH		2
-
-void	__zbx_update_env(double time_now);
-
-#ifdef _WINDOWS
-#define zbx_update_env(info, time_now)			\
-							\
-do							\
-{							\
-	__zbx_update_env(time_now);			\
-	ZBX_UNUSED(info);				\
-}							\
-while (0)
-#else
-#define zbx_update_env(info, time_now)			\
-							\
-do							\
-{							\
-	__zbx_update_env(time_now);			\
-	zbx_prof_update(info, time_now);		\
-}							\
-while (0)
-#endif
-
-#define ZBX_PROBLEM_SUPPRESSED_FALSE	0
-#define ZBX_PROBLEM_SUPPRESSED_TRUE	1
 
 /* includes terminating '\0' */
 #define CUID_LEN	26
@@ -820,6 +745,72 @@ char	*zbx_strerror(int errnum);
 #	else
 #		define zbx_sigmask	sigprocmask
 #	endif
+#endif
+
+#define ZBX_GET_CONFIG_VAR(type, varname, defvalue) \
+static type	varname = defvalue; \
+static type	get_##varname(void) \
+{ \
+	return varname; \
+}
+
+#define ZBX_GET_CONFIG_VAR2(type1, type2, varname, defvalue) \
+static	type1	varname = defvalue; \
+static	type2	get_##varname(void) \
+{ \
+	return varname; \
+}
+
+#define LOG_LEVEL_EMPTY		0	/* printing nothing (if not LOG_LEVEL_INFORMATION set) */
+#define LOG_LEVEL_CRIT		1
+#define LOG_LEVEL_ERR		2
+#define LOG_LEVEL_WARNING	3
+#define LOG_LEVEL_DEBUG		4
+#define LOG_LEVEL_TRACE		5
+
+#define LOG_LEVEL_INFORMATION	127	/* printing in any case no matter what level set */
+
+#define ZBX_CHECK_LOG_LEVEL(level)			\
+		((LOG_LEVEL_INFORMATION != (level) &&	\
+		((level) > zbx_get_log_level() || LOG_LEVEL_EMPTY == (level))) ? FAIL : SUCCEED)
+
+#ifdef HAVE___VA_ARGS__
+#	define ZBX_ZABBIX_LOG_CHECK
+#	define zabbix_log(level, ...)									\
+													\
+	do												\
+	{												\
+		if (SUCCEED == ZBX_CHECK_LOG_LEVEL(level))						\
+			zbx_log_handle(level, __VA_ARGS__);						\
+	}												\
+	while (0)
+#else
+#	define zabbix_log zbx_log_handle
+#endif
+
+typedef void (*zbx_log_func_t)(int level, const char *fmt, va_list args);
+
+void	zbx_init_library_common(zbx_log_func_t log_func, zbx_get_progname_f get_progname, zbx_backtrace_f backtrace);
+void	zbx_log_handle(int level, const char *fmt, ...) __zbx_attr_format_printf(2, 3);
+int	zbx_get_log_level(void);
+void	zbx_set_log_level(int level);
+const char	*zbx_get_log_component_name(void);
+
+#ifndef _WINDOWS
+void		zabbix_increase_log_level(void);
+void		zabbix_decrease_log_level(void);
+void		zabbix_report_log_level_change(void);
+const char	*zabbix_get_log_level_string(void);
+
+typedef struct
+{
+	int		level;
+	const char	*name;
+}
+zbx_log_component_t;
+
+void	zbx_set_log_component(const char *name, zbx_log_component_t *component);
+void	zbx_change_component_log_level(zbx_log_component_t *component, int direction);
 #endif
 
 #endif

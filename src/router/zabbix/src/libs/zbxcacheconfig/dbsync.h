@@ -1,26 +1,24 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_DBSYNC_H
 #define ZABBIX_DBSYNC_H
 
 #include "dbconfig.h"
+
+#include "zbxalgo.h"
+#include "zbxdb.h"
 
 /* no changes */
 #define ZBX_DBSYNC_ROW_NONE	0
@@ -40,13 +38,11 @@
 #define ZBX_DBSYNC_UPDATE_MAINTENANCE_GROUPS	__UINT64_C(0x0040)
 #define ZBX_DBSYNC_UPDATE_MACROS		__UINT64_C(0x0080)
 
-#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
-#	define ZBX_HOST_TLS_OFFSET	4
-#else
-#	define ZBX_HOST_TLS_OFFSET	0
-#endif
-
 #define ZBX_DBSYNC_TRIGGER_ERROR	0x80
+
+
+#define ZBX_DBSYNC_TYPE_DIFF		0
+#define ZBX_DBSYNC_TYPE_CHANGELOG	1
 
 /******************************************************************************
  *                                                                            *
@@ -60,7 +56,7 @@
  *           some columns.                                                    *
  *                                                                            *
  ******************************************************************************/
-typedef char **(*zbx_dbsync_preproc_row_func_t)(char **row);
+typedef char **(*zbx_dbsync_preproc_row_func_t)(zbx_dbsync_t *sync, char **row);
 
 typedef struct
 {
@@ -80,6 +76,9 @@ struct zbx_dbsync
 	/* the synchronization mode (see ZBX_DBSYNC_* defines) */
 	unsigned char			mode;
 
+
+	unsigned char			type;
+
 	/* the number of columns in diff */
 	int				columns_num;
 
@@ -90,7 +89,7 @@ struct zbx_dbsync
 	zbx_vector_ptr_t		rows;
 
 	/* the database result set for ZBX_DBSYNC_ALL mode */
-	DB_RESULT			dbresult;
+	zbx_db_result_t			dbresult;
 
 	/* the row preprocessing function */
 	zbx_dbsync_preproc_row_func_t	preproc_row_func;
@@ -102,19 +101,28 @@ struct zbx_dbsync
 	zbx_vector_ptr_t		columns;
 
 	/* statistics */
+	const char	*from;
 	zbx_uint64_t	add_num;
 	zbx_uint64_t	update_num;
 	zbx_uint64_t	remove_num;
+	double		start;
+	double		sql_time;
+	double		sync_time;
+	zbx_uint64_t	used;
+	zbx_int64_t	sync_size;
 };
 
-void	zbx_dbsync_env_init(ZBX_DC_CONFIG *cache);
+void	zbx_dbsync_env_init(zbx_dc_config_t *cache);
 int	zbx_dbsync_env_prepare(unsigned char mode);
 void	zbx_dbsync_env_flush_changelog(void);
 void	zbx_dbsync_env_clear(void);
 int	zbx_dbsync_env_changelog_num(void);
+int	zbx_dbsync_env_changelog_dbsyncs_new_records(void);
 
-void	zbx_dbsync_init(zbx_dbsync_t *sync, unsigned char mode);
+void	zbx_dbsync_init(zbx_dbsync_t *sync, const char *name, unsigned char mode);
+void	zbx_dbsync_init_changelog(zbx_dbsync_t *sync, const char *name, unsigned char mode);
 void	zbx_dbsync_clear(zbx_dbsync_t *sync);
+int	zbx_dbsync_get_row_num(const zbx_dbsync_t *sync);
 int	zbx_dbsync_next(zbx_dbsync_t *sync, zbx_uint64_t *rowid, char ***row, unsigned char *tag);
 
 int	zbx_dbsync_compare_config(zbx_dbsync_t *sync);
@@ -129,7 +137,6 @@ int	zbx_dbsync_compare_interfaces(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_item_discovery(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_items(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_template_items(zbx_dbsync_t *sync);
-int	zbx_dbsync_compare_prototype_items(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_triggers(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_trigger_dependency(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_functions(zbx_dbsync_t *sync);
@@ -164,5 +171,15 @@ void	zbx_dbsync_clear_user_macros(void);
 
 int	zbx_dbsync_compare_connectors(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_connector_tags(zbx_dbsync_t *sync);
+
+int	zbx_dbsync_compare_proxies(zbx_dbsync_t *sync);
+
+int	zbx_dbsync_prepare_proxy_group(zbx_dbsync_t *sync);
+int	zbx_dbsync_prepare_host_proxy(zbx_dbsync_t *sync);
+void	zbx_dcsync_sql_start(zbx_dbsync_t *sync);
+void	zbx_dcsync_sql_end(zbx_dbsync_t *sync);
+void	zbx_dcsync_sync_start(zbx_dbsync_t *sync, zbx_uint64_t used_size);
+void	zbx_dcsync_sync_end(zbx_dbsync_t *sync, zbx_uint64_t used_size);
+void	zbx_dcsync_stats_dump(const char *function_name);
 
 #endif /* BUILD_SRC_LIBS_ZBXDBCACHE_DBSYNC_H_ */

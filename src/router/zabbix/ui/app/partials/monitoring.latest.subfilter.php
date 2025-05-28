@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,8 +24,8 @@ $subfilters = $data['subfilters'];
 
 $subfilter_options = [];
 
-foreach (['hostids', 'tagnames', 'data'] as $key) {
-	if (($key === 'hostids' || $key === 'tagnames') && count($subfilters[$key]) == 0) {
+foreach (['hostids', 'tagnames', 'state', 'data'] as $key) {
+	if (($key === 'hostids' || $key === 'tagnames' || $key === 'state') && count($subfilters[$key]) == 0) {
 		$subfilter_options[$key] = null;
 
 		continue;
@@ -39,10 +34,17 @@ foreach (['hostids', 'tagnames', 'data'] as $key) {
 	$subfilter_options[$key] = [];
 
 	// Remove non-selected filter fields with 0 occurrences (for hosts and tag names).
-	if ($key === 'hostids' || $key === 'tagnames') {
+	if ($key === 'hostids' || $key === 'tagnames' || $key === 'state') {
 		$subfilters[$key] = array_filter($subfilters[$key], function ($field) {
 			return $field['selected'] || $field['count'] > 0;
 		});
+	}
+
+	if ($key === 'state'
+			&& (!$subfilters[$key] || (count($subfilters[$key]) == 1 && !current($subfilters[$key])['selected']))) {
+		$subfilter_options[$key] = null;
+
+		continue;
 	}
 
 	$subfilter_used = (bool) array_filter($subfilters[$key], function ($field) {
@@ -166,7 +168,8 @@ if (count($subfilters['tags']) > 0) {
 	if (!$tags_expanded && count($subfilter_options['tags']) > CControllerLatest::SUBFILTERS_TAG_VALUE_ROWS) {
 		$subfilter_options['tags'][] = (new CButton('expand_tag_values'))
 			->setAttribute('data-name', 'tags')
-			->addClass(ZBX_STYLE_ICON_WIZARD_ACTION);
+			->addClass(ZBX_STYLE_BTN_ICON)
+			->addClass(ZBX_ICON_MORE);
 	}
 }
 else {
@@ -204,6 +207,14 @@ else {
 			? [[
 				new CTag('h3', true, _('Tag values')),
 				$subfilter_options['tags']
+			]]
+			: null
+	)
+	->addRow(
+		$subfilter_options['state'] !== null
+			? [[
+				new CTag('h3', true, _('State')),
+				$subfilter_options['state']
 			]]
 			: null
 	)

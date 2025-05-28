@@ -1,30 +1,27 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxdbhigh.h"
 
-#include "log.h"
 #include "zbxalgo.h"
 #include "zbxdb.h"
 #include "zbxnum.h"
+#include "zbxstr.h"
 #include "zbx_trigger_constants.h"
 #include "zbx_host_constants.h"
+
+ZBX_PTR_VECTOR_IMPL(lld_override_operation, zbx_lld_override_operation_t*)
 
 void	zbx_lld_override_operation_free(zbx_lld_override_operation_t *override_operation)
 {
@@ -44,19 +41,19 @@ void	zbx_lld_override_operation_free(zbx_lld_override_operation_t *override_oper
  *                                                                            *
  * Purpose: load tag override operations from database                        *
  *                                                                            *
- * Parameters: overrideids - [IN] the lld overrideids, sorted                 *
- *             sql         - [IN/OUT] the sql query buffer                    *
- *             sql_alloc   - [IN/OUT] the sql query buffer size               *
- *             ops         - [IN/OUT] the lld override operations, sorted by  *
+ * Parameters: overrideids - [IN] lld overrideids, sorted                     *
+ *             sql         - [IN/OUT] sql query buffer                        *
+ *             sql_alloc   - [IN/OUT] sql query buffer size                   *
+ *             ops         - [IN/OUT] lld override operations, sorted by      *
  *                                    override_operationid                    *
  *                                                                            *
  ******************************************************************************/
 static void	lld_override_operations_load_tags(const zbx_vector_uint64_t *overrideids, char **sql, size_t *sql_alloc,
-		zbx_vector_ptr_t *ops)
+		zbx_vector_lld_override_operation_t *ops)
 {
 	size_t				sql_offset = 0;
-	DB_RESULT			result;
-	DB_ROW				row;
+	zbx_db_result_t			result;
+	zbx_db_row_t			row;
 	zbx_lld_override_operation_t	*op = NULL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
@@ -84,13 +81,13 @@ static void	lld_override_operations_load_tags(const zbx_vector_uint64_t *overrid
 		{
 			int	index;
 
-			if (FAIL == (index = zbx_vector_ptr_bsearch(ops, &override_operationid,
-					ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC)))
+			if (FAIL == (index = zbx_vector_ptr_bsearch((const zbx_vector_ptr_t *)ops,
+					(const void *)&override_operationid, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC)))
 			{
 				THIS_SHOULD_NEVER_HAPPEN;
 				continue;
 			}
-			op = (zbx_lld_override_operation_t *)ops->values[index];
+			op = ops->values[index];
 		}
 
 		tag = zbx_db_tag_create(row[1], row[2]);
@@ -105,19 +102,19 @@ static void	lld_override_operations_load_tags(const zbx_vector_uint64_t *overrid
  *                                                                            *
  * Purpose: load template lld override operations from database               *
  *                                                                            *
- * Parameters: overrideids - [IN] the lld overrideids, sorted                 *
- *             sql         - [IN/OUT] the sql query buffer                    *
- *             sql_alloc   - [IN/OUT] the sql query buffer size               *
- *             ops         - [IN/OUT] the lld override operations, sorted by  *
+ * Parameters: overrideids - [IN] lld overrideids, sorted                     *
+ *             sql         - [IN/OUT] sql query buffer                        *
+ *             sql_alloc   - [IN/OUT] sql query buffer size                   *
+ *             ops         - [IN/OUT] lld override operations, sorted by      *
  *                                    override_operationid                    *
  *                                                                            *
  ******************************************************************************/
 static void	lld_override_operations_load_templates(const zbx_vector_uint64_t *overrideids, char **sql,
-		size_t *sql_alloc, zbx_vector_ptr_t *ops)
+		size_t *sql_alloc, zbx_vector_lld_override_operation_t *ops)
 {
 	size_t				sql_offset = 0;
-	DB_RESULT			result;
-	DB_ROW				row;
+	zbx_db_result_t			result;
+	zbx_db_row_t			row;
 	zbx_lld_override_operation_t	*op = NULL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
@@ -143,13 +140,13 @@ static void	lld_override_operations_load_templates(const zbx_vector_uint64_t *ov
 		{
 			int	index;
 
-			if (FAIL == (index = zbx_vector_ptr_bsearch(ops, &override_operationid,
-					ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC)))
+			if (FAIL == (index = zbx_vector_ptr_bsearch((const zbx_vector_ptr_t *)ops,
+					(const void *)&override_operationid, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC)))
 			{
 				THIS_SHOULD_NEVER_HAPPEN;
 				continue;
 			}
-			op = (zbx_lld_override_operation_t *)ops->values[index];
+			op = ops->values[index];
 		}
 
 		ZBX_STR2UINT64(templateid, row[1]);
@@ -164,19 +161,19 @@ static void	lld_override_operations_load_templates(const zbx_vector_uint64_t *ov
  *                                                                            *
  * Purpose: load lld override operations from database                        *
  *                                                                            *
- * Parameters: overrideids - [IN] the lld overrideids, sorted                 *
- *             sql         - [IN/OUT] the sql query buffer                    *
- *             sql_alloc   - [IN/OUT] the sql query buffer size               *
- *             ops         - [OUT] the lld override operations, sorted by     *
+ * Parameters: overrideids - [IN] lld overrideids, sorted                     *
+ *             sql         - [IN/OUT] sql query buffer                        *
+ *             sql_alloc   - [IN/OUT] sql query buffer size                   *
+ *             ops         - [OUT] lld override operations, sorted by         *
  *                                    override_operationid                    *
  *                                                                            *
  ******************************************************************************/
 void	zbx_load_lld_override_operations(const zbx_vector_uint64_t *overrideids, char **sql, size_t *sql_alloc,
-		zbx_vector_ptr_t *ops)
+		zbx_vector_lld_override_operation_t *ops)
 {
 	size_t				sql_offset = 0;
-	DB_RESULT			result;
-	DB_ROW				row;
+	zbx_db_result_t			result;
+	zbx_db_row_t			row;
 	zbx_lld_override_operation_t	*override_operation = NULL;
 	zbx_uint64_t			object_mask = 0;
 
@@ -245,9 +242,9 @@ void	zbx_load_lld_override_operations(const zbx_vector_uint64_t *overrideids, ch
 		override_operation->inventory_mode = FAIL == zbx_db_is_null(row[11]) ? (signed char)atoi(row[11]) :
 				HOST_INVENTORY_COUNT;
 
-		zbx_vector_ptr_append(ops, override_operation);
+		zbx_vector_lld_override_operation_append(ops, override_operation);
 
-		object_mask |= (1 << override_operation->operationtype);
+		object_mask |= (__UINT64_C(1) << override_operation->operationtype);
 	}
 	zbx_db_free_result(result);
 

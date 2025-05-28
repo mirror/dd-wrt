@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -89,8 +84,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 					$range_time_parser = new CRangeTimeParser();
 
-					if ($this->fields_values['date_from'] !== ''
-							&& $range_time_parser->parse($this->fields_values['date_from']) == CParser::PARSE_SUCCESS) {
+					if ($this->fields_values['date_period']['from'] !== ''
+							&& $range_time_parser->parse($this->fields_values['date_period']['from']) == CParser::PARSE_SUCCESS) {
 						$period_from = $range_time_parser->getDateTime(true, $timezone)->getTimestamp();
 
 						if ($period_from < 0 || $period_from > ZBX_MAX_DATE) {
@@ -103,8 +98,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 						$period_from = null;
 					}
 
-					if ($this->fields_values['date_to'] !== ''
-							&& $range_time_parser->parse($this->fields_values['date_to']) == CParser::PARSE_SUCCESS) {
+					if ($this->fields_values['date_period']['to'] !== ''
+							&& $range_time_parser->parse($this->fields_values['date_period']['to']) == CParser::PARSE_SUCCESS) {
 						$period_to = $range_time_parser->getDateTime(false, $timezone)->getTimestamp();
 
 						if ($period_to < 0 || $period_to > ZBX_MAX_DATE) {

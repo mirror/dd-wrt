@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxcommon.h"
@@ -56,7 +51,9 @@ const char	*get_process_type_string(unsigned char proc_type)
 		case ZBX_PROCESS_TYPE_HISTSYNCER:
 			return "history syncer";
 		case ZBX_PROCESS_TYPE_DISCOVERER:
-			return "discoverer";
+			return "discovery worker";
+		case ZBX_PROCESS_TYPE_DISCOVERYMANAGER:
+			return "discovery manager";
 		case ZBX_PROCESS_TYPE_ALERTER:
 			return "alerter";
 		case ZBX_PROCESS_TYPE_TIMER:
@@ -115,6 +112,21 @@ const char	*get_process_type_string(unsigned char proc_type)
 			return "connector worker";
 		case ZBX_PROCESS_TYPE_MAIN:
 			return "main";
+		case ZBX_PROCESS_TYPE_HTTPAGENT_POLLER:
+			return "http agent poller";
+		case ZBX_PROCESS_TYPE_AGENT_POLLER:
+			return "agent poller";
+		case ZBX_PROCESS_TYPE_SNMP_POLLER:
+			return "snmp poller";
+		case ZBX_PROCESS_TYPE_INTERNAL_POLLER:
+			return "internal poller";
+		case ZBX_PROCESS_TYPE_DBCONFIGWORKER:
+			return "configuration syncer worker";
+		case ZBX_PROCESS_TYPE_PG_MANAGER:
+			return "proxy group manager";
+		case ZBX_PROCESS_TYPE_BROWSERPOLLER:
+			return "browser poller";
+			break;
 	}
 
 	THIS_SHOULD_NEVER_HAPPEN;
@@ -131,11 +143,8 @@ int	get_process_type_by_name(const char *proc_type_str)
 			return i;
 	}
 
-	for (i = ZBX_PROCESS_TYPE_EXT_FIRST; i <= ZBX_PROCESS_TYPE_EXT_LAST; i++)
-	{
-		if (0 == strcmp(proc_type_str, get_process_type_string((unsigned char)i)))
-			return i;
-	}
+	if (0 == strcmp(proc_type_str, get_process_type_string(ZBX_PROCESS_TYPE_MAIN)))
+		return ZBX_PROCESS_TYPE_MAIN;
 
 	return ZBX_PROCESS_TYPE_UNKNOWN;
 }
@@ -174,28 +183,10 @@ const char	*zbx_item_value_type_string(zbx_item_value_type_t value_type)
 			return "Numeric (unsigned)";
 		case ITEM_VALUE_TYPE_TEXT:
 			return "Text";
-		default:
-			return "unknown";
-	}
-}
-
-const char	*zbx_interface_type_string(zbx_interface_type_t type)
-{
-	switch (type)
-	{
-		case INTERFACE_TYPE_AGENT:
-			return "Zabbix agent";
-		case INTERFACE_TYPE_SNMP:
-			return "SNMP";
-		case INTERFACE_TYPE_IPMI:
-			return "IPMI";
-		case INTERFACE_TYPE_JMX:
-			return "JMX";
-		case INTERFACE_TYPE_OPT:
-			return "optional";
-		case INTERFACE_TYPE_ANY:
-			return "any";
-		case INTERFACE_TYPE_UNKNOWN:
+		case ITEM_VALUE_TYPE_BIN:
+			return "Binary";
+		case ITEM_VALUE_TYPE_NONE:
+			return "None";
 		default:
 			return "unknown";
 	}
@@ -218,6 +209,8 @@ const char	*zbx_result_string(int result)
 {
 	switch (result)
 	{
+		case SUCCEED_PARTIAL:
+			return "SUCCEED_PARTIAL";
 		case SUCCEED:
 			return "SUCCEED";
 		case FAIL:
@@ -238,6 +231,12 @@ const char	*zbx_result_string(int result)
 			return "SIG_ERROR";
 		case SYSINFO_RET_FAIL:
 			return "SYSINFO_RET_FAIL";
+		case CONNECT_ERROR:
+			return "CONNECT_ERROR";
+		case SEND_ERROR:
+			return "SEND_ERROR";
+		case RECV_ERROR:
+			return "RECV_ERROR";
 		default:
 			return "unknown";
 	}

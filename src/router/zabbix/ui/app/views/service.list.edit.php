@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,8 +20,6 @@
  */
 
 $this->addJsFile('layout.mode.js');
-$this->addJsFile('class.tagfilteritem.js');
-$this->addJsFile('class.calendar.js');
 
 $this->includeJsFile('service.list.js.php');
 
@@ -54,7 +47,9 @@ $filter = (new CFilter())
 if ($data['service'] !== null && !$data['is_filtered']) {
 	$filter
 		->addTab(
-			(new CLink(_('Info'), '#tab_info'))->addClass(ZBX_STYLE_BTN_INFO),
+			(new CLink(_('Info'), '#tab_info'))
+				->addClass(ZBX_STYLE_BTN)
+				->addClass(ZBX_ICON_CIRCLE_INFO),
 			(new CDiv())
 				->setId('tab_info')
 				->addClass(ZBX_STYLE_FILTER_CONTAINER)
@@ -125,14 +120,7 @@ $filter->addFilterTab(_('Filter'), [
 	->setControls(
 		(new CTag('nav', true,
 			(new CList())
-				->addItem(
-					(new CSimpleButton(_('Create service')))
-						->addClass('js-create-service')
-						->setAttribute('data-serviceid', $data['service'] !== null
-							? $data['service']['serviceid']
-							: null
-						)
-				)
+				->addItem((new CSimpleButton(_('Create service')))->addClass('js-create-service'))
 				->addItem(
 					(new CRadioButtonList('list_mode', ZBX_LIST_MODE_EDIT))
 						->addValue(_('View'), ZBX_LIST_MODE_VIEW)
@@ -148,7 +136,7 @@ $filter->addFilterTab(_('Filter'), [
 	->addItem($filter)
 	->addItem(new CPartial('service.list.edit', array_intersect_key($data, array_flip([
 		'can_monitor_problems', 'path', 'is_filtered', 'max_in_table', 'service', 'services', 'events', 'tags',
-		'paging', 'back_url'
+		'paging', 'return_url'
 	]))))
 	->show();
 
@@ -161,7 +149,7 @@ $filter->addFilterTab(_('Filter'), [
 		'parent_url' => $data['parent_url'],
 		'refresh_url' => $data['refresh_url'],
 		'refresh_interval' => $data['refresh_interval'],
-		'back_url' => $data['back_url']
+		'return_url' => $data['return_url']
 	]).');
 '))
 	->setOnDocumentReady()

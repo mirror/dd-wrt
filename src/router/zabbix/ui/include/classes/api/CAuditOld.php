@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -53,7 +48,7 @@ class CAuditOld {
 		CAudit::RESOURCE_MAP =>					['sysmapid', 'name', 'sysmaps', 'map'],
 		CAudit::RESOURCE_MEDIA_TYPE =>			['mediatypeid', 'name', 'media_type', 'mediatype'],
 		CAudit::RESOURCE_MODULE =>				['moduleid', 'id', 'module', 'module'],
-		CAudit::RESOURCE_PROXY =>				['proxyid', 'host', 'hosts', 'proxy'],
+		CAudit::RESOURCE_PROXY =>				['proxyid', 'name', 'proxy', 'proxy'],
 		CAudit::RESOURCE_SCENARIO =>			['httptestid', 'name', 'httptest', 'httptest'],
 		CAudit::RESOURCE_SCHEDULED_REPORT =>	['reportid', 'name', 'report', 'report'],
 		CAudit::RESOURCE_SCRIPT =>				['scriptid', 'name', 'scripts', 'script'],
@@ -77,7 +72,10 @@ class CAuditOld {
 			'conditions' => ['type' => ZBX_MACRO_TYPE_SECRET]
 		],
 		'hosts' => [
-			'fields' => ['tls_psk_identity' => true, 'tls_psk' => true]
+			'fields' => ['tls_psk_identity' => true, 'tls_psk' => true, 'ipmi_password' => true]
+		],
+		'httptest' => [
+			'fields' => ['http_password' => true, 'ssl_key_password' => true]
 		],
 		'media_type' => [
 			'fields' => ['passwd' => true]
@@ -132,7 +130,7 @@ class CAuditOld {
 	 * @param array  $objects_old
 	 */
 	public static function addBulk(string $userid, string $ip, string $username, int $action, int $resourcetype,
-			array $objects, array $objects_old = null) {
+			array $objects, ?array $objects_old = null) {
 		if (!array_key_exists($resourcetype, self::$supported_type)) {
 			return;
 		}

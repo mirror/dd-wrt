@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -131,7 +126,7 @@ class CAutoregistration extends CApiService {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	protected function validateUpdate(array &$autoreg, array &$db_autoreg = null): void {
+	protected function validateUpdate(array &$autoreg, ?array &$db_autoreg = null): void {
 		$api_input_rules = ['type' => API_OBJECT, 'fields' => [
 			'tls_accept' =>			['type' => API_INT32, 'in' => HOST_ENCRYPTION_NONE.':'.(HOST_ENCRYPTION_NONE | HOST_ENCRYPTION_PSK)],
 			'tls_psk_identity' =>	['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('config_autoreg_tls', 'tls_psk_identity')],
@@ -174,6 +169,19 @@ class CAutoregistration extends CApiService {
 				if (!array_key_exists($field_name, $autoreg) && $db_autoreg[$field_name] !== '') {
 					$autoreg[$field_name] = '';
 				}
+			}
+		}
+
+		if ($tls_accept & HOST_ENCRYPTION_PSK) {
+			$tls_psk_fields = array_flip(['tls_psk_identity', 'tls_psk']);
+
+			$psk_pair = array_intersect_key($autoreg, $tls_psk_fields);
+
+			if ($psk_pair) {
+				$psk_pair += array_intersect_key($db_autoreg, $tls_psk_fields);
+
+				CApiPskHelper::checkPskOfIdentityAmongHosts($psk_pair);
+				CApiPskHelper::checkPskOfIdentityAmongProxies($psk_pair);
 			}
 		}
 	}

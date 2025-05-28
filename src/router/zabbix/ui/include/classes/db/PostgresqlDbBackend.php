@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -139,31 +134,6 @@ class PostgresqlDbBackend extends DbBackend {
 	}
 
 	/**
-	* Check if database is using IEEE754 compatible double precision columns.
-	*
-	* @return bool
-	*/
-	public function isDoubleIEEE754() {
-		global $DB;
-
-		$conditions_or = [
-			'(table_name=\'history\' AND column_name=\'value\')',
-			'(table_name=\'trends\' AND column_name IN (\'value_min\', \'value_avg\', \'value_max\'))'
-		];
-
-		$sql =
-			'SELECT COUNT(*) cnt FROM information_schema.columns'.
-				' WHERE table_catalog='.zbx_dbstr($DB['DATABASE']).
-					' AND table_schema='.zbx_dbstr($DB['SCHEMA'] ? $DB['SCHEMA'] : 'public').
-					' AND data_type=\'double precision\''.
-					' AND ('.implode(' OR ', $conditions_or).')';
-
-		$result = DBfetch(DBselect($sql));
-
-		return (is_array($result) && array_key_exists('cnt', $result) && $result['cnt'] == 4);
-	}
-
-	/**
 	 * Check is current connection contain requested cipher list.
 	 *
 	 * @return bool
@@ -261,8 +231,6 @@ class PostgresqlDbBackend extends DbBackend {
 	/**
 	 * Check if tables have compressed data.
 	 *
-	 * @static
-	 *
 	 * @param array $tables  Tables list.
 	 *
 	 * @return bool
@@ -270,23 +238,6 @@ class PostgresqlDbBackend extends DbBackend {
 	public static function isCompressed(array $tables): bool {
 		if (CHousekeepingHelper::get(CHousekeepingHelper::DB_EXTENSION) != ZBX_DB_EXTENSION_TIMESCALEDB) {
 			return false;
-		}
-
-		$timescale_v1 = DBfetch(DBselect(
-			'SELECT NULL FROM pg_catalog.pg_class c'.
-			' JOIN pg_catalog.pg_namespace n'.
-			' ON n.oid=c.relnamespace'.
-			' WHERE n.nspname='.zbx_dbstr('timescaledb_information').
-			' AND c.relname='.zbx_dbstr('compressed_hypertable_stats')
-		));
-
-		if ($timescale_v1) {
-			$result = DBfetch(DBselect('SELECT coalesce(sum(number_compressed_chunks),0) chunks'.
-				' FROM timescaledb_information.compressed_hypertable_stats'.
-				' WHERE number_compressed_chunks != 0 AND '.dbConditionString('hypertable_name::text', $tables)
-			));
-
-			return $result && $result['chunks'];
 		}
 
 		$query = implode(' UNION ', array_map(function ($table) {

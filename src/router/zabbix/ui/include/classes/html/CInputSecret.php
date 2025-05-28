@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -45,7 +40,7 @@ class CInputSecret extends CInput {
 	 * @param string $value        Input element value attribute.
 	 * @param bool   $add_post_js  Add initialization javascript, default true.
 	 */
-	public function __construct(string $name, string $value = null, $add_post_js = true) {
+	public function __construct(string $name, ?string $value = null, $add_post_js = true) {
 		parent::__construct('text', $name, $value);
 
 		$this->add_post_js = $add_post_js;
@@ -77,10 +72,10 @@ class CInputSecret extends CInput {
 		if ($value === null) {
 			$node->addItem([
 				(new CPassBox($name, ZBX_SECRET_MASK, $maxlength))->setAttribute('disabled', 'disabled'),
-				(new CButton(null, _('Set new value')))
+				(new CSimpleButton(_('Set new value')))
 					->setId(zbx_formatDomId($name.'[btn]'))
-					->setAttribute('disabled', $this->getAttribute('disabled'))
 					->addClass(self::ZBX_STYLE_BTN_CHANGE)
+					->setAttribute('disabled', $this->getAttribute('disabled'))
 			]);
 		}
 		else {

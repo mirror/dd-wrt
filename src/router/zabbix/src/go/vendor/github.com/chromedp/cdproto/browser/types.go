@@ -98,6 +98,7 @@ const (
 	PermissionTypeAudioCapture             PermissionType = "audioCapture"
 	PermissionTypeBackgroundSync           PermissionType = "backgroundSync"
 	PermissionTypeBackgroundFetch          PermissionType = "backgroundFetch"
+	PermissionTypeCapturedSurfaceControl   PermissionType = "capturedSurfaceControl"
 	PermissionTypeClipboardReadWrite       PermissionType = "clipboardReadWrite"
 	PermissionTypeClipboardSanitizedWrite  PermissionType = "clipboardSanitizedWrite"
 	PermissionTypeDisplayCapture           PermissionType = "displayCapture"
@@ -115,11 +116,13 @@ const (
 	PermissionTypeProtectedMediaIdentifier PermissionType = "protectedMediaIdentifier"
 	PermissionTypeSensors                  PermissionType = "sensors"
 	PermissionTypeStorageAccess            PermissionType = "storageAccess"
+	PermissionTypeSpeakerSelection         PermissionType = "speakerSelection"
 	PermissionTypeTopLevelStorageAccess    PermissionType = "topLevelStorageAccess"
 	PermissionTypeVideoCapture             PermissionType = "videoCapture"
 	PermissionTypeVideoCapturePanTiltZoom  PermissionType = "videoCapturePanTiltZoom"
 	PermissionTypeWakeLockScreen           PermissionType = "wakeLockScreen"
 	PermissionTypeWakeLockSystem           PermissionType = "wakeLockSystem"
+	PermissionTypeWebAppInstallation       PermissionType = "webAppInstallation"
 	PermissionTypeWindowManagement         PermissionType = "windowManagement"
 )
 
@@ -145,6 +148,8 @@ func (t *PermissionType) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = PermissionTypeBackgroundSync
 	case PermissionTypeBackgroundFetch:
 		*t = PermissionTypeBackgroundFetch
+	case PermissionTypeCapturedSurfaceControl:
+		*t = PermissionTypeCapturedSurfaceControl
 	case PermissionTypeClipboardReadWrite:
 		*t = PermissionTypeClipboardReadWrite
 	case PermissionTypeClipboardSanitizedWrite:
@@ -179,6 +184,8 @@ func (t *PermissionType) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = PermissionTypeSensors
 	case PermissionTypeStorageAccess:
 		*t = PermissionTypeStorageAccess
+	case PermissionTypeSpeakerSelection:
+		*t = PermissionTypeSpeakerSelection
 	case PermissionTypeTopLevelStorageAccess:
 		*t = PermissionTypeTopLevelStorageAccess
 	case PermissionTypeVideoCapture:
@@ -189,6 +196,8 @@ func (t *PermissionType) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = PermissionTypeWakeLockScreen
 	case PermissionTypeWakeLockSystem:
 		*t = PermissionTypeWakeLockSystem
+	case PermissionTypeWebAppInstallation:
+		*t = PermissionTypeWebAppInstallation
 	case PermissionTypeWindowManagement:
 		*t = PermissionTypeWindowManagement
 
@@ -251,8 +260,7 @@ func (t *PermissionSetting) UnmarshalJSON(buf []byte) error {
 }
 
 // PermissionDescriptor definition of PermissionDescriptor defined in the
-// Permissions API:
-// https://w3c.github.io/permissions/#dictdef-permissiondescriptor.
+// Permissions API: https://w3c.github.io/permissions/#dom-permissiondescriptor.
 //
 // See: https://chromedevtools.github.io/devtools-protocol/tot/Browser#type-PermissionDescriptor
 type PermissionDescriptor struct {
@@ -260,6 +268,7 @@ type PermissionDescriptor struct {
 	Sysex                    bool   `json:"sysex,omitempty"`                    // For "midi" permission, may also specify sysex control.
 	UserVisibleOnly          bool   `json:"userVisibleOnly,omitempty"`          // For "push" permission, may specify userVisibleOnly. Note that userVisibleOnly = true is the only currently supported type.
 	AllowWithoutSanitization bool   `json:"allowWithoutSanitization,omitempty"` // For "clipboard" permission, may specify allowWithoutSanitization.
+	AllowWithoutGesture      bool   `json:"allowWithoutGesture,omitempty"`      // For "fullscreen" permission, must specify allowWithoutGesture:true.
 	PanTiltZoom              bool   `json:"panTiltZoom,omitempty"`              // For "camera" permission, may specify panTiltZoom.
 }
 
@@ -377,7 +386,7 @@ func (t *DownloadProgressState) UnmarshalJSON(buf []byte) error {
 
 // SetDownloadBehaviorBehavior whether to allow all or deny all download
 // requests, or use default Chrome behavior if available (otherwise deny).
-// |allowAndName| allows download and names files according to their dowmload
+// |allowAndName| allows download and names files according to their download
 // guids.
 //
 // See: https://chromedevtools.github.io/devtools-protocol/tot/Browser#method-setDownloadBehavior

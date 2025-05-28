@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "json.h"
@@ -22,6 +17,8 @@
 #include "zbxjson.h"
 #include "json_parser.h"
 #include "jsonpath.h"
+
+#include "zbxnum.h"
 
 /******************************************************************************
  *                                                                            *
@@ -135,6 +132,39 @@ void	zbx_json_initarray(struct zbx_json *j, size_t allocate)
 	zbx_json_addarray(j, NULL);
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Purpose: initialize json with data from another json and position cursor   *
+ *          to the closing bracket                                            *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_json_init_with(struct zbx_json *j, const char *src, size_t len)
+{
+	if (NULL == src)
+	{
+		zbx_json_init(j, ZBX_JSON_STAT_BUF_LEN);
+		return;
+	}
+
+	j->buffer = NULL;
+	j->buffer_allocated = 0;
+	__zbx_json_realloc(j, len + 1);
+
+	memcpy(j->buffer, src, len);
+	j->buffer[len] = '\0';
+
+	j->buffer_size = len;
+	j->buffer_offset = len - 1;	/* position to the closing bracket */
+	j->level = 1;
+
+	const char	*ptr = j->buffer + j->buffer_offset - 1;
+
+	while (' ' == *ptr && ptr > j->buffer)
+		ptr--;
+
+	j->status = ('{' == *ptr ? ZBX_JSON_EMPTY : ZBX_JSON_COMMA);
+}
+
 static void	zbx_json_setempty(struct zbx_json *j)
 {
 	j->buffer_offset = 0;
@@ -158,14 +188,17 @@ void	zbx_json_free(struct zbx_json *j)
 		zbx_free(j->buffer);
 }
 
-static size_t	__zbx_json_stringsize(const char *string, zbx_json_type_t type)
+static size_t	__zbx_json_stringsize_limit(const char *string, zbx_json_type_t type, size_t max_size,
+		size_t *full_len, size_t *cutoff)
 {
-	size_t		len = 0;
-	const char	*sptr;
+	size_t		len = 0, len_cutoff = 0;
+	const char	*sptr, *str_cutoff = NULL;
 	char		buffer[] = {"null"};
 
 	for (sptr = (NULL != string ? string : buffer); '\0' != *sptr; sptr++)
 	{
+		const size_t	cur_len = len;
+
 		switch (*sptr)
 		{
 			case '"':  /* quotation mark */
@@ -186,12 +219,43 @@ static size_t	__zbx_json_stringsize(const char *string, zbx_json_type_t type)
 				else
 					len++;
 		}
+
+		if (NULL == str_cutoff && (0 != max_size && len > max_size))
+		{
+			str_cutoff = sptr + 1;
+			len_cutoff = cur_len;
+		}
 	}
 
-	if (NULL != string && ZBX_JSON_TYPE_STRING == type)
-		len += 2; /* "" */
+	if (NULL != full_len)
+		*full_len = len;
 
-	return len;
+	if (NULL != string && ZBX_JSON_TYPE_STRING == type)
+	{
+		len += 2;	/* "" */
+
+		if (NULL != str_cutoff)
+			len_cutoff += 2;
+	}
+
+	if (NULL != str_cutoff)	/* cut in multi-byte utf-8 sequence */
+	{
+		while (0 < len_cutoff && 0x80 == (0xc0 & (unsigned char)*(str_cutoff - 1)))
+		{
+			str_cutoff--;
+			len_cutoff--;
+		}
+
+		if (NULL != cutoff)
+			*cutoff = (size_t)((str_cutoff - string) - 1);
+	}
+
+	return (NULL != str_cutoff) ? len_cutoff : len;
+}
+
+static size_t	__zbx_json_stringsize(const char *string, zbx_json_type_t type)
+{
+	return __zbx_json_stringsize_limit(string, type, 0, NULL, NULL);
 }
 
 /******************************************************************************
@@ -213,15 +277,17 @@ static char	zbx_num2hex(unsigned char c)
 		return (char)(c + 0x30);	/* 0-9 */
 }
 
-static char	*__zbx_json_insstring(char *p, const char *string, zbx_json_type_t type)
+static char	*__zbx_json_insstring_limit(char *p, const char *string, zbx_json_type_t type, size_t str_len)
 {
-	const char	*sptr;
+	const char	*sptr, *start;
 	char		buffer[] = {"null"};
 
 	if (NULL != string && ZBX_JSON_TYPE_STRING == type)
 		*p++ = '"';
 
-	for (sptr = (NULL != string ? string : buffer); '\0' != *sptr; sptr++)
+	start = (NULL != string ? string : buffer);
+
+	for (sptr = start; (0 == str_len || (size_t)(sptr - start) < str_len) && '\0' != *sptr; sptr++)
 	{
 		switch (*sptr)
 		{
@@ -277,6 +343,11 @@ static char	*__zbx_json_insstring(char *p, const char *string, zbx_json_type_t t
 	return p;
 }
 
+static char	*__zbx_json_insstring(char *p, const char *string, zbx_json_type_t type)
+{
+	return __zbx_json_insstring_limit(p, string, type, 0);
+}
+
 void	zbx_json_escape(char **string)
 {
 	size_t	size;
@@ -329,7 +400,7 @@ static void	__zbx_json_addobject(struct zbx_json *j, const char *name, int objec
 	*p++ = object ? '{' : '[';
 	*p = object ? '}' : ']';
 
-	j->buffer_offset = p - j->buffer;
+	j->buffer_offset = (size_t)(p - j->buffer);
 	j->buffer_size += len;
 	j->level++;
 	j->status = ZBX_JSON_EMPTY;
@@ -345,9 +416,10 @@ void	zbx_json_addarray(struct zbx_json *j, const char *name)
 	__zbx_json_addobject(j, name, 0);
 }
 
-void	zbx_json_addstring(struct zbx_json *j, const char *name, const char *string, zbx_json_type_t type)
+size_t	zbx_json_addstring_limit( struct zbx_json *j, const char *name, const char *string, zbx_json_type_t type,
+		size_t max_size)
 {
-	size_t	len = 0;
+	size_t	len = 0, str_len = 0, orig_len;
 	char	*p, *psrc, *pdst;
 
 	assert(j);
@@ -360,14 +432,14 @@ void	zbx_json_addstring(struct zbx_json *j, const char *name, const char *string
 		len += __zbx_json_stringsize(name, ZBX_JSON_TYPE_STRING);
 		len += 1; /* : */
 	}
-	len += __zbx_json_stringsize(string, type);
+	len += __zbx_json_stringsize_limit(string, type, max_size, &orig_len, &str_len);
 
-	__zbx_json_realloc(j, j->buffer_size + len + 1/*'\0'*/);
+	__zbx_json_realloc(j, j->buffer_size + len + 1);	/*'\0'*/
 
 	psrc = j->buffer + j->buffer_offset;
 	pdst = j->buffer + j->buffer_offset + len;
 
-	memmove(pdst, psrc, j->buffer_size - j->buffer_offset + 1/*'\0'*/);
+	memmove(pdst, psrc, j->buffer_size - j->buffer_offset + 1);	/*'\0'*/
 
 	p = psrc;
 
@@ -379,11 +451,18 @@ void	zbx_json_addstring(struct zbx_json *j, const char *name, const char *string
 		p = __zbx_json_insstring(p, name, ZBX_JSON_TYPE_STRING);
 		*p++ = ':';
 	}
-	p = __zbx_json_insstring(p, string, type);
+	p = __zbx_json_insstring_limit(p, string, type, str_len);
 
-	j->buffer_offset = p - j->buffer;
+	j->buffer_offset = (size_t)(p - j->buffer);
 	j->buffer_size += len;
 	j->status = ZBX_JSON_COMMA;
+
+	return orig_len;
+}
+
+void	zbx_json_addstring(struct zbx_json *j, const char *name, const char *string, zbx_json_type_t type)
+{
+	zbx_json_addstring_limit(j, name, string, type, 0);
 }
 
 void	zbx_json_addraw(struct zbx_json *j, const char *name, const char *data)
@@ -425,7 +504,7 @@ void	zbx_json_addraw(struct zbx_json *j, const char *name, const char *data)
 	memcpy(p, data, len_data);
 	p += len_data;
 
-	j->buffer_offset = p - j->buffer;
+	j->buffer_offset = (size_t)(p - j->buffer);
 	j->buffer_size += len;
 	j->status = ZBX_JSON_COMMA;
 }
@@ -1234,4 +1313,29 @@ out:
 zbx_json_type_t	zbx_json_valuetype(const char *p)
 {
 	return __zbx_json_type(p);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: creates a copy of the specified JSON structure                    *
+ *                                                                            *
+ * Return value: The copied JSON structure.                                   *
+ *                                                                            *
+ ******************************************************************************/
+struct zbx_json	*zbx_json_clone(const struct zbx_json *src)
+{
+	struct zbx_json	*dst;
+
+	dst = (struct zbx_json *)zbx_malloc(NULL, sizeof(struct zbx_json));
+	*dst = *src;
+
+	if (src->buffer != src->buf_stat)
+	{
+		dst->buffer = (char *)zbx_malloc(NULL, dst->buffer_allocated);
+		memcpy(dst->buffer, src->buffer, src->buffer_size);
+	}
+	else
+		dst->buffer = dst->buf_stat;
+
+	return dst;
 }

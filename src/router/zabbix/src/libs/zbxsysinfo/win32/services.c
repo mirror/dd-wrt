@@ -1,27 +1,22 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
 #include "../sysinfo.h"
 
 #include "zbxstr.h"
-#include "log.h"
+#include "zbxlog.h"
 #include "zbxjson.h"
 
 #define ZBX_QSC_BUFSIZE	8192	/* QueryServiceConfig() and QueryServiceConfig2() maximum output buffer size */
@@ -41,11 +36,11 @@ zbx_startup_type_t;
 
 /******************************************************************************
  *                                                                            *
- * Purpose: convert service state code from value used in Microsoft Windows   *
+ * Purpose: converts service state code from value used in Microsoft Windows  *
  *          to value used in Zabbix                                           *
  *                                                                            *
  * Parameters: state - [IN] service state code (e.g. obtained via             *
- *                     QueryServiceStatus() function)                         *
+ *                          QueryServiceStatus() function)                    *
  *                                                                            *
  * Return value: service state code used in Zabbix or 7 if service state code *
  *               is not recognized by this function                           *
@@ -124,11 +119,12 @@ static void	log_if_buffer_too_small(const char *function_name, DWORD sz)
  * Parameters:                                                                *
  *     hService - [IN] QueryServiceConfig() parameter 'hService'              *
  *     buf      - [OUT] QueryServiceConfig() parameter 'lpServiceConfig'.     *
- *                Pointer to a caller supplied buffer with size               *
- *                ZBX_QSC_BUFSIZE bytes !                                     *
+ *                      Pointer to a caller supplied buffer with size         *
+ *                      ZBX_QSC_BUFSIZE bytes !                               *
  * Return value:                                                              *
  *      SUCCEED - data were successfully copied into 'buf'                    *
- *      FAIL    - use strerror_from_system(GetLastError() to see what failed  *
+ *      FAIL    - use zbx_strerror_from_system(GetLastError()) to see what    *
+ *                failed                                                      *
  *                                                                            *
  ******************************************************************************/
 static int	zbx_get_service_config(SC_HANDLE hService, LPQUERY_SERVICE_CONFIG buf)
@@ -151,11 +147,12 @@ static int	zbx_get_service_config(SC_HANDLE hService, LPQUERY_SERVICE_CONFIG buf
  *     hService    - [IN] QueryServiceConfig2() parameter 'hService'          *
  *     dwInfoLevel - [IN] QueryServiceConfig2() parameter 'dwInfoLevel'       *
  *     buf         - [OUT] QueryServiceConfig2() parameter 'lpBuffer'.        *
- *                   Pointer to a caller supplied buffer with size            *
- *                   ZBX_QSC_BUFSIZE bytes !                                 *
+ *                         Pointer to a caller supplied buffer with size      *
+ *                         ZBX_QSC_BUFSIZE bytes !                            *
  * Return value:                                                              *
- *      SUCCEED - data were successfully copied into 'buf'                    *
- *      FAIL    - use strerror_from_system(GetLastError() to see what failed  *
+ *      SUCCEED - data was successfully copied into 'buf'                     *
+ *      FAIL    - use zbx_strerror_from_system(GetLastError()) to see what    *
+ *                failed                                                      *
  *                                                                            *
  ******************************************************************************/
 static int	zbx_get_service_config2(SC_HANDLE hService, DWORD dwInfoLevel, LPBYTE buf)
@@ -191,7 +188,7 @@ static int	check_trigger_start(SC_HANDLE h_srv, const char *service_name)
 		if((6 <= version_info->dwMajorVersion) && (1 <= version_info->dwMinorVersion))
 		{
 			zabbix_log(LOG_LEVEL_DEBUG, "cannot obtain startup trigger information of service \"%s\": %s",
-					service_name, strerror_from_system(GetLastError()));
+					service_name, zbx_strerror_from_system(GetLastError()));
 		}
 	}
 
@@ -212,7 +209,7 @@ static int	check_delayed_start(SC_HANDLE h_srv, const char *service_name)
 	else
 	{
 		zabbix_log(LOG_LEVEL_DEBUG, "cannot obtain automatic delayed start information of service \"%s\": %s",
-				service_name, strerror_from_system(GetLastError()));
+				service_name, zbx_strerror_from_system(GetLastError()));
 	}
 
 	return FAIL;
@@ -290,7 +287,7 @@ int	discover_services(AGENT_REQUEST *request, AGENT_RESULT *result)
 			if (SUCCEED != zbx_get_service_config(h_srv, (LPQUERY_SERVICE_CONFIG)buf_qsc))
 			{
 				zabbix_log(LOG_LEVEL_DEBUG, "cannot obtain configuration of service \"%s\": %s",
-						service_name_utf8, strerror_from_system(GetLastError()));
+						service_name_utf8, zbx_strerror_from_system(GetLastError()));
 				goto next;
 			}
 
@@ -299,7 +296,7 @@ int	discover_services(AGENT_REQUEST *request, AGENT_RESULT *result)
 			if (SUCCEED != zbx_get_service_config2(h_srv, SERVICE_CONFIG_DESCRIPTION, buf_scd))
 			{
 				zabbix_log(LOG_LEVEL_DEBUG, "cannot obtain description of service \"%s\": %s",
-						service_name_utf8, strerror_from_system(GetLastError()));
+						service_name_utf8, zbx_strerror_from_system(GetLastError()));
 				goto next;
 			}
 
@@ -488,7 +485,7 @@ int	get_service_info(AGENT_REQUEST *request, AGENT_RESULT *result)
 		if (SUCCEED != zbx_get_service_config2(h_srv, SERVICE_CONFIG_DESCRIPTION, buf))
 		{
 			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain service description: %s",
-					strerror_from_system(GetLastError())));
+					zbx_strerror_from_system(GetLastError())));
 			CloseServiceHandle(h_srv);
 			CloseServiceHandle(h_mgr);
 			return SYSINFO_RET_FAIL;
@@ -509,7 +506,7 @@ int	get_service_info(AGENT_REQUEST *request, AGENT_RESULT *result)
 		if (SUCCEED != zbx_get_service_config(h_srv, (LPQUERY_SERVICE_CONFIG)buf_qsc))
 		{
 			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain service configuration: %s",
-					strerror_from_system(GetLastError())));
+					zbx_strerror_from_system(GetLastError())));
 			CloseServiceHandle(h_srv);
 			CloseServiceHandle(h_mgr);
 			return SYSINFO_RET_FAIL;

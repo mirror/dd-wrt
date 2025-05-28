@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,11 +20,10 @@
 class CTabFilter extends CDiv {
 
 	const ZBX_STYLE_CLASS = 'tabfilter-container';
+	const CSS_TABS = 'tabfilter-tabs';
 	const CSS_TAB_SELECTED = 'selected';
 	const CSS_TAB_EXPANDED = 'expanded';
-	const CSS_TAB_SORTABLE_CONTAINER = 'ui-sortable-container';
 	const CSS_ID_PREFIX = 'tabfilter_';
-	const CSS_TABFILTER_ICON_FILTER = 'icon-filter';
 	const CSS_TABFILTER_ITEM = 'tabfilter-item-label';
 
 	/**
@@ -42,19 +36,21 @@ class CTabFilter extends CDiv {
 
 	/**
 	 * Tab options array.
-	 * idx                  - namespace used to get/update filter related data in profiles table.
-	 * selected             - zero based index of selected filter.
-	 * expanded             - is selected filter expanded or not.
-	 * support_custom_time  - can filters define custom time range or not.
-	 * data                 - array of filters data arrays.
-	 * page                 - current page number used by selected tab for pagination.
-	 * csrf_token           - CSRF token.
-	 * timeselector         - array of timeselector data, can be set with addTimeselector or passed as array.
+	 * idx                   - namespace used to get/update filter related data in profiles table.
+	 * selected              - zero based index of selected filter.
+	 * expanded              - is selected filter expanded or not.
+	 * expanded_timeselector - is timeselector tab expanded or not.
+	 * support_custom_time   - can filters define custom time range or not.
+	 * data                  - array of filters data arrays.
+	 * page                  - current page number used by selected tab for pagination.
+	 * csrf_token            - CSRF token.
+	 * timeselector          - array of timeselector data, can be set with addTimeselector or passed as array.
 	 */
 	public $options = [
 		'idx' => '',
 		'selected' => 0,
 		'expanded' => false,
+		'expanded_timeselector' => false,
 		'support_custom_time' => 1,
 		'data' => [],
 		'page' => null,
@@ -113,10 +109,15 @@ class CTabFilter extends CDiv {
 	 * @param array $options  Array of options.
 	 */
 	public function setOptions(array $options) {
-		$this->options = $options;
+		$this->options = $options + $this->options;
 
 		if (array_key_exists('timeselector', $options)) {
-			$this->addTimeselector($this->options['timeselector']);
+			if ($this->options['expanded_timeselector'] && $options['timeselector']['disabled']) {
+				$this->options['expanded_timeselector'] = false;
+				$this->options['expanded'] = true;
+			}
+
+			$this->addTimeselector($options['timeselector']);
 		}
 
 		return $this;
@@ -166,7 +167,7 @@ class CTabFilter extends CDiv {
 			if ($tab_index == 0) {
 				$label = (new CLink(''))
 					->setAttribute('aria-label', _('Home'))
-					->addClass(self::CSS_TABFILTER_ICON_FILTER);
+					->addClass(ZBX_ICON_FILTER);
 				$data += [
 					'filter_sortable' => false,
 					'filter_configurable' => false
@@ -215,6 +216,10 @@ class CTabFilter extends CDiv {
 			'disabled' => true
 		];
 
+		$this->options['timeselector']['label'] = relativeDateToText($this->options['timeselector']['from'],
+			$this->options['timeselector']['to']
+		);
+
 		return $this;
 	}
 
@@ -254,18 +259,20 @@ class CTabFilter extends CDiv {
 		if ($timeselector) {
 			$data = $timeselector + [
 				'label' => relativeDateToText($timeselector['from'], $timeselector['to']),
+				'expanded_timeselector' => $this->options['expanded_timeselector'],
 				'filter_timeselector' => true,
 				'filter_sortable' => false,
 				'filter_configurable' => false
 			];
-			$this->contents[] = (new CDiv(new CPartial('timeselector.filter', $data)))
+			$this->contents['timeselector'] = (new CDiv(new CPartial('timeselector.filter', $data)))
 				->setId(static::CSS_ID_PREFIX.'timeselector');
 			$this->options['data'][] = $data;
 		}
 
 		foreach ($this->contents as $index => $content) {
 			if (is_a($content, CTag::class)) {
-				$content->addClass($index == $selected ? null : ZBX_STYLE_DISPLAY_NONE);
+				$show_index = $this->options['expanded_timeselector'] ? 'timeselector' : $selected;
+				$content->addClass($index == $show_index ? null : ZBX_STYLE_DISPLAY_NONE);
 			}
 		}
 
@@ -276,10 +283,10 @@ class CTabFilter extends CDiv {
 		}
 
 		$tabfilter_container_classes = 'tabfilter-content-container';
-		if (!$this->options['expanded']) {
+		if (!$this->options['expanded'] && !$this->options['expanded_timeselector']) {
 			$tabfilter_container_classes .= ' tabfilter-collapsed';
 			if (!$this->subfilter) {
-				$tabfilter_container_classes .= ' display-none';
+				$tabfilter_container_classes .= ' '.ZBX_STYLE_DISPLAY_NONE;
 			}
 		}
 
@@ -287,7 +294,7 @@ class CTabFilter extends CDiv {
 			$this->getNavigation(),
 			(new CDiv([
 				(new CDiv($this->contents))->addClass('tabfilter-tabs-container'),
-				$this->buttons,
+				$this->buttons->addClass($this->options['expanded_timeselector'] ? ZBX_STYLE_DISPLAY_NONE : null),
 				$this->subfilter
 			]))
 				->addClass($tabfilter_container_classes),
@@ -316,28 +323,33 @@ class CTabFilter extends CDiv {
 	protected function getTimeselectorNavigation(): array {
 		$data = $this->options['timeselector'];
 		$selected = $this->options['data'][$this->options['selected']] + ['filter_custom_time' => 0];
+		$expanded = $this->options['expanded_timeselector'];
 		$enabled = (!$selected['filter_custom_time'] && !$data['disabled']);
-		// Disable navigation by TAB, if timeselector is disabled.
-		$link = (new CLink(relativeDateToText($data['from'], $data['to'])))
-			->addClass('tabfilter-item-link')
-			->setAttribute('tabindex', $enabled ? 0 : -1)
-			->addClass(ZBX_STYLE_BTN_TIME)
-			->addClass($data['disabled'] ? ZBX_STYLE_DISABLED : null);
 
 		return [
-			(new CListItem($link))
+			(new CButtonIcon(ZBX_ICON_CHEVRON_LEFT))
+				->addClass('js-btn-time-left')
+				->setEnabled($enabled),
+			(new CSimpleButton(_('Zoom out')))
+				->addClass(ZBX_STYLE_BTN_TIME_ZOOMOUT)
+				->setEnabled($enabled),
+			(new CButtonIcon(ZBX_ICON_CHEVRON_RIGHT))
+				->addClass('js-btn-time-right')
+				->setEnabled($enabled),
+			(new CListItem(
+				(new CLink(relativeDateToText($data['from'], $data['to'])))
+					->setAttribute('tabindex', $enabled ? 0 : -1)
+					->addClass('tabfilter-item-link')
+					->addClass(ZBX_STYLE_BTN)
+					->addClass(ZBX_ICON_CLOCK)
+					->addClass(ZBX_STYLE_BTN_TIME)
+					->addClass($data['disabled'] ? ZBX_STYLE_DISABLED : null)
+			))
 				->setAttribute('data-target', static::CSS_ID_PREFIX.'timeselector')
 				->addClass(self::CSS_TABFILTER_ITEM)
-				->addClass($enabled ? null : ZBX_STYLE_DISABLED),
-			(new CSimpleButton())
-				->setEnabled($enabled)
-				->addClass(ZBX_STYLE_BTN_TIME_LEFT),
-			(new CSimpleButton(_('Zoom out')))
-				->setEnabled($enabled)
-				->addClass(ZBX_STYLE_BTN_TIME_OUT),
-			(new CSimpleButton())
-				->setEnabled($enabled)
-				->addClass(ZBX_STYLE_BTN_TIME_RIGHT)
+				->addClass($expanded ? static::CSS_TAB_SELECTED : null)
+				->addClass($expanded ? static::CSS_TAB_EXPANDED : null)
+				->addClass($enabled ? null : ZBX_STYLE_DISABLED)
 		];
 	}
 
@@ -363,25 +375,23 @@ class CTabFilter extends CDiv {
 		array_unshift($sortable, array_shift($static));
 
 		$nav_list = new CList([
-			(new CSimpleButton())
-				->setAttribute('data-action', 'toggleTabsList')
-				->addClass(ZBX_STYLE_BTN_WIDGET_EXPAND),
-			(new CSimpleButton())
-				->setAttribute('data-action', 'selectNextTab')
-				->addClass('btn-iterator-page-next')
+			(new CButtonIcon(ZBX_ICON_CHEVRON_DOWN))->setAttribute('data-action', 'toggleTabsList'),
+			(new CButtonIcon(ZBX_ICON_CHEVRON_RIGHT))->setAttribute('data-action', 'selectNextTab')
 		]);
 
 		if (array_key_exists('timeselector', $this->options)) {
-			array_map([$nav_list, 'addItem'], $this->getTimeselectorNavigation());
+			foreach ($this->getTimeselectorNavigation() as $button) {
+				$nav_list->addItem($button);
+			}
 		}
 
-		return new CTag('nav', true , new CList([
-			(new CSimpleButton())
-				->setAttribute('data-action', 'selectPrevTab')
-				->addClass('btn-iterator-page-previous'),
-			$sortable ? (new CList($sortable))->addClass(static::CSS_TAB_SORTABLE_CONTAINER) : null,
-			$static ? $static : null,
-			$nav_list
-		]));
+		return new CTag('nav', true,
+			new CList([
+				(new CButtonIcon(ZBX_ICON_CHEVRON_LEFT))->setAttribute('data-action', 'selectPrevTab'),
+				$sortable ? (new CList($sortable))->addClass(static::CSS_TABS) : null,
+				$static ?: null,
+				$nav_list
+			])
+		);
 	}
 }

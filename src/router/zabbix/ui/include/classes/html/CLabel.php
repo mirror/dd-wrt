@@ -1,25 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CLabel extends CTag {
+
+	private bool $has_asterisk = false;
 
 	public function __construct($label, $id = null) {
 		parent::__construct('label', true, $label);
@@ -38,11 +35,21 @@ class CLabel extends CTag {
 	/**
 	 * Allow to add visual 'asterisk' mark to label.
 	 *
-	 * @param bool $add_asterisk  Define is label marked with asterisk or not.
+	 * @param bool $has_asterisk  Define is label marked with asterisk or not.
 	 *
 	 * @return CLabel
 	 */
-	public function setAsteriskMark($add_asterisk = true) {
-		return $this->addClass($add_asterisk ? ZBX_STYLE_FIELD_LABEL_ASTERISK : null);
+	public function setAsteriskMark(bool $has_asterisk = true): self {
+		$this->has_asterisk = $has_asterisk;
+
+		return $this;
+	}
+
+	public function toString($destroy = true) {
+		if ($this->has_asterisk) {
+			$this->addClass(ZBX_STYLE_FIELD_LABEL_ASTERISK);
+		}
+
+		return parent::toString($destroy);
 	}
 }

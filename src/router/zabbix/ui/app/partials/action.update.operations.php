@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -27,7 +22,7 @@
 $operations_table = (new CTable())
 	->setId('upd-table')
 	->setAttribute('style', 'width: 100%;')
-	->setHeader([_('Details'), _('Action')]);
+	->setHeader([_('Details'), _('Actions')]);
 
 $i = 0;
 foreach ($data['action']['update_operations'] as $operationid => $operation) {
@@ -65,8 +60,7 @@ foreach ($data['action']['update_operations'] as $operationid => $operation) {
 		$details_column,
 		(new CCol(
 			new CHorList([
-				(new CSimpleButton(_('Edit')))
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Edit')))
 					->addClass('js-edit-operation')
 					->setAttribute('data-operation', json_encode([
 						'operationid' => $i,
@@ -79,9 +73,9 @@ foreach ($data['action']['update_operations'] as $operationid => $operation) {
 					])),
 				[
 					(new CButton('remove', _('Remove')))
-						->setAttribute('data-operationid', $i)
-						->addClass('js-remove')
 						->addClass(ZBX_STYLE_BTN_LINK)
+						->addClass('js-remove')
+						->setAttribute('data-operationid', $i)
 						->removeId(),
 					new CVar('update_operations['.$i.']', $hidden_data)
 				]
@@ -96,14 +90,13 @@ $operations_table->addItem(
 		(new CTag('tfoot', true))
 			->addItem(
 				(new CCol(
-					(new CSimpleButton(_('Add')))
+					(new CButtonLink(_('Add')))
 						->setAttribute('data-actionid', array_key_exists('actionid', $data) ? $data['actionid'] : 0)
 						->setAttribute('operationtype', ACTION_UPDATE_OPERATION)
 						->setAttribute('data-eventsource', array_key_exists('eventsource', $data)
 							? $data['eventsource']
 							: $operation['eventsource'])
 						->addClass('js-update-operations-create')
-						->addClass(ZBX_STYLE_BTN_LINK)
 				))->setColSpan(4)
 			)
 	);

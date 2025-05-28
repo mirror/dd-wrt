@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 require_once dirname(__FILE__).'/js/configuration.host.prototype.list.js.php';
@@ -69,7 +65,8 @@ $hostTable = (new CTableInfo())
 		make_sorting_header(_('Create enabled'), 'status', $data['sort'], $data['sortorder'], $url),
 		make_sorting_header(_('Discover'), 'discover', $data['sort'], $data['sortorder'], $url),
 		_('Tags')
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 $csrf_token = CCsrfTokenHelper::get('host_prototypes.php');
 
@@ -100,11 +97,13 @@ foreach ($this->data['hostPrototypes'] as $hostPrototype) {
 
 			if ($data['allowed_ui_conf_templates']
 					&& array_key_exists($template['templateid'], $data['writable_templates'])) {
-				$caption[] = (new CLink($template['name'],
-					(new CUrl('templates.php'))
-						->setArgument('form', 'update')
-						->setArgument('templateid', $template['templateid'])
-				))
+				$template_url = (new CUrl('zabbix.php'))
+					->setArgument('action', 'popup')
+					->setArgument('popup', 'template.edit')
+					->setArgument('templateid', $template['templateid'])
+					->getUrl();
+
+				$caption[] = (new CLink($template['name'], $template_url))
 					->addClass(ZBX_STYLE_LINK_ALT)
 					->addClass(ZBX_STYLE_GREY);
 			}
@@ -118,12 +117,14 @@ foreach ($this->data['hostPrototypes'] as $hostPrototype) {
 
 				$caption[] = ' (';
 				foreach ($linkedTemplates as $tpl) {
+					$tpl_url = (new CUrl('zabbix.php'))
+						->setArgument('action', 'popup')
+						->setArgument('popup', 'template.edit')
+						->setArgument('templateid', $tpl['templateid'])
+						->getUrl();
+
 					if (array_key_exists($tpl['templateid'], $data['writable_templates'])) {
-						$caption[] = (new CLink($tpl['name'],
-							(new CUrl('templates.php'))
-								->setArgument('form', 'update')
-								->setArgument('templateid', $tpl['templateid'])
-						))
+						$caption[] = (new CLink($tpl['name'], $tpl_url))
 							->addClass(ZBX_STYLE_LINK_ALT)
 							->addClass(ZBX_STYLE_GREY);
 					}
@@ -158,6 +159,7 @@ foreach ($this->data['hostPrototypes'] as $hostPrototype) {
 				: 'hostprototype.massdisable'
 			)
 			->setArgument('context', $data['context'])
+			->setArgument('backurl', $url)
 			->getUrl()
 	))
 		->addCsrfToken($csrf_token)
@@ -172,6 +174,7 @@ foreach ($this->data['hostPrototypes'] as $hostPrototype) {
 				->setArgument('action', 'hostprototype.updatediscover')
 				->setArgument('discover', $nodiscover ? ZBX_PROTOTYPE_DISCOVER : ZBX_PROTOTYPE_NO_DISCOVER)
 				->setArgument('context', $data['context'])
+				->setArgument('backurl', $url)
 				->getUrl()
 		))
 			->addCsrfToken($csrf_token)
@@ -191,17 +194,25 @@ foreach ($this->data['hostPrototypes'] as $hostPrototype) {
 // append table to form
 $itemForm->addItem([
 	$hostTable,
-	$data['paging'],
 	new CActionButtonList('action', 'group_hostid',
 		[
-			'hostprototype.massenable' => ['name' => _('Create enabled'),
-				'confirm' => _('Create hosts from selected prototypes as enabled?'), 'csrf_token' => $csrf_token
+			'hostprototype.massenable' => [
+				'name' => _('Create enabled'),
+				'confirm_singular' => _('Create hosts from selected prototype as enabled?'),
+				'confirm_plural' => _('Create hosts from selected prototypes as enabled?'),
+				'csrf_token' => $csrf_token
 			],
-			'hostprototype.massdisable' => ['name' => _('Create disabled'),
-				'confirm' => _('Create hosts from selected prototypes as disabled?'), 'csrf_token' => $csrf_token
+			'hostprototype.massdisable' => [
+				'name' => _('Create disabled'),
+				'confirm_singular' => _('Create hosts from selected prototype as disabled?'),
+				'confirm_plural' => _('Create hosts from selected prototypes as disabled?'),
+				'csrf_token' => $csrf_token
 			],
-			'hostprototype.massdelete' => ['name' => _('Delete'),
-				'confirm' => _('Delete selected host prototypes?'), 'csrf_token' => $csrf_token
+			'hostprototype.massdelete' => [
+				'name' => _('Delete'),
+				'confirm_singular' => _('Delete selected host prototype?'),
+				'confirm_plural' => _('Delete selected host prototypes?'),
+				'csrf_token' => $csrf_token
 			]
 		],
 		$data['discovery_rule']['itemid']
@@ -210,4 +221,13 @@ $itemForm->addItem([
 
 $html_page
 	->addItem($itemForm)
+	->show();
+
+(new CScriptTag('
+	view.init('.json_encode([
+		'context' => $data['context'],
+		'checkbox_hash' => $data['discovery_rule']['itemid']
+	]).');
+'))
+	->setOnDocumentReady()
 	->show();

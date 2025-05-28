@@ -1,27 +1,20 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "zbxsysinfo.h"
 #include "../sysinfo.h"
 
 #include "zbxjson.h"
-#include "log.h"
 #include "zbxcomms.h"
 #include "zbxnum.h"
 #include "zbxip.h"
@@ -105,22 +98,38 @@ static int	find_tcp_port_by_state_nl(unsigned short port, int state, int *found)
 	}
 	request;
 
-	int			ret = FAIL, fd, status, i;
+	int			ret = FAIL, fd, status;
 	int			families[] = {AF_INET, AF_INET6, AF_UNSPEC};
 	unsigned int		sequence = 0x58425A;
 	struct timeval		timeout = { 1, 500 * 1000 };
 
 	struct sockaddr_nl	s_sa = { AF_NETLINK, 0, 0, 0 };
 	struct iovec		s_io[1] = { { &request, sizeof(request) } };
-	struct msghdr		s_msg = { .msg_name = (void *)&s_sa, .msg_namelen = sizeof(struct sockaddr_nl), .msg_iov = s_io, .msg_iovlen=1, .msg_control=NULL, .msg_controllen=0, .msg_flags=0};
+	struct msghdr		s_msg;
 
 	char			buffer[BUFSIZ] = { 0 };
 
 	struct sockaddr_nl	r_sa = { AF_NETLINK, 0, 0, 0 };
 	struct iovec		r_io[1] = { { buffer, BUFSIZ } };
-	struct msghdr		r_msg = { .msg_name = (void *)&r_sa, .msg_namelen = sizeof(struct sockaddr_nl), .msg_iov = r_io, .msg_iovlen=1, .msg_control=NULL, .msg_controllen=0, .msg_flags=0};
+	struct msghdr		r_msg;
 
 	struct nlmsghdr		*r_hdr;
+
+	s_msg.msg_name = (void *)&s_sa;
+	s_msg.msg_namelen = sizeof(struct sockaddr_nl);
+	s_msg.msg_iov = s_io;
+	s_msg.msg_iovlen = 1;
+	s_msg.msg_control = NULL;
+	s_msg.msg_controllen = 0;
+	s_msg.msg_flags = 0;
+
+	r_msg.msg_name = (void *)&r_sa;
+	r_msg.msg_namelen = sizeof(struct sockaddr_nl);
+	r_msg.msg_iov = r_io;
+	r_msg.msg_iovlen = 1;
+	r_msg.msg_control = NULL;
+	r_msg.msg_controllen = 0;
+	r_msg.msg_flags = 0;
 
 	*found = 0;
 
@@ -142,7 +151,7 @@ static int	find_tcp_port_by_state_nl(unsigned short port, int state, int *found)
 
 	nlerr = NLERR_OK;
 
-	for (i = 0; AF_UNSPEC != families[i]; i++)
+	for (int i = 0; AF_UNSPEC != families[i]; i++)
 	{
 		request.r.idiag_family = families[i];
 
@@ -294,12 +303,12 @@ static int	get_net_stat(const char *if_name, net_stat_t *result, char **error)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: reads /proc/net/tcp(6) file by chunks until the last line in      *
- *          in buffer has non-listening socket state                          *
+ * Purpose: Reads /proc/net/tcp(6) file by chunks until the last line in      *
+ *          in buffer has non-listening socket state.                         *
  *                                                                            *
- * Parameters: filename     - [IN] the file to read                           *
- *             buffer       - [IN/OUT] the output buffer                      *
- *             buffer_alloc - [IN/OUT] the output buffer size                 *
+ * Parameters: filename     - [IN] file to read                               *
+ *             buffer       - [IN/OUT] output buffer                          *
+ *             buffer_alloc - [IN/OUT] output buffer size                     *
  *                                                                            *
  * Return value: -1 error occurred during reading                             *
  *                0 empty file (shouldn't happen)                             *
@@ -377,11 +386,11 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Purpose: reads whole file into a buffer in a single read operation         *
+ * Purpose: reads whole file into buffer in single read operation             *
  *                                                                            *
- * Parameters: filename     - [IN] the file to read                           *
- *             buffer       - [IN/OUT] the output buffer                      *
- *             buffer_alloc - [IN/OUT] the output buffer size                 *
+ * Parameters: filename     - [IN] file to read                               *
+ *             buffer       - [IN/OUT] output buffer                          *
+ *             buffer_alloc - [IN/OUT] output buffer size                     *
  *                                                                            *
  * Return value: -1 error occurred during reading                             *
  *                0 empty file (shouldn't happen)                             *
@@ -822,11 +831,9 @@ static unsigned char	get_connection_state_udp(const char *name)
 #ifdef HAVE_IPV6
 static int	scan_ipv6_addr(const char *addr, struct sockaddr_in6 *sa6)
 {
-	int	i, k;
-
-	for (i = 0; i < 16; i += 4)
+	for (int i = 0; i < 16; i += 4)
 	{
-		for (k = 0; k < 4; k++)
+		for (int k = 0; k < 4; k++)
 		{
 			if (1 != sscanf(addr + i * 2 + k * 2, "%2hhx", &sa6->sin6_addr.s6_addr[i + 3 - k]))
 				return FAIL;
@@ -836,8 +843,8 @@ static int	scan_ipv6_addr(const char *addr, struct sockaddr_in6 *sa6)
 	return SUCCEED;
 }
 
-static int	get_proc_net_count_ipv6(const char *filename, unsigned char state, net_count_info_t *exp_l,
-		net_count_info_t *exp_r, zbx_uint64_t *count, char **error)
+static void	get_proc_net_count_ipv6(const char *filename, unsigned char state, net_count_info_t *exp_l,
+		net_count_info_t *exp_r, zbx_uint64_t *count)
 {
 	char			line[MAX_STRING_LEN], *p;
 	unsigned short		lport, rport;
@@ -847,10 +854,7 @@ static int	get_proc_net_count_ipv6(const char *filename, unsigned char state, ne
 	struct sockaddr_in6	*sa_l, *sa_r;
 
 	if (NULL == (f = fopen(filename, "r")))
-	{
-		*error = zbx_dsprintf(NULL, "Cannot open %s: %s", filename, zbx_strerror(errno));
-		return FAIL;
-	}
+		return;
 
 	sa_l = (struct sockaddr_in6 *)&sockaddr_l;
 	sa_r = (struct sockaddr_in6 *)&sockaddr_r;
@@ -893,10 +897,10 @@ static int	get_proc_net_count_ipv6(const char *filename, unsigned char state, ne
 				(0 != exp_r->port && exp_r->port != rport) ||
 				(0 != state && state != state_f) ||
 				(NULL != exp_l->ai &&
-				FAIL == zbx_ip_cmp(exp_l->prefix_sz, exp_l->ai, sockaddr_l,
+				FAIL == zbx_ip_cmp(exp_l->prefix_sz, exp_l->ai, &sockaddr_l,
 				1 == exp_l->mapped && 0 != exp_l->prefix_sz ? 0 : 1)) ||
 				(NULL != exp_r->ai &&
-				FAIL == zbx_ip_cmp(exp_r->prefix_sz, exp_r->ai, sockaddr_r,
+				FAIL == zbx_ip_cmp(exp_r->prefix_sz, exp_r->ai, &sockaddr_r,
 				1 == exp_r->mapped && 0 != exp_r->prefix_sz ? 0 : 1)))
 		{
 			continue;
@@ -906,13 +910,11 @@ static int	get_proc_net_count_ipv6(const char *filename, unsigned char state, ne
 	}
 
 	zbx_fclose(f);
-
-	return SUCCEED;
 }
 #endif
 
-static int	get_proc_net_count_ipv4(const char *filename, unsigned char state, net_count_info_t *exp_l,
-		net_count_info_t *exp_r, zbx_uint64_t *count, char **error)
+static void	get_proc_net_count_ipv4(const char *filename, unsigned char state, net_count_info_t *exp_l,
+		net_count_info_t *exp_r, zbx_uint64_t *count)
 {
 	char			line[MAX_STRING_LEN], *p;
 	unsigned short		lport, rport;
@@ -923,8 +925,7 @@ static int	get_proc_net_count_ipv4(const char *filename, unsigned char state, ne
 
 	if (NULL == (f = fopen(filename, "r")))
 	{
-		*error = zbx_dsprintf(NULL, "Cannot open %s: %s", filename, zbx_strerror(errno));
-		return FAIL;
+		return;
 	}
 
 	sa_l = (struct sockaddr_in *)&sockaddr_l;
@@ -953,10 +954,10 @@ static int	get_proc_net_count_ipv4(const char *filename, unsigned char state, ne
 				(0 != exp_r->port && exp_r->port != rport) ||
 				(0 != state && state != state_f) ||
 				(NULL != exp_l->ai &&
-				FAIL == zbx_ip_cmp(exp_l->prefix_sz, exp_l->ai, sockaddr_l,
+				FAIL == zbx_ip_cmp(exp_l->prefix_sz, exp_l->ai, &sockaddr_l,
 				1 == exp_l->mapped && 0 != exp_l->prefix_sz ? 0 : 1)) ||
 				(NULL != exp_r->ai &&
-				FAIL == zbx_ip_cmp(exp_r->prefix_sz, exp_r->ai, sockaddr_r,
+				FAIL == zbx_ip_cmp(exp_r->prefix_sz, exp_r->ai, &sockaddr_r,
 				1 == exp_r->mapped && 0 != exp_r->prefix_sz ? 0 : 1)))
 		{
 			continue;
@@ -966,8 +967,6 @@ static int	get_proc_net_count_ipv4(const char *filename, unsigned char state, ne
 	}
 
 	zbx_fclose(f);
-
-	return SUCCEED;
 }
 
 static int	get_addr_info(const char *addr_in, const char *port_in, struct addrinfo *hints, net_count_info_t *info,
@@ -1132,20 +1131,12 @@ static int	net_socket_count(int conn_type, AGENT_REQUEST *request, AGENT_RESULT 
 		goto err;
 	}
 
-	if (SUCCEED != get_proc_net_count_ipv4(NET_CONN_TYPE_TCP == conn_type ? "/proc/net/tcp" : "/proc/net/udp",
-			state_num, &info_l, &info_r, &count, &error))
-	{
-		SET_MSG_RESULT(result, error);
-		goto err;
-	}
+	get_proc_net_count_ipv4(NET_CONN_TYPE_TCP == conn_type ? "/proc/net/tcp" : "/proc/net/udp",
+			state_num, &info_l, &info_r, &count);
 
 #ifdef HAVE_IPV6
-	if (SUCCEED != get_proc_net_count_ipv6(NET_CONN_TYPE_TCP == conn_type ? "/proc/net/tcp6" : "/proc/net/udp6",
-			state_num, &info_l, &info_r,  &count, &error))
-	{
-		SET_MSG_RESULT(result, error);
-		goto err;
-	}
+	get_proc_net_count_ipv6(NET_CONN_TYPE_TCP == conn_type ? "/proc/net/tcp6" : "/proc/net/udp6",
+			state_num, &info_l, &info_r, &count);
 #endif
 
 	SET_UI64_RESULT(result, count);

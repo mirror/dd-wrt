@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -159,14 +154,12 @@ class CRegexp extends CApiService {
 	/**
 	 * Check for unique global regular expression names.
 	 *
-	 * @static
-	 *
 	 * @param array      $regexs
 	 * @param array|null $db_regexs
 	 *
 	 * @throws APIException if global regular expression names are not unique.
 	 */
-	protected static function checkDuplicates(array $regexs, array $db_regexs = null): void {
+	protected static function checkDuplicates(array $regexs, ?array $db_regexs = null): void {
 		$names = [];
 
 		foreach ($regexs as $regex) {
@@ -198,7 +191,7 @@ class CRegexp extends CApiService {
 	 * @param array $regexs
 	 * @param string $method
 	 */
-	protected function updateExpressions(array &$regexs, string $method, array $db_regexs = null): void {
+	protected function updateExpressions(array &$regexs, string $method, ?array $db_regexs = null): void {
 		$ins_expressions = [];
 		$upd_expressions = [];
 		$del_expressionids = [];
@@ -327,7 +320,7 @@ class CRegexp extends CApiService {
 	 *
 	 * @throws APIException  if the input is invalid
 	 */
-	protected function validateUpdate(array &$regexs, array &$db_regexs = null): void {
+	protected function validateUpdate(array &$regexs, ?array &$db_regexs = null): void {
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['regexpid'], ['name']], 'fields' => [
 			'regexpid' =>			['type' => API_ID, 'flags' => API_REQUIRED],
 			'name' =>				['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('regexps', 'name')],
@@ -429,8 +422,6 @@ class CRegexp extends CApiService {
 
 	/**
 	 * Add the existing expressions to $db_regexs whether these are affected by the update.
-	 *
-	 * @static
 	 *
 	 * @param array $regexs
 	 * @param array $db_regexs

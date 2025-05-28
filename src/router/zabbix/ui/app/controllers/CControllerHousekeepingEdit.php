@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -114,12 +109,10 @@ class CControllerHousekeepingEdit extends CController {
 		];
 
 		if ($data['db_extension'] === ZBX_DB_EXTENSION_TIMESCALEDB) {
-			$dbversion_status = CSettingsHelper::getDbVersionStatus();
-
 			// Temporary state to show checkbox checked and disabled before the real state is detected.
 			$data['compression_not_detected'] = true;
 
-			foreach ($dbversion_status as $dbversion) {
+			foreach (CSettingsHelper::getDbVersionStatus() as $dbversion) {
 				if ($dbversion['database'] === ZBX_DB_EXTENSION_TIMESCALEDB) {
 					$data['timescaledb_min_version'] = $dbversion['min_version'];
 					$data['timescaledb_max_version'] = $dbversion['max_version'];
@@ -133,7 +126,7 @@ class CControllerHousekeepingEdit extends CController {
 					}
 
 					if ($data['compression_availability']) {
-						$data += CHousekeepingHelper::getWarnings($dbversion_status);
+						$data += CHousekeepingHelper::getWarnings();
 					}
 
 					break;

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -32,20 +27,26 @@
  * @return {jQuery}
  */
 function makeStepResult(step) {
-	if (typeof step.error !== 'undefined') {
+	if (step.error !== undefined) {
 		return jQuery(new Template(jQuery('#preprocessing-step-error-icon').html()).evaluate(
-			{error: step.error || <?= json_encode(_('<empty string>')) ?>}
+			{error: escapeHtml(step.error) || <?= json_encode(htmlspecialchars(_('<empty string>'))) ?>}
 		));
 	}
-	else if (typeof step.result === 'undefined' || step.result === null) {
+
+	if (step.result === undefined || step.result === null) {
 		return jQuery('<span>', {'class': '<?= ZBX_STYLE_GREY ?>'}).text(<?= json_encode(_('No value')) ?>);
 	}
 	else if (step.result === '') {
 		return jQuery('<span>', {'class': '<?= ZBX_STYLE_GREY ?>'}).text(<?= json_encode(_('<empty string>')) ?>);
 	}
+	else if (step.warning !== undefined) {
+		return jQuery(new Template(jQuery('#preprocessing-step-result-warning').html()).evaluate(
+			{result: step.result, result_hint: escapeHtml(step.result), warning: step.warning}
+		));
+	}
 	else if (step.result.indexOf("\n") != -1 || step.result.length > 25) {
 		return jQuery(new Template(jQuery('#preprocessing-step-result').html()).evaluate(
-			jQuery.extend({result: step.result})
+			{result: step.result, result_hint: escapeHtml(step.result)}
 		));
 	}
 	else {
@@ -71,7 +72,11 @@ function disableItemTestForm() {
 		<?php endif ?>
 
 		<?php if ($data['proxies_enabled']): ?>
-			jQuery('#proxy_hostid').prop('disabled', true);
+			for (const element of document.querySelectorAll('#test_with input')) {
+				element.disabled = true;
+			}
+
+			jQuery('#proxyid').multiSelect('disable');
 		<?php endif ?>
 
 	<?php else: ?>
@@ -103,7 +108,11 @@ function enableItemTestForm() {
 		<?php endif ?>
 
 		<?php if ($data['proxies_enabled']): ?>
-			jQuery('#proxy_hostid').prop('disabled', false);
+			for (const element of document.querySelectorAll('#test_with input')) {
+				element.disabled = false;
+			}
+
+			jQuery('#proxyid').multiSelect('enable');
 		<?php endif ?>
 
 	<?php else: ?>
@@ -149,7 +158,7 @@ function itemGetValueTest(overlay) {
 		url = new Curl('zabbix.php');
 
 	url.setArgument('action', 'popup.itemtest.getvalue');
-	url.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>', <?= json_encode(CCsrfTokenHelper::get('itemtest')) ?>);
+	url.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('itemtest')) ?>);
 
 	post_data = jQuery.extend(post_data, {
 		interface: {
@@ -160,7 +169,8 @@ function itemGetValueTest(overlay) {
 			details: interface ? interface['details'] : null
 		},
 		macros: form_data['macros'],
-		proxy_hostid: form_data['proxy_hostid'],
+		test_with: form_data['test_with'],
+		proxyid: form_data['proxyid'],
 		test_type: <?= $data['test_type'] ?>,
 		hostid: <?= $data['hostid'] ?>,
 		value: form_data['value']
@@ -210,6 +220,10 @@ function itemGetValueTest(overlay) {
 			<?php endif ?>
 
 			jQuery('#value', $form).multilineInput('value', ret.value);
+			jQuery('#value_warning', $form)
+				.toggle('value_warning' in ret)
+				.toggleClass('js-retrieved', 'value_warning' in ret)
+				.attr('data-hintbox-contents', ret.value_warning);
 
 			if (typeof ret.eol !== 'undefined') {
 				jQuery("input[value=" + ret.eol + "]", jQuery("#eol")).prop("checked", "checked");
@@ -234,7 +248,7 @@ function itemCompleteTest(overlay) {
 		url = new Curl('zabbix.php');
 
 	url.setArgument('action', 'popup.itemtest.send');
-	url.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>', <?= json_encode(CCsrfTokenHelper::get('itemtest')) ?>);
+	url.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('itemtest')) ?>);
 
 	post_data = jQuery.extend(post_data, {
 		get_value: form_data['get_value'] || 0,
@@ -247,13 +261,15 @@ function itemCompleteTest(overlay) {
 			details: interface ? interface['details'] : null
 		},
 		macros: form_data['macros'],
-		proxy_hostid: form_data['proxy_hostid'],
+		test_with: form_data['test_with'],
+		proxyid: form_data['proxyid'],
 		show_final_result: <?= $data['show_final_result'] ? 1 : 0 ?>,
 		test_type: <?= $data['test_type'] ?>,
 		hostid: <?= $data['hostid'] ?>,
 		valuemapid: <?= $data['valuemapid'] ?>,
 		value: form_data['value'],
-		not_supported: form_data['not_supported']
+		not_supported: form_data['not_supported'],
+		runtime_error: form_data['runtime_error']
 	});
 
 	<?php if ($data['show_prev']): ?>
@@ -301,7 +317,21 @@ function itemCompleteTest(overlay) {
 				}
 			<?php endif ?>
 
+			if ('not_supported' in ret && jQuery('[name="not_supported"]', $form).length) {
+				jQuery('[name="not_supported"]', $form)
+					.prop('checked', ret.not_supported != 0)
+					.trigger('change');
+			}
+
 			jQuery('#value', $form).multilineInput('value', ret.value);
+			jQuery('#value_warning', $form)
+				.toggle('value_warning' in ret)
+				.toggleClass('js-retrieved', 'value_warning' in ret)
+				.attr('data-hintbox-contents', ret.value_warning);
+
+			if ('runtime_error' in ret && jQuery('#runtime_error', $form).length) {
+				jQuery('#runtime_error', $form).multilineInput('value', ret.runtime_error);
+			}
 
 			if (typeof ret.eol !== 'undefined') {
 				jQuery("input[value=" + ret.eol + "]", jQuery("#eol")).prop("checked", "checked");
@@ -309,8 +339,9 @@ function itemCompleteTest(overlay) {
 
 			if (typeof ret.final !== 'undefined') {
 				var result = makeStepResult(ret.final);
+
 				if (result !== null) {
-					$result = jQuery(result).css('float', 'right');
+					$result = result.css('float', 'right');
 				}
 
 				$result_row = jQuery('<div>', {'class': '<?= ZBX_STYLE_TABLE_FORMS_SEPARATOR ?>'})
@@ -325,7 +356,7 @@ function itemCompleteTest(overlay) {
 					$result_row.append(jQuery('<div>')
 						.append(
 							jQuery('<span>', {'class': '<?= ZBX_STYLE_GREY ?>'})
-								.text('<?= _('Result with value map applied') ?>'),
+								.text(<?= json_encode(_('Result with value map applied')) ?>),
 							$mapped_value
 						)
 					);
@@ -368,15 +399,16 @@ function processItemPreprocessingTestResults(steps) {
 					break;
 
 				case <?= ZBX_PREPROC_FAIL_SET_VALUE ?>:
+					step.result = step.result === '' ? <?= json_encode(_('<empty string>')) ?> : step.result;
 					step.action = jQuery(tmpl_act_done.evaluate(jQuery.extend(<?= json_encode([
 						'action_name' => _('Set value to')
-					]) ?>, {failed: step.result})));
+					]) ?>, {failed: step.result, failed_hint: escapeHtml(step.result)})));
 					break;
 
 				case <?= ZBX_PREPROC_FAIL_SET_ERROR ?>:
 					step.action = jQuery(tmpl_act_done.evaluate(jQuery.extend(<?= json_encode([
 						'action_name' => _('Set error to')
-					]) ?>, {failed: step.failed})));
+					]) ?>, {failed: step.failed, failed_hint: escapeHtml(step.failed)})));
 					break;
 			}
 		}
@@ -401,6 +433,7 @@ function saveItemTestInputs() {
 		$test_obj,
 		input_values = {
 			value: jQuery('#value').multilineInput('value'),
+			not_supported: jQuery('[name="not_supported"]').is(':checked') ? 1 : 0,
 			eol: jQuery('#eol').find(':checked').val()
 		},
 		form_data = $form.serializeJSON(),
@@ -408,9 +441,17 @@ function saveItemTestInputs() {
 		macros = {};
 
 	<?php if ($data['is_item_testable']): ?>
+		if (jQuery('#runtime_error').length) {
+			input_values.runtime_error = jQuery('#runtime_error').multilineInput('value');
+		}
+
+		const test_with = $form[0].querySelector('[name="test_with"]:checked').value;
+		const proxyid = jQuery('#proxyid', $form).multiSelect('getData').map((proxy) => proxy.id)[0] || 0;
+
 		input_values = jQuery.extend(input_values, {
 			get_value: jQuery('#get_value', $form).is(':checked') ? 1 : 0,
-			proxy_hostid: jQuery('#proxy_hostid', $form).val(),
+			test_with,
+			proxyid: test_with == <?= CControllerPopupItemTest::TEST_WITH_PROXY ?> ? proxyid : 0,
 			interfaceid: <?= $data['interfaceid'] ?> || 0,
 			address: jQuery('#interface_address', $form).val(),
 			port: jQuery('#interface_port', $form).val(),
@@ -432,7 +473,7 @@ function saveItemTestInputs() {
 	input_values.macros = macros;
 
 	<?php if ($data['step_obj'] == -2): ?>
-		$test_obj = jQuery('.tfoot-buttons');
+		$test_obj = jQuery('.overlay-dialogue-footer');
 	<?php elseif ($data['step_obj'] == -1): ?>
 		$test_obj = jQuery('.preprocessing-list-foot', jQuery('#preprocessing'));
 	<?php else: ?>
@@ -454,7 +495,17 @@ jQuery(document).ready(function($) {
 		value: <?= json_encode($data['value']) ?>,
 		monospace_font: false,
 		autofocus: true,
-		readonly: false,
+		readonly: <?= $data['not_supported'] != 0 ? 'true' : 'false' ?>,
+		grow: 'auto',
+		rows: 0
+	});
+
+	$('#runtime_error').length && $('#runtime_error').multilineInput({
+		placeholder: <?= json_encode(_('error text')) ?>,
+		value: <?= json_encode($data['runtime_error']) ?>,
+		monospace_font: false,
+		autofocus: true,
+		readonly: <?= $data['not_supported'] != 0 ? 'false' : 'true' ?>,
 		grow: 'auto',
 		rows: 0
 	});
@@ -468,27 +519,35 @@ jQuery(document).ready(function($) {
 		rows: 0
 	});
 
-	<?php if ($data['is_item_testable']): ?>
-		$('#not_supported').on('change', function() {
-			var $form = $('#preprocessing-test-form');
+	$('#not_supported').on('change', function() {
+		const $form = $('#preprocessing-test-form');
 
-			if ($(this).is(':checked')) {
-				$('#value', $form).multilineInput('setReadOnly');
-			}
-			else {
-				$('#value', $form).multilineInput('unsetReadOnly');
-			}
+		$('#value', $form).multilineInput(this.checked ? 'setReadOnly' : 'unsetReadOnly');
+		$('#runtime_error', $form).length && $('#runtime_error', $form).multilineInput(
+			this.checked && !$('[name="get_value"]', $form).is(':checked') ? 'unsetReadOnly' : 'setReadOnly'
+		);
+	});
+
+	<?php if ($data['is_item_testable']): ?>
+		$('#proxyid').multiSelect();
+
+		document.getElementById('test_with').addEventListener('change', (e) => {
+			document.querySelector('.js-test-with-proxy').style.display =
+				e.target.value == <?= CControllerPopupItemTest::TEST_WITH_SERVER ?> ? 'none' : '';
 		});
 
 		$('#get_value').on('change', function() {
-			var $rows = $('.js-host-address-row, .js-proxy-hostid-row, .js-get-value-row, [class*=js-popup-row-snmp]'),
+			var $rows = $('.js-host-address-row, .js-test-with-row, .js-get-value-row, [class*=js-popup-row-snmp]'),
 				$form = $('#preprocessing-test-form'),
 				$submit_btn = overlays_stack.getById('item-test').$btn_submit,
-				$not_supported = $('#not_supported', $form);
+				$not_supported = $('[name="not_supported"]', $form);
 
 			if ($(this).is(':checked')) {
 				$('#value', $form).multilineInput('setReadOnly');
+				$('#value_warning.js-retrieved').show();
+
 				$not_supported.prop('disabled', true);
+				$('#runtime_error').length && $('#runtime_error', $form).multilineInput('setReadOnly');
 
 				<?php if ($data['show_prev']): ?>
 					$('#prev_value', $form).multilineInput('setReadOnly');
@@ -496,7 +555,11 @@ jQuery(document).ready(function($) {
 				<?php endif ?>
 
 				<?php if ($data['proxies_enabled']): ?>
-					$('#proxy_hostid').prop('disabled', false);
+					for (const element of document.querySelectorAll('#test_with input')) {
+						element.disabled = false;
+					}
+
+					$('#proxyid').multiSelect('enable');
 				<?php endif ?>
 
 				<?php if ($data['interface_address_enabled']): ?>
@@ -507,7 +570,7 @@ jQuery(document).ready(function($) {
 					$('#interface_port').prop('disabled', false);
 				<?php endif ?>
 
-				$submit_btn.html('<?= _('Get value and test') ?>');
+				$submit_btn.html(<?= json_encode(_('Get value and test')) ?>);
 				$rows.show();
 
 				<?php if ($data['show_snmp_form']): ?>
@@ -557,8 +620,15 @@ jQuery(document).ready(function($) {
 				<?php endif ?>
 			}
 			else {
-				!$not_supported.is(':checked') && $('#value', $form).multilineInput('unsetReadOnly');
-				$not_supported.prop('disabled', false);
+				if ($not_supported.length) {
+					$not_supported
+						.prop('disabled', false)
+						.trigger('change');
+				}
+				else {
+					$('#value', $form).multilineInput('unsetReadOnly');
+				}
+				$('#value_warning').hide();
 
 				<?php if ($data['show_prev']): ?>
 					$('#prev_value', $form).multilineInput('unsetReadOnly');
@@ -566,7 +636,11 @@ jQuery(document).ready(function($) {
 				<?php endif ?>
 
 				<?php if ($data['proxies_enabled']): ?>
-					$('#proxy_hostid').prop('disabled', true);
+					for (const element of document.querySelectorAll('#test_with input')) {
+						element.disabled = true;
+					}
+
+					$('#proxyid').multiSelect('disable');
 				<?php endif ?>
 
 				<?php if ($data['interface_address_enabled']): ?>
@@ -577,7 +651,7 @@ jQuery(document).ready(function($) {
 					$('#interface_port').prop('disabled', false);
 				<?php endif ?>
 
-				$submit_btn.html('<?= _('Test') ?>');
+				$submit_btn.html(<?= json_encode(_('Test')) ?>);
 				$rows.hide();
 			}
 		}).trigger('change');

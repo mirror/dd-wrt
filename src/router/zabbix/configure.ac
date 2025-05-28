@@ -1,37 +1,33 @@
 dnl
-dnl Zabbix
-dnl Copyright (C) 2001-2024 Zabbix SIA
+dnl Copyright (C) 2001-2025 Zabbix SIA
 dnl
-dnl This program is free software; you can redistribute it and/or modify
-dnl it under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation; either version 2 of the License, or
-dnl (at your option) any later version.
+dnl This program is free software: you can redistribute it and/or modify it under the terms of
+dnl the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 dnl
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-dnl GNU General Public License for more details.
+dnl This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+dnl without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+dnl See the GNU Affero General Public License for more details.
 dnl
-dnl You should have received a copy of the GNU General Public License
-dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+dnl You should have received a copy of the GNU Affero General Public License along with this program.
+dnl If not, see <https://www.gnu.org/licenses/>.
 dnl
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([Zabbix],[6.4.12])
-AC_CONFIG_SRCDIR(src/zabbix_server/server.c)
-AM_INIT_AUTOMAKE([subdir-objects tar-pax])
+AC_INIT([Zabbix], [7.2.7])
 
 AC_MSG_NOTICE([Configuring $PACKAGE_NAME $PACKAGE_VERSION])
 
-AC_PROG_MAKE_SET
-
-AC_CONFIG_HEADERS(include/common/config.h)
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([src/zabbix_server/server.c])
+AC_CONFIG_HEADERS([include/common/config.h])
 
 AC_SUBST(DEFAULT_INCLUDES, ['-I$(top_srcdir)/include/common -I$(top_srcdir)/include'])
 
+AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
+
+AM_INIT_AUTOMAKE([subdir-objects tar-pax])
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -39,8 +35,155 @@ dnl *                     Checks for programs                       *
 dnl *                                                               *
 dnl *****************************************************************
 
-AC_PROG_CC([cc c99 gcc clang])
-AM_PROG_CC_C_O
+AC_PROG_EGREP
+AC_PROG_AWK
+AC_PROG_MAKE_SET
+AC_PROG_CC
+AC_PROG_CXX
+
+dnl **
+dnl * Program capability tests
+dnl *
+
+AC_MSG_CHECKING(whether compiler continues when given unrecognized flags)
+cc_rejects_unknown_flags=
+dnl Be mindful of the flag you're passing.
+dnl Depending on the compiler's argument parsing, this may be interpreted
+dnl as another flag. Be very explicit.
+saved_CFLAGS="$CFLAGS"
+CFLAGS="--ThisFlagShouldCauseACompilerInvocationFailure"
+AC_COMPILE_IFELSE([
+    dnl The program should be legal C99 to avoid unrelated failures.
+
+    dnl As the test harness wraps the body in a main() with a
+    dnl successful return, we don't need to provide any code
+    dnl for the compiler to succeed at the test.
+    AC_LANG_PROGRAM([[
+    /* empty preamble */
+    ]], [[
+    /* empty body */
+    ]])], [
+        cc_rejects_unknown_flags="no"
+        AC_MSG_RESULT(yes)
+    ], [
+        cc_rejects_unknown_flags="yes"
+        AC_MSG_RESULT(no)
+    ]
+)
+CFLAGS="$saved_CFLAGS"
+
+dnl The -Werror flag is _not_ supported by compilers such as
+dnl xlc (IBM's C/C++ compiler suite on AIX), where the flag
+dnl `-qhalt` enables the same behavior.
+AC_MSG_CHECKING(whether compiler supports -Werror)
+cc_accepts_werror=
+dnl XXX: The flag to be tested gets _appended_ in case the
+dnl user has provided CFLAGS containing -Wno-error, which would
+dnl negate the effect of -Werror.
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Werror"
+AC_COMPILE_IFELSE([
+    dnl The program should be legal C99 to avoid unrelated failures.
+
+    dnl As the test harness wraps the body in a main() with a
+    dnl successful return, we don't really need to provide
+    dnl any code to get the compiler to succeed at the test.
+    dnl The expectation is when the compiler will not recognize
+    dnl the flag and consequently fail the compilation
+    dnl (as opposed to issuing a warning and continuing).
+    dnl If this is not the case, the variable
+    dnl $compiler_rejects_unknown_flags can be tested for this
+    dnl behavior, as set by a previous test.
+    AC_LANG_PROGRAM([[
+    /* empty preamble */
+    ]], [[
+    /* empty body */
+    ]])], [
+        AS_IF([test $cc_rejects_unknown_flags = yes],
+            [
+                cc_accepts_werror="yes"
+                AC_MSG_RESULT(yes)
+            ],
+            [
+                dnl The compilation failed, but as the compiler
+                dnl does not reject unrecognized flags, we can't
+                dnl differentiate between success and the compiler
+                dnl just ignoring it.
+
+                dnl XXX We probably can, by resorting to pretty
+                dnl gnarly output processing; keep it simple for now.
+                cc_accepts_werror="unknown"
+                AC_MSG_RESULT(unknown)
+            ]
+        )
+    ], [
+        cc_accepts_werror="no"
+        AC_MSG_RESULT(no)
+    ]
+)
+CFLAGS="$saved_CFLAGS"
+
+AC_MSG_CHECKING(whether compiler supports -Werror=cpp)
+checked_werror_cpp_CFLAGS=
+AS_IF([test $cc_accepts_werror = yes],
+    [
+        saved_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS -Werror=cpp"
+        AC_COMPILE_IFELSE([
+            dnl XXX: We're forcing a compiler failure here,
+            dnl thus the result setting is inverted, because
+            dnl we're providing a test case that should _fail_
+            dnl compilation. Thus, if it succeeds, the compiler
+            dnl does not support the flag.
+            dnl
+            dnl We've already established whether the compiler
+            dnl continues with invocation errors, and whether
+            dnl it accepts -Werror at all.
+            AC_LANG_PROGRAM([[
+            #warning This preprocessor warning is intentional
+            ]], [[
+            /* empty body */
+            ]])], [
+                dnl Set this explicitly here, regardless of the initial value
+                checked_werror_cpp_CFLAGS=""
+                AC_MSG_RESULT(no)
+            ], [
+                checked_werror_cpp_CFLAGS="-Werror=cpp"
+                AC_MSG_RESULT(yes)
+            ]
+        )
+        CFLAGS="$saved_CFLAGS"
+    ],
+    dnl Default
+    [
+        AC_MSG_RESULT(skipping)
+    ]
+)
+
+dnl A C99 compliant compiler must support this.
+dnl
+dnl The implementations differ across compilers and platforms.
+dnl GCC allocates the storage blocks in bss during compilation,
+dnl while others elect for the runtime loader to handle the allocation.
+dnl
+dnl This means the proper test would be to run the executable,
+dnl but that would make no sense when cross-compiling,
+dnl so the best we can do is just reject compilers that don't even
+dnl recognize the keyword.
+AC_MSG_CHECKING(whether compiler supports thread-local storage)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdio.h>
+    ]], [[
+    static __thread int a = 0;
+    (void)a;
+    ]])],
+    [
+        AC_MSG_RESULT(yes)
+    ], [
+        AC_MSG_RESULT(no)
+        AC_MSG_ERROR([compiler does not recognize the __thread keyword])
+    ]
+)
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -48,23 +191,76 @@ dnl *                   Checks for header files                     *
 dnl *                                                               *
 dnl *****************************************************************
 
-AC_PROG_EGREP
+AC_HEADER_MAJOR
+AC_HEADER_RESOLV
 
-AC_CHECK_HEADERS(stdio.h stdlib.h string.h unistd.h netdb.h signal.h \
-  syslog.h time.h errno.h sys/types.h sys/stat.h netinet/in.h \
-  math.h sys/socket.h dirent.h ctype.h \
-  fcntl.h sys/param.h arpa/inet.h \
-  sys/vfs.h sys/pstat.h sys/statvfs.h sys/statfs.h \
-  sys/loadavg.h sys/vmmeter.h strings.h vm/vm_param.h \
-  sys/time.h kstat.h sys/syscall.h sys/sysmacros.h \
-  stdint.h mach/host_info.h mach/mach_host.h pwd.h \
-  sys/var.h arpa/nameser.h assert.h sys/dkstat.h sys/disk.h sys/sched.h \
-  zone.h nlist.h kvm.h linux/kernel.h procinfo.h sys/dk.h \
-  sys/resource.h pthread.h windows.h process.h conio.h sys/wait.h \
-  stdarg.h winsock2.h pdh.h psapi.h sys/sem.h sys/ipc.h sys/shm.h Winldap.h \
-  Winber.h lber.h ws2tcpip.h inttypes.h sys/file.h grp.h \
-  execinfo.h sys/systemcfg.h sys/mnttab.h mntent.h sys/times.h \
-  dlfcn.h sys/utsname.h sys/un.h sys/protosw.h stddef.h limits.h float.h)
+dnl ISO C Standard Library
+dnl
+AC_CHECK_HEADERS([assert.h ctype.h dirent.h dlfcn.h errno.h float.h          \
+                  inttypes.h limits.h math.h signal.h stdarg.h stddef.h      \
+                  stdint.h stdio.h stdlib.h string.h time.h                  \
+])
+
+dnl POSIX C Standard Library
+dnl
+AC_CHECK_HEADERS([sys/ipc.h sys/resource.h sys/sem.h sys/shm.h sys/socket.h  \
+                  sys/stat.h sys/statfs.h sys/statvfs.h sys/time.h           \
+                  sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h  \
+                  arpa/inet.h fcntl.h grp.h netdb.h netinet/in.h poll.h      \
+                  pthread.h pwd.h strings.h syslog.h termios.h unistd.h      \
+                  utmpx.h libgen.h                                           \
+])
+
+dnl X/Open and SUS
+AC_CHECK_HEADERS([sys/timeb.h])
+
+dnl Non-standardized and obsolete non-platform headers
+dnl XXX: sys/syscall.h is not standardized; obsoleted by unistd.h in POSIX;
+dnl      required on AIX to work around a defect in netinet/in6_var.h
+dnl      process.h is a non-standard header shipped by various compilers;
+dnl      effectively obsoleted by unistd.h in POSIX.
+AC_CHECK_HEADERS([sys/syscall.h malloc.h process.h])
+
+dnl GNU C extensions
+dnl
+AC_CHECK_HEADERS([execinfo.h mntent.h sys/sysinfo.h])
+
+dnl AIX
+AC_CHECK_HEADERS([sys/protosw.h sys/systemcfg.h sys/var.h procinfo.h])
+
+dnl BSDs
+dnl XXX: sys/param.h is needed by duktape; shipped everywhere _except_ Linux.
+dnl      sys/vfs.h is a Solaris thing that's spread to BSDs and Linux as part
+dnl      of the ZFS compat layer.
+AC_CHECK_HEADERS([sys/disk.h sys/dkstat.h sys/ioctl.h sys/param.h            \
+                  sys/sched.h sys/vfs.h sys/vmmeter.h arpa/nameser.h kvm.h   \
+])
+
+dnl HP-UX
+AC_CHECK_HEADERS([sys/pstat.h])
+
+dnl Linux
+AC_CHECK_HEADERS([linux/version.h])
+
+dnl MacOS
+AC_CHECK_HEADERS([mach/host_info.h mach/mach_host.h vm/vm_param.h nlist.h])
+dnl maybe MacOS
+AC_CHECK_HEADERS([kstat.h])
+
+dnl Solaris
+dnl
+dnl XXX: sys/loadavg.h declares getloadavg(), which glibc, musl c and
+dnl      BSD libc's have merged into stdlib.h.
+AC_CHECK_HEADERS([sys/dk.h sys/loadavg.h sys/mnttab.h sys/sysmacros.h zone.h])
+
+dnl Windows
+AC_CHECK_HEADERS([Winber.h Winldap.h conio.h pdh.h psapi.h windows.h         \
+                  winsock2.h ws2tcpip.h                                      \
+])
+
+dnl 3rd-Party Libraries
+AC_CHECK_HEADERS([lber.h])
+
 AC_CHECK_HEADERS(resolv.h, [], [], [
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
@@ -76,6 +272,9 @@ AC_CHECK_HEADERS(resolv.h, [], [], [
 #  include <arpa/nameser.h>
 #endif
 #ifdef HAVE_NETDB_H
+#if defined(_AIX)       /* AIX 5.1 needs this to get hstrerror() declaration */
+#define _USE_IRS
+#endif
 #  include <netdb.h>
 #endif
 ])
@@ -101,19 +300,8 @@ AC_CHECK_HEADERS(net/if.h net/if_mib.h, [], [], [
 #endif
 ])
 
-AC_MSG_CHECKING(whether compiler supports -Werror=cpp)
-checked_werror_cpp_CFLAGS=""
 saved_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -Werror=cpp"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  void f() {};
-]])],[checked_werror_cpp_CFLAGS="-Werror=cpp"
-  AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
-])
-CFLAGS="$saved_CFLAGS"
-
-saved_CFLAGS="$CFLAGS"
-CFLAGS="$checked_werror_cpp_CFLAGS $CFLAGS"
+CFLAGS="$CFLAGS $checked_werror_cpp_CFLAGS"
 AC_CHECK_HEADERS(sys/mount.h sys/proc.h sys/sysctl.h sys/user.h, [], [], [
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
@@ -154,6 +342,27 @@ AC_CHECK_HEADERS(libperfstat.h, [], [], [
 #endif
 ])
 
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+AC_TYPE_INT8_T
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UID_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT8_T
+
+AC_CHECK_TYPES([ptrdiff_t])
+
+AC_STRUCT_ST_BLOCKS
+
+AC_CHECK_MEMBERS([struct stat.st_rdev])
+
 dnl Kluge for building wihout pkg-config
 m4_ifdef([PKG_PROG_PKG_CONFIG], [], [ AC_DEFUN([PKG_PROG_PKG_CONFIG], []) ])
 
@@ -165,7 +374,7 @@ dnl *****************************************************************
 
 AC_SEARCH_LIBS(socket, socket)
 AC_SEARCH_LIBS(kstat_open, kstat)
-AC_SEARCH_LIBS(gethostbyname, nsl)
+AC_SEARCH_LIBS(inet_ntoa, nsl)
 AC_SEARCH_LIBS(clock_gettime, rt)
 AC_SEARCH_LIBS(dlopen, dl)
 
@@ -209,9 +418,6 @@ esac
 if test "x$largefile" = "xyes"; then
 	AC_SYS_LARGEFILE
 fi
-
-AC_C_CONST
-AC_TYPE_PID_T
 
 AC_MSG_CHECKING(for socklen_t)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -629,11 +835,6 @@ AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
 ])
 LDFLAGS="$saved_LDFLAGS"
 
-AC_MSG_CHECKING(for '__thread' compiler support)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[static __thread int a = 0;]])],[AC_DEFINE(HAVE_THREAD_LOCAL,1,Define to 1 if compiler keyword '__thread' supported.)
-AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
-HAVE_THREAD_LOCAL="no"])
-
 AC_MSG_CHECKING(for field updates in struct vminfo_t)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/sysinfo.h>
@@ -843,6 +1044,14 @@ clock_gettime(CLOCK_REALTIME, &tp);
 ]])],[AC_DEFINE(HAVE_TIME_CLOCK_GETTIME,1,Define to 1 if function 'clock_gettime' exists.)
 AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 
+AC_MSG_CHECKING(for function getrlimit in resource.h)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/resource.h>
+]], [[struct rlimit rlim;
+getrlimit(RLIMIT_NOFILE, &rlim);
+]])],[AC_DEFINE(HAVE_GETRLIMIT,1,Define to 1 if function 'getrlimit' exists.)
+AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+
 dnl *****************************************************************
 dnl *                                                               *
 dnl *                      Checks for macros                        *
@@ -876,15 +1085,26 @@ dnl *                 Checks for library functions                  *
 dnl *                                                               *
 dnl *****************************************************************
 
-AC_REPLACE_FUNCS(getloadavg)
-AC_CHECK_FUNCS(hstrerror)
-AC_CHECK_FUNCS(getenv)
-AC_CHECK_FUNCS(putenv)
-AC_CHECK_FUNCS(setenv)
-AC_CHECK_FUNCS(tzset)
-AC_CHECK_FUNCS(unsetenv)
-AC_CHECK_FUNCS(sigqueue)
-AC_CHECK_FUNCS(round)
+AC_FUNC_FORK
+AC_FUNC_GETMNTENT
+AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
+dnl Macros AC_FUNC_MALLOC and AC_FUNC_REALLOC are commented out because their checks
+dnl whether malloc() and realloc() are GNU libc compatible break compilation on AIX.
+dnl zbx_malloc2() and zbx_realloc2() provide a protection similar to rpl_malloc() and
+dnl rpl_realloc() required by AC_FUNC_MALLOC and AC_FUNC_REALLOC on AIX.
+dnl AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_FUNC_MMAP
+dnl AC_FUNC_REALLOC
+AC_FUNC_STRTOD
+
+AC_CHECK_FUNCS([alarm atexit clock_gettime dup2 fesetround floor getcwd       \
+                getenv gethostname getmntent getmntinfo getpagesize           \
+                gettimeofday hstrerror inet_ntoa localtime_r malloc_trim      \
+                memchr memmove memset mkdir modf munmap pow pstat_getdynamic  \
+                realpath round select setenv sigqueue socket sqrt strcasecmp  \
+                strchr strcspn strdup strerror strpbrk strrchr strstr strtol  \
+                strtoul sysinfo tzset uname unsetenv])
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1021,14 +1241,12 @@ freebsd*)
 netbsd*)
 	ARCH="netbsd"
 	;;
-osf*)
-	ARCH="osf"
-	;;
 openbsd*)
 	ARCH="openbsd"
 	;;
 *)
 	ARCH="unknown"
+	AC_DEFINE([ZBX_UNKNOWN_ARCH], 1, [Define to 1 if unsupported architecture was detected.])
 	;;
 esac
 
@@ -1116,6 +1334,7 @@ AC_DEFINE_UNQUOTED([ARCH], "${ARCH}", [Define to OS name for code managing])
 AC_SUBST(ARCH)
 
 AC_CHECK_SIZEOF([void *])
+AC_CHECK_SIZEOF([size_t])
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1207,7 +1426,6 @@ AC_ARG_ENABLE(agent2,[  --enable-agent2         Turn on build of Zabbix agent 2]
   no)  agent2=no ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-agent2]) ;;
 esac
-test "x$agent2" = "xyes" -a "x$HAVE_THREAD_LOCAL" = "xno" && AC_MSG_ERROR([C compiler is not compatible with agent2 assembly])
 ],
 [agent2=no])
 AM_CONDITIONAL(AGENT2, test "x$agent2" = "xyes")
@@ -1218,7 +1436,6 @@ AC_ARG_ENABLE(webservice,[  --enable-webservice         Turn on build of Zabbix 
   no)  webservice=no ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-webservice]) ;;
 esac
-test "x$webservice" = "xyes" -a "x$HAVE_THREAD_LOCAL" = "xno" && AC_MSG_ERROR([C compiler is not compatible with webservice assembly])
 ],
 [webservice=no])
 AM_CONDITIONAL(WEBSERVICE, test "x$webservice" = "xyes")
@@ -1279,26 +1496,6 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 		fi
 	fi
 
-	dnl Checking for Oracle support
-	AX_LIB_ORACLE_OCI([10.0])
-	if test "x$want_oracle_oci" = "xyes"; then
-		if test "x$have_db" != "xno"; then
-			AC_MSG_ERROR([You can configure for only one database.])
-		fi
-
-		if test "x$HAVE_ORACLE_OCI" = "xyes"; then
-			have_db="Oracle"
-
-			ORACLE_CPPFLAGS="$ORACLE_OCI_CFLAGS"
-			ORACLE_LDFLAGS="$ORACLE_OCI_LDFLAGS"
-			ORACLE_LIBS="$ORACLE_OCI_LIBS"
-
-			AC_DEFINE(HAVE_ORACLE,1,[Define to 1 if Oracle should be enabled.])
-		else
-			AC_MSG_ERROR([Oracle OCI library not found])
-		fi
-	fi
-
 	dnl Checking for PostgreSQL support
 	AX_LIB_POSTGRESQL("9.2")
 	if test "x$want_postgresql" = "xyes"; then
@@ -1338,9 +1535,11 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 			saved_CPPFLAGS="$CPPFLAGS"
 			saved_LDFLAGS="$LDFLAGS"
+			saved_LIBS="$LIBS"
 
 			CPPFLAGS="$CPPFLAGS $SQLITE3_CPPFLAGS"
-			LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS $SQLITE3_LIBS"
+			LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
+			LIBS="$LIBS $SQLITE3_LIBS"
 
 			AC_MSG_CHECKING([for function sqlite3_open_v2() in sqlite3.h])
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sqlite3.h>]], [[sqlite3 *conn = 0;
@@ -1350,6 +1549,7 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 			CPPFLAGS="$saved_CPPFLAGS"
 			LDFLAGS="$saved_LDFLAGS"
+			LIBS="$saved_LIBS"
 		else
 			AC_MSG_ERROR([SQLite3 library not found])
 		fi
@@ -1358,7 +1558,7 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 	AC_MSG_CHECKING(for Zabbix server/proxy database selection)
 	if test "x$have_db" = "xno"; then
 		AC_MSG_RESULT(error)
-		AC_MSG_ERROR([No database selected for Zabbix server/proxy. Use --with-mysql or --with-oracle or --with-postgresql or --with-sqlite3.])
+		AC_MSG_ERROR([No database selected for Zabbix server/proxy. Use --with-mysql or --with-postgresql or --with-sqlite3.])
 	else
 		AC_MSG_RESULT(ok)
 	fi
@@ -1371,9 +1571,9 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 		AC_MSG_RESULT(no)
 	fi
 
-	DB_CFLAGS="$MYSQL_CFLAGS $ORACLE_CPPFLAGS $POSTGRESQL_CFLAGS $SQLITE3_CPPFLAGS"
-	DB_LDFLAGS="$MYSQL_LDFLAGS $ORACLE_LDFLAGS $POSTGRESQL_LDFLAGS $SQLITE3_LDFLAGS"
-	DB_LIBS="$MYSQL_LIBS $ORACLE_LIBS $POSTGRESQL_LIBS $SQLITE3_LIBS"
+	DB_CFLAGS="$MYSQL_CFLAGS $POSTGRESQL_CFLAGS $SQLITE3_CPPFLAGS"
+	DB_LDFLAGS="$MYSQL_LDFLAGS $POSTGRESQL_LDFLAGS $SQLITE3_LDFLAGS"
+	DB_LIBS="$MYSQL_LIBS $POSTGRESQL_LIBS $SQLITE3_LIBS"
 
 	AC_SUBST(DB_CFLAGS)
 	AC_SUBST(DB_LDFLAGS)
@@ -1507,6 +1707,22 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 	AC_SUBST(ZLIB_CFLAGS)
 
+	dnl Checking for c-ares support
+	ARES_CHECK_CONFIG([no])
+	if test "x$want_ares" = "xyes"; then
+		if test "x$found_ares" != "xyes"; then
+			AC_MSG_ERROR([Unable to use ares (ares check failed)])
+		fi
+		have_ares="yes"
+	fi
+	SERVER_LDFLAGS="$SERVER_LDFLAGS $ARES_LDFLAGS"
+	SERVER_LIBS="$SERVER_LIBS $ARES_LIBS"
+
+	PROXY_LDFLAGS="$PROXY_LDFLAGS $ARES_LDFLAGS"
+	PROXY_LIBS="$PROXY_LIBS $ARES_LIBS"
+
+	AC_SUBST(ARES_CFLAGS)
+
 	dnl Check for 'libpthread' library that supports PTHREAD_PROCESS_SHARED flag
 	LIBPTHREAD_CHECK_CONFIG([no])
 	if test "x$found_libpthread" != "xyes"; then
@@ -1537,6 +1753,7 @@ ZBXJS_LIBS="$ZBXJS_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
 
 AM_CONDITIONAL(HAVE_IPMI, [test "x$have_ipmi" = "xyes"])
 AM_CONDITIONAL(HAVE_LIBXML2, test "x$have_libxml2" = "xyes")
+AM_CONDITIONAL(HAVE_UNIXODBC, test "x$have_unixodbc" = "xyes")
 
 AM_CONDITIONAL(HAVE_SSH, [test "x$have_ssh" = "xyes (libssh)"])
 AM_CONDITIONAL(HAVE_SSH2, [test "x$have_ssh" = "xyes (libssh2)"])
@@ -1573,6 +1790,16 @@ if test "x$have_ipcservice" = "xyes"; then
 	PROXY_LIBS="$PROXY_LIBS $LIBEVENT_LIBS"
 fi
 
+dnl Check multhithread SSL libs requirements [by default - skip]
+mt_required="no"
+if test "x$server" = "xyes"; then
+	mt_required="yes"
+fi
+
+if test "x$proxy" = "xyes"; then
+	mt_required="yes"
+fi
+
 dnl Check for GnuTLS libgnutls [by default - skip]
 LIBGNUTLS_CHECK_CONFIG([no])
 if test "x$want_gnutls" = "xyes"; then
@@ -1596,7 +1823,7 @@ if test "x$want_gnutls" = "xyes"; then
 fi
 
 dnl Check for OpenSSL libssl and libcrypto [by default - skip]
-LIBOPENSSL_CHECK_CONFIG([no])
+LIBOPENSSL_CHECK_CONFIG([no], [$mt_required])
 if test "x$want_openssl" = "xyes"; then
 	if test "x$have_tls" != "xno"; then
 		AC_MSG_ERROR([You can configure for only one TLS library (--with-gnutls or --with-openssl).])
@@ -1604,6 +1831,8 @@ if test "x$want_openssl" = "xyes"; then
 
 	if test "x$found_openssl" != "xOpenSSL" -a "x$found_openssl" != "xOpenSSL (PSK not supported)"; then
 		AC_MSG_ERROR([OpenSSL library libssl or libcrypto not found])
+	elif test "x$accept_openssl_version" != "xyes" -a "$mt_required" = "yes"; then
+		AC_MSG_ERROR([OpenSSL library version requirement for server or proxy not met (>= 1.1.0)])
 	elif test "x$accept_openssl_version" != "xyes"; then
 		AC_MSG_ERROR([OpenSSL library version requirement not met (>= 1.0.1)])
 	else
@@ -1614,6 +1843,9 @@ if test "x$want_openssl" = "xyes"; then
 	TLS_LIBS="$OPENSSL_LIBS"
 fi
 AC_SUBST(TLS_CFLAGS)
+
+AM_CONDITIONAL(HAVE_OPENSSL, [test "x$have_tls" = "xOpenSSL" || test "x$have_tls" = "xOpenSSL (PSK not supported)"])
+AM_CONDITIONAL(HAVE_GNUTLS, [test "x$have_tls" = "xGnuTLS"])
 
 SERVER_LDFLAGS="$SERVER_LDFLAGS $TLS_LDFLAGS"
 SERVER_LIBS="$SERVER_LIBS $TLS_LIBS"
@@ -1652,19 +1884,18 @@ fi
 AM_CONDITIONAL(HAVE_LIBMODBUS, [test "x$have_libmodbus" = "xyes"])
 
 if test "x$agent2" = "xyes"; then
-	AC_CHECK_PROGS([GO], [go], [no])
-	if test "x$GO" = "xno"; then
-		AC_MSG_ERROR([Unable to find "go" executable in path])
-	fi
 	AC_DEFINE(ZBX_BUILD_AGENT2,1,[Define to 1 if Agent2 is being built.])
 fi
 
 if test "x$webservice" = "xyes"; then
+	AC_DEFINE(ZBX_BUILD_WEBSERVICE,1,[Define to 1 if Web Service is being built.])
+fi
+
+if test "x$agent2" = "xyes" || test "x$webservice" = "xyes"; then
 	AC_CHECK_PROGS([GO], [go], [no])
 	if test "x$GO" = "xno"; then
 		AC_MSG_ERROR([Unable to find "go" executable in path])
 	fi
-	AC_DEFINE(ZBX_BUILD_WEBSERVICE,1,[Define to 1 if Web Service is being built.])
 fi
 
 if test "x$java" = "xyes"; then
@@ -1697,9 +1928,11 @@ AGENT_LIBS="$AGENT_LIBS $LDAP_LIBS"
 
 AC_SUBST(LDAP_CPPFLAGS)
 
+dnl Currently required cURL library version is 7.19.1 . When it is
+dnl increased all the functionality in zbxcurl.h must be revised.
 found_curl="no"
 dnl Checking for libCurl [by default - skip]
-LIBCURL_CHECK_CONFIG(, [7.13.1], [],[])
+LIBCURL_CHECK_CONFIG(, [7.19.1], [],[])
 if test "x$want_curl" = "xyes"; then
 	if test "x$found_curl" != "xyes"; then
 		AC_MSG_ERROR([Curl library not found])
@@ -1732,14 +1965,21 @@ ZBXJS_LDFLAGS="$ZBXJS_LDFLAGS $LIBCURL_LDFLAGS"
 ZBXJS_LIBS="$ZBXJS_LIBS $LIBCURL_LIBS"
 
 if test "x$server" = "xyes" || test "x$proxy" = "xyes" || test "x$agent" = "xyes" || test "x$agent2" = "xyes"; then
-
-want_libpcre=yes
-want_libpcre2=no
+LIBPCRE_CHECK_CONFIG([flags-only])
+LIBPCRE2_CHECK_CONFIG([flags-only])
 
 if test "x$want_libpcre2" = "xno"; then # default to old pcre
 	if test "x$want_libpcre" = "xno"; then
 		AC_MSG_NOTICE([using old pcre library by default])
 	fi
+
+	LIBPCRE_CHECK_CONFIG([mandatory])
+
+	if test "x$found_libpcre" != "xyes"; then
+		AC_MSG_ERROR([unable to use libpcre (libpcre check failed)])
+	fi
+
+	LIBPCRE_CHECK_CONFIG([no])
 
 	CFLAGS="$CFLAGS $LIBPCRE_CFLAGS"
 	LDFLAGS="$LDFLAGS $LIBPCRE_LDFLAGS"
@@ -1793,6 +2033,17 @@ LIBS="$LIBS $ICONV_LIBS"
 
 TIMES_CHECK_NULL_ARG([no])
 
+have_stacksize="no"
+
+AC_ARG_WITH(stacksize,[
+Override default thread stack size:
+AS_HELP_STRING([--with-stacksize=STACKSIZE], [Set default thread stack size in kilobytes.])],
+[case "${withval}" in
+  [[0-9]][[0-9]][[0-9]]|[[0-9]][[0-9]][[0-9]][[0-9]]|[[0-9]][[0-9]][[0-9]][[0-9]][[0-9]])
+    AC_DEFINE_UNQUOTED(HAVE_STACKSIZE, ${withval}, [Override default thread stack size.]) ;;
+  *) AC_MSG_ERROR([bad value ${withval} for --with-stacksize]) ;;
+esac])
+
 RANLIB="ranlib"
 AC_SUBST(RANLIB)
 
@@ -1800,8 +2051,8 @@ SERVER_CONFIG_FILE="${sysconfdir}/zabbix_server.conf"
 PROXY_CONFIG_FILE="${sysconfdir}/zabbix_proxy.conf"
 AGENT_CONFIG_FILE="${sysconfdir}/zabbix_agentd.conf"
 AGENT2_CONFIG_FILE="${sysconfdir}/zabbix_agent2.conf"
-AGENT2_CONFIG_PATH="${sysconfdir}/zabbix_agent2.d"
-AGENT2_CONFIG_PLUGINS_PATH="${AGENT2_CONFIG_PATH}/plugins.d"
+AGENT2_CONFIG_DIR="${sysconfdir}/zabbix_agent2.d"
+AGENT2_PLUGIN_CONFIG_DIR="${AGENT2_CONFIG_DIR}/plugins.d"
 WEBSERVICE_CONFIG_FILE="${sysconfdir}/zabbix_web_service.conf"
 
 EXTERNAL_SCRIPTS_PATH="${datadir}/zabbix/externalscripts"
@@ -1833,6 +2084,7 @@ if test "x$agent2" = "xyes"; then
 	CGO_CFLAGS="$TLS_CFLAGS $LIBPCRE_CFLAGS $LIBPCRE2_CFLAGS"
 	CGO_LDFLAGS="$AGENT2_LDFLAGS $LD_START_GROUP \
 		\${abs_top_builddir}/src/libs/zbxalgo/libzbxalgo.a \
+		\${abs_top_builddir}/src/libs/zbxinterface/libzbxinterface.a \
 		\${abs_top_builddir}/src/libs/zbxcommon/libzbxcommon.a \
 		\${abs_top_builddir}/src/libs/zbxcomms/libzbxcomms.a \
 		\${abs_top_builddir}/src/libs/zbxcompress/libzbxcompress.a \
@@ -1847,6 +2099,7 @@ if test "x$agent2" = "xyes"; then
 		\${abs_top_builddir}/src/libs/zbxregexp/libzbxregexp.a \
 		\${abs_top_builddir}/src/libs/zbxnum/libzbxnum.a \
 		\${abs_top_builddir}/src/libs/zbxstr/libzbxstr.a \
+		\${abs_top_builddir}/src/libs/zbxfile/libzbxfile.a \
 		\${abs_top_builddir}/src/libs/zbxparam/libzbxparam.a \
 		\${abs_top_builddir}/src/libs/zbxexpr/libzbxexpr.a \
 		\${abs_top_builddir}/src/libs/zbxtime/libzbxtime.a \
@@ -1861,6 +2114,8 @@ if test "x$agent2" = "xyes"; then
 		\${abs_top_builddir}/src/libs/zbxvariant/libzbxvariant.a \
 		\${abs_top_builddir}/src/libs/zbxxml/libzbxxml.a \
 		\${abs_top_builddir}/src/zabbix_agent/logfiles/libzbxlogfiles.a \
+		\${abs_top_builddir}/src/zabbix_agent/active_checks/libzbxactive_checks.a \
+		\${abs_top_builddir}/src/zabbix_agent/metrics/libzbxmetrics.a \
 		$LIBS $AGENT2_LIBS $LD_END_GROUP"
 
 	AC_SUBST(CGO_CFLAGS)
@@ -1880,8 +2135,8 @@ AC_SUBST(SERVER_CONFIG_FILE)
 AC_SUBST(PROXY_CONFIG_FILE)
 AC_SUBST(AGENT_CONFIG_FILE)
 AC_SUBST(AGENT2_CONFIG_FILE)
-AC_SUBST(AGENT2_CONFIG_PATH)
-AC_SUBST(AGENT2_CONFIG_PLUGINS_PATH)
+AC_SUBST(AGENT2_CONFIG_DIR)
+AC_SUBST(AGENT2_PLUGIN_CONFIG_DIR)
 AC_SUBST(WEBSERVICE_CONFIG_FILE)
 
 AC_SUBST(EXTERNAL_SCRIPTS_PATH)
@@ -1892,14 +2147,7 @@ AC_SUBST(CURL_SSL_KEY_LOCATION)
 
 AC_SUBST(LOAD_MODULE_PATH)
 
-GOBIN=${sbindir}
-GOCMD=go
-GOWORKDIR=$ac_abs_confdir/go/src/zabbix
-
-export GOBIN=${GOBIN}
-AC_SUBST(GOBIN)
-AC_SUBST(GOCMD)
-AC_SUBST(GOWORKDIR)
+AC_SUBST(GO)
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1942,8 +2190,6 @@ AC_CONFIG_FILES([
 	database/Makefile
 	database/mysql/Makefile
 	database/mysql/option-patches/Makefile
-	database/oracle/Makefile
-	database/oracle/option-patches/Makefile
 	database/postgresql/Makefile
 	database/postgresql/option-patches/Makefile
 	database/postgresql/timescaledb/Makefile
@@ -1956,16 +2202,22 @@ AC_CONFIG_FILES([
 	src/go/Makefile
 	src/libs/Makefile
 	src/libs/zbxalgo/Makefile
+	src/libs/zbxasyncpoller/Makefile
+	src/libs/zbxasynchttppoller/Makefile
 	src/libs/zbxaudit/Makefile
+	src/libs/zbxautoreg/Makefile
 	src/libs/zbxavailability/Makefile
 	src/libs/zbxconnector/Makefile
 	src/libs/zbxcommon/Makefile
+	src/libs/zbxbincommon/Makefile
 	src/libs/zbxcomms/Makefile
 	src/libs/zbxcommshigh/Makefile
 	src/libs/zbxcompress/Makefile
-	src/libs/zbxconf/Makefile
+	src/libs/zbxcfg/Makefile
 	src/libs/zbxcrypto/Makefile
+	src/libs/zbxcurl/Makefile
 	src/libs/zbxdb/Makefile
+	src/libs/zbxdbsyncer/Makefile
 	src/libs/zbxcacheconfig/Makefile
 	src/libs/zbxcachehistory/Makefile
 	src/libs/zbxcachevalue/Makefile
@@ -1974,40 +2226,53 @@ AC_CONFIG_FILES([
 	src/libs/zbxdbschema/Makefile
 	src/libs/zbxdbupgrade/Makefile
 	src/libs/zbxdiag/Makefile
+	src/libs/zbxdiscoverer/Makefile
 	src/libs/zbxdiscovery/Makefile
 	src/libs/zbxembed/Makefile
 	src/libs/zbxeval/Makefile
+	src/libs/zbxevent/Makefile
 	src/libs/zbxexec/Makefile
 	src/libs/zbxexport/Makefile
 	src/libs/zbxexpr/Makefile
+	src/libs/zbxfile/Makefile
 	src/libs/zbxgetopt/Makefile
-	src/libs/zbxha/Makefile
 	src/libs/zbxhash/Makefile
 	src/libs/zbxhistory/Makefile
 	src/libs/zbxhttp/Makefile
 	src/libs/zbxicmpping/Makefile
 	src/libs/zbxip/Makefile
+	src/libs/zbxinterface/Makefile
 	src/libs/zbxipcservice/Makefile
+	src/libs/zbxipmi/Makefile
 	src/libs/zbxjson/Makefile
 	src/libs/zbxkvs/Makefile
 	src/libs/zbxlog/Makefile
 	src/libs/zbxmedia/Makefile
 	src/libs/zbxmodules/Makefile
 	src/libs/zbxmutexs/Makefile
+	src/libs/zbxpgservice/Makefile
 	src/libs/zbxprof/Makefile
 	src/libs/zbxnix/Makefile
 	src/libs/zbxnum/Makefile
+	src/libs/zbxodbc/Makefile
 	src/libs/zbxparam/Makefile
+	src/libs/zbxpoller/Makefile
+	src/libs/zbxagentget/Makefile
 	src/libs/zbxpreproc/Makefile
+	src/libs/zbxpreprocbase/Makefile
 	src/libs/zbxprometheus/Makefile
+	src/libs/zbxproxybuffer/Makefile
 	src/libs/zbxregexp/Makefile
 	src/libs/zbxrtc/Makefile
 	src/libs/zbxself/Makefile
 	src/libs/zbxserialize/Makefile
-	src/libs/zbxserver/Makefile
+	src/libs/zbxexpression/Makefile
+	src/libs/zbxscripts/Makefile
 	src/libs/zbxservice/Makefile
 	src/libs/zbxshmem/Makefile
+	src/libs/zbxsnmptrapper/Makefile
 	src/libs/zbxstr/Makefile
+	src/libs/zbxvmware/Makefile
 	src/libs/zbxsysinfo/Makefile
 	src/libs/zbxsysinfo/agent/Makefile
 	src/libs/zbxsysinfo/aix/Makefile
@@ -2018,7 +2283,6 @@ AC_CONFIG_FILES([
 	src/libs/zbxsysinfo/linux/Makefile
 	src/libs/zbxsysinfo/netbsd/Makefile
 	src/libs/zbxsysinfo/openbsd/Makefile
-	src/libs/zbxsysinfo/osf/Makefile
 	src/libs/zbxsysinfo/osx/Makefile
 	src/libs/zbxsysinfo/simple/Makefile
 	src/libs/zbxsysinfo/solaris/Makefile
@@ -2026,59 +2290,73 @@ AC_CONFIG_FILES([
 	src/libs/zbxstats/Makefile
 	src/libs/zbxtagfilter/Makefile
 	src/libs/zbxtasks/Makefile
+	src/libs/zbxhttppoller/Makefile
 	src/libs/zbxthreads/Makefile
 	src/libs/zbxtime/Makefile
 	src/libs/zbxtimekeeper/Makefile
+	src/libs/zbxtrapper/Makefile
 	src/libs/zbxtrends/Makefile
 	src/libs/zbxvariant/Makefile
 	src/libs/zbxvault/Makefile
 	src/libs/zbxversion/Makefile
 	src/libs/zbxxml/Makefile
+	src/libs/zbxalerter/Makefile
+	src/libs/zbxpinger/Makefile
+	src/libs/zbxescalations/Makefile
 	src/zabbix_agent/Makefile
 	src/zabbix_agent/logfiles/Makefile
+	src/zabbix_agent/active_checks/Makefile
+	src/zabbix_agent/agent_conf/Makefile
+	src/zabbix_agent/listener/Makefile
+	src/zabbix_agent/metrics/Makefile
 	src/zabbix_get/Makefile
 	src/zabbix_java/Makefile
 	src/zabbix_js/Makefile
 	src/zabbix_proxy/Makefile
+	src/zabbix_proxy/autoreg/Makefile
+	src/zabbix_proxy/cachehistory/Makefile
 	src/zabbix_proxy/datasender/Makefile
 	src/zabbix_proxy/diag/Makefile
+	src/zabbix_proxy/discovery/Makefile
 	src/zabbix_proxy/housekeeper/Makefile
 	src/zabbix_proxy/proxyconfig/Makefile
 	src/zabbix_proxy/rtc/Makefile
+	src/zabbix_proxy/poller/Makefile
+	src/zabbix_proxy/preproc/Makefile
 	src/zabbix_proxy/proxyconfigwrite/Makefile
 	src/zabbix_proxy/stats/Makefile
 	src/zabbix_proxy/taskmanager/Makefile
+	src/zabbix_proxy/trapper/Makefile
 	src/zabbix_sender/Makefile
 	src/zabbix_server/Makefile
-	src/zabbix_server/alerter/Makefile
-	src/zabbix_server/availability/Makefile
+	src/zabbix_server/audit/Makefile
+	src/zabbix_server/autoreg/Makefile
+	src/zabbix_server/actions/Makefile
+	src/zabbix_server/postinit/Makefile
+	src/zabbix_server/cachehistory/Makefile
 	src/zabbix_server/connector/Makefile
+	src/zabbix_server/dbconfigworker/Makefile
 	src/zabbix_server/dbconfig/Makefile
-	src/zabbix_server/dbsyncer/Makefile
 	src/zabbix_server/diag/Makefile
-	src/zabbix_server/discoverer/Makefile
+	src/zabbix_server/discovery/Makefile
 	src/zabbix_server/escalator/Makefile
+	src/zabbix_server/events/Makefile
 	src/zabbix_server/ha/Makefile
 	src/zabbix_server/housekeeper/Makefile
-	src/zabbix_server/httppoller/Makefile
-	src/zabbix_server/ipmi/Makefile
 	src/zabbix_server/lld/Makefile
-	src/zabbix_server/odbc/Makefile
-	src/zabbix_server/pinger/Makefile
+	src/zabbix_server/pgmanager/Makefile
+	src/zabbix_server/operations/Makefile
 	src/zabbix_server/poller/Makefile
-	src/zabbix_server/preprocessor/Makefile
+	src/zabbix_server/preproc/Makefile
 	src/zabbix_server/proxyconfigread/Makefile
 	src/zabbix_server/proxypoller/Makefile
 	src/zabbix_server/reporter/Makefile
 	src/zabbix_server/rtc/Makefile
-	src/zabbix_server/scripts/Makefile
 	src/zabbix_server/service/Makefile
-	src/zabbix_server/snmptrapper/Makefile
 	src/zabbix_server/stats/Makefile
 	src/zabbix_server/taskmanager/Makefile
 	src/zabbix_server/timer/Makefile
 	src/zabbix_server/trapper/Makefile
-	src/zabbix_server/vmware/Makefile
 	man/Makefile
 	])
 AC_OUTPUT
@@ -2102,11 +2380,11 @@ AGENT_CONFIG_FILE=`eval echo "${AGENT_CONFIG_FILE}"`
 AGENT2_CONFIG_FILE=`eval echo "${AGENT2_CONFIG_FILE}"`
 AGENT2_CONFIG_FILE=`eval echo "${AGENT2_CONFIG_FILE}"`
 
-AGENT2_CONFIG_PATH=`eval echo "${AGENT2_CONFIG_PATH}"`
-AGENT2_CONFIG_PATH=`eval echo "${AGENT2_CONFIG_PATH}"`
+AGENT2_CONFIG_DIR=`eval echo "${AGENT2_CONFIG_DIR}"`
+AGENT2_CONFIG_DIR=`eval echo "${AGENT2_CONFIG_DIR}"`
 
-AGENT2_CONFIG_PLUGINS_PATH=`eval echo "${AGENT2_CONFIG_PLUGINS_PATH}"`
-AGENT2_CONFIG_PLUGINS_PATH=`eval echo "${AGENT2_CONFIG_PLUGINS_PATH}"`
+AGENT2_PLUGIN_CONFIG_DIR=`eval echo "${AGENT2_PLUGIN_CONFIG_DIR}"`
+AGENT2_PLUGIN_CONFIG_DIR=`eval echo "${AGENT2_PLUGIN_CONFIG_DIR}"`
 
 WEBSERVICE_CONFIG_FILE=`eval echo "${WEBSERVICE_CONFIG_FILE}"`
 WEBSERVICE_CONFIG_FILE=`eval echo "${WEBSERVICE_CONFIG_FILE}"`
@@ -2157,6 +2435,10 @@ fi
 
 if test "x$UNIXODBC_CFLAGS" != "x"; then
 	echo "    unixODBC:              ${UNIXODBC_CFLAGS}"
+fi
+
+if test "x$ARES_CFLAGS" != "x"; then
+	echo "    c-ares:              ${ARES_CFLAGS}"
 fi
 
 if test "x$SNMP_CFLAGS" != "x"; then
@@ -2315,6 +2597,6 @@ echo "***********************************************************"
 echo "*            Now run '${am_make} install'                       *"
 echo "*                                                         *"
 echo "*            Thank you for using Zabbix!                  *"
-echo "*              <http://www.zabbix.com>                    *"
+echo "*              <https://www.zabbix.com>                   *"
 echo "***********************************************************"
 echo

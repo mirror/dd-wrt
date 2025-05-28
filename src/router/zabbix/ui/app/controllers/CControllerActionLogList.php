@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -24,16 +19,6 @@
  */
 
 class CControllerActionLogList extends CController {
-
-	/**
-	 * @var string  Time from.
-	 */
-	private $from;
-
-	/**
-	 * @var string  Time till.
-	 */
-	private $to;
 
 	protected function init(): void {
 		$this->disableCsrfValidation();
@@ -53,23 +38,10 @@ class CControllerActionLogList extends CController {
 			'to' =>						'range_time'
 		];
 
-		$ret = $this->validateInput($fields);
+		$ret = $this->validateInput($fields) && $this->validateTimeSelectorPeriod();
 
 		if (!$ret) {
 			$this->setResponse(new CControllerResponseFatal());
-		}
-		else {
-			if ($this->hasInput('from') || $this->hasInput('to')) {
-				validateTimeSelectorPeriod(
-					$this->hasInput('from') ? $this->getInput('from') : null,
-					$this->hasInput('to') ? $this->getInput('to') : null
-				);
-			}
-
-			$this->from = $this->getInput('from', CProfile::get('web.actionlog.filter.from',
-				'now-'.CSettingsHelper::get(CSettingsHelper::PERIOD_DEFAULT)
-			));
-			$this->to = $this->getInput('to', CProfile::get('web.actionlog.filter.to', 'now'));
 		}
 
 		return $ret;
@@ -87,6 +59,16 @@ class CControllerActionLogList extends CController {
 			$this->deleteProfiles();
 		}
 
+		$timeselector_options = [
+			'profileIdx' => 'web.actionlog.filter',
+			'profileIdx2' => 0,
+			'from' => null,
+			'to' => null
+		];
+
+		$this->getInputs($timeselector_options, ['from', 'to']);
+		updateTimeSelectorPeriod($timeselector_options);
+
 		$data = [
 			'page' => $this->getInput('page', 1),
 			'userids' => CProfile::getArray('web.actionlog.filter.userids', []),
@@ -100,12 +82,7 @@ class CControllerActionLogList extends CController {
 			'messages' => CProfile::get('web.actionlog.filter.messages', ''),
 			'alerts' => [],
 			'action' => $this->getAction(),
-			'timeline' => getTimeSelectorPeriod([
-				'profileIdx' => 'web.actionlog.filter',
-				'profileIdx2' => 0,
-				'from' => $this->from,
-				'to' => $this->to
-			]),
+			'timeline' => getTimeSelectorPeriod($timeselector_options),
 			'active_tab' => CProfile::get('web.actionlog.filter.active', 1)
 		];
 
@@ -156,7 +133,9 @@ class CControllerActionLogList extends CController {
 				'output' => ['alertid', 'actionid', 'userid', 'clock', 'sendto', 'subject', 'message', 'status',
 					'retries', 'error', 'alerttype'
 				],
-				'filter' => ['status' => $data['actionlog_statuses']],
+				'filter' => [
+					'status' => $data['actionlog_statuses'] ?: null
+				],
 				'selectMediatypes' => ['mediatypeid', 'name', 'maxattempts'],
 				'userids' => $userids ?: null,
 				'actionids' => $actionids ?: null,
@@ -226,15 +205,19 @@ class CControllerActionLogList extends CController {
 	}
 
 	private function updateProfiles(): void {
+		$filter_statuses = $this->getInput('filter_statuses', []);
+
+		if (in_array(ALERT_STATUS_NOT_SENT, $filter_statuses)) {
+			$filter_statuses[] = ALERT_STATUS_NEW;
+		}
+
 		CProfile::updateArray('web.actionlog.filter.userids', $this->getInput('filter_userids', []), PROFILE_TYPE_ID);
 		CProfile::updateArray('web.actionlog.filter.actionids', $this->getInput('filter_actionids', []),
 			PROFILE_TYPE_ID);
 		CProfile::updateArray('web.actionlog.filter.mediatypeids', $this->getInput('filter_mediatypeids', []),
 			PROFILE_TYPE_ID);
-		CProfile::updateArray('web.actionlog.filter.statuses', $this->getInput('filter_statuses', []), PROFILE_TYPE_ID);
+		CProfile::updateArray('web.actionlog.filter.statuses', $filter_statuses, PROFILE_TYPE_ID);
 		CProfile::update('web.actionlog.filter.messages', $this->getInput('filter_messages', ''), PROFILE_TYPE_STR);
-		CProfile::update('web.actionlog.filter.from', $this->from, PROFILE_TYPE_STR);
-		CProfile::update('web.actionlog.filter.to', $this->to, PROFILE_TYPE_STR);
 	}
 
 	private function deleteProfiles(): void {

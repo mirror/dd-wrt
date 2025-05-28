@@ -1,28 +1,21 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "../sysinfo.h"
 #include "net.h"
 
 #include "zbxcomms.h"
-#include "log.h"
-#include "cfg.h"
 #include "zbxstr.h"
 #include "zbxnum.h"
 
@@ -35,8 +28,8 @@ int	tcp_expect(const char *host, unsigned short port, int timeout, const char *r
 
 	*value_int = 0;
 
-	if (SUCCEED != (net = zbx_tcp_connect(&s, CONFIG_SOURCE_IP, host, port, timeout, ZBX_TCP_SEC_UNENCRYPTED, NULL,
-			NULL)))
+	if (SUCCEED != (net = zbx_tcp_connect(&s, sysinfo_get_config_source_ip(), host, port, timeout,
+			ZBX_TCP_SEC_UNENCRYPTED, NULL, NULL)))
 	{
 		goto out;
 	}
@@ -103,7 +96,7 @@ int	net_tcp_port(AGENT_REQUEST *request, AGENT_RESULT *result)
 		return SYSINFO_RET_FAIL;
 	}
 
-	if (SYSINFO_RET_OK == (ret = tcp_expect(ip, port, sysinfo_get_config_timeout(), NULL, NULL, NULL, &value_int)))
+	if (SYSINFO_RET_OK == (ret = tcp_expect(ip, port, request->timeout, NULL, NULL, NULL, &value_int)))
 		SET_UI64_RESULT(result, value_int);
 
 	return ret;

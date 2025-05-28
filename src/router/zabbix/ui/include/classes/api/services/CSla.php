@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -505,7 +500,7 @@ class CSla extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkDuplicates(array $slas, array $db_slas = null): void {
+	private static function checkDuplicates(array $slas, ?array $db_slas = null): void {
 		$names = [];
 
 		foreach ($slas as $sla) {
@@ -534,7 +529,7 @@ class CSla extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkSlo(array $slas, array $db_slas = null): void {
+	private static function checkSlo(array $slas, ?array $db_slas = null): void {
 		foreach ($slas as $sla) {
 			$name = $db_slas !== null ? $db_slas[$sla['slaid']]['name'] : $sla['name'];
 
@@ -552,7 +547,7 @@ class CSla extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkSchedule(array &$slas, array $db_slas = null): void {
+	private static function checkSchedule(array &$slas, ?array $db_slas = null): void {
 		foreach ($slas as &$sla) {
 			if (!array_key_exists('schedule', $sla)) {
 				continue;
@@ -579,7 +574,7 @@ class CSla extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkExcludedDowntimes(array $slas, array $db_slas = null): void {
+	private static function checkExcludedDowntimes(array $slas, ?array $db_slas = null): void {
 		foreach ($slas as $sla) {
 			if (!array_key_exists('excluded_downtimes', $sla)) {
 				continue;
@@ -700,7 +695,7 @@ class CSla extends CApiService {
 	 * @param array      $slas
 	 * @param array|null $db_slas
 	 */
-	private static function updateServiceTags(array &$slas, array $db_slas = null): void {
+	private static function updateServiceTags(array &$slas, ?array $db_slas = null): void {
 		$ins_service_tags = [];
 		$del_service_tags = [];
 
@@ -770,7 +765,7 @@ class CSla extends CApiService {
 	 * @param array      $slas
 	 * @param array|null $db_slas
 	 */
-	private static function updateSchedule(array &$slas, array $db_slas = null): void {
+	private static function updateSchedule(array &$slas, ?array $db_slas = null): void {
 		$ins_schedule = [];
 		$del_schedule = [];
 
@@ -837,7 +832,7 @@ class CSla extends CApiService {
 	 * @param array      $slas
 	 * @param array|null $db_slas
 	 */
-	private static function updateExcludedDowntimes(array &$slas, array $db_slas = null): void {
+	private static function updateExcludedDowntimes(array &$slas, ?array $db_slas = null): void {
 		$ins_excluded_downtimes = [];
 		$upd_excluded_downtimes = [];
 		$del_excluded_downtimes = [];

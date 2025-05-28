@@ -80,6 +80,6 @@ type EventScriptParsed struct {
 	StackTrace              *runtime.StackTrace        `json:"stackTrace,omitempty"`     // JavaScript top stack frame of where the script parsed event was triggered if available.
 	CodeOffset              int64                      `json:"codeOffset,omitempty"`     // If the scriptLanguage is WebAssembly, the code section offset in the module.
 	ScriptLanguage          ScriptLanguage             `json:"scriptLanguage,omitempty"` // The language of the script.
-	DebugSymbols            *DebugSymbols              `json:"debugSymbols,omitempty"`   // If the scriptLanguage is WebASsembly, the source of debug symbols for the module.
+	DebugSymbols            []*DebugSymbols            `json:"debugSymbols,omitempty"`   // If the scriptLanguage is WebAssembly, the source of debug symbols for the module.
 	EmbedderName            string                     `json:"embedderName,omitempty"`   // The name the embedder supplied for this script.
 }

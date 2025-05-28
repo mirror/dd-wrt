@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -26,7 +21,6 @@
 
 $this->addJsFile('flickerfreescreen.js');
 $this->addJsFile('gtlc.js');
-$this->addJsFile('class.calendar.js');
 
 $this->includeJsFile('reports.auditlog.list.js.php');
 
@@ -95,6 +89,9 @@ $html_page = (new CHtmlPage())
 				->addRow(_('Recordset ID'), (new CTextBox('filter_recordsetid', $data['recordsetid']))
 					->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 				)
+				->addRow(_('IP'), (new CTextBox('filter_ip', $data['ip']))
+					->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
+				)
 		])
 	);
 
@@ -108,7 +105,8 @@ $table = (new CTableInfo())
 		_('Action'),
 		_('Recordset ID'),
 		_('Details')
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 foreach ($data['auditlogs'] as $auditlog) {
 	$table->addRow([
@@ -116,7 +114,12 @@ foreach ($data['auditlogs'] as $auditlog) {
 		in_array($auditlog['userid'], $data['non_existent_userids'])
 			? new CTag('em', true, $auditlog['username'])
 			: $data['users'][$auditlog['userid']],
-		$auditlog['ip'],
+		new CLink($auditlog['ip'],
+			(new CUrl('zabbix.php'))
+				->setArgument('action', $data['action'])
+				->setArgument('filter_ip', $auditlog['ip'])
+				->setArgument('filter_set', 1)
+		),
 		array_key_exists($auditlog['resourcetype'], $data['resources'])
 			? $data['resources'][$auditlog['resourcetype']]
 			: _('Unknown resource'),
@@ -137,7 +140,7 @@ foreach ($data['auditlogs'] as $auditlog) {
 				->setArgument('filter_set', 1)
 		),
 		(new CDiv([
-			new CDiv(zbx_nl2br($auditlog['short_details'])),
+			(new CDiv(zbx_nl2br($auditlog['short_details'])))->addClass(ZBX_STYLE_WORDBREAK),
 			($auditlog['details_button'] == 1)
 				? (new CDiv(
 					(new CLinkAction(_('Details')))->setAttribute('data-details', json_encode($auditlog['details']))
@@ -163,7 +166,7 @@ $html_page
 	->addItem(
 		(new CForm('get'))
 			->setName('auditForm')
-			->addItem([$table, $data['paging']])
+			->addItem($table)
 	)
 	->show();
 

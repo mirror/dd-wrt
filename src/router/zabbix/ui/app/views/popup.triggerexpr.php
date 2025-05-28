@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -35,7 +30,7 @@ $expression_form = (new CForm())
 	->addVar('function', $data['function']);
 
 // Enable form submitting on Enter.
-$expression_form->addItem((new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
+$expression_form->addItem((new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
 
 if ($data['parent_discoveryid'] !== '') {
 	$expression_form->addVar('parent_discoveryid', $data['parent_discoveryid']);
@@ -52,7 +47,14 @@ $popup_options = [
 	'dstfrm' => $expression_form->getName(),
 	'dstfld1' => 'itemid',
 	'dstfld2' => 'item_description',
-	'writeonly' => '1'
+	'writeonly' => '1',
+	'value_types' => [
+		ITEM_VALUE_TYPE_FLOAT,
+		ITEM_VALUE_TYPE_STR,
+		ITEM_VALUE_TYPE_LOG,
+		ITEM_VALUE_TYPE_UINT64,
+		ITEM_VALUE_TYPE_TEXT
+	]
 ];
 
 if ($data['context'] === 'host') {
@@ -99,7 +101,14 @@ if ($data['item_required']) {
 				'dstfrm' => $expression_form->getName(),
 				'dstfld1' => 'itemid',
 				'dstfld2' => 'item_description',
-				'parent_discoveryid' => $data['parent_discoveryid']
+				'parent_discoveryid' => $data['parent_discoveryid'],
+				'value_types' => [
+					ITEM_VALUE_TYPE_FLOAT,
+					ITEM_VALUE_TYPE_STR,
+					ITEM_VALUE_TYPE_LOG,
+					ITEM_VALUE_TYPE_UINT64,
+					ITEM_VALUE_TYPE_TEXT
+				]
 			]).');')
 			->removeId();
 	}
@@ -147,9 +156,9 @@ if (array_key_exists('params', $data['functions'][$data['selectedFunction']])) {
 	$count_functions = [
 		'acos', 'ascii', 'asin', 'atan', 'atan2', 'between', 'bitand', 'bitlength', 'bitlshift', 'bitnot', 'bitor',
 		'bitrshift', 'bitxor', 'bytelength', 'cbrt', 'ceil', 'char', 'concat', 'cos', 'cosh', 'cot', 'degrees', 'exp',
-		'expm1', 'floor', 'in', 'insert', 'last', 'left', 'length', 'log', 'log10', 'ltrim', 'mid', 'mod', 'power',
-		'radians', 'rate', 'repeat', 'replace', 'right', 'round', 'rtrim', 'signum', 'sin', 'sinh', 'sqrt', 'tan',
-		'trim', 'truncate'
+		'expm1', 'floor', 'in', 'insert', 'jsonpath', 'last', 'left', 'length', 'log', 'log10', 'ltrim', 'mid', 'mod',
+		'power', 'radians', 'rate', 'repeat', 'replace', 'right', 'round', 'rtrim', 'signum', 'sin', 'sinh', 'sqrt',
+		'tan', 'trim', 'truncate', 'xmlxpath'
 	];
 
 	foreach ($data['functions'][$data['selectedFunction']]['params'] as $param_name => $param_function) {

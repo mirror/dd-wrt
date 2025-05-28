@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -41,7 +36,8 @@ $fields = [
 	'legend' =>			[T_ZBX_INT,			O_OPT, null,	IN('0,1'),			null],
 	'i' =>				[T_ZBX_STR,			O_OPT, P_ONLY_ARRAY,	null,		null],
 	'items' =>			[T_ZBX_STR,			O_OPT, P_ONLY_TD_ARRAY,	null,		null],
-	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),			null]
+	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),			null],
+	'resolve_macros' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),			null]
 ];
 if (!check_fields($fields)) {
 	session_write_close();
@@ -64,18 +60,18 @@ CArrayHelper::sort($items, ['sortorder']);
 /*
  * Permissions
  */
-$dbItems = API::Item()->get([
-	'itemids' => zbx_objectValues($items, 'itemid'),
+$db_items = API::Item()->get([
+	'output' => ['value_type'],
+	'itemids' => array_column($items, 'itemid'),
 	'filter' => [
 		'flags' => [ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_PROTOTYPE, ZBX_FLAG_DISCOVERY_CREATED]
 	],
-	'output' => ['itemid'],
 	'webitems' => true,
 	'preservekeys' => true
 ]);
 
 foreach ($items as $item) {
-	if (!isset($dbItems[$item['itemid']])) {
+	if (!array_key_exists('itemid', $item) || !array_key_exists($item['itemid'], $db_items)) {
 		access_deny();
 	}
 }
@@ -124,8 +120,12 @@ $graph->showLegend(getRequest('legend', 0));
 $graph->setWidth(getRequest('width', 400));
 $graph->setHeight(getRequest('height', 300));
 
+$resolve_macros = (bool) getRequest('resolve_macros', 0);
+
 foreach ($items as $item) {
-	$graph->addItem($item['itemid'], $item['calc_fnc'], $item['color'], $item['type']);
+	if ($db_items[$item['itemid']]['value_type'] != ITEM_VALUE_TYPE_BINARY) {
+		$graph->addItem($item['itemid'], $resolve_macros, $item['calc_fnc'], $item['color'], $item['type']);
+	}
 }
 $graph->draw();
 

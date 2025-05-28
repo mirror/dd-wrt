@@ -16,23 +16,19 @@ $DB['ENCRYPTION']		= false;
 $DB['KEY_FILE']			= '';
 $DB['CERT_FILE']		= '';
 $DB['CA_FILE']			= '';
-$DB['VERIFY_HOST']		= false;
+$DB['VERIFY_HOST']		= true;
 $DB['CIPHER_LIST']		= '';
 
 // Vault configuration. Used if database credentials are stored in Vault secrets manager.
 $DB['VAULT']			= '';
 $DB['VAULT_URL']		= '';
+$DB['VAULT_PREFIX']		= '';
 $DB['VAULT_DB_PATH']	= '';
 $DB['VAULT_TOKEN']		= '';
 $DB['VAULT_CERT_FILE']	= '';
 $DB['VAULT_KEY_FILE']	= '';
 // Uncomment to bypass local caching of credentials.
 // $DB['VAULT_CACHE']	= true;
-
-// Use IEEE754 compatible value range for 64-bit Numeric (float) history values.
-// This option is enabled by default for new Zabbix installations.
-// For upgraded installations, please read database upgrade notes before enabling this option.
-$DB['DOUBLE_IEEE754']	= true;
 
 // Uncomment and set to desired values to override Zabbix hostname/IP and port.
 // $ZBX_SERVER			= '';
@@ -57,3 +53,6 @@ $IMAGE_FORMAT_DEFAULT	= IMAGE_FORMAT_PNG;
 //$SSO['SP_CERT']			= 'conf/certs/sp.crt';
 //$SSO['IDP_CERT']		= 'conf/certs/idp.crt';
 //$SSO['SETTINGS']		= [];
+
+// If set to false, support for HTTP authentication will be disabled.
+// $ALLOW_HTTP_AUTH = true;

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,7 +20,7 @@
  */
 class CFrontendSetup {
 
-	const MIN_PHP_VERSION = '7.4.0';
+	const MIN_PHP_VERSION = '8.0.0';
 	const MIN_PHP_MEMORY_LIMIT = '134217728'; // 128 * ZBX_MEBIBYTE;
 	const MIN_PHP_POST_MAX_SIZE = '16777216'; // 16 * ZBX_MEBIBYTE;
 	const MIN_PHP_UPLOAD_MAX_FILESIZE = '2097152'; // 2 * ZBX_MEBIBYTE;
@@ -49,6 +44,20 @@ class CFrontendSetup {
 	 * Check failed, setup cannot continue. An error will be displayed.
 	 */
 	const CHECK_FATAL = 3;
+
+	/**
+	 * Default language, used by checkLocaleSet() check.
+	 */
+	private $default_lang = '';
+
+	/**
+	 * Set default language, used by checkLocaleSet() check.
+	 *
+	 * @param string $default_lang
+	 */
+	public function setDefaultLang(string $default_lang): void {
+		$this->default_lang = $default_lang;
+	}
 
 	/**
 	 * Perform all requirements checks.
@@ -86,6 +95,8 @@ class CFrontendSetup {
 		$result[] = $this->checkPhpSessionAutoStart();
 		$result[] = $this->checkPhpGettext();
 		$result[] = $this->checkPhpArgSeparatorOutput();
+		$result[] = $this->checkPhpCurlModule();
+		$result[] = $this->checkSystemLocale();
 
 		return $result;
 	}
@@ -238,7 +249,7 @@ class CFrontendSetup {
 			'current' => empty($current) ? _('off') : new CSpan($current),
 			'required' => null,
 			'result' => $current ? self::CHECK_OK : self::CHECK_FATAL,
-			'error' => _('At least one of MySQL, PostgreSQL or Oracle should be supported.')
+			'error' => _('At least one of MySQL or PostgreSQL should be supported.')
 		];
 	}
 
@@ -259,12 +270,6 @@ class CFrontendSetup {
 				'pg_free_result', 'pg_last_error', 'pg_parameter_status', 'pg_query', 'pg_unescape_bytea',
 				'pg_field_type'])) {
 			$allowed_db[ZBX_DB_POSTGRESQL] = 'PostgreSQL';
-		}
-
-		if (zbx_is_callable(['oci_bind_by_name', 'oci_close', 'oci_commit', 'oci_connect', 'oci_error', 'oci_execute',
-				'oci_fetch_assoc', 'oci_field_type', 'oci_free_statement', 'oci_new_descriptor', 'oci_parse',
-				'oci_rollback'])) {
-			$allowed_db[ZBX_DB_ORACLE] = 'Oracle';
 		}
 
 		return $allowed_db;
@@ -651,6 +656,39 @@ class CFrontendSetup {
 	}
 
 	/**
+	 * Checks if selected locale is working.
+	 *
+	 * @return array
+	 */
+	public function checkSystemLocale() {
+		$result = true;
+		$current_locale = setlocale(LC_MONETARY, 0);
+
+		if ($current_locale === false) {
+			$result = false;
+		}
+
+		$locale_variants = zbx_locale_variants($this->default_lang);
+
+		if ($result && !setlocale(LC_MONETARY, $locale_variants)) {
+			$result = false;
+		}
+
+		if ($current_locale !== false) {
+			setlocale(LC_MONETARY, zbx_locale_variants($current_locale));
+		}
+
+		return [
+			'name' => _('System locale'),
+			'current' => $current_locale ?: '',
+			'required' => $this->default_lang,
+			'result' => $result ? self::CHECK_OK : self::CHECK_FATAL,
+			'error' => 'Locale for language "'.$this->default_lang.'" is not found on the web server. Tried to set: '.
+				implode(', ', $locale_variants).'. Unable to translate Zabbix interface.'
+		];
+	}
+
+	/**
 	 * Checks for the SSL parameters point to files that are open for writing.
 	 *
 	 * @return array
@@ -671,6 +709,23 @@ class CFrontendSetup {
 			'required' => null,
 			'result' => $writeable ? self::CHECK_FATAL : self::CHECK_OK,
 			'error' => _s('Database TLS certificate files must be read-only')
+		];
+	}
+
+	/**
+	 * Checks for PHP Curl extension.
+	 *
+	 * @return array
+	 */
+	public function checkPhpCurlModule() {
+		$current = function_exists('curl_init');
+
+		return [
+			'name' => _('PHP curl'),
+			'current' => $current ? _('on') : _('off'),
+			'required' => null,
+			'result' => $current ? self::CHECK_OK : self::CHECK_WARNING,
+			'error' => _('PHP curl extension missing.')
 		];
 	}
 }

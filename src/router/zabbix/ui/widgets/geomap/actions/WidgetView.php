@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -70,7 +65,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 			$data['config'] = $this->geomap_config + $this->getMapCenter() + [
 				'filter' => $this->getUserProfileFilter(),
-				'colors' => self::getSeveritySettings()
+				'severities' => self::getSeveritySettings()
 			];
 		}
 
@@ -81,21 +76,40 @@ class WidgetView extends CControllerDashboardWidgetView {
 	 * Get hosts and their properties to show on the map as markers.
 	 */
 	private function getHosts(): array {
-		$filter_groupids = $this->fields_values['groupids'] ? getSubGroups($this->fields_values['groupids']) : null;
+		if ($this->isTemplateDashboard()) {
+			if ($this->fields_values['override_hostid']) {
+				$hosts = API::Host()->get([
+					'output' => ['hostid', 'name'],
+					'selectInventory' => ['location_lat', 'location_lon'],
+					'hostids' => $this->fields_values['override_hostid'],
+					'filter' => [
+						'inventory_mode' => [HOST_INVENTORY_MANUAL, HOST_INVENTORY_AUTOMATIC]
+					],
+					'monitored_hosts' => true,
+					'preservekeys' => true
+				]);
+			}
+			else {
+				return [];
+			}
+		}
+		else {
+			$filter_groupids = $this->fields_values['groupids'] ? getSubGroups($this->fields_values['groupids']) : null;
 
-		$hosts = API::Host()->get([
-			'output' => ['hostid', 'name'],
-			'selectInventory' => ['location_lat', 'location_lon'],
-			'groupids' => $filter_groupids,
-			'hostids' => $this->fields_values['hostids'] ?: null,
-			'evaltype' => $this->fields_values['evaltype'],
-			'tags' => $this->fields_values['tags'],
-			'filter' => [
-				'inventory_mode' => [HOST_INVENTORY_MANUAL, HOST_INVENTORY_AUTOMATIC]
-			],
-			'monitored_hosts' => true,
-			'preservekeys' => true
-		]);
+			$hosts = API::Host()->get([
+				'output' => ['hostid', 'name'],
+				'selectInventory' => ['location_lat', 'location_lon'],
+				'groupids' => $filter_groupids,
+				'hostids' => $this->fields_values['hostids'] ?: null,
+				'evaltype' => $this->fields_values['evaltype'],
+				'tags' => $this->fields_values['tags'],
+				'filter' => [
+					'inventory_mode' => [HOST_INVENTORY_MANUAL, HOST_INVENTORY_AUTOMATIC]
+				],
+				'monitored_hosts' => true,
+				'preservekeys' => true
+			]);
+		}
 
 		$hosts = array_filter($hosts, static function ($host) {
 			$lat = $host['inventory']['location_lat'];
@@ -120,9 +134,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		// Get problems.
 		$problems = API::Problem()->get([
 			'output' => ['objectid', 'severity'],
-			'symptom' => false,
-			'selectHosts' => ['hostid'],
-			'objectids' => array_keys($triggers)
+			'objectids' => array_keys($triggers),
+			'symptom' => false
 		]);
 
 		// Group problems by hosts.
@@ -250,15 +263,25 @@ class WidgetView extends CControllerDashboardWidgetView {
 	}
 
 	/**
-	 * Create an array of problem severity colors.
+	 * Get severity-related settings.
 	 */
 	private static function getSeveritySettings(): array {
 		$severity_config = [
-			-1 => self::NO_PROBLEMS_MARKER_COLOR
+			-1 => [
+				'name' => _('No problems'),
+				'color' => self::NO_PROBLEMS_MARKER_COLOR,
+				'style' => ''
+			]
 		];
 
-		for ($severity = TRIGGER_SEVERITY_NOT_CLASSIFIED; $severity < TRIGGER_SEVERITY_COUNT; $severity++) {
-			$severity_config[$severity] = '#'.CSeverityHelper::getColor($severity);
+		$severities = CSeverityHelper::getSeverities();
+
+		foreach ($severities as $severity) {
+			$severity_config[$severity['value']] = [
+				'name' => $severity['label'],
+				'color' => '#'.CSeverityHelper::getColor($severity['value']),
+				'style' => $severity['style']
+			];
 		}
 
 		return $severity_config;

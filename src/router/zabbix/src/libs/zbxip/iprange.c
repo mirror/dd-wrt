@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxip.h"
@@ -23,12 +18,12 @@
 
 /******************************************************************************
  *                                                                            *
- * Purpose: checks if the specified character is allowed whitespace character *
- *          that can be used before or after iprange definition               *
+ * Purpose: Checks if the specified character is allowed whitespace character *
+ *          that can be used before or after iprange definition.              *
  *                                                                            *
- * Parameters: value - [IN] the character to check                            *
+ * Parameters: value - [IN] character to check                                *
  *                                                                            *
- * Return value: SUCCEED - the value is whitespace character                  *
+ * Return value: SUCCEED - value is whitespace character                      *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
@@ -48,7 +43,7 @@ static int	iprange_is_whitespace_character(unsigned char value)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: calculates the length of address data without trailing whitespace *
+ * Purpose: calculates length of address data without trailing whitespace     *
  *                                                                            *
  ******************************************************************************/
 static size_t	iprange_address_length(const char *address)
@@ -70,10 +65,10 @@ static size_t	iprange_address_length(const char *address)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: applies a bit mask to the parsed v4 or v6 IP range                *
+ * Purpose: applies bit mask to parsed v4 or v6 IP range                      *
  *                                                                            *
- * Parameters: iprange - [IN] the IP range                                    *
- *             bits    - [IN] the number of bits in IP mask                   *
+ * Parameters: iprange - [IN]                                                 *
+ *             bits    - [IN] number of bits in IP mask                       *
  *                                                                            *
  ******************************************************************************/
 static void	iprange_apply_mask(zbx_iprange_t *iprange, int bits)
@@ -115,14 +110,14 @@ static void	iprange_apply_mask(zbx_iprange_t *iprange, int bits)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: parse IPv4 address into IP range structure                        *
+ * Purpose: parses IPv4 address into IP range structure                       *
  *                                                                            *
- * Parameters: iprange - [OUT] the IP range                                   *
- *             address - [IN]  the IP address with optional ranges or         *
- *                             network mask (see documentation for network    *
- *                             discovery rule configuration)                  *
+ * Parameters: iprange - [OUT]                                                *
+ *             address - [IN] IP address with the optional ranges or network  *
+ *                            mask (see documentation for network discovery   *
+ *                            rule configuration).                            *
  *                                                                            *
- * Return value: SUCCEED - the IP range was successfully parsed               *
+ * Return value: SUCCEED - IP range was successfully parsed                   *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
@@ -207,14 +202,14 @@ static int	iprangev4_parse(zbx_iprange_t *iprange, const char *address)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: parse IPv6 address into IP range structure                        *
+ * Purpose: parses IPv6 address into IP range structure                       *
  *                                                                            *
- * Parameters: iprange - [OUT] the IP range                                   *
- *             address - [IN]  the IP address with optional ranges or         *
- *                             network mask (see documentation for network    *
- *                             discovery rule configuration)                  *
+ * Parameters: iprange - [OUT]                                                *
+ *             address - [IN] IP address with the optional ranges or network  *
+ *                             mask (see documentation for network discovery  *
+ *                             rule configuration).                           *
  *                                                                            *
- * Return value: SUCCEED - the IP range was successfully parsed               *
+ * Return value: SUCCEED - IP range was successfully parsed                   *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
@@ -341,14 +336,41 @@ check_fill:
 
 /******************************************************************************
  *                                                                            *
- * Purpose: parse IP address (v4 or v6) into IP range structure               *
+ * Purpose: converts IP address (v4 or v6) into IP string                     *
  *                                                                            *
- * Parameters: iprange - [OUT] the IP range                                   *
- *             address - [IN]  the IP address with optional ranges or         *
- *                             network mask (see documentation for network    *
- *                             discovery rule configuration)                  *
+ * Parameters: type      - [IN] type of IP                                    *
+ *             ipaddress - [IN] IP address as number array                    *
+ *             ip        - [IN/OUT] string with current address from IP range *
+ *             len       - [IN] size of string buffer for ip address          *
  *                                                                            *
- * Return value: SUCCEED - the IP range was successfully parsed               *
+ ******************************************************************************/
+void	zbx_iprange_ip2str(const unsigned char type, const int *ipaddress, char *ip, const size_t len)
+{
+	if (ZBX_IPRANGE_V6 == type)
+	{
+		zbx_snprintf(ip, len, "%x:%x:%x:%x:%x:%x:%x:%x", (unsigned int)ipaddress[0],
+				(unsigned int)ipaddress[1], (unsigned int)ipaddress[2],
+				(unsigned int)ipaddress[3], (unsigned int)ipaddress[4],
+				(unsigned int)ipaddress[5], (unsigned int)ipaddress[6],
+				(unsigned int)ipaddress[7]);
+	}
+	else
+	{
+		zbx_snprintf(ip, len, "%u.%u.%u.%u", (unsigned int)ipaddress[0], (unsigned int)ipaddress[1],
+				(unsigned int)ipaddress[2], (unsigned int)ipaddress[3]);
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: parses IP address (v4 or v6) into IP range structure              *
+ *                                                                            *
+ * Parameters: iprange - [OUT]                                                *
+ *             address - [IN] IP address with the optional ranges or network  *
+ *                            mask (see documentation for network discovery   *
+ *                            rule configuration).                            *
+ *                                                                            *
+ * Return value: SUCCEED - IP range was successfully parsed                   *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
@@ -366,20 +388,20 @@ int	zbx_iprange_parse(zbx_iprange_t *iprange, const char *address)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: gets the first IP address from the specified range                *
+ * Purpose: gets first IP address from specified range                        *
  *                                                                            *
- * Parameters: iprange - [IN] the IP range                                    *
- *             address - [OUT] the first address of the specified range       *
+ * Parameters: iprange - [IN]                                                 *
+ *             address - [OUT] first address of specified range               *
  *                             (with at least 8 items to support IPv6)        *
  *                                                                            *
- * Comments: The IP address is returned as a number array.                    *
+ * Comments: IP address is returned as number array                           *
  *                                                                            *
  ******************************************************************************/
 void	zbx_iprange_first(const zbx_iprange_t *iprange, int *address)
 {
 	int	i, groups;
 
-	groups = (ZBX_IPRANGE_V4 == iprange->type ? 4 : 8);
+	groups = (ZBX_IPRANGE_V4 == iprange->type ? ZBX_IPRANGE_GROUPS_V4 : ZBX_IPRANGE_GROUPS_V6);
 
 	for (i = 0; i < groups; i++)
 		address[i] = iprange->range[i].from;
@@ -391,24 +413,24 @@ void	zbx_iprange_first(const zbx_iprange_t *iprange, int *address)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: gets the next IP address from the specified range                 *
+ * Purpose: gets next IP address from specified range                         *
  *                                                                            *
- * Parameters: iprange - [IN] the IP range                                    *
- *             address - [IN/OUT] IN - the current address from IP range      *
- *                                OUT - the next address from IP range        *
+ * Parameters: iprange - [IN]                                                 *
+ *             address - [IN/OUT] IN  - current address from IP range         *
+ *                                OUT - next address from IP range            *
  *                                (with at least 8 items to support IPv6)     *
  *                                                                            *
- * Return value: SUCCEED - the next IP address was returned successfully      *
- *               FAIL    - no more addresses in the specified range           *
+ * Return value: SUCCEED - next IP address was returned successfully          *
+ *               FAIL    - no more addresses in specified range               *
  *                                                                            *
- * Comments: The IP address is returned as a number array.                    *
+ * Comments: IP address is returned as number array                           *
  *                                                                            *
  ******************************************************************************/
 int	zbx_iprange_next(const zbx_iprange_t *iprange, int *address)
 {
 	int	i, groups;
 
-	groups = (ZBX_IPRANGE_V4 == iprange->type ? 4 : 8);
+	groups = (ZBX_IPRANGE_V4 == iprange->type ? ZBX_IPRANGE_GROUPS_V4 : ZBX_IPRANGE_GROUPS_V6);
 
 	for (i = groups - 1; i >= 0; i--)
 	{
@@ -440,13 +462,99 @@ int	zbx_iprange_next(const zbx_iprange_t *iprange, int *address)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: checks if the IP address is in specified range                    *
+ * Purpose: gets next unique IP address from specified range                  *
  *                                                                            *
- * Parameters: iprange - [IN] the IP range                                    *
- *             address - [IN] the IP address to check                         *
+ * Parameters: ipranges - [IN] array of ipranges                              *
+ *             num      - [IN] size of ipranges array                         *
+ *             ip       - [IN/OUT] string with current address from IP range  *
+ *             len      - [IN] size of string buffer for ip address           *
+ *                                                                            *
+ * Return value: SUCCEED - next IP address was in specified range             *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_iprange_uniq_next(const zbx_iprange_t *ipranges, const int num, char *ip, const size_t len)
+{
+	static ZBX_THREAD_LOCAL int	idx, ipaddress[8];
+
+	if ('\0' == *ip)
+	{
+		idx = 0;
+		zbx_iprange_first(&ipranges[idx], ipaddress);
+		zbx_iprange_ip2str(ipranges[idx].type, ipaddress, ip, len);
+
+		return SUCCEED;
+	}
+
+	if (FAIL == zbx_iprange_uniq_iter(ipranges, num, &idx, ipaddress))
+		return FAIL;
+
+	zbx_iprange_ip2str(ipranges[idx].type, ipaddress, ip, len);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: gets next unique digital IP address from specified range          *
+ *                                                                            *
+ * Parameters: ipranges  - [IN] array of ipranges                             *
+ *             num       - [IN] size of ipranges array                        *
+ *             idx       - [IN/OUT] current index of ipranges                 *
+ *             ipaddress - [IN/OUT] current ip address from range             *
+ *                                                                            *
+ * Return value: SUCCEED - next IP address was in specified range             *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_iprange_uniq_iter(const zbx_iprange_t *ipranges, const int num, int *idx, int *ipaddress)
+{
+	int	i, z[ZBX_IPRANGE_GROUPS_V6] = {0};
+
+	if (0 == num)
+		return FAIL;
+
+	if (0 == memcmp(ipaddress, z, sizeof(int) * (ZBX_IPRANGE_V4 == ipranges->type ?
+			ZBX_IPRANGE_GROUPS_V4 : ZBX_IPRANGE_GROUPS_V6)))
+	{
+		*idx = 0;
+		zbx_iprange_first(ipranges, ipaddress);
+		return SUCCEED;
+	}
+
+	if (*idx == num)
+		return FAIL;
+
+	do
+	{
+		if (FAIL == zbx_iprange_next(&ipranges[*idx], ipaddress))
+		{
+			if (++(*idx) == num)
+				return FAIL;
+
+			zbx_iprange_first(&ipranges[*idx], ipaddress);
+		}
+
+		for (i = 0; i < *idx; i++)
+		{
+			if (SUCCEED == zbx_iprange_validate(&ipranges[i], ipaddress))
+				break;
+		}
+	}
+	while (i != *idx);	/* skipping ip from overlapping ipranges */
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: checks if IP address is in specified range                        *
+ *                                                                            *
+ * Parameters: iprange - [IN]                                                 *
+ *             address - [IN] IP address to check                             *
  *                            (with at least 8 items to support IPv6)         *
  *                                                                            *
- * Return value: SUCCEED - the IP address was in the specified range          *
+ * Return value: SUCCEED - IP address was in specified range                  *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
@@ -454,7 +562,7 @@ int	zbx_iprange_validate(const zbx_iprange_t *iprange, const int *address)
 {
 	int	i, groups;
 
-	groups = (ZBX_IPRANGE_V4 == iprange->type ? 4 : 8);
+	groups = (ZBX_IPRANGE_V4 == iprange->type ? ZBX_IPRANGE_GROUPS_V4 : ZBX_IPRANGE_GROUPS_V6);
 
 	for (i = 0; i < groups; i++)
 	{
@@ -467,9 +575,9 @@ int	zbx_iprange_validate(const zbx_iprange_t *iprange, const int *address)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: get the number of addresses covered by the specified IP range     *
+ * Purpose: gets number of addresses covered by specified IP range            *
  *                                                                            *
- * Parameters: iprange - [IN] the IP range                                    *
+ * Parameters: iprange - [IN]                                                 *
  *                                                                            *
  * Return value: The number of addresses covered by the range or              *
  *               ZBX_MAX_UINT64 if this number exceeds 64 bit unsigned        *
@@ -481,7 +589,7 @@ zbx_uint64_t	zbx_iprange_volume(const zbx_iprange_t *iprange)
 	int		i, groups;
 	zbx_uint64_t	n, volume = 1;
 
-	groups = (ZBX_IPRANGE_V4 == iprange->type ? 4 : 8);
+	groups = (ZBX_IPRANGE_V4 == iprange->type ? ZBX_IPRANGE_GROUPS_V4 : ZBX_IPRANGE_GROUPS_V6);
 
 	for (i = 0; i < groups; i++)
 	{
@@ -498,4 +606,94 @@ zbx_uint64_t	zbx_iprange_volume(const zbx_iprange_t *iprange)
 		volume -= 2;
 
 	return volume;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: gets next unique port value from specified range                  *
+ *                                                                            *
+ * Parameters: ranges - [IN] array of port ranges                             *
+ *             num    - [IN] size of port ranges array                        *
+ *             port   - [IN/OUT] port with current value from port range      *
+ *                                                                            *
+ * Return value: SUCCEED - next port value was in specified range             *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_portrange_uniq_next(const zbx_range_t *ranges, const int num, int *port)
+{
+	static ZBX_THREAD_LOCAL int	idx, current_port;
+
+	if (0 == num)
+		return FAIL;
+
+	if (ZBX_PORTRANGE_INIT_PORT == *port)
+	{
+		idx = 0;
+		current_port = ranges[idx].from;
+		*port = current_port;
+		return SUCCEED;
+	}
+
+	if (num == idx)
+		return FAIL;
+
+	if (FAIL == zbx_portrange_uniq_iter(ranges, num, &idx, &current_port))
+		return FAIL;
+
+	*port = current_port;
+
+	return SUCCEED;
+
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: gets next unique port value from specified range                  *
+ *                                                                            *
+ * Parameters: ranges - [IN] array of port ranges (allowed values 1-65534)    *
+ *             num    - [IN] size of port ranges array                        *
+ *             idx    - [IN/OUT] index of range in array                      *
+ *             port   - [IN/OUT] port with current value from port range      *
+ *                                                                            *
+ * Return value: SUCCEED - next port value was in specified range             *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_portrange_uniq_iter(const zbx_range_t *ranges, const int num, int *idx, int *port)
+{
+	int	i;
+
+	if (0 == num)
+		return FAIL;
+
+	if (ZBX_PORTRANGE_INIT_PORT == *port)
+	{
+		*idx = 0;
+		*port = ranges->from;
+		return SUCCEED;
+	}
+
+	if (num == *idx)
+		return FAIL;
+
+	do
+	{
+		if (++(*port) > ranges[*idx].to)
+		{
+			if (++(*idx) == num)
+				return FAIL;
+
+			*port = ranges[*idx].from;
+		}
+
+		for (i = 0; i < *idx; i++)
+		{
+			if (*port >= ranges[i].from && *port <= ranges[i].to)
+				break;
+		}
+	}
+	while (i != *idx);	/* skipping port from overlapping port ranges */
+
+	return SUCCEED;
 }

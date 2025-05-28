@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -646,7 +641,8 @@ class CHttpTestManager {
 				if ($httptest['name'] != $db_httptest['name']) {
 					$item += [
 						'name' => self::getTestName($db_item['test_type'], $httptest['name']),
-						'key_' => self::getTestKey($db_item['test_type'], $httptest['name'])
+						'key_' => self::getTestKey($db_item['test_type'], $httptest['name']),
+						'host_status' => $db_httptest['host_status']
 					];
 				}
 
@@ -689,7 +685,8 @@ class CHttpTestManager {
 					if ($httptest['name'] != $db_httptest['name']) {
 						$item += [
 							'name' => self::getStepName($db_item['test_type'], $httptest['name'], $db_step['name']),
-							'key_' => self::getStepKey($db_item['test_type'], $httptest['name'], $db_step['name'])
+							'key_' => self::getStepKey($db_item['test_type'], $httptest['name'], $db_step['name']),
+							'host_status' => $db_httptest['host_status']
 						];
 					}
 
@@ -730,7 +727,7 @@ class CHttpTestManager {
 	 * @param array      $httptests
 	 * @param array|null $db_httptests
 	 */
-	private static function updateFields(array &$httptests, array $db_httptests = null): void {
+	private static function updateFields(array &$httptests, ?array $db_httptests = null): void {
 		$ins_fields = [];
 		$upd_fields = [];
 		$del_fieldids = [];
@@ -818,7 +815,7 @@ class CHttpTestManager {
 	 * @param array      $httptests
 	 * @param array|null $db_httptests
 	 */
-	private static function updateSteps(array &$httptests, array $db_httptests = null): void {
+	private static function updateSteps(array &$httptests, ?array $db_httptests = null): void {
 		$ins_steps = [];
 		$upd_steps = [];
 		$update_step_items = false;
@@ -836,26 +833,11 @@ class CHttpTestManager {
 				if (array_key_exists('httpstepid', $step)) {
 					if (array_key_exists('posts', $step)) {
 						if (is_array($step['posts'])) {
-							if ($db_steps[$step['httpstepid']]['post_type'] == ZBX_POSTTYPE_RAW) {
-								if ($step['posts']) {
-									$step['post_type'] = ZBX_POSTTYPE_FORM;
-								}
-
-								$step['posts'] = '';
-							}
-							else {
-								if (!$step['posts']) {
-									$step['post_type'] = ZBX_POSTTYPE_RAW;
-								}
-
-								unset($step['posts']);
-							}
+							$step['post_type'] = ZBX_POSTTYPE_FORM;
+							$step['posts'] = '';
 						}
 						else {
-							if ($db_steps[$step['httpstepid']]['post_type'] == ZBX_POSTTYPE_FORM) {
-								$step['post_type'] = ZBX_POSTTYPE_RAW;
-								$db_steps[$step['httpstepid']]['posts'] = '';
-							}
+							$step['post_type'] = ZBX_POSTTYPE_RAW;
 						}
 					}
 
@@ -975,7 +957,8 @@ class CHttpTestManager {
 					if ($httptest['name'] != $db_httptest['name'] || $step['name'] !== $db_step['name']) {
 						$item += [
 							'name' => self::getStepName($db_item['test_type'], $httptest['name'], $step['name']),
-							'key_' => self::getStepKey($db_item['test_type'], $httptest['name'], $step['name'])
+							'key_' => self::getStepKey($db_item['test_type'], $httptest['name'], $step['name']),
+							'host_status' => $db_httptest['host_status']
 						];
 					}
 
@@ -1285,7 +1268,7 @@ class CHttpTestManager {
 	 * @param array      $httptests
 	 * @param array|null $db_httptests
 	 */
-	private static function updateTags(array &$httptests, array $db_httptests = null): void {
+	private static function updateTags(array &$httptests, ?array $db_httptests = null): void {
 		$ins_tags = [];
 		$del_tagids = [];
 

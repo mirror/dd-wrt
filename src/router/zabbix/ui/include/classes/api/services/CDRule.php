@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -147,6 +142,7 @@ class CDRule extends CApiService {
 		$sqlParts = $this->applyQueryOutputOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$dbRes = DBselect(self::createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
+
 		while ($drule = DBfetch($dbRes)) {
 			if ($options['countOutput']) {
 				if ($options['groupCount']) {
@@ -167,14 +163,13 @@ class CDRule extends CApiService {
 
 		if ($result) {
 			$result = $this->addRelatedObjects($options, $result);
+
+			if (!$options['preservekeys']) {
+				$result = array_values($result);
+			}
 		}
 
-// removing keys (hash -> array)
-		if (!$options['preservekeys']) {
-			$result = zbx_cleanHashes($result);
-		}
-
-	return $result;
+		return $result;
 	}
 
 	/**
@@ -194,11 +189,16 @@ class CDRule extends CApiService {
 			self::exception(ZBX_API_ERROR_PARAMETERS, _('Empty input parameter.'));
 		}
 
-		$proxy_hostids = [];
+		$proxyids = [];
 
 		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'dns' => false, 'max_ipv4_cidr' => 30]);
+		$allowed_fields = array_flip(['proxyid', 'name', 'iprange', 'delay', 'status', 'concurrency_max', 'dchecks']);
 
 		foreach ($drules as $drule) {
+			if (array_diff_key($drule, $allowed_fields)) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+			}
+
 			if (!array_key_exists('name', $drule)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Field "%1$s" is mandatory.', 'name'));
 			}
@@ -245,15 +245,23 @@ class CDRule extends CApiService {
 				);
 			}
 
-			if (array_key_exists('proxy_hostid', $drule)) {
-				if (!zbx_is_int($drule['proxy_hostid'])) {
+			if (array_key_exists('concurrency_max', $drule)
+					&& ($drule['concurrency_max'] < ZBX_DISCOVERY_CHECKS_UNLIMITED
+						|| $drule['concurrency_max'] > ZBX_DISCOVERY_CHECKS_MAX)) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value "%1$s" for "%2$s" field.', $drule['concurrency_max'], 'concurrency_max')
+				);
+			}
+
+			if (array_key_exists('proxyid', $drule)) {
+				if (!zbx_is_int($drule['proxyid'])) {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value "%1$s" for "%2$s" field.', $drule['proxy_hostid'], 'proxy_hostid')
+						_s('Incorrect value "%1$s" for "%2$s" field.', $drule['proxyid'], 'proxyid')
 					);
 				}
 
-				if ($drule['proxy_hostid'] > 0) {
-					$proxy_hostids[] = $drule['proxy_hostid'];
+				if ($drule['proxyid'] > 0) {
+					$proxyids[] = $drule['proxyid'];
 				}
 			}
 
@@ -267,6 +275,7 @@ class CDRule extends CApiService {
 
 		// Check drule name duplicates in input data.
 		$duplicate = CArrayHelper::findDuplicate($drules, 'name');
+
 		if ($duplicate) {
 			self::exception(ZBX_API_ERROR_PARAMETERS,
 				_s('Discovery rule "%1$s" already exists.', $duplicate['name'])
@@ -287,16 +296,17 @@ class CDRule extends CApiService {
 		}
 
 		// Check proxy IDs.
-		if ($proxy_hostids) {
-			$db_proxies = API::proxy()->get([
+		if ($proxyids) {
+			$db_proxies = API::Proxy()->get([
 				'output' => ['proxyid'],
-				'proxyids' => $proxy_hostids,
+				'proxyids' => $proxyids,
 				'preservekeys' => true
 			]);
-			foreach ($proxy_hostids as $proxy_hostid) {
-				if (!array_key_exists($proxy_hostid, $db_proxies)) {
+
+			foreach ($proxyids as $proxyid) {
+				if (!array_key_exists($proxyid, $db_proxies)) {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value "%1$s" for "%2$s" field.', $proxy_hostid, 'proxy_hostid')
+						_s('Incorrect value "%1$s" for "%2$s" field.', $proxyid, 'proxyid')
 					);
 				}
 			}
@@ -334,11 +344,18 @@ class CDRule extends CApiService {
 		]);
 
 		$drule_names_changed = [];
-		$proxy_hostids = [];
+		$proxyids = [];
 
 		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'dns' => false, 'max_ipv4_cidr' => 30]);
+		$allowed_fields = array_flip([
+			'druleid', 'proxyid', 'name', 'iprange', 'delay', 'status', 'concurrency_max', 'dchecks'
+		]);
 
 		foreach ($drules as $drule) {
+			if (array_diff_key($drule, $allowed_fields)) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+			}
+
 			if (!array_key_exists($drule['druleid'], $db_drules)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions to referred object or it does not exist!'));
 			}
@@ -394,15 +411,23 @@ class CDRule extends CApiService {
 				);
 			}
 
-			if (array_key_exists('proxy_hostid', $drule)) {
-				if (!zbx_is_int($drule['proxy_hostid'])) {
+			if (array_key_exists('concurrency_max', $drule)
+					&& ($drule['concurrency_max'] < ZBX_DISCOVERY_CHECKS_UNLIMITED
+						|| $drule['concurrency_max'] > ZBX_DISCOVERY_CHECKS_MAX)) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value "%1$s" for "%2$s" field.', $drule['concurrency_max'], 'concurrency_max')
+				);
+			}
+
+			if (array_key_exists('proxyid', $drule)) {
+				if (!zbx_is_int($drule['proxyid'])) {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value "%1$s" for "%2$s" field.', $drule['proxy_hostid'], 'proxy_hostid')
+						_s('Incorrect value "%1$s" for "%2$s" field.', $drule['proxyid'], 'proxyid')
 					);
 				}
 
-				if ($drule['proxy_hostid'] > 0) {
-					$proxy_hostids[] = $drule['proxy_hostid'];
+				if ($drule['proxyid'] > 0) {
+					$proxyids[] = $drule['proxyid'];
 				}
 			}
 
@@ -419,6 +444,7 @@ class CDRule extends CApiService {
 		if ($drule_names_changed) {
 			// Check drule name duplicates in input data.
 			$duplicate = CArrayHelper::findDuplicate($drule_names_changed, 'name');
+
 			if ($duplicate) {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Discovery rule "%1$s" already exists.', $duplicate['name'])
@@ -440,20 +466,25 @@ class CDRule extends CApiService {
 		}
 
 		// Check proxy IDs.
-		if ($proxy_hostids) {
-			$db_proxies = API::proxy()->get([
+		if ($proxyids) {
+			$db_proxies = API::Proxy()->get([
 				'output' => ['proxyid'],
-				'proxyids' => $proxy_hostids,
+				'proxyids' => $proxyids,
 				'preservekeys' => true
 			]);
-			foreach ($proxy_hostids as $proxy_hostid) {
-				if (!array_key_exists($proxy_hostid, $db_proxies)) {
+
+			foreach ($proxyids as $proxyid) {
+				if (!array_key_exists($proxyid, $db_proxies)) {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value "%1$s" for "%2$s" field.', $proxy_hostid, 'proxy_hostid')
+						_s('Incorrect value "%1$s" for "%2$s" field.', $proxyid, 'proxyid')
 					);
 				}
 			}
 		}
+
+		self::addAffectedObjects($drules, $db_drules);
+
+		self::checkDiscoveryChecksUsedInActions($drules, $db_drules);
 	}
 
 	/**
@@ -532,6 +563,7 @@ class CDRule extends CApiService {
 					_s('Incorrect value "%1$s" for "%2$s" field.', $dcheck['type'], 'type')
 				);
 			}
+
 			switch ($dcheck['type']) {
 				case SVC_AGENT:
 					if (!array_key_exists('key_', $dcheck)) {
@@ -550,6 +582,7 @@ class CDRule extends CApiService {
 
 					$length = mb_strlen($dcheck['key_']);
 					$max_length = DB::getFieldLength('dchecks', 'key_');
+
 					if ($length > $max_length) {
 						self::exception(ZBX_API_ERROR_PARAMETERS,
 							_s('Incorrect value for field "%1$s": %2$s.', 'key_',
@@ -577,6 +610,14 @@ class CDRule extends CApiService {
 					if (!array_key_exists('key_', $dcheck) || $dcheck['key_'] === null || $dcheck['key_'] === false
 							|| $dcheck['key_'] === '') {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect SNMP OID.'));
+					}
+					break;
+				case SVC_ICMPPING:
+					if (array_key_exists('allow_redirect', $dcheck)
+							&& $dcheck['allow_redirect'] != 1 && $dcheck['allow_redirect'] != 0) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_s('Incorrect value "%1$s" for "%2$s" field.', $dcheck['allow_redirect'], 'allow_redirect')
+						);
 					}
 					break;
 			}
@@ -641,23 +682,96 @@ class CDRule extends CApiService {
 			}
 
 			$dcheck += $default_values;
-			unset($dcheck['uniq']);
+			unset($dcheck['dcheckid'], $dcheck['uniq']);
 		}
 		unset($dcheck);
 
 		while ($current = array_pop($dchecks)) {
 			foreach ($dchecks as $dcheck) {
 				$equal = true;
+
 				foreach ($dcheck as $field => $value) {
 					if (array_key_exists($field, $current) && (strcmp($value, $current[$field]) !== 0)) {
 						$equal = false;
 						break;
 					}
 				}
+
 				if ($equal) {
 					self::exception(ZBX_API_ERROR_PARAMETERS, _('Checks should be unique.'));
 				}
 			}
+		}
+	}
+
+	private static function addAffectedObjects(array $drules, array &$db_rules): void {
+		$druleids = [];
+
+		foreach ($drules as $drule) {
+			if (array_key_exists('dchecks', $drule)) {
+				$druleids[] = $drule['druleid'];
+				$db_drules[$drule['druleid']]['dchecks'] = [];
+			}
+		}
+
+		if (!$druleids) {
+			return;
+		}
+
+		$options = [
+			'output' => ['dcheckid', 'druleid', 'type', 'key_', 'snmp_community', 'ports', 'snmpv3_securityname',
+				'snmpv3_securitylevel', 'snmpv3_authpassphrase', 'snmpv3_privpassphrase', 'uniq', 'snmpv3_authprotocol',
+				'snmpv3_privprotocol', 'snmpv3_contextname', 'host_source', 'name_source', 'allow_redirect'
+			],
+			'filter' => ['druleid' => $druleids]
+		];
+		$db_dchecks = DBselect(DB::makeSql('dchecks', $options));
+
+		while ($db_dcheck = DBfetch($db_dchecks)) {
+			$db_rules[$db_dcheck['druleid']]['dchecks'][$db_dcheck['dcheckid']] =
+				array_diff_key($db_dcheck, array_flip(['druleid']));
+		}
+	}
+
+	private static function checkDiscoveryChecksUsedInActions(array $drules, array $db_drules): void {
+		$del_dcheckids = [];
+
+		foreach ($drules as $drule) {
+			if (!array_key_exists('dchecks', $drule)) {
+				continue;
+			}
+
+			$del_dcheckids = array_merge($del_dcheckids, array_diff(
+				array_column($db_drules[$drule['druleid']]['dchecks'], 'dcheckid'),
+				array_column($drule['dchecks'], 'dcheckid')
+			));
+		}
+
+		if (!$del_dcheckids) {
+			return;
+		}
+
+		$row = DBfetch(DBselect(
+			'SELECT a.name,dc.dcheckid,dc.druleid'.
+			' FROM conditions c'.
+			' JOIN actions a ON c.actionid=a.actionid'.
+			' JOIN dchecks dc ON '.zbx_dbcast_2bigint('c.value').'=dc.dcheckid'.
+			' WHERE c.conditiontype='.ZBX_CONDITION_TYPE_DCHECK.
+				' AND '.dbConditionString('c.value', $del_dcheckids),
+			1
+		));
+
+		if ($row) {
+			$db_drule = $db_drules[$row['druleid']];
+			$db_dcheck = $db_drule['dchecks'][$row['dcheckid']];
+			$db_dcheck_name = discovery_check2str($db_dcheck['type'], $db_dcheck['key_'], $db_dcheck['ports'],
+				$db_dcheck['allow_redirect']
+			);
+
+			self::exception(ZBX_API_ERROR_PARAMETERS, _s(
+				'Cannot delete discovery check "%1$s" of discovery rule "%2$s": %3$s.', $db_dcheck_name,
+				$db_drule['name'], _s('action "%1$s" uses this discovery check', $row['name'])
+			));
 		}
 	}
 
@@ -666,10 +780,11 @@ class CDRule extends CApiService {
 	 *
 	 * @param array(
 	 *  name => string,
-	 *  proxy_hostid => int,
+	 *  proxyid => int,
 	 *  iprange => string,
 	 *  delay => string,
 	 *  status => int,
+	 * 	concurrency_max => int,
 	 *  dchecks => array(
 	 *  	array(
 	 *  		type => int,
@@ -681,6 +796,7 @@ class CDRule extends CApiService {
 	 *  		snmpv3_authpassphrase => string,
 	 *  		snmpv3_privpassphrase => string,
 	 *  		uniq => int,
+	 * 			allow_redirect => int,
 	 *  	), ...
 	 *  )
 	 * ) $drules
@@ -700,6 +816,7 @@ class CDRule extends CApiService {
 		$this->addAuditBulk(CAudit::ACTION_ADD, CAudit::RESOURCE_DISCOVERY_RULE, $drules);
 
 		$create_dchecks = [];
+
 		foreach ($drules as $dnum => $drule) {
 			foreach ($drule['dchecks'] as $dcheck) {
 				$dcheck['druleid'] = $druleids[$dnum];
@@ -718,10 +835,11 @@ class CDRule extends CApiService {
 	 * @param array(
 	 * 	druleid => int,
 	 *  name => string,
-	 *  proxy_hostid => int,
+	 *  proxyid => int,
 	 *  iprange => string,
 	 *  delay => string,
 	 *  status => int,
+	 *  concurrency_max => int,
 	 *  dchecks => array(
 	 *  	array(
 	 * 			dcheckid => int,
@@ -734,6 +852,7 @@ class CDRule extends CApiService {
 	 *  		snmpv3_authpassphrase => string,
 	 *  		snmpv3_privpassphrase => string,
 	 *  		uniq => int,
+	 * 			allow_redirect => int,
 	 *  	), ...
 	 *  )
 	 * ) $drules
@@ -747,10 +866,10 @@ class CDRule extends CApiService {
 		$this->validateUpdate($drules);
 
 		$db_drules = API::DRule()->get([
-			'output' => ['druleid', 'proxy_hostid', 'name', 'iprange', 'delay', 'status'],
+			'output' => ['druleid', 'proxyid', 'name', 'iprange', 'delay', 'status', 'concurrency_max'],
 			'selectDChecks' => ['dcheckid', 'druleid', 'type', 'key_', 'snmp_community', 'ports', 'snmpv3_securityname',
 				'snmpv3_securitylevel', 'snmpv3_authpassphrase', 'snmpv3_privpassphrase', 'uniq', 'snmpv3_authprotocol',
-				'snmpv3_privprotocol', 'snmpv3_contextname', 'host_source', 'name_source'
+				'snmpv3_privprotocol', 'snmpv3_contextname', 'host_source', 'name_source', 'allow_redirect'
 			],
 			'druleids' => $druleids,
 			'editable' => true,
@@ -785,15 +904,6 @@ class CDRule extends CApiService {
 					}
 				}
 
-				$del_dcheckids = array_diff(
-					zbx_objectValues($db_dchecks, 'dcheckid'),
-					zbx_objectValues($old_dchecks, 'dcheckid')
-				);
-
-				if ($del_dcheckids) {
-					$this->deleteActionConditions($del_dcheckids);
-				}
-
 				DB::replace('dchecks', $db_dchecks, array_merge($old_dchecks, $new_dchecks));
 			}
 		}
@@ -808,8 +918,20 @@ class CDRule extends CApiService {
 	 *
 	 * @return array
 	 */
-	public function delete(array $druleids) {
+	public function delete(array $druleids): array {
+		$this->validateDelete($druleids, $db_drules);
+
+		DB::delete('dchecks', ['druleid' => $druleids]);
+		DB::delete('drules', ['druleid' => $druleids]);
+
+		$this->addAuditBulk(CAudit::ACTION_DELETE, CAudit::RESOURCE_DISCOVERY_RULE, $db_drules);
+
+		return ['druleids' => $druleids];
+	}
+
+	private function validateDelete(array $druleids, ?array &$db_drules): void {
 		$api_input_rules = ['type' => API_IDS, 'flags' => API_NOT_EMPTY, 'uniq' => true];
+
 		if (!CApiInputValidator::validate($api_input_rules, $druleids, '/', $error)) {
 			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
 		}
@@ -821,86 +943,42 @@ class CDRule extends CApiService {
 			'preservekeys' => true
 		]);
 
-		foreach ($druleids as $druleid) {
-			if (!array_key_exists($druleid, $db_drules)) {
-				self::exception(ZBX_API_ERROR_PERMISSIONS,
-					_('No permissions to referred object or it does not exist!')
-				);
-			}
+		if (count($db_drules) != count($druleids)) {
+			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
 		}
 
-		// Check if discovery rules are used in actions.
-		$db_actions = DBselect(
-			'SELECT a.name,c.value'.
-			' FROM actions a,conditions c'.
-			' WHERE a.actionid=c.actionid'.
-				' AND c.conditiontype='.ZBX_CONDITION_TYPE_DRULE.
-				' AND '.dbConditionString('c.value', $druleids),
-			1
-		);
+		self::checkUsedInActions($db_drules);
 
-		if ($db_action = DBfetch($db_actions)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _s('Discovery rule "%1$s" is used in "%2$s" action.',
-				$db_drules[$db_action['value']]['name'], $db_action['name']
-			));
+		$drules = [];
+
+		foreach ($db_drules as $db_drule) {
+			$drules[] = [
+				'druleid' => $db_drule['druleid'],
+				'dchecks' => []
+			];
 		}
 
-		// Check if discovery checks are used in actions.
-		$db_actions = DBselect(
-			'SELECT a.name,dc.druleid'.
-			' FROM actions a,conditions c,dchecks dc'.
-			' WHERE a.actionid=c.actionid'.
-				' AND '.zbx_dbcast_2bigint('c.value').'=dc.dcheckid'.
-				' AND c.conditiontype='.ZBX_CONDITION_TYPE_DCHECK.
-				' AND '.dbConditionString('dc.druleid', $druleids),
-			1
-		);
+		self::addAffectedObjects($drules, $db_drules);
 
-		if ($db_action = DBfetch($db_actions)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _s('Discovery rule "%1$s" is used in "%2$s" action.',
-				$db_drules[$db_action['druleid']]['name'], $db_action['name']
-			));
-		}
-
-		DB::delete('dchecks', ['druleid' => $druleids]);
-		DB::delete('drules', ['druleid' => $druleids]);
-
-		$this->addAuditBulk(CAudit::ACTION_DELETE, CAudit::RESOURCE_DISCOVERY_RULE, $db_drules);
-
-		return ['druleids' => $druleids];
+		self::checkDiscoveryChecksUsedInActions($drules, $db_drules);
 	}
 
-	/**
-	 * Delete related action conditions.
-	 *
-	 * @param array $dCheckIds
-	 */
-	protected function deleteActionConditions(array $dCheckIds) {
-		$actionIds = [];
+	private static function checkUsedInActions(array $db_drules): void {
+		$druleids = array_keys($db_drules);
 
-		// conditions
-		$dbActions = DBselect(
-			'SELECT DISTINCT c.actionid'.
+		$row = DBfetch(DBselect(
+			'SELECT c.value AS druleid,a.name'.
 			' FROM conditions c'.
-			' WHERE c.conditiontype='.ZBX_CONDITION_TYPE_DCHECK.
-				' AND '.dbConditionString('c.value', $dCheckIds).
-			' ORDER BY c.actionid'
-		);
-		while ($dbAction = DBfetch($dbActions)) {
-			$actionIds[] = $dbAction['actionid'];
-		}
+			' JOIN actions a ON c.actionid=a.actionid'.
+			' WHERE c.conditiontype='.ZBX_CONDITION_TYPE_DRULE.
+				' AND '.dbConditionString('c.value', $druleids),
+			1
+		));
 
-		// disabling actions with deleted conditions
-		if ($actionIds) {
-			DB::update('actions', [
-				'values' => ['status' => ACTION_STATUS_DISABLED],
-				'where' => ['actionid' => $actionIds]
-			]);
-
-			DB::delete('conditions', [
-				'conditiontype' => ZBX_CONDITION_TYPE_DCHECK,
-				'value' => $dCheckIds
-			]);
+		if ($row) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, _s('Cannot delete discovery rule "%1$s": %2$s.',
+				$db_drules[$row['druleid']]['name'], _s('action "%1$s" uses this discovery rule', $row['name'])
+			));
 		}
 	}
 
@@ -937,7 +1015,9 @@ class CDRule extends CApiService {
 					'countOutput' => true,
 					'groupCount' => true
 				]);
+
 				$dchecks = zbx_toHash($dchecks, 'druleid');
+
 				foreach ($result as $druleid => $drule) {
 					$result[$druleid]['dchecks'] = array_key_exists($druleid, $dchecks)
 						? $dchecks[$druleid]['rowscount']
@@ -959,6 +1039,7 @@ class CDRule extends CApiService {
 						'dhostids' => $related_ids,
 						'preservekeys' => true
 					]);
+
 					if (!is_null($options['limitSelects'])) {
 						order_result($dhosts, 'dhostid');
 					}
@@ -972,7 +1053,9 @@ class CDRule extends CApiService {
 					'countOutput' => true,
 					'groupCount' => true
 				]);
+
 				$dhosts = zbx_toHash($dhosts, 'druleid');
+
 				foreach ($result as $druleid => $drule) {
 					$result[$druleid]['dhosts'] = array_key_exists($druleid, $dhosts)
 						? $dhosts[$druleid]['rowscount']

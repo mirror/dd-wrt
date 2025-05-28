@@ -1,40 +1,35 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package filemonitor
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
 	"github.com/fsnotify/fsnotify"
-	"zabbix.com/pkg/itemutil"
-	"zabbix.com/pkg/watch"
+	"golang.zabbix.com/agent2/pkg/itemutil"
+	"golang.zabbix.com/agent2/pkg/watch"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 var impl Plugin
 
 type watchRequest struct {
 	clientid uint64
-	targets  []*plugin.Request
+	items    []*plugin.Item
 	output   plugin.ResultWriter
 }
 
@@ -69,12 +64,12 @@ func (p *Plugin) run() {
 			if r == nil {
 				return
 			}
-			p.manager.Update(r.clientid, r.output, r.targets)
+			p.manager.Update(r.clientid, r.output, r.items)
 		case event := <-p.watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				var b []byte
 				var v interface{}
-				if b, v = ioutil.ReadFile(event.Name); v == nil {
+				if b, v = os.ReadFile(event.Name); v == nil {
 					v = b
 				}
 				if es, ok := p.eventSources[event.Name]; ok {
@@ -85,8 +80,8 @@ func (p *Plugin) run() {
 	}
 }
 
-func (p *Plugin) Watch(requests []*plugin.Request, ctx plugin.ContextProvider) {
-	p.input <- &watchRequest{clientid: ctx.ClientID(), targets: requests, output: ctx.Output()}
+func (p *Plugin) Watch(items []*plugin.Item, ctx plugin.ContextProvider) {
+	p.input <- &watchRequest{clientid: ctx.ClientID(), items: items, output: ctx.Output()}
 }
 
 func (p *Plugin) Start() {

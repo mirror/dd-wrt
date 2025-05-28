@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 /* this file is for the minimal possible set of string related functions that are used by libzbxcommon.a */
@@ -49,6 +44,19 @@ size_t	zbx_vsnprintf(char *str, size_t count, const char *fmt, va_list args)
 	str[written_len] = '\0';	/* always write '\0', even if buffer size is 0 or vsnprintf() error */
 
 	return (size_t)written_len;
+}
+
+int	zbx_vsnprintf_check_len(const char *fmt, va_list args)
+{
+	int	rv;
+
+	if (0 > (rv = vsnprintf(NULL, 0, fmt, args)))
+	{
+		THIS_SHOULD_NEVER_HAPPEN;
+		exit(EXIT_FAILURE);
+	}
+
+	return rv;
 }
 
 /******************************************************************************
@@ -161,7 +169,7 @@ size_t	zbx_snprintf(char *str, size_t count, const char *fmt, ...)
 }
 
 #if defined(__hpux)
-#include "log.h"
+#include "zbxlog.h"
 	/* On HP-UX 11.23 vsnprintf(NULL, 0, fmt, args) cannot be used to     */
 	/* determine the required buffer size - the result is program crash   */
 	/* (ZBX-23404). Also, it returns -1 if buffer is too small.           */
@@ -281,10 +289,12 @@ void	zbx_snprintf_alloc(char **str, size_t *alloc_len, size_t *offset, const cha
 retry:
 	if (NULL == *str)
 	{
-		/* zbx_vsnprintf() returns bytes actually written instead of bytes to write, */
-		/* so we have to use the standard function                                   */
 		va_start(args, fmt);
-		*alloc_len = vsnprintf(NULL, 0, fmt, args) + 2;	/* '\0' + one byte to prevent the operation retry */
+
+		/* zbx_vsnprintf_check_len() cannot return negative result. */
+		/* '\0' + one byte to prevent operation retry. */
+		*alloc_len = (size_t)zbx_vsnprintf_check_len(fmt, args) + 2;
+
 		va_end(args);
 		*offset = 0;
 		*str = (char *)zbx_malloc(*str, *alloc_len);

@@ -290,7 +290,6 @@ func (t DebugSymbolsType) String() string {
 
 // DebugSymbolsType values.
 const (
-	DebugSymbolsTypeNone          DebugSymbolsType = "None"
 	DebugSymbolsTypeSourceMap     DebugSymbolsType = "SourceMap"
 	DebugSymbolsTypeEmbeddedDWARF DebugSymbolsType = "EmbeddedDWARF"
 	DebugSymbolsTypeExternalDWARF DebugSymbolsType = "ExternalDWARF"
@@ -310,8 +309,6 @@ func (t DebugSymbolsType) MarshalJSON() ([]byte, error) {
 func (t *DebugSymbolsType) UnmarshalEasyJSON(in *jlexer.Lexer) {
 	v := in.String()
 	switch DebugSymbolsType(v) {
-	case DebugSymbolsTypeNone:
-		*t = DebugSymbolsTypeNone
 	case DebugSymbolsTypeSourceMap:
 		*t = DebugSymbolsTypeSourceMap
 	case DebugSymbolsTypeEmbeddedDWARF:
@@ -353,6 +350,7 @@ const (
 	PausedReasonOther            PausedReason = "other"
 	PausedReasonPromiseRejection PausedReason = "promiseRejection"
 	PausedReasonXHR              PausedReason = "XHR"
+	PausedReasonStep             PausedReason = "step"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
@@ -393,6 +391,8 @@ func (t *PausedReason) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = PausedReasonPromiseRejection
 	case PausedReasonXHR:
 		*t = PausedReasonXHR
+	case PausedReasonStep:
+		*t = PausedReasonStep
 
 	default:
 		in.AddError(fmt.Errorf("unknown PausedReason value: %v", v))

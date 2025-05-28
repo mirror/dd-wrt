@@ -637,12 +637,43 @@ func (p *SetAsyncCallStackDepthParams) Do(ctx context.Context) (err error) {
 	return cdp.Execute(ctx, CommandSetAsyncCallStackDepth, p, nil)
 }
 
+// SetBlackboxExecutionContextsParams replace previous blackbox execution
+// contexts with passed ones. Forces backend to skip stepping/pausing in scripts
+// in these execution contexts. VM will try to leave blackboxed script by
+// performing 'step in' several times, finally resorting to 'step out' if
+// unsuccessful.
+type SetBlackboxExecutionContextsParams struct {
+	UniqueIDs []string `json:"uniqueIds"` // Array of execution context unique ids for the debugger to ignore.
+}
+
+// SetBlackboxExecutionContexts replace previous blackbox execution contexts
+// with passed ones. Forces backend to skip stepping/pausing in scripts in these
+// execution contexts. VM will try to leave blackboxed script by performing
+// 'step in' several times, finally resorting to 'step out' if unsuccessful.
+//
+// See: https://chromedevtools.github.io/devtools-protocol/tot/Debugger#method-setBlackboxExecutionContexts
+//
+// parameters:
+//
+//	uniqueIDs - Array of execution context unique ids for the debugger to ignore.
+func SetBlackboxExecutionContexts(uniqueIDs []string) *SetBlackboxExecutionContextsParams {
+	return &SetBlackboxExecutionContextsParams{
+		UniqueIDs: uniqueIDs,
+	}
+}
+
+// Do executes Debugger.setBlackboxExecutionContexts against the provided context.
+func (p *SetBlackboxExecutionContextsParams) Do(ctx context.Context) (err error) {
+	return cdp.Execute(ctx, CommandSetBlackboxExecutionContexts, p, nil)
+}
+
 // SetBlackboxPatternsParams replace previous blackbox patterns with passed
 // ones. Forces backend to skip stepping/pausing in scripts with url matching
 // one of the patterns. VM will try to leave blackboxed script by performing
 // 'step in' several times, finally resorting to 'step out' if unsuccessful.
 type SetBlackboxPatternsParams struct {
-	Patterns []string `json:"patterns"` // Array of regexps that will be used to check script url for blackbox state.
+	Patterns      []string `json:"patterns"`                // Array of regexps that will be used to check script url for blackbox state.
+	SkipAnonymous bool     `json:"skipAnonymous,omitempty"` // If true, also ignore scripts with no source url.
 }
 
 // SetBlackboxPatterns replace previous blackbox patterns with passed ones.
@@ -659,6 +690,12 @@ func SetBlackboxPatterns(patterns []string) *SetBlackboxPatternsParams {
 	return &SetBlackboxPatternsParams{
 		Patterns: patterns,
 	}
+}
+
+// WithSkipAnonymous if true, also ignore scripts with no source url.
+func (p SetBlackboxPatternsParams) WithSkipAnonymous(skipAnonymous bool) *SetBlackboxPatternsParams {
+	p.SkipAnonymous = skipAnonymous
+	return &p
 }
 
 // Do executes Debugger.setBlackboxPatterns against the provided context.
@@ -1226,6 +1263,7 @@ const (
 	CommandResume                       = "Debugger.resume"
 	CommandSearchInContent              = "Debugger.searchInContent"
 	CommandSetAsyncCallStackDepth       = "Debugger.setAsyncCallStackDepth"
+	CommandSetBlackboxExecutionContexts = "Debugger.setBlackboxExecutionContexts"
 	CommandSetBlackboxPatterns          = "Debugger.setBlackboxPatterns"
 	CommandSetBlackboxedRanges          = "Debugger.setBlackboxedRanges"
 	CommandSetBreakpoint                = "Debugger.setBreakpoint"

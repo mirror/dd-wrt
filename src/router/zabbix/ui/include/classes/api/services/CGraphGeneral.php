@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -363,10 +358,8 @@ abstract class CGraphGeneral extends CApiService {
 			$result = $relationMap->mapMany($result, $gitems, 'gitems');
 		}
 
-		// adding HostGroups
-		$this->addRelatedGroups($options, $result, 'selectGroups');
-		$this->addRelatedGroups($options, $result, 'selectHostGroups');
-		$this->addRelatedGroups($options, $result, 'selectTemplateGroups');
+		$this->addRelatedHostGroups($options, $result);
+		$this->addRelatedTemplateGroups($options, $result);
 
 		// adding Hosts
 		if ($options['selectHosts'] !== null && $options['selectHosts'] !== API_OUTPUT_COUNT) {
@@ -430,63 +423,70 @@ abstract class CGraphGeneral extends CApiService {
 		return $result;
 	}
 
-	/**
-	 * Adds related host groups and template groups requested by "select*" options to the resulting object set.
-	 *
-	 * @param array  $options  [IN] Original input options.
-	 * @param array  $result   [IN/OUT] Result output.
-	 * @param string $option   [IN] Possible values:
-	 *                                - "selectGroups" (deprecated);
-	 *                                - "selectHostGroups";
-	 *                                - "selectTemplateGroups".
-	 */
-	private function addRelatedGroups(array $options, array &$result, string $option): void {
-		if ($options[$option] === null || $options[$option] === API_OUTPUT_COUNT) {
+	private function addRelatedHostGroups(array $options, array &$result): void {
+		if ($options['selectHostGroups'] === null || $options['selectHostGroups'] === API_OUTPUT_COUNT) {
 			return;
 		}
 
-		$relationMap = new CRelationMap();
-
-		// discovered items
-		$dbRules = DBselect(
+		$resource = DBselect(
 			'SELECT gi.graphid,hg.groupid'.
-			' FROM graphs_items gi,items i,hosts_groups hg'.
-			' WHERE '.dbConditionInt('gi.graphid', array_keys($result)).
-				' AND gi.itemid=i.itemid'.
-				' AND i.hostid=hg.hostid'
+			' FROM graphs_items gi'.
+			' JOIN items i ON gi.itemid=i.itemid'.
+			' JOIN hosts_groups hg ON i.hostid=hg.hostid'.
+			' JOIN hstgrp hgg ON hg.groupid=hgg.groupid'.
+				' AND '.dbConditionInt('hgg.type', [HOST_GROUP_TYPE_HOST_GROUP]).
+			' WHERE '.dbConditionId('gi.graphid', array_keys($result))
 		);
-		while ($relation = DBfetch($dbRules)) {
-			$relationMap->addRelation($relation['graphid'], $relation['groupid']);
+		$relation_map = new CRelationMap();
+
+		while ($relation = DBfetch($resource)) {
+			$relation_map->addRelation($relation['graphid'], $relation['groupid']);
 		}
 
-		switch ($option) {
-			case 'selectGroups':
-				$output_tag = 'groups';
-				$entities = [API::HostGroup(), API::TemplateGroup()];
-				break;
-
-			case 'selectHostGroups':
-				$entities = [API::HostGroup()];
-				$output_tag = 'hostgroups';
-				break;
-
-			case 'selectTemplateGroups':
-				$entities = [API::TemplateGroup()];
-				$output_tag = 'templategroups';
-				break;
-		}
-
-		$groups = [];
-		foreach ($entities as $entity) {
-			$groups += $entity->get([
-				'output' => $options[$option],
-				'groupids' => $relationMap->getRelatedIds(),
+		$related_ids = $relation_map->getRelatedIds();
+		$groups = $related_ids
+			? API::HostGroup()->get([
+				'output' => $options['selectHostGroups'],
+				'groupids' => $related_ids,
 				'nopermissions' => true,
 				'preservekeys' => true
-			]);
+			])
+			: [];
+
+		$result = $relation_map->mapMany($result, $groups, 'hostgroups');
+	}
+
+	private function addRelatedTemplateGroups(array $options, array &$result): void {
+		if ($options['selectTemplateGroups'] === null || $options['selectTemplateGroups'] === API_OUTPUT_COUNT) {
+			return;
 		}
 
-		$result = $relationMap->mapMany($result, $groups, $output_tag);
+		$resource = DBselect(
+			'SELECT gi.graphid,hg.groupid'.
+			' FROM graphs_items gi'.
+			' JOIN items i ON gi.itemid=i.itemid'.
+			' JOIN hosts_groups hg ON i.hostid=hg.hostid'.
+			' JOIN hstgrp hgg ON hg.groupid=hgg.groupid'.
+				' AND '.dbConditionInt('hgg.type', [HOST_GROUP_TYPE_TEMPLATE_GROUP]).
+			' WHERE '.dbConditionId('gi.graphid', array_keys($result))
+		);
+		$relation_map = new CRelationMap();
+
+		while ($relation = DBfetch($resource)) {
+			$relation_map->addRelation($relation['graphid'], $relation['groupid']);
+		}
+
+		$related_ids = $relation_map->getRelatedIds();
+		$groups = $related_ids
+			? API::TemplateGroup()->get([
+				'output' => $options['selectTemplateGroups'],
+				'groupids' => $related_ids,
+				'nopermissions' => true,
+				'preservekeys' => true
+			])
+			: [];
+
+		$result = $relation_map->mapMany($result, $groups, 'templategroups');
 	}
 
 	/**
@@ -566,7 +566,7 @@ abstract class CGraphGeneral extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private function validateItems(array $itemids, array $graphs, array &$db_items = null): void {
+	private function validateItems(array $itemids, array $graphs, ?array &$db_items = null): void {
 		$permission_options = ['nopermissions' => true];
 
 		foreach ($graphs as $graph) {
@@ -714,7 +714,7 @@ abstract class CGraphGeneral extends CApiService {
 	}
 
 	/**
-	 * Validate graph gerenal data on Create method.
+	 * Validate graph general data on Create method.
 	 * Check if new items are from same templated host, validate Y axis items and values and hosts and templates.
 	 *
 	 * @param array $graphs
@@ -779,7 +779,7 @@ abstract class CGraphGeneral extends CApiService {
 		}
 		unset($graph);
 
-		$this->validateHostsAndTemplates($graphs);
+		$this->checkDuplicates($graphs);
 	}
 
 	/**
@@ -835,7 +835,7 @@ abstract class CGraphGeneral extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUuidDuplicates(array $graphs, array $db_graphs = null): void {
+	private static function checkUuidDuplicates(array $graphs, ?array $db_graphs = null): void {
 		$graph_indexes = [];
 
 		foreach ($graphs as $i => $graph) {
@@ -1004,80 +1004,18 @@ abstract class CGraphGeneral extends CApiService {
 			$this->checkAxisItems($graph);
 		}
 
-		$this->validateHostsAndTemplates($graphs);
+		static::checkDuplicates($graphs);
 	}
 
 	/**
-	 * Check if graph already exists somewhere in DB.
-	 *
 	 * @param array $graphs
+	 *
+	 * @throws APIException
 	 */
-	protected function validateHostsAndTemplates(array $graphs) {
-		$graphNames = [];
-
-		foreach ($graphs as $graph) {
-			// check if the host has any graphs in DB with the same name within host
-			$hostsAndTemplates = API::Host()->get([
-				'itemids' => zbx_objectValues($graph['gitems'], 'itemid'),
-				'output' => ['hostid'],
-				'nopermissions' => true,
-				'preservekeys' => true,
-				'templated_hosts' => true
-			]);
-
-			$hostAndTemplateIds = array_keys($hostsAndTemplates);
-
-			$dbGraphs = API::Graph()->get([
-				'hostids' => $hostAndTemplateIds,
-				'output' => ['graphid'],
-				'filter' => ['name' => $graph['name'], 'flags' => null], // 'flags' => null overrides default behaviour
-				'nopermissions' => true
-			]);
-
-			if ($dbGraphs) {
-				$duplicateGraphsFound = false;
-
-				if (isset($graph['graphid'])) {
-					foreach ($dbGraphs as $dbGraph) {
-						if (bccomp($dbGraph['graphid'], $graph['graphid']) != 0) {
-							$duplicateGraphsFound = true;
-							break;
-						}
-					}
-				}
-				else {
-					$duplicateGraphsFound = true;
-				}
-
-				if ($duplicateGraphsFound) {
-					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Graph with name "%1$s" already exists in graphs or graph prototypes.', $graph['name'])
-					);
-				}
-			}
-
-			// checks that there are no two graphs with the same name within host
-			foreach ($hostAndTemplateIds as $id) {
-				if (!isset($graphNames[$graph['name']])) {
-					$graphNames[$graph['name']] = [];
-				}
-
-				if (isset($graphNames[$graph['name']][$id])) {
-					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('More than one graph with name "%1$s" within host.', $graph['name'])
-					);
-				}
-				else {
-					$graphNames[$graph['name']][$id] = true;
-				}
-			}
-		}
-	}
+	abstract protected static function checkDuplicates(array $graphs): void;
 
 	/**
 	 * Returns visible host name. Can be used for error reporting.
-	 *
-	 * @static
 	 *
 	 * @param string|int $hostid
 	 *
@@ -1092,8 +1030,6 @@ abstract class CGraphGeneral extends CApiService {
 
 	/**
 	 * Adding graph items for selected graphs.
-	 *
-	 * @static
 	 *
 	 * @param array $graphs
 	 * @param bool  $with_hostid
@@ -1132,7 +1068,7 @@ abstract class CGraphGeneral extends CApiService {
 	 *                             linked hosts or templates.
 	 * @throws APIException
 	 */
-	protected function inherit(array $graphs, array $hostids = null): void {
+	protected function inherit(array $graphs, ?array $hostids = null): void {
 		$graphs = array_column($graphs, null, 'graphid');
 
 		if ($hostids === null) {

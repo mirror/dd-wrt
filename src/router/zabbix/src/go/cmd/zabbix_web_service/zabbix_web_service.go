@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package main
@@ -30,16 +25,17 @@ import (
 	"os/signal"
 	"syscall"
 
-	"git.zabbix.com/ap/plugin-support/conf"
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/zbxflag"
-	"zabbix.com/pkg/version"
-	"zabbix.com/pkg/zbxnet"
+	"golang.zabbix.com/agent2/pkg/version"
+	"golang.zabbix.com/sdk/conf"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/zbxflag"
+	"golang.zabbix.com/sdk/zbxnet"
 )
 
 const usageMessageFormat = //
 `Usage of Zabbix web service:
   %[1]s [-c config-file]
+  %[1]s [-c config-file] -T
   %[1]s -h
   %[1]s -V
 
@@ -58,9 +54,10 @@ type handler struct {
 
 func main() {
 	var (
-		confFlag    string
-		helpFlag    bool
-		versionFlag bool
+		confFlag       string
+		helpFlag       bool
+		testConfigFlag bool
+		versionFlag    bool
 	)
 
 	version.Init(applicationName)
@@ -76,6 +73,15 @@ func main() {
 			},
 			Default: confDefault,
 			Dest:    &confFlag,
+		},
+		&zbxflag.BoolFlag{
+			Flag: zbxflag.Flag{
+				Name:        "test-config",
+				Shorthand:   "T",
+				Description: "Validate configuration file and exit",
+			},
+			Default: false,
+			Dest:    &testConfigFlag,
 		},
 		&zbxflag.BoolFlag{
 			Flag: zbxflag.Flag{
@@ -119,8 +125,22 @@ func main() {
 		os.Exit(0)
 	}
 
+	if testConfigFlag {
+		if confFlag == "" {
+			fmt.Fprintf(os.Stderr, "cannot validate configuration file: %s\n", "it was not specified")
+			os.Exit(1)
+		}
+
+		fmt.Printf("Validating configuration file \"%s\"\n", confFlag)
+	}
+
 	if err := conf.Load(confFlag, &options); err != nil {
 		fatalExit("", err)
+	}
+
+	if testConfigFlag {
+		fmt.Println("Validation successful")
+		os.Exit(0)
 	}
 
 	var logType, logLevel int

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -73,7 +68,8 @@ $table = (new CTableInfo())
 		make_sorting_header(_('Name'), 'name', $data['sort'], $data['sortorder'], $view_url),
 		(new CColHeader(_('Hosts')))->setColSpan(2),
 		(new CColHeader(_('Info')))->addClass(ZBX_STYLE_CELL_WIDTH)
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 $current_time = time();
 
@@ -95,13 +91,13 @@ foreach ($data['groups'] as $group) {
 		}
 
 		if ($data['allowed_ui_conf_hosts']) {
-			$host_output = (new CLink($host['name'], (new CUrl('zabbix.php'))
-				->setArgument('action', 'host.edit')
+			$host_url = (new CUrl('zabbix.php'))
+				->setArgument('action', 'popup')
+				->setArgument('popup', 'host.edit')
 				->setArgument('hostid', $host['hostid'])
-			))
-			->setAttribute('data-hostid', $host['hostid'])
-			->onClick('view.editHost(event, this.dataset.hostid);')
-			->addClass(ZBX_STYLE_LINK_ALT);
+				->getUrl();
+
+			$host_output = (new CLink($host['name'], $host_url))->addClass(ZBX_STYLE_LINK_ALT);
 		}
 		else {
 			$host_output = new CSpan($host['name']);
@@ -116,21 +112,42 @@ foreach ($data['groups'] as $group) {
 	$name = [];
 
 	if ($group['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
-		if ($group['discoveryRule']) {
-			if ($data['allowed_ui_conf_hosts'] && $group['is_discovery_rule_editable']) {
-				$lld_name = (new CLink($group['discoveryRule']['name'],
-					(new CUrl('host_prototypes.php'))
-						->setArgument('form', 'update')
-						->setArgument('parent_discoveryid', $group['discoveryRule']['itemid'])
-						->setArgument('hostid', $group['hostPrototype']['hostid'])
-						->setArgument('context', 'host')
-				))->addClass(ZBX_STYLE_LINK_ALT);
-			}
-			else {
-				$lld_name = new CSpan($group['discoveryRule']['name']);
+		if ($group['discoveryRules']) {
+			$lld_rule_count = count($group['discoveryRules']);
+
+			if ($lld_rule_count > 1) {
+				$group['discoveryRules'] = [
+					reset($group['discoveryRules']),
+					end($group['discoveryRules'])
+				];
 			}
 
-			$name[] = $lld_name->addClass(ZBX_STYLE_ORANGE);
+			foreach ($group['discoveryRules'] as $lld_rule) {
+				if ($data['allowed_ui_conf_hosts'] && $lld_rule['is_editable']
+						&& array_key_exists($lld_rule['itemid'], $data['ldd_rule_to_host_prototype'])) {
+					$lld_name = (new CLink($lld_rule['name'],
+						(new CUrl('host_prototypes.php'))
+							->setArgument('form', 'update')
+							->setArgument('parent_discoveryid', $lld_rule['itemid'])
+							->setArgument('hostid', reset($data['ldd_rule_to_host_prototype'][$lld_rule['itemid']]))
+							->setArgument('context', 'host')
+					))->addClass(ZBX_STYLE_LINK_ALT);
+				}
+				else {
+					$lld_name = new CSpan($lld_rule['name']);
+				}
+
+				$name[] = $lld_name->addClass(ZBX_STYLE_ORANGE);
+
+				if ($lld_rule_count > 2) {
+					$name[] = ', ..., ';
+				}
+				else {
+					$name[] = ', ';
+				}
+			}
+
+			array_pop($name);
 		}
 		else {
 			$name[] = (new CSpan(_('Inaccessible discovery rule')))->addClass(ZBX_STYLE_ORANGE);
@@ -139,17 +156,33 @@ foreach ($data['groups'] as $group) {
 		$name[] = NAME_DELIMITER;
 	}
 
-	$name[] = (new CLink($group['name'],
-		(new CUrl('zabbix.php'))
-			->setArgument('action', 'hostgroup.edit')
-			->setArgument('groupid', $group['groupid'])
-	))
-		->addClass('js-edit-hostgroup')
-		->setAttribute('data-groupid', $group['groupid']);
+	$group_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'hostgroup.edit')
+		->setArgument('groupid', $group['groupid'])
+		->getUrl();
+
+	$name[] = new CLink($group['name'], $group_url);
 
 	$info_icons = [];
-	if ($group['flags'] == ZBX_FLAG_DISCOVERY_CREATED && $group['groupDiscovery']['ts_delete'] != 0) {
-		$info_icons[] = getHostGroupLifetimeIndicator($current_time, $group['groupDiscovery']['ts_delete']);
+
+	if ($group['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+		$max = 0;
+
+		foreach ($group['groupDiscoveries'] as $group_discovery) {
+			if ($group_discovery['ts_delete'] == 0) {
+				$max = 0;
+				break;
+			}
+
+			if ($group_discovery['status'] == ZBX_LLD_STATUS_LOST) {
+				$max = max($max, (int) $group_discovery['ts_delete']);
+			}
+		}
+
+		if ($max > 0) {
+			$info_icons[] = getHostGroupLifetimeIndicator($current_time, $max);
+		}
 	}
 
 	$count = '';
@@ -164,39 +197,38 @@ foreach ($data['groups'] as $group) {
 			$count = new CSpan($host_count);
 		}
 
-		$count->addClass(ZBX_STYLE_ICON_COUNT);
+		$count->addClass(ZBX_STYLE_ENTITY_COUNT);
 	}
 
 	$table->addRow([
 		new CCheckBox('groups['.$group['groupid'].']', $group['groupid']),
 		(new CCol($name))->addClass(ZBX_STYLE_NOWRAP),
 		(new CCol($count))->addClass(ZBX_STYLE_CELL_WIDTH),
-		$hosts_output ? $hosts_output : '',
+		$hosts_output ?: '',
 		makeInformationList($info_icons)
 	]);
 }
 
 $form->addItem([
 	$table,
-	$data['paging'],
 	new CActionButtonList('action', 'groups', [
 		'hostgroup.massenable' => [
 			'content' => (new CSimpleButton(_('Enable hosts')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massenable-hostgroup')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		],
 		'hostgroup.massdisable' => [
 			'content' => (new CSimpleButton(_('Disable hosts')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massdisable-hostgroup')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		],
 		'hostgroup.massdelete' => [
 			'content' => (new CSimpleButton(_('Delete')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massdelete-hostgroup')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		]
 	], 'hostgroup')
 ]);
@@ -210,15 +242,15 @@ $csrf_token = CCsrfTokenHelper::get('hostgroup');
 (new CScriptTag('view.init('.json_encode([
 	'enable_url' => (new CUrl('zabbix.php'))
 		->setArgument('action', 'hostgroup.enable')
-		->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token)
+		->setArgument(CSRF_TOKEN_NAME, $csrf_token)
 		->getUrl(),
 	'disable_url' => (new CUrl('zabbix.php'))
 		->setArgument('action', 'hostgroup.disable')
-		->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token)
+		->setArgument(CSRF_TOKEN_NAME, $csrf_token)
 		->getUrl(),
 	'delete_url' => (new CUrl('zabbix.php'))
 		->setArgument('action', 'hostgroup.delete')
-		->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token)
+		->setArgument(CSRF_TOKEN_NAME, $csrf_token)
 		->getUrl()
 ]).');'))
 	->setOnDocumentReady()

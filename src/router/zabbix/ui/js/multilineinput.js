@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -99,7 +94,7 @@
 			$line_numbers.append(li);
 
 			while (diff < 0) {
-				$line_numbers.find('li:eq(0)').remove();
+				$line_numbers[0].querySelector('li:last-child').remove();
 				diff++;
 			}
 
@@ -107,7 +102,7 @@
 			$textarea.css('margin-left', $line_numbers.outerWidth());
 		}
 
-		var height_offset = 190,
+		var height_offset = 220,
 			$content = $('<div>', {class: 'multilineinput-container'}),
 			monospace_font = obj.options.monospace_font ? ' monospace-font' : '',
 			$textarea = $('<textarea>', {
@@ -169,6 +164,26 @@
 
 		$textarea[0].setSelectionRange(0, 0);
 
+		if (obj.options.use_tab) {
+			$textarea[0].addEventListener('keydown', e => {
+				if (e.key === 'Tab' && !e.shiftKey) {
+					e.preventDefault();
+
+					const input = e.target;
+					const value = input.value;
+
+					if (value.length < obj.options.maxlength) {
+						const startSelection = input.selectionStart;
+
+						input.value = value.substring(0, startSelection) + "\t" + value.substring(input.selectionEnd);
+
+						input.selectionStart = input.selectionEnd;
+						input.selectionEnd = startSelection + 1;
+					}
+				}
+			});
+		}
+
 		$textarea
 			.on('change contextmenu keydown keyup paste scroll', function() {
 				var value = $(this).val();
@@ -203,7 +218,8 @@
 							disabled: false,
 							autofocus: false,
 							line_numbers: true,
-							monospace_font: true
+							monospace_font: true,
+							use_tab: true
 						}, options)
 					};
 
@@ -223,6 +239,7 @@
 					.on('mousedown', obj, openModal);
 
 				obj.$button = $('<button>', {
+					class: ZBX_ICON_PENCIL,
 					type: 'button',
 					title: obj.options.hint,
 					autofocus: obj.options.autofocus || null

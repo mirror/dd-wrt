@@ -7,4 +7,5 @@ libzbxavailability_a_CFLAGS = \
 
 libzbxavailability_a_SOURCES = \
 	availability.c \
-	avail_protocol.c
+	avail_protocol.c \
+	avail_manager.c

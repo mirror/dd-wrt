@@ -1,28 +1,23 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 ?>
 
 
 window.operation_popup = new class {
 
-	init({eventsource, recovery_phase, data, actionid}) {
+	init({eventsource, recovery_phase, data, scripts_with_warning, actionid}) {
 		this.recovery_phase = recovery_phase;
 		this.eventsource = eventsource;
 		this.overlay = overlays_stack.getById('operations');
@@ -30,6 +25,8 @@ window.operation_popup = new class {
 		this.form = this.overlay.$dialogue.$body[0].querySelector('form');
 		this.actionid = actionid;
 		this.row_index = data.row_index;
+		this.data = data;
+		this.scripts_with_warning = scripts_with_warning;
 
 		if (document.getElementById('operation-condition-list')) {
 			this.condition_count = (document.getElementById('operation-condition-list').rows.length - 2);
@@ -38,8 +35,8 @@ window.operation_popup = new class {
 		this._loadViews();
 		this._processTypeOfCalculation();
 
-		if (data.opconditions.length > 0) {
-			data.opconditions.map((row, index) => {
+		if (this.data.opconditions.length > 0) {
+			this.data.opconditions.map((row, index) => {
 				this._createOperationConditionsRow(row, index);
 			})
 		}
@@ -47,29 +44,90 @@ window.operation_popup = new class {
 
 	_loadViews() {
 		this._customMessageFields();
+		this.#loadHostTags(this.data.optag);
 		this._removeAllFields();
-		const operation_type = document.getElementById('operation-type-select').getAttribute('value');
+		const operation_type = document.getElementById('operation-type-select').value;
+		this.#toggleScriptWarningIcon(operation_type);
 		this._changeView(operation_type);
 
-		document.querySelector('#operation-type-select').onchange = () => {
-			const operation_type = document.getElementById('operation-type-select').value;
-
+		document.getElementById('operation-type-select').addEventListener('change', (e) => {
+			this.#toggleScriptWarningIcon(e.target.value);
 			this._removeAllFields();
-			this._changeView(operation_type);
+			this._changeView(e.target.value);
 			this._processTypeOfCalculation();
-		}
+		});
 
 		this.dialogue.addEventListener('click', (e) => {
 			if (e.target.classList.contains('operation-condition-list-footer')) {
 				this._openConditionsPopup(e.target);
 			}
-			else if (e.target.classList.contains('element-table-remove')) {
-				this._processTypeOfCalculation();
-			}
 			else if (e.target.classList.contains('js-remove')) {
 				e.target.closest('tr').remove();
 				this._processTypeOfCalculation();
 			}
+			else if (e.target.classList.contains('element-table-add')) {
+				const tags_table = this.form.querySelector('#tags-table');
+				const form_rows = tags_table.querySelectorAll('.form_row')
+				let row_index = 0;
+
+				if (form_rows.length !== 0) {
+					const last_row = form_rows[form_rows.length - 1];
+
+					row_index = parseInt(last_row.getAttribute('data-id')) + 1;
+				}
+
+				this.#addHostTags([{tag: '', value:'', row_index: row_index}]);
+			}
+			else if (e.target.classList.contains('element-table-remove')) {
+				e.target.closest('tr').remove();
+			}
+		});
+	}
+
+	/**
+	 * Show/hides warning icon for script operation type.
+	 *
+	 * @param {string} operation_type  Type of operation selected.
+	 */
+	#toggleScriptWarningIcon(operation_type) {
+		if (this.scripts_with_warning.length > 0) {
+			const has_warning = this.scripts_with_warning.includes(operation_type);
+
+			this.form.querySelector('.js-script-warning-icon').style.display = has_warning ? '' : 'none';
+		}
+	}
+
+	/**
+	 * Adds empty row if no host tags are initially present and adds a row index for each host tag.
+	 *
+	 * @param {array} optags  Operation host tags.
+	 */
+	#loadHostTags(optags) {
+		if (optags.length === 0) {
+			optags.push({tag: '', value:'', row_index: 0});
+		}
+		else {
+			optags.map((optag, index) => {
+				optag.row_index = index;
+			});
+		}
+
+		this.#addHostTags(optags);
+	}
+
+	/**
+	 * Adds rows for "Add host tags" and "Remove host tags" options based on row template.
+	 *
+	 * @param {array} optags  Operation host tags.
+	 */
+	#addHostTags(optags) {
+		const tags_table = this.form.querySelector('#tags-table');
+		const template = new Template(this.form.querySelector('#operation-host-tags-row-tmpl').innerHTML);
+
+		optags.forEach((optag) => {
+			tags_table.rows[tags_table.rows.length - 1].insertAdjacentHTML('beforebegin', template.evaluate(optag));
+
+			$(`#operation_optag_${optag.row_index}_tag, #operation_optag_${optag.row_index}_value`).textareaFlexible();
 		});
 	}
 
@@ -111,6 +169,11 @@ window.operation_popup = new class {
 			case <?= OPERATION_TYPE_HOST_REMOVE ?>:
 			case <?= OPERATION_TYPE_HOST_ENABLE ?>:
 			case <?= OPERATION_TYPE_HOST_DISABLE ?>:
+				break;
+
+			case <?= OPERATION_TYPE_HOST_TAGS_ADD ?>:
+			case <?= OPERATION_TYPE_HOST_TAGS_REMOVE ?>:
+				this.#hostTagsFields();
 				break;
 
 			case <?= OPERATION_TYPE_UPDATE_MESSAGE ?>:
@@ -164,6 +227,14 @@ window.operation_popup = new class {
 		this.hostgroup_ms.multiSelect('setDisabledEntries',
 			[... this.form.querySelectorAll('[name^="operation[opgroup]["]')].map((input) => input.value)
 		);
+	}
+
+	/**
+	 * Shows or hides the host tags fields.
+	 */
+	#hostTagsFields() {
+		this.form.querySelector('#operation-host-tags').style.display = '';
+		this._enableFormFields(['operation-host-tags']);
 	}
 
 	_templateFields() {

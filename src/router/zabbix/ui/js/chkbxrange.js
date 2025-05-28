@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -53,7 +48,7 @@ var chkbxRange = {
 
 			// check if checkboxes should be selected from session storage
 			if (!jQuery.isEmptyObject(selected_ids)) {
-				var objectIds = jQuery.map(selected_ids, function(id) { return id });
+				var objectIds = Object.keys(selected_ids);
 			}
 			// no checkboxes selected, check browser cache if checkboxes are still checked and update state
 			else {
@@ -73,7 +68,7 @@ var chkbxRange = {
 			};
 		}
 
-		for (const footer_button of document.querySelectorAll('#action_buttons button:not(.no-chkbxrange)')) {
+		for (const footer_button of document.querySelectorAll('#action_buttons button:not(.js-no-chkbxrange)')) {
 			footer_button.addEventListener('click', this.event_handlers.action_button_click);
 		}
 	},
@@ -113,7 +108,6 @@ var chkbxRange = {
 	 * @param e
 	 */
 	handleClick: function(e) {
-		e = e || window.event;
 		var checkbox = e.target;
 
 		PageRefresh.restart();
@@ -300,7 +294,13 @@ var chkbxRange = {
 					for (const [action, count] of Object.entries(actions)) {
 						// Checkbox data-actions attribute must match the button attribute.
 						if (button.dataset.required === action) {
-							button.disabled = (count == 0);
+							// Check if there is a minimum amount of checkboxes required to be selected.
+							if (button.dataset.requiredCount) {
+								button.disabled = (count < button.dataset.requiredCount);
+							}
+							else {
+								button.disabled = (count == 0);
+							}
 						}
 					}
 				}
@@ -379,9 +379,14 @@ var chkbxRange = {
 	},
 
 	submitFooterButton: function(e) {
+		const checked_count = Object.keys(this.getSelectedIds()).length;
+
 		var footerButton = jQuery(e.target),
 			form = footerButton.closest('form'),
-			confirmText = footerButton.attr('confirm');
+			confirmText = checked_count > 1
+				? footerButton.attr('confirm_plural')
+				: footerButton.attr('confirm_singular');
+
 		if (confirmText && !confirm(confirmText)) {
 			e.preventDefault();
 			e.stopPropagation();

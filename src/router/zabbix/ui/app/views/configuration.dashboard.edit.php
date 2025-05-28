@@ -1,41 +1,55 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
-$this->addJsFile('flickerfreescreen.js');
-$this->addJsFile('gtlc.js');
-$this->addJsFile('colorpicker.js');
+$this->addJsFile('class.cnavtree.js');
+$this->addJsFile('class.coverride.js');
+$this->addJsFile('class.crangecontrol.js');
+$this->addJsFile('class.csvggraph.js');
 $this->addJsFile('class.dashboard.js');
 $this->addJsFile('class.dashboard.page.js');
 $this->addJsFile('class.dashboard.widget.placeholder.js');
+$this->addJsFile('class.svg.canvas.js');
+$this->addJsFile('class.svg.map.js');
+$this->addJsFile('class.widgets-data.js');
+$this->addJsFile('class.widget-base.js');
 $this->addJsFile('class.widget.js');
 $this->addJsFile('class.widget.inaccessible.js');
 $this->addJsFile('class.widget.iterator.js');
+$this->addJsFile('class.widget.misconfigured.js');
 $this->addJsFile('class.widget.paste-placeholder.js');
-$this->addJsFile('class.sortable.js');
+$this->addJsFile('class.widget-field.checkbox-list.js');
+$this->addJsFile('class.widget-field.multiselect.js');
+$this->addJsFile('class.widget-field.time-period.js');
+$this->addJsFile('class.widget-select.popup.js');
+$this->addJsFile('colorpicker.js');
+$this->addJsFile('d3.js');
+$this->addJsFile('flickerfreescreen.js');
+$this->addJsFile('gtlc.js');
+$this->addJsFile('leaflet.js');
+$this->addJsFile('leaflet.markercluster.js');
+$this->addJsFile('class.geomaps.js');
 
 $this->includeJsFile('configuration.dashboard.edit.js.php');
+
+$this->addCssFile('assets/styles/vendors/Leaflet/leaflet.css');
 
 $html_page = (new CHtmlPage())
 	->setTitle(_('Dashboards'))
@@ -45,16 +59,20 @@ $html_page = (new CHtmlPage())
 			->setId('dashboard-control')
 			->addItem(
 				(new CTag('nav', true, new CList([
-					(new CButton('dashboard-config'))->addClass(ZBX_STYLE_BTN_DASHBOARD_CONF),
+					(new CButton('dashboard-config'))
+						->addClass(ZBX_STYLE_BTN_ICON)
+						->addClass(ZBX_ICON_COG_FILLED),
 					(new CList())
 						->addClass(ZBX_STYLE_BTN_SPLIT)
-						->addItem((new CButton('dashboard-add-widget',
-							[(new CSpan())->addClass(ZBX_STYLE_PLUS_ICON), _('Add')]
-						))->addClass(ZBX_STYLE_BTN_ALT))
 						->addItem(
-							(new CButton('dashboard-add', ZWSPACE()))
+							(new CButton('dashboard-add-widget', _('Add')))
 								->addClass(ZBX_STYLE_BTN_ALT)
-								->addClass(ZBX_STYLE_BTN_TOGGLE_CHEVRON)
+								->addClass(ZBX_ICON_PLUS_SMALL)
+						)
+						->addItem(
+							(new CButton('dashboard-add'))
+								->addClass(ZBX_STYLE_BTN_ALT)
+								->addClass(ZBX_ICON_CHEVRON_DOWN_SMALL)
 						),
 					(new CButton('dashboard-save', _('Save changes'))),
 					(new CLink(_('Cancel'), '#'))->setId('dashboard-cancel'),
@@ -82,13 +100,11 @@ $dashboard->addItem(
 			(new CDiv())
 				->addClass(ZBX_STYLE_DASHBOARD_NAVIGATION_CONTROLS)
 				->addItem([
-					(new CSimpleButton())
-						->addClass(ZBX_STYLE_DASHBOARD_PREVIOUS_PAGE)
-						->addClass('btn-iterator-page-previous')
+					(new CButtonIcon(ZBX_ICON_CHEVRON_LEFT, _('Previous page')))
+						->addClass(ZBX_STYLE_BTN_DASHBOARD_PREVIOUS_PAGE)
 						->setEnabled(false),
-					(new CSimpleButton())
-						->addClass(ZBX_STYLE_DASHBOARD_NEXT_PAGE)
-						->addClass('btn-iterator-page-next')
+					(new CButtonIcon(ZBX_ICON_CHEVRON_RIGHT, _('Next page')))
+						->addClass(ZBX_STYLE_BTN_DASHBOARD_NEXT_PAGE)
 						->setEnabled(false)
 				])
 		)
@@ -105,7 +121,7 @@ $html_page
 		'dashboard' => $data['dashboard'],
 		'widget_defaults' => $data['widget_defaults'],
 		'widget_last_type' => $data['widget_last_type'],
-		'time_period' => $data['time_period'],
+		'dashboard_time_period' => $data['dashboard_time_period'],
 		'page' => $data['page']
 	]).');
 '))

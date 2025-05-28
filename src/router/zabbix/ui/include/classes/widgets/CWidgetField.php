@@ -1,57 +1,68 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 namespace Zabbix\Widgets;
 
-use CApiInputValidator;
+use CApiInputValidator,
+	DB;
 
 abstract class CWidgetField {
 
-	public const FLAG_ACKNOWLEDGES = 0x01;
+	public const DEFAULT_VIEW = null;
+
 	public const FLAG_NOT_EMPTY = 0x02;
 	public const FLAG_LABEL_ASTERISK = 0x04;
 	public const FLAG_DISABLED = 0x08;
 
+	public const FOREIGN_REFERENCE_KEY = '_reference';
+	public const REFERENCE_DASHBOARD = 'DASHBOARD';
+
 	protected string $name;
 	protected ?string $label;
-	protected ?string $full_name = null;
+	protected ?string $label_prefix = null;
 
 	protected ?int $save_type = null;
 
 	protected $value;
 	protected $default;
 
+	protected array $values_captions = [];
+	protected string $inaccessible_caption = '';
+
+	protected int $max_length;
+
 	protected ?string $action = null;
 
 	protected int $flags = 0x00;
 
-	protected array $validation_rules = [];
-	protected ?array $strict_validation_rules = null;
-	protected array $ex_validation_rules = [];
+	private array $validation_rules = [];
+
+	private $templateid = null;
+
+	private bool $default_prevented = false;
+	private bool $widget_accepted = false;
+	private bool $dashboard_accepted = false;
+
+	private string $in_type = '';
 
 	/**
 	 * @param string      $name   Field name in form.
 	 * @param string|null $label  Label for the field in form.
 	 */
-	public function __construct(string $name, string $label = null) {
+	public function __construct(string $name, ?string $label = null) {
 		$this->name = $name;
 		$this->label = $label;
 		$this->value = null;
@@ -67,20 +78,37 @@ abstract class CWidgetField {
 	}
 
 	/**
-	 * Set field full name which will appear in case of error messages. For example:
-	 * Invalid parameter "<FULL NAME>": too many decimal places.
+	 * Prefix field label to enhance clarity in case of error messages. For example:
+	 * Invalid parameter "<LABEL PREFIX>: <LABEL>": too many decimal places.
 	 */
-	public function setFullName(string $name): self {
-		$this->full_name = $name;
+	public function prefixLabel(?string $prefix): self {
+		$this->label_prefix = $prefix;
 
 		return $this;
 	}
 
 	/**
-	 * Get field value. If no value is set, will return default value.
+	 * Get fully qualified label for displaying in error messages.
+	 *
+	 * @return string
+	 */
+	public function getErrorLabel(): string {
+		$label = $this->label ?? $this->name;
+
+		if ($this->label_prefix !== null) {
+			$label = $this->label_prefix.': '.$label;
+		}
+
+		return $label;
+	}
+
+	/**
+	 * Get field value. If no value is set, return the default value.
+	 *
+	 * @return mixed
 	 */
 	public function getValue() {
-		return $this->value ?? $this->default;
+		return $this->value ?? $this->getDefault();
 	}
 
 	public function setValue($value): self {
@@ -89,10 +117,93 @@ abstract class CWidgetField {
 		return $this;
 	}
 
+	public function getValuesCaptions(): array {
+		return $this->values_captions;
+	}
+
+	public function setValuesCaptions(array $captions): self {
+		$values = [];
+		$this->toApi($values);
+
+		$inaccessible = 0;
+		foreach ($values as $value) {
+			if (array_key_exists($value['type'], $captions)) {
+				$this->values_captions[$value['value']] = array_key_exists($value['value'], $captions[$value['type']])
+					? $captions[$value['type']][$value['value']]
+					: [
+						'id' => $value['value'],
+						'name' => $this->inaccessible_caption.(++$inaccessible > 1 ? ' ('.$inaccessible.')' : ''),
+						'inaccessible' => true
+					];
+			}
+		}
+
+		return $this;
+	}
+
+	public function getDefault() {
+		return $this->default;
+	}
+
 	public function setDefault($value): self {
 		$this->default = $value;
 
 		return $this;
+	}
+
+	public function isDefaultPrevented(): bool {
+		return $this->default_prevented;
+	}
+
+	/**
+	 * Disable exact object selection, like item or host.
+	 *
+	 * @return $this
+	 */
+	public function preventDefault($default_prevented = true): self {
+		$this->default_prevented = $default_prevented;
+
+		return $this;
+	}
+
+	public function isWidgetAccepted(): bool {
+		return $this->widget_accepted;
+	}
+
+	/**
+	 * Allow selecting widget as reference.
+	 *
+	 * @return $this
+	 */
+	public function acceptWidget($widget_accepted = true): self {
+		$this->widget_accepted = $widget_accepted;
+
+		return $this;
+	}
+
+	public function isDashboardAccepted(): bool {
+		return $this->dashboard_accepted;
+	}
+
+	/**
+	 * Allow selecting dashboard as reference.
+	 *
+	 * @return $this
+	 */
+	public function acceptDashboard($dashboard_accepted = true): self {
+		$this->dashboard_accepted = $dashboard_accepted;
+
+		return $this;
+	}
+
+	public function setInType(string $in_type): self {
+		$this->in_type = $in_type;
+
+		return $this;
+	}
+
+	public function getInType(): string {
+		return $this->in_type;
 	}
 
 	public function getAction(): ?string {
@@ -106,6 +217,18 @@ abstract class CWidgetField {
 	 */
 	public function setAction(string $action): self {
 		$this->action = $action;
+
+		return $this;
+	}
+
+	public function getMaxLength(): int {
+		return $this->max_length;
+	}
+
+	public function setMaxLength(int $max_length): self {
+		$this->max_length = $max_length;
+
+		$this->validation_rules['length'] = $this->max_length;
 
 		return $this;
 	}
@@ -127,6 +250,23 @@ abstract class CWidgetField {
 	}
 
 	/**
+	 * @return int|string|null
+	 */
+	public function getTemplateId() {
+		return $this->templateid;
+	}
+
+	public function setTemplateId($templateid): self {
+		$this->templateid = $templateid;
+
+		return $this;
+	}
+
+	public function isTemplateDashboard(): bool {
+		return $this->templateid !== null;
+	}
+
+	/**
 	 * @param bool $strict  Widget form submit validation?
 	 *
 	 * @return array  Errors.
@@ -134,25 +274,15 @@ abstract class CWidgetField {
 	public function validate(bool $strict = false): array {
 		$errors = [];
 
-		$validation_rules = ($strict && $this->strict_validation_rules !== null)
-			? $this->strict_validation_rules
-			: $this->validation_rules;
-		$validation_rules += $this->ex_validation_rules;
-
-		$value = $this->value ?? $this->default;
-
-		if ($this->full_name !== null) {
-			$label = $this->full_name;
-		}
-		else {
-			$label = $this->label ?? $this->name;
-		}
+		$validation_rules = $this->getValidationRules($strict);
+		$value = $this->getValue();
+		$label = $this->getErrorLabel();
 
 		if (CApiInputValidator::validate($validation_rules, $value, $label, $error)) {
 			$this->setValue($value);
 		}
 		else {
-			$this->setValue($this->default);
+			$this->setValue($this->getDefault());
 			$errors[] = $error;
 		}
 
@@ -169,22 +299,30 @@ abstract class CWidgetField {
 	public function toApi(array &$widget_fields = []): void {
 		$value = $this->getValue();
 
-		if ($value !== null && $value !== $this->default) {
-			$widget_field = [
-				'type' => $this->save_type,
-				'name' => $this->name
-			];
+		if ($value === null) {
+			return;
+		}
 
-			if (is_array($value)) {
-				foreach ($value as $val) {
-					$widget_field['value'] = $val;
-					$widget_fields[] = $widget_field;
+		if (is_array($value)) {
+			$value = array_values($value);
+			$default = $this->getDefault();
+
+			if (!is_array($default) || $value !== array_values($default)) {
+				foreach ($value as $index => $each_value) {
+					$widget_fields[] = [
+						'type' => $this->save_type,
+						'name' => $this->name.'.'.$index,
+						'value' => $each_value
+					];
 				}
 			}
-			else {
-				$widget_field['value'] = $value;
-				$widget_fields[] = $widget_field;
-			}
+		}
+		elseif ($value !== $this->getDefault()) {
+			$widget_fields[] = [
+				'type' => $this->save_type,
+				'name' => $this->name,
+				'value' => $value
+			];
 		}
 	}
 
@@ -195,7 +333,12 @@ abstract class CWidgetField {
 				break;
 
 			case ZBX_WIDGET_FIELD_TYPE_STR:
-				$this->validation_rules = ['type' => API_STRING_UTF8, 'length' => 255];
+				$this->max_length = DB::getFieldLength('widget_field', 'value_str');
+
+				$this->validation_rules = [
+					'type' => API_STRING_UTF8,
+					'length' => $this->max_length
+				];
 				break;
 
 			case ZBX_WIDGET_FIELD_TYPE_GROUP:
@@ -222,27 +365,12 @@ abstract class CWidgetField {
 		return $this;
 	}
 
-	protected function getValidationRules(): array {
+	protected function getValidationRules(bool $strict = false): array {
 		return $this->validation_rules;
 	}
 
 	protected function setValidationRules(array $validation_rules): self {
 		$this->validation_rules = $validation_rules;
-
-		return $this;
-	}
-
-	/**
-	 * Set validation rules for "strict" mode.
-	 */
-	protected function setStrictValidationRules(array $strict_validation_rules = null): self {
-		$this->strict_validation_rules = $strict_validation_rules;
-
-		return $this;
-	}
-
-	protected function setExValidationRules(array $ex_validation_rules): self {
-		$this->ex_validation_rules = $ex_validation_rules;
 
 		return $this;
 	}
@@ -257,5 +385,37 @@ abstract class CWidgetField {
 		else {
 			$validation_rule['flags'] = $flag;
 		}
+	}
+
+	/**
+	 * Parse typed reference (a reference to a foreign data source).
+	 *
+	 * @param string $typed_reference
+	 *
+	 * @return array
+	 */
+	public static function parseTypedReference(string $typed_reference): array {
+		$separator_index = strpos($typed_reference, '.');
+
+		if ($separator_index === false) {
+			return ['reference' => '', 'type' => ''];
+		}
+
+		return [
+			'reference' => substr($typed_reference, 0, $separator_index),
+			'type' => substr($typed_reference, $separator_index + 1)
+		];
+	}
+
+	/**
+	 * Create a typed reference (a reference to a foreign data source).
+	 *
+	 * @param string $reference
+	 * @param string $type
+	 *
+	 * @return string
+	 */
+	public static function createTypedReference(string $reference, string $type = ''): string {
+		return $type !== '' ? $reference.'.'.$type : $reference;
 	}
 }

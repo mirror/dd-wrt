@@ -1,27 +1,20 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_XML_H
 #define ZABBIX_XML_H
 
-#include "config.h"
-#include "zbxtypes.h"
 #include "zbxalgo.h"
 
 #ifdef HAVE_LIBXML2
@@ -34,6 +27,7 @@ char	*zbx_xml_escape_dyn(const char *data);
 void	zbx_xml_escape_xpath(char **data);
 
 int	zbx_query_xpath(zbx_variant_t *value, const char *params, char **errmsg);
+int	zbx_query_xpath_contents(zbx_variant_t *value, const char *params, int *is_empty, char **errmsg);
 
 #ifdef HAVE_LIBXML2
 int	zbx_open_xml(char *data, int options, int maxerrlen, void **xml_doc, void **root_node, char **errmsg);
@@ -54,6 +48,7 @@ int	zbx_xml_try_read_value(const char *data, size_t len, const char *xpath, xmlD
 int	zbx_xml_doc_read_num(xmlDoc *xdoc, const char *xpath, int *num);
 int	zbx_xml_node_read_num(xmlDoc *xdoc, xmlNode *node, const char *xpath, int *num);
 char	*zbx_xml_node_read_value(xmlDoc *xdoc, xmlNode *node, const char *xpath);
+char	*zbx_xml_node_read_prop(xmlNode *node, const char *name);
 char	*zbx_xml_doc_read_value(xmlDoc *xdoc, const char *xpath);
 xmlNode	*zbx_xml_node_get(xmlDoc *xdoc, xmlNode *node, const char *xpath);
 xmlNode	*zbx_xml_doc_get(xmlDoc *xdoc, const char *xpath);

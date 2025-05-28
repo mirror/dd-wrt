@@ -1,26 +1,22 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "dns.h"
-#include "zbxsysinfo.h"
+#include "ip_reverse.h"
 #include "../sysinfo.h"
 
+#include "zbxtime.h"
 #include "zbxstr.h"
 #include "zbxnum.h"
 #include "zbxcomms.h"
@@ -96,8 +92,38 @@ static char	*get_name(unsigned char *msg, unsigned char *msg_end, unsigned char 
 }
 #endif	/* !defined(_WINDOWS) && !defined(__MINGW32__)*/
 
-/* Replace zbx_inet_ntop with inet_ntop in case of drop Windows XP/W2k3 support */
+/* Replace zbx_inet_ntop/zbx_inet_pton with inet_ntop/inet_pton in case of drop Windows XP/W2k3 support */
 #if defined(_WINDOWS) || defined(__MINGW32__)
+int	zbx_inet_pton(int af, const char *src, void *dst)
+{
+	struct sockaddr_storage	ss;
+	int			size = sizeof(ss);
+	char			src_copy[INET6_ADDRSTRLEN + 1];
+
+	memset(&ss, '\0', sizeof(ss));
+	ss.ss_family = af;
+	zbx_strlcpy(src_copy, src, INET6_ADDRSTRLEN+1);
+	src_copy[INET6_ADDRSTRLEN] = 0;
+
+	if (0 == WSAStringToAddressA(src_copy, af, NULL, (struct sockaddr *)&ss, &size))
+	{
+		switch(af)
+		{
+			case AF_INET:
+				*((struct in_addr *)dst) = ((struct sockaddr_in *)&ss)->sin_addr;
+				return SUCCEED;
+			case AF_INET6:
+				*((struct in6_addr *)dst) = ((struct sockaddr_in6 *)&ss)->sin6_addr;
+				return SUCCEED;
+			default:
+				return FAIL;
+		}
+		return SUCCEED;
+	}
+
+	return FAIL;
+}
+
 const char *zbx_inet_ntop(int af, const void *src, char *dst, size_t size)
 {
 	struct sockaddr_storage ss;
@@ -123,6 +149,10 @@ const char *zbx_inet_ntop(int af, const void *src, char *dst, size_t size)
 #endif
 #endif	/* defined(HAVE_RES_QUERY) || defined(_WINDOWS) || defined(__MINGW32__) */
 
+#define DNS_QUERY_LONG	0
+#define DNS_QUERY_SHORT	1
+#define DNS_QUERY_PERF	2
+
 static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_answer)
 {
 #if defined(HAVE_RES_QUERY) || defined(_WINDOWS) || defined(__MINGW32__)
@@ -131,6 +161,7 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 	int			res, type, retrans, retry, use_tcp, i, ret = SYSINFO_RET_FAIL, ip_type = AF_INET;
 	char			*ip, zone[MAX_STRING_LEN], buffer[MAX_STRING_LEN], *zone_str, *param,
 				tmp[MAX_STRING_LEN];
+	double			check_time = zbx_time();
 	struct in_addr		inaddr;
 	struct in6_addr		in6addr;
 #if !defined(_WINDOWS) && !defined(__MINGW32__)
@@ -187,7 +218,7 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		{"MX",		T_MX},
 		{"TXT",		T_TXT},
 		{"SRV",		T_SRV},
-		{NULL}
+		{0}
 	};
 
 #if defined(_WINDOWS) || defined(__MINGW32__)
@@ -248,9 +279,14 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		freeaddrinfo(hres);
 #endif
 	if (NULL == zone_str || '\0' == *zone_str)
-		zbx_strscpy(zone, "zabbix.com");
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Second parameter cannot be empty."));
+		return SYSINFO_RET_FAIL;
+	}
 	else
+	{
 		zbx_strscpy(zone, zone_str);
+	}
 
 	param = get_rparam(request, 2);
 
@@ -306,6 +342,20 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		return SYSINFO_RET_FAIL;
 	}
 
+	if (T_PTR == type)
+	{
+		char	*reversed_zone = NULL, *error = NULL;
+
+		if (FAIL == zbx_ip_reverse(zone, &reversed_zone, &error))
+		{
+			SET_MSG_RESULT(result, error);
+
+			return SYSINFO_RET_FAIL;
+		}
+		zbx_strscpy(zone, reversed_zone);
+		zbx_free(reversed_zone);
+	}
+
 #if defined(_WINDOWS) || defined(__MINGW32__)
 	options = DNS_QUERY_STANDARD | DNS_QUERY_BYPASS_CACHE;
 	if (0 != use_tcp)
@@ -315,11 +365,31 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 	res = DnsQuery(wzone, type, options, NULL, &pQueryResults, NULL);
 	zbx_free(wzone);
 
-	if (1 == short_answer)
+	if (DNS_QUERY_SHORT == short_answer)
 	{
 		SET_UI64_RESULT(result, DNS_RCODE_NOERROR != res ? 0 : 1);
 		ret = SYSINFO_RET_OK;
 		goto clean_dns;
+	}
+	else if (DNS_QUERY_PERF == short_answer)
+	{
+		if (ERROR_TIMEOUT == res)
+		{
+			SET_DBL_RESULT(result, 0.0);
+			ret = SYSINFO_RET_OK;
+			goto clean_dns;
+		}
+		else
+		{
+			check_time = zbx_time() - check_time;
+
+			if (zbx_get_float_epsilon() > check_time)
+				check_time = zbx_get_float_epsilon();
+
+			SET_DBL_RESULT(result, check_time);
+			ret = SYSINFO_RET_OK;
+			goto clean_dns;
+		}
 	}
 
 	if (DNS_RCODE_NOERROR != res)
@@ -469,6 +539,19 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		*buffer = '\0';
 	}
 #else	/* !defined(_WINDOWS) && !defined(__MINGW32__) */
+
+#if defined(HAVE_RES_NINIT) && !defined(_AIX) && (defined(HAVE_RES_U_EXT) || defined(HAVE_RES_U_EXT_EXT))
+
+#ifdef HAVE_RES_NDESTROY
+#	define zbx_free_res(ptr) res_ndestroy(ptr);
+#else
+#	define zbx_free_res(ptr) res_nclose(ptr);
+#endif
+
+#else
+#	define zbx_free_res(ptr)
+#endif
+
 #if defined(HAVE_RES_NINIT) && !defined(_AIX)
 	memset(&res_state_local, 0, sizeof(res_state_local));
 	if (-1 == res_ninit(&res_state_local))	/* initialize always, settings might have changed */
@@ -487,6 +570,9 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 #endif
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot create DNS query: %s", zbx_strerror(errno)));
+
+		zbx_free_res(&res_state_local);
+
 		return SYSINFO_RET_FAIL;
 	}
 
@@ -495,6 +581,9 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		if (0 == inet_aton(ip, &inaddr))
 		{
 			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid IP address."));
+
+			zbx_free_res(&res_state_local);
+
 			return SYSINFO_RET_FAIL;
 		}
 
@@ -518,6 +607,9 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		if (0 == inet_pton(ip_type, ip, &in6addr))
 		{
 			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid IPv6 address."));
+
+			zbx_free_res(&res_state_local);
+
 			return SYSINFO_RET_FAIL;
 		}
 
@@ -575,18 +667,15 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 
 	res_state_local.retrans = retrans;
 	res_state_local.retry = retry;
-
+	memset(&answer.buffer, 0, sizeof(answer.buffer));
 	res = res_nsend(&res_state_local, buf, res, answer.buffer, sizeof(answer.buffer));
 
 #	ifdef HAVE_RES_U_EXT	/* Linux */
 	if (NULL != ip && '\0' != *ip && AF_INET6 == ip_type)
 		res_state_local._u._ext.nsaddrs[0] = saved_ns6;
 #	endif
-#	ifdef HAVE_RES_NDESTROY
-	res_ndestroy(&res_state_local);
-#	else
-	res_nclose(&res_state_local);
-#	endif
+	zbx_free_res(&res_state_local);
+
 #else	/* thread-unsafe resolver API */
 	saved_options = _res.options;
 	saved_retrans = _res.retrans;
@@ -626,15 +715,44 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 #endif
 	hp = (HEADER *)answer.buffer;
 
-	if (1 == short_answer)
+	int	dns_is_down = -1 == res || NOERROR != hp->rcode || 0 == ntohs(hp->ancount);
+
+	if (DNS_QUERY_SHORT == short_answer)
 	{
-		SET_UI64_RESULT(result, -1 == res || NOERROR != hp->rcode || 0 == ntohs(hp->ancount) ? 0 : 1);
+		SET_UI64_RESULT(result, dns_is_down ? 0 : 1);
+
+		return SYSINFO_RET_OK;
+	}
+	else if (DNS_QUERY_PERF == short_answer)
+	{
+		/* -1 for res is returned also for REFUSED and SERVFAIL for res_send()          */
+		/* for NXDOMAIN - res is 0 and hp->rcode is set                                 */
+		/* for REFUXED and SERVFAIL res is -1, with hp->rcode set for particular error  */
+		/* for missing connection - res is -1, but hp->rcode it is uninitialized        */
+		/* So, the only to detect the missing connection is to set hp->rcode to 0 first,*/
+		/* and then to check if res is -1 with rcode beting set to 0.                   */
+		if (-1 == res && 0 == hp->rcode)
+		{
+			SET_DBL_RESULT(result, 0.0);
+
+			return SYSINFO_RET_OK;
+		}
+		else
+		{
+			check_time = zbx_time() - check_time;
+
+			if (zbx_get_float_epsilon() > check_time)
+				check_time = zbx_get_float_epsilon();
+			SET_DBL_RESULT(result, check_time);
+		}
+
 		return SYSINFO_RET_OK;
 	}
 
-	if (-1 == res || NOERROR != hp->rcode || 0 == ntohs(hp->ancount))
+	if (1 == dns_is_down)
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot perform DNS query."));
+
 		return SYSINFO_RET_FAIL;
 	}
 
@@ -991,12 +1109,17 @@ clean_dns:
 
 static int	dns_query_short(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	return dns_query(request, result, 1);
+	return dns_query(request, result, DNS_QUERY_SHORT);
 }
 
 static int	dns_query_long(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	return dns_query(request, result, 0);
+	return dns_query(request, result, DNS_QUERY_LONG);
+}
+
+static int	dns_query_perf(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	return dns_query(request, result, DNS_QUERY_PERF);
 }
 
 static int	dns_query_is_tcp(AGENT_REQUEST *request)
@@ -1026,3 +1149,15 @@ int	net_dns_record(AGENT_REQUEST *request, AGENT_RESULT *result)
 #endif
 	return dns_query_long(request, result);
 }
+
+int	net_dns_perf(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+#if !defined(_WINDOWS) && !defined(__MINGW32__)
+	if (SUCCEED == dns_query_is_tcp(request))
+		return zbx_execute_threaded_metric(dns_query_perf, request, result);
+#endif
+	return dns_query_perf(request, result);
+}
+#undef DNS_QUERY_LONG
+#undef DNS_QUERY_SHORT
+#undef DNS_QUERY_PERF

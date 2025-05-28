@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,26 +20,57 @@
 ?>
 
 <script>
-	const view = {
-		is_busy: false,
-		is_busy_saving: false,
+	const view = new class {
+		/**
+		 * @type {Object}
+		 */
+		#dashboard;
+
+		/**
+		 * @type {Object}
+		 */
+		#broadcast_requirements;
+
+		/**
+		 * @type {Object}
+		 */
+		#dashboard_time_period;
+
+		/**
+		 * @type {boolean}
+		 */
+		#clone;
+
+		/**
+		 * @type {boolean}
+		 */
+		#is_busy = false;
+
+		/**
+		 * @type {boolean}
+		 */
+		#is_busy_saving = false;
+
+		/**
+		 * @type {boolean}
+		 */
+		#skip_time_selector_range_update = false;
 
 		init({
 			dashboard,
 			widget_defaults,
 			widget_last_type,
 			configuration_hash,
-			has_time_selector,
-			time_period,
-			dynamic,
+			broadcast_requirements,
+			dashboard_host,
+			dashboard_time_period,
 			web_layout_mode,
 			clone
 		}) {
-			this.dashboard = dashboard;
-			this.has_time_selector = has_time_selector;
-			this.time_period = time_period;
-			this.dynamic = dynamic;
-			this.clone = clone;
+			this.#dashboard = dashboard;
+			this.#broadcast_requirements = broadcast_requirements;
+			this.#dashboard_time_period = dashboard_time_period;
+			this.#clone = clone;
 
 			timeControl.refreshPage = false;
 
@@ -61,9 +87,9 @@
 						slideshow: document.querySelector('.<?= ZBX_STYLE_BTN_DASHBOARD_KIOSKMODE_TOGGLE_SLIDESHOW ?>')
 					}
 					: {
-						previous_page: document.querySelector('.<?= ZBX_STYLE_DASHBOARD_PREVIOUS_PAGE ?>'),
-						next_page: document.querySelector('.<?= ZBX_STYLE_DASHBOARD_NEXT_PAGE ?>'),
-						slideshow: document.querySelector('.<?= ZBX_STYLE_DASHBOARD_TOGGLE_SLIDESHOW ?>')
+						previous_page: document.querySelector('.<?= ZBX_STYLE_BTN_DASHBOARD_PREVIOUS_PAGE ?>'),
+						next_page: document.querySelector('.<?= ZBX_STYLE_BTN_DASHBOARD_NEXT_PAGE ?>'),
+						slideshow: document.querySelector('.<?= ZBX_STYLE_BTN_DASHBOARD_TOGGLE_SLIDESHOW ?>')
 					},
 				data: {
 					dashboardid: dashboard.dashboardid,
@@ -75,11 +101,9 @@
 				},
 				max_dashboard_pages: <?= DASHBOARD_MAX_PAGES ?>,
 				cell_width: 100 / <?= DASHBOARD_MAX_COLUMNS ?>,
-				cell_height: 70,
+				cell_height: <?= DASHBOARD_ROW_HEIGHT ?>,
 				max_columns: <?= DASHBOARD_MAX_COLUMNS ?>,
 				max_rows: <?= DASHBOARD_MAX_ROWS ?>,
-				widget_min_rows: <?= DASHBOARD_WIDGET_MIN_ROWS ?>,
-				widget_max_rows: <?= DASHBOARD_WIDGET_MAX_ROWS ?>,
 				widget_defaults,
 				widget_last_type,
 				configuration_hash,
@@ -88,31 +112,60 @@
 				is_edit_mode: dashboard.dashboardid === null || clone,
 				can_edit_dashboards: dashboard.can_edit_dashboards,
 				is_kiosk_mode: web_layout_mode == <?= ZBX_LAYOUT_KIOSKMODE ?>,
-				time_period,
-				dynamic_hostid: dynamic.host ? dynamic.host.id : null,
+				broadcast_options: {
+					[CWidgetsData.DATA_TYPE_HOST_ID]: {rebroadcast: false},
+					[CWidgetsData.DATA_TYPE_HOST_IDS]: {rebroadcast: false},
+					[CWidgetsData.DATA_TYPE_TIME_PERIOD]: {rebroadcast: true}
+				},
 				csrf_token: <?= json_encode(CCsrfTokenHelper::get('dashboard')) ?>
 			});
 
 			for (const page of dashboard.pages) {
 				for (const widget of page.widgets) {
-					widget.fields = (typeof widget.fields === 'object') ? widget.fields : {};
+					widget.fields = Object.keys(widget.fields).length > 0 ? widget.fields : {};
 				}
 
 				ZABBIX.Dashboard.addDashboardPage(page);
 			}
 
+			const time_period = {
+				from: dashboard_time_period.from,
+				from_ts: dashboard_time_period.from_ts,
+				to: dashboard_time_period.to,
+				to_ts: dashboard_time_period.to_ts
+			};
+
+			CWidgetsData.setDefault(CWidgetsData.DATA_TYPE_TIME_PERIOD, time_period, {is_comparable: false});
+
+			ZABBIX.Dashboard.broadcast({
+				[CWidgetsData.DATA_TYPE_HOST_ID]: dashboard_host !== null
+					? [dashboard_host.id]
+					: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_ID),
+				[CWidgetsData.DATA_TYPE_HOST_IDS]: dashboard_host !== null
+					? [dashboard_host.id]
+					: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_IDS),
+				[CWidgetsData.DATA_TYPE_TIME_PERIOD]: time_period
+			});
+
 			ZABBIX.Dashboard.activate();
 
 			if (web_layout_mode != <?= ZBX_LAYOUT_KIOSKMODE ?>) {
-				ZABBIX.Dashboard.on(DASHBOARD_EVENT_EDIT, () => this.edit());
-				ZABBIX.Dashboard.on(DASHBOARD_EVENT_APPLY_PROPERTIES, this.events.applyProperties);
+				ZABBIX.Dashboard.on(DASHBOARD_EVENT_EDIT, () => this.#edit());
+				ZABBIX.Dashboard.on(DASHBOARD_EVENT_APPLY_PROPERTIES, () => this.#applyProperties());
 
-				if (dynamic.has_dynamic_widgets) {
-					jQuery('#dynamic_hostid').on('change', this.events.dynamicHostChange);
+				if (CWidgetsData.DATA_TYPE_HOST_ID in broadcast_requirements
+						|| CWidgetsData.DATA_TYPE_HOST_IDS in broadcast_requirements) {
+					jQuery('#dashboard_hostid').on('change', this.#listeners.onDashboardHostChange);
+
+					window.addEventListener('popstate', e => this.#onPopState(e));
+				}
+
+				if (CWidgetsData.DATA_TYPE_TIME_PERIOD in broadcast_requirements) {
+					jQuery.subscribe('timeselector.rangeupdate', (e, data) => this.#onTimeSelectorRangeUpdate(e, data));
 				}
 
 				if (dashboard.dashboardid === null || clone) {
-					this.edit();
+					this.#edit();
 					ZABBIX.Dashboard.editProperties();
 				}
 				else {
@@ -120,26 +173,28 @@
 						.getElementById('dashboard-edit')
 						.addEventListener('click', () => {
 							ZABBIX.Dashboard.setEditMode();
-							this.edit();
+							this.#edit();
 						});
+
+					this.#updateHistory(false);
 				}
 			}
 
-			ZABBIX.Dashboard.on(DASHBOARD_EVENT_CONFIGURATION_OUTDATED, this.events.configurationOutdated);
+			ZABBIX.Dashboard.on(CDashboard.EVENT_FEEDBACK, e => this.#onFeedback(e));
 
-			if (dynamic.has_dynamic_widgets) {
-				// Perform dynamic host switch when browser back/previous buttons are pressed.
-				window.addEventListener('popstate', this.events.popState);
-			}
+			ZABBIX.Dashboard.on(DASHBOARD_EVENT_CONFIGURATION_OUTDATED, () => {
+				location.href = location.href;
+			});
 
 			jqBlink.blink();
-		},
+		}
 
-		edit() {
+		#edit() {
 			timeControl.disableAllSBox();
 
-			if (this.dynamic.has_dynamic_widgets) {
-				jQuery('#dynamic_hostid').off('change', this.events.dynamicHostChange);
+			if (CWidgetsData.DATA_TYPE_HOST_ID in this.#broadcast_requirements
+					|| CWidgetsData.DATA_TYPE_HOST_IDS in this.#broadcast_requirements) {
+				jQuery('#dashboard_hostid').off('change', this.#listeners.onDashboardHostChange);
 			}
 
 			document
@@ -166,52 +221,56 @@
 
 			document
 				.getElementById('dashboard-add')
-				.addEventListener('click', this.events.addClick);
+				.addEventListener('click', e => this.#onAddClick(e));
 
 			document
 				.getElementById('dashboard-save')
-				.addEventListener('click', () => this.save());
+				.addEventListener('click', () => this.#save());
 
 			document
 				.getElementById('dashboard-cancel')
-				.addEventListener('click', (e) => {
-					this.cancelEditing();
+				.addEventListener('click', e => {
+					this.#cancelEditing();
 					e.preventDefault();
-				}
-			);
+				});
 
-			ZABBIX.Dashboard.on(DASHBOARD_EVENT_BUSY, this.events.busy);
-			ZABBIX.Dashboard.on(DASHBOARD_EVENT_IDLE, this.events.idle);
+			ZABBIX.Dashboard.on(DASHBOARD_EVENT_BUSY, () => {
+				this.#is_busy = true;
+				this.#updateBusy();
+			});
 
-			this.enableNavigationWarning();
-		},
+			ZABBIX.Dashboard.on(DASHBOARD_EVENT_IDLE, () => {
+				this.#is_busy = false;
+				this.#updateBusy();
+			});
 
-		save() {
-			this.is_busy_saving = true;
-			this.updateBusy();
+			this.#enableNavigationWarning();
+		}
+
+		#save() {
+			this.#is_busy_saving = true;
+			this.#updateBusy();
 
 			const request_data = ZABBIX.Dashboard.save();
 
-			request_data.sharing = this.dashboard.sharing;
+			request_data.sharing = this.#dashboard.sharing;
 
-			if (this.clone) {
+			if (this.#clone) {
 				request_data.clone = '1';
 			}
 
 			const curl = new Curl('zabbix.php');
 
 			curl.setArgument('action', 'dashboard.update');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('dashboard')) ?>
-			);
+			curl.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('dashboard')) ?>);
 
 			fetch(curl.getUrl(), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify(request_data)
 			})
-				.then((response) => response.json())
-				.then((response) => {
+				.then(response => response.json())
+				.then(response => {
 					if ('error' in response) {
 						throw {error: response.error};
 					}
@@ -222,7 +281,7 @@
 						postMessageDetails('success', response.success.messages);
 					}
 
-					this.disableNavigationWarning();
+					this.#disableNavigationWarning();
 
 					const curl = new Curl('zabbix.php');
 
@@ -250,7 +309,7 @@
 						messages = exception.error.messages;
 					}
 					else {
-						title = this.dashboard.dashboardid === null || this.clone
+						title = this.#dashboard.dashboardid === null || this.#clone
 							? <?= json_encode(_('Failed to create dashboard')) ?>
 							: <?= json_encode(_('Failed to update dashboard')) ?>;
 					}
@@ -260,185 +319,237 @@
 					addMessage(message_box);
 				})
 				.finally(() => {
-					this.is_busy_saving = false;
-					this.updateBusy();
+					this.#is_busy_saving = false;
+					this.#updateBusy();
 				});
-		},
+		}
 
-		updateBusy() {
-			document.getElementById('dashboard-save').disabled = this.is_busy || this.is_busy_saving;
-		},
+		#applyProperties() {
+			const dashboard_data = ZABBIX.Dashboard.getData();
 
-		cancelEditing() {
-			this.disableNavigationWarning();
+			document.getElementById('<?= CHtmlPage::PAGE_TITLE_ID ?>').textContent = dashboard_data.name;
+			document.getElementById('dashboard-direct-link').textContent = dashboard_data.name;
+		}
+
+		#cancelEditing() {
+			this.#disableNavigationWarning();
 
 			const curl = new Curl('zabbix.php');
 
 			curl.setArgument('action', 'dashboard.view');
 
-			if (this.dashboard.dashboardid !== null) {
-				curl.setArgument('dashboardid', this.dashboard.dashboardid);
+			if (this.#dashboard.dashboardid !== null) {
+				curl.setArgument('dashboardid', this.#dashboard.dashboardid);
 			}
 			else {
 				curl.setArgument('cancel', '1');
 			}
 
 			location.replace(curl.getUrl());
-		},
+		}
 
-		enableNavigationWarning() {
-			window.addEventListener('beforeunload', this.events.beforeUnload, {passive: false});
-		},
+		#updateBusy() {
+			document.getElementById('dashboard-save').disabled = this.#is_busy || this.#is_busy_saving;
+		}
 
-		disableNavigationWarning() {
-			window.removeEventListener('beforeunload', this.events.beforeUnload);
-		},
+		#updateHistory(is_new = true)  {
+			const curl = new Curl('zabbix.php');
 
-		editHost(hostid) {
-			const host_data = {hostid};
+			curl.setArgument('action', 'dashboard.view');
+			curl.setArgument('dashboardid', this.#dashboard.dashboardid);
 
-			this.openHostPopup(host_data);
-		},
+			const state = {};
 
-		openHostPopup(host_data) {
-			const original_url = location.href;
+			if (CWidgetsData.DATA_TYPE_HOST_ID in this.#broadcast_requirements
+					|| CWidgetsData.DATA_TYPE_HOST_IDS in this.#broadcast_requirements) {
+				const hosts = jQuery('#dashboard_hostid').multiSelect('getData');
 
-			const overlay = PopUp('popup.host.edit', host_data, {
-				dialogueid: 'host_edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
+				if (hosts.length > 0) {
+					curl.setArgument('hostid', hosts[0].id);
+
+					state.host = hosts[0];
+				}
+			}
+
+			if (CWidgetsData.DATA_TYPE_TIME_PERIOD in this.#broadcast_requirements) {
+				curl.setArgument('from', this.#dashboard_time_period.from);
+				curl.setArgument('to', this.#dashboard_time_period.to);
+			}
+
+			const page = new Curl().getArgument('page');
+
+			if (page !== null) {
+				curl.setArgument('page', page);
+			}
+
+			if (is_new) {
+				history.pushState(state, '', curl.getUrl());
+			}
+			else {
+				history.replaceState(state, '', curl.getUrl());
+			}
+		}
+
+		#enableNavigationWarning() {
+			window.addEventListener('beforeunload', this.#listeners.onBeforeUnload, {passive: false});
+		}
+
+		#disableNavigationWarning() {
+			window.removeEventListener('beforeunload', this.#listeners.onBeforeUnload);
+		}
+
+		#onAddClick(e) {
+			const menu = [
+				{
+					items: [
+						{
+							label: <?= json_encode(_('Add widget')) ?>,
+							clickCallback: () => ZABBIX.Dashboard.addNewWidget()
+						},
+						{
+							label: <?= json_encode(_('Add page')) ?>,
+							clickCallback: () => ZABBIX.Dashboard.addNewDashboardPage()
+						}
+					]
+				},
+				{
+					items: [
+						{
+							label: <?= json_encode(_('Paste widget')) ?>,
+							clickCallback: () => ZABBIX.Dashboard.pasteWidget(
+								ZABBIX.Dashboard.getStoredWidgetDataCopy()
+							),
+							disabled: ZABBIX.Dashboard.getStoredWidgetDataCopy() === null
+						},
+						{
+							label: <?= json_encode(_('Paste page')) ?>,
+							clickCallback: () => ZABBIX.Dashboard.pasteDashboardPage(
+								ZABBIX.Dashboard.getStoredDashboardPageDataCopy()
+							),
+							disabled: ZABBIX.Dashboard.getStoredDashboardPageDataCopy() === null
+						}
+					]
+				}
+			];
+
+			jQuery(e.target).menuPopup(menu, new jQuery.Event(e), {
+				position: {
+					of: e.target,
+					my: 'right top',
+					at: 'right bottom',
+					within: '.wrapper',
+					collision: 'fit flip'
+				}
 			});
+		}
 
-			overlay.$dialogue[0].addEventListener('dialogue.create', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.update', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.delete', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-			}, {once: true});
-		},
+		#onPopState(e) {
+			const host = (e.state !== null && 'host' in e.state) ? e.state.host : null;
 
-		events: {
-			addClick(e) {
-				const menu = [
-					{
-						items: [
-							{
-								label: <?= json_encode(_('Add widget')) ?>,
-								clickCallback: () => ZABBIX.Dashboard.addNewWidget()
-							},
-							{
-								label: <?= json_encode(_('Add page')) ?>,
-								clickCallback: () => ZABBIX.Dashboard.addNewDashboardPage()
-							}
-						]
-					},
-					{
-						items: [
-							{
-								label: <?= json_encode(_('Paste widget')) ?>,
-								clickCallback: () => ZABBIX.Dashboard.pasteWidget(
-									ZABBIX.Dashboard.getStoredWidgetDataCopy()
-								),
-								disabled: ZABBIX.Dashboard.getStoredWidgetDataCopy() === null
-							},
-							{
-								label: <?= json_encode(_('Paste page')) ?>,
-								clickCallback: () => ZABBIX.Dashboard.pasteDashboardPage(
-									ZABBIX.Dashboard.getStoredDashboardPageDataCopy()
-								),
-								disabled: ZABBIX.Dashboard.getStoredDashboardPageDataCopy() === null
-							}
-						]
-					}
-				];
+			jQuery('#dashboard_hostid').multiSelect('addData', host ? [host] : [], false);
 
-				jQuery(e.target).menuPopup(menu, new jQuery.Event(e), {
-					position: {
-						of: e.target,
-						my: 'left top',
-						at: 'left bottom',
-						within: '.wrapper'
-					}
+			this.#updateHistory(false);
+
+			ZABBIX.Dashboard.broadcast({
+				[CWidgetsData.DATA_TYPE_HOST_ID]: host !== null
+					? [host.id]
+					: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_ID),
+				[CWidgetsData.DATA_TYPE_HOST_IDS]: host !== null
+					? [host.id]
+					: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_IDS)
+			});
+		}
+
+		#onTimeSelectorRangeUpdate(e, data) {
+			this.#dashboard_time_period = data;
+
+			this.#updateHistory(false);
+
+			if (this.#skip_time_selector_range_update) {
+				this.#skip_time_selector_range_update = false;
+
+				return;
+			}
+
+			const time_period = {
+				from: data.from,
+				from_ts: data.from_ts,
+				to: data.to,
+				to_ts: data.to_ts
+			};
+
+			CWidgetsData.setDefault(CWidgetsData.DATA_TYPE_TIME_PERIOD, time_period, {is_comparable: false});
+
+			ZABBIX.Dashboard.broadcast({
+				[CWidgetsData.DATA_TYPE_TIME_PERIOD]: time_period
+			});
+		}
+
+		#onFeedback(e) {
+			if (e.detail.type === CWidgetsData.DATA_TYPE_TIME_PERIOD && e.detail.value !== null) {
+				this.#skip_time_selector_range_update = true;
+
+				$.publish('timeselector.rangechange', {
+					from: e.detail.value.from,
+					to: e.detail.value.to
 				});
+			}
+		}
+
+		#listeners = {
+			onDashboardHostChange: () => {
+				this.#updateHistory();
+
+				const hosts = jQuery('#dashboard_hostid').multiSelect('getData');
+				const host = hosts.length > 0 ? hosts[0] : null;
+
+				ZABBIX.Dashboard.broadcast({
+					[CWidgetsData.DATA_TYPE_HOST_ID]: host !== null
+						? [host.id]
+						: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_ID),
+					[CWidgetsData.DATA_TYPE_HOST_IDS]: host !== null
+						? [host.id]
+						: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_IDS)
+				});
+
+				updateUserProfile('web.dashboard.hostid', host !== null ? host.id : 1, []);
 			},
 
-			beforeUnload(e) {
+			onBeforeUnload: e => {
 				if (ZABBIX.Dashboard.isUnsaved()) {
 					// Display confirmation message.
 					e.preventDefault();
 					e.returnValue = '';
 				}
-			},
-
-			popState(e) {
-				const host = (e.state !== null && 'host' in e.state) ? e.state.host : null;
-
-				jQuery('#dynamic_hostid').multiSelect('addData', host ? [host] : [], false);
-
-				ZABBIX.Dashboard.setDynamicHost(host ? host.id : null);
-			},
-
-			dynamicHostChange() {
-				const hosts = jQuery('#dynamic_hostid').multiSelect('getData');
-				const host = hosts.length ? hosts[0] : null;
-				const curl = new Curl('zabbix.php');
-
-				curl.setArgument('action', 'dashboard.view');
-
-				if (view.dashboard.dashboardid !== null) {
-					curl.setArgument('dashboardid', view.dashboard.dashboardid);
-				}
-
-				if (view.has_time_selector) {
-					curl.setArgument('from', view.time_period.from);
-					curl.setArgument('to', view.time_period.to);
-				}
-
-				if (host !== null) {
-					curl.setArgument('hostid', host.id);
-				}
-
-				ZABBIX.Dashboard.setDynamicHost(host ? host.id : null);
-
-				history.pushState({host: host}, '', curl.getUrl());
-
-				updateUserProfile('web.dashboard.hostid', host ? host.id : 1);
-			},
-
-			applyProperties() {
-				const dashboard_data = ZABBIX.Dashboard.getData();
-
-				document.getElementById('<?= CHtmlPage::PAGE_TITLE_ID ?>').textContent = dashboard_data.name;
-				document.getElementById('dashboard-direct-link').textContent = dashboard_data.name;
-			},
-
-			configurationOutdated() {
-				location.href = location.href;
-			},
-
-			busy() {
-				view.is_busy = true;
-				view.updateBusy();
-			},
-
-			idle() {
-				view.is_busy = false;
-				view.updateBusy();
-			},
-
-			hostSuccess(e) {
-				const data = e.detail;
-
-				if ('success' in data) {
-					postMessageOk(data.success.title);
-
-					if ('messages' in data.success) {
-						postMessageDetails('success', data.success.messages);
-					}
-				}
-
-				location.href = location.href;
 			}
+		};
+
+		executeNow(target, data) {
+			const curl = new Curl('zabbix.php');
+
+			curl.setArgument('action', 'item.execute');
+
+			data[CSRF_TOKEN_NAME] = <?= json_encode(CCsrfTokenHelper::get('item')) ?>;
+
+			return fetch(curl.getUrl(), {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify(data)
+			})
+				.then(response => response.json())
+				.then(response => {
+					clearMessages();
+					if (response.error) {
+						addMessage(makeMessageBox('bad', response.error.messages, response.error.title))
+					}
+					else {
+						addMessage(makeMessageBox('good', [], response.success.title))
+					}
+				})
+				.catch(() => {
+					clearMessages();
+					addMessage(makeMessageBox('bad', [<?= json_encode(_('Unexpected server error.')) ?>]));
+				});
 		}
 	}
 </script>

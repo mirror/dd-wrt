@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -88,8 +83,8 @@ final class CModuleManager {
 	 *
 	 * @return array|null  Either manifest data or null if manifest file had errors or IDs didn't match.
 	 */
-	public function addModule(string $relative_path, string $moduleid = null, string $id = null,
-			array $config = null): ?array {
+	public function addModule(string $relative_path, ?string $moduleid = null, ?string $id = null,
+			?array $config = null): ?array {
 
 		$manifest = $this->loadManifest($relative_path);
 
@@ -193,12 +188,12 @@ final class CModuleManager {
 	/**
 	 * Get initialized widget modules.
 	 */
-	public function getWidgets(bool $for_template_dashboard_only = false): array {
+	public function getWidgets(): array {
 		$widgets = [];
 
 		/** @var CWidget $widget */
 		foreach ($this->modules as $widget) {
-			if (!($widget instanceof CWidget) || ($for_template_dashboard_only && !$widget->hasTemplateSupport())) {
+			if (!($widget instanceof CWidget)) {
 				continue;
 			}
 			$widgets[$widget->getId()] = $widget;
@@ -207,11 +202,11 @@ final class CModuleManager {
 		return $widgets;
 	}
 
-	public function getWidgetsDefaults(bool $for_template_dashboard_only = false): array {
+	public function getWidgetsDefaults(): array {
 		$widget_defaults = [];
 
 		/** @var CWidget $widget */
-		foreach (APP::ModuleManager()->getWidgets($for_template_dashboard_only) as $widget) {
+		foreach (APP::ModuleManager()->getWidgets() as $widget) {
 			$widget_defaults[$widget->getId()] = $widget->getDefaults();
 		}
 
@@ -450,10 +445,10 @@ final class CModuleManager {
 				'name' => '',
 				'form_class' => CWidget::DEFAULT_FORM_CLASS,
 				'js_class' => CWidget::DEFAULT_JS_CLASS,
+				'in' => [],
+				'out' => [],
 				'size' => CWidget::DEFAULT_SIZE,
-				'refresh_rate' => CWidget::DEFAULT_REFRESH_RATE,
-				'template_support' => false,
-				'use_time_selector' => false
+				'refresh_rate' => CWidget::DEFAULT_REFRESH_RATE
 			];
 		}
 

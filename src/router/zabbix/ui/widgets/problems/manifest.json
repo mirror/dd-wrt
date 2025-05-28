@@ -5,9 +5,24 @@
 	"name": "Problems",
 	"namespace": "Problems",
 	"version": "1.0",
-	"author": "Zabbix SIA",
+	"author": "Zabbix",
+	"description": "Displays currently open problems with quick access links to the problem details.",
+	"url": "web_interface/frontend_sections/dashboards/widgets/problems",
 	"widget": {
-		"js_class": "CWidgetProblems"
+		"js_class": "CWidgetProblems",
+		"in": {
+			"hostids": {
+				"type": "_hostids"
+			},
+			"groupids": {
+				"type": "_hostgroupids"
+			}
+		},
+		"out": [
+			{
+				"type": "_eventid"
+			}
+		]
 	},
 	"actions": {
 		"widget.problems.view": {

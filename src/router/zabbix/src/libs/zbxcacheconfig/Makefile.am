@@ -10,9 +10,15 @@ libzbxcacheconfig_a_SOURCES = \
 	dbconfig_maintenance.c \
 	dbsync.c \
 	dbsync.h \
+	inventory.c \
 	lld_macro.c \
+	trigger.c \
 	user_macro.c \
-	user_macro.h
+	user_macro.h \
+	vps_monitor.c \
+	vps_monitor.h \
+	proxy_group.c \
+	proxy_group.h
 
 libzbxcacheconfig_a_CFLAGS = \
 	-I$(top_srcdir)/src/zabbix_server/ \

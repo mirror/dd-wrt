@@ -1,81 +1,66 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CControllerCorrelationUpdate extends CController {
 
-	protected function checkInput() {
+	protected function init(): void {
+		$this->setPostContentType(self::POST_CONTENT_TYPE_JSON);
+	}
+
+	protected function checkInput(): bool {
 		$fields = [
 			'correlationid' =>	'db correlation.correlationid|required',
 			'name' =>			'db correlation.name|required|not_empty',
 			'description' =>	'db correlation.description',
-			'evaltype' =>		'db correlation.evaltype|required|in '.implode(',', [CONDITION_EVAL_TYPE_AND_OR, CONDITION_EVAL_TYPE_AND, CONDITION_EVAL_TYPE_OR, CONDITION_EVAL_TYPE_EXPRESSION]),
-			'status' =>			'db correlation.status|required|in '.implode(',', [ZBX_CORRELATION_ENABLED, ZBX_CORRELATION_DISABLED]),
+			'evaltype' =>		'db correlation.evaltype|required|in '.implode(',', [CONDITION_EVAL_TYPE_AND_OR,
+				CONDITION_EVAL_TYPE_AND, CONDITION_EVAL_TYPE_OR, CONDITION_EVAL_TYPE_EXPRESSION
+			]),
+			'status' =>			'db correlation.status|in '.ZBX_CORRELATION_ENABLED,
 			'formula' =>		'db correlation.formula',
 			'op_close_new' =>	'in 1',
 			'op_close_old' =>	'in 1',
-			'conditions' =>		'array',
-			'form_refresh' =>	'int32'
+			'conditions' =>		'required|array'
 		];
 
 		$ret = $this->validateInput($fields);
-		$error = $this->getValidationError();
 
 		if (!$ret) {
-			switch ($error) {
-				case self::VALIDATION_ERROR:
-					$response = new CControllerResponseRedirect((new CUrl('zabbix.php'))
-						->setArgument('action', 'correlation.edit')
-					);
-					$response->setFormData($this->getInputAll());
-					CMessageHelper::setErrorTitle(_('Cannot update correlation'));
-					$this->setResponse($response);
-					break;
-
-				case self::VALIDATION_FATAL_ERROR:
-					$this->setResponse(new CControllerResponseFatal());
-					break;
-			}
+			$this->setResponse(
+				new CControllerResponseData(['main_block' => json_encode([
+					'error' => [
+						'title' => _('Cannot update event correlation'),
+						'messages' => array_column(get_and_clear_messages(), 'message')
+					]
+				], JSON_THROW_ON_ERROR)])
+			);
 		}
 
 		return $ret;
 	}
 
-	protected function checkPermissions() {
-		if (!$this->checkAccess(CRoleHelper::UI_CONFIGURATION_EVENT_CORRELATION)) {
-			return false;
-		}
-
-		return (bool) API::Correlation()->get([
-			'output' => [],
-			'correlationid' => $this->getInput('correlationid'),
-			'editable' => true
-		]);
+	protected function checkPermissions(): bool {
+		return $this->checkAccess(CRoleHelper::UI_CONFIGURATION_EVENT_CORRELATION);
 	}
 
-	protected function doAction() {
+	protected function doAction(): void {
 		$correlation = [
 			'correlationid' => $this->getInput('correlationid'),
 			'name' => $this->getInput('name'),
 			'description' => $this->getInput('description', ''),
-			'status' => $this->getInput('status'),
+			'status' => $this->getInput('status', ZBX_CORRELATION_DISABLED),
 			'filter' => [
 				'evaltype' => $this->getInput('evaltype'),
 				'conditions' => $this->getInput('conditions', [])
@@ -113,23 +98,22 @@ class CControllerCorrelationUpdate extends CController {
 
 		$result = API::Correlation()->update($correlation);
 
+		$output = [];
+
 		if ($result) {
-			$response = new CControllerResponseRedirect(
-				(new CUrl('zabbix.php'))
-					->setArgument('action', 'correlation.list')
-					->setArgument('page', CPagerHelper::loadPage('correlation.list', null))
-			);
-			$response->setFormData(['uncheck' => '1']);
-			CMessageHelper::setSuccessTitle(_('Correlation updated'));
+			$output['success']['title'] = _('Event correlation updated');
+
+			if ($messages = get_and_clear_messages()) {
+				$output['success']['messages'] = array_column($messages, 'message');
+			}
 		}
 		else {
-			$response = new CControllerResponseRedirect(
-				(new CUrl('zabbix.php'))->setArgument('action', 'correlation.edit')
-			);
-			$response->setFormData($this->getInputAll());
-			CMessageHelper::setErrorTitle(_('Cannot update correlation'));
+			$output['error'] = [
+				'title' => _('Cannot update event correlation'),
+				'messages' => array_column(get_and_clear_messages(), 'message')
+			];
 		}
 
-		$this->setResponse($response);
+		$this->setResponse(new CControllerResponseData(['main_block' => json_encode($output)]));
 	}
 }

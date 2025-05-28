@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package scheduler
@@ -27,18 +22,20 @@ import (
 	"time"
 	"unsafe"
 
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"zabbix.com/internal/agent"
-	"zabbix.com/pkg/glexpr"
-	"zabbix.com/pkg/zbxlib"
+	"golang.zabbix.com/agent2/internal/agent"
+	"golang.zabbix.com/agent2/internal/agent/resultcache"
+	"golang.zabbix.com/agent2/pkg/glexpr"
+	"golang.zabbix.com/agent2/pkg/zbxlib"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 // clientItem represents item monitored by client
 type clientItem struct {
-	itemid uint64
-	delay  string
-	key    string
+	itemid  uint64
+	delay   string
+	key     string
+	timeout int
 }
 
 // pluginInfo is used to track plugin usage by client
@@ -51,8 +48,9 @@ type pluginInfo struct {
 // client represents source of items (metrics) to be queried.
 // Each server for active checks is represented by a separate client.
 // There is a predefined clients to handle:
-//    all single passive checks (client id 1)
-//    all internal checks (resolving HostnameItem, HostMetadataItem, HostInterfaceItem) (client id 0)
+//
+//	all single passive checks (client id 1)
+//	all internal checks (resolving HostnameItem, HostMetadataItem, HostInterfaceItem) (client id 0)
 type client struct {
 	// Client id. Predefined clients have ids < 100, while clients active checks servers (ServerActive)
 	// have auto incrementing id starting with 100.
@@ -64,7 +62,9 @@ type client struct {
 	// server global regular expression bundle
 	globalRegexp unsafe.Pointer
 	// plugin result sink, can be nil for bulk passive checks (in future)
-	output plugin.ResultWriter
+	output resultcache.Writer
+	// remote command expiration times
+	commands map[uint64]time.Time
 }
 
 // ClientAccessor interface exports client data required for scheduler tasks.
@@ -99,7 +99,7 @@ func (c *client) Output() plugin.ResultWriter {
 
 // addRequest requests client to start monitoring/update item described by request 'r' using plugin 'p' (*pluginAgent)
 // with output writer 'sink'
-func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.ResultWriter, now time.Time,
+func (c *client) addRequest(p *pluginAgent, r *Request, timeout int, sink plugin.ResultWriter, now time.Time,
 	firstActiveChecksRefreshed bool) (err error) {
 	var info *pluginInfo
 	var ok bool
@@ -135,6 +135,10 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 	if _, ok := p.impl.(plugin.Exporter); ok {
 		var tacc exporterTaskAccessor
 
+		if r.Timeout == 0 {
+			r.Timeout = agent.Options.Timeout
+		}
+
 		if c.id > agent.MaxBuiltinClientID {
 			var task *exporterTask
 			var scheduling bool
@@ -159,13 +163,13 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 				// create and register new exporter task
 				task = &exporterTask{
 					taskBase: taskBase{plugin: p, active: true, recurring: true},
-					item:     clientItem{itemid: r.Itemid, delay: r.Delay, key: r.Key},
+					item:     clientItem{itemid: r.Itemid, delay: r.Delay, key: r.Key, timeout: timeout},
 					updated:  now,
 					client:   c,
 					output:   sink,
 				}
 
-				if scheduling == false && (firstActiveChecksRefreshed == true || p.forceActiveChecksOnStart != 0) {
+				if !scheduling && !firstActiveChecksRefreshed && p.forceActiveChecksOnStart {
 					task.scheduled = time.Unix(now.Unix(), priorityExporterTaskNs)
 				} else if err = task.reschedule(now); err != nil {
 					return
@@ -179,6 +183,8 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 				task = tacc.task()
 				task.updated = now
 				task.item.key = r.Key
+				task.item.timeout = timeout
+
 				if task.item.delay != r.Delay {
 					task.item.delay = r.Delay
 					if err = task.reschedule(now); err != nil {
@@ -196,7 +202,7 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 			// handle single passive check or internal request
 			task := &directExporterTask{
 				taskBase: taskBase{plugin: p, active: true, recurring: true},
-				item:     clientItem{itemid: r.Itemid, delay: r.Delay, key: r.Key},
+				item:     clientItem{itemid: r.Itemid, delay: r.Delay, key: r.Key, timeout: timeout},
 				expire:   now.Add(time.Duration(agent.Options.Timeout) * time.Second),
 				client:   c,
 				output:   sink,
@@ -231,7 +237,7 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 		if info.watcher == nil {
 			info.watcher = &watcherTask{
 				taskBase: taskBase{plugin: p, active: true},
-				requests: make([]*plugin.Request, 0, 1),
+				items:    make([]*plugin.Item, 0, 1),
 				client:   c,
 			}
 			if err = info.watcher.reschedule(now); err != nil {
@@ -241,7 +247,17 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 
 			log.Debugf("[%d] created watcher task for plugin %s", c.id, p.name())
 		}
-		info.watcher.requests = append(info.watcher.requests, r)
+
+		item := plugin.Item{
+			Itemid:      r.Itemid,
+			Key:         r.Key,
+			Delay:       r.Delay,
+			LastLogsize: r.LastLogsize,
+			Mtime:       r.Mtime,
+			Timeout:     timeout,
+		}
+
+		info.watcher.items = append(info.watcher.items, &item)
 	}
 
 	// handle configurator interface for inactive plugins
@@ -269,6 +285,66 @@ func (c *client) addRequest(p *pluginAgent, r *plugin.Request, sink plugin.Resul
 	info.used = now
 
 	return nil
+}
+
+// command registry cleanup
+func (c *client) commandCleanup() {
+	now := time.Now()
+	for id, expire := range c.commands {
+		if now.After(expire) {
+			delete(c.commands, id)
+		}
+	}
+}
+
+func (c *client) addCommand(p *pluginAgent, id uint64, params []string, sink resultcache.Writer, now time.Time,
+	timeout int) {
+	if _, ok := c.commands[id]; ok {
+		return
+	}
+	c.commands[id] = now.Add(time.Hour)
+
+	var info *pluginInfo
+	var ok bool
+	if info, ok = c.pluginsInfo[p]; !ok {
+		info = &pluginInfo{}
+	}
+
+	if p.refcount == 0 {
+		task := &configuratorTask{
+			taskBase: taskBase{plugin: p, active: true},
+			options:  &agent.Options,
+		}
+
+		log.Debugf("[%d] created configurator task for plugin %s", c.id, p.name())
+
+		_ = task.reschedule(now)
+		p.enqueueTask(task)
+	}
+
+	task := &commandTask{
+		taskBase: taskBase{plugin: p, active: true},
+		id:       id,
+		params:   params,
+		output:   sink,
+		timeout:  timeout,
+	}
+
+	log.Debugf("[%d] created remote command task for plugin '%s' command '%s'", c.id, p.name(), params)
+
+	_ = task.reschedule(now)
+	p.enqueueTask(task)
+
+	// update plugin usage information
+	if info.used.IsZero() {
+		p.refcount++
+		c.pluginsInfo[p] = info
+	}
+
+	// set 'used' time in future to avoid expiring system.run plugin when updating metrics
+	info.used = now.Add(time.Hour)
+
+	log.Debugf("scheduled remote command(%d) '%s'", id, params[0])
 }
 
 // cleanup releases unused uplugins. For external clients it's done after update,
@@ -309,7 +385,7 @@ func (c *client) cleanup(plugins map[string]*pluginAgent, now time.Time) (releas
 				if _, ok := p.impl.(plugin.Watcher); ok && c.id > agent.MaxBuiltinClientID {
 					task := &watcherTask{
 						taskBase: taskBase{plugin: p, active: true},
-						requests: make([]*plugin.Request, 0),
+						items:    make([]*plugin.Item, 0),
 						client:   c,
 					}
 					if err := task.reschedule(now); err == nil {
@@ -358,12 +434,13 @@ func (c *client) updateExpressions(expressions []*glexpr.Expression) {
 }
 
 // newClient creates new client
-func newClient(id uint64, output plugin.ResultWriter) (b *client) {
+func newClient(id uint64, output resultcache.Writer) (b *client) {
 	b = &client{
 		id:          id,
 		exporters:   make(map[uint64]exporterTaskAccessor),
 		pluginsInfo: make(map[*pluginAgent]*pluginInfo),
 		output:      output,
+		commands:    make(map[uint64]time.Time),
 	}
 
 	return

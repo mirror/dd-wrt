@@ -1,44 +1,36 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 namespace Widgets\Problems\Includes;
 
-use CTableInfo,
-	CColHeader,
+use CButtonIcon,
 	CCol,
-	CRow,
-	CLinkAction,
-	CLink,
-	CSimpleButton,
-	CButton,
-	CSpan,
-	CUrl,
-	CScreenProblem,
+	CColHeader,
 	CHintBoxHelper,
-	CMenuPopupHelper,
-	CSeverityHelper,
+	CIcon,
+	CLink,
+	CLinkAction,
 	CMacrosResolverHelper,
-	CWebUser;
-
-use Widgets\Problems\Widget;
+	CMenuPopupHelper,
+	CRow,
+	CScreenProblem,
+	CSeverityHelper,
+	CSpan,
+	CTableInfo,
+	CUrl;
 
 class WidgetProblems extends CTableInfo {
 	private array $data;
@@ -67,9 +59,7 @@ class WidgetProblems extends CTableInfo {
 
 		if ($this->data['show_three_columns']) {
 			$header[] = new CColHeader();
-			$header[] = (new CColHeader())
-				->addClass(ZBX_STYLE_CELL_WIDTH)
-				->addClass(ZBX_STYLE_THIRD_COL);
+			$header[] = (new CColHeader())->addClass(ZBX_STYLE_CELL_WIDTH);
 		}
 		elseif ($this->data['show_two_columns']) {
 			$header[] = new CColHeader();
@@ -144,7 +134,7 @@ class WidgetProblems extends CTableInfo {
 	 * @param int        $data['today']                         Timestamp of today's date.
 	 * @param array      $data['tasks']                         List of tasks. Used to determine current problem status.
 	 * @param array      $data['users']                         List of users.
-	 * @param array      $data['correlations']                  List of correlations.
+	 * @param array      $data['correlations']                  List of event correlations.
 	 * @param array      $data['fields']                        Problem widget filter fields.
 	 * @param int        $data['fields']['show']                "Show" filter option.
 	 * @param int        $data['fields']['show_tags']           "Show tags" filter option.
@@ -236,7 +226,7 @@ class WidgetProblems extends CTableInfo {
 			$cell_status = new CSpan($value_str);
 
 			if (isEventUpdating($in_closing, $problem)) {
-				$cell_status->addClass('blink');
+				$cell_status->addClass('js-blink');
 			}
 
 			// Add colors and blinking to span depending on configuration and trigger parameters.
@@ -253,10 +243,10 @@ class WidgetProblems extends CTableInfo {
 				if ($problem['correlationid'] != 0) {
 					$info_icons[] = makeInformationIcon(
 						array_key_exists($problem['correlationid'], $data['correlations'])
-							? _s('Resolved by correlation rule "%1$s".',
+							? _s('Resolved by event correlation rule "%1$s".',
 								$data['correlations'][$problem['correlationid']]['name']
 							)
-							: _('Resolved by correlation rule.')
+							: _('Resolved by event correlation rule.')
 					);
 				}
 				elseif ($problem['userid'] != 0) {
@@ -277,9 +267,9 @@ class WidgetProblems extends CTableInfo {
 						? getUserFullname($data['users'][$unsuppression_action['userid']])
 						: _('Inaccessible user');
 
-					$info_icons[] = (new CSimpleButton())
-						->addClass(ZBX_STYLE_ACTION_ICON_UNSUPPRESS)
-						->addClass('blink')
+					$info_icons[] = (new CButtonIcon(ZBX_ICON_EYE))
+						->addClass(ZBX_STYLE_COLOR_ICON)
+						->addClass('js-blink')
 						->setHint(_s('Unsuppressed by: %1$s', $user_unsuppressed));
 				}
 				elseif ($problem['suppression_data']) {
@@ -374,18 +364,14 @@ class WidgetProblems extends CTableInfo {
 
 				if ($blink_period != 0 && $duration < $blink_period) {
 					$description
-						->addClass('blink')
+						->addClass('js-blink')
 						->setAttribute('data-time-to-blink', $blink_period - $duration)
 						->setAttribute('data-toggle-class', ZBX_STYLE_BLINK_HIDDEN);
 				}
 			}
 
 			$symptom_col = (new CCol(
-				makeActionIcon([
-					'icon' => ZBX_STYLE_ACTION_ICON_SYMPTOM,
-					'title' => _('Symptom'),
-					'style' => 'margin-right: 0'
-				])
+				new CIcon(ZBX_ICON_ARROW_TOP_RIGHT, _('Symptom'))
 			))->addClass(ZBX_STYLE_RIGHT);
 
 			$empty_col = new CCol();
@@ -402,18 +388,15 @@ class WidgetProblems extends CTableInfo {
 				if ($problem['symptom_count'] > 0) {
 					// Show symptom counter and collapse/expand button.
 					$symptom_count_col = (new CCol(
-						(new CSpan($problem['symptom_count']))->addClass(ZBX_STYLE_TAG)
+						(new CSpan($problem['symptom_count']))->addClass(ZBX_STYLE_ENTITY_COUNT)
 					))->addClass(ZBX_STYLE_RIGHT);
 
 					$collapse_expand_col = (new CCol(
-						(new CButton(null))
+						(new CButtonIcon(ZBX_ICON_CHEVRON_DOWN, _('Expand')))
+							->addClass(ZBX_STYLE_COLLAPSED)
 							->setAttribute('data-eventid', $problem['eventid'])
 							->setAttribute('data-action', 'show_symptoms')
-							->addClass(ZBX_STYLE_BTN_WIDGET_EXPAND)
-							->setTitle(_('Expand'))
-					))
-						->addClass(ZBX_STYLE_RIGHT)
-						->addClass(ZBX_STYLE_THIRD_COL);
+					))->addClass(ZBX_STYLE_RIGHT);
 
 					if ($data['show_timeline']) {
 						$symptom_count_col->addClass(ZBX_STYLE_PROBLEM_EXPAND_TD);
@@ -425,15 +408,10 @@ class WidgetProblems extends CTableInfo {
 				else {
 					if ($data['show_three_columns']) {
 						// Show two empty columns.
-						$row->addItem([
-							$empty_col,
-							$empty_col->addClass(ZBX_STYLE_THIRD_COL)
-						]);
+						$row->addItem([$empty_col, $empty_col]);
 					}
 					elseif ($data['show_two_columns']) {
-						$row->addItem(
-							$empty_col->addClass(ZBX_STYLE_THIRD_COL)
-						);
+						$row->addItem($empty_col);
 					}
 				}
 			}
@@ -445,9 +423,7 @@ class WidgetProblems extends CTableInfo {
 						->addClass(ZBX_STYLE_PROBLEM_NESTED_SMALL)
 						->addClass('hidden')
 						->setAttribute('data-cause-eventid', $problem['cause_eventid'])
-						->addItem(
-							$symptom_col->addClass(ZBX_STYLE_THIRD_COL)
-						);
+						->addItem($symptom_col);
 				}
 				else {
 					// First column empty stand-alone symptom event.
@@ -456,9 +432,7 @@ class WidgetProblems extends CTableInfo {
 
 				// If there are causes as well, show additional empty column.
 				if (!$nested && $data['show_three_columns']) {
-					$row->addItem(
-						$empty_col->addClass(ZBX_STYLE_THIRD_COL)
-					);
+					$row->addItem($empty_col);
 				}
 			}
 
@@ -483,39 +457,44 @@ class WidgetProblems extends CTableInfo {
 				);
 			}
 
+			$problem_update_url = (new CUrl('zabbix.php'))
+				->setArgument('action', 'popup')
+				->setArgument('popup', 'acknowledge.edit')
+				->setArgument('eventids[]', $problem['eventid'])
+				->getUrl();
+
 			// Create acknowledge link.
 			$problem_update_link = ($data['allowed']['add_comments'] || $data['allowed']['change_severity']
 					|| $data['allowed']['acknowledge'] || $can_be_closed || $data['allowed']['suppress_problems']
 					|| $data['allowed']['rank_change'])
-				? (new CLink(_('Update')))
-					->addClass(ZBX_STYLE_LINK_ALT)
-					->setAttribute('data-eventid', $problem['eventid'])
-					->onClick('acknowledgePopUp({eventids: [this.dataset.eventid]}, this);')
+				? (new CLink(_('Update'), $problem_update_url))->addClass(ZBX_STYLE_LINK_ALT)
 				: new CSpan(_('Update'));
 
-			$row->addItem([
-				$data['show_recovery_data'] ? $cell_r_clock : null,
-				$data['show_recovery_data'] ? $cell_status : null,
-				makeInformationList($info_icons),
-				$data['triggers_hosts'][$trigger['triggerid']],
-				$description,
-				($data['fields']['show_opdata'] == OPERATIONAL_DATA_SHOW_SEPARATELY)
-					? $opdata->addClass(ZBX_STYLE_WORDBREAK)
-					: null,
-				(new CCol(
-					(new CLinkAction(zbx_date2age($problem['clock'], ($problem['r_eventid'] != 0)
-						? $problem['r_clock']
-						: 0
-					)))
-						->setAjaxHint(CHintBoxHelper::getEventList($trigger['triggerid'], $problem['eventid'],
-							$data['show_timeline'], $data['fields']['show_tags'], $data['fields']['tags'],
-							$data['fields']['tag_name_format'], $data['fields']['tag_priority']
-						))
-				))->addClass(ZBX_STYLE_NOWRAP),
-				$problem_update_link,
-				makeEventActionsIcons($problem['eventid'], $data['actions'], $data['users'], $is_acknowledged),
-				$data['fields']['show_tags'] ? $data['tags'][$problem['eventid']] : null
-			]);
+			$row
+				->addItem([
+					$data['show_recovery_data'] ? $cell_r_clock : null,
+					$data['show_recovery_data'] ? $cell_status : null,
+					makeInformationList($info_icons),
+					$data['triggers_hosts'][$trigger['triggerid']],
+					$description,
+					($data['fields']['show_opdata'] == OPERATIONAL_DATA_SHOW_SEPARATELY)
+						? $opdata->addClass(ZBX_STYLE_WORDBREAK)
+						: null,
+					(new CCol(
+						(new CLinkAction(zbx_date2age($problem['clock'], ($problem['r_eventid'] != 0)
+							? $problem['r_clock']
+							: 0
+						)))
+							->setAjaxHint(CHintBoxHelper::getEventList($trigger['triggerid'], $problem['eventid'],
+								$data['show_timeline'], $data['fields']['show_tags'], $data['fields']['tags'],
+								$data['fields']['tag_name_format'], $data['fields']['tag_priority']
+							))
+					))->addClass(ZBX_STYLE_NOWRAP),
+					$problem_update_link,
+					makeEventActionsIcons($problem['eventid'], $data['actions'], $data['users'], $is_acknowledged),
+					$data['fields']['show_tags'] ? $data['tags'][$problem['eventid']] : null
+				])
+				->setAttribute('data-eventid', $problem['eventid']);
 
 			$this->addRow($row);
 

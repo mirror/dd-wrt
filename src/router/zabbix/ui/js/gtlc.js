@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,9 +24,9 @@ jQuery(function($) {
 			from_clndr: $container.find('[name=from_calendar]'),
 			to_clndr: $container.find('[name=to_calendar]'),
 			apply: $container.find('[name=apply]'),
-			increment: $container.find('.btn-time-right'),
-			decrement: $container.find('.btn-time-left'),
-			zoomout: $container.find('.btn-time-out'),
+			increment: $container.find('.js-btn-time-right'),
+			decrement: $container.find('.js-btn-time-left'),
+			zoomout: $container.find('.btn-time-zoomout'),
 			quickranges: $container.find('.time-quick a'),
 			label: $container.find('.btn-time')
 		},
@@ -41,11 +36,12 @@ jQuery(function($) {
 			from: element.from.val(),
 			to: element.to.val()
 		},
+		prevent_history_updates = $container.data('prevent-history-updates') == 1,
 		ui_accessible = ($container.data('accessible') == 1),
 		ui_disabled = false;
 
 	endpoint.setArgument('action', 'timeselector.update');
-	endpoint.setArgument('type', 11); // PAGE_TYPE_TEXT_RETURN_JSON
+	endpoint.setArgument('type', PAGE_TYPE_TEXT_RETURN_JSON);
 
 	$.subscribe('timeselector.rangechange timeselector.decrement timeselector.increment timeselector.zoomout' +
 		' timeselector.rangeoffset',
@@ -117,7 +113,7 @@ jQuery(function($) {
 			return;
 		}
 
-		if ('error' in data === false) {
+		if (!('error' in data) && !('fields_errors' in data)) {
 			element.from.val(data.from);
 			element.to.val(data.to);
 			element.label.text(data.label);
@@ -219,31 +215,38 @@ jQuery(function($) {
 				request_data = $.extend(data, request_data, json, {event: event.namespace});
 				updateTimeSelectorUI(request_data);
 
-				if (json.error) {
-					if (typeof json.error === 'string') {
-						// Error message originates from CControllerTimeSelectorUpdate::checkInput().
-						alert(json.error);
-					}
+				if ('error' in request_data) {
+					clearMessages();
 
+					const message_box = makeMessageBox('bad', request_data.error.messages, request_data.error.title);
+
+					addMessage(message_box);
+
+					delete request_data.error;
+				}
+				else if ('fields_errors' in request_data) {
 					$container.find('.time-input-error').each(function(i, elm) {
-						var $node = $(elm),
-							field = $node.attr('data-error-for');
+						const $node = $(elm);
+						const field = $node.attr('data-error-for');
 
-						if (json.error[field]) {
+						if (field in request_data.fields_errors) {
 							$node
 								.show()
 								.find('.red')
-								.text(json.error[field]);
+								.text(request_data.fields_errors[field]);
 						}
 						else {
 							$node.hide();
 						}
 					});
 
-					delete request_data.error;
+					delete request_data.fields_errors;
 				}
 				else {
-					updateUrlArguments(json.from, json.to);
+					if (!prevent_history_updates) {
+						updateUrlArguments(request_data.from, request_data.to);
+					}
+
 					$container
 						.find('.time-input-error')
 						.hide();
@@ -252,24 +255,12 @@ jQuery(function($) {
 
 				xhr = null;
 			},
-			error: function(request, status, error) {
-				/*
-				 * In case there is something very wrong with the code like "echo '<br>'" in the middle where there is
-				 * supposed to be JSON, show error. Otherwise it could've been just a temporary connection issue
-				 * like 404, for example, so just retry.
-				 */
-				if (request.status != 200) {
-					var request = this,
-						retry = function() {
-							$.ajax(request);
-						};
+			error: function() {
+				clearMessages();
 
-					// Retry with 2s interval.
-					setTimeout(retry, 2000);
-				}
-				else {
-					alert(error);
-				}
+				const message_box = makeMessageBox('bad', [], t('Failed to update time selector.'));
+
+				addMessage(message_box);
 			}
 		});
 	}
@@ -311,10 +302,40 @@ jQuery(function($) {
 		.on('mousedown', 'img', selectionHandlerDragStart)
 		.on('dblclick', 'img', function(event) {
 			if (typeof $(event.target).data('zbx_sbox') !== 'undefined') {
-				$.publish('timeselector.zoomout', {
-					from: element.from.val(),
-					to: element.to.val()
-				});
+				const obj = event.target.id in timeControl.objectList
+					? timeControl.objectList[event.target.id]
+					: null;
+
+				if (obj === null || obj.useCustomEvents !== 1) {
+					$.publish('timeselector.zoomout', {
+						from: element.from.val(),
+						to: element.to.val()
+					});
+				}
+				else {
+					$(event.target).data('zbx_sbox').prevent_refresh = true;
+					window.flickerfreeScreen.setElementProgressState(obj.id, true);
+
+					calcTimeSelector({
+						method: 'zoomout',
+						from: obj.timeline.from,
+						to: obj.timeline.to
+					})
+						.then((response) => {
+							if ('has_fields_errors' in response) {
+								return;
+							}
+
+							setTimeout(() => {
+								document.getElementById(obj.containerid)
+									.dispatchEvent(new CustomEvent('rangeupdate', {detail: response}));
+							});
+						})
+						.finally(() => {
+							$(event.target).data('zbx_sbox').prevent_refresh = false;
+							window.flickerfreeScreen.setElementProgressState(obj.id, false);
+						});
+				}
 
 				return cancelEvent(event);
 			}
@@ -432,11 +453,45 @@ jQuery(function($) {
 		noclick_area.remove();
 		noclick_area = null;
 
-		if (was_dragged && (from_offset > 0 || to_offset > 0)) {
+		if (!was_dragged || (from_offset === 0 && to_offset === 0)) {
+			return cancelEvent(event);
+		}
+
+		const obj = event.data.target[0].id in timeControl.objectList
+			? timeControl.objectList[event.data.target[0].id]
+			: null;
+
+		if (obj === null || obj.useCustomEvents !== 1) {
 			$.publish('timeselector.rangeoffset', {
 				from_offset: Math.ceil(from_offset),
 				to_offset: Math.ceil(to_offset)
 			});
+		}
+		else {
+			zbx_sbox.prevent_refresh = true;
+			window.flickerfreeScreen.setElementProgressState(obj.id, true);
+
+			calcTimeSelector({
+				method: 'rangeoffset',
+				from: obj.timeline.from,
+				to: obj.timeline.to,
+				from_offset: Math.ceil(from_offset),
+				to_offset: Math.ceil(to_offset)
+			})
+				.then((response) => {
+					if ('has_fields_errors' in response) {
+						return;
+					}
+
+					setTimeout(() => {
+						document.getElementById(obj.containerid)
+							.dispatchEvent(new CustomEvent('rangeupdate', {detail: response}));
+					});
+				})
+				.finally(() => {
+					zbx_sbox.prevent_refresh = false;
+					window.flickerfreeScreen.setElementProgressState(obj.id, false);
+				});
 		}
 
 		return cancelEvent(event);
@@ -488,6 +543,44 @@ jQuery(function($) {
 		});
 	}
 
+	function calcTimeSelector(data) {
+		const curl = new Curl('zabbix.php');
+
+		curl.setArgument('action', 'timeselector.calc');
+
+		return fetch(curl.getUrl(), {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify(data)
+		})
+			.then((response) => response.json())
+			.then((response) => {
+				if ('error' in response) {
+					throw {error: response.error};
+				}
+
+				return response;
+			})
+			.catch((exception) => {
+				clearMessages();
+
+				let title;
+				let messages = [];
+
+				if (typeof exception === 'object' && 'error' in exception) {
+					title = exception.error.title;
+					messages = exception.error.messages;
+				}
+				else {
+					title = t('Unexpected server error.');
+				}
+
+				const message_box = makeMessageBox('bad', messages, title);
+
+				addMessage(message_box);
+			});
+	}
+
 	if (!$container.data('disable-initial-check')) {
 		checkDisableTimeSelectorUI();
 	}
@@ -513,7 +606,7 @@ var timeControl = {
 
 	addObject: function(id, time, objData) {
 		if (typeof this.objectList[id] !== 'undefined' && objData['reloadOnAdd'] !== 1) {
-			// Do not reload object twice if not asked to.
+			// Do not reload object twice if wasn't asked.
 			return;
 		}
 
@@ -529,18 +622,21 @@ var timeControl = {
 			src: location.href,
 			dynamic: 1,
 			loadSBox: 0,
-			loadImage: 0
+			loadImage: 0,
+			useCustomEvents: 0
 		}, objData);
 
-		var _this = this;
-		this.objectList[id].objectUpdate = function(e, data) {
-			_this.objectUpdate.call(_this.objectList[id], data);
-		};
-		jQuery.subscribe('timeselector.rangeupdate', this.objectList[id].objectUpdate);
+		if (this.objectList[id].useCustomEvents !== 1) {
+			var _this = this;
+			this.objectList[id].objectUpdate = function(e, data) {
+				_this.objectUpdate.call(_this.objectList[id], data);
+			};
+			jQuery.subscribe('timeselector.rangeupdate', this.objectList[id].objectUpdate);
+		}
 	},
 
 	removeObject: function(id) {
-		if (typeof this.objectList[id] !== 'undefined') {
+		if (typeof this.objectList[id] !== 'undefined' && this.objectList[id].useCustomEvents !== 1) {
 			jQuery.unsubscribe('timeselector.rangeupdate', this.objectList[id].objectUpdate);
 
 			delete this.objectList[id];

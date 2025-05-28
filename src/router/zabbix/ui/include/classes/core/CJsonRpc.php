@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -23,8 +18,6 @@ class CJsonRpc {
 
 	const VERSION = '2.0';
 
-	public const AUTH_TYPE_FRONTEND = 0;
-	public const AUTH_TYPE_PARAM = 1;
 	public const AUTH_TYPE_HEADER = 2;
 	public const AUTH_TYPE_COOKIE = 3;
 
@@ -78,11 +71,6 @@ class CJsonRpc {
 				continue;
 			}
 
-			$auth = [
-				'type' => self::AUTH_TYPE_PARAM,
-				'auth' => $call['auth']
-			];
-
 			list($api, $method) = explode('.', $call['method']) + [1 => ''];
 
 			$header = $request->getAuthBearerValue();
@@ -92,7 +80,7 @@ class CJsonRpc {
 					'auth' => $header
 				];
 			}
-			elseif ($call['auth'] === null) {
+			else {
 				$session = new CEncryptedCookieSession();
 
 				$auth = [
@@ -124,7 +112,6 @@ class CJsonRpc {
 			'jsonrpc' =>	['type' => API_STRING_UTF8, 'flags' => API_REQUIRED, 'in' => self::VERSION],
 			'method' =>		['type' => API_STRING_UTF8, 'flags' => API_REQUIRED],
 			'params' =>		['type' => API_JSONRPC_PARAMS, 'flags' => API_REQUIRED],
-			'auth' =>		['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY | API_ALLOW_NULL | API_DEPRECATED, 'default' => null],
 			'id' =>			['type' => API_JSONRPC_ID]
 		]];
 
@@ -148,6 +135,12 @@ class CJsonRpc {
 
 	public function processResult(array $call, CApiClientResponse $response) {
 		if ($response->errorCode) {
+			$user_type = CUser::$userData === null ? USER_TYPE_ZABBIX_USER : CUser::$userData['type'];
+
+			if ($response->errorCode == ZBX_API_ERROR_DB && $user_type != USER_TYPE_SUPER_ADMIN) {
+				$response->errorMessage = _('System error occurred. Please contact Zabbix administrator.');
+			}
+
 			$errno = $this->_zbx2jsonErrors[$response->errorCode];
 
 			$this->jsonError($call, $errno, $response->errorMessage, $response->debug);
@@ -242,7 +235,8 @@ class CJsonRpc {
 			ZBX_API_ERROR_PARAMETERS => '-32602',
 			ZBX_API_ERROR_NO_AUTH => '-32602',
 			ZBX_API_ERROR_PERMISSIONS => '-32500',
-			ZBX_API_ERROR_INTERNAL => '-32500'
+			ZBX_API_ERROR_INTERNAL => '-32500',
+			ZBX_API_ERROR_DB => '-32500'
 		];
 	}
 }

@@ -1,21 +1,16 @@
 /*
- ** Zabbix
- ** Copyright (C) 2001-2024 Zabbix SIA
- **
- ** This program is free software; you can redistribute it and/or modify
- ** it under the terms of the GNU General Public License as published by
- ** the Free Software Foundation; either version 2 of the License, or
- ** (at your option) any later version.
- **
- ** This program is distributed in the hope that it will be useful,
- ** but WITHOUT ANY WARRANTY; without even the implied warranty of
- ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- ** GNU General Public License for more details.
- **
- ** You should have received a copy of the GNU General Public License
- ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- **/
+** Copyright (C) 2001-2025 Zabbix SIA
+**
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+**
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
+**
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
+**/
 
 
 (function($) {
@@ -84,11 +79,20 @@
 			}
 		},
 
-		refresh: function(id) {
+		refresh: function(id, time_object = null) {
 			var screen = this.screens[id];
 
 			if (empty(screen.id)) {
 				return;
+			}
+
+			if (time_object !== null) {
+				screen.timeline = $.extend(screen.timeline, {
+					from: time_object.from,
+					to: time_object.to,
+					from_ts: time_object.from_ts,
+					to_ts: time_object.to_ts
+				});
 			}
 
 			// Do not update screen if displaying static hintbox.
@@ -215,14 +219,8 @@
 			for (var id in this.screens) {
 				var screen = this.screens[id];
 
-				if (!empty(screen.id) && typeof screen.timeline !== 'undefined') {
-					screen.timeline = $.extend(screen.timeline, {
-						from: time_object.from,
-						to: time_object.to,
-						from_ts: time_object.from_ts,
-						to_ts: time_object.to_ts
-					});
-
+				if (!empty(screen.id) && typeof screen.timeline !== 'undefined'
+						&& (!('useCustomEvents' in screen) || screen.useCustomEvents !== 1)) {
 					// Reset pager on time range update (SCREEN_RESOURCE_HISTORY).
 					if (screen.resourcetype == 17) {
 						screen.page = 1;
@@ -230,7 +228,7 @@
 
 					// restart refresh execution starting from Now
 					clearTimeout(screen.timeoutHandler);
-					this.refresh(id);
+					this.refresh(id, time_object);
 				}
 			}
 		},
@@ -264,7 +262,6 @@
 							$('.wrapper > .msg-bad').remove();
 							$('#flickerfreescreen_' + id).replaceWith(html);
 							html.filter('.msg-bad').insertBefore('.wrapper main');
-
 							window.flickerfreeScreen.setElementProgressState(id, false);
 						}
 						else if (!html.length) {
@@ -453,24 +450,6 @@
 			}
 			else {
 				screen.isReRefreshRequire = true;
-			}
-		},
-
-		cleanAll: function() {
-			for (var id in this.screens) {
-				var screen = this.screens[id];
-
-				if (!empty(screen.id)) {
-					clearTimeout(screen.timeoutHandler);
-				}
-			}
-
-			this.screens = [];
-
-			for (var id in timeControl.objectList) {
-				if (timeControl.objectList.hasOwnProperty(id)) {
-					timeControl.removeObject(id);
-				}
 			}
 		}
 	};

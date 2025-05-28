@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -31,7 +26,7 @@ $page['type'] = detect_page_type(PAGE_TYPE_HTML);
 $fields = [
 	'maps' =>					[T_ZBX_INT, O_OPT, P_SYS|P_ONLY_ARRAY,	DB_ID,	null],
 	'sysmapid' =>				[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,
-		'isset({form}) && ({form} === "update" || {form} === "full_clone")'
+		'isset({form}) && ({form} === "update" || {form} === "clone")'
 	],
 	'name' =>					[T_ZBX_STR, O_OPT, null,	NOT_EMPTY, 'isset({add}) || isset({update})', _('Name')],
 	'width' =>					[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535), 'isset({add}) || isset({update})', _('Width')],
@@ -76,7 +71,7 @@ $fields = [
 	// filter
 	'filter_set' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,			null],
 	'filter_rst' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,			null],
-	'filter_name' =>			[T_ZBX_STR, O_OPT, null,	null,			null],
+	'filter_name' =>			[T_ZBX_STR, O_OPT, P_NO_TRIM,	null,		null],
 	// sort and sortorder
 	'sort' =>					[T_ZBX_STR, O_OPT, P_SYS, IN('"height","name","width"'),				null],
 	'sortorder' =>				[T_ZBX_STR, O_OPT, P_SYS, IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
@@ -189,7 +184,7 @@ if (hasRequest('add') || hasRequest('update')) {
 		$messageFailed = _('Cannot update network map');
 	}
 	else {
-		if (getRequest('form') === 'full_clone') {
+		if (getRequest('form') === 'clone') {
 			$maps = API::Map()->get([
 				'output' => [],
 				'selectSelements' => ['selementid', 'elements', 'elementtype', 'iconid_off', 'iconid_on', 'label',
@@ -238,6 +233,8 @@ elseif ((hasRequest('delete') && hasRequest('sysmapid'))
 		$sysmapIds[] = getRequest('sysmapid');
 	}
 
+	$sysmap_count = count($sysmapIds);
+
 	DBstart();
 
 	$maps = API::Map()->get([
@@ -259,7 +256,11 @@ elseif ((hasRequest('delete') && hasRequest('sysmapid'))
 	else {
 		uncheckTableRows(null, zbx_objectValues($maps, 'sysmapid'));
 	}
-	show_messages($result, _('Network map deleted'), _('Cannot delete network map'));
+
+	$messageSuccess = _n('Network map deleted', 'Network maps deleted', $sysmap_count);
+	$messageFailed = _n('Cannot delete network map', 'Cannot delete network maps', $sysmap_count);
+
+	show_messages($result, $messageSuccess, $messageFailed);
 }
 
 /*

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -23,8 +18,6 @@
  * @var CView $this
  * @var array $data
  */
-
-$this->includeJsFile('search.js.php');
 
 $sections = [];
 
@@ -42,20 +35,21 @@ $table = (new CTableInfo())
 			->addClass(ZBX_STYLE_TABLE_LEFT_BORDER)
 		)
 	)
-
-	->removeId();
+	->removeId()
+	->setNoDataMessage(_('No data found'));
 
 foreach ($data['hosts'] as $hostid => $host) {
 	$interface = reset($host['interfaces']);
 	$visible_name = make_decoration($host['name'], $data['search']);
 
+	$host_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'host.edit')
+		->setArgument('hostid', $hostid)
+		->getUrl();
+
 	$name_link = ($host['editable'] && $data['allowed_ui_conf_hosts'])
-		? (new CLink($visible_name, (new CUrl('zabbix.php'))
-			->setArgument('action', 'host.edit')
-			->setArgument('hostid', $hostid)
-		))
-			->setAttribute('data-hostid', $host['hostid'])
-			->onClick('view.editHost(event, this.dataset.hostid);')
+		? new CLink($visible_name, $host_url)
 		: new CSpan($visible_name);
 
 	if ($host['status'] == HOST_STATUS_NOT_MONITORED) {
@@ -117,7 +111,8 @@ foreach ($data['hosts'] as $hostid => $host) {
 
 	$item_count = CViewHelper::showNum($host['items']);
 	$items_link = ($host['editable'] && $data['allowed_ui_conf_hosts'])
-		? [new CLink(_('Items'), (new CUrl('items.php'))
+		? [new CLink(_('Items'), (new CUrl('zabbix.php'))
+			->setArgument('action', 'item.list')
 			->setArgument('filter_set', '1')
 			->setArgument('filter_hostids', [$hostid])
 			->setArgument('context', 'host')
@@ -128,7 +123,8 @@ foreach ($data['hosts'] as $hostid => $host) {
 
 	$trigger_count = CViewHelper::showNum($host['triggers']);
 	$triggers_link = ($host['editable'] && $data['allowed_ui_conf_hosts'])
-		? [new CLink(_('Triggers'), (new CUrl('triggers.php'))
+		? [new CLink(_('Triggers'), (new CUrl('zabbix.php'))
+			->setArgument('action', 'trigger.list')
 			->setArgument('filter_set', '1')
 			->setArgument('filter_hostids', [$hostid])
 			->setArgument('context', 'host')
@@ -182,7 +178,10 @@ foreach ($data['hosts'] as $hostid => $host) {
 $sections[] = (new CSectionCollapsible($table))
 	->setId(SECTION_SEARCH_HOSTS)
 	->setHeader(new CTag('h4', true, _('Hosts')))
-	->setFooter(_s('Displaying %1$s of %2$s found', count($data['hosts']), $data['total_hosts_cnt']))
+	->setFooter($data['total_hosts_cnt'] != 0
+		? _s('Displaying %1$s of %2$s found', count($data['hosts']), $data['total_hosts_cnt'])
+		: null
+	)
 	->setProfileIdx('web.search.hats.'.SECTION_SEARCH_HOSTS.'.state')
 	->setExpanded((bool) CProfile::get('web.search.hats.'.SECTION_SEARCH_HOSTS.'.state', true));
 
@@ -198,17 +197,19 @@ $table = (new CTableInfo())
 				? (new CColHeader(_('Configuration')))->addClass(ZBX_STYLE_TABLE_LEFT_BORDER)
 				: null
 		)
-	);
+	)
+	->setNoDataMessage(_('No data found'));
 
 foreach ($data['host_groups'] as $groupid => $group) {
 	$caption = make_decoration($group['name'], $data['search']);
+	$group_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'hostgroup.edit')
+		->setArgument('groupid', $groupid)
+		->getUrl();
+
 	$name_link = $group['editable'] && $data['allowed_ui_conf_host_groups']
-		? (new CLink($caption, (new CUrl('zabbix.php'))
-			->setArgument('action', 'hostgroup.edit')
-			->setArgument('groupid', $groupid)
-		))
-			->addClass('js-edit-hostgroup')
-			->setAttribute('data-groupid', $groupid)
+		? new CLink($caption, $group_url)
 		: new CSpan($caption);
 
 	$hosts_link = null;
@@ -262,7 +263,10 @@ foreach ($data['host_groups'] as $groupid => $group) {
 $sections[] = (new CSectionCollapsible($table))
 	->setId(SECTION_SEARCH_HOSTGROUP)
 	->setHeader(new CTag('h4', true, _('Host groups')))
-	->setFooter(_s('Displaying %1$s of %2$s found', count($data['host_groups']), $data['total_host_groups_cnt']))
+	->setFooter($data['total_host_groups_cnt'] != 0
+		? _s('Displaying %1$s of %2$s found', count($data['host_groups']), $data['total_host_groups_cnt'])
+		: null
+	)
 	->setProfileIdx('web.search.hats.'.SECTION_SEARCH_HOSTGROUP.'.state')
 	->setExpanded((bool) CProfile::get('web.search.hats.'.SECTION_SEARCH_HOSTGROUP.'.state', true));
 
@@ -274,7 +278,8 @@ if ($data['admin']) {
 				->setColSpan($data['templates'] ? 6 : 1)
 				->addClass(ZBX_STYLE_TABLE_LEFT_BORDER)
 			)
-		);
+		)
+		->setNoDataMessage(_('No data found'));
 
 	foreach ($data['templates'] as $templateid => $template) {
 		$visible_name = make_decoration($template['name'], $data['search']);
@@ -285,15 +290,19 @@ if ($data['admin']) {
 		$discovery_count = CViewHelper::showNum($template['discoveries']);
 		$httptest_count = CViewHelper::showNum($template['httpTests']);
 
+		$template_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'popup')
+			->setArgument('popup', 'template.edit')
+			->setArgument('templateid', $templateid)
+			->getUrl();
+
 		$template_cell = ($template['editable'] && $data['allowed_ui_conf_templates'])
-			? [new CLink($visible_name, (new CUrl('templates.php'))
-				->setArgument('form', 'update')
-				->setArgument('templateid', $templateid)
-			)]
+			? [new CLink($visible_name, $template_url)]
 			: [new CSpan($visible_name)];
 
 		$items_link = ($template['editable'] && $data['allowed_ui_conf_templates'])
-			? [new CLink(_('Items'), (new CUrl('items.php'))
+			? [new CLink(_('Items'), (new CUrl('zabbix.php'))
+				->setArgument('action', 'item.list')
 				->setArgument('filter_set', '1')
 				->setArgument('filter_hostids', [$templateid])
 				->setArgument('context', 'template')
@@ -303,7 +312,8 @@ if ($data['admin']) {
 		$items_link = (new CCol($items_link))->addClass(ZBX_STYLE_TABLE_LEFT_BORDER);
 
 		$triggers_link = ($template['editable'] && $data['allowed_ui_conf_templates'])
-			? [new CLink(_('Triggers'), (new CUrl('triggers.php'))
+			? [new CLink(_('Triggers'), (new CUrl('zabbix.php'))
+				->setArgument('action', 'trigger.list')
 				->setArgument('filter_set', '1')
 				->setArgument('filter_hostids', [$templateid])
 				->setArgument('context', 'template')
@@ -360,7 +370,10 @@ if ($data['admin']) {
 	$sections[] = (new CSectionCollapsible($table))
 		->setId(SECTION_SEARCH_TEMPLATES)
 		->setHeader(new CTag('h4', true, _('Templates')))
-		->setFooter(_s('Displaying %1$s of %2$s found', count($data['templates']), $data['total_templates_cnt']))
+		->setFooter($data['total_templates_cnt'] != 0
+			? _s('Displaying %1$s of %2$s found', count($data['templates']), $data['total_templates_cnt'])
+			: null
+		)
 		->setProfileIdx('web.search.hats.'.SECTION_SEARCH_TEMPLATES.'.state')
 		->setExpanded((bool) CProfile::get('web.search.hats.'.SECTION_SEARCH_TEMPLATES.'.state', true));
 }
@@ -373,24 +386,27 @@ $table = (new CTableInfo())
 				? (new CColHeader(_('Configuration')))->addClass(ZBX_STYLE_TABLE_LEFT_BORDER)
 				: null
 		)
-	);
+	)
+	->setNoDataMessage(_('No data found'));
 
 foreach ($data['template_groups'] as $groupid => $group) {
 	$caption = make_decoration($group['name'], $data['search']);
+	$templategroup_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'templategroup.edit')
+		->setArgument('groupid', $groupid)
+		->getUrl();
+
 	$name_link = $group['editable'] && $data['allowed_ui_conf_template_groups']
-		? (new CLink($caption, (new CUrl('zabbix.php'))
-			->setArgument('action', 'templategroup.edit')
-			->setArgument('groupid', $groupid)
-		))
-			->addClass('js-edit-templategroup')
-			->setAttribute('data-groupid', $groupid)
+		? new CLink($caption, $templategroup_url)
 		: new CSpan($caption);
 
 	$templates_link = null;
 
 	if ($data['admin']) {
 		$templates_link = ($group['editable'] && $data['allowed_ui_conf_templates'] && $group['templates'])
-			? [new CLink(_('Templates'), (new CUrl('templates.php'))
+			? [new CLink(_('Templates'), (new CUrl('zabbix.php'))
+				->setArgument('action', 'template.list')
 				->setArgument('filter_set', '1')
 				->setArgument('filter_groups', [$groupid])
 			), CViewHelper::showNum($group['templates'])]
@@ -404,8 +420,9 @@ foreach ($data['template_groups'] as $groupid => $group) {
 $sections[] = (new CSectionCollapsible($table))
 	->setId(SECTION_SEARCH_TEMPLATEGROUP)
 	->setHeader(new CTag('h4', true, _('Template groups')))
-	->setFooter(
-		_s('Displaying %1$s of %2$s found', count($data['template_groups']), $data['total_template_groups_cnt'])
+	->setFooter($data['total_template_groups_cnt'] != 0
+		? _s('Displaying %1$s of %2$s found', count($data['template_groups']), $data['total_template_groups_cnt'])
+		: null
 	)
 	->setProfileIdx('web.search.hats.'.SECTION_SEARCH_TEMPLATEGROUP.'.state')
 	->setExpanded((bool) CProfile::get('web.search.hats.'.SECTION_SEARCH_TEMPLATEGROUP.'.state', true));
@@ -414,8 +431,4 @@ $sections[] = (new CSectionCollapsible($table))
 	->setTitle(_('Search').': '.$data['search'])
 	->setDocUrl(CDocHelper::getUrl(CDocHelper::SEARCH))
 	->addItem(new CDiv($sections))
-	->show();
-
-(new CScriptTag('view.init();'))
-	->setOnDocumentReady()
 	->show();

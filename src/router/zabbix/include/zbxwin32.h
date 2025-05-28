@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_WIN32_H
@@ -86,6 +81,8 @@ typedef struct perf_counter_data
 }
 zbx_perf_counter_data_t;
 
+void		zbx_init_library_win32(zbx_get_progname_f get_progname);
+
 zbx_uint64_t	zbx_get_cluster_size(const char *path, char **error);
 
 PDH_STATUS	zbx_PdhMakeCounterPath(const char *function, PDH_COUNTER_PATH_ELEMENTS *cpe, char *counterpath);
@@ -101,8 +98,8 @@ PDH_STATUS	zbx_calculate_counter_value(const char *function, const char *counter
 wchar_t		*zbx_get_counter_name(DWORD pdhIndex);
 int		zbx_check_counter_path(char *counterPath, int convert_from_numeric);
 int		zbx_init_builtin_counter_indexes(void);
-DWORD 		zbx_get_builtin_object_index(zbx_builtin_counter_ref_t counter_ref);
-DWORD 		zbx_get_builtin_counter_index(zbx_builtin_counter_ref_t counter_ref);
+DWORD		zbx_get_builtin_object_index(zbx_builtin_counter_ref_t counter_ref);
+DWORD		zbx_get_builtin_counter_index(zbx_builtin_counter_ref_t counter_ref);
 wchar_t		*zbx_get_all_counter_names(HKEY reg_key, wchar_t *reg_value_name);
 
 LONG		zbx_win_seh_handler(struct _EXCEPTION_POINTERS *ep);
@@ -110,6 +107,29 @@ LONG		zbx_win_seh_handler(struct _EXCEPTION_POINTERS *ep);
 LONG		zbx_win_veh_handler(struct _EXCEPTION_POINTERS *ep);
 #endif /* _M_X64 */
 
-void		zbx_init_library_win32(zbx_get_progname_f get_progname);
+/* symbols */
 
+/* some definitions which are not available on older MS Windows versions */
+typedef enum {
+	/* we only use below values, the rest of enumerated values are omitted here */
+	zbx_FileBasicInfo	= 0,
+	zbx_FileIdInfo		= 18
+} zbx_file_info_by_handle_class_t;
+
+
+typedef DWORD	(__stdcall *GetGuiResources_t)(HANDLE, DWORD);
+typedef BOOL	(__stdcall *GetProcessIoCounters_t)(HANDLE, PIO_COUNTERS);
+typedef BOOL	(__stdcall *GetPerformanceInfo_t)(PPERFORMANCE_INFORMATION, DWORD);
+typedef BOOL	(__stdcall *GlobalMemoryStatusEx_t)(LPMEMORYSTATUSEX);
+typedef BOOL	(__stdcall *GetFileInformationByHandleEx_t)(HANDLE, zbx_file_info_by_handle_class_t, LPVOID, DWORD);
+
+GetGuiResources_t		zbx_get_GetGuiResources(void);
+GetProcessIoCounters_t		zbx_get_GetProcessIoCounters(void);
+GetPerformanceInfo_t		zbx_get_GetPerformanceInfo(void);
+GlobalMemoryStatusEx_t		zbx_get_GlobalMemoryStatusEx(void);
+GetFileInformationByHandleEx_t	zbx_get_GetFileInformationByHandleEx(void);
+
+void	zbx_import_symbols(void);
+
+void	zbx_backtrace(void);
 #endif /* ZABBIX_WIN32_H */

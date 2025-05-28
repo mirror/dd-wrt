@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -41,7 +36,7 @@ if (hasRequest('request')) {
 	}
 }
 
-if (CAuthenticationHelper::get(CAuthenticationHelper::SAML_AUTH_ENABLED) == ZBX_AUTH_SAML_DISABLED) {
+if (CAuthenticationHelper::getPublic(CAuthenticationHelper::SAML_AUTH_ENABLED) == ZBX_AUTH_SAML_DISABLED) {
 	CSessionHelper::unset(['request']);
 
 	redirect($redirect_to->toString());
@@ -72,7 +67,7 @@ $service = API::getApiService('user');
 $userdirectoryid = CAuthenticationHelper::getSamlUserdirectoryid();
 $provisioning = CProvisioning::forUserDirectoryId($userdirectoryid);
 $provisioning_enabled = ($provisioning->isProvisioningEnabled()
-	&& CAuthenticationHelper::get(CAuthenticationHelper::SAML_JIT_STATUS) ==  JIT_PROVISIONING_ENABLED
+	&& CAuthenticationHelper::getPublic(CAuthenticationHelper::SAML_JIT_STATUS) ==  JIT_PROVISIONING_ENABLED
 );
 
 if (array_key_exists('baseurl', $SSO['SETTINGS']) && !is_array($SSO['SETTINGS']['baseurl'])
@@ -277,7 +272,7 @@ try {
 			$userdirectoryid = CAuthenticationHelper::getSamlUserdirectoryid();
 
 			$db_users = CUser::findUsersByUsername($saml_data['username_attribute'],
-				CAuthenticationHelper::get(CAuthenticationHelper::SAML_CASE_SENSITIVE) == ZBX_AUTH_CASE_SENSITIVE
+				CAuthenticationHelper::getPublic(CAuthenticationHelper::SAML_CASE_SENSITIVE) == ZBX_AUTH_CASE_SENSITIVE
 			);
 
 			if (!$db_users && $saml_data['provisioned_user']['roleid']) {
@@ -311,7 +306,7 @@ try {
 		}
 
 		CWebUser::$data = CUser::loginByUsername($saml_data['username_attribute'],
-			CAuthenticationHelper::get(CAuthenticationHelper::SAML_CASE_SENSITIVE) == ZBX_AUTH_CASE_SENSITIVE
+			CAuthenticationHelper::getPublic(CAuthenticationHelper::SAML_CASE_SENSITIVE) == ZBX_AUTH_CASE_SENSITIVE
 		);
 		API::setWrapper($wrapper);
 
@@ -321,7 +316,7 @@ try {
 
 		CSessionHelper::set('sessionid', CWebUser::$data['sessionid']);
 		API::getWrapper()->auth = [
-			'type' => CJsonRpc::AUTH_TYPE_FRONTEND,
+			'type' => CJsonRpc::AUTH_TYPE_COOKIE,
 			'auth' => CWebUser::$data['sessionid']
 		];
 

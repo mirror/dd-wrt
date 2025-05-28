@@ -1,3 +1,17 @@
+/*
+** Copyright (C) 2001-2025 Zabbix SIA
+**
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+**
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
+**
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
+**/
+
 package stats
 
 import (
@@ -7,10 +21,10 @@ import (
 	"strconv"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/conf"
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"zabbix.com/pkg/zbxcomms"
+	"golang.zabbix.com/agent2/pkg/zbxcomms"
+	"golang.zabbix.com/sdk/conf"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 const defaultServerPort = 10051
@@ -18,9 +32,7 @@ const defaultServerPort = 10051
 var impl Plugin
 
 type Options struct {
-	plugin.SystemOptions `conf:"optional,name=System"`
-	Timeout              int    `conf:"optional,range=1:30"`
-	SourceIP             string `conf:"optional"`
+	SourceIP string `conf:"optional"`
 }
 
 // Plugin -
@@ -57,14 +69,14 @@ func init() {
 	}
 }
 
-func (p *Plugin) getRemoteZabbixStats(addr string, req []byte) ([]byte, error) {
+func (p *Plugin) getRemoteZabbixStats(addr string, req []byte, timeout int) ([]byte, error) {
 	var parse response
 
 	resp, errs, _ := zbxcomms.Exchange(
-		&[]string{addr},
+		zbxcomms.NewAddress(addr),
 		&p.localAddr,
-		time.Duration(p.options.Timeout)*time.Second,
-		time.Duration(p.options.Timeout)*time.Second,
+		time.Duration(timeout)*time.Second,
+		time.Duration(timeout)*time.Second,
 		req,
 	)
 
@@ -141,7 +153,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		return nil, fmt.Errorf("Cannot obtain internal statistics: %s", err)
 	}
 
-	resp, err := p.getRemoteZabbixStats(addr, req)
+	resp, err := p.getRemoteZabbixStats(addr, req, ctx.Timeout())
 	if err != nil {
 		return nil, err
 	}
@@ -152,11 +164,8 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 }
 
 func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
-	if err := conf.Unmarshal(options, &p.options); err != nil {
+	if err := conf.UnmarshalStrict(options, &p.options); err != nil {
 		p.Warningf("cannot unmarshal configuration options: %s", err)
-	}
-	if p.options.Timeout == 0 {
-		p.options.Timeout = global.Timeout
 	}
 	if p.options.SourceIP == "" {
 		p.options.SourceIP = global.SourceIP
@@ -165,5 +174,11 @@ func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
 
 func (p *Plugin) Validate(options interface{}) error {
 	var o Options
-	return conf.Unmarshal(options, &o)
+
+	err := conf.UnmarshalStrict(options, &o)
+	if err != nil {
+		return errs.Wrap(err, "plugin config validation failed")
+	}
+
+	return nil
 }

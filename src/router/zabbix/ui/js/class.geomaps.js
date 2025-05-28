@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -68,7 +63,7 @@ L.Control.severityFilterFilterControl = L.Control.extend({
 	onAdd: function(map) {
 		this._geomap_filter_div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
 
-		const btn = L.DomUtil.create('a', 'geomap-filter-button', this._geomap_filter_div);
+		const btn = L.DomUtil.create('a', 'geomap-filter-button ' + ZBX_ICON_FILTER, this._geomap_filter_div);
 
 		btn.ariaLabel = t('Severity filter');
 		btn.title = t('Severity filter');
@@ -145,7 +140,7 @@ L.Control.navigateHomeControl = L.Control.extend({
 
 	onAdd: function(map) {
 		this._div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-		this._btn = L.DomUtil.create('a', 'navigate-home-button', this._div);
+		this._btn = L.DomUtil.create('a', 'navigate-home-button ' + ZBX_ICON_HOME, this._div);
 
 		this._btn.role = 'button';
 		this._btn.href = '#';

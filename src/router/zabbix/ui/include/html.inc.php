@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -74,7 +69,7 @@ function make_decoration($haystack, $needle, $class = null) {
 	return $result;
 }
 
-function prepareUrlParam($value, $name = null) {
+function prepareUrlParam($value, $name = null): string {
 	if (is_array($value)) {
 		$result = '';
 
@@ -92,26 +87,22 @@ function prepareUrlParam($value, $name = null) {
 /**
  * Get ready for url params.
  *
- * @param mixed  $param				param name or array with data depend from $getFromRequest
- * @param bool   $getFromRequest	detect data source - input array or $_REQUEST variable
- * @param string $name				if $_REQUEST variable is used this variable not used
- *
- * @return string
+ * @param mixed       $param           Param name or array with data depends from $getFromRequest.
+ * @param bool        $getFromRequest  Detect data source - input array or $_REQUEST variable.
+ * @param string|null $name            If $_REQUEST variable is used this variable not used.
  */
-function url_param($param, $getFromRequest = true, $name = null) {
+function url_param($param, bool $getFromRequest = true, ?string $name = null): string {
 	if (is_array($param)) {
 		if ($getFromRequest) {
 			fatal_error(_('URL parameter cannot be array.'));
 		}
 	}
-	else {
-		if (is_null($name)) {
-			if (!$getFromRequest) {
-				fatal_error(_('URL parameter name is empty.'));
-			}
-
-			$name = $param;
+	elseif ($name === null) {
+		if (!$getFromRequest) {
+			fatal_error(_('URL parameter name is empty.'));
 		}
+
+		$name = $param;
 	}
 
 	if ($getFromRequest) {
@@ -124,7 +115,7 @@ function url_param($param, $getFromRequest = true, $name = null) {
 	return isset($value) ? prepareUrlParam($value, $name) : '';
 }
 
-function url_params(array $params) {
+function url_params(array $params): string {
 	$result = '';
 
 	foreach ($params as $param) {
@@ -134,7 +125,7 @@ function url_params(array $params) {
 	return $result;
 }
 
-function BR() {
+function BR(): CTag {
 	return new CTag('br');
 }
 
@@ -166,22 +157,18 @@ function RARR() {
 	return new CHtmlEntity('&rArr;');
 }
 
-function ZWSPACE() {
-	return new CHtmlEntity('&#8203;');
-}
-
-function get_icon($type, $params = []) {
+function get_icon($type, $params = []): ?CSimpleButton {
 	switch ($type) {
 		case 'favorite':
 			if (CFavorite::exists($params['fav'], $params['elid'], $params['elname'])) {
-				$icon = (new CRedirectButton(NBSP(), null))
-					->addClass(ZBX_STYLE_BTN_REMOVE_FAV)
+				$icon = (new CSimpleButton())
+					->addClass(ZBX_ICON_STAR_FILLED)
 					->setTitle(_('Remove from favorites'))
 					->onClick('rm4favorites("'.$params['elname'].'", "'.$params['elid'].'");');
 			}
 			else {
-				$icon = (new CRedirectButton(NBSP(), null))
-					->addClass(ZBX_STYLE_BTN_ADD_FAV)
+				$icon = (new CSimpleButton())
+					->addClass(ZBX_ICON_STAR)
 					->setTitle(_('Add to favorites'))
 					->onClick('add2favorites("'.$params['elname'].'", "'.$params['elid'].'");');
 			}
@@ -191,41 +178,47 @@ function get_icon($type, $params = []) {
 
 		case 'kioskmode':
 			if ($params['mode'] == ZBX_LAYOUT_KIOSKMODE) {
-				$icon = (new CButton(null, NBSP()))
-					->setTitle(_('Normal view'))
-					->setAttribute('data-layout-mode', ZBX_LAYOUT_NORMAL)
+				$icon = (new CSimpleButton())
 					->addClass(ZBX_LAYOUT_MODE)
+					->addClass(ZBX_ICON_MINIMIZE)
 					->addClass(ZBX_STYLE_BTN_DASHBOARD_NORMAL)
-					->addClass(ZBX_STYLE_BTN_MIN);
+					->setTitle(_('Normal view'))
+					->setAttribute('data-layout-mode', ZBX_LAYOUT_NORMAL);
 			}
 			else {
-				$icon = (new CButton(null, NBSP()))
-					->setTitle(_('Kiosk mode'))
-					->setAttribute('data-layout-mode', ZBX_LAYOUT_KIOSKMODE)
+				$icon = (new CSimpleButton())
 					->addClass(ZBX_LAYOUT_MODE)
-					->addClass(ZBX_STYLE_BTN_KIOSK);
+					->addClass(ZBX_ICON_FULLSCREEN)
+					->addClass(ZBX_STYLE_BTN_KIOSK)
+					->setTitle(_('Kiosk mode'))
+					->setAttribute('data-layout-mode', ZBX_LAYOUT_KIOSKMODE);
 			}
 
 			return $icon;
 	}
+
+	return null;
 }
 
 /**
  * Get host/template configuration navigation.
  *
- * @param string  $current_element
- * @param int     $hostid
- * @param int     $lld_ruleid
+ * @param string $current_element
+ * @param int    $hostid
+ * @param int    $lld_ruleid
  *
- * @return CList|null
+ * @throws Exception
  */
-function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
+function getHostNavigation(string $current_element, $hostid, $lld_ruleid = 0): ?CList {
 	$options = [
 		'output' => [
 			'hostid', 'status', 'name', 'maintenance_status', 'flags', 'active_available'
 		],
-		'selectHostDiscovery' => ['ts_delete'],
-		'selectInterfaces' => ['type', 'useip', 'ip', 'dns', 'port', 'version', 'details', 'available', 'error'],
+		'selectHostDiscovery' => ['status', 'ts_delete', 'ts_disable', 'disable_source'],
+		'selectDiscoveryRule' => ['lifetime_type', 'enabled_lifetime_type'],
+		'selectInterfaces' => ['interfaceid', 'type', 'useip', 'ip', 'dns', 'port', 'version', 'details', 'available',
+			'error'
+		],
 		'hostids' => [$hostid],
 		'editable' => true
 	];
@@ -271,17 +264,28 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 	$db_host = reset($db_host);
 
 	if (!$is_template) {
-		if (getItemTypeCountByHostId(ITEM_TYPE_ZABBIX_ACTIVE, [$hostid])) {
+		$interface_enabled_items_count = getEnabledItemsCountByInterfaceIds(
+			array_column($db_host['interfaces'], 'interfaceid')
+		);
+
+		foreach ($db_host['interfaces'] as &$interface) {
+			$interfaceid = $interface['interfaceid'];
+
+			$interface['has_enabled_items'] = array_key_exists($interfaceid, $interface_enabled_items_count)
+				&& $interface_enabled_items_count[$interfaceid] > 0;
+		}
+		unset($interface);
+
+		if (getEnabledItemTypeCountByHostId(ITEM_TYPE_ZABBIX_ACTIVE, [$hostid])) {
 			// Add active checks interface if host have items with type ITEM_TYPE_ZABBIX_ACTIVE (7).
 			$db_host['interfaces'][] = [
 				'type' => INTERFACE_TYPE_AGENT_ACTIVE,
 				'available' => $db_host['active_available'],
+				'has_enabled_items' => true,
 				'error' => ''
 			];
 			unset($db_host['active_available']);
 		}
-
-		$db_host['has_passive_checks'] = (bool) getItemTypeCountByHostId(ITEM_TYPE_ZABBIX, [$hostid]);
 	}
 
 	// get lld-rules
@@ -301,16 +305,20 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 	$list = new CList();
 
 	if ($is_template) {
-		$template = new CSpan(
-			new CLink($db_host['name'], 'templates.php?form=update&templateid='.$db_host['templateid'])
-		);
+		$template_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'popup')
+			->setArgument('popup', 'template.edit')
+			->setArgument('templateid', $db_host['templateid'])
+			->getUrl();
+
+		$template = new CSpan((new CLink($db_host['name'], $template_url)));
 
 		if ($current_element === '') {
 			$template->addClass(ZBX_STYLE_SELECTED);
 		}
 
 		$list->addItem(new CBreadcrumbs([
-			new CSpan(new CLink(_('All templates'), new CUrl('templates.php'))),
+			new CSpan(new CLink(_('All templates'), (new CUrl('zabbix.php'))->setArgument('action', 'template.list'))),
 			$template
 		]));
 
@@ -334,16 +342,13 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 				break;
 		}
 
-		$host = new CSpan(
-			(new CLink($db_host['name'],
-				(new CUrl('zabbix.php'))
-					->setArgument('action', 'host.edit')
-					->setArgument('hostid', $db_host['hostid'])
-				)
-			)
-			->setAttribute('data-hostid', $db_host['hostid'])
-			->onClick('view.editHost(event, this.dataset.hostid);')
-		);
+		$host_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'popup')
+			->setArgument('popup', 'host.edit')
+			->setArgument('hostid', $db_host['hostid'])
+			->getUrl();
+
+		$host = new CSpan((new CLink($db_host['name'], $host_url)));
 
 		if ($current_element === '') {
 			$host->addClass(ZBX_STYLE_SELECTED);
@@ -354,10 +359,19 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 				(new CUrl('zabbix.php'))->setArgument('action', 'host.list'))), $host
 			]))
 			->addItem($status)
-			->addItem(getHostAvailabilityTable($db_host['interfaces'], $db_host['has_passive_checks']));
+			->addItem(getHostAvailabilityTable($db_host['interfaces']));
 
-		if ($db_host['flags'] == ZBX_FLAG_DISCOVERY_CREATED && $db_host['hostDiscovery']['ts_delete'] != 0) {
-			$info_icons = [getHostLifetimeIndicator(time(), $db_host['hostDiscovery']['ts_delete'])];
+		$disable_source = $db_host['status'] == HOST_STATUS_NOT_MONITORED && $db_host['hostDiscovery']
+			? $db_host['hostDiscovery']['disable_source']
+			: '';
+
+		if ($db_host['flags'] == ZBX_FLAG_DISCOVERY_CREATED
+				&& $db_host['hostDiscovery']['status'] == ZBX_LLD_STATUS_LOST) {
+			$info_icons = [getLldLostEntityIndicator(time(), $db_host['hostDiscovery']['ts_delete'],
+				$db_host['hostDiscovery']['ts_disable'], $disable_source,
+				$db_host['status'] == HOST_STATUS_NOT_MONITORED, _('host')
+			)];
+
 			$list->addItem(makeInformationList($info_icons));
 		}
 	}
@@ -375,14 +389,15 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 		// items
 		$items = new CSpan([
 			new CLink(_('Items'),
-				(new CUrl('items.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'item.list')
 					->setArgument('filter_set', '1')
 					->setArgument('filter_hostids', [$db_host['hostid']])
 					->setArgument('context', $context)
 			),
 			CViewHelper::showNum($db_host['items'])
 		]);
-		if ($current_element == 'items') {
+		if ($current_element === 'items') {
 			$items->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($items);
@@ -390,14 +405,15 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 		// triggers
 		$triggers = new CSpan([
 			new CLink(_('Triggers'),
-				(new CUrl('triggers.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'trigger.list')
 					->setArgument('filter_set', '1')
 					->setArgument('filter_hostids', [$db_host['hostid']])
 					->setArgument('context', $context)
 			),
 			CViewHelper::showNum($db_host['triggers'])
 		]);
-		if ($current_element == 'triggers') {
+		if ($current_element === 'triggers') {
 			$triggers->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($triggers);
@@ -411,7 +427,7 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 			),
 			CViewHelper::showNum($db_host['graphs'])
 		]);
-		if ($current_element == 'graphs') {
+		if ($current_element === 'graphs') {
 			$graphs->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($graphs);
@@ -426,7 +442,7 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 				),
 				CViewHelper::showNum($db_host['dashboards'])
 			]);
-			if ($current_element == 'dashboards') {
+			if ($current_element === 'dashboards') {
 				$dashboards->addClass(ZBX_STYLE_SELECTED);
 			}
 			$content_menu->addItem($dashboards);
@@ -441,7 +457,7 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 			),
 			CViewHelper::showNum($db_host['discoveries'])
 		]);
-		if ($current_element == 'discoveries') {
+		if ($current_element === 'discoveries') {
 			$lld_rules->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($lld_rules);
@@ -456,7 +472,7 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 			),
 			CViewHelper::showNum($db_host['httpTests'])
 		]);
-		if ($current_element == 'web') {
+		if ($current_element === 'web') {
 			$http_tests->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($http_tests);
@@ -472,7 +488,7 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 			)
 		);
 
-		if ($current_element == 'discoveries') {
+		if ($current_element === 'discoveries') {
 			$discovery_rule->addClass(ZBX_STYLE_SELECTED);
 		}
 
@@ -489,13 +505,14 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 		// item prototypes
 		$item_prototypes = new CSpan([
 			new CLink(_('Item prototypes'),
-				(new CUrl('disc_prototypes.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'item.prototype.list')
 					->setArgument('parent_discoveryid', $db_discovery_rule['itemid'])
 					->setArgument('context', $context)
 			),
 			CViewHelper::showNum($db_discovery_rule['items'])
 		]);
-		if ($current_element == 'items') {
+		if ($current_element === 'items') {
 			$item_prototypes->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($item_prototypes);
@@ -503,13 +520,14 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 		// trigger prototypes
 		$trigger_prototypes = new CSpan([
 			new CLink(_('Trigger prototypes'),
-				(new CUrl('trigger_prototypes.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'trigger.prototype.list')
 					->setArgument('parent_discoveryid', $db_discovery_rule['itemid'])
 					->setArgument('context', $context)
 			),
 			CViewHelper::showNum($db_discovery_rule['triggers'])
 		]);
-		if ($current_element == 'triggers') {
+		if ($current_element === 'triggers') {
 			$trigger_prototypes->addClass(ZBX_STYLE_SELECTED);
 		}
 		$content_menu->addItem($trigger_prototypes);
@@ -538,7 +556,7 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 				),
 				CViewHelper::showNum($db_discovery_rule['hostPrototypes'])
 			]);
-			if ($current_element == 'hosts') {
+			if ($current_element === 'hosts') {
 				$host_prototypes->addClass(ZBX_STYLE_SELECTED);
 			}
 			$content_menu->addItem($host_prototypes);
@@ -553,13 +571,11 @@ function getHostNavigation($current_element, $hostid, $lld_ruleid = 0) {
 /**
  * Get map navigation.
  *
- * @param int    $sysmapid      Used as value for sysmaid in map link generation.
+ * @param int    $sysmapid      Used as value for sysmapid in map link generation.
  * @param string $name          Used as label for map link generation.
  * @param int    $severity_min  Used as value for severity_min in map link generation.
- *
- * @return CList
  */
-function getSysmapNavigation($sysmapid, $name, $severity_min) {
+function getSysmapNavigation($sysmapid, $name, $severity_min): CList {
 	$list = (new CList())->addItem(new CBreadcrumbs([
 		(new CSpan())->addItem(new CLink(_('All maps'), new CUrl('sysmaps.php'))),
 		(new CSpan())
@@ -597,14 +613,12 @@ function getSysmapNavigation($sysmapid, $name, $severity_min) {
 /**
  * Renders a form footer with the given buttons.
  *
- * @param CButtonInterface 		$main_button	main button that will be displayed on the left
- * @param CButtonInterface[] 	$other_buttons
- *
- * @return CDiv
+ * @param CButtonInterface|null $main_button  Main button that will be displayed on the left.
+ * @param CButtonInterface[]    $other_buttons
  *
  * @throws InvalidArgumentException	if an element of $other_buttons contain something other than CButtonInterface
  */
-function makeFormFooter(CButtonInterface $main_button = null, array $other_buttons = []) {
+function makeFormFooter(?CButtonInterface $main_button = null, array $other_buttons = []): CList {
 	foreach ($other_buttons as $other_button) {
 		$other_button->addClass(ZBX_STYLE_BTN_ALT);
 	}
@@ -627,11 +641,10 @@ function makeFormFooter(CButtonInterface $main_button = null, array $other_butto
  * Create HTML helper element for host interfaces availability.
  *
  * @param array $host_interfaces
- * @param bool  $passive_checks
  *
  * @return CHostAvailability
  */
-function getHostAvailabilityTable(array $host_interfaces, bool $passive_checks = true): CHostAvailability {
+function getHostAvailabilityTable(array $host_interfaces): CHostAvailability {
 	$interfaces = [];
 
 	foreach ($host_interfaces as $interface) {
@@ -645,37 +658,34 @@ function getHostAvailabilityTable(array $host_interfaces, bool $passive_checks =
 			'type' => $interface['type'],
 			'available' => $interface['available'],
 			'interface' => getHostInterface($interface),
+			'has_enabled_items' => $interface['has_enabled_items'],
 			'description' => $description,
-			'error' => ($interface['available'] == INTERFACE_AVAILABLE_TRUE) ? '' : $interface['error']
+			'error' => $interface['available'] == INTERFACE_AVAILABLE_TRUE ? '' : $interface['error']
 		];
 	}
 
 	return (new CHostAvailability())
-		->setInterfaces($interfaces)
-		->enablePassiveChecks($passive_checks);
+		->setInterfaces($interfaces);
 }
 
 /**
  * Returns the discovered host group lifetime indicator.
  *
- * @param string $current_time	current Unix timestamp
- * @param array  $ts_delete		deletion timestamp of the host group
+ * @param int $current_time  Current Unix timestamp.
+ * @param int $ts_delete     Deletion timestamp of the host group.
  *
- * @return CLink
+ * @throws Exception
  */
-function getHostGroupLifetimeIndicator($current_time, $ts_delete) {
+function getHostGroupLifetimeIndicator(int $current_time, int $ts_delete): CSimpleButton {
 	// Check if the element should've been deleted in the past.
 	if ($current_time > $ts_delete) {
-		$warning = _(
-			'The host group is not discovered anymore and will be deleted the next time discovery rule is processed.'
+		$warning = _s('The %1$s is not discovered anymore and %2$s.', _('host group'),
+			_('will be deleted the next time discovery rule is processed')
 		);
 	}
 	else {
-		$warning = _s(
-			'The host group is not discovered anymore and will be deleted in %1$s (on %2$s at %3$s).',
-			zbx_date2age($current_time, $ts_delete),
-			zbx_date2str(DATE_FORMAT, $ts_delete),
-			zbx_date2str(TIME_FORMAT, $ts_delete)
+		$warning = _s('The %1$s is not discovered anymore and %2$s.', _('host group'),
+			_s('will be deleted in %1$s', zbx_date2age($current_time, $ts_delete))
 		);
 	}
 
@@ -683,114 +693,128 @@ function getHostGroupLifetimeIndicator($current_time, $ts_delete) {
 }
 
 /**
- * Returns the discovered host lifetime indicator.
+ * Returns the indicator for lost LLD entity.
  *
- * @param string $current_time	current Unix timestamp
- * @param array  $ts_delete		deletion timestamp of the host
+ * @param int     $current_time    Current Unix timestamp.
+ * @param int     $ts_delete       Deletion timestamp of the entity.
+ * @param int     $ts_disable      Disabling timestamp of the entity.
+ * @param string  $disable_source  Indicator whether entity was disabled by an LLD rule or manually.
+ * @param boolean $disabled        Indicator whether entity is disabled.
+ * @param string  $entity          Type of entity.
  *
- * @return CLink
+ * @throws Exception
  */
-function getHostLifetimeIndicator($current_time, $ts_delete) {
-	// Check if the element should've been deleted in the past.
-	if ($current_time > $ts_delete) {
-		$warning = _(
-			'The host is not discovered anymore and will be deleted the next time discovery rule is processed.'
+function getLldLostEntityIndicator(int $current_time, int $ts_delete, int $ts_disable, string $disable_source,
+		bool $disabled, string $entity): ?CSimpleButton {
+	$warning = '';
+
+	if ($disable_source == ZBX_DISABLE_SOURCE_LLD) {
+		if ($ts_delete > 0 && $current_time < $ts_delete) {
+			$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity, _('has been disabled'),
+				_s('will be deleted in %1$s', zbx_date2age($current_time, $ts_delete))
+			);
+		}
+		elseif ($ts_delete == 0) {
+			$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity, _('has been disabled'),
+				_('will not be deleted')
+			);
+		}
+		elseif ($current_time > $ts_delete) {
+			$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity, _('has been disabled'),
+				_('will be deleted the next time discovery rule is processed')
+			);
+		}
+	}
+	elseif ($disabled && $disable_source == ZBX_DISABLE_DEFAULT && $ts_delete > 0) {
+		$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity, _('has been manually disabled'),
+			_('will not be deleted')
 		);
 	}
-	else {
-		$warning = _s(
-			'The host is not discovered anymore and will be deleted in %1$s (on %2$s at %3$s).',
-			zbx_date2age($current_time, $ts_delete),
-			zbx_date2str(DATE_FORMAT, $ts_delete),
-			zbx_date2str(TIME_FORMAT, $ts_delete)
-		);
+	elseif (!$disabled && $ts_delete > 0) {
+		$delete_msg = _s('will be deleted in %1$s', zbx_date2age($current_time, $ts_delete));
+
+		switch (true) {
+			case $current_time > $ts_delete:
+				$warning = _s('The %1$s is not discovered anymore and %2$s.', $entity,
+					_('will be deleted the next time discovery rule is processed')
+				);
+				break;
+
+			case $ts_disable == 0:
+				$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity,
+					_s('will not be disabled'), $delete_msg
+				);
+				break;
+
+			case $ts_disable > 0 && $ts_disable > $current_time:
+				$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity,
+					_s('will be disabled in %1$s', zbx_date2age($current_time, $ts_disable)), $delete_msg
+				);
+				break;
+
+			case $ts_disable != 0 && $current_time > $ts_disable:
+				$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity,
+					_('will be disabled the next time discovery rule is processed'), $delete_msg
+				);
+				break;
+		}
+	}
+	elseif (!$disabled && $ts_delete == 0) {
+		$delete_msg = _('will not be deleted');
+
+		switch (true) {
+			case $ts_disable != 0 && $current_time > $ts_disable:
+				$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity,
+					_('will be disabled the next time discovery rule is processed'), $delete_msg
+				);
+				break;
+
+			case $ts_disable > 0:
+				$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity,
+					_s('will be disabled in %1$s', zbx_date2age($current_time, $ts_disable)), $delete_msg
+				);
+				break;
+
+			case $ts_disable == 0:
+				$warning = _s('The %1$s is not discovered anymore and %2$s, %3$s.', $entity,
+					_('will not be disabled'), $delete_msg
+				);
+				break;
+		}
 	}
 
-	return makeWarningIcon($warning);
+	return $warning === '' ? null : makeWarningIcon($warning);
 }
 
 /**
  * Returns the discovered graph lifetime indicator.
  *
- * @param string $current_time	current Unix timestamp
- * @param array  $ts_delete		deletion timestamp of the graph
+ * @param int $current_time   Current Unix timestamp.
+ * @param int $ts_delete      Deletion timestamp of the graph.
  *
- * @return CLink
+ * @throws Exception
  */
-function getGraphLifetimeIndicator($current_time, $ts_delete) {
-	// Check if the element should've been deleted in the past.
-	if ($current_time > $ts_delete) {
-		$warning = _(
-			'The graph is not discovered anymore and will be deleted the next time discovery rule is processed.'
+function getGraphLifetimeIndicator(int $current_time, int $ts_delete): ?CSimpleButton {
+	if ($ts_delete == 0) {
+		$warning = _s('The %1$s is not discovered anymore and %2$s.', _('graph'),
+			_('will not be deleted')
+		);
+	}
+	elseif ($current_time > $ts_delete && $ts_delete != 0) {
+		$warning = _s('The %1$s is not discovered anymore and %2$s.', _('graph'),
+			_('will be deleted the next time discovery rule is processed')
 		);
 	}
 	else {
-		$warning = _s(
-			'The graph is not discovered anymore and will be deleted in %1$s (on %2$s at %3$s).',
-			zbx_date2age($current_time, $ts_delete),
-			zbx_date2str(DATE_FORMAT, $ts_delete),
-			zbx_date2str(TIME_FORMAT, $ts_delete)
+		$warning = _s('The %1$s is not discovered anymore and %2$s.', _('graph'),
+			_s('will be deleted in %1$s', zbx_date2age($current_time, $ts_delete))
 		);
 	}
 
 	return makeWarningIcon($warning);
 }
 
-/**
- * Returns the discovered trigger lifetime indicator.
- *
- * @param string $current_time	current Unix timestamp
- * @param array  $ts_delete		deletion timestamp of the trigger
- *
- * @return CLink
- */
-function getTriggerLifetimeIndicator($current_time, $ts_delete) {
-	// Check if the element should've been deleted in the past.
-	if ($current_time > $ts_delete) {
-		$warning = _(
-			'The trigger is not discovered anymore and will be deleted the next time discovery rule is processed.'
-		);
-	}
-	else {
-		$warning = _s(
-			'The trigger is not discovered anymore and will be deleted in %1$s (on %2$s at %3$s).',
-			zbx_date2age($current_time, $ts_delete),
-			zbx_date2str(DATE_FORMAT, $ts_delete),
-			zbx_date2str(TIME_FORMAT, $ts_delete)
-		);
-	}
-
-	return makeWarningIcon($warning);
-}
-
-/**
- * Returns the discovered item lifetime indicator.
- *
- * @param string $current_time	current Unix timestamp
- * @param array  $ts_delete		deletion timestamp of the item
- *
- * @return CLink
- */
-function getItemLifetimeIndicator($current_time, $ts_delete) {
-	// Check if the element should've been deleted in the past.
-	if ($current_time > $ts_delete) {
-		$warning = _(
-			'The item is not discovered anymore and will be deleted the next time discovery rule is processed.'
-		);
-	}
-	else {
-		$warning = _s(
-			'The item is not discovered anymore and will be deleted in %1$s (on %2$s at %3$s).',
-			zbx_date2age($current_time, $ts_delete),
-			zbx_date2str(DATE_FORMAT, $ts_delete),
-			zbx_date2str(TIME_FORMAT, $ts_delete)
-		);
-	}
-
-	return makeWarningIcon($warning);
-}
-
-function makeServerStatusOutput() {
+function makeServerStatusOutput(): CTag {
 	return (new CTag('output', true))
 		->setId('msg-global-footer')
 		->addClass(ZBX_STYLE_MSG_GLOBAL_FOOTER)
@@ -801,40 +825,35 @@ function makeServerStatusOutput() {
 * Make logo of the specified type.
 *
 * @param int $type  LOGO_TYPE_NORMAL | LOGO_TYPE_SIDEBAR | LOGO_TYPE_SIDEBAR_COMPACT.
-*
-* @return CTag
 */
-function makeLogo(int $type): ?CTag {
+function makeLogo(int $type): CTag {
 	static $zabbix_logo_classes = [
 		LOGO_TYPE_NORMAL => ZBX_STYLE_ZABBIX_LOGO,
-		LOGO_TYPE_SIDEBAR => ZBX_STYLE_ZABBIX_SIDEBAR_LOGO,
-		LOGO_TYPE_SIDEBAR_COMPACT => ZBX_STYLE_ZABBIX_SIDEBAR_LOGO_COMPACT
+		LOGO_TYPE_SIDEBAR => ZBX_STYLE_ZABBIX_LOGO_SIDEBAR,
+		LOGO_TYPE_SIDEBAR_COMPACT => ZBX_STYLE_ZABBIX_LOGO_SIDEBAR_COMPACT
 	];
 
 	$brand_logo = CBrandHelper::getLogo($type);
 
 	if ($brand_logo !== null) {
-		return (new CImg($brand_logo));
+		return (new CImg($brand_logo))->addClass($zabbix_logo_classes[$type]);
 	}
-	else {
-		return (new CDiv())->addClass($zabbix_logo_classes[$type]);
-	}
+
+	return (new CDiv())->addClass($zabbix_logo_classes[$type]);
 }
 
 /**
  * Renders a page footer.
- *
- * @param bool $with_version
- *
- * @return CDiv
  */
-function makePageFooter($with_version = true) {
+function makePageFooter(bool $with_version = true): CTag {
 	return (new CTag('footer', true, CBrandHelper::getFooterContent($with_version)))
 		->setAttribute('role', 'contentinfo');
 }
 
 /**
  * Get drop-down submenu item list for the User settings section.
+ *
+ * @throws Exception
  *
  * @return array  Menu definition for CHtmlPage::setTitleSubmenu.
  */
@@ -866,13 +885,17 @@ function getUserSettingsSubmenu(): array {
  *
  * @return array  Menu definition for CHtmlPage::setTitleSubmenu.
  */
-function getAdministrationGeneralSubmenu() {
+function getAdministrationGeneralSubmenu(): array {
 	$gui_url = (new CUrl('zabbix.php'))
 		->setArgument('action', 'gui.edit')
 		->getUrl();
 
 	$autoreg_url = (new CUrl('zabbix.php'))
 		->setArgument('action', 'autoreg.edit')
+		->getUrl();
+
+	$timeouts_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'timeouts.edit')
 		->getUrl();
 
 	$image_url = (new CUrl('zabbix.php'))
@@ -912,6 +935,7 @@ function getAdministrationGeneralSubmenu() {
 			'items' => array_filter([
 				$gui_url            => _('GUI'),
 				$autoreg_url        => _('Autoregistration'),
+				$timeouts_url       => _('Timeouts'),
 				$image_url          => _('Images'),
 				$iconmap_url        => _('Icon mapping'),
 				$regex_url          => _('Regular expressions'),
@@ -937,29 +961,13 @@ function makeInformationList($info_icons) {
 }
 
 /**
- * Renders an information icon like green [i] with message.
- *
- * @param string $message
- *
- * @return CLink
- */
-function makeInformationIcon($message) {
-	return (new CLink())
-		->addClass(ZBX_STYLE_ICON_INFO)
-		->addClass(ZBX_STYLE_STATUS_GREEN)
-		->setHint($message, ZBX_STYLE_HINTBOX_WRAP);
-}
-
-/**
  * Renders an icon for host in maintenance.
  *
- * @param int    $type         Type of the maintenance.
- * @param string $name         Name of the maintenance.
- * @param string $description  Description of the maintenance.
- *
- * @return CLink
+ * @param int|string $type         Type of the maintenance.
+ * @param string     $name         Name of the maintenance.
+ * @param string     $description  Description of the maintenance.
  */
-function makeMaintenanceIcon($type, $name, $description) {
+function makeMaintenanceIcon($type, string $name, string $description): CButtonIcon {
 	$hint = $name.' ['.($type
 		? _('Maintenance without data collection')
 		: _('Maintenance with data collection')).']';
@@ -968,8 +976,9 @@ function makeMaintenanceIcon($type, $name, $description) {
 		$hint .= "\n".$description;
 	}
 
-	return (new CLink())
-		->addClass(ZBX_STYLE_ICON_MAINTENANCE)
+	return (new CButtonIcon(ZBX_ICON_WRENCH_ALT_SMALL))
+		->addClass(ZBX_STYLE_COLOR_WARNING)
+		->addClass(ZBX_STYLE_NO_INDENT)
 		->setHint($hint);
 }
 
@@ -977,14 +986,14 @@ function makeMaintenanceIcon($type, $name, $description) {
  * Renders an icon for suppressed problem.
  *
  * @param array  $icon_data
- * @param string $icon_data[]['suppress_until']    Time until the problem is suppressed.
- * @param string $icon_data[]['maintenance_name']  Name of the maintenance.
- * @param string $icon_data[]['username']          User who created manual suppression.
+ *        string $icon_data[]['suppress_until']    Time until the problem is suppressed.
+ *        string $icon_data[]['maintenance_name']  Name of the maintenance.
+ *        string $icon_data[]['username']          User who created manual suppression.
  * @param bool   $blink                            Add 'blink' CSS class for jqBlink.
  *
- * @return CLink
+ * @throws Exception
  */
-function makeSuppressedProblemIcon(array $icon_data, bool $blink = false) {
+function makeSuppressedProblemIcon(array $icon_data, bool $blink = false): CSimpleButton {
 	$suppress_until_values = array_column($icon_data, 'suppress_until');
 
 	if (in_array(ZBX_PROBLEM_SUPPRESS_TIME_INDEFINITE, $suppress_until_values)) {
@@ -1006,141 +1015,89 @@ function makeSuppressedProblemIcon(array $icon_data, bool $blink = false) {
 		if (array_key_exists('maintenance_name', $suppression)) {
 			$maintenance_names[] = $suppression['maintenance_name'];
 		}
-		else {
+		elseif (array_key_exists('username', $suppression)) {
 			$username = $suppression['username'];
 		}
 	}
 
-	$maintenances = implode(',', $maintenance_names);
+	$maintenances = implode(', ', $maintenance_names);
 
-	return (new CSimpleButton())
-		->addClass(ZBX_STYLE_ACTION_ICON_SUPPRESS)
-		->addClass($blink ? 'blink' : null)
+	return (new CButtonIcon(ZBX_ICON_EYE_OFF))
+		->addClass(ZBX_STYLE_COLOR_ICON)
+		->addClass($blink ? 'js-blink' : null)
 		->setHint(
 			_s('Suppressed till: %1$s', $suppressed_till).
-			"\n".
-			($username !== '' ? _s('Manually by: %1$s', $username)."\n" : '').
-			($maintenances !== '' ? _s('Maintenance: %1$s', $maintenances)."\n" : '')
+			($username !== '' ? "\n"._s('Manually by: %1$s', $username) : '').
+			($maintenances !== '' ? "\n"._s('Maintenance: %1$s', $maintenances) : '')
 		);
-}
-
-/**
- * Renders an action icon.
- *
- * @param array  $icon_data
- * @param string $icon_data[icon]    Icon style.
- * @param array  $icon_data[hint]    Hintbox content (optional).
- * @param bool   $icon_data[button]  Use button element (optional).
- * @param int    $icon_data[num]     Number displayed over the icon (optional).
- *
- * @return CTag  Returns CSpan or CButton depending on boolean $icon_data['button'] parameter
- */
-function makeActionIcon(array $icon_data): CTag {
-	if (array_key_exists('button', $icon_data) && $icon_data['button']) {
-		$icon = (new CButton(null))->addClass($icon_data['icon']);
-	}
-	else {
-		$icon = (new CSpan())->addClass($icon_data['icon']);
-	}
-
-	if (array_key_exists('num', $icon_data)) {
-		if ($icon_data['num'] > 99) {
-			$icon_data['num'] = '99+';
-		}
-		$icon->setAttribute('data-count', $icon_data['num']);
-	}
-
-	if (array_key_exists('hint', $icon_data)) {
-		$icon
-			->addClass(ZBX_STYLE_CURSOR_POINTER)
-			->setHint($icon_data['hint'], '', true, 'max-width: '.ZBX_ACTIONS_POPUP_MAX_WIDTH.'px;');
-	}
-	elseif (array_key_exists('title', $icon_data)) {
-		$icon->setTitle($icon_data['title']);
-	}
-
-	if (array_key_exists('style', $icon_data)) {
-		$icon->addStyle($icon_data['style']);
-	}
-
-	if (array_key_exists('aria-label', $icon_data)) {
-		$icon
-			->addItem($icon_data['aria-label'])
-			->addClass(ZBX_STYLE_INLINE_SR_ONLY);
-	}
-
-	return $icon;
-}
-
-/**
- * Renders an icon for a description.
- *
- * @param string $description
- *
- * @return CLink
- */
-function makeDescriptionIcon($description) {
-	return (new CLink())
-		->addClass(ZBX_STYLE_ICON_DESCRIPTION)
-		->setHint(zbx_str2links($description), ZBX_STYLE_HINTBOX_WRAP);
-}
-
-/**
- * Renders an error icon like red [i] with error message
- *
- * @param string $error
- *
- * @return CLink
- */
-function makeErrorIcon($error) {
-	return (new CLink())
-		->addClass(ZBX_STYLE_ICON_INFO)
-		->addClass(ZBX_STYLE_STATUS_RED)
-		->setHint($error, ZBX_STYLE_HINTBOX_WRAP." ".ZBX_STYLE_RED);
 }
 
 /**
  * Renders an icon with question mark and text in hint.
  *
  * @param string|array|CTag $help_text
- *
- * @return CLink
  */
-function makeHelpIcon($help_text): CLink {
-	return (new CLink())
-		->addClass(ZBX_STYLE_ICON_HELP_HINT)
+function makeHelpIcon($help_text): CSimpleButton {
+	return (new CButtonIcon(ZBX_ICON_HELP_FILLED_SMALL))
+		->setSmall()
 		->setHint($help_text, ZBX_STYLE_HINTBOX_WRAP);
 }
 
 /**
- * Renders a warning icon like yellow [i] with error message
- *
- * @param string $error
- *
- * @return CLink
+ * Renders an icon for a description.
  */
-function makeWarningIcon($error) {
-	return (new CLink())
-		->addClass(ZBX_STYLE_ICON_INFO)
-		->addClass(ZBX_STYLE_STATUS_YELLOW)
-		->setHint($error, ZBX_STYLE_HINTBOX_WRAP);
+function makeDescriptionIcon(string $description): CButtonIcon {
+	return (new CButtonIcon(ZBX_ICON_ALERT_WITH_CONTENT))
+		->setAttribute('data-content', '?')
+		->setHint(zbx_str2links($description), ZBX_STYLE_HINTBOX_WRAP);
+}
+
+/**
+ * Renders an information icon like green [i] with message.
+ *
+ * @param string|array|CTag $message
+ */
+function makeInformationIcon($message): CButtonIcon {
+	return (new CButtonIcon(ZBX_ICON_I_POSITIVE))
+		->setSmall()
+		->setHint($message, ZBX_STYLE_HINTBOX_WRAP);
+}
+
+/**
+ * Renders a warning icon like yellow [i] with error message.
+ *
+ * @param string|array|CTag $warning
+ */
+function makeWarningIcon($warning): CButtonIcon {
+	return (new CButtonIcon(ZBX_ICON_I_WARNING))
+		->setSmall()
+		->setHint($warning, ZBX_STYLE_HINTBOX_WRAP);
+}
+
+/**
+ * Renders an error icon like red [i] with error message.
+ *
+ * @param string|array|CTag $error
+ */
+function makeErrorIcon($error): CButtonIcon {
+	return (new CButtonIcon(ZBX_ICON_I_NEGATIVE))
+		->setSmall()
+		->setHint($error, ZBX_STYLE_HINTBOX_WRAP.' '.ZBX_STYLE_RED);
 }
 
 /**
  * Returns css for trigger severity backgrounds.
- *
- * @return string
  */
-function getTriggerSeverityCss() {
+function getTriggerSeverityCss(): string {
 	$css = '';
 
 	$severities = [
-		ZBX_STYLE_NA_BG => CSettingsHelper::getGlobal(CSettingsHelper::SEVERITY_COLOR_0),
-		ZBX_STYLE_INFO_BG => CSettingsHelper::getGlobal(CSettingsHelper::SEVERITY_COLOR_1),
-		ZBX_STYLE_WARNING_BG => CSettingsHelper::getGlobal(CSettingsHelper::SEVERITY_COLOR_2),
-		ZBX_STYLE_AVERAGE_BG => CSettingsHelper::getGlobal(CSettingsHelper::SEVERITY_COLOR_3),
-		ZBX_STYLE_HIGH_BG => CSettingsHelper::getGlobal(CSettingsHelper::SEVERITY_COLOR_4),
-		ZBX_STYLE_DISASTER_BG => CSettingsHelper::getGlobal(CSettingsHelper::SEVERITY_COLOR_5)
+		ZBX_STYLE_NA_BG => CSettingsHelper::getPublic(CSettingsHelper::SEVERITY_COLOR_0),
+		ZBX_STYLE_INFO_BG => CSettingsHelper::getPublic(CSettingsHelper::SEVERITY_COLOR_1),
+		ZBX_STYLE_WARNING_BG => CSettingsHelper::getPublic(CSettingsHelper::SEVERITY_COLOR_2),
+		ZBX_STYLE_AVERAGE_BG => CSettingsHelper::getPublic(CSettingsHelper::SEVERITY_COLOR_3),
+		ZBX_STYLE_HIGH_BG => CSettingsHelper::getPublic(CSettingsHelper::SEVERITY_COLOR_4),
+		ZBX_STYLE_DISASTER_BG => CSettingsHelper::getPublic(CSettingsHelper::SEVERITY_COLOR_5)
 	];
 
 	$css .= ':root {'."\n";
@@ -1159,18 +1116,16 @@ function getTriggerSeverityCss() {
 
 /**
  * Returns css for trigger status colors, if those are customized.
- *
- * @return string
  */
-function getTriggerStatusCss() {
+function getTriggerStatusCss(): string {
 	$css = '';
 
-	if (CSettingsHelper::getGlobal(CSettingsHelper::CUSTOM_COLOR) == EVENT_CUSTOM_COLOR_ENABLED) {
+	if (CSettingsHelper::getPublic(CSettingsHelper::CUSTOM_COLOR) == EVENT_CUSTOM_COLOR_ENABLED) {
 		$event_statuses = [
-			ZBX_STYLE_PROBLEM_UNACK_FG => CSettingsHelper::get(CSettingsHelper::PROBLEM_UNACK_COLOR),
-			ZBX_STYLE_PROBLEM_ACK_FG => CSettingsHelper::get(CSettingsHelper::PROBLEM_ACK_COLOR),
-			ZBX_STYLE_OK_UNACK_FG => CSettingsHelper::get(CSettingsHelper::OK_UNACK_COLOR),
-			ZBX_STYLE_OK_ACK_FG => CSettingsHelper::get(CSettingsHelper::OK_ACK_COLOR)
+			ZBX_STYLE_PROBLEM_UNACK_FG => CSettingsHelper::getPublic(CSettingsHelper::PROBLEM_UNACK_COLOR),
+			ZBX_STYLE_PROBLEM_ACK_FG => CSettingsHelper::getPublic(CSettingsHelper::PROBLEM_ACK_COLOR),
+			ZBX_STYLE_OK_UNACK_FG => CSettingsHelper::getPublic(CSettingsHelper::OK_UNACK_COLOR),
+			ZBX_STYLE_OK_ACK_FG => CSettingsHelper::getPublic(CSettingsHelper::OK_ACK_COLOR)
 		];
 
 		foreach ($event_statuses as $class => $color) {

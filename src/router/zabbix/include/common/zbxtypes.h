@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_TYPES_H
@@ -25,19 +20,7 @@
 #if defined(_WINDOWS)
 #	define ZBX_THREAD_LOCAL __declspec(thread)
 #else
-#	if defined(HAVE_THREAD_LOCAL) && (defined(__GNUC__) || defined(__clang__) || defined(__MINGW32__))
-#		define ZBX_THREAD_LOCAL __thread
-#	else
-#		error "C compiler is not compatible with agent2 assembly"
-#	endif
-#endif
-
-#if defined(_WINDOWS) || defined(__MINGW32__)
-#	define zbx_open(pathname, flags)	__zbx_open(pathname, flags | O_BINARY)
-#	define PATH_SEPARATOR	'\\'
-#else
-#	define zbx_open(pathname, flags)	open(pathname, flags)
-#	define PATH_SEPARATOR	'/'
+#	define ZBX_THREAD_LOCAL __thread
 #endif
 
 #if defined(_WINDOWS)
@@ -79,6 +62,7 @@ typedef int	ssize_t;
 typedef long	ssize_t;
 #	endif
 
+typedef DWORD	zbx_syserror_t;
 #else	/* _WINDOWS */
 #	ifndef __UINT64_C
 #		ifdef UINT64_C
@@ -144,6 +128,8 @@ typedef long	ssize_t;
 
 typedef uint32_t	zbx_uint32_t;
 
+typedef int	zbx_syserror_t;
+
 #endif	/* _WINDOWS */
 
 #if defined(_WINDOWS)
@@ -173,11 +159,7 @@ typedef off_t	zbx_offset_t;
 #define ZBX_FS_DBL_EXT(p)	"%." #p "lf"
 #define ZBX_FS_DBL64		"%.17G"
 
-#ifdef HAVE_ORACLE
-#	define ZBX_FS_DBL64_SQL	ZBX_FS_DBL64 "d"
-#else
-#	define ZBX_FS_DBL64_SQL	ZBX_FS_DBL64
-#endif
+#define ZBX_FS_DBL64_SQL	ZBX_FS_DBL64
 
 #define ZBX_PTR_SIZE		sizeof(void *)
 #define ZBX_FS_SIZE_T		ZBX_FS_UI64
@@ -213,6 +195,7 @@ zbx_uint128_t;
 
 typedef struct zbx_variant zbx_variant_t;
 
+#define SUCCEED_PARTIAL	2
 #define	SUCCEED		0
 #define	FAIL		-1
 #define	NOTSUPPORTED	-2
@@ -222,5 +205,8 @@ typedef struct zbx_variant zbx_variant_t;
 #define	GATEWAY_ERROR	-6
 #define	CONFIG_ERROR	-7
 #define	SIG_ERROR	-8
+#define	CONNECT_ERROR	-9
+#define	SEND_ERROR	-10
+#define	RECV_ERROR	-11
 
 #endif

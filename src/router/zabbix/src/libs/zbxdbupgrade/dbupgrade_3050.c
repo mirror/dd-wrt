@@ -1,30 +1,28 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "dbupgrade.h"
+#include "dbupgrade_common.h"
 
-#include "zbxdbhigh.h"
 #include "zbxtasks.h"
 #include "zbxregexp.h"
-#include "log.h"
 #include "zbxexpr.h"
 #include "zbxnum.h"
+#include "zbxalgo.h"
+#include "zbxdb.h"
+#include "zbxdbschema.h"
+#include "zbxstr.h"
 
 /*
  * 4.0 development database patches
@@ -34,15 +32,15 @@
 
 static int	DBpatch_3050000(void)
 {
-	const ZBX_FIELD	field = {"proxy_address", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"proxy_address", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("hosts", &field);
 }
 
 static int	DBpatch_3050001(void)
 {
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 	int		ret = FAIL;
 
 	/* type : 'problem' - WIDGET_PROBLEMS */
@@ -82,7 +80,7 @@ clean:
 
 static int	DBpatch_3050004(void)
 {
-	const ZBX_FIELD	field = {"name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	if (SUCCEED != DBadd_field("events", &field))
 		return FAIL;
@@ -92,7 +90,7 @@ static int	DBpatch_3050004(void)
 
 static int	DBpatch_3050005(void)
 {
-	const ZBX_FIELD	field = {"name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	if (SUCCEED != DBadd_field("problem", &field))
 		return FAIL;
@@ -188,35 +186,35 @@ static int	DBpatch_3050012(void)
 
 static int	DBpatch_3050013(void)
 {
-	const ZBX_FIELD	field = {"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("interface", &field, NULL);
 }
 
 static int	DBpatch_3050014(void)
 {
-	const ZBX_FIELD	field = {"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("proxy_dhistory", &field, NULL);
 }
 
 static int	DBpatch_3050015(void)
 {
-	const ZBX_FIELD	field = {"listen_dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"listen_dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("autoreg_host", &field, NULL);
 }
 
 static int	DBpatch_3050016(void)
 {
-	const ZBX_FIELD	field = {"listen_dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"listen_dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("proxy_autoreg_host", &field, NULL);
 }
 
 static int	DBpatch_3050017(void)
 {
-	const ZBX_FIELD	field = {"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("dservices", &field, NULL);
 }
@@ -228,26 +226,26 @@ static int	DBpatch_3050018(void)
 
 static int	DBpatch_3050019(void)
 {
-	const ZBX_TABLE table =
-		{"graph_theme",	"graphthemeid",	0,
-			{
-				{"graphthemeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
-				{"theme", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"backgroundcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"graphcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"gridcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"maingridcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"gridbordercolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"textcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"highlightcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"leftpercentilecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"rightpercentilecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"nonworktimecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"colorpalette", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{0}
-			},
-			NULL
-		};
+	const zbx_db_table_t	table =
+			{"graph_theme",	"graphthemeid",	0,
+				{
+					{"graphthemeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+					{"theme", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"backgroundcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"graphcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"gridcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"maingridcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"gridbordercolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"textcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"highlightcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"leftpercentilecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"rightpercentilecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"nonworktimecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"colorpalette", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{0}
+				},
+				NULL
+			};
 
 	return DBcreate_table(&table);
 }
@@ -364,56 +362,54 @@ static int	DBpatch_3050026(void)
 
 static int	DBpatch_3050027(void)
 {
-	const ZBX_FIELD	field = {"sendto", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"sendto", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("media", &field, NULL);
 }
 
 static int	DBpatch_3050028(void)
 {
-	const ZBX_FIELD	field = {"sendto", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"sendto", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("alerts", &field, NULL);
 }
 
-extern int	DBpatch_3040006(void);
-
 static int	DBpatch_3050029(void)
 {
-	return DBpatch_3040006();
+	return create_problem_3_index();
 }
 
 static int	DBpatch_3050030(void)
 {
-	const ZBX_FIELD	field = {"custom_color", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"custom_color", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
 
 static int	DBpatch_3050031(void)
 {
-	const ZBX_FIELD	field = {"problem_unack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"problem_unack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBset_default("config", &field);
 }
 
 static int	DBpatch_3050032(void)
 {
-	const ZBX_FIELD	field = {"problem_ack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"problem_ack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBset_default("config", &field);
 }
 
 static int	DBpatch_3050033(void)
 {
-	const ZBX_FIELD	field = {"ok_unack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"ok_unack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBset_default("config", &field);
 }
 
 static int	DBpatch_3050034(void)
 {
-	const ZBX_FIELD	field = {"ok_ack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"ok_ack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBset_default("config", &field);
 }
@@ -457,16 +453,14 @@ static int	DBpatch_3050036(void)
 	return SUCCEED;
 }
 
-extern int	DBpatch_3040007(void);
-
 static int	DBpatch_3050037(void)
 {
-	return DBpatch_3040007();
+	return drop_c_problem_2_index();
 }
 
 static int	DBpatch_3050038(void)
 {
-	const ZBX_TABLE table =
+	const zbx_db_table_t	table =
 			{"tag_filter", "tag_filterid", 0,
 				{
 					{"tag_filterid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
@@ -484,21 +478,21 @@ static int	DBpatch_3050038(void)
 
 static int	DBpatch_3050039(void)
 {
-	const ZBX_FIELD	field = {"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
+	const zbx_db_field_t	field = {"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
 
 	return DBadd_foreign_key("tag_filter", 1, &field);
 }
 
 static int	DBpatch_3050040(void)
 {
-	const ZBX_FIELD	field = {"groupid", NULL, "groups", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
+	const zbx_db_field_t	field = {"groupid", NULL, "groups", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
 
 	return DBadd_foreign_key("tag_filter", 2, &field);
 }
 
 static int	DBpatch_3050041(void)
 {
-	const ZBX_TABLE table =
+	const zbx_db_table_t	table =
 			{"task_check_now", "taskid", 0,
 				{
 					{"taskid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
@@ -513,7 +507,7 @@ static int	DBpatch_3050041(void)
 
 static int	DBpatch_3050042(void)
 {
-	const ZBX_FIELD	field = {"taskid", NULL, "task", "taskid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
+	const zbx_db_field_t	field = {"taskid", NULL, "task", "taskid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
 
 	return DBadd_foreign_key("task_check_now", 1, &field);
 }
@@ -571,133 +565,133 @@ static int	DBpatch_3050045(void)
 
 static int	DBpatch_3050046(void)
 {
-	const ZBX_FIELD field = {"timeout", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"timeout", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050047(void)
 {
-	const ZBX_FIELD field = {"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050048(void)
 {
-	const ZBX_FIELD field = {"query_fields", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"query_fields", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050049(void)
 {
-	const ZBX_FIELD	field = {"posts", "", NULL, NULL, 0, ZBX_TYPE_SHORTTEXT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"posts", "", NULL, NULL, 0, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050050(void)
 {
-	const ZBX_FIELD field = {"status_codes", "200", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"status_codes", "200", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050051(void)
 {
-	const ZBX_FIELD field = {"follow_redirects", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"follow_redirects", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050052(void)
 {
-	const ZBX_FIELD field = {"post_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"post_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050053(void)
 {
-	const ZBX_FIELD field = {"http_proxy", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"http_proxy", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050054(void)
 {
-	const ZBX_FIELD	field = {"headers", "", NULL, NULL, 0, ZBX_TYPE_SHORTTEXT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"headers", "", NULL, NULL, 0, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050055(void)
 {
-	const ZBX_FIELD field = {"retrieve_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"retrieve_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050056(void)
 {
-	const ZBX_FIELD field = {"request_method", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"request_method", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050057(void)
 {
-	const ZBX_FIELD field = {"output_format", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"output_format", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050058(void)
 {
-	const ZBX_FIELD field = {"ssl_cert_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"ssl_cert_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050059(void)
 {
-	const ZBX_FIELD field = {"ssl_key_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"ssl_key_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050060(void)
 {
-	const ZBX_FIELD field = {"ssl_key_password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"ssl_key_password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050061(void)
 {
-	const ZBX_FIELD field = {"verify_peer", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"verify_peer", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050062(void)
 {
-	const ZBX_FIELD field = {"verify_host", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"verify_host", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050063(void)
 {
-	const ZBX_FIELD field = {"allow_traps", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0};
+	const zbx_db_field_t	field = {"allow_traps", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("items", &field);
 }
 
 static int	DBpatch_3050064(void)
 {
-	const ZBX_FIELD	field = {"auto_compress", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"auto_compress", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("hosts", &field);
 }
@@ -925,7 +919,7 @@ static int	DBpatch_3050097(void)
 
 static int	DBpatch_3050098(void)
 {
-	const ZBX_FIELD	field = {"name", "", NULL, NULL, 12, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"name", "", NULL, NULL, 12, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBrename_field("functions", "function", &field);
 }
@@ -953,8 +947,8 @@ static int	DBpatch_3050101(void)
 
 static int	DBpatch_3050102(void)
 {
-	DB_RESULT		result;
-	DB_ROW			row;
+	zbx_db_result_t		result;
+	zbx_db_row_t		row;
 	int			ret = SUCCEED;
 	zbx_vector_uint64_t	ids;
 
@@ -1081,49 +1075,49 @@ static int	DBpatch_3050108(void)
 
 static int	DBpatch_3050109(void)
 {
-	const ZBX_FIELD	field = {"ok_period", "5m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"ok_period", "5m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBset_default("config", &field);
 }
 
 static int	DBpatch_3050110(void)
 {
-	const ZBX_FIELD	field = {"blink_period", "2m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"blink_period", "2m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBset_default("config", &field);
 }
 
 static int	DBpatch_3050111(void)
 {
-	const ZBX_FIELD	field = {"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("events", &field);
 }
 
 static int	DBpatch_3050112(void)
 {
-	const ZBX_FIELD	field = {"acknowledged", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"acknowledged", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("problem", &field);
 }
 
 static int	DBpatch_3050113(void)
 {
-	const ZBX_FIELD	field = {"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("problem", &field);
 }
 
 static int	DBpatch_3050114(void)
 {
-	const ZBX_FIELD	field = {"old_severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"old_severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("acknowledges", &field);
 }
 
 static int	DBpatch_3050115(void)
 {
-	const ZBX_FIELD	field = {"new_severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"new_severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("acknowledges", &field);
 }
@@ -1151,16 +1145,14 @@ static int	DBpatch_3050117(void)
 
 static int	DBpatch_3050118(void)
 {
-	DB_ROW		row;
-	DB_RESULT	result;
+	zbx_db_row_t	row;
+	zbx_db_result_t	result;
 	int		ret = SUCCEED;
 	char		*sql = NULL;
 	size_t		sql_alloc = 0, sql_offset = 0;
 
 	if (0 == (DBget_program_type() & ZBX_PROGRAM_TYPE_SERVER))
 		return SUCCEED;
-
-	zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = zbx_db_select(
 			"select e.eventid,t.priority"
@@ -1180,9 +1172,8 @@ static int	DBpatch_3050118(void)
 		if (SUCCEED != (ret = zbx_db_execute_overflowed_sql(&sql, &sql_alloc, &sql_offset)))
 			goto out;
 	}
-	zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
 
-	if (16 < sql_offset && ZBX_DB_OK > zbx_db_execute("%s", sql))
+	if (ZBX_DB_OK > zbx_db_flush_overflowed_sql(sql, sql_offset))
 		ret = FAIL;
 out:
 	zbx_db_free_result(result);
@@ -1193,16 +1184,14 @@ out:
 
 static int	DBpatch_3050119(void)
 {
-	DB_ROW		row;
-	DB_RESULT	result;
+	zbx_db_row_t	row;
+	zbx_db_result_t	result;
 	int		ret = SUCCEED;
 	char		*sql = NULL;
 	size_t		sql_alloc = 0, sql_offset = 0;
 
 	if (0 == (DBget_program_type() & ZBX_PROGRAM_TYPE_SERVER))
 		return SUCCEED;
-
-	zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = zbx_db_select(
 			"select p.eventid,t.priority"
@@ -1222,9 +1211,7 @@ static int	DBpatch_3050119(void)
 			goto out;
 	}
 
-	zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-	if (16 < sql_offset && ZBX_DB_OK > zbx_db_execute("%s", sql))
+	if (ZBX_DB_OK > zbx_db_flush_overflowed_sql(sql, sql_offset))
 		ret = FAIL;
 out:
 	zbx_db_free_result(result);
@@ -1238,8 +1225,8 @@ static int	DBpatch_3050120(void)
 	int		ret = SUCCEED, action;
 	zbx_uint64_t	ackid, eventid;
 	zbx_hashset_t	eventids;
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 	char		*sql;
 	size_t		sql_alloc = 4096, sql_offset = 0;
 
@@ -1248,8 +1235,6 @@ static int	DBpatch_3050120(void)
 
 	sql = zbx_malloc(NULL, sql_alloc);
 	zbx_hashset_create(&eventids, 1000, ZBX_DEFAULT_UINT64_HASH_FUNC, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
-
-	zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = zbx_db_select("select acknowledgeid,eventid,action from acknowledges order by clock");
 	while (NULL != (row = zbx_db_fetch(result)))
@@ -1276,9 +1261,7 @@ static int	DBpatch_3050120(void)
 			goto out;
 	}
 
-	zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-	if (16 < sql_offset && ZBX_DB_OK > zbx_db_execute("%s", sql))
+	if (ZBX_DB_OK > zbx_db_flush_overflowed_sql(sql, sql_offset))
 		ret = FAIL;
 out:
 	zbx_hashset_destroy(&eventids);
@@ -1320,13 +1303,11 @@ static void	DBpatch_3050122_add_anchors(const char *src, char *dst, size_t src_l
 
 static int	DBpatch_3050122(void)
 {
-	DB_ROW		row;
-	DB_RESULT	result;
+	zbx_db_row_t	row;
+	zbx_db_result_t	result;
 	int		ret = FAIL;
 	char		*sql = NULL;
 	size_t		sql_alloc = 0, sql_offset = 0;
-
-	zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = zbx_db_select("select functionid,parameter from functions where name='logsource'");
 
@@ -1343,7 +1324,8 @@ static int	DBpatch_3050122(void)
 		/* copy leading whitespace (if any) or empty string */
 		zbx_strncpy_alloc(&processed_parameter, &param_alloc, &param_offset, orig_param, param_pos);
 
-		unquoted_parameter = zbx_function_param_unquote_dyn(orig_param + param_pos, param_len, &was_quoted);
+		unquoted_parameter = zbx_function_param_unquote_dyn_compat(orig_param + param_pos, param_len,
+				&was_quoted);
 
 		zbx_regexp_escape(&unquoted_parameter);
 
@@ -1354,7 +1336,7 @@ static int	DBpatch_3050122(void)
 		DBpatch_3050122_add_anchors(unquoted_parameter, parameter_anchored, current_len);
 		zbx_free(unquoted_parameter);
 
-		if (SUCCEED != zbx_function_param_quote(&parameter_anchored, was_quoted))
+		if (SUCCEED != zbx_function_param_quote(&parameter_anchored, was_quoted, 0))
 		{
 			zabbix_log(LOG_LEVEL_WARNING, "Cannot convert parameter \"%s\" of trigger function"
 					" logsource (functionid: %s) to regexp during database upgrade. The"
@@ -1399,13 +1381,8 @@ static int	DBpatch_3050122(void)
 			goto out;
 	}
 
-	zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-	if (16 < sql_offset)
-	{
-		if (ZBX_DB_OK > zbx_db_execute("%s", sql))
-			goto out;
-	}
+	if (ZBX_DB_OK > zbx_db_flush_overflowed_sql(sql, sql_offset))
+		goto out;
 
 	ret = SUCCEED;
 out:
@@ -1436,7 +1413,7 @@ static int	DBpatch_3050123(void)
 
 static int	DBpatch_3050124(void)
 {
-	const ZBX_FIELD	field = {"request_method", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"request_method", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBset_default("items", &field);
 }
@@ -1463,17 +1440,17 @@ static int	DBpatch_3050128(void)
 
 static int	DBpatch_3050129(void)
 {
-	const ZBX_TABLE table =
-		{"event_suppress", "event_suppressid",	0,
-			{
-				{"event_suppressid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
-				{"eventid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
-				{"maintenanceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, 0, 0},
-				{"suppress_until", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-				{0}
-			},
-			NULL
-		};
+	const zbx_db_table_t	table =
+			{"event_suppress", "event_suppressid",	0,
+				{
+					{"event_suppressid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+					{"eventid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+					{"maintenanceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, 0, 0},
+					{"suppress_until", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+					{0}
+				},
+				NULL
+			};
 
 	return DBcreate_table(&table);
 }
@@ -1495,32 +1472,33 @@ static int	DBpatch_3050132(void)
 
 static int	DBpatch_3050133(void)
 {
-	const ZBX_FIELD	field = {"eventid", NULL, "events", "eventid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
+	const zbx_db_field_t	field = {"eventid", NULL, "events", "eventid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
 
 	return DBadd_foreign_key("event_suppress", 1, &field);
 }
 
 static int	DBpatch_3050134(void)
 {
-	const ZBX_FIELD	field = {"maintenanceid", NULL, "maintenances", "maintenanceid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
+	const zbx_db_field_t	field = {"maintenanceid", NULL, "maintenances", "maintenanceid", 0, 0, 0,
+			ZBX_FK_CASCADE_DELETE};
 
 	return DBadd_foreign_key("event_suppress", 2, &field);
 }
 
 static int	DBpatch_3050135(void)
 {
-	const ZBX_TABLE table =
-		{"maintenance_tag", "maintenancetagid", 0,
-			{
-				{"maintenancetagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
-				{"maintenanceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
-				{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{"operator", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-				{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-				{0}
-			},
-			NULL
-		};
+	const zbx_db_table_t	table =
+			{"maintenance_tag", "maintenancetagid", 0,
+				{
+					{"maintenancetagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+					{"maintenanceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+					{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{"operator", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+					{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+					{0}
+				},
+				NULL
+			};
 
 	return DBcreate_table(&table);
 }
@@ -1532,28 +1510,29 @@ static int	DBpatch_3050136(void)
 
 static int	DBpatch_3050137(void)
 {
-	const ZBX_FIELD	field = {"maintenanceid", NULL, "maintenances", "maintenanceid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
+	const zbx_db_field_t	field = {"maintenanceid", NULL, "maintenances", "maintenanceid", 0, 0, 0,
+			ZBX_FK_CASCADE_DELETE};
 
 	return DBadd_foreign_key("maintenance_tag", 1, &field);
 }
 
 static int	DBpatch_3050138(void)
 {
-	const ZBX_FIELD	field = {"show_suppressed", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"show_suppressed", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("sysmaps", &field);
 }
 
 static int	DBpatch_3050139(void)
 {
-	const ZBX_FIELD	field = {"tags_evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"tags_evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("maintenances", &field);
 }
 
 static int	DBpatch_3050140(void)
 {
-	const ZBX_FIELD	field = {"pause_suppressed", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"pause_suppressed", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBrename_field("actions", "maintenance_mode", &field);
 }
@@ -1615,8 +1594,8 @@ static int	DBpatch_3050143(void)
 
 static int	DBpatch_3050144(void)
 {
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 	int		ret = FAIL;
 	zbx_db_insert_t	db_insert;
 
@@ -1693,42 +1672,42 @@ static int	DBpatch_3050146(void)
 
 static int	DBpatch_3050147(void)
 {
-	const ZBX_FIELD	field = {"http_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"http_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
 
 static int	DBpatch_3050148(void)
 {
-	const ZBX_FIELD	field = {"http_login_form", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"http_login_form", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
 
 static int	DBpatch_3050149(void)
 {
-	const ZBX_FIELD	field = {"http_strip_domains", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"http_strip_domains", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
 
 static int	DBpatch_3050150(void)
 {
-	const ZBX_FIELD	field = {"http_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"http_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
 
 static int	DBpatch_3050151(void)
 {
-	const ZBX_FIELD	field = {"ldap_configured", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"ldap_configured", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
 
 static int	DBpatch_3050152(void)
 {
-	const ZBX_FIELD	field = {"ldap_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"ldap_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0};
 
 	return DBadd_field("config", &field);
 }
@@ -1809,7 +1788,7 @@ static int	DBpatch_3050156(void)
 
 static int	DBpatch_3050157(void)
 {
-	const ZBX_FIELD	field = {"passwd", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
+	const zbx_db_field_t	field = {"passwd", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
 	return DBmodify_field_type("users", &field, NULL);
 }

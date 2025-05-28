@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -24,12 +19,18 @@ const TABFILTER_EVENT_NEWITEM = 'newitem.tabfilter';
 
 class CTabFilter extends CBaseComponent {
 
+	/**
+	 * @type {CSortable|null}
+	 */
+	#tabs_sortable = null;
+
 	constructor(target, options) {
 		super(target);
 		this._options = options;
 		// Array of CTabFilterItem objects.
 		this._items = [];
 		this._active_item = null;
+		this.selected_filter_item = null;
 		this._filters_footer = null;
 		// NodeList of available templates (<script> DOM elements).
 		this._templates = {};
@@ -41,6 +42,8 @@ class CTabFilter extends CBaseComponent {
 		this.init(options);
 		this.registerEvents();
 		this.initItemUnsavedState(this._active_item, this._active_item._data);
+
+		this.scrollIntoView(this._items[options.selected]);
 
 		if (this._timeselector instanceof CTabFilterItem) {
 			this._timeselector._data = options.timeselector;
@@ -69,7 +72,6 @@ class CTabFilter extends CBaseComponent {
 			}
 
 			if (options.selected == index) {
-				item.renderContentTemplate();
 				this.setSelectedItem(item);
 
 				if (options.expanded) {
@@ -79,23 +81,28 @@ class CTabFilter extends CBaseComponent {
 
 			index++;
 		}
+
+		if (options.expanded_timeselector) {
+			this.setSelectedItem(this._timeselector);
+			this._timeselector.setExpanded();
+		}
+
+		this.#updateSeparators();
 	}
 
 	/**
 	 * Ensures item label is visible in tab filter navigation.
 	 *
-	 * @param {CTabfilterItem} item    Filter item object.
+	 * @param {CTabFilterItem} item  Filter item object.
 	 */
 	scrollIntoView(item) {
-		let scrollable_parent = item._target.closest('.ui-sortable-container').parentNode;
-
-		scrollable_parent.scrollLeft = item._target.parentNode.offsetLeft - item._target.parentNode.clientWidth;
+		setTimeout(() => this.#tabs_sortable.scrollIntoView(item._target.parentNode, {immediate: true}));
 	}
 
 	/**
 	 * Render filter with profiles stored data to hidden container to get source url for unsaved state comparison.
 	 *
-	 * @param {CTabfilterItem} item    Selected filter object.
+	 * @param {CTabFilterItem} item    Selected filter object.
 	 * @param {object} filter_data     Selected filter object filter data.
 	 */
 	initItemUnsavedState(item, filter_data) {
@@ -122,18 +129,16 @@ class CTabFilter extends CBaseComponent {
 		let index = this._items.indexOf(item);
 
 		if (index != -1) {
+			item.delete();
+			this._items.splice(index, 1);
+			this._items.forEach((item, index) => item._index = index);
+
 			this.setSelectedItem(this._items[index - 1]);
 
 			if (item._expanded) {
 				this._active_item.setExpanded();
 			}
 
-			item.delete();
-			delete this._items[index];
-			this._items.splice(index, 1);
-			this._items.forEach((item, index) => {
-				item._index = index;
-			});
 			this._active_item.setBrowserLocation(this._active_item.getFilterParams());
 		}
 	}
@@ -202,11 +207,15 @@ class CTabFilter extends CBaseComponent {
 			return;
 		}
 
+		this._target.querySelector('a.btn-time').textContent = item.hasCustomTime()
+			? item.getCustomTimeLabel()
+			: this._timeselector._data.label;
+
 		let disabled = disable || (!this._options.support_custom_time || item.hasCustomTime()),
 			buttons = {
-				decrement_button: this._target.querySelector('button.btn-time-left'),
-				increment_button: this._target.querySelector('button.btn-time-right'),
-				zoomout_button: this._target.querySelector('button.btn-time-out')
+				decrement_button: this._target.querySelector('button.js-btn-time-left'),
+				increment_button: this._target.querySelector('button.js-btn-time-right'),
+				zoomout_button: this._target.querySelector('button.btn-time-zoomout')
 			};
 
 		this._timeselector.setDisabled(disabled);
@@ -254,7 +263,7 @@ class CTabFilter extends CBaseComponent {
 		}
 
 		body.idx = this._idx_namespace + '.' + property;
-		body._csrf_token = this._csrf_token;
+		body[CSRF_TOKEN_NAME] = this._csrf_token;
 
 		if (property !== 'properties') {
 			this._fetch[property] = new AbortController();
@@ -299,13 +308,16 @@ class CTabFilter extends CBaseComponent {
 	 * @param {CTabFilterItem} item  Item object to be set as selected item.
 	 */
 	setSelectedItem(item) {
+		if (this._active_item !== this._timeselector) {
+			this.selected_filter_item = this._active_item;
+		}
+
 		this._active_item = item;
 		this._active_item.unsetExpandedSubfilters();
 		item.setSelected();
 
-		if (item !== this._timeselector) {
+		if (item !== this._timeselector && item !== this.selected_filter_item) {
 			item._target.setAttribute('tabindex', 0);
-			this.scrollIntoView(item);
 			item.setBrowserLocationToApplyUrl();
 		}
 
@@ -317,6 +329,41 @@ class CTabFilter extends CBaseComponent {
 					_item._target.setAttribute('tabindex', -1);
 				}
 			}
+		}
+
+		this.#updateSeparators();
+	}
+
+	/**
+	 * Update separated state of items (whether to visually separate one item from another).
+	 */
+	#updateSeparators() {
+		for (let index = 0; index < this._items.length; index++) {
+			this._items[index].setSeparated(
+				index > 0 && !this._items[index].isSelected() && !this._items[index - 1].isSelected()
+			);
+		}
+	}
+
+	/**
+	 * Update separated state of items (whether to visually separate one item from another) for dragging.
+	 *
+	 * @param {number} index     Index of item being dragged.
+	 * @param {number} index_to  Overtake index.
+	 */
+	#updateSeparatorsForDragging(index, index_to) {
+		const items = [...this._items];
+
+		items.splice(index_to, 0, ...items.splice(index, 1));
+
+		for (let index = 0; index < items.length; index++) {
+			const separated_state = index > 0
+				&& index !== index_to
+				&& index !== index_to + 1
+				&& !items[index].isSelected()
+				&& !items[index - 1].isSelected();
+
+			this.#tabs_sortable.mutate(() => items[index].setSeparated(separated_state));
 		}
 	}
 
@@ -386,16 +433,27 @@ class CTabFilter extends CBaseComponent {
 						|| (item !== this._timeselector && this._active_item === this._timeselector)
 					);
 
-				if (item !== this._timeselector) {
-					if (item.isSelected()) {
+				item.setFocused();
+
+				if (item === this._timeselector) {
+					this.profileUpdate('expanded_timeselector', {
+						value_int: item._expanded ? 0 : 1
+					}).then(() => {
+						this._options.expanded_timeselector = +item._expanded;
+						this._options.expanded = false;
+					});
+				}
+				else {
+					if (item.isSelected() || this._active_item === this._timeselector) {
 						this.profileUpdate('expanded', {
 							value_int: item._expanded ? 0 : 1
 						}).then(() => {
 							this._options.expanded = +item._expanded;
+							this._options.expanded_timeselector = false;
 						});
 					}
-					else {
-						item.setFocused();
+
+					if (!item.isSelected()) {
 						item.initUnsavedState();
 						this.profileUpdate('selected', {
 							value_int: item._index
@@ -403,8 +461,6 @@ class CTabFilter extends CBaseComponent {
 							this._options.selected = item._index;
 						});
 					}
-
-					this.scrollIntoView(item);
 				}
 
 				if (item !== this._active_item) {
@@ -412,7 +468,6 @@ class CTabFilter extends CBaseComponent {
 					this.collapseAllItemsExcept(item);
 
 					if (expand) {
-						item.setFocused();
 						item.fire(TABFILTERITEM_EVENT_EXPAND);
 					}
 				}
@@ -466,34 +521,66 @@ class CTabFilter extends CBaseComponent {
 			},
 
 			/**
-			 * UI sortable update event handler. Updates tab sorting in profile.
+			 * Listener for tabs event {CSortable.EVENT_DRAG_START}.
+			 *
+			 * Updates separators of items.
+			 *
+			 * @param {Object} ev
 			 */
-			tabSortChanged: (ev, ui) => {
-				// Update order of this._items array.
-				let from,
-					to,
-					item_moved;
-				const target = ui.item[0].querySelector('[data-target] .tabfilter-item-link');
+			tabsDragStart: (ev) => {
+				this._items[ev.detail.index].setFocused();
 
-				this._items.forEach((item, index) => from = (item._target === target) ? index : from);
-				this._target.querySelectorAll('nav [data-target] .tabfilter-item-link')
-					.forEach((elm, index) => to = (elm === target) ? index : to);
+				this.#updateSeparatorsForDragging(ev.detail.index, ev.detail.index);
+			},
 
-				item_moved = this._items[from];
-				this._items.splice(from, 1);
-				this._items.splice(to, 0, item_moved);
+			/**
+			 * Listener for tabs event {CSortable.EVENT_DRAG_OVERTAKE}.
+			 *
+			 * Updates separators of items.
+			 *
+			 * @param ev
+			 */
+			tabsDragOvertake: (ev) => {
+				this.#updateSeparatorsForDragging(ev.detail.index, ev.detail.index_to);
+			},
 
-				// Tab order changed, update changes via ajax.
-				let value_str = this._items.map((item) => item._index).join(',');
+			/**
+			 * Listener for tabs event {CSortable.EVENT_DRAG_END}.
+			 *
+			 * Re-focuses the item marked as focused and updates separators of items.
+			 *
+			 * @param ev
+			 */
+			tabsDragEnd: (ev) => {
+				this._items[ev.detail.index].setFocused();
+
+				if (ev.detail.index_to == ev.detail.index) {
+					this.#updateSeparators();
+				}
+			},
+
+			/**
+			 * Listener for tabs event {CSortable.EVENT_SORT}.
+			 *
+			 * Updates tab sorting and updates separators of items.
+			 *
+			 * @param ev
+			 */
+			tabsSort: (ev) => {
+				this._items.splice(ev.detail.index_to, 0, ...this._items.splice(ev.detail.index, 1));
+
+				this.#updateSeparators();
+
+				this.#tabs_sortable.enableSorting(false);
 
 				this.profileUpdate('taborder', {
-					value_str: value_str
+					value_str: this._items.map(item => item._index).join(',')
 				})
-				.then(() => {
-					this._items.forEach((item, index) => {
-						item._index = index;
+					.then(() => {
+						this._items.forEach((item, index) => item._index = index);
+
+						this.#tabs_sortable.enableSorting();
 					});
-				});
 			},
 
 			/**
@@ -583,7 +670,7 @@ class CTabFilter extends CBaseComponent {
 								if (this._active_item !== this._items[0]) {
 									this._items[0].fire(TABFILTERITEM_EVENT_SELECT);
 									// Set selected item focus after popup menu will focus it opener element (used for ESC).
-									setTimeout(() => this._items[0].setFocused(), 0);
+									setTimeout(() => this._items[0].setFocused());
 								}
 							}
 						}]
@@ -600,7 +687,7 @@ class CTabFilter extends CBaseComponent {
 								if (this._active_item !== item) {
 									item.fire(TABFILTERITEM_EVENT_SELECT);
 									// Set selected item focus after popup menu will focus it opener element (used for ESC).
-									setTimeout(() => item.setFocused(), 0);
+									setTimeout(() => item.setFocused());
 								}
 							}
 						});
@@ -609,13 +696,7 @@ class CTabFilter extends CBaseComponent {
 					dropdown.push({items: dropdown_items});
 				}
 
-				$(this._target).menuPopup(dropdown, new jQuery.Event(ev), {
-					position: {
-						of: ev.target,
-						my: 'left bottom',
-						at: 'left top'
-					}
-				});
+				$(this._target).menuPopup(dropdown, new jQuery.Event(ev));
 			},
 
 			/**
@@ -706,16 +787,6 @@ class CTabFilter extends CBaseComponent {
 
 					cancelEvent(ev);
 				}
-			},
-
-			/**
-			 * Scroll horizontally with mouse wheel handler for sortable items container.
-			 */
-			mouseWheelHandler: (container, ev) => {
-				if ((ev.deltaY < 0 && container.scrollLeft > 0)
-						|| (ev.deltaY > 0 && container.scrollLeft < container.scrollWidth - container.clientWidth)) {
-					container.scrollBy({left: ev.deltaY});
-				}
 			}
 		}
 
@@ -727,40 +798,14 @@ class CTabFilter extends CBaseComponent {
 				.on(TABFILTERITEM_EVENT_URLSET, () => this.fire(TABFILTER_EVENT_URLSET));
 		}
 
-		$('.ui-sortable-container', this._target).sortable({
-			items: '.tabfilter-item-label:not(:first-child)',
-			update: this._events.tabSortChanged,
-			stop: (_, ui) => {
-				const $item = ui.item;
-
-				ui.item[0].classList.remove(TABFILTERITEM_STYLE_FOCUSED);
-
-				/**
-				 * Remove inline style position, left and top that stay after sortable.
-				 * This styles broken tabs layout.
-				 */
-				if ($item.css('position') === 'relative') {
-					$item.css({
-						'position': '',
-						'left': '',
-						'top': ''
-					});
-				}
-			},
-			axis: 'x',
-			containment: 'parent',
-			helper : 'clone'
-		});
-
-		const container = this._target.querySelector('.ui-sortable-container').parentNode;
-
-		try {
-			addEventListener('test', null, {get passive() {}});
-			container.addEventListener('wheel', ev => this._events.mouseWheelHandler(container, ev), {passive: true});
-		}
-		catch(e) {
-			container.addEventListener('wheel', ev => this._events.mouseWheelHandler(container, ev));
-		}
+		this.#tabs_sortable = new CSortable(this._target.querySelector('.tabfilter-tabs'), {
+			is_horizontal: true,
+			freeze_start: 1
+		})
+			.on(CSortable.EVENT_DRAG_START, this._events.tabsDragStart)
+			.on(CSortable.EVENT_DRAG_OVERTAKE, this._events.tabsDragOvertake)
+			.on(CSortable.EVENT_DRAG_END, this._events.tabsDragEnd)
+			.on(CSortable.EVENT_SORT, this._events.tabsSort);
 
 		for (const action of this._target.querySelectorAll('nav [data-action]')) {
 			action.addEventListener('click', this._events[action.getAttribute('data-action')]);

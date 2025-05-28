@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package uname
@@ -27,7 +22,8 @@ import (
 	"syscall"
 
 	"golang.org/x/sys/windows"
-	"zabbix.com/pkg/wmi"
+	"golang.zabbix.com/agent2/pkg/win32"
+	"golang.zabbix.com/agent2/pkg/wmi"
 )
 
 func getHostname(params []string) (uname string, err error) {
@@ -36,6 +32,7 @@ func getHostname(params []string) (uname string, err error) {
 	}
 
 	var mode, transform string
+	const ComputerNameDnsFullyQualified = 3
 
 	if len(params) > 0 {
 		mode = params[0]
@@ -56,6 +53,13 @@ func getHostname(params []string) (uname string, err error) {
 		if uname, err = os.Hostname(); err != nil {
 			return "", err
 		}
+	case "fqdn":
+		uname, err = win32.GetComputerNameExA(ComputerNameDnsFullyQualified)
+		if err != nil {
+			return "", err
+		}
+
+		uname = strings.Trim(uname, " .\n\r")
 	case "shorthost":
 		if uname, err = os.Hostname(); err != nil {
 			return "", err

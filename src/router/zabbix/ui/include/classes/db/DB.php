@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -26,20 +21,20 @@ class DB {
 	const DBEXECUTE_ERROR = 1;
 	const RESERVEIDS_ERROR = 2;
 	const SCHEMA_ERROR = 3;
-	const INPUT_ERROR = 4;
+	const INIT_ERROR = 4;
 
-	const TABLE_TYPE_CONFIG = 1;
-	const TABLE_TYPE_HISTORY = 2;
+	const FIELD_TYPE_INT = 0x01;
+	const FIELD_TYPE_CHAR = 0x02;
+	const FIELD_TYPE_ID = 0x04;
+	const FIELD_TYPE_FLOAT = 0x08;
+	const FIELD_TYPE_UINT = 0x10;
+	const FIELD_TYPE_BLOB = 0x20;
+	const FIELD_TYPE_TEXT = 0x40;
+	const FIELD_TYPE_CUID = 0x80;
 
-	const FIELD_TYPE_INT = 'int';
-	const FIELD_TYPE_CHAR = 'char';
-	const FIELD_TYPE_ID = 'id';
-	const FIELD_TYPE_FLOAT = 'float';
-	const FIELD_TYPE_UINT = 'uint';
-	const FIELD_TYPE_BLOB = 'blob';
-	const FIELD_TYPE_TEXT = 'text';
-	const FIELD_TYPE_NCLOB = 'nclob';
-	const FIELD_TYPE_CUID = 'cuid';
+	const SUPPORTED_FILTER_TYPES = self::FIELD_TYPE_INT | self::FIELD_TYPE_CHAR | self::FIELD_TYPE_ID |
+		self::FIELD_TYPE_FLOAT | self::FIELD_TYPE_UINT | self::FIELD_TYPE_CUID;
+	const SUPPORTED_SEARCH_TYPES = self::FIELD_TYPE_CHAR | self::FIELD_TYPE_TEXT | self::FIELD_TYPE_CUID;
 
 	private static $schema = null;
 
@@ -61,11 +56,9 @@ class DB {
 				case ZBX_DB_MYSQL:
 					self::$dbBackend = new MysqlDbBackend();
 					break;
+
 				case ZBX_DB_POSTGRESQL:
 					self::$dbBackend = new PostgresqlDbBackend();
-					break;
-				case ZBX_DB_ORACLE:
-					self::$dbBackend = new OracleDbBackend();
 					break;
 			}
 		}
@@ -201,28 +194,7 @@ class DB {
 	 */
 	public static function getSchema(?string $table = null): array {
 		if (self::$schema === null) {
-			$schema = include __DIR__.'/../../'.self::SCHEMA_FILE;
-
-			global $DB;
-
-			if ($DB['TYPE'] === ZBX_DB_ORACLE) {
-				$config = DBfetch(DBselect('SELECT dbversion_status FROM config'));
-				$dbversion_status = $config ? (array) json_decode($config['dbversion_status'], true) : [];
-
-				foreach ($dbversion_status as $dbversion) {
-					if (array_key_exists('schema_diff', $dbversion)
-							&& array_key_exists('tables', $dbversion['schema_diff'])) {
-						foreach ($dbversion['schema_diff']['tables'] as $table_name => $table_params) {
-							foreach ($table_params['fields'] as $field_name => $field) {
-								$schema[$table_name]['fields'][$field_name]['type'] = $field['type'];
-								$schema[$table_name]['fields'][$field_name]['length'] = $field['length'];
-							}
-						}
-					}
-				}
-			}
-
-			self::$schema = $schema;
+			self::$schema = include __DIR__.'/../../'.self::SCHEMA_FILE;
 		}
 
 		if ($table === null) {
@@ -272,17 +244,7 @@ class DB {
 	 * @return int
 	 */
 	public static function getFieldLength($table_name, $field_name) {
-		global $DB;
-
 		$schema = self::getSchema($table_name);
-
-		if ($schema['fields'][$field_name]['type'] == self::FIELD_TYPE_TEXT) {
-			return ($DB['TYPE'] == ZBX_DB_ORACLE) ? 2048 : 65535;
-		}
-
-		if ($schema['fields'][$field_name]['type'] == self::FIELD_TYPE_NCLOB) {
-			return 65535;
-		}
 
 		return $schema['fields'][$field_name]['length'];
 	}
@@ -327,7 +289,7 @@ class DB {
 		$updated_values = [];
 
 		// Discard field names not existing in the target table.
-		$fields = array_intersect_key(DB::getSchema($table_name)['fields'], $new_values);
+		$fields = array_intersect_key(self::getSchema($table_name)['fields'], $new_values);
 
 		foreach ($fields as $name => $spec) {
 			if (!array_key_exists($name, $old_values)) {
@@ -335,26 +297,18 @@ class DB {
 				continue;
 			}
 
-			switch ($spec['type']) {
-				case DB::FIELD_TYPE_ID:
-					if (bccomp($new_values[$name], $old_values[$name]) != 0) {
-						$updated_values[$name] = $new_values[$name];
-					}
-					break;
-
-				case DB::FIELD_TYPE_INT:
-				case DB::FIELD_TYPE_UINT:
-				case DB::FIELD_TYPE_FLOAT:
-					if ($new_values[$name] != $old_values[$name]) {
-						$updated_values[$name] = $new_values[$name];
-					}
-					break;
-
-				default:
-					if ($new_values[$name] !== $old_values[$name]) {
-						$updated_values[$name] = $new_values[$name];
-					}
-					break;
+			if ($spec['type'] & self::FIELD_TYPE_ID) {
+				if (bccomp($new_values[$name], $old_values[$name]) != 0) {
+					$updated_values[$name] = $new_values[$name];
+				}
+			}
+			elseif ($spec['type'] & (self::FIELD_TYPE_INT | self::FIELD_TYPE_UINT | self::FIELD_TYPE_FLOAT)) {
+				if ($new_values[$name] != $old_values[$name]) {
+					$updated_values[$name] = $new_values[$name];
+				}
+			}
+			elseif ($new_values[$name] !== $old_values[$name]) {
+				$updated_values[$name] = $new_values[$name];
 			}
 		}
 
@@ -390,100 +344,49 @@ class DB {
 				}
 			}
 			else {
-				switch ($tableSchema['fields'][$field]['type']) {
-					case self::FIELD_TYPE_CUID:
-					case self::FIELD_TYPE_CHAR:
-						$length = mb_strlen($values[$field]);
+				if ($tableSchema['fields'][$field]['type'] & (self::FIELD_TYPE_CUID | self::FIELD_TYPE_CHAR)) {
+					$length = mb_strlen($values[$field]);
 
-						if ($length > $tableSchema['fields'][$field]['length']) {
-							self::exception(self::SCHEMA_ERROR, _s('Value "%1$s" is too long for field "%2$s" - %3$d characters. Allowed length is %4$d characters.',
-								$values[$field], $field, $length, $tableSchema['fields'][$field]['length']));
-						}
-						$values[$field] = zbx_dbstr($values[$field]);
-						break;
-
-					case self::FIELD_TYPE_ID:
-					case self::FIELD_TYPE_UINT:
-						if (!zbx_ctype_digit($values[$field])) {
-							self::exception(self::DBEXECUTE_ERROR, _s('Incorrect value "%1$s" for unsigned int field "%2$s".', $values[$field], $field));
-						}
-						$values[$field] = zbx_dbstr($values[$field]);
-						break;
-
-					case self::FIELD_TYPE_INT:
-						if (!zbx_is_int($values[$field])) {
-							self::exception(self::DBEXECUTE_ERROR, _s('Incorrect value "%1$s" for int field "%2$s".', $values[$field], $field));
-						}
-						$values[$field] = zbx_dbstr($values[$field]);
-						break;
-
-					case self::FIELD_TYPE_FLOAT:
-						if (!is_numeric($values[$field])) {
-							self::exception(self::DBEXECUTE_ERROR, _s('Incorrect value "%1$s" for float field "%2$s".', $values[$field], $field));
-						}
-						$values[$field] = zbx_dbstr($values[$field]);
-						break;
-
-					case self::FIELD_TYPE_TEXT:
-						if ($DB['TYPE'] == ZBX_DB_ORACLE) {
-							$length = mb_strlen($values[$field]);
-
-							if ($length > 2048) {
-								self::exception(self::SCHEMA_ERROR, _s('Value "%1$s" is too long for field "%2$s" - %3$d characters. Allowed length is %4$d characters.',
-									$values[$field], $field, $length, 2048));
-							}
-						}
-						$values[$field] = zbx_dbstr($values[$field]);
-						break;
-
-					case self::FIELD_TYPE_NCLOB:
-						// Using strlen because 4000 bytes is largest possible string literal in oracle query.
-						if ($DB['TYPE'] == ZBX_DB_ORACLE && strlen($values[$field]) > ORACLE_MAX_STRING_SIZE) {
-							$chunks = zbx_dbstr(self::chunkMultibyteStr($values[$field], ORACLE_MAX_STRING_SIZE));
-							$values[$field] = 'TO_NCLOB('.implode(') || TO_NCLOB(', $chunks).')';
-						}
-						else {
+					if ($length > $tableSchema['fields'][$field]['length']) {
+						self::exception(self::SCHEMA_ERROR, _s('Value "%1$s" is too long for field "%2$s" - %3$d characters. Allowed length is %4$d characters.',
+							$values[$field], $field, $length, $tableSchema['fields'][$field]['length']));
+					}
+					$values[$field] = zbx_dbstr($values[$field]);
+				}
+				elseif ($tableSchema['fields'][$field]['type'] & (self::FIELD_TYPE_ID | self::FIELD_TYPE_UINT)) {
+					if (!zbx_ctype_digit($values[$field])) {
+						self::exception(self::DBEXECUTE_ERROR, _s('Incorrect value "%1$s" for unsigned int field "%2$s".', $values[$field], $field));
+					}
+					$values[$field] = zbx_dbstr($values[$field]);
+				}
+				elseif ($tableSchema['fields'][$field]['type'] & self::FIELD_TYPE_INT) {
+					if (!zbx_is_int($values[$field])) {
+						self::exception(self::DBEXECUTE_ERROR, _s('Incorrect value "%1$s" for int field "%2$s".', $values[$field], $field));
+					}
+					$values[$field] = zbx_dbstr($values[$field]);
+				}
+				elseif ($tableSchema['fields'][$field]['type'] & self::FIELD_TYPE_FLOAT) {
+					if (!is_numeric($values[$field])) {
+						self::exception(self::DBEXECUTE_ERROR, _s('Incorrect value "%1$s" for float field "%2$s".', $values[$field], $field));
+					}
+					$values[$field] = zbx_dbstr($values[$field]);
+				}
+				elseif ($tableSchema['fields'][$field]['type'] & self::FIELD_TYPE_TEXT) {
+					$values[$field] = zbx_dbstr($values[$field]);
+				}
+				elseif ($tableSchema['fields'][$field]['type'] & self::FIELD_TYPE_BLOB) {
+					switch ($DB['TYPE']) {
+						case ZBX_DB_MYSQL:
 							$values[$field] = zbx_dbstr($values[$field]);
-						}
-						break;
+							break;
 
-					case self::FIELD_TYPE_BLOB:
-						switch ($DB['TYPE']) {
-							case ZBX_DB_MYSQL:
-								$values[$field] = zbx_dbstr($values[$field]);
-								break;
-
-							case ZBX_DB_POSTGRESQL:
-								$values[$field] = "'".pg_escape_bytea($DB['DB'], $values[$field])."'";
-								break;
-
-							case ZBX_DB_ORACLE:
-								// Do nothing; Check CImage.php to see how to update BLOB data with ORACLE DB.
-								break;
-						}
+						case ZBX_DB_POSTGRESQL:
+							$values[$field] = "'".pg_escape_bytea($DB['DB'], $values[$field])."'";
+							break;
+					}
 				}
 			}
 		}
-	}
-
-	/**
-	 * @param string $str
-	 * @param int $chunk_size
-	 *
-	 * @return array
-	 */
-	public static function chunkMultibyteStr(string $str, int $chunk_size): array {
-		$chunks = [];
-		$offset = 0;
-		$size = strlen($str);
-
-		while ($offset < $size) {
-			$chunk = mb_strcut($str, $offset, $chunk_size);
-			$chunks[] = $chunk;
-			$offset = strlen($chunk) + $offset;
-		}
-
-		return $chunks;
 	}
 
 	/**
@@ -557,21 +460,12 @@ class DB {
 
 		$mandatory_fields = [];
 
-		switch ($DB['TYPE']) {
-			case ZBX_DB_MYSQL:
-				foreach ($table_schema['fields'] as $name => $field) {
-					if ($field['type'] == self::FIELD_TYPE_TEXT || $field['type'] == self::FIELD_TYPE_NCLOB) {
-						$mandatory_fields += [$name => $field['default']];
-					}
+		if ($DB['TYPE'] === ZBX_DB_MYSQL) {
+			foreach ($table_schema['fields'] as $name => $field) {
+				if ($field['type'] & self::FIELD_TYPE_TEXT) {
+					$mandatory_fields += [$name => $field['default']];
 				}
-				break;
-
-			case ZBX_DB_ORACLE:
-				foreach ($table_schema['fields'] as $name => $field) {
-					if ($field['type'] == self::FIELD_TYPE_BLOB) {
-						$mandatory_fields += [$name => 'EMPTY_BLOB()'];
-					}
-				}
+			}
 		}
 
 		return $mandatory_fields;
@@ -589,23 +483,20 @@ class DB {
 		$table_schema = self::getSchema($table);
 		$resultids = [];
 
-		if ($table_schema['fields'][$table_schema['key']]['type'] === DB::FIELD_TYPE_ID) {
+		if ($table_schema['fields'][$table_schema['key']]['type'] & self::FIELD_TYPE_ID) {
 			$id = self::reserveIds($table, count($values));
 		}
 
 		foreach ($values as $key => &$row) {
-			switch ($table_schema['fields'][$table_schema['key']]['type']) {
-				case DB::FIELD_TYPE_ID:
-					$resultids[$key] = $id;
-					$row = [$table_schema['key'] => $id] + $row;
-					$id = bcadd($id, 1, 0);
-					break;
-
-				case DB::FIELD_TYPE_CUID:
-					$id = CCuid::generate();
-					$resultids[$key] = $id;
-					$row = [$table_schema['key'] => $id] + $row;
-					break;
+			if ($table_schema['fields'][$table_schema['key']]['type'] & self::FIELD_TYPE_ID) {
+				$resultids[$key] = $id;
+				$row = [$table_schema['key'] => $id] + $row;
+				$id = bcadd($id, 1, 0);
+			}
+			elseif ($table_schema['fields'][$table_schema['key']]['type'] & self::FIELD_TYPE_CUID) {
+				$id = CCuid::generate();
+				$resultids[$key] = $id;
+				$row = [$table_schema['key'] => $id] + $row;
 			}
 		}
 		unset($row);
@@ -639,6 +530,7 @@ class DB {
 			$row += $mandatory_fields;
 
 			self::checkValueTypes($table_schema, $row);
+			self::uppercaseValues($table, $row);
 		}
 		unset($row);
 
@@ -675,6 +567,8 @@ class DB {
 			if (empty($row['values'])) {
 				self::exception(self::DBEXECUTE_ERROR, _s('Cannot perform update statement on table "%1$s" without values.', $table));
 			}
+
+			self::uppercaseValues($table, $row['values']);
 
 			// set creation
 			$sqlSet = '';
@@ -806,88 +700,12 @@ class DB {
 
 		// delete remaining records
 		if ($oldRecords) {
-			DB::delete($tableName, [
+			self::delete($tableName, [
 				$pk => array_keys($oldRecords)
 			]);
 		}
 
 		return $newRecords;
-	}
-
-	/**
-	 * Replaces the records given in $groupedOldRecords with the ones given in $groupedNewRecords.
-	 *
-	 * This method can be used to replace related objects in one-to-many relations. Both old and new records
-	 * must be grouped by the ID of the record they belong to. The records will be matched by position, instead of
-	 * the primary key as in DB::replace(). That is, the first new record will update the first old one, second new
-	 * record - the second old one, etc. Since the records are matched by position, the new records should not contain
-	 * primary keys.
-	 *
-	 * Example 1:
-	 * $old = array(2 => array( array('gitemid' => 1, 'color' => 'FF0000') ));
-	 * $new = array(2 => array( array('color' => '00FF00') ));
-	 * var_dump(DB::replaceByPosition('items', $old, $new));
-	 * // array(array('gitemid' => 1, 'color' => '00FF00'))
-	 *
-	 * The new record updated the old one.
-	 *
-	 * Example 2:
-	 * $old = array(2 => array( array('gitemid' => 1, 'color' => 'FF0000') ));
-	 * $new = array(
-	 *     2 => array(
-	 *         array('color' => '00FF00'),
-	 *         array('color' => '0000FF')
-	 *     )
-	 * );
-	 * var_dump(DB::replaceByPosition('items', $old, $new));
-	 * // array(array('gitemid' => 1, 'color' => '00FF00'), array('gitemid' => 2, 'color' => '0000FF'))
-	 *
-	 * The first record was updated, the second one - created.
-	 *
-	 * Example 3:
-	 * $old = array(
-	 *     2 => array(
-	 *         array('gitemid' => 1, 'color' => 'FF0000'),
-	 *         array('gitemid' => 2, 'color' => '0000FF')
-	 *     )
-	 * );
-	 * $new = array(2 => array( array('color' => '00FF00') ));
-	 * var_dump(DB::replaceByPosition('items', $old, $new));
-	 * // array(array('gitemid' => 1, 'color' => '00FF00'))
-	 *
-	 * The first record was updated, the second one - deleted.
-	 *
-	 * @param string 	$tableName			table to update
-	 * @param array 	$groupedOldRecords	grouped old records
-	 * @param array 	$groupedNewRecords	grouped new records
-	 *
-	 * @return array	array of new records not grouped (!).
-	 */
-	public static function replaceByPosition($tableName, array $groupedOldRecords, array $groupedNewRecords) {
-		$pk = self::getPk($tableName);
-
-		$allOldRecords = [];
-		$allNewRecords = [];
-		foreach ($groupedNewRecords as $key => $newRecords) {
-			// if records exist for the parent object - replace them, otherwise create new records
-			if (isset($groupedOldRecords[$key])) {
-				$oldRecords = $groupedOldRecords[$key];
-
-				// updated the records by position
-				$newRecords = self::mergeRecords($oldRecords, $newRecords, $pk);
-
-				foreach ($oldRecords as $record) {
-					$allOldRecords[] = $record;
-				}
-			}
-
-			foreach ($newRecords as $record) {
-				$allNewRecords[] = $record;
-			}
-		}
-
-		// replace the old records with the new ones
-		return self::replace($tableName, $allOldRecords, $allNewRecords);
 	}
 
 	/**
@@ -909,30 +727,6 @@ class DB {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Replace each record in $oldRecords with a corresponding record in $newRecords, but keep the old record IDs.
-	 * The records are match by position, that is, the first new record, replaces the first old record and etc.
-	 * If there are less $newRecords than $oldRecords, the remaining old records will be discarded.
-	 *
-	 * @param array 	$oldRecords		array of old records
-	 * @param array 	$newRecords		array of new records
-	 * @param string 	$pk				name of the private key column
-	 *
-	 * @return array	array of new records with the primary keys from the old ones
-	 */
-	protected static function mergeRecords(array $oldRecords, array $newRecords, $pk) {
-		$result = [];
-		foreach ($newRecords as $i => $record) {
-			if (isset($oldRecords[$i])) {
-				$record[$pk] = $oldRecords[$i][$pk];
-			}
-
-			$result[] = $record;
-		}
-
-		return $result;
 	}
 
 	/**
@@ -1082,7 +876,7 @@ class DB {
 	 *
 	 * @return string
 	 */
-	public static function uppercaseField(string $field_name, string $table_name, string $table_alias = null): string {
+	public static function uppercaseField(string $field_name, string $table_name, ?string $table_alias = null): string {
 		if ($table_alias === null) {
 			$table_alias = $table_name;
 		}
@@ -1091,7 +885,23 @@ class DB {
 			return $table_alias.'.name_upper';
 		}
 
+		if ($field_name === 'name_resolved' && self::hasField($table_name, 'name_resolved_upper')) {
+			return $table_alias.'.name_resolved_upper';
+		}
+
 		return 'UPPER('.$table_alias.'.'.$field_name.')';
+	}
+
+	/**
+	 * Convert field values to uppercase.
+	 *
+	 * @param string $table_name
+	 * @param array  $row
+	 */
+	public static function uppercaseValues(string $table_name, array &$row): void {
+		if (array_key_exists('name_resolved', $row) && self::hasField($table_name, 'name_resolved_upper')) {
+			$row['name_resolved_upper'] = 'UPPER('.$row['name_resolved'].')';
+		}
 	}
 
 	/**
@@ -1188,18 +998,14 @@ class DB {
 			$field_schema = $table_schema['fields'][$pk];
 			$field_name = self::fieldId($pk, $table_alias);
 
-			switch ($field_schema['type']) {
-				case self::FIELD_TYPE_ID:
-					$sql_parts['where'][] = dbConditionId($field_name, $options[$pk_option]);
-					break;
-
-				case self::FIELD_TYPE_INT:
-				case self::FIELD_TYPE_UINT:
-					$sql_parts['where'][] = dbConditionInt($field_name, $options[$pk_option]);
-					break;
-
-				default:
-					$sql_parts['where'][] = dbConditionString($field_name, $options[$pk_option]);
+			if ($field_schema['type'] & self::FIELD_TYPE_ID) {
+				$sql_parts['where'][] = dbConditionId($field_name, $options[$pk_option]);
+			}
+			elseif ($field_schema['type'] & (self::FIELD_TYPE_INT | self::FIELD_TYPE_UINT)) {
+				$sql_parts['where'][] = dbConditionInt($field_name, $options[$pk_option]);
+			}
+			else {
+				$sql_parts['where'][] = dbConditionString($field_name, $options[$pk_option]);
 			}
 		}
 
@@ -1229,10 +1035,7 @@ class DB {
 	private static function applyQuerySearchOptions($table_name, array $options, $table_alias, array $sql_parts) {
 		global $DB;
 
-		$table_schema = DB::getSchema($table_name);
-		$unsupported_types = [self::FIELD_TYPE_INT, self::FIELD_TYPE_ID, self::FIELD_TYPE_FLOAT, self::FIELD_TYPE_UINT,
-			self::FIELD_TYPE_BLOB
-		];
+		$table_schema = self::getSchema($table_name);
 
 		$start = $options['startSearch'] ? '' : '%';
 		$glue = $options['searchByAny'] ? ' OR ' : ' AND ';
@@ -1248,7 +1051,7 @@ class DB {
 
 			$field_schema = $table_schema['fields'][$field_name];
 
-			if (in_array($field_schema['type'], $unsupported_types)) {
+			if (($field_schema['type'] & self::SUPPORTED_SEARCH_TYPES) == 0) {
 				self::exception(self::SCHEMA_ERROR,
 					vsprintf('%s: field "%s.%s" has an unsupported type.', [__FUNCTION__, $table_name, $field_name])
 				);
@@ -1261,16 +1064,7 @@ class DB {
 			foreach ((array) $patterns as $pattern) {
 				// escaping parameter that is about to be used in LIKE statement
 				$pattern = mb_strtoupper(strtr($pattern, ['!' => '!!', '%' => '!%', '_' => '!_']));
-				$pattern = $start.$pattern.'%';
-
-				if ($DB['TYPE'] == ZBX_DB_ORACLE && $field_schema['type'] === DB::FIELD_TYPE_NCLOB
-						&& strlen($pattern) > ORACLE_MAX_STRING_SIZE) {
-					$chunks = zbx_dbstr(DB::chunkMultibyteStr($pattern, ORACLE_MAX_STRING_SIZE));
-					$pattern = 'TO_NCLOB('.implode(') || TO_NCLOB(', $chunks).')';
-				}
-				else {
-					$pattern = zbx_dbstr($pattern);
-				}
+				$pattern = zbx_dbstr($start.$pattern.'%');
 
 				$search[] = self::uppercaseField($field_name, $table_name, $table_alias).' LIKE '.$pattern." ESCAPE '!'";
 			}
@@ -1310,7 +1104,7 @@ class DB {
 
 			$field_schema = $table_schema['fields'][$field_name];
 
-			if ($field_schema['type'] == self::FIELD_TYPE_TEXT || $field_schema['type'] == self::FIELD_TYPE_NCLOB) {
+			if (($field_schema['type'] & self::SUPPORTED_FILTER_TYPES) == 0) {
 				self::exception(self::SCHEMA_ERROR,
 					vsprintf('%s: field "%s.%s" has an unsupported type.', [__FUNCTION__, $table_name, $field_name])
 				);
@@ -1324,18 +1118,14 @@ class DB {
 				$value = [$value];
 			}
 
-			switch ($field_schema['type']) {
-				case self::FIELD_TYPE_ID:
-					$filter[] = dbConditionId(self::fieldId($field_name, $table_alias), $value);
-					break;
-
-				case self::FIELD_TYPE_INT:
-				case self::FIELD_TYPE_UINT:
-					$filter[] = dbConditionInt(self::fieldId($field_name, $table_alias), $value);
-					break;
-
-				default:
-					$filter[] = dbConditionString(self::fieldId($field_name, $table_alias), $value);
+			if ($field_schema['type'] & self::FIELD_TYPE_ID) {
+				$filter[] = dbConditionId(self::fieldId($field_name, $table_alias), $value);
+			}
+			elseif ($field_schema['type'] & (self::FIELD_TYPE_INT | self::FIELD_TYPE_UINT)) {
+				$filter[] = dbConditionInt(self::fieldId($field_name, $table_alias), $value);
+			}
+			else {
+				$filter[] = dbConditionString(self::fieldId($field_name, $table_alias), $value);
 			}
 		}
 
@@ -1344,6 +1134,60 @@ class DB {
 		}
 
 		return $sql_parts;
+	}
+
+	/**
+	 * Get array of the field names by which filtering is supported from the given table.
+	 * If $output_fields parameter is given, get filterable fields among them in scope of the given table name.
+	 *
+	 * @param string     $table_name
+	 * @param array|null $output_fields
+	 *
+	 * @return array
+	 */
+	public static function getFilterFields(string $table_name, ?array $output_fields = null): array {
+		$table_schema = self::getSchema($table_name);
+
+		if ($output_fields !== null) {
+			$table_schema['fields'] = array_intersect_key($table_schema['fields'], array_flip($output_fields));
+		}
+
+		$filter_fields = [];
+
+		foreach ($table_schema['fields'] as $field_name => $field_schema) {
+			if ($field_schema['type'] & self::SUPPORTED_FILTER_TYPES) {
+				$filter_fields[] = $field_name;
+			}
+		}
+
+		return $filter_fields;
+	}
+
+	/**
+	 * Get array of the field names by which searching is supported from the given table.
+	 * If $output_fields parameter is given, get searchable fields among them in scope of the given table name.
+	 *
+	 * @param string     $table_name
+	 * @param array|null $output_fields
+	 *
+	 * @return array
+	 */
+	public static function getSearchFields(string $table_name, ?array $output_fields = null): array {
+		$table_schema = self::getSchema($table_name);
+
+		if ($output_fields !== null) {
+			$table_schema['fields'] = array_intersect_key($table_schema['fields'], array_flip($output_fields));
+		}
+
+		$search_fields = [];
+
+		foreach ($table_schema['fields'] as $field_name => $field_schema) {
+			if ($field_schema['type'] & self::SUPPORTED_SEARCH_TYPES) {
+				$search_fields[] = $field_name;
+			}
+		}
+
+		return $search_fields;
 	}
 
 	/**

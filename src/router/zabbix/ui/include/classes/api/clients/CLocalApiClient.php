@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -54,7 +49,7 @@ class CLocalApiClient extends CApiClient {
 	 * @param string $requestMethod  API method.
 	 * @param array  $params         API parameters.
 	 * @param array  $auth
-	 * @param int    $auth['type']   CJsonRpc::AUTH_TYPE_PARAM, CJsonRpc::AUTH_TYPE_HEADER, CJsonRpc::AUTH_TYPE_COOKIE
+	 * @param int    $auth['type']   CJsonRpc::AUTH_TYPE_HEADER, CJsonRpc::AUTH_TYPE_COOKIE
 	 * @param string $auth['auth']   Authentication token.
 	 *
 	 * @return CApiClientResponse
@@ -86,21 +81,12 @@ class CLocalApiClient extends CApiClient {
 		$requiresAuthentication = $this->requiresAuthentication($api, $method);
 
 		// check that no authentication token is passed to methods that don't require it
-		if (!$requiresAuthentication) {
-			if ($auth['type'] == CJsonRpc::AUTH_TYPE_COOKIE) {
-				$auth['auth'] = null;
-			}
+		if (!$requiresAuthentication && $auth['type'] != CJsonRpc::AUTH_TYPE_COOKIE && $auth['auth'] !== null) {
+			$error = _('The "%1$s.%2$s" method must be called without authorization header.');
+			$response->errorCode = ZBX_API_ERROR_PARAMETERS;
+			$response->errorMessage = _params($error, [$requestApi, $requestMethod]);
 
-			if ($auth['auth'] !== null) {
-				$error = $auth['type'] == CJsonRpc::AUTH_TYPE_HEADER
-					? _('The "%1$s.%2$s" method must be called without authorization header.')
-					: _('The "%1$s.%2$s" method must be called without the "auth" parameter.');
-
-				$response->errorCode = ZBX_API_ERROR_PARAMETERS;
-				$response->errorMessage = _params($error, [$requestApi, $requestMethod]);
-
-				return $response;
-			}
+			return $response;
 		}
 
 		$newTransaction = false;
@@ -132,7 +118,11 @@ class CLocalApiClient extends CApiClient {
 
 			// if the method was called successfully - commit the transaction
 			if ($newTransaction) {
-				DBend(true);
+				$committed = DBend(true);
+
+				if (!$committed && APP::getMode() === APP::EXEC_MODE_API) {
+					throw new DBException(_('Database error occurred.'), DB::DBEXECUTE_ERROR);
+				}
 			}
 
 			$response->data = $result;
@@ -142,7 +132,11 @@ class CLocalApiClient extends CApiClient {
 				// if we're calling user.login and authentication failed - commit the transaction to save the
 				// failed attempt data
 				if ($api === 'user' && $method === 'login') {
-					DBend(true);
+					$committed = DBend(true);
+
+					if (!$committed) {
+						$e = new DBException(_('Database error occurred.'), DB::DBEXECUTE_ERROR);
+					}
 				}
 				// otherwise - revert the transaction
 				else {
@@ -150,7 +144,16 @@ class CLocalApiClient extends CApiClient {
 				}
 			}
 
-			$response->errorCode = ($e instanceof APIException) ? $e->getCode() : ZBX_API_ERROR_INTERNAL;
+			if ($e instanceof APIException) {
+				$response->errorCode = $e->getCode();
+			}
+			elseif ($e instanceof DBException) {
+				$response->errorCode = ZBX_API_ERROR_DB;
+			}
+			else {
+				$response->errorCode = ZBX_API_ERROR_INTERNAL;
+			}
+
 			$response->errorMessage = $e->getMessage();
 
 			// add debug data
@@ -218,8 +221,7 @@ class CLocalApiClient extends CApiClient {
 	protected function requiresAuthentication($api, $method) {
 		return !(($api === 'user' && $method === 'login')
 			|| ($api === 'user' && $method === 'checkauthentication')
-			|| ($api === 'apiinfo' && $method === 'version')
-			|| ($api === 'settings' && $method === 'getglobal'));
+			|| ($api === 'apiinfo' && $method === 'version'));
 	}
 
 	/**

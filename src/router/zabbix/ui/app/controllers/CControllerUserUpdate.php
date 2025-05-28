@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -71,7 +66,9 @@ class CControllerUserUpdate extends CControllerUserUpdateGeneral {
 		if (!$ret) {
 			switch ($error) {
 				case self::VALIDATION_ERROR:
-					$response = new CControllerResponseRedirect('zabbix.php?action=user.edit');
+					$response = new CControllerResponseRedirect(
+						(new CUrl('zabbix.php'))->setArgument('action', 'user.edit')
+					);
 					$response->setFormData($this->getInputAll());
 					CMessageHelper::setErrorTitle(_('Cannot update user'));
 					$this->setResponse($response);
@@ -99,7 +96,10 @@ class CControllerUserUpdate extends CControllerUserUpdateGeneral {
 	}
 
 	protected function doAction() {
-		$user = ['roleid' => 0];
+		$user = [
+			'roleid' => 0,
+			'medias' => $this->getInputUserMedia()
+		];
 
 		$this->getInputs($user, ['userid', 'username', 'name', 'surname', 'lang', 'timezone', 'theme', 'autologin',
 			'autologout', 'refresh', 'rows_per_page', 'url', 'roleid'
@@ -125,7 +125,6 @@ class CControllerUserUpdate extends CControllerUserUpdateGeneral {
 		}
 		else {
 			$user['usrgrps'] = zbx_toObject($this->getInput('user_groups', []), 'usrgrpid');
-			$user['medias'] = $this->getInputUserMedia();
 		}
 
 		$result = (bool) API::User()->update($user);
@@ -135,16 +134,17 @@ class CControllerUserUpdate extends CControllerUserUpdateGeneral {
 				redirect('index.php');
 			}
 
-			$response = new CControllerResponseRedirect((new CUrl('zabbix.php'))
-				->setArgument('action', 'user.list')
-				->setArgument('page', CPagerHelper::loadPage('user.list', null))
+			$response = new CControllerResponseRedirect(
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'user.list')
+					->setArgument('page', CPagerHelper::loadPage('user.list', null))
 			);
 			$response->setFormData(['uncheck' => '1']);
 			CMessageHelper::setSuccessTitle(_('User updated'));
 		}
 		else {
-			$response = new CControllerResponseRedirect((new CUrl('zabbix.php'))
-				->setArgument('action', 'user.edit')
+			$response = new CControllerResponseRedirect(
+				(new CUrl('zabbix.php'))->setArgument('action', 'user.edit')
 			);
 			$response->setFormData($this->getInputAll());
 			CMessageHelper::setErrorTitle(_('Cannot update user'));

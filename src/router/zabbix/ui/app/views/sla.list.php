@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -23,9 +18,6 @@
  * @var CView $this
  * @var array $data
  */
-
-$this->addJsFile('class.tagfilteritem.js');
-$this->addJsFile('class.calendar.js');
 
 $this->includeJsFile('sla.list.js.php');
 
@@ -94,7 +86,9 @@ $header = [
 	make_sorting_header(_('Status'), 'status', $data['sort'], $data['sortorder'], $view_url)
 ];
 
-$sla_list = (new CTableInfo())->setHeader($header);
+$sla_list = (new CTableInfo())
+	->setHeader($header)
+	->setPageNavigation($data['paging']);
 
 foreach ($data['slas'] as $slaid => $sla) {
 	if ($data['has_access'][CRoleHelper::ACTIONS_MANAGE_SLA]) {
@@ -130,14 +124,18 @@ foreach ($data['slas'] as $slaid => $sla) {
 		$sla_report_tag = null;
 	}
 
+	$sla_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'sla.edit')
+		->setArgument('slaid', $slaid)
+		->getUrl();
+
 	$row = [
 		$data['has_access'][CRoleHelper::ACTIONS_MANAGE_SLA]
 			? new CCheckBox('slaids['.$slaid.']', $slaid)
 			: null,
 		(new CCol($data['has_access'][CRoleHelper::ACTIONS_MANAGE_SLA]
-			? (new CLink($sla['name']))
-				->addClass('js-edit-sla')
-				->setAttribute('data-slaid', $slaid)
+			? new CLink($sla['name'], $sla_url)
 			: $sla['name']
 		))->addClass(ZBX_STYLE_WORDBREAK),
 		CSlaHelper::getSloTag((float) $sla['slo']),
@@ -146,7 +144,7 @@ foreach ($data['slas'] as $slaid => $sla) {
 		$sla['timezone'] !== ZBX_DEFAULT_TIMEZONE
 			? $sla['timezone']
 			: CTimezoneHelper::getTitle(CTimezoneHelper::getSystemTimezone(), _('System default')),
-		CSlaHelper::getScheduleTag($sla['schedule']),
+		CSlaHelper::getScheduleCaption($sla['schedule']),
 		$sla_report_tag,
 		$status_tag
 	];
@@ -154,7 +152,7 @@ foreach ($data['slas'] as $slaid => $sla) {
 	$sla_list->addRow($row);
 }
 
-$form->addItem([$sla_list, $data['paging']]);
+$form->addItem($sla_list);
 
 if ($data['has_access'][CRoleHelper::ACTIONS_MANAGE_SLA]) {
 	$form->addItem(
@@ -163,19 +161,19 @@ if ($data['has_access'][CRoleHelper::ACTIONS_MANAGE_SLA]) {
 				'content' => (new CSimpleButton(_('Enable')))
 					->addClass(ZBX_STYLE_BTN_ALT)
 					->addClass('js-massenable-sla')
-					->addClass('no-chkbxrange')
+					->addClass('js-no-chkbxrange')
 			],
 			'sla.massdisable' => [
 				'content' => (new CSimpleButton(_('Disable')))
 					->addClass(ZBX_STYLE_BTN_ALT)
 					->addClass('js-massdisable-sla')
-					->addClass('no-chkbxrange')
+					->addClass('js-no-chkbxrange')
 			],
 			'sla.massdelete' => [
 				'content' => (new CSimpleButton(_('Delete')))
 					->addClass(ZBX_STYLE_BTN_ALT)
 					->addClass('js-massdelete-sla')
-					->addClass('no-chkbxrange')
+					->addClass('js-no-chkbxrange')
 			]
 		], 'sla')
 	);

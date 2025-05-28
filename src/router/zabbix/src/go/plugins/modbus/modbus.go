@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 /*
@@ -30,12 +25,12 @@ import (
 	"fmt"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/conf"
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
 	named "github.com/BurntSushi/locker"
 	"github.com/goburrow/modbus"
 	mblib "github.com/goburrow/modbus"
+	"golang.zabbix.com/sdk/conf"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 // Plugin -
@@ -58,9 +53,6 @@ type Session struct {
 
 // PluginOptions -
 type PluginOptions struct {
-	// Timeout is the maximum time for waiting when a request has to be done. Default value equals the global timeout.
-	Timeout int `conf:"optional,range=1:30"`
-
 	// Sessions stores pre-defined named sets of connections settings.
 	Sessions map[string]*Session `conf:"optional"`
 }
@@ -166,7 +158,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		return nil, fmt.Errorf("Invalid number of parameters:%d", len(params))
 	}
 
-	timeout := p.options.Timeout
+	timeout := ctx.Timeout()
 	session, ok := p.options.Sessions[params[0]]
 	if ok {
 		if session.Timeout > 0 {
@@ -206,12 +198,8 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 // Configure implements the Configurator interface.
 // Initializes configuration structures.
 func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
-	if err := conf.Unmarshal(options, &p.options); err != nil {
+	if err := conf.UnmarshalStrict(options, &p.options); err != nil {
 		p.Errf("cannot unmarshal configuration options: %s", err)
-	}
-
-	if p.options.Timeout == 0 {
-		p.options.Timeout = global.Timeout
 	}
 }
 
@@ -223,12 +211,9 @@ func (p *Plugin) Validate(options interface{}) error {
 		err  error
 	)
 
-	if err = conf.Unmarshal(options, &opts); err != nil {
+	err = conf.UnmarshalStrict(options, &opts)
+	if err != nil {
 		return err
-	}
-
-	if opts.Timeout > 30 || opts.Timeout < 0 {
-		return fmt.Errorf("Unacceptable Timeout value:%d", opts.Timeout)
 	}
 
 	for _, s := range opts.Sessions {

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -69,18 +64,21 @@ function discovery_check_type2str($type = null) {
 	return isset($types[$type]) ? $types[$type] : false;
 }
 
-function discovery_check2str($type, $key, $port) {
+function discovery_check2str($type, $key, $port, $allow_redirect) {
 	$externalParam = '';
 
-	if ($key !== '') {
-		switch ($type) {
-			case SVC_SNMPv1:
-			case SVC_SNMPv2c:
-			case SVC_SNMPv3:
-			case SVC_AGENT:
-				$externalParam = ' "'.$key.'"';
-				break;
-		}
+	switch ($type) {
+		case SVC_SNMPv1:
+		case SVC_SNMPv2c:
+		case SVC_SNMPv3:
+		case SVC_AGENT:
+			$externalParam = ' "'.$key.'"';
+			break;
+		case SVC_ICMPPING:
+			if ($allow_redirect == 1) {
+				$externalParam = ' "'._('allow redirect').'"';
+			}
+			break;
 	}
 
 	$result = discovery_check_type2str($type);
@@ -100,35 +98,6 @@ function discovery_port2str($type_int, $port) {
 	}
 
 	return '';
-}
-
-function discovery_status2str($status = null) {
-	$statuses = [
-		DRULE_STATUS_ACTIVE => _('Enabled'),
-		DRULE_STATUS_DISABLED => _('Disabled')
-	];
-
-	if (is_null($status)) {
-		return $statuses;
-	}
-
-	return isset($statuses[$status]) ? $statuses[$status] : _('Unknown');
-}
-
-function discovery_status2style($status) {
-	switch ($status) {
-		case DRULE_STATUS_ACTIVE:
-			$status = ZBX_STYLE_GREEN;
-			break;
-		case DRULE_STATUS_DISABLED:
-			$status = ZBX_STYLE_RED;
-			break;
-		default:
-			$status = ZBX_STYLE_GREY;
-			break;
-	}
-
-	return $status;
 }
 
 function discovery_object_status2str($status = null) {

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -56,13 +51,13 @@ class CControllerQueueDetails extends CController {
 		}
 		else {
 			$queue_data = array_column($queue_data, null, 'itemid');
-			$items = API::Item()->get([
-				'output' => ['hostid', 'name'],
+			$items = CArrayHelper::renameObjectsKeys(API::Item()->get([
+				'output' => ['hostid', 'name_resolved'],
 				'selectHosts' => ['name'],
 				'itemids' => array_keys($queue_data),
 				'webitems' => true,
 				'preservekeys' => true
-			]);
+			]), ['name_resolved' => 'name']);
 
 			if (count($queue_data) != count($items)) {
 				$items += API::DiscoveryRule()->get([
@@ -74,35 +69,31 @@ class CControllerQueueDetails extends CController {
 			}
 
 			$hosts = API::Host()->get([
-				'output' => ['proxy_hostid'],
-				'hostids' => array_column($items, 'hostid', 'hostid'),
+				'output' => ['proxyid'],
+				'hostids' => array_unique(array_column($items, 'hostid')),
 				'preservekeys' => true
 			]);
 
-			$proxy_hostids = [];
-			foreach ($hosts as $host) {
-				if ($host['proxy_hostid']) {
-					$proxy_hostids[$host['proxy_hostid']] = true;
-				}
-			}
+			$proxyids = array_flip(array_column($hosts, 'proxyid'));
+			unset($proxyids[0]);
 
-			$proxies = [];
-
-			if ($proxy_hostids) {
-				$proxies = API::Proxy()->get([
-					'proxyids' => array_keys($proxy_hostids),
-					'output' => ['proxyid', 'host'],
+			$proxies = $proxyids
+				? API::Proxy()->get([
+					'output' => ['proxyid', 'name'],
+					'proxyids' => array_keys($proxyids),
 					'preservekeys' => true
-				]);
-			}
+				])
+				: [];
 		}
+
+		$total_count = $zabbix_server->getTotalCount();
 
 		$response = new CControllerResponseData([
 			'items' => $items,
 			'hosts' => $hosts,
 			'proxies' => $proxies,
 			'queue_data' => $queue_data,
-			'total_count' => $zabbix_server->getTotalCount()
+			'total_count' => $total_count == null ? 0 : $total_count
 		]);
 
 		$title = _('Queue');

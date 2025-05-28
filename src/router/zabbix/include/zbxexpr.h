@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_EXPR_H
@@ -27,6 +22,7 @@ int	zbx_is_key_char(unsigned char c);
 int	zbx_is_function_char(unsigned char c);
 int	zbx_is_macro_char(unsigned char c);
 int	zbx_is_discovery_macro(const char *name);
+int	zbx_is_strict_macro(const char *macro);
 int	zbx_parse_key(const char **exp);
 int	zbx_parse_host_key(char *exp, char **host, char **key);
 void	zbx_make_hostname(char *host);
@@ -42,8 +38,10 @@ char	*zbx_user_macro_unquote_context_dyn(const char *context, int len);
 char	*zbx_user_macro_quote_context_dyn(const char *context, int force_quote, char **error);
 int	zbx_function_find(const char *expr, size_t *func_pos, size_t *par_l, size_t *par_r, char *error,
 		int max_error_len);
+char	*zbx_function_param_unquote_dyn_ext(const char *param, size_t len, int *quoted, int esc_bs);
 char	*zbx_function_param_unquote_dyn(const char *param, size_t len, int *quoted);
-int	zbx_function_param_quote(char **param, int forced);
+char	*zbx_function_param_unquote_dyn_compat(const char *param, size_t len, int *quoted);
+int	zbx_function_param_quote(char **param, int forced, int esc_bs);
 char	*zbx_function_get_param_dyn(const char *params, int Nparam);
 
 #define ZBX_BACKSLASH_ESC_OFF		0
@@ -53,7 +51,9 @@ void	zbx_function_param_parse_ext(const char *expr, zbx_uint32_t allowed_macros,
 		size_t *length, size_t *sep_pos);
 void	zbx_function_param_parse(const char *expr, size_t *param_pos, size_t *length, size_t *sep_pos);
 void	zbx_trigger_function_param_parse(const char *expr, size_t *param_pos, size_t *length, size_t *sep_pos);
-void	zbx_lld_trigger_function_param_parse(const char *expr, size_t *param_pos, size_t *length, size_t *sep_pos);
+void	zbx_lld_function_param_parse(const char *expr, int esc_flags, size_t *param_pos, size_t *length,
+		size_t *sep_pos);
+int	zbx_function_param_parse_count(const char *expr);
 
 typedef enum
 {
@@ -74,6 +74,7 @@ int	zbx_uint64match_condition(zbx_uint64_t value, zbx_uint64_t pattern, unsigned
 
 /* token START */
 /* tokens used in expressions */
+#define ZBX_TOKEN_UNKNOWN		0x00000
 #define ZBX_TOKEN_OBJECTID		0x00001
 #define ZBX_TOKEN_MACRO			0x00002
 #define ZBX_TOKEN_LLD_MACRO		0x00004
@@ -83,6 +84,9 @@ int	zbx_uint64match_condition(zbx_uint64_t value, zbx_uint64_t pattern, unsigned
 #define ZBX_TOKEN_REFERENCE		0x00040
 #define ZBX_TOKEN_LLD_FUNC_MACRO	0x00080
 #define ZBX_TOKEN_EXPRESSION_MACRO	0x00100
+#define ZBX_TOKEN_USER_FUNC_MACRO	0x00200	/* e.g. {{$TEST_1}.fmtnum(2)} */
+#define ZBX_TOKEN_VAR_MACRO		0x00400
+#define ZBX_TOKEN_VAR_FUNC_MACRO	0x00800
 
 /* additional token flags */
 #define ZBX_TOKEN_JSON		0x0010000
@@ -174,6 +178,8 @@ typedef union
 	zbx_token_func_macro_t		lld_func_macro;
 	zbx_token_simple_macro_t	simple_macro;
 	zbx_token_reference_t		reference;
+	zbx_token_macro_t		var_macro;
+	zbx_token_func_macro_t		var_func_macro;
 }
 zbx_token_data_t;
 
@@ -194,6 +200,7 @@ zbx_token_t;
 #define ZBX_TOKEN_SEARCH_EXPRESSION_MACRO	0x02
 #define ZBX_TOKEN_SEARCH_FUNCTIONID		0x04
 #define ZBX_TOKEN_SEARCH_SIMPLE_MACRO		0x08	/* used by the upgrade patches only */
+#define ZBX_TOKEN_SEARCH_VAR_MACRO		0x10	/* web scenario variable support */
 
 typedef int zbx_token_search_t;
 
@@ -230,8 +237,7 @@ int	zbx_calculate_item_nextcheck_unreachable(int simple_interval, const zbx_cust
 		time_t disable_until);
 
 int	zbx_check_time_period(const char *period, time_t time, const char *tz, int *res);
-int	zbx_get_report_nextcheck(int now, unsigned char cycle, unsigned char weekdays, int start_time,
-		const char *tz);
+int	zbx_get_report_nextcheck(int now, unsigned char cycle, unsigned char weekdays, int start_time);
 /* interval END */
 
 /* condition operators */
@@ -251,5 +257,38 @@ int	zbx_get_report_nextcheck(int now, unsigned char cycle, unsigned char weekday
 #define ZBX_CONDITION_OPERATOR_NOT_EXIST		13
 
 int	zbx_strloc_cmp(const char *src, const zbx_strloc_t *loc, const char *text, size_t text_len);
+
+typedef struct
+{
+	zbx_token_search_t	token_search;
+
+	zbx_token_t	token;			/* current token type */
+	zbx_token_t	inner_token;		/* inner token type */
+
+	const char	*macro;			/* normalized macro (without function id, index, etc.) */
+	int		pos;			/* macro position in input data string */
+
+	int	raw_value;			/* flag that resolver should resolve to raw value */
+	int	indexed;
+	int	index;
+	int	resolved;			/* flag that macro is fully resolved (special case) */
+}
+zbx_macro_resolv_data_t;
+
+typedef int (*zbx_macro_resolv_func_t)(zbx_macro_resolv_data_t *p, va_list args, char **replace_to,
+		char **data, char *error, size_t maxerrlen);
+
+int		zbx_is_indexed_macro(const char *str, const zbx_token_t *token);
+const char	*zbx_macro_in_list(const char *str, zbx_strloc_t strloc, const char **macros, int *N_functionid);
+char		*zbx_get_macro_from_func(const char *str, zbx_token_func_macro_t *fm, int *N_functionid);
+const char	**zbx_get_indexable_macros(void);
+
+int	zbx_substitute_macros(char **data, char *error, size_t maxerrlen, zbx_macro_resolv_func_t resolver, ...);
+
+/* macro function calculation */
+int	zbx_calculate_macro_function(const char *expression, const zbx_token_func_macro_t *func_macro, char **out);
+
+void	zbx_url_encode(const char *source, char **result);
+int	zbx_url_decode(const char *source, char **result);
 
 #endif /* ZABBIX_EXPR_H */

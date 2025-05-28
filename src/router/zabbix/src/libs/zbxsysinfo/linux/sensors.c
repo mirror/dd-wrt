@@ -1,23 +1,17 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "zbxsysinfo.h"
 #include "../sysinfo.h"
 
 #include "zbxregexp.h"
@@ -78,14 +72,14 @@ static void	count_sensor(int do_task, const char *filename, double *aggr, int *c
 #ifndef KERNEL_2_4
 /*********************************************************************************
  *                                                                               *
- * Purpose: locate and read the name attribute of a sensor from sysfs            *
+ * Purpose: locates and reads name attribute of sensor from sysfs                *
  *                                                                               *
- * Parameters:  device        - [IN] the path to sensor data in sysfs            *
- *              attribute     - [OUT] the sensor name                            *
+ * Parameters:  device        - [IN] path to sensor data in sysfs                *
+ *              attribute     - [OUT] sensor name                                *
  *                                                                               *
- * Return value: Subfolder where the sensor name file was found or NULL          *
+ * Return value: Subfolder where the sensor name file was found or NULL.         *
  *                                                                               *
- * Comments: attribute string must be freed by caller after it's been used.      *
+ * Comments: Attribute string must be freed by caller after it's been used.      *
  *                                                                               *
  *********************************************************************************/
 static const char	*sysfs_read_attr(const char *device, char **attribute)
@@ -94,6 +88,7 @@ static const char	*sysfs_read_attr(const char *device, char **attribute)
 	const char	**location;
 	char		path[MAX_STRING_LEN], buf[ATTR_MAX], *p;
 	FILE		*f;
+	size_t		l;
 
 	for (location = locations; NULL != *location; location++)
 	{
@@ -108,7 +103,8 @@ static const char	*sysfs_read_attr(const char *device, char **attribute)
 				break;
 
 			/* Last byte is a '\n'; chop that off */
-			buf[strlen(buf) - 1] = '\0';
+			l = strlen(buf);
+			buf[l - 1] = '\0';
 
 			if (NULL != attribute)
 				*attribute = zbx_strdup(*attribute, buf);

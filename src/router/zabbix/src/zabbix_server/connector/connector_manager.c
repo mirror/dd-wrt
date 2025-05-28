@@ -1,34 +1,33 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "connector_manager.h"
+#include "connector_server.h"
 
-#include "log.h"
+#include "zbxcommon.h"
+#include "zbxtimekeeper.h"
+#include "zbxthreads.h"
+#include "zbxlog.h"
 #include "zbxself.h"
 #include "zbxconnector.h"
 #include "zbxipcservice.h"
 #include "zbxnix.h"
-#include "zbxnum.h"
 #include "zbxtime.h"
 #include "zbxcacheconfig.h"
 #include "zbxalgo.h"
 #include "zbxdbhigh.h"
+#include "zbxrtc.h"
+#include "zbx_rtc_constants.h"
 
 #define ZBX_CONNECTOR_MANAGER_DELAY	1
 #define ZBX_CONNECTOR_FLUSH_INTERVAL	1
@@ -86,6 +85,7 @@ static void	connector_clear(zbx_connector_t *connector)
 	zbx_free(connector->ssl_key_file_orig);
 	zbx_free(connector->ssl_key_password);
 	zbx_free(connector->ssl_key_password_orig);
+	zbx_free(connector->attempt_interval);
 	zbx_list_destroy(&connector->data_point_link_queue);
 	zbx_hashset_destroy(&connector->data_point_links);
 }
@@ -234,7 +234,7 @@ static void	connector_get_next_task(zbx_connector_t *connector, zbx_connector_wo
 		/* return back to list if over the limit */
 		if (0 == i)
 		{
-			zbx_list_prepend(&connector->data_point_link_queue, data_point_link, NULL);
+			(void)zbx_list_prepend(&connector->data_point_link_queue, data_point_link, NULL);
 			break;
 		}
 
@@ -378,7 +378,8 @@ static void	connector_enqueue(zbx_connector_manager_t *manager, zbx_vector_conne
 						sizeof(data_point_link_local));
 				zbx_vector_connector_data_point_create(&data_point_link->connector_data_points);
 
-				zbx_list_insert_after(&connector->data_point_link_queue, NULL, data_point_link, NULL);
+				(void)zbx_list_insert_after(&connector->data_point_link_queue, NULL, data_point_link,
+						NULL);
 			}
 
 			connector_data_point.ts = connector_objects->values[i].ts;
@@ -442,9 +443,14 @@ static void	connector_add_result(zbx_connector_manager_t *manager, zbx_ipc_clien
 			}
 
 			if (0 == data_point_link->connector_data_points.values_num)
+			{
 				zbx_hashset_remove_direct(&connector->data_point_links, data_point_link);
+			}
 			else
-				zbx_list_insert_after(&connector->data_point_link_queue, NULL, data_point_link, NULL);
+			{
+				(void)zbx_list_insert_after(&connector->data_point_link_queue, NULL, data_point_link,
+						NULL);
+			}
 		}
 
 		connector->senders--;
@@ -610,7 +616,7 @@ ZBX_THREAD_ENTRY(connector_manager_thread, args)
 	char					*error = NULL;
 	zbx_ipc_client_t			*client;
 	zbx_ipc_message_t			*message;
-	int					ret, processed_num = 0;
+	int					ret, processed_num = 0, running = 1;
 	double					time_stat, time_idle = 0, time_now, sec;
 	zbx_timespec_t				timeout = {ZBX_CONNECTOR_MANAGER_DELAY, 0};
 	const zbx_thread_info_t			*info = &((zbx_thread_args_t *)args)->info;
@@ -635,6 +641,8 @@ ZBX_THREAD_ENTRY(connector_manager_thread, args)
 		exit(EXIT_FAILURE);
 	}
 
+	zbx_rtc_subscribe_service(ZBX_PROCESS_TYPE_CONNECTORMANAGER, 0, NULL, 0, SEC_PER_MIN,
+			ZBX_IPC_SERVICE_CONNECTOR);
 	connector_init_manager(&manager, args_in->get_process_forks_cb_arg(ZBX_PROCESS_TYPE_CONNECTORWORKER));
 
 	/* initialize statistics */
@@ -700,6 +708,11 @@ ZBX_THREAD_ENTRY(connector_manager_thread, args)
 				case ZBX_IPC_CONNECTOR_QUEUE:
 					connector_get_queue(&manager, client);
 					break;
+				case ZBX_RTC_SHUTDOWN:
+					zabbix_log(LOG_LEVEL_DEBUG, "shutdown message received, terminating...");
+					timeout.sec = 0;
+					timeout.ns = 1e8;
+					break;
 				default:
 					THIS_SHOULD_NEVER_HAPPEN;
 			}
@@ -728,11 +741,11 @@ ZBX_THREAD_ENTRY(connector_manager_thread, args)
 
 			if (0 == num)
 			{
-				if (0 == timeout.sec)
+				if (0 == running)
 					break;
 
-				timeout.sec = 0;
-				timeout.ns = 100000000;
+				running = 0;
+				timeout.ns = 0;
 			}
 		}
 	}

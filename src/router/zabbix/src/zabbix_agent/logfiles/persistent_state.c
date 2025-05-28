@@ -1,26 +1,23 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "persistent_state.h"
-
-#include "log.h"
 #include "logfiles.h"
+
+#include "zbxalgo.h"
+#include "zbxhash.h"
+#include "zbxnum.h"
 #include "zbxjson.h"
 #include "zbxcrypto.h"
 
@@ -46,22 +43,26 @@ ZBX_VECTOR_IMPL(persistent_inactive, zbx_persistent_inactive_t)
 #if !defined(_WINDOWS) && !defined(__MINGW32__)
 static int	zbx_persistent_inactive_compare_func(const void *d1, const void *d2)
 {
-	return strcmp(((const zbx_persistent_inactive_t *)d1)->key_orig,
-			((const zbx_persistent_inactive_t *)d2)->key_orig);
+	const zbx_persistent_inactive_t	*p1 = (const zbx_persistent_inactive_t *)d1;
+	const zbx_persistent_inactive_t	*p2 = (const zbx_persistent_inactive_t *)d2;
+
+	ZBX_RETURN_IF_NOT_EQUAL(p1->itemid, p2->itemid);
+
+	return 0;
 }
 
 /******************************************************************************
  *                                                                            *
- * Purpose: for the specified string get the part of persistent storage path  *
+ * Purpose: gets part of persistent storage path for specified string         *
  *                                                                            *
  * Parameters:                                                                *
  *          str - [IN] string (e.g. host, item key)                           *
  *                                                                            *
- * Return value: dynamically allocated string with the part of path           *
- *               corresponding to the input string                            *
+ * Return value: dynamically allocated string with part of path               *
+ *               corresponding to input string                                *
  *                                                                            *
- * Comments: the part of persistent storage path is built of md5 sum of the   *
- *           input string with the length of input string appended            *
+ * Comments: The part of persistent storage path is built of md5 sum of the   *
+ *           input string with the length of input string appended.           *
  *                                                                            *
  * Example: for input string                                                  *
  *           "logrt[/home/zabbix/test.log,,,,,,,,/home/zabbix/agent_private]" *
@@ -98,19 +99,19 @@ static char	*str2file_name_part(const char *str)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: calculate the part of persistent storage path for the specified   *
- *          server/port pair where the agent is sending active check data     *
+ * Purpose: CalculateS the part of persistent storage path for the specified  *
+ *          server/port pair where the agent is sending active check data.    *
  *                                                                            *
  * Parameters:                                                                *
  *          server - [IN] server string                                       *
  *          port   - [IN] port number                                         *
  *                                                                            *
- * Return value: dynamically allocated string with the part of path           *
+ * Return value: dynamically allocated string with part of path               *
  *                                                                            *
- * Comments: the part of persistent storage path is built of md5 sum of the   *
- *           input string with the length of input string appended            *
+ * Comments: The part of persistent storage path is built of md5 sum of the   *
+ *           input string with the length of input string appended.           *
  *                                                                            *
- * Example: for server "127.0.0.1" and port 10091 the function returns        *
+ * Example: for server "127.0.0.1" and port 10091 function returns            *
  *         "8392b6ea687188e70feac24517d2f9d715"                               *
  *                                          \/ - length  of "127.0.0.1:10091" *
  *          \------------------------------/   - md5 sum of "127.0.0.1:10091" *
@@ -129,15 +130,15 @@ static char	*active_server2dir_name_part(const char *server, unsigned short port
 
 /******************************************************************************
  *                                                                            *
- * Purpose: make the name of persistent storage directory for the specified   *
- *          server/proxy and port                                             *
+ * Purpose: Makes the name of persistent storage directory for the specified  *
+ *          server/proxy and port.                                            *
  *                                                                            *
  * Parameters:                                                                *
  *          base_path - [IN] initial part of pathname                         *
  *          server    - [IN] server string                                    *
  *          port      - [IN] port number                                      *
  *                                                                            *
- * Return value: dynamically allocated string with the name of directory      *
+ * Return value: dynamically allocated string with name of directory          *
  *                                                                            *
  * Example: for base_path "/var/tmp/", server "127.0.0.1", port 10091 the     *
  *          function returns "/var/tmp/8392b6ea687188e70feac24517d2f9d715"    *
@@ -156,7 +157,7 @@ static char	*make_persistent_server_directory_name(const char *base_path, const 
 
 /******************************************************************************
  *                                                                            *
- * Purpose: check if the directory exists                                     *
+ * Purpose: checks if the directory exists                                    *
  *                                                                            *
  * Parameters:                                                                *
  *          pathname  - [IN] full pathname of directory                       *
@@ -187,7 +188,7 @@ static int	check_persistent_directory_exists(const char *pathname, char **error)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: create directory if it does not exist or check access if it       *
+ * Purpose: creates directory if it does not exist or checks access if it     *
  *          exists                                                            *
  *                                                                            *
  * Parameters:                                                                *
@@ -218,7 +219,7 @@ static int	create_persistent_directory(const char *pathname, char **error)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: create all subdirectories in the pathname if they do not exist    *
+ * Purpose: creates all subdirectories in the pathname if they do not exist   *
  *                                                                            *
  * Parameters:                                                                *
  *          pathname - [IN] full pathname of directory, must consist of only  *
@@ -282,7 +283,7 @@ static int	create_base_path_directories(const char *pathname, char **error)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: create directory if it does not exist or check access if it       *
+ * Purpose: Creates directory if it does not exist or check access if it      *
  *          exists. Directory name is derived from host and port.             *
  *                                                                            *
  * Parameters:                                                                *
@@ -292,7 +293,7 @@ static int	create_base_path_directories(const char *pathname, char **error)
  *          port      - [IN] port number                                      *
  *          error     - [OUT] error message                                   *
  *                                                                            *
- * Return value: on success - dynamically allocated string with the name of   *
+ * Return value: on success - dynamically allocated string with name of       *
  *                            directory,                                      *
  *               on error   - NULL (with dynamically allocated 'error')       *
  *                                                                            *
@@ -336,13 +337,13 @@ char	*zbx_create_persistent_server_directory(const char *base_path, const char *
 
 /******************************************************************************
  *                                                                            *
- * Purpose: make the name of persistent storage directory or file             *
+ * Purpose: makes name of persistent storage directory or file                *
  *                                                                            *
  * Parameters:                                                                *
  *          persistent_server_dir - [IN] initial part of pathname             *
  *          item_key              - [IN] item key (not NULL)                  *
  *                                                                            *
- * Return value: dynamically allocated string with the name of file           *
+ * Return value: dynamically allocated string with name of file               *
  *                                                                            *
  ******************************************************************************/
 char	*zbx_make_persistent_file_name(const char *persistent_server_dir, const char *item_key)
@@ -358,15 +359,15 @@ char	*zbx_make_persistent_file_name(const char *persistent_server_dir, const cha
 
 /******************************************************************************
  *                                                                            *
- * Purpose: write metric info into persistent file                            *
+ * Purpose: writes metric info into persistent file                           *
  *                                                                            *
  * Parameters:                                                                *
- *          filename  - [IN] file name                                        *
+ *          filename  - [IN]                                                  *
  *          data      - [IN] file content                                     *
  *          error     - [OUT] error message                                   *
  *                                                                            *
  * Return value: SUCCEED - file was successfully written                      *
- *               FAIL    - cannot write the file (see dynamically allocated   *
+ *               FAIL    - cannot write file (see dynamically allocated       *
  *                         'error' message)                                   *
  *                                                                            *
  ******************************************************************************/
@@ -404,16 +405,16 @@ static int	zbx_write_persistent_file(const char *filename, const char *data, cha
 
 /******************************************************************************
  *                                                                            *
- * Purpose: read metric info from persistent file. One line is read.          *
+ * Purpose: Reads metric info from persistent file. One line is read.         *
  *                                                                            *
  * Parameters:                                                                *
- *          filename  - [IN] file name                                        *
+ *          filename  - [IN]                                                  *
  *          buf       - [OUT] buffer to read file into                        *
- *          buf_size  - [IN] buffer size                                      *
- *          err_msg   - [OUT] error message                                   *
+ *          buf_size  - [IN]                                                  *
+ *          err_msg   - [OUT]                                                 *
  *                                                                            *
  * Return value: SUCCEED - file was successfully read                         *
- *               FAIL    - cannot read the file (see dynamically allocated    *
+ *               FAIL    - cannot read file (see dynamically allocated        *
  *                         'err_msg' message)                                 *
  *                                                                            *
  ******************************************************************************/
@@ -448,14 +449,14 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Purpose: remove the specified file                                         *
+ * Purpose: removes specified file                                            *
  *                                                                            *
  * Parameters:                                                                *
  *          pathname  - [IN] file name                                        *
  *          error     - [OUT] error message                                   *
  *                                                                            *
  * Return value: SUCCEED - file was removed or does not exist                 *
- *               FAIL    - cannot remove the specified file (see dynamically  *
+ *               FAIL    - cannot remove specified file (see dynamically      *
  *                         allocated 'error' message)                         *
  *                                                                            *
  ******************************************************************************/
@@ -541,7 +542,6 @@ void	zbx_clean_pre_persistent_elements(zbx_vector_pre_persistent_t *prep_vec)
 
 	for (i = 0; i < prep_vec->values_num; i++)
 	{
-		zbx_free(prep_vec->values[i].key_orig);
 		zbx_free(prep_vec->values[i].persistent_file_name);
 		zbx_free(prep_vec->values[i].filename);
 	}
@@ -549,35 +549,34 @@ void	zbx_clean_pre_persistent_elements(zbx_vector_pre_persistent_t *prep_vec)
 	zbx_vector_pre_persistent_clear(prep_vec);
 }
 
-void	zbx_add_to_persistent_inactive_list(zbx_vector_persistent_inactive_t *inactive_vec, char *key,
+void	zbx_add_to_persistent_inactive_list(zbx_vector_persistent_inactive_t *inactive_vec, zbx_uint64_t itemid,
 		const char *filename)
 {
 	zbx_persistent_inactive_t	el;
 
-	el.key_orig = key;
+	el.itemid = itemid;
 
 	if (FAIL == zbx_vector_persistent_inactive_search(inactive_vec, el,
 			zbx_persistent_inactive_compare_func))
 	{
 		/* create and initialize a new vector element */
 
-		el.key_orig = zbx_strdup(NULL, key);
 		el.not_received_time = time(NULL);
 		el.persistent_file_name = zbx_strdup(NULL, filename);
 
 		zbx_vector_persistent_inactive_append(inactive_vec, el);
 
-		zabbix_log(LOG_LEVEL_DEBUG, "%s(): added element %d with key '%s' for file '%s'", __func__,
-				inactive_vec->values_num - 1, key, filename);
+		zabbix_log(LOG_LEVEL_DEBUG, "%s(): added element %d with itemid '" ZBX_FS_UI64 "' for file '%s'",
+				__func__, inactive_vec->values_num - 1, itemid, filename);
 	}
 }
 
-void	zbx_remove_from_persistent_inactive_list(zbx_vector_persistent_inactive_t *inactive_vec, char *key)
+void	zbx_remove_from_persistent_inactive_list(zbx_vector_persistent_inactive_t *inactive_vec, zbx_uint64_t itemid)
 {
 	zbx_persistent_inactive_t	el;
 	int				idx;
 
-	el.key_orig = key;
+	el.itemid = itemid;
 
 	if (FAIL == (idx = zbx_vector_persistent_inactive_search(inactive_vec, el,
 			zbx_persistent_inactive_compare_func)))
@@ -585,15 +584,17 @@ void	zbx_remove_from_persistent_inactive_list(zbx_vector_persistent_inactive_t *
 		return;
 	}
 
-	zbx_free(inactive_vec->values[idx].key_orig);
 	zbx_free(inactive_vec->values[idx].persistent_file_name);
 	zbx_vector_persistent_inactive_remove(inactive_vec, idx);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "%s(): removed element %d with key '%s'", __func__, idx, key);
+	zabbix_log(LOG_LEVEL_DEBUG, "%s(): removed element %d with itemid " ZBX_FS_UI64 , __func__, idx, itemid);
 }
 
 void	zbx_remove_inactive_persistent_files(zbx_vector_persistent_inactive_t *inactive_vec)
 {
+#define ZBX_PERSIST_INACTIVITY_PERIOD	SEC_PER_DAY	/* the time period after which persistent files used by log */
+							/* items which are not received in active check list can be */
+							/* removed */
 	int	i;
 	time_t	now;
 
@@ -607,8 +608,8 @@ void	zbx_remove_inactive_persistent_files(zbx_vector_persistent_inactive_t *inac
 		{
 			char	*err_msg = NULL;
 
-			zabbix_log(LOG_LEVEL_DEBUG, "%s(): removing element %d with key '%s'", __func__, i,
-					el->key_orig);
+			zabbix_log(LOG_LEVEL_DEBUG, "%s(): removing element %d with itemid '" ZBX_FS_UI64 "'",
+					__func__, i, el->itemid);
 
 			if (SUCCEED != zbx_remove_persistent_file(el->persistent_file_name, &err_msg))
 			{
@@ -617,37 +618,42 @@ void	zbx_remove_inactive_persistent_files(zbx_vector_persistent_inactive_t *inac
 				zbx_free(err_msg);
 			}
 
-			zbx_free(el->key_orig);
 			zbx_free(el->persistent_file_name);
 			zbx_vector_persistent_inactive_remove(inactive_vec, i);
 		}
 	}
+#undef ZBX_PERSIST_INACTIVITY_PERIOD
 }
 
 static int	zbx_pre_persistent_compare_func(const void *d1, const void *d2)
 {
-	return strcmp(((const zbx_pre_persistent_t *)d1)->key_orig, ((const zbx_pre_persistent_t *)d2)->key_orig);
+	const zbx_pre_persistent_t	*p1 = (const zbx_pre_persistent_t *)d1;
+	const zbx_pre_persistent_t	*p2 = (const zbx_pre_persistent_t *)d2;
+
+	ZBX_RETURN_IF_NOT_EQUAL(p1->itemid, p2->itemid);
+
+	return 0;
 }
 
 /******************************************************************************
  *                                                                            *
- * Purpose: search preparation vector to find element with the specified key. *
- *          If not found then create the element.                             *
+ * Purpose: Searches preparation vector to find element with the specified    *
+ *          itemid. If not found then creates the element.                    *
  *                                                                            *
  * Parameters:                                                                *
  *    prep_vec             - [IN/OUT] preparation vector for persistent data  *
  *                                files                                       *
- *    key                  - [IN] log*[] item key                             *
+ *    itemid               - [IN]                                             *
  *    persistent_file_name - [IN] file name for copying into new element      *
  *                                                                            *
  ******************************************************************************/
-int	zbx_find_or_create_prep_vec_element(zbx_vector_pre_persistent_t *prep_vec, const char *key,
+int	zbx_find_or_create_prep_vec_element(zbx_vector_pre_persistent_t *prep_vec, zbx_uint64_t itemid,
 		const char *persistent_file_name)
 {
 	zbx_pre_persistent_t	prep_element;
 	int			prep_vec_idx;
 
-	prep_element.key_orig = (char *)key;
+	prep_element.itemid = itemid;
 
 	if (FAIL == (prep_vec_idx = zbx_vector_pre_persistent_search(prep_vec, prep_element,
 			zbx_pre_persistent_compare_func)))
@@ -658,15 +664,19 @@ int	zbx_find_or_create_prep_vec_element(zbx_vector_pre_persistent_t *prep_vec, c
 		zbx_vector_pre_persistent_append(prep_vec, prep_element);
 		prep_vec_idx = prep_vec->values_num - 1;
 
-		/* fill in 'key_orig' and 'persistent_file_name' values - they never change for the specified */
+		/* fill in 'itemid' and 'persistent_file_name' values - they never change for the specified */
 		/* log*[] item (otherwise it is not the same item anymore) */
-		prep_vec->values[prep_vec_idx].key_orig = zbx_strdup(NULL, key);
+		prep_vec->values[prep_vec_idx].itemid = itemid;
 		prep_vec->values[prep_vec_idx].persistent_file_name = zbx_strdup(NULL, persistent_file_name);
 
-		zabbix_log(LOG_LEVEL_DEBUG, "%s(): key:[%s] created element %d", __func__, key, prep_vec_idx);
+		zabbix_log(LOG_LEVEL_DEBUG, "%s(): itemid:" ZBX_FS_UI64 " created element %d",
+				__func__, itemid, prep_vec_idx);
 	}
 	else
-		zabbix_log(LOG_LEVEL_DEBUG, "%s(): key:[%s] found element %d", __func__, key, prep_vec_idx);
+	{
+		zabbix_log(LOG_LEVEL_DEBUG, "%s(): itemid:" ZBX_FS_UI64 " found element %d",
+				__func__, itemid, prep_vec_idx);
+	}
 
 	return prep_vec_idx;
 }
@@ -704,15 +714,15 @@ void	zbx_update_prep_vec_data(const struct st_logfile *logfile, zbx_uint64_t pro
 
 /******************************************************************************
  *                                                                            *
- * Purpose: create the 'old log file list' and restore log file attributes    *
- *          from JSON string which was read from persistent file              *
+ * Purpose: Create the 'old log file list' and restore log file attributes    *
+ *          from JSON string which was read from persistent file.             *
  *                                                                            *
  * Parameters:                                                                *
  *     str            - [IN] JSON string                                      *
  *     logfiles       - [OUT] log file list (vector)                          *
  *     logfiles_num   - [OUT] number of elements in the log file list         *
  *     processed_size - [OUT] processed size attribute                        *
- *     mtime          - [OUT] mtime                                           *
+ *     mtime          - [OUT]                                                 *
  *     err_msg        - [OUT] dynamically allocated error message             *
  *                                                                            *
  * Return value: SUCCEED or FAIL                                              *

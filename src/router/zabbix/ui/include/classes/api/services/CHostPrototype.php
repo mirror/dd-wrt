@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -122,10 +117,10 @@ class CHostPrototype extends CHostBase {
 		if ($result) {
 			$result = $this->addRelatedObjects($options, $result);
 			$result = $this->unsetExtraFields($result, ['triggerid'], $options['output']);
-		}
 
-		if (!$options['preservekeys']) {
-			$result = zbx_cleanHashes($result);
+			if (!$options['preservekeys']) {
+				$result = array_values($result);
+			}
 		}
 
 		return $result;
@@ -161,22 +156,20 @@ class CHostPrototype extends CHostBase {
 		$sqlParts['where'][] = 'ph.flags='.ZBX_FLAG_DISCOVERY_NORMAL;
 
 		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
-			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
+			if (self::$userData['ugsetid'] == 0) {
+				$sql_parts['where'][] = '1=0';
+			}
+			else {
+				$sqlParts['from'][] = 'host_hgset hh';
+				$sqlParts['from'][] = 'permission p';
+				$sqlParts['where'][] = 'i.hostid=hh.hostid';
+				$sqlParts['where'][] = 'hh.hgsetid=p.hgsetid';
+				$sqlParts['where'][] = 'p.ugsetid='.self::$userData['ugsetid'];
 
-			$sqlParts['where'][] = 'EXISTS ('.
-				'SELECT NULL'.
-				' FROM '.
-					'host_discovery hd,items i,hosts_groups hgg'.
-					' JOIN rights r'.
-						' ON r.id=hgg.groupid'.
-						' AND '.dbConditionId('r.groupid', getUserGroupsByUserId(self::$userData['userid'])).
-				' WHERE h.hostid=hd.hostid'.
-					' AND hd.parent_itemid=i.itemid'.
-					' AND i.hostid=hgg.hostid'.
-				' GROUP BY hgg.hostid'.
-				' HAVING MIN(r.permission)>'.PERM_DENY.
-				' AND MAX(r.permission)>='.zbx_dbstr($permission).
-				')';
+				if ($options['editable']) {
+					$sqlParts['where'][] = 'p.permission='.PERM_READ_WRITE;
+				}
+			}
 		}
 
 		// discoveryids
@@ -582,7 +575,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException
 	 */
-	protected function validateUpdate(array &$hosts, array &$db_hosts = null): void {
+	protected function validateUpdate(array &$hosts, ?array &$db_hosts = null): void {
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE | API_ALLOW_UNEXPECTED, 'uniq' => [['hostid']], 'fields' => [
 			'hostid' =>				['type' => API_ID, 'flags' => API_REQUIRED],
 			'groupPrototypes' =>	['type' => API_OBJECTS, 'flags' => API_NORMALIZE | API_ALLOW_UNEXPECTED, 'uniq' => [['group_prototypeid']], 'fields' => [
@@ -885,9 +878,6 @@ class CHostPrototype extends CHostBase {
 	 * @param array $db_hosts
 	 */
 	private function updateForce(array &$hosts, array &$db_hosts): void {
-		// Helps to avoid deadlocks.
-		CArrayHelper::sort($hosts, ['hostid', 'order' => ZBX_SORT_DOWN]);
-
 		$upd_hosts = [];
 		$upd_hostids = [];
 
@@ -1078,7 +1068,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkDuplicates(array $hosts, array $db_hosts = null, bool $inherited = false): void {
+	private static function checkDuplicates(array $hosts, ?array $db_hosts = null, bool $inherited = false): void {
 		$h_names = [];
 		$v_names = [];
 
@@ -1220,7 +1210,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUuidDuplicates(array $hosts, array $db_hosts = null): void {
+	private static function checkUuidDuplicates(array $hosts, ?array $db_hosts = null): void {
 		$host_indexes = [];
 
 		foreach ($hosts as $i => $host) {
@@ -1261,7 +1251,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkDiscoveryRules(array $hosts, array &$db_lld_rules = null): void {
+	private static function checkDiscoveryRules(array $hosts, ?array &$db_lld_rules = null): void {
 		$ruleids = array_unique(array_column($hosts, 'ruleid'));
 
 		$count = API::DiscoveryRule()->get([
@@ -1334,7 +1324,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkGroupLinks(array $hosts, array $db_hosts = null): void {
+	private static function checkGroupLinks(array $hosts, ?array $db_hosts = null): void {
 		$edit_groupids = [];
 
 		foreach ($hosts as $host) {
@@ -1449,7 +1439,7 @@ class CHostPrototype extends CHostBase {
 	 * @param array|null $db_hosts
 	 * @param array|null $upd_hostids
 	 */
-	private static function updateInterfaces(array &$hosts, array &$db_hosts = null, array &$upd_hostids = null): void {
+	private static function updateInterfaces(array &$hosts, ?array &$db_hosts = null, ?array &$upd_hostids = null): void {
 		$ins_interfaces = [];
 		$del_interfaceids = [];
 
@@ -1593,7 +1583,7 @@ class CHostPrototype extends CHostBase {
 	 * @param array|null $db_hosts
 	 * @param array|null $upd_hostids
 	 */
-	private static function updateGroupLinks(array &$hosts, array &$db_hosts = null, array &$upd_hostids = null): void {
+	private static function updateGroupLinks(array &$hosts, ?array &$db_hosts = null, ?array &$upd_hostids = null): void {
 		$ins_group_links = [];
 		$upd_group_links = []; // Used to update templateid value upon inheritance.
 		$del_group_prototypeids = [];
@@ -1682,8 +1672,8 @@ class CHostPrototype extends CHostBase {
 	 * @param array|null $db_hosts
 	 * @param array|null $upd_hostids
 	 */
-	private static function updateGroupPrototypes(array &$hosts, array &$db_hosts = null,
-			array &$upd_hostids = null): void {
+	private static function updateGroupPrototypes(array &$hosts, ?array &$db_hosts = null,
+			?array &$upd_hostids = null): void {
 		$ins_group_prototypes = [];
 		$upd_group_prototypes = []; // Used to update templateid value upon inheritance.
 		$del_group_prototypeids = [];
@@ -1767,8 +1757,8 @@ class CHostPrototype extends CHostBase {
 	 * @param array|null $db_hosts
 	 * @param array|null $upd_hostids
 	 */
-	private static function updateHostInventories(array $hosts, array $db_hosts = null,
-			array &$upd_hostids = null): void {
+	private static function updateHostInventories(array $hosts, ?array $db_hosts = null,
+			?array &$upd_hostids = null): void {
 		$ins_inventories = [];
 		$upd_inventories = [];
 		$del_hostids = [];
@@ -1942,7 +1932,7 @@ class CHostPrototype extends CHostBase {
 	 * @param array      $db_hosts
 	 * @param array|null $lld_links
 	 */
-	private function inherit(array $hosts, array $db_hosts = [], array $lld_links = null): void {
+	private function inherit(array $hosts, array $db_hosts = [], ?array $lld_links = null): void {
 		if ($lld_links === null) {
 			$lld_links = self::getLldLinks(array_unique(array_column($hosts, 'ruleid')));
 
@@ -1970,7 +1960,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @param array
 	 */
-	private static function getLldLinks(array $ruleids, array $hostids = null): array {
+	private static function getLldLinks(array $ruleids, ?array $hostids = null): array {
 		$hostids_condition = $hostids !== null
 			? ' AND '.dbConditionId('i.hostid', $hostids)
 			: '';
@@ -2077,7 +2067,7 @@ class CHostPrototype extends CHostBase {
 	 * @param array $lld_links
 	 * @param array $ruleids
 	 */
-	protected function inheritChunk(array $hosts, array $db_hosts, array $lld_links, array $ruleids): void {
+	private function inheritChunk(array $hosts, array $db_hosts, array $lld_links, array $ruleids): void {
 		$hosts_to_link = [];
 		$hosts_to_update = [];
 
@@ -2365,8 +2355,8 @@ class CHostPrototype extends CHostBase {
 	 * @param array|null $inh_db_host
 	 * @param array|null $db_host
 	 */
-	private static function addInheritedFields(array &$inh_host, array $host, array $inh_db_host = null,
-			array $db_host = null): void {
+	private static function addInheritedFields(array &$inh_host, array $host, ?array $inh_db_host = null,
+			?array $db_host = null): void {
 		$inh_host += array_intersect_key($host,
 			array_flip(['host', 'name', 'custom_interfaces', 'status', 'discover', 'inventory_mode'])
 		);
@@ -2483,7 +2473,7 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	private function validateDelete(array &$hostids, array &$db_hosts = null): void {
+	private function validateDelete(array &$hostids, ?array &$db_hosts = null): void {
 		$api_input_rules = ['type' => API_IDS, 'flags' => API_NOT_EMPTY, 'uniq' => true];
 
 		if (!CApiInputValidator::validate($api_input_rules, $hostids, '/', $error)) {
@@ -2546,7 +2536,6 @@ class CHostPrototype extends CHostBase {
 				' AND '.dbConditionId('hd.parent_hostid', $hostids)
 		), 'hostid');
 
-		CHost::validateDeleteForce($discovered_hosts);
 		CHost::deleteForce($discovered_hosts);
 
 		DB::delete('interface', ['hostid' => $hostids]);
@@ -2608,15 +2597,22 @@ class CHostPrototype extends CHostBase {
 	 */
 	private static function deleteDiscoveredGroups(array $group_prototypeids): void {
 		$db_groups = DBfetchArrayAssoc(DBselect(
-			'SELECT gd.groupid,g.name'.
+			'SELECT DISTINCT gd.groupid,g.name'.
 			' FROM group_discovery gd,hstgrp g'.
 			' WHERE gd.groupid=g.groupid'.
-				' AND '.dbConditionId('gd.parent_group_prototypeid', $group_prototypeids)
+				' AND '.dbConditionId('gd.parent_group_prototypeid', $group_prototypeids).
+				' AND NOT EXISTS ('.
+					'SELECT NULL'.
+					' FROM group_discovery gd2'.
+					' WHERE gd.groupid=gd2.groupid'.
+						' AND '.dbConditionId('gd2.parent_group_prototypeid', $group_prototypeids, true).
+				')'
 		), 'groupid');
 
 		if ($db_groups) {
-			CHostGroup::validateDeleteForce($db_groups);
-			CHostGroup::deleteForce($db_groups);
+			API::HostGroup()->deleteForce($db_groups);
 		}
+
+		DB::delete('group_discovery', ['parent_group_prototypeid' => $group_prototypeids]);
 	}
 }

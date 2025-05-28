@@ -1,26 +1,21 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_REPORT_PROTOCOL_H
 #define ZABBIX_REPORT_PROTOCOL_H
 
-#include "../alerter/alerter.h"
+#include "zbxalerter.h"
 #include "zbxalgo.h"
 #include "zbxdbhigh.h"
 
@@ -57,12 +52,11 @@ void	report_deserialize_response(const unsigned char *data, int *status, char **
 		zbx_vector_alerter_dispatch_result_t *results);
 
 zbx_uint32_t	report_serialize_begin_report(unsigned char **data, const char *name, const char *url,
-		const char *cookie, int width, int height, const zbx_vector_ptr_pair_t *params);
+		const char *cookie, const zbx_vector_ptr_pair_t *params);
 void	report_deserialize_begin_report(const unsigned char *data, char **name, char **url, char **cookie,
-		int *width, int *height, zbx_vector_ptr_pair_t *params);
+		zbx_vector_ptr_pair_t *params);
 
 zbx_uint32_t	report_serialize_send_report(unsigned char **data, const zbx_db_mediatype *mt,
 		const zbx_vector_str_t *emails);
 void	report_deserialize_send_report(const unsigned char *data, zbx_db_mediatype *mt, zbx_vector_str_t *sendtos);
-
 #endif

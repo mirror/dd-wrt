@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,7 +24,7 @@
 		is_busy: false,
 		is_busy_saving: false,
 
-		init({dashboard, widget_defaults, widget_last_type, time_period, page}) {
+		init({dashboard, widget_defaults, widget_last_type, dashboard_time_period, page}) {
 			this.dashboard = dashboard;
 			this.page = page;
 
@@ -40,8 +35,8 @@
 					navigation_tabs: document.querySelector('.<?= ZBX_STYLE_DASHBOARD_NAVIGATION_TABS ?>')
 				},
 				buttons: {
-					previous_page: document.querySelector('.<?= ZBX_STYLE_DASHBOARD_PREVIOUS_PAGE ?>'),
-					next_page: document.querySelector('.<?= ZBX_STYLE_DASHBOARD_NEXT_PAGE ?>')
+					previous_page: document.querySelector('.<?= ZBX_STYLE_BTN_DASHBOARD_PREVIOUS_PAGE ?>'),
+					next_page: document.querySelector('.<?= ZBX_STYLE_BTN_DASHBOARD_NEXT_PAGE ?>')
 				},
 				data: {
 					dashboardid: dashboard.dashboardid,
@@ -53,28 +48,44 @@
 				},
 				max_dashboard_pages: <?= DASHBOARD_MAX_PAGES ?>,
 				cell_width: 100 / <?= DASHBOARD_MAX_COLUMNS ?>,
-				cell_height: 70,
+				cell_height: <?= DASHBOARD_ROW_HEIGHT ?>,
 				max_columns: <?= DASHBOARD_MAX_COLUMNS ?>,
 				max_rows: <?= DASHBOARD_MAX_ROWS ?>,
-				widget_min_rows: <?= DASHBOARD_WIDGET_MIN_ROWS ?>,
-				widget_max_rows: <?= DASHBOARD_WIDGET_MAX_ROWS ?>,
 				widget_defaults,
 				widget_last_type,
 				is_editable: true,
 				is_edit_mode: true,
 				can_edit_dashboards: true,
 				is_kiosk_mode: false,
-				time_period,
-				dynamic_hostid: null
+				broadcast_options: {
+					[CWidgetsData.DATA_TYPE_HOST_ID]: {rebroadcast: false},
+					[CWidgetsData.DATA_TYPE_HOST_IDS]: {rebroadcast: false},
+					[CWidgetsData.DATA_TYPE_TIME_PERIOD]: {rebroadcast: true}
+				}
 			});
 
 			for (const page of dashboard.pages) {
 				for (const widget of page.widgets) {
-					widget.fields = (typeof widget.fields === 'object') ? widget.fields : {};
+					widget.fields = Object.keys(widget.fields).length > 0 ? widget.fields : {};
 				}
 
 				ZABBIX.Dashboard.addDashboardPage(page);
 			}
+
+			const time_period = {
+				from: dashboard_time_period.from,
+				from_ts: dashboard_time_period.from_ts,
+				to: dashboard_time_period.to,
+				to_ts: dashboard_time_period.to_ts
+			};
+
+			CWidgetsData.setDefault(CWidgetsData.DATA_TYPE_TIME_PERIOD, time_period, {is_comparable: false});
+
+			ZABBIX.Dashboard.broadcast({
+				[CWidgetsData.DATA_TYPE_HOST_ID]: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_ID),
+				[CWidgetsData.DATA_TYPE_HOST_IDS]: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_IDS),
+				[CWidgetsData.DATA_TYPE_TIME_PERIOD]: time_period
+			});
 
 			ZABBIX.Dashboard.activate();
 
@@ -110,6 +121,8 @@
 			if (dashboard.dashboardid === null) {
 				ZABBIX.Dashboard.editProperties();
 			}
+
+			this.initPopupListeners();
 		},
 
 		save() {
@@ -121,9 +134,7 @@
 			const curl = new Curl('zabbix.php');
 
 			curl.setArgument('action', 'template.dashboard.update');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('template')) ?>
-			);
+			curl.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('template')) ?>);
 
 			fetch(curl.getUrl(), {
 				method: 'POST',
@@ -197,6 +208,24 @@
 			window.removeEventListener('beforeunload', this.events.beforeUnload);
 		},
 
+		initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: ({data, event}) => {
+					if (data.submit.success.action === 'delete') {
+						const url = new URL('zabbix.php', location.href);
+
+						url.searchParams.set('action', 'template.list');
+
+						event.setRedirectUrl(url.href);
+					}
+				}
+			});
+		},
+
 		events: {
 			addClick(e) {
 				const menu = [
@@ -235,9 +264,10 @@
 				jQuery(e.target).menuPopup(menu, new jQuery.Event(e), {
 					position: {
 						of: e.target,
-						my: 'left top',
-						at: 'left bottom',
-						within: '.wrapper'
+						my: 'right top',
+						at: 'right bottom',
+						within: '.wrapper',
+						collision: 'fit flip'
 					}
 				});
 			},

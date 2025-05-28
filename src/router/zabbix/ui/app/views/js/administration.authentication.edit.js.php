@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -27,14 +22,8 @@
 <script>
 	const view = new class {
 
-		constructor() {
-			this.form = null;
-			this.db_authentication_type = null;
-			this.allow_jit = null;
-		}
-
 		init({ldap_servers, ldap_default_row_index, db_authentication_type, saml_provision_groups,
-				saml_provision_media, templates
+				saml_provision_media, templates, mfa_methods, mfa_default_row_index, is_http_auth_allowed
 		}) {
 			this.form = document.getElementById('authentication-form');
 			this.db_authentication_type = db_authentication_type;
@@ -44,22 +33,28 @@
 			this.ldap_jit_status = document.getElementById('ldap_jit_status');
 			this.ldap_servers_table = document.getElementById('ldap-servers');
 			this.templates = templates;
+			this.is_http_auth_allowed = is_http_auth_allowed;
 			this.ldap_provisioning_fields = this.form.querySelectorAll(
 				'[name="ldap_jit_status"],[name="ldap_case_sensitive"],[name="jit_provision_interval"]'
 			);
 			this.jit_provision_interval = this.form.querySelector('[name="jit_provision_interval"]');
 			this.ldap_auth_enabled = this.form.querySelector('[type="checkbox"][name="ldap_auth_enabled"]');
+			this.mfa_table = document.getElementById('mfa-methods');
 			const saml_readonly = !this.form.querySelector('[type="checkbox"][name="saml_auth_enabled"]').checked;
 			const ldap_disabled = this.ldap_auth_enabled === null || !this.ldap_auth_enabled.checked;
+			const mfa_readonly = !this.form.querySelector('[type="checkbox"][name="mfa_status"]').checked;
 
 			this._addEventListeners();
 			this._addLdapServers(ldap_servers, ldap_default_row_index);
-			this._setTableVisiblityState(this.ldap_servers_table, ldap_disabled);
-			this._disableRemoveLdapServersWithUserGroups();
+			this.#setTableVisiblityState(this.ldap_servers_table, ldap_disabled);
+			this.#disableRemoveLinksWithUserGroups(this.ldap_servers_table);
 			this._renderProvisionGroups(saml_provision_groups);
-			this._setTableVisiblityState(this.saml_provision_groups_table, saml_readonly);
+			this.#setTableVisiblityState(this.saml_provision_groups_table, saml_readonly);
 			this._renderProvisionMedia(saml_provision_media);
-			this._setTableVisiblityState(this.saml_media_type_mapping_table, saml_readonly);
+			this.#setTableVisiblityState(this.saml_media_type_mapping_table, saml_readonly)
+			this.#addMfaMethods(mfa_methods, mfa_default_row_index);
+			this.#setTableVisiblityState(this.mfa_table, mfa_readonly);
+			this.#disableRemoveLinksWithUserGroups(this.mfa_table);
 
 			this.form.querySelector('[type="checkbox"][name="saml_auth_enabled"]').dispatchEvent(new Event('change'));
 		}
@@ -67,48 +62,50 @@
 		_addEventListeners() {
 			this.#addLdapSettingsEventListeners();
 
-			document.getElementById('http_auth_enabled').addEventListener('change', (e) => {
-				this.form.querySelectorAll('[name^=http_]').forEach(field => {
-					if (!field.isSameNode(e.target)) {
-						field.disabled = !e.target.checked;
+			if (this.is_http_auth_allowed) {
+				document.getElementById('http_auth_enabled').addEventListener('change', (e) => {
+					this.form.querySelectorAll('[name^=http_]').forEach(field => {
+						if (!field.isSameNode(e.target)) {
+							field.disabled = !e.target.checked;
+						}
+					});
+
+					if (e.target.checked) {
+						let form_fields = this.form.querySelectorAll('[name^=http_]');
+
+						const http_auth_enabled = document.getElementById('http_auth_enabled');
+						overlayDialogue({
+							'title': <?= json_encode(_('Confirm changes')) ?>,
+							'class': 'position-middle',
+							'content': document.createElement('span').innerText = <?= json_encode(
+								_('Enable HTTP authentication for all users.')
+							) ?>,
+							'buttons': [
+								{
+									'title': <?= json_encode(_('Cancel')) ?>,
+									'cancel': true,
+									'class': '<?= ZBX_STYLE_BTN_ALT ?>',
+									'action': function () {
+										for (const form_field of form_fields) {
+											if (form_field !== http_auth_enabled) {
+												form_field.disabled = true;
+											}
+										}
+
+										http_auth_enabled.checked = false;
+										document.getElementById('tab_http').setAttribute('data-indicator-value', '0');
+									}
+								},
+								{
+									'title': <?= json_encode(_('Ok')) ?>,
+									'focused': true,
+									'action': function () {}
+								}
+							]
+						}, e.target);
 					}
 				});
-
-				if (e.target.checked) {
-					let form_fields = this.form.querySelectorAll('[name^=http_]');
-
-					const http_auth_enabled = document.getElementById('http_auth_enabled');
-					overlayDialogue({
-						'title': <?= json_encode(_('Confirm changes')) ?>,
-						'class': 'position-middle',
-						'content': document.createElement('span').innerText = <?= json_encode(
-							_('Enable HTTP authentication for all users.')
-						) ?>,
-						'buttons': [
-							{
-								'title': <?= json_encode(_('Cancel')) ?>,
-								'cancel': true,
-								'class': '<?= ZBX_STYLE_BTN_ALT ?>',
-								'action': function () {
-									for (const form_field of form_fields) {
-										if (form_field !== http_auth_enabled) {
-											form_field.disabled = true;
-										}
-									}
-
-									http_auth_enabled.checked = false;
-									document.getElementById('tab_http').setAttribute('data-indicator-value', '0');
-								}
-							},
-							{
-								'title': <?= json_encode(_('Ok')) ?>,
-								'focused': true,
-								'action': function () {}
-							}
-						]
-					}, e.target);
-				}
-			});
+			}
 
 			this.form.querySelector('[type="checkbox"][name="saml_auth_enabled"]').addEventListener('change', (e) => {
 				const is_readonly = !e.target.checked;
@@ -118,8 +115,8 @@
 					field.toggleAttribute('disabled', is_readonly);
 					field.setAttribute('tabindex', is_readonly ? -1 : 0);
 				});
-				this._setTableVisiblityState(this.saml_provision_groups_table, is_readonly);
-				this._setTableVisiblityState(this.saml_media_type_mapping_table, is_readonly);
+				this.#setTableVisiblityState(this.saml_provision_groups_table, is_readonly);
+				this.#setTableVisiblityState(this.saml_media_type_mapping_table, is_readonly);
 			});
 
 			this.saml_provision_status.addEventListener('change', (e) => {
@@ -162,6 +159,54 @@
 			this.form.addEventListener('submit', (e) => {
 				if (!this._authFormSubmit()) {
 					e.preventDefault();
+				}
+			});
+
+			this.mfa_table.addEventListener('click', (e) => {
+				if (e.target.classList.contains('disabled')) {
+					return;
+				}
+				else if (e.target.classList.contains('js-add')) {
+					this.editMfaMethod();
+				}
+				else if (e.target.classList.contains('js-edit')) {
+					this.editMfaMethod(e.target.closest('tr'));
+				}
+				else if (e.target.classList.contains('js-remove')) {
+					const table = e.target.closest('table');
+					const mfaid_input = e.target.closest('tr')
+						.querySelector('input[name$="[mfaid]"]');
+
+					if (mfaid_input !== null) {
+						const input = document.createElement('input');
+						input.type = 'hidden';
+						input.name = 'mfa_removed_mfaids[]';
+						input.value = mfaid_input.value;
+						this.form.appendChild(input);
+					}
+
+					e.target.closest('tr').remove();
+
+					if (table.querySelector('input[name="mfa_default_row_index"]:checked') === null) {
+						const default_mfa = table.querySelector('input[name="mfa_default_row_index"]');
+
+						if (default_mfa !== null) {
+							default_mfa.checked = true;
+						}
+					}
+				}
+			});
+
+			this.form.querySelector('[type="checkbox"][name="mfa_status"]').addEventListener('change', (e) => {
+				const is_readonly = !e.target.checked;
+				const default_index = this.form.querySelector('input[name="mfa_default_row_index"]:checked');
+				const default_index_hidden = this.form.querySelector('[type="hidden"][name="mfa_default_row_index"]');
+
+				this.#setTableVisiblityState(this.mfa_table, is_readonly);
+				this.#disableRemoveLinksWithUserGroups(this.mfa_table);
+
+				if (is_readonly && default_index) {
+					default_index_hidden.value = default_index.value;
 				}
 			});
 		}
@@ -215,8 +260,8 @@
 			const provision_disabled = ldap_disabled || !this.ldap_jit_status.checked;
 
 			this.ldap_provisioning_fields.forEach(field => field.toggleAttribute('disabled', ldap_disabled));
-			this._setTableVisiblityState(this.ldap_servers_table, ldap_disabled);
-			this._disableRemoveLdapServersWithUserGroups();
+			this.#setTableVisiblityState(this.ldap_servers_table, ldap_disabled);
+			this.#disableRemoveLinksWithUserGroups(this.ldap_servers_table);
 			this.jit_provision_interval.toggleAttribute('disabled', provision_disabled);
 		}
 
@@ -248,8 +293,8 @@
 			}
 		}
 
-		_disableRemoveLdapServersWithUserGroups() {
-			this.form.querySelectorAll('[data-disable_remove] .js-remove').forEach(field => field.disabled = true);
+		#disableRemoveLinksWithUserGroups(table) {
+			table.querySelectorAll('[data-disable_remove] .js-remove').forEach(field => field.disabled = true);
 		}
 
 		_renderProvisionGroups(saml_provision_groups) {
@@ -272,7 +317,7 @@
 			}
 		}
 
-		_setTableVisiblityState(table, readonly) {
+		#setTableVisiblityState(table, readonly) {
 			table.classList.toggle('disabled', readonly);
 			table.querySelectorAll('a,input:not([type="hidden"]),button').forEach(node => {
 				node.toggleAttribute('disabled', readonly);
@@ -337,11 +382,10 @@
 			if (row !== null) {
 				row_index = row.dataset.row_index;
 
-				popup_params = {
-					name: row.querySelector(`[name="saml_provision_media[${row_index}][name]"`).value,
-					attribute: row.querySelector(`[name="saml_provision_media[${row_index}][attribute]"`).value,
-					mediatypeid: row.querySelector(`[name="saml_provision_media[${row_index}][mediatypeid]"`).value
-				};
+				popup_params = Object.fromEntries(
+					[...row.querySelectorAll(`[name^="saml_provision_media[${row_index}]"]`)].map(
+						i => [i.name.match(/\[([^\]]+)\]$/)[1], i.value]
+				));
 			}
 			else {
 				while (this.saml_media_type_mapping_table.querySelector(`[data-row_index="${row_index}"]`) !== null) {
@@ -416,17 +460,10 @@
 					return element.name.substring(start, end);
 				});
 				const provision_media = provision_media_indexes.map((i) => {
-					return {
-						name: row.querySelector(
-							`[name="ldap_servers[${row_index}][provision_media][${i}][name]"`
-						).value,
-						mediatypeid: row.querySelector(
-							`[name="ldap_servers[${row_index}][provision_media][${i}][mediatypeid]"`
-						).value,
-						attribute: row.querySelector(
-							`[name="ldap_servers[${row_index}][provision_media][${i}][attribute]"`
-						).value
-					};
+					return Object.fromEntries(
+						[...row.querySelectorAll(`[name^="ldap_servers[${row_index}][provision_media][${i}]"]`)].map(
+							i => [i.name.match(/\[([^\]]+)\]$/)[1], i.value]
+					));
 				});
 
 				popup_params = {
@@ -534,7 +571,7 @@
 			}
 
 			if ('provision_media' in ldap) {
-				for (const [group_index, media] of ldap.provision_media.entries()) {
+				for (const [group_index, media] of Object.entries(ldap.provision_media)) {
 					for (const [name, value] of Object.entries(media)) {
 						if (name === 'mediatype_name') {
 							continue;
@@ -603,7 +640,110 @@
 
 			template.innerHTML = template_saml_media_mapping_row.evaluate(saml_media).trim();
 
+			if (saml_media.userdirectory_mediaid === undefined) {
+				template.content.firstChild.querySelector('[name$="[userdirectory_mediaid]"]').remove();
+			}
+
 			return template.content.firstChild;
+		}
+
+		#addMfaMethods(mfa_methods, mfa_default_row_index) {
+			for (const [row_index, mfa] of Object.entries(mfa_methods)) {
+				mfa.row_index = row_index;
+				mfa.is_default = (mfa.row_index == mfa_default_row_index) ? 'checked' : '';
+
+				this.mfa_table
+					.querySelector('tbody')
+					.appendChild(this.#prepareMfaRow(mfa));
+			}
+		}
+
+		#prepareMfaRow(mfa) {
+			const template_mfa_methods_row = new Template(this.templates.mfa_methods_row);
+			const template = document.createElement('template');
+			template.innerHTML = template_mfa_methods_row.evaluate(mfa).trim();
+			const row = template.content.firstChild;
+
+			row.querySelector('[name="mfa_default_row_index"]').toggleAttribute('checked', mfa.is_default);
+
+			const optional_fields = ['mfaid', 'hash_function', 'code_length', 'api_hostname', 'clientid',
+				'client_secret'
+			];
+
+			for (const field of optional_fields) {
+				if (!(field in mfa)) {
+					row.querySelector(`input[name="mfa_methods[${mfa.row_index}][${field}]"]`).remove();
+				}
+			}
+
+			if (mfa.usrgrps > 0) {
+				row.querySelector('.js-remove').disabled = true;
+				row.dataset.disable_remove = true;
+			}
+
+			return row;
+		}
+
+		editMfaMethod(row = null) {
+			let popup_params;
+			let row_index = 0;
+
+			if (row !== null) {
+				row_index = row.dataset.row_index;
+
+				popup_params = {
+					row_index,
+					add_mfa_method: 0,
+					type: row.querySelector(`[name="mfa_methods[${row_index}][type]"`).value,
+					name: row.querySelector(`[name="mfa_methods[${row_index}][name]"`).value,
+					hash_function: row.querySelector(`[name="mfa_methods[${row_index}][hash_function]"`)?.value,
+					code_length: row.querySelector(`[name="mfa_methods[${row_index}][code_length]"`)?.value,
+					api_hostname: row.querySelector(`[name="mfa_methods[${row_index}][api_hostname]"`)?.value,
+					clientid: row.querySelector(`[name="mfa_methods[${row_index}][clientid]"`)?.value,
+					client_secret: row.querySelector(`[name="mfa_methods[${row_index}][client_secret]"`)?.value
+				};
+
+				const mfaid_input = row.querySelector(`[name="mfa_methods[${row_index}][mfaid]"`);
+
+				if (mfaid_input !== null) {
+					popup_params['mfaid'] = mfaid_input.value;
+				}
+			}
+			else {
+				while (document.querySelector(`#mfa-methods [data-row_index="${row_index}"]`) !== null) {
+					row_index++;
+				}
+
+				popup_params = {
+					row_index,
+					add_mfa_method: 1
+				};
+			}
+
+			const overlay = PopUp('mfa.edit', popup_params,
+				{dialogueid: 'mfa_edit', dialogue_class: 'modal-popup-small'}
+			);
+
+			overlay.$dialogue[0].addEventListener('dialogue.submit', (e) => {
+				const mfa = {...e.detail, row_index};
+
+				if (row === null) {
+					mfa.is_default = document.getElementById('mfa-methods')
+						.querySelector('[name="mfa_default_row_index"]:checked') === null;
+					mfa.usrgrps = 0;
+
+					this.mfa_table
+						.querySelector('tbody')
+						.appendChild(this.#prepareMfaRow(mfa));
+				}
+				else {
+					mfa.is_default = row.querySelector('[name="mfa_default_row_index"]').checked === true;
+					mfa.usrgrps = row.querySelector('.js-mfa-usergroups').textContent;
+
+					row.parentNode.insertBefore(this.#prepareMfaRow(mfa), row);
+					row.remove();
+				}
+			});
 		}
 	};
 </script>

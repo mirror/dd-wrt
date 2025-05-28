@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -40,6 +35,7 @@ abstract class CControllerLatest extends CController {
 		'name' => '',
 		'evaltype' => TAG_EVAL_TYPE_AND_OR,
 		'tags' => [],
+		'state' => -1,
 		'show_tags' => SHOW_TAGS_3,
 		'tag_name_format' => TAG_NAME_FULL,
 		'tag_priority' => '',
@@ -50,8 +46,12 @@ abstract class CControllerLatest extends CController {
 		'subfilter_hostids' => [],
 		'subfilter_tagnames' => [],
 		'subfilter_tags' => [],
+		'subfilter_state' => [],
 		'subfilter_data' => []
 	];
+
+	// Mandatory filter fields.
+	public const MANDATORY_FILTER_FIELDS = ['groupids', 'hostids', 'name', 'tags', 'state'];
 
 	/**
 	 * Prepare the latest data based on the given filter and sorting options.
@@ -65,6 +65,7 @@ abstract class CControllerLatest extends CController {
 	 * @param string $filter['tags'][]['tag']
 	 * @param string $filter['tags'][]['value']
 	 * @param int    $filter['tags'][]['operator']
+	 * @param int    $filter['state']              Filter state.
 	 * @param string $sort_field                   Sorting field.
 	 * @param string $sort_order                   Sorting order.
 	 *
@@ -99,11 +100,10 @@ abstract class CControllerLatest extends CController {
 				'evaltype' => $filter['evaltype'],
 				'tags' => $filter['tags'] ?: null,
 				'filter' => [
-					'status' => [ITEM_STATUS_ACTIVE]
+					'status' => [ITEM_STATUS_ACTIVE],
+					'state' => $filter['state'] == -1 ? null : $filter['state']
 				],
-				'search' => ($filter['name'] === '') ? null : [
-					'name' => $filter['name']
-				],
+				'search' => $filter['name'] === '' ? null : ['name_resolved' => $filter['name']],
 				'preservekeys' => true
 			]);
 
@@ -111,16 +111,16 @@ abstract class CControllerLatest extends CController {
 		}
 
 		if ($select_items) {
-			$items = API::Item()->get([
-				'output' => ['itemid', 'type', 'hostid', 'name', 'key_', 'delay', 'history', 'trends', 'status',
-					'value_type', 'units', 'description', 'state', 'error'
+			$items = CArrayHelper::renameObjectsKeys(API::Item()->get([
+				'output' => ['itemid', 'type', 'hostid', 'name_resolved', 'key_', 'delay', 'history', 'trends',
+					'status', 'value_type', 'units', 'description', 'state', 'error'
 				],
 				'selectTags' => ['tag', 'value'],
 				'selectValueMap' => ['mappings'],
 				'itemids' => array_keys($select_items),
 				'webitems' => true,
 				'preservekeys' => true
-			]);
+			]), ['name_resolved' => 'name']);
 
 			// If user role checkbox 'Invoke "Execute now" on read-only hosts' is ON, read-write items are the same.
 			$items_rw = $items;
@@ -269,6 +269,7 @@ abstract class CControllerLatest extends CController {
 	 * @param array  $filter['subfilter_hostids']   Selected host subfilter parameters.
 	 * @param array  $filter['subfilter_tagnames']  Selected tagname subfilter parameters.
 	 * @param array  $filter['subfilter_tags']      Selected tags subfilter parameters.
+	 * @param array  $filter['subfilter_state']     Selected state subfilter parameters.
 	 * @param array  $filter['subfilter_data']      Selected data subfilter parameters.
 	 *
 	 * @return array
@@ -284,6 +285,7 @@ abstract class CControllerLatest extends CController {
 			'hostids' => array_flip($filter['subfilter_hostids']),
 			'tagnames' => array_flip($filter['subfilter_tagnames']),
 			'tags' => $tags,
+			'state' => $filter['state'] == -1 ? array_flip($filter['subfilter_state']) : [],
 			'data' => array_flip($filter['subfilter_data'])
 		];
 	}
@@ -382,6 +384,22 @@ abstract class CControllerLatest extends CController {
 				}
 			}
 
+			// State subfilter.
+			$item_matches = true;
+			foreach ($item['matching_subfilters'] as $filter_name => $match) {
+				if ($filter_name === 'state') {
+					continue;
+				}
+				if (!$match) {
+					$item_matches = false;
+					break;
+				}
+			}
+
+			if ($item_matches) {
+				$subfilter_options['state'][$item['state']]['count']++;
+			}
+
 			// Data subfilter.
 			if ($subfilters['data']) {
 				$subfilter_options['data'][$item['has_data'] ? 1 : 0]['count']++;
@@ -430,6 +448,7 @@ abstract class CControllerLatest extends CController {
 	 * @param array $subfilter['hostids']                  Selected subfilter hosts.
 	 * @param array $subfilter['tagnames']                 Selected subfilter names.
 	 * @param array $subfilter['tags']                     Selected subfilter tags.
+	 * @param array $subfilter['state']                    Selected subfilter state.
 	 * @param array $subfilter['data']                     Selected subfilter data options.
 	 *
 	 * @return array
@@ -513,6 +532,19 @@ abstract class CControllerLatest extends CController {
 			}
 		}
 
+		$subfilter_options['state'] = [
+			ITEM_STATE_NORMAL => [
+				'name' => _('Normal'),
+				'selected' => array_key_exists(ITEM_STATE_NORMAL, $subfilter['state']),
+				'count' => 0
+			],
+			ITEM_STATE_NOTSUPPORTED => [
+				'name' => _('Not supported'),
+				'selected' => array_key_exists(ITEM_STATE_NOTSUPPORTED, $subfilter['state']),
+				'count' => 0
+			]
+		];
+
 		$subfilter_options['data'] = [
 			1 => [
 				'name' => _('With data'),
@@ -530,6 +562,59 @@ abstract class CControllerLatest extends CController {
 	}
 
 	/**
+	 * Clean the filter from non-existing hosts and host group IDs.
+	 *
+	 * @param array $filter
+	 *
+	 * $filter = [
+	 *     'groupids' =>          (array)  Group IDs from filter to check.
+	 *     'hostids' =>           (array)  Host IDs from filter to check.
+	 *     'subfilter_hostids' => (array)  Host IDs from sub-filter to check.
+	 * ]
+	 *
+	 * @return array
+	 */
+	protected static function sanitizeFilter(array $filter): array {
+		if ($filter['hostids']) {
+			$hosts = API::Host()->get([
+				'output' => [],
+				'hostids' => $filter['hostids'],
+				'preservekeys' => true
+			]);
+
+			$filter['hostids'] = array_filter($filter['hostids'], static fn($hostid) =>
+				array_key_exists($hostid, $hosts)
+			);
+		}
+
+		if ($filter['subfilter_hostids']) {
+			$hosts = API::Host()->get([
+				'output' => [],
+				'hostids' => $filter['subfilter_hostids'],
+				'preservekeys' => true
+			]);
+
+			$filter['subfilter_hostids'] = array_filter($filter['subfilter_hostids'], static fn($hostid) =>
+				array_key_exists($hostid, $hosts)
+			);
+		}
+
+		if ($filter['groupids']) {
+			$groups = API::HostGroup()->get([
+				'output' => [],
+				'groupids' => $filter['groupids'],
+				'preservekeys' => true
+			]);
+
+			$filter['groupids'] = array_filter($filter['groupids'], static fn($groupid) =>
+				array_key_exists($groupid, $groups)
+			);
+		}
+
+		return $filter;
+	}
+
+	/**
 	 * Calculate which items retrieved using the primary filter matches selected subfilter options. Results are added to
 	 * the array stored with 'matching_subfilters' key for each retrieved item. Additionally 'has_data' flag is added to
 	 * each of retrieved item to indicate either particular item has data.
@@ -544,6 +629,7 @@ abstract class CControllerLatest extends CController {
 	 * @param array  $subfilter['hostids']                        Selected subfilter hosts.
 	 * @param array  $subfilter['tagnames']                       Selected subfilter tagnames.
 	 * @param array  $subfilter['tags']                           Selected subfilter tags.
+	 * @param array  $subfilter['state']                          Selected subfilter state.
 	 * @param array  $subfilter['data']                           Selected subfilter data options.
 	 *
 	 * @return array
@@ -580,6 +666,13 @@ abstract class CControllerLatest extends CController {
 				'tags' => $match_tags
 			];
 
+			if ($subfilter['state']) {
+				$item['matching_subfilters']['state'] = array_key_exists(ITEM_STATE_NORMAL, $subfilter['state'])
+					&& $item['state'] == ITEM_STATE_NORMAL
+					|| array_key_exists(ITEM_STATE_NOTSUPPORTED, $subfilter['state'])
+					&& $item['state'] == ITEM_STATE_NOTSUPPORTED;
+			}
+
 			if ($subfilter['data']) {
 				$item['has_data'] = array_key_exists($item['itemid'], $with_data);
 				$item['matching_subfilters']['data'] = array_key_exists(0, $subfilter['data']) && !$item['has_data']
@@ -602,6 +695,7 @@ abstract class CControllerLatest extends CController {
 	 * @param array|bool $items[]['matching_subfilters']['tags']      (optional) TRUE if item matches tagname/value
 	 *                                                                subfilter or array of exactly matching
 	 *                                                                tagname/value pairs.
+	 * @param bool       $items[]['matching_subfilters']['state']     (optional) TRUE if item matches state subfilter.
 	 * @param bool       $items[]['matching_subfilters']['data']      (optional) TRUE if item matches data subfilter.
 	 *
 	 * @return array
@@ -609,7 +703,7 @@ abstract class CControllerLatest extends CController {
 	protected static function applySubfilters(array $items): array {
 		return array_filter($items, function ($item) {
 			$matches = array_intersect_key($item['matching_subfilters'],
-				array_flip(['hostids', 'tagnames', 'tags', 'data'])
+				array_flip(['hostids', 'tagnames', 'tags', 'state', 'data'])
 			);
 
 			if (array_key_exists('tagnames', $matches)) {
@@ -719,5 +813,45 @@ abstract class CControllerLatest extends CController {
 		CArrayHelper::sort($top_priority_fields, ['name']);
 
 		return $top_priority_fields;
+	}
+
+	/**
+	 * Check if at least one of mandatory filter fields is set.
+	 *
+	 * @param array $filter
+	 *
+	 * @return bool
+	 */
+	public static function isMandatoryFilterFieldSet(array $filter): bool {
+		$mandatory_field_defaults = array_intersect_key(
+			self::FILTER_FIELDS_DEFAULT, array_flip(self::MANDATORY_FILTER_FIELDS)
+		);
+
+		foreach ($mandatory_field_defaults as $field => $value) {
+			if ($filter[$field] != $value) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if at least one of subfilters is set.
+	 *
+	 * @param array $filter
+	 *
+	 * @return bool
+	 */
+	public static function isSubfilterSet(array $filter): bool {
+		$subfilters = ['subfilter_hostids','subfilter_tagnames','subfilter_tags','subfilter_state','subfilter_data'];
+
+		foreach ($subfilters as $subfilter) {
+			if ($filter[$subfilter]) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -1,27 +1,21 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxmodules.h"
 #include "module.h"
 
 #include "zbxstr.h"
-#include "log.h"
 #include "zbxsysinfo.h"
 #include "zbxalgo.h"
 
@@ -53,7 +47,7 @@ zbx_history_log_cb_t		*history_log_cbs = NULL;
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
-static int	zbx_register_module_items(ZBX_METRIC *metrics, char *error, size_t max_error_len)
+static int	zbx_register_module_items(zbx_metric_t *metrics, char *error, size_t max_error_len)
 {
 	int	i;
 
@@ -100,7 +94,7 @@ static void	zbx_register_history_write_cbs(zbx_module_t *module, ZBX_HISTORY_WRI
 {
 	if (NULL != history_write_cbs.history_float_cb)
 	{
-		int	j = 0;
+		size_t	j = 0;
 
 		if (NULL == history_float_cbs)
 		{
@@ -121,7 +115,7 @@ static void	zbx_register_history_write_cbs(zbx_module_t *module, ZBX_HISTORY_WRI
 
 	if (NULL != history_write_cbs.history_integer_cb)
 	{
-		int	j = 0;
+		size_t	j = 0;
 
 		if (NULL == history_integer_cbs)
 		{
@@ -142,7 +136,7 @@ static void	zbx_register_history_write_cbs(zbx_module_t *module, ZBX_HISTORY_WRI
 
 	if (NULL != history_write_cbs.history_string_cb)
 	{
-		int	j = 0;
+		size_t	j = 0;
 
 		if (NULL == history_string_cbs)
 		{
@@ -163,7 +157,7 @@ static void	zbx_register_history_write_cbs(zbx_module_t *module, ZBX_HISTORY_WRI
 
 	if (NULL != history_write_cbs.history_text_cb)
 	{
-		int	j = 0;
+		size_t	j = 0;
 
 		if (NULL == history_text_cbs)
 		{
@@ -184,7 +178,7 @@ static void	zbx_register_history_write_cbs(zbx_module_t *module, ZBX_HISTORY_WRI
 
 	if (NULL != history_write_cbs.history_log_cb)
 	{
-		int	j = 0;
+		size_t	j = 0;
 
 		if (NULL == history_log_cbs)
 		{
@@ -206,8 +200,8 @@ static void	zbx_register_history_write_cbs(zbx_module_t *module, ZBX_HISTORY_WRI
 
 static int	zbx_module_compare_func(const void *d1, const void *d2)
 {
-	const zbx_module_t	*m1 = *(const zbx_module_t **)d1;
-	const zbx_module_t	*m2 = *(const zbx_module_t **)d2;
+	const zbx_module_t	*m1 = *(const zbx_module_t * const *)d1;
+	const zbx_module_t	*m2 = *(const zbx_module_t * const *)d2;
 
 	ZBX_RETURN_IF_NOT_EQUAL(m1->lib, m2->lib);
 
@@ -232,7 +226,7 @@ static int	zbx_load_module(const char *path, char *name, int timeout)
 	void			*lib;
 	char			full_name[MAX_STRING_LEN], error[MAX_STRING_LEN];
 	int			(*func_init)(void), (*func_version)(void), version;
-	ZBX_METRIC		*(*func_list)(void);
+	zbx_metric_t		*(*func_list)(void);
 	void			(*func_timeout)(int);
 	ZBX_HISTORY_WRITE_CBS	(*func_history_write_cbs)(void);
 	zbx_module_t		*module, module_tmp;
@@ -253,7 +247,7 @@ static int	zbx_load_module(const char *path, char *name, int timeout)
 	module_tmp.lib = lib;
 	if (FAIL != zbx_vector_ptr_search(&modules, &module_tmp, zbx_module_compare_func))
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "module \"%s\" has already beed loaded", name);
+		zabbix_log(LOG_LEVEL_DEBUG, "module \"%s\" has already been loaded", name);
 		return SUCCEED;
 	}
 

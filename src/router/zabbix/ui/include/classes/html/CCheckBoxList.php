@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -23,12 +18,13 @@ class CCheckBoxList extends CList {
 
 	private const ZBX_STYLE_CLASS = 'checkbox-list';
 
+	private const ZBX_STYLE_LAYOUT_FIXED = 'fixed';
 	private const ZBX_STYLE_VERTICAL = 'vertical';
 
 	/**
 	 * @var array $values
 	 */
-	protected $values;
+	protected array $values = [];
 
 	/**
 	 * @var string $name
@@ -36,14 +32,24 @@ class CCheckBoxList extends CList {
 	protected $name;
 
 	/**
+	 * Checkboxes id unique suffix.
+	 */
+	protected $uniqid = '';
+
+	/**
 	 * @var bool $enabled
 	 */
 	protected $enabled = true;
 
 	/**
-	 * Checkboxes id unique suffix.
+	 * @var bool $readonly
 	 */
-	protected $uniqid = '';
+	protected $readonly = false;
+
+	/**
+	 * @var bool $layout_fixed
+	 */
+	protected $layout_fixed = false;
 
 	/**
 	 * @var bool $vertical
@@ -53,7 +59,12 @@ class CCheckBoxList extends CList {
 	/**
 	 * @var int $columns
 	 */
-	protected $columns;
+	protected int $columns = 1;
+
+	/**
+	 * @var bool
+	 */
+	protected bool $show_titles = false;
 
 	/**
 	 * @param string $name
@@ -63,8 +74,6 @@ class CCheckBoxList extends CList {
 
 		$this->addClass(self::ZBX_STYLE_CLASS);
 		$this->name = $name;
-		$this->values = [];
-		$this->columns = 1;
 	}
 
 	/**
@@ -136,13 +145,37 @@ class CCheckBoxList extends CList {
 	}
 
 	/**
+	 * Set checkboxes readonly state.
+	 *
+	 * @param bool $readonly  State of checkboxes.
+	 */
+	public function setReadonly(bool $readonly) {
+		$this->readonly = $readonly;
+
+		return $this;
+	}
+
+	/**
+	 * Make columns the same size.
+	 *
+	 * @param bool $layout_fixed
+	 *
+	 * @return CCheckBoxList
+	 */
+	public function setLayoutFixed(bool $layout_fixed = true): CCheckBoxList {
+		$this->layout_fixed = $layout_fixed;
+
+		return $this;
+	}
+
+	/**
 	 * Display checkboxes in vertical order.
 	 *
 	 * @param bool $vertical
 	 *
 	 * @return CCheckBoxList
 	 */
-	public function setVertical(bool $vertical = true): CCheckBoxList {
+	public function setVertical(bool $vertical = true): self {
 		$this->vertical = $vertical;
 
 		return $this;
@@ -155,13 +188,26 @@ class CCheckBoxList extends CList {
 	 *
 	 * @return CCheckBoxList
 	 */
-	public function setColumns(int $columns): CCheckBoxList {
+	public function setColumns(int $columns): self {
 		$this->columns = $columns;
 
 		return $this;
 	}
 
-	/*
+	/**
+	 * Set if checkboxes inside have a title.
+	 *
+	 * @param bool $show_titles
+	 *
+	 * @return CCheckBoxList
+	 */
+	public function showTitles(bool $show_titles = true): self {
+		$this->show_titles = $show_titles;
+
+		return $this;
+	}
+
+	/**
 	 * @param bool $destroy
 	 *
 	 * @return string
@@ -169,9 +215,12 @@ class CCheckBoxList extends CList {
 	public function toString($destroy = true) {
 		$this->addStyle('--columns: '.$this->columns.';');
 
+		if ($this->layout_fixed) {
+			$this->addClass(self::ZBX_STYLE_LAYOUT_FIXED);
+		}
+
 		if ($this->vertical) {
-			$values_count = count($this->values);
-			$max_rows = (int) ceil($values_count / $this->columns);
+			$max_rows = (int) ceil(count($this->values) / $this->columns);
 
 			$this->addClass(self::ZBX_STYLE_VERTICAL);
 			$this->addStyle('--rows: '.$max_rows.';');
@@ -183,7 +232,12 @@ class CCheckBoxList extends CList {
 			$checkbox = (new CCheckBox($name, $value['value']))
 				->setLabel($value['label'])
 				->setChecked($value['checked'])
-				->setEnabled($this->enabled);
+				->setEnabled($this->enabled)
+				->setReadonly($this->readonly);
+
+			if ($this->show_titles) {
+				$checkbox->setTitle($value['label']);
+			}
 
 			if (array_key_exists('id', $value) || $this->uniqid !== '') {
 				$checkbox->setId(array_key_exists('id', $value)

@@ -1,27 +1,21 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_ZBXALGO_H
 #define ZABBIX_ZBXALGO_H
 
 #include "zbxnum.h"
-#include "log.h"
 
 /* generic */
 
@@ -39,6 +33,7 @@ typedef zbx_hash_t (*zbx_hash_func_t)(const void *data);
 
 zbx_hash_t	zbx_default_ptr_hash_func(const void *data);
 zbx_hash_t	zbx_default_string_hash_func(const void *data);
+zbx_hash_t	zbx_default_string_ptr_hash_func(const void *data);
 zbx_hash_t	zbx_default_uint64_pair_hash_func(const void *data);
 
 #define ZBX_DEFAULT_HASH_SEED		0
@@ -46,7 +41,15 @@ zbx_hash_t	zbx_default_uint64_pair_hash_func(const void *data);
 #define ZBX_DEFAULT_PTR_HASH_FUNC		zbx_default_ptr_hash_func
 #define ZBX_DEFAULT_UINT64_HASH_FUNC		zbx_hash_splittable64
 #define ZBX_DEFAULT_STRING_HASH_FUNC		zbx_default_string_hash_func
+#define ZBX_DEFAULT_STRING_PTR_HASH_FUNC	zbx_default_string_ptr_hash_func
 #define ZBX_DEFAULT_UINT64_PAIR_HASH_FUNC	zbx_default_uint64_pair_hash_func
+
+typedef enum
+{
+	ZBX_HASHSET_UNIQ_FALSE,
+	ZBX_HASHSET_UNIQ_TRUE
+}
+zbx_hashset_uniq_t;
 
 typedef int (*zbx_compare_func_t)(const void *d1, const void *d2);
 
@@ -90,15 +93,18 @@ typedef void (*zbx_clean_func_t)(void *data);
 	if ((a) > (b))			\
 		return +1
 
-#define ZBX_RETURN_IF_DBL_NOT_EQUAL(a, b)	\
-						\
-	if (FAIL == zbx_double_compare(a, b))	\
-	{					\
-		if ((a) < (b))			\
-			return -1;		\
-		else				\
-			return +1;		\
-	}
+#define ZBX_RETURN_IF_DBL_NOT_EQUAL(a, b)		\
+	do						\
+	{						\
+		if (FAIL == zbx_double_compare(a, b))	\
+		{					\
+			if ((a) < (b))			\
+				return -1;		\
+			else				\
+				return +1;		\
+		}					\
+	}						\
+	while(0)
 
 /* pair */
 
@@ -161,10 +167,11 @@ void	zbx_hashset_destroy(zbx_hashset_t *hs);
 
 int	zbx_hashset_reserve(zbx_hashset_t *hs, int num_slots_req);
 void	*zbx_hashset_insert(zbx_hashset_t *hs, const void *data, size_t size);
-void	*zbx_hashset_insert_ext(zbx_hashset_t *hs, const void *data, size_t size, size_t offset);
+void	*zbx_hashset_insert_ext(zbx_hashset_t *hs, const void *data, size_t size, size_t offset, size_t n,
+		zbx_hashset_uniq_t uniq);
 void	*zbx_hashset_search(const zbx_hashset_t *hs, const void *data);
 void	zbx_hashset_remove(zbx_hashset_t *hs, const void *data);
-void	zbx_hashset_remove_direct(zbx_hashset_t *hs, const void *data);
+void	zbx_hashset_remove_direct(zbx_hashset_t *hs, void *data);
 
 void	zbx_hashset_clear(zbx_hashset_t *hs);
 
@@ -240,8 +247,8 @@ void	zbx_hashmap_clear(zbx_hashmap_t *hm);
 
 typedef struct
 {
-	zbx_uint64_t		key;
-	const void		*data;
+	zbx_uint64_t	key;
+	void		*data;
 }
 zbx_binary_heap_elem_t;
 
@@ -272,8 +279,8 @@ void			zbx_binary_heap_create_ext(zbx_binary_heap_t *heap, zbx_compare_func_t co
 							zbx_mem_free_func_t mem_free_func);
 void			zbx_binary_heap_destroy(zbx_binary_heap_t *heap);
 
-int			zbx_binary_heap_empty(zbx_binary_heap_t *heap);
-zbx_binary_heap_elem_t	*zbx_binary_heap_find_min(zbx_binary_heap_t *heap);
+int			zbx_binary_heap_empty(const zbx_binary_heap_t *heap);
+zbx_binary_heap_elem_t	*zbx_binary_heap_find_min(const zbx_binary_heap_t *heap);
 void			zbx_binary_heap_insert(zbx_binary_heap_t *heap, zbx_binary_heap_elem_t *elem);
 void			zbx_binary_heap_update_direct(zbx_binary_heap_t *heap, zbx_binary_heap_elem_t *elem);
 void			zbx_binary_heap_remove_min(zbx_binary_heap_t *heap);
@@ -283,7 +290,7 @@ void			zbx_binary_heap_clear(zbx_binary_heap_t *heap);
 
 /* vector implementation start */
 
-#define ZBX_VECTOR_DECL(__id, __type)										\
+#define ZBX_VECTOR_STRUCT_DECL(__id, __type)									\
 														\
 typedef struct													\
 {														\
@@ -294,7 +301,9 @@ typedef struct													\
 	zbx_mem_realloc_func_t	mem_realloc_func;								\
 	zbx_mem_free_func_t	mem_free_func;									\
 }														\
-zbx_vector_ ## __id ## _t;											\
+zbx_vector_ ## __id ## _t;
+
+#define ZBX_VECTOR_FUNC_DECL(__id, __type, __const)								\
 														\
 void	zbx_vector_ ## __id ## _create(zbx_vector_ ## __id ## _t *vector);					\
 void	zbx_vector_ ## __id ## _create_ext(zbx_vector_ ## __id ## _t *vector,					\
@@ -304,6 +313,7 @@ void	zbx_vector_ ## __id ## _create_ext(zbx_vector_ ## __id ## _t *vector,					\
 void	zbx_vector_ ## __id ## _destroy(zbx_vector_ ## __id ## _t *vector);					\
 														\
 void	zbx_vector_ ## __id ## _append(zbx_vector_ ## __id ## _t *vector, __type value);			\
+void	zbx_vector_ ## __id ## _insert(zbx_vector_ ## __id ## _t *vector, __type value, int before_index);	\
 void	zbx_vector_ ## __id ## _append_ptr(zbx_vector_ ## __id ## _t *vector, __type *value);			\
 void	zbx_vector_ ## __id ## _append_array(zbx_vector_ ## __id ## _t *vector, __type const *values,		\
 									int values_num);			\
@@ -313,13 +323,13 @@ void	zbx_vector_ ## __id ## _remove(zbx_vector_ ## __id ## _t *vector, int index
 void	zbx_vector_ ## __id ## _sort(zbx_vector_ ## __id ## _t *vector, zbx_compare_func_t compare_func);	\
 void	zbx_vector_ ## __id ## _uniq(zbx_vector_ ## __id ## _t *vector, zbx_compare_func_t compare_func);	\
 														\
-int	zbx_vector_ ## __id ## _nearestindex(const zbx_vector_ ## __id ## _t *vector, const __type value,	\
+int	zbx_vector_ ## __id ## _nearestindex(const zbx_vector_ ## __id ## _t *vector, __const __type value,	\
 									zbx_compare_func_t compare_func);	\
-int	zbx_vector_ ## __id ## _bsearch(const zbx_vector_ ## __id ## _t *vector, const __type value,		\
+int	zbx_vector_ ## __id ## _bsearch(const zbx_vector_ ## __id ## _t *vector, __const __type value,		\
 									zbx_compare_func_t compare_func);	\
-int	zbx_vector_ ## __id ## _lsearch(const zbx_vector_ ## __id ## _t *vector, const __type value, int *index,\
+int	zbx_vector_ ## __id ## _lsearch(const zbx_vector_ ## __id ## _t *vector, __const __type value, int *index,\
 									zbx_compare_func_t compare_func);	\
-int	zbx_vector_ ## __id ## _search(const zbx_vector_ ## __id ## _t *vector, const __type value,		\
+int	zbx_vector_ ## __id ## _search(const zbx_vector_ ## __id ## _t *vector, __const __type value,		\
 									zbx_compare_func_t compare_func);	\
 void	zbx_vector_ ## __id ## _setdiff(zbx_vector_ ## __id ## _t *left, const zbx_vector_ ## __id ## _t *right,\
 									zbx_compare_func_t compare_func);	\
@@ -327,27 +337,37 @@ void	zbx_vector_ ## __id ## _setdiff(zbx_vector_ ## __id ## _t *left, const zbx_
 void	zbx_vector_ ## __id ## _reserve(zbx_vector_ ## __id ## _t *vector, size_t size);			\
 void	zbx_vector_ ## __id ## _clear(zbx_vector_ ## __id ## _t *vector);
 
-#define ZBX_PTR_VECTOR_DECL(__id, __type)									\
+#define ZBX_VECTOR_DECL(__id, __type)	ZBX_VECTOR_STRUCT_DECL(__id, __type)					\
+					ZBX_VECTOR_FUNC_DECL(__id, __type, const)
+
+#define ZBX_PTR_VECTOR_FUNC_DECL(__id, __type, __const)									\
 														\
-ZBX_VECTOR_DECL(__id, __type)											\
+ZBX_VECTOR_FUNC_DECL(__id, __type, __const)										\
 														\
 typedef void (*zbx_ ## __id ## _free_func_t)(__type data);							\
 														\
 void	zbx_vector_ ## __id ## _clear_ext(zbx_vector_ ## __id ## _t *vector, zbx_ ## __id ## _free_func_t free_func);
 
+#define ZBX_PTR_VECTOR_DECL(__id, __type)	ZBX_VECTOR_STRUCT_DECL(__id, __type)				\
+						ZBX_PTR_VECTOR_FUNC_DECL(__id, __type, const)
+
+#define ZBX_CONST_PTR_VECTOR_DECL(__id, __type)	ZBX_VECTOR_STRUCT_DECL(__id, __type)				\
+						ZBX_PTR_VECTOR_FUNC_DECL(__id, __type, )
+
 ZBX_VECTOR_DECL(uint64, zbx_uint64_t)
 ZBX_VECTOR_DECL(uint32, zbx_uint32_t)
+ZBX_VECTOR_DECL(int32, int)
 ZBX_PTR_VECTOR_DECL(str, char *)
 ZBX_PTR_VECTOR_DECL(ptr, void *)
 ZBX_VECTOR_DECL(ptr_pair, zbx_ptr_pair_t)
 ZBX_VECTOR_DECL(uint64_pair, zbx_uint64_pair_t)
 ZBX_VECTOR_DECL(dbl, double)
 
-ZBX_PTR_VECTOR_DECL(tags, zbx_tag_t*)
+ZBX_PTR_VECTOR_DECL(tags_ptr, zbx_tag_t*)
 
 #define	ZBX_VECTOR_ARRAY_GROWTH_FACTOR	3/2
 
-#define	ZBX_VECTOR_IMPL(__id, __type)										\
+#define	ZBX_VECTOR_FUNC_IMPL(__id, __type, __const)										\
 														\
 static void	__vector_ ## __id ## _ensure_free_space(zbx_vector_ ## __id ## _t *vector)			\
 {														\
@@ -410,6 +430,20 @@ void	zbx_vector_ ## __id ## _append(zbx_vector_ ## __id ## _t *vector, __type va
 	vector->values[vector->values_num++] = value;								\
 }														\
 														\
+void	zbx_vector_ ## __id ## _insert(zbx_vector_ ## __id ## _t *vector, __type value, int before_index)	\
+{														\
+	__vector_ ## __id ## _ensure_free_space(vector);							\
+														\
+	if (0 < vector->values_num - before_index)								\
+	{													\
+		memmove(vector->values + before_index + 1, vector->values + before_index,			\
+				(size_t)(vector->values_num - before_index) * sizeof(__type));			\
+	}													\
+														\
+	vector->values_num++;											\
+	vector->values[before_index] = value;									\
+}														\
+														\
 void	zbx_vector_ ## __id ## _append_ptr(zbx_vector_ ## __id ## _t *vector, __type *value)			\
 {														\
 	__vector_ ## __id ## _ensure_free_space(vector);							\
@@ -419,6 +453,9 @@ void	zbx_vector_ ## __id ## _append_ptr(zbx_vector_ ## __id ## _t *vector, __typ
 void	zbx_vector_ ## __id ## _append_array(zbx_vector_ ## __id ## _t *vector, __type const *values,		\
 									int values_num)				\
 {														\
+	if (0 == values_num)											\
+		return;												\
+														\
 	zbx_vector_ ## __id ## _reserve(vector, (size_t)(vector->values_num + values_num));			\
 	memcpy(vector->values + vector->values_num, values, (size_t)values_num * sizeof(__type));		\
 	vector->values_num = vector->values_num + values_num;							\
@@ -470,7 +507,7 @@ void	zbx_vector_ ## __id ## _uniq(zbx_vector_ ## __id ## _t *vector, zbx_compare
 	}													\
 }														\
 														\
-int	zbx_vector_ ## __id ## _nearestindex(const zbx_vector_ ## __id ## _t *vector, const __type value,	\
+int	zbx_vector_ ## __id ## _nearestindex(const zbx_vector_ ## __id ## _t *vector, __const __type value,	\
 									zbx_compare_func_t compare_func)	\
 {														\
 	int	lo = 0, hi = vector->values_num, mid, c;							\
@@ -496,7 +533,7 @@ int	zbx_vector_ ## __id ## _nearestindex(const zbx_vector_ ## __id ## _t *vector
 	return hi;												\
 }														\
 														\
-int	zbx_vector_ ## __id ## _bsearch(const zbx_vector_ ## __id ## _t *vector, const __type value,		\
+int	zbx_vector_ ## __id ## _bsearch(const zbx_vector_ ## __id ## _t *vector, __const __type value,		\
 									zbx_compare_func_t compare_func)	\
 {														\
 	__type	*ptr;												\
@@ -510,7 +547,7 @@ int	zbx_vector_ ## __id ## _bsearch(const zbx_vector_ ## __id ## _t *vector, con
 		return FAIL;											\
 }														\
 														\
-int	zbx_vector_ ## __id ## _lsearch(const zbx_vector_ ## __id ## _t *vector, const __type value, int *index,\
+int	zbx_vector_ ## __id ## _lsearch(const zbx_vector_ ## __id ## _t *vector, __const __type value, int *index,\
 									zbx_compare_func_t compare_func)	\
 {														\
 	while (*index < vector->values_num)									\
@@ -533,7 +570,7 @@ int	zbx_vector_ ## __id ## _lsearch(const zbx_vector_ ## __id ## _t *vector, con
 	return FAIL;												\
 }														\
 														\
-int	zbx_vector_ ## __id ## _search(const zbx_vector_ ## __id ## _t *vector, const __type value,		\
+int	zbx_vector_ ## __id ## _search(const zbx_vector_ ## __id ## _t *vector, __const __type value,		\
 									zbx_compare_func_t compare_func)	\
 {														\
 	int	index;												\
@@ -598,9 +635,11 @@ void	zbx_vector_ ## __id ## _clear(zbx_vector_ ## __id ## _t *vector)					\
 	vector->values_num = 0;											\
 }
 
+#define	ZBX_VECTOR_IMPL(__id, __type)	ZBX_VECTOR_FUNC_IMPL(__id, __type, const)
+
 #define	ZBX_PTR_VECTOR_IMPL(__id, __type)									\
 														\
-ZBX_VECTOR_IMPL(__id, __type)											\
+ZBX_VECTOR_FUNC_IMPL(__id, __type, const)									\
 														\
 void	zbx_vector_ ## __id ## _clear_ext(zbx_vector_ ## __id ## _t *vector,					\
 		zbx_ ## __id ## _free_func_t free_func)								\
@@ -615,6 +654,18 @@ void	zbx_vector_ ## __id ## _clear_ext(zbx_vector_ ## __id ## _t *vector,					\
 		vector->values_num = 0;										\
 	}													\
 }
+
+#define	ZBX_CONST_PTR_VECTOR_IMPL(__id, __type)									\
+														\
+ZBX_VECTOR_FUNC_IMPL(__id, __type, )										\
+														\
+void	zbx_vector_ ## __id ## _clear_ext(zbx_vector_ ## __id ## _t *vector,					\
+		zbx_ ## __id ## _free_func_t free_func)								\
+{														\
+	ZBX_UNUSED(vector);											\
+	ZBX_UNUSED(free_func);											\
+	THIS_SHOULD_NEVER_HAPPEN_MSG("constant pointer vector contents must not be freed");			\
+}
 /* vector implementation end */
 
 /* these functions are only for use with zbx_vector_XXX_clear_ext() */
@@ -626,6 +677,7 @@ void	zbx_free_tag(zbx_tag_t *tag);
 /* these functions are only for use with zbx_vector_XXX_sort() */
 int	zbx_compare_tags(const void *d1, const void *d2);
 int	zbx_compare_tags_and_values(const void *d1, const void *d2);
+int	zbx_compare_tags_natural(const void *d1, const void *d2);
 
 /* 128 bit unsigned integer handling */
 void	zbx_uinc128_64(zbx_uint128_t *base, zbx_uint64_t value);
@@ -656,8 +708,7 @@ typedef enum
 	MODE_MAX,
 	MODE_MIN,
 	MODE_DELTA,
-	MODE_AVG,
-	MODE_INVALID
+	MODE_AVG
 }
 zbx_mode_t;
 
@@ -716,16 +767,17 @@ typedef struct
 }
 zbx_list_iterator_t;
 
-void	zbx_list_create(zbx_list_t *queue);
-void	zbx_list_create_ext(zbx_list_t *queue, zbx_mem_malloc_func_t mem_malloc_func,
+void	zbx_list_create(zbx_list_t *list);
+void	zbx_list_create_ext(zbx_list_t *list, zbx_mem_malloc_func_t mem_malloc_func,
 		zbx_mem_free_func_t mem_free_func);
 void	zbx_list_destroy(zbx_list_t *list);
-void	zbx_list_append(zbx_list_t *list, void *value, zbx_list_item_t **inserted);
-void	zbx_list_insert_after(zbx_list_t *list, zbx_list_item_t *after, void *value, zbx_list_item_t **inserted);
-void	zbx_list_prepend(zbx_list_t *list, void *value, zbx_list_item_t **inserted);
+int	zbx_list_append(zbx_list_t *list, void *value, zbx_list_item_t **inserted);
+int	zbx_list_insert_after(zbx_list_t *list, zbx_list_item_t *after, void *value, zbx_list_item_t **inserted);
+int	zbx_list_prepend(zbx_list_t *list, void *value, zbx_list_item_t **inserted);
 int	zbx_list_pop(zbx_list_t *list, void **value);
 int	zbx_list_peek(const zbx_list_t *list, void **value);
 void	zbx_list_iterator_init(zbx_list_t *list, zbx_list_iterator_t *iterator);
+int	zbx_list_iterator_init_with(zbx_list_t *list, zbx_list_item_t *next, zbx_list_iterator_t *iterator);
 int	zbx_list_iterator_next(zbx_list_iterator_t *iterator);
 int	zbx_list_iterator_peek(const zbx_list_iterator_t *iterator, void **value);
 void	zbx_list_iterator_clear(zbx_list_iterator_t *iterator);

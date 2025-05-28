@@ -1,45 +1,48 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
+require_once dirname(__FILE__).'/include/defines.inc.php';
 
 // get language translations
 require_once dirname(__FILE__).'/include/locales.inc.php';
 require_once dirname(__FILE__).'/include/gettextwrapper.inc.php';
 
-setupLocale(array_key_exists('lang', $_GET) ? (string) $_GET['lang'] : 'en_GB');
+setupLocale(array_key_exists('lang', $_GET) ? (string) $_GET['lang'] : ZBX_DEFAULT_LANG);
 
 require_once dirname(__FILE__).'/include/js.inc.php';
-
-require_once dirname(__FILE__).'/include/defines.inc.php';
 require_once dirname(__FILE__).'/include/classes/helpers/CCookieHelper.php';
 
 // available scripts 'scriptFileName' => 'path relative to js/'
 $available_js = [
+	'defines.js' => '',
 	'common.js' => '',
 	'class.dashboard.js' => '',
 	'class.dashboard.page.js' => '',
+	'class.dashboard.print.js' => '',
 	'class.dashboard.widget.placeholder.js' => '',
+	'class.widgets-data.js' => '',
+	'class.widget-base.js' => '',
 	'class.widget.js' => '',
 	'class.widget.inaccessible.js' => '',
 	'class.widget.iterator.js' => '',
+	'class.widget.misconfigured.js' => '',
 	'class.widget.paste-placeholder.js' => '',
+	'class.widget-field.checkbox-list.js' => '',
+	'class.widget-field.multiselect.js' => '',
+	'class.widget-field.time-period.js' => '',
+	'class.widget-select.popup.js' => '',
 	'hostinterfacemanager.js' => '',
 	'hostmacrosmanager.js' => '',
 	'menupopup.js' => '',
@@ -58,13 +61,19 @@ $available_js = [
 	'inputsecret.js' => '',
 	'macrovalue.js' => '',
 	// vendors
-	'jquery.js' => 'vendors/',
-	'jquery-ui.js' => 'vendors/',
-	'leaflet.js' => 'vendors/Leaflet/Leaflet/',
-	'leaflet.markercluster.js' => 'vendors/Leaflet/Leaflet.markercluster/',
+	'jquery.js' => 'vendors/jQuery/',
+	'jquery-ui.js' => 'vendors/jQueryUI/',
+	'leaflet.js' => 'vendors/Leaflet/',
+	'leaflet.markercluster.js' => 'vendors/Leaflet.markercluster/',
+	'd3.js' => 'vendors/D3/',
+	'qrcode.js' => 'vendors/qrcode/',
 	// classes
 	'component.z-bar-gauge.js' => '',
+	'component.z-vertical.js' => '',
 	'component.z-select.js' => '',
+	'component.z-sparkline.js' => '',
+	'class.event-hub.js' => '',
+	'class.event-hub.event.js' => '',
 	'class.base-component.js' => '',
 	'class.calendar.js' => '',
 	'class.cdate.js' => '',
@@ -87,11 +96,14 @@ $available_js = [
 	'class.csuggest.js' => '',
 	'class.csvggraph.js' => '',
 	'class.curl.js' => '',
+	'class.form.fieldset.collapsible.js' => '',
 	'class.overlaycollection.js' => '',
 	'class.overlay.js' => '',
 	'class.cverticalaccordion.js' => '',
+	'class.script.js' => '',
 	'class.scrollable.js' => '',
 	'class.sidebar.js' => '',
+	'class.software-version-check.js' => '',
 	'class.sortable.js' => '',
 	'class.svg.canvas.js' => 'vector/',
 	'class.svg.map.js' => 'vector/',
@@ -101,25 +113,32 @@ $available_js = [
 	'class.tabfilteritem.js' => '',
 	'class.tagfilteritem.js' => '',
 	'class.template.js' => '',
+	'class.navigationtree.js' => '',
 	'init.js' => '',
 	'class.tab-indicators.js' => '',
+	'class.popup-manager.js' => '',
+	'class.popup-manager.event.js' => '',
 	// templates
 	'sysmap.tpl.js' => 'templates/',
 	// page-specific scripts
 	'items.js' => 'pages/',
-	'report2.js' => 'pages/',
 	'report4.js' => 'pages/',
 	'setup.js' => 'pages/'
 ];
 
 $translate_strings = [
 	'gtlc.js' => [
-		'S_MINUTE_SHORT' => _x('m', 'minute short')
+		'S_MINUTE_SHORT' => _x('m', 'minute short'),
+		'Failed to update time selector.' => _('Failed to update time selector.'),
+		'Unexpected server error.' => _('Unexpected server error.')
 	],
 	'class.dashboard.js' => [
 		'Actions' => _('Actions'),
-		'Cannot add dashboard page: maximum number of %1$d dashboard pages has been added.' => _('Cannot add dashboard page: maximum number of %1$d dashboard pages has been added.'),
-		'Cannot add widget: not enough free space on the dashboard.' => _('Cannot add widget: not enough free space on the dashboard.'),
+		'Add widget' => _('Add widget'),
+		'Cannot add dashboard page: maximum number of %1$d dashboard pages has been added.' =>
+			_('Cannot add dashboard page: maximum number of %1$d dashboard pages has been added.'),
+		'Cannot add widget: not enough free space on the dashboard.' =>
+			_('Cannot add widget: not enough free space on the dashboard.'),
 		'Cannot add widget: no widgets available.' => _('Cannot add widget: no widgets available.'),
 		'Cannot paste inaccessible widget.' => _('Cannot paste inaccessible widget.'),
 		'Copy' => _('Copy'),
@@ -129,6 +148,7 @@ $translate_strings = [
 		'Failed to update dashboard page properties.' => _('Failed to update dashboard page properties.'),
 		'Failed to update dashboard properties.' => _('Failed to update dashboard properties.'),
 		'Failed to update widget properties.' => _('Failed to update widget properties.'),
+		'Inaccessible widget' => _('Inaccessible widget'),
 		'Inaccessible widgets were not copied.' => _('Inaccessible widgets were not copied.'),
 		'Inaccessible widgets were not pasted.' => _('Inaccessible widgets were not pasted.'),
 		'Page %1$d' => _('Page %1$d'),
@@ -136,9 +156,6 @@ $translate_strings = [
 		'Properties' => _('Properties'),
 		'Start slideshow' => _('Start slideshow'),
 		'Stop slideshow' => _('Stop slideshow')
-	],
-	'class.dashboard.page.js' => [
-		'Inaccessible widget' => _('Inaccessible widget')
 	],
 	'class.dashboard.widget.placeholder.js' => [
 		'Add a new widget' => _('Add a new widget'),
@@ -148,44 +165,63 @@ $translate_strings = [
 	'class.geomaps.js' => [
 		'Severity filter' => _('Severity filter')
 	],
-	'class.widget.js' => [
+	'class.widget-base.js' => [
 		'10 seconds' => _n('%1$s second', '%1$s seconds', 10),
 		'30 seconds' => _n('%1$s second', '%1$s seconds', 30),
 		'1 minute' => _n('%1$s minute', '%1$s minutes', 1),
 		'2 minutes' => _n('%1$s minute', '%1$s minutes', 2),
 		'10 minutes' => _n('%1$s minute', '%1$s minutes', 10),
 		'15 minutes' => _n('%1$s minute', '%1$s minutes', 15),
-		'Actions' => _s('Actions'),
-		'Copy' => _s('Copy'),
-		'Delete' => _s('Delete'),
-		'Edit' => _s('Edit'),
+		'Actions' => _('Actions'),
+		'Awaiting data' => _('Awaiting data'),
+		'Copy' => _('Copy'),
+		'Delete' => _('Delete'),
+		'Edit' => _('Edit'),
 		'No refresh' => _('No refresh'),
-		'Paste' => _s('Paste'),
-		'Refresh interval' => _s('Refresh interval')
+		'Paste' => _('Paste'),
+		'Refresh interval' => _('Refresh interval')
 	],
 	'class.widget.inaccessible.js' => [
-		'Actions' => _s('Actions'),
-		'Copy' => _s('Copy'),
-		'Inaccessible widget' => _('Inaccessible widget'),
-		'Refresh interval' => _s('Refresh interval')
+		'No permissions to referred object or it does not exist!' =>
+			_('No permissions to referred object or it does not exist!'),
+		'Refresh interval' => _('Refresh interval')
 	],
 	'class.widget.iterator.js' => [
-		'Next page' => _s('Next page'),
-		'Previous page' => _s('Previous page'),
+		'Next page' => _('Next page'),
+		'Previous page' => _('Previous page'),
 		'Widget is too small for the specified number of columns and rows.' =>
-			_s('Widget is too small for the specified number of columns and rows.')
+			_('Widget is too small for the specified number of columns and rows.')
+	],
+	'class.widget.misconfigured.js' => [
+		'Please update configuration' => _('Please update configuration'),
+		'Referred widget is unavailable' => _('Referred widget is unavailable'),
+		'Refresh interval' => _('Refresh interval')
+	],
+	'class.widget-select.popup.js' => [
+		'Cancel' => _('Cancel'),
+		'Name' => _('Name'),
+		'No compatible widgets.' => _('No compatible widgets.'),
+		'Widget' => _('Widget')
+	],
+	'class.widget-field.multiselect.js' => [
+		'Dashboard' => _('Dashboard'),
+		'Widget' => _('Widget'),
+		'Widgets' => _('Widgets'),
+		'Unavailable widget' => _('Unavailable widget'),
+		'Dashboard is used as data source.' => _('Dashboard is used as data source.'),
+		'Another widget is used as data source.' => _('Another widget is used as data source.')
+	],
+	'class.widget-field.time-period.js' => [
+		'Unavailable widget' => _('Unavailable widget')
 	],
 	'functions.js' => [
-		'Cancel' => _('Cancel'),
-		'S_CLOSE' => _('Close'),
-		'Execute' => _('Execute'),
-		'Execution confirmation' => _('Execution confirmation'),
+		'Close' => _('Close'),
+		'Details' => _('Details'),
 		'S_YEAR_SHORT' => _x('y', 'year short'),
 		'S_MONTH_SHORT' => _x('M', 'month short'),
 		'S_DAY_SHORT' => _x('d', 'day short'),
 		'S_HOUR_SHORT' => _x('h', 'hour short'),
 		'S_MINUTE_SHORT' => _x('m', 'minute short'),
-		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?'),
 		'Success message' => _('Success message'),
 		'Error message' => _('Error message'),
 		'Warning message' => _('Warning message')
@@ -247,27 +283,41 @@ $translate_strings = [
 		'S_PASTE' => _('Paste'),
 		'S_PASTE_SIMPLE' => _('Paste without external links'),
 		'S_INCORRECT_ELEMENT_MAP_LINK' => _('All links should have "Name" and "URL" specified'),
-		'S_EACH_URL_SHOULD_HAVE_UNIQUE' => _('Each URL should have a unique name. Please make sure there is only one URL named'),
+		'S_EACH_URL_SHOULD_HAVE_UNIQUE' =>
+			_('Each URL should have a unique name. Please make sure there is only one URL named'),
 		'S_DELETE_LINKS_BETWEEN_SELECTED_ELEMENTS_Q' => _('Delete links between selected elements?'),
 		'S_MACRO_EXPAND_ERROR' => _('Cannot expand macros.'),
-		'S_NO_IMAGES' => 'You need to have at least one image uploaded to create map element. Images can be uploaded in Administration->General->Images section.',
-		'S_COLOR_IS_NOT_CORRECT' => _('Color "%1$s" is not correct: expecting hexadecimal color code (6 symbols).')
+		'S_NO_IMAGES' =>
+			_('You need to have at least one image uploaded to create map element. Images can be uploaded in Administration->General->Images section.'),
+		'S_COLOR_IS_NOT_CORRECT' => _('Color "%1$s" is not correct: expecting hexadecimal color code (6 symbols).'),
+		'Host is not selected.' => _('Host is not selected.'),
+		'Map is not selected.' => _('Map is not selected.'),
+		'Trigger is not selected.' => _('Trigger is not selected.'),
+		'Host group is not selected.' => _('Host group is not selected.')
+	],
+	'class.notification.js' => [
+		'S_PROBLEM_ON' => _('Problem on'),
+		'S_RESOLVED' => _('Resolved')
 	],
 	'class.notifications.js' => [
-		'S_PROBLEM_ON' => _('Problem on'),
-		'S_RESOLVED' => _('Resolved'),
-		'S_MUTE' => _('Mute'),
-		'S_CANNOT_SUPPORT_NOTIFICATION_AUDIO' => _('Cannot support notification audio for this device.'),
-		'S_UNMUTE' => _('Unmute'),
-		'S_CLOSE' => _('Close'),
-		'S_SNOOZE' => _('Snooze'),
 		'Unexpected server error.' => _('Unexpected server error.')
 	],
+	'class.notification.collection.js' => [
+		'Mute for %1$s' => _('Mute for %1$s'),
+		'S_CLOSE' => _('Close'),
+		'S_CANNOT_SUPPORT_NOTIFICATION_AUDIO' => _('Cannot support notification audio for this device.'),
+		'Snooze for %1$s' => _('Snooze for %1$s'),
+		'Unmute for %1$s' => _('Unmute for %1$s')
+	],
+	'class.overlay.js' => [
+		'Help' => _('Help'),
+		'S_CLOSE' => _('Close')
+	],
 	'class.cookie.js' => [
-		'S_MAX_COOKIE_SIZE_REACHED' => _('We are sorry, the maximum possible number of elements to remember has been reached.')
+		'S_MAX_COOKIE_SIZE_REACHED' =>
+			_('We are sorry, the maximum possible number of elements to remember has been reached.')
 	],
 	'class.coverride.js' => [
-		'S_COLOR' => _('color'),
 		'S_TIME_SHIFT' => _('time shift')
 	],
 	'class.cverticalaccordion.js' => [
@@ -310,18 +360,20 @@ $translate_strings = [
 		'%1$s, read only' => _x('%1$s, read only', 'screen reader'),
 		'Cannot be removed' => _x('Cannot be removed', 'screen reader'),
 		'Selected, %1$s in position %2$d of %3$d' => _x('Selected, %1$s in position %2$d of %3$d', 'screen reader'),
-		'Selected, %1$s, read only, in position %2$d of %3$d' => _x('Selected, %1$s, read only, in position %2$d of %3$d', 'screen reader'),
+		'Selected, %1$s, read only, in position %2$d of %3$d' =>
+			_x('Selected, %1$s, read only, in position %2$d of %3$d', 'screen reader'),
 		'More than %1$d matches for %2$s found' => _x('More than %1$d matches for %2$s found', 'screen reader'),
 		'%1$d matches for %2$s found' => _x('%1$d matches for %2$s found', 'screen reader'),
-		'%1$s preselected, use down,up arrow keys and enter to select' => _x('%1$s preselected, use down,up arrow keys and enter to select', 'screen reader')
+		'%1$s preselected, use down,up arrow keys and enter to select' =>
+			_x('%1$s preselected, use down,up arrow keys and enter to select', 'screen reader')
 	],
 	'menupopup.js' => [
 		'500 latest values' => _('500 latest values'),
 		'Actions' => _('Actions'),
-		'Update problem' => _('Update problem'),
-		'Configuration' => _('Configuration'),
 		'Clone' => _('Clone'),
+		'Configuration' => _('Configuration'),
 		'Create new' => _('Create new'),
+		'Create new report' => _('Create new report'),
 		'Create trigger' => _('Create trigger'),
 		'Create trigger prototype' => _('Create trigger prototype'),
 		'Create dependent item' => _('Create dependent item'),
@@ -330,17 +382,13 @@ $translate_strings = [
 		'Delete' => _('Delete'),
 		'Delete dashboard?' => _('Delete dashboard?'),
 		'Discovery' => _('Discovery'),
+		'Discovery rule' => _('Discovery rule'),
 		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?'),
 		'Execute now' => _('Execute now'),
 		'Item' => _('Item'),
 		'Items' => _('Items'),
 		'Item prototype' => _('Item prototype'),
 		'Insert expression' => _('Insert expression'),
-		'Sharing' => _('Sharing'),
-		'Triggers' => _('Triggers'),
-		'Trigger status "OK"' => _('Trigger status "OK"'),
-		'Trigger status "Problem"' => _('Trigger status "Problem"'),
-		'Trigger prototypes' => _('Trigger prototypes'),
 		'Go to' => _('Go to'),
 		'Graph' => _('Graph'),
 		'Graphs' => _('Graphs'),
@@ -352,25 +400,35 @@ $translate_strings = [
 		'Last hour graph' => _('Last hour graph'),
 		'Last month graph' => _('Last month graph'),
 		'Last week graph' => _('Last week graph'),
-		'Problems' => _('Problems'),
-		'Problem' => _('Problem'),
+		'Links' => _('Links'),
 		'Mark as cause' => _('Mark as cause'),
 		'Mark selected as symptoms' => _('Mark selected as symptoms'),
+		'Problem' => _('Problem'),
+		'Problems' => _('Problems'),
+		'S_SELECTED_SR' => _x('%1$s, selected', 'screen reader'),
 		'Scripts' => _('Scripts'),
+		'Sharing' => _('Sharing'),
 		'Submap' => _('Submap'),
-		'S_TRIGGER' => _('Trigger'),
-		'URL' => _('URL'),
+		'Template' => _('Template'),
+		'Trigger' => _('Trigger'),
+		'Triggers' => _('Triggers'),
+		'Trigger status "OK"' => _('Trigger status "OK"'),
+		'Trigger status "Problem"' => _('Trigger status "Problem"'),
+		'Trigger prototypes' => _('Trigger prototypes'),
+		'Unexpected server error.' => _('Unexpected server error.'),
+		'Update problem' => _('Update problem'),
 		'Values' => _('Values'),
 		'View' => _('View'),
-		'Web' => _('Web'),
-		'S_SELECTED_SR' => _x('%1$s, selected', 'screen reader')
+		'View related reports' => _('View related reports'),
+		'Web' => _('Web')
 	],
 	'init.js' => [
 		'Debug' => _('Debug'),
 		'Hide debug' => _('Hide debug')
 	],
 	'items.js' => [
-		'To set a host interface select a single item type for all items' => _('To set a host interface select a single item type for all items'),
+		'To set a host interface select a single item type for all items' =>
+			_('To set a host interface select a single item type for all items'),
 		'No interface found' => _('No interface found'),
 		'Item type does not use interface' => _('Item type does not use interface')
 	],
@@ -381,32 +439,58 @@ $translate_strings = [
 	],
 	'class.csvggraph.js' => [
 		'S_DISPLAYING_FOUND' => _('Displaying %1$s of %2$s found'),
-		'S_MINUTE_SHORT' => _x('m', 'minute short')
+		'S_MINUTE_SHORT' => _x('m', 'minute short'),
+		'Unexpected server error.' => _('Unexpected server error.')
+	],
+	'class.svggauge.js' => [
+		'No data' => _('No data')
+	],
+	'class.svghoneycomb.js' => [
+		'No data' => _('No data')
 	],
 	'common.js' => [
 		'Cancel' => _('Cancel'),
 		'Ok' => _('Ok'),
 		'Unexpected server error.' => _('Unexpected server error.')
 	],
-	'component.z-select.js' => [
-		'All' => _('All')
-	],
 	'macrovalue.js' => [
 		'Set new value' => _('Set new value'),
 		'value' => _('value')
+	],
+	'class.script.js' => [
+		'Cancel' => _('Cancel'),
+		'Cannot open URL' => _('Cannot open URL'),
+		'Execute' => _('Execute'),
+		'Execution confirmation' => _('Execution confirmation'),
+		'Invalid URL: %1$s' => _('Invalid URL: %1$s'),
+		'Open URL' => _('Open URL'),
+		'Unexpected server error.' => _('Unexpected server error.'),
+		'URL opening confirmation' => _('URL opening confirmation')
+	],
+	'class.navigationtree.js' => [
+		'Maintenance with data collection' => _('Maintenance with data collection'),
+		'Maintenance without data collection' => _('Maintenance without data collection')
 	]
 ];
 
 $js = '';
 if (empty($_GET['files'])) {
 	$files = [
+		'defines.js',
 		'jquery.js',
 		'jquery-ui.js',
+		'main.js',
 		'common.js',
 		'component.z-bar-gauge.js',
+		'component.z-vertical.js',
 		'component.z-select.js',
+		'component.z-sparkline.js',
+		'class.event-hub.js',
+		'class.event-hub.event.js',
 		'class.base-component.js',
+		'class.calendar.js',
 		'class.cdebug.js',
+		'class.form.fieldset.collapsible.js',
 		'class.overlaycollection.js',
 		'class.overlay.js',
 		'class.cdate.js',
@@ -416,22 +500,29 @@ if (empty($_GET['files'])) {
 		'class.menu-item.js',
 		'class.rpc.js',
 		'class.csuggest.js',
+		'class.script.js',
 		'class.scrollable.js',
 		'class.sidebar.js',
+		'class.sortable.js',
 		'class.template.js',
-		'main.js',
+		'class.navigationtree.js',
 		'chkbxrange.js',
 		'functions.js',
 		'menupopup.js',
 		'inputsecret.js',
 		'macrovalue.js',
+		'multilineinput.js',
 		'multiselect.js',
 		'class.cverticalaccordion.js',
 		'class.cviewswitcher.js',
 		'class.tab-indicators.js',
+		'class.tagfilteritem.js',
 		'hostinterfacemanager.js',
 		'hostmacrosmanager.js',
 		'textareaflexible.js',
+		'class.popup-manager.js',
+		'class.popup-manager.event.js',
+		'items.js',
 		'init.js'
 	];
 

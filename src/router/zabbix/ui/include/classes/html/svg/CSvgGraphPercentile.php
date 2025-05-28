@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,19 +24,38 @@ class CSvgGraphPercentile extends CSvgGroup {
 	private $color;
 
 	private $side;
+	private $scale;
 
 	private $label;
 	private $value;
+
+	// Linear scale variables
 	private $min;
 	private $max;
 
-	public function __construct($label, $value, $min, $max) {
+	// Logarithmic scale variables
+	private ?float $max_negative_power;
+	private ?float $min_negative_power;
+	private ?float $min_positive_power;
+	private ?float $max_positive_power;
+
+	public function __construct($label, $value, $scale, $scale_boundaries) {
 		parent::__construct();
 
 		$this->label = $label;
 		$this->value = $value;
-		$this->min = $min;
-		$this->max = $max;
+		$this->scale = $scale;
+
+		if ($scale == SVG_GRAPH_AXIS_SCALE_LINEAR) {
+			$this->min = $scale_boundaries['min'];
+			$this->max = $scale_boundaries['max'];
+		}
+		else {
+			$this->max_negative_power = $scale_boundaries['max_negative_power'];
+			$this->min_negative_power = $scale_boundaries['min_negative_power'];
+			$this->min_positive_power = $scale_boundaries['min_positive_power'];
+			$this->max_positive_power = $scale_boundaries['max_positive_power'];
+		}
 	}
 
 	public function setColor(string $color): self {
@@ -71,17 +85,27 @@ class CSvgGraphPercentile extends CSvgGroup {
 	private function draw(): void {
 		$total = $this->max - $this->min;
 
-		if ($total == INF) {
-			$total = $this->max / 10 - $this->min / 10;
-			$fraction = $this->value / 10 - $this->min / 10;
+		if ($this->scale == SVG_GRAPH_AXIS_SCALE_LOGARITHMIC) {
+			$y_relative_position = calculateLogarithmicRelativePosition($this->max_negative_power,
+				$this->min_negative_power, $this->min_positive_power, $this->max_positive_power, $this->value
+			);
+
+			$y = $this->y + $this->height * $y_relative_position;
 		}
 		else {
-			$fraction = $this->value - $this->min;
+			if ($total == INF) {
+				$total = $this->max / 10 - $this->min / 10;
+				$fraction = $this->value / 10 - $this->min / 10;
+			}
+			else {
+				$fraction = $this->value - $this->min;
+			}
+
+			$y = $this->height + $this->y - CMathHelper::safeMul([
+				$this->height, $fraction, 1 / $total
+			]);
 		}
 
-		$y = $this->height + $this->y - CMathHelper::safeMul([
-			$this->height, $fraction, 1 / $total
-		]);
 		$label_x = ($this->side == GRAPH_YAXIS_SIDE_RIGHT)
 			? $this->width + $this->x - self::LABEL_MARGIN
 			: $this->x + self::LABEL_MARGIN;

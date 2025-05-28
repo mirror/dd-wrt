@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package dns
@@ -27,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"git.zabbix.com/ap/plugin-support/zbxerr"
 	"github.com/miekg/dns"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
+	"golang.zabbix.com/sdk/zbxerr"
 )
 
 const (
@@ -38,6 +33,12 @@ const (
 
 	tcpProtocol = "tcp"
 	udpProtocol = "udp"
+
+	inAddrSuffix   = ".in-addr.arpa"
+	inAddrV6Suffix = ".ip6.arpa"
+
+	defaultCount = 2
+	defaultRecordType = dns.TypeSOA
 )
 
 const (
@@ -48,21 +49,8 @@ const (
 	fourthParam
 	fifthParam
 	sixthParam
+	seventhParam
 )
-
-type options struct {
-	ip       string
-	name     string
-	protocol string
-	dnsType  uint16
-	count    int
-	timeout  time.Duration
-}
-
-// Plugin -
-type Plugin struct {
-	plugin.Base
-}
 
 var impl Plugin
 
@@ -87,11 +75,27 @@ var dnsTypes = map[string]uint16{
 	"SRV":   dns.TypeSRV,
 }
 
+type options struct {
+	ip       string
+	name     string
+	protocol string
+	dnsType  uint16
+	count    int
+	timeout  time.Duration
+}
+
+// Plugin -
+type Plugin struct {
+	plugin.Base
+}
+
 func init() {
 	err := plugin.RegisterMetrics(
 		&impl, "DNS",
 		"net.dns", "Checks if DNS service is up.",
+		"net.dns.perf", "Measures DNS query time in seconds.",
 		"net.dns.record", "Performs a DNS query.",
+		"net.dns.get", "Performs a DNS query. (Returns verbose response in JSON).",
 	)
 	if err != nil {
 		panic(errs.Wrap(err, "failed to register metric"))
@@ -105,11 +109,31 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		return exportDns(params)
 	case "net.dns.record":
 		return exportDnsRecord(params)
+	case "net.dns.perf":
+		return exportDnsPerf(params)
+	case "net.dns.get":
+		return exportDnsGet(params)
 	default:
 		err = zbxerr.ErrorUnsupportedMetric
 
 		return
 	}
+}
+
+func exportDnsPerf(params []string) (result interface{}, err error) {
+	time_before := time.Now()
+	_, err = getDNSAnswers(params)
+	if err != nil {
+		if errors.Is(err, zbxerr.ErrorCannotFetchData.Unwrap()) {
+			return 0, nil
+		}
+
+		return
+	}
+
+	t := time.Since(time_before).Seconds()
+
+	return t, nil
 }
 
 func exportDns(params []string) (result interface{}, err error) {
@@ -193,7 +217,7 @@ func parseAnswers(answers []dns.RR) string {
 }
 
 func getDNSAnswers(params []string) ([]dns.RR, error) {
-	options, err := parseParamas(params)
+	options, err := parseParams(params)
 	if err != nil {
 		return nil, err
 	}
@@ -309,33 +333,35 @@ func parseTXT(in ...string) string {
 	return strings.TrimSpace(out)
 }
 
-func parseParamas(params []string) (o options, err error) {
+func parseParams(params []string) (*options, error) {
+	var o options
+
 	switch len(params) {
 	case sixthParam:
-		err = o.setProtocol(params[sixthParam-1])
+		err := o.setProtocol(params[sixthParam-1])
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		fallthrough
 	case fifthParam:
-		err = o.setCount(params[fifthParam-1])
+		err := o.setCount(params[fifthParam-1])
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		fallthrough
 	case fourthParam:
-		err = o.setTimeout(params[fourthParam-1])
+		err := o.setTimeout(params[fourthParam-1])
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		fallthrough
 	case thirdParam:
-		err = o.setDNSType(params[thirdParam-1])
+		err := o.setDNSType(params[thirdParam-1])
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		fallthrough
@@ -344,24 +370,24 @@ func parseParamas(params []string) (o options, err error) {
 
 		fallthrough
 	case firstParam:
-		err = o.setIP(params[firstParam-1])
+		err := o.setIP(params[firstParam-1])
 		if err != nil {
-			return o, zbxerr.New(fmt.Sprintf("invalid fist parameter, %s", err.Error()))
+			return &o, zbxerr.New(fmt.Sprintf("invalid first parameter, %s", err.Error()))
 		}
 
 		fallthrough
 	case noneParam:
-		err = o.setDefaults()
+		err := o.setDefaults()
 		if err != nil {
-			return
+			return nil, err
 		}
 	default:
-		err = zbxerr.ErrorTooManyParameters
+		err := zbxerr.ErrorTooManyParameters
 
-		return
+		return nil, err
 	}
 
-	return
+	return &o, nil
 }
 
 func (o *options) setIP(ip string) error {
@@ -453,6 +479,7 @@ func (o *options) setDNSType(dnsType string) error {
 }
 
 func (o *options) setDefaults() error {
+
 	if o.ip == "" {
 		err := o.setDefaultIP()
 		if err != nil {
@@ -461,11 +488,11 @@ func (o *options) setDefaults() error {
 	}
 
 	if o.name == "" {
-		o.setDefaultName()
+		return zbxerr.New("second parameter cannot be empty")
 	}
 
 	if o.dnsType == dns.TypeNone {
-		o.dnsType = dns.TypeSOA
+		o.dnsType = defaultRecordType
 	}
 
 	if o.timeout < 1 {
@@ -473,7 +500,7 @@ func (o *options) setDefaults() error {
 	}
 
 	if o.count < 1 {
-		o.count = 2
+		o.count = defaultCount
 	}
 
 	if o.protocol == "" {
@@ -483,16 +510,23 @@ func (o *options) setDefaults() error {
 	return nil
 }
 
-func (o *options) setDefaultName() {
-	o.name = "zabbix.com"
-}
-
 func runQuery(resolver, domain, net string, record uint16, timeout time.Duration) (*dns.Msg, error) {
-	c := new(dns.Client)
-	c.Net = net
-	c.DialTimeout = timeout
-	c.ReadTimeout = timeout
-	c.WriteTimeout = timeout
+	c := &dns.Client{
+		Net:          net,
+		DialTimeout:  timeout,
+		ReadTimeout:  timeout,
+		WriteTimeout: timeout,
+	}
+
+	var err error
+	if record == dns.TypePTR &&
+		!strings.HasSuffix(domain, inAddrSuffix) &&
+		!strings.HasSuffix(domain, inAddrV6Suffix) {
+		domain, err = dns.ReverseAddr(domain)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	m := &dns.Msg{
 		MsgHdr: dns.MsgHdr{
@@ -501,11 +535,15 @@ func runQuery(resolver, domain, net string, record uint16, timeout time.Duration
 			Opcode:           dns.OpcodeQuery,
 			Rcode:            dns.RcodeSuccess,
 		},
-		Question: make([]dns.Question, 1),
+		Question: []dns.Question{
+			{Name: dns.Fqdn(domain), Qtype: record, Qclass: dns.ClassINET},
+		},
 	}
 
-	m.Question[0] = dns.Question{Name: dns.Fqdn(domain), Qtype: record, Qclass: dns.ClassINET}
 	r, _, err := c.Exchange(m, resolver)
+	if err != nil {
+		return nil, err
+	}
 
-	return r, err
+	return r, nil
 }

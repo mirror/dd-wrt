@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,10 +24,10 @@ $operations_table = (new CTable())
 	->setAttribute('style', 'width: 100%;');
 
 if (in_array($data['eventsource'], [EVENT_SOURCE_TRIGGERS, EVENT_SOURCE_INTERNAL, EVENT_SOURCE_SERVICE])) {
-	$operations_table->setHeader([_('Steps'), _('Details'), _('Start in'), _('Duration'), _('Action')]);
+	$operations_table->setHeader([_('Steps'), _('Details'), _('Start in'), _('Duration'), _('Actions')]);
 }
 else {
-	$operations_table->setHeader([_('Details'), _('Action')]);
+	$operations_table->setHeader([_('Details'), _('Actions')]);
 }
 
 if (array_key_exists('descriptions', $data)) {
@@ -89,8 +84,7 @@ foreach ($data['action']['operations'] as $i => $operation) {
 	}, ARRAY_FILTER_USE_KEY);
 
 	$buttons = (new CHorList([
-		(new CSimpleButton(_('Edit')))
-			->addClass(ZBX_STYLE_BTN_LINK)
+		(new CButtonLink(_('Edit')))
 			->addClass('js-edit-operation')
 			->setAttribute('data-operation', json_encode([
 				'operationid' => $i,
@@ -132,12 +126,11 @@ $operations_table->addItem(
 	(new CTag('tfoot', true))
 		->addItem(
 			(new CCol(
-				(new CSimpleButton(_('Add')))
+				(new CButtonLink(_('Add')))
+					->addClass('js-operation-details')
 					->setAttribute('data-actionid', array_key_exists('actionid', $data) ? $data['actionid'] : 0)
 					->setAttribute('data-eventsource', $data['eventsource'])
 					->setAttribute('operationtype', ACTION_OPERATION)
-					->addClass('js-operation-details')
-					->addClass(ZBX_STYLE_BTN_LINK)
 			))->setColSpan(4)
 		)
 );

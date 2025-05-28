@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -35,7 +30,7 @@
 		step_nums.forEach(function(num) {
 			var type = jQuery('[name="preprocessing[' + num + '][type]"]', $preprocessing).val(),
 				error_handler = jQuery('[name="preprocessing[' + num + '][on_fail]"]').is(':checked')
-					? jQuery('[name="preprocessing[' + num + '][error_handler]"]:checked').val()
+					? jQuery('[name="preprocessing[' + num + '][error_handler]"]').val()
 					: <?= ZBX_PREPROC_FAIL_DEFAULT ?>,
 				params = [];
 
@@ -100,11 +95,17 @@
 		form_data = $form.serializeJSON();
 		delete $form;
 
+		const timeout = 'custom_timeout' in form_data
+				&& form_data['custom_timeout'] != <?= ZBX_ITEM_CUSTOM_TIMEOUT_ENABLED ?>
+			? form_data['inherited_timeout']
+			: form_data['timeout'];
+
 		// Item type specific properties.
 		switch (+form_data['type']) {
 			case <?= ITEM_TYPE_ZABBIX ?>:
 				properties = {
-					key: form_data['key'].trim()
+					key: form_data['key'].trim(),
+					timeout
 				};
 				break;
 
@@ -112,21 +113,29 @@
 				properties = {
 					key: form_data['key'].trim(),
 					username: form_data['username'],
-					password: form_data['password']
+					password: form_data['password'],
+					timeout
 				};
 				break;
 
 			case <?= ITEM_TYPE_SNMP ?>:
 				properties = {
 					snmp_oid: form_data['snmp_oid'],
+					timeout,
 					flags: form_data['flags']
 				};
 				break;
 
 			case <?= ITEM_TYPE_INTERNAL ?>:
-			case <?= ITEM_TYPE_EXTERNAL ?>:
 				properties = {
 					key: form_data['key'].trim()
+				};
+				break;
+
+			case <?= ITEM_TYPE_EXTERNAL ?>:
+				properties = {
+					key: form_data['key'].trim(),
+					timeout
 				};
 				break;
 
@@ -135,7 +144,8 @@
 					key: form_data['key'].trim(),
 					params_ap: form_data['params_ap'],
 					username: form_data['username'],
-					password: form_data['password']
+					password: form_data['password'],
+					timeout
 				};
 				break;
 
@@ -156,7 +166,7 @@
 					ssl_key_file: form_data['ssl_key_file'],
 					ssl_key_password: form_data['ssl_key_password'],
 					status_codes: form_data['status_codes'],
-					timeout: form_data['timeout'],
+					timeout,
 					url: form_data['url'],
 					verify_host: form_data['verify_host'] || 0,
 					verify_peer: form_data['verify_peer'] || 0
@@ -183,7 +193,8 @@
 					authtype: form_data['authtype'],
 					params_es: form_data['params_es'],
 					username: form_data['username'],
-					password: form_data['password']
+					password: form_data['password'],
+					timeout
 				};
 
 				if (properties.authtype == <?= ITEM_AUTHTYPE_PUBLICKEY ?>) {
@@ -199,7 +210,8 @@
 					key: form_data['key'].trim(),
 					params_es: form_data['params_es'],
 					username: form_data['username'],
-					password: form_data['password']
+					password: form_data['password'],
+					timeout
 				};
 				break;
 
@@ -219,39 +231,34 @@
 				};
 				break;
 
-			case <?= ITEM_TYPE_SIMPLE ?>:
-				properties = {
-					key: form_data['key'].trim(),
-					username: form_data['username'],
-					password: form_data['password'],
-				};
-				break;
-
 			case <?= ITEM_TYPE_SCRIPT ?>:
 				properties = {
 					key: form_data['key'].trim(),
 					parameters: form_data['parameters'],
 					script: form_data['script'],
-					timeout: form_data['timeout']
+					timeout
+				};
+				break;
+
+			case <?= ITEM_TYPE_BROWSER ?>:
+				properties = {
+					key: form_data['key'].trim(),
+					parameters: form_data['parameters'],
+					browser_script: form_data['browser_script'],
+					timeout
 				};
 				break;
 		}
 
 		// Common properties.
-		properties = jQuery.extend(properties, {
+		return jQuery.extend(properties, {
 			delay: form_data['delay'] || '',
 			value_type: form_data['value_type'] || <?= CControllerPopupItemTest::ZBX_DEFAULT_VALUE_TYPE ?>,
 			item_type: form_data['type'],
 			itemid: <?= array_key_exists('itemid', $data) ? (int) $data['itemid'] : 0 ?>,
 			valuemapid: form_data['valuemapid'],
-			interfaceid: form_data['interfaceid'] || form_data['selectedInterfaceId']
+			interfaceid: form_data['interfaceid'] || 0
 		});
-
-		if (properties.interfaceid == undefined) {
-			properties.interfaceid = 0;
-		}
-
-		return properties;
 	}
 
 	/**
@@ -267,7 +274,8 @@
 	 *                                     - 'test' button to test single preprocessing step (step index).
 	 */
 	function openItemTestDialog(step_nums, show_final_result, get_value, trigger_element, step_obj_nr) {
-		var $row = jQuery(trigger_element).closest('.preprocessing-list-item, .preprocessing-list-foot, .tfoot-buttons'),
+		var $row = jQuery(trigger_element)
+					.closest('.preprocessing-list-item, .preprocessing-list-foot, .overlay-dialogue-footer'),
 			item_properties = getItemTestProperties('form[name="itemForm"]'),
 			cached_values = $row.data('test-data') || [];
 

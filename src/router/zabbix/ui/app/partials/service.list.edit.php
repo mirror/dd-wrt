@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -27,7 +22,7 @@
 $form = (new CForm())
 	->setId('service-list')
 	->setName('service_list')
-	->addVar('back_url', $data['back_url']);
+	->addVar('return_url', $data['return_url']);
 
 $header = [
 	(new CColHeader(
@@ -58,7 +53,8 @@ $table = (new CTableInfo())
 		(new CColHeader(_('Created at')))->addStyle('width: 10%;'),
 		(new CColHeader(_('Tags')))->addClass(ZBX_STYLE_COLUMN_TAGS_3),
 		(new CColHeader())
-	]));
+	]))
+	->setPageNavigation($data['paging']);
 
 foreach ($data['services'] as $serviceid => $service) {
 	$row = [(new CCheckBox('serviceids['.$serviceid.']', $serviceid))->setEnabled(!$service['readonly'])];
@@ -98,6 +94,12 @@ foreach ($data['services'] as $serviceid => $service) {
 			: $problem_event['name'];
 	}
 
+	$service_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'service.edit')
+		->setArgument('serviceid', $serviceid)
+		->getUrl();
+
 	$table->addRow(new CRow(array_merge($row, [
 		(new CCol([
 			(new CLink($service['name'],
@@ -114,23 +116,17 @@ foreach ($data['services'] as $serviceid => $service) {
 		zbx_date2str(DATE_FORMAT, $service['created_at']),
 		$data['tags'][$serviceid],
 		(new CCol([
-			(new CButton(null))
-				->addClass(ZBX_STYLE_BTN_ADD)
+			(new CButtonIcon(ZBX_ICON_PLUS, _('Add child service')))
 				->addClass('js-add-child-service')
 				->setAttribute('data-serviceid', $serviceid)
-				->setTitle(_('Add child service'))
 				->setEnabled(!$service['readonly'] && $service['problem_tags'] == 0),
-			(new CButton(null))
-				->addClass(ZBX_STYLE_BTN_EDIT)
-				->addClass('js-edit-service')
-				->setAttribute('data-serviceid', $serviceid)
-				->setTitle(_('Edit'))
+			(new CButtonIcon(ZBX_ICON_PENCIL, _('Edit')))
+				->addClass('js-edit-service-list')
+				->setAttribute('data-href', $service_url)
 				->setEnabled(!$service['readonly']),
-			(new CButton(null))
-				->addClass(ZBX_STYLE_BTN_REMOVE)
+			(new CButtonIcon(ZBX_ICON_REMOVE_SMALL, _('Delete')))
 				->addClass('js-delete-service')
 				->setAttribute('data-serviceid', $serviceid)
-				->setTitle(_('Delete'))
 				->setEnabled(!$service['readonly'])
 		]))->addClass(ZBX_STYLE_LIST_TABLE_ACTIONS)
 	])));
@@ -141,16 +137,16 @@ $action_buttons = new CActionButtonList('action', 'serviceids', [
 		'content' => (new CSimpleButton(_('Mass update')))
 			->addClass(ZBX_STYLE_BTN_ALT)
 			->addClass('js-massupdate-service')
-			->addClass('no-chkbxrange')
+			->addClass('js-no-chkbxrange')
 	],
 	'service.massdelete' => [
 		'content' => (new CSimpleButton(_('Delete')))
 			->addClass(ZBX_STYLE_BTN_ALT)
 			->addClass('js-massdelete-service')
-			->addClass('no-chkbxrange')
+			->addClass('js-no-chkbxrange')
 	]
 ], $path !== null ? 'service_'.implode('_', $path) : 'service');
 
 $form
-	->addItem([$table, $data['paging'], $action_buttons])
+	->addItem([$table, $action_buttons])
 	->show();

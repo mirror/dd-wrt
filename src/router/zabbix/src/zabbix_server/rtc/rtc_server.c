@@ -1,25 +1,19 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 #include "rtc_server.h"
 
-#include "log.h"
-#include "zbxha.h"
+#include "zbxlog.h"
 #include "zbxdiag.h"
 #include "zbxtypes.h"
 #include "zbxcommon.h"
@@ -27,6 +21,7 @@
 #include "zbx_rtc_constants.h"
 #include "zbxjson.h"
 #include "zbxtime.h"
+#include "../ha/ha.h"
 
 static int	rtc_parse_options_server(const char *opt, zbx_uint32_t *code, struct zbx_json *j, char **error)
 {
@@ -250,6 +245,11 @@ static int	rtc_process_diaginfo(const char *data, char **result)
 	else if (0 == strcmp(buf, ZBX_DIAG_ALERTING))
 	{
 		scope = 1 << ZBX_DIAGINFO_ALERTING;
+		ret = SUCCEED;
+	}
+	else if (0 == strcmp(buf, ZBX_DIAG_CONNECTOR))
+	{
+		scope = 1 << ZBX_DIAGINFO_CONNECTOR;
 		ret = SUCCEED;
 	}
 

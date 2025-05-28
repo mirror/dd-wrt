@@ -1,27 +1,23 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package redis
 
 import (
-	"git.zabbix.com/ap/plugin-support/conf"
-	"git.zabbix.com/ap/plugin-support/plugin"
+	"golang.zabbix.com/sdk/conf"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 type Session struct {
@@ -30,6 +26,9 @@ type Session struct {
 
 	// Password to send to a protected Redis server.
 	Password string `conf:"optional"`
+
+	// User to send to a protected Redis server.
+	User string `conf:"optional"`
 }
 
 type PluginOptions struct {
@@ -49,7 +48,7 @@ type PluginOptions struct {
 // Configure implements the Configurator interface.
 // Initializes configuration structures.
 func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
-	if err := conf.Unmarshal(options, &p.options); err != nil {
+	if err := conf.UnmarshalStrict(options, &p.options); err != nil {
 		p.Errf("cannot unmarshal configuration options: %s", err)
 	}
 
@@ -66,9 +65,9 @@ func (p *Plugin) Validate(options interface{}) error {
 		err  error
 	)
 
-	err = conf.Unmarshal(options, &opts)
+	err = conf.UnmarshalStrict(options, &opts)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "plugin config validation failed")
 	}
 
 	return err

@@ -1,26 +1,33 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "pp_error.h"
-#include "pp_item.h"
+
 #include "zbxdbhigh.h"
 #include "zbxstr.h"
+#include "zbxvariant.h"
+#include "zbxalgo.h"
+#include "zbxdbschema.h"
+
+/* mock field to estimate how much data can be stored in characters, bytes or both, */
+/* depending on database backend                                                    */
+typedef struct
+{
+	int	bytes_num;
+	int	chars_num;
+}
+zbx_db_mock_field_t;
 
 ZBX_PTR_VECTOR_IMPL(pp_result_ptr, zbx_pp_result_t *)
 
@@ -28,10 +35,10 @@ ZBX_PTR_VECTOR_IMPL(pp_result_ptr, zbx_pp_result_t *)
  *                                                                            *
  * Purpose: set result value                                                  *
  *                                                                            *
- * Parameters: result    - [OUT] the result to set                            *
- *             value     - [IN] the field type in database schema             *
- *             action    - [IN] the on fail action                            *
- *             value_raw - [IN] the value before applying on fail action if   *
+ * Parameters: result    - [OUT] result to set                                *
+ *             value     - [IN] field type in database schema                 *
+ *             action    - [IN] on fail action                                *
+ *             value_raw - [IN] value before applying on fail action if       *
  *                              non-default action was applied. This value is *
  *                              'moved' over to result.                       *
  *                                                                            *
@@ -62,23 +69,13 @@ void	pp_free_results(zbx_pp_result_t *results, int results_num)
 	zbx_free(results);
 }
 
-/* mock field to estimate how much data can be stored in characters, bytes or both, */
-/* depending on database backend                                                    */
-
-typedef struct
-{
-	int	bytes_num;
-	int	chars_num;
-}
-zbx_db_mock_field_t;
-
 /******************************************************************************
  *                                                                            *
  * Purpose: initializes mock field                                            *
  *                                                                            *
- * Parameters: field      - [OUT] the field data                              *
- *             field_type - [IN] the field type in database schema            *
- *             field_len  - [IN] the field size in database schema            *
+ * Parameters: field      - [OUT] field data                                  *
+ *             field_type - [IN] field type in database schema                *
+ *             field_len  - [IN] field size in database schema                *
  *                                                                            *
  ******************************************************************************/
 static void	zbx_db_mock_field_init(zbx_db_mock_field_t *field, int field_type, int field_len)
@@ -86,13 +83,8 @@ static void	zbx_db_mock_field_init(zbx_db_mock_field_t *field, int field_type, i
 	switch (field_type)
 	{
 		case ZBX_TYPE_CHAR:
-#if defined(HAVE_ORACLE)
-			field->chars_num = field_len;
-			field->bytes_num = 4000;
-#else
 			field->chars_num = field_len;
 			field->bytes_num = -1;
-#endif
 			return;
 	}
 
@@ -107,8 +99,8 @@ static void	zbx_db_mock_field_init(zbx_db_mock_field_t *field, int field_type, i
  * Purpose: 'appends' text to the field, if successful the character/byte     *
  *           limits are updated                                               *
  *                                                                            *
- * Parameters: field - [IN/OUT] the mock field                                *
- *             text  - [IN] the text to append                                *
+ * Parameters: field - [IN/OUT] mock field                                    *
+ *             text  - [IN] text to append                                    *
  *                                                                            *
  * Return value: SUCCEED - the field had enough space to append the text      *
  *               FAIL    - otherwise                                          *
@@ -142,14 +134,12 @@ static int	zbx_db_mock_field_append(zbx_db_mock_field_t *field, const char *text
 	return SUCCEED;
 }
 
-#define ZBX_PP_VALUE_PREVIEW_LEN		100
-
 /******************************************************************************
  *                                                                            *
  * Purpose: format value in text format                                       *
  *                                                                            *
- * Parameters: value     - [IN] the value to format                           *
- *             value_str - [OUT] the formatted value                          *
+ * Parameters: value     - [IN] value to format                               *
+ *             value_str - [OUT] formatted value                              *
  *                                                                            *
  * Comments: Control characters are replaced with '.' and truncated if it's   *
  *           larger than ZBX_PP_VALUE_PREVIEW_LEN characters.                 *
@@ -159,6 +149,8 @@ static void	pp_error_format_value(const zbx_variant_t *value, char **value_str)
 {
 	const char	*value_desc;
 	size_t		i, len;
+
+#define ZBX_PP_VALUE_PREVIEW_LEN	100
 
 	value_desc = zbx_variant_value_desc(value);
 
@@ -182,15 +174,17 @@ static void	pp_error_format_value(const zbx_variant_t *value, char **value_str)
 		if (0 != iscntrl((*value_str)[i]))
 			(*value_str)[i] = '.';
 	}
+
+#undef ZBX_PP_VALUE_PREVIEW_LEN
 }
 
 /******************************************************************************
  *                                                                            *
  * Purpose: format one preprocessing step result                              *
  *                                                                            *
- * Parameters: step   - [IN] the preprocessing step number                    *
- *             result - [IN] the preprocessing step result                    *
- *             out    - [OUT] the formatted string                            *
+ * Parameters: step   - [IN] preprocessing step number                        *
+ *             result - [IN] preprocessing step result                        *
+ *             out    - [OUT] formatted string                                *
  *                                                                            *
  ******************************************************************************/
 static void	pp_error_format_result(int step, const zbx_pp_result_t *result, char **out)
@@ -216,10 +210,10 @@ static void	pp_error_format_result(int step, const zbx_pp_result_t *result, char
  *                                                                            *
  * Purpose: format preprocessing error message                                *
  *                                                                            *
- * Parameters: value        - [IN] the input value                            *
- *             results      - [IN] the preprocessing step results             *
- *             results_num  - [IN] the number of executed steps               *
- *             error        - [OUT] the formatted error message               *
+ * Parameters: value        - [IN] input value                                *
+ *             results      - [IN] preprocessing step results                 *
+ *             results_num  - [IN] number of executed steps                   *
+ *             error        - [OUT] formatted error message                   *
  *                                                                            *
  ******************************************************************************/
 void	pp_format_error(const zbx_variant_t *value, zbx_pp_result_t *results, int results_num, char **error)
@@ -293,27 +287,54 @@ void	pp_format_error(const zbx_variant_t *value, zbx_pp_result_t *results, int r
  *                                                                            *
  * Purpose: apply 'on fail' preprocessing error handler                       *
  *                                                                            *
- * Parameters: value         - [IN/OUT] the value                             *
- *             step          - [IN] the preprocessing operation that produced *
- *                                  the error                                 *
+ * Parameters: value - [IN/OUT]                                               *
+*              error - [IN] error that overrides error handler params         *
+ *             step  - [IN] preprocessing operation that produced error       *
  *                                                                            *
  ******************************************************************************/
-int	pp_error_on_fail(zbx_variant_t *value, const zbx_pp_step_t *step)
+int	pp_error_on_fail(zbx_dc_um_shared_handle_t *um_handle, zbx_uint64_t hostid, zbx_variant_t *value,
+		const char *error, const zbx_pp_step_t *step)
 {
+	char	*error_handler_params;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
+
 	switch (step->error_handler)
 	{
 		case ZBX_PREPROC_FAIL_DISCARD_VALUE:
 			zbx_variant_clear(value);
 			break;
 		case ZBX_PREPROC_FAIL_SET_VALUE:
-			zbx_variant_clear(value);
-			zbx_variant_set_str(value, zbx_strdup(NULL, step->error_handler_params));
-			break;
 		case ZBX_PREPROC_FAIL_SET_ERROR:
 			zbx_variant_clear(value);
-			zbx_variant_set_error(value, zbx_strdup(NULL, step->error_handler_params));
+			error_handler_params = zbx_strdup(NULL, NULL != error ? error : step->error_handler_params);
+
+			if (NULL != um_handle)
+			{
+				zbx_dc_expand_user_and_func_macros_from_cache(um_handle->um_cache,
+						&error_handler_params, &hostid, 1, ZBX_MACRO_ENV_NONSECURE);
+			}
+
+			if (ZBX_PREPROC_FAIL_SET_VALUE == step->error_handler)
+			{
+				zbx_variant_set_str(value, error_handler_params);
+			}
+			else if (ZBX_PREPROC_FAIL_SET_ERROR == step->error_handler)
+			{
+				zbx_variant_set_error(value, error_handler_params);
+			}
+			else
+			{
+				THIS_SHOULD_NEVER_HAPPEN;
+				zabbix_log(LOG_LEVEL_ERR, "unexpected \"custom on fail\" handler type %d",
+						step->error_handler);
+				zbx_free(error_handler_params);
+			}
+
 			break;
 	}
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s() value:%s", __func__, zbx_variant_value_desc(value));
 
 	return step->error_handler;
 }

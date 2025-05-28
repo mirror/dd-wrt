@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -34,8 +29,6 @@ window.widget_clock_form = new class {
 		this._show_time = document.getElementById('show_2');
 		this._show_tzone = document.getElementById('show_3');
 
-		this._advanced_configuration = document.getElementById('adv_conf');
-
 		for (const colorpicker of this._form.querySelectorAll('.<?= ZBX_STYLE_COLOR_PICKER ?> input')) {
 			$(colorpicker).colorpicker({
 				appendTo: '.overlay-dialogue-body',
@@ -44,62 +37,50 @@ window.widget_clock_form = new class {
 			});
 		}
 
-		this._time_type.addEventListener('change', () => {
-			ZABBIX.Dashboard.reloadWidgetProperties();
-			this.updateForm();
-		});
+		this._time_type.addEventListener('change', () => this.updateForm());
 
 		for (const checkbox of this._clock_type.querySelectorAll('input')) {
 			checkbox.addEventListener('change', () => this.updateForm());
 		}
 
-		const show = [this._show_date, this._show_time, this._show_tzone];
-
-		for (const checkbox of show) {
-			checkbox.addEventListener('change', (e) => {
-				if (show.filter((checkbox) => checkbox.checked).length > 0) {
-					this.updateForm();
-				}
-				else {
-					e.target.checked = true;
-				}
-			});
+		for (const checkbox of [this._show_date, this._show_time, this._show_tzone]) {
+			checkbox.addEventListener('change', () => this.updateForm());
 		}
-
-		this._advanced_configuration.addEventListener('change', () => this.updateForm());
 
 		this.updateForm();
 	}
 
 	updateForm() {
+		document.querySelectorAll('.js-row-itemid').forEach(element => {
+			element.style.display = this._time_type.value == <?= TIME_TYPE_HOST ?> ? '' : 'none'
+		});
+
+		$('#itemid').multiSelect(this._time_type.value != <?= TIME_TYPE_HOST ?> ? 'disable' : 'enable');
+
 		const is_digital = this._clock_type.querySelector('input:checked').value == <?= Widget::TYPE_DIGITAL ?>;
 
-		const show_date_row = is_digital && this._advanced_configuration.checked && this._show_date.checked;
-		const show_time_row = is_digital && this._advanced_configuration.checked && this._show_time.checked;
-		const show_tzone_row = is_digital && this._advanced_configuration.checked && this._show_tzone.checked;
-
-		for (const element of this._form.querySelectorAll('.js-row-show, .js-row-adv-conf')) {
+		for (const element of this._form.querySelectorAll('.js-row-show')) {
 			element.style.display = is_digital ? '' : 'none';
 		}
 
-		for (const element of this._form.querySelectorAll('.js-row-bg-color')) {
-			element.style.display = is_digital && this._advanced_configuration.checked ? '' : 'none';
-		}
+		this._form.querySelector('.js-fieldset-adv-conf').style.display = is_digital ? 'contents' : 'none';
 
-		for (const element of this._form.querySelectorAll('.fields-group-date')) {
-			element.style.display = show_date_row ? '' : 'none';
-		}
+		if (is_digital) {
+			for (const element of this._form.querySelectorAll('.fields-group-date')) {
+				element.style.display = this._show_date.checked ? '' : 'none';
+			}
 
-		for (const element of this._form.querySelectorAll('.fields-group-time')) {
-			element.style.display = show_time_row ? '' : 'none';
-		}
+			for (const element of this._form.querySelectorAll('.fields-group-time')) {
+				element.style.display = this._show_time.checked ? '' : 'none';
+			}
 
-		for (const element of this._form.querySelectorAll('.fields-group-tzone')) {
-			element.style.display = show_tzone_row ? '' : 'none';
-		}
+			for (const element of this._form.querySelectorAll('.fields-group-tzone')) {
+				element.style.display = this._show_tzone.checked ? '' : 'none';
+			}
 
-		for (const element of this._form.querySelectorAll('.field-tzone-timezone, .field-tzone-format')) {
-			element.style.display = this._time_type.value != <?= TIME_TYPE_HOST ?> ? '' : 'none';
+			for (const element of this._form.querySelectorAll('.field-tzone-timezone, .field-tzone-format')) {
+				element.style.display = this._time_type.value != <?= TIME_TYPE_HOST ?> ? '' : 'none';
+			}
 		}
 	}
 };

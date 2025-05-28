@@ -1,25 +1,22 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "trigger_housekeeper.h"
+#include "housekeeper_server.h"
 
-#include "log.h"
+#include "zbxtimekeeper.h"
+#include "zbxthreads.h"
+#include "zbxlog.h"
 #include "zbxself.h"
 #include "zbxnix.h"
 #include "zbxservice.h"
@@ -27,29 +24,31 @@
 #include "zbxnum.h"
 #include "zbxtime.h"
 #include "zbx_rtc_constants.h"
-
-extern int		CONFIG_PROBLEMHOUSEKEEPING_FREQUENCY;
+#include "zbxalgo.h"
+#include "zbxdb.h"
+#include "zbxipcservice.h"
+#include "zbxcacheconfig.h"
 
 static void	housekeep_service_problems(const zbx_vector_uint64_t *eventids)
 {
 	unsigned char	*data = NULL;
 	size_t		data_alloc = 0, data_offset = 0;
-	int		i;
 
-	for (i = 0; i < eventids->values_num; i++)
+	for (int i = 0; i < eventids->values_num; i++)
 		zbx_service_serialize_id(&data, &data_alloc, &data_offset, eventids->values[i]);
 
 	if (NULL == data)
 		return;
 
-	zbx_service_flush(ZBX_IPC_SERVICE_SERVICE_PROBLEMS_DELETE, data, (zbx_uint32_t)data_offset);
+	if (0 != zbx_dc_get_itservices_num())
+		zbx_service_flush(ZBX_IPC_SERVICE_SERVICE_PROBLEMS_DELETE, data, (zbx_uint32_t)data_offset);
 	zbx_free(data);
 }
 
 static int	housekeep_problems_without_triggers(void)
 {
-	DB_RESULT		result;
-	DB_ROW			row;
+	zbx_db_result_t		result;
+	zbx_db_row_t		row;
 	zbx_vector_uint64_t	ids;
 	int			deleted = 0;
 
@@ -103,9 +102,7 @@ static int	housekeep_problems_without_triggers(void)
 			zabbix_log(LOG_LEVEL_WARNING, "Failed to delete a problem without a trigger");
 		}
 		else
-		{
 			deleted = ids.values_num;
-		}
 
 		housekeep_service_problems(&ids);
 	}
@@ -117,12 +114,10 @@ fail:
 
 ZBX_THREAD_ENTRY(trigger_housekeeper_thread, args)
 {
-	int			deleted;
-	double			sec;
 	zbx_ipc_async_socket_t	rtc;
 	const zbx_thread_info_t	*info = &((zbx_thread_args_t *)args)->info;
-	int			server_num = ((zbx_thread_args_t *)args)->info.server_num;
-	int			process_num = ((zbx_thread_args_t *)args)->info.process_num;
+	int			server_num = ((zbx_thread_args_t *)args)->info.server_num,
+				process_num = ((zbx_thread_args_t *)args)->info.process_num;
 	unsigned char		process_type = ((zbx_thread_args_t *)args)->info.process_type;
 	zbx_uint32_t		rtc_msgs[] = {ZBX_RTC_TRIGGER_HOUSEKEEPER_EXECUTE};
 
@@ -138,7 +133,7 @@ ZBX_THREAD_ENTRY(trigger_housekeeper_thread, args)
 	zbx_db_connect(ZBX_DB_CONNECT_NORMAL);
 
 	zbx_setproctitle("%s [startup idle for %d second(s)]", get_process_type_string(process_type),
-			CONFIG_PROBLEMHOUSEKEEPING_FREQUENCY);
+			trigger_housekeeper_args_in->config_problemhousekeeping_frequency);
 
 	zbx_rtc_subscribe(process_type, process_num, rtc_msgs, ARRSIZE(rtc_msgs),
 			trigger_housekeeper_args_in->config_timeout, &rtc);
@@ -148,8 +143,8 @@ ZBX_THREAD_ENTRY(trigger_housekeeper_thread, args)
 		zbx_uint32_t	rtc_cmd;
 		unsigned char	*rtc_data;
 
-		if (SUCCEED == zbx_rtc_wait(&rtc, info, &rtc_cmd, &rtc_data, CONFIG_PROBLEMHOUSEKEEPING_FREQUENCY) &&
-				0 != rtc_cmd)
+		if (SUCCEED == zbx_rtc_wait(&rtc, info, &rtc_cmd, &rtc_data,
+				trigger_housekeeper_args_in->config_problemhousekeeping_frequency) && 0 != rtc_cmd)
 		{
 			if (ZBX_RTC_SHUTDOWN == rtc_cmd)
 				break;
@@ -167,12 +162,12 @@ ZBX_THREAD_ENTRY(trigger_housekeeper_thread, args)
 
 		zbx_setproctitle("%s [removing deleted triggers problems]", get_process_type_string(process_type));
 
-		sec = zbx_time();
-		deleted = housekeep_problems_without_triggers();
+		double	sec = zbx_time();
+		int	deleted = housekeep_problems_without_triggers();
 
 		zbx_setproctitle("%s [deleted %d problems records in " ZBX_FS_DBL " sec, idle for %d second(s)]",
 				get_process_type_string(process_type), deleted, zbx_time() - sec,
-				CONFIG_PROBLEMHOUSEKEEPING_FREQUENCY);
+				trigger_housekeeper_args_in->config_problemhousekeeping_frequency);
 	}
 
 	zbx_db_close();

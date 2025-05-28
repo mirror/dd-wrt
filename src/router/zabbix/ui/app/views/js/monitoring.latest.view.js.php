@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -38,14 +33,17 @@
 		_refresh_message_box: null,
 		_popup_message_box: null,
 		active_filter: null,
+		layout_mode: null,
 
 		checkbox_object: null,
 
-		init({refresh_url, refresh_data, refresh_interval, filter_options, checkbox_object}) {
+		init({refresh_url, refresh_data, refresh_interval, filter_options, checkbox_object, filter_set, layout_mode}) {
 			this.refresh_url = new Curl(refresh_url);
 			this.refresh_data = refresh_data;
 			this.refresh_interval = refresh_interval;
 			this.checkbox_object = checkbox_object;
+			this.filter_set = filter_set;
+			this.layout_mode = layout_mode;
 
 			const url = new Curl('zabbix.php');
 			url.setArgument('action', 'latest.view.refresh');
@@ -53,21 +51,25 @@
 
 			this.initTabFilter(filter_options);
 			this.initExpandableSubfilter();
+			this.initListActions();
+			this.initPopupListeners();
 
-			if (this.refresh_interval != 0) {
+			if (this.refresh_interval != 0 && this.filter_set) {
 				this.running = true;
 				this.scheduleRefresh();
 			}
 		},
 
 		initTabFilter(filter_options) {
-			if (!filter_options) {
-				return;
-			}
+			const filter = document.getElementById('monitoring_latest_filter');
 
 			this.refresh_counters = this.createCountersRefresh(1);
-			this.filter = new CTabFilter(document.getElementById('monitoring_latest_filter'), filter_options);
+			this.filter = new CTabFilter(filter, filter_options);
 			this.active_filter = this.filter._active_item;
+
+			if (this.layout_mode == <?= ZBX_LAYOUT_KIOSKMODE ?>) {
+				filter.style.display = 'none';
+			}
 
 			this.filter.on(TABFILTER_EVENT_URLSET, () => {
 				this.reloadPartialAndTabCounters();
@@ -108,6 +110,51 @@
 					expand_tags.remove();
 				});
 			}
+		},
+
+		initListActions() {
+			let form = this.getCurrentForm().get(0);
+
+			form.querySelector('.js-massexecute-item').addEventListener('click', e => {
+				this.executeNow(e.target, {itemids: Object.keys(chkbxRange.getSelectedIds())});
+			});
+		},
+
+		initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_OPEN
+				},
+				callback: () => this.unscheduleRefresh()
+			});
+
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_CANCEL
+				},
+				callback: () => this.scheduleRefresh()
+			});
+
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: ({data, event}) => {
+					event.preventDefault();
+
+					if ('success' in data.submit) {
+						this._addPopupMessage(
+							makeMessageBox('good', data.submit.success.messages, data.submit.success.title)
+						);
+					}
+
+					uncheckTableRows('latest');
+					this.refresh();
+				}
+			});
 		},
 
 		createCountersRefresh(timeout) {
@@ -163,7 +210,19 @@
 		},
 
 		getCurrentSubfilter() {
-			return $('#latest-data-subfilter');
+			const latest_data_subfilter = document.getElementById('latest-data-subfilter');
+
+			if (latest_data_subfilter) {
+				return latest_data_subfilter;
+			}
+			else {
+				const table = document.createElement('table');
+
+				table.classList.add('list-table', 'tabfilter-subfilter');
+				table.id = 'latest-data-subfilter';
+
+				return document.querySelector('.tabfilter-content-container').appendChild(table);
+			}
 		},
 
 		_addRefreshMessage(messages) {
@@ -236,10 +295,28 @@
 			this.getCurrentForm().removeClass('is-loading is-loading-fadein delayed-15s');
 		},
 
-		doRefresh(body, subfilter) {
+		doRefresh(body, subfilter = null) {
 			this.getCurrentForm().replaceWith(body);
-			this.getCurrentSubfilter().replaceWith(subfilter);
+
+			const colapsed_tabfilter = document.querySelector('.tabfilter-collapsed');
+
+			if (subfilter !== null) {
+				this.getCurrentSubfilter().innerHTML = subfilter;
+
+				if (colapsed_tabfilter !== null) {
+					colapsed_tabfilter.classList.remove('display-none');
+				}
+			}
+			else {
+				this.getCurrentSubfilter().remove();
+
+				if (colapsed_tabfilter !== null) {
+					colapsed_tabfilter.classList.add('display-none');
+				}
+			}
+
 			chkbxRange.init();
+			this.initListActions();
 		},
 
 		bindDataEvents(deferred) {
@@ -260,7 +337,7 @@
 		onDataDone(response) {
 			this.clearLoading();
 			this._removeRefreshMessage();
-			this.doRefresh(response.body, response.subfilter);
+			this.doRefresh(response.body, response.subfilter ? response.subfilter : null);
 
 			if ('messages' in response) {
 				this._addRefreshMessage(response.messages);
@@ -277,7 +354,7 @@
 
 			this.clearLoading();
 
-			var messages = $(jqXHR.responseText).find('.msg-global');
+			var messages = $(jqXHR.responseText).find('.<?= ZBX_STYLE_MSG_GLOBAL ?>');
 
 			if (messages.length) {
 				this.getCurrentForm().html(messages);
@@ -315,62 +392,20 @@
 			}
 		},
 
-		massCheckNow(button) {
-			button.classList.add('is-loading');
+		executeNow(button, data) {
+			if (button instanceof Element) {
+				button.classList.add('is-loading');
+			}
 
+			let clear_checkboxes = false;
 			const curl = new Curl('zabbix.php');
-			curl.setArgument('action', 'item.masscheck_now');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('item')) ?>
-			);
+			curl.setArgument('action', 'item.execute');
+			data[CSRF_TOKEN_NAME] = <?= json_encode(CCsrfTokenHelper::get('item')) ?>;
 
 			fetch(curl.getUrl(), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({itemids: Object.keys(chkbxRange.getSelectedIds())})
-			})
-				.then((response) => response.json())
-				.then((response) => {
-					clearMessages();
-
-					if ('error' in response) {
-						addMessage(makeMessageBox('bad', [response.error.messages], response.error.title, true, true));
-					}
-					else if('success' in response) {
-						addMessage(makeMessageBox('good', [], response.success.title, true, false));
-
-						const uncheckids = Object.keys(chkbxRange.getSelectedIds());
-						uncheckTableRows('latest', []);
-						chkbxRange.checkObjects(this.checkbox_object, uncheckids, false);
-						chkbxRange.update(this.checkbox_object);
-					}
-				})
-				.catch(() => {
-					const title = <?= json_encode(_('Unexpected server error.')) ?>;
-					const message_box = makeMessageBox('bad', [], title)[0];
-
-					clearMessages();
-					addMessage(message_box);
-				})
-				.finally(() => {
-					button.classList.remove('is-loading');
-
-					// Deselect the "Execute now" button in both success and error cases, since there is no page reload.
-					button.blur();
-				});
-		},
-
-		checkNow(itemid) {
-			const curl = new Curl('zabbix.php');
-			curl.setArgument('action', 'item.masscheck_now');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('item')) ?>
-			);
-
-			fetch(curl.getUrl(), {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({itemids: [itemid]})
+				body: JSON.stringify(data)
 			})
 				.then((response) => response.json())
 				.then((response) => {
@@ -386,6 +421,7 @@
 						addMessage(makeMessageBox('bad', [response.error.messages], response.error.title, true, true));
 					}
 					else if('success' in response) {
+						clear_checkboxes = true;
 						addMessage(makeMessageBox('good', [], response.success.title, true, false));
 					}
 				})
@@ -395,34 +431,22 @@
 
 					clearMessages();
 					addMessage(message_box);
+				})
+				.finally(() => {
+					if (!(button instanceof Element)) {
+						return;
+					}
+
+					if (clear_checkboxes) {
+						const uncheckids = Object.keys(chkbxRange.getSelectedIds());
+						uncheckTableRows('latest', []);
+						chkbxRange.checkObjects(this.checkbox_object, uncheckids, false);
+						chkbxRange.update(this.checkbox_object);
+					}
+
+					button.classList.remove('is-loading');
+					button.blur();
 				});
-		},
-
-		editHost(hostid) {
-			const host_data = {hostid};
-
-			this.openHostPopup(host_data);
-		},
-
-		openHostPopup(host_data) {
-			this._removePopupMessage();
-
-			const original_url = location.href;
-			const overlay = PopUp('popup.host.edit', host_data, {
-				dialogueid: 'host_edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
-			});
-
-			this.unscheduleRefresh();
-
-			overlay.$dialogue[0].addEventListener('dialogue.create', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.update', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.delete', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-				this.scheduleRefresh();
-			}, {once: true});
 		},
 
 		setSubfilter(field) {
@@ -431,26 +455,6 @@
 
 		unsetSubfilter(field) {
 			this.filter.unsetSubfilter(field[0], field[1]);
-		},
-
-		events: {
-			hostSuccess(e) {
-				const data = e.detail;
-
-				if ('success' in data) {
-					const title = data.success.title;
-					let messages = [];
-
-					if ('messages' in data.success) {
-						messages = data.success.messages;
-					}
-
-					view._addPopupMessage(makeMessageBox('good', messages, title));
-				}
-
-				uncheckTableRows('latest');
-				view.refresh();
-			}
 		}
 	};
 </script>

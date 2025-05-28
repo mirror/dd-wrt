@@ -1,78 +1,110 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CWidgetSvgGraph extends CWidget {
 
-	_init() {
-		super._init();
+	static DATASET_TYPE_SINGLE_ITEM = 0;
 
+	onInitialize() {
 		this._has_contents = false;
 		this._svg_options = {};
 	}
 
-	_doActivate() {
-		super._doActivate();
-
+	onActivate() {
 		this._activateGraph();
 	}
 
-	_doDeactivate() {
-		super._doDeactivate();
-
+	onDeactivate() {
 		this._deactivateGraph();
 	}
 
-	resize() {
-		super.resize();
-
+	onResize() {
 		if (this._state === WIDGET_STATE_ACTIVE) {
 			this._startUpdating();
 		}
 	}
 
-	setEditMode() {
-		super.setEditMode();
-
+	onEdit() {
 		this._deactivateGraph();
 	}
 
-	setTimePeriod(time_period) {
-		super.setTimePeriod(time_period);
-
-		if (this._state === WIDGET_STATE_ACTIVE) {
+	onFeedback({type, value}) {
+		if (type === CWidgetsData.DATA_TYPE_TIME_PERIOD) {
 			this._startUpdating();
+
+			this.feedback({time_period: value});
+
+			return true;
 		}
+
+		return false;
 	}
 
-	_getUpdateRequestData() {
-		return {
-			...super._getUpdateRequestData(),
-			from: this._time_period.from,
-			to: this._time_period.to
-		};
+	promiseUpdate() {
+		const time_period = this.getFieldsData().time_period;
+
+		if (!this.hasBroadcast(CWidgetsData.DATA_TYPE_TIME_PERIOD) || this.isFieldsReferredDataUpdated('time_period')) {
+			this.broadcast({
+				[CWidgetsData.DATA_TYPE_TIME_PERIOD]: time_period
+			});
+		}
+
+		return super.promiseUpdate();
 	}
 
-	_processUpdateResponse(response) {
-		this._destroyGraph();
+	getUpdateRequestData() {
+		const request_data = super.getUpdateRequestData();
 
-		super._processUpdateResponse(response);
+		for (const [dataset_key, dataset] of request_data.fields.ds.entries()) {
+			if (dataset.dataset_type != CWidgetSvgGraph.DATASET_TYPE_SINGLE_ITEM) {
+				continue;
+			}
+
+			const dataset_new = {
+				...dataset,
+				itemids: [],
+				color: []
+			};
+
+			for (const [item_index, itemid] of dataset.itemids.entries()) {
+				if (Array.isArray(itemid)) {
+					if (itemid.length === 1) {
+						dataset_new.itemids.push(itemid[0]);
+						dataset_new.color.push(dataset.color[item_index]);
+					}
+				}
+				else {
+					dataset_new.itemids.push(itemid);
+					dataset_new.color.push(dataset.color[item_index]);
+				}
+			}
+
+			request_data.fields.ds[dataset_key] = dataset_new;
+		}
+
+		if (!this.getFieldsReferredData().has('time_period')) {
+			request_data.has_custom_time_period = 1;
+		}
+
+		return request_data;
+	}
+
+	processUpdateResponse(response) {
+		this.clearContents();
+
+		super.processUpdateResponse(response);
 
 		if (response.svg_options !== undefined) {
 			this._has_contents = true;
@@ -91,9 +123,17 @@ class CWidgetSvgGraph extends CWidget {
 		}
 	}
 
+	onClearContents() {
+		if (this._has_contents) {
+			this._deactivateGraph();
+
+			this._has_contents = false;
+		}
+	}
+
 	_initGraph(options) {
 		this._svg_options = options;
-		this._svg = this._content_body.querySelector('svg');
+		this._svg = this._body.querySelector('svg');
 		jQuery(this._svg).svggraph(this);
 
 		this._activateGraph();
@@ -111,17 +151,10 @@ class CWidgetSvgGraph extends CWidget {
 		}
 	}
 
-	_destroyGraph() {
-		if (this._has_contents) {
-			this._deactivateGraph();
-			this._svg.remove();
-		}
-	}
+	getActionsContextMenu({can_copy_widget, can_paste_widget}) {
+		const menu = super.getActionsContextMenu({can_copy_widget, can_paste_widget});
 
-	getActionsContextMenu({can_paste_widget}) {
-		const menu = super.getActionsContextMenu({can_paste_widget});
-
-		if (this._is_edit_mode) {
+		if (this.isEditMode()) {
 			return menu;
 		}
 
@@ -148,14 +181,14 @@ class CWidgetSvgGraph extends CWidget {
 			label: t('Download image'),
 			disabled: !this._has_contents,
 			clickCallback: () => {
-				downloadSvgImage(this._svg, 'graph.png');
+				downloadSvgImage(this._svg, 'image.png', '.svg-graph-legend');
 			}
 		});
 
 		return menu;
 	}
 
-	_hasPadding() {
+	hasPadding() {
 		return true;
 	}
 }

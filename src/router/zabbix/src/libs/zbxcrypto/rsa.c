@@ -1,32 +1,32 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
+#include "zbxcommon.h"
+
+#if defined(HAVE_OPENSSL)
 #include "zbxcrypto.h"
 #include "zbxstr.h"
 
-#if defined(HAVE_OPENSSL)
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #elif defined(HAVE_GNUTLS)
+#include "zbxcrypto.h"
+#include "zbxstr.h"
+
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 #include <gnutls/x509.h>
@@ -47,13 +47,12 @@ static void	pem_replace_spaces(char *s)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: receive PEM container with arbitrary newlines, validate if        *
+ * Purpose: Receives PEM container with arbitrary newlines, validate if       *
  *          contains necessary newlines after header and before footer,       *
  *          insert them if they are absent.                                   *
  *                                                                            *
- * Parameters:                                                                *
- *     key     - [OUT/IN] key in PEM container                                *
- *     key_len - [OUT/IN] key length                                          *
+ * Parameters: key     - [IN/OUT] key in PEM container                        *
+ *             key_len - [IN/OUT] key length                                  *
  *                                                                            *
  ******************************************************************************/
 void	zbx_normalize_pem(char **key, size_t *key_len)
@@ -99,19 +98,19 @@ void	zbx_normalize_pem(char **key, size_t *key_len)
 #if defined(HAVE_OPENSSL)
 /******************************************************************************
  *                                                                            *
- * Purpose: create RS256 signature for given data                             *
+ * Purpose: creates RS256 signature for given data                            *
  *                                                                            *
  * Parameters:                                                                *
- *     key         - [IN] private key in a PEM container (PKCS#1 or PKCS#8)   *
+ *     key         - [IN] private key in PEM container (PKCS#1 or PKCS#8)     *
  *     data        - [IN] data to sign                                        *
  *     data_len    - [IN] length of data to sign                              *
  *     output      - [OUT] dynamically allocated memory with signature        *
- *     output_len  - [OUT] length of a signature (bytes)                      *
+ *     output_len  - [OUT] length of signature (bytes)                        *
  *     error       - [OUT] dynamically allocated memory with error message    *
  *                                                                            *
  * Return value:                                                              *
  *     SUCCEED - signature was generated successfully                         *
- *     FAIL    - an error occurred                                            *
+ *     FAIL    - error occurred                                               *
  *                                                                            *
  ******************************************************************************/
 int	zbx_rs256_sign(char *key, size_t key_len, char *data, size_t data_len, unsigned char **output,

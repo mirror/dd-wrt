@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -55,20 +50,25 @@ class CActionButtonList extends CObject {
 	protected $selected_count_element = null;
 
 	/**
-	 * @param string       $action_name                   Name of submit buttons.
-	 * @param string       $checkboxes_name               Name of parameter into which checked checkboxes will be put
-	 *                                                    in.
-	 * @param array        $buttons_data                  Buttons data array.
-	 * @param string       $buttons_data[]['name']        Button caption.
-	 * @param string       $buttons_data[]['confirm']     Confirmation text (optional).
-	 * @param string       $buttons_data[]['redirect']    Redirect URL (optional).
-	 * @param string       $buttons_data[]['csrf_token']  CSRF token (optional).
-	 * @param bool         $buttons_data[]['disabled']    Set button state disabled (optional).
-	 * @param array        $buttons_data[]['attributes']  Set additional HTML attributes where array key is attribute
-	 *                                                    name array value is the attribute value.
-	 * @param CTag         $buttons_data[]['content']     A HTML tag. For example a CButton wrapped in CList object.
-	 * @param string|null  $name_prefix                   Prefix for sessionStorage used for storing currently selected
-	 *                                                    checkboxes.
+	 * @param string       $action_name			Name of submit buttons.
+	 * @param string       $checkboxes_name		Name of parameter into which checked checkboxes will be put in.
+	 * @param array        $buttons_data		Buttons data array.
+	 * @param string|null  $name_prefix			Prefix for sessionStorage used for storing currently selected
+	 *                                          checkboxes.
+	 *
+	 * $buttons_data = [[
+	 * 		'name' =>				(string)	Button caption.
+	 * 		'confirm_singular' =>	(string)	Confirmation text in the singular (optional). If this is provided,
+	 *                                  		'confirm_plural' also must be provided.
+	 * 		'confirm_plural' =>		(string)	Confirmation text in the plural (optional). If this is provided,
+	 *                                  		'confirm_singular' also must be provided.
+	 * 		'redirect' =>			(string)	Redirect URL (optional).
+	 * 		'csrf_token' =>			(string)	CSRF token (optional).
+	 * 		'disabled' =>			(bool)		Set button state disabled (optional).
+	 * 		'attributes' =>			(array)		Set additional HTML attributes where array key is attribute name array
+	 * 											value is the attribute value.
+	 * 		'content' =>			(CTag)		A HTML tag. For example a CButton wrapped in CList object.
+	 * ]]
 	 */
 	function __construct($action_name, $checkboxes_name, array $buttons_data, $name_prefix = null) {
 		$this->checkboxes_name = $checkboxes_name;
@@ -120,7 +120,7 @@ class CActionButtonList extends CObject {
 				}
 
 				if (array_key_exists('csrf_token', $button_data)) {
-					$on_click_action .= 'create_var(form,"'.CCsrfTokenHelper::CSRF_TOKEN_NAME.'", "'.
+					$on_click_action .= 'create_var(form,"'.CSRF_TOKEN_NAME.'", "'.
 						$button_data['csrf_token'].'", false);';
 				}
 
@@ -132,8 +132,10 @@ class CActionButtonList extends CObject {
 						->setAttribute('data-disabled', $button_data['disabled']);
 				}
 
-				if (array_key_exists('confirm', $button_data)) {
-					$button->setAttribute('confirm', $button_data['confirm']);
+				if (array_key_exists('confirm_singular', $button_data)
+						&& array_key_exists('confirm_plural', $button_data)) {
+					$button->setAttribute('confirm_singular', $button_data['confirm_singular']);
+					$button->setAttribute('confirm_plural', $button_data['confirm_plural']);
 				}
 			}
 

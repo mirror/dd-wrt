@@ -1,27 +1,24 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 namespace Widgets\Item\Includes;
 
-use API;
+use API,
+	CItemHelper,
+	CWidgetsData;
 
 use Zabbix\Widgets\{
 	CWidgetField,
@@ -34,11 +31,14 @@ use Zabbix\Widgets\Fields\{
 	CWidgetFieldColor,
 	CWidgetFieldIntegerBox,
 	CWidgetFieldMultiSelectItem,
+	CWidgetFieldMultiSelectOverrideHost,
 	CWidgetFieldRadioButtonList,
 	CWidgetFieldSelect,
 	CWidgetFieldTextArea,
 	CWidgetFieldTextBox,
-	CWidgetFieldThresholds
+	CWidgetFieldSparkline,
+	CWidgetFieldThresholds,
+	CWidgetFieldTimePeriod
 };
 
 use Widgets\Item\Widget;
@@ -57,6 +57,22 @@ class WidgetForm extends CWidgetForm {
 	private const DEFAULT_UNITS_SIZE = 35;
 	private const DEFAULT_TIME_SIZE = 15;
 
+	public const ITEM_VALUE_DATA_SOURCE_AUTO = 0;
+	public const ITEM_VALUE_DATA_SOURCE_HISTORY = 1;
+	public const ITEM_VALUE_DATA_SOURCE_TRENDS = 2;
+
+	public const SPARKLINE_DEFAULT = [
+		'width'		=> 1,
+		'fill'		=> 3,
+		'color'		=> '42A5F5',
+		'time_period' => [
+			'data_source' => CWidgetFieldTimePeriod::DATA_SOURCE_DEFAULT,
+			'from' => 'now-1h',
+			'to' => 'now'
+		],
+		'history'	=> CWidgetFieldSparkline::DATA_SOURCE_AUTO
+	];
+
 	private bool $is_binary_units = false;
 
 	public function __construct(array $values, ?string $templateid) {
@@ -65,7 +81,8 @@ class WidgetForm extends CWidgetForm {
 		if (array_key_exists('units', $this->values) && $this->values['units'] !== '') {
 			$this->is_binary_units = isBinaryUnits($this->values['units']);
 		}
-		elseif (array_key_exists('itemid', $this->values)) {
+		elseif (array_key_exists('itemid', $this->values) && is_array($this->values['itemid'])
+				&& !array_key_exists(CWidgetField::FOREIGN_REFERENCE_KEY, $this->values['itemid'])) {
 			$items = API::Item()->get([
 				'output' => ['units'],
 				'itemids' => $this->values['itemid'],
@@ -76,8 +93,39 @@ class WidgetForm extends CWidgetForm {
 		}
 	}
 
+	public function getFieldsValues(): array {
+		$fields_values = parent::getFieldsValues();
+
+		if ($fields_values['aggregate_function'] == AGGREGATE_NONE) {
+			unset($fields_values['time_period']);
+		}
+
+		return $fields_values;
+	}
+
 	public function validate(bool $strict = false): array {
-		$errors = parent::validate($strict);
+		$show = $this->getFieldValue('show');
+		$sparkline_enabled = in_array(Widget::SHOW_SPARKLINE, $show);
+		$errors = [];
+
+		foreach ($this->fields as $name => $field) {
+			if (!$sparkline_enabled && $name === 'sparkline') {
+				$field->setValue(CWidgetFieldSparkline::DEFAULT_VALUE);
+			}
+			else {
+				$errors = array_merge($errors, $field->validate($strict));
+			}
+		}
+
+		if ($errors) {
+			return $errors;
+		}
+
+		if (!$show) {
+			$errors[] = _s('Invalid parameter "%1$s": %2$s.', _('Show'), _('at least one option must be selected'));
+
+			return $errors;
+		}
 
 		// Check if one of the objects (description, value or time) occupies same space.
 		$fields = [
@@ -87,7 +135,6 @@ class WidgetForm extends CWidgetForm {
 		];
 
 		$fields_count = count($fields);
-		$show = $this->getFieldValue('show');
 
 		for ($i = 0; $i < $fields_count - 1; $i++) {
 			if (!in_array($fields[$i]['show'], $show)) {
@@ -115,10 +162,23 @@ class WidgetForm extends CWidgetForm {
 		return $errors;
 	}
 
+	protected function normalizeValues(array $values): array {
+		$values = parent::normalizeValues($values);
+
+		if (array_key_exists('show', $values) && is_array($values['show'])
+				&& in_array(Widget::SHOW_SPARKLINE, $values['show'])) {
+			$values['sparkline'] = array_key_exists('sparkline', $values)
+				? array_replace(WidgetForm::SPARKLINE_DEFAULT, $values['sparkline'])
+				: WidgetForm::SPARKLINE_DEFAULT;
+		}
+
+		return $values;
+	}
+
 	public function addFields(): self {
 		return $this
 			->addField(
-				(new CWidgetFieldMultiSelectItem('itemid', _('Item'), $this->templateid))
+				(new CWidgetFieldMultiSelectItem('itemid', _('Item')))
 					->setFlags(CWidgetField::FLAG_NOT_EMPTY | CWidgetField::FLAG_LABEL_ASTERISK)
 					->setMultiple(false)
 			)
@@ -127,7 +187,8 @@ class WidgetForm extends CWidgetForm {
 					Widget::SHOW_DESCRIPTION => _('Description'),
 					Widget::SHOW_VALUE => _('Value'),
 					Widget::SHOW_TIME => _('Time'),
-					Widget::SHOW_CHANGE_INDICATOR => _('Change indicator')
+					Widget::SHOW_CHANGE_INDICATOR => _('Change indicator'),
+					Widget::SHOW_SPARKLINE => _('Sparkline')
 				]))
 					->setDefault([Widget::SHOW_DESCRIPTION, Widget::SHOW_VALUE, Widget::SHOW_TIME,
 						Widget::SHOW_CHANGE_INDICATOR
@@ -135,7 +196,7 @@ class WidgetForm extends CWidgetForm {
 					->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
 			)
 			->addField(
-				new CWidgetFieldCheckBox('adv_conf', _('Advanced configuration'))
+				new CWidgetFieldMultiSelectOverrideHost()
 			)
 			->addField(
 				(new CWidgetFieldTextArea('description', _('Description')))
@@ -203,7 +264,7 @@ class WidgetForm extends CWidgetForm {
 				(new CWidgetFieldCheckBox('units_show', _('Units')))->setDefault(1)
 			)
 			->addField(
-				new CWidgetFieldTextBox('units', _('Units'))
+				(new CWidgetFieldTextBox('units', _('Units')))->setMaxLength(255)
 			)
 			->addField(
 				(new CWidgetFieldSelect('units_pos', _('Position'), [
@@ -257,14 +318,42 @@ class WidgetForm extends CWidgetForm {
 				new CWidgetFieldColor('updown_color', _('Change indicator'))
 			)
 			->addField(
+				(new CWidgetFieldSparkline('sparkline', _('Sparkline')))->setDefault(self::SPARKLINE_DEFAULT)
+			)
+			->addField(
 				new CWidgetFieldColor('bg_color', _('Background color'))
 			)
 			->addField(
-				new CWidgetFieldThresholds('thresholds', _('Thresholds'), $this->is_binary_units)
+				(new CWidgetFieldSelect('aggregate_function', _('Aggregation function'), [
+					AGGREGATE_NONE => CItemHelper::getAggregateFunctionName(AGGREGATE_NONE),
+					AGGREGATE_MIN => CItemHelper::getAggregateFunctionName(AGGREGATE_MIN),
+					AGGREGATE_MAX => CItemHelper::getAggregateFunctionName(AGGREGATE_MAX),
+					AGGREGATE_AVG => CItemHelper::getAggregateFunctionName(AGGREGATE_AVG),
+					AGGREGATE_COUNT => CItemHelper::getAggregateFunctionName(AGGREGATE_COUNT),
+					AGGREGATE_SUM => CItemHelper::getAggregateFunctionName(AGGREGATE_SUM),
+					AGGREGATE_FIRST => CItemHelper::getAggregateFunctionName(AGGREGATE_FIRST),
+					AGGREGATE_LAST => CItemHelper::getAggregateFunctionName(AGGREGATE_LAST)
+				]))->setDefault(AGGREGATE_NONE)
 			)
-			->addField($this->templateid === null
-				? new CWidgetFieldCheckBox('dynamic', _('Enable host selection'))
-				: null
+			->addField(
+				(new CWidgetFieldTimePeriod('time_period', _('Time period')))
+					->setDefault([
+						CWidgetField::FOREIGN_REFERENCE_KEY => CWidgetField::createTypedReference(
+							CWidgetField::REFERENCE_DASHBOARD, CWidgetsData::DATA_TYPE_TIME_PERIOD
+						)
+					])
+					->setDefaultPeriod(['from' => 'now-1h', 'to' => 'now'])
+					->setFlags(CWidgetField::FLAG_NOT_EMPTY | CWidgetField::FLAG_LABEL_ASTERISK)
+			)
+			->addField(
+				(new CWidgetFieldRadioButtonList('history', _('History data'), [
+					self::ITEM_VALUE_DATA_SOURCE_AUTO => _('Auto'),
+					self::ITEM_VALUE_DATA_SOURCE_HISTORY => _('History'),
+					self::ITEM_VALUE_DATA_SOURCE_TRENDS => _('Trends')
+				]))->setDefault(self::ITEM_VALUE_DATA_SOURCE_AUTO)
+			)
+			->addField(
+				new CWidgetFieldThresholds('thresholds', _('Thresholds'), $this->is_binary_units)
 			);
 	}
 }

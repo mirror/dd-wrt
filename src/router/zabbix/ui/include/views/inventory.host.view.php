@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 $this->includeJsFile('inventory.host.view.js.php');
@@ -93,14 +89,14 @@ foreach (CItem::INTERFACE_TYPES_BY_PRIORITY as $type) {
 				(new CRadioButtonList('useip['.$interface['interfaceid'].']', (int) $interface['useip']))
 					->addValue('IP', INTERFACE_USE_IP)
 					->addValue('DNS', INTERFACE_USE_DNS)
-					->setModern(true)
-					->setEnabled(false),
+					->setModern()
+					->setReadonly(true),
 				(new CTextBox('port', $interface['port'], true, 64))
 					->setWidth(ZBX_TEXTAREA_INTERFACE_PORT_WIDTH)
 					->removeId(),
 				(new CRadioButtonList('main['.$interface['interfaceid'].']', (int) $interface['main']))
 					->addValue(null, INTERFACE_PRIMARY)
-					->setEnabled(false)
+					->setReadonly(true)
 					->removeId()
 			]);
 		}
@@ -175,17 +171,24 @@ $overviewFormList->addRow(_('Monitoring'),
 
 // configuration
 if ($data['allowed_ui_conf_hosts'] && $data['rwHost']) {
-	$hostLink = (new CLink(_('Host')))
-		->setAttribute('data-hostid', $data['host']['hostid'])
-		->onClick('view.editHost({hostid: this.dataset.hostid});');
+	$host_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'host.edit')
+		->setArgument('hostid', $data['host']['hostid'])
+		->getUrl();
+
+	$hostLink = new CLink(_('Host'), $host_url);
+
 	$itemsLink = new CLink(_('Items'),
-		(new CUrl('items.php'))
+		(new CUrl('zabbix.php'))
+			->setArgument('action', 'item.list')
 			->setArgument('filter_set', '1')
 			->setArgument('filter_hostids', [$data['host']['hostid']])
 			->setArgument('context', 'host')
 	);
 	$triggersLink = new CLink(_('Triggers'),
-		(new CUrl('triggers.php'))
+		(new CUrl('zabbix.php'))
+			->setArgument('action', 'trigger.list')
 			->setArgument('filter_set', '1')
 			->setArgument('filter_hostids', [$data['host']['hostid']])
 			->setArgument('context', 'host')
@@ -242,7 +245,9 @@ $inventoryValues = false;
 foreach ($data['host']['inventory'] as $key => $value) {
 	if ($value !== '') {
 		$detailsFormList->addRow($data['tableTitles'][$key]['title'],
-			(new CDiv(zbx_str2links($value)))->setWidth(ZBX_TEXTAREA_BIG_WIDTH)
+			(new CDiv(zbx_str2links($value)))
+				->addClass(ZBX_STYLE_WORDWRAP)
+				->setWidth(ZBX_TEXTAREA_BIG_WIDTH)
 		);
 
 		$inventoryValues = true;
@@ -257,6 +262,10 @@ $hostInventoriesTab->addTab('detailsTab', _('Details'), $detailsFormList);
 
 // append tabs and form
 $hostInventoriesTab->setFooter(makeFormFooter(null, [new CButtonCancel()]));
+
+(new CScriptTag('view.init();'))
+	->setOnDocumentReady()
+	->show();
 
 (new CHtmlPage())
 	->setTitle(_('Host inventory'))

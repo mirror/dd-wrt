@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -31,6 +26,7 @@ use Zabbix\Widgets\Fields\{
 	CWidgetFieldIntegerBox,
 	CWidgetFieldMultiSelectGroup,
 	CWidgetFieldMultiSelectHost,
+	CWidgetFieldMultiSelectOverrideHost,
 	CWidgetFieldRadioButtonList,
 	CWidgetFieldSelect,
 	CWidgetFieldSeverities,
@@ -46,7 +42,7 @@ class WidgetForm extends CWidgetForm {
 	private bool $show_tags = false;
 
 	protected function normalizeValues(array $values): array {
-		$values = self::convertDottedKeys($values);
+		$values = parent::normalizeValues($values);
 
 		if (array_key_exists('show_tags', $values)) {
 			$this->show_tags = $values['show_tags'] !== SHOW_TAGS_NONE;
@@ -64,14 +60,17 @@ class WidgetForm extends CWidgetForm {
 					TRIGGERS_OPTION_ALL => _('History')
 				]))->setDefault(TRIGGERS_OPTION_RECENT_PROBLEM)
 			)
-			->addField(
-				new CWidgetFieldMultiSelectGroup('groupids', _('Host groups'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectGroup('groupids', _('Host groups'))
 			)
-			->addField(
-				new CWidgetFieldMultiSelectGroup('exclude_groupids', _('Exclude host groups'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectGroup('exclude_groupids', _('Exclude host groups'))
 			)
-			->addField(
-				new CWidgetFieldMultiSelectHost('hostids', _('Hosts'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectHost('hostids', _('Hosts'))
 			)
 			->addField(
 				new CWidgetFieldTextBox('problem', _('Problem'))
@@ -80,7 +79,7 @@ class WidgetForm extends CWidgetForm {
 				new CWidgetFieldSeverities('severities', _('Severity'))
 			)
 			->addField(
-				(new CWidgetFieldRadioButtonList('evaltype', _('Tags'), [
+				(new CWidgetFieldRadioButtonList('evaltype', _('Problem tags'), [
 					TAG_EVAL_TYPE_AND_OR => _('And/Or'),
 					TAG_EVAL_TYPE_OR => _('Or')
 				]))->setDefault(TAG_EVAL_TYPE_AND_OR)
@@ -123,20 +122,23 @@ class WidgetForm extends CWidgetForm {
 				new CWidgetFieldCheckBox('show_suppressed', _('Show suppressed problems'))
 			)
 			->addField(
-				(new CWidgetFieldCheckBox('unacknowledged', _('Show unacknowledged only')))
-					->setFlags(CWidgetField::FLAG_ACKNOWLEDGES)
+				(new CWidgetFieldRadioButtonList('acknowledgement_status', null, [
+					ZBX_ACK_STATUS_ALL => _('All'),
+					ZBX_ACK_STATUS_UNACK => _('Unacknowledged'),
+					ZBX_ACK_STATUS_ACK => _('Acknowledged')
+				]))->setDefault(ZBX_ACK_STATUS_ALL)
 			)
 			->addField(
-				(new CWidgetFieldSelect('sort_triggers', _('Sort entries by'), [
-					SCREEN_SORT_TRIGGERS_TIME_DESC => _('Time').' ('._('descending').')',
-					SCREEN_SORT_TRIGGERS_TIME_ASC => _('Time').' ('._('ascending').')',
-					SCREEN_SORT_TRIGGERS_SEVERITY_DESC => _('Severity').' ('._('descending').')',
-					SCREEN_SORT_TRIGGERS_SEVERITY_ASC => _('Severity').' ('._('ascending').')',
-					SCREEN_SORT_TRIGGERS_NAME_DESC => _('Problem').' ('._('descending').')',
-					SCREEN_SORT_TRIGGERS_NAME_ASC => _('Problem').' ('._('ascending').')',
-					SCREEN_SORT_TRIGGERS_HOST_NAME_DESC => _('Host').' ('._('descending').')',
-					SCREEN_SORT_TRIGGERS_HOST_NAME_ASC => _('Host').' ('._('ascending').')'
-				]))->setDefault(SCREEN_SORT_TRIGGERS_TIME_DESC)
+				(new CWidgetFieldCheckBox('acknowledged_by_me', _('By me')))
+					->setFlags(array_key_exists('acknowledgement_status', $this->values)
+							&& $this->values['acknowledgement_status'] != ZBX_ACK_STATUS_ACK
+						? CWidgetField::FLAG_DISABLED
+						: 0x00
+					)
+			)
+			->addField(
+				(new CWidgetFieldSelect('sort_triggers', _('Sort entries by'), $this->getSortTriggersValues()))
+					->setDefault(SCREEN_SORT_TRIGGERS_TIME_DESC)
 			)
 			->addField(
 				(new CWidgetFieldCheckBox('show_timeline', _('Show timeline')))
@@ -157,6 +159,29 @@ class WidgetForm extends CWidgetForm {
 				))
 					->setDefault(ZBX_DEFAULT_WIDGET_LINES)
 					->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
+			)
+			->addField(
+				new CWidgetFieldMultiSelectOverrideHost()
 			);
+	}
+
+	protected function getSortTriggersValues(): array {
+		$sort_triggers_values = [
+			SCREEN_SORT_TRIGGERS_TIME_DESC => _('Time').' ('._('descending').')',
+			SCREEN_SORT_TRIGGERS_TIME_ASC => _('Time').' ('._('ascending').')',
+			SCREEN_SORT_TRIGGERS_SEVERITY_DESC => _('Severity').' ('._('descending').')',
+			SCREEN_SORT_TRIGGERS_SEVERITY_ASC => _('Severity').' ('._('ascending').')',
+			SCREEN_SORT_TRIGGERS_NAME_DESC => _('Problem').' ('._('descending').')',
+			SCREEN_SORT_TRIGGERS_NAME_ASC => _('Problem').' ('._('ascending').')'
+		];
+
+		if (!$this->isTemplateDashboard()) {
+			$sort_triggers_values += [
+				SCREEN_SORT_TRIGGERS_HOST_NAME_DESC => _('Host').' ('._('descending').')',
+				SCREEN_SORT_TRIGGERS_HOST_NAME_ASC => _('Host').' ('._('ascending').')'
+			];
+		}
+
+		return $sort_triggers_values;
 	}
 }

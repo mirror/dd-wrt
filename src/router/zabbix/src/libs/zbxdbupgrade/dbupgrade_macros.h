@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_DBUPGRADE_MACROS_H
@@ -64,8 +59,8 @@ zbx_field_len_t;
 
 ZBX_VECTOR_DECL(strloc, zbx_strloc_t)
 
-int	db_rename_macro(DB_RESULT result, const char *table, const char *pkey, zbx_field_len_t *fields, int fields_num,
-		const char *oldmacro, const char *newmacro);
+int	db_rename_macro(zbx_db_result_t result, const char *table, const char *pkey, zbx_field_len_t *fields,
+		int fields_num, const char *oldmacro, const char *newmacro);
 void	dbpatch_convert_simple_macro(const char *expression, const zbx_token_simple_macro_t *data, int more,
 		char **function);
 int	dbpatch_is_time_function(const char *name, size_t len);
@@ -73,7 +68,7 @@ void	dbpatch_update_hist2common(zbx_dbpatch_function_t *function, int extended, 
 void	dbpatch_convert_function(zbx_dbpatch_function_t *function, char **replace, zbx_vector_ptr_t *functions);
 void	dbpatch_function_free(zbx_dbpatch_function_t *func);
 int	dbpatch_is_composite_constant(const char *str);
-void	dbpatch_strcpy_alloc_quoted(char **str, size_t *str_alloc, size_t *str_offset, const char *source);
+void	dbpatch_strcpy_alloc_quoted_compat(char **str, size_t *str_alloc, size_t *str_offset, const char *source);
 void	dbpatch_convert_params(char **out, const char *parameter, const zbx_vector_strloc_t *params, ...);
 
 zbx_dbpatch_function_t	*dbpatch_new_function(zbx_uint64_t functionid, zbx_uint64_t itemid, const char *name,

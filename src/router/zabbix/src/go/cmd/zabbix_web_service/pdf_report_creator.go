@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package main
@@ -32,18 +27,45 @@ import (
 	"strings"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/zbxerr"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/zbxerr"
+)
+
+const (
+	netErrCertCommonNameInvalid = "net::ERR_CERT_COMMON_NAME_INVALID"
+	netErrCertAuthorityInvalid  = "net::ERR_CERT_AUTHORITY_INVALID"
+	netErrCertDateInvalid       = "net::ERR_CERT_DATE_INVALID"
+	netErrCertWeakSignatureAlg  = "net::ERR_CERT_WEAK_SIGNATURE_ALGORITHM"
 )
 
 type requestBody struct {
 	URL        string            `json:"url"`
 	Header     map[string]string `json:"headers"`
 	Parameters map[string]string `json:"parameters"`
+}
+
+// Report size in pixels.
+type reportSize struct {
+	width  int64
+	height int64
+}
+
+// PDF report generation request parameters.
+type reportReqParams struct {
+	cookieParams []*network.CookieParam
+	size         reportSize
+	url          string
+}
+
+// Report generation request parameters.
+type chromedpResp struct {
+	data []byte
+	err  error
 }
 
 func newRequestBody() *requestBody {
@@ -58,26 +80,76 @@ func (b *requestBody) httpCookiesGet() []*http.Cookie {
 	return r.Cookies()
 }
 
+// extractIPv4AddrFromHTTPReq returns extracted net.IP address from a given http.Request.RemoteAddr.
+func extractIPv4AddrFromHTTPReq(r *http.Request) (net.IP, error) {
+	sep := ":"
+
+	if strings.Contains(r.RemoteAddr, "%") {
+		sep = "%"
+	}
+
+	ip := strings.Split(r.RemoteAddr, sep)[0]
+
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return nil, errs.Errorf("invalid IP address %q", ip)
+	}
+
+	return parsedIP, nil
+}
+
 func logAndWriteError(w http.ResponseWriter, errMsg string, code int) {
 	log.Errf("%s", errMsg)
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(map[string]string{"detail": errMsg})
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(false)
+
+	err := encoder.Encode(map[string]string{"detail": errMsg})
+	if err != nil {
+		log.Errf("Error '%s' happened while encoding error message: '%s'", err.Error(), errMsg)
+	}
 }
 
 func (h *handler) report(w http.ResponseWriter, r *http.Request) {
 	log.Infof("received report request from %s", r.RemoteAddr)
 
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	var remoteIP net.IP
+
+	remoteTcpAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
 	if err != nil {
-		logAndWriteError(w, fmt.Sprintf("Cannot remove port from host for incoming ip %s.", err.Error()), http.StatusInternalServerError)
+		log.Debugf("Error '%s' happened while resolving tcp addr: '%s'", err.Error(), r.RemoteAddr)
+		// This is a workaround.
+		// Due to a suspected bug in net.ResolveTCPAddr, it cannot handle IPv4 addresses with interfaces,
+		// for example, "169.254.100.101%Ethernet 3:34018". It is needed for on Windows.
+		// If the bug will be fixed in future, this workaround may be removed.
+		// The bug was registered here https://github.com/golang/go/issues/73071.
+		remoteIP, err = extractIPv4AddrFromHTTPReq(r)
+	} else {
+		remoteIP = remoteTcpAddr.IP
+	}
+
+	if err != nil {
+		logAndWriteError(
+			w,
+			fmt.Sprintf(
+				"Cannot extract a valid IP from HTTP request remote address %q: %s.",
+				r.RemoteAddr,
+				err.Error(),
+			),
+			http.StatusInternalServerError,
+		)
 
 		return
 	}
 
-	if !h.allowedPeers.CheckPeer(net.ParseIP(host)) {
-		logAndWriteError(w, fmt.Sprintf("Cannot accept incoming connection for peer: %s.", r.RemoteAddr), http.StatusInternalServerError)
+	if !h.allowedPeers.CheckPeer(remoteIP) {
+		logAndWriteError(
+			w,
+			fmt.Sprintf("Cannot accept incoming connection for peer: %s.", remoteIP.String()),
+			http.StatusInternalServerError,
+		)
 
 		return
 	}
@@ -114,7 +186,7 @@ func (h *handler) report(w http.ResponseWriter, r *http.Request) {
 		opts = append(opts, chromedp.Flag("ignore-certificate-errors", "1"))
 	}
 
-	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	allocCtx, cancel := chromedp.NewExecAllocator(r.Context(), opts...)
 	defer cancel()
 
 	ctx, cancel := chromedp.NewContext(allocCtx)
@@ -180,85 +252,173 @@ func (h *handler) report(w http.ResponseWriter, r *http.Request) {
 		cookieParams = append(cookieParams, &cookieParam)
 	}
 
-	var buf []byte
+	cdpReqParams := reportReqParams{
+		cookieParams: cookieParams,
+		size: reportSize{
+			height: height,
+			width:  width,
+		},
+		url: u.String(),
+	}
 
-	if err = chromedp.Run(ctx, chromedp.Tasks{
-		network.SetCookies(cookieParams),
-		emulation.SetDeviceMetricsOverride(width, height, 1, false),
-		navigateAndWaitFor(u.String(), "networkIdle"),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			timeoutContext, cancel := context.WithTimeout(ctx, time.Duration(options.Timeout)*time.Second)
-			defer cancel()
-			var err error
-			buf, _, err = page.PrintToPDF().
-				WithPrintBackground(true).
-				WithPreferCSSPageSize(true).
-				WithPaperWidth(pixels2inches(width)).
-				WithPaperHeight(pixels2inches(height)).
-				Do(timeoutContext)
+	respChan := make(chan chromedpResp)
+	defer close(respChan)
 
-			return err
-		}),
-	}); err != nil {
-		logAndWriteError(w, zbxerr.ErrorCannotFetchData.Wrap(err).Error(), http.StatusInternalServerError)
+	go runCDP(ctx, cancel, cdpReqParams, respChan)
+
+	// should never deadlock as chromedp.Run has it's own timeout and we should always get a response
+	resp := <-respChan
+
+	if resp.err != nil {
+		logAndWriteError(
+			w,
+			errs.WrapConst(resp.err, zbxerr.ErrorCannotFetchData).Error(),
+			http.StatusInternalServerError,
+		)
 
 		return
 	}
 
-	log.Infof("writing response for report request from %s", r.RemoteAddr)
+	log.Infof("writing response to report request from %s", r.RemoteAddr)
 
 	w.Header().Set("Content-type", "application/pdf")
-	w.Write(buf)
 
-	return
+	_, err = w.Write(resp.data)
+	if err != nil {
+		log.Errf("failed to write response to report request from %s: %s", r.RemoteAddr, err.Error())
+	}
+}
+
+func runCDP(
+	ctx context.Context,
+	cancel context.CancelFunc,
+	req reportReqParams,
+	resp chan<- chromedpResp,
+) {
+	var (
+		out         []byte
+		listenerErr error
+	)
+
+	requests := make(map[network.RequestID]string)
+
+	chromedp.ListenTarget(
+		ctx,
+		func(ev any) {
+			switch evt := ev.(type) {
+			case *network.EventRequestWillBeSent:
+				requests[evt.RequestID] = evt.Request.URL
+			case *network.EventLoadingFailed:
+				reqURL := "unknown"
+
+				evtReqSentURL, ok := requests[evt.RequestID]
+				if ok {
+					if evtReqSentURL == req.url {
+						listenerErr = handleCriticalNetErr(evt.ErrorText)
+
+						cancel()
+
+						return
+					}
+
+					reqURL = evtReqSentURL
+				}
+
+				log.Warningf("network.EventLoadingFailed with error %q was received "+
+					"while loading external widget content, "+
+					"continuing to generate a report, URL: %s",
+					evt.ErrorText, reqURL)
+			}
+		},
+	)
+
+	err := chromedp.Run(ctx, chromedp.Tasks{
+		network.SetCookies(req.cookieParams),
+		emulation.SetDeviceMetricsOverride(req.size.width, req.size.height, 1, false),
+		prepareDashboard(req.url),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			timeoutContext, cancel := context.WithTimeout(ctx, time.Duration(options.Timeout)*time.Second)
+			defer cancel()
+			var err error
+			out, _, err = page.PrintToPDF().
+				WithPrintBackground(true).
+				WithPreferCSSPageSize(true).
+				WithPaperWidth(pixels2inches(req.size.width)).
+				WithPaperHeight(pixels2inches(req.size.height)).
+				Do(timeoutContext)
+			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					return errs.Wrapf(
+						err,
+						"timeout (%ds) reached while formatting dashboard as PDF, "+
+							"it is configurable in Zabbix web service config file "+
+							"('Timeout' option)",
+						options.Timeout,
+					)
+				}
+
+				return errs.Wrap(err, "failed to format dashboard as PDF")
+			}
+
+			return nil
+		}),
+	})
+
+	if listenerErr != nil {
+		// error is logged since in case of listenerErr chromedp error might be nil or some other error,
+		// and it is good for debugging.
+		log.Tracef("chromedp.Run exited, with err: %v", err)
+		resp <- chromedpResp{err: listenerErr}
+
+		return
+	}
+
+	if err != nil {
+		resp <- chromedpResp{err: err}
+
+		return
+	}
+
+	resp <- chromedpResp{data: out}
 }
 
 func pixels2inches(value int64) float64 {
 	return float64(value) * 0.0104166667
 }
 
-func navigateAndWaitFor(url string, eventName string) chromedp.ActionFunc {
+func prepareDashboard(url string) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
 		_, _, _, err := page.Navigate(url).Do(ctx)
 		if err != nil {
-			return err
+			return errs.Wrapf(err, "failed to navigate to dashboard, url: %q", url)
 		}
 
-		return waitFor(ctx, eventName)
+		return waitForDashboardReady(ctx, url)
 	}
 }
 
-// This comment is taken from the proof of concept example
-//
-// waitFor blocks until eventName is received.
-// Examples of events you can wait for:
-//
-//	init, DOMContentLoaded, firstPaint,
-//	firstContentfulPaint, firstImagePaint,
-//	firstMeaningfulPaintCandidate,
-//	load, networkAlmostIdle, firstMeaningfulPaint, networkIdle
-//
-// This is not super reliable, I've already found incidental cases where
-// networkIdle was sent before load. It's probably smart to see how
-// puppeteer implements this exactly.
-func waitFor(ctx context.Context, eventName string) error {
-	ch := make(chan struct{})
-	cctx, cancel := context.WithCancel(ctx)
-	chromedp.ListenTarget(cctx, func(ev interface{}) {
-		switch e := ev.(type) {
-		case *page.EventLifecycleEvent:
-			if e.Name == eventName {
-				cancel()
-				close(ch)
-			}
-		}
-	})
-	select {
-	case <-ch:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
+func waitForDashboardReady(ctx context.Context, url string) error {
+	var isReady bool
+
+	err := chromedp.Run(
+		ctx,
+		chromedp.Poll(
+			"document.querySelector('.wrapper.is-ready') !== null",
+			&isReady,
+			chromedp.WithPollingTimeout(time.Second*45),
+		),
+	)
+	if err != nil {
+		return errs.Wrapf(err, "dashboard failed to get ready, url: '%s'", url)
 	}
+
+	if !isReady {
+		/* Should never happen: */
+		/* it is expected that either dashboard gets ready or chromedp.ErrPollingTimeout happens. */
+		return errs.Errorf("dashboard failed to get ready with no error, url: '%s'", url)
+	}
+
+	return nil
 }
 
 func parseUrl(u string) (*url.URL, error) {
@@ -276,4 +436,45 @@ func parseUrl(u string) (*url.URL, error) {
 	}
 
 	return parsed, nil
+}
+
+// handleCriticalNetErr returns a user friendly error message for network.EventLoadingFailed errors.
+func handleCriticalNetErr(errStr string) error {
+	switch errStr {
+	case netErrCertCommonNameInvalid:
+		return errs.New(
+			"Invalid certificate common name detected while loading dashboard. Fix TLS configuration or " +
+				"configure Zabbix web service to ignore TLS certificate errors when accessing " +
+				"frontend URL.",
+		)
+	case netErrCertDateInvalid:
+		return errs.New(
+			"Invalid certificate date detected while loading dashboard " +
+				"(certificate's validity period has expired or is not yet valid). " +
+				"configure Zabbix web service to ignore TLS certificate errors when accessing " +
+				"frontend URL.",
+		)
+	case netErrCertWeakSignatureAlg:
+		return errs.New(
+			"Weak certificate signature algorithm detected while loading dashboard. " +
+				"Fix TLS configuration or configure Zabbix web service to ignore " +
+				"TLS certificate errors when accessing frontend URL.",
+		)
+
+	case netErrCertAuthorityInvalid:
+		return errs.New(
+			"Invalid certificate authority detected while loading dashboard. Fix TLS configuration or " +
+				"configure Zabbix web service to ignore TLS certificate errors when accessing " +
+				"frontend URL.",
+		)
+	case "":
+		return errs.New(
+			"network.EventLoadingFailed event with empty ErrorText was received while loading dashboard.",
+		)
+	default:
+		return errs.Errorf(
+			"network.EventLoadingFailed event with ErrorText = '%s' was received while loading dashboard.",
+			errStr,
+		)
+	}
 }

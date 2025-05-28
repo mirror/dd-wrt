@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -41,8 +36,8 @@ abstract class CTriggerGeneral extends CApiService {
 	 * @param array  $tpl_triggers
 	 * @param string $tpl_triggers[<tnum>]['triggerid']
 	 */
-	private function prepareInheritedTriggers(array $tpl_triggers, array $hostids = null, array &$ins_triggers = null,
-			array &$upd_triggers = null, array &$db_triggers = null) {
+	private function prepareInheritedTriggers(array $tpl_triggers, ?array $hostids = null, ?array &$ins_triggers = null,
+			?array &$upd_triggers = null, ?array &$db_triggers = null) {
 		$ins_triggers = [];
 		$upd_triggers = [];
 		$db_triggers = [];
@@ -301,7 +296,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 *
 	 * @return array
 	 */
-	private static function getLinkedHosts(array $tpl_hostids, array $hostids = null) {
+	private static function getLinkedHosts(array $tpl_hostids, ?array $hostids = null) {
 		// Fetch all child hosts and templates
 		$sql = 'SELECT ht.hostid,ht.templateid,h.host,h.status'.
 			' FROM hosts_templates ht,hosts h'.
@@ -343,7 +338,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 *
 	 * @return array
 	 */
-	private function getHostTriggersByTemplateId(array $tpl_triggerids, array $hostids = null) {
+	private function getHostTriggersByTemplateId(array $tpl_triggerids, ?array $hostids = null) {
 		$output = 't.triggerid,t.expression,t.description,t.url_name,t.url,t.status,t.priority,t.comments,t.type,'.
 			't.recovery_mode,t.recovery_expression,t.correlation_mode,t.correlation_tag,t.manual_close,t.opdata,'.
 			't.templateid,t.event_name,i.hostid';
@@ -524,7 +519,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 * @param string $triggers[]['recovery_expression']
 	 * @param array  $hostids
 	 */
-	protected function inherit(array $triggers, array $hostids = null) {
+	protected function inherit(array $triggers, ?array $hostids = null) {
 		$this->prepareInheritedTriggers($triggers, $hostids, $ins_triggers, $upd_triggers, $db_triggers);
 
 		if ($ins_triggers) {
@@ -647,7 +642,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUuidDuplicates(array $triggers, array $db_triggers = null): void {
+	private static function checkUuidDuplicates(array $triggers, ?array $db_triggers = null): void {
 		$trigger_indexes = [];
 
 		foreach ($triggers as $i => $trigger) {
@@ -762,10 +757,8 @@ abstract class CTriggerGeneral extends CApiService {
 
 		$triggerids = array_keys($result);
 
-		// adding groups
-		$this->addRelatedGroups($options, $result, 'selectGroups');
-		$this->addRelatedGroups($options, $result, 'selectHostGroups');
-		$this->addRelatedGroups($options, $result, 'selectTemplateGroups');
+		$this->addRelatedHostGroups($options, $result);
+		$this->addRelatedTemplateGroups($options, $result);
 
 		// adding hosts
 		if ($options['selectHosts'] !== null && $options['selectHosts'] != API_OUTPUT_COUNT) {
@@ -829,66 +822,72 @@ abstract class CTriggerGeneral extends CApiService {
 		return $result;
 	}
 
-	/**
-	 * Adds related host or template groups requested by "select*" options to the resulting object set.
-	 *
-	 * @param array  $options [IN] Original input options.
-	 * @param array  $result  [IN/OUT] Result output.
-	 * @param string $option  [IN] Possible values:
-	 *                               - "selectGroups" (deprecated);
-	 *                               - "selectHostGroups";
-	 *                               - "selectTemplateGroups".
-	 */
-	private function addRelatedGroups(array $options, array &$result, string $option): void {
-		if ($options[$option] === null || $options[$option] === API_OUTPUT_COUNT) {
+	private function addRelatedHostGroups(array $options, array &$result): void {
+		if ($options['selectHostGroups'] === null || $options['selectHostGroups'] === API_OUTPUT_COUNT) {
 			return;
 		}
 
-		$res = DBselect(
+		$resource = DBselect(
 			'SELECT f.triggerid,hg.groupid'.
-			' FROM functions f,items i,hosts_groups hg'.
-			' WHERE '.dbConditionInt('f.triggerid', array_keys($result)).
-				' AND f.itemid=i.itemid'.
-				' AND i.hostid=hg.hostid'
+			' FROM functions f'.
+			' JOIN items i ON f.itemid=i.itemid'.
+			' JOIN hosts_groups hg ON i.hostid=hg.hostid'.
+			' JOIN hstgrp hgg ON hg.groupid=hgg.groupid'.
+				' AND '.dbConditionInt('hgg.type', [HOST_GROUP_TYPE_HOST_GROUP]).
+			' WHERE '.dbConditionId('f.triggerid', array_keys($result))
 		);
-		$relationMap = new CRelationMap();
-		while ($relation = DBfetch($res)) {
-			$relationMap->addRelation($relation['triggerid'], $relation['groupid']);
+		$relation_map = new CRelationMap();
+
+		while ($relation = DBfetch($resource)) {
+			$relation_map->addRelation($relation['triggerid'], $relation['groupid']);
 		}
 
-		switch ($option) {
-			case 'selectGroups':
-				$output_tag = 'groups';
-				$entities = [API::HostGroup(), API::TemplateGroup()];
-				break;
-
-			case 'selectHostGroups':
-				$entities = [API::HostGroup()];
-				$output_tag = 'hostgroups';
-				break;
-
-			case 'selectTemplateGroups':
-				$entities = [API::TemplateGroup()];
-				$output_tag = 'templategroups';
-				break;
-		}
-
-		$groups = [];
-		foreach ($entities as $entity) {
-			$groups += $entity->get([
-				'output' => $options[$option],
-				'groupids' => $relationMap->getRelatedIds(),
+		$related_ids = $relation_map->getRelatedIds();
+		$groups = $related_ids
+			? API::HostGroup()->get([
+				'output' => $options['selectHostGroups'],
+				'groupids' => $related_ids,
 				'preservekeys' => true
-			]);
+			])
+			: [];
+
+		$result = $relation_map->mapMany($result, $groups, 'hostgroups');
+	}
+
+	private function addRelatedTemplateGroups(array $options, array &$result): void {
+		if ($options['selectTemplateGroups'] === null || $options['selectTemplateGroups'] === API_OUTPUT_COUNT) {
+			return;
 		}
 
-		$result = $relationMap->mapMany($result, $groups, $output_tag);
+		$resource = DBselect(
+			'SELECT f.triggerid,hg.groupid'.
+			' FROM functions f'.
+			' JOIN items i ON f.itemid=i.itemid'.
+			' JOIN hosts_groups hg ON i.hostid=hg.hostid'.
+			' JOIN hstgrp hgg ON hg.groupid=hgg.groupid'.
+				' AND '.dbConditionInt('hgg.type', [HOST_GROUP_TYPE_TEMPLATE_GROUP]).
+			' WHERE '.dbConditionId('f.triggerid', array_keys($result))
+		);
+		$relation_map = new CRelationMap();
+
+		while ($relation = DBfetch($resource)) {
+			$relation_map->addRelation($relation['triggerid'], $relation['groupid']);
+		}
+
+		$related_ids = $relation_map->getRelatedIds();
+		$groups = $related_ids
+			? API::TemplateGroup()->get([
+				'output' => $options['selectTemplateGroups'],
+				'groupids' => $related_ids,
+				'preservekeys' => true
+			])
+			: [];
+
+		$result = $relation_map->mapMany($result, $groups, 'templategroups');
 	}
 
 	/**
 	 * Validate integrity of trigger recovery properties.
-	 *
-	 * @static
 	 *
 	 * @param array  $trigger
 	 * @param int    $trigger['recovery_mode']
@@ -913,8 +912,6 @@ abstract class CTriggerGeneral extends CApiService {
 
 	/**
 	 * Validate trigger correlation mode and related properties.
-	 *
-	 * @static
 	 *
 	 * @param array  $trigger
 	 * @param int    $trigger['correlation_mode']
@@ -1080,7 +1077,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 *
 	 * @throws APIException if validation failed.
 	 */
-	protected function validateUpdate(array &$triggers, array &$db_triggers = null) {
+	protected function validateUpdate(array &$triggers, ?array &$db_triggers = null) {
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['description', 'expression']], 'fields' => [
 			'uuid' => 					['type' => API_ANY],
 			'triggerid' =>				['type' => API_ID, 'flags' => API_REQUIRED],
@@ -1359,7 +1356,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private function checkDependencies(array $triggers, array $db_triggers = null): void {
+	private function checkDependencies(array $triggers, ?array $db_triggers = null): void {
 		$edit_triggerids_up = [];
 
 		foreach ($triggers as $trigger) {
@@ -1462,7 +1459,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 * @param array      $triggers
 	 * @param array|null $db_triggers
 	 */
-	protected function checkDependenciesLinks(array $triggers, array $db_triggers = null): void {
+	protected function checkDependenciesLinks(array $triggers, ?array $db_triggers = null): void {
 		$ins_dependencies = [];
 		$del_dependencies = [];
 
@@ -1660,6 +1657,7 @@ abstract class CTriggerGeneral extends CApiService {
 		$triggers_functions = [];
 		$new_tags = [];
 		$del_triggertagids = [];
+		$upd_discovered_triggers = [];
 		$save_triggers = $triggers;
 		$this->implode_expressions($triggers, $db_triggers, $triggers_functions, $inherited);
 
@@ -1760,6 +1758,13 @@ abstract class CTriggerGeneral extends CApiService {
 					$new_tags[] = $tag_add;
 				}
 			}
+
+			if (array_key_exists('flags', $db_trigger) && $db_trigger['flags'] == ZBX_FLAG_DISCOVERY_CREATED
+					&& array_key_exists('status', $upd_trigger['values'])
+					&& $upd_trigger['values']['status'] == TRIGGER_STATUS_DISABLED
+					&& $upd_trigger['values']['status'] != $db_trigger['status']) {
+				$upd_discovered_triggers[] = $db_trigger['triggerid'];
+			}
 		}
 
 		if ($upd_triggers) {
@@ -1776,6 +1781,13 @@ abstract class CTriggerGeneral extends CApiService {
 		}
 		if ($new_tags) {
 			DB::insert('trigger_tag', $new_tags);
+		}
+
+		if ($upd_discovered_triggers) {
+			DB::update('trigger_discovery', [
+				'values' => ['disable_source' => ZBX_DISABLE_DEFAULT],
+				'where' => ['triggerid' => $upd_discovered_triggers]
+			]);
 		}
 
 		if (!$inherited) {
@@ -2961,7 +2973,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 * @param array      $triggers
 	 * @param array|null $db_triggers
 	 */
-	public static function updateDependencies(array &$triggers, array $db_triggers = null): void {
+	public static function updateDependencies(array &$triggers, ?array $db_triggers = null): void {
 		$ins_trigger_deps = [];
 		$del_triggerdepids = [];
 		$edit_dependencies = [];
@@ -3064,7 +3076,7 @@ abstract class CTriggerGeneral extends CApiService {
 	 * @param array $edit_dependencies[<triggerid>][<triggerid_up>]
 	 * @param array $hostids
 	 */
-	protected static function inheritDependencies(array $edit_dependencies, array $hostids = null): void {
+	protected static function inheritDependencies(array $edit_dependencies, ?array $hostids = null): void {
 		$all_triggerids = $edit_dependencies;
 		$all_triggerids_up = [];
 

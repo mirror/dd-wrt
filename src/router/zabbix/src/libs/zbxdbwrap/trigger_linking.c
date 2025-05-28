@@ -1,32 +1,28 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "trigger_linking.h"
-#include "zbxdbwrap.h"
 #include "trigger_dep_linking.h"
 
 #include "zbxeval.h"
-#include "log.h"
 #include "audit/zbxaudit.h"
 #include "audit/zbxaudit_trigger.h"
 #include "zbxnum.h"
 #include "zbx_trigger_constants.h"
+#include "zbxdb.h"
+#include "zbxdbhigh.h"
+#include "zbxstr.h"
 
 typedef struct
 {
@@ -328,17 +324,19 @@ static void	trigger_tags_free(zbx_trigger_tags_t *trigger_tags)
  *                                                                              *
  * Purpose: copies tags from template triggers to created/linked triggers       *
  *                                                                              *
- * Parameters: new_triggerids - the created trigger ids                         *
- *             cur_triggerids - the linked trigfer ids                          *
+ * Parameters:                                                                  *
+ *             new_triggerids     - [IN] created trigger ids                    *
+ *             cur_triggerids     - [IN] linked trigger ids                     *
+ *             audit_context_mode - [IN]                                        *
  *                                                                              *
  * Return value: upon successful completion return SUCCEED, or FAIL on DB error *
  *                                                                              *
  ********************************************************************************/
 static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerids,
-		const zbx_vector_uint64_t *cur_triggerids)
+		const zbx_vector_uint64_t *cur_triggerids, int audit_context_mode)
 {
-	DB_RESULT			result;
-	DB_ROW				row;
+	zbx_db_result_t			result;
+	zbx_db_row_t			row;
 	char				*sql = NULL;
 	size_t				sql_alloc = 0, sql_offset = 0;
 	int				i, j, ret = SUCCEED, insert_num = 0, update_num = 0, delete_num = 0;
@@ -407,7 +405,8 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 			" where tt.triggerid=t.templateid"
 			" and");
 
-	zbx_db_add_condition_alloc(&sql, &sql_alloc, &sql_offset, "t.triggerid", triggerids.values, triggerids.values_num);
+	zbx_db_add_condition_alloc(&sql, &sql_alloc, &sql_offset, "t.triggerid", triggerids.values,
+			triggerids.values_num);
 
 	if (NULL == (result = zbx_db_select("%s", sql)))
 	{
@@ -456,12 +455,12 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 	if (0 != update_num)
 	{
 		sql_offset = 0;
-		zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 	}
 
 	if (0 != insert_num)
 	{
-		zbx_db_insert_prepare(&db_insert, "trigger_tag", "triggertagid", "triggerid", "tag", "value", (char *)NULL);
+		zbx_db_insert_prepare(&db_insert, "trigger_tag", "triggertagid", "triggerid", "tag", "value",
+				(char *)NULL);
 		tagid = zbx_db_get_maxid_num("trigger_tag", insert_num);
 	}
 
@@ -486,8 +485,9 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 				zbx_db_insert_add_values(&db_insert, tagid, trigger_tags->triggerid,
 						db_tag->tag, db_tag->value);
 
-				zbx_audit_trigger_update_json_add_tags_and_values(trigger_tags->triggerid,
-						trigger_tags->flags, tagid, db_tag->tag, db_tag->value);
+				zbx_audit_trigger_update_json_add_tags_and_values(audit_context_mode,
+						trigger_tags->triggerid, trigger_tags->flags, tagid, db_tag->tag,
+						db_tag->value);
 
 				tagid++;
 			}
@@ -495,8 +495,8 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 			{
 				zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, "update trigger_tag set ");
 
-				zbx_audit_trigger_update_json_update_trigger_tag_create_entry(trigger_tags->triggerid,
-						trigger_tags->flags, db_tag->tagid);
+				zbx_audit_trigger_update_json_update_trigger_tag_create_entry(audit_context_mode,
+						trigger_tags->triggerid, trigger_tags->flags, db_tag->tagid);
 
 				if (0 != (db_tag->flags & ZBX_FLAG_DB_TAG_UPDATE_TAG))
 				{
@@ -508,9 +508,9 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 					d = ",";
 					zbx_free(tag_esc);
 
-					zbx_audit_trigger_update_json_update_tag_tag(trigger_tags->triggerid,
-							trigger_tags->flags, db_tag->tagid, db_tag->tag_orig,
-							db_tag->tag);
+					zbx_audit_trigger_update_json_update_tag_tag(audit_context_mode,
+							trigger_tags->triggerid, trigger_tags->flags, db_tag->tagid,
+							db_tag->tag_orig, db_tag->tag);
 
 				}
 
@@ -522,9 +522,9 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 					zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%svalue='%s'", d, value_esc);
 					zbx_free(value_esc);
 
-					zbx_audit_trigger_update_json_update_tag_value(trigger_tags->triggerid,
-							trigger_tags->flags, db_tag->tagid, db_tag->value_orig,
-							db_tag->value);
+					zbx_audit_trigger_update_json_update_tag_value(audit_context_mode,
+							trigger_tags->triggerid, trigger_tags->flags, db_tag->tagid,
+							db_tag->value_orig, db_tag->value);
 				}
 
 				zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, " where triggertagid=" ZBX_FS_UI64
@@ -536,18 +536,15 @@ static int	DBcopy_template_trigger_tags(const zbx_vector_uint64_t *new_triggerid
 			{
 				zbx_vector_uint64_append(&del_tagids, db_tag->tagid);
 
-				zbx_audit_trigger_update_json_delete_tags(trigger_tags->triggerid, trigger_tags->flags,
-						db_tag->tagid);
+				zbx_audit_trigger_update_json_delete_tags(audit_context_mode, trigger_tags->triggerid,
+						trigger_tags->flags, db_tag->tagid);
 			}
 		}
 	}
 
 	if (0 != update_num)
 	{
-		zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-		if (16 < sql_offset)	/* in ORACLE always present begin..end; */
-			zbx_db_execute("%s", sql);
+		(void)zbx_db_flush_overflowed_sql(sql, sql_offset);
 	}
 
 	if (0 != insert_num)
@@ -587,8 +584,8 @@ static int	get_trigger_funcs(zbx_vector_uint64_t *triggerids, zbx_hashset_t *fun
 	char		*sql = NULL;
 	size_t		sql_alloc = 256, sql_offset = 0;
 	int		res = SUCCEED;
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
@@ -668,22 +665,24 @@ static int	get_templates_triggers_data(zbx_uint64_t hostid, const zbx_vector_uin
 	size_t			sql_alloc = 512, sql_offset = 0;
 	int			res = SUCCEED;
 	zbx_trigger_copy_t	*trigger_copy;
-	DB_RESULT		result;
-	DB_ROW			row;
+	zbx_db_result_t		result;
+	zbx_db_row_t		row;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
 	zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset,
 			"select t.triggerid,t.description,t.expression,t.status,"
-				"t.type,t.priority,t.comments,t.url,t.url_name,t.flags,t.recovery_expression,t.recovery_mode,"
-				"t.correlation_mode,t.correlation_tag,t.manual_close,t.opdata,t.discover,t.event_name"
+				"t.type,t.priority,t.comments,t.url,t.url_name,t.flags,t.recovery_expression,"
+				"t.recovery_mode,t.correlation_mode,t.correlation_tag,t.manual_close,t.opdata,"
+				"t.discover,t.event_name"
 			" from triggers t"
 			" where t.triggerid in (select distinct tg.triggerid"
 				" from triggers tg,functions f,items i"
 				" where tg.triggerid=f.triggerid"
 					" and f.itemid=i.itemid"
 					" and");
-	zbx_db_add_condition_alloc(&sql, &sql_alloc, &sql_offset, "i.hostid", templateids->values, templateids->values_num);
+	zbx_db_add_condition_alloc(&sql, &sql_alloc, &sql_offset, "i.hostid", templateids->values,
+			templateids->values_num);
 	zbx_chrcpy_alloc(&sql, &sql_alloc, &sql_offset, ')');
 
 	if (NULL == (result = zbx_db_select("%s", sql)))
@@ -738,8 +737,8 @@ static int	get_target_host_main_data(zbx_uint64_t hostid, zbx_vector_str_t *temp
 	char		*sql = NULL;
 	size_t		sql_alloc = 256, sql_offset = 0;
 	int		res = SUCCEED;
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
@@ -989,7 +988,7 @@ static void	mark_updates_for_host_trigger(zbx_trigger_copy_t *trigger_copy,
 	main_found->update_flags |= ZBX_FLAG_LINK_TRIGGER_UPDATE_TEMPLATEID;
 }
 
-static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
+static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data, int audit_context_mode)
 {
 	int				res = SUCCEED;
 	const char			*d;
@@ -1001,14 +1000,13 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
 	zbx_hashset_iter_reset(zbx_host_triggers_main_data, &iter1);
-	zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	while (NULL != (found = (zbx_target_host_trigger_entry_t *)zbx_hashset_iter_next(&iter1)))
 	{
 		d = "";
 
-		zbx_audit_trigger_create_entry(ZBX_AUDIT_ACTION_UPDATE, found->triggerid, found->description,
-				(int)found->flags);
+		zbx_audit_trigger_create_entry(audit_context_mode, ZBX_AUDIT_ACTION_UPDATE, found->triggerid,
+				found->description, (int)found->flags);
 
 		if (0 != (found->update_flags & ZBX_FLAG_LINK_TRIGGER_UPDATE))
 		{
@@ -1020,8 +1018,8 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 						found->recovery_mode);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_recovery_mode(found->triggerid,
-						(int)found->flags, found->recovery_mode_orig,
+				zbx_audit_trigger_update_json_update_recovery_mode(audit_context_mode,
+						found->triggerid, (int)found->flags, found->recovery_mode_orig,
 						found->recovery_mode);
 			}
 
@@ -1031,8 +1029,8 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 						found->correlation_mode);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_correlation_mode(found->triggerid,
-						(int)found->flags, found->correlation_mode_orig,
+				zbx_audit_trigger_update_json_update_correlation_mode(audit_context_mode,
+						found->triggerid, (int)found->flags, found->correlation_mode_orig,
 						found->correlation_mode);
 			}
 
@@ -1045,8 +1043,9 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				zbx_free(correlation_tag_esc);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_correlation_tag(found->triggerid,
-						(int)found->flags, found->correlation_tag_orig, found->correlation_tag);
+				zbx_audit_trigger_update_json_update_correlation_tag(audit_context_mode,
+						found->triggerid, (int)found->flags, found->correlation_tag_orig,
+						found->correlation_tag);
 			}
 
 			if (0 != (found->update_flags & ZBX_FLAG_LINK_TRIGGER_UPDATE_MANUAL_CLOSE))
@@ -1055,8 +1054,8 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 						found->manual_close);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_manual_close(found->triggerid, (int)found->flags,
-						found->manual_close_orig, found->manual_close);
+				zbx_audit_trigger_update_json_update_manual_close(audit_context_mode, found->triggerid,
+						(int)found->flags, found->manual_close_orig, found->manual_close);
 			}
 
 			if (0 != (found->update_flags & ZBX_FLAG_LINK_TRIGGER_UPDATE_OPDATA))
@@ -1067,8 +1066,8 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				zbx_free(opdata_esc);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_opdata(found->triggerid, (int)found->flags,
-						found->opdata_orig, found->opdata);
+				zbx_audit_trigger_update_json_update_opdata(audit_context_mode, found->triggerid,
+						(int)found->flags, found->opdata_orig, found->opdata);
 			}
 
 			if (0 != (found->update_flags & ZBX_FLAG_LINK_TRIGGER_UPDATE_DISCOVER))
@@ -1076,7 +1075,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%sdiscover=%d", d, found->discover);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_discover(found->triggerid,
+				zbx_audit_trigger_update_json_update_discover(audit_context_mode, found->triggerid,
 						(int)found->flags, found->discover_orig, found->discover);
 			}
 
@@ -1089,7 +1088,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				d = ",";
 				zbx_free(event_name_esc);
 
-				zbx_audit_trigger_update_json_update_event_name(found->triggerid,
+				zbx_audit_trigger_update_json_update_event_name(audit_context_mode, found->triggerid,
 						(int)found->flags, found->event_name_orig, found->event_name);
 			}
 
@@ -1098,7 +1097,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%spriority=%d", d, found->priority);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_priority(found->triggerid,
+				zbx_audit_trigger_update_json_update_priority(audit_context_mode, found->triggerid,
 						(int)found->flags, found->priority_orig, found->priority);
 			}
 
@@ -1111,7 +1110,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				d = ",";
 				zbx_free(comments_esc);
 
-				zbx_audit_trigger_update_json_update_comments(found->triggerid,
+				zbx_audit_trigger_update_json_update_comments(audit_context_mode, found->triggerid,
 						(int)found->flags, found->comments_orig, found->comments);
 			}
 
@@ -1124,7 +1123,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				d = ",";
 				zbx_free(url_esc);
 
-				zbx_audit_trigger_update_json_update_url(found->triggerid,
+				zbx_audit_trigger_update_json_update_url(audit_context_mode, found->triggerid,
 						(int)found->flags, found->url_orig, found->url);
 			}
 
@@ -1137,7 +1136,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 				d = ",";
 				zbx_free(url_name_esc);
 
-				zbx_audit_trigger_update_json_update_url_name(found->triggerid,
+				zbx_audit_trigger_update_json_update_url_name(audit_context_mode, found->triggerid,
 						(int)found->flags, found->url_name_orig, found->url_name);
 			}
 
@@ -1147,7 +1146,7 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 						found->type);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_type(found->triggerid,
+				zbx_audit_trigger_update_json_update_type(audit_context_mode, found->triggerid,
 						(int)found->flags, found->type_orig, found->type);
 			}
 
@@ -1157,15 +1156,15 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 						found->status);
 				d = ",";
 
-				zbx_audit_trigger_update_json_update_status(found->triggerid,
+				zbx_audit_trigger_update_json_update_status(audit_context_mode, found->triggerid,
 						(int)found->flags, found->status_orig, found->status);
 			}
 
 			zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%stemplateid=" ZBX_FS_UI64, d,
 					found->templateid);
 
-			zbx_audit_trigger_update_json_update_templateid(found->triggerid, (int)found->flags,
-					found->templateid_orig, found->templateid);
+			zbx_audit_trigger_update_json_update_templateid(audit_context_mode, found->triggerid,
+					(int)found->flags, found->templateid_orig, found->templateid);
 
 			zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, " where triggerid=" ZBX_FS_UI64 ";\n",
 					found->triggerid);
@@ -1178,13 +1177,9 @@ static int	execute_triggers_updates(zbx_hashset_t *zbx_host_triggers_main_data)
 		}
 	}
 
-	zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
+	if (ZBX_DB_OK > zbx_db_flush_overflowed_sql(sql, sql_offset))
+		res = FAIL;
 
-	if (16 < sql_offset)
-	{
-		if (ZBX_DB_OK > zbx_db_execute("%s", sql))
-			res = FAIL;
-	}
 clean:
 	zbx_free(sql);
 
@@ -1199,8 +1194,8 @@ static int	get_funcs_for_insert(zbx_uint64_t hostid, zbx_vector_uint64_t *insert
 	int		res = SUCCEED;
 	char		*sql = NULL;
 	size_t		sql_alloc = 512, sql_offset = 0;
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 	zbx_uint64_t	itemid;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
@@ -1281,7 +1276,7 @@ out:
 
 static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_copies_insert,
 		zbx_hashset_t *zbx_insert_triggers_funcs, zbx_vector_uint64_t *new_triggerids, int *funcs_insert_count,
-		char **error)
+		int audit_context_mode, char **error)
 {
 	int				i, j, res;
 	char				*sql_update_triggers_expr = NULL;
@@ -1292,12 +1287,10 @@ static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
-	zbx_db_begin_multiple_update(&sql_update_triggers_expr, &sql_update_triggers_expr_alloc,
-			&sql_update_triggers_expr_offset);
-
 	zbx_db_insert_prepare(&db_insert, "triggers", "triggerid", "description", "priority", "status", "comments",
-			"url", "url_name", "type", "value", "state", "templateid", "flags", "recovery_mode", "correlation_mode",
-			"correlation_tag", "manual_close", "opdata", "discover", "event_name", (char *)NULL);
+			"url", "url_name", "type", "value", "state", "templateid", "flags", "recovery_mode",
+			"correlation_mode", "correlation_tag", "manual_close", "opdata", "discover", "event_name",
+			(char *)NULL);
 
 	zbx_db_insert_prepare(&db_insert_funcs, "functions", "functionid", "itemid", "triggerid", "name",
 			"parameter", (char *)NULL);
@@ -1321,9 +1314,9 @@ static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_
 
 		zbx_vector_uint64_append(new_triggerids, triggerid);
 
-		zbx_audit_trigger_create_entry(ZBX_AUDIT_ACTION_ADD, triggerid, trigger_copy_template->description,
-				(int)trigger_copy_template->flags);
-		zbx_audit_trigger_update_json_add_data(triggerid, trigger_copy_template->templateid,
+		zbx_audit_trigger_create_entry(audit_context_mode, ZBX_AUDIT_ACTION_ADD, triggerid,
+				trigger_copy_template->description, (int)trigger_copy_template->flags);
+		zbx_audit_trigger_update_json_add_data(audit_context_mode, triggerid, trigger_copy_template->templateid,
 				trigger_copy_template->recovery_mode, trigger_copy_template->status,
 				trigger_copy_template->type, TRIGGER_VALUE_OK, TRIGGER_STATE_NORMAL,
 				trigger_copy_template->priority, trigger_copy_template->comments,
@@ -1343,7 +1336,7 @@ static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_
 	{
 		zbx_eval_context_t	ctx, ctx_r;
 		zbx_trigger_copy_t	*trigger_copy_template = trigger_copies_insert->values[i];
-		zbx_uint64_t            parse_rules = ZBX_EVAL_PARSE_TRIGGER_EXPRESSION | ZBX_EVAL_COMPOSE_FUNCTIONID;
+		zbx_uint64_t		parse_rules = ZBX_EVAL_PARSE_TRIGGER_EXPRESSION | ZBX_EVAL_COMPOSE_FUNCTIONID;
 
 		if (0 != (trigger_copy_template->flags & ZBX_FLAG_DISCOVERY_PROTOTYPE))
 			parse_rules |= ZBX_EVAL_PARSE_LLDMACRO | ZBX_EVAL_COMPOSE_LLD;
@@ -1404,8 +1397,8 @@ static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_
 
 			/* technically this is an update SQL operation, but logically it is an add, so we audit it */
 			/* as such */
-			zbx_audit_trigger_update_json_add_expr(triggerid2, trigger_copy_template->flags,
-					new_expression);
+			zbx_audit_trigger_update_json_add_expr(audit_context_mode, triggerid2,
+					trigger_copy_template->flags, new_expression);
 
 			zbx_free(esc);
 			zbx_free(new_expression);
@@ -1418,8 +1411,8 @@ static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_
 						&sql_update_triggers_expr_alloc, &sql_update_triggers_expr_offset,
 						",recovery_expression='%s'", esc);
 
-				zbx_audit_trigger_update_json_add_rexpr(triggerid2, trigger_copy_template->flags,
-						new_expression);
+				zbx_audit_trigger_update_json_add_rexpr(audit_context_mode, triggerid2,
+						trigger_copy_template->flags, new_expression);
 
 				zbx_free(esc);
 				zbx_free(new_expression);
@@ -1430,8 +1423,8 @@ static int	execute_triggers_inserts(zbx_vector_trigger_copies_insert_t *trigger_
 					" where triggerid=" ZBX_FS_UI64 ";\n",
 					triggerid2);
 
-			if (FAIL == zbx_db_execute_overflowed_sql(&sql_update_triggers_expr, &sql_update_triggers_expr_alloc,
-					&sql_update_triggers_expr_offset))
+			if (FAIL == zbx_db_execute_overflowed_sql(&sql_update_triggers_expr,
+					&sql_update_triggers_expr_alloc, &sql_update_triggers_expr_offset))
 			{
 				res = FAIL;
 			}
@@ -1449,12 +1442,9 @@ func_out:
 		res = zbx_db_insert_execute(&db_insert_funcs);
 	zbx_db_insert_clean(&db_insert_funcs);
 
-	zbx_db_end_multiple_update(&sql_update_triggers_expr, &sql_update_triggers_expr_alloc,
-			&sql_update_triggers_expr_offset);
-
-	if (SUCCEED == res && 16 < sql_update_triggers_expr_offset)	/* In ORACLE always present begin..end; */
+	if (SUCCEED == res)
 	{
-		if (ZBX_DB_OK > zbx_db_execute("%s", sql_update_triggers_expr))
+		if (ZBX_DB_OK > zbx_db_flush_overflowed_sql(sql_update_triggers_expr, sql_update_triggers_expr_offset))
 			res = FAIL;
 	}
 
@@ -1551,18 +1541,21 @@ static void	trigger_copies_free(zbx_trigger_copy_t *trigger_copy)
 
 /********************************************************************************
  *                                                                              *
- * Purpose: Copy template triggers to host                                      *
+ * Purpose: copies template triggers to host                                    *
  *                                                                              *
- * Parameters: hostid      - [IN] host identifier from database                 *
- *             templateids - [IN] array of template IDs                         *
- *             error       - [IN] the error message                             *
+ * Parameters:                                                                  *
+ *             hostid             - [IN] host id from database                  *
+ *             templateids        - [IN]                                        *
+ *             audit_context_mode - [IN]                                        *
+ *             error              - [OUT] error message                         *
  *                                                                              *
  * Return value: upon successful completion return SUCCEED, or FAIL on DB error *
  *                                                                              *
  * Comments: !!! Don't forget to sync the code with PHP !!!                     *
  *                                                                              *
  ********************************************************************************/
-int	DBcopy_template_triggers(zbx_uint64_t hostid, const zbx_vector_uint64_t *templateids, char **error)
+int	DBcopy_template_triggers(zbx_uint64_t hostid, const zbx_vector_uint64_t *templateids, int audit_context_mode,
+		char **error)
 {
 	int					i, upd_triggers = 0, funcs_insert_count = 0, res = SUCCEED;
 	zbx_vector_uint64_t			new_triggerids, cur_triggerids;
@@ -1605,11 +1598,16 @@ int	DBcopy_template_triggers(zbx_uint64_t hostid, const zbx_vector_uint64_t *tem
 	res = get_templates_triggers_data(hostid, templateids, &trigger_copies_templates,
 			&templates_triggers_descriptions, &temp_templates_triggerids);
 
+	if (FAIL == res)
+		*error = zbx_strdup(NULL, "failed to get templates trigger data");
+
 	if (0 == templates_triggers_descriptions.values_num)
 		goto end;
 
 	if (SUCCEED == res)
 	{
+		/* temp_host_triggerids - list of host triggerids that have DESCRIPTION ONLY (trigger name)  */
+		/* matches with triggers from templates, not FULL matches (description + expression).        */
 		res = get_target_host_main_data(hostid, &templates_triggers_descriptions, &zbx_host_triggers_main_data,
 				&temp_host_triggerids, &host_triggers_descriptions);
 	}
@@ -1638,25 +1636,28 @@ int	DBcopy_template_triggers(zbx_uint64_t hostid, const zbx_vector_uint64_t *tem
 	}
 
 	if (SUCCEED == res && 0 < upd_triggers)
-		res = execute_triggers_updates(&zbx_host_triggers_main_data);
+		res = execute_triggers_updates(&zbx_host_triggers_main_data, audit_context_mode);
 
 	if (SUCCEED == res && 0 < trigger_copies_insert.values_num)
 	{
 		res = execute_triggers_inserts(&trigger_copies_insert, &zbx_insert_triggers_funcs,
-				&new_triggerids, &funcs_insert_count, error);
+				&new_triggerids, &funcs_insert_count, audit_context_mode, error);
 	}
 
 	if (SUCCEED == res)
 	{
-		res = DBsync_template_dependencies_for_triggers(hostid, &temp_host_triggerids,
-				TRIGGER_DEP_SYNC_UPDATE_OP);
+		res = DBsync_template_dependencies_for_triggers(hostid, &cur_triggerids,
+				TRIGGER_DEP_SYNC_UPDATE_OP, audit_context_mode);
 	}
 
 	if (SUCCEED == res)
-		res = DBsync_template_dependencies_for_triggers(hostid, &new_triggerids, TRIGGER_DEP_SYNC_INSERT_OP);
+	{
+		res = DBsync_template_dependencies_for_triggers(hostid, &new_triggerids, TRIGGER_DEP_SYNC_INSERT_OP,
+				audit_context_mode);
+	}
 
 	if (SUCCEED == res)
-		res = DBcopy_template_trigger_tags(&new_triggerids, &cur_triggerids);
+		res = DBcopy_template_trigger_tags(&new_triggerids, &cur_triggerids, audit_context_mode);
 
 	if (FAIL == res && NULL == *error)
 		*error = zbx_strdup(NULL, "unknown error while linking triggers");

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -78,8 +73,6 @@ class ZBase {
 
 	/**
 	 * Returns the current instance of APP.
-	 *
-	 * @static
 	 *
 	 * @return APP
 	 */
@@ -218,15 +211,17 @@ class ZBase {
 
 				$router->setAction($action_name);
 
-				$this->component_registry->get('menu.main')
-					->setSelectedByAction($action_name, $_REQUEST,
-						CViewHelper::loadSidebarMode() != ZBX_SIDEBAR_VIEW_MODE_COMPACT
-					);
+				if (CWebUser::isLoggedIn()) {
+					$this->component_registry->get('menu.main')
+						->setSelectedByAction($action_name, $_REQUEST,
+							CViewHelper::loadSidebarMode() != ZBX_SIDEBAR_VIEW_MODE_COMPACT
+						);
 
-				$this->component_registry->get('menu.user')
-					->setSelectedByAction($action_name, $_REQUEST,
-						CViewHelper::loadSidebarMode() != ZBX_SIDEBAR_VIEW_MODE_COMPACT
-					);
+					$this->component_registry->get('menu.user')
+						->setSelectedByAction($action_name, $_REQUEST,
+							CViewHelper::loadSidebarMode() != ZBX_SIDEBAR_VIEW_MODE_COMPACT
+						);
+				}
 
 				CProfiler::getInstance()->start();
 
@@ -351,6 +346,7 @@ class ZBase {
 			$this->root_dir.'/include/classes/html',
 			$this->root_dir.'/include/classes/html/svg',
 			$this->root_dir.'/include/classes/html/widgets',
+			$this->root_dir.'/include/classes/html/widgets/fields',
 			$this->root_dir.'/include/classes/html/interfaces',
 			$this->root_dir.'/include/classes/parsers',
 			$this->root_dir.'/include/classes/parsers/results',
@@ -383,6 +379,13 @@ class ZBase {
 		];
 	}
 
+	public static function getColorScheme(string $theme): string {
+		return match ($theme) {
+			'dark-theme', 'hc-dark' => ZBX_COLOR_SCHEME_DARK,
+			default => ZBX_COLOR_SCHEME_LIGHT
+		};
+	}
+
 	/**
 	 * Check if maintenance mode is enabled.
 	 *
@@ -393,7 +396,7 @@ class ZBase {
 
 		if (defined('ZBX_DENY_GUI_ACCESS')) {
 			if (!isset($ZBX_GUI_ACCESS_IP_RANGE) || !in_array(CWebUser::getIp(), $ZBX_GUI_ACCESS_IP_RANGE)) {
-				throw new Exception($_REQUEST['warning_msg']);
+				throw new Exception($ZBX_GUI_ACCESS_MESSAGE ?? 'Zabbix is under maintenance.');
 			}
 		}
 	}
@@ -427,13 +430,9 @@ class ZBase {
 	 * Vault provider initialisation if it exists in configuration file.
 	 */
 	protected function initVault(): void {
-		if (!array_key_exists('VAULT', $this->config['DB'])) {
-			return;
-		}
-
 		switch ($this->config['DB']['VAULT']) {
 			case CVaultCyberArk::NAME:
-				$this->vault = new CVaultCyberArk($this->config['DB']['VAULT_URL'],
+				$this->vault = new CVaultCyberArk($this->config['DB']['VAULT_URL'], $this->config['DB']['VAULT_PREFIX'],
 					$this->config['DB']['VAULT_DB_PATH'], $this->config['DB']['VAULT_CERT_FILE'],
 					$this->config['DB']['VAULT_KEY_FILE']
 				);
@@ -441,7 +440,8 @@ class ZBase {
 
 			case CVaultHashiCorp::NAME:
 				$this->vault = new CVaultHashiCorp($this->config['DB']['VAULT_URL'],
-					$this->config['DB']['VAULT_DB_PATH'], $this->config['DB']['VAULT_TOKEN']
+					$this->config['DB']['VAULT_PREFIX'], $this->config['DB']['VAULT_DB_PATH'],
+					$this->config['DB']['VAULT_TOKEN']
 				);
 				break;
 		}
@@ -465,7 +465,7 @@ class ZBase {
 				$db_credentials = $this->vault->getCredentials();
 
 				if ($db_credentials === null) {
-					throw new DBException(_('Unable to load database credentials from Vault.'));
+					throw new DBException(_('Unable to load database credentials from Vault.'), DB::INIT_ERROR);
 				}
 
 				['user' => $db_user, 'password' => $db_password] = $db_credentials;
@@ -490,7 +490,7 @@ class ZBase {
 		if (!DBconnect($error)) {
 			CDataCacheHelper::clearValues(['db_user', 'db_password']);
 
-			throw new DBException($error);
+			throw new DBException($error, DB::INIT_ERROR);
 		}
 	}
 
@@ -500,7 +500,7 @@ class ZBase {
 	 * @param string|null $language  Locale variant prefix like en_US, ru_RU etc.
 	 */
 	public function initLocales(?string $language): void {
-		if (!setupLocale($language, $error) && $error !== '') {
+		if (!setupLocale($language, $error)) {
 			error($error);
 		}
 
@@ -542,9 +542,20 @@ class ZBase {
 	 */
 	protected function authenticateUser(): void {
 		$session = new CEncryptedCookieSession();
+		$sessionid = $session->extractSessionId() ?: '';
 
-		if (!CWebUser::checkAuthentication($session->extractSessionId() ?: '')) {
+		API::getWrapper()->auth = [
+			'type' => CJsonRpc::AUTH_TYPE_COOKIE,
+			'auth' => $sessionid
+		];
+
+		if (!CWebUser::checkAuthentication($sessionid)) {
 			CWebUser::setDefault();
+
+			API::getWrapper()->auth = [
+				'type' => CJsonRpc::AUTH_TYPE_COOKIE,
+				'auth' => CWebUser::$data['sessionid']
+			];
 		}
 
 		$this->initLocales(CWebUser::$data['lang']);
@@ -555,11 +566,9 @@ class ZBase {
 
 		CSessionHelper::set('sessionid', CWebUser::$data['sessionid']);
 
-		// Set the authentication token for the API.
-		API::getWrapper()->auth = [
-			'type' => CJsonRpc::AUTH_TYPE_COOKIE,
-			'auth' => CWebUser::$data['sessionid']
-		];
+		if (CWebUser::isAutologinEnabled()) {
+			$session->lifetime = time() + SEC_PER_MONTH;
+		}
 
 		// Enable debug mode in the API.
 		API::getWrapper()->debug = CWebUser::getDebugMode();
@@ -665,7 +674,7 @@ class ZBase {
 			CMessageHelper::addError('Controller: '.$router->getAction());
 			ksort($_REQUEST);
 			foreach ($_REQUEST as $key => $value) {
-				if ($key !== 'sid') {
+				if ($key !== CSRF_TOKEN_NAME) {
 					CMessageHelper::addError(is_scalar($value) ? $key.': '.$value : $key.': '.gettype($value));
 				}
 			}
@@ -693,12 +702,21 @@ class ZBase {
 				'stylesheet' => [
 					'files' => []
 				],
-				'web_layout_mode' => ZBX_LAYOUT_NORMAL,
-				'config' => [
+				'web_layout_mode' => ZBX_LAYOUT_NORMAL
+			];
+
+			try {
+				$layout_data_defaults['config'] = [
 					'server_check_interval' => CSettingsHelper::get(CSettingsHelper::SERVER_CHECK_INTERVAL),
 					'x_frame_options' => CSettingsHelper::get(CSettingsHelper::X_FRAME_OPTIONS)
-				]
-			];
+				];
+			}
+			catch (Throwable $e) {
+				$layout_data_defaults['config'] = [
+					'server_check_interval' => DB::getDefault('config', 'server_check_interval'),
+					'x_frame_options' => DB::getDefault('config', 'x_frame_options')
+				];
+			}
 
 			if ($router->getView() !== null && $response->isViewEnabled()) {
 				$this->view = new CView($router->getView(), $response->getData());
@@ -733,11 +751,11 @@ class ZBase {
 
 	private static function denyPageAccess(CRouter $router): void {
 		$request_url = (new CUrl(array_key_exists('request', $_REQUEST) ? $_REQUEST['request'] : ''))
-			->removeArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME)
+			->removeArgument(CSRF_TOKEN_NAME)
 			->toString();
 
-		if (CAuthenticationHelper::get(CAuthenticationHelper::HTTP_LOGIN_FORM) == ZBX_AUTH_FORM_HTTP
-				&& CAuthenticationHelper::get(CAuthenticationHelper::HTTP_AUTH_ENABLED) == ZBX_AUTH_HTTP_ENABLED
+		if (CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_LOGIN_FORM) == ZBX_AUTH_FORM_HTTP
+				&& CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_AUTH_ENABLED) == ZBX_AUTH_HTTP_ENABLED
 				&& (!CWebUser::isLoggedIn() || CWebUser::isGuest())) {
 			redirect(
 				(new CUrl('index_http.php'))
@@ -866,8 +884,11 @@ class ZBase {
 	 */
 	private function initComponents(): void {
 		$this->component_registry->register('router', new CRouter());
-		$this->component_registry->register('menu.main', CMenuHelper::getMainMenu());
-		$this->component_registry->register('menu.user', CMenuHelper::getUserMenu());
+
+		if (CWebUser::isLoggedIn()) {
+			$this->component_registry->register('menu.main', CMenuHelper::getMainMenu());
+			$this->component_registry->register('menu.user', CMenuHelper::getUserMenu());
+		}
 	}
 
 	/**
@@ -915,8 +936,6 @@ class ZBase {
 
 	/**
 	 * Check for High availability override to standalone mode, set server to use for system information checks.
-	 *
-	 * @return void
 	 */
 	private function setServerAddress(): void {
 		global $ZBX_SERVER, $ZBX_SERVER_PORT;

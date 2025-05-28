@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -40,6 +35,11 @@ function SVGMap(options) {
 	if (typeof this.options.show_timestamp === 'undefined') {
 		this.options.show_timestamp = true;
 	}
+	this.rendered_promise = Promise.resolve();
+	this.can_select_element = this.options.can_select_element || false;
+	this.selected_element_id = options.selected_element_id || '';
+
+	this.EVENT_ELEMENT_SELECT = 'element.select';
 
 	// Extra group for font styles.
 	container = this.canvas.add('g', {
@@ -74,6 +74,13 @@ function SVGMap(options) {
 			type: 'g',
 			attributes: {
 				class: 'map-shapes'
+			}
+		},
+		// Hovered/selected indicators of elements.
+		{
+			type: 'g',
+			attributes: {
+				class: 'map-selections'
 			}
 		},
 		// Highlights of elements.
@@ -125,9 +132,10 @@ function SVGMap(options) {
 
 	layers = container.add(layers_to_add);
 
-	['background', 'grid', 'shapes', 'highlights', 'links', 'elements', 'marks'].forEach(function (attribute, index) {
-		this.layers[attribute] = layers[index];
-	}, this);
+	['background', 'grid', 'shapes', 'selections', 'highlights', 'links', 'elements', 'marks'].forEach(
+		function (attribute, index) {
+			this.layers[attribute] = layers[index];
+		}, this);
 
 	this.layers.background.add('rect', {
 		x: 0,
@@ -152,6 +160,15 @@ function SVGMap(options) {
 	}
 	this.update(this.options);
 }
+
+/**
+ * Get rendered promise.
+ *
+ * @returns {Promise<void>}
+ */
+SVGMap.prototype.promiseRendered = function () {
+	return this.rendered_promise;
+};
 
 // Predefined list of fonts for maps.
 SVGMap.FONTS = [
@@ -469,16 +486,40 @@ SVGMap.prototype.update = function (options, incremental) {
 		}
 	}
 
-	// Images are preloaded before update.
-	this.imageCache.preload(images, function () {
-		// Update is performed after preloading all of the images.
-		this.updateItems('elements', 'SVGMapElement', options.elements, incremental);
-		this.updateOrderedItems('shapes', 'sysmap_shapeid', 'SVGMapShape', options.shapes, incremental);
-		this.updateItems('links', 'SVGMapLink', options.links, incremental);
-		this.updateBackground(options.background, incremental);
+	this.rendered_promise = new Promise(resolve => {
+		// Images are preloaded before update.
+		this.imageCache.preload(images, function () {
+			try {
+				// Update is performed after preloading all the images.
+				this.updateItems('elements', 'SVGMapElement', options.elements, incremental);
+				this.updateOrderedItems('shapes', 'sysmap_shapeid', 'SVGMapShape', options.shapes, incremental);
+				this.updateItems('links', 'SVGMapLink', options.links, incremental);
+				this.updateBackground(options.background);
+			}
+			catch(exception) {
+				resolve();
 
-		this.options = SVGElement.mergeAttributes(this.options, options);
-	}, this);
+				throw exception;
+			}
+
+			this.options = SVGElement.mergeAttributes(this.options, options);
+
+			const readiness = [];
+
+			const container = typeof this.options.container !== 'object'
+				? document.querySelector(this.options.container)
+				: this.options.container;
+
+			container.querySelectorAll('image').forEach(image => {
+				readiness.push(new Promise(resolve => image.addEventListener('load', resolve)));
+			});
+
+			resolve(Promise
+				.all(readiness)
+				.then(this.select(this.selected_element_id))
+			);
+		}, this);
+	});
 
 	// Timestamp (date on map) is updated.
 	if (options.show_timestamp && typeof options.timestamp !== 'undefined') {
@@ -511,6 +552,17 @@ SVGMap.prototype.render = function (container) {
 	this.container = container;
 };
 
+/**
+ * Map element selection by element ID.
+ *
+ * @param selected_element_id
+ */
+SVGMap.prototype.select = function(selected_element_id) {
+	for (const element_id in this.elements) {
+		this.elements[element_id].toggleSelection(element_id == selected_element_id);
+	}
+}
+
 /*
  * SVGMapElement class. Implements rendering of map elements (selements).
  *
@@ -520,6 +572,7 @@ SVGMap.prototype.render = function (container) {
 function SVGMapElement(map, options) {
 	this.map = map;
 	this.options = options;
+	this.selection = null;
 	this.highlight = null;
 	this.image = null;
 	this.label = null;
@@ -550,11 +603,39 @@ SVGMapElement.prototype.removeItem = function (item) {
  * Remove element.
  */
 SVGMapElement.prototype.remove = function () {
-	['highlight', 'image', 'label', 'markers'].forEach(function (name) {
+	['selection', 'highlight', 'image', 'label', 'markers'].forEach(function (name) {
 		this.removeItem(name);
 	}, this);
 
 	delete this.map.elements[this.options.selementid];
+};
+
+/**
+ * Update element hovered/selected indicators.
+ */
+SVGMapElement.prototype.updateSelection = function () {
+	if (!this.map.can_select_element || (this.options.elementtype != SYSMAP_ELEMENT_TYPE_HOST
+			&& this.options.elementtype != SYSMAP_ELEMENT_TYPE_HOST_GROUP)) {
+		return;
+	}
+
+	const type = 'ellipse';
+	const options = {
+		cx: this.center.x,
+		cy: this.center.y,
+		rx: Math.floor(this.width / 2) + 20,
+		ry: Math.floor(this.width / 2) + 20,
+		class: 'display-none'
+	};
+
+	if (this.selection === null) {
+		const element = this.map.layers.selections.add(type, options);
+		this.removeItem('selection');
+		this.selection = element;
+	}
+	else {
+		this.selection.update(options);
+	}
 };
 
 /**
@@ -675,27 +756,26 @@ SVGMapElement.prototype.updateHighlight = function() {
  * Update element image. Image should be pre-loaded and placed in cache before calling this method.
  */
 SVGMapElement.prototype.updateImage = function() {
-	var image,
-		options =  {
-			x: this.x,
-			y: this.y,
-			width: this.width,
-			height: this.height
-		};
+	const options = {
+		x: this.x,
+		y: this.y,
+		width: this.width,
+		height: this.height
+	};
 
 	if (this.options.actions !== null && this.options.actions !== 'null'
 			&& typeof this.options.actions !== 'undefined') {
-		var actions = JSON.parse(this.options.actions);
+		const actions = JSON.parse(this.options.actions);
 
-		// 4 - SYSMAP_ELEMENT_TYPE_IMAGE. Don't draw context menu and hand cursor for image elements with no links.
-		if (actions.data.elementtype != 4 || actions.data.urls.length != 0) {
+		// Don't draw context menu and hand cursor for image elements with no links.
+		if (actions.data.elementtype != SYSMAP_ELEMENT_TYPE_IMAGE || actions.data.urls.length != 0) {
 			options['data-menu-popup'] = this.options.actions;
 			options['style'] = 'cursor: pointer';
 		}
 	}
 
 	if (typeof this.options.icon !== 'undefined') {
-		var href = this.map.getImageUrl(this.options.icon);
+		let href = this.map.getImageUrl(this.options.icon);
 		// 2 - PERM_READ
 		if (2 > this.options.permission) {
 			href += '&unavailable=1';
@@ -704,9 +784,16 @@ SVGMapElement.prototype.updateImage = function() {
 		if (this.image === null || this.image.attributes['xlink:href'] !== href) {
 			options['xlink:href'] = href;
 
-			var image = this.map.layers.elements.add('image', options);
+			const image = this.map.layers.elements.add('image', options);
 			this.removeItem('image');
 			this.image = image;
+
+			if (this.map.can_select_element && (this.options.elementtype == SYSMAP_ELEMENT_TYPE_HOST
+					|| this.options.elementtype == SYSMAP_ELEMENT_TYPE_HOST_GROUP)) {
+				this.image.element.addEventListener('mouseover', e => this.onMouseOver(e));
+				this.image.element.addEventListener('mouseout', e => this.onMouseOut(e));
+				this.image.element.addEventListener('click', () => this.onClick());
+			}
 		}
 		else {
 			this.image.update(options);
@@ -827,9 +914,61 @@ SVGMapElement.prototype.update = function(options) {
 		};
 	}
 
+	this.updateSelection();
 	this.updateHighlight();
 	this.updateImage();
 	this.updateLabel();
+};
+
+/**
+ * Element mouse over event.
+ */
+SVGMapElement.prototype.onMouseOver = function(e) {
+	if (e.target.classList.contains('selected')) {
+		return;
+	}
+
+	this.selection.element.classList.remove('display-none');
+};
+
+/**
+ * Element mouse out event.
+ */
+SVGMapElement.prototype.onMouseOut = function(e) {
+	if (e.target.classList.contains('selected')) {
+		return;
+	}
+
+	this.selection.element.classList.add('display-none');
+};
+
+/**
+ * Element click event.
+ */
+SVGMapElement.prototype.onClick = function() {
+	this.map.container.dispatchEvent(new CustomEvent(this.map.EVENT_ELEMENT_SELECT, {
+		detail: {
+			selected_element_id: this.options.selementid,
+			hostid: this.options.elementtype == SYSMAP_ELEMENT_TYPE_HOST
+				? this.options.elements[0].hostid
+				: null,
+			hostgroupid: this.options.elementtype == SYSMAP_ELEMENT_TYPE_HOST_GROUP
+				? this.options.elements[0].groupid
+				: null
+		}
+	}));
+};
+
+/**
+ * Select element.
+ */
+SVGMapElement.prototype.toggleSelection = function(is_selected) {
+	if (this.selection === null) {
+		return;
+	}
+	this.selection.element.classList.toggle('display-none', !is_selected);
+	this.selection.element.classList.toggle('selected', is_selected);
+	this.image.element.classList.toggle('selected', is_selected);
 };
 
 /**
@@ -1022,12 +1161,9 @@ SVGMapShape.prototype.update = function(options) {
 		];
 
 	mapping.forEach(function(map) {
-		if (typeof options[map.key] !== 'undefined' && /[0-9A-F]{6}/g.test(options[map.key].trim())) {
-			attributes[map.value] = '#' + options[map.key];
-		}
-		else {
-			attributes[map.value] = 'none';
-		}
+		const color = `#${options[map.key].toString().trim()}`;
+
+		attributes[map.value] = isColorHex(color) ? color : 'none';
 	}, this);
 
 	if (typeof options['border_width'] !== 'undefined') {
@@ -1156,10 +1292,12 @@ SVGMapShape.prototype.update = function(options) {
 				break;
 		}
 
+		const font_color = `#${options['font_color'].toString().trim()}`;
+
 		element.add('textarea', {
 			'x': x,
 			'y': y,
-			fill: '#' + (/[0-9A-F]{6}/g.test(options['font_color'].trim()) ? options['font_color'] : '000000'),
+			fill: isColorHex(font_color) ? font_color : '#000000',
 			'font-family': SVGMap.FONTS[parseInt(options.font)],
 			'font-size': parseInt(options['font_size']) + 'px',
 			'anchor': anchor,

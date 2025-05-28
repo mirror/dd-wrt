@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,15 +20,15 @@ use Zabbix\Widgets\CWidgetField;
 
 class CWidgetFieldTags extends CWidgetField {
 
+	public const DEFAULT_VIEW = \CWidgetFieldTagsView::class;
 	public const DEFAULT_VALUE = [];
 	public const DEFAULT_TAG = ['tag' => '', 'operator' => TAG_OPERATOR_LIKE, 'value' => ''];
 
-	public function __construct(string $name, string $label = null) {
+	public function __construct(string $name, ?string $label = null) {
 		parent::__construct($name, $label);
 
 		$this
 			->setDefault(self::DEFAULT_VALUE)
-			->setSaveType(ZBX_WIDGET_FIELD_TYPE_STR)
 			->setValidationRules(['type' => API_OBJECTS, 'fields' => [
 				'tag'		=> ['type' => API_STRING_UTF8, 'flags' => API_REQUIRED, 'length' => 255],
 				'operator'	=> ['type' => API_INT32, 'flags' => API_REQUIRED, 'in' => implode(',', [TAG_OPERATOR_LIKE, TAG_OPERATOR_EQUAL, TAG_OPERATOR_NOT_LIKE, TAG_OPERATOR_NOT_EQUAL, TAG_OPERATOR_EXISTS, TAG_OPERATOR_NOT_EXISTS])],
@@ -45,15 +40,15 @@ class CWidgetFieldTags extends CWidgetField {
 	 * Get field value. If no value is set, will return default value.
 	 */
 	public function getValue() {
-		$value = parent::getValue();
+		$field_value = parent::getValue();
 
-		foreach ($value as $index => $val) {
-			if ($val['tag'] === '' && $val['value'] === '') {
-				unset($value[$index]);
+		foreach ($field_value as $index => $value) {
+			if ($value['tag'] === '' && $value['value'] === '') {
+				unset($field_value[$index]);
 			}
 		}
 
-		return $value;
+		return $field_value;
 	}
 
 	public function setValue($value): self {
@@ -63,23 +58,21 @@ class CWidgetFieldTags extends CWidgetField {
 	}
 
 	public function toApi(array &$widget_fields = []): void {
-		$value = $this->getValue();
-
-		foreach ($value as $index => $val) {
+		foreach ($this->getValue() as $index => $value) {
 			$widget_fields[] = [
 				'type' => $this->save_type,
-				'name' => $this->name.'.tag.'.$index,
-				'value' => $val['tag']
+				'name' => $this->name.'.'.$index.'.'.'tag',
+				'value' => $value['tag']
 			];
 			$widget_fields[] = [
 				'type' => ZBX_WIDGET_FIELD_TYPE_INT32,
-				'name' => $this->name.'.operator.'.$index,
-				'value' => $val['operator']
+				'name' => $this->name.'.'.$index.'.'.'operator',
+				'value' => $value['operator']
 			];
 			$widget_fields[] = [
 				'type' => $this->save_type,
-				'name' => $this->name.'.value.'.$index,
-				'value' => $val['value']
+				'name' => $this->name.'.'.$index.'.'.'value',
+				'value' => $value['value']
 			];
 		}
 	}

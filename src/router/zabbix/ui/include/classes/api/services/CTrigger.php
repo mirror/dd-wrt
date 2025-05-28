@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -36,6 +31,11 @@ class CTrigger extends CTriggerGeneral {
 	protected $tableName = 'triggers';
 	protected $tableAlias = 't';
 	protected $sortColumns = ['triggerid', 'description', 'status', 'priority', 'lastchange', 'hostname'];
+
+	public const OUTPUT_FIELDS = ['triggerid', 'expression', 'description', 'url', 'status', 'value', 'priority',
+		'lastchange', 'comments', 'error', 'templateid', 'type', 'state', 'flags', 'recovery_mode',
+		'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close', 'opdata', 'event_name', 'url_name'
+	];
 
 	/**
 	 * Get Triggers data.
@@ -106,7 +106,6 @@ class CTrigger extends CTriggerGeneral {
 			'expandComment'					=> null,
 			'expandExpression'				=> null,
 			'output'						=> API_OUTPUT_EXTEND,
-			'selectGroups'					=> null,
 			'selectHostGroups'				=> null,
 			'selectTemplateGroups'			=> null,
 			'selectHosts'					=> null,
@@ -127,26 +126,35 @@ class CTrigger extends CTriggerGeneral {
 		];
 		$options = zbx_array_merge($defOptions, $options);
 
-		$this->checkDeprecatedParam($options, 'selectGroups');
-
 		// editable + PERMISSION CHECK
 		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
-			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
+			if (self::$userData['ugsetid'] == 0) {
+				return $options['countOutput'] ? '0' : [];
+			}
+
+			$sqlParts['from']['functions'] = 'functions f';
+			$sqlParts['from']['items'] = 'items i';
+			$sqlParts['from'][] = 'host_hgset hh';
+			$sqlParts['from'][] = 'permission p';
+			$sqlParts['where']['ft'] = 'f.triggerid=t.triggerid';
+			$sqlParts['where']['fi'] = 'f.itemid=i.itemid';
+			$sqlParts['where'][] = 'i.hostid=hh.hostid';
+			$sqlParts['where'][] = 'hh.hgsetid=p.hgsetid';
+			$sqlParts['where'][] = 'p.ugsetid='.self::$userData['ugsetid'];
+
+			if ($options['editable']) {
+				$sqlParts['where'][] = 'p.permission='.PERM_READ_WRITE;
+			}
 
 			$sqlParts['where'][] = 'NOT EXISTS ('.
 				'SELECT NULL'.
-				' FROM functions f,items i,hosts_groups hgg'.
-					' LEFT JOIN rights r'.
-						' ON r.id=hgg.groupid'.
-							' AND '.dbConditionInt('r.groupid', $userGroups).
-				' WHERE t.triggerid=f.triggerid '.
-					' AND f.itemid=i.itemid'.
-					' AND i.hostid=hgg.hostid'.
-				' GROUP BY i.hostid'.
-				' HAVING MAX(permission)<'.zbx_dbstr($permission).
-					' OR MIN(permission) IS NULL'.
-					' OR MIN(permission)='.PERM_DENY.
+				' FROM functions f1'.
+				' JOIN items i1 ON f1.itemid=i1.itemid'.
+				' JOIN host_hgset hh1 ON i1.hostid=hh1.hostid'.
+				' LEFT JOIN permission p1 ON hh1.hgsetid=p1.hgsetid'.
+					' AND p1.ugsetid=p.ugsetid'.
+				' WHERE t.triggerid=f1.triggerid'.
+					' AND p1.permission IS NULL'.
 			')';
 		}
 
@@ -499,9 +507,8 @@ class CTrigger extends CTriggerGeneral {
 			}
 		}
 
-		// removing keys (hash -> array)
 		if (!$options['preservekeys']) {
-			$result = zbx_cleanHashes($result);
+			$result = array_values($result);
 		}
 
 		$result = $this->unsetExtraFields($result, ['state', 'expression'], $options['output']);
@@ -586,7 +593,7 @@ class CTrigger extends CTriggerGeneral {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	protected function validateDelete(array &$triggerids, array &$db_triggers = null) {
+	protected function validateDelete(array &$triggerids, ?array &$db_triggers = null) {
 		$api_input_rules = ['type' => API_IDS, 'flags' => API_NOT_EMPTY, 'uniq' => true];
 		if (!CApiInputValidator::validate($api_input_rules, $triggerids, '/', $error)) {
 			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
@@ -869,7 +876,7 @@ class CTrigger extends CTriggerGeneral {
 			unset($trigger);
 
 			$sql_select = ['triggerid'];
-			foreach (['parent_triggerid', 'ts_delete'] as $field) {
+			foreach (['parent_triggerid', 'status', 'ts_delete', 'ts_disable', 'disable_source'] as $field) {
 				if ($this->outputIsRequested($field, $options['selectTriggerDiscovery'])) {
 					$sql_select[] = $field;
 				}

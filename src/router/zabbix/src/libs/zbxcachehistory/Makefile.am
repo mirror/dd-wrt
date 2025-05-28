@@ -3,9 +3,8 @@
 noinst_LIBRARIES = libzbxcachehistory.a
 
 libzbxcachehistory_a_SOURCES = \
-	dbcache.c
+	cachehistory.c
 
 libzbxcachehistory_a_CFLAGS = \
-	-I$(top_srcdir)/src/zabbix_server/ \
 	$(TLS_CFLAGS) \
 	$(TEST_FLAGS)

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -127,14 +122,14 @@ class CScreenHistory extends CScreenBase {
 	public function get() {
 		$output = [];
 
-		$items = API::Item()->get([
-			'output' => ['itemid', 'name', 'key_', 'value_type'],
+		$items = CArrayHelper::renameObjectsKeys(API::Item()->get([
+			'output' => ['itemid', 'name_resolved', 'key_', 'value_type'],
 			'selectHosts' => ['name'],
 			'selectValueMap' => ['mappings'],
 			'itemids' => $this->itemids,
 			'webitems' => true,
 			'preservekeys' => true
-		]);
+		]), ['name_resolved' => 'name']);
 
 		if (!$items) {
 			show_error_message(_('No permissions to referred object or it does not exist!'));
@@ -300,39 +295,45 @@ class CScreenHistory extends CScreenBase {
 				]);
 
 				// Array $history_data will be modified according page and rows on page.
-				$pagination = CPagerHelper::paginate($this->page, $history_data, ZBX_SORT_UP,
-					new CUrl($this->page_file)
+				$history_table->setPageNavigation(
+					CPagerHelper::paginate($this->page, $history_data, ZBX_SORT_UP, new CUrl($this->page_file))
 				);
 
 				foreach ($history_data as $data) {
-					$data['value'] = rtrim($data['value'], " \t\r\n");
-
 					$item = $items[$data['itemid']];
 					$host = reset($item['hosts']);
 					$color = null;
 
-					if ($this->filter !== '') {
-						$haystack = mb_strtolower($data['value']);
-						$needle = mb_strtolower($this->filter);
-						$pos = mb_strpos($haystack, $needle);
+					if ($value_type == ITEM_VALUE_TYPE_BINARY) {
+						$value = italic(_('binary value'))->addClass(ZBX_STYLE_GREY);
+					}
+					else {
+						$data['value'] = rtrim($data['value'], " \t\r\n");
+						$value = zbx_nl2br($data['value']);
 
-						if ($pos !== false && $this->filterTask == FILTER_TASK_MARK) {
-							$color = $this->markColor;
-						}
-						elseif ($pos === false && $this->filterTask == FILTER_TASK_INVERT_MARK) {
-							$color = $this->markColor;
-						}
+						if ($this->filter !== '') {
+							$haystack = mb_strtolower($data['value']);
+							$needle = mb_strtolower($this->filter);
+							$pos = mb_strpos($haystack, $needle);
 
-						switch ($color) {
-							case MARK_COLOR_RED:
-								$color = ZBX_STYLE_RED;
-								break;
-							case MARK_COLOR_GREEN:
-								$color = ZBX_STYLE_GREEN;
-								break;
-							case MARK_COLOR_BLUE:
-								$color = ZBX_STYLE_BLUE;
-								break;
+							if ($pos !== false && $this->filterTask == FILTER_TASK_MARK) {
+								$color = $this->markColor;
+							}
+							elseif ($pos === false && $this->filterTask == FILTER_TASK_INVERT_MARK) {
+								$color = $this->markColor;
+							}
+
+							switch ($color) {
+								case MARK_COLOR_RED:
+									$color = ZBX_STYLE_RED;
+									break;
+								case MARK_COLOR_GREEN:
+									$color = ZBX_STYLE_GREEN;
+									break;
+								case MARK_COLOR_BLUE:
+									$color = ZBX_STYLE_BLUE;
+									break;
+							}
 						}
 					}
 
@@ -374,12 +375,12 @@ class CScreenHistory extends CScreenBase {
 						}
 					}
 
-					$row[] = (new CCol(new CPre(zbx_nl2br($data['value']))))->addClass($color);
+					$row[] = (new CCol(new CPre($value)))->addClass($color);
 
 					$history_table->addRow($row);
 				}
 
-				$output[] = [$history_table, $pagination];
+				$output[] = $history_table;
 			}
 			/**
 			 * View type: 500 latest values.
@@ -421,12 +422,14 @@ class CScreenHistory extends CScreenBase {
 						$value = formatFloat($value, ['decimals' => ZBX_UNITS_ROUNDOFF_UNSUFFIXED]);
 					}
 
-					$value = CValueMapHelper::applyValueMap($item['value_type'], $value, $item['valuemap']);
+					$value = $item['value_type'] == ITEM_VALUE_TYPE_BINARY
+						? italic(_('binary value'))->addClass(ZBX_STYLE_GREY)
+						: zbx_nl2br(CValueMapHelper::applyValueMap($item['value_type'], $value, $item['valuemap']));
 
 					$history_table->addRow([
 						(new CCol(zbx_date2str(DATE_TIME_FORMAT_SECONDS, $history_row['clock'])))
 							->addClass(ZBX_STYLE_NOWRAP),
-						new CPre(zbx_nl2br($value))
+						new CPre($value)
 					]);
 				}
 
@@ -453,9 +456,7 @@ class CScreenHistory extends CScreenBase {
 						['field' => 'ns', 'order' => ZBX_SORT_DOWN]
 					]);
 
-					$table_header[] = (new CSpan($item['name']))
-						->addClass(ZBX_STYLE_TEXT_VERTICAL)
-						->setTitle($item['name']);
+					$table_header[] = (new CVertical($item['name']))->setTitle($item['name']);
 					$history_data_index = 0;
 
 					foreach ($item_data as $item_data_row) {
@@ -485,12 +486,11 @@ class CScreenHistory extends CScreenBase {
 					}
 				}
 
-				// Array $history_data will be modified according page and rows on page.
-				$pagination = CPagerHelper::paginate($this->page, $history_data, ZBX_SORT_UP,
-					new CUrl($this->page_file)
-				);
-
-				$history_table = (new CTableInfo())->setHeader($table_header);
+				$history_table = (new CTableInfo())
+					->setHeader($table_header)
+					->setPageNavigation(
+						CPagerHelper::paginate($this->page, $history_data, ZBX_SORT_UP, new CUrl($this->page_file))
+					);
 
 				foreach ($history_data as $history_data_row) {
 					$row = [(new CCol(zbx_date2str(DATE_TIME_FORMAT_SECONDS, $history_data_row['clock'])))
@@ -505,7 +505,9 @@ class CScreenHistory extends CScreenBase {
 							$value = formatFloat($value, ['decimals' => ZBX_UNITS_ROUNDOFF_UNSUFFIXED]);
 						}
 
-						$value = CValueMapHelper::applyValueMap($item['value_type'], $value, $item['valuemap']);
+						$value = $item['value_type'] == ITEM_VALUE_TYPE_BINARY
+							? italic(_('binary value'))->addClass(ZBX_STYLE_GREY)
+							: CValueMapHelper::applyValueMap($item['value_type'], $value, $item['valuemap']);
 
 						$row[] = ($value === '') ? '' : new CPre($value);
 					}
@@ -513,7 +515,7 @@ class CScreenHistory extends CScreenBase {
 					$history_table->addRow($row);
 				}
 
-				$output[] = [$history_table, $pagination];
+				$output[] = $history_table;
 			}
 		}
 
@@ -592,6 +594,7 @@ class CScreenHistory extends CScreenBase {
 			->setArgument('to', $this->timeline['to'])
 			->setArgument('itemids', $itemIds)
 			->setArgument('type', $this->graphType)
+			->setArgument('resolve_macros', 1)
 			->setArgument('profileIdx', $this->profileIdx)
 			->setArgument('profileIdx2', $this->profileIdx2);
 

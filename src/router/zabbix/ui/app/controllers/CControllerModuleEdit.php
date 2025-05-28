@@ -1,32 +1,21 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
-/**
- * Module edit action.
- */
 class CControllerModuleEdit extends CController {
 
-	/**
-	 * Current module data.
-	 */
 	private array $module = [];
 
 	protected function init(): void {
@@ -35,17 +24,19 @@ class CControllerModuleEdit extends CController {
 
 	protected function checkInput(): bool {
 		$fields = [
-			'moduleid' =>		'required|db module.moduleid',
-
-			// form update fields
-			'status' =>			'in 1',
-			'form_refresh' =>	'int32'
+			'moduleid' => 'required|db module.moduleid'
 		];
 
 		$ret = $this->validateInput($fields);
 
 		if (!$ret) {
-			$this->setResponse(new CControllerResponseFatal());
+			$this->setResponse(
+				(new CControllerResponseData(['main_block' => json_encode([
+					'error' => [
+						'messages' => array_column(get_and_clear_messages(), 'message')
+					]
+				])]))->disableView()
+			);
 		}
 
 		return $ret;
@@ -56,16 +47,16 @@ class CControllerModuleEdit extends CController {
 			return false;
 		}
 
-		$modules = API::Module()->get([
-			'output' => ['id', 'relative_path', 'status'],
-			'moduleids' => [$this->getInput('moduleid')]
+		$module = API::Module()->get([
+			'output' => ['relative_path', 'status'],
+			'moduleids' => $this->getInput('moduleid')
 		]);
 
-		if (!$modules) {
+		if (!$module) {
 			return false;
 		}
 
-		$this->module = $modules[0];
+		$this->module = $module[0];
 
 		return true;
 	}
@@ -76,30 +67,36 @@ class CControllerModuleEdit extends CController {
 		$manifest = $module_manager->addModule($this->module['relative_path']);
 
 		if ($manifest !== null) {
+			$url = $manifest['url'];
+
+			if ($url !== '' && parse_url($url, PHP_URL_HOST) === null) {
+				$url = CDocHelper::getUrl($url);
+			}
+
 			$data = [
-				'form_refresh' => $this->getInput('form_refresh', 0),
 				'moduleid' => $this->getInput('moduleid'),
 				'name' => $manifest['name'],
 				'version' => $manifest['version'],
-				'author' => array_key_exists('author', $manifest) ? $manifest['author'] : null,
-				'description' => array_key_exists('description', $manifest) ? $manifest['description'] : null,
+				'author' => $manifest['author'],
+				'description' => $manifest['description'],
 				'relative_path' => $this->module['relative_path'],
 				'namespace' => $manifest['namespace'],
-				'url' => array_key_exists('url', $manifest) ? $manifest['url'] : null,
-				'status' => $this->hasInput('form_refresh')
-					? ($this->hasInput('status') ? MODULE_STATUS_ENABLED : MODULE_STATUS_DISABLED)
-					: $this->module['status']
+				'url' => $url,
+				'status' => $this->module['status'],
+				'user' => [
+					'debug_mode' => $this->getDebugMode()
+				]
 			];
 
 			$response = new CControllerResponseData($data);
-			$response->setTitle(_('Modules'));
 		}
 		else {
-			$response = new CControllerResponseRedirect((new CUrl('zabbix.php'))
-				->setArgument('action', 'module.list')
-				->setArgument('page', CPagerHelper::loadPage('module.list', null))
-			);
-			CMessageHelper::setErrorTitle(_s('Cannot load module at: %1$s.', $this->module['relative_path']));
+			$response = (new CControllerResponseData(['main_block' => json_encode([
+				'error' => [
+					'title' => _s('Cannot load module at: %1$s.', $this->module['relative_path']),
+					'messages' => array_column(get_and_clear_messages(), 'message')
+				]
+			])]))->disableView();
 		}
 
 		$this->setResponse($response);

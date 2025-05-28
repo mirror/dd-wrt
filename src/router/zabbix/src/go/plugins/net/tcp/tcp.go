@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package tcpudp
@@ -31,11 +26,10 @@ import (
 	"strings"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/conf"
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/plugin"
 	"github.com/go-ldap/ldap"
-	"zabbix.com/pkg/web"
+	"golang.zabbix.com/agent2/pkg/web"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 const (
@@ -54,15 +48,9 @@ const (
 	tcpExpectIgnore = 1
 )
 
-type Options struct {
-	plugin.SystemOptions `conf:"optional"`
-	Timeout              int `conf:"optional,range=1:30"`
-}
-
 // Plugin -
 type Plugin struct {
 	plugin.Base
-	options Options
 }
 
 var impl Plugin
@@ -306,7 +294,7 @@ func encloseIPv6(in string) string {
 	return in
 }
 
-func (p *Plugin) httpsExpect(ip string, port string) int {
+func (p *Plugin) httpsExpect(ip string, port string, timeout int) int {
 	scheme, host, err := removeScheme(ip)
 	if err != nil {
 		log.Debugf("https error: cannot parse the url [%s]: %s", ip, err.Error())
@@ -326,7 +314,7 @@ func (p *Plugin) httpsExpect(ip string, port string) int {
 
 	// does NOT return an error on >=400 status codes same as C agent
 	_, err = web.Get(fmt.Sprintf("%s://%s:%s%s", u.Scheme, u.Hostname(), port, u.Path),
-		time.Second*time.Duration(p.options.Timeout), false)
+		time.Second*time.Duration(timeout), false)
 	if err != nil {
 		log.Debugf("https network error: cannot connect to [%s]: %s", u, err.Error())
 		return 0
@@ -356,11 +344,11 @@ func (p *Plugin) validateLdap(conn *ldap.Conn, address string) (result int) {
 	return 1
 }
 
-func (p *Plugin) tcpExpect(service string, address string) (result int) {
+func (p *Plugin) tcpExpect(service string, address string, timeout int) (result int) {
 	var conn net.Conn
 	var err error
 
-	if conn, err = net.DialTimeout("tcp", address, time.Second*time.Duration(p.options.Timeout)); err != nil {
+	if conn, err = net.DialTimeout("tcp", address, time.Second*time.Duration(timeout)); err != nil {
 		log.Debugf("TCP expect network error: cannot connect to [%s]: %s", address, err.Error())
 		return
 	}
@@ -370,7 +358,7 @@ func (p *Plugin) tcpExpect(service string, address string) (result int) {
 		return 1
 	}
 
-	if err = conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(p.options.Timeout))); err != nil {
+	if err = conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(timeout))); err != nil {
 		return
 	}
 
@@ -439,7 +427,7 @@ func (p *Plugin) tcpExpect(service string, address string) (result int) {
 	return
 }
 
-func (p *Plugin) exportNetService(params []string) int {
+func (p *Plugin) exportNetService(params []string, timeout int) int {
 	var ip, port string
 	service := params[0]
 
@@ -461,10 +449,10 @@ func (p *Plugin) exportNetService(params []string) int {
 		}
 	}
 	if service == "https" {
-		return p.httpsExpect(ip, port)
+		return p.httpsExpect(ip, port, timeout)
 	}
 
-	return p.tcpExpect(service, net.JoinHostPort(ip, port))
+	return p.tcpExpect(service, net.JoinHostPort(ip, port), timeout)
 }
 
 func toFixed(num float64, precision int) float64 {
@@ -472,11 +460,11 @@ func toFixed(num float64, precision int) float64 {
 	return math.Round(num*output) / output
 }
 
-func (p *Plugin) exportNetServicePerf(params []string) float64 {
+func (p *Plugin) exportNetServicePerf(params []string, timeout int) float64 {
 	const floatPrecision = 0.0001
 
 	start := time.Now()
-	ret := p.exportNetService(params)
+	ret := p.exportNetService(params, timeout)
 
 	if ret == 1 {
 		elapsedTime := toFixed(time.Since(start).Seconds(), 6)
@@ -495,7 +483,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 	case "net.tcp.listen":
 		return p.exportNetTcpListen(params)
 	case "net.tcp.port":
-		return p.exportNetTcpPort(params, p.options.Timeout)
+		return p.exportNetTcpPort(params, ctx.Timeout())
 	case "net.tcp.service", "net.tcp.service.perf":
 		if len(params) > 3 {
 			err = errors.New(errorTooManyParams)
@@ -526,9 +514,9 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		}
 
 		if key == "net.tcp.service" {
-			return p.exportNetService(params), nil
+			return p.exportNetService(params, ctx.Timeout()), nil
 		} else if key == "net.tcp.service.perf" {
-			return p.exportNetServicePerf(params), nil
+			return p.exportNetServicePerf(params, ctx.Timeout()), nil
 		}
 	case "net.tcp.socket.count":
 		return p.exportNetTcpSocketCount(params)
@@ -536,18 +524,4 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 
 	/* SHOULD_NEVER_HAPPEN */
 	return nil, errors.New(errorUnsupportedMetric)
-}
-
-func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
-	if err := conf.Unmarshal(options, &p.options); err != nil {
-		p.Warningf("cannot unmarshal configuration options: %s", err)
-	}
-	if p.options.Timeout == 0 {
-		p.options.Timeout = global.Timeout
-	}
-}
-
-func (p *Plugin) Validate(options interface{}) error {
-	var o Options
-	return conf.Unmarshal(options, &o)
 }

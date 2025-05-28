@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -34,6 +29,8 @@ class CRole extends CApiService {
 	protected $tableName = 'role';
 	protected $tableAlias = 'r';
 	protected $sortColumns = ['roleid', 'name'];
+
+	public const OUTPUT_FIELDS = ['roleid', 'name', 'type', 'readonly'];
 
 	/**
 	 * Rule types.
@@ -61,6 +58,10 @@ class CRole extends CApiService {
 	 * @throws APIException
 	 */
 	public function get(array $options = []) {
+		$user_output_fields = self::$userData['type'] == USER_TYPE_SUPER_ADMIN
+			? CUser::OUTPUT_FIELDS
+			: CUser::OWN_LIMITED_OUTPUT_FIELDS;
+
 		$api_input_rules = ['type' => API_OBJECT, 'fields' => [
 			// filter
 			'roleids' =>				['type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'default' => null],
@@ -71,10 +72,10 @@ class CRole extends CApiService {
 			'excludeSearch' =>			['type' => API_FLAG, 'default' => false],
 			'searchWildcardsEnabled' =>	['type' => API_BOOLEAN, 'default' => false],
 			// output
-			'output' =>					['type' => API_OUTPUT, 'in' => implode(',', ['roleid', 'name', 'type', 'readonly']), 'default' => API_OUTPUT_EXTEND],
+			'output' =>					['type' => API_OUTPUT, 'in' => implode(',', self::OUTPUT_FIELDS), 'default' => API_OUTPUT_EXTEND],
 			'countOutput' =>			['type' => API_FLAG, 'default' => false],
 			'selectRules' =>			['type' => API_OUTPUT, 'flags' => API_ALLOW_NULL, 'in' => implode(',', ['ui', 'ui.default_access', 'services.read.mode', 'services.read.list', 'services.read.tag', 'services.write.mode', 'services.write.list', 'services.write.tag', 'modules', 'modules.default_access', 'api.access', 'api.mode', 'api', 'actions', 'actions.default_access']), 'default' => null],
-			'selectUsers' =>			['type' => API_OUTPUT, 'flags' => API_ALLOW_NULL | API_ALLOW_COUNT, 'in' => implode(',', ['userid', 'username', 'name', 'surname', 'url', 'autologin', 'autologout', 'lang', 'refresh', 'theme', 'attempt_failed', 'attempt_ip', 'attempt_clock', 'rows_per_page', 'timezone', 'roleid']), 'default' => null],
+			'selectUsers' =>			['type' => API_OUTPUT, 'flags' => API_ALLOW_NULL | API_ALLOW_COUNT, 'in' => implode(',', $user_output_fields), 'default' => null],
 			// sort and limit
 			'sortfield' =>				['type' => API_STRINGS_UTF8, 'flags' => API_NORMALIZE, 'in' => implode(',', $this->sortColumns), 'uniq' => true, 'default' => []],
 			'sortorder' =>				['type' => API_SORTORDER, 'default' => []],
@@ -245,6 +246,7 @@ class CRole extends CApiService {
 
 		$roles = array_column($roles, null, 'roleid');
 
+		self::updateUserUgSets($roles, $db_roles);
 		$this->updateRules($roles, $db_roles);
 
 		$this->addAuditBulk(CAudit::ACTION_UPDATE, CAudit::RESOURCE_USER_ROLE, $roles, $db_roles);
@@ -383,7 +385,7 @@ class CRole extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private function checkDuplicates(array $roles, array $db_roles = null): void {
+	private function checkDuplicates(array $roles, ?array $db_roles = null): void {
 		$names = [];
 
 		foreach ($roles as $role) {
@@ -416,21 +418,21 @@ class CRole extends CApiService {
 	 *
 	 * @throws APIException if input is invalid.
 	 */
-	private function checkRules(array $roles, array $db_roles = null): void {
+	private function checkRules(array $roles, ?array $db_roles = null): void {
 		foreach ($roles as $role) {
 			if (!array_key_exists('rules', $role)) {
 				continue;
 			}
 
-			$name = $db_roles !== null ? $db_roles[$role['roleid']]['name'] : $role['name'];
+			$name = array_key_exists('name', $role) ? $role['name'] : $db_roles[$role['roleid']]['name'];
 			$type = array_key_exists('type', $role) ? $role['type'] : $db_roles[$role['roleid']]['type'];
 
 			$db_rules = $db_roles !== null ? $db_roles[$role['roleid']]['rules'] : null;
 
-			$this->checkUiRules($name, (int) $type, $role['rules'], $db_rules);
+			self::checkUiRules($name, (int) $type, $role['rules'], $db_rules);
 			$this->checkServicesRules($name, (int) $type, $role['rules'], $db_rules);
 			$this->checkModulesRules($name, $role['rules']);
-			$this->checkApiRules($name, $role['rules']);
+			self::checkApiRules($name, (int) $type, $role['rules']);
 			$this->checkActionsRules($name, (int) $type, $role['rules']);
 		}
 	}
@@ -443,7 +445,7 @@ class CRole extends CApiService {
 
 	 * @throws APIException
 	 */
-	private function checkUiRules(string $name, int $type, array $rules, array $db_rules = null): void {
+	private static function checkUiRules(string $name, int $type, array $rules, ?array $db_rules = null): void {
 		if (!array_key_exists('ui', $rules)) {
 			return;
 		}
@@ -459,10 +461,13 @@ class CRole extends CApiService {
 		}
 
 		$ui_rules = [];
+		$db_ui_rules = $db_rules !== null ? array_column($db_rules['ui'], 'status', 'name') : [];
 
 		foreach (CRoleHelper::getUiElementsByUserType($type) as $ui_element) {
 			$ui_rule_name = substr($ui_element, strlen('ui.'));
-			$ui_rules[$ui_rule_name] = $default_access == ZBX_ROLE_RULE_ENABLED;
+			$ui_rules[$ui_rule_name] = array_key_exists($ui_rule_name, $db_ui_rules)
+				? $db_ui_rules[$ui_rule_name]
+				: $default_access;
 		}
 
 		foreach ($rules['ui'] as $ui_rule) {
@@ -472,10 +477,10 @@ class CRole extends CApiService {
 				);
 			}
 
-			$ui_rules[$ui_rule['name']] = $ui_rule['status'] == ZBX_ROLE_RULE_ENABLED;
+			$ui_rules[$ui_rule['name']] = $ui_rule['status'];
 		}
 
-		if (!in_array(true, $ui_rules)) {
+		if (!in_array(ZBX_ROLE_RULE_ENABLED, $ui_rules)) {
 			self::exception(ZBX_API_ERROR_PARAMETERS,
 				_s('At least one UI element must be enabled for user role "%1$s".', $name)
 			);
@@ -490,7 +495,7 @@ class CRole extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private function checkServicesRules(string $name, int $type, array $rules, array $db_rules = null): void {
+	private function checkServicesRules(string $name, int $type, array $rules, ?array $db_rules = null): void {
 		$this->checkServicesReadRules($name, $rules, $db_rules);
 		$this->checkServicesWriteRules($name, $type, $rules, $db_rules);
 
@@ -538,7 +543,7 @@ class CRole extends CApiService {
 
 	 * @throws APIException
 	 */
-	private function checkServicesReadRules(string $name, array $rules, array $db_rules = null): void {
+	private function checkServicesReadRules(string $name, array $rules, ?array $db_rules = null): void {
 		if (!array_key_exists('services.read.mode', $rules)
 				&& !array_key_exists('services.read.list', $rules)
 				&& !array_key_exists('services.read.tag', $rules)) {
@@ -611,7 +616,7 @@ class CRole extends CApiService {
 
 	 * @throws APIException
 	 */
-	private function checkServicesWriteRules(string $name, int $type, array $rules, array $db_rules = null): void {
+	private function checkServicesWriteRules(string $name, int $type, array $rules, ?array $db_rules = null): void {
 		if (!array_key_exists('services.write.mode', $rules)
 				&& !array_key_exists('services.write.list', $rules)
 				&& !array_key_exists('services.write.tag', $rules)) {
@@ -711,11 +716,12 @@ class CRole extends CApiService {
 
 	/**
 	 * @param string $name
+	 * @param int    $type
 	 * @param array  $rules
 	 *
 	 * @throws APIException
 	 */
-	private function checkApiRules(string $name, array $rules): void {
+	private static function checkApiRules(string $name, int $type, array $rules): void {
 		if (!array_key_exists('api', $rules)) {
 			return;
 		}
@@ -725,8 +731,8 @@ class CRole extends CApiService {
 				continue;
 			}
 
-			if (!in_array($rule, CRoleHelper::getApiMethodMasks(USER_TYPE_SUPER_ADMIN), true)
-					&& !in_array($rule, CRoleHelper::getApiMethods(USER_TYPE_SUPER_ADMIN), true)) {
+			if (!in_array($rule, CRoleHelper::getApiMethodMasks($type), true)
+					&& !in_array($rule, CRoleHelper::getApiMethods($type), true)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Invalid API method "%2$s" for user role "%1$s".', $name, $rule)
 				);
@@ -786,13 +792,56 @@ class CRole extends CApiService {
 		}
 	}
 
+	private function updateUserUgSets(array $roles, array $db_roles): void {
+		$role_indexes = [];
+
+		foreach ($roles as $i => $role) {
+			if (array_key_exists('type', $role) && $role['type'] != $db_roles[$role['roleid']]['type']
+					&& ($role['type'] == USER_TYPE_SUPER_ADMIN
+						|| $db_roles[$role['roleid']]['type'] == USER_TYPE_SUPER_ADMIN)) {
+				$role_indexes[$role['roleid']] = $i;
+			}
+		}
+
+		if (!$role_indexes) {
+			return;
+		}
+
+		$options = [
+			'output' => ['userid', 'username', 'roleid'],
+			'filter' => ['roleid' => array_keys($role_indexes)]
+		];
+		$result = DBselect(DB::makeSql('users', $options));
+
+		$users = [];
+		$db_users = [];
+
+		while ($row = DBfetch($result)) {
+			$users[] = [
+				'userid' => $row['userid'],
+				'role_type' => $roles[$role_indexes[$row['roleid']]]['type']
+			];
+
+			$db_users[$row['userid']] = [
+				'userid' => $row['userid'],
+				'username' => $row['username'],
+				'roleid' => $row['roleid'],
+				'role_type' => $db_roles[$row['roleid']]['type']
+			];
+		}
+
+		if ($users) {
+			CUser::updateFromRole($users, $db_users);
+		}
+	}
+
 	/**
 	 * @param array      $roles
 	 * @param array|null $db_roles
 	 *
 	 * @throws APIException
 	 */
-	private function updateRules(array $roles, array $db_roles = null): void {
+	private function updateRules(array $roles, ?array $db_roles = null): void {
 		$default_rules = [
 			'ui' => [],
 			'ui.default_access' => ZBX_ROLE_RULE_ENABLED,
@@ -814,22 +863,17 @@ class CRole extends CApiService {
 		$rules = [];
 
 		foreach ($roles as $roleid => $role) {
-			if (!array_key_exists('rules', $role)) {
-				continue;
-			}
-
 			$type = array_key_exists('type', $role) ? $role['type'] : $db_roles[$role['roleid']]['type'];
-
 			$old_rules = $db_roles !== null ? $db_roles[$roleid]['rules'] : $default_rules;
-			$new_rules = $role['rules'] + $old_rules;
+			$new_rules = array_key_exists('rules', $role) ? $role['rules'] + $old_rules : $old_rules;
 
 			$rules[$roleid] = array_merge(
-				$this->compileUiRules((int) $type, $old_rules, $new_rules),
-				$this->compileServicesReadRules($new_rules),
-				$this->compileServicesWriteRules($new_rules),
-				$this->compileModulesRules($old_rules, $new_rules),
-				$this->compileApiRules($new_rules),
-				$this->compileActionsRules((int) $type, $old_rules, $new_rules)
+				self::compileUiRules((int) $type, $old_rules, $new_rules),
+				self::compileServicesReadRules($new_rules),
+				self::compileServicesWriteRules($new_rules),
+				self::compileModulesRules($old_rules, $new_rules),
+				self::compileApiRules((int) $type, $new_rules),
+				self::compileActionsRules((int) $type, $old_rules, $new_rules)
 			);
 		}
 
@@ -900,7 +944,7 @@ class CRole extends CApiService {
 	 *
 	 * @return array
 	 */
-	private function compileUiRules(int $type, array $old_rules, array $new_rules): array {
+	private static function compileUiRules(int $type, array $old_rules, array $new_rules): array {
 		$old_ui_rules = array_column($old_rules['ui'], null, 'name');
 		$new_ui_rules = array_column($new_rules['ui'], null, 'name');
 
@@ -926,7 +970,6 @@ class CRole extends CApiService {
 					'value' => $ui_rule_status
 				];
 			}
-
 		}
 
 		$compiled_rules[] = [
@@ -943,7 +986,7 @@ class CRole extends CApiService {
 	 *
 	 * @return array
 	 */
-	private function compileServicesReadRules(array $new_rules): array {
+	private static function compileServicesReadRules(array $new_rules): array {
 		$compiled_rules[] = [
 			'name' => 'services.read',
 			'type' => self::RULE_TYPE_INT32,
@@ -984,7 +1027,7 @@ class CRole extends CApiService {
 	 *
 	 * @return array
 	 */
-	private function compileServicesWriteRules(array $new_rules): array {
+	private static function compileServicesWriteRules(array $new_rules): array {
 		$compiled_rules[] = [
 			'name' => 'services.write',
 			'type' => self::RULE_TYPE_INT32,
@@ -1028,7 +1071,7 @@ class CRole extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private function compileModulesRules(array $old_rules, array $new_rules): array {
+	private static function compileModulesRules(array $old_rules, array $new_rules): array {
 		$old_modules_rules = array_column($old_rules['modules'], null, 'moduleid');
 		$new_modules_rules = array_column($new_rules['modules'], null, 'moduleid');
 
@@ -1068,11 +1111,12 @@ class CRole extends CApiService {
 	}
 
 	/**
+	 * @param int   $type
 	 * @param array $new_rules
 	 *
 	 * @return array
 	 */
-	private function compileApiRules(array $new_rules): array {
+	private static function compileApiRules(int $type, array $new_rules): array {
 		$compiled_rules = [];
 
 		$compiled_rules[] = [
@@ -1089,6 +1133,13 @@ class CRole extends CApiService {
 			];
 
 			foreach ($new_rules['api'] as $index => $api_method) {
+				// Skip specific API methods that do not belong to new user in case of user type change.
+				if ($api_method !== ZBX_ROLE_RULE_API_WILDCARD && $api_method !== ZBX_ROLE_RULE_API_WILDCARD_ALIAS
+						&& !in_array($api_method, CRoleHelper::getApiMethodMasks($type), true)
+						&& !in_array($api_method, CRoleHelper::getApiMethods($type), true)) {
+					continue;
+				}
+
 				$compiled_rules[] = [
 					'name' => 'api.method.'.$index,
 					'type' => self::RULE_TYPE_STR,
@@ -1107,7 +1158,7 @@ class CRole extends CApiService {
 	 *
 	 * @return array
 	 */
-	private function compileActionsRules(int $type, array $old_rules, array $new_rules): array {
+	private static function compileActionsRules(int $type, array $old_rules, array $new_rules): array {
 		$old_actions_rules = array_column($old_rules['actions'], null, 'name');
 		$new_actions_rules = array_column($new_rules['actions'], null, 'name');
 
@@ -1133,7 +1184,6 @@ class CRole extends CApiService {
 					'value' => $action_rule_status
 				];
 			}
-
 		}
 
 		$compiled_rules[] = [
@@ -1238,19 +1288,31 @@ class CRole extends CApiService {
 				$output = ['userid', 'roleid'];
 			}
 			elseif ($options['selectUsers'] === API_OUTPUT_EXTEND) {
-				$output = ['userid', 'username', 'name', 'surname', 'url', 'autologin', 'autologout', 'lang', 'refresh',
-					'theme', 'attempt_failed', 'attempt_ip', 'attempt_clock', 'rows_per_page', 'timezone', 'roleid'
-				];
+				$output = self::$userData['type'] == USER_TYPE_SUPER_ADMIN
+					? CUser::OUTPUT_FIELDS
+					: CUser::OWN_LIMITED_OUTPUT_FIELDS;
 			}
 			else {
 				$output = array_unique(array_merge(['userid', 'roleid'], $options['selectUsers']));
 			}
 
-			$users = DB::select('users', [
-				'output' => $output,
-				'filter' => ['roleid' => $roleids],
-				'preservekeys' => true
-			]);
+			if (self::$userData['type'] == USER_TYPE_SUPER_ADMIN) {
+				$users = API::User()->get([
+					'output' => $output,
+					'filter' => ['roleid' => $roleids],
+					'preservekeys' => true
+				]);
+			}
+			else {
+				$users = array_key_exists(self::$userData['roleid'], $result)
+					? API::User()->get([
+						'output' => $output,
+						'userids' => self::$userData['userid'],
+						'preservekeys' => true
+					])
+					: [];
+			}
+
 			$relation_map = $this->createRelationMap($users, 'roleid', 'userid');
 			$users = $this->unsetExtraFields($users, ['userid', 'roleid'], $options['selectUsers']);
 			$result = $relation_map->mapMany($result, $users, 'users');

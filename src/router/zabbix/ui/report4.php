@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -54,7 +49,7 @@ $current_year = date('Y');
 $media_types = [];
 
 $db_media_types = API::MediaType()->get([
-	'output' => ['name'],
+	'output' => ['mediatypeid', 'name'],
 	'preservekeys' => true
 ]);
 CArrayHelper::sort($db_media_types, ['name']);
@@ -80,7 +75,7 @@ if ($media_types) {
 	$select_media_type = (new CSelect('media_type'))
 		->setValue($media_type)
 		->setFocusableElementId('media-type')
-		->addOption(new CSelectOption(0, _('all')))
+		->addOption(new CSelectOption(0, _('All')))
 		->addOptions(CSelect::createOptionsFromArray($media_types));
 
 	$select_period = (new CSelect('period'))
@@ -137,9 +132,7 @@ if ($media_types) {
 
 	foreach ($db_users as $user_data) {
 		$full_name = getUserFullname($user_data);
-		$header[] = (new CSpan($full_name))
-			->addClass(ZBX_STYLE_TEXT_VERTICAL)
-			->setTitle($full_name);
+		$header[] = (new CVertical($full_name))->setTitle($full_name);
 		$users[] = $user_data['userid'];
 	}
 

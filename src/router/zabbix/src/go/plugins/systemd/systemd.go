@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package systemd
@@ -27,9 +22,9 @@ import (
 	"strings"
 	"sync"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
 	"github.com/godbus/dbus/v5"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 // Plugin -
@@ -71,6 +66,7 @@ type unitJson struct {
 	JobType       string `json:"{#UNIT.JOBTYPE}"`
 	JobPath       string `json:"{#UNIT.JOBPATH}"`
 	UnitFileState string `json:"{#UNIT.UNITFILESTATE}"`
+	ServiceType   string `json:"{#UNIT.SERVICETYPE}"` //nolint:tagliatelle
 }
 
 type state struct {
@@ -201,6 +197,22 @@ func (p *Plugin) get(params []string, conn *dbus.Conn) (interface{}, error) {
 	return string(val), nil
 }
 
+func (p *Plugin) getServiceType(name string, conn *dbus.Conn) string {
+	serviceType, err := p.info([]string{name, "Type", "Service"}, conn)
+	if err != nil {
+		p.Debugf("failed to retrieve service type for %s, err:%s", name, err.Error())
+		return ""
+	}
+
+	typeString, ok := serviceType.(string)
+	if !ok {
+		p.Debugf("unit service type is not string for %s", name)
+		return ""
+	}
+
+	return typeString
+}
+
 func (p *Plugin) discovery(params []string, conn *dbus.Conn) (interface{}, error) {
 	var ext string
 
@@ -241,7 +253,7 @@ func (p *Plugin) discovery(params []string, conn *dbus.Conn) (interface{}, error
 
 		UnitFileState, err := p.info([]string{u.Name, "UnitFileState"}, conn)
 		if err != nil {
-			p.Debugf("Failed to retrieve unit file state for %s, err:", u.Name, err.Error())
+			p.Debugf("Failed to retrieve unit file state for %s, err:%s", u.Name, err.Error())
 			continue
 		}
 
@@ -254,9 +266,10 @@ func (p *Plugin) discovery(params []string, conn *dbus.Conn) (interface{}, error
 			continue
 		}
 
+		serviceType := p.getServiceType(u.Name, conn)
 		array = append(array, unitJson{
 			u.Name, u.Description, u.LoadState, u.ActiveState,
-			u.SubState, u.Followed, u.Path, u.JobID, u.JobType, u.JobPath, state,
+			u.SubState, u.Followed, u.Path, u.JobID, u.JobType, u.JobPath, state, serviceType,
 		})
 	}
 
@@ -271,15 +284,10 @@ func (p *Plugin) discovery(params []string, conn *dbus.Conn) (interface{}, error
 
 		unitPath := "/org/freedesktop/systemd1/unit/" + getName(basePath)
 
-		var details map[string]interface{}
-		obj = conn.Object("org.freedesktop.systemd1", dbus.ObjectPath(unitPath))
-		err = obj.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.freedesktop.systemd1.Unit").Store(&details)
-		if err != nil {
-			p.Debugf("Cannot get unit properties for disabled unit %s, err:", basePath, err.Error())
-			continue
-		}
+		serviceType := p.getServiceType(f.Name, conn)
 
-		array = append(array, unitJson{basePath, "", "", "inactive", "", "", unitPath, 0, "", "", f.EnablementState})
+		array = append(array, unitJson{basePath, "", "", "inactive", "", "", unitPath, 0, "", "",
+			f.EnablementState, serviceType})
 	}
 
 	jsonArray, err := json.Marshal(array)

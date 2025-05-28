@@ -2,22 +2,17 @@
 // +build linux
 
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package proc
@@ -38,10 +33,10 @@ import (
 	"sync"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"zabbix.com/pkg/procfs"
+	"golang.zabbix.com/agent2/pkg/procfs"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 const (
@@ -192,6 +187,7 @@ type procStatus struct {
 	CtxSwitches   int64   `json:"ctx_switches"`
 	Threads       int64   `json:"threads"`
 	PageFaults    int64   `json:"page_faults"`
+	Pss           int64   `json:"pss"`
 }
 
 type procSummary struct {
@@ -214,6 +210,7 @@ type procSummary struct {
 	CtxSwitches   int64   `json:"ctx_switches"`
 	Threads       int64   `json:"threads"`
 	PageFaults    int64   `json:"page_faults"`
+	Pss           int64   `json:"pss"`
 }
 
 type thread struct {
@@ -505,7 +502,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		p.queries[query] = stats
 		p.Debugf("registered new CPU utilization query: %s, %s, %s", name, user, cmdline)
 	} else {
-		p.Debugf("cannot register CPU utilization query: %s", err)
+		err = fmt.Errorf("cannot register CPU utilization query: %s", err)
 	}
 	return
 }
@@ -616,8 +613,7 @@ func (p *PluginExport) exportProcMem(params []string) (result interface{}, err e
 	if cmdline != "" {
 		cmdRgx, err = regexp.Compile(cmdline)
 		if err != nil {
-			p.Debugf("Failed to compile provided regex expression '%s': %s", cmdline, err.Error())
-			return 0, nil
+			return nil, fmt.Errorf("Failed to compile regular expression '%s': %s", cmdline, err.Error())
 		}
 	}
 
@@ -625,9 +621,7 @@ func (p *PluginExport) exportProcMem(params []string) (result interface{}, err e
 	if usr != nil {
 		userID, err = strconv.ParseInt(usr.Uid, 10, 64)
 		if err != nil {
-			p.Logger.Tracef(
-				"failed to convert user id '%s' to uint64 for user '%s'", usr.Uid, usr.Username)
-			return 0, nil
+			return nil, fmt.Errorf("Failed to parse userid '%s' for user '%s", usr.Uid, usr.Username)
 		}
 	}
 
@@ -766,8 +760,7 @@ func (p *PluginExport) exportProcNum(params []string) (interface{}, error) {
 
 	query, flags, err := p.prepareQuery(&procQuery{name, userName, cmdline, state})
 	if err != nil {
-		p.Debugf("Failed to prepare query: %s", err.Error())
-		return count, nil
+		return nil, fmt.Errorf("Failed to prepare query: %s", err.Error())
 	}
 
 	procs, err := getProcesses(flags)
@@ -834,8 +827,7 @@ func (p *PluginExport) exportProcGet(params []string) (interface{}, error) {
 
 	query, _, err := p.prepareQuery(&procQuery{name, userName, cmdline, ""})
 	if err != nil {
-		p.Debugf("Failed to prepare query: %s", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("Failed to prepare query: %s", err.Error())
 	}
 
 	if mode != "thread" {
@@ -905,7 +897,7 @@ func (p *PluginExport) exportProcGet(params []string) (interface{}, error) {
 				proc.Name, 1, proc.Vsize, proc.Pmem, proc.Rss, proc.Data,
 				proc.Exe, proc.Lck, proc.Lib, proc.Pin, proc.Pte, proc.Size, proc.Stk,
 				proc.Swap, proc.CpuTimeUser, proc.CpuTimeSystem, proc.CtxSwitches, proc.Threads,
-				proc.PageFaults,
+				proc.PageFaults, proc.Pss,
 			}
 
 			if len(array) > i+1 {
@@ -931,6 +923,7 @@ func (p *PluginExport) exportProcGet(params []string) (interface{}, error) {
 					addNonNegativeFloat(&procSum.CpuTimeSystem, procCmp.CpuTimeSystem)
 					addNonNegative(&procSum.CtxSwitches, procCmp.CtxSwitches)
 					addNonNegative(&procSum.PageFaults, procCmp.PageFaults)
+					addNonNegative(&procSum.Pss, procCmp.Pss)
 				}
 			}
 			processed = append(processed, proc.Name)

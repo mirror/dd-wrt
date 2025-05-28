@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -45,153 +40,6 @@ $condition_type = (int) $data['last_type'];
 $form_grid = (new CFormGrid());
 
 switch ($data['type']) {
-	case ZBX_POPUP_CONDITION_TYPE_EVENT_CORR:
-		// Type select.
-		$form_grid
-			->addItem([
-				new CLabel(_('Type'), 'label-condition-type'),
-				new CFormField((new CSelect('condition_type'))
-					->setFocusableElementId('label-condition-type')
-					->setValue($condition_type)
-					->setId('condition-type')
-					->addOptions(CSelect::createOptionsFromArray(CCorrelationHelper::getConditionTypes()))
-				)
-			]);
-
-		switch ($condition_type) {
-			// Old|New event tag form elements.
-			case ZBX_CORR_CONDITION_OLD_EVENT_TAG:
-			case ZBX_CORR_CONDITION_NEW_EVENT_TAG:
-				$operator = (new CRadioButtonList('', CONDITION_OPERATOR_EQUAL))
-					->setModern(true)
-					->addValue(CCorrelationHelper::getLabelByOperator(
-						CCorrelationHelper::getOperatorsByConditionType(ZBX_CORR_CONDITION_OLD_EVENT_TAG)[0]
-					), CCorrelationHelper::getOperatorsByConditionType(ZBX_CORR_CONDITION_OLD_EVENT_TAG)[0]);
-				$new_condition_tag = (new CTextAreaFlexible('tag'))
-					->setId('tag')
-					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH);
-
-				$inline_js .= $new_condition_tag->getPostJS();
-
-				$form_grid
-					->addItem([
-						new CLabel(_('Operator')),
-						new CFormField([$operator, new CVar('operator', CONDITION_OPERATOR_EQUAL)])
-					])
-					->addItem([
-						(new CLabel(_('Tag'), 'tag'))->setAsteriskMark(),
-						new CFormField($new_condition_tag)
-					]);
-
-				break;
-
-			// New event host group form elements.
-			case ZBX_CORR_CONDITION_NEW_EVENT_HOSTGROUP:
-				$operator = (new CRadioButtonList('operator', CONDITION_OPERATOR_EQUAL))->setModern(true);
-				foreach (CCorrelationHelper::getOperatorsByConditionType(ZBX_CORR_CONDITION_NEW_EVENT_HOSTGROUP)
-						as $value) {
-					$operator->addValue(CCorrelationHelper::getLabelByOperator($value), $value);
-				}
-
-				$hostgroup_multiselect = (new CMultiSelect([
-					'name' => 'groupids[]',
-					'object_name' => 'hostGroup',
-					'default_value' => 0,
-					'popup' => [
-						'parameters' => [
-							'srctbl' => 'host_groups',
-							'srcfld1' => 'groupid',
-							'dstfrm' => $form->getName(),
-							'dstfld1' => 'groupids_'
-						]
-					]
-				]))
-					->setId('groupids_')
-					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH);
-
-				$inline_js .= $hostgroup_multiselect->getPostJS();
-
-				$form_grid
-					->addItem([
-						new CLabel(_('Operator')),
-						new CFormField($operator)
-					])
-					->addItem([
-						(new CLabel(_('Host groups'), 'groupids__ms'))->setAsteriskMark(),
-						new CFormField($hostgroup_multiselect)
-					]);
-
-				break;
-
-			// Event tag pair form elements.
-			case ZBX_CORR_CONDITION_EVENT_TAG_PAIR:
-				$operator = (new CRadioButtonList('', CONDITION_OPERATOR_EQUAL))
-					->setModern(true)
-					->addValue(CCorrelationHelper::getLabelByOperator(
-						CCorrelationHelper::getOperatorsByConditionType(ZBX_CORR_CONDITION_EVENT_TAG_PAIR)[0]
-					), CCorrelationHelper::getOperatorsByConditionType(ZBX_CORR_CONDITION_EVENT_TAG_PAIR)[0]);
-				$new_condition_oldtag = (new CTextAreaFlexible('oldtag'))
-					->setId('oldtag')
-					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH);
-				$new_condition_newtag = (new CTextAreaFlexible('newtag'))
-					->setId('newtag')
-					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH);
-
-				$inline_js .= $new_condition_oldtag->getPostJS();
-				$inline_js .= $new_condition_newtag->getPostJS();
-
-				$form_grid
-					->addItem([
-						(new CLabel(_('Old tag name'), 'oldtag'))->setAsteriskMark(),
-						new CFormField($new_condition_oldtag)
-					])
-					->addItem([
-						new CLabel(_('Operator')),
-						new CFormField([$operator, new CVar('operator', CONDITION_OPERATOR_EQUAL)])
-					])
-					->addItem([
-						(new CLabel(_('New tag name'), 'newtag'))->setAsteriskMark(),
-						new CFormField($new_condition_newtag)
-					]);
-
-				break;
-
-			// Old|New event tag value form elements.
-			case ZBX_CORR_CONDITION_OLD_EVENT_TAG_VALUE:
-			case ZBX_CORR_CONDITION_NEW_EVENT_TAG_VALUE:
-				$operator = (new CRadioButtonList('operator', CONDITION_OPERATOR_EQUAL))->setModern(true);
-				foreach (CCorrelationHelper::getOperatorsByConditionType($condition_type) as $value) {
-					$operator->addValue(CCorrelationHelper::getLabelByOperator($value), $value);
-				}
-
-				$new_condition_tag = (new CTextAreaFlexible('tag'))
-					->setId('tag')
-					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH);
-				$new_condition_value = (new CTextAreaFlexible('value'))
-					->setId('value')
-					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH);
-
-				$inline_js .= $new_condition_tag->getPostJS();
-				$inline_js .= $new_condition_value->getPostJS();
-
-				$form_grid
-					->addItem([
-						(new CLabel(_('Tag'), 'tag'))->setAsteriskMark(),
-						new CFormField($new_condition_tag)
-					])
-					->addItem([
-						new CLabel(_('Operator')),
-						new CFormField($operator)
-					])
-					->addItem([
-						new CLabel(_('Value'), 'value'),
-						new CFormField($new_condition_value)
-					]);
-
-				break;
-		}
-		break;
-
 	case ZBX_POPUP_CONDITION_TYPE_ACTION:
 		require_once __DIR__ .'/../../include/actions.inc.php';
 
@@ -677,7 +525,7 @@ switch ($data['type']) {
 						'parameters' => [
 							'srctbl' => 'proxies',
 							'srcfld1' => 'proxyid',
-							'srcfld2' => 'host',
+							'srcfld2' => 'name',
 							'dstfrm' => $form->getName(),
 							'dstfld1' => 'proxy_new_condition'
 						]
@@ -781,7 +629,7 @@ switch ($data['type']) {
 				foreach ($operators_by_condition[ZBX_CONDITION_TYPE_DUPTIME] as $key => $value) {
 					$operator->addValue($value, $key);
 				}
-				$new_condition_value = (new CNumericBox('value', 600, 15))
+				$new_condition_value = (new CNumericBox('value', 600, 7))
 					->setWidth(ZBX_TEXTAREA_NUMERIC_BIG_WIDTH)
 					->setId('value');
 

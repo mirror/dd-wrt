@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,55 +20,36 @@
 ?>
 
 <script>
-	const view = {
+	const view = new class {
 
 		init() {
-			this.initActionButtons();
+			this.#initActionButtons();
+			this.#initPopupListeners();
 			this.expiresDaysHandler();
-		},
+		}
 
-		initActionButtons() {
-			document.addEventListener('click', (e) => {
+		#initActionButtons() {
+			document.addEventListener('click', e => {
 				if (e.target.classList.contains('js-create-token')) {
-					this.createUserToken();
-				}
-				else if (e.target.classList.contains('js-edit-token')) {
-					this.editUserToken(e.target.dataset.tokenid);
+					ZABBIX.PopupManager.open('token.edit', {admin_mode: '0'});
 				}
 				else if (e.target.classList.contains('js-massdelete-token')) {
-					this.massDeleteUserToken(e.target, Object.keys(chkbxRange.getSelectedIds()));
+					this.#massDeleteUserToken(e.target, Object.keys(chkbxRange.getSelectedIds()));
 				}
 			});
-		},
+		}
 
-		expiresDaysHandler() {
-			const filter_expires_state = document.getElementById('filter-expires-state');
-			const filter_expires_days = document.getElementById('filter-expires-days');
-
-			filter_expires_days.disabled = !filter_expires_state.checked;
-		},
-
-		createUserToken() {
-			this.openUserTokenPopup({admin_mode: '0'});
-		},
-
-		editUserToken(tokenid) {
-			const user_token_data = {tokenid, admin_mode: '0'};
-			this.openUserTokenPopup(user_token_data);
-		},
-
-		openUserTokenPopup(user_token_data) {
-			const overlay = PopUp('popup.token.edit', user_token_data, {
-				dialogueid: 'token_edit',
-				dialogue_class: 'modal-popup-generic',
-				prevent_navigation: true
+		#initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: () => uncheckTableRows('user.token')
 			});
+		}
 
-			overlay.$dialogue[0].addEventListener('dialogue.update', this.events.userTokenSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.delete', this.events.userTokenSuccess, {once: true});
-		},
-
-		massDeleteUserToken(target, tokenids) {
+		#massDeleteUserToken(target, tokenids) {
 			const confirmation = tokenids.length > 1
 				? <?= json_encode(_('Delete selected tokens?')) ?>
 				: <?= json_encode(_('Delete selected token?')) ?>;
@@ -86,9 +62,7 @@
 
 			const curl = new Curl('zabbix.php');
 			curl.setArgument('action', 'token.delete');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('token')) ?>
-			);
+			curl.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('token')) ?>);
 
 			fetch(curl.getUrl(), {
 				method: 'POST',
@@ -130,23 +104,13 @@
 				.finally(() => {
 					target.classList.remove('is-loading');
 				});
-		},
+		}
 
-		events: {
-			userTokenSuccess(e) {
-				const data = e.detail;
+		expiresDaysHandler() {
+			const filter_expires_state = document.getElementById('filter-expires-state');
+			const filter_expires_days = document.getElementById('filter-expires-days');
 
-				if ('success' in data) {
-					postMessageOk(data.success.title);
-
-					if ('messages' in data.success) {
-						postMessageDetails('success', data.success.messages);
-					}
-				}
-
-				uncheckTableRows('user.token');
-				location.href = location.href;
-			}
+			filter_expires_days.disabled = !filter_expires_state.checked;
 		}
 	};
 </script>

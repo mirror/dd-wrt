@@ -1,27 +1,20 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxdbhigh.h"
-
-#include "log.h"
-#include "events.h"
-#include "zbxnum.h"
+#include "zbxdb.h"
+#include "zbxstr.h"
 
 /******************************************************************************
  *                                                                            *
@@ -30,7 +23,7 @@
  * Parameters: trigger_diff - [IN] the trigger changeset                      *
  *                                                                            *
  ******************************************************************************/
-void	zbx_db_save_trigger_changes(const zbx_vector_ptr_t *trigger_diff)
+void	zbx_db_save_trigger_changes(const zbx_vector_trigger_diff_ptr_t *trigger_diff)
 {
 	int				i;
 	char				*sql = NULL;
@@ -39,12 +32,10 @@ void	zbx_db_save_trigger_changes(const zbx_vector_ptr_t *trigger_diff)
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
-	zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
-
 	for (i = 0; i < trigger_diff->values_num; i++)
 	{
 		char	delim = ' ';
-		diff = (const zbx_trigger_diff_t *)trigger_diff->values[i];
+		diff = trigger_diff->values[i];
 
 		if (0 == (diff->flags & ZBX_FLAGS_TRIGGER_DIFF_UPDATE))
 			continue;
@@ -84,10 +75,7 @@ void	zbx_db_save_trigger_changes(const zbx_vector_ptr_t *trigger_diff)
 		zbx_db_execute_overflowed_sql(&sql, &sql_alloc, &sql_offset);
 	}
 
-	zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-	if (sql_offset > 16)	/* in ORACLE always present begin..end; */
-		zbx_db_execute("%s", sql);
+	(void)zbx_db_flush_overflowed_sql(sql, sql_offset);
 
 	zbx_free(sql);
 
@@ -110,8 +98,9 @@ void	zbx_trigger_diff_free(zbx_trigger_diff_t *diff)
  * Purpose: Adds a new trigger diff to trigger changeset vector               *
  *                                                                            *
  ******************************************************************************/
-void	zbx_append_trigger_diff(zbx_vector_ptr_t *trigger_diff, zbx_uint64_t triggerid, unsigned char priority,
-		zbx_uint64_t flags, unsigned char value, unsigned char state, int lastchange, const char *error)
+void	zbx_append_trigger_diff(zbx_vector_trigger_diff_ptr_t *trigger_diff, zbx_uint64_t triggerid,
+		unsigned char priority, zbx_uint64_t flags, unsigned char value, unsigned char state, int lastchange,
+		const char *error)
 {
 	zbx_trigger_diff_t	*diff;
 
@@ -126,5 +115,5 @@ void	zbx_append_trigger_diff(zbx_vector_ptr_t *trigger_diff, zbx_uint64_t trigge
 
 	diff->problem_count = 0;
 
-	zbx_vector_ptr_append(trigger_diff, diff);
+	zbx_vector_trigger_diff_ptr_append(trigger_diff, diff);
 }

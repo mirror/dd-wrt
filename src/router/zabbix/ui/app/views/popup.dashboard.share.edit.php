@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -24,7 +19,7 @@
  */
 
 $form = (new CForm('post'))
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('dashboard')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('dashboard')))->removeId())
 	->setId('dashboard-share-form')
 	->setName('dashboard_share_form')
 	->addItem(getMessages());
@@ -34,17 +29,15 @@ $table_user_groups = (new CTable())
 	->addRow(
 		(new CRow(
 			(new CCol(
-				(new CButton(null, _('Add')))
-					->onClick(
-						'return PopUp("popup.generic", '. json_encode([
-							'srctbl' => 'usrgrp',
-							'srcfld1' => 'usrgrpid',
-							'srcfld2' => 'name',
-							'dstfrm' => $form->getName(),
-							'multiselect' => '1'
-						]).', {dialogue_class: "modal-popup-generic"});'
-					)
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Add')))->onClick(
+					'return PopUp("popup.generic", '.json_encode([
+						'srctbl' => 'usrgrp',
+						'srcfld1' => 'usrgrpid',
+						'srcfld2' => 'name',
+						'dstfrm' => $form->getName(),
+						'multiselect' => '1'
+					]).', {dialogue_class: "modal-popup-generic"});'
+				)
 			))->setColSpan(3)
 		))->setId('user-group-list-footer')
 	)
@@ -55,17 +48,15 @@ $table_users = (new CTable())
 	->addRow(
 		(new CRow(
 			(new CCol(
-				(new CButton(null, _('Add')))
-					->onClick(
-						'return PopUp("popup.generic", '.json_encode([
-							'srctbl' => 'users',
-							'srcfld1' => 'userid',
-							'srcfld2' => 'fullname',
-							'dstfrm' => $form->getName(),
-							'multiselect' => '1'
-						]).', {dialogue_class: "modal-popup-generic"});'
-					)
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Add')))->onClick(
+					'return PopUp("popup.generic", '.json_encode([
+						'srctbl' => 'users',
+						'srcfld1' => 'userid',
+						'srcfld2' => 'fullname',
+						'dstfrm' => $form->getName(),
+						'multiselect' => '1'
+					]).', {dialogue_class: "modal-popup-generic"});'
+				)
 			))->setColSpan(3)
 		))->setId('user-list-footer')
 	)

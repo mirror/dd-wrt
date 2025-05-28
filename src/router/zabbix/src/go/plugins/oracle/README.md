@@ -7,35 +7,63 @@ memory usage. It is highly recommended to use in conjunction with the official
 [Oracle template.](https://git.zabbix.com/projects/ZBX/repos/zabbix/browse/templates/db/oracle_agent2) 
 You can extend it or create your own template to cater specific needs.
 
+**Important! This integration queries the `V$ACTIVE_SESSION_HISTORY` dynamic performance view which is part of the Oracle Diagnostics Pack. Please make sure that you have the licence required for using this management pack.**
+
 ## Requirements
 
 * Zabbix Agent 2
-* Go >= 1.18 (required only to build from source)
+* Go >= 1.21 (required only to build from source)
 * Oracle Instant Client >= 12
 
 ## Supported versions
 
-* Oracle Database 12c2
-* Oracle Database 18c
-* Oracle Database 19c
+* Oracle Database 12c2 and newer
 
 ## Installation
 
 1. [Install Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client/downloads.html).
-2. Create an Oracle DB user and grant permissions. 
+2. Create an Oracle DB user and grant permissions.
+
+In CDB installations it is possible to monitor tablespaces from CDB _(container database)_ and all PDBs _(pluggable databases)_. In such case, a common user is needed with the correct rights:
+
+```
+CREATE USER c##zabbix_mon IDENTIFIED BY <PASSWORD>;
+-- Grant access to the c##zabbix_mon user.
+ALTER USER c##zabbix_mon SET CONTAINER_DATA=ALL CONTAINER=CURRENT;
+GRANT CONNECT, CREATE SESSION TO c##zabbix_mon;
+GRANT SELECT_CATALOG_ROLE to c##zabbix_mon;
+GRANT SELECT ON v_$instance TO c##zabbix_mon;
+GRANT SELECT ON v_$database TO c##zabbix_mon;
+GRANT SELECT ON v_$sysmetric TO c##zabbix_mon;
+GRANT SELECT ON v_$system_parameter TO c##zabbix_mon;
+GRANT SELECT ON v_$session TO c##zabbix_mon;
+GRANT SELECT ON v_$recovery_file_dest TO c##zabbix_mon;
+GRANT SELECT ON v_$active_session_history TO c##zabbix_mon;
+GRANT SELECT ON v_$osstat TO c##zabbix_mon;
+GRANT SELECT ON v_$process TO c##zabbix_mon;
+GRANT SELECT ON v_$datafile TO c##zabbix_mon;
+GRANT SELECT ON v_$pgastat TO c##zabbix_mon;
+GRANT SELECT ON v_$sgastat TO c##zabbix_mon;
+GRANT SELECT ON v_$log TO c##zabbix_mon;
+GRANT SELECT ON v_$archive_dest TO c##zabbix_mon;
+GRANT SELECT ON v_$asm_diskgroup TO c##zabbix_mon;
+GRANT SELECT ON v_$asm_diskgroup_stat TO c##zabbix_mon;
+GRANT SELECT ON DBA_USERS TO c##zabbix_mon;
+```
+This is needed because the template uses ```CDB_*``` views to monitor tablespaces from CDB and different PDBs, and, therefore, the monitoring user needs access to the container data objects on all PDBs.
+
+However, if you wish to monitor only a single PDB or non-CDB instance, a local user is sufficient:
 
 ```
 CREATE USER zabbix_mon IDENTIFIED BY <PASSWORD>;
 -- Grant access to the zabbix_mon user.
 GRANT CONNECT, CREATE SESSION TO zabbix_mon;
 GRANT SELECT_CATALOG_ROLE to zabbix_mon;
-GRANT SELECT ON DBA_TABLESPACE_USAGE_METRICS TO zabbix_mon;
-GRANT SELECT ON DBA_TABLESPACES TO zabbix_mon;
 GRANT SELECT ON DBA_USERS TO zabbix_mon;
-GRANT SELECT ON SYS.DBA_DATA_FILES TO zabbix_mon;
 GRANT SELECT ON V_$ACTIVE_SESSION_HISTORY TO zabbix_mon;
 GRANT SELECT ON V_$ARCHIVE_DEST TO zabbix_mon;
 GRANT SELECT ON V_$ASM_DISKGROUP TO zabbix_mon;
+GRANT SELECT ON V_$ASM_DISKGROUP_STAT TO zabbix_mon;
 GRANT SELECT ON V_$DATABASE TO zabbix_mon;
 GRANT SELECT ON V_$DATAFILE TO zabbix_mon;
 GRANT SELECT ON V_$INSTANCE TO zabbix_mon;
@@ -44,12 +72,76 @@ GRANT SELECT ON V_$OSSTAT TO zabbix_mon;
 GRANT SELECT ON V_$PGASTAT TO zabbix_mon;
 GRANT SELECT ON V_$PROCESS TO zabbix_mon;
 GRANT SELECT ON V_$RECOVERY_FILE_DEST TO zabbix_mon;
-GRANT SELECT ON V_$RESTORE_POINT TO zabbix_mon;
 GRANT SELECT ON V_$SESSION TO zabbix_mon;
 GRANT SELECT ON V_$SGASTAT TO zabbix_mon;
 GRANT SELECT ON V_$SYSMETRIC TO zabbix_mon;
 GRANT SELECT ON V_$SYSTEM_PARAMETER TO zabbix_mon;
 ```
+
+**Important! These privileges grant the monitoring user `SELECT_CATALOG_ROLE`, which, in turn, gives access to thousands of tables in the database.**
+This role is required to access the `V$RESTORE_POINT` dynamic performance view.
+However, there are ways to go around this, if the `SELECT_CATALOG_ROLE` assigned to a monitoring user raises any security issues.
+One way to do this is using **pipelined table functions**:
+
+  1. Log into your database as the `SYS` user or make sure that your administration user has the required privileges to execute the steps below;
+  
+  2. Create types for the table function:
+    
+      ```sql
+      CREATE OR REPLACE TYPE zbx_mon_restore_point_row AS OBJECT (
+        SCN                           NUMBER,
+        DATABASE_INCARNATION#         NUMBER,
+        GUARANTEE_FLASHBACK_DATABASE  VARCHAR2(3),
+        STORAGE_SIZE                  NUMBER,
+        TIME                          TIMESTAMP(9),
+        RESTORE_POINT_TIME            TIMESTAMP(9),
+        PRESERVED                     VARCHAR2(3),
+        NAME                          VARCHAR2(128),
+        PDB_RESTORE_POINT             VARCHAR2(3),
+        CLEAN_PDB_RESTORE_POINT       VARCHAR2(3),
+        PDB_INCARNATION#              NUMBER,
+        REPLICATED                    VARCHAR2(3),
+        CON_ID                        NUMBER
+      );
+      CREATE OR REPLACE TYPE zbx_mon_restore_point_tab IS TABLE OF zbx_mon_restore_point_row;
+      ```
+  
+  3. Create the pipelined table function:
+  
+      ```sql
+      CREATE OR REPLACE FUNCTION zbx_mon_restore_point RETURN zbx_mon_restore_point_tab PIPELINED AS
+      BEGIN
+        FOR i IN (SELECT * FROM V$RESTORE_POINT) LOOP
+          PIPE ROW (zbx_mon_restore_point_row(i.SCN, i.DATABASE_INCARNATION#, i.GUARANTEE_FLASHBACK_DATABASE, i.STORAGE_SIZE, i.TIME, i.RESTORE_POINT_TIME, i.PRESERVED, i.NAME, i.PDB_RESTORE_POINT, i.CLEAN_PDB_RESTORE_POINT, i.PDB_INCARNATION#, i.REPLICATED, i.CON_ID));
+        END LOOP;
+        RETURN;
+      END;
+      ```
+  
+  4. Grant the Zabbix monitoring user the Execute privilege on the created pipelined table function and replace the monitoring user `V$RESTORE_POINT` view with the `SYS` user function (in this example, the `SYS` user is used to create DB types and function):
+
+      ```sql
+      GRANT EXECUTE ON zbx_mon_restore_point TO c##zabbix_mon;
+      CREATE OR REPLACE VIEW c##zabbix_mon.V$RESTORE_POINT AS SELECT * FROM TABLE(SYS.zbx_mon_restore_point);
+      ```
+
+5. Finally, revoke the `SELECT_CATALOG_ROLE` and grant additional permissions that were previously covered by the `SELECT_CATALOG_ROLE`.
+
+    ```sql
+    REVOKE SELECT_CATALOG_ROLE FROM c##zabbix_mon;
+    GRANT SELECT ON v_$pdbs TO c##zabbix_mon;
+    GRANT SELECT ON v_$sort_segment TO c##zabbix_mon;
+    GRANT SELECT ON v_$parameter TO c##zabbix_mon;
+    GRANT SELECT ON CDB_TABLESPACES TO c##zabbix_mon;
+    GRANT SELECT ON CDB_DATA_FILES TO c##zabbix_mon;
+    GRANT SELECT ON CDB_FREE_SPACE TO c##zabbix_mon;
+    GRANT SELECT ON CDB_TEMP_FILES TO c##zabbix_mon;
+    ```
+
+  > Note that in these examples, the monitoring user is named `c##zabbix_mon` and the system user - `SYS`. Change these example usernames to ones that are appropriate for your environment.
+  
+  If this workaround does not work for you, there are more options available, such as __materialized views__, but look out for data refresh as `V$RESTORE_POINT` is a dynamic performance view.
+
 3. Make sure a TNS Listener and an Oracle instance are available for the connection.  
 
 ## Configuration
@@ -93,7 +185,11 @@ Examples of valid URIs:
     - localhost
     
 * Usernames are supported only if written in uppercase characters.
-      
+
+#### Multitenant architecture tablespace monitoring (across CDB and PDBs)
+
+In order to be able to monitor tablespaces across multiple containers, the Oracle service name needs to be pointed to the root CDB and a common user must be used for connection.
+
 #### Using key parameters
 
 Common parameters for all the keys are: [ConnString][User][Password][Service] where `ConnString` can be either a URI or a session name.
@@ -160,7 +256,7 @@ Note: session names are case-sensitive.
 
 **oracle.instance.info[\<commonParams\>]** — returns instance statistics.
 
-**oracle.pdb.info[\<commonParams\>,\<database\>]** — returns the Plugable Databases (PDBs) information.
+**oracle.pdb.info[\<commonParams\>,\<database\>]** — returns the Pluggable Databases (PDBs) information.
 *Parameters:*  
 `database` (optional) — the name of the database.
 
@@ -196,10 +292,12 @@ Possible values:
 
 **oracle.sys.params[\<commonParams\>]** — returns a set of the system parameter values.
 
-**oracle.ts.stats[\<commonParams\>,\<tablespace\>,\<type\>]** — returns the tablespace statistics. 
+**oracle.ts.stats[\<commonParams\>,[tablespace],[type],[conname]]** — returns the tablespace statistics. 
+
 *Parameters:*  
 `tablespace` (optional) — the name of the tablespace.
 `type` (optional) — the type of the tablespace.
+`conname` (optional) — the container name for which the information is required.
 
 **oracle.ts.discovery[\<commonParams\>]** — returns the list of tablespaces in Low-level discovery (LLD) format.
 
@@ -246,6 +344,10 @@ WHERE
 ``` 
 
     oracle.custom.query[<commonParams>,payment,"John Doe",1,"10/25/2020"]
+
+### Notes:
+ * Returned data is automatically converted into JSON.
+ * Avoid returning JSON directly from queries, as it will become corrupted when the plugin attempts to convert it into JSON again.
 
 ## Current limitations
 

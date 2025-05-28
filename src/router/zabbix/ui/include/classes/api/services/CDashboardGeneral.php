@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -310,7 +305,7 @@ abstract class CDashboardGeneral extends CApiService {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	protected function checkWidgets(array $dashboards, array $db_dashboards = null): void {
+	protected function checkWidgets(array $dashboards, ?array $db_dashboards = null): void {
 		$widget_defaults = DB::getDefaults('widget');
 
 		foreach ($dashboards as $dashboard) {
@@ -369,7 +364,7 @@ abstract class CDashboardGeneral extends CApiService {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	protected function checkWidgetFields(array $dashboards, array $db_dashboards = null): void {
+	protected function checkWidgetFields(array $dashboards, ?array $db_dashboards = null): void {
 		$ids = [
 			ZBX_WIDGET_FIELD_TYPE_ITEM => [],
 			ZBX_WIDGET_FIELD_TYPE_ITEM_PROTOTYPE => [],
@@ -702,7 +697,7 @@ abstract class CDashboardGeneral extends CApiService {
 	 * @param array      $dashboards
 	 * @param array|null $db_dashboards
 	 */
-	protected function updatePages(array &$dashboards, array $db_dashboards = null): void {
+	protected function updatePages(array &$dashboards, ?array $db_dashboards = null): void {
 		$db_dashboard_pages = [];
 
 		if ($db_dashboards !== null) {
@@ -782,7 +777,7 @@ abstract class CDashboardGeneral extends CApiService {
 	 * @param array      $dashboards
 	 * @param array|null $db_dashboards
 	 */
-	protected function updateWidgets(array &$dashboards, array $db_dashboards = null): void {
+	protected function updateWidgets(array &$dashboards, ?array $db_dashboards = null): void {
 		$db_widgets = [];
 
 		if ($db_dashboards !== null) {
@@ -883,7 +878,7 @@ abstract class CDashboardGeneral extends CApiService {
 	 * @param array      $dashboards
 	 * @param array|null $db_dashboards
 	 */
-	protected function updateWidgetFields(array &$dashboards, array $db_dashboards = null): void {
+	protected function updateWidgetFields(array &$dashboards, ?array $db_dashboards = null): void {
 		$ins_widget_fields = [];
 		$upd_widget_fields = [];
 		$del_widget_fieldids = [];
@@ -1009,8 +1004,6 @@ abstract class CDashboardGeneral extends CApiService {
 	 *   - web.dashboard.widget.rf_rate
 	 *   - web.dashboard.widget.navtree.item.selected
 	 *   - web.dashboard.widget.navtree.item-*.toggle
-	 *
-	 * @static
 	 *
 	 * @param array $widgetids
 	 */

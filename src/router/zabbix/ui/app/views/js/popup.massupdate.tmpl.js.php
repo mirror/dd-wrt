@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -31,9 +26,7 @@
 		(new CTextBox('valuemap_rename[#{rowNum}][to]', '', false, DB::getFieldLength('valuemap', 'name')))
 			->addStyle('width: 100%;'),
 		(new CCol(
-			(new CButton(null, _('Remove')))
-				->addClass(ZBX_STYLE_BTN_LINK)
-				->addClass('element-table-remove'))
+			(new CButtonLink(_('Remove')))->addClass('element-table-remove'))
 		)
 			->addClass(ZBX_STYLE_TOP)
 	]))->addClass('form_row')
@@ -71,7 +64,7 @@
 </script>
 
 <script type="text/x-jquery-tmpl" id="tag-row-tmpl">
-	<?= renderTagTableRow('#{rowNum}', '', '', ZBX_TAG_MANUAL, ['add_post_js' => false]) ?>
+	<?= renderTagTableRow('#{rowNum}', ['tag' => '', 'value' => ''], ['add_post_js' => false]) ?>
 </script>
 
 <script type="text/x-jquery-tmpl" id="custom-intervals-tmpl">
@@ -89,7 +82,7 @@
 		</td>
 		<td>
 			<input type="text" id="delay_flex_#{rowNum}_delay" name="delay_flex[#{rowNum}][delay]" maxlength="255" placeholder="<?= ZBX_ITEM_FLEXIBLE_DELAY_DEFAULT ?>" style="max-width: 100px; width: 100%;">
-			<input type="text" id="delay_flex_#{rowNum}_schedule" name="delay_flex[#{rowNum}][schedule]" maxlength="255" placeholder="<?= ZBX_ITEM_SCHEDULING_DEFAULT ?>" style="display: none; max-width: 100px; width: 100%;">
+			<input type="text" id="delay_flex_#{rowNum}_schedule" name="delay_flex[#{rowNum}][schedule]" maxlength="255" placeholder="<?= ZBX_ITEM_SCHEDULING_DEFAULT ?>" style="max-width: 100px; width: 100%;" class="<?= ZBX_STYLE_DISPLAY_NONE ?>">
 		</td>
 		<td>
 			<input type="text" id="delay_flex_#{rowNum}_period" name="delay_flex[#{rowNum}][period]" maxlength="255" placeholder="<?= ZBX_DEFAULT_INTERVAL ?>" style="max-width: 110px; width: 100%;">
@@ -104,7 +97,7 @@
 	<tr id="dependency_#{triggerid}" data-triggerid="#{triggerid}">
 		<td>
 			<input type="hidden" name="dependencies[]" id="dependencies_#{triggerid}" value="#{triggerid}">
-			<a href="#{url}" target="_blank" rel="noopener<?= ZBX_NOREFERER ? ' noreferrer' : '' ?>">#{name}</a>
+			<a href="#{trigger_url}" class="js-edit-dependency" data-triggerid="#{triggerid}" data-context="#{context}" data-parent_discoveryid="#{parent_discoveryid}" data-prototype="#{prototype}">#{name}</a>
 		</td>
 		<td class="<?= ZBX_STYLE_NOWRAP ?>">
 			<?= (new CButton('remove', _('Remove')))

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -32,11 +27,12 @@
 	const view = new class {
 
 		init() {
-			this._initTagFilter();
-			this._initActions();
+			this.#initTagFilter();
+			this.#initActions();
+			this.#initPopupListeners();
 		}
 
-		_initTagFilter() {
+		#initTagFilter() {
 			$('#filter-tags')
 				.dynamicRows({template: '#filter-tag-row-tmpl'})
 				.on('afteradd.dynamicRows', function () {
@@ -50,86 +46,64 @@
 			});
 		}
 
-		_initActions() {
-			document.addEventListener('click', (e) => {
+		#initActions() {
+			document.addEventListener('click', e => {
 				if (e.target.classList.contains('js-create-sla')) {
-					this._edit();
-				}
-				else if (e.target.classList.contains('js-edit-sla')) {
-					this._edit({slaid: e.target.dataset.slaid});
+					ZABBIX.PopupManager.open('sla.edit');
 				}
 				else if (e.target.classList.contains('js-enable-sla')) {
-					this._enable(e.target, [e.target.dataset.slaid]);
+					this.#enable(e.target, [e.target.dataset.slaid]);
 				}
 				else if (e.target.classList.contains('js-disable-sla')) {
-					this._disable(e.target, [e.target.dataset.slaid]);
+					this.#disable(e.target, [e.target.dataset.slaid]);
 				}
 				else if (e.target.classList.contains('js-massenable-sla')) {
-					this._enable(e.target, Object.keys(chkbxRange.getSelectedIds()));
+					this.#enable(e.target, Object.keys(chkbxRange.getSelectedIds()), true);
 				}
 				else if (e.target.classList.contains('js-massdisable-sla')) {
-					this._disable(e.target, Object.keys(chkbxRange.getSelectedIds()));
+					this.#disable(e.target, Object.keys(chkbxRange.getSelectedIds()), true);
 				}
 				else if (e.target.classList.contains('js-massdelete-sla')) {
-					this._delete(e.target, Object.keys(chkbxRange.getSelectedIds()));
+					this.#delete(e.target, Object.keys(chkbxRange.getSelectedIds()));
 				}
 			});
 		}
 
-		_edit(parameters = {}) {
-			const overlay = PopUp('popup.sla.edit', parameters, {
-				dialogueid: 'sla_edit',
-				dialogue_class: 'modal-popup-static'
-			});
+		#enable(target, slaids, massenable = false) {
+			if (massenable) {
+				const confirmation = slaids.length > 1
+					? <?= json_encode(_('Enable selected SLAs?')) ?>
+					: <?= json_encode(_('Enable selected SLA?')) ?>;
 
-			const dialogue = overlay.$dialogue[0];
-
-			dialogue.addEventListener('dialogue.submit', (e) => this._reload(e.detail));
-			dialogue.addEventListener('dialogue.delete', (e) => this._reload(e.detail));
-		}
-
-		_reload(success) {
-			postMessageOk(success.title);
-
-			if ('messages' in success) {
-				postMessageDetails('success', success.messages);
-			}
-
-			uncheckTableRows('sla');
-			location.href = location.href;
-		}
-
-		_enable(target, slaids) {
-			const confirmation = slaids.length > 1
-				? <?= json_encode(_('Enable selected SLAs?')) ?>
-				: <?= json_encode(_('Enable selected SLA?')) ?>;
-
-			if (!window.confirm(confirmation)) {
-				return;
+				if (!window.confirm(confirmation)) {
+					return;
+				}
 			}
 
 			const curl = new Curl('zabbix.php');
 			curl.setArgument('action', 'sla.enable');
 
-			this._post(target, slaids, curl);
+			this.#post(target, slaids, curl);
 		}
 
-		_disable(target, slaids) {
-			const confirmation = slaids.length > 1
-				? <?= json_encode(_('Disable selected SLAs?')) ?>
-				: <?= json_encode(_('Disable selected SLA?')) ?>;
+		#disable(target, slaids, massdisable = false) {
+			if (massdisable) {
+				const confirmation = slaids.length > 1
+					? <?= json_encode(_('Disable selected SLAs?')) ?>
+					: <?= json_encode(_('Disable selected SLA?')) ?>;
 
-			if (!window.confirm(confirmation)) {
-				return;
+				if (!window.confirm(confirmation)) {
+					return;
+				}
 			}
 
 			const curl = new Curl('zabbix.php');
 			curl.setArgument('action', 'sla.disable');
 
-			this._post(target, slaids, curl);
+			this.#post(target, slaids, curl);
 		}
 
-		_delete(target, slaids) {
+		#delete(target, slaids) {
 			const confirmation = slaids.length > 1
 				? <?= json_encode(_('Delete selected SLAs?')) ?>
 				: <?= json_encode(_('Delete selected SLA?')) ?>;
@@ -141,15 +115,13 @@
 			const curl = new Curl('zabbix.php');
 			curl.setArgument('action', 'sla.delete');
 
-			this._post(target, slaids, curl);
+			this.#post(target, slaids, curl);
 		}
 
-		_post(target, slaids, curl) {
+		#post(target, slaids, curl) {
 			target.classList.add('is-loading');
 
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('sla')) ?>
-			);
+			curl.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('sla')) ?>);
 
 			return fetch(curl.getUrl(), {
 				method: 'POST',
@@ -185,10 +157,20 @@
 					const message_box = makeMessageBox('bad', [<?= json_encode(_('Unexpected server error.')) ?>]);
 
 					addMessage(message_box);
-				})
-				.finally(() => {
+
 					target.classList.remove('is-loading');
+					target.blur();
 				});
+		}
+
+		#initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: () => uncheckTableRows('sla')
+			});
 		}
 	};
 </script>

@@ -1,25 +1,22 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 namespace Widgets\TopHosts\Includes;
+
+use Widgets\TopHosts\Widget;
 
 use Zabbix\Widgets\{
 	CWidgetField,
@@ -27,29 +24,27 @@ use Zabbix\Widgets\{
 };
 
 use Zabbix\Widgets\Fields\{
-	CWidgetFieldColumnsList,
+	CWidgetFieldCheckBox,
 	CWidgetFieldIntegerBox,
 	CWidgetFieldMultiSelectGroup,
 	CWidgetFieldMultiSelectHost,
+	CWidgetFieldMultiSelectOverrideHost,
 	CWidgetFieldRadioButtonList,
 	CWidgetFieldSelect,
 	CWidgetFieldTags
 };
-
-use Widgets\TopHosts\Widget;
 
 /**
  * Top hosts data widget form.
  */
 class WidgetForm extends CWidgetForm {
 
-	private const DEFAULT_HOSTS_COUNT = 10;
 	private const DEFAULT_ORDER_COLUMN = 0;
 
 	private array $field_column_values = [];
 
 	protected function normalizeValues(array $values): array {
-		$values = self::convertDottedKeys($values);
+		$values = parent::normalizeValues($values);
 
 		if (array_key_exists('columnsthresholds', $values)) {
 			foreach ($values['columnsthresholds'] as $column_index => $fields) {
@@ -87,8 +82,27 @@ class WidgetForm extends CWidgetForm {
 
 		if (array_key_exists('columns', $values)) {
 			foreach ($values['columns'] as $key => $value) {
-				if ($value['data'] == CWidgetFieldColumnsList::DATA_ITEM_VALUE) {
-					$this->field_column_values[$key] = ($value['name'] === '') ? $value['item'] : $value['name'];
+				$value['name'] = trim($value['name']);
+
+				switch ($value['data']) {
+					case CWidgetFieldColumnsList::DATA_ITEM_VALUE:
+						$this->field_column_values[$key] = $value['name'] === '' ? $value['item'] : $value['name'];
+
+						if (array_key_exists('display', $value)
+								&& $value['display'] == CWidgetFieldColumnsList::DISPLAY_SPARKLINE) {
+							$values['columns'][$key]['sparkline'] = array_key_exists('sparkline', $value)
+								? array_replace(CWidgetFieldColumnsList::SPARKLINE_DEFAULT, $value['sparkline'])
+								: CWidgetFieldColumnsList::SPARKLINE_DEFAULT;
+						}
+						break;
+
+					case CWidgetFieldColumnsList::DATA_HOST_NAME:
+						$this->field_column_values[$key] = $value['name'] === '' ? _('Host name') : $value['name'];
+						break;
+
+					case CWidgetFieldColumnsList::DATA_TEXT:
+						$this->field_column_values[$key] = $value['name'] === '' ? $value['text'] : $value['name'];
+						break;
 				}
 			}
 		}
@@ -98,32 +112,36 @@ class WidgetForm extends CWidgetForm {
 
 	public function addFields(): self {
 		return $this
-			->addField(
-				new CWidgetFieldMultiSelectGroup('groupids', _('Host groups'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectGroup('groupids', _('Host groups'))
 			)
-			->addField(
-				new CWidgetFieldMultiSelectHost('hostids', _('Hosts'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectHost('hostids', _('Hosts'))
 			)
-			->addField(
-				(new CWidgetFieldRadioButtonList('evaltype', _('Host tags'), [
+			->addField($this->isTemplateDashboard()
+				? null
+				: (new CWidgetFieldRadioButtonList('evaltype', _('Host tags'), [
 					TAG_EVAL_TYPE_AND_OR => _('And/Or'),
 					TAG_EVAL_TYPE_OR => _('Or')
 				]))->setDefault(TAG_EVAL_TYPE_AND_OR)
 			)
-			->addField(
-				new CWidgetFieldTags('tags', '')
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldTags('tags')
 			)
 			->addField(
-				(new CWidgetFieldColumnsList('columns', _('Columns')))->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
+				new CWidgetFieldCheckBox('maintenance',
+					$this->isTemplateDashboard() ? _('Show data in maintenance') : _('Show hosts in maintenance')
+				)
 			)
 			->addField(
-				(new CWidgetFieldRadioButtonList('order', _('Order'), [
-					Widget::ORDER_TOP_N => _('Top N'),
-					Widget::ORDER_BOTTOM_N => _('Bottom N')
-				]))->setDefault(Widget::ORDER_TOP_N)
+				(new CWidgetFieldColumnsList('columns', _('Columns')))
+					->setFlags(CWidgetField::FLAG_NOT_EMPTY | CWidgetField::FLAG_LABEL_ASTERISK)
 			)
 			->addField(
-				(new CWidgetFieldSelect('column', _('Order column'), $this->field_column_values))
+				(new CWidgetFieldSelect('column', _('Order by'), $this->field_column_values))
 					->setDefault($this->field_column_values
 						? self::DEFAULT_ORDER_COLUMN
 						: CWidgetFieldSelect::DEFAULT_VALUE
@@ -131,9 +149,21 @@ class WidgetForm extends CWidgetForm {
 					->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
 			)
 			->addField(
-				(new CWidgetFieldIntegerBox('count', _('Host count'), ZBX_MIN_WIDGET_LINES, ZBX_MAX_WIDGET_LINES))
-					->setDefault(self::DEFAULT_HOSTS_COUNT)
+				(new CWidgetFieldRadioButtonList('order', _('Order'), [
+					Widget::ORDER_TOP_N => _('Top N'),
+					Widget::ORDER_BOTTOM_N => _('Bottom N')
+				]))->setDefault(Widget::ORDER_TOP_N)
+			)
+			->addField($this->isTemplateDashboard()
+				? null
+				: (new CWidgetFieldIntegerBox('show_lines', _('Host limit'), ZBX_MIN_WIDGET_LINES,
+					ZBX_MAX_WIDGET_LINES
+				))
+					->setDefault(10)
 					->setFlags(CWidgetField::FLAG_LABEL_ASTERISK)
+			)
+			->addField(
+				new CWidgetFieldMultiSelectOverrideHost()
 			);
 	}
 }

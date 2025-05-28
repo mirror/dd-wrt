@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -38,7 +33,8 @@ $fields = [
 	'height' =>			[T_ZBX_INT,			O_OPT, P_NZERO,	'{} > 0',	null],
 	'graph3d' =>		[T_ZBX_INT,			O_OPT, P_NZERO,	IN('0,1'),	null],
 	'legend' =>			[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
-	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null]
+	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
+	'resolve_macros' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null]
 ];
 if (!check_fields($fields)) {
 	session_write_close();
@@ -100,14 +96,20 @@ CArrayHelper::sort($dbGraph['gitems'], [
 	['field' => 'sortorder', 'order' => ZBX_SORT_UP]
 ]);
 
+$db_items = API::Item()->get([
+	'output' => ['value_type'],
+	'itemids' => array_column($dbGraph['gitems'], 'itemid'),
+	'webitems' => true,
+	'preservekeys' => true
+]);
+
+$resolve_macros = (bool) getRequest('resolve_macros', 0);
+
 // get graph items
 foreach ($dbGraph['gitems'] as $gItem) {
-	$graph->addItem(
-		$gItem['itemid'],
-		$gItem['calc_fnc'],
-		$gItem['color'],
-		$gItem['type']
-	);
+	if ($db_items[$gItem['itemid']]['value_type'] != ITEM_VALUE_TYPE_BINARY) {
+		$graph->addItem($gItem['itemid'], $resolve_macros, $gItem['calc_fnc'], $gItem['color'], $gItem['type']);
+	}
 }
 
 $hostName = '';

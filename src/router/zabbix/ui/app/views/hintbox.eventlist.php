@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -148,7 +143,7 @@ if (array_key_exists('problems', $data)) {
 		$cell_status = new CSpan($value_str);
 
 		if (isEventUpdating($in_closing, $problem)) {
-			$cell_status->addClass('blink');
+			$cell_status->addClass('js-blink');
 		}
 
 		// Add colors and blinking to span depending on configuration and trigger parameters.
@@ -176,13 +171,16 @@ if (array_key_exists('problems', $data)) {
 			];
 		}
 
+		$problem_update_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'popup')
+			->setArgument('popup', 'acknowledge.edit')
+			->setArgument('eventids[]', $problem['eventid'])
+			->getUrl();
+
 		// Create acknowledge link.
 		$problem_update_link = ($data['allowed_add_comments'] || $data['allowed_change_severity']
 				|| $data['allowed_acknowledge'] || $can_be_closed || $data['allowed_suppress'])
-			? (new CLink(_('Update')))
-				->addClass(ZBX_STYLE_LINK_ALT)
-				->setAttribute('data-eventid', $problem['eventid'])
-				->onClick('acknowledgePopUp({eventids: [this.dataset.eventid]}, this);')
+			? (new CLink(_('Update'), $problem_update_url))->addClass(ZBX_STYLE_LINK_ALT)
 			: new CSpan(_('Update'));
 
 		$table->addRow(array_merge($row, [

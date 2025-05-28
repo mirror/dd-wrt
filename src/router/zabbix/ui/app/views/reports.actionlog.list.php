@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,7 +20,6 @@
  */
 
 $this->addJsFile('gtlc.js');
-$this->addJsFile('class.calendar.js');
 
 $this->includeJsFile('reports.actionlog.list.js.php');
 
@@ -120,7 +114,8 @@ $actionlog_list = (new CTableInfo())
 		_('Message'),
 		_('Status'),
 		_('Info')
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 foreach ($data['alerts'] as $alert) {
 	$mediatype = array_pop($alert['mediatypes']);
@@ -148,11 +143,13 @@ foreach ($data['alerts'] as $alert) {
 			: (new CSpan(_('Executed')))->addClass(ZBX_STYLE_GREEN);
 	}
 	elseif ($alert['status'] == ALERT_STATUS_NOT_SENT || $alert['status'] == ALERT_STATUS_NEW) {
-		$status = (new CSpan([
-			_('In progress').':',
-			BR(),
-			_n('%1$s retry left', '%1$s retries left', $mediatype['maxattempts'] - $alert['retries'])
-		]))->addClass(ZBX_STYLE_YELLOW);
+		$status = $alert['alerttype'] == ALERT_TYPE_MESSAGE
+			? (new CSpan([
+				_('In progress').':',
+				BR(),
+				_n('%1$s retry left', '%1$s retries left', $mediatype['maxattempts'] - $alert['retries'])
+			]))->addClass(ZBX_STYLE_YELLOW)
+			: (new CSpan(_('In progress')))->addClass(ZBX_STYLE_YELLOW);
 	}
 	else {
 		$status = (new CSpan(_('Failed')))->addClass(ZBX_STYLE_RED);
@@ -192,7 +189,7 @@ foreach ($data['alerts'] as $alert) {
 	->addItem(
 		(new CForm('get'))
 			->setName('auditForm')
-			->addItem([$actionlog_list, $data['paging']])
+			->addItem($actionlog_list)
 	)
 	->show();
 

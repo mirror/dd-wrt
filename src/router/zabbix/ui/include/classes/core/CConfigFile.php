@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,7 +24,6 @@ class CConfigFile {
 
 	private static $supported_db_types = [
 		ZBX_DB_MYSQL => true,
-		ZBX_DB_ORACLE => true,
 		ZBX_DB_POSTGRESQL => true
 	];
 
@@ -44,7 +38,7 @@ class CConfigFile {
 	public function __construct($file = null) {
 		$this->setDefaults();
 
-		if (!is_null($file)) {
+		if ($file !== null) {
 			$this->setFile($file);
 		}
 	}
@@ -138,16 +132,16 @@ class CConfigFile {
 			$this->config['DB']['CIPHER_LIST'] = $DB['CIPHER_LIST'];
 		}
 
-		if (isset($DB['DOUBLE_IEEE754'])) {
-			$this->config['DB']['DOUBLE_IEEE754'] = $DB['DOUBLE_IEEE754'];
-		}
-
 		if (isset($DB['VAULT'])) {
 			$this->config['DB']['VAULT'] = $DB['VAULT'];
 		}
 
 		if (isset($DB['VAULT_URL'])) {
 			$this->config['DB']['VAULT_URL'] = $DB['VAULT_URL'];
+		}
+
+		if (isset($DB['VAULT_PREFIX'])) {
+			$this->config['DB']['VAULT_PREFIX'] = $DB['VAULT_PREFIX'];
 		}
 
 		if (isset($DB['VAULT_DB_PATH'])) {
@@ -194,13 +188,18 @@ class CConfigFile {
 			$this->config['SSO'] = $SSO;
 		}
 
+		if (isset($ALLOW_HTTP_AUTH)) {
+			$this->config['ALLOW_HTTP_AUTH'] = $ALLOW_HTTP_AUTH;
+		}
+
 		$this->makeGlobal();
 
 		return $this->config;
 	}
 
 	public function makeGlobal() {
-		global $DB, $ZBX_SERVER, $ZBX_SERVER_PORT, $ZBX_SERVER_NAME, $IMAGE_FORMAT_DEFAULT, $HISTORY, $SSO;
+		global $DB, $ZBX_SERVER, $ZBX_SERVER_PORT, $ZBX_SERVER_NAME, $IMAGE_FORMAT_DEFAULT, $HISTORY, $SSO,
+			$ALLOW_HTTP_AUTH;
 
 		$DB = $this->config['DB'];
 		$ZBX_SERVER = $this->config['ZBX_SERVER'];
@@ -209,17 +208,16 @@ class CConfigFile {
 		$IMAGE_FORMAT_DEFAULT = $this->config['IMAGE_FORMAT_DEFAULT'];
 		$HISTORY = $this->config['HISTORY'];
 		$SSO = $this->config['SSO'];
+		$ALLOW_HTTP_AUTH = $this->config['ALLOW_HTTP_AUTH'];
 	}
 
 	public function save() {
 		try {
 			$file = $this->configFile;
 
-			if (is_null($file)) {
+			if ($file === null) {
 				self::exception('Cannot save, config file is not set.');
 			}
-
-			$this->check();
 
 			if (is_link($file)) {
 				$file = readlink($file);
@@ -275,17 +273,13 @@ $DB[\'CIPHER_LIST\']		= \''.addcslashes($this->config['DB']['CIPHER_LIST'], "'\\
 // Vault configuration. Used if database credentials are stored in Vault secrets manager.
 $DB[\'VAULT\']			= \''.addcslashes($this->config['DB']['VAULT'], "'\\").'\';
 $DB[\'VAULT_URL\']		= \''.addcslashes($this->config['DB']['VAULT_URL'], "'\\").'\';
+$DB[\'VAULT_PREFIX\']		= \''.addcslashes($this->config['DB']['VAULT_PREFIX'], "'\\").'\';
 $DB[\'VAULT_DB_PATH\']		= \''.addcslashes($this->config['DB']['VAULT_DB_PATH'], "'\\").'\';
 $DB[\'VAULT_TOKEN\']		= \''.addcslashes($this->config['DB']['VAULT_TOKEN'], "'\\").'\';
 $DB[\'VAULT_CERT_FILE\']		= \''.addcslashes($this->config['DB']['VAULT_CERT_FILE'], "'\\").'\';
 $DB[\'VAULT_KEY_FILE\']		= \''.addcslashes($this->config['DB']['VAULT_KEY_FILE'], "'\\").'\';
 // Uncomment to bypass local caching of credentials.
 // $DB[\'VAULT_CACHE\']		= true;
-
-// Use IEEE754 compatible value range for 64-bit Numeric (float) history values.
-// This option is enabled by default for new Zabbix installations.
-// For upgraded installations, please read database upgrade notes before enabling this option.
-$DB[\'DOUBLE_IEEE754\']		= '.($this->config['DB']['DOUBLE_IEEE754'] ? 'true' : 'false').';
 
 // Uncomment and set to desired values to override Zabbix hostname/IP and port.
 // $ZBX_SERVER			= \'\';
@@ -310,6 +304,9 @@ $IMAGE_FORMAT_DEFAULT	= IMAGE_FORMAT_PNG;
 //$SSO[\'SP_CERT\']			= \'conf/certs/sp.crt\';
 //$SSO[\'IDP_CERT\']		= \'conf/certs/idp.crt\';
 //$SSO[\'SETTINGS\']		= [];
+
+// If set to false, support for HTTP authentication will be disabled.
+// $ALLOW_HTTP_AUTH = true;
 ';
 	}
 
@@ -328,9 +325,9 @@ $IMAGE_FORMAT_DEFAULT	= IMAGE_FORMAT_PNG;
 			'CA_FILE' => '',
 			'VERIFY_HOST' => true,
 			'CIPHER_LIST' => '',
-			'DOUBLE_IEEE754' => false,
 			'VAULT' => '',
 			'VAULT_URL' => '',
+			'VAULT_PREFIX' => '',
 			'VAULT_DB_PATH' => '',
 			'VAULT_TOKEN' => '',
 			'VAULT_CERT_FILE' => '',
@@ -343,22 +340,6 @@ $IMAGE_FORMAT_DEFAULT	= IMAGE_FORMAT_PNG;
 		$this->config['IMAGE_FORMAT_DEFAULT'] = IMAGE_FORMAT_PNG;
 		$this->config['HISTORY'] = null;
 		$this->config['SSO'] = null;
-	}
-
-	protected function check() {
-		if (!isset($this->config['DB']['TYPE'])) {
-			self::exception('DB type is not set.');
-		}
-
-		if (!array_key_exists($this->config['DB']['TYPE'], self::$supported_db_types)) {
-			self::exception(
-				'Incorrect value "'.$this->config['DB']['TYPE'].'" for DB type. Possible values '.
-				implode(', ', array_keys(self::$supported_db_types)).'.'
-			);
-		}
-
-		if (!isset($this->config['DB']['DATABASE'])) {
-			self::exception('DB database is not set.');
-		}
+		$this->config['ALLOW_HTTP_AUTH'] = true;
 	}
 }

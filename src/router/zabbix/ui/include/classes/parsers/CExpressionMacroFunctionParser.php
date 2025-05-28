@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -43,6 +38,7 @@ class CExpressionMacroFunctionParser extends CParser {
 	 *   'host_macro' => false    Allow {HOST.HOST} macro as host name part in the query.
 	 *   'host_macro_n' => false  Allow {HOST.HOST} and {HOST.HOST<1-9>} macros as host name part in the query.
 	 *   'empty_host' => false    Allow empty hostname in the query string.
+	 *   'macros_n' => []         Array of strings having supported reference macros.
 	 *
 	 * @var array
 	 */
@@ -51,7 +47,8 @@ class CExpressionMacroFunctionParser extends CParser {
 		'lldmacros' => false,
 		'host_macro' => false,
 		'host_macro_n' => false,
-		'empty_host' => false
+		'empty_host' => false,
+		'macros_n' => []
 	];
 
 	/**
@@ -67,7 +64,8 @@ class CExpressionMacroFunctionParser extends CParser {
 			'lldmacros' => $this->options['lldmacros'],
 			'host_macro' => $this->options['host_macro'],
 			'host_macro_n' => $this->options['host_macro_n'],
-			'empty_host' => $this->options['empty_host']
+			'empty_host' => $this->options['empty_host'],
+			'macros_n' => $this->options['macros_n']
 		]);
 		$this->function_parser = new C10FunctionParser();
 	}

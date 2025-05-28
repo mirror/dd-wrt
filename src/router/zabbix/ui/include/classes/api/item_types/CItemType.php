@@ -1,21 +1,16 @@
 <?php declare(strict_types = 1);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 abstract class CItemType {
@@ -162,7 +157,26 @@ abstract class CItemType {
 				}
 
 			case 'timeout':
-				return ['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.SEC_PER_MIN, 'length' => DB::getFieldLength('items', 'timeout')];
+				switch (static::TYPE) {
+					case ITEM_TYPE_SIMPLE:
+						return ['type' => API_MULTIPLE, 'rules' => [
+							['if' => static function (array $data): bool {
+								return strncmp($data['key_'], 'icmpping', 8) != 0 && strncmp($data['key_'], 'vmware.', 7) != 0;
+							}, 'type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.(10 * SEC_PER_MIN), 'length' => DB::getFieldLength('items', 'timeout')],
+							['else' => true, 'type' => API_STRING_UTF8, 'in' => DB::getDefault('items', 'timeout')]
+						]];
+
+					case ITEM_TYPE_SNMP:
+						return ['type' => API_MULTIPLE, 'rules' => [
+							['if' => static function (array $data): bool {
+								return strncmp($data['snmp_oid'], 'get[', 4) == 0 || strncmp($data['snmp_oid'], 'walk[', 5) == 0;
+							}, 'type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.(10 * SEC_PER_MIN), 'length' => DB::getFieldLength('items', 'timeout')],
+							['else' => true, 'type' => API_STRING_UTF8, 'in' => DB::getDefault('items', 'timeout')]
+						]];
+
+					default:
+						return ['type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.(10 * SEC_PER_MIN), 'length' => DB::getFieldLength('items', 'timeout')];
+				}
 
 			case 'delay':
 				switch (static::TYPE) {
@@ -189,6 +203,12 @@ abstract class CItemType {
 					case  ITEM_TYPE_TRAPPER:
 						return ['type' => API_IP_RANGES, 'flags' => API_ALLOW_DNS | API_ALLOW_USER_MACRO, 'macros' => ['{HOST.HOST}', '{HOSTNAME}', '{HOST.NAME}', '{HOST.CONN}', '{HOST.IP}', '{IPADDRESS}', '{HOST.DNS}'], 'length' => DB::getFieldLength('items', 'trapper_hosts')];
 				}
+
+			case 'parameters':
+				return ['type' => API_OBJECTS, 'flags' => API_NORMALIZE, 'uniq' => [['name']], 'fields' => [
+					'name' =>	['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('item_parameter', 'name')],
+					'value' =>	['type' => API_STRING_UTF8, 'flags' => API_REQUIRED, 'length' => DB::getFieldLength('item_parameter', 'value')]
+				]];
 		}
 	}
 
@@ -255,17 +275,39 @@ abstract class CItemType {
 				}
 
 			case 'timeout':
-				return ['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.SEC_PER_MIN, 'length' => DB::getFieldLength('items', 'timeout')];
+				switch (static::TYPE) {
+					case ITEM_TYPE_SIMPLE:
+						return ['type' => API_MULTIPLE, 'rules' => [
+							['if' => static function (array $data): bool {
+								return strncmp($data['key_'], 'icmpping', 8) != 0 && strncmp($data['key_'], 'vmware.', 7) != 0;
+							}, 'type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.(10 * SEC_PER_MIN), 'length' => DB::getFieldLength('items', 'timeout')],
+							['else' => true, 'type' => API_STRING_UTF8, 'in' => DB::getDefault('items', 'timeout')]
+						]];
+
+					case ITEM_TYPE_SNMP:
+						return ['type' => API_MULTIPLE, 'rules' => [
+							['if' => static function (array $data): bool {
+								return strncmp($data['snmp_oid'], 'get[', 4) == 0 || strncmp($data['snmp_oid'], 'walk[', 5) == 0;
+							}, 'type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.(10 * SEC_PER_MIN), 'length' => DB::getFieldLength('items', 'timeout')],
+							['else' => true, 'type' => API_STRING_UTF8, 'in' => DB::getDefault('items', 'timeout')]
+						]];
+
+					default:
+						return ['type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'in' => '1:'.(10 * SEC_PER_MIN), 'length' => DB::getFieldLength('items', 'timeout')];
+				}
 
 			case 'delay':
 				switch (static::TYPE) {
 					case ITEM_TYPE_ZABBIX_ACTIVE:
 						return ['type' => API_MULTIPLE, 'rules' => [
 							['if' => static function (array $data): bool {
-								return strncmp($data['key_'], 'mqtt.get', 8) !== 0;
+								return strncmp($data['key_'], 'mqtt.get', 8) != 0;
 							}, 'type' => API_ITEM_DELAY, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'length' => DB::getFieldLength('items', 'delay')],
 							['else' => true, 'type' => API_TIME_UNIT, 'in' => DB::getDefault('items', 'delay')]
 						]];
+
+					case ITEM_TYPE_DEPENDENT:
+						return ['type' => API_ITEM_DELAY, 'in' => DB::getDefault('items', 'delay')];
 
 					default:
 						return ['type' => API_ITEM_DELAY, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'length' => DB::getFieldLength('items', 'delay')];
@@ -282,6 +324,12 @@ abstract class CItemType {
 					case  ITEM_TYPE_TRAPPER:
 						return ['type' => API_IP_RANGES, 'flags' => API_ALLOW_DNS | API_ALLOW_USER_MACRO, 'macros' => ['{HOST.HOST}', '{HOSTNAME}', '{HOST.NAME}', '{HOST.CONN}', '{HOST.IP}', '{IPADDRESS}', '{HOST.DNS}'], 'length' => DB::getFieldLength('items', 'trapper_hosts')];
 				}
+
+			case 'parameters':
+				return ['type' => API_OBJECTS, 'flags' => API_NORMALIZE, 'uniq' => [['name']], 'fields' => [
+					'name' =>	['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('item_parameter', 'name')],
+					'value' =>	['type' => API_STRING_UTF8, 'flags' => API_REQUIRED, 'length' => DB::getFieldLength('item_parameter', 'value')]
+				]];
 		}
 	}
 
@@ -338,6 +386,7 @@ abstract class CItemType {
 						return ['type' => API_CALC_FORMULA, 'flags' => ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'length' => DB::getFieldLength('items', 'params')];
 
 					case ITEM_TYPE_SCRIPT:
+					case ITEM_TYPE_BROWSER:
 						return ['type' => API_UNEXPECTED, 'error_type' => API_ERR_INHERITED];
 
 					default:
@@ -352,7 +401,7 @@ abstract class CItemType {
 					case ITEM_TYPE_ZABBIX_ACTIVE:
 						return ['type' => API_MULTIPLE, 'rules' => [
 							['if' => static function (array $data): bool {
-								return strncmp($data['key_'], 'mqtt.get', 8) !== 0;
+								return strncmp($data['key_'], 'mqtt.get', 8) != 0;
 							}, 'type' => API_ITEM_DELAY, 'flags' => API_ALLOW_USER_MACRO | ($is_item_prototype ? API_ALLOW_LLD_MACRO : 0), 'length' => DB::getFieldLength('items', 'delay')],
 							['else' => true, 'type' => API_TIME_UNIT, 'in' => DB::getDefault('items', 'delay')]
 						]];
@@ -372,6 +421,9 @@ abstract class CItemType {
 					case  ITEM_TYPE_TRAPPER:
 						return ['type' => API_IP_RANGES, 'flags' => API_ALLOW_DNS | API_ALLOW_USER_MACRO, 'macros' => ['{HOST.HOST}', '{HOSTNAME}', '{HOST.NAME}', '{HOST.CONN}', '{HOST.IP}', '{IPADDRESS}', '{HOST.DNS}'], 'length' => DB::getFieldLength('items', 'trapper_hosts')];
 				}
+
+			case 'parameters':
+				return ['type' => API_UNEXPECTED, 'error_type' => API_ERR_INHERITED];
 		}
 	}
 
@@ -390,6 +442,7 @@ abstract class CItemType {
 			case 'timeout':
 			case 'delay':
 			case 'trapper_hosts':
+			case 'parameters':
 				return ['type' => API_UNEXPECTED, 'error_type' => API_ERR_DISCOVERED];
 		}
 	}
@@ -418,7 +471,7 @@ abstract class CItemType {
 			'request_method' =>		['type' => API_INT32, 'in' => DB::getDefault('items', 'request_method')],
 			'post_type' =>			['type' => API_INT32, 'in' => DB::getDefault('items', 'post_type')],
 			'posts' =>				['type' => API_STRING_UTF8, 'in' => DB::getDefault('items', 'posts')],
-			'headers' =>			['type' => API_OBJECT, 'fields' => []],
+			'headers' =>			['type' => API_OBJECTS, 'length' => 0],
 			'status_codes' =>		['type' => API_INT32_RANGES, 'in' => DB::getDefault('items', 'status_codes')],
 			'follow_redirects' =>	['type' => API_INT32, 'in' => DB::getDefault('items', 'follow_redirects')],
 			'retrieve_mode' =>		['type' => API_INT32, 'in' => DB::getDefault('items', 'retrieve_mode')],

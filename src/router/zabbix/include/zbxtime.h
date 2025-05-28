@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_TIME_H
@@ -63,6 +58,7 @@ int		zbx_is_leap_year(int year);
 void		zbx_get_time(struct tm *tm, long *milliseconds, zbx_timezone_t *tz);
 long		zbx_get_timezone_offset(time_t t, struct tm *tm);
 struct tm	*zbx_localtime(const time_t *time, const char *tz);
+const struct tm	*zbx_localtime_now(const time_t *time);
 int		zbx_utc_time(int year, int mon, int mday, int hour, int min, int sec, int *t);
 int		zbx_day_in_month(int year, int mon);
 zbx_uint64_t	zbx_get_duration_ms(const zbx_timespec_t *ts);
@@ -92,4 +88,8 @@ typedef enum
 	TIMEPERIOD_TYPE_MONTHLY
 }
 zbx_timeperiod_type_t;
+
+void	zbx_ts_get_deadline(zbx_timespec_t *ts, int sec);
+int	zbx_ts_check_deadline(const zbx_timespec_t *deadline);
+
 #endif /* ZABBIX_TIME_H */

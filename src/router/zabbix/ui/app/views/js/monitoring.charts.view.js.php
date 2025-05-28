@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 ?>
 
@@ -27,6 +22,8 @@
 		_data: null,
 		_resize_observer: null,
 		_container: null,
+		_filter_tags: new Map(),
+		_filter_tagnames: new Set(),
 
 		init({filter_form_name, data, timeline}) {
 			this._filter_form = document.querySelector(`[name="${filter_form_name}"]`);
@@ -48,14 +45,20 @@
 		},
 
 		initSubfilter() {
+			for (const element of this._filter_form.querySelectorAll('.js-subfilter-unset')) {
+				this.setSubfilter(element.dataset.tag, element.dataset.value || null);
+			}
+
 			this._filter_form.addEventListener('click', (e) => {
 				const link = e.target;
 
 				if (link.classList.contains('js-subfilter-set')) {
 					this.setSubfilter(link.getAttribute('data-tag'), link.getAttribute('data-value'));
+					this.submitSubfilter();
 				}
 				else if (link.classList.contains('js-subfilter-unset')) {
 					this.unsetSubfilter(link.getAttribute('data-tag'), link.getAttribute('data-value'));
+					this.submitSubfilter();
 				}
 			});
 		},
@@ -94,24 +97,25 @@
 
 		setSubfilter(tag, value) {
 			if (value !== null) {
-				this.filterAddVar(`subfilter_tags[${tag}][]`, value);
+				const tag_values = this._filter_tags.has(tag) ? this._filter_tags.get(tag) : [];
+
+				tag_values.push(value);
+				this._filter_tags.set(tag, tag_values);
 			}
 			else {
-				this.filterAddVar(`subfilter_tagnames[]`, tag);
+				this._filter_tagnames.add(tag);
 			}
-
-			this.submitSubfilter();
 		},
 
 		unsetSubfilter(tag, value) {
 			if (value !== null) {
-				document.querySelector(`[name^="subfilter_tags[${tag}]["][value="${value}"]`).remove();
+				const values = this._filter_tags.get(tag);
+
+				this._filter_tags.set(tag, values.filter((tag_value) => value !== tag_value));
 			}
 			else {
-				document.querySelector(`[name^="subfilter_tagnames["][value="${tag}"]`).remove();
+				this._filter_tagnames.delete(tag);
 			}
-
-			this.submitSubfilter();
 		},
 
 		filterAddVar(name, value) {
@@ -126,6 +130,20 @@
 
 		submitSubfilter() {
 			this.filterAddVar('subfilter_set', '1');
+
+			for (const element of this._filter_form.querySelectorAll('[name^="subfilter_tag"]')) {
+				element.remove();
+			}
+
+			this._filter_tags.forEach((values, tag) => {
+				for (let value of values) {
+					this.filterAddVar(`subfilter_tags[${encodeURIComponent(tag)}][]`, value);
+				}
+			});
+			this._filter_tagnames.forEach(tag => {
+				this.filterAddVar(`subfilter_tagnames[]`, tag);
+			});
+
 			this._filter_form.submit();
 		}
 	};
@@ -240,6 +258,7 @@
 		this.curl.setArgument('height', this.dimensions.graphHeight);
 		this.curl.setArgument('width', Math.max(1000, width));
 		this.curl.setArgument('profileIdx', 'web.charts.filter');
+		this.curl.setArgument('resolve_macros', 1);
 		this.curl.setArgument('_', (+new Date).toString(34));
 
 		const unsetLoading = this.setLoading(delay_loading);

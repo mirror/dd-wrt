@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -32,7 +27,7 @@
 function Overlay(type, dialogueid) {
 	this.type = type;
 	this.dialogueid = dialogueid || overlays_stack.getNextId();
-	this.headerid = 'dashboard-widget-head-title-' + this.dialogueid;
+	this.headerid =  'overlay-dialogue-header-title-' + this.dialogueid;
 	this.$backdrop = jQuery('<div>', {
 		'class': 'overlay-bg',
 		'data-dialogueid': this.dialogueid
@@ -49,15 +44,15 @@ function Overlay(type, dialogueid) {
 	this.$dialogue.$header = jQuery('<h4>', {id: this.headerid});
 
 	const $close_btn = jQuery('<button>', {
-		class: 'overlay-close-btn',
+		class: 'btn-overlay-close',
 		title: t('S_CLOSE')
 	}).click(function(e) {
-		overlayDialogueDestroy(this.dialogueid);
 		e.preventDefault();
+		overlayDialogueDestroy(this.dialogueid, this.CLOSE_BY_USER);
 	}.bind(this));
 
 	this.$dialogue.$controls = jQuery('<div>', {class: 'overlay-dialogue-controls'});
-	this.$dialogue.$head = jQuery('<div>', {class: 'dashboard-widget-head'});
+	this.$dialogue.$head = jQuery('<div>', {class: 'overlay-dialogue-header'});
 	this.$dialogue.$body = jQuery('<div>', {class: 'overlay-dialogue-body'});
 	this.$dialogue.$debug = jQuery('<pre>', {class: 'debug-output'});
 	this.$dialogue.$footer = jQuery('<div>', {class: 'overlay-dialogue-footer'});
@@ -70,8 +65,9 @@ function Overlay(type, dialogueid) {
 	this.$dialogue.append(this.$dialogue.$footer);
 
 	this.$dialogue.$body.on('submit', 'form', function(e) {
-		if (this.$btn_submit) {
-			e.preventDefault();
+		e.preventDefault();
+
+		if (this.$btn_submit && this.$btn_submit.prop('disabled') === false) {
 			this.$btn_submit.trigger('click');
 		}
 	}.bind(this));
@@ -99,6 +95,20 @@ function Overlay(type, dialogueid) {
 		content: jQuery('<div>', {'height': '68px', class: 'is-loading'})
 	});
 }
+
+/**
+ * Indication of overlay dialog being closed by user intent.
+ *
+ * @type {string}
+ */
+Overlay.prototype.CLOSE_BY_USER = 'close-by-user';
+
+/**
+ * Indication of overlay dialog being closed by script.
+ *
+ * @type {string}
+ */
+Overlay.prototype.CLOSE_BY_SCRIPT = 'close-by-script';
 
 /**
  * Centers the $dialog.
@@ -146,18 +156,18 @@ Overlay.prototype.centerDialog = function() {
  */
 Overlay.prototype.recoverFocus = function() {
 	if (this.$btn_focus) {
-		this.$btn_focus.focus();
+		this.$btn_focus[0].focus({preventScroll: true});
 		return;
 	}
 
 	if (jQuery('[autofocus=autofocus]', this.$dialogue).length) {
-		jQuery('[autofocus=autofocus]', this.$dialogue).first().focus();
+		jQuery('[autofocus=autofocus]', this.$dialogue)[0].focus({preventScroll: true});
 	}
 	else if (jQuery('.overlay-dialogue-body form :focusable', this.$dialogue).length) {
-		jQuery('.overlay-dialogue-body form :focusable', this.$dialogue).first().focus();
+		jQuery('.overlay-dialogue-body form :focusable', this.$dialogue)[0].focus({preventScroll: true});
 	}
 	else {
-		jQuery(':focusable:first', this.$dialogue).focus();
+		jQuery(':focusable:first', this.$dialogue)[0].focus({preventScroll: true});
 	}
 };
 
@@ -177,7 +187,7 @@ Overlay.prototype.containFocus = function() {
 			.on('keydown.containFocus', function(e) {
 				// TAB and SHIFT
 				if (e.which == 9 && e.shiftKey) {
-					last_focusable.focus();
+					last_focusable[0].focus();
 					return false;
 				}
 			});
@@ -186,7 +196,7 @@ Overlay.prototype.containFocus = function() {
 			.on('keydown.containFocus', function(e) {
 				// TAB and not SHIFT
 				if (e.which == 9 && !e.shiftKey) {
-					first_focusable.focus();
+					first_focusable[0].focus();
 					return false;
 				}
 			});
@@ -277,11 +287,16 @@ Overlay.prototype.unmount = function() {
 		cancelAnimationFrame(this.center_dialog_animation_frame);
 	}
 
-	var $wrapper = jQuery('.wrapper');
+	const $wrapper = jQuery('.wrapper');
 
 	if (!jQuery('[data-dialogueid]').length) {
 		$wrapper.css('overflow', $wrapper.data('overflow'));
 		$wrapper.removeData('overflow');
+
+		$wrapper[0].scrollTo($wrapper[0].dataset.scroll_x, $wrapper[0].dataset.scroll_y);
+
+		delete $wrapper[0].dataset.scroll_x;
+		delete $wrapper[0].dataset.scroll_y;
 	}
 };
 
@@ -289,7 +304,10 @@ Overlay.prototype.unmount = function() {
  * Appends associated nodes to document body.
  */
 Overlay.prototype.mount = function() {
-	var $wrapper = jQuery('.wrapper');
+	const $wrapper = jQuery('.wrapper');
+
+	$wrapper[0].dataset.scroll_x = $wrapper[0].scrollLeft;
+	$wrapper[0].dataset.scroll_y = $wrapper[0].scrollTop;
 
 	if (!jQuery('[data-dialogueid]').length) {
 		$wrapper.data('overflow', $wrapper.css('overflow'));
@@ -342,7 +360,7 @@ Overlay.prototype.makeButton = function(obj) {
 			this.cancel_action = null;
 
 			if (!obj.keepOpen) {
-				overlayDialogueDestroy(this.dialogueid);
+				overlayDialogueDestroy(this.dialogueid, this.CLOSE_BY_USER);
 			}
 		}
 
@@ -413,7 +431,7 @@ Overlay.prototype.unsetProperty = function(key) {
 			break;
 
 		case 'doc_url':
-			const doc_link = this.$dialogue.$head[0].querySelector('.icon-doc-link');
+			const doc_link = this.$dialogue.$head[0].querySelector('.' + ZBX_ICON_HELP_SMALL);
 			if (doc_link !== null) {
 				doc_link.remove();
 			}
@@ -443,7 +461,40 @@ Overlay.prototype.unsetProperty = function(key) {
 			break;
 
 		case 'prevent_navigation':
-			window.removeEventListener('beforeunload', this.preventNavigation);
+			const dialogues = Object.values(overlays_stack.map).filter((overlay) => overlay.$dialogue !== undefined);
+			let prevent_navigation = false;
+
+			if (this.$dialogue !== undefined) {
+				if (dialogues.length === 0) {
+					if (this.$dialogue[0].dataset.preventNavigation === 'true' && !isVisible(this.$dialogue[0])) {
+						prevent_navigation = true;
+					}
+				}
+				else {
+					// Dialogue was closed.
+					if (dialogues[dialogues.length - 1].dialogueid === this.dialogueid
+							&& isVisible(this.$dialogue[0])) {
+						// Ignore last dialogue in stack, because it is same as "this" (which was closed).
+						dialogues.pop();
+
+						if (dialogues.some((dialogue) => dialogue.$dialogue[0].dataset.preventNavigation === 'true')) {
+							prevent_navigation = true;
+						}
+					}
+					// Dialogue was opened.
+					else {
+						if (dialogues.some((dialogue) => dialogue.$dialogue[0].dataset.preventNavigation === 'true')
+								|| this.$dialogue[0].dataset.preventNavigation === 'true') {
+							prevent_navigation = true;
+						}
+					}
+				}
+			}
+
+			if (!prevent_navigation) {
+				removeEventListener('beforeunload', this.preventNavigation);
+			}
+
 			break;
 	}
 };
@@ -472,7 +523,7 @@ Overlay.prototype.setProperties = function(obj) {
 			case 'doc_url':
 				this.unsetProperty(key);
 				this.$dialogue.$header[0].insertAdjacentHTML('afterend', `
-					<a class="icon-doc-link" target="_blank" title="${t('Help')}" href="${obj[key]}"></a>
+					<a class="${ZBX_STYLE_BTN_ICON} ${ZBX_ICON_HELP_SMALL}" target="_blank" title="${t('Help')}" href="${obj[key]}"></a>
 				`);
 				break;
 
@@ -512,6 +563,7 @@ Overlay.prototype.setProperties = function(obj) {
 				break;
 
 			case 'prevent_navigation':
+				this.$dialogue[0].dataset.preventNavigation = obj[key];
 				this.unsetProperty(key);
 				window.addEventListener('beforeunload', this.preventNavigation, {passive: false});
 				break;
@@ -525,4 +577,6 @@ Overlay.prototype.setProperties = function(obj) {
 				break;
 		}
 	}
+
+	this.$dialogue[0].dispatchEvent(new CustomEvent('dialogue.update', {detail: {properties: Object.keys(obj)}}));
 };

@@ -1,26 +1,22 @@
-<?php
+<?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 $this->includeJsFile('administration.script.list.js.php');
@@ -32,30 +28,42 @@ if ($data['uncheck']) {
 $html_page = (new CHtmlPage())
 	->setTitle(_('Scripts'))
 	->setDocUrl(CDocHelper::getUrl(CDocHelper::ALERTS_SCRIPT_LIST))
-	->setControls((new CTag('nav', true,
-		(new CList())
-			->addItem(new CRedirectButton(_('Create script'), 'zabbix.php?action=script.edit'))
+	->setControls(
+		(new CTag('nav', true,
+			(new CList())->addItem(
+				(new CSimpleButton(_('Create script')))->setId('js-create')
+			)
 		))
-			->setAttribute('aria-label', _('Content controls'))
+		->setAttribute('aria-label', _('Content controls'))
 	)
 	->addItem((new CFilter())
 		->setResetUrl((new CUrl('zabbix.php'))->setArgument('action', 'script.list'))
 		->setProfile($data['profileIdx'])
 		->setActiveTab($data['active_tab'])
 		->addFilterTab(_('Filter'), [
-			(new CFormList())->addRow(_('Name'),
-				(new CTextBox('filter_name', $data['filter']['name']))
-					->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
-					->setAttribute('autofocus', 'autofocus')
-			),
-			(new CFormList())->addRow(_('Scope'),
-				(new CRadioButtonList('filter_scope', (int) $data['filter']['scope']))
-					->addValue(_('Any'), -1)
-					->addValue(_('Action operation'), ZBX_SCRIPT_SCOPE_ACTION)
-					->addValue(_('Manual host action'), ZBX_SCRIPT_SCOPE_HOST)
-					->addValue(_('Manual event action'), ZBX_SCRIPT_SCOPE_EVENT)
-					->setModern(true)
-			)
+			(new CFormGrid())
+				->addClass(CFormGrid::ZBX_STYLE_FORM_GRID_LABEL_WIDTH_TRUE)
+				->addItem([
+					new CLabel(_('Name'), 'filter_name'),
+					new CFormField(
+						(new CTextBox('filter_name', $data['filter']['name']))
+							->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+							->setAttribute('autofocus', 'autofocus')
+					)
+				]),
+			(new CFormGrid())
+				->addClass(CFormGrid::ZBX_STYLE_FORM_GRID_LABEL_WIDTH_TRUE)
+				->addItem([
+					new CLabel(_('Scope')),
+					new CFormField(
+						(new CRadioButtonList('filter_scope', (int) $data['filter']['scope']))
+							->addValue(_('Any'), -1)
+							->addValue(_('Action operation'), ZBX_SCRIPT_SCOPE_ACTION)
+							->addValue(_('Manual host action'), ZBX_SCRIPT_SCOPE_HOST)
+							->addValue(_('Manual event action'), ZBX_SCRIPT_SCOPE_EVENT)
+							->setModern()
+					)
+				])
 		])
 		->addVar('action', 'script.list')
 	);
@@ -76,16 +84,18 @@ $scriptsTable = (new CTableInfo())
 		))->addClass(ZBX_STYLE_CELL_WIDTH),
 		make_sorting_header(_('Name'), 'name', $data['sort'], $data['sortorder'], $url),
 		_('Scope'),
-		_('Used in actions'),
+		(new CColHeader(_('Used in actions')))->setColSpan(2),
 		_('Type'),
 		_('Execute on'),
 		make_sorting_header(_('Commands'), 'command', $data['sort'], $data['sortorder'], $url),
 		_('User group'),
 		_('Host group'),
 		_('Host access')
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 foreach ($data['scripts'] as $script) {
+	$action_count_total = '';
 	$actions = [];
 
 	switch ($script['scope']) {
@@ -93,50 +103,28 @@ foreach ($data['scripts'] as $script) {
 			$scope = _('Action operation');
 
 			if ($script['actions']) {
-				$i = 0;
+				$action_count_total = (new CSpan($script['action_count_total']))->addClass(ZBX_STYLE_ENTITY_COUNT);
 
 				foreach ($script['actions'] as $action) {
-					$i++;
+					$action_url = (new CUrl('zabbix.php'))
+						->setArgument('action', 'popup')
+						->setArgument('popup', 'action.edit')
+						->setArgument('actionid', $action['actionid'])
+						->setArgument('eventsource', $action['eventsource'])
+						->getUrl();
 
-					if ($i > $data['config']['max_in_table']) {
-						$actions[] = [' ', HELLIP()];
-
-						break;
-					}
-
-					if ($actions) {
-						$actions[] = ', ';
-					}
-
-					switch ($action['eventsource']) {
-						case EVENT_SOURCE_TRIGGERS:
-							$has_access = CWebUser::checkAccess(CRoleHelper::UI_CONFIGURATION_TRIGGER_ACTIONS);
-							break;
-						case EVENT_SOURCE_SERVICE:
-							$has_access = CWebUser::checkAccess(CRoleHelper::UI_CONFIGURATION_SERVICE_ACTIONS);
-							break;
-						case EVENT_SOURCE_DISCOVERY:
-							$has_access = CWebUser::checkAccess(CRoleHelper::UI_CONFIGURATION_DISCOVERY_ACTIONS);
-							break;
-						case EVENT_SOURCE_AUTOREGISTRATION:
-							$has_access = CWebUser::checkAccess(CRoleHelper::UI_CONFIGURATION_AUTOREGISTRATION_ACTIONS);
-							break;
-						case EVENT_SOURCE_INTERNAL:
-							$has_access = CWebUser::checkAccess(CRoleHelper::UI_CONFIGURATION_INTERNAL_ACTIONS);
-							break;
-					}
-
-					if ($has_access) {
-						$actions[] = (new CLink($action['name']))
-							->addClass('js-action-edit')
-							->setAttribute('data-actionid', $action['actionid'])
-							->setAttribute('data-eventsource', $action['eventsource'])
+					$actions[] = $action['is_editable']
+						? (new CLink($action['name'], $action_url))
 							->addClass(ZBX_STYLE_LINK_ALT)
-							->addClass(ZBX_STYLE_GREY);
-					}
-					else {
-						$actions[] = (new CSpan($action['name']))->addClass(ZBX_STYLE_GREY);
-					}
+							->addClass(ZBX_STYLE_GREY)
+						: (new CSpan($action['name']))->addClass(ZBX_STYLE_GREY);
+					$actions[] = ', ';
+				}
+
+				array_pop($actions);
+
+				if ($script['action_count_total'] > count($script['actions'])) {
+					$actions[] = [', ', HELLIP()];
 				}
 			}
 			break;
@@ -195,32 +183,39 @@ foreach ($data['scripts'] as $script) {
 		$execute_on = '';
 	}
 
-	$link = new CLink($script['name'], (new CUrl('zabbix.php'))
-		->setArgument('action', 'script.edit')
+	$script_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'script.edit')
 		->setArgument('scriptid', $script['scriptid'])
-	);
+		->getUrl();
+
+	$link = new CLink($script['name'], $script_url);
 
 	$scriptsTable->addRow([
 		new CCheckBox('scriptids['.$script['scriptid'].']', $script['scriptid']),
 		(new CCol($script['menu_path'] === '' ? $link : [$script['menu_path'].'/', $link]))->addClass(ZBX_STYLE_NOWRAP),
 		$scope,
+		(new CCol($action_count_total))->addClass(ZBX_STYLE_CELL_WIDTH),
 		$actions,
 		$type,
 		$execute_on,
 		(new CCol(zbx_nl2br($script['command'])))->addClass(ZBX_STYLE_MONOSPACE_FONT),
-		($script['userGroupName'] === null) ? _('All') : $script['userGroupName'],
-		($script['hostGroupName'] === null) ? _('All') : $script['hostGroupName'],
-		($script['host_access'] == PERM_READ_WRITE) ? _('Write') : _('Read')
+		$script['userGroupName'] === null ? _('All') : $script['userGroupName'],
+		$script['hostGroupName'] === null ? _('All') : $script['hostGroupName'],
+		$script['host_access'] == PERM_READ_WRITE ? _('Write') : _('Read')
 	]);
 }
 
 // append table to form
 $scriptsForm->addItem([
 	$scriptsTable,
-	$data['paging'],
 	new CActionButtonList('action', 'scriptids', [
-		'script.delete' => ['name' => _('Delete'), 'confirm' => _('Delete selected scripts?'),
-			'csrf_token' => CCsrfTokenHelper::get('script')]
+		'script.delete' => [
+			'content' => (new CSimpleButton(_('Delete')))
+				->addClass(ZBX_STYLE_BTN_ALT)
+				->setId('js-massdelete')
+				->addClass('js-no-chkbxrange')
+		]
 	], 'script')
 ]);
 

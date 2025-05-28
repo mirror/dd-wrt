@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -252,6 +247,15 @@ class CExpressionValidator extends CValidator {
 
 						break;
 
+					case 'regexp':
+						$tokens = $token['data']['parameters'][$rule['position']]['data']['tokens'];
+
+						if (preg_match($rule['pattern'], CHistFunctionParser::unquoteParam($tokens[0]['match'])) != 1) {
+							return false;
+						}
+
+						break;
+
 					default:
 						return false;
 				}
@@ -273,55 +277,62 @@ class CExpressionValidator extends CValidator {
 			return true;
 		}
 
+		$is_valid = true;
+
 		foreach ($this->hist_function_expression_rules[$token['data']['function']] as $rule) {
 			switch ($rule['type']) {
 				case 'require_math_parent':
 					if ($parent_token === null
 							|| $parent_token['type'] != CExpressionParserResult::TOKEN_TYPE_MATH_FUNCTION) {
-						return false;
+						$is_valid = false;
+						break;
 					}
 
 					if (array_key_exists('in', $rule) && !in_array($parent_token['data']['function'], $rule['in'])) {
-						return false;
+						$is_valid = false;
+						break;
 					}
 
 					if (array_key_exists('parameters', $rule)) {
 						if (array_key_exists('count', $rule['parameters'])
 								&& count($parent_token['data']['parameters']) != $rule['parameters']['count']) {
-							return false;
+							$is_valid = false;
+							break;
 						}
 
 						if (array_key_exists('min', $rule['parameters'])
 								&& count($parent_token['data']['parameters']) < $rule['parameters']['min']) {
-							return false;
+							$is_valid = false;
+							break;
 						}
 
 						if (array_key_exists('max', $rule['parameters'])
 								&& count($parent_token['data']['parameters']) > $rule['parameters']['max']) {
-							return false;
+							$is_valid = false;
+							break;
 						}
 					}
 
 					if (array_key_exists('position', $rule) && $position != $rule['position']) {
-						return false;
+						$is_valid = false;
+						break;
 					}
 
-					break;
+					return true;
 
 				default:
-					return false;
+					$is_valid = false;
+					break;
 			}
 		}
 
-		return true;
+		return $is_valid;
 	}
 
 	/**
 	 * Check if there are history function tokens within the hierarchy of given tokens.
 	 *
 	 * @param array $tokens
-	 *
-	 * @static
 	 *
 	 * @return bool
 	 */

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -768,7 +763,7 @@ function isTemplate($hostId) {
  * @return array
  */
 function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
-	$user_macro_parser = new CUserMacroParser();
+	$user_macro_parser = new CUserMacroParser(['allow_regex' => true]);
 
 	$all_macros = [];
 	$global_macros = [];
@@ -779,8 +774,12 @@ function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
 	]);
 
 	foreach ($db_global_macros as $db_global_macro) {
-		$all_macros[$db_global_macro['macro']] = true;
-		$global_macros[$db_global_macro['macro']] = [
+		$user_macro_parser->parse($db_global_macro['macro']);
+		$minified_macro = $user_macro_parser->getMinifiedMacro();
+
+		$all_macros[$minified_macro] = true;
+		$global_macros[$minified_macro] = [
+			'macro' => $db_global_macro['macro'],
 			'value' => getMacroConfigValue($db_global_macro),
 			'description' => $db_global_macro['description'],
 			'type' => $db_global_macro['type']
@@ -807,74 +806,21 @@ function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
 			$hosts[$hostid] = [
 				'templateid' => $hostid,
 				'name' => $db_template['name'],
-				'templateids' => zbx_objectValues($db_template['parentTemplates'], 'templateid'),
+				'templateids' => array_column($db_template['parentTemplates'], 'templateid'),
 				'macros' => []
 			];
 
-			/*
-			 * Global macros are overwritten by template macros and template macros are overwritten by host macros.
-			 * Macros with contexts require additional checking for contexts, since {$MACRO:} is the same as
-			 * {$MACRO:""}.
-			 */
-			foreach ($db_template['macros'] as $dbMacro) {
-				if (array_key_exists($dbMacro['macro'], $all_macros)) {
-					$hosts[$hostid]['macros'][$dbMacro['macro']] = [
-						'value' => getMacroConfigValue($dbMacro),
-						'description' => $dbMacro['description'],
-						'type' => $dbMacro['type']
-					];
-					$all_macros[$dbMacro['macro']] = true;
-				}
-				else {
-					$user_macro_parser->parse($dbMacro['macro']);
-					$tpl_macro = $user_macro_parser->getMacro();
-					$tpl_context = $user_macro_parser->getContext();
+			foreach ($db_template['macros'] as $db_macro) {
+				$user_macro_parser->parse($db_macro['macro']);
+				$minified_macro = $user_macro_parser->getMinifiedMacro();
 
-					if ($tpl_context === null) {
-						$hosts[$hostid]['macros'][$dbMacro['macro']] = [
-							'value' => getMacroConfigValue($dbMacro),
-							'description' => $dbMacro['description'],
-							'type' => $dbMacro['type']
-						];
-						$all_macros[$dbMacro['macro']] = true;
-					}
-					else {
-						$match_found = false;
-
-						foreach ($global_macros as $global_macro => $global_value) {
-							$user_macro_parser->parse($global_macro);
-							$gbl_macro = $user_macro_parser->getMacro();
-							$gbl_context = $user_macro_parser->getContext();
-
-							if ($tpl_macro === $gbl_macro && $tpl_context === $gbl_context) {
-								$match_found = true;
-
-								unset($global_macros[$global_macro], $hosts[$hostid][$global_macro],
-									$all_macros[$global_macro]
-								);
-
-								$hosts[$hostid]['macros'][$dbMacro['macro']] = [
-									'value' => getMacroConfigValue($dbMacro),
-									'description' => $dbMacro['description'],
-									'type' => $dbMacro['type']
-								];
-								$all_macros[$dbMacro['macro']] = true;
-								$global_macros[$dbMacro['macro']] = $global_value;
-
-								break;
-							}
-						}
-
-						if (!$match_found) {
-							$hosts[$hostid]['macros'][$dbMacro['macro']] = [
-								'value' => getMacroConfigValue($dbMacro),
-								'description' => $dbMacro['description'],
-								'type' => $dbMacro['type']
-							];
-							$all_macros[$dbMacro['macro']] = true;
-						}
-					}
-				}
+				$all_macros[$minified_macro] = true;
+				$hosts[$hostid]['macros'][$minified_macro] = [
+					'macro' => $db_macro['macro'],
+					'value' => getMacroConfigValue($db_macro),
+					'description' => $db_macro['description'],
+					'type' => $db_macro['type']
+				];
 			}
 		}
 
@@ -893,29 +839,31 @@ function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
 	$parent_host_macros = [];
 
 	if ($parent_hostid !== null) {
-		$parent_host_macros = API::UserMacro()->get([
+		$db_macros = API::UserMacro()->get([
 			'output' => ['macro', 'type', 'value', 'description'],
 			'hostids' => [$parent_hostid]
 		]);
 
-		$parent_host_macros = array_column($parent_host_macros, null, 'macro');
-		$all_macros += array_fill_keys(array_keys($parent_host_macros), true);
-	}
+		foreach ($db_macros as $db_macro) {
+			$user_macro_parser->parse($db_macro['macro']);
+			$minified_macro = $user_macro_parser->getMinifiedMacro();
 
-	$all_macros = array_keys($all_macros);
-
-	// resolving
-	foreach ($all_macros as $macro) {
-		$inherited_macro = ['macro' => $macro];
-
-		if (array_key_exists($macro, $parent_host_macros)) {
-			$inherited_macro['parent_host'] = [
-				'value' => getMacroConfigValue($parent_host_macros[$macro]),
-				'description' => $parent_host_macros[$macro]['description'],
-				'type' => $parent_host_macros[$macro]['type']
+			$all_macros[$minified_macro] = true;
+			$parent_host_macros[$minified_macro] = [
+				'macro' => $db_macro['macro'],
+				'value' => getMacroConfigValue($db_macro),
+				'description' => $db_macro['description'],
+				'type' => $db_macro['type']
 			];
 		}
-		elseif (array_key_exists($macro, $global_macros)) {
+	}
+
+	// resolving
+	foreach (array_keys($all_macros) as $macro) {
+		$inherited_macro = [];
+
+		if (array_key_exists($macro, $global_macros)) {
+			$inherited_macro['macro'] = $global_macros[$macro]['macro'];
 			$inherited_macro['global'] = [
 				'value' => $global_macros[$macro]['value'],
 				'description' => $global_macros[$macro]['description'],
@@ -930,6 +878,7 @@ function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
 
 			foreach ($templateids as $templateid) {
 				if (array_key_exists($templateid, $hosts) && array_key_exists($macro, $hosts[$templateid]['macros'])) {
+					$inherited_macro['macro'] = $hosts[$templateid]['macros'][$macro]['macro'];
 					$inherited_macro['template'] = [
 						'value' => $hosts[$templateid]['macros'][$macro]['value'],
 						'description' => $hosts[$templateid]['macros'][$macro]['description'],
@@ -960,6 +909,15 @@ function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
 
 			$templateids = $parent_templateids;
 		} while ($templateids);
+
+		if (array_key_exists($macro, $parent_host_macros)) {
+			$inherited_macro['macro'] = $parent_host_macros[$macro]['macro'];
+			$inherited_macro['parent_host'] = [
+				'value' => $parent_host_macros[$macro]['value'],
+				'description' => $parent_host_macros[$macro]['description'],
+				'type' => $parent_host_macros[$macro]['type']
+			];
+		}
 
 		$inherited_macros[$macro] = $inherited_macro;
 	}
@@ -1016,7 +974,7 @@ function getInheritedMacros(array $hostids, ?int $parent_hostid = null): array {
  * @return array
  */
 function mergeInheritedMacros(array $host_macros, array $inherited_macros): array {
-	$user_macro_parser = new CUserMacroParser();
+	$user_macro_parser = new CUserMacroParser(['allow_regex' => true]);
 	$inherit_order = ['parent_host', 'template', 'global'];
 
 	foreach ($inherited_macros as &$inherited_macro) {
@@ -1056,8 +1014,9 @@ function mergeInheritedMacros(array $host_macros, array $inherited_macros): arra
 			if ($user_macro_parser->parse($host_macro['macro']) == CParser::PARSE_SUCCESS) {
 				$hst_macro = $user_macro_parser->getMacro();
 				$hst_context = $user_macro_parser->getContext();
+				$hst_regex = $user_macro_parser->getRegex();
 
-				if ($hst_context === null) {
+				if ($hst_context === null && $hst_regex === null) {
 					$host_macro['inherited_type'] = 0x00;
 				}
 				else {
@@ -1068,8 +1027,9 @@ function mergeInheritedMacros(array $host_macros, array $inherited_macros): arra
 						$user_macro_parser->parse($inherited_macro);
 						$inh_macro = $user_macro_parser->getMacro();
 						$inh_context = $user_macro_parser->getContext();
+						$inh_regex = $user_macro_parser->getRegex();
 
-						if ($hst_macro === $inh_macro && $hst_context === $inh_context) {
+						if ($hst_macro === $inh_macro && $hst_context === $inh_context && $hst_regex === $inh_regex) {
 							$match_found = true;
 
 							$host_macro = array_merge($inherited_macros[$inherited_macro], $host_macro);
@@ -1144,20 +1104,6 @@ function isReadableHosts(array $hostids) {
 	return count($hostids) == API::Host()->get([
 		'countOutput' => true,
 		'hostids' => $hostids
-	]);
-}
-
-/**
- * Check if user has read permissions for templates.
- *
- * @param array $templateids
- *
- * @return bool
- */
-function isReadableTemplates(array $templateids) {
-	return count($templateids) == API::Template()->get([
-		'countOutput' => true,
-		'templateids' => $templateids
 	]);
 }
 
@@ -1454,11 +1400,17 @@ function getSanitizedHostPrototypeInterfaceDetailsFields(array $details): array 
 /**
  * Get summary interface availability status.
  *
- * @param array  $interfaces
+ * @param array $interfaces
  *
  * @return int
  */
 function getInterfaceAvailabilityStatus(array $interfaces): int {
+	$interfaces_with_enabled_items = array_filter($interfaces,
+		static fn ($interface) => $interface['has_enabled_items']
+	);
+
+	$interfaces = $interfaces_with_enabled_items ?: $interfaces;
+
 	$available = array_column($interfaces, 'available');
 
 	if (in_array(INTERFACE_AVAILABLE_MIXED, $available)) {

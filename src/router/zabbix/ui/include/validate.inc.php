@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -145,8 +140,6 @@ function unset_all() {
 }
 
 function check_type(&$field, $flags, &$var, $type, $caption = null) {
-	global $DB;
-
 	if ($caption === null) {
 		$caption = $field;
 	}
@@ -210,23 +203,9 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 
 		$value = $number_parser->calcValue();
 
-		if ($DB['DOUBLE_IEEE754']) {
-			if (abs($value) > ZBX_FLOAT_MAX) {
-				$error = true;
-				$message = _s('Field "%1$s" is not correct: %2$s', $caption, _('a number is too large'));
-			}
-		}
-		else {
-			if (abs($value) >= 1E+16) {
-				$error = true;
-				$message = _s('Field "%1$s" is not correct: %2$s', $caption, _('a number is too large'));
-			}
-			elseif ($value != round($value, 4)) {
-				$error = true;
-				$message = _s('Field "%1$s" is not correct: %2$s', $caption,
-					_('a number has too many fractional digits')
-				);
-			}
+		if (abs($value) > ZBX_FLOAT_MAX) {
+			$error = true;
+			$message = _s('Field "%1$s" is not correct: %2$s', $caption, _('a number is too large'));
 		}
 	}
 	elseif ($type == T_ZBX_STR) {
@@ -234,8 +213,9 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 			$error = true;
 			$message = _s('Field "%1$s" is not string.', $caption);
 		}
-		elseif (mb_check_encoding($var, 'UTF-8') !== true) {
+		elseif (zbx_mb_check_encoding($var, 'UTF-8') !== true) {
 			error(_s('Field "%1$s" is not correct: %2$s.', $caption, _('invalid byte sequence in UTF-8')));
+
 			return ZBX_VALID_ERROR;
 		}
 	}
@@ -343,7 +323,7 @@ function check_field(&$fields, &$field, $checks) {
 		elseif ($flags & P_ACT) {
 			$action = APP::Component()->router->getAction();
 
-			$csrf_token_form = getRequest(CCsrfTokenHelper::CSRF_TOKEN_NAME, '');
+			$csrf_token_form = getRequest(CSRF_TOKEN_NAME, '');
 
 			if (!isRequestMethod('post') || !is_string($csrf_token_form) || $csrf_token_form === ''
 					|| !CCsrfTokenHelper::check($csrf_token_form, $action)) {
@@ -548,7 +528,8 @@ function validateNumber($value, $min = null, $max = null) {
 }
 
 function validateUserMacro($value) {
-	return ((new CUserMacroParser())->parse($value) == CParser::PARSE_SUCCESS);
+	return (new CUserMacroParser())->parse($value) == CParser::PARSE_SUCCESS
+		|| (new CUserMacroFunctionParser())->parse($value) == CParser::PARSE_SUCCESS;
 }
 
 /**

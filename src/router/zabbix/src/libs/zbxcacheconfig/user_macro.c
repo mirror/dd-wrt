@@ -1,39 +1,34 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "user_macro.h"
 #include "dbsync.h"
 #include "dbconfig.h"
 
-#include "zbxshmem.h"
+#include "zbxdb.h"
+#include "zbxjson.h"
+#include "zbxvault.h"
+#include "zbxstr.h"
+#include "zbxexpr.h"
 #include "zbxregexp.h"
 #include "zbxnum.h"
-
-extern zbx_shmem_info_t	*config_mem;
-ZBX_SHMEM_FUNC_IMPL(__config, config_mem)
+#include "zbx_expression_constants.h"
 
 ZBX_PTR_VECTOR_IMPL(um_macro, zbx_um_macro_t *)
 ZBX_PTR_VECTOR_IMPL(um_host, zbx_um_host_t *)
 
-#define ZBX_MACRO_NO_KVS_VALUE	"*UNKNOWN*"
-
-extern unsigned char	program_type;
+#define ZBX_MACRO_NO_KVS_VALUE	STR_UNKNOWN_VARIABLE
 
 typedef enum
 {
@@ -60,7 +55,7 @@ static zbx_um_cache_t	*um_cache_dup(zbx_um_cache_t *cache)
 	zbx_um_host_t		**phost;
 	zbx_hashset_iter_t	iter;
 
-	dup = (zbx_um_cache_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_um_cache_t));
+	dup = (zbx_um_cache_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_um_cache_t));
 	dup->refcount = 1;
 
 	zbx_hashset_copy(&dup->hosts, &cache->hosts, sizeof(zbx_um_host_t *));
@@ -135,11 +130,11 @@ zbx_um_cache_t	*um_cache_create(void)
 {
 	zbx_um_cache_t	*cache;
 
-	cache = (zbx_um_cache_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_um_cache_t));
+	cache = (zbx_um_cache_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_um_cache_t));
 	cache->refcount = 1;
 	cache->revision = 0;
 	zbx_hashset_create_ext(&cache->hosts, 10, um_host_hash, um_host_compare, NULL,
-			__config_shmem_malloc_func, __config_shmem_realloc_func, __config_shmem_free_func);
+			dbconfig_shmem_malloc_func, dbconfig_shmem_realloc_func, dbconfig_shmem_free_func);
 
 	return cache;
 }
@@ -160,7 +155,7 @@ void	um_macro_release(zbx_um_macro_t *macro)
 	if (NULL != macro->value)
 		dc_strpool_release(macro->value);
 
-	__config_shmem_free_func(macro);
+	dbconfig_shmem_free_func(macro);
 }
 
 /*********************************************************************************
@@ -180,7 +175,7 @@ static void	um_host_release(zbx_um_host_t *host)
 	zbx_vector_um_macro_destroy(&host->macros);
 
 	zbx_vector_uint64_destroy(&host->templateids);
-	__config_shmem_free_func(host);
+	dbconfig_shmem_free_func(host);
 }
 
 /*********************************************************************************
@@ -201,7 +196,7 @@ void	um_cache_release(zbx_um_cache_t *cache)
 		um_host_release(*host);
 	zbx_hashset_destroy(&cache->hosts);
 
-	__config_shmem_free_func(cache);
+	dbconfig_shmem_free_func(cache);
 }
 
 /*********************************************************************************
@@ -213,7 +208,7 @@ static zbx_um_macro_t	*um_macro_dup(zbx_um_macro_t *macro)
 {
 	zbx_um_macro_t	*dup;
 
-	dup = (zbx_um_macro_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_um_macro_t));
+	dup = (zbx_um_macro_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_um_macro_t));
 	dup->macroid = macro->macroid;
 	dup->hostid = macro->hostid;
 	dup->name = dc_strpool_acquire(macro->name);
@@ -238,14 +233,14 @@ static zbx_um_host_t	*um_host_dup(zbx_um_host_t *host)
 	zbx_um_host_t	*dup;
 	int		i;
 
-	dup = (zbx_um_host_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_um_host_t));
+	dup = (zbx_um_host_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_um_host_t));
 	dup->hostid = host->hostid;
 	dup->refcount = 1;
 	dup->macro_revision = host->macro_revision;
 	dup->link_revision = host->link_revision;
 
-	zbx_vector_uint64_create_ext(&dup->templateids, __config_shmem_malloc_func, __config_shmem_realloc_func,
-			__config_shmem_free_func);
+	zbx_vector_uint64_create_ext(&dup->templateids, dbconfig_shmem_malloc_func, dbconfig_shmem_realloc_func,
+			dbconfig_shmem_free_func);
 
 	if (0 != host->templateids.values_num)
 	{
@@ -253,8 +248,8 @@ static zbx_um_host_t	*um_host_dup(zbx_um_host_t *host)
 				host->templateids.values_num);
 	}
 
-	zbx_vector_um_macro_create_ext(&dup->macros, __config_shmem_malloc_func, __config_shmem_realloc_func,
-			__config_shmem_free_func);
+	zbx_vector_um_macro_create_ext(&dup->macros, dbconfig_shmem_malloc_func, dbconfig_shmem_realloc_func,
+			dbconfig_shmem_free_func);
 
 	if (0 != host->macros.values_num)
 		zbx_vector_um_macro_append_array(&dup->macros, host->macros.values, host->macros.values_num);
@@ -298,15 +293,15 @@ static zbx_um_host_t	*um_cache_create_host(zbx_um_cache_t *cache, zbx_uint64_t h
 {
 	zbx_um_host_t	*host;
 
-	host = (zbx_um_host_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_um_host_t));
+	host = (zbx_um_host_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_um_host_t));
 	host->hostid = hostid;
 	host->refcount = 1;
 	host->macro_revision = cache->revision;
 	host->link_revision = cache->revision;
-	zbx_vector_uint64_create_ext(&host->templateids, __config_shmem_malloc_func, __config_shmem_realloc_func,
-			__config_shmem_free_func);
-	zbx_vector_um_macro_create_ext(&host->macros, __config_shmem_malloc_func, __config_shmem_realloc_func,
-			__config_shmem_free_func);
+	zbx_vector_uint64_create_ext(&host->templateids, dbconfig_shmem_malloc_func, dbconfig_shmem_realloc_func,
+			dbconfig_shmem_free_func);
+	zbx_vector_um_macro_create_ext(&host->macros, dbconfig_shmem_malloc_func, dbconfig_shmem_realloc_func,
+			dbconfig_shmem_free_func);
 
 	zbx_hashset_insert(&cache->hosts, &host, sizeof(host));
 
@@ -412,13 +407,13 @@ static void	dc_kvs_path_remove(zbx_dc_kvs_path_t *kvs_path)
 
 	kvs_path_local.path = kvs_path->path;
 
-	if (FAIL != (i = zbx_vector_ptr_search(&config->kvs_paths, &kvs_path_local, dc_compare_kvs_path)))
-		zbx_vector_ptr_remove_noorder(&config->kvs_paths, i);
+	if (FAIL != (i = zbx_vector_ptr_search(&(get_dc_config())->kvs_paths, &kvs_path_local, dc_compare_kvs_path)))
+		zbx_vector_ptr_remove_noorder(&(get_dc_config())->kvs_paths, i);
 
 	zbx_hashset_destroy(&kvs_path->kvs);
 	dc_strpool_release(kvs_path->path);
 
-	__config_shmem_free_func(kvs_path);
+	dbconfig_shmem_free_func(kvs_path);
 }
 
 /*********************************************************************************
@@ -455,14 +450,16 @@ static void	um_macro_kv_remove(zbx_um_macro_t *macro, zbx_dc_macro_kv_t *mkv)
  *                                                                               *
  *********************************************************************************/
 static void	um_macro_register_kvs(zbx_um_macro_t *macro, const char *location,
-		const zbx_config_vault_t *config_vault)
+		const zbx_config_vault_t *config_vault, unsigned char program_type)
 {
 	zbx_dc_kvs_path_t	*kvs_path, kvs_path_local;
 	zbx_dc_kv_t		*kv, kv_local;
 	int			i;
 	zbx_uint64_pair_t	pair = {macro->hostid, macro->macroid};
 	char			*path, *key;
-	zbx_hashset_t		*macro_kv = (0 == macro->hostid ? &config->gmacro_kv : &config->hmacro_kv);
+	zbx_dc_config_t		*config = get_dc_config();
+	zbx_hashset_t		*macro_kv = (0 == macro->hostid ? &config->gmacro_kv :
+				&(get_dc_config())->hmacro_kv);
 	zbx_dc_macro_kv_t	*mkv;
 
 	zbx_strsplit_last(location, ':', &path, &key);
@@ -494,10 +491,10 @@ static void	um_macro_register_kvs(zbx_um_macro_t *macro, const char *location,
 
 	if (FAIL == (i = zbx_vector_ptr_search(&config->kvs_paths, &kvs_path_local, dc_compare_kvs_path)))
 	{
-		kvs_path = (zbx_dc_kvs_path_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_dc_kvs_path_t));
+		kvs_path = (zbx_dc_kvs_path_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_dc_kvs_path_t));
 		kvs_path->path = dc_strpool_intern(path);
 		zbx_hashset_create_ext(&kvs_path->kvs, 0, dc_kv_hash, dc_kv_compare, NULL,
-				__config_shmem_malloc_func, __config_shmem_realloc_func, __config_shmem_free_func);
+				dbconfig_shmem_malloc_func, dbconfig_shmem_realloc_func, dbconfig_shmem_free_func);
 
 		zbx_vector_ptr_append(&config->kvs_paths, kvs_path);
 		kv = NULL;
@@ -513,8 +510,8 @@ static void	um_macro_register_kvs(zbx_um_macro_t *macro, const char *location,
 	{
 		kv_local.key = dc_strpool_intern(key);
 		kv_local.value = NULL;
-		zbx_vector_uint64_pair_create_ext(&kv_local.macros, __config_shmem_malloc_func,
-				__config_shmem_realloc_func, __config_shmem_free_func);
+		zbx_vector_uint64_pair_create_ext(&kv_local.macros, dbconfig_shmem_malloc_func,
+				dbconfig_shmem_realloc_func, dbconfig_shmem_free_func);
 
 		kv = (zbx_dc_kv_t *)zbx_hashset_insert(&kvs_path->kvs, &kv_local, sizeof(zbx_dc_kv_t));
 	}
@@ -559,7 +556,7 @@ out:
  *********************************************************************************/
 static void	um_macro_deregister_kvs(zbx_um_macro_t *macro)
 {
-	zbx_hashset_t	*macro_kv = (0 == macro->hostid ? &config->gmacro_kv : &config->hmacro_kv);
+	zbx_hashset_t	*macro_kv = (0 == macro->hostid ? &(get_dc_config())->gmacro_kv : &(get_dc_config())->hmacro_kv);
 
 	zbx_dc_macro_kv_t	*mkv;
 
@@ -577,6 +574,7 @@ static void	um_macro_deregister_kvs(zbx_um_macro_t *macro)
  *********************************************************************************/
 int	um_macro_check_vault_location(const zbx_um_macro_t *macro, const char *location)
 {
+	zbx_dc_config_t		*config = get_dc_config();
 	zbx_hashset_t		*macro_kv = (0 == macro->hostid ? &config->gmacro_kv : &config->hmacro_kv);
 	zbx_dc_macro_kv_t	*mkv;
 	char			*path, *key;
@@ -615,10 +613,11 @@ out:
  *                            updated and deleted rows                           *
  *             offset       - [IN] macro column offset in row                    *
  *             config_vault - [IN]                                               *
+ *             program_type - [IN]                                               *
  *                                                                               *
  *********************************************************************************/
 static void	um_cache_sync_macros(zbx_um_cache_t *cache, zbx_dbsync_t *sync, int offset,
-		const zbx_config_vault_t *config_vault)
+		const zbx_config_vault_t *config_vault, unsigned char program_type)
 {
 	unsigned char		tag;
 	int			ret, i;
@@ -629,7 +628,9 @@ static void	um_cache_sync_macros(zbx_um_cache_t *cache, zbx_dbsync_t *sync, int 
 	zbx_vector_um_host_t	hosts;
 	zbx_hashset_t		*user_macros;
 
-	user_macros = (2 == offset ? &config->hmacros : &config->gmacros);
+	zbx_dcsync_sync_start(sync, dbconfig_used_size());
+
+	user_macros = (2 == offset ? &(get_dc_config())->hmacros : &(get_dc_config())->gmacros);
 
 	zbx_vector_um_host_create(&hosts);
 
@@ -718,7 +719,7 @@ static void	um_cache_sync_macros(zbx_um_cache_t *cache, zbx_dbsync_t *sync, int 
 		}
 		else
 		{
-			macro = (zbx_um_macro_t *)__config_shmem_malloc_func(NULL, sizeof(zbx_um_macro_t));
+			macro = (zbx_um_macro_t *)dbconfig_shmem_malloc_func(NULL, sizeof(zbx_um_macro_t));
 			macro->macroid = macroid;
 			macro->refcount = 1;
 			macro->value = NULL;
@@ -734,7 +735,7 @@ static void	um_cache_sync_macros(zbx_um_cache_t *cache, zbx_dbsync_t *sync, int 
 		(*pmacro)->context_op = context_op;
 
 		if (ZBX_MACRO_VALUE_VAULT == type)
-			um_macro_register_kvs(*pmacro, row[offset + 1], config_vault);
+			um_macro_register_kvs(*pmacro, row[offset + 1], config_vault, program_type);
 		else
 			(*pmacro)->value = dc_value;
 
@@ -780,14 +781,16 @@ static void	um_cache_sync_macros(zbx_um_cache_t *cache, zbx_dbsync_t *sync, int 
 		{
 			/* recreate empty-macros vector to release memory */
 			zbx_vector_um_macro_destroy(&hosts.values[i]->macros);
-			zbx_vector_um_macro_create_ext(&hosts.values[i]->macros, __config_shmem_malloc_func,
-					__config_shmem_realloc_func, __config_shmem_free_func);
+			zbx_vector_um_macro_create_ext(&hosts.values[i]->macros, dbconfig_shmem_malloc_func,
+					dbconfig_shmem_realloc_func, dbconfig_shmem_free_func);
 		}
 		else
 			zbx_vector_um_macro_sort(&hosts.values[i]->macros, um_macro_compare_by_name_context);
 	}
 
 	zbx_vector_um_host_destroy(&hosts);
+
+	zbx_dcsync_sync_end(sync, dbconfig_used_size());
 }
 
 /*********************************************************************************
@@ -838,8 +841,8 @@ static void	um_cache_sync_hosts(zbx_um_cache_t *cache, zbx_dbsync_t *sync)
 				if (0 == host->templateids.values_num)
 				{
 					zbx_vector_uint64_destroy(&host->templateids);
-					zbx_vector_uint64_create_ext(&host->templateids, __config_shmem_malloc_func,
-							__config_shmem_realloc_func, __config_shmem_free_func);
+					zbx_vector_uint64_create_ext(&host->templateids, dbconfig_shmem_malloc_func,
+							dbconfig_shmem_realloc_func, dbconfig_shmem_free_func);
 				}
 				break;
 			}
@@ -853,7 +856,8 @@ static void	um_cache_sync_hosts(zbx_um_cache_t *cache, zbx_dbsync_t *sync)
  *                                                                               *
  *********************************************************************************/
 zbx_um_cache_t	*um_cache_sync(zbx_um_cache_t *cache, zbx_uint64_t revision, zbx_dbsync_t *gmacros,
-		zbx_dbsync_t *hmacros, zbx_dbsync_t *htmpls, const zbx_config_vault_t *config_vault)
+		zbx_dbsync_t *hmacros, zbx_dbsync_t *htmpls, const zbx_config_vault_t *config_vault,
+		unsigned char program_type)
 {
 	if (ZBX_DBSYNC_INIT != gmacros->mode && ZBX_DBSYNC_INIT != hmacros->mode && ZBX_DBSYNC_INIT != htmpls->mode &&
 			0 == gmacros->rows.values_num && 0 == hmacros->rows.values_num && 0 == htmpls->rows.values_num)
@@ -869,8 +873,8 @@ zbx_um_cache_t	*um_cache_sync(zbx_um_cache_t *cache, zbx_uint64_t revision, zbx_
 
 	cache->revision = revision;
 
-	um_cache_sync_macros(cache, gmacros, 1, config_vault);
-	um_cache_sync_macros(cache, hmacros, 2, config_vault);
+	um_cache_sync_macros(cache, gmacros, 1, config_vault, program_type);
+	um_cache_sync_macros(cache, hmacros, 2, config_vault, program_type);
 	um_cache_sync_hosts(cache, htmpls);
 
 	return cache;
@@ -1023,9 +1027,8 @@ static void	um_cache_get_macro(const zbx_um_cache_t *cache, const zbx_uint64_t *
 		const char *macro, const zbx_um_macro_t **um_macro)
 {
 	char		*name = NULL, *context = NULL;
-	unsigned char	context_op;
 
-	if (SUCCEED != zbx_user_macro_parse_dyn(macro, &name, &context, NULL, &context_op))
+	if (SUCCEED != zbx_user_macro_parse_dyn(macro, &name, &context, NULL, NULL))
 		return;
 
 	/* User macros should be expanded according to the following priority: */
@@ -1122,7 +1125,7 @@ void	um_cache_resolve(const zbx_um_cache_t *cache, const zbx_uint64_t *hostids, 
 			if (ZBX_MACRO_VALUE_TEXT == um_macro->type)
 				out = um_macro->value;
 			else
-				out = (NULL == um_macro->value ? ZBX_MACRO_SECRET_MASK : ZBX_MACRO_NO_KVS_VALUE);
+				out = (NULL != um_macro->value ? ZBX_MACRO_SECRET_MASK : ZBX_MACRO_NO_KVS_VALUE);
 		}
 
 		zabbix_log(LOG_LEVEL_DEBUG, "End of %s(): %s", __func__, ZBX_NULL2EMPTY_STR(out));
@@ -1159,7 +1162,8 @@ zbx_um_cache_t	*um_cache_set_value_to_macros(zbx_um_cache_t *cache, zbx_uint64_t
 	{
 		zbx_um_macro_t		**pmacro;
 		zbx_uint64_pair_t	*pair = &host_macro_ids->values[i];
-		zbx_hashset_t		*user_macros = (0 != pair->first ? &config->hmacros : &config->gmacros);
+		zbx_hashset_t		*user_macros = (0 != pair->first ? &(get_dc_config())->hmacros :
+					&(get_dc_config())->gmacros);
 		zbx_uint64_t		*pmacroid = &pair->second;
 		zbx_um_host_t		*host;
 

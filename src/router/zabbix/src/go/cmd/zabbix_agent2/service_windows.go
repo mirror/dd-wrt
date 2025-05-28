@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package main
@@ -27,18 +22,26 @@ import (
 	"sync"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/zbxflag"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
-	"zabbix.com/internal/agent"
-	"zabbix.com/internal/agent/keyaccess"
-	"zabbix.com/internal/agent/scheduler"
-	"zabbix.com/internal/monitor"
+	"golang.zabbix.com/agent2/internal/agent"
+	"golang.zabbix.com/agent2/internal/agent/keyaccess"
+	"golang.zabbix.com/agent2/internal/agent/scheduler"
+	"golang.zabbix.com/agent2/internal/monitor"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/zbxflag"
 )
 
 const usageMessageExampleConfPath = `C:\zabbix\zabbix_agent2.conf`
+
+const (
+	startTypeAutomatic = "automatic"
+	startTypeDelayed   = "delayed"
+	startTypeManual    = "manual"
+	startTypeDisabled  = "disabled"
+)
 
 var (
 	serviceName = "Zabbix Agent 2"
@@ -48,6 +51,7 @@ var (
 	svcStartFlag         bool
 	svcStopFlag          bool
 	svcMultipleAgentFlag bool
+	svcStartType         string
 
 	winServiceRun bool
 
@@ -58,12 +62,22 @@ var (
 
 	fatalStopChan chan bool
 	startChan     chan bool
-
-	stopChan = make(chan bool)
+	stopChan      = make(chan bool)
 )
 
 func osDependentFlags() zbxflag.Flags {
 	return zbxflag.Flags{
+		&zbxflag.BoolFlag{
+			Flag: zbxflag.Flag{
+				Name:      "multiple-agents",
+				Shorthand: "m",
+				Description: "For -i -d -s -x functions service name will " +
+					"include Hostname parameter specified in configuration file",
+			},
+			Default: false,
+			Dest:    &svcMultipleAgentFlag,
+		},
+
 		&zbxflag.BoolFlag{
 			Flag: zbxflag.Flag{
 				Name:        "install",
@@ -100,21 +114,28 @@ func osDependentFlags() zbxflag.Flags {
 			Default: false,
 			Dest:    &svcStopFlag,
 		},
-		&zbxflag.BoolFlag{
+		&zbxflag.StringFlag{
 			Flag: zbxflag.Flag{
-				Name:      "multiple-agents",
-				Shorthand: "m",
-				Description: "For -i -d -s -x functions service name will " +
-					"include Hostname parameter specified in configuration file",
+				Name:      "startup-type",
+				Shorthand: "S",
+				Description: fmt.Sprintf(
+					"Set startup type of the Zabbix Windows agent service to be installed."+
+						" Allowed values: %s (default), %s, %s, %s",
+					startTypeAutomatic,
+					startTypeDelayed,
+					startTypeManual,
+					startTypeDisabled,
+				),
 			},
-			Default: false,
-			Dest:    &svcMultipleAgentFlag,
+			Default: "",
+			Dest:    &svcStartType,
 		},
 	}
 }
 
 func isWinLauncher() bool {
-	if svcInstallFlag || svcUninstallFlag || svcStartFlag || svcStopFlag || svcMultipleAgentFlag {
+	if svcInstallFlag || svcUninstallFlag || svcStartFlag || svcStopFlag || svcMultipleAgentFlag ||
+		svcStartType != "" {
 		return true
 	}
 	return false
@@ -163,29 +184,64 @@ func eventLogInfo(msg string) (err error) {
 	return nil
 }
 
+// eventLogErr reports err to Windows event log if agent is launched on
+// windows.
+// On success returns parameter err.
+// On failure returns error that occurred during reporting to event log.
 func eventLogErr(err error) error {
 	if isWinLauncher() {
-		return eLog.Error(3, err.Error())
+		elErr := eLog.Error(3, err.Error())
+		if elErr != nil {
+			return errs.Wrapf(
+				elErr, "failed to report error (%s) to event log", err.Error(),
+			)
+		}
 	}
-	return nil
+
+	return err
 }
 
-func validateExclusiveFlags() error {
-	defaultFlagSet := argTest || argPrint || argVerbose
-	serviceFlagsSet := []bool{svcInstallFlag, svcUninstallFlag, svcStartFlag, svcStopFlag}
-	var count int
-	for _, serserviceFlagSet := range serviceFlagsSet {
-		if serserviceFlagSet {
+func validateMultipleAgentFlag() bool {
+	if svcMultipleAgentFlag &&
+		!(svcInstallFlag || svcUninstallFlag || svcStartFlag || svcStopFlag || svcStartType != "") &&
+		!winServiceRun {
+		return false
+	}
+
+	return true
+}
+
+func validateExclusiveFlags(args *Arguments) error {
+	var (
+		exclusiveFlagsSet = []bool{
+			svcInstallFlag,
+			svcUninstallFlag,
+			svcStartFlag,
+			svcStopFlag,
+			args.print,
+			args.test != "",
+			args.runtimeCommand != "",
+			args.testConfig,
+		}
+		count int
+	)
+
+	if args.verbose && !(args.test != "" || args.print) {
+		return errors.New("option -v, --verbose can only be specified with -t or -p")
+	}
+
+	for _, exclusiveFlagSet := range exclusiveFlagsSet {
+		if exclusiveFlagSet {
 			count++
 		}
-		if count >= 2 || (serserviceFlagSet && defaultFlagSet) {
-			return errors.New("mutually exclusive options used, use help '-help'('-h'), for additional information")
+		if count >= 2 { //nolint:gomnd
+			return errors.New("mutually exclusive options used, see -h, --help for more information")
 		}
 	}
 
-	if svcMultipleAgentFlag && count == 0 && !winServiceRun {
+	if !validateMultipleAgentFlag() {
 		return errors.New(
-			"multiple agents '-multiple-agents'('-m'), flag has to be used with another windows service flag, use help '-help'('-h'), for additional information",
+			"option -m, --multiple-agents can only be used with one of the service options, see -h, --help for more information",
 		)
 	}
 
@@ -207,7 +263,7 @@ func setHostname() error {
 
 	var m *scheduler.Manager
 	var err error
-	if m, err = scheduler.NewManager(&agent.Options); err != nil {
+	if m, err = scheduler.NewManager(&agent.Options, make(agent.PluginSystemOptions)); err != nil {
 		return fmt.Errorf("cannot create scheduling manager: %s", err)
 	}
 	m.Start()
@@ -228,13 +284,16 @@ func handleWindowsService(confPath string) error {
 		}
 		hostnames, err := agent.ValidateHostnames(agent.Options.Hostname)
 		if err != nil {
-			return fmt.Errorf("cannot parse the \"Hostname\" parameter: %s", err)
+			return fmt.Errorf(
+				"cannot parse the \"Hostname\" parameter: %s",
+				err,
+			)
 		}
 		agent.FirstHostname = hostnames[0]
 		serviceName = fmt.Sprintf("%s [%s]", serviceName, agent.FirstHostname)
 	}
 
-	if svcInstallFlag || svcUninstallFlag || svcStartFlag || svcStopFlag {
+	if svcInstallFlag || svcUninstallFlag || svcStartFlag || svcStopFlag || svcStartType != "" {
 		absPath, err := filepath.Abs(confPath)
 		if err != nil {
 			return err
@@ -260,17 +319,29 @@ func resolveWindowsService(confPath string) error {
 	switch true {
 	case svcInstallFlag:
 		if err := svcInstall(confPath); err != nil {
-			return fmt.Errorf("failed to install %s as service: %s", serviceName, err)
+			return fmt.Errorf(
+				"failed to install %s as service: %s",
+				serviceName,
+				err,
+			)
 		}
 		msg = fmt.Sprintf("'%s' installed successfully", serviceName)
 	case svcUninstallFlag:
 		if err := svcUninstall(); err != nil {
-			return fmt.Errorf("failed to uninstall %s as service: %s", serviceName, err)
+			return fmt.Errorf(
+				"failed to uninstall %s as service: %s",
+				serviceName,
+				err,
+			)
 		}
 		msg = fmt.Sprintf("'%s' uninstalled successfully", serviceName)
 	case svcStartFlag:
 		if err := svcStart(confPath); err != nil {
-			return fmt.Errorf("failed to start %s service: %s", serviceName, err)
+			return fmt.Errorf(
+				"failed to start %s service: %s",
+				serviceName,
+				err,
+			)
 		}
 		msg = fmt.Sprintf("'%s' started successfully", serviceName)
 	case svcStopFlag:
@@ -278,6 +349,11 @@ func resolveWindowsService(confPath string) error {
 			return fmt.Errorf("failed to stop %s service: %s", serviceName, err)
 		}
 		msg = fmt.Sprintf("'%s' stopped successfully", serviceName)
+	case svcStartType != "":
+		if err := svcStartupTypeSet(); err != nil {
+			return errs.Wrapf(err, "failed to set service '%s' startup type", serviceName)
+		}
+		msg = fmt.Sprintf("service '%s' startup type configured successfully", serviceName)
 	}
 
 	msg = fmt.Sprintf("zabbix_agent2 [%d]: %s\n", os.Getpid(), msg)
@@ -311,15 +387,42 @@ func getAgentPath() (p string, err error) {
 	return
 }
 
+func svcStartTypeFlagParse() (uint32, bool, error) {
+	var startType uint32
+	var delayedAutoStart bool
+	var err error
+
+	switch svcStartType {
+	case "":
+		startType = mgr.StartAutomatic
+	case startTypeAutomatic:
+		startType = mgr.StartAutomatic
+	case startTypeDelayed:
+		delayedAutoStart = true
+		startType = mgr.StartAutomatic
+	case startTypeManual:
+		startType = mgr.StartManual
+	case startTypeDisabled:
+		startType = mgr.StartDisabled
+	default:
+		err = fmt.Errorf("unknown service start type: '%s'", svcStartType)
+	}
+
+	return startType, delayedAutoStart, err
+}
+
 func svcInstall(conf string) error {
 	exepath, err := getAgentPath()
 	if err != nil {
-		return fmt.Errorf("failed to get Zabbix Agent 2 exeutable path: %s", err.Error())
+		return fmt.Errorf("failed to get Zabbix Agent 2 executable path: %s", err.Error())
 	}
 
 	m, err := mgr.Connect()
 	if err != nil {
-		return fmt.Errorf("failed to connect to service manager: %s", err.Error())
+		return fmt.Errorf(
+			"failed to connect to service manager: %s",
+			err.Error(),
+		)
 	}
 	defer m.Disconnect()
 
@@ -329,17 +432,34 @@ func svcInstall(conf string) error {
 		return errors.New("service already exists")
 	}
 
-	s, err = m.CreateService(serviceName, exepath, mgr.Config{
-		StartType: mgr.StartAutomatic, DisplayName: serviceName,
-		Description: "Provides system monitoring", BinaryPathName: fmt.Sprintf("%s -c %s -f=false", exepath, conf),
-	}, "-c", conf, "-f=false")
+	startType, delayedAutoStart, err := svcStartTypeFlagParse()
+	if err != nil {
+		return errs.Wrap(err, "failed to get new startup type")
+	}
+
+	s, err = m.CreateService(
+		serviceName,
+		exepath,
+		mgr.Config{
+			StartType:        startType,
+			DisplayName:      serviceName,
+			Description:      "Provides system monitoring",
+			BinaryPathName:   fmt.Sprintf("%s -c %s -f=false", exepath, conf),
+			DelayedAutoStart: delayedAutoStart,
+		},
+		"-c", conf,
+		"-f=false",
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create service: %s", err.Error())
 	}
 	defer s.Close()
 
 	if err = eventlog.InstallAsEventCreate(serviceName, eventlog.Error|eventlog.Warning|eventlog.Info); err != nil {
-		err = fmt.Errorf("failed to report service into the event log: %s", err.Error())
+		err = fmt.Errorf(
+			"failed to report service into the event log: %s",
+			err.Error(),
+		)
 		derr := s.Delete()
 		if derr != nil {
 			return fmt.Errorf("%s and %s", err.Error(), derr.Error())
@@ -353,7 +473,10 @@ func svcInstall(conf string) error {
 func svcUninstall() error {
 	m, err := mgr.Connect()
 	if err != nil {
-		return fmt.Errorf("failed to connect to service manager: %s", err.Error())
+		return fmt.Errorf(
+			"failed to connect to service manager: %s",
+			err.Error(),
+		)
 	}
 	defer m.Disconnect()
 
@@ -368,7 +491,10 @@ func svcUninstall() error {
 	}
 
 	if err = eventlog.Remove(serviceName); err != nil {
-		return fmt.Errorf("failed to remove service from the event log: %s", err.Error())
+		return fmt.Errorf(
+			"failed to remove service from the event log: %s",
+			err.Error(),
+		)
 	}
 
 	return nil
@@ -377,7 +503,10 @@ func svcUninstall() error {
 func svcStart(conf string) error {
 	m, err := mgr.Connect()
 	if err != nil {
-		return fmt.Errorf("failed to connect to service manager: %s", err.Error())
+		return fmt.Errorf(
+			"failed to connect to service manager: %s",
+			err.Error(),
+		)
 	}
 	defer m.Disconnect()
 
@@ -397,7 +526,10 @@ func svcStart(conf string) error {
 func svcStop() error {
 	m, err := mgr.Connect()
 	if err != nil {
-		return fmt.Errorf("failed to connect to service manager: %s", err.Error())
+		return fmt.Errorf(
+			"failed to connect to service manager: %s",
+			err.Error(),
+		)
 	}
 	defer m.Disconnect()
 
@@ -409,7 +541,10 @@ func svcStop() error {
 
 	status, err := s.Control(svc.Stop)
 	if err != nil {
-		return fmt.Errorf("failed to send stop request to service: %s", err.Error())
+		return fmt.Errorf(
+			"failed to send stop request to service: %s",
+			err.Error(),
+		)
 	}
 
 	timeout := time.Now().Add(10 * time.Second)
@@ -421,6 +556,39 @@ func svcStop() error {
 		if status, err = s.Query(); err != nil {
 			return fmt.Errorf("failed to get service status: %s", err.Error())
 		}
+	}
+
+	return nil
+}
+
+func svcStartupTypeSet() error {
+	m, err := mgr.Connect()
+	if err != nil {
+		return errs.Wrap(err, "failed to connect to service manager")
+	}
+
+	defer m.Disconnect()
+
+	s, err := m.OpenService(serviceName)
+	if err != nil {
+		return errs.Wrap(err, "failed to open service")
+	}
+
+	defer s.Close()
+
+	c, err := s.Config()
+	if err != nil {
+		return errs.Wrap(err, "failed to retrieve service config")
+	}
+
+	c.StartType, c.DelayedAutoStart, err = svcStartTypeFlagParse()
+	if err != nil {
+		return errs.Wrap(err, "failed to get new startup type")
+	}
+
+	err = s.UpdateConfig(c)
+	if err != nil {
+		return errs.Wrap(err, "failed to update service config")
 	}
 
 	return nil
@@ -448,17 +616,14 @@ func sendServiceStop() {
 
 func runService() {
 	if err := svc.Run(serviceName, &winService{}); err != nil {
-		fatalExit("use foreground option to run Zabbix agent as console application", err)
-		return
+		panic(errs.Wrap(err, "use foreground option to run Zabbix agent as console application"))
 	}
 }
 
 type winService struct{}
 
 func (ws *winService) Execute(
-	args []string,
-	r <-chan svc.ChangeRequest,
-	changes chan<- svc.Status,
+	args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status,
 ) (ssec bool, errno uint32) {
 	changes <- svc.Status{State: svc.StartPending}
 	select {

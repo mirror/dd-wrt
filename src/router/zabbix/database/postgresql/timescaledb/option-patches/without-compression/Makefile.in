@@ -89,8 +89,8 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = database/postgresql/timescaledb/option-patches/without-compression
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_mysql.m4 \
-	$(top_srcdir)/m4/ax_lib_oracle_oci.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ares.m4 \
+	$(top_srcdir)/m4/ax_lib_mysql.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 \
 	$(top_srcdir)/m4/check_enum.m4 $(top_srcdir)/m4/iconv.m4 \
@@ -134,11 +134,11 @@ am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+AGENT2_CONFIG_DIR = @AGENT2_CONFIG_DIR@
 AGENT2_CONFIG_FILE = @AGENT2_CONFIG_FILE@
-AGENT2_CONFIG_PATH = @AGENT2_CONFIG_PATH@
-AGENT2_CONFIG_PLUGINS_PATH = @AGENT2_CONFIG_PLUGINS_PATH@
 AGENT2_LDFLAGS = @AGENT2_LDFLAGS@
 AGENT2_LIBS = @AGENT2_LIBS@
+AGENT2_PLUGIN_CONFIG_DIR = @AGENT2_PLUGIN_CONFIG_DIR@
 AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
@@ -146,6 +146,9 @@ ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
+ARES_CFLAGS = @ARES_CFLAGS@
+ARES_LDFLAGS = @ARES_LDFLAGS@
+ARES_LIBS = @ARES_LIBS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -155,11 +158,15 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CGO_CFLAGS = @CGO_CFLAGS@
 CGO_LDFLAGS = @CGO_LDFLAGS@
+CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
 CTAGS = @CTAGS@
 CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
 CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
+CXX = @CXX@
+CXXDEPMODE = @CXXDEPMODE@
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -178,9 +185,6 @@ GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
 GO = @GO@
-GOBIN = @GOBIN@
-GOCMD = @GOCMD@
-GOWORKDIR = @GOWORKDIR@
 GREP = @GREP@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LDFLAGS = @ICONV_LDFLAGS@
@@ -237,10 +241,6 @@ OPENIPMI_LIBS = @OPENIPMI_LIBS@
 OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
 OPENSSL_LDFLAGS = @OPENSSL_LDFLAGS@
 OPENSSL_LIBS = @OPENSSL_LIBS@
-ORACLE_OCI_CFLAGS = @ORACLE_OCI_CFLAGS@
-ORACLE_OCI_LDFLAGS = @ORACLE_OCI_LDFLAGS@
-ORACLE_OCI_LIBS = @ORACLE_OCI_LIBS@
-ORACLE_OCI_VERSION = @ORACLE_OCI_VERSION@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -257,6 +257,7 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+POW_LIB = @POW_LIB@
 PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
@@ -300,11 +301,14 @@ ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
+_libnetsnmp_config_bin = @_libnetsnmp_config_bin@
+_libnetsnmp_config_root = @_libnetsnmp_config_root@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_CXX = @ac_ct_CXX@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -352,11 +356,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 PATCHES = \
-	  history_pk.sql \
-	  history_pk_log.sql \
-	  history_pk_text.sql \
-	  history_pk_str.sql \
-	  history_pk_uint.sql
+	  history_upgrade.sql \
+	  history_upgrade_log.sql \
+	  history_upgrade_text.sql \
+	  history_upgrade_str.sql \
+	  history_upgrade_uint.sql \
+	  trends_upgrade.sql \
+	  history_upgrade_prepare.sql
 
 EXTRA_DIST = $(PATCHES)
 all: all-am
@@ -548,20 +554,26 @@ uninstall-am:
 
 @DBSCHEMA_TRUE@all: $(PATCHES)
 
-@DBSCHEMA_TRUE@history_pk.sql: $(top_srcdir)/create/bin/gen_history_pk.pl
-@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_pk.pl timescaledb history without_compression > $@
+@DBSCHEMA_TRUE@history_upgrade.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb history without_compression > $@
 
-@DBSCHEMA_TRUE@history_pk_log.sql: $(top_srcdir)/create/bin/gen_history_pk.pl
-@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_pk.pl timescaledb history_log without_compression > $@
+@DBSCHEMA_TRUE@history_upgrade_log.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb history_log without_compression > $@
 
-@DBSCHEMA_TRUE@history_pk_text.sql: $(top_srcdir)/create/bin/gen_history_pk.pl
-@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_pk.pl timescaledb history_text without_compression > $@
+@DBSCHEMA_TRUE@history_upgrade_text.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb history_text without_compression > $@
 
-@DBSCHEMA_TRUE@history_pk_str.sql: $(top_srcdir)/create/bin/gen_history_pk.pl
-@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_pk.pl timescaledb history_str without_compression > $@
+@DBSCHEMA_TRUE@history_upgrade_str.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb history_str without_compression > $@
 
-@DBSCHEMA_TRUE@history_pk_uint.sql: $(top_srcdir)/create/bin/gen_history_pk.pl
-@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_pk.pl timescaledb history_uint without_compression > $@
+@DBSCHEMA_TRUE@history_upgrade_uint.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb history_uint without_compression > $@
+
+@DBSCHEMA_TRUE@trends_upgrade.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb trends without_compression > $@
+
+@DBSCHEMA_TRUE@history_upgrade_prepare.sql: $(top_srcdir)/create/bin/gen_history_upgrade.pl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_history_upgrade.pl timescaledb > $@
 
 @DBSCHEMA_TRUE@clean:
 @DBSCHEMA_TRUE@	rm -f $(PATCHES)

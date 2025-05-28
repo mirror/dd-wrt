@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -53,6 +48,10 @@ class CXmlConstantValue {
 	const SNMP = INTERFACE_TYPE_SNMP;
 	const IPMI = INTERFACE_TYPE_IPMI;
 	const JMX = INTERFACE_TYPE_JMX;
+
+	const SERVER = ZBX_MONITORED_BY_SERVER;
+	const PROXY = ZBX_MONITORED_BY_PROXY;
+	const PROXY_GROUP = ZBX_MONITORED_BY_PROXY_GROUP;
 
 	const INV_MODE_DISABLED = HOST_INVENTORY_DISABLED; // Duplicate.
 	const INV_MODE_MANUAL = HOST_INVENTORY_MANUAL;
@@ -235,6 +234,7 @@ class CXmlConstantValue {
 	const ITEM_TYPE_HTTP_AGENT = ITEM_TYPE_HTTPAGENT;
 	const ITEM_TYPE_SNMP = ITEM_TYPE_SNMP;
 	const ITEM_TYPE_SCRIPT = ITEM_TYPE_SCRIPT;
+	const ITEM_TYPE_BROWSER = ITEM_TYPE_BROWSER;
 
 	const SNMP_V1 = SNMP_V1;
 	const SNMP_V2 = SNMP_V2C;
@@ -245,6 +245,7 @@ class CXmlConstantValue {
 	const LOG = ITEM_VALUE_TYPE_LOG;
 	const UNSIGNED = ITEM_VALUE_TYPE_UINT64;
 	const TEXT = ITEM_VALUE_TYPE_TEXT;
+	const BINARY = ITEM_VALUE_TYPE_BINARY;
 
 	const ORIGINAL_ERROR = ZBX_PREPROC_FAIL_DEFAULT;
 	const DISCARD_VALUE = ZBX_PREPROC_FAIL_DISCARD_VALUE;
@@ -280,6 +281,7 @@ class CXmlConstantValue {
 	const XML_TO_JSON = ZBX_PREPROC_XML_TO_JSON;
 	const SNMP_WALK_VALUE = ZBX_PREPROC_SNMP_WALK_VALUE;
 	const SNMP_WALK_TO_JSON = ZBX_PREPROC_SNMP_WALK_TO_JSON;
+	const SNMP_GET_VALUE = ZBX_PREPROC_SNMP_GET_VALUE;
 
 	const AND_OR = CONDITION_EVAL_TYPE_AND_OR;
 	const XML_AND = CONDITION_EVAL_TYPE_AND;
@@ -305,14 +307,14 @@ class CXmlConstantValue {
 	const OFFICE365 = CMediatypeHelper::EMAIL_PROVIDER_OFFICE365;
 	const OFFICE365_RELAY = CMediatypeHelper::EMAIL_PROVIDER_OFFICE365_RELAY;
 
-	const STARTTLS = SMTP_CONNECTION_SECURITY_STARTTLS;
-	const SSL_OR_TLS = SMTP_CONNECTION_SECURITY_SSL_TLS;
+	const STARTTLS = SMTP_SECURITY_STARTTLS;
+	const SSL_OR_TLS = SMTP_SECURITY_SSL;
 
 	const SMTP_AUTHENTICATION_NONE = SMTP_AUTHENTICATION_NONE;
 	const SMTP_AUTHENTICATION_PASSWORD = SMTP_AUTHENTICATION_NORMAL;
 
-	const CONTENT_TYPE_TEXT = SMTP_MESSAGE_FORMAT_PLAIN_TEXT;
-	const CONTENT_TYPE_HTML = SMTP_MESSAGE_FORMAT_HTML;
+	const MESSAGE_FORMAT_TEXT = ZBX_MEDIA_MESSAGE_FORMAT_TEXT;
+	const MESSAGE_FORMAT_HTML = ZBX_MEDIA_MESSAGE_FORMAT_HTML;
 
 	const EVENT_SOURCE_TRIGGERS = EVENT_SOURCE_TRIGGERS;
 	const EVENT_SOURCE_DISCOVERY = EVENT_SOURCE_DISCOVERY;
@@ -327,6 +329,14 @@ class CXmlConstantValue {
 	const MACRO_TYPE_TEXT = ZBX_MACRO_TYPE_TEXT;
 	const MACRO_TYPE_SECRET = ZBX_MACRO_TYPE_SECRET;
 	const MACRO_TYPE_VAULT = ZBX_MACRO_TYPE_VAULT;
+
+	// Constants for low-level discovery rules.
+	const LLD_DELETE_AFTER = ZBX_LLD_DELETE_AFTER;
+	const LLD_DELETE_NEVER = ZBX_LLD_DELETE_NEVER;
+	const LLD_DELETE_IMMEDIATELY = ZBX_LLD_DELETE_IMMEDIATELY;
+	const LLD_DISABLE_AFTER = ZBX_LLD_DISABLE_AFTER;
+	const LLD_DISABLE_NEVER = ZBX_LLD_DISABLE_NEVER;
+	const LLD_DISABLE_IMMEDIATELY = ZBX_LLD_DISABLE_IMMEDIATELY;
 
 	// Constants for low-level discovery rule overrides.
 	const LLD_OVERRIDE_STOP_NO = ZBX_LLD_OVERRIDE_STOP_NO;
@@ -376,6 +386,12 @@ class CXmlConstantValue {
 	const DASHBOARD_WIDGET_FIELD_TYPE_ITEM_PROTOTYPE = ZBX_WIDGET_FIELD_TYPE_ITEM_PROTOTYPE;
 	const DASHBOARD_WIDGET_FIELD_TYPE_GRAPH = ZBX_WIDGET_FIELD_TYPE_GRAPH;
 	const DASHBOARD_WIDGET_FIELD_TYPE_GRAPH_PROTOTYPE = ZBX_WIDGET_FIELD_TYPE_GRAPH_PROTOTYPE;
+	const DASHBOARD_WIDGET_FIELD_TYPE_MAP = ZBX_WIDGET_FIELD_TYPE_MAP;
+	const DASHBOARD_WIDGET_FIELD_TYPE_SERVICE = ZBX_WIDGET_FIELD_TYPE_SERVICE;
+	const DASHBOARD_WIDGET_FIELD_TYPE_SLA = ZBX_WIDGET_FIELD_TYPE_SLA;
+	const DASHBOARD_WIDGET_FIELD_TYPE_USER = ZBX_WIDGET_FIELD_TYPE_USER;
+	const DASHBOARD_WIDGET_FIELD_TYPE_ACTION = ZBX_WIDGET_FIELD_TYPE_ACTION;
+	const DASHBOARD_WIDGET_FIELD_TYPE_MEDIA_TYPE = ZBX_WIDGET_FIELD_TYPE_MEDIA_TYPE;
 
 	// Valuemap mapping type.
 	const MAPPING_EQUAL = VALUEMAP_MAPPING_TYPE_EQUAL;

@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 $this->includeJsFile('administration.user.edit.common.js.php');
@@ -66,7 +62,7 @@ if ($data['readonly'] == true) {
 // Create form.
 $user_form = (new CForm())
 	->addItem((new CVar('form_refresh', $data['form_refresh'] + 1))->removeId())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, $csrf_token))->removeId())
 	->setId('user-form')
 	->setName('user_form')
 	->setAttribute('aria-labelledby', CHtmlPage::PAGE_TITLE_ID)
@@ -104,7 +100,7 @@ if ($data['action'] === 'user.edit') {
 				'name' => 'user_groups[]',
 				'object_name' => 'usersGroups',
 				'data' => $data['groups'],
-				'disabled' => $data['readonly'],
+				'readonly' => $data['readonly'],
 				'popup' => [
 					'parameters' => [
 						'srctbl' => 'usrgrp',
@@ -166,7 +162,8 @@ if ($data['change_password']) {
 
 	$current_password = (new CPassBox('current_password'))
 		->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
-		->setAriaRequired();
+		->setAriaRequired()
+		->setAttribute('autocomplete', 'off');
 
 	if ($data['action'] !== 'user.edit') {
 		$current_password->setAttribute('autofocus', 'autofocus');
@@ -186,11 +183,13 @@ if ($data['change_password']) {
 			(new CPassBox('password1', $data['password1']))
 				->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 				->setAriaRequired()
+				->setAttribute('autocomplete', 'off')
 		])
 		->addRow((new CLabel(_('Password (once again)'), 'password2'))->setAsteriskMark(),
 			(new CPassBox('password2', $data['password2']))
 				->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 				->setAriaRequired()
+				->setAttribute('autocomplete', 'off')
 		)
 		->addRow('', _('Password is not mandatory for non internal authentication type.'));
 }
@@ -202,8 +201,7 @@ else {
 	}
 
 	$hint = !$change_password_enabled
-		? $hint = (makeErrorIcon(_('Password can only be changed for users using the internal Zabbix authentication.')))
-			->addStyle('margin-left: 5px; margin-top: 4px')
+		? $hint = makeErrorIcon(_('Password can only be changed for users using the internal Zabbix authentication.'))
 		: null;
 
 	$user_form_list->addRow(_('Password'), [
@@ -266,15 +264,14 @@ else {
 	setlocale(LC_MONETARY, zbx_locale_variants(CWebUser::$data['lang']));
 
 	if (!function_exists('bindtextdomain')) {
-		$language_error = 'Translations are unavailable because the PHP gettext module is missing.';
+		$language_error = makeErrorIcon('Translations are unavailable because the PHP gettext module is missing.');
+
 		$lang_select->setReadonly();
 	}
 	elseif (!$all_locales_available) {
-		$language_error = _('You are not able to choose some of the languages, because locales for them are not installed on the web server.');
-	}
-
-	if ($language_error) {
-		$language_error = (makeErrorIcon($language_error))->addStyle('margin-left: 5px;');
+		$language_error = makeWarningIcon(
+			_('You are not able to choose some of the languages, because locales for them are not installed on the web server.')
+		);
 	}
 
 	$timezone_select
@@ -302,13 +299,14 @@ if ($data['action'] === 'userprofile.edit' || $data['db_user']['username'] !== Z
 			->setId('autologout_visible')
 			->setChecked($data['autologout'] !== '0'),
 		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-		(new CTextBox('autologout', $autologout))->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
+		(new CTextBox('autologout', $autologout, false, DB::getFieldLength('users', 'autologout')))
+			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 	]);
 }
 
 $user_form_list
 	->addRow((new CLabel(_('Refresh'), 'refresh'))->setAsteriskMark(),
-		(new CTextBox('refresh', $data['refresh']))
+		(new CTextBox('refresh', $data['refresh'], false, DB::getFieldLength('users', 'refresh')))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setAriaRequired()
 	)
@@ -318,9 +316,8 @@ $user_form_list
 			->setAriaRequired()
 	)
 	->addRow(_('URL (after login)'),
-		(new CTextBox('url', $data['url']))
+		(new CTextBox('url', $data['url'], false, DB::getFieldLength('users', 'url')))
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-			->setAttribute('maxlength', DB::getFieldLength('users', 'url'))
 	);
 
 $tabs->addTab('userTab', _('User'), $user_form_list);
@@ -333,43 +330,60 @@ if ($data['action'] === 'user.edit' || CWebUser::$data['type'] > USER_TYPE_ZABBI
 	$media_table_info = (new CTable())
 		->setId('media-table')
 		->setAttribute('style', 'width: 100%;')
-		->setHeader([_('Type'), _('Send to'), _('When active'), _('Use if severity'), _('Status'), _('Action')]);
+		->setHeader([_('Type'), _('Send to'), _('When active'), _('Use if severity'), _('Status'), _('Actions')]);
 
 	foreach ($data['medias'] as $index => $media) {
-		if ($data['mediatypes'][$media['mediatypeid']]['status'] == MEDIA_TYPE_STATUS_ACTIVE) {
+		if (!array_key_exists($media['mediatypeid'], $data['mediatypes'])) {
+			$media_name = (new CSpan(_('Unknown')))->addClass(ZBX_STYLE_DISABLED);
+			$status = (new CSpan(_('Disabled')))->addClass(ZBX_STYLE_RED);
+		}
+		elseif ($data['mediatypes'][$media['mediatypeid']]['status'] == MEDIA_TYPE_STATUS_ACTIVE) {
 			$media_name = $media['name'];
 
 			if ($media['active'] == MEDIA_STATUS_ACTIVE) {
-				$status_action = 'return create_var("'.$user_form->getName().'","disable_media",'.$index.', true);';
-				$status_label = _('Enabled');
-				$status_class = ZBX_STYLE_GREEN;
+				$status = (new CButtonLink(_('Enabled')))
+					->onClick('return create_var("'.$user_form->getName().'","disable_media",'.$index.', true);')
+					->addClass(ZBX_STYLE_GREEN);
 			}
 			else {
-				$status_action = 'return create_var("'.$user_form->getName().'","enable_media",'.$index.', true);';
-				$status_label = _('Disabled');
-				$status_class = ZBX_STYLE_RED;
+				$status = (new CButtonLink(_('Disabled')))
+					->onClick('return create_var("'.$user_form->getName().'","enable_media",'.$index.', true);')
+					->addClass(ZBX_STYLE_RED);
 			}
-
-			$status = (new CSimpleButton($status_label))
-				->onClick(!$data['readonly'] ? $status_action : null)
-				->addClass(ZBX_STYLE_BTN_LINK.($data['readonly'] ? '' : ' '.$status_class))
-				->setEnabled(!$data['readonly']);
 		}
 		else {
-			$media_name = new CDiv([$media['name'], makeWarningIcon(_('Media type disabled by Administration.'))]);
-			$status = (new CDiv(_('Disabled')))->addClass(ZBX_STYLE_RED);
+			$media_name = [
+				new CSpan($media['name']),
+				makeWarningIcon(_('Media type disabled by Administration.'))
+			];
+			$status = (new CSpan(_('Disabled')))->addClass(ZBX_STYLE_RED);
 		}
 
 		$parameters = [
 			'dstfrm' => $user_form->getName(),
 			'media' => $index,
 			'mediatypeid' => $media['mediatypeid'],
-			($media['mediatype'] == MEDIA_TYPE_EMAIL) ? 'sendto_emails' : 'sendto' => $media['sendto'],
 			'period' => $media['period'],
 			'severity' => $media['severity'],
-			'active' => $media['active']
+			'active' => $media['active'],
+			'provisioned' => $media['provisioned']
 		];
+
+		if ($media['mediatype'] === MEDIA_TYPE_EMAIL) {
+			$parameters['sendto_emails'] = $media['sendto'];
+		}
+		else {
+			if (is_array($media['sendto'])) {
+				$media['sendto'] = implode(', ', $media['sendto']);
+			}
+			$parameters['sendto'] = $media['sendto'];
+		}
+
 		$media_severity = [];
+
+		if (array_key_exists('mediaid', $media)) {
+			$parameters['mediaid'] = $media['mediaid'];
+		}
 
 		for ($severity = TRIGGER_SEVERITY_NOT_CLASSIFIED; $severity < TRIGGER_SEVERITY_COUNT; $severity++) {
 			$severity_name = CSeverityHelper::getName($severity);
@@ -380,11 +394,11 @@ if ($data['action'] === 'user.edit' || CWebUser::$data['type'] > USER_TYPE_ZABBI
 				->setHint($severity_name.' ('.($media_active ? _('on') : _('off')).')', '', false)
 				->addClass($media_active
 					? CSeverityHelper::getStatusStyle($severity)
-					: ZBX_STYLE_STATUS_DISABLED_BG
+					: ZBX_STYLE_STATUS_DISABLED
 				);
 		}
 
-		if ($media['mediatype'] == MEDIA_TYPE_EMAIL) {
+		if (is_array($media['sendto'])) {
 			$media['sendto'] = implode(', ', $media['sendto']);
 		}
 
@@ -403,16 +417,13 @@ if ($data['action'] === 'user.edit' || CWebUser::$data['type'] > USER_TYPE_ZABBI
 				$status,
 				(new CCol(
 					new CHorList([
-						(new CButton(null, _('Edit')))
-							->setEnabled(!$data['readonly'])
-							->addClass(ZBX_STYLE_BTN_LINK)
+						(new CButtonLink(_('Edit')))
 							->setAttribute('data-parameters', json_encode($parameters))
 							->onClick('PopUp("popup.media", JSON.parse(this.dataset.parameters),
 								{dialogue_class: "modal-popup-generic"});'
 							),
-						(new CButton(null, _('Remove')))
-							->setEnabled(!$data['readonly'])
-							->addClass(ZBX_STYLE_BTN_LINK)
+						(new CButtonLink(_('Remove')))
+							->setEnabled($parameters['provisioned'] == CUser::PROVISION_STATUS_NO)
 							->onClick('removeMedia('.$index.');')
 					])
 				))->addClass(ZBX_STYLE_NOWRAP)
@@ -423,13 +434,11 @@ if ($data['action'] === 'user.edit' || CWebUser::$data['type'] > USER_TYPE_ZABBI
 	$media_form_list->addRow(_('Media'),
 		(new CDiv([
 			$media_table_info,
-			(new CButton(null, _('Add')))
+			(new CButtonLink(_('Add')))
 				->onClick('PopUp("popup.media", '.
 					json_encode(['dstfrm' => $user_form->getName()]).
 					', {dialogue_class: "modal-popup-generic"});'
 				)
-				->addClass(ZBX_STYLE_BTN_LINK)
-				->setEnabled(!$data['readonly'])
 		]))
 			->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 			->setAttribute('style', 'min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
@@ -450,7 +459,7 @@ if ($data['action'] === 'user.edit') {
 		'object_name' => 'roles',
 		'data' => $data['role'],
 		'multiple' => false,
-		'disabled' => $role_disabled,
+		'readonly' => $role_disabled,
 		'popup' => [
 			'parameters' => [
 				'srctbl' => 'roles',
@@ -726,10 +735,10 @@ if ($data['action'] === 'user.edit') {
 	$tabs->addTab('permissionsTab', _('Permissions'), $permissions_form_list);
 }
 
-// Messaging tab.
+// Frontend notifications tab.
 if ($data['action'] !== 'user.edit') {
 	$messaging_form_list = (new CFormList())
-		->addRow(_('Frontend messaging'),
+		->addRow(_('Frontend notifications'),
 			(new CCheckBox('messages[enabled]'))
 				->setChecked($data['messages']['enabled'] == 1)
 				->setUncheckedValue(0)
@@ -824,7 +833,9 @@ if ($data['action'] !== 'user.edit') {
 				->setUncheckedValue(ZBX_PROBLEM_SUPPRESSED_FALSE)
 		);
 
-	$tabs->addTab('messagingTab', _('Messaging'), $messaging_form_list, TAB_INDICATOR_FRONTEND_MESSAGE);
+	$tabs->addTab('notificationsTab', _('Frontend notifications'), $messaging_form_list,
+		TAB_INDICATOR_FRONTEND_NOTIFICATIONS
+	);
 }
 
 // Append buttons to form.
@@ -841,7 +852,7 @@ if ($data['action'] === 'user.edit') {
 				(new CRedirectButton(_('Delete'), (new CUrl('zabbix.php'))
 					->setArgument('action', 'user.delete')
 					->setArgument('userids', [$data['userid']])
-					->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token),
+					->setArgument(CSRF_TOKEN_NAME, $csrf_token),
 					_('Delete selected user?')
 				))
 					->setEnabled(bccomp(CWebUser::$data['userid'], $data['userid']) != 0)

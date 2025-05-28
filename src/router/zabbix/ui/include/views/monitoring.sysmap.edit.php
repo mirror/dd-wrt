@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 require_once dirname(__FILE__).'/js/monitoring.sysmap.edit.js.php';
@@ -38,7 +34,7 @@ if ($data['form_refresh'] == 0) {
 // Create sysmap form.
 $form = (new CForm())
 	->addItem((new CVar('form_refresh', $data['form_refresh'] + 1))->removeId())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('sysmaps.php')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('sysmaps.php')))->removeId())
 	->setId('sysmap-form')
 	->setName('map.edit.php')
 	->addVar('form', getRequest('form', 1))
@@ -59,7 +55,7 @@ $multiselect_data = [
 	'name' => 'userid',
 	'object_name' => 'users',
 	'multiple' => false,
-	'disabled' => ($user_type != USER_TYPE_SUPER_ADMIN && $user_type != USER_TYPE_ZABBIX_ADMIN),
+	'readonly' => ($user_type != USER_TYPE_SUPER_ADMIN && $user_type != USER_TYPE_ZABBIX_ADMIN),
 	'data' => [],
 	'popup' => [
 		'parameters' => [
@@ -284,7 +280,7 @@ $map_tab->addRow(_('Show suppressed problems'),
 // Create url table.
 $url_table = (new CTable())
 	->setAttribute('style', 'width: 100%;')
-	->setHeader([_('Name'), _('URL'), _('Element'), _('Action')]);
+	->setHeader([_('Name'), _('URL'), _('Element'), '']);
 if (empty($data['sysmap']['urls'])) {
 	$data['sysmap']['urls'][] = ['name' => '', 'url' => '', 'elementtype' => 0];
 }
@@ -293,14 +289,13 @@ foreach ($data['sysmap']['urls'] as $url) {
 	$url_table->addRow(
 		(new CRow([
 			(new CTextBox('urls['.$i.'][name]', $url['name']))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
-			(new CTextBox('urls['.$i.'][url]', $url['url']))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
+			(new CTextBox('urls['.$i.'][url]', $url['url'], false, DB::getFieldLength('sysmap_url','url')))
+				->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
 			(new CSelect('urls['.$i.'][elementtype]'))
 				->setValue($url['elementtype'])
 				->addOptions(CSelect::createOptionsFromArray(sysmap_element_types())),
 			(new CCol(
-				(new CButton(null, _('Remove')))
-					->onClick('$("#url-row-'.$i.'").remove();')
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Remove')))->onClick('$("#url-row-'.$i.'").remove();')
 			))->addClass(ZBX_STYLE_NOWRAP)
 		]))->setId('url-row-'.$i)
 	);
@@ -310,10 +305,8 @@ foreach ($data['sysmap']['urls'] as $url) {
 // Append "add" button to url table.
 $url_table->addRow(
 	(new CCol(
-		(new CButton(null, _('Add')))
-			->setId('add-url')
-			->addClass(ZBX_STYLE_BTN_LINK))
-	)->setColSpan(4)
+		(new CButtonLink(_('Add')))->setId('add-url')
+	))->setColSpan(4)
 );
 
 // Append url table to form list.
@@ -329,25 +322,22 @@ $tabs->addTab('sysmap_tab', _('Map'), $map_tab);
 $user_group_shares_table = (new CTable())
 	->setId('user-group-share-table')
 	->setHeader([_('User groups'), _('Permissions'), _('Action')])
-	->setAttribute('style', 'width: 100%;');
-
-$add_user_group_btn = ([(new CButton(null, _('Add')))
-	->onClick(
-		'return PopUp("popup.generic", '.json_encode([
-			'srctbl' => 'usrgrp',
-			'srcfld1' => 'usrgrpid',
-			'srcfld2' => 'name',
-			'dstfrm' => $form->getName(),
-			'multiselect' => '1'
-		]).', {dialogue_class: "modal-popup-generic"});'
-	)
-	->addClass(ZBX_STYLE_BTN_LINK)]);
-
-$user_group_shares_table->addRow(
-	(new CRow(
-		(new CCol($add_user_group_btn))->setColSpan(3)
-	))->setId('user_group_list_footer')
-);
+	->setAttribute('style', 'width: 100%')
+	->addRow(
+		(new CRow(
+			(new CCol(
+				(new CButtonLink(_('Add')))->onClick(
+					'return PopUp("popup.generic", '.json_encode([
+						'srctbl' => 'usrgrp',
+						'srcfld1' => 'usrgrpid',
+						'srcfld2' => 'name',
+						'dstfrm' => $form->getName(),
+						'multiselect' => '1'
+					]).', {dialogue_class: "modal-popup-generic"});'
+				)
+			))->setColSpan(3)
+		))->setId('user_group_list_footer')
+	);
 
 $user_groups = [];
 
@@ -366,25 +356,22 @@ $js_insert = 'window.addPopupValues('.json_encode(['object' => 'usrgrpid', 'valu
 $user_shares_table = (new CTable())
 	->setId('user-share-table')
 	->setHeader([_('Users'), _('Permissions'), _('Action')])
-	->setAttribute('style', 'width: 100%;');
-
-$add_user_btn = ([(new CButton(null, _('Add')))
-	->onClick(
-		'return PopUp("popup.generic", '.json_encode([
-			'srctbl' => 'users',
-			'srcfld1' => 'userid',
-			'srcfld2' => 'fullname',
-			'dstfrm' => $form->getName(),
-			'multiselect' => '1'
-		]).', {dialogue_class: "modal-popup-generic"});'
-	)
-	->addClass(ZBX_STYLE_BTN_LINK)]);
-
-$user_shares_table->addRow(
-	(new CRow(
-		(new CCol($add_user_btn))->setColSpan(3)
-	))->setId('user_list_footer')
-);
+	->setAttribute('style', 'width: 100%')
+	->addRow(
+		(new CRow(
+			(new CCol(
+				(new CButtonLink(_('Add')))->onClick(
+					'return PopUp("popup.generic", '.json_encode([
+						'srctbl' => 'users',
+						'srcfld1' => 'userid',
+						'srcfld2' => 'fullname',
+						'dstfrm' => $form->getName(),
+						'multiselect' => '1'
+					]).', {dialogue_class: "modal-popup-generic"});'
+				)
+			))->setColSpan(3)
+		))->setId('user_list_footer')
+	);
 
 $users = [];
 
@@ -423,14 +410,13 @@ $sharing_tab = (new CFormList('sharing_form'))
 $tabs->addTab('sharing_tab', _('Sharing'), $sharing_tab, TAB_INDICATOR_SHARING);
 
 // Append buttons to form.
-if (hasRequest('sysmapid') && getRequest('sysmapid') > 0 && getRequest('form') !== 'full_clone') {
+if (hasRequest('sysmapid') && getRequest('sysmapid') > 0 && getRequest('form') !== 'clone') {
 	$tabs->setFooter(makeFormFooter(
 		new CSubmit('update', _('Update')),
 		[
 			new	CButton('clone', _('Clone')),
-			new CButton('full_clone', _('Full clone')),
 			new CButtonDelete(_('Delete selected map?'), url_params(['form', 'sysmapid']).'&'.
-				CCsrfTokenHelper::CSRF_TOKEN_NAME.'='.CCsrfTokenHelper::get('sysmaps.php')
+				CSRF_TOKEN_NAME.'='.CCsrfTokenHelper::get('sysmaps.php')
 			),
 			new CButtonCancel()
 		]

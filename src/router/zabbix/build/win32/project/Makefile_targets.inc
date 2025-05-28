@@ -2,9 +2,11 @@ all: $(PREBUILD) $(PROGNAME) $(POSTBUILD)
 
 clean: $(POSTCLEAN)
 # break this down because del has limit for command-line args length (NMAKE : fatal error U1077: 'del' : return code '0x1')
+	@<<zbx_del_obj.bat
 	del $(OBJS) 2>NUL
-	del $(RESOURCE_RES) $(MESSAGES_H) $(PROGNAME) messages.rc MSG00001.bin $(TARGETNAME).$(TARGETEXT).manifest \
-		$(PDBS) $(TARGETNAME).$(TARGETEXT).idb 2>NUL
+<<
+	del $(RESOURCE_RES) $(MESSAGES_H) $(PROGNAME) messages.rc 2>NUL
+	del MSG00001.bin $(TARGETNAME).$(TARGETEXT).manifest $(PDBS) $(TARGETNAME).$(TARGETEXT).idb 2>NUL
 
 $(PROGNAME): $(MESSAGES_H) $(OBJS) $(RESOURCE_RES)
 	$(LINKER) $(OBJS) $(RESOURCE_RES) $(LFLAGS) /OUT:$(PROGNAME) $(LIBS)
@@ -22,10 +24,19 @@ $(RESOURCE_RES): $(RESOURCE_RC) $(RESOURCE_H) $(DESC_H)
 {..\..\..\src\libs\zbxcommon}.c{..\..\..\src\libs\zbxcommon}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
+{..\..\..\src\libs\zbxbincommon}.c{..\..\..\src\libs\zbxbincommon}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
 {..\..\..\src\libs\zbxnum}.c{..\..\..\src\libs\zbxnum}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxstr}.c{..\..\..\src\libs\zbxstr}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\libs\zbxfile}.c{..\..\..\src\libs\zbxfile}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\libs\zbxfile\win32}.c{..\..\..\src\libs\zbxfile\win32}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxparam}.c{..\..\..\src\libs\zbxparam}.o:
@@ -49,7 +60,7 @@ $(RESOURCE_RES): $(RESOURCE_RC) $(RESOURCE_H) $(DESC_H)
 {..\..\..\src\libs\zbxcompress}.c{..\..\..\src\libs\zbxcompress}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
-{..\..\..\src\libs\zbxconf}.c{..\..\..\src\libs\zbxconf}.o:
+{..\..\..\src\libs\zbxcfg}.c{..\..\..\src\libs\zbxcfg}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxcrypto}.c{..\..\..\src\libs\zbxcrypto}.o:
@@ -79,13 +90,13 @@ $(RESOURCE_RES): $(RESOURCE_RC) $(RESOURCE_H) $(DESC_H)
 {..\..\..\src\libs\zbxmutexs}.c{..\..\..\src\libs\zbxmutexs}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
-{..\..\..\src\libs\zbxsymbols}.c{..\..\..\src\libs\zbxsymbols}.o:
-	$(CC) $? /Fo"$@" $(CFLAGS)
-
 {..\..\..\src\libs\zbxexec}.c{..\..\..\src\libs\zbxexec}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxhttp}.c{..\..\..\src\libs\zbxhttp}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\libs\zbxcurl}.c{..\..\..\src\libs\zbxcurl}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxsysinfo}.c{..\..\..\src\libs\zbxsysinfo}.o:
@@ -101,6 +112,9 @@ $(RESOURCE_RES): $(RESOURCE_RC) $(RESOURCE_H) $(DESC_H)
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxsysinfo\win32}.c{..\..\..\src\libs\zbxsysinfo\win32}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\libs\zbxsysinfo\win32\perfstat}.c{..\..\..\src\libs\zbxsysinfo\win32\perfstat}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxsysinfo\win32}.cpp{..\..\..\src\libs\zbxsysinfo\win32}.o:
@@ -119,6 +133,24 @@ $(RESOURCE_RES): $(RESOURCE_RC) $(RESOURCE_H) $(DESC_H)
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\libs\zbxwinservice}.c{..\..\..\src\libs\zbxwinservice}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\libs\zbxagentget}.c{..\..\..\src\libs\zbxagentget}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\zabbix_agent\active_checks}.c{..\..\..\src\zabbix_agent\active_checks}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\zabbix_agent\metrics}.c{..\..\..\src\zabbix_agent\metrics}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\zabbix_agent\active_checks\eventlog_win32}.c{..\..\..\src\zabbix_agent\active_checks\eventlog_win32}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\zabbix_agent\listener}.c{..\..\..\src\zabbix_agent\listener}.o:
+	$(CC) $? /Fo"$@" $(CFLAGS)
+
+{..\..\..\src\zabbix_agent\agent_conf}.c{..\..\..\src\zabbix_agent\agent_conf}.o:
 	$(CC) $? /Fo"$@" $(CFLAGS)
 
 {..\..\..\src\zabbix_agent\logfiles}.c{..\..\..\src\zabbix_agent\logfiles}.o:

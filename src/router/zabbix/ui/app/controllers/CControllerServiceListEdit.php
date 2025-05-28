@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -124,7 +119,7 @@ class CControllerServiceListEdit extends CControllerServiceListGeneral {
 			->removeArgument('filter_without_problem_tags')
 			->removeArgument('filter_tag_source');
 
-		$back_curl = (clone $paging_curl)
+		$return_curl = (clone $paging_curl)
 			->setArgument('action', 'service.list.edit')
 			->setArgument('page', $this->hasInput('page') ? $this->getInput('page') : null);
 
@@ -142,7 +137,7 @@ class CControllerServiceListEdit extends CControllerServiceListGeneral {
 			'active_tab' => CProfile::get('web.service.filter.active', 1),
 			'reset_curl' => $reset_curl,
 			'view_mode_url' => $view_mode_curl->getUrl(),
-			'back_url' => $back_curl->getUrl(),
+			'return_url' => $return_curl->getUrl(),
 			'refresh_url' => $refresh_curl->getUrl(),
 			'refresh_interval' => CWebUser::getRefresh() * 1000,
 			'max_in_table' => CSettingsHelper::get(CSettingsHelper::MAX_IN_TABLE),

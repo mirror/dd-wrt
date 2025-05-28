@@ -2,22 +2,17 @@
 // +build !windows
 
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package sw
@@ -35,10 +30,10 @@ import (
 	"syscall"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/log"
-	"git.zabbix.com/ap/plugin-support/zbxerr"
-	"zabbix.com/pkg/zbxcmd"
-	"zabbix.com/util"
+	"golang.zabbix.com/agent2/pkg/zbxcmd"
+	"golang.zabbix.com/agent2/util"
+	"golang.zabbix.com/sdk/log"
+	"golang.zabbix.com/sdk/zbxerr"
 )
 
 const timeFmt = "Mon Jan _2 15:04:05 2006"
@@ -121,6 +116,14 @@ func getManagers() []manager {
 			"grep -r '^UNCOMPRESSED PACKAGE SIZE' /var/log/packages",
 			parseRegex,
 			pkgtoolsDetails,
+		},
+		{
+			"portage",
+			"qsize --version 2> /dev/null",
+			"qlist -C -I -F '%{PN},%{PV},%{PR}'",
+			"qsize -C --bytes -F '%{CATEGORY},%{PN},%{PV},%{PR},%{REPO}'",
+			parseRegex,
+			portageDetails,
 		},
 	}
 }
@@ -237,7 +240,7 @@ func dpkgDetails(manager string, in []string, regex string) (out string, err err
 		// [2]: https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-installed-size
 
 		if split[4] != "" {
-			size, err = strconv.ParseUint(split[4], 10, 64);
+			size, err = strconv.ParseUint(split[4], 10, 64)
 			if err != nil {
 				return "", err
 			}
@@ -519,6 +522,77 @@ func pkgtoolsDetails(manager string, in []string, regex string) (out string, err
 	return
 }
 
+func portageParseSizeInfo(in string) (out uint64, err error) {
+	const sizeinfo_num_fields = 3
+
+	// "n files, n non-files, n bytes"
+	sizeinfo := strings.Split(in, ", ")
+
+	if len(sizeinfo) != sizeinfo_num_fields {
+		err = errors.New("invalid input format: separator \", \" not found in \"%s\"")
+		return
+	}
+
+	_, err = fmt.Sscanf(sizeinfo[2], "%d bytes", &out)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func portageDetails(manager string, in []string, regex string) (out string, err error) {
+	const num_fields, pkginfo_num_fields, sizeinfo_num_fields = 2, 5, 3
+
+	rgx, err := regexp.Compile(regex)
+	if err != nil {
+		log.Debugf("internal error: cannot compile regex \"%s\"", regex)
+
+		return
+	}
+
+	pd := []PackageDetails{}
+
+	for _, s := range in {
+		var size uint64
+
+		// category,name,version,revision,repo: file count, nonfile count, size
+		split := strings.Split(s, ":")
+
+		if len(split) != num_fields {
+			log.Debugf("invalid input format: separator \":\" not found in \"%s\"", s)
+
+			continue
+		}
+
+		// category,name,version,revision,repo
+		pkginfo := strings.Split(split[0], ",")
+
+		if "" != regex && !rgx.MatchString(pkginfo[1]) {
+			continue
+		}
+
+		size, err = portageParseSizeInfo(split[1])
+		if err != nil {
+			log.Debugf("internal error: failed to parse package size information in \"%s\"", split[1])
+			continue
+		}
+
+		pd = append(pd, appendPackage(pkginfo[1], manager, pkginfo[2], size, "", 0, "", 0, ""))
+	}
+
+	var b []byte
+
+	b, err = json.Marshal(pd)
+	if err != nil {
+		return
+	}
+
+	out = string(b)
+
+	return
+}
+
 func getParams(params []string, maxparams int) (regex string, manager string, short bool, err error) {
 	if len(params) > maxparams {
 		err = zbxerr.ErrorTooManyParameters
@@ -555,7 +629,7 @@ func getParams(params []string, maxparams int) (regex string, manager string, sh
 	return
 }
 
-func (p *Plugin) systemSwPackages(params []string) (result string, err error) {
+func (p *Plugin) systemSwPackages(params []string, timeout int) (result string, err error) {
 	var regex, manager string
 	var short bool
 
@@ -572,12 +646,12 @@ func (p *Plugin) systemSwPackages(params []string) (result string, err error) {
 			continue
 		}
 
-		test, err := zbxcmd.Execute(m.testCmd, time.Second*time.Duration(p.options.Timeout), "")
+		test, err := zbxcmd.Execute(m.testCmd, time.Second*time.Duration(timeout), "")
 		if err != nil || test == "" {
 			continue
 		}
 
-		tmp, err := zbxcmd.Execute(m.listCmd, time.Second*time.Duration(p.options.Timeout), "")
+		tmp, err := zbxcmd.Execute(m.listCmd, time.Second*time.Duration(timeout), "")
 		if err != nil {
 			p.Errf("Failed to execute command '%s', err: %s", m.listCmd, err.Error())
 
@@ -624,7 +698,7 @@ func (p *Plugin) systemSwPackages(params []string) (result string, err error) {
 	return
 }
 
-func (p *Plugin) systemSwPackagesGet(params []string) (result string, err error) {
+func (p *Plugin) systemSwPackagesGet(params []string, timeout int) (result string, err error) {
 	var regex, manager string
 
 	regex, manager, _, err = getParams(params, 2)
@@ -640,12 +714,12 @@ func (p *Plugin) systemSwPackagesGet(params []string) (result string, err error)
 			continue
 		}
 
-		test, err := zbxcmd.Execute(m.testCmd, time.Second*time.Duration(p.options.Timeout), "")
+		test, err := zbxcmd.Execute(m.testCmd, time.Second*time.Duration(timeout), "")
 		if err != nil || test == "" {
 			continue
 		}
 
-		tmp, err := zbxcmd.Execute(m.detailsCmd, time.Second*time.Duration(p.options.Timeout), "")
+		tmp, err := zbxcmd.Execute(m.detailsCmd, time.Second*time.Duration(timeout), "")
 		if err != nil {
 			p.Errf("Failed to execute command '%s', err: %s", m.listCmd, err.Error())
 

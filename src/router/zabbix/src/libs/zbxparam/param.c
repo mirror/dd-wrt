@@ -1,26 +1,20 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxparam.h"
 
 #include "zbxexpr.h"
-#include "zbxnum.h"
 #include "zbxstr.h"
 
 /******************************************************************************
@@ -43,12 +37,14 @@
  ******************************************************************************/
 int	zbx_get_param(const char *p, int num, char *buf, size_t max_len, zbx_request_parameter_type_t *type)
 {
-#define ZBX_ASSIGN_PARAM				\
-{							\
-	if (buf_i == max_len)				\
-		return 1;	/* buffer overflow */	\
-	buf[buf_i++] = *p;				\
-}
+#define ZBX_ASSIGN_PARAM					\
+	do							\
+	{							\
+		if (buf_i == max_len)				\
+			return 1;	/* buffer overflow */	\
+		buf[buf_i++] = *p;				\
+	}							\
+	while(0)
 
 	int	state;	/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
 	int	array, idx = 1;
@@ -708,4 +704,88 @@ int	zbx_num_key_param(char *param)
 	*pr = ']';
 
 	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: unquotes special symbols in item key parameter                    *
+ *                                                                            *
+ * Parameters: param - [IN/OUT] item key parameter                            *
+ *                                                                            *
+ * Comments:                                                                  *
+ *   "param"     => param                                                     *
+ *   "\"param\"" => "param"                                                   *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_unquote_key_param(char *param)
+{
+	char	*dst;
+
+	if ('"' != *param)
+		return;
+
+	for (dst = param++; '\0' != *param; param++)
+	{
+		if ('\\' == *param && '"' == param[1])
+			continue;
+
+		*dst++ = *param;
+	}
+	*--dst = '\0';
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: quotes special symbols in item key parameter                      *
+ *                                                                            *
+ * Parameters: param   - [IN/OUT] item key parameter                          *
+ *             forced  - [IN] 2 - enclose parameter in " even if it does not  *
+ *                                contain any special characters              *
+ *                            1 - enclose parameter in " even if it does not  *
+ *                                contain any special characters, except case *
+ *                                when parameter ends with backslash          *
+ *                            0 - do nothing if the parameter does not        *
+ *                                contain any special characters              *
+ *                                                                            *
+ * Return value: SUCCEED - if parameter was successfully quoted or quoting    *
+ *                         was not necessary                                  *
+ *               FAIL    - if parameter needs to but cannot be quoted due to  *
+ *                         backslash in the end                               *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_quote_key_param(char **param, int forced)
+{
+	size_t	sz_src, sz_dst;
+	int	req;
+
+	req = ('"' == **param || ' ' == **param || '[' == **param || NULL != strchr(*param, ',') ||
+			NULL != strchr(*param, ']')) ? 1 : 0;
+
+	if (0 == req && 0 == forced)
+		return SUCCEED;
+
+	if (0 != (sz_src = strlen(*param)) && '\\' == (*param)[sz_src - 1])
+	{
+		if (0 == req && 2 != forced)
+			return SUCCEED;
+		else
+			return FAIL;
+	}
+
+	sz_dst = zbx_get_escape_string_len(*param, "\"") + 3;
+
+	*param = (char *)zbx_realloc(*param, sz_dst);
+
+	(*param)[--sz_dst] = '\0';
+	(*param)[--sz_dst] = '"';
+
+	while (0 < sz_src)
+	{
+		(*param)[--sz_dst] = (*param)[--sz_src];
+		if ('"' == (*param)[sz_src])
+			(*param)[--sz_dst] = '\\';
+	}
+	(*param)[--sz_dst] = '"';
+
+	return SUCCEED;
 }

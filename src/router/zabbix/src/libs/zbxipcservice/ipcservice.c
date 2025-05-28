@@ -1,16 +1,31 @@
+/*
+** Copyright (C) 2001-2025 Zabbix SIA
+**
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+**
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
+**
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
+**/
+
 #include "zbxcommon.h"
 
 #ifdef HAVE_IPCSERVICE
 
 #ifdef HAVE_LIBEVENT
-#	include <event.h>
+#	include <event2/event.h>
 #	include <event2/thread.h>
+#	include <event2/util.h>
 #endif
 
 #include "zbxipcservice.h"
 #include "zbxalgo.h"
-#include "log.h"
 #include "zbxstr.h"
+#include "zbxtime.h"
 
 #define ZBX_IPC_PATH_MAX	sizeof(((struct sockaddr_un *)0)->sun_path)
 
@@ -51,6 +66,8 @@ struct zbx_ipc_client
 
 	zbx_uint32_t		refcount;
 };
+
+ZBX_PTR_VECTOR_IMPL(ipc_client_ptr, zbx_ipc_client_t *)
 
 /*
  * Private API
@@ -118,7 +135,8 @@ static size_t		ipc_path_prefix_len = ZBX_CONST_STRLEN(ZBX_IPC_CLASS_PREFIX_NONE)
  ******************************************************************************/
 static const char	*ipc_make_path(const char *service_name, char **error)
 {
-	size_t		path_len, offset;
+	size_t				path_len, offset;
+	static ZBX_THREAD_LOCAL char	ipc_path_full[ZBX_IPC_PATH_MAX];
 
 	path_len = strlen(service_name);
 
@@ -131,16 +149,17 @@ static const char	*ipc_make_path(const char *service_name, char **error)
 		return NULL;
 	}
 
+	memcpy(ipc_path_full, ipc_path, ipc_path_root_len);
 	offset = ipc_path_root_len;
-	memcpy(ipc_path + offset , ZBX_IPC_SOCKET_PREFIX, ZBX_CONST_STRLEN(ZBX_IPC_SOCKET_PREFIX));
+	memcpy(ipc_path_full + offset, ZBX_IPC_SOCKET_PREFIX, ZBX_CONST_STRLEN(ZBX_IPC_SOCKET_PREFIX));
 	offset += ZBX_CONST_STRLEN(ZBX_IPC_SOCKET_PREFIX);
-	memcpy(ipc_path + offset, ipc_path_prefix, ipc_path_prefix_len);
+	memcpy(ipc_path_full + offset, ipc_path_prefix, ipc_path_prefix_len);
 	offset += ipc_path_prefix_len;
-	memcpy(ipc_path + offset, service_name, path_len);
+	memcpy(ipc_path_full + offset, service_name, path_len);
 	offset += path_len;
-	memcpy(ipc_path + offset, ZBX_IPC_SOCKET_SUFFIX, ZBX_CONST_STRLEN(ZBX_IPC_SOCKET_SUFFIX) + 1);
+	memcpy(ipc_path_full + offset, ZBX_IPC_SOCKET_SUFFIX, ZBX_CONST_STRLEN(ZBX_IPC_SOCKET_SUFFIX) + 1);
 
-	return ipc_path;
+	return ipc_path_full;
 }
 
 /******************************************************************************
@@ -755,7 +774,7 @@ static void	ipc_service_add_client(zbx_ipc_service_t *service, int fd)
 	client->tx_event = event_new(service->ev, fd, EV_WRITE | EV_PERSIST, ipc_client_write_event_cb, (void *)client);
 	event_add(client->rx_event, NULL);
 
-	zbx_vector_ptr_append(&service->clients, client);
+	zbx_vector_ipc_client_ptr_append(&service->clients, client);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s() clientid:" ZBX_FS_UI64, __func__, client->id);
 }
@@ -770,12 +789,10 @@ static void	ipc_service_add_client(zbx_ipc_service_t *service, int fd)
  ******************************************************************************/
 static void	ipc_service_remove_client(zbx_ipc_service_t *service, zbx_ipc_client_t *client)
 {
-	int		i;
-
-	for (i = 0; i < service->clients.values_num; i++)
+	for (int i = 0; i < service->clients.values_num; i++)
 	{
 		if (service->clients.values[i] == client)
-			zbx_vector_ptr_remove_noorder(&service->clients, i);
+			zbx_vector_ipc_client_ptr_remove_noorder(&service->clients, i);
 	}
 }
 
@@ -791,12 +808,11 @@ static void	ipc_service_remove_client(zbx_ipc_service_t *service, zbx_ipc_client
  ******************************************************************************/
 zbx_ipc_client_t	*zbx_ipc_client_by_id(const zbx_ipc_service_t *service, zbx_uint64_t id)
 {
-	int			i;
 	zbx_ipc_client_t	*client;
 
-	for (i = 0; i < service->clients.values_num; i++)
+	for (int i = 0; i < service->clients.values_num; i++)
 	{
-		client = (zbx_ipc_client_t *) service->clients.values[i];
+		client = service->clients.values[i];
 
 		if (id == client->id)
 			return client;
@@ -1501,8 +1517,8 @@ int	zbx_ipc_service_start(zbx_ipc_service_t *service, const char *service_name, 
 		goto out;
 	}
 
-	service->path = zbx_strdup(NULL, service_name);
-	zbx_vector_ptr_create(&service->clients);
+	service->path = zbx_strdup(NULL, socket_path);
+	zbx_vector_ipc_client_ptr_create(&service->clients);
 	zbx_queue_ptr_create(&service->clients_recv);
 
 	service->ev = event_base_new();
@@ -1531,18 +1547,20 @@ out:
  ******************************************************************************/
 void	zbx_ipc_service_close(zbx_ipc_service_t *service)
 {
-	int	i;
-
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() path:%s", __func__, service->path);
 
-	close(service->fd);
+	if (0 != close(service->fd))
+		zabbix_log(LOG_LEVEL_DEBUG, "Cannot close path \"%s\": %s", service->path, zbx_strerror(errno));
 
-	for (i = 0; i < service->clients.values_num; i++)
-		ipc_client_free((zbx_ipc_client_t *)service->clients.values[i]);
+	if (-1 == unlink(service->path))
+		zabbix_log(LOG_LEVEL_WARNING, "cannot remove socket at %s: %s.", service->path, zbx_strerror(errno));
+
+	for (int i = 0; i < service->clients.values_num; i++)
+		ipc_client_free(service->clients.values[i]);
 
 	zbx_free(service->path);
 
-	zbx_vector_ptr_destroy(&service->clients);
+	zbx_vector_ipc_client_ptr_destroy(&service->clients);
 	zbx_queue_ptr_destroy(&service->clients_recv);
 
 	event_free(service->ev_alert);
@@ -1712,6 +1730,11 @@ void	zbx_ipc_client_close(zbx_ipc_client_t *client)
 	zbx_ipc_client_release(client);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
+}
+
+int	zbx_ipc_client_get_fd(zbx_ipc_client_t *client)
+{
+	return client->csocket.fd;
 }
 
 void	zbx_ipc_client_addref(zbx_ipc_client_t *client)

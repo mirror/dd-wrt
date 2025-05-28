@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -52,8 +47,9 @@
 			this.initFilter(filter_options);
 			$.subscribe('event.rank_change', () => view.refreshNow());
 
-			this.initAcknowledge();
 			this.initExpandables();
+			this.initEvents();
+			this.initPopupListeners();
 
 			if (this.refresh_interval != 0) {
 				this.running = true;
@@ -149,27 +145,6 @@
 			});
 		},
 
-		initAcknowledge() {
-			$.subscribe('acknowledge.create', function(event, response) {
-				// Clear all selected checkboxes in Monitoring->Problems.
-				if (chkbxRange.prefix === 'problem') {
-					chkbxRange.checkObjectAll(chkbxRange.pageGoName, false);
-					chkbxRange.clearSelectedOnFilterChange();
-				}
-
-				view.refreshNow();
-
-				clearMessages();
-				addMessage(makeMessageBox('good', [], response.success.title));
-			});
-
-			$(document).on('submit', '#problem_form', function(e) {
-				e.preventDefault();
-
-				acknowledgePopUp({eventids: Object.keys(chkbxRange.getSelectedIds())}, this);
-			});
-		},
-
 		initExpandables() {
 			const table = this.getCurrentResultsTable();
 			const expandable_buttons = table.querySelectorAll("button[data-action='show_symptoms']");
@@ -189,8 +164,9 @@
 
 					[...rows].forEach((row) => row.classList.remove('hidden'));
 
-					btn.classList.replace('<?= ZBX_STYLE_BTN_WIDGET_EXPAND ?>', '<?= ZBX_STYLE_BTN_WIDGET_COLLAPSE ?>');
-					btn.title = '<?= _('Collapse') ?>';
+					btn.classList.remove(ZBX_ICON_CHEVRON_DOWN, ZBX_STYLE_COLLAPSED);
+					btn.classList.add(ZBX_ICON_CHEVRON_UP);
+					btn.title = <?= json_encode(_('Collapse')) ?>;
 				}
 			});
 
@@ -200,10 +176,62 @@
 			if (rows.length > 0) {
 				const row = [...rows].pop();
 				const btn = row.querySelector('button[data-action="show_symptoms"]');
-				const is_collapsed = btn !== null && btn.classList.contains('<?= ZBX_STYLE_BTN_WIDGET_EXPAND ?>');
+				const is_collapsed = btn !== null && btn.classList.contains(ZBX_STYLE_COLLAPSED);
 
 				[...row.children].forEach((td) => td.style.borderBottomStyle = is_collapsed ? 'hidden' : 'solid');
 			}
+		},
+
+		initEvents() {
+			document.addEventListener('click', e => {
+				if (e.target.classList.contains('js-massupdate-problem')) {
+					this.massupdate({eventids: Object.keys(chkbxRange.getSelectedIds())});
+				}
+			});
+		},
+
+		massupdate({eventids}) {
+			ZABBIX.PopupManager.open('acknowledge.edit', {eventids}, {supports_standalone: true});
+		},
+
+		initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_OPEN
+				},
+				callback: () => this.unscheduleRefresh()
+			});
+
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_CANCEL
+				},
+				callback: () => this.scheduleRefresh()
+			});
+
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: ({data, event}) => {
+					event.preventDefault();
+
+					clearMessages();
+
+					if ('success' in data.submit) {
+						addMessage(makeMessageBox('good', data.submit.success.messages, data.submit.success.title));
+					}
+
+					chkbxRange.checkObjectAll('eventids', false);
+					chkbxRange.update('eventids');
+
+					this.refreshResults();
+					this.refreshCounters();
+				}
+			});
 		},
 
 		showSymptoms(btn, idx, array) {
@@ -215,16 +243,18 @@
 
 			// Show symptom rows for current cause. Sliding animations are not supported on table rows.
 			if (rows[0].classList.contains('hidden')) {
-				btn.classList.replace('<?= ZBX_STYLE_BTN_WIDGET_EXPAND ?>', '<?= ZBX_STYLE_BTN_WIDGET_COLLAPSE ?>');
-				btn.title = '<?= _('Collapse') ?>';
+				btn.classList.remove(ZBX_ICON_CHEVRON_DOWN, ZBX_STYLE_COLLAPSED);
+				btn.classList.add(ZBX_ICON_CHEVRON_UP);
+				btn.title = <?= json_encode(_('Collapse')) ?>;
 
 				this.opened_eventids.push(btn.dataset.eventid);
 
 				[...rows].forEach((row) => row.classList.remove('hidden'));
 			}
 			else {
-				btn.classList.replace('<?= ZBX_STYLE_BTN_WIDGET_COLLAPSE ?>', '<?= ZBX_STYLE_BTN_WIDGET_EXPAND ?>');
-				btn.title = '<?= _('Expand') ?>';
+				btn.classList.remove(ZBX_ICON_CHEVRON_UP);
+				btn.classList.add(ZBX_ICON_CHEVRON_DOWN, ZBX_STYLE_COLLAPSED);
+				btn.title = <?= json_encode(_('Expand')) ?>;
 
 				this.opened_eventids = this.opened_eventids.filter((id) => id !== btn.dataset.eventid);
 
@@ -236,7 +266,7 @@
 
 			if (rows.length > 0) {
 				const row = [...rows].pop();
-				const is_collapsed = btn !== null && btn.classList.contains('<?= ZBX_STYLE_BTN_WIDGET_EXPAND ?>');
+				const is_collapsed = btn.classList.contains(ZBX_STYLE_COLLAPSED);
 
 				[...row.children].forEach((td) => td.style.borderBottomStyle = is_collapsed ? 'hidden' : 'solid');
 			}
@@ -406,7 +436,7 @@
 					}
 				})
 				.catch(() => {
-					/**
+					/*
 					 * On error restart refresh timer.
 					 * If refresh interval is set to 0 (no refresh) schedule initialization request after 5 sec.
 					 */
@@ -414,49 +444,6 @@
 						this.refresh_interval > 0 ? this.refresh_interval : 5000
 					);
 				});
-		},
-
-		editHost(hostid) {
-			this.openHostPopup({hostid});
-		},
-
-		openHostPopup(host_data) {
-			clearMessages();
-
-			const original_url = location.href;
-			const overlay = PopUp('popup.host.edit', host_data, {
-				dialogueid: 'host_edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
-			});
-
-			overlay.$dialogue[0].addEventListener('dialogue.create', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.update', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.delete', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-			}, {once: true});
-		},
-
-		events: {
-			hostSuccess(e) {
-				const data = e.detail;
-
-				if ('success' in data) {
-					const title = data.success.title;
-					let messages = [];
-
-					if ('messages' in data.success) {
-						messages = data.success.messages;
-					}
-
-					addMessage(makeMessageBox('good', messages, title));
-				}
-
-				uncheckTableRows('problem');
-				view.refreshResults();
-				view.refreshCounters();
-			}
 		}
 	};
 </script>

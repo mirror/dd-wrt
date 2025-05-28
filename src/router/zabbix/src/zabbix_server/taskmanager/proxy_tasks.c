@@ -1,34 +1,30 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "zbxdbhigh.h"
+#include "taskmanager_server.h"
+
+#include "zbxdb.h"
 #include "zbxnum.h"
 #include "zbxtasks.h"
 #include "zbxversion.h"
-#include "taskmanager.h"
 
 /******************************************************************************
  *                                                                            *
- * Purpose: get tasks scheduled to be executed on a proxy                     *
+ * Purpose: gets tasks scheduled to be executed on proxy                      *
  *                                                                            *
- * Parameters: tasks         - [OUT] the tasks to execute                     *
- *             proxy_hostid  - [IN] the target proxy                          *
+ * Parameters: tasks         - [OUT] tasks to execute                         *
+ *             proxyid       - [IN] target proxy                              *
  *             compatibility - [IN] proxy version compatibility with server   *
  *                                                                            *
  * Comments: This function is used by server to get tasks to be sent to the   *
@@ -38,11 +34,11 @@
  *           command and check now are supported by outdated proxies.         *
  *                                                                            *
  ******************************************************************************/
-void	zbx_tm_get_remote_tasks(zbx_vector_tm_task_t *tasks, zbx_uint64_t proxy_hostid,
+void	zbx_tm_get_remote_tasks(zbx_vector_tm_task_t *tasks, zbx_uint64_t proxyid,
 		zbx_proxy_compatibility_t compatibility)
 {
-	DB_RESULT	result;
-	DB_ROW		row;
+	zbx_db_result_t	result;
+	zbx_db_row_t	row;
 
 	if (ZBX_PROXY_VERSION_UNDEFINED == compatibility || ZBX_PROXY_VERSION_UNSUPPORTED == compatibility)
 		return;
@@ -62,10 +58,10 @@ void	zbx_tm_get_remote_tasks(zbx_vector_tm_task_t *tasks, zbx_uint64_t proxy_hos
 			" left join task_data d"
 				" on t.taskid=d.taskid"
 			" where t.status=%d"
-				" and t.proxy_hostid=" ZBX_FS_UI64
+				" and t.proxyid=" ZBX_FS_UI64
 				" and (t.ttl=0 or t.clock+t.ttl>" ZBX_FS_TIME_T ")"
 			" order by t.taskid",
-			ZBX_TM_STATUS_NEW, proxy_hostid, (zbx_fs_time_t)time(NULL));
+			ZBX_TM_STATUS_NEW, proxyid, (zbx_fs_time_t)time(NULL));
 
 	while (NULL != (row = zbx_db_fetch(result)))
 	{

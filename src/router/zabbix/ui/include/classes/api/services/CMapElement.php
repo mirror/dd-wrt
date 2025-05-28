@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -57,6 +52,13 @@ abstract class CMapElement extends CApiService {
 				}
 			}
 
+			if (array_key_exists('label', $selement)
+					&& mb_strlen($selement['label']) > DB::getFieldLength('sysmaps_elements', 'label')) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+					'label', _('value is too long')
+				));
+			}
+
 			if (array_key_exists('urls', $selement)) {
 				$url_validate_options = ['allow_user_macro' => false];
 				if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST) {
@@ -69,16 +71,14 @@ abstract class CMapElement extends CApiService {
 					$url_validate_options['allow_inventory_macro'] = INVENTORY_URL_MACRO_NONE;
 				}
 
-				foreach ($selement['urls'] as $url_data) {
+				foreach ($selement['urls'] as &$url_data) {
 					if (!CHtmlUrlValidator::validate($url_data['url'], $url_validate_options)) {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for "url" field.'));
 					}
-				}
-			}
 
-			if ($update && array_key_exists('selementid', $selement)
-						&& array_key_exists($selement['selementid'], $db_selements)) {
-				$db_selement = $db_selements[$selement['selementid']];
+					unset($url_data['sysmapelementurlid'], $url_data['selementid']);
+				}
+				unset($url_data);
 			}
 
 			if (!$elementtype_validator->validate($selement['elementtype'])) {
@@ -318,6 +318,13 @@ abstract class CMapElement extends CApiService {
 				if (!isset($dbLinks[$link['linkid']])) {
 					self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions to referred object or it does not exist!'));
 				}
+			}
+
+			if (array_key_exists('label', $link)
+					&& mb_strlen($link['label']) > DB::getFieldLength('sysmaps_links', 'label')) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+					'label', _('value is too long')
+				));
 			}
 		}
 

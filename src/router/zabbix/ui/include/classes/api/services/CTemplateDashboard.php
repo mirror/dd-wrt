@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -84,55 +79,29 @@ class CTemplateDashboard extends CDashboardGeneral {
 		$options['groupCount'] = ($options['groupCount'] && $options['countOutput']);
 
 		// permissions
-		if (in_array(self::$userData['type'], [USER_TYPE_ZABBIX_USER, USER_TYPE_ZABBIX_ADMIN])) {
-			if ($options['editable']) {
-				if ($options['templateids'] !== null) {
-					$options['templateids'] = array_keys(API::Template()->get([
-						'output' => [],
-						'templateids' => $options['templateids'],
-						'editable' => true,
-						'preservekeys' => true
-					]));
-				}
-				else {
-					$user_groups = getUserGroupsByUserId(self::$userData['userid']);
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
+			if (self::$userData['ugsetid'] == 0) {
+				return $options['countOutput'] ? '0' : [];
+			}
 
-					$sql_parts['where'][] = 'EXISTS ('.
-						'SELECT NULL'.
-						' FROM hosts_groups hgg'.
-							' JOIN rights r'.
-								' ON r.id=hgg.groupid'.
-									' AND '.dbConditionInt('r.groupid', $user_groups).
-						' WHERE d.templateid=hgg.hostid'.
-						' GROUP BY hgg.hostid'.
-						' HAVING MIN(r.permission)>'.PERM_DENY.
-							' AND MAX(r.permission)>='.PERM_READ_WRITE.
-						')';
-				}
+			if ($options['editable']) {
+				$sql_parts['from'][] = 'host_hgset hh';
+				$sql_parts['from'][] = 'permission p';
+				$sql_parts['where'][] = 'd.templateid=hh.hostid';
+				$sql_parts['where'][] = 'hh.hgsetid=p.hgsetid';
+				$sql_parts['where'][] = 'p.ugsetid='.self::$userData['ugsetid'];
+				$sql_parts['where'][] = 'p.permission='.PERM_READ_WRITE;
 			}
 			else {
-				$user_groups = getUserGroupsByUserId(self::$userData['userid']);
-
-				// Select direct templates of all hosts accessible to the current user.
 				$db_host_templates = DBselect(
 					'SELECT DISTINCT ht.templateid'.
-					' FROM hosts_templates ht'.
-						' JOIN hosts h ON ht.hostid=h.hostid'.
-							' AND h.status IN ('.HOST_STATUS_MONITORED.','.HOST_STATUS_NOT_MONITORED.')'.
-							' AND h.flags IN ('.ZBX_FLAG_DISCOVERY_NORMAL.','.ZBX_FLAG_DISCOVERY_CREATED.')'.
-						' JOIN hosts_groups hg ON h.hostid=hg.hostid'.
-						' JOIN rights r ON hg.groupid=r.id'.
-							' AND '.dbConditionId('r.groupid', $user_groups).
-							' AND r.permission>='.PERM_READ.
-					' WHERE NOT EXISTS ('.
-						'SELECT NULL'.
-						' FROM hosts_groups hgg'.
-							' JOIN rights r2'.
-								' ON hgg.groupid=r2.id'.
-									' AND '.dbConditionId('r2.groupid', $user_groups).
-									' AND r2.permission='.PERM_DENY.
-						' WHERE h.hostid=hgg.hostid'.
-					')'
+					' FROM hosts h'.
+					' JOIN host_hgset hh ON h.hostid=hh.hostid'.
+					' JOIN permission p ON hh.hgsetid=p.hgsetid'.
+						' AND p.ugsetid='.self::$userData['ugsetid'].
+					' JOIN hosts_templates ht ON h.hostid=ht.hostid'.
+					' WHERE h.status IN ('.HOST_STATUS_MONITORED.','.HOST_STATUS_NOT_MONITORED.')'.
+						' AND h.flags IN ('.ZBX_FLAG_DISCOVERY_NORMAL.','.ZBX_FLAG_DISCOVERY_CREATED.')'
 				);
 
 				$templateids = [];
@@ -303,9 +272,9 @@ class CTemplateDashboard extends CDashboardGeneral {
 					'name' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('widget', 'name')],
 					'view_mode' =>		['type' => API_INT32, 'in' => implode(',', [ZBX_WIDGET_VIEW_MODE_NORMAL, ZBX_WIDGET_VIEW_MODE_HIDDEN_HEADER])],
 					'x' =>				['type' => API_INT32, 'in' => '0:'.(DASHBOARD_MAX_COLUMNS - 1)],
-					'y' =>				['type' => API_INT32, 'in' => '0:'.(DASHBOARD_MAX_ROWS - 2)],
+					'y' =>				['type' => API_INT32, 'in' => '0:'.(DASHBOARD_MAX_ROWS - 1)],
 					'width' =>			['type' => API_INT32, 'in' => '1:'.DASHBOARD_MAX_COLUMNS],
-					'height' =>			['type' => API_INT32, 'in' => '2:'.DASHBOARD_WIDGET_MAX_ROWS],
+					'height' =>			['type' => API_INT32, 'in' => '1:'.DASHBOARD_MAX_ROWS],
 					'fields' =>			['type' => API_OBJECTS, 'fields' => [
 						'type' =>			['type' => API_INT32, 'flags' => API_REQUIRED, 'in' => implode(',', array_keys(self::WIDGET_FIELD_TYPE_COLUMNS))],
 						'name' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('widget_field', 'name'), 'default' => DB::getDefault('widget_field', 'name')],
@@ -364,7 +333,7 @@ class CTemplateDashboard extends CDashboardGeneral {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUuidDuplicates(array $dashboards, array $db_dashboards = null): void {
+	private static function checkUuidDuplicates(array $dashboards, ?array $db_dashboards = null): void {
 		$dashboard_indexes = [];
 
 		foreach ($dashboards as $i => $dashboard) {
@@ -404,7 +373,7 @@ class CTemplateDashboard extends CDashboardGeneral {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	protected function validateUpdate(array &$dashboards, array &$db_dashboards = null): void {
+	protected function validateUpdate(array &$dashboards, ?array &$db_dashboards = null): void {
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['uuid'], ['dashboardid']], 'fields' => [
 			'uuid' => 				['type' => API_UUID],
 			'dashboardid' =>		['type' => API_ID, 'flags' => API_REQUIRED],
@@ -421,9 +390,9 @@ class CTemplateDashboard extends CDashboardGeneral {
 					'name' =>				['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('widget', 'name')],
 					'view_mode' =>			['type' => API_INT32, 'in' => implode(',', [ZBX_WIDGET_VIEW_MODE_NORMAL, ZBX_WIDGET_VIEW_MODE_HIDDEN_HEADER])],
 					'x' =>					['type' => API_INT32, 'in' => '0:'.(DASHBOARD_MAX_COLUMNS - 1)],
-					'y' =>					['type' => API_INT32, 'in' => '0:'.(DASHBOARD_MAX_ROWS - 2)],
+					'y' =>					['type' => API_INT32, 'in' => '0:'.(DASHBOARD_MAX_ROWS - 1)],
 					'width' =>				['type' => API_INT32, 'in' => '1:'.DASHBOARD_MAX_COLUMNS],
-					'height' =>				['type' => API_INT32, 'in' => '2:'.DASHBOARD_WIDGET_MAX_ROWS],
+					'height' =>				['type' => API_INT32, 'in' => '1:'.DASHBOARD_MAX_ROWS],
 					'fields' =>				['type' => API_OBJECTS, 'fields' => [
 						'type' =>				['type' => API_INT32, 'flags' => API_REQUIRED, 'in' => implode(',', array_keys(self::WIDGET_FIELD_TYPE_COLUMNS))],
 						'name' =>				['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('widget_field', 'name'), 'default' => DB::getDefault('widget_field', 'name')],
@@ -484,7 +453,7 @@ class CTemplateDashboard extends CDashboardGeneral {
 	 *
 	 * @throws APIException if dashboard names are not unique.
 	 */
-	protected function checkDuplicates(array $dashboards, array $db_dashboards = null): void {
+	protected function checkDuplicates(array $dashboards, ?array $db_dashboards = null): void {
 		$names_by_templateid = [];
 
 		foreach ($dashboards as $dashboard) {

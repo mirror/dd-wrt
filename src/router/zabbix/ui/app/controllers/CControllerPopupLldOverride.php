@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -68,7 +63,12 @@ class CControllerPopupLldOverride extends CController {
 			'stop' => $this->getInput('stop', 0),
 			'overrides_evaltype' => $this->getInput('overrides_evaltype', CONDITION_EVAL_TYPE_AND_OR),
 			'overrides_formula' => $this->getInput('overrides_formula', ''),
-			'overrides_filters' => $this->getInput('overrides_filters', []),
+			'overrides_filters' => $this->getInput('overrides_filters', [[
+				'macro' => '',
+				'operator' => CONDITION_OPERATOR_REGEXP,
+				'value' => '',
+				'formulaid' => num2letter(0)
+			]]),
 			'operations' => $this->getInput('operations', []),
 			'overrides_names' => $this->getInput('overrides_names', [])
 		];
@@ -76,11 +76,6 @@ class CControllerPopupLldOverride extends CController {
 		if ($this->hasInput('validate')) {
 			if ($page_options['name'] === '') {
 				error(_s('Incorrect value for field "%1$s": %2$s.', _('Name'), _('cannot be empty')));
-			}
-
-			if ($page_options['overrides_evaltype'] == CONDITION_EVAL_TYPE_EXPRESSION
-					&& $page_options['overrides_formula'] === '') {
-				error(_s('Incorrect value for field "%1$s": %2$s.', _('Custom expression'), _('cannot be empty')));
 			}
 
 			// Validate if override names are unique.
@@ -92,16 +87,15 @@ class CControllerPopupLldOverride extends CController {
 				}
 			}
 
-			foreach ($page_options['overrides_filters'] as $i => $filter) {
-				if ($filter['macro'] === '' && $filter['value'] === '') {
-					unset($page_options['overrides_filters'][$i]);
-				}
-			}
+			$overrides_filter = prepareLldFilter([
+				'evaltype' => $page_options['overrides_evaltype'],
+				'formula' => $page_options['overrides_formula'],
+				'conditions' => $page_options['overrides_filters']
+			]);
 
-			if ($page_options['overrides_filters']) {
-				$page_options['overrides_filters'] = sortLldRuleFilterConditions($page_options['overrides_filters'],
-					$page_options['overrides_evaltype']
-				);
+			if ($overrides_filter['evaltype'] == CONDITION_EVAL_TYPE_EXPRESSION
+					&& $overrides_filter['formula'] === '') {
+				error(_s('Incorrect value for field "%1$s": %2$s.', _('Custom expression'), _('cannot be empty')));
 			}
 
 			// Return collected error messages.
@@ -113,9 +107,9 @@ class CControllerPopupLldOverride extends CController {
 				$params = [
 					'name' => $page_options['name'],
 					'stop' => $page_options['stop'],
-					'overrides_evaltype' => $page_options['overrides_evaltype'],
-					'overrides_formula' => $page_options['overrides_formula'],
-					'overrides_filters' => $page_options['overrides_filters'],
+					'overrides_evaltype' => $overrides_filter['evaltype'],
+					'overrides_formula' => $overrides_filter['formula'],
+					'overrides_filters' => $overrides_filter['conditions'],
 					'operations' => $page_options['operations'],
 					'no' => $page_options['no']
 				];
@@ -130,15 +124,6 @@ class CControllerPopupLldOverride extends CController {
 			);
 		}
 		else {
-			if (!$page_options['overrides_filters']) {
-				$page_options['overrides_filters'][] = [
-					'macro' => '',
-					'operator' => CONDITION_OPERATOR_REGEXP,
-					'value' => '',
-					'formulaid' => num2letter(0)
-				];
-			}
-
 			$data = [
 				'title' => _('Override'),
 				'options' => $page_options,

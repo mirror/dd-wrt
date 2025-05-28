@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -28,48 +23,55 @@
 	const view = new class {
 
 		init() {
-			document.addEventListener('click', (e) => {
-				if (e.target.classList.contains('js-action-edit')) {
-					this._edit({actionid: e.target.dataset.actionid, eventsource: e.target.dataset.eventsource});
-				}
-			})
+			this.#initActions();
+			this.#initPopupListeners();
 		}
 
-		_edit(parameters = {}) {
-			const overlay = PopUp('popup.action.edit', parameters, {
-				dialogueid: 'action-edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
+		#initActions() {
+			document.getElementById('js-create').addEventListener('click', () => {
+				ZABBIX.PopupManager.open('script.edit');
 			});
 
-			overlay.$dialogue[0].addEventListener('dialogue.submit', (e) => {
-				postMessageOk(e.detail.title);
-
-				if ('messages' in e.detail) {
-					postMessageDetails('success', e.detail.messages);
-				}
-
-				location.href = location.href;
-			});
-
-			overlay.$dialogue[0].addEventListener('dialogue.delete', (e) => {
-				postMessageOk(e.detail.title);
-
-				if ('messages' in e.detail) {
-					postMessageDetails('success', e.detail.messages);
-				}
-
-				location.href = location.href;
+			document.getElementById('js-massdelete').addEventListener('click', e => {
+				this.#delete(e.target, Object.keys(chkbxRange.getSelectedIds()), true)
 			});
 		}
 
-		_post(target, actionids, url) {
+		#initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: () => uncheckTableRows('script')
+			});
+		}
+
+		#delete(target, scriptids) {
+			const confirmation = scriptids.length > 1
+				? <?= json_encode(_('Delete selected scripts?')) ?>
+				: <?= json_encode(_('Delete selected script?')) ?>;
+
+			if (!window.confirm(confirmation)) {
+				return;
+			}
+
+			const curl = new Curl('zabbix.php');
+
+			curl.setArgument('action', 'script.delete');
+
+			this.#post(target, scriptids, curl);
+		}
+
+		#post(target, scriptids, url) {
+			url.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('script')) ?>);
+
 			target.classList.add('is-loading');
 
-			return fetch(url, {
+			return fetch(url.getUrl(), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({actionids: actionids})
+				body: JSON.stringify({scriptids: scriptids})
 			})
 				.then((response) => response.json())
 				.then((response) => {
@@ -77,6 +79,7 @@
 						if ('title' in response.error) {
 							postMessageError(response.error.title);
 						}
+						uncheckTableRows('script', response.keepids ?? []);
 
 						postMessageDetails('error', response.error.messages);
 					}
@@ -86,6 +89,8 @@
 						if ('messages' in response.success) {
 							postMessageDetails('success', response.success.messages);
 						}
+
+						uncheckTableRows('script');
 					}
 
 					location.href = location.href;

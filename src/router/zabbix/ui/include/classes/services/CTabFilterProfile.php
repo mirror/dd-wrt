@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -44,6 +39,13 @@ class CTabFilterProfile {
 	 * @var bool
 	 */
 	public $expanded;
+
+	/**
+	 * Is timeselector tab expanded.
+	 *
+	 * @var bool
+	 */
+	public $expanded_timeselector;
 
 	/**
 	 * Global time range start.
@@ -98,6 +100,7 @@ class CTabFilterProfile {
 		];
 		$this->selected = 0;
 		$this->expanded = false;
+		$this->expanded_timeselector = false;
 	}
 
 	/**
@@ -139,7 +142,10 @@ class CTabFilterProfile {
 			? $this->tabfilters[$index] + $this->filter_defaults
 			: $this->filter_defaults;
 
-		if (!$data['filter_custom_time']) {
+		if ($data['filter_custom_time']) {
+			$data['filter_custom_time_label'] = relativeDateToText($data['from'], $data['to']);
+		}
+		else {
 			$data['from'] = $this->from;
 			$data['to'] = $this->to;
 		}
@@ -277,6 +283,11 @@ class CTabFilterProfile {
 		$this->to = CProfile::get($this->namespace.'.to', $to);
 		$this->selected = (int) CProfile::get($this->namespace.'.selected', 0);
 		$this->expanded = (bool) CProfile::get($this->namespace.'.expanded', true);
+
+		if (!$this->expanded) {
+			$this->expanded_timeselector = (bool) CProfile::get($this->namespace.'.expanded_timeselector', false);
+		}
+
 		// CProfile::updateArray assign new idx2 values do not need to store order in profile
 		$this->tabfilters = CProfile::getArray($this->namespace.'.properties', []);
 
@@ -303,6 +314,8 @@ class CTabFilterProfile {
 		CProfile::updateArray($this->namespace.'.properties', array_map('json_encode', $tabfilters), PROFILE_TYPE_STR);
 		CProfile::update($this->namespace.'.selected', $this->selected, PROFILE_TYPE_INT);
 		CProfile::update($this->namespace.'.expanded', (int) $this->expanded, PROFILE_TYPE_INT);
+		CProfile::update($this->namespace.'.expanded_timeselector', (int) $this->expanded_timeselector,
+			PROFILE_TYPE_INT);
 
 		return $this;
 	}

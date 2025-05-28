@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -77,8 +72,8 @@ if (array_key_exists('slas', $data)) {
 
 			$sla_html[] = ': ';
 			$sla_html[] = CSlaHelper::getSliTag($current_period_sli, (float) $sla['slo']);
-			$sla_html[] = (new CLink())
-				->addClass(ZBX_STYLE_ICON_DESCRIPTION)
+			$sla_html[] = (new CButtonIcon(ZBX_ICON_ALERT_WITH_CONTENT))
+				->setAttribute('data-content', '?')
 				->setHint($hint);
 		}
 
@@ -90,6 +85,12 @@ if (array_key_exists('slas', $data)) {
 	}
 }
 
+$service_url = (new CUrl('zabbix.php'))
+	->setArgument('action', 'popup')
+	->setArgument('popup', 'service.edit')
+	->setArgument('serviceid', $data['service']['serviceid'])
+	->getUrl();
+
 (new CDiv([
 	(new CDiv())
 		->addClass(ZBX_STYLE_SERVICE_INFO_GRID)
@@ -97,10 +98,9 @@ if (array_key_exists('slas', $data)) {
 			(new CDiv($data['service']['name']))->addClass(ZBX_STYLE_SERVICE_NAME),
 			(new CDiv(
 				$data['is_editable']
-					? (new CButton(null))
-						->addClass(ZBX_STYLE_BTN_EDIT)
+					? (new CButtonIcon(ZBX_ICON_PENCIL, _('Edit')))
 						->addClass('js-edit-service')
-						->setAttribute('data-serviceid', $data['service']['serviceid'])
+						->setAttribute('data-href', $service_url)
 						->setEnabled(!$data['service']['readonly'])
 					: null
 			))->addClass(ZBX_STYLE_SERVICE_ACTIONS)

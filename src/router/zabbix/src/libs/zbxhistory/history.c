@@ -1,35 +1,36 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "history.h"
 
-#include "log.h"
 #include "zbxstr.h"
+#include "zbxalgo.h"
 #include "zbxnum.h"
 #include "zbxprof.h"
+#include "zbxtime.h"
+#include "zbxvariant.h"
 
 ZBX_VECTOR_IMPL(history_record, zbx_history_record_t)
 
-extern char	*CONFIG_HISTORY_STORAGE_URL;
-extern char	*CONFIG_HISTORY_STORAGE_OPTS;
+ZBX_PTR_VECTOR_IMPL(dc_history_ptr, zbx_dc_history_t *)
 
-zbx_history_iface_t	history_ifaces[ITEM_VALUE_TYPE_MAX];
+void	zbx_dc_history_shallow_free(zbx_dc_history_t *dc_history)
+{
+	zbx_free(dc_history);
+}
+
+zbx_history_iface_t	history_ifaces[ITEM_VALUE_TYPE_BIN + 1];
 
 /************************************************************************************
  *                                                                                  *
@@ -37,26 +38,38 @@ zbx_history_iface_t	history_ifaces[ITEM_VALUE_TYPE_MAX];
  *                                                                                  *
  * Comments: History interfaces are created for all values types based on           *
  *           configuration. Every value type can have different history storage     *
- *           backend.                                                               *
+ *           backend. (Binary value type is not supported for ElasticSearch)        *
  *                                                                                  *
  ************************************************************************************/
-int	zbx_history_init(char **error)
+int	zbx_history_init(const char *config_history_storage_url, const char *config_history_storage_opts,
+		int config_log_slow_queries, char **error)
 {
-	int		i, ret;
-
 	/* TODO: support per value type specific configuration */
 
-	const char	*opts[] = {"dbl", "str", "log", "uint", "text"};
+	const char	*opts[] = {"dbl", "str", "log", "uint", "text", "bin"};
 
-	for (i = 0; i < ITEM_VALUE_TYPE_MAX; i++)
+	for (int i = ITEM_VALUE_TYPE_FLOAT; i <= ITEM_VALUE_TYPE_BIN; i++)
 	{
-		if (NULL == CONFIG_HISTORY_STORAGE_URL || NULL == strstr(CONFIG_HISTORY_STORAGE_OPTS, opts[i]))
-			ret = zbx_history_sql_init(&history_ifaces[i], i, error);
-		else
-			ret = zbx_history_elastic_init(&history_ifaces[i], i, error);
 
-		if (FAIL == ret)
-			return FAIL;
+		if (NULL == config_history_storage_url || NULL == strstr(config_history_storage_opts, opts[i]))
+		{
+			zbx_history_sql_init(&history_ifaces[i], i);
+		}
+		else
+		{
+			if (ITEM_VALUE_TYPE_BIN == i)
+			{
+				*error = zbx_strdup(*error, "Binary value type is not supported for ElasticSearch"
+						" history storage");
+				return FAIL;
+			}
+
+			if (FAIL == zbx_history_elastic_init(&history_ifaces[i], i, config_history_storage_url,
+					config_log_slow_queries, error))
+			{
+				return FAIL;
+			}
+		}
 	}
 
 	return SUCCEED;
@@ -74,7 +87,7 @@ void	zbx_history_destroy(void)
 {
 	int	i;
 
-	for (i = 0; i < ITEM_VALUE_TYPE_MAX; i++)
+	for (i = 0; i <= ITEM_VALUE_TYPE_BIN; i++)
 	{
 		zbx_history_iface_t	*writer = &history_ifaces[i];
 
@@ -84,16 +97,20 @@ void	zbx_history_destroy(void)
 
 /************************************************************************************
  *                                                                                  *
- * Purpose: Sends values to the history storage                                     *
+ * Purpose: sends values to history storage                                         *
  *                                                                                  *
- * Parameters: history - [IN] the values to store                                   *
+ * Parameters:                                                                      *
+ *    history                          - [IN] values to store                       *
+ *    ret_flush                        - [OUT]                                      *
+ *    config_history_storage_pipelines - [IN]                                       *
  *                                                                                  *
  * Comments: add history values to the configured storage backends                  *
  *                                                                                  *
  ************************************************************************************/
-int	zbx_history_add_values(const zbx_vector_ptr_t *history, int *ret_flush)
+int	zbx_history_add_values(const zbx_vector_dc_history_ptr_t *history, int *ret_flush,
+		int config_history_storage_pipelines)
 {
-	int	i, flags = 0;
+	int	flags = 0;
 
 	*ret_flush = FLUSH_SUCCEED;
 
@@ -101,15 +118,15 @@ int	zbx_history_add_values(const zbx_vector_ptr_t *history, int *ret_flush)
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
-	for (i = 0; i < ITEM_VALUE_TYPE_MAX; i++)
+	for (int i = 0; i <= ITEM_VALUE_TYPE_BIN; i++)
 	{
 		zbx_history_iface_t	*writer = &history_ifaces[i];
 
-		if (0 < writer->add_values(writer, history))
+		if (0 < writer->add_values(writer, history, config_history_storage_pipelines))
 			flags |= (1 << i);
 	}
 
-	for (i = 0; i < ITEM_VALUE_TYPE_MAX; i++)
+	for (int i = 0; i <= ITEM_VALUE_TYPE_BIN; i++)
 	{
 		zbx_history_iface_t	*writer = &history_ifaces[i];
 
@@ -244,10 +261,19 @@ void	zbx_history_record_clear(zbx_history_record_t *value, int value_type)
 	{
 		case ITEM_VALUE_TYPE_STR:
 		case ITEM_VALUE_TYPE_TEXT:
+		case ITEM_VALUE_TYPE_BIN:
 			zbx_free(value->value.str);
 			break;
 		case ITEM_VALUE_TYPE_LOG:
 			history_logfree(value->value.log);
+			break;
+		case ITEM_VALUE_TYPE_UINT64:
+		case ITEM_VALUE_TYPE_FLOAT:
+			break;
+		case ITEM_VALUE_TYPE_NONE:
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			exit(EXIT_FAILURE);
 	}
 }
 
@@ -255,10 +281,10 @@ void	zbx_history_record_clear(zbx_history_record_t *value, int value_type)
  *                                                                            *
  * Purpose: converts history value to string format                           *
  *                                                                            *
- * Parameters: buffer     - [OUT] the output buffer                           *
- *             size       - [IN] the output buffer size                       *
- *             value      - [IN] the value to convert                         *
- *             value_type - [IN] the history value type                       *
+ * Parameters: buffer     - [OUT] output buffer                               *
+ *             size       - [IN] output buffer size                           *
+ *             value      - [IN] value to convert                             *
+ *             value_type - [IN] history value type                           *
  *                                                                            *
  ******************************************************************************/
 void	zbx_history_value2str(char *buffer, size_t size, const zbx_history_value_t *value, int value_type)
@@ -275,42 +301,16 @@ void	zbx_history_value2str(char *buffer, size_t size, const zbx_history_value_t 
 		case ITEM_VALUE_TYPE_TEXT:
 			zbx_strlcpy_utf8(buffer, value->str, size);
 			break;
+		case ITEM_VALUE_TYPE_BIN:
+			zbx_strlcpy(buffer, value->str, size);
+			break;
 		case ITEM_VALUE_TYPE_LOG:
 			zbx_strlcpy_utf8(buffer, value->log->value, size);
+			break;
+		case ITEM_VALUE_TYPE_NONE:
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
 	}
-}
-
-/******************************************************************************
- *                                                                            *
- * Purpose: converts history value to string format (with dynamic buffer)     *
- *                                                                            *
- * Parameters: value      - [IN] the value to convert                         *
- *             value_type - [IN] the history value type                       *
- *                                                                            *
- * Return value: The value in text format.                                    *
- *                                                                            *
- ******************************************************************************/
-char	*zbx_history_value2str_dyn(const zbx_history_value_t *value, int value_type)
-{
-	char	*str = NULL;
-	size_t	str_alloc = 0, str_offset = 0;
-
-	switch (value_type)
-	{
-		case ITEM_VALUE_TYPE_FLOAT:
-			zbx_snprintf_alloc(&str, &str_alloc, &str_offset, ZBX_FS_DBL, value->dbl);
-			break;
-		case ITEM_VALUE_TYPE_UINT64:
-			zbx_snprintf_alloc(&str, &str_alloc, &str_offset, ZBX_FS_UI64, value->ui64);
-			break;
-		case ITEM_VALUE_TYPE_STR:
-		case ITEM_VALUE_TYPE_TEXT:
-			str = zbx_strdup(NULL, value->str);
-			break;
-		case ITEM_VALUE_TYPE_LOG:
-			str = zbx_strdup(NULL, value->log->value);
-	}
-	return str;
 }
 
 /******************************************************************************
@@ -348,6 +348,7 @@ void	zbx_history_record_vector_clean(zbx_vector_history_record_t *vector, int va
 	{
 		case ITEM_VALUE_TYPE_STR:
 		case ITEM_VALUE_TYPE_TEXT:
+		case ITEM_VALUE_TYPE_BIN:
 			for (i = 0; i < vector->values_num; i++)
 				zbx_free(vector->values[i].value.str);
 
@@ -355,6 +356,14 @@ void	zbx_history_record_vector_clean(zbx_vector_history_record_t *vector, int va
 		case ITEM_VALUE_TYPE_LOG:
 			for (i = 0; i < vector->values_num; i++)
 				history_logfree(vector->values[i].value.log);
+			break;
+		case ITEM_VALUE_TYPE_FLOAT:
+		case ITEM_VALUE_TYPE_UINT64:
+			break;
+		case ITEM_VALUE_TYPE_NONE:
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			exit(EXIT_FAILURE);
 	}
 
 	zbx_vector_history_record_clear(vector);
@@ -431,6 +440,12 @@ void	zbx_history_value2variant(const zbx_history_value_t *value, unsigned char v
 			break;
 		case ITEM_VALUE_TYPE_LOG:
 			zbx_variant_set_str(var, zbx_strdup(NULL, value->log->value));
+			break;
+		case ITEM_VALUE_TYPE_BIN:
+		case ITEM_VALUE_TYPE_NONE:
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			exit(EXIT_FAILURE);
 	}
 }
 
@@ -440,8 +455,12 @@ void	zbx_history_value2variant(const zbx_history_value_t *value, unsigned char v
  *          functions                                                         *
  *                                                                            *
  ******************************************************************************/
-void	zbx_history_check_version(struct zbx_json *json, int *result)
+void	zbx_history_check_version(struct zbx_json *json, int *result, int config_allow_unsupported_db_versions,
+		const char *config_history_storage_url)
 {
-	if (NULL != CONFIG_HISTORY_STORAGE_URL)
-		zbx_elastic_version_extract(json, result);
+	if (NULL != config_history_storage_url)
+	{
+		zbx_elastic_version_extract(json, result, config_allow_unsupported_db_versions,
+				config_history_storage_url);
+	}
 }

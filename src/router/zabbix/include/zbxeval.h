@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_ZBXEVAL_H
@@ -23,6 +18,7 @@
 #include "zbxtime.h"
 #include "zbxvariant.h"
 #include "zbxexpr.h"
+#include "zbxregexp.h"
 
 /*
  * Token type flags (32 bits):
@@ -96,6 +92,7 @@
 #define ZBX_EVAL_PARSE_FUNCTION_NAME	__UINT64_C(0x00008000)
 #define ZBX_EVAL_PARSE_PROP_TAG		__UINT64_C(0x00010000)	/* 'tag' keyword in item query filter */
 #define ZBX_EVAL_PARSE_PROP_GROUP	__UINT64_C(0x00020000)	/* 'group' keyword in item query filter */
+#define ZBX_EVAL_PARSE_STR_V64_COMPAT	__UINT64_C(0x00040000)	/* no backslash escaping for history functions */
 
 #define ZBX_EVAL_PARSE_FUNCTION		(ZBX_EVAL_PARSE_FUNCTION_NAME | ZBX_EVAL_PARSE_FUNCTION_ARGS	|\
 					ZBX_EVAL_PARSE_GROUP)
@@ -180,8 +177,8 @@ typedef zbx_uint32_t zbx_token_type_t;
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
-typedef	int (*zbx_eval_function_cb_t)(const char *name, size_t len, int args_num, const zbx_variant_t *args,
-		void *data, const zbx_timespec_t *ts, zbx_variant_t *value, char **error);
+typedef	int (*zbx_eval_function_cb_t)(const char *name, size_t len, int args_num, zbx_variant_t *args, void *data,
+		const zbx_timespec_t *ts, zbx_variant_t *value, char **error);
 
 typedef struct
 {
@@ -212,6 +209,10 @@ zbx_eval_context_t;
 
 typedef int	(*zbx_macro_expand_func_t)(void *data, char **str, const zbx_uint64_t *hostids, int hostids_num, \
 		char **error);
+typedef void	(*zbx_get_expressions_by_name_f)(zbx_vector_expression_t *expressions, const char *name);
+typedef int (*zbx_eval_subst_macros_func_t)(zbx_token_type_t token_type, char **value, char **error, va_list args);
+
+void	zbx_init_library_eval(zbx_get_expressions_by_name_f get_expressions_by_name_func);
 
 int	zbx_eval_parse_expression(zbx_eval_context_t *ctx, const char *expression, zbx_uint64_t rules, char **error);
 void	zbx_eval_init(zbx_eval_context_t *ctx);
@@ -226,10 +227,14 @@ int	zbx_eval_execute_ext(zbx_eval_context_t *ctx, const zbx_timespec_t *ts, zbx_
 		zbx_eval_function_cb_t history_func_cb, void *data, zbx_variant_t *value, char **error);
 void	zbx_eval_get_functionids(zbx_eval_context_t *ctx, zbx_vector_uint64_t *functionids);
 void	zbx_eval_get_functionids_ordered(zbx_eval_context_t *ctx, zbx_vector_uint64_t *functionids);
-int	zbx_eval_expand_user_macros(const zbx_eval_context_t *ctx, const zbx_uint64_t *hostids, int hostids_num,
-		zbx_macro_expand_func_t um_expand_cb, void *data, char **error);
+int	zbx_eval_substitute_macros(const zbx_eval_context_t *ctx, char **error, zbx_eval_subst_macros_func_t resolver,
+		...);
+int	zbx_eval_query_subtitute_user_macros(const char *itemquery, size_t len, char **out, char **error,
+		zbx_eval_subst_macros_func_t resolver, ...);
 
 void	zbx_eval_set_exception(zbx_eval_context_t *ctx, char *message);
+
+void	zbx_eval_compose_expression_from_pos(const zbx_eval_context_t *ctx, char **expression, size_t pos);
 
 #define ZBX_EVAL_EXTRACT_FUNCTIONID	0x0001
 #define ZBX_EVAL_EXTRACT_VAR_STR	0x0002
@@ -253,6 +258,7 @@ char	*zbx_eval_format_function_error(const char *function, const char *host, con
 		const char *parameter, const char *error);
 
 void	zbx_eval_extract_item_refs(zbx_eval_context_t *ctx, zbx_vector_str_t *refs);
+int	zbx_eval_compare_tokens_by_loc(const void *d1, const void *d2);
 
 typedef struct
 {
@@ -286,6 +292,36 @@ int	zbx_eval_calc_min(zbx_vector_dbl_t *values, double *result, char **error);
 int	zbx_eval_calc_max(zbx_vector_dbl_t *values, double *result, char **error);
 int	zbx_eval_calc_sum(zbx_vector_dbl_t *values, double *result, char **error);
 
-int	zbx_eval_suffixed_number_parse(const char *value, char *suffix);
+int	zbx_eval_var_vector_to_dbl(zbx_vector_var_t *input_vector, zbx_vector_dbl_t *output_vector, char **error);
 
+#define OP_UNKNOWN	-1
+#define OP_EQ		0
+#define OP_NE		1
+#define OP_GT		2
+#define OP_GE		3
+#define OP_LT		4
+#define OP_LE		5
+#define OP_LIKE		6
+#define OP_REGEXP	7
+#define OP_IREGEXP	8
+#define OP_BITAND	9
+#define OP_ANY		10
+
+typedef struct
+{
+	int			op;
+	int			numeric_search;
+	char			*pattern2;
+	zbx_uint64_t		pattern_ui64;
+	zbx_uint64_t		pattern2_ui64;
+	double			pattern_dbl;
+	zbx_vector_expression_t	regexps;
+}
+zbx_eval_count_pattern_data_t;
+
+int	zbx_init_count_pattern(char *operator, char *pattern, unsigned char value_type,
+		zbx_eval_count_pattern_data_t *pdata, char **error);
+int	zbx_count_var_vector_with_pattern(zbx_eval_count_pattern_data_t *pdata, char *pattern, zbx_vector_var_t *values,
+		int limit, int *count, char **error);
+void	zbx_clear_count_pattern(zbx_eval_count_pattern_data_t *pdata);
 #endif

@@ -1,33 +1,41 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxavailability.h"
+#include "zbx_availability_constants.h"
 
-#include "log.h"
+#include "zbxalgo.h"
+#include "zbxdb.h"
+#include "zbxstr.h"
 #include "zbxipcservice.h"
+#include "zbxjson.h"
+
+int	zbx_interface_availability_compare_func(const void *d1, const void *d2)
+{
+	const zbx_interface_availability_t	*int_avail_1 = *(const zbx_interface_availability_t **)d1;
+	const zbx_interface_availability_t	*int_avail_2 = *(const zbx_interface_availability_t **)d2;
+
+	ZBX_RETURN_IF_NOT_EQUAL(int_avail_1->interfaceid, int_avail_2->interfaceid);
+
+	return 0;
+}
 
 ZBX_PTR_VECTOR_IMPL(proxy_hostdata_ptr, zbx_proxy_hostdata_t *)
-ZBX_PTR_VECTOR_IMPL(host_active_avail_ptr, zbx_host_active_avail_t *)
 
 void	zbx_availability_send(zbx_uint32_t code, unsigned char *data, zbx_uint32_t size, zbx_ipc_message_t *response)
 {
-	static zbx_ipc_socket_t	socket;
+	static ZBX_THREAD_LOCAL zbx_ipc_socket_t	socket;
 
 	/* each process has a permanent connection to availability manager */
 	if (0 == socket.fd)
@@ -58,9 +66,8 @@ void	zbx_availabilities_flush(const zbx_vector_availability_ptr_t *interface_ava
 {
 	unsigned char	*data = NULL;
 	size_t		data_alloc = 0, data_offset = 0;
-	int		i;
 
-	for (i = 0; i < interface_availabilities->values_num; i++)
+	for (int i = 0; i < interface_availabilities->values_num; i++)
 	{
 		zbx_availability_serialize_interface(&data, &data_alloc, &data_offset,
 				interface_availabilities->values[i]);
@@ -72,14 +79,12 @@ void	zbx_availabilities_flush(const zbx_vector_availability_ptr_t *interface_ava
 
 void	zbx_availability_serialize_json_hostdata(zbx_vector_proxy_hostdata_ptr_t *hostdata, struct zbx_json *j)
 {
-	int	i;
-
 	if (0 == hostdata->values_num)
 		return;
 
 	zbx_json_addarray(j, ZBX_PROTO_TAG_PROXY_ACTIVE_AVAIL_DATA);
 
-	for (i = 0; i < hostdata->values_num; i++)
+	for (int i = 0; i < hostdata->values_num; i++)
 	{
 		zbx_proxy_hostdata_t	*hd = hostdata->values[i];
 
@@ -97,7 +102,7 @@ int	zbx_get_active_agent_availability(zbx_uint64_t hostid)
 	zbx_ipc_message_t	response;
 	unsigned char		*data = NULL;
 	zbx_uint32_t		data_len = 0;
-	int			status = INTERFACE_AVAILABLE_UNKNOWN;
+	int			status = ZBX_INTERFACE_AVAILABLE_UNKNOWN;
 
 	zbx_ipc_message_init(&response);
 	data_len = zbx_availability_serialize_active_status_request(&data, hostid);
@@ -157,8 +162,8 @@ ZBX_PTR_VECTOR_IMPL(availability_ptr, zbx_interface_availability_t *)
  * Purpose: initializes agent availability with the specified data            *
  *                                                                            *
  * Parameters: agent         - [IN/OUT] agent availability data               *
- *             available     - [IN] the availability data                     *
- *             error         - [IN] the availability error                    *
+ *             available     - [IN] availability data                         *
+ *             error         - [IN] availability error                        *
  *             errors_from   - [IN] error starting timestamp                  *
  *             disable_until - [IN] disable until timestamp                   *
  *                                                                            *
@@ -195,11 +200,11 @@ int	zbx_interface_availability_is_set(const zbx_interface_availability_t *ia)
  *                                                                            *
  * Purpose: adds interface availability update to sql statement               *
  *                                                                            *
- * Parameters: ia           [IN] the interface availability data              *
- *             sql        - [IN/OUT] the sql statement                        *
- *             sql_alloc  - [IN/OUT] the number of bytes allocated for sql    *
+ * Parameters: ia           [IN] interface availability data                  *
+ *             sql        - [IN/OUT] sql statement                            *
+ *             sql_alloc  - [IN/OUT] number of bytes allocated for sql        *
  *                                   statement                                *
- *             sql_offset - [IN/OUT] the number of bytes used in sql          *
+ *             sql_offset - [IN/OUT] number of bytes used in sql              *
  *                                   statement                                *
  *                                                                            *
  * Return value: SUCCEED - sql statement is created                           *
@@ -209,7 +214,7 @@ int	zbx_interface_availability_is_set(const zbx_interface_availability_t *ia)
 static int	zbx_sql_add_interface_availability(const zbx_interface_availability_t *ia, char **sql,
 		size_t *sql_alloc, size_t *sql_offset)
 {
-	char		delim = ' ';
+	char	delim = ' ';
 
 	if (FAIL == zbx_interface_availability_is_set(ia))
 		return FAIL;
@@ -250,7 +255,7 @@ static int	zbx_sql_add_interface_availability(const zbx_interface_availability_t
  *                                                                            *
  * Purpose: sync interface availabilities updates into database               *
  *                                                                            *
- * Parameters: interface_availabilities [IN] the interface availability data  *
+ * Parameters: interface_availabilities - [IN] interface availability data    *
  *                                                                            *
  ******************************************************************************/
 void	zbx_db_update_interface_availabilities(const zbx_vector_availability_ptr_t *interface_availabilities)
@@ -258,7 +263,6 @@ void	zbx_db_update_interface_availabilities(const zbx_vector_availability_ptr_t 
 	int	txn_error;
 	char	*sql = NULL;
 	size_t	sql_alloc = 4 * ZBX_KIBIBYTE;
-	int	i;
 
 	sql = (char *)zbx_malloc(sql, sql_alloc);
 
@@ -267,9 +271,8 @@ void	zbx_db_update_interface_availabilities(const zbx_vector_availability_ptr_t 
 		size_t	sql_offset = 0;
 
 		zbx_db_begin();
-		zbx_db_begin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
-		for (i = 0; i < interface_availabilities->values_num; i++)
+		for (int i = 0; i < interface_availabilities->values_num; i++)
 		{
 			if (SUCCEED != zbx_sql_add_interface_availability(interface_availabilities->values[i], &sql,
 					&sql_alloc, &sql_offset))
@@ -281,11 +284,7 @@ void	zbx_db_update_interface_availabilities(const zbx_vector_availability_ptr_t 
 			zbx_db_execute_overflowed_sql(&sql, &sql_alloc, &sql_offset);
 		}
 
-		zbx_db_end_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-		if (16 < sql_offset)
-			zbx_db_execute("%s", sql);
-
+		(void)zbx_db_flush_overflowed_sql(sql, sql_offset);
 		txn_error = zbx_db_commit();
 	}
 	while (ZBX_DB_DOWN == txn_error);

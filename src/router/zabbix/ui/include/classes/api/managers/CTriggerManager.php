@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -53,30 +48,7 @@ class CTriggerManager {
 
 		$del_triggerids = array_keys($del_triggerids);
 
-		// Disable actions.
-		$actionids = [];
-		$conditionids = [];
-
-		$db_actions = DBselect(
-			'SELECT ac.conditionid,ac.actionid'.
-			' FROM conditions ac'.
-			' WHERE ac.conditiontype='.ZBX_CONDITION_TYPE_TRIGGER.
-				' AND '.dbConditionString('ac.value', $del_triggerids)
-		);
-		while ($db_action = DBfetch($db_actions)) {
-			$conditionids[] = $db_action['conditionid'];
-			$actionids[$db_action['actionid']] = true;
-		}
-
-		if ($actionids) {
-			DB::update('actions', [
-				'values' => ['status' => ACTION_STATUS_DISABLED],
-				'where' => ['actionid' => array_keys($actionids)]
-			]);
-
-			// Delete action conditions.
-			DB::delete('conditions', ['conditionid' => $conditionids]);
-		}
+		self::checkUsedInActions($del_triggerids);
 
 		// Remove trigger sysmap elements.
 		$selement_triggerids = [];
@@ -134,5 +106,26 @@ class CTriggerManager {
 			'where' => ['triggerid' => $del_triggerids]
 		]);
 		DB::delete('triggers', ['triggerid' => $del_triggerids]);
+	}
+
+	/**
+	 * @throws APIException
+	 */
+	private static function checkUsedInActions(array $del_triggerids): void {
+		$row = DBfetch(DBselect(
+			'SELECT a.name,t.description'.
+			' FROM conditions c'.
+			' JOIN actions a ON c.actionid=a.actionid'.
+			' JOIN triggers t ON '.zbx_dbcast_2bigint('c.value').'=t.triggerid'.
+			' WHERE c.conditiontype='.ZBX_CONDITION_TYPE_TRIGGER.
+				' AND '.dbConditionString('c.value', $del_triggerids),
+			1
+		));
+
+		if ($row) {
+			throw new APIException(ZBX_API_ERROR_PARAMETERS, _s('Cannot delete trigger "%1$s": %2$s.',
+				$row['description'], _s('action "%1$s" uses this trigger', $row['name'])
+			));
+		}
 	}
 }

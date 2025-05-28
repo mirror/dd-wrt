@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_ZBXPROMETHEUS_H
@@ -55,7 +50,8 @@ typedef struct
 {
 	zbx_vector_prometheus_row_t		rows;
 	zbx_vector_prometheus_label_index_t	indexes;
-	pthread_rwlock_t			index_lock;
+	zbx_hashset_t				hints;
+	pthread_mutex_t				index_lock;
 }
 zbx_prometheus_t;
 
@@ -67,6 +63,7 @@ int	zbx_prometheus_pattern_ex(zbx_prometheus_t *prom, const char *filter_data, c
 int	zbx_prometheus_pattern(const char *data, const char *filter_data, const char *request, const char *output,
 		char **value, char **error);
 int	zbx_prometheus_to_json(const char *data, const char *filter_data, char **value, char **error);
+int	zbx_prometheus_to_json_ex(zbx_prometheus_t *prom, const char *filter_data, char **value, char **error);
 
 int	zbx_prometheus_validate_filter(const char *pattern, char **error);
 int	zbx_prometheus_validate_label(const char *label);

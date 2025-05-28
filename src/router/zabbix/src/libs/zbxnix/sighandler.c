@@ -1,33 +1,45 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxnix.h"
+#include "zbxthreads.h"
+
+#include "fatal.h"
 #include "sigcommon.h"
 
-#include "zbxcommon.h"
-#include "log.h"
-#include "fatal.h"
-#include "zbxcomms.h"
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#	include "zbxcomms.h"
+#endif
 
 #define ZBX_EXIT_NONE		0
 #define ZBX_EXIT_SUCCESS	1
 #define ZBX_EXIT_FAILURE	2
+
+static int	sig_parent_pid = -1;
+
+static const pid_t	*child_pids = NULL;
+static size_t		child_pid_count = 0;
+
+void	set_sig_parent_pid(int in)
+{
+	sig_parent_pid = in;
+}
+
+int	get_sig_parent_pid(void)
+{
+	return sig_parent_pid;
+}
 
 typedef struct
 {
@@ -39,10 +51,10 @@ typedef struct
 }
 zbx_siginfo_t;
 
-int				sig_parent_pid = -1;
 static volatile sig_atomic_t	sig_exiting;
 static volatile sig_atomic_t	sig_exit_on_terminate = 1;
 static zbx_on_exit_t		zbx_on_exit_cb = NULL;
+static void 			*zbx_on_exit_args = NULL;
 
 static zbx_siginfo_t	siginfo_exit = {-1, -1, -1, -1, -1};
 
@@ -210,7 +222,7 @@ static void	terminate_signal_handler(int sig, siginfo_t *siginfo, void *context)
 			if (0 != sig_exit_on_terminate)
 			{
 				zbx_log_exit_signal();
-				zbx_on_exit_cb(SUCCEED);
+				zbx_on_exit_cb(SUCCEED, zbx_on_exit_args);
 			}
 		}
 	}
@@ -224,6 +236,9 @@ static void	terminate_signal_handler(int sig, siginfo_t *siginfo, void *context)
 static void	child_signal_handler(int sig, siginfo_t *siginfo, void *context)
 {
 	SIG_CHECK_PARAMS(sig, siginfo, context);
+
+	if (FAIL == zbx_is_child_pid(siginfo->si_pid, child_pids, child_pid_count))
+		return;
 
 	if (!SIG_PARENT_PROCESS)
 		exit_with_failure();
@@ -372,4 +387,15 @@ void	zbx_unblock_signals(const sigset_t *orig_mask)
 {
 	if (0 > zbx_sigmask(SIG_SETMASK, orig_mask, NULL))
 		zabbix_log(LOG_LEVEL_WARNING,"cannot restore signal mask");
+}
+
+void	zbx_set_on_exit_args(void *args)
+{
+	zbx_on_exit_args = args;
+}
+
+void	zbx_set_child_pids(const pid_t *pids, size_t pid_num)
+{
+	child_pids = pids;
+	child_pid_count = pid_num;
 }

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -73,9 +68,11 @@ class CControllerUserEdit extends CControllerUserEditGeneral {
 		if ($this->getInput('userid', 0) != 0) {
 			$users = API::User()->get([
 				'output' => ['username', 'name', 'surname', 'lang', 'theme', 'autologin', 'autologout', 'refresh',
-					'rows_per_page', 'url', 'roleid', 'timezone', 'userdirectoryid'
+					'rows_per_page', 'url', 'roleid', 'timezone', 'provisioned'
 				],
-				'selectMedias' => ['mediatypeid', 'period', 'sendto', 'severity', 'active'],
+				'selectMedias' => ['mediaid', 'mediatypeid', 'period', 'sendto', 'severity', 'active',
+					'provisioned'
+				],
 				'selectRole' => ['roleid'],
 				'selectUsrgrps' => ['usrgrpid'],
 				'userids' => $this->getInput('userid'),
@@ -121,7 +118,7 @@ class CControllerUserEdit extends CControllerUserEditGeneral {
 			'form_refresh' => 0,
 			'action' => $this->getAction(),
 			'db_user' => ['username' => ''],
-			'userdirectoryid' => 0
+			'readonly' => false
 		];
 		$user_groups = [];
 
@@ -145,11 +142,14 @@ class CControllerUserEdit extends CControllerUserEditGeneral {
 			$data['url'] = $this->user['url'];
 			$data['medias'] = $this->user['medias'];
 			$data['db_user']['username'] = $this->user['username'];
-			$data['userdirectoryid'] = $this->user['userdirectoryid'];
 			$data['roleid_required'] = (bool) $this->user['role'];
 
 			if (!$this->getInput('form_refresh', 0)) {
 				$data['roleid'] = $this->user['roleid'];
+			}
+
+			if ($this->user['provisioned'] == CUser::PROVISION_STATUS_YES) {
+				$data['readonly'] = true;
 			}
 		}
 		else {
@@ -267,11 +267,6 @@ class CControllerUserEdit extends CControllerUserEditGeneral {
 		$db_modules = API::Module()->get([
 			'output' => ['moduleid', 'relative_path', 'status']
 		]);
-
-		$data['readonly'] = false;
-		if ($data['userdirectoryid'] != 0) {
-			$data['readonly'] = true;
-		}
 
 		if ($db_modules) {
 			$module_manager = new CModuleManager(APP::getRootDir());

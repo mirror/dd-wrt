@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -235,7 +230,7 @@ class CReport extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkDuplicates(array $reports, array $db_reports = null): void {
+	private static function checkDuplicates(array $reports, ?array $db_reports = null): void {
 		$names = [];
 
 		foreach ($reports as $report) {
@@ -269,7 +264,7 @@ class CReport extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkDashboards(array $reports, array $db_reports = null): void {
+	private static function checkDashboards(array $reports, ?array $db_reports = null): void {
 		$dashboardids = [];
 
 		foreach ($reports as $i => $report) {
@@ -328,7 +323,7 @@ class CReport extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUsers(array $reports, array $db_reports = null): void {
+	private static function checkUsers(array $reports, ?array $db_reports = null): void {
 		$userids = [];
 
 		foreach ($reports as $report) {
@@ -431,7 +426,7 @@ class CReport extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUserGroups(array $reports, array $db_reports = null): void {
+	private static function checkUserGroups(array $reports, ?array $db_reports = null): void {
 		$usrgrpids = [];
 
 		foreach ($reports as $report) {
@@ -718,7 +713,7 @@ class CReport extends CApiService {
 	 * @param array      $reports
 	 * @param array|null $db_reports
 	 */
-	private static function updateUsers(array &$reports, array $db_reports = null): void {
+	private static function updateUsers(array &$reports, ?array $db_reports = null): void {
 		$ins_report_users = [];
 		$upd_report_users = [];
 		$del_reportuserids = [];
@@ -788,7 +783,7 @@ class CReport extends CApiService {
 	 * @param array      $reports
 	 * @param array|null $db_reports
 	 */
-	private static function updateUserGroups(array &$reports, array $db_reports = null): void {
+	private static function updateUserGroups(array &$reports, ?array $db_reports = null): void {
 		$ins_report_usrgrps = [];
 		$upd_report_usrgrps = [];
 		$del_reportusrgrpids = [];

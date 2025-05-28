@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -41,6 +36,22 @@ class CControllerChartsViewJson extends CControllerCharts {
 		];
 
 		$ret = $this->validateInput($fields) && $this->validateTimeSelectorPeriod();
+
+		if ($ret && $this->hasInput('subfilter_tagnames')) {
+			$tagnames = $this->getInput('subfilter_tagnames', []);
+			$ret = !$tagnames || count($tagnames) == count(array_filter($tagnames, 'is_string'));
+		}
+
+		if ($ret && $this->hasInput('subfilter_tags')) {
+			$tags = $this->getInput('subfilter_tags', []);
+			foreach ($tags as $tag => $values) {
+				if (!is_scalar($tag) || !is_array($values)
+						|| count($values) != count(array_filter($values, 'is_string'))) {
+					$ret = false;
+					break;
+				}
+			}
+		}
 
 		if (!$ret) {
 			$this->setResponse(new CControllerResponseFatal());

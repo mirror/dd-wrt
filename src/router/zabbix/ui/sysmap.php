@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,9 +20,7 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of network maps');
 $page['file'] = 'sysmap.php';
-$page['scripts'] = ['class.svg.canvas.js', 'class.svg.map.js', 'class.cmap.js',
-	'colorpicker.js', 'class.tagfilteritem.js'
-];
+$page['scripts'] = ['class.svg.canvas.js', 'class.svg.map.js', 'class.cmap.js', 'colorpicker.js'];
 $page['type'] = detect_page_type();
 
 if (!CWebUser::checkAccess(CRoleHelper::ACTIONS_EDIT_MAPS)) {
@@ -61,6 +54,7 @@ if (isset($_REQUEST['favobj'])) {
 	if (getRequest('favobj') === 'sysmap' && hasRequest('action')) {
 		if (getRequest('action') === 'update') {
 			$sysmapid = getRequest('sysmapid', 0);
+			$result = false;
 
 			@ob_start();
 
@@ -117,26 +111,22 @@ if (isset($_REQUEST['favobj'])) {
 					unset($shape);
 				}
 
-				$result = API::Map()->update($sysmapUpdate);
+				$result = (bool) API::Map()->update($sysmapUpdate);
 
-				if ($result !== false) {
-					$url = (new CUrl('sysmaps.php'))
-						->setArgument('page', CPagerHelper::loadPage('sysmaps.php', null))
-						->getUrl();
-
-					echo
-						'if (confirm('.json_encode(_('Map is updated! Return to map list?')).')) {'.
-							'location.href = "'.$url.'";'.
-						'}';
-				}
-				else {
+				if (!$result) {
 					throw new Exception(_('Map update failed.'));
 				}
 
-				DBend(true);
+				$url = (new CUrl('sysmaps.php'))
+					->setArgument('page', CPagerHelper::loadPage('sysmaps.php', null))
+					->getUrl();
+
+				echo
+					'if (confirm('.json_encode(_('Map is updated! Return to map list?')).')) {'.
+						'location.href = "'.$url.'";'.
+					'}';
 			}
 			catch (Exception $e) {
-				DBend(false);
 				$msg = [$e->getMessage()];
 
 				foreach (get_and_clear_messages() as $errMsg) {
@@ -145,8 +135,10 @@ if (isset($_REQUEST['favobj'])) {
 
 				ob_clean();
 
-				echo 'alert('.zbx_jsvalue(implode("\r\n", $msg)).');';
+				echo 'alert('.json_encode(implode("\r\n", $msg)).');';
 			}
+
+			$result = DBend($result);
 
 			@ob_flush();
 			session_write_close();

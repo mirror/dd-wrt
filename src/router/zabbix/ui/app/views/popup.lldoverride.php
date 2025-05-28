@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -38,7 +33,7 @@ $overrides_popup_form = (new CForm())
 	->addItem((new CVar('action', 'popup.lldoverride'))->removeId());
 
 // Enable form submitting on Enter.
-$overrides_popup_form->addItem((new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
+$overrides_popup_form->addItem((new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
 
 $overrides_popup_form_list = (new CFormList())
 	->addRow(
@@ -80,9 +75,7 @@ $override_evaltype = (new CDiv([
 		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN)
 	]))->addClass(ZBX_STYLE_CELL),
 	(new CDiv([
-		(new CSpan(''))
-			->addStyle('white-space: normal;')
-			->setId('overrides_expression'),
+		(new CSpan(''))->setId('overrides_expression'),
 		(new CTextBox('overrides_formula', $options['overrides_formula'], $options['templated'],
 				DB::getFieldLength('lld_override', 'formula')))
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -98,7 +91,7 @@ $override_evaltype = (new CDiv([
 $filter_table = (new CTable())
 	->setId('overrides_filters')
 	->addStyle('width: 100%;')
-	->setHeader([_('Label'), _('Macro'), '', _('Regular expression'), (new CColHeader(_('Action')))->setWidth('100%')]);
+	->setHeader([_('Label'), _('Macro'), '', _('Regular expression'), (new CColHeader(''))->setWidth('100%')]);
 
 $operators = CSelect::createOptionsFromArray([
 	CONDITION_OPERATOR_REGEXP => _('matches'),
@@ -180,7 +173,7 @@ $operations_list = (new CTable())
 	->addStyle('width: 100%;')
 	->setHeader([
 		_('Condition'),
-		(new CColHeader(''))->setWidth('50')
+		(new CColHeader('Actions'))->setWidth('50')
 	])
 	->addRow(
 		(new CCol(

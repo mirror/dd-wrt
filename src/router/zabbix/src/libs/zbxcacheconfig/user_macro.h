@@ -1,26 +1,22 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZBX_USER_MACRO_H
 #define ZBX_USER_MACRO_H
 
 #include "zbxalgo.h"
+#include "zbxcacheconfig.h"
 
 #define ZBX_UM_CACHE_GLOBAL_MACRO_HOSTID	0
 
@@ -52,13 +48,12 @@ zbx_um_host_t;
 
 ZBX_PTR_VECTOR_DECL(um_host, zbx_um_host_t *)
 
-typedef struct
+struct zbx_um_cache
 {
 	zbx_hashset_t	hosts;
 	zbx_uint32_t	refcount;
 	zbx_uint64_t	revision;
-}
-zbx_um_cache_t;
+};
 
 zbx_hash_t	um_macro_hash(const void *d);
 int	um_macro_compare(const void *d1, const void *d2);

@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 $this->includeJsFile('administration.user.list.js.php');
@@ -139,7 +135,8 @@ $table = (new CTableInfo())
 		_('Status'),
 		make_sorting_header(_('Provisioned'), 'ts_provisioned', $data['sort'], $data['sortorder'], $url),
 		_('Info')
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 $csrf_token = CCsrfTokenHelper::get('user');
 
@@ -296,18 +293,31 @@ foreach ($data['users'] as $user) {
 // Append table to form.
 $form->addItem([
 	$table,
-	$data['paging'],
 	new CActionButtonList('action', 'userids', [
 		'user.provision' => [
 			'name' => _('Provision now'),
 			'attributes' => ['data-required' => 'ldap'],
-			'confirm' => _('Provision selected LDAP users?'),
+			'confirm_singular' => _('Provision selected LDAP user?'),
+			'confirm_plural' => _('Provision selected LDAP users?'),
 			'csrf_token' => $csrf_token
 		],
-		'user.unblock' => ['name' => _('Unblock'), 'confirm' => _('Unblock selected users?'),
+		'user.reset.totp' => [
+			'name' => _('Reset TOTP secret'),
+			'confirm_singular' => _('Multi-factor TOTP secret will be deleted.'),
+			'confirm_plural' => _('Multi-factor TOTP secrets will be deleted.'),
+			'csrf_token' => $csrf_token,
+			'disabled' => CAuthenticationHelper::get(CAuthenticationHelper::MFA_STATUS) == MFA_DISABLED
+		],
+		'user.unblock' => [
+			'name' => _('Unblock'),
+			'confirm_singular' => _('Unblock selected user?'),
+			'confirm_plural' => _('Unblock selected users?'),
 			'csrf_token' => $csrf_token
 		],
-		'user.delete' => ['name' => _('Delete'), 'confirm' => _('Delete selected users?'),
+		'user.delete' => [
+			'name' => _('Delete'),
+			'confirm_singular' => _('Delete selected user?'),
+			'confirm_plural' => _('Delete selected users?'),
 			'csrf_token' => $csrf_token
 		]
 	], 'user')

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,7 +20,6 @@
 
 include __DIR__.'/common.item.edit.js.php';
 include __DIR__.'/item.preprocessing.js.php';
-include __DIR__.'/editabletable.js.php';
 include __DIR__.'/itemtest.js.php';
 include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 ?>
@@ -99,14 +93,18 @@ include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 <script>
 	const view = {
 		form_name: null,
+		context: null,
 
-		init({form_name, counter}) {
+		init({form_name, counter, context, token, readonly, query_fields, headers}) {
 			this.form_name = form_name;
+			this.context = context;
+			this.token = token;
 
 			$('#conditions')
 				.dynamicRows({
 					template: '#condition-row',
 					counter: counter,
+					allow_empty: true,
 					dataCallback: (data) => {
 						data.formulaId = num2letter(data.rowNum);
 
@@ -168,10 +166,83 @@ include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 			}).trigger('change');
 
 			$('#lld_macro_paths')
-				.dynamicRows({template: '#lld_macro_path-row'})
+				.dynamicRows({template: '#lld_macro_path-row', allow_empty: true})
 				.on('click', 'button.element-table-add', () => {
 					$('#lld_macro_paths .<?= ZBX_STYLE_TEXTAREA_FLEXIBLE ?>').textareaFlexible();
 				});
+
+			let button = document.querySelector(`[name="${this.form_name}"] .js-execute-item`);
+
+			if (button instanceof Element) {
+				button.addEventListener('click', e => this.executeNow(e.target));
+			}
+
+			const updateSortOrder = (table, field_name) => {
+				table.querySelectorAll('.form_row').forEach((row, index) => {
+					for (const field of row.querySelectorAll(`[name^="${field_name}["]`)) {
+						field.name = field.name.replace(/\[\d+]/g, `[${index}]`);
+					}
+				});
+			};
+
+			jQuery('#query-fields-table')
+				.dynamicRows({
+					template: '#query-field-row-tmpl',
+					rows: query_fields,
+					allow_empty: true,
+					sortable: true,
+					sortable_options: {
+						target: 'tbody',
+						selector_handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
+						freeze_end: 1,
+						enable_sorting: !readonly
+					}
+				})
+				.on('tableupdate.dynamicRows', (e) => updateSortOrder(e.target, 'query_fields'));
+
+			jQuery('#headers-table')
+				.dynamicRows({
+					template: '#item-header-row-tmpl',
+					rows: headers,
+					allow_empty: true,
+					sortable: true,
+					sortable_options: {
+						target: 'tbody',
+						selector_handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
+						freeze_end: 1,
+						enable_sorting: !readonly
+					}
+				})
+				.on('tableupdate.dynamicRows', (e) => updateSortOrder(e.target, 'headers'));
+
+			document.querySelectorAll('#lifetime_type, #enabled_lifetime_type').forEach(element => {
+				element.addEventListener('change', () => this.updateLostResourcesFields());
+			});
+
+			this.updateLostResourcesFields();
+			this.initPopupListeners();
+		},
+
+		updateLostResourcesFields() {
+			const lifetime_type = document.querySelector('[name="lifetime_type"]:checked').value;
+			const enabled_lifetime_type = document.querySelector('[name="enabled_lifetime_type"]:checked').value;
+			const delete_immediately = lifetime_type == <?= ZBX_LLD_DELETE_IMMEDIATELY ?>;
+
+			document.getElementById('enabled_lifetime_type').classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>',
+				delete_immediately
+			);
+			document.getElementById('lifetime').classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>',
+				lifetime_type != <?= ZBX_LLD_DELETE_AFTER ?>
+			);
+			document.getElementById('enabled_lifetime').classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>',
+				delete_immediately || enabled_lifetime_type != <?= ZBX_LLD_DISABLE_AFTER ?>
+			);
+			document.getElementById('js-item-disable-resources-field').classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>',
+				delete_immediately
+			);
+			document.getElementById('js-item-disable-resources-label').classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>',
+				delete_immediately
+			);
 		},
 
 		updateExpression() {
@@ -193,7 +264,7 @@ include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 		toggleConditionValue(event) {
 			const value = event.currentTarget.closest('.form_row').querySelector('.js-value');
 			const show_value = (event.currentTarget.value == <?= CONDITION_OPERATOR_REGEXP ?>
-					|| event.currentTarget.value == <?= CONDITION_OPERATOR_NOT_REGEXP ?>);
+				|| event.currentTarget.value == <?= CONDITION_OPERATOR_NOT_REGEXP ?>);
 
 			value.classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>', !show_value);
 
@@ -202,19 +273,22 @@ include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 			}
 		},
 
-		checkNow(button) {
+		executeNow(button) {
 			button.classList.add('is-loading');
 
 			const curl = new Curl('zabbix.php');
-			curl.setArgument('action', 'item.masscheck_now');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('item')) ?>
-			);
+			curl.setArgument('action', 'item.execute');
+
+			const data = {
+				...this.token,
+				itemids: [document.querySelector(`[name="${this.form_name}"] [name="itemid"]`).value],
+				discovery_rule: 1
+			};
 
 			fetch(curl.getUrl(), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({itemids: [document.getElementById('itemid').value], discovery_rule: 1})
+				body: JSON.stringify(data)
 			})
 				.then((response) => response.json())
 				.then((response) => {
@@ -248,29 +322,6 @@ include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 				});
 		},
 
-		editHost(e, hostid) {
-			e.preventDefault();
-			const host_data = {hostid};
-
-			this.openHostPopup(host_data);
-		},
-
-		openHostPopup(host_data) {
-			const original_url = location.href;
-			const overlay = PopUp('popup.host.edit', host_data, {
-				dialogueid: 'host_edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
-			});
-
-			overlay.$dialogue[0].addEventListener('dialogue.create', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.update', this.events.hostSuccess, {once: true});
-			overlay.$dialogue[0].addEventListener('dialogue.delete', this.events.hostDelete, {once: true});
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-			}, {once: true});
-		},
-
 		refresh() {
 			const url = new Curl('');
 			const form = document.getElementsByName(this.form_name)[0];
@@ -290,37 +341,25 @@ include __DIR__.'/configuration.host.discovery.edit.overr.js.php';
 			post(url.getUrl(), fields);
 		},
 
-		events: {
-			hostSuccess(e) {
-				const data = e.detail;
+		initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: ({data, event}) => {
+					if (data.submit.success.action === 'delete') {
+						const url = new URL('host_discovery.php', location.href);
 
-				if ('success' in data) {
-					postMessageOk(data.success.title);
+						url.searchParams.set('context', this.context);
 
-					if ('messages' in data.success) {
-						postMessageDetails('success', data.success.messages);
+						event.setRedirectUrl(url.href);
+					}
+					else {
+						this.refresh();
 					}
 				}
-
-				view.refresh();
-			},
-
-			hostDelete(e) {
-				const data = e.detail;
-
-				if ('success' in data) {
-					postMessageOk(data.success.title);
-
-					if ('messages' in data.success) {
-						postMessageDetails('success', data.success.messages);
-					}
-				}
-
-				const curl = new Curl('zabbix.php');
-				curl.setArgument('action', 'host.list');
-
-				location.href = curl.getUrl();
-			}
+			});
 		}
 	};
 </script>

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -53,7 +48,7 @@ final class CMathFunctionData {
 		'cos' =>				[['count' => 1]],
 		'cosh' =>				[['count' => 1]],
 		'cot' =>				[['count' => 1]],
-		'count' =>				[['count' => 1]],
+		'count' =>				[['min' => 1, 'max' => 3]],
 		'date' =>				[['count' => 0]],
 		'dayofmonth' =>			[['count' => 0]],
 		'dayofweek' =>			[['count' => 0]],
@@ -65,6 +60,7 @@ final class CMathFunctionData {
 		'histogram_quantile' =>	[['min' => 5, 'step' => 2], ['count' => 2]],
 		'in' =>					[['min' => 2]],
 		'insert' =>				[['count' => 4]],
+		'jsonpath' =>			[['min' => 2, 'max' => 3]],
 		'kurtosis' =>			[['min' => 1, 'max' => 2]],
 		'left' =>				[['count' => 2]],
 		'length' =>				[['count' => 1]],
@@ -100,7 +96,8 @@ final class CMathFunctionData {
 		'trim' =>				[['min' => 1, 'max' => 2]],
 		'truncate' =>			[['count' => 2]],
 		'varpop' =>				[['min' => 1, 'max' => 2]],
-		'varsamp' =>			[['min' => 1, 'max' => 2]]
+		'varsamp' =>			[['min' => 1, 'max' => 2]],
+		'xmlxpath' =>			[['min' => 2, 'max' => 3]]
 	];
 
 	/**
@@ -109,18 +106,41 @@ final class CMathFunctionData {
 	 * @var array
 	 */
 	private const EXPRESSION_RULES = [
-		'count' => [[
-			'if' => [
-				'parameters' => ['count' => 1]
-			],
-			'rules' => [[
-				'type' => 'require_history_child',
-				'in' => ['avg_foreach', 'bucket_rate_foreach', 'count_foreach', 'exists_foreach', 'last_foreach',
-					'max_foreach', 'min_foreach', 'sum_foreach'
+		'count' => [
+			[
+				'if' => [
+					'parameters' => ['count' => 1]
 				],
-				'position' => 0
-			]]
-		]],
+				'rules' => [
+					[
+						'type' => 'require_history_child',
+						'in' => ['avg_foreach', 'count_foreach', 'exists_foreach', 'last_foreach',
+							'max_foreach', 'min_foreach', 'sum_foreach'
+						],
+						'position' => 0
+					]
+				]
+			],
+			[
+				'if' => [
+					'parameters' => ['min' => 2, 'max' => 3]
+				],
+				'rules' => [
+					[
+						'type' => 'require_history_child',
+						'in' => ['avg_foreach', 'count_foreach', 'exists_foreach', 'last_foreach',
+							'max_foreach', 'min_foreach', 'sum_foreach'
+						],
+						'position' => 0
+					],
+					[
+						'type' => 'regexp',
+						'pattern' => '/^(eq|ne|gt|ge|lt|le|like|bitand|regexp|iregexp)$/',
+						'position' => 1
+					]
+				]
+			]
+		],
 		'histogram_quantile' => [[
 			'if' => [
 				'parameters' => ['count' => 2]

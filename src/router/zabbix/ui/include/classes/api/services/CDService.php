@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -31,6 +26,10 @@ class CDService extends CApiService {
 	protected $tableName = 'dservices';
 	protected $tableAlias = 'ds';
 	protected $sortColumns = ['dserviceid', 'dhostid', 'ip'];
+
+	public const OUTPUT_FIELDS = ['dserviceid', 'dhostid', 'value', 'port', 'status', 'lastup', 'lastdown', 'dcheckid',
+		'ip', 'dns'
+	];
 
 	/**
 	 * Get discovery service data.
@@ -186,11 +185,10 @@ class CDService extends CApiService {
 		if ($result) {
 			$result = $this->addRelatedObjects($options, $result);
 			$result = $this->unsetExtraFields($result, ['dhostid'], $options['output']);
-		}
 
-		// removing keys (hash -> array)
-		if (!$options['preservekeys']) {
-			$result = zbx_cleanHashes($result);
+			if (!$options['preservekeys']) {
+				$result = array_values($result);
+			}
 		}
 
 		return $result;
@@ -266,13 +264,22 @@ class CDService extends CApiService {
 
 			$db_services = DBselect(
 				'SELECT DISTINCT ds.dserviceid,h.hostid'.
-				' FROM dservices ds,dchecks dc,drules dr,hosts h,interface i'.
+				' FROM dservices ds,dchecks dc,interface i,hosts h,drules dr'.
+				' LEFT JOIN proxy p ON dr.proxyid=p.proxyid'.
 				' WHERE ds.dcheckid=dc.dcheckid'.
 					' AND dc.druleid=dr.druleid'.
-					' AND (dr.proxy_hostid=h.proxy_hostid OR (dr.proxy_hostid IS NULL AND h.proxy_hostid IS NULL))'.
-					' AND h.hostid=i.hostid'.
 					' AND ds.ip=i.ip'.
-					' AND '.dbConditionInt('ds.dserviceid', $dserviceIds)
+					' AND i.hostid=h.hostid'.
+					' AND '.dbConditionId('ds.dserviceid', $dserviceIds).
+					' AND ('.
+						'(h.monitored_by='.ZBX_MONITORED_BY_SERVER.' AND dr.proxyid IS NULL)'.
+						' OR ('.
+							'h.monitored_by='.ZBX_MONITORED_BY_PROXY.
+							' AND dr.proxyid=h.proxyid'.
+							' AND p.proxy_groupid IS NULL'.
+						')'.
+						' OR (h.monitored_by='.ZBX_MONITORED_BY_PROXY_GROUP.' AND h.proxy_groupid=p.proxy_groupid)'.
+					')'
 			);
 
 			$host_services = [];

@@ -1,26 +1,22 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 if ($data['uncheck']) {
@@ -80,25 +76,28 @@ $form->addItem([
 			'sort' => $data['sort'],
 			'sortorder' => $data['sortorder'],
 			'allowed_edit' => $data['allowed_edit'],
-			'reports' => $data['reports']
+			'reports' => $data['reports'],
+			'paging' => $data['paging']
 		]),
-		$data['paging'],
 		new CActionButtonList('action', 'reportids', [
 			'scheduledreport.enable' => [
 				'name' => _('Enable'),
-				'confirm' => _('Enable selected scheduled reports?'),
+				'confirm_singular' => _('Enable selected scheduled report?'),
+				'confirm_plural' => _('Enable selected scheduled reports?'),
 				'disabled' => !$data['allowed_edit'],
 				'csrf_token' => $csrf_token
 			],
 			'scheduledreport.disable' => [
 				'name' => _('Disable'),
-				'confirm' => _('Disable selected scheduled reports?'),
+				'confirm_singular' => _('Disable selected scheduled report?'),
+				'confirm_plural' => _('Disable selected scheduled reports?'),
 				'disabled' => !$data['allowed_edit'],
 				'csrf_token' => $csrf_token
 			],
 			'scheduledreport.delete' => [
 				'name' => _('Delete'),
-				'confirm' => _('Delete selected scheduled reports?'),
+				'confirm_singular' => _('Delete selected scheduled report?'),
+				'confirm_plural' => _('Delete selected scheduled reports?'),
 				'disabled' => !$data['allowed_edit'],
 				'csrf_token' => $csrf_token
 			]

@@ -88,16 +88,16 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = x86_64-pc-linux-gnu
 host_triplet = x86_64-pc-linux-gnu
-#am__append_1 = zabbix.com/cmd/zabbix_agent2
-#am__append_2 = install-zabbix.com/cmd/zabbix_agent2
+#am__append_1 = bin/zabbix_agent2
+#am__append_2 = install-bin/zabbix_agent2
 #am__append_3 = conf/zabbix_agent2.conf
-#am__append_4 = zabbix.com/cmd/zabbix_web_service
-#am__append_5 = install-zabbix.com/cmd/zabbix_web_service
+#am__append_4 = bin/zabbix_web_service
+#am__append_5 = install-bin/zabbix_web_service
 #am__append_6 = conf/zabbix_web_service.conf
 subdir = src/go
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_mysql.m4 \
-	$(top_srcdir)/m4/ax_lib_oracle_oci.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ares.m4 \
+	$(top_srcdir)/m4/ax_lib_mysql.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 \
 	$(top_srcdir)/m4/check_enum.m4 $(top_srcdir)/m4/iconv.m4 \
@@ -172,12 +172,12 @@ DATA = $(dist_sysconf_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' aclocal-1.16
+ACLOCAL = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/missing' aclocal-1.16
+AGENT2_CONFIG_DIR = ${prefix}/etc/zabbix_agent2.d
 AGENT2_CONFIG_FILE = ${prefix}/etc/zabbix_agent2.conf
-AGENT2_CONFIG_PATH = ${prefix}/etc/zabbix_agent2.d
-AGENT2_CONFIG_PLUGINS_PATH = ${prefix}/etc/zabbix_agent2.d/plugins.d
 AGENT2_LDFLAGS =    
 AGENT2_LIBS =    
+AGENT2_PLUGIN_CONFIG_DIR = ${prefix}/etc/zabbix_agent2.d/plugins.d
 AGENT_CONFIG_FILE = ${prefix}/etc/zabbix_agentd.conf
 AGENT_LDFLAGS =      
 AGENT_LIBS =      
@@ -185,20 +185,27 @@ ALERT_SCRIPTS_PATH = ${datarootdir}/zabbix/alertscripts
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 ARCH = linux
-AUTOCONF = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' autoconf
-AUTOHEADER = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' autoheader
-AUTOMAKE = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' automake-1.16
+ARES_CFLAGS = 
+ARES_LDFLAGS = 
+ARES_LIBS = 
+AUTOCONF = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/missing' autoconf
+AUTOHEADER = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/missing' autoheader
+AUTOMAKE = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/missing' automake-1.16
 AWK = mawk
-CC = cc
+CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS =  -g -O2
 CGO_CFLAGS = 
 CGO_LDFLAGS = 
+CPP = gcc -E
 CPPFLAGS = 
 CSCOPE = cscope
 CTAGS = ctags
 CURL_SSL_CERT_LOCATION = ${datarootdir}/zabbix/ssl/certs
 CURL_SSL_KEY_LOCATION = ${datarootdir}/zabbix/ssl/keys
+CXX = g++
+CXXDEPMODE = depmode=none
+CXXFLAGS = 
 CYGPATH_W = echo
 DB_CFLAGS = 
 DB_LDFLAGS = 
@@ -217,9 +224,6 @@ GNUTLS_CFLAGS =
 GNUTLS_LDFLAGS = 
 GNUTLS_LIBS = 
 GO = 
-GOBIN = ${exec_prefix}/sbin
-GOCMD = go
-GOWORKDIR = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/go/src/zabbix
 GREP = /usr/bin/grep
 ICONV_CFLAGS = 
 ICONV_LDFLAGS = 
@@ -261,7 +265,7 @@ LIBXML2_LIBS =
 LIBXML2_VERSION = 
 LOAD_MODULE_PATH = ${exec_prefix}/lib/modules
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/missing' makeinfo
+MAKEINFO = ${SHELL} '/home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/missing' makeinfo
 MKDIR_P = /usr/bin/mkdir -p
 MYSQL_CFLAGS = 
 MYSQL_CONFIG = 
@@ -276,17 +280,13 @@ OPENIPMI_LIBS =
 OPENSSL_CFLAGS = 
 OPENSSL_LDFLAGS = 
 OPENSSL_LIBS = 
-ORACLE_OCI_CFLAGS = 
-ORACLE_OCI_LDFLAGS = 
-ORACLE_OCI_LIBS = 
-ORACLE_OCI_VERSION = 
 PACKAGE = zabbix
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = Zabbix
-PACKAGE_STRING = Zabbix 6.4.12
+PACKAGE_STRING = Zabbix 7.2.7
 PACKAGE_TARNAME = zabbix
 PACKAGE_URL = 
-PACKAGE_VERSION = 6.4.12
+PACKAGE_VERSION = 7.2.7
 PATH_SEPARATOR = :
 PG_CONFIG = 
 PKG_CONFIG = 
@@ -296,6 +296,7 @@ POSTGRESQL_CFLAGS =
 POSTGRESQL_LDFLAGS = 
 POSTGRESQL_LIBS = 
 POSTGRESQL_VERSION = 
+POW_LIB = 
 PROXY_CONFIG_FILE = ${prefix}/etc/zabbix_proxy.conf
 PROXY_LDFLAGS =      
 PROXY_LIBS =      
@@ -328,7 +329,7 @@ TLS_LIBS =
 UNIXODBC_CFLAGS = 
 UNIXODBC_LDFLAGS = 
 UNIXODBC_LIBS = 
-VERSION = 6.4.12
+VERSION = 7.2.7
 WEBSERVICE_CONFIG_FILE = ${prefix}/etc/zabbix_web_service.conf
 ZBXGET_LDFLAGS =      
 ZBXGET_LIBS =      
@@ -339,11 +340,14 @@ ZLIB_LDFLAGS =
 ZLIB_LIBS = 
 _libcurl_config = no
 _libnetsnmp_config = 
-abs_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/src/go
-abs_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/src/go
-abs_top_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12
-abs_top_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12
-ac_ct_CC = cc
+_libnetsnmp_config_bin = 
+_libnetsnmp_config_root = 
+abs_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/src/go
+abs_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/src/go
+abs_top_builddir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7
+abs_top_srcdir = /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7
+ac_ct_CC = gcc
+ac_ct_CXX = 
 am__include = include
 am__leading_dot = .
 am__quote = 
@@ -369,7 +373,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-6.4.12/install-sh
+install_sh = ${SHELL} /home/jenkins/workspace/zabbix-release/03-zabbix-release/zabbix-7.2.7/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -395,7 +399,7 @@ BUILD_TIME = `date +%H:%M:%S`
 BUILD_DATE = `date +"%b %_d %Y"`
 GOOS = `go env GOOS`
 GOARCH = `go env GOARCH`
-PKG = zabbix.com/pkg/version
+PKG = golang.zabbix.com/agent2/pkg/version
 NEW_FROM_REV = ""
 GOLDFLAGS = -X '${PKG}.compileDate=${BUILD_DATE}' -X \
 	${PKG}.compileTime=${BUILD_TIME} -X ${PKG}.compileOs=${GOOS} \
@@ -410,7 +414,6 @@ WEBSERVICE_GOLDFLAGS = ${GOLDFLAGS} -X \
 dist_sysconf_DATA = $(am__append_3) $(am__append_6)
 TARGETS = $(am__append_1) $(am__append_4)
 INSTALL_TARGETS = $(am__append_2) $(am__append_5)
-#DBGTARGETS = zabbix.com/cmd/mock_server
 all: all-am
 
 .SUFFIXES:
@@ -623,18 +626,26 @@ uninstall-am: uninstall-dist_sysconfDATA
 
 all: build
 
-zabbix.com/cmd/zabbix_agent2:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" go build -tags="${AGENT_GOTAGS}" -ldflags="${AGENT_GOLDFLAGS}" -o bin zabbix.com/cmd/zabbix_agent2
+bin/zabbix_agent2: FORCE
+	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" \
+		$(GO) build \
+		-tags="${AGENT_GOTAGS}" \
+		-ldflags="${AGENT_GOLDFLAGS}" \
+		-o bin \
+		golang.zabbix.com/agent2/cmd/zabbix_agent2
 
-zabbix.com/cmd/zabbix_web_service:
-	go build -ldflags="${WEBSERVICE_GOLDFLAGS}" -o bin zabbix.com/cmd/zabbix_web_service
+bin/zabbix_web_service: FORCE
+	$(GO) build \
+	-ldflags="${WEBSERVICE_GOLDFLAGS}" \
+	-o bin \
+	golang.zabbix.com/agent2/cmd/zabbix_web_service
 
 build: ${TARGETS}
 
 clean: clean-go-build clean-sbom
 
 clean-go-build:
-	-go clean ./...
+	-$(GO) clean ./...
 	-rm -f bin/mock_server
 	-rm -f bin/zabbix_agent2
 	-rm -f bin/zabbix_web_service
@@ -647,18 +658,25 @@ clean-sbom:
 	-rm -f sbom-zws.json
 	-rm -f sbom-zws.xml
 
-install-zabbix.com/cmd/zabbix_agent2:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" GOBIN=${GOBIN} \
-		go install -ldflags="${AGENT_GOLDFLAGS}" ${TARGETS}
-	$(MKDIR_P) "$(DESTDIR)$(AGENT2_CONFIG_PLUGINS_PATH)"
-	test -f "$(DESTDIR)$(AGENT2_CONFIG_FILE)" || cp "conf/zabbix_agent2.conf" "$(DESTDIR)$(AGENT2_CONFIG_FILE)"
-	for cfg in conf/zabbix_agent2.d/plugins.d/*.conf; do \
-		test -f "$(DESTDIR)$(AGENT2_CONFIG_PLUGINS_PATH)/"`basename $$cfg` || \
-		cp "$$cfg" "$(DESTDIR)$(AGENT2_CONFIG_PLUGINS_PATH)/"`basename $$cfg`; \
-	done
+# Mode flags (-m) for $(INSTALL) have been intentionally omitted to avoid
+# changing permission flags of existing directories and breaking their
+# conformance to system policy.
+#
+# Directories are created for the case when we're installing into a staging
+# environment where they may not exist at all.
+install-bin/zabbix_agent2: bin/zabbix_agent2
+	$(INSTALL) -d "$(DESTDIR)$(sbindir)"
+	$(INSTALL_PROGRAM) bin/zabbix_agent2 "$(DESTDIR)$(sbindir)"
+	$(INSTALL) -d "$(DESTDIR)$(AGENT2_PLUGIN_CONFIG_DIR)"
+	$(INSTALL_DATA) conf/zabbix_agent2.conf "$(DESTDIR)$(sysconfdir)"
+	$(INSTALL) -d "$(DESTDIR)$(AGENT2_PLUGIN_CONFIG_DIR)"
+	(cd conf/zabbix_agent2.d/plugins.d && \
+	for _f in *.conf; do \
+		$(INSTALL_DATA) $${_f} "$(DESTDIR)$(AGENT2_PLUGIN_CONFIG_DIR)"; \
+	done)
 
-install-zabbix.com/cmd/zabbix_web_service:
-	GOBIN=${GOBIN} go install -ldflags="${WEBSERVICE_GOLDFLAGS}" zabbix.com/cmd/zabbix_web_service
+install-bin/zabbix_web_service: bin/zabbix_web_service
+	$(INSTALL_PROGRAM) bin/zabbix_web_service "$(DESTDIR)$(sbindir)"
 
 install-exec-local: ${INSTALL_TARGETS}
 
@@ -726,13 +744,28 @@ sbom-mod: sbom-mod.json
 sbom: sbom-apps sbom-mod
 
 check:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" go test ./...
+	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" $(GO) test ./...
 style:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" golangci-lint run --new-from-rev=$(NEW_FROM_REV)  ./...
+	golangci-lint run --new-from-rev=$(NEW_FROM_REV)  ./...
 format:
-	CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" go fmt ./... 
+	$(GO) fmt ./...
 
 .PHONY: all build check clean clean-go-build clean-sbom format sbom sbom-apps sbom-mod sbom-za2 sbom-zws style
+
+# This is a target to be used as a prerequisite for other targets to force
+# their build. See
+# https://www.gnu.org/software/make/manual/html_node/Force-Targets.html
+#
+# In the case of bin/zabbix_{agent2,web_service} targets, make is unaware of
+# their prerequisites, i.e. source files, as all it does is drive the Go build
+# system.
+#
+# When building either target, and then modifying the source files, any repeat
+# builds of these targets will not execute, as the target already exists.
+# This leads to the subtle issue when iterating in development, where modifying
+# the source and asking to build the `install` target would install the initial
+# executable.
+FORCE:
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

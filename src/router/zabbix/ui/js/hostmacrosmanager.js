@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -26,18 +21,15 @@ class HostMacrosManager {
 	static ZBX_MACRO_TYPE_TEXT = 0;
 	static ZBX_MACRO_TYPE_SECRET = 1;
 	static ZBX_MACRO_TYPE_VAULT = 2;
-	static ZBX_STYLE_ICON_TEXT = 'icon-text';
-	static ZBX_STYLE_ICON_INVISIBLE = 'icon-invisible';
-	static ZBX_STYLE_ICON_SECRET_TEXT = 'icon-secret';
 	static ZBX_STYLE_TEXTAREA_FLEXIBLE = 'textarea-flexible';
 	static DISCOVERY_STATE_AUTOMATIC = 0x1;
 	static DISCOVERY_STATE_CONVERTING = 0x2;
 	static DISCOVERY_STATE_MANUAL = 0x3;
 
-	constructor({readonly, parent_hostid}) {
+	constructor({container, readonly, parent_hostid}) {
+		this.$container = container;
 		this.readonly = readonly;
 		this.parent_hostid = parent_hostid ?? null;
-		this.$container = $('#macros_container .table-forms-td-right');
 	}
 
 	load(show_inherited_macros, templateids) {
@@ -123,15 +115,16 @@ class HostMacrosManager {
 	initMacroTable(show_inherited_macros) {
 		const $parent = this.getMacroTable();
 		const dropdown_btn_classes = {
-			[HostMacrosManager.ZBX_MACRO_TYPE_TEXT]: HostMacrosManager.ZBX_STYLE_ICON_TEXT,
-			[HostMacrosManager.ZBX_MACRO_TYPE_SECRET]: HostMacrosManager.ZBX_STYLE_ICON_INVISIBLE,
-			[HostMacrosManager.ZBX_MACRO_TYPE_VAULT]: HostMacrosManager.ZBX_STYLE_ICON_SECRET_TEXT
+			[HostMacrosManager.ZBX_MACRO_TYPE_TEXT]: ZBX_ICON_TEXT,
+			[HostMacrosManager.ZBX_MACRO_TYPE_SECRET]: ZBX_ICON_EYE_OFF,
+			[HostMacrosManager.ZBX_MACRO_TYPE_VAULT]: ZBX_ICON_LOCK
 		};
 
 		$parent
 			.dynamicRows({
 				remove_next_sibling: show_inherited_macros,
-				template: show_inherited_macros ? '#macro-row-tmpl-inherited' : '#macro-row-tmpl'
+				template: show_inherited_macros ? '#macro-row-tmpl-inherited' : '#macro-row-tmpl',
+				allow_empty: true,
 			})
 			.on('click', 'button.element-table-add', () => {
 				this.initMacroFields($parent);
@@ -300,5 +293,13 @@ class HostMacrosManager {
 
 			$element.val(macro_part.toUpperCase() + context_part);
 		}
+	}
+
+	getManualDiscoveryState() {
+		return HostMacrosManager.DISCOVERY_STATE_MANUAL;
+	}
+
+	getDefaultMacroType() {
+		return HostMacrosManager.ZBX_MACRO_TYPE_TEXT;
 	}
 }

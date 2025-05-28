@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -103,7 +98,7 @@ $filter = (new CFilter())
 $current_url->removeArgument('filter_rst');
 
 $form = (new CForm())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('action')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('action')))->removeId())
 	->setId('action-list')
 	->setName('action_list');
 
@@ -115,8 +110,10 @@ $action_list = (new CTableInfo())
 		make_sorting_header(_('Name'), 'name', $data['sort'], $data['sortorder'], $current_url->getUrl()),
 		_('Conditions'),
 		_('Operations'),
-		make_sorting_header(_('Status'), 'status', $data['sort'], $data['sortorder'], $current_url->getUrl())
-	]);
+		make_sorting_header(_('Status'), 'status', $data['sort'], $data['sortorder'], $current_url->getUrl()),
+		_('Info')
+	])
+	->setPageNavigation($data['paging']);
 
 if ($data['actions']) {
 	$actionConditionStringValues = $data['actionConditionStringValues'];
@@ -147,39 +144,59 @@ if ($data['actions']) {
 				->addClass('js-enable-action')
 				->setAttribute('data-actionid', $action['actionid']);
 
+		$action_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'popup')
+			->setArgument('popup', 'action.edit')
+			->setArgument('actionid', $action['actionid'])
+			->setArgument('eventsource', $data['eventsource'])
+			->getUrl();
+
+		$warning = '';
+
+		if ($action['has_missing_conditions'] || $action['has_missing_operations']) {
+			$warning = makeWarningIcon(
+				_('This action has missing conditions or operations due to previously deleted object(s).')
+			);
+		}
+		elseif ($action['references_deleted_objects']) {
+			$warning = makeWarningIcon(
+				_('This action has conditions or operations referencing deleted object(s).')
+			);
+		}
+
 		$action_list->addRow([
 			new CCheckBox('actionids['.$action['actionid'].']', $action['actionid']),
-			(new CLink($action['name']))
-				->addClass('js-action-edit')
-				->setAttribute('data-actionid', $action['actionid']),
-			$conditions,
-			$operations,
-			$status
+			(new CCol(
+				new CLink($action['name'], $action_url)
+			))->addClass(ZBX_STYLE_WORDBREAK),
+			(new CCol($conditions))->addClass(ZBX_STYLE_WORDBREAK),
+			(new CCol($operations))->addClass(ZBX_STYLE_WORDBREAK),
+			$status,
+			$warning
 		]);
 	}
 }
 
 $form->addItem([
 	$action_list,
-	$data['paging'],
 	new CActionButtonList('action', 'actionids', [
 		'action.massenable' => [
 			'content' => (new CSimpleButton(_('Enable')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massenable-action')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		],
 		'action.massdisable' => [
 			'content' => (new CSimpleButton(_('Disable')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massdisable-action')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		],
 		'action.massdelete' => [
 			'content' => (new CSimpleButton(_('Delete')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massdelete-action')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		]
 	], 'action_'.$data['eventsource'])
 ]);

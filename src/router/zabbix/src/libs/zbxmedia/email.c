@@ -1,29 +1,27 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxmedia.h"
 
 #include "zbxstr.h"
-#include "log.h"
 #include "zbxcomms.h"
-#include "base64.h"
+#include "zbxcrypto.h"
 #include "zbxalgo.h"
+
+#ifdef HAVE_LIBCURL
+#	include "zbxcurl.h"
+#endif
 
 /* number of characters per line when wrapping Base64 data in Email */
 #define ZBX_EMAIL_B64_MAXLINE			76
@@ -38,13 +36,6 @@
 #define ZBX_MULTIPART_MIXED_BOUNDARY	"MULTIPART-MIXED-BOUNDARY"
 
 #define OK_250	"250"
-
-extern char	*CONFIG_SSL_CA_LOCATION;
-
-/* SMTP security options */
-#define SMTP_SECURITY_NONE	0
-#define SMTP_SECURITY_STARTTLS	1
-#define SMTP_SECURITY_SSL	2
 
 /******************************************************************************
  *                                                                            *
@@ -94,7 +85,7 @@ static void	str_base64_encode_rfc2047(const char *src, char **p_base64)
 			/* 12 characters are taken by header "=?UTF-8?B?" and trailer "?=" plus '\0' */
 			char	b64_buf[ZBX_EMAIL_B64_MAXWORD_RFC2047 - 12 + 1];
 
-			str_base64_encode(p0, b64_buf, p1 - p0);
+			zbx_base64_encode(p0, b64_buf, p1 - p0);
 
 			if (0 != p_base64_offset)	/* not the first "encoded-word" ? */
 			{
@@ -138,7 +129,6 @@ static int	smtp_readln(zbx_socket_t *s, const char **buf)
  *                                                                              *
  * Parameters: mailbox       - [IN] a null-terminated UTF-8 string              *
  *             error         - [IN] pointer to string for reporting errors      *
- *             max_error_len - [IN] size of 'error' string                      *
  *             mailaddrs     - [OUT] array of mail addresses                    *
  *                                                                              *
  * Comments:   The function is very much simplified in comparison with full     *
@@ -150,7 +140,7 @@ static int	smtp_readln(zbx_socket_t *s, const char **buf)
  *             and the local part of email address.                             *
  *                                                                              *
  ********************************************************************************/
-static int	smtp_parse_mailbox(const char *mailbox, char *error, size_t max_error_len, zbx_vector_ptr_t *mailaddrs)
+static int	smtp_parse_mailbox(const char *mailbox, char **error, zbx_vector_ptr_t *mailaddrs)
 {
 	const char	*p, *pstart, *angle_addr_start, *domain_start, *utf8_end;
 	const char	*base64_like_start, *base64_like_end, *token;
@@ -209,7 +199,7 @@ static int	smtp_parse_mailbox(const char *mailbox, char *error, size_t max_error
 				{
 					if ('\0' == *(p + i))
 					{
-						zbx_snprintf(error, max_error_len, "invalid UTF-8 character in email"
+						*error = zbx_dsprintf(*error, "invalid UTF-8 character in email"
 								" address: %s", token);
 						goto out;
 					}
@@ -219,22 +209,21 @@ static int	smtp_parse_mailbox(const char *mailbox, char *error, size_t max_error
 			}
 			else if (0 == len)	/* invalid UTF-8 character */
 			{
-				zbx_snprintf(error, max_error_len, "invalid UTF-8 character in email address: %s",
-						token);
+				*error = zbx_dsprintf(*error, "invalid UTF-8 character in email address: %s", token);
 				goto out;
 			}
 		}
 
 		if (NULL == domain_start)
 		{
-			zbx_snprintf(error, max_error_len, "no '@' in email address: %s", token);
+			*error = zbx_dsprintf(*error, "no '@' in email address: %s", token);
 			goto out;
 		}
 
 		if (utf8_end > angle_addr_start)
 		{
-			zbx_snprintf(error, max_error_len, "email address local or domain part contains UTF-8 character:"
-					" %s", token);
+			*error = zbx_dsprintf(*error, "email address local or domain part contains UTF-8 character: %s",
+					token);
 			goto out;
 		}
 
@@ -284,7 +273,7 @@ static char	*email_encode_part(const char *data, size_t data_size)
 {
 	char	*base64 = NULL, *part;
 
-	str_base64_encode_dyn(data, &base64, data_size);
+	zbx_base64_encode_dyn(data, &base64, data_size);
 	part = zbx_str_linefeed(base64, ZBX_EMAIL_B64_MAXLINE, "\r\n");
 	zbx_free(base64);
 
@@ -292,7 +281,7 @@ static char	*email_encode_part(const char *data, size_t data_size)
 }
 
 static char	*smtp_prepare_payload(zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t *to_mails, const char *inreplyto,
-		const char *mailsubject, const char *mailbody, unsigned char content_type)
+		const char *mailsubject, const char *mailbody, unsigned char message_format)
 {
 	char		*tmp = NULL, *base64 = NULL;
 	char		*localsubject = NULL, *localbody = NULL, *from = NULL, *to = NULL;
@@ -320,7 +309,7 @@ static char	*smtp_prepare_payload(zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t
 
 	/* prepare body */
 
-	if (ZBX_MEDIA_CONTENT_TYPE_MULTI != content_type)
+	if (ZBX_MEDIA_MESSAGE_FORMAT_MULTI != message_format)
 	{
 		char	*tmp_body;
 
@@ -371,7 +360,7 @@ static char	*smtp_prepare_payload(zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t
 			"MIME-Version: 1.0\r\n",
 			from, to, inreplyto, str_time, localsubject);
 
-	if (ZBX_MEDIA_CONTENT_TYPE_MULTI == content_type)
+	if (ZBX_MEDIA_MESSAGE_FORMAT_MULTI == message_format)
 	{
 		zbx_strcpy_alloc(&tmp, &tmp_alloc, &tmp_offset,
 				"Content-Type: multipart/mixed; boundary=" ZBX_MULTIPART_MIXED_BOUNDARY "\r\n");
@@ -381,7 +370,7 @@ static char	*smtp_prepare_payload(zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t
 		zbx_snprintf_alloc(&tmp, &tmp_alloc, &tmp_offset,
 				"Content-Type: %s; charset=\"UTF-8\"\r\n"
 				"Content-Transfer-Encoding: base64\r\n",
-				ZBX_MEDIA_CONTENT_TYPE_HTML == content_type ? "text/html" : "text/plain");
+				ZBX_MEDIA_MESSAGE_FORMAT_HTML == message_format ? "text/html" : "text/plain");
 	}
 
 	zbx_snprintf_alloc(&tmp, &tmp_alloc, &tmp_offset,
@@ -398,7 +387,7 @@ static char	*smtp_prepare_payload(zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t
 	return tmp;
 }
 
-#ifdef HAVE_SMTP_AUTHENTICATION
+#ifdef HAVE_LIBCURL
 typedef struct
 {
 	char	*payload;
@@ -470,8 +459,7 @@ static char	*smtp_get_helo_from_addr(const char *addr)
 	return helo_addr;
 }
 
-static int	send_smtp_helo_plain(const char *addr, const char *helo, zbx_socket_t *s, char **error,
-		size_t max_error_len)
+static int	send_smtp_helo_plain(const char *addr, const char *helo, zbx_socket_t *s, char **error)
 {
 	char		cmd[MAX_STRING_LEN], *helo_parsed = NULL;
 	const char	*response;
@@ -490,7 +478,7 @@ static int	send_smtp_helo_plain(const char *addr, const char *helo, zbx_socket_t
 
 			if (NULL == (helo_parsed = smtp_get_helo_from_system()))
 			{
-				zbx_snprintf(*error, max_error_len, "failed to retrieve domain name for HELO command");
+				*error = zbx_strdup(*error, "failed to retrieve domain name for HELO command");
 				ret = FAIL;
 				goto out;
 			}
@@ -499,27 +487,23 @@ static int	send_smtp_helo_plain(const char *addr, const char *helo, zbx_socket_t
 		zbx_snprintf(cmd, sizeof(cmd), "HELO %s\r\n", helo_parsed);
 	}
 
-	if (-1 == write(s->socket, cmd, strlen(cmd)))
+	if (-1 == zbx_tcp_send_raw(s, cmd))
 	{
-		zbx_snprintf(*error, max_error_len, "error sending HELO to mailserver: %s",
-				zbx_strerror(errno));
-
+		*error = zbx_dsprintf(*error, "error sending HELO to mailserver: %s", zbx_strerror(errno));
 		ret = FAIL;
 		goto out;
 	}
 
 	if (FAIL == smtp_readln(s, &response))
 	{
-		zbx_snprintf(*error, max_error_len, "error receiving answer on HELO request: %s",
-				zbx_strerror(errno));
-
+		*error = zbx_dsprintf(*error, "error receiving answer on HELO request: %s", zbx_strerror(errno));
 		ret = FAIL;
 		goto out;
 	}
 
 	if (0 != strncmp(response, OK_250, ZBX_CONST_STRLEN(OK_250)))
 	{
-		zbx_snprintf(*error, max_error_len, "wrong answer on HELO \"%s\"", response);
+		*error = zbx_dsprintf(*error, "wrong answer on HELO \"%s\"", response);
 		ret = FAIL;
 		goto out;
 	}
@@ -529,10 +513,18 @@ out:
 	return ret;
 }
 
+static const char	*socket_error(zbx_socket_t *s, int socket_errno)
+{
+	if (SUCCEED != zbx_socket_check_deadline(s))
+		return "timeout error";
+
+	return zbx_strerror(socket_errno);
+}
+
 static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, const char *smtp_helo,
 		zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t *to_mails, const char *inreplyto,
-		const char *mailsubject, const char *mailbody, unsigned char content_type, int timeout, char *error,
-		size_t max_error_len)
+		const char *mailsubject, const char *mailbody, unsigned char message_format, int timeout,
+		const char *config_source_ip, char **error)
 {
 #define OK_220	"220"
 #define OK_251	"251"
@@ -543,28 +535,25 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 
 	const char	*response;
 
-	zbx_alarm_on(timeout);
-
 	/* connect to and receive an initial greeting from SMTP server */
-
-	if (FAIL == zbx_tcp_connect(&s, CONFIG_SOURCE_IP, smtp_server, smtp_port, 0, ZBX_TCP_SEC_UNENCRYPTED, NULL,
-			NULL))
+	if (FAIL == zbx_tcp_connect(&s, config_source_ip, smtp_server, smtp_port, timeout, ZBX_TCP_SEC_UNENCRYPTED,
+			NULL, NULL))
 	{
-		zbx_snprintf(error, max_error_len, "cannot connect to SMTP server \"%s\": %s",
+		*error = zbx_dsprintf(*error, "cannot connect to SMTP server \"%s\": %s",
 				smtp_server, zbx_socket_strerror());
 		goto out;
 	}
 
 	if (FAIL == smtp_readln(&s, &response))
 	{
-		zbx_snprintf(error, max_error_len, "error receiving initial string from SMTP server: %s",
-				zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error receiving initial string from SMTP server: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
 	if (0 != strncmp(response, OK_220, ZBX_CONST_STRLEN(OK_220)))
 	{
-		zbx_snprintf(error, max_error_len, "no welcome message 220* from SMTP server \"%s\"", response);
+		*error = zbx_dsprintf(*error, "no welcome message 220* from SMTP server \"%s\"", response);
 		goto close;
 	}
 
@@ -572,7 +561,7 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 	if (0 != from_mails->values_num)
 		helo_addr = ((zbx_mailaddr_t *)from_mails->values[0])->addr;
 
-	if (FAIL == send_smtp_helo_plain(helo_addr, smtp_helo, &s, &error, max_error_len))
+	if (FAIL == send_smtp_helo_plain(helo_addr, smtp_helo, &s, error))
 		goto close;
 
 	/* send MAIL FROM */
@@ -581,21 +570,23 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 	{
 		zbx_snprintf(cmd, sizeof(cmd), "MAIL FROM:%s\r\n", ((zbx_mailaddr_t *)from_mails->values[i])->addr);
 
-		if (-1 == write(s.socket, cmd, strlen(cmd)))
+		if (-1 == zbx_tcp_send_raw(&s, cmd))
 		{
-			zbx_snprintf(error, max_error_len, "error sending MAIL FROM to mailserver: %s", zbx_strerror(errno));
+			*error = zbx_dsprintf(*error, "error sending MAIL FROM to mailserver: %s",
+					socket_error(&s, errno));
 			goto close;
 		}
 
 		if (FAIL == smtp_readln(&s, &response))
 		{
-			zbx_snprintf(error, max_error_len, "error receiving answer on MAIL FROM request: %s", zbx_strerror(errno));
+			*error = zbx_dsprintf(*error, "error receiving answer on MAIL FROM request: %s",
+					socket_error(&s, errno));
 			goto close;
 		}
 
 		if (0 != strncmp(response, OK_250, ZBX_CONST_STRLEN(OK_250)))
 		{
-			zbx_snprintf(error, max_error_len, "wrong answer on MAIL FROM \"%s\"", response);
+			*error = zbx_dsprintf(*error, "wrong answer on MAIL FROM \"%s\"", response);
 			goto close;
 		}
 	}
@@ -606,15 +597,17 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 	{
 		zbx_snprintf(cmd, sizeof(cmd), "RCPT TO:%s\r\n", ((zbx_mailaddr_t *)to_mails->values[i])->addr);
 
-		if (-1 == write(s.socket, cmd, strlen(cmd)))
+		if (-1 == zbx_tcp_send_raw(&s, cmd))
 		{
-			zbx_snprintf(error, max_error_len, "error sending RCPT TO to mailserver: %s", zbx_strerror(errno));
+			*error = zbx_dsprintf(*error, "error sending RCPT TO to mailserver: %s",
+					socket_error(&s, errno));
 			goto close;
 		}
 
 		if (FAIL == smtp_readln(&s, &response))
 		{
-			zbx_snprintf(error, max_error_len, "error receiving answer on RCPT TO request: %s", zbx_strerror(errno));
+			*error = zbx_dsprintf(*error, "error receiving answer on RCPT TO request: %s",
+					socket_error(&s, errno));
 			goto close;
 		}
 
@@ -622,7 +615,7 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 		if (0 != strncmp(response, OK_250, ZBX_CONST_STRLEN(OK_250)) &&
 				0 != strncmp(response, OK_251, ZBX_CONST_STRLEN(OK_251)))
 		{
-			zbx_snprintf(error, max_error_len, "wrong answer on RCPT TO \"%s\"", response);
+			*error = zbx_dsprintf(*error, "wrong answer on RCPT TO \"%s\"", response);
 			goto close;
 		}
 	}
@@ -631,32 +624,34 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 
 	zbx_snprintf(cmd, sizeof(cmd), "DATA\r\n");
 
-	if (-1 == write(s.socket, cmd, strlen(cmd)))
+	if (-1 == zbx_tcp_send_raw(&s, cmd))
 	{
-		zbx_snprintf(error, max_error_len, "error sending DATA to mailserver: %s", zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error sending DATA to mailserver: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
 	if (FAIL == smtp_readln(&s, &response))
 	{
-		zbx_snprintf(error, max_error_len, "error receiving answer on DATA request: %s", zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error receiving answer on DATA request: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
 	if (0 != strncmp(response, OK_354, ZBX_CONST_STRLEN(OK_354)))
 	{
-		zbx_snprintf(error, max_error_len, "wrong answer on DATA \"%s\"", response);
+		*error = zbx_dsprintf(*error, "wrong answer on DATA \"%s\"", response);
 		goto close;
 	}
 
-	cmdp = smtp_prepare_payload(from_mails, to_mails, inreplyto, mailsubject, mailbody, content_type);
-	err = write(s.socket, cmdp, strlen(cmdp));
+	cmdp = smtp_prepare_payload(from_mails, to_mails, inreplyto, mailsubject, mailbody, message_format);
+	err = zbx_tcp_send_raw(&s, cmdp);
 	zbx_free(cmdp);
 
 	if (-1 == err)
 	{
-		zbx_snprintf(error, max_error_len, "error sending headers and mail body to mailserver: %s",
-				zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error sending headers and mail body to mailserver: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
@@ -664,21 +659,23 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 
 	zbx_snprintf(cmd, sizeof(cmd), "\r\n.\r\n");
 
-	if (-1 == write(s.socket, cmd, strlen(cmd)))
+	if (-1 == zbx_tcp_send_raw(&s, cmd))
 	{
-		zbx_snprintf(error, max_error_len, "error sending . to mailserver: %s", zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error sending . to mailserver: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
 	if (FAIL == smtp_readln(&s, &response))
 	{
-		zbx_snprintf(error, max_error_len, "error receiving answer on . request: %s", zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error receiving answer on . request: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
 	if (0 != strncmp(response, OK_250, ZBX_CONST_STRLEN(OK_250)))
 	{
-		zbx_snprintf(error, max_error_len, "wrong answer on end of data \"%s\"", response);
+		*error = zbx_dsprintf(*error, "wrong answer on end of data \"%s\"", response);
 		goto close;
 	}
 
@@ -686,9 +683,10 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 
 	zbx_snprintf(cmd, sizeof(cmd), "QUIT\r\n");
 
-	if (-1 == write(s.socket, cmd, strlen(cmd)))
+	if (-1 == zbx_tcp_send_raw(&s, cmd))
 	{
-		zbx_snprintf(error, max_error_len, "error sending QUIT to mailserver: %s", zbx_strerror(errno));
+		*error = zbx_dsprintf(*error, "error sending QUIT to mailserver: %s",
+				socket_error(&s, errno));
 		goto close;
 	}
 
@@ -696,25 +694,25 @@ static int	send_email_plain(const char *smtp_server, unsigned short smtp_port, c
 close:
 	zbx_tcp_close(&s);
 out:
-	zbx_alarm_off();
-
 	return ret;
 #undef OK_220
 #undef OK_251
 #undef OK_354
 }
 
-/* SMTP authentication options */
-#define SMTP_AUTHENTICATION_NONE		0
-#define SMTP_AUTHENTICATION_NORMAL_PASSWORD	1
+/* SMTP security options */
+#define SMTP_SECURITY_NONE	0
+#define SMTP_SECURITY_STARTTLS	1
+#define SMTP_SECURITY_SSL	2
+
 static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, const char *smtp_helo,
 		zbx_vector_ptr_t *from_mails, zbx_vector_ptr_t *to_mails, const char *inreplyto,
 		const char *mailsubject, const char *mailbody, unsigned char smtp_security, unsigned char
 		smtp_verify_peer, unsigned char smtp_verify_host, unsigned char smtp_authentication,
-		const char *username, const char *password, unsigned char content_type, int timeout, char *error,
-		size_t max_error_len)
+		const char *username, const char *password, unsigned char message_format, int timeout,
+		const char *config_source_ip, const char *config_ssl_ca_location, char **error)
 {
-#ifdef HAVE_SMTP_AUTHENTICATION
+#ifdef HAVE_LIBCURL
 	int			ret = FAIL, i;
 	CURL			*easyhandle;
 	CURLcode		err;
@@ -723,16 +721,27 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 	struct curl_slist	*recipients = NULL;
 	smtp_payload_status_t	payload_status;
 
+	if (SMTP_SECURITY_NONE != smtp_security && SUCCEED != zbx_curl_has_ssl(error))
+		goto out;
+
+	if (SMTP_AUTHENTICATION_NONE != smtp_authentication && SUCCEED != zbx_curl_has_smtp_auth(error))
+		goto out;
+
 	if (NULL == (easyhandle = curl_easy_init()))
 	{
-		zbx_strlcpy(error, "cannot initialize cURL library", max_error_len);
+		*error = zbx_strdup(*error, "cannot initialize cURL library");
 		goto out;
 	}
 
 	memset(&payload_status, 0, sizeof(payload_status));
 
 	if (SMTP_SECURITY_SSL == smtp_security)
+	{
+		if (SUCCEED != zbx_curl_protocol("smtps", error))
+			goto clean;
+
 		url_offset += zbx_snprintf(url + url_offset, sizeof(url) - url_offset, "smtps://");
+	}
 	else
 		url_offset += zbx_snprintf(url + url_offset, sizeof(url) - url_offset, "smtp://");
 
@@ -761,7 +770,7 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 		{
 			if (NULL == (helo_domain = smtp_get_helo_from_system()))
 			{
-				zbx_strlcpy(error, "failed to retrieve domain name for HELO command", max_error_len);
+				*error = zbx_strdup(*error, "failed to retrieve domain name for HELO command");
 				goto clean;
 			}
 		}
@@ -770,16 +779,9 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 		zbx_free(helo_domain);
 	}
 
-#if LIBCURL_VERSION_NUM >= 0x071304
-	/* CURLOPT_PROTOCOLS is supported starting with version 7.19.4 (0x071304) */
-	/* CURLOPT_PROTOCOLS was deprecated in favor of CURLOPT_PROTOCOLS_STR starting with version 7.85.0 (0x075500) */
-#	if LIBCURL_VERSION_NUM >= 0x075500
-	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_PROTOCOLS_STR, "SMTPS,SMTP")))
-#	else
-	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_PROTOCOLS, CURLPROTO_SMTPS | CURLPROTO_SMTP)))
-#	endif
-		goto error;
-#endif
+	if (SUCCEED != zbx_curl_setopt_smtps(easyhandle, error))
+		goto clean;
+
 	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_URL, url)))
 		goto error;
 
@@ -793,9 +795,9 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 			goto error;
 		}
 
-		if (0 != smtp_verify_peer && NULL != CONFIG_SSL_CA_LOCATION)
+		if (0 != smtp_verify_peer && NULL != config_ssl_ca_location)
 		{
-			if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_CAPATH, CONFIG_SSL_CA_LOCATION)))
+			if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_CAPATH, config_ssl_ca_location)))
 				goto error;
 		}
 
@@ -832,7 +834,7 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 		goto error;
 	}
 
-	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, ZBX_CURLOPT_ACCEPT_ENCODING, "")))
+	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_ACCEPT_ENCODING, "")))
 		goto error;
 
 	for (i = 0; i < to_mails->values_num; i++)
@@ -842,7 +844,7 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 		goto error;
 
 	payload_status.payload = smtp_prepare_payload(from_mails, to_mails, inreplyto, mailsubject, mailbody,
-			content_type);
+			message_format);
 	payload_status.payload_len = strlen(payload_status.payload);
 
 	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_UPLOAD, 1L)) ||
@@ -854,9 +856,9 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 		goto error;
 	}
 
-	if (NULL != CONFIG_SOURCE_IP)
+	if (NULL != config_source_ip)
 	{
-		if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_INTERFACE, CONFIG_SOURCE_IP)))
+		if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_INTERFACE, config_source_ip)))
 			goto error;
 	}
 
@@ -871,7 +873,7 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 
 	if (CURLE_OK != (err = curl_easy_perform(easyhandle)))
 	{
-		zbx_snprintf(error, max_error_len, "%s%s%s", curl_easy_strerror(err), ('\0' != *errbuf ? ": " : ""),
+		*error = zbx_dsprintf(*error, "%s%s%s", curl_easy_strerror(err), ('\0' != *errbuf ? ": " : ""),
 				errbuf);
 		goto clean;
 	}
@@ -879,7 +881,7 @@ static int	send_email_curl(const char *smtp_server, unsigned short smtp_port, co
 	ret = SUCCEED;
 	goto clean;
 error:
-	zbx_strlcpy(error, curl_easy_strerror(err), max_error_len);
+	*error = zbx_strdup(*error, curl_easy_strerror(err));
 clean:
 	zbx_free(payload_status.payload);
 
@@ -902,10 +904,13 @@ out:
 	ZBX_UNUSED(smtp_authentication);
 	ZBX_UNUSED(username);
 	ZBX_UNUSED(password);
-	ZBX_UNUSED(content_type);
+	ZBX_UNUSED(message_format);
 	ZBX_UNUSED(timeout);
+	ZBX_UNUSED(config_source_ip);
+	ZBX_UNUSED(config_ssl_ca_location);
 
-	zbx_strlcpy(error, "Support for SMTP authentication was not compiled in", max_error_len);
+	*error = zbx_strdup(*error, "Zabbix server was compiled without cURL library required for SMTP authentication");
+
 	return FAIL;
 #endif
 }
@@ -928,7 +933,8 @@ int	send_email(const char *smtp_server, unsigned short smtp_port, const char *sm
 		const char *mailto, const char *inreplyto, const char *mailsubject, const char *mailbody,
 		unsigned char smtp_security, unsigned char smtp_verify_peer, unsigned char smtp_verify_host,
 		unsigned char smtp_authentication, const char *username, const char *password,
-		unsigned char content_type, int timeout, char *error, size_t max_error_len)
+		unsigned char message_format, int timeout, const char *config_source_ip,
+		const char *config_ssl_ca_location, char **error)
 {
 	int			ret = FAIL;
 	zbx_vector_ptr_t	from_mails, to_mails;
@@ -936,50 +942,50 @@ int	send_email(const char *smtp_server, unsigned short smtp_port, const char *sm
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() smtp_server:'%s' smtp_port:%hu smtp_security:%d smtp_authentication:%d",
 			__func__, smtp_server, smtp_port, (int)smtp_security, (int)smtp_authentication);
 
-	*error = '\0';
-
 	zbx_vector_ptr_create(&from_mails);
 	zbx_vector_ptr_create(&to_mails);
 
 	/* validate addresses before connecting to the server */
-	if (SUCCEED != smtp_parse_mailbox(smtp_email, error, max_error_len, &from_mails))
+	if (SUCCEED != smtp_parse_mailbox(smtp_email, error, &from_mails))
 		goto clean;
 
-	if (SUCCEED != smtp_parse_mailbox(mailto, error, max_error_len, &to_mails))
+	if (SUCCEED != smtp_parse_mailbox(mailto, error, &to_mails))
 		goto clean;
 
 	/* choose appropriate method for sending the email */
 	if (SMTP_SECURITY_NONE == smtp_security && SMTP_AUTHENTICATION_NONE == smtp_authentication)
 	{
 		ret = send_email_plain(smtp_server, smtp_port, smtp_helo, &from_mails, &to_mails, inreplyto,
-				mailsubject, mailbody, content_type, timeout, error, max_error_len);
+				mailsubject, mailbody, message_format, timeout, config_source_ip, error);
 	}
 	else
 	{
 		ret = send_email_curl(smtp_server, smtp_port, smtp_helo, &from_mails, &to_mails, inreplyto, mailsubject,
 				mailbody, smtp_security, smtp_verify_peer, smtp_verify_host, smtp_authentication,
-				username, password, content_type, timeout, error, max_error_len);
+				username, password, message_format, timeout, config_source_ip, config_ssl_ca_location,
+				error);
 	}
 
 clean:
-
 	zbx_vector_ptr_clear_ext(&from_mails, (zbx_clean_func_t)zbx_mailaddr_free);
 	zbx_vector_ptr_destroy(&from_mails);
 
 	zbx_vector_ptr_clear_ext(&to_mails, (zbx_clean_func_t)zbx_mailaddr_free);
 	zbx_vector_ptr_destroy(&to_mails);
 
-	if ('\0' != *error)
-		zabbix_log(LOG_LEVEL_WARNING, "failed to send email: %s", error);
+	if (FAIL == ret)
+		zabbix_log(LOG_LEVEL_WARNING, "failed to send email: %s", *error);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __func__, zbx_result_string(ret));
 
 	return ret;
 }
-#undef SMTP_AUTHENTICATION_NONE
-#undef SMTP_AUTHENTICATION_NORMAL_PASSWORD
 
-char	*zbx_email_make_body(const char *message, unsigned char content_type,  const char *attachment_name,
+#undef SMTP_SECURITY_NONE
+#undef SMTP_SECURITY_STARTTLS
+#undef SMTP_SECURITY_SSL
+
+char	*zbx_email_make_body(const char *message, unsigned char message_format,  const char *attachment_name,
 		const char *attachment_type, const char *attachment, size_t attachment_size)
 {
 	size_t	body_alloc = 0, body_offset = 0;
@@ -998,7 +1004,7 @@ char	*zbx_email_make_body(const char *message, unsigned char content_type,  cons
 			"\r\n"
 			"%s\r\n"
 			"\r\n",
-			ZBX_MEDIA_CONTENT_TYPE_HTML == content_type ? "text/html" : "text/plain",
+			ZBX_MEDIA_MESSAGE_FORMAT_HTML == message_format ? "text/html" : "text/plain",
 			localbody);
 
 	zbx_free(localbody);

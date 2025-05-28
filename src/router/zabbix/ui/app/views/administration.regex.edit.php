@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -40,7 +35,7 @@ $csrf_token = CCsrfTokenHelper::get('regex');
 
 $form = (new CForm())
 	->addItem((new CVar('form_refresh', $data['form_refresh'] + 1))->removeId())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, $csrf_token))->removeId())
 	->setId('regex')
 	->setAction($action->getUrl())
 	->setAttribute('aria-labelledby', CHtmlPage::PAGE_TITLE_ID);
@@ -53,7 +48,7 @@ $table = (new CTable())
 		_('Expression'),
 		_('Delimiter'),
 		_('Case sensitive'),
-		_('Action')
+		''
 	]);
 
 foreach ($data['expressions'] as $i => $expression) {
@@ -156,7 +151,7 @@ if ($data['regexid'] != 0) {
 					(new CUrl('zabbix.php'))
 						->setArgument('action', 'regex.delete')
 						->setArgument('regexids', (array) $data['regexid'])
-						->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token),
+						->setArgument(CSRF_TOKEN_NAME, $csrf_token),
 				_('Delete regular expression?')
 			))->setId('delete'),
 			(new CRedirectButton(_('Cancel'), (new CUrl('zabbix.php'))

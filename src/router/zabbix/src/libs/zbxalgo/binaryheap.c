@@ -1,26 +1,19 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxalgo.h"
 
-#include "zbxcommon.h"
-#include "log.h"
 
 static void	swap(zbx_binary_heap_t *heap, int index_1, int index_2);
 
@@ -70,7 +63,8 @@ static void	__binary_heap_ensure_free_space(zbx_binary_heap_t *heap)
 
 	if (heap->elems_alloc != tmp_elems_alloc)
 	{
-		heap->elems = (zbx_binary_heap_elem_t *)heap->mem_realloc_func(heap->elems, tmp_elems_alloc * sizeof(zbx_binary_heap_elem_t));
+		heap->elems = (zbx_binary_heap_elem_t *)heap->mem_realloc_func(heap->elems, tmp_elems_alloc *
+				sizeof(zbx_binary_heap_elem_t));
 
 		if (NULL == heap->elems)
 		{
@@ -206,12 +200,12 @@ void	zbx_binary_heap_destroy(zbx_binary_heap_t *heap)
 	heap->mem_free_func = NULL;
 }
 
-int	zbx_binary_heap_empty(zbx_binary_heap_t *heap)
+int	zbx_binary_heap_empty(const zbx_binary_heap_t *heap)
 {
 	return (0 == heap->elems_num ? SUCCEED : FAIL);
 }
 
-zbx_binary_heap_elem_t	*zbx_binary_heap_find_min(zbx_binary_heap_t *heap)
+zbx_binary_heap_elem_t	*zbx_binary_heap_find_min(const zbx_binary_heap_t *heap)
 {
 	if (0 == heap->elems_num)
 	{

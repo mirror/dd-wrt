@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -66,6 +61,7 @@ $fields = [
 	'cancel' =>					[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'form' =>					[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'form_refresh' =>			[T_ZBX_INT, O_OPT, P_SYS,	null,		null],
+	'backurl' =>				[T_ZBX_STR, O_OPT, null,	null,		null],
 	// sort and sortorder
 	'sort' =>					[T_ZBX_STR, O_OPT, P_SYS,	IN('"name","status","discover"'),				null],
 	'sortorder' =>				[T_ZBX_STR, O_OPT, P_SYS,	IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
@@ -107,6 +103,11 @@ if (getRequest('parent_discoveryid')) {
 	}
 }
 else {
+	access_deny();
+}
+
+// Validate backurl.
+if (hasRequest('backurl') && !CHtmlUrlValidator::validateSameSite(getRequest('backurl'))) {
 	access_deny();
 }
 
@@ -277,14 +278,23 @@ elseif ($hostid != 0 && getRequest('action', '') === 'hostprototype.updatediscov
 		'discover' => getRequest('discover', DB::getDefault('hosts', 'discover'))
 	]);
 
-	show_messages($result, _('Host prototype updated'), _('Cannot update host prototype'));
+	if ($result) {
+		CMessageHelper::setSuccessTitle(_('Host prototype updated'));
+	}
+	else {
+		CMessageHelper::setErrorTitle(_('Cannot update host prototype'));
+	}
+
+	if (hasRequest('backurl')) {
+		$response = new CControllerResponseRedirect(new CUrl(getRequest('backurl')));
+		$response->redirect();
+	}
 }
 // GO
 elseif (hasRequest('action') && str_in_array(getRequest('action'), ['hostprototype.massenable', 'hostprototype.massdisable']) && hasRequest('group_hostid')) {
 	$status = (getRequest('action') == 'hostprototype.massenable') ? HOST_STATUS_MONITORED : HOST_STATUS_NOT_MONITORED;
 	$update = [];
 
-	DBstart();
 	foreach ((array) getRequest('group_hostid') as $hostPrototypeId) {
 		$update[] = [
 			'hostid' => $hostPrototypeId,
@@ -292,18 +302,23 @@ elseif (hasRequest('action') && str_in_array(getRequest('action'), ['hostprototy
 		];
 	}
 
-	$result = API::HostPrototype()->update($update);
-	$result = DBend($result);
+	$result = (bool) API::HostPrototype()->update($update);
 
 	$updated = count($update);
 
-	$messageSuccess = _n('Host prototype updated', 'Host prototypes updated', $updated);
-	$messageFailed = _n('Cannot update host prototype', 'Cannot update host prototypes', $updated);
-
 	if ($result) {
 		uncheckTableRows($discoveryRule['itemid']);
+
+		CMessageHelper::setSuccessTitle(_n('Host prototype updated', 'Host prototypes updated', $updated));
 	}
-	show_messages($result, $messageSuccess, $messageFailed);
+	else {
+		CMessageHelper::setErrorTitle(_n('Cannot update host prototype', 'Cannot update host prototypes', $updated));
+	}
+
+	if (hasRequest('backurl')) {
+		$response = new CControllerResponseRedirect(new CUrl(getRequest('backurl')));
+		$response->redirect();
+	}
 }
 elseif (hasRequest('action') && getRequest('action') == 'hostprototype.massdelete' && getRequest('group_hostid')) {
 	DBstart();
@@ -313,7 +328,12 @@ elseif (hasRequest('action') && getRequest('action') == 'hostprototype.massdelet
 	if ($result) {
 		uncheckTableRows($discoveryRule['itemid']);
 	}
-	show_messages($result, _('Host prototypes deleted'), _('Cannot delete host prototypes'));
+
+	$host_prototypes_count = count(getRequest('group_hostid'));
+	$messageSuccess = _n('Host prototype deleted', 'Host prototypes deleted', $host_prototypes_count);
+	$messageFailed = _n('Cannot delete host prototype', 'Cannot delete host prototypes', $host_prototypes_count);
+
+	show_messages($result, $messageSuccess, $messageFailed);
 }
 
 if (hasRequest('action') && hasRequest('group_hostid') && !$result) {
@@ -387,8 +407,8 @@ if (hasRequest('form')) {
 
 	// add parent host
 	$parentHost = API::Host()->get([
-		'output' => ['hostid', 'proxy_hostid', 'status', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username',
-			'ipmi_password', 'tls_accept', 'tls_connect', 'tls_issuer', 'tls_subject'
+		'output' => ['hostid', 'monitored_by', 'proxyid', 'proxy_groupid', 'status', 'ipmi_authtype', 'ipmi_privilege',
+			'ipmi_username', 'ipmi_password', 'tls_accept', 'tls_connect', 'tls_issuer', 'tls_subject'
 		],
 		'selectInterfaces' => API_OUTPUT_EXTEND,
 		'hostids' => $discoveryRule['hostid'],
@@ -407,13 +427,20 @@ if (hasRequest('form')) {
 		]);
 	}
 
-	if ($parentHost['proxy_hostid']) {
-		$proxy = API::Proxy()->get([
-			'output' => ['host', 'proxyid'],
-			'proxyids' => $parentHost['proxy_hostid'],
-			'limit' => 1
-		]);
-		$data['proxy'] = reset($proxy);
+	$data['ms_proxy'] = [];
+	$data['ms_proxy_group'] = [];
+
+	if ($parentHost['monitored_by'] == ZBX_MONITORED_BY_PROXY) {
+		$data['ms_proxy'] = CArrayHelper::renameObjectsKeys(API::Proxy()->get([
+			'output' => ['proxyid', 'name'],
+			'proxyids' => $parentHost['proxyid']
+		]), ['proxyid' => 'id']);
+	}
+	elseif ($parentHost['monitored_by'] == ZBX_MONITORED_BY_PROXY_GROUP) {
+		$data['ms_proxy_group'] = CArrayHelper::renameObjectsKeys(API::ProxyGroup()->get([
+			'output' => ['proxy_groupid', 'name'],
+			'proxy_groupids' => $parentHost['proxy_groupid']
+		]), ['proxy_groupid' => 'id']);
 	}
 
 	if (!hasRequest('form_refresh')) {
@@ -515,7 +542,6 @@ if (hasRequest('form')) {
 	}
 	unset($macro);
 
-	// This data is used in common.template.edit.js.php.
 	$data['macros_tab'] = [
 		'linked_templates' => array_map('strval', $templateids),
 		'add_templates' => array_map('strval', array_keys($data['host_prototype']['add_templates']))

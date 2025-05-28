@@ -1,26 +1,21 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxshmem.h"
 
 #include "zbxstr.h"
-#include "log.h"
+#include "zbxnix.h"
 
 /******************************************************************************
  *                                                                            *
@@ -136,6 +131,8 @@ static void	*ALIGNPTR(void *ptr)
 		return ALIGN4(ptr);
 	if (8 == ZBX_PTR_SIZE)
 		return ALIGN8(ptr);
+
+	zbx_this_should_never_happen_backtrace();
 	assert(0);
 }
 
@@ -632,7 +629,7 @@ out:
  *               FAIL - otherwise                                             *
  *                                                                            *
  * Comments: When allocating shared memory with default zbx_shmem_create()    *
- *           function the available memory will reduced by the allocator      *
+ *           function the available memory will be reduced by the allocator   *
  *           overhead. This function estimates the overhead and requests      *
  *           enough memory so the available memory is greater or equal to the *
  *           requested size.                                                  *
@@ -641,12 +638,11 @@ out:
 int	zbx_shmem_create_min(zbx_shmem_info_t **info, zbx_uint64_t size, const char *descr, const char *param,
 		int allow_oom, char **error)
 {
-	void	*base = NULL;
+	void	*base = (void *)sizeof(zbx_shmem_info_t);
 
 	descr = ZBX_NULL2STR(descr);
 	param = ZBX_NULL2STR(param);
 
-	base = (void *)((zbx_shmem_info_t *)(base) + 1);
 	base = ALIGNPTR(base);
 	base = (void *)((void **)base + ZBX_SHMEM_BUCKET_COUNT);
 	base = (void *)((char *)base + strlen(descr) + 1);
@@ -793,6 +789,9 @@ void	zbx_shmem_get_stats(const zbx_shmem_info_t *info, zbx_shmem_stats_t *stats)
 		stats->free_chunks += counter;
 		stats->chunks_num[i] = counter;
 	}
+
+	if (__UINT64_C(0xffffffffffffffff) == stats->min_chunk_size)
+		stats->min_chunk_size = 0;
 
 	stats->overhead = info->total_size - info->used_size - info->free_size;
 	stats->used_chunks = stats->overhead / (2 * SHMEM_SIZE_FIELD) + 1 - stats->free_chunks;

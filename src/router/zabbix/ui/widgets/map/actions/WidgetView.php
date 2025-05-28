@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -73,23 +68,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$error = _('No permissions to referred object or it does not exist!');
 		}
 
-		// Rewrite actions to force Submaps be opened in same widget, instead of separate window.
-		foreach ($sysmap_data['elements'] as &$element) {
-			$actions = json_decode($element['actions'], true);
-			$element['actions'] = json_encode($actions);
-		}
-		unset($element);
-
 		// Pass variables to view.
 		$this->setResponse(new CControllerResponseData([
 			'name' => $this->getInput('name', $this->widget->getDefaultName()),
 			'sysmap_data' => $sysmap_data ?: [],
 			'widget_settings' => [
 				'current_sysmapid' => $sysmapid,
-				'filter_widget_reference' => array_key_exists('filter_widget_reference', $this->fields_values)
-					? $this->fields_values['filter_widget_reference']
-					: null,
-				'source_type' => $this->fields_values['source_type'],
 				'previous_map' => $previous_map,
 				'initial_load' => $this->getInput('initial_load', 1),
 				'error' => $error

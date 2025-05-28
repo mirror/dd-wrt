@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -36,7 +31,7 @@ abstract class CController {
 	private $post_content_type = self::POST_CONTENT_TYPE_FORM;
 
 	/**
-	 * Action name, so that controller knows what action he is executing.
+	 * Action name, so that controller knows which action is being executed.
 	 *
 	 * @var string
 	 */
@@ -173,8 +168,6 @@ abstract class CController {
 
 	/**
 	 * Disables CSRF token validation.
-	 *
-	 * @return void
 	 */
 	protected function disableCsrfValidation(): void {
 		$this->validate_csrf_token = false;
@@ -278,47 +271,45 @@ abstract class CController {
 	/**
 	 * Validate "from" and "to" parameters for allowed period.
 	 *
+	 * @throws CAccessDeniedException
+	 *
 	 * @return bool
 	 */
-	protected function validateTimeSelectorPeriod() {
+	protected function validateTimeSelectorPeriod(): bool {
 		if (!$this->hasInput('from') || !$this->hasInput('to')) {
 			return true;
 		}
 
 		try {
-			$max_period = 'now-'.CSettingsHelper::get(CSettingsHelper::MAX_PERIOD);
+			$min_period = CTimePeriodHelper::getMinPeriod();
+			$max_period = CTimePeriodHelper::getMaxPeriod();
 		}
 		catch (Exception $x) {
-			access_deny(ACCESS_DENY_PAGE);
-
-			return false;
+			throw new CAccessDeniedException();
 		}
 
-		$ts = [];
-		$ts['now'] = time();
 		$range_time_parser = new CRangeTimeParser();
 
-		foreach (['from', 'to'] as $field) {
-			$range_time_parser->parse($this->getInput($field));
-			$ts[$field] = $range_time_parser
-				->getDateTime($field === 'from')
-				->getTimestamp();
+		$time_period = [
+			'from' => $this->getInput('from'),
+			'to' => $this->getInput('to')
+		];
+
+		foreach (['from' => 'from_ts', 'to' => 'to_ts'] as $field => $field_ts) {
+			$range_time_parser->parse($time_period[$field]);
+			$time_period[$field_ts] = $range_time_parser->getDateTime($field === 'from')->getTimestamp();
 		}
 
-		$period = $ts['to'] - $ts['from'] + 1;
-		$range_time_parser->parse($max_period);
-		$max_period = 1 + $ts['now'] - $range_time_parser
-			->getDateTime(true)
-			->getTimestamp();
+		$period = $time_period['to_ts'] - $time_period['from_ts'] + 1;
 
-		if ($period < ZBX_MIN_PERIOD) {
+		if ($period < $min_period) {
 			info(_n('Minimum time period to display is %1$s minute.',
-				'Minimum time period to display is %1$s minutes.', (int) (ZBX_MIN_PERIOD / SEC_PER_MIN)
+				'Minimum time period to display is %1$s minutes.', (int) ($min_period / SEC_PER_MIN)
 			));
 
 			return false;
 		}
-		elseif ($period > $max_period) {
+		elseif ($period > $max_period + 1) {
 			info(_n('Maximum time period to display is %1$s day.',
 				'Maximum time period to display is %1$s days.', (int) round($max_period / SEC_PER_DAY)
 			));
@@ -414,15 +405,19 @@ abstract class CController {
 	 */
 	private function checkCsrfToken(): bool {
 		if (!isRequestMethod('post') || !is_array($this->raw_input)
-				|| !array_key_exists(CCsrfTokenHelper::CSRF_TOKEN_NAME, $this->raw_input)) {
+				|| !array_key_exists(CSRF_TOKEN_NAME, $this->raw_input)) {
 			return false;
 		}
 
 		$skip = ['popup', 'massupdate'];
-		$csrf_token_form = $this->raw_input[CCsrfTokenHelper::CSRF_TOKEN_NAME];
+		$csrf_token_form = $this->raw_input[CSRF_TOKEN_NAME];
 
 		if (!is_string($csrf_token_form)) {
 			return false;
+		}
+
+		if (strpos(get_class($this), 'Modules\\') === 0) {
+			return CCsrfTokenHelper::check($csrf_token_form, $this->action);
 		}
 
 		foreach (explode('.', $this->action) as $segment) {

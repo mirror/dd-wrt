@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -150,10 +145,11 @@ class CConfigurationExport {
 			'drule' => ['itemid', 'hostid', 'type', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends', 'status',
 				'value_type', 'trapper_hosts', 'units', 'formula', 'valuemapid', 'params', 'ipmi_sensor', 'authtype',
 				'username', 'password', 'publickey', 'privatekey', 'interfaceid', 'description', 'inventory_link',
-				'flags', 'filter', 'lifetime', 'jmx_endpoint', 'master_itemid', 'timeout', 'url', 'query_fields',
-				'posts', 'status_codes', 'follow_redirects', 'post_type', 'http_proxy', 'headers', 'retrieve_mode',
-				'request_method', 'output_format', 'ssl_cert_file', 'ssl_key_file', 'ssl_key_password', 'verify_peer',
-				'verify_host', 'allow_traps', 'parameters', 'uuid'
+				'flags', 'filter', 'lifetime_type', 'lifetime', 'enabled_lifetime_type', 'enabled_lifetime',
+				'jmx_endpoint', 'master_itemid', 'timeout', 'url', 'query_fields', 'posts', 'status_codes',
+				'follow_redirects', 'post_type', 'http_proxy', 'headers', 'retrieve_mode', 'request_method',
+				'output_format', 'ssl_cert_file', 'ssl_key_file', 'ssl_key_password', 'verify_peer', 'verify_host',
+				'allow_traps', 'parameters', 'uuid'
 			],
 			'item_prototype' => ['hostid', 'type', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends', 'status',
 				'value_type', 'trapper_hosts', 'units', 'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username',
@@ -207,7 +203,7 @@ class CConfigurationExport {
 		try {
 			$this->gatherData();
 
-			// Parameter in CImportValidatorFactory is irrelavant here, since export does not validate data.
+			// Parameter in CImportValidatorFactory is irrelevant here, since export does not validate data.
 			$schema = (new CImportValidatorFactory(CExportWriterFactory::YAML))
 				->getObject(ZABBIX_EXPORT_VERSION)
 				->getSchema();
@@ -308,7 +304,7 @@ class CConfigurationExport {
 			$this->gatherImages($options['images']);
 		}
 
-		if ($options['mediaTypes']) {
+		if ($options['mediaTypes'] && CApiService::$userData['type'] == USER_TYPE_SUPER_ADMIN) {
 			$this->gatherMediaTypes($options['mediaTypes']);
 		}
 	}
@@ -434,8 +430,8 @@ class CConfigurationExport {
 	protected function gatherHosts(array $hostIds) {
 		$hosts = API::Host()->get([
 			'output' => [
-				'proxy_hostid', 'host', 'status', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username', 'ipmi_password',
-				'name', 'description', 'inventory_mode'
+				'host', 'name', 'monitored_by', 'proxyid', 'proxy_groupid', 'description', 'status', 'ipmi_authtype',
+				'ipmi_privilege', 'ipmi_username', 'ipmi_password', 'inventory_mode'
 			],
 			'selectInterfaces' => API_OUTPUT_EXTEND,
 			'selectInventory' => API_OUTPUT_EXTEND,
@@ -460,6 +456,7 @@ class CConfigurationExport {
 
 		if ($hosts) {
 			$hosts = $this->gatherProxies($hosts);
+			$hosts = $this->gatherProxyGroups($hosts);
 			$hosts = $this->gatherItems($hosts);
 			$hosts = $this->gatherDiscoveryRules($hosts);
 			$hosts = $this->gatherHttpTests($hosts);
@@ -504,6 +501,12 @@ class CConfigurationExport {
 		$hostids = [];
 		$itemids = [];
 		$graphids = [];
+		$mapids = [];
+		$serviceids = [];
+		$slaids = [];
+		$userids = [];
+		$actionids = [];
+		$mediatypeids = [];
 
 		// Collect IDs.
 		foreach ($dashboard_pages as $dashboard_page) {
@@ -523,6 +526,30 @@ class CConfigurationExport {
 						case ZBX_WIDGET_FIELD_TYPE_GRAPH_PROTOTYPE:
 							$graphids[$field['value']] = true;
 							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_MAP:
+							$mapids[$field['value']] = true;
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_SERVICE:
+							$serviceids[$field['value']] = true;
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_SLA:
+							$slaids[$field['value']] = true;
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_USER:
+							$userids[$field['value']] = true;
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_ACTION:
+							$actionids[$field['value']] = true;
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_MEDIA_TYPE:
+							$mediatypeids[$field['value']] = true;
+							break;
 					}
 				}
 			}
@@ -531,6 +558,12 @@ class CConfigurationExport {
 		$hosts = $this->getHostsReferences(array_keys($hostids));
 		$items = $this->getItemsReferences(array_keys($itemids));
 		$graphs = $this->getGraphsReferences(array_keys($graphids));
+		$sysmaps = $this->getMapsReferences(array_keys($mapids));
+		$services = $this->getServicesReferences(array_keys($serviceids));
+		$slas = $this->getSlasReferences(array_keys($slaids));
+		$users = $this->getUsersReferences(array_keys($userids));
+		$actions = $this->getActionsReferences(array_keys($actionids));
+		$media_types = $this->getMediaTypesReferences(array_keys($mediatypeids));
 
 		// Replace IDs.
 		foreach ($dashboard_pages as &$dashboard_page) {
@@ -549,6 +582,30 @@ class CConfigurationExport {
 						case ZBX_WIDGET_FIELD_TYPE_GRAPH:
 						case ZBX_WIDGET_FIELD_TYPE_GRAPH_PROTOTYPE:
 							$field['value'] = $graphs[$field['value']];
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_MAP:
+							$field['value'] = $sysmaps[$field['value']];
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_SERVICE:
+							$field['value'] = $services[$field['value']];
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_SLA:
+							$field['value'] = $slas[$field['value']];
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_USER:
+							$field['value'] = $users[$field['value']];
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_ACTION:
+							$field['value'] = $actions[$field['value']];
+							break;
+
+						case ZBX_WIDGET_FIELD_TYPE_MEDIA_TYPE:
+							$field['value'] = $media_types[$field['value']];
 							break;
 					}
 				}
@@ -569,27 +626,62 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function gatherProxies(array $hosts) {
-		$proxy_hostids = [];
-		$db_proxies = [];
+		$proxyids = [];
 
 		foreach ($hosts as $host) {
-			if ($host['proxy_hostid'] != 0) {
-				$proxy_hostids[$host['proxy_hostid']] = true;
+			if ($host['proxyid'] != 0) {
+				$proxyids[$host['proxyid']] = true;
 			}
 		}
 
-		if ($proxy_hostids) {
-			$db_proxies = DBfetchArray(DBselect(
-				'SELECT h.hostid,h.host'.
-				' FROM hosts h'.
-				' WHERE '.dbConditionInt('h.hostid', array_keys($proxy_hostids))
-			));
-			$db_proxies = zbx_toHash($db_proxies, 'hostid');
-		}
+		$db_proxies = $proxyids
+			? DBfetchArray(DBselect(
+				'SELECT p.proxyid,p.name'.
+				' FROM proxy p'.
+				' WHERE '.dbConditionId('p.proxyid', array_keys($proxyids))
+			))
+			: [];
+		$db_proxies = array_column($db_proxies, null, 'proxyid');
 
 		foreach ($hosts as &$host) {
-			$host['proxy'] = ($host['proxy_hostid'] != 0 && array_key_exists($host['proxy_hostid'], $db_proxies))
-				? ['name' => $db_proxies[$host['proxy_hostid']]['host']]
+			$host['proxy'] = ($host['proxyid'] != 0 && array_key_exists($host['proxyid'], $db_proxies))
+				? ['name' => $db_proxies[$host['proxyid']]['name']]
+				: [];
+		}
+		unset($host);
+
+		return $hosts;
+	}
+
+	/**
+	 * Get proxy groups from database.
+	 *
+	 * @param array $hosts
+	 *
+	 * @return array
+	 */
+	protected function gatherProxyGroups(array $hosts): array {
+		$proxy_groupids = [];
+
+		foreach ($hosts as $host) {
+			if ($host['proxy_groupid'] != 0) {
+				$proxy_groupids[$host['proxy_groupid']] = true;
+			}
+		}
+
+		$db_proxy_groups = $proxy_groupids
+			? DBfetchArray(DBselect(
+				'SELECT pg.proxy_groupid,pg.name'.
+				' FROM proxy_group pg'.
+				' WHERE '.dbConditionId('pg.proxy_groupid', array_keys($proxy_groupids))
+			))
+			: [];
+		$db_proxy_groups = array_column($db_proxy_groups, null, 'proxy_groupid');
+
+		foreach ($hosts as &$host) {
+			$host['proxy_group'] = $host['proxy_groupid'] != 0
+					&& array_key_exists($host['proxy_groupid'], $db_proxy_groups)
+				? ['name' => $db_proxy_groups[$host['proxy_groupid']]['name']]
 				: [];
 		}
 		unset($host);
@@ -872,7 +964,7 @@ class CConfigurationExport {
 
 		if ($templateids) {
 			$templates = API::Template()->get([
-				'output' => ['name'],
+				'output' => ['host'],
 				'templateids' => array_keys($templateids),
 				'preservekeys' => true
 			]);
@@ -883,7 +975,7 @@ class CConfigurationExport {
 							if (array_key_exists('optemplate', $operation)) {
 								$operation['templates'] = [];
 								foreach ($operation['optemplate'] as $template) {
-									$operation['templates'][] = ['name' => $templates[$template['templateid']]['name']];
+									$operation['templates'][] = ['name' => $templates[$template['templateid']]['host']];
 								}
 								unset($operation['optemplate']);
 							}
@@ -1395,7 +1487,7 @@ class CConfigurationExport {
 	protected function gatherMediaTypes(array $mediatypeids) {
 		$this->data['mediaTypes'] = API::MediaType()->get([
 			'output' => ['name', 'type', 'smtp_server', 'smtp_port', 'smtp_helo', 'smtp_email', 'smtp_security',
-				'smtp_verify_peer', 'smtp_verify_host', 'smtp_authentication', 'username', 'passwd', 'content_type',
+				'smtp_verify_peer', 'smtp_verify_host', 'smtp_authentication', 'username', 'passwd', 'message_format',
 				'exec_path', 'gsm_modem', 'status', 'maxsessions', 'maxattempts', 'attempt_interval', 'script',
 				'timeout', 'process_tags', 'show_event_menu', 'event_menu_url', 'event_menu_name', 'description',
 				'parameters', 'provider'
@@ -1744,6 +1836,146 @@ class CConfigurationExport {
 
 		foreach ($images as $id => $image) {
 			$ids[$id] = ['name' => $image['name']];
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Get services references by service ids.
+	 *
+	 * @param array $serviceids
+	 *
+	 * @return array
+	 */
+	protected function getServicesReferences(array $serviceids) {
+		$ids = [];
+
+		$services = API::Service()->get([
+			'output' => ['name'],
+			'serviceids' => $serviceids,
+			'preservekeys' => true
+		]);
+
+		// Access denied for some objects?
+		if (count($services) != count($serviceids)) {
+			throw new CConfigurationExportException();
+		}
+
+		foreach ($services as $id => $service) {
+			$ids[$id] = ['name' => $service['name']];
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Get SLAs references by SLA ids.
+	 *
+	 * @param array $slaids
+	 *
+	 * @return array
+	 */
+	protected function getSlasReferences(array $slaids) {
+		$ids = [];
+
+		$slas = API::Sla()->get([
+			'output' => ['name'],
+			'slaids' => $slaids,
+			'preservekeys' => true
+		]);
+
+		// Access denied for some objects?
+		if (count($slas) != count($slaids)) {
+			throw new CConfigurationExportException();
+		}
+
+		foreach ($slas as $id => $sla) {
+			$ids[$id] = ['name' => $sla['name']];
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Get users references by user ids.
+	 *
+	 * @param array $userids
+	 *
+	 * @return array
+	 */
+	protected function getUsersReferences(array $userids) {
+		$ids = [];
+
+		$users = API::User()->get([
+			'userids' => $userids,
+			'output' => ['username'],
+			'preservekeys' => true
+		]);
+
+		// Access denied for some objects?
+		if (count($users) != count($userids)) {
+			throw new CConfigurationExportException();
+		}
+
+		foreach ($users as $id => $user) {
+			$ids[$id] = ['username' => $user['username']];
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Get actions references by action ids.
+	 *
+	 * @param array $actionids
+	 *
+	 * @return array
+	 */
+	protected function getActionsReferences(array $actionids) {
+		$ids = [];
+
+		$actions = API::Action()->get([
+			'actionids' => $actionids,
+			'output' => ['name'],
+			'preservekeys' => true
+		]);
+
+		// Access denied for some objects?
+		if (count($actions) != count($actionids)) {
+			throw new CConfigurationExportException();
+		}
+
+		foreach ($actions as $id => $action) {
+			$ids[$id] = ['name' => $action['name']];
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Get media types references by media type ids.
+	 *
+	 * @param array $mediatypeids
+	 *
+	 * @return array
+	 */
+	protected function getMediaTypesReferences(array $mediatypeids) {
+		$ids = [];
+
+		$media_types = API::MediaType()->get([
+			'mediatypeids' => $mediatypeids,
+			'output' => ['name'],
+			'preservekeys' => true
+		]);
+
+		// Access denied for some objects?
+		if (count($media_types) != count($mediatypeids)) {
+			throw new CConfigurationExportException();
+		}
+
+		foreach ($media_types as $id => $media_type) {
+			$ids[$id] = ['name' => $media_type['name']];
 		}
 
 		return $ids;

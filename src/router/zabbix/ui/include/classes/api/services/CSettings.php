@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -32,21 +27,20 @@ class CSettings extends CApiService {
 	protected $tableName = 'config';
 	protected $tableAlias = 'c';
 
-	/**
-	 * @var array
-	 */
-	private $output_fields = ['default_theme', 'search_limit', 'max_in_table', 'server_check_interval', 'work_period',
-		'show_technical_errors', 'history_period', 'period_default', 'max_period', 'severity_color_0',
+	private array $output_fields = ['default_theme', 'search_limit', 'max_in_table', 'server_check_interval',
+		'work_period', 'show_technical_errors', 'history_period', 'period_default', 'max_period', 'severity_color_0',
 		'severity_color_1', 'severity_color_2', 'severity_color_3', 'severity_color_4', 'severity_color_5',
 		'severity_name_0', 'severity_name_1', 'severity_name_2', 'severity_name_3', 'severity_name_4',
 		'severity_name_5', 'custom_color', 'ok_period', 'blink_period', 'problem_unack_color', 'problem_ack_color',
-		'ok_unack_color', 'ok_ack_color', 'problem_unack_style', 'problem_ack_style', 'ok_unack_style',
-		'ok_ack_style', 'discovery_groupid', 'default_inventory_mode', 'alert_usrgrpid',
-		'snmptrap_logging', 'default_lang', 'default_timezone', 'login_attempts', 'login_block', 'validate_uri_schemes',
-		'uri_valid_schemes', 'x_frame_options', 'iframe_sandboxing_enabled', 'iframe_sandboxing_exceptions',
-		'max_overview_table_size', 'connect_timeout', 'socket_timeout', 'media_type_test_timeout', 'script_timeout',
-		'item_test_timeout', 'url', 'report_test_timeout', 'auditlog_enabled', 'ha_failover_delay',
-		'geomaps_tile_provider', 'geomaps_tile_url', 'geomaps_max_zoom', 'geomaps_attribution', 'vault_provider'
+		'ok_unack_color', 'ok_ack_color', 'problem_unack_style', 'problem_ack_style', 'ok_unack_style', 'ok_ack_style',
+		'discovery_groupid', 'default_inventory_mode', 'alert_usrgrpid', 'snmptrap_logging', 'default_lang',
+		'default_timezone', 'login_attempts', 'login_block', 'validate_uri_schemes', 'uri_valid_schemes',
+		'x_frame_options', 'iframe_sandboxing_enabled', 'iframe_sandboxing_exceptions', 'max_overview_table_size',
+		'connect_timeout', 'socket_timeout', 'media_type_test_timeout', 'script_timeout', 'item_test_timeout', 'url',
+		'report_test_timeout', 'auditlog_enabled', 'auditlog_mode', 'ha_failover_delay', 'geomaps_tile_provider',
+		'geomaps_tile_url', 'geomaps_max_zoom', 'geomaps_attribution', 'vault_provider', 'timeout_zabbix_agent',
+		'timeout_simple_check', 'timeout_snmp_agent', 'timeout_external_check', 'timeout_db_monitor',
+		'timeout_http_agent', 'timeout_ssh_agent', 'timeout_telnet_agent', 'timeout_script', 'timeout_browser'
 	];
 
 	/**
@@ -81,47 +75,44 @@ class CSettings extends CApiService {
 	}
 
 	/**
-	 * @param array $options
-	 * @param bool  $api_call  Flag indicating whether this method called via an API call or from a local PHP file.
-	 *
-	 * @throws APIException if the input is invalid.
-	 *
-	 * @return array
+	 * Get the fields of the Settings API object that are used by parts of the UI where authentication is not required.
 	 */
-	public function getGlobal(array $options, bool $api_call = true): array {
-		if ($api_call) {
-			self::exception(ZBX_API_ERROR_PARAMETERS,
-				_s('Incorrect method "%1$s.%2$s".', 'settings', 'getglobal')
-			);
-		}
-
-		$output_fields = ['default_theme', 'show_technical_errors', 'severity_color_0', 'severity_color_1',
-			'severity_color_2', 'severity_color_3', 'severity_color_4', 'severity_color_5', 'custom_color',
-			'problem_unack_color', 'problem_ack_color', 'ok_unack_color', 'ok_ack_color', 'default_lang',
-			'x_frame_options', 'default_timezone', 'session_key', 'dbversion_status', 'server_status'
+	public static function getPublic(): array {
+		$output_fields = ['default_theme', 'server_check_interval', 'show_technical_errors', 'severity_color_0',
+			'severity_color_1', 'severity_color_2', 'severity_color_3', 'severity_color_4', 'severity_color_5',
+			'custom_color', 'problem_unack_color', 'problem_ack_color', 'ok_unack_color', 'ok_ack_color',
+			'default_lang', 'default_timezone', 'login_attempts', 'login_block', 'x_frame_options', 'auditlog_enabled'
 		];
-		$api_input_rules = ['type' => API_OBJECT, 'fields' => [
-			'output' =>	['type' => API_OUTPUT, 'in' => implode(',', $output_fields), 'default' => API_OUTPUT_EXTEND]
+
+		return DB::select('config', ['output' => $output_fields])[0];
+	}
+
+	/**
+	 * Get the private settings used in UI.
+	 */
+	public static function getPrivate(): array {
+		$output_fields = ['session_key', 'dbversion_status', 'server_status', 'software_update_checkid',
+			'software_update_check_data'
+		];
+
+		$db_settings = DB::select('config', ['output' => $output_fields])[0];
+
+		$db_settings['dbversion_status'] = json_decode($db_settings['dbversion_status'], true) ?: [];
+
+		$db_settings['server_status'] = json_decode($db_settings['server_status'], true) ?: [];
+		$db_settings['server_status'] += ['configuration' => [
+			'enable_global_scripts' => true,
+			'allow_software_update_check' => false
 		]];
 
-		if (!CApiInputValidator::validate($api_input_rules, $options, '/', $error)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+		if ($db_settings['software_update_checkid'] !== '') {
+			$db_settings['software_update_checkid'] = hash('sha256', $db_settings['software_update_checkid']);
 		}
 
-		if ($options['output'] === API_OUTPUT_EXTEND) {
-			$options['output'] = $output_fields;
-		}
+		$db_settings['software_update_check_data'] =
+			json_decode($db_settings['software_update_check_data'], true) ?: [];
 
-		$db_settings = [];
-
-		$result = DBselect($this->createSelectQuery($this->tableName(), $options));
-
-		while ($row = DBfetch($result)) {
-			$db_settings[] = $row;
-		}
-		$db_settings = $this->unsetExtraFields($db_settings, ['configid'], []);
-
-		return $db_settings[0];
+		return $db_settings;
 	}
 
 	/**
@@ -215,15 +206,26 @@ class CSettings extends CApiService {
 			'socket_timeout' =>					['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '1:300'],
 			'media_type_test_timeout' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '1:300'],
 			'script_timeout' =>					['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '1:300'],
-			'item_test_timeout' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '1:300'],
+			'item_test_timeout' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '1:600'],
 			'url' =>							['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('config', 'url')],
 			'report_test_timeout' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '1:300'],
 			'auditlog_enabled' =>				['type' => API_INT32, 'in' => '0,1'],
+			'auditlog_mode' =>					['type' => API_INT32, 'in' => '0,1'],
 			'geomaps_tile_provider' =>			['type' => API_STRING_UTF8, 'in' => ','.implode(',', array_keys(getTileProviders()))],
 			'geomaps_tile_url' =>				['type' => API_URL, 'length' => DB::getFieldLength('config', 'geomaps_tile_url')],
 			'geomaps_max_zoom' =>				['type' => API_INT32, 'in' => '0:'.ZBX_GEOMAP_MAX_ZOOM],
 			'geomaps_attribution' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('config', 'geomaps_attribution')],
-			'vault_provider' =>					['type' => API_INT32, 'flags' => API_NOT_EMPTY, 'in' => ZBX_VAULT_TYPE_HASHICORP.','.ZBX_VAULT_TYPE_CYBERARK]
+			'vault_provider' =>					['type' => API_INT32, 'flags' => API_NOT_EMPTY, 'in' => ZBX_VAULT_TYPE_HASHICORP.','.ZBX_VAULT_TYPE_CYBERARK],
+			'timeout_zabbix_agent' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_simple_check' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_snmp_agent' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_external_check' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_db_monitor' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_http_agent' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_ssh_agent' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_telnet_agent' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_script' =>					['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600'],
+			'timeout_browser' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:600']
 		]];
 
 		if (!CApiInputValidator::validate($api_input_rules, $settings, '/', $error)) {
@@ -294,5 +296,21 @@ class CSettings extends CApiService {
 		$output_fields[] = 'configid';
 
 		return DB::select('config', ['output' => $output_fields])[0];
+	}
+
+	public static function updatePrivate(array $settings): array {
+		$settings['software_update_check_data'] = json_encode($settings['software_update_check_data']);
+		$db_settings = DB::select('config', ['output' => ['configid', 'software_update_check_data']])[0];
+
+		$upd_config = DB::getUpdatedValues('config', $settings, $db_settings);
+
+		if ($upd_config) {
+			DB::update('config', [
+				'values' => $upd_config,
+				'where' => ['configid' => $db_settings['configid']]
+			]);
+		}
+
+		return array_keys($settings);
 	}
 }

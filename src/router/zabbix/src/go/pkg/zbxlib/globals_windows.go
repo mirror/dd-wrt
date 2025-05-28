@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package zbxlib
@@ -24,7 +19,7 @@ package zbxlib
 #include "zbxsysinfo.h"
 #include "zbxcomms.h"
 #include "zbxwin32.h"
-#include "../src/zabbix_agent/metrics.h"
+#include "../src/zabbix_agent/metrics/metrics.h"
 
 #cgo LDFLAGS: -Wl,--start-group
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/misc.o
@@ -32,10 +27,14 @@ package zbxlib
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/num.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/param.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/interval.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/bincommon.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/common_str.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/common_log.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/components_strings_representations.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/libc_wrappers.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/file.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/symbols.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/win32_file.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/time.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/expr.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/function.o
@@ -45,6 +44,7 @@ package zbxlib
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/fatal.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/disk.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/threads.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/ip.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/iprange.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/zbxhash.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/md5.o
@@ -63,10 +63,13 @@ package zbxlib
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/variant.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_system.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_dns.o
-#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_file.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_ip_reverse.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_vfs_file.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_dir.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_alias.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/eventlog.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/process_eventslog.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/process_eventslog6.o
 #cgo openssl LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/tls_version.o
 #cgo LDFLAGS: -lDbghelp -lpsapi -lws2_32 -lWevtapi -ldnsapi
 #cgo pcre  LDFLAGS: -lpcre
@@ -74,26 +77,23 @@ package zbxlib
 #cgo openssl LDFLAGS: -lssl -lcrypto
 #cgo LDFLAGS: -Wl,--end-group
 
-int CONFIG_MAX_LINES_PER_SECOND = 20;
-int CONFIG_EVENTLOG_MAX_LINES_PER_SECOND = 20;
-char ZBX_THREAD_LOCAL *CONFIG_HOSTNAME = NULL;
-int	CONFIG_UNSAFE_USER_PARAMETERS= 0;
-int	CONFIG_ENABLE_REMOTE_COMMANDS= 0;
-char *CONFIG_SOURCE_IP = NULL;
-
 int	CONFIG_TCP_MAX_BACKLOG_SIZE	= SOMAXCONN;
 
-const char	*progname = NULL;
-const char	title_message[] = "agent";
-const char	*usage_message[] = {};
-const char	*help_message[] = {};
+zbx_metric_t	parameters_common[] = {NULL};
+zbx_metric_t	*get_parameters_common(void)
+{
+	return &parameters_common[0];
+}
 
-ZBX_METRIC	parameters_common[] = {NULL};
-ZBX_METRIC	parameters_common_local[] = {NULL};
+zbx_metric_t	parameters_common_local[] = {NULL};
+zbx_metric_t	*get_parameters_common_local(void)
+{
+	return &parameters_common_local[0];
+}
 
 #define ZBX_MESSAGE_BUF_SIZE	1024
 
-char	*strerror_from_system(unsigned long error)
+char	*zbx_strerror_from_system(zbx_syserror_t error)
 {
 	size_t		offset = 0;
 	wchar_t		wide_string[ZBX_MESSAGE_BUF_SIZE];

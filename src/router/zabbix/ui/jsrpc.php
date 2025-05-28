@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -215,20 +210,33 @@ switch ($data['method']) {
 			case 'items':
 			case 'item_prototypes':
 				$options = [
-					'output' => ['itemid', 'name'],
+					'output' => ['itemid'],
 					'selectHosts' => ['name'],
 					'hostids' => array_key_exists('hostid', $data) ? $data['hostid'] : null,
 					'templated' => array_key_exists('real_hosts', $data) ? false : null,
-					'search' => array_key_exists('search', $data) ? ['name' => $data['search']] : null,
 					'filter' => array_key_exists('filter', $data) ? $data['filter'] : null,
 					'limit' => $limit
 				];
 
 				if ($data['object_name'] === 'item_prototypes') {
+					$options['output'][] = 'name';
+					$options['search'] = array_key_exists('search', $data) ? ['name' => $data['search']] : null;
+
 					$records = API::ItemPrototype()->get($options);
 				}
 				else {
-					$records = API::Item()->get($options + ['webitems' => true]);
+					$resolve_macros = array_key_exists('resolve_macros', $data) && $data['resolve_macros'];
+					$name_field = $resolve_macros ? 'name_resolved' : 'name';
+
+					$options['output'][] = $name_field;
+					$options['search'] = array_key_exists('search', $data) ? [$name_field => $data['search']] : null;
+					$options['webitems'] = true;
+
+					$records = API::Item()->get($options);
+
+					if ($resolve_macros) {
+						$records = CArrayHelper::renameObjectsKeys($records, ['name_resolved' => 'name']);
+					}
 				}
 
 				if ($records) {
@@ -342,19 +350,37 @@ switch ($data['method']) {
 
 			case 'proxies':
 				$proxies = API::Proxy()->get([
-					'output' => ['proxyid', 'host'],
-					'search' => array_key_exists('search', $data) ? ['host' => $data['search']] : null,
+					'output' => ['proxyid', 'name'],
+					'search' => array_key_exists('search', $data) ? ['name' => $data['search']] : null,
 					'limit' => $limit
 				]);
 
 				if ($proxies) {
-					CArrayHelper::sort($proxies, ['host']);
+					CArrayHelper::sort($proxies, ['name']);
 
 					if (isset($data['limit'])) {
 						$proxies = array_slice($proxies, 0, $data['limit']);
 					}
 
-					$result = CArrayHelper::renameObjectsKeys($proxies, ['proxyid' => 'id', 'host' => 'name']);
+					$result = CArrayHelper::renameObjectsKeys($proxies, ['proxyid' => 'id']);
+				}
+				break;
+
+			case 'proxy_groups':
+				$db_proxy_groups = API::ProxyGroup()->get([
+					'output' => ['proxy_groupid', 'name'],
+					'search' => array_key_exists('search', $data) ? ['name' => $data['search']] : null,
+					'limit' => $limit
+				]);
+
+				if ($db_proxy_groups) {
+					CArrayHelper::sort($db_proxy_groups, ['name']);
+
+					if (array_key_exists('limit', $data)) {
+						$db_proxy_groups = array_slice($db_proxy_groups, 0, $data['limit']);
+					}
+
+					$result = CArrayHelper::renameObjectsKeys($db_proxy_groups, ['proxy_groupid' => 'id']);
 				}
 				break;
 
@@ -414,7 +440,7 @@ switch ($data['method']) {
 				break;
 
 			case 'users':
-				$users = API::User()->get([
+				$options = [
 					'output' => ['userid', 'username', 'name', 'surname'],
 					'search' => array_key_exists('search', $data)
 						? [
@@ -425,7 +451,13 @@ switch ($data['method']) {
 						: null,
 					'searchByAny' => true,
 					'limit' => $limit
-				]);
+				];
+
+				if (array_key_exists('exclude_provisioned', $data) && $data['exclude_provisioned']) {
+					$options['filter']['userdirectoryid'] = 0;
+				}
+
+				$users = API::User()->get($options);
 
 				if (array_key_exists('context', $data) && stripos('system', $data['search']) !== false) {
 					$users[] = ['userid' => '0', 'username' => 'System', 'name' => '', 'surname' => ''];
@@ -723,17 +755,33 @@ switch ($data['method']) {
 					$result = CArrayHelper::renameObjectsKeys($sysmaps, ['sysmapid' => 'id']);
 				}
 				break;
+
+			case 'host_inventory':
+				$inventory_fields = array_column(getHostInventories(true), 'title', 'nr');
+
+				if (array_key_exists('search', $data)) {
+					$inventory_fields = preg_grep('/'.preg_quote($data['search']).'/i', $inventory_fields);
+				}
+
+				foreach (array_slice($inventory_fields, 0, $limit, true) as $nr => $title) {
+					$result[] = ['id' => (string) $nr, 'name' => $title];
+				}
+				break;
 		}
 		break;
 
 	case 'patternselect.get':
 		$search = (array_key_exists('search', $data) && $data['search'] !== '') ? $data['search'] : null;
+		$hostids = array_key_exists('hostids', $data) ? $data['hostids'] : null;
+		$items = array_key_exists('items', $data) ? $data['items'] : null;
+		$groupids = array_key_exists('groupids', $data) ? getSubGroups($data['groupids']) : null;
 		$wildcard_enabled = array_key_exists('wildcard_allowed', $data) && strpos($search, '*') !== false;
 
 		switch ($data['object_name']) {
 			case 'hosts':
 				$options = [
 					'output' => ['name'],
+					'groupids' => $groupids,
 					'search' => ['name' => $search.($wildcard_enabled ? '*' : '')],
 					'searchWildcardsEnabled' => $wildcard_enabled,
 					'preservekeys' => true,
@@ -745,8 +793,6 @@ switch ($data['method']) {
 				break;
 
 			case 'items':
-				$hostids = null;
-
 				if (array_key_exists('host_pattern', $data)) {
 					$host_pattern_multiple = array_key_exists('host_pattern_multiple', $data)
 						&& $data['host_pattern_multiple'] == 1;
@@ -756,6 +802,8 @@ switch ($data['method']) {
 
 					$hosts = API::Host()->get([
 						'output' => [],
+						'hostids' => $hostids,
+						'groupids' => $groupids,
 						'search' => [
 							'name' => $host_pattern_wildcard_enabled ? $host_patterns : null
 						],
@@ -767,19 +815,37 @@ switch ($data['method']) {
 					$hostids = array_keys($hosts);
 				}
 
+				if (array_key_exists('hostid', $data)) {
+					$hostids = $data['hostid'];
+				}
+
+				$resolve_macros = array_key_exists('resolve_macros', $data) && $data['resolve_macros'];
+				$name_field = $resolve_macros ? 'name_resolved' : 'name';
+
 				$options = [
-					'output' => ['name'],
-					'search' => ['name' => $search.($wildcard_enabled ? '*' : '')],
+					'output' => ['itemid', $name_field],
+					'search' => [$name_field => $search.($wildcard_enabled ? '*' : '')],
 					'searchWildcardsEnabled' => $wildcard_enabled,
 					'filter' => array_key_exists('filter', $data) ? $data['filter'] : null,
 					'templated' => array_key_exists('real_hosts', $data) ? false : null,
 					'hostids' => $hostids,
+					'groupids' => $groupids,
 					'webitems' => true,
 					'sortfield' => 'name',
 					'limit' => $limit
 				];
 
+				if ($items) {
+					$options['search'][$name_field] = [...$items, $options['search'][$name_field]];
+					$options['searchWildcardsEnabled'] = true;
+					$options['searchByAny'] = true;
+				}
+
 				$db_result = API::Item()->get($options);
+
+				if ($resolve_macros) {
+					$db_result = CArrayHelper::renameObjectsKeys($db_result, ['name_resolved' => 'name']);
+				}
 				break;
 
 			case 'graphs':
@@ -828,11 +894,58 @@ switch ($data['method']) {
 		if (array_key_exists('itemid', $data) && is_scalar($data['itemid'])) {
 			$items = API::Item()->get([
 				'output' => ['value_type'],
-				'itemids' => $data['itemid']
+				'itemids' => $data['itemid'],
+				'webitems' => true
 			]);
 
 			if ($items) {
 				$result = $items[0]['value_type'];
+			}
+		}
+		break;
+
+	case 'get_scripts_by_hosts':
+		$result = [];
+
+		if (array_key_exists('hostid', $data) && is_scalar($data['hostid'])) {
+			$scripts = API::Script()->getScriptsByHosts([
+				'hostid' => $data['hostid'],
+				'scriptid' => $data['scriptid'],
+				'manualinput' => $data['manualinput']
+			]);
+
+			$errors = CMessageHelper::getMessages();
+
+			if ($errors) {
+				$result = [
+					'error' => array_values(array_column($errors, 'message'))
+				];
+			}
+			elseif ($scripts) {
+				$result = $scripts[$data['hostid']][0];
+			}
+		}
+		break;
+
+	case 'get_scripts_by_events':
+		$result = [];
+
+		if (array_key_exists('eventid', $data) && is_scalar($data['eventid'])) {
+			$scripts = API::Script()->getScriptsByEvents([
+				'eventid' => $data['eventid'],
+				'scriptid' => $data['scriptid'],
+				'manualinput' => $data['manualinput']
+			]);
+
+			$errors = CMessageHelper::getMessages();
+
+			if ($errors) {
+				$result = [
+					'error' => array_values(array_column($errors, 'message'))
+				];
+			}
+			elseif ($scripts) {
+				$result = $scripts[$data['eventid']][0];
 			}
 		}
 		break;

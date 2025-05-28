@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -35,7 +30,9 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 			'templates' => 'array',
 			'inventories' => 'array',
 			'description' => 'string',
-			'proxy_hostid' => 'string',
+			'monitored_by' => 'in '.implode(',', [ZBX_MONITORED_BY_SERVER, ZBX_MONITORED_BY_PROXY, ZBX_MONITORED_BY_PROXY_GROUP]),
+			'proxyid' => 'string',
+			'proxy_groupid' => 'string',
 			'ipmi_username' => 'string',
 			'ipmi_password' => 'string',
 			'tls_issuer' => 'string',
@@ -92,22 +89,21 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 			);
 		}
 
+		if ($this->hasInput('backurl') && !CHtmlUrlValidator::validateSameSite($this->getInput('backurl'))) {
+			throw new CAccessDeniedException();
+		}
+
 		return $ret;
 	}
 
 	protected function checkPermissions(): bool {
-		$hosts = API::Host()->get([
-			'output' => [],
-			'hostids' => $this->getInput('hostids'),
-			'editable' => true
-		]);
-
-		return count($hosts) > 0;
+		return $this->checkAccess(CRoleHelper::UI_CONFIGURATION_HOSTS);
 	}
 
 	protected function doAction(): void {
 		if ($this->hasInput('update')) {
 			$hostids = $this->getInput('hostids');
+			$hosts_count = count($hostids);
 			$visible = $this->getInput('visible', []);
 
 			$macros = array_filter(cleanInheritedMacros($this->getInput('macros', [])),
@@ -124,6 +120,8 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 				}
 			);
 
+			$result = false;
+
 			try {
 				DBstart();
 
@@ -131,7 +129,8 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 				$options = [
 					'output' => ['hostid', 'host', 'inventory_mode', 'flags'],
 					'hostids' => $hostids,
-					'filter' => ['flags' => [ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_CREATED]]
+					'filter' => ['flags' => [ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_CREATED]],
+					'editable' => true
 				];
 
 				if (array_key_exists('groups', $visible)) {
@@ -159,6 +158,11 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 
 				$hosts = API::Host()->get($options);
 
+				if (!$hosts) {
+					error(_('No permissions to referred object or it does not exist!'));
+					throw new Exception();
+				}
+
 				if (array_key_exists('groups', $visible)) {
 					$new_groupids = [];
 					$remove_groupids = [];
@@ -178,7 +182,9 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 							}
 
 							if ($ins_groups) {
-								if (!$result = API::HostGroup()->create($ins_groups)) {
+								$result = API::HostGroup()->create($ins_groups);
+
+								if (!$result) {
 									throw new Exception();
 								}
 
@@ -194,14 +200,23 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 					}
 				}
 
-				$properties = ['description', 'proxy_hostid', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username',
-					'ipmi_password'
-				];
+				$properties = ['description', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username', 'ipmi_password'];
 
 				$new_values = [];
 				foreach ($properties as $property) {
 					if (array_key_exists($property, $visible)) {
 						$new_values[$property] = $this->getInput($property);
+					}
+				}
+
+				if (array_key_exists('monitored_by', $visible)) {
+					$new_values['monitored_by'] = $this->getInput('monitored_by', ZBX_MONITORED_BY_SERVER);
+
+					if ($new_values['monitored_by'] == ZBX_MONITORED_BY_PROXY) {
+						$new_values['proxyid'] = $this->getInput('proxyid', 0);
+					}
+					elseif ($new_values['monitored_by'] == ZBX_MONITORED_BY_PROXY_GROUP) {
+						$new_values['proxy_groupid'] = $this->getInput('proxy_groupid', 0);
 					}
 				}
 
@@ -459,53 +474,55 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 				}
 				unset($host);
 
-				$result = $hosts ? (bool) API::Host()->update($hosts) : true;
+				$result = (bool) API::Host()->update($hosts);
 
-				if ($result === false) {
+				if (!$result) {
 					throw new Exception();
 				}
+
+				$hosts_count = count($hosts);
 
 				// Value mapping.
 				if (array_key_exists('valuemaps', $visible)) {
 					$this->updateValueMaps($hostids);
 				}
-
-				DBend(true);
 			}
 			catch (Exception $e) {
-				DBend(false);
-
 				$result = false;
 			}
+
+			$result = DBend($result);
 
 			if ($this->hasInput('backurl')) {
 				$upd_status = ($this->getInput('status', HOST_STATUS_NOT_MONITORED) == HOST_STATUS_MONITORED);
 				$backurl = new CUrl($this->getInput('backurl'));
-				$cnt = count($hostids);
 
 				if ($result) {
 					$backurl->setArgument('uncheck', 1);
 
 					CMessageHelper::setSuccessTitle($upd_status
-						? _n('Host enabled', 'Hosts enabled', $cnt)
-						: _n('Host disabled', 'Hosts disabled', $cnt)
+						? _n('Host enabled', 'Hosts enabled', $hosts_count)
+						: _n('Host disabled', 'Hosts disabled', $hosts_count)
 					);
 				}
 				else {
 					CMessageHelper::setErrorTitle($upd_status
-						? _n('Cannot enable host', 'Cannot enable hosts', $cnt)
-						: _n('Cannot disable host', 'Cannot disable hosts', $cnt)
+						? _n('Cannot enable host', 'Cannot enable hosts', $hosts_count)
+						: _n('Cannot disable host', 'Cannot disable hosts', $hosts_count)
 					);
 				}
 
-				$this->setResponse(new CControllerResponseRedirect($backurl->getUrl()));
+				$this->setResponse(new CControllerResponseRedirect($backurl));
 			}
 			else {
 				if ($result) {
 					ob_start();
 					uncheckTableRows('hosts');
 
-					$output = ['title' => _('Hosts updated'), 'script_inline' => ob_get_clean()];
+					$output = [
+						'title' => _n('Host updated', 'Hosts updated', $hosts_count),
+						'script_inline' => ob_get_clean()
+					];
 
 					if ($messages = CMessageHelper::getMessages()) {
 						$output['messages'] = array_column($messages, 'message');
@@ -514,7 +531,7 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 				else {
 					$output = [
 						'error' => [
-							'title' => _('Cannot update hosts'),
+							'title' => _n('Cannot update host', 'Cannot update hosts', $hosts_count),
 							'messages' => array_column(get_and_clear_messages(), 'message')
 						]
 					];
@@ -538,14 +555,6 @@ class CControllerPopupMassupdateHost extends CControllerPopupMassupdateAbstract 
 					->setArgument('page', CPagerHelper::loadPage('host.list'))
 					->getUrl()
 			];
-
-			$data['proxies'] = API::Proxy()->get([
-				'output' => ['proxyid', 'host'],
-				'filter' => [
-					'status' => [HOST_STATUS_PROXY_ACTIVE, HOST_STATUS_PROXY_PASSIVE]
-				],
-				'sortfield' => 'host'
-			]);
 
 			$data['discovered_host'] = !(bool) API::Host()->get([
 				'output' => [],

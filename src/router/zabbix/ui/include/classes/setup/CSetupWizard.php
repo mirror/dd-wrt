@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -102,6 +97,8 @@ class CSetupWizard extends CForm {
 
 		if ($this->getStep() == self::STAGE_REQUIREMENTS) {
 			if (hasRequest('next') && array_key_exists(self::STAGE_REQUIREMENTS, getRequest('next'))) {
+				$default_lang = getRequest('default_lang', $this->getConfig('default_lang'));
+				$this->frontend_setup->setDefaultLang($default_lang);
 				$finalResult = CFrontendSetup::CHECK_OK;
 
 				foreach ($this->frontend_setup->checkRequirements() as $req) {
@@ -120,25 +117,36 @@ class CSetupWizard extends CForm {
 			}
 		}
 		elseif ($this->getStep() == self::STAGE_DB_CONNECTION) {
+			$config = new CConfigFile(APP::getRootDir().CConfigFile::CONFIG_FILE_PATH);
+
 			$input = [
 				'DB_TYPE' => getRequest('type', $this->getConfig('DB_TYPE')),
-				'DB_SERVER' => getRequest('server', $this->getConfig('DB_SERVER', 'localhost')),
-				'DB_PORT' => getRequest('port', $this->getConfig('DB_PORT', '0')),
+				'DB_SERVER' => getRequest('server', $this->getConfig('DB_SERVER', $config->config['DB']['SERVER'])),
+				'DB_PORT' => getRequest('port', $this->getConfig('DB_PORT', $config->config['DB']['PORT'])),
 				'DB_DATABASE' => getRequest('database', $this->getConfig('DB_DATABASE', 'zabbix')),
 				'DB_CREDS_STORAGE' => getRequest('creds_storage',
 					$this->getConfig('DB_CREDS_STORAGE', DB_STORE_CREDS_CONFIG)
 				),
-				'DB_PASSWORD' => getRequest('password', $this->getConfig('DB_PASSWORD', '')),
-				'DB_SCHEMA' => getRequest('schema', $this->getConfig('DB_SCHEMA', '')),
-				'DB_ENCRYPTION' => (bool) getRequest('tls_encryption', $this->getConfig('DB_ENCRYPTION', false)),
+				'DB_SCHEMA' => getRequest('schema', $this->getConfig('DB_SCHEMA', $config->config['DB']['SCHEMA'])),
+				'DB_ENCRYPTION' => (bool) getRequest('tls_encryption',
+					$this->getConfig('DB_ENCRYPTION', $config->config['DB']['ENCRYPTION'])
+				),
 				'DB_ENCRYPTION_ADVANCED' => (bool) getRequest('verify_certificate',
 					$this->getConfig('DB_ENCRYPTION_ADVANCED', false)
 				),
 				'DB_VERIFY_HOST' => (bool) getRequest('verify_host', $this->getConfig('DB_VERIFY_HOST', false)),
-				'DB_KEY_FILE' => getRequest('key_file', $this->getConfig('DB_KEY_FILE', '')),
-				'DB_CERT_FILE' => getRequest('cert_file', $this->getConfig('DB_CERT_FILE', '')),
-				'DB_CA_FILE' => getRequest('ca_file', $this->getConfig('DB_CA_FILE', '')),
-				'DB_CIPHER_LIST' => getRequest('cipher_list', $this->getConfig('DB_CIPHER_LIST', ''))
+				'DB_KEY_FILE' => getRequest('key_file',
+					$this->getConfig('DB_KEY_FILE', $config->config['DB']['KEY_FILE'])
+				),
+				'DB_CERT_FILE' => getRequest('cert_file',
+					$this->getConfig('DB_CERT_FILE', $config->config['DB']['CERT_FILE'])
+				),
+				'DB_CA_FILE' => getRequest('ca_file',
+					$this->getConfig('DB_CA_FILE', $config->config['DB']['CA_FILE'])
+				),
+				'DB_CIPHER_LIST' => getRequest('cipher_list',
+					$this->getConfig('DB_CIPHER_LIST', $config->config['DB']['CIPHER_LIST'])
+				)
 			];
 
 			if (!$input['DB_ENCRYPTION_ADVANCED']) {
@@ -165,6 +173,10 @@ class CSetupWizard extends CForm {
 						$this->getConfig('DB_VAULT_URL', CVaultHashiCorp::API_ENDPOINT_DEFAULT)
 					));
 
+					$this->setConfig('DB_VAULT_PREFIX', getRequest('vault_prefix_hashicorp',
+						$this->getConfig('DB_VAULT_PREFIX', '')
+					));
+
 					$this->setConfig('DB_VAULT_DB_PATH', getRequest('vault_db_path',
 						$this->getConfig('DB_VAULT_DB_PATH', '')
 					));
@@ -172,8 +184,8 @@ class CSetupWizard extends CForm {
 					$this->setConfig('DB_VAULT_TOKEN', getRequest('vault_token', $this->getConfig('DB_VAULT_TOKEN')));
 
 					$this->unsetConfig(['DB_USER', 'DB_PASSWORD', 'DB_VAULT_CERTIFICATES', 'DB_VAULT_CERT_FILE',
-						'DB_VAULT_KEY_FILE']
-					);
+						'DB_VAULT_KEY_FILE'
+					]);
 					break;
 
 				case DB_STORE_CREDS_VAULT_CYBERARK:
@@ -181,24 +193,28 @@ class CSetupWizard extends CForm {
 						$this->getConfig('DB_VAULT_URL', CVaultCyberArk::API_ENDPOINT_DEFAULT)
 					));
 
-					$this->setConfig('DB_VAULT_DB_PATH',
-						getRequest('vault_query_string', $this->getConfig('DB_VAULT_DB_PATH'))
-					);
+					$this->setConfig('DB_VAULT_PREFIX', getRequest('vault_prefix_cyberark',
+						$this->getConfig('DB_VAULT_PREFIX', '')
+					));
+
+					$this->setConfig('DB_VAULT_DB_PATH', getRequest('vault_query_string',
+						$this->getConfig('DB_VAULT_DB_PATH', '')
+					));
 
 					$vault_certificates = (bool) getRequest('vault_certificates',
 						$this->getConfig('DB_VAULT_CERTIFICATES', false)
 					);
 					$this->setConfig('DB_VAULT_CERTIFICATES', $vault_certificates);
 
-					if ($vault_certificates) {
-						$this->setConfig('DB_VAULT_CERT_FILE', getRequest('vault_cert_file',
-							$this->getConfig('DB_VAULT_CERT_FILE')
-						));
+					$vault_cert_file = $vault_certificates
+						? getRequest('vault_cert_file', $this->getConfig('DB_VAULT_CERT_FILE', ''))
+						: '';
+					$this->setConfig('DB_VAULT_CERT_FILE', $vault_cert_file);
 
-						$this->setConfig('DB_VAULT_KEY_FILE', getRequest('vault_key_file',
-							$this->getConfig('DB_VAULT_KEY_FILE')
-						));
-					}
+					$vault_key_file = $vault_certificates
+						? getRequest('vault_key_file', $this->getConfig('DB_VAULT_KEY_FILE', ''))
+						: '';
+					$this->setConfig('DB_VAULT_KEY_FILE', $vault_key_file);
 
 					$this->unsetConfig(['DB_USER', 'DB_PASSWORD', 'DB_VAULT_TOKEN']);
 					break;
@@ -208,23 +224,28 @@ class CSetupWizard extends CForm {
 					$this->setConfig('DB_PASSWORD', getRequest('password', $this->getConfig('DB_PASSWORD', '')));
 
 					$this->unsetConfig(['DB_VAULT_URL', 'DB_VAULT_DB_PATH', 'DB_VAULT_TOKEN', 'DB_VAULT_CERTIFICATES',
-						'DB_VAULT_CERT_FILE', 'DB_VAULT_KEY_FILE']
-					);
+						'DB_VAULT_CERT_FILE', 'DB_VAULT_KEY_FILE'
+					]);
 					break;
+			}
+
+			if ($this->getConfig('DB_SERVER') === '') {
+				$this->setConfig('DB_SERVER', $config->config['DB']['SERVER']);
 			}
 
 			if (hasRequest('next') && array_key_exists(self::STAGE_DB_CONNECTION, getRequest('next'))) {
 				switch ($this->getConfig('DB_CREDS_STORAGE')) {
 					case DB_STORE_CREDS_VAULT_HASHICORP:
 						$vault_provider = new CVaultHashiCorp($this->getConfig('DB_VAULT_URL'),
-							$this->getConfig('DB_VAULT_DB_PATH'), $this->getConfig('DB_VAULT_TOKEN')
+							$this->getConfig('DB_VAULT_PREFIX'), $this->getConfig('DB_VAULT_DB_PATH'),
+							$this->getConfig('DB_VAULT_TOKEN')
 						);
 						break;
 
 					case DB_STORE_CREDS_VAULT_CYBERARK:
 						$vault_provider = new CVaultCyberArk($this->getConfig('DB_VAULT_URL'),
-							$this->getConfig('DB_VAULT_DB_PATH'), $this->getConfig('DB_VAULT_CERT_FILE'),
-							$this->getConfig('DB_VAULT_KEY_FILE')
+							$this->getConfig('DB_VAULT_PREFIX'), $this->getConfig('DB_VAULT_DB_PATH'),
+							$this->getConfig('DB_VAULT_CERT_FILE'), $this->getConfig('DB_VAULT_KEY_FILE')
 						);
 						break;
 
@@ -260,7 +281,6 @@ class CSetupWizard extends CForm {
 
 				if ($db_connected) {
 					if ($this->checkConnection()) {
-						$this->setConfig('DB_DOUBLE_IEEE754', DB::getDbBackend()->isDoubleIEEE754());
 						$this->doNext();
 					}
 
@@ -284,6 +304,7 @@ class CSetupWizard extends CForm {
 				$vault_config = [
 					'VAULT' => '',
 					'VAULT_URL' => '',
+					'VAULT_PREFIX' => '',
 					'VAULT_DB_PATH' => '',
 					'VAULT_TOKEN' => '',
 					'VAULT_CERT_FILE' => '',
@@ -299,6 +320,7 @@ class CSetupWizard extends CForm {
 					case DB_STORE_CREDS_VAULT_HASHICORP:
 						$vault_config['VAULT'] = CVaultHashiCorp::NAME;
 						$vault_config['VAULT_URL'] = $this->getConfig('DB_VAULT_URL');
+						$vault_config['VAULT_PREFIX'] = $this->getConfig('DB_VAULT_PREFIX');
 						$vault_config['VAULT_DB_PATH'] = $this->getConfig('DB_VAULT_DB_PATH');
 						$vault_config['VAULT_TOKEN'] = $this->getConfig('DB_VAULT_TOKEN');
 						break;
@@ -306,9 +328,10 @@ class CSetupWizard extends CForm {
 					case DB_STORE_CREDS_VAULT_CYBERARK:
 						$vault_config['VAULT'] = CVaultCyberArk::NAME;
 						$vault_config['VAULT_URL'] = $this->getConfig('DB_VAULT_URL');
+						$vault_config['VAULT_PREFIX'] = $this->getConfig('DB_VAULT_PREFIX');
 						$vault_config['VAULT_DB_PATH'] = $this->getConfig('DB_VAULT_DB_PATH');
-						$vault_config['VAULT_CERT_FILE'] = $this->getConfig('VAULT_CERT_FILE');
-						$vault_config['VAULT_KEY_FILE'] = $this->getConfig('VAULT_KEY_FILE');
+						$vault_config['VAULT_CERT_FILE'] = $this->getConfig('DB_VAULT_CERT_FILE');
+						$vault_config['VAULT_KEY_FILE'] = $this->getConfig('DB_VAULT_KEY_FILE');
 						break;
 
 					default:
@@ -333,8 +356,7 @@ class CSetupWizard extends CForm {
 						'KEY_FILE' => $this->getConfig('DB_KEY_FILE'),
 						'CERT_FILE' => $this->getConfig('DB_CERT_FILE'),
 						'CA_FILE' => $this->getConfig('DB_CA_FILE'),
-						'CIPHER_LIST' => $this->getConfig('DB_CIPHER_LIST'),
-						'DOUBLE_IEEE754' => $this->getConfig('DB_DOUBLE_IEEE754')
+						'CIPHER_LIST' => $this->getConfig('DB_CIPHER_LIST')
 					] + $db_creds_config + $vault_config,
 					'ZBX_SERVER_NAME' => $this->getConfig('ZBX_SERVER_NAME')
 				];
@@ -362,7 +384,7 @@ class CSetupWizard extends CForm {
 	protected function bodyToString($destroy = true): string {
 		$setup_left = (new CDiv())
 			->addClass(ZBX_STYLE_SETUP_LEFT)
-			->addItem((new CDiv(makeLogo(LOGO_TYPE_NORMAL)))->addClass('setup-logo'))
+			->addItem(makeLogo(LOGO_TYPE_NORMAL))
 			->addItem($this->getList());
 
 		$setup_right = (new CDiv($this->getStage()))->addClass(ZBX_STYLE_SETUP_RIGHT);
@@ -445,18 +467,18 @@ class CSetupWizard extends CForm {
 		// Restoring original locale.
 		setlocale(LC_MONETARY, zbx_locale_variants($default_lang));
 
-		$language_error = '';
+		$language_error = null;
+
 		if (!function_exists('bindtextdomain')) {
-			$language_error = 'Translations are unavailable because the PHP gettext module is missing.';
+			$language_error = makeErrorIcon('Translations are unavailable because the PHP gettext module is missing.');
+
 			$lang_select->setReadonly();
 		}
 		elseif (!$all_locales_available) {
-			$language_error = _('You are not able to choose some of the languages, because locales for them are not installed on the web server.');
+			$language_error = makeWarningIcon(
+				_('You are not able to choose some of the languages, because locales for them are not installed on the web server.')
+			);
 		}
-
-		$language_error = ($language_error !== '')
-			? (makeErrorIcon($language_error))->addStyle('margin-left: 5px;')
-			: null;
 
 		$language_select = (new CFormList())
 			->addRow(new CLabel(_('Default language'), $lang_select->getFocusableElementId()), [
@@ -472,6 +494,8 @@ class CSetupWizard extends CForm {
 			->setHeader(['', _('Current value'), _('Required'), '']);
 
 		$messages = [];
+		$default_lang = getRequest('default_lang', $this->getConfig('default_lang'));
+		$this->frontend_setup->setDefaultLang($default_lang);
 		$finalResult = CFrontendSetup::CHECK_OK;
 
 		foreach ($this->frontend_setup->checkRequirements() as $req) {
@@ -493,7 +517,7 @@ class CSetupWizard extends CForm {
 				[
 					$req['name'],
 					$req['current'],
-					($req['required'] !== null) ? $req['required'] : '',
+					$req['required'] !== null ? $req['required'] : '',
 					(new CCol($result))->addClass($class)
 				]
 			);
@@ -519,6 +543,8 @@ class CSetupWizard extends CForm {
 	private function stageDbConnection(): array {
 		$DB['TYPE'] = $this->getConfig('DB_TYPE', key(CFrontendSetup::getSupportedDatabases()));
 
+		$config = new CConfigFile(APP::getRootDir().CConfigFile::CONFIG_FILE_PATH);
+
 		$table = (new CFormList())
 			->addItem([
 				(new CVar('tls_encryption', 0))->removeId(),
@@ -533,12 +559,14 @@ class CSetupWizard extends CForm {
 					->addOptions(CSelect::createOptionsFromArray(CFrontendSetup::getSupportedDatabases()))
 			)
 			->addRow(_('Database host'),
-				(new CTextBox('server', $this->getConfig('DB_SERVER', 'localhost')))
+				(new CTextBox('server', $this->getConfig('DB_SERVER', $config->config['DB']['SERVER'])))
+					->setAttribute('placeholder', $config->config['DB']['SERVER'])
 					->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 			)
 			->addRow(_('Database port'), [
-				(new CNumericBox('port', $this->getConfig('DB_PORT', '0'), 5, false, false, false))
-					->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
+				(new CNumericBox('port', $this->getConfig('DB_PORT', $config->config['DB']['PORT']), 5, false, false,
+					false
+				))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
 				(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 				(new CSpan(_('0 - use default port')))->addClass(ZBX_STYLE_GREY)
 			])
@@ -547,7 +575,7 @@ class CSetupWizard extends CForm {
 					->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 			)
 			->addRow(_('Database schema'),
-				(new CTextBox('schema', $this->getConfig('DB_SCHEMA', '')))
+				(new CTextBox('schema', $this->getConfig('DB_SCHEMA', $config->config['DB']['SCHEMA'])))
 					->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
 				'db_schema_row',
 				ZBX_STYLE_DISPLAY_NONE
@@ -567,12 +595,12 @@ class CSetupWizard extends CForm {
 			->addRow(_('User'),
 				(new CTextBox('user', $this->getConfig('DB_USER', 'zabbix')))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
 				'db_user',
-				($db_creds_storage != DB_STORE_CREDS_CONFIG) ? ZBX_STYLE_DISPLAY_NONE : null
+				$db_creds_storage != DB_STORE_CREDS_CONFIG ? ZBX_STYLE_DISPLAY_NONE : null
 			)
 			->addRow(_('Password'),
 				(new CPassBox('password', $this->getConfig('DB_PASSWORD')))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
 				'db_password',
-				($db_creds_storage != DB_STORE_CREDS_CONFIG) ? ZBX_STYLE_DISPLAY_NONE : null
+				$db_creds_storage != DB_STORE_CREDS_CONFIG ? ZBX_STYLE_DISPLAY_NONE : null
 			)
 			// Vault common.
 			->addRow(
@@ -590,53 +618,86 @@ class CSetupWizard extends CForm {
 			)
 			// HashiCorp Vault - related fields.
 			->addRow(
-				_('Vault secret path'),
-				(new CTextBox('vault_db_path', $this->getConfig('DB_VAULT_DB_PATH')))
+				_('Vault prefix'),
+				(new CTextBox('vault_prefix_hashicorp', $db_creds_storage == DB_STORE_CREDS_VAULT_HASHICORP
+					? $this->getConfig('DB_VAULT_PREFIX')
+					: ''
+				))
+					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
+					->setAttribute('maxlength', 2048)
+					->setAttribute('placeholder', CVaultHashiCorp::DB_PREFIX_PLACEHOLDER),
+				'vault_prefix_hashicorp_row',
+				$db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK ? ZBX_STYLE_DISPLAY_NONE : null
+			)
+			->addRow(
+				(new CLabel(_('Vault secret path')))->setAsteriskMark(),
+				(new CTextBox('vault_db_path', $db_creds_storage == DB_STORE_CREDS_VAULT_HASHICORP
+					? $this->getConfig('DB_VAULT_DB_PATH')
+					: ''
+				))
 					->setAttribute('placeholder', CVaultHashiCorp::DB_PATH_PLACEHOLDER)
 					->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
 				'vault_db_path_row',
-				($db_creds_storage != DB_STORE_CREDS_VAULT_HASHICORP) ? ZBX_STYLE_DISPLAY_NONE : null
+				$db_creds_storage != DB_STORE_CREDS_VAULT_HASHICORP ? ZBX_STYLE_DISPLAY_NONE : null
 			)
 			->addRow(_('Vault authentication token'),
 				(new CTextBox('vault_token', $this->getConfig('DB_VAULT_TOKEN')))
 					->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 					->setAttribute('maxlength', 2048),
 				'vault_token_row',
-				($db_creds_storage != DB_STORE_CREDS_VAULT_HASHICORP) ? ZBX_STYLE_DISPLAY_NONE : null
+				$db_creds_storage != DB_STORE_CREDS_VAULT_HASHICORP ? ZBX_STYLE_DISPLAY_NONE : null
 			)
 			// CyberArk Vault - related fields.
 			->addRow(
+				_('Vault prefix'),
+				(new CTextBox('vault_prefix_cyberark', $db_creds_storage == DB_STORE_CREDS_VAULT_CYBERARK
+					? $this->getConfig('DB_VAULT_PREFIX')
+					: ''
+				))
+					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
+					->setAttribute('maxlength', 2048)
+					->setAttribute('placeholder', CVaultCyberArk::DB_PREFIX_DEFAULT),
+				'vault_prefix_cyberark_row',
+				$db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK ? ZBX_STYLE_DISPLAY_NONE : null
+			)
+			->addRow(
 				(new CLabel(_('Vault secret query string')))->setAsteriskMark(),
-				(new CTextBox('vault_query_string', $this->getConfig('DB_VAULT_DB_PATH')))
+				(new CTextBox('vault_query_string', $db_creds_storage == DB_STORE_CREDS_VAULT_CYBERARK
+					? $this->getConfig('DB_VAULT_DB_PATH')
+					: ''
+				))
 					->setAttribute('placeholder', CVaultCyberArk::DB_PATH_PLACEHOLDER)
 					->setAttribute('maxlength', 2048)
 					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH),
 				'vault_query_string_row',
-				($db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK) ? ZBX_STYLE_DISPLAY_NONE : null
+				$db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK ? ZBX_STYLE_DISPLAY_NONE : null
 			)
 			->addRow(
 				(new CLabel(_('Vault certificates'), 'vault_certificates_toggle')),
 				(new CCheckBox('vault_certificates'))
 					->setId('vault_certificates_toggle')
-					->setChecked($this->getConfig('DB_VAULT_CERTIFICATES', false)),
-				'vault_certificates',
-				($db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK) ? ZBX_STYLE_DISPLAY_NONE : null
+					->setChecked($this->getConfig('DB_VAULT_CERTIFICATES', false))
+					->setUncheckedValue(0),
+				'vault_certificates_row',
+				$db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK ? ZBX_STYLE_DISPLAY_NONE : null
 			)
 			->addRow(_('SSL certificate file'),
-				(new CTextBox('vault_cert_file', $this->getConfig('VAULT_CERT_FILE', 'conf/certs/cyberark-cert.pem')))
+				(new CTextBox('vault_cert_file',
+					$this->getConfig('DB_VAULT_CERT_FILE', 'conf/certs/cyberark-cert.pem')
+				))
 					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
 					->setAttribute('maxlength', 2048),
-				'vault_cert_file',
-				($db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK || !$this->getConfig('DB_VAULT_CERTIFICATES', false))
+				'vault_cert_file_row',
+				$db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK || !$this->getConfig('DB_VAULT_CERTIFICATES', false)
 					? ZBX_STYLE_DISPLAY_NONE
 					: null
 			)
 			->addRow(_('SSL key file'),
-				(new CTextBox('vault_key_file', $this->getConfig('VAULT_KEY_FILE', 'conf/certs/cyberark-key.pem')))
+				(new CTextBox('vault_key_file', $this->getConfig('DB_VAULT_KEY_FILE', 'conf/certs/cyberark-key.pem')))
 					->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
 					->setAttribute('maxlength', 2048),
-				'vault_key_file',
-				($db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK || !$this->getConfig('DB_VAULT_CERTIFICATES', false))
+				'vault_key_file_row',
+				$db_creds_storage != DB_STORE_CREDS_VAULT_CYBERARK || !$this->getConfig('DB_VAULT_CERTIFICATES', false)
 					? ZBX_STYLE_DISPLAY_NONE
 					: null
 			);
@@ -747,7 +808,7 @@ class CSetupWizard extends CForm {
 				$databases[$db_type]
 			);
 
-		$db_port = ($this->getConfig('DB_PORT') == 0) ? _('default') : $this->getConfig('DB_PORT');
+		$db_port = $this->getConfig('DB_PORT') == 0 ? _('default') : $this->getConfig('DB_PORT');
 
 		if ($this->getConfig('DB_CREDS_STORAGE', DB_STORE_CREDS_CONFIG) == DB_STORE_CREDS_CONFIG) {
 			$db_password = preg_replace('/./', '*', $this->getConfig('DB_PASSWORD'));
@@ -794,6 +855,10 @@ class CSetupWizard extends CForm {
 					$this->getConfig('DB_VAULT_URL')
 				)
 				->addRow(
+					(new CSpan(_('Vault prefix')))->addClass(ZBX_STYLE_GREY),
+					$this->getConfig('DB_VAULT_PREFIX')
+				)
+				->addRow(
 					(new CSpan(_('Vault secret path')))->addClass(ZBX_STYLE_GREY),
 					$this->getConfig('DB_VAULT_DB_PATH')
 				)
@@ -810,6 +875,10 @@ class CSetupWizard extends CForm {
 					$this->getConfig('DB_VAULT_URL')
 				)
 				->addRow(
+					(new CSpan(_('Vault prefix')))->addClass(ZBX_STYLE_GREY),
+					$this->getConfig('DB_VAULT_PREFIX')
+				)
+				->addRow(
 					(new CSpan(_('Vault secret query string')))->addClass(ZBX_STYLE_GREY),
 					$this->getConfig('DB_VAULT_DB_PATH')
 				)
@@ -822,11 +891,11 @@ class CSetupWizard extends CForm {
 				$table
 					->addRow(
 						(new CSpan(_('SSL certificate file')))->addClass(ZBX_STYLE_GREY),
-						$this->getConfig('VAULT_CERT_FILE') ? $this->getConfig('VAULT_CERT_FILE') : ''
+						$this->getConfig('DB_VAULT_CERT_FILE', '')
 					)
 					->addRow(
 						(new CSpan(_('SSL key file')))->addClass(ZBX_STYLE_GREY),
-						$this->getConfig('VAULT_KEY_FILE') ? $this->getConfig('VAULT_KEY_FILE') : ''
+						$this->getConfig('DB_VAULT_KEY_FILE', '')
 					);
 			}
 		}
@@ -901,6 +970,7 @@ class CSetupWizard extends CForm {
 		$vault_config = [
 			'VAULT' => '',
 			'VAULT_URL' => '',
+			'VAULT_PREFIX' => '',
 			'VAULT_DB_PATH' => '',
 			'VAULT_TOKEN' => '',
 			'VAULT_CERT_FILE' => '',
@@ -918,11 +988,12 @@ class CSetupWizard extends CForm {
 		if ($this->getConfig('DB_CREDS_STORAGE', DB_STORE_CREDS_CONFIG) == DB_STORE_CREDS_VAULT_HASHICORP) {
 			$vault_config['VAULT'] = CVaultHashiCorp::NAME;
 			$vault_config['VAULT_URL'] = $this->getConfig('DB_VAULT_URL');
+			$vault_config['VAULT_PREFIX'] = $this->getConfig('DB_VAULT_PREFIX');
 			$vault_config['VAULT_DB_PATH'] = $this->getConfig('DB_VAULT_DB_PATH');
 			$vault_config['VAULT_TOKEN'] = $this->getConfig('DB_VAULT_TOKEN');
 
-			$vault_provider = new CVaultHashiCorp($vault_config['VAULT_URL'], $vault_config['VAULT_DB_PATH'],
-				$vault_config['VAULT_TOKEN']
+			$vault_provider = new CVaultHashiCorp($vault_config['VAULT_URL'], $vault_config['VAULT_PREFIX'],
+				$vault_config['VAULT_DB_PATH'], $vault_config['VAULT_TOKEN']
 			);
 
 			$db_credentials = $vault_provider->getCredentials();
@@ -939,12 +1010,14 @@ class CSetupWizard extends CForm {
 		elseif ($this->getConfig('DB_CREDS_STORAGE', DB_STORE_CREDS_CONFIG) == DB_STORE_CREDS_VAULT_CYBERARK) {
 			$vault_config['VAULT'] = CVaultCyberArk::NAME;
 			$vault_config['VAULT_URL'] = $this->getConfig('DB_VAULT_URL');
+			$vault_config['VAULT_PREFIX'] = $this->getConfig('DB_VAULT_PREFIX');
 			$vault_config['VAULT_DB_PATH'] = $this->getConfig('DB_VAULT_DB_PATH');
 			$vault_config['VAULT_CERT_FILE'] = $this->getConfig('DB_VAULT_CERT_FILE');
 			$vault_config['VAULT_KEY_FILE'] = $this->getConfig('DB_VAULT_KEY_FILE');
 
-			$vault_provider = new CVaultCyberArk($vault_config['VAULT_URL'], $vault_config['VAULT_DB_PATH'],
-				$vault_config['VAULT_CERT_FILE'], $vault_config['VAULT_KEY_FILE']);
+			$vault_provider = new CVaultCyberArk($vault_config['VAULT_URL'], $vault_config['VAULT_PREFIX'],
+				$vault_config['VAULT_DB_PATH'], $vault_config['VAULT_CERT_FILE'], $vault_config['VAULT_KEY_FILE']
+			);
 
 			$db_credentials = $vault_provider->getCredentials();
 
@@ -987,8 +1060,7 @@ class CSetupWizard extends CForm {
 				'CERT_FILE' => $this->getConfig('DB_CERT_FILE'),
 				'CA_FILE' => $this->getConfig('DB_CA_FILE'),
 				'VERIFY_HOST' => $this->getConfig('DB_VERIFY_HOST'),
-				'CIPHER_LIST' => $this->getConfig('DB_CIPHER_LIST'),
-				'DOUBLE_IEEE754' => $this->getConfig('DB_DOUBLE_IEEE754')
+				'CIPHER_LIST' => $this->getConfig('DB_CIPHER_LIST')
 			] + $db_creds_config + $vault_config,
 			'ZBX_SERVER_NAME' => $this->getConfig('ZBX_SERVER_NAME')
 		];
@@ -1086,13 +1158,13 @@ class CSetupWizard extends CForm {
 		$list = new CList();
 
 		foreach ($this->stages as $id => $data) {
-			$list->addItem($data['title'], ($id <= $this->getStep()) ? ZBX_STYLE_SETUP_LEFT_CURRENT : null);
+			$list->addItem($data['title'], $id <= $this->getStep() ? ZBX_STYLE_SETUP_LEFT_CURRENT : null);
 		}
 
 		return $list;
 	}
 
-	private function dbConnect(string $username = null, string $password = null) {
+	private function dbConnect(?string $username = null, ?string $password = null) {
 		global $DB;
 
 		if (!$this->getConfig('check_fields_result')) {
@@ -1120,7 +1192,7 @@ class CSetupWizard extends CForm {
 		$error = '';
 
 		// Check certificate files exists.
-		if ($DB['ENCRYPTION'] && ($DB['TYPE'] === ZBX_DB_MYSQL || $DB['TYPE'] === ZBX_DB_POSTGRESQL)) {
+		if ($DB['ENCRYPTION']) {
 			if (($this->getConfig('DB_ENCRYPTION_ADVANCED') || $DB['CA_FILE'] !== '') && !file_exists($DB['CA_FILE'])) {
 				error(_s('Incorrect file path for "%1$s": %2$s.', _('Database TLS CA file'), $DB['CA_FILE']));
 
@@ -1135,7 +1207,8 @@ class CSetupWizard extends CForm {
 
 			if ($DB['CERT_FILE'] !== '' && !file_exists($DB['CERT_FILE'])) {
 				error(_s('Incorrect file path for "%1$s": %2$s.', _('Database TLS certificate file'),
-					$DB['CERT_FILE']));
+					$DB['CERT_FILE']
+				));
 
 				return false;
 			}

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -141,10 +136,7 @@ class CHtmlPage {
 	private function createTopHeader(): CTag {
 		$divs = [
 			(new CTag('nav', true,
-				(new CButton(null, _('Show sidebar')))
-					->setId('sidebar-button-toggle')
-					->addClass('button-toggle')
-					->setAttribute('title', _('Show sidebar'))
+				(new CButtonIcon(ZBX_ICON_MENU, _('Show sidebar')))->setId('sidebar-button-toggle')
 			))
 				->addClass('sidebar-nav-toggle')
 				->setAttribute('role', 'navigation')
@@ -174,9 +166,10 @@ class CHtmlPage {
 		if ($this->doc_url !== '') {
 			$divs[] = (new CDiv(
 				(new CLink(null, $this->doc_url))
+					->addClass(ZBX_STYLE_BTN_ICON)
+					->addClass(ZBX_ICON_HELP)
 					->setTitle(_('Help'))
 					->setTarget('_blank')
-					->addClass(ZBX_STYLE_ICON_DOC_LINK)
 			))->addClass(self::ZBX_STYLE_HEADER_DOC_LINK);
 		}
 

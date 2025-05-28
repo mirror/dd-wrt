@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -33,7 +28,7 @@ if ($request !== '') {
 	$redirect_to->setArgument('request', $request);
 }
 
-if (CAuthenticationHelper::get(CAuthenticationHelper::HTTP_AUTH_ENABLED) != ZBX_AUTH_HTTP_ENABLED) {
+if (CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_AUTH_ENABLED) != ZBX_AUTH_HTTP_ENABLED) {
 	redirect($redirect_to->toString());
 }
 
@@ -49,7 +44,7 @@ if ($http_user) {
 	$parser = new CADNameAttributeParser(['strict' => true]);
 
 	if ($parser->parse($http_user) === CParser::PARSE_SUCCESS) {
-		$strip_domain = explode(',', CAuthenticationHelper::get(CAuthenticationHelper::HTTP_STRIP_DOMAINS));
+		$strip_domain = explode(',', CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_STRIP_DOMAINS));
 		$strip_domain = array_map('trim', $strip_domain);
 
 		if ($strip_domain && in_array($parser->getDomainName(), $strip_domain)) {
@@ -59,13 +54,13 @@ if ($http_user) {
 
 	try {
 		CWebUser::$data = CUser::loginByUsername($http_user,
-			CAuthenticationHelper::get(CAuthenticationHelper::HTTP_CASE_SENSITIVE) == ZBX_AUTH_CASE_SENSITIVE
+			CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_CASE_SENSITIVE) == ZBX_AUTH_CASE_SENSITIVE
 		);
 
 		if (!empty(CWebUser::$data)) {
 			CSessionHelper::set('sessionid', CWebUser::$data['sessionid']);
 			API::getWrapper()->auth = [
-				'type' => CJsonRpc::AUTH_TYPE_FRONTEND,
+				'type' => CJsonRpc::AUTH_TYPE_COOKIE,
 				'auth' => CWebUser::$data['sessionid']
 			];
 

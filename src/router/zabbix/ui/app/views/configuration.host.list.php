@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -24,7 +19,6 @@
  * @var array $data
  */
 
-$this->addJsFile('class.tagfilteritem.js');
 $this->includeJsFile('configuration.host.list.js.php');
 
 if ($data['uncheck']) {
@@ -37,14 +31,14 @@ $html_page = (new CHtmlPage())
 	->setControls((new CTag('nav', true, (new CList())
 			->addItem(
 				(new CSimpleButton(_('Create host')))
-					->onClick('view.createHost()')
+					->addClass('js-create-host')
 			)
 			->addItem(
 				(new CButton('form', _('Import')))
 					->onClick(
 						'return PopUp("popup.import", {
 							rules_preset: "host", '.
-							CCsrfTokenHelper::CSRF_TOKEN_NAME.': "'. CCsrfTokenHelper::get('import').
+							CSRF_TOKEN_NAME.': "'.CCsrfTokenHelper::get('import').
 						'"}, {
 							dialogueid: "popup_import",
 							dialogue_class: "modal-popup-generic"
@@ -148,28 +142,47 @@ $filter = (new CFilter())
 						->addValue(_('Any'), ZBX_MONITORED_BY_ANY)
 						->addValue(_('Server'), ZBX_MONITORED_BY_SERVER)
 						->addValue(_('Proxy'), ZBX_MONITORED_BY_PROXY)
-						->setModern(true)
+						->addValue(_('Proxy group'), ZBX_MONITORED_BY_PROXY_GROUP)
+						->setModern()
 				)
 			])
 			->addItem([
-				new CLabel(_('Proxy'), 'filter_proxyids__ms'),
-				new CFormField(
+				(new CLabel(_('Proxies'), 'filter_proxyids__ms'))->addClass('js-filter-proxyids'),
+				(new CFormField(
 					(new CMultiSelect([
 						'name' => 'filter_proxyids[]',
 						'object_name' => 'proxies',
 						'data' => $data['proxies_ms'],
-						'disabled' => ($data['filter']['monitored_by'] != ZBX_MONITORED_BY_PROXY),
 						'popup' => [
 							'parameters' => [
 								'srctbl' => 'proxies',
 								'srcfld1' => 'proxyid',
-								'srcfld2' => 'host',
+								'srcfld2' => 'name',
 								'dstfrm' => 'zbx_filter',
 								'dstfld1' => 'filter_proxyids_'
 							]
 						]
 					]))->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
-				)
+				))->addClass('js-filter-proxyids')
+			])
+			->addItem([
+				(new CLabel(_('Proxy groups'), 'filter_proxy_groupids__ms'))->addClass('js-filter-proxy-groupids'),
+				(new CFormField(
+					(new CMultiSelect([
+						'name' => 'filter_proxy_groupids[]',
+						'object_name' => 'proxy_groups',
+						'data' => $data['proxy_groups_ms'],
+						'popup' => [
+							'parameters' => [
+								'srctbl' => 'proxy_groups',
+								'srcfld1' => 'proxy_groupid',
+								'srcfld2' => 'name',
+								'dstfrm' => 'zbx_filter',
+								'dstfld1' => 'filter_proxy_groupids_'
+							]
+						]
+					]))->setWidth(ZBX_TEXTAREA_MEDIUM_WIDTH)
+				))->addClass('js-filter-proxy-groupids')
 			])
 			->addItem([
 				new CLabel(_('Tags')),
@@ -187,8 +200,9 @@ $html_page->addItem($filter);
 // table hosts
 $form = (new CForm())->setName('hosts');
 $header_checkbox = (new CCheckBox('all_hosts'))->onClick("checkAll('".$form->getName()."', 'all_hosts', 'hostids');");
-$show_monitored_by = ($data['filter']['monitored_by'] == ZBX_MONITORED_BY_PROXY
-		|| $data['filter']['monitored_by'] == ZBX_MONITORED_BY_ANY);
+$show_monitored_by = $data['filter']['monitored_by'] == ZBX_MONITORED_BY_ANY
+	|| $data['filter']['monitored_by'] == ZBX_MONITORED_BY_PROXY
+	|| $data['filter']['monitored_by'] == ZBX_MONITORED_BY_PROXY_GROUP;
 $header_sortable_name = make_sorting_header(_('Name'), 'name', $data['sortField'], $data['sortOrder'],
 	$action_url->getUrl()
 );
@@ -213,10 +227,11 @@ $table = (new CTableInfo())
 		_('Agent encryption'),
 		_('Info'),
 		_('Tags')
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 $current_time = time();
-$csrf_token_massupdate = CCsrfTokenHelper::get('host');
+$csrf_token = CCsrfTokenHelper::get('host');
 
 foreach ($data['hosts'] as $host) {
 	// Select an interface from the list with highest priority.
@@ -262,26 +277,15 @@ foreach ($data['hosts'] as $host) {
 		$description[] = NAME_DELIMITER;
 	}
 
-	$description[] = (new CLink($host['name'],
-		(new CUrl('zabbix.php'))
-			->setArgument('action', 'host.edit')
-			->setArgument('hostid', $host['hostid'])
-	))
-		->setAttribute('data-hostid', $host['hostid'])
-		->onClick('view.editHost(event, this.dataset.hostid);');
+	$host_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'host.edit')
+		->setArgument('hostid', $host['hostid'])
+		->getUrl();
+
+	$description[] = new CLink($host['name'], $host_url);
 
 	$maintenance_icon = false;
-	$status_toggle_url = (new CUrl('zabbix.php'))
-		->setArgument('action', 'popup.massupdate.host')
-		->setArgument('hostids', [$host['hostid']])
-		->setArgument('visible[status]', 1)
-		->setArgument('update', 1)
-		->setArgument('backurl',
-			(new CUrl('zabbix.php'))
-				->setArgument('action', 'host.list')
-				->setArgument('page', CPagerHelper::loadPage('host.list', null))
-				->getUrl()
-		);
 
 	if ($host['status'] == HOST_STATUS_MONITORED) {
 		if ($host['maintenance_status'] == HOST_MAINTENANCE_STATUS_ON) {
@@ -296,20 +300,16 @@ foreach ($data['hosts'] as $host) {
 			}
 		}
 
-		$status_toggle_url->setArgument('status', HOST_STATUS_NOT_MONITORED);
-		$toggle_status_link = (new CLink(_('Enabled'), $status_toggle_url->getUrl()))
-			->addClass(ZBX_STYLE_LINK_ACTION)
+		$toggle_status_link = (new CLinkAction(_('Enabled')))
 			->addClass(ZBX_STYLE_GREEN)
-			->addConfirmation(_('Disable host?'))
-			->addCsrfToken($csrf_token_massupdate);
+			->addClass('js-disable-host')
+			->setAttribute('data-hostid', $host['hostid']);
 	}
 	else {
-		$status_toggle_url->setArgument('status', HOST_STATUS_MONITORED);
-		$toggle_status_link = (new CLink(_('Disabled'), $status_toggle_url->getUrl()))
-			->addClass(ZBX_STYLE_LINK_ACTION)
+		$toggle_status_link = (new CLinkAction(_('Disabled')))
 			->addClass(ZBX_STYLE_RED)
-			->addConfirmation(_('Enable host?'))
-			->addCsrfToken($csrf_token_massupdate);
+			->addClass('js-enable-host')
+			->setAttribute('data-hostid', $host['hostid']);
 	}
 
 	if ($maintenance_icon) {
@@ -331,13 +331,15 @@ foreach ($data['hosts'] as $host) {
 		}
 
 		if (array_key_exists($template['templateid'], $data['writable_templates'])
-				&& $data['allowed_ui_conf_templates']) {
+				&& $data['user']['can_edit_templates']) {
+			$template_url = (new CUrl('zabbix.php'))
+				->setArgument('action', 'popup')
+				->setArgument('popup', 'template.edit')
+				->setArgument('templateid', $template['templateid'])
+				->getUrl();
+
 			$caption = [
-				(new CLink($template['name'],
-					(new CUrl('templates.php'))
-						->setArgument('form', 'update')
-						->setArgument('templateid', $template['templateid'])
-				))
+				(new CLink($template['name'], $template_url))
 					->addClass(ZBX_STYLE_LINK_ALT)
 					->addClass(ZBX_STYLE_GREY)
 			];
@@ -357,12 +359,14 @@ foreach ($data['hosts'] as $host) {
 
 			foreach ($parent_templates as $parent_template) {
 				if (array_key_exists($parent_template['templateid'], $data['writable_templates'])
-						&& $data['allowed_ui_conf_templates']) {
-					$caption[] = (new CLink($parent_template['name'],
-						(new CUrl('templates.php'))
-							->setArgument('form', 'update')
-							->setArgument('templateid', $parent_template['templateid'])
-					))
+						&& $data['user']['can_edit_templates']) {
+					$parent_template_url = (new CUrl('zabbix.php'))
+						->setArgument('action', 'popup')
+						->setArgument('popup', 'template.edit')
+						->setArgument('templateid', $parent_template['templateid'])
+						->getUrl();
+
+					$caption[] = (new CLink($parent_template['name'], $parent_template_url))
 						->addClass(ZBX_STYLE_LINK_ALT)
 						->addClass(ZBX_STYLE_GREY);
 				}
@@ -386,8 +390,15 @@ foreach ($data['hosts'] as $host) {
 
 	$info_icons = [];
 
-	if ($host['flags'] == ZBX_FLAG_DISCOVERY_CREATED && $host['hostDiscovery']['ts_delete'] != 0) {
-		$info_icons[] = getHostLifetimeIndicator($current_time, $host['hostDiscovery']['ts_delete']);
+	$disable_source = $host['status'] == HOST_STATUS_NOT_MONITORED && $host['hostDiscovery']
+		? $host['hostDiscovery']['disable_source']
+		: '';
+
+	if ($host['flags'] == ZBX_FLAG_DISCOVERY_CREATED && $host['hostDiscovery']['status'] == ZBX_LLD_STATUS_LOST) {
+		$info_icons[] = getLldLostEntityIndicator($current_time, $host['hostDiscovery']['ts_delete'],
+			$host['hostDiscovery']['ts_disable'], $disable_source, $host['status'] == HOST_STATUS_NOT_MONITORED,
+			_('host')
+		);
 	}
 
 	if ($host['tls_connect'] == HOST_ENCRYPTION_NONE
@@ -441,26 +452,64 @@ foreach ($data['hosts'] as $host) {
 	$monitored_by = null;
 
 	if ($show_monitored_by) {
-		$monitored_by = ($host['proxy_hostid'] != 0)
-			? $data['proxies'][$host['proxy_hostid']]['host']
-			: '';
+		$proxy_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'popup')
+			->setArgument('popup', 'proxy.edit');
+
+		if ($host['monitored_by'] == ZBX_MONITORED_BY_PROXY) {
+			$monitored_by = $data['user']['can_edit_proxies']
+				? (new CLink($data['proxies'][$host['proxyid']]['name'],
+					$proxy_url->setArgument('proxyid', $host['proxyid'])
+				))
+				: $data['proxies'][$host['proxyid']]['name'];
+		}
+		elseif ($host['monitored_by'] == ZBX_MONITORED_BY_PROXY_GROUP) {
+			$proxy_group_url = (new CUrl('zabbix.php'))
+				->setArgument('action', 'popup')
+				->setArgument('popup', 'proxygroup.edit')
+				->setArgument('proxy_groupid', $host['proxy_groupid'])
+				->getUrl();
+
+			$monitored_by = $data['user']['can_edit_proxy_groups']
+				? (new CLink($data['proxy_groups'][$host['proxy_groupid']]['name'], $proxy_group_url))
+					->addClass(ZBX_STYLE_LINK_ALT)
+					->addClass(ZBX_STYLE_GREY)
+				: $data['proxy_groups'][$host['proxy_groupid']]['name'];
+
+			if ($host['assigned_proxyid'] != 0) {
+				$monitored_by = [$monitored_by];
+				$monitored_by[] = NAME_DELIMITER;
+				$monitored_by[] = $data['user']['can_edit_proxies']
+					? (new CLink($data['proxies'][$host['assigned_proxyid']]['name'],
+						$proxy_url->setArgument('proxyid', $host['assigned_proxyid'])
+					))
+					: $data['proxies'][$host['assigned_proxyid']]['name'];
+			}
+		}
+		else {
+			$monitored_by = '';
+		}
 	}
+
+	$disabled_by_lld = $disable_source == ZBX_DISABLE_SOURCE_LLD;
 
 	$table->addRow([
 		new CCheckBox('hostids['.$host['hostid'].']', $host['hostid']),
 		(new CCol($description))->addClass(ZBX_STYLE_NOWRAP),
 		[
 			new CLink(_('Items'),
-				(new CUrl('items.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'item.list')
+					->setArgument('context', 'host')
 					->setArgument('filter_set', '1')
 					->setArgument('filter_hostids', [$host['hostid']])
-					->setArgument('context', 'host')
 			),
 			CViewHelper::showNum($host['items'])
 		],
 		[
 			new CLink(_('Triggers'),
-				(new CUrl('triggers.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'trigger.list')
 					->setArgument('filter_set', '1')
 					->setArgument('filter_hostids', [$host['hostid']])
 					->setArgument('context', 'host')
@@ -497,17 +546,20 @@ foreach ($data['hosts'] as $host) {
 		getHostInterface($interface),
 		$monitored_by,
 		$hostTemplates,
-		$toggle_status_link,
-		getHostAvailabilityTable($host['interfaces'], $host['has_passive_checks']),
+		[
+			$toggle_status_link,
+			$disabled_by_lld ? makeDescriptionIcon(_('Disabled automatically by an LLD rule.')) : null
+		],
+		getHostAvailabilityTable($host['interfaces']),
 		$encryption,
 		makeInformationList($info_icons),
 		$data['tags'][$host['hostid']]
 	]);
 }
 
-$status_toggle_url =  (new CUrl('zabbix.php'))
+$status_toggle_url = (new CUrl('zabbix.php'))
 	->setArgument('action', 'popup.massupdate.host')
-	->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, $csrf_token_massupdate)
+	->setArgument(CSRF_TOKEN_NAME, $csrf_token)
 	->setArgument('visible[status]', 1)
 	->setArgument('update', 1)
 	->setArgument('backurl',
@@ -519,21 +571,18 @@ $status_toggle_url =  (new CUrl('zabbix.php'))
 
 $form->addItem([
 	$table,
-	$data['paging'],
 	new CActionButtonList('action', 'hostids', [
-		'enable-hosts' => [
-			'name' => _('Enable'),
-			'confirm' => _('Enable selected hosts?'),
-			'redirect' => $status_toggle_url
-				->setArgument('status', HOST_STATUS_MONITORED)
-				->getUrl()
+		'host.enable' => [
+			'content' => (new CSimpleButton(_('Enable')))
+				->addClass(ZBX_STYLE_BTN_ALT)
+				->addClass('js-massenable-host')
+				->addClass('js-no-chkbxrange')
 		],
-		'disable-hosts' => [
-			'name' => _('Disable'),
-			'confirm' => _('Disable selected hosts?'),
-			'redirect' => $status_toggle_url
-				->setArgument('status', HOST_STATUS_NOT_MONITORED)
-				->getUrl()
+		'host.disable' => [
+			'content' => (new CSimpleButton(_('Disable')))
+				->addClass(ZBX_STYLE_BTN_ALT)
+				->addClass('js-massdisable-host')
+				->addClass('js-no-chkbxrange')
 		],
 		'host.export' => [
 			'content' => new CButtonExport('export.hosts', $action_url
@@ -542,25 +591,16 @@ $form->addItem([
 			)
 		],
 		'popup.massupdate.host' => [
-			'content' => (new CButton('', _('Mass update')))
-				->onClick(
-					"openMassupdatePopup('popup.massupdate.host', {".
-						CCsrfTokenHelper::CSRF_TOKEN_NAME.": '".$csrf_token_massupdate.
-					"'}, {
-						dialogue_class: 'modal-popup-static',
-						trigger_element: this
-					});"
-				)
+			'content' => (new CSimpleButton(_('Mass update')))
 				->addClass(ZBX_STYLE_BTN_ALT)
-				->addClass('no-chkbxrange')
+				->addClass('js-massupdate-host')
+				->addClass('js-no-chkbxrange')
 		],
 		'host.massdelete' => [
 			'content' => (new CSimpleButton(_('Delete')))
-				->setAttribute('confirm', _('Delete selected hosts?'))
-				->onClick('view.massDeleteHosts(this);')
 				->addClass(ZBX_STYLE_BTN_ALT)
-				->addClass('no-chkbxrange')
-				->removeAttribute('id')
+				->addClass('js-massdelete-host')
+				->addClass('js-no-chkbxrange')
 		]
 	], 'hosts')
 ]);
@@ -571,7 +611,8 @@ $html_page
 
 (new CScriptTag('
 	view.init('.json_encode([
-		'applied_filter_groupids' => array_keys($data['filter']['groups'])
+		'applied_filter_groupids' => array_keys($data['filter']['groups']),
+		'csrf_token' => $csrf_token
 	]).');
 '))
 	->setOnDocumentReady()

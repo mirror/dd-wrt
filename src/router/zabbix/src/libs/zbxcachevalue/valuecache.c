@@ -1,28 +1,25 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxcachevalue.h"
 
-#include "log.h"
 #include "zbxmutexs.h"
 #include "zbxtime.h"
 #include "zbxvariant.h"
+#include "zbxalgo.h"
+#include "zbxhistory.h"
+#include "zbxshmem.h"
 
 /*
  * The cache (zbx_vc_cache_t) is organized as a hashset of item records (zbx_vc_item_t).
@@ -50,6 +47,13 @@
  * In low memory mode a warning message is written into log every 5 minutes.
  */
 
+ZBX_PTR_VECTOR_IMPL(vc_item_stats_ptr, zbx_vc_item_stats_t *)
+
+void	zbx_vc_item_stats_free(zbx_vc_item_stats_t * vc_item_stats)
+{
+	zbx_free(vc_item_stats);
+}
+
 /* the period of low memory warning messages */
 #define ZBX_VC_LOW_MEMORY_WARNING_PERIOD	(5 * SEC_PER_MIN)
 
@@ -68,9 +72,6 @@ zbx_rwlock_t	vc_lock = ZBX_RWLOCK_NULL;
 
 /* value cache state, after initialization value cache is always disabled */
 static int	vc_state = ZBX_VC_DISABLED;
-
-/* the value cache size */
-extern zbx_uint64_t	CONFIG_VALUE_CACHE_SIZE;
 
 ZBX_SHMEM_FUNC_IMPL(__vc, vc_mem)
 
@@ -200,6 +201,9 @@ typedef struct
 	/* timestamp of the last low memory warning message */
 	int		last_warning_time;
 
+	/* timestamp of the last warning message when item couldn't be allocated due to insufficient space */
+	time_t		last_alloc_warning_time;
+
 	/* the minimum number of bytes to be freed when cache runs out of space */
 	size_t		min_free_request;
 
@@ -274,9 +278,9 @@ static void	vc_cache_item_update(zbx_uint64_t itemid, zbx_vc_item_update_type_t 
 /* the value cache */
 static zbx_vc_cache_t	*vc_cache = NULL;
 
-#define	RDLOCK_CACHE	zbx_rwlock_rdlock(vc_lock);
-#define	WRLOCK_CACHE	zbx_rwlock_wrlock(vc_lock);
-#define	UNLOCK_CACHE	zbx_rwlock_unlock(vc_lock);
+#define	RDLOCK_CACHE	zbx_rwlock_rdlock(vc_lock)
+#define	WRLOCK_CACHE	zbx_rwlock_wrlock(vc_lock)
+#define	UNLOCK_CACHE	zbx_rwlock_unlock(vc_lock)
 
 /* function prototypes */
 static void	vc_history_record_copy(zbx_history_record_t *dst, const zbx_history_record_t *src, int value_type);
@@ -626,6 +630,15 @@ static void	vc_history_record_vector_clean(zbx_vector_history_record_t *vector, 
 		case ITEM_VALUE_TYPE_LOG:
 			for (i = 0; i < vector->values_num; i++)
 				vc_history_logfree(vector->values[i].value.log);
+			break;
+		case ITEM_VALUE_TYPE_UINT64:
+		case ITEM_VALUE_TYPE_FLOAT:
+			break;
+		case ITEM_VALUE_TYPE_BIN:
+		case ITEM_VALUE_TYPE_NONE:
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			exit(EXIT_FAILURE);
 	}
 
 	zbx_vector_history_record_clear(vector);
@@ -724,6 +737,29 @@ static void	vc_dump_items_statistics(void)
 	zbx_vector_ptr_destroy(&items);
 
 	zabbix_log(LOG_LEVEL_WARNING, "==================================================");
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: logs warning when item allocation in cache failed due to          *
+ *          insufficient space.                                               *
+ *                                                                            *
+ * Comments: The failed alloc warning is written to log every 5 minutes.      *
+ *                                                                            *
+ ******************************************************************************/
+static void	vc_warn_alloc(const zbx_vc_item_t *item, size_t requested_bytes)
+{
+	time_t	now;
+
+	now = time(NULL);
+
+	if (now - vc_cache->last_alloc_warning_time > ZBX_VC_LOW_MEMORY_WARNING_PERIOD)
+	{
+		vc_cache->last_alloc_warning_time = now;
+
+		zabbix_log(LOG_LEVEL_WARNING, "cannot allocate " ZBX_FS_SIZE_T " bytes for itemid:" ZBX_FS_UI64
+				" in value cache", (zbx_fs_size_t)requested_bytes, item->itemid);
+	}
 }
 
 /******************************************************************************
@@ -831,6 +867,7 @@ static void	vc_release_space(zbx_vc_item_t *source_item, size_t space)
 	vc_cache->mode_time = (int)time(NULL);
 
 	vc_warn_low_memory();
+	vc_warn_alloc(source_item, space);
 
 	/* remove items with least hits/size ratio */
 	zbx_vector_vc_itemweight_create(&items);
@@ -968,28 +1005,21 @@ static void	*vc_item_malloc(zbx_vc_item_t *item, size_t size)
 static char	*vc_item_strdup(zbx_vc_item_t *item, const char *str)
 {
 	void	*ptr;
+	int	tries = 0;
+	size_t	len;
 
-	ptr = zbx_hashset_search(&vc_cache->strpool, str - REFCOUNT_FIELD_SIZE);
+	len = strlen(str) + 1;
 
-	if (NULL == ptr)
+	while (NULL == (ptr = zbx_hashset_insert_ext(&vc_cache->strpool, str - REFCOUNT_FIELD_SIZE,
+			REFCOUNT_FIELD_SIZE + len, REFCOUNT_FIELD_SIZE, REFCOUNT_FIELD_SIZE + len,
+			ZBX_HASHSET_UNIQ_FALSE)))
 	{
-		int	tries = 0;
-		size_t	len;
-
-		len = strlen(str) + 1;
-
-		while (NULL == (ptr = zbx_hashset_insert_ext(&vc_cache->strpool, str - REFCOUNT_FIELD_SIZE,
-				REFCOUNT_FIELD_SIZE + len, REFCOUNT_FIELD_SIZE)))
-		{
-			/* If there is not enough space - free enough to store string + hashset entry overhead */
-			/* and try inserting one more time. If it fails again, then fail the function.         */
-			if (0 == tries++)
-				vc_release_space(item, len + REFCOUNT_FIELD_SIZE + sizeof(ZBX_HASHSET_ENTRY_T));
-			else
-				return NULL;
-		}
-
-		*(zbx_uint32_t *)ptr = 0;
+		/* If there is not enough space - free enough to store string + hashset entry overhead */
+		/* and try inserting one more time. If it fails again, then fail the function.         */
+		if (0 == tries++)
+			vc_release_space(item, len + REFCOUNT_FIELD_SIZE + sizeof(ZBX_HASHSET_ENTRY_T));
+		else
+			return NULL;
 	}
 
 	(*(zbx_uint32_t *)ptr)++;
@@ -1133,6 +1163,14 @@ static size_t	vc_item_free_values(zbx_vc_item_t *item, zbx_history_record_t *val
 			for (i = first; i <= last; i++)
 				freed += vc_item_logfree(values[i].value.log);
 			break;
+		case ITEM_VALUE_TYPE_UINT64:
+		case ITEM_VALUE_TYPE_FLOAT:
+			break;
+		case ITEM_VALUE_TYPE_BIN:
+		case ITEM_VALUE_TYPE_NONE:
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			exit(EXIT_FAILURE);
 	}
 
 	item->values_total -= (last - first + 1);
@@ -2035,7 +2073,7 @@ static int	vch_item_cache_values_by_time_and_count(zbx_vc_item_t **item, int ran
 		return SUCCEED;
 
 	/* find if the cache should be updated to cover the required count */
-	if (NULL != (*item)->head)
+	if (0 != (*item)->db_cached_from && NULL != (*item)->head)
 	{
 		zbx_vc_chunk_t	*chunk;
 		int		index;
@@ -2054,7 +2092,7 @@ static int	vch_item_cache_values_by_time_and_count(zbx_vc_item_t **item, int ran
 		return SUCCEED;
 
 	/* get the end timestamp to which (including) the values should be cached */
-	if (NULL != (*item)->head)
+	if (0 != (*item)->db_cached_from && NULL != (*item)->head)
 		range_end = (*item)->tail->slots[(*item)->tail->first_value].timestamp.sec - 1;
 	else
 		range_end = ZBX_JAN_2038;
@@ -2143,15 +2181,9 @@ static void	vch_item_get_values_by_time(const zbx_vc_item_t *item, zbx_vector_hi
 	zbx_timespec_t	start = {ts->sec - seconds, ts->ns};
 	zbx_vc_chunk_t	*chunk;
 
-	/* Check if maximum request range is not set and all data are cached.  */
-	/* Because that indicates there was a count based request with unknown */
-	/* range which might be greater than the current request range.        */
-	if (0 != item->active_range || ZBX_ITEM_STATUS_CACHED_ALL != item->status)
-	{
-		now = (int)time(NULL);
-		/* add another second to include nanosecond shifts */
-		vc_cache_item_update(item->itemid, ZBX_VC_UPDATE_RANGE, seconds + now - ts->sec + 1, now);
-	}
+	now = (int)time(NULL);
+	/* add another second to include nanosecond shifts */
+	vc_cache_item_update(item->itemid, ZBX_VC_UPDATE_RANGE, seconds + now - ts->sec + 1, now);
 
 	if (FAIL == vch_item_get_last_value(item, ts, &chunk, &index))
 	{
@@ -2237,8 +2269,7 @@ out:
 		if (0 == seconds)
 			return;
 
-		/* not enough data in the requested period, set the range equal to the period plus */
-		/* one second to include nanosecond shifts                                         */
+		/* set the range equal to the period plus one second to include nanosecond shifts */
 		range_timestamp = ts->sec - seconds;
 	}
 	else
@@ -2364,12 +2395,12 @@ static size_t	vch_item_free_cache(zbx_vc_item_t *item)
  * Purpose: initializes value cache                                           *
  *                                                                            *
  ******************************************************************************/
-int	zbx_vc_init(char **error)
+int	zbx_vc_init(zbx_uint64_t value_cache_size, char **error)
 {
 	zbx_uint64_t	size_reserved;
 	int		ret = FAIL;
 
-	if (0 == CONFIG_VALUE_CACHE_SIZE)
+	if (0 == value_cache_size)
 		return SUCCEED;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
@@ -2379,13 +2410,13 @@ int	zbx_vc_init(char **error)
 
 	size_reserved = zbx_shmem_required_size(1, "value cache size", "ValueCacheSize");
 
-	if (SUCCEED != zbx_shmem_create(&vc_mem, CONFIG_VALUE_CACHE_SIZE, "value cache size", "ValueCacheSize", 1,
+	if (SUCCEED != zbx_shmem_create(&vc_mem, value_cache_size, "value cache size", "ValueCacheSize", 1,
 			error))
 	{
 		goto out;
 	}
 
-	CONFIG_VALUE_CACHE_SIZE -= size_reserved;
+	value_cache_size -= size_reserved;
 
 	vc_cache = (zbx_vc_cache_t *)__vc_shmem_malloc_func(vc_cache, sizeof(zbx_vc_cache_t));
 
@@ -2417,7 +2448,7 @@ int	zbx_vc_init(char **error)
 	}
 
 	/* the free space request should be 5% of cache size, but no more than 128KB */
-	vc_cache->min_free_request = (CONFIG_VALUE_CACHE_SIZE / 100) * 5;
+	vc_cache->min_free_request = (value_cache_size / 100) * 5;
 	if (vc_cache->min_free_request > 128 * ZBX_KIBIBYTE)
 		vc_cache->min_free_request = 128 * ZBX_KIBIBYTE;
 
@@ -2492,6 +2523,7 @@ void	zbx_vc_reset(void)
 		vc_cache->mode = ZBX_VC_MODE_NORMAL;
 		vc_cache->mode_time = 0;
 		vc_cache->last_warning_time = 0;
+		vc_cache->last_alloc_warning_time = 0;
 
 		UNLOCK_CACHE;
 	}
@@ -2501,21 +2533,24 @@ void	zbx_vc_reset(void)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: adds item values to the history and value cache                   *
+ * Purpose: adds item values to history and value cache                       *
  *                                                                            *
- * Parameters: history - [IN] item history values                             *
+ * Parameters:                                                                *
+ *   history                          - [IN] item history values              *
+ *   ret_flush                        - [OUT]                                 *
+ *   config_history_storage_pipelines - [IN]                                  *
  *                                                                            *
- * Return value: SUCCEED - the values were added successfully                 *
+ * Return value: SUCCEED - values were added successfully                     *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
-int	zbx_vc_add_values(zbx_vector_ptr_t *history, int *ret_flush)
+int	zbx_vc_add_values(zbx_vector_dc_history_ptr_t *history, int *ret_flush, int config_history_storage_pipelines)
 {
 	zbx_vc_item_t		*item;
 	int			i;
-	ZBX_DC_HISTORY		*h;
+	zbx_dc_history_t	*h;
 
-	if (SUCCEED != zbx_history_add_values(history, ret_flush))
+	if (SUCCEED != zbx_history_add_values(history, ret_flush, config_history_storage_pipelines))
 		return FAIL;
 
 	if (ZBX_VC_DISABLED == vc_state)
@@ -2525,7 +2560,7 @@ int	zbx_vc_add_values(zbx_vector_ptr_t *history, int *ret_flush)
 
 	for (i = 0; i < history->values_num; i++)
 	{
-		h = (ZBX_DC_HISTORY *)history->values[i];
+		h = history->values[i];
 
 		item = (zbx_vc_item_t *)zbx_hashset_search(&vc_cache->items, &h->itemid);
 
@@ -2534,7 +2569,8 @@ int	zbx_vc_add_values(zbx_vector_ptr_t *history, int *ret_flush)
 			zbx_vc_item_t	item_local = {
 					.itemid = h->itemid,
 					.value_type = h->value_type,
-					.last_accessed = (int)time(NULL)
+					.last_accessed = (int)time(NULL),
+					.active_range = VC_MIN_RANGE
 
 			};
 
@@ -2542,7 +2578,7 @@ int	zbx_vc_add_values(zbx_vector_ptr_t *history, int *ret_flush)
 		}
 
 		/* cache new values only after the item history database status is known */
-		if (NULL != item && (ZBX_ITEM_STATUS_CACHED_ALL == item->status || 0 != item->db_cached_from))
+		if (NULL != item)
 		{
 			zbx_history_record_t	record = {h->ts, h->value};
 			zbx_vc_chunk_t		*head = item->head;
@@ -2607,6 +2643,9 @@ int	zbx_vc_get_values(zbx_uint64_t itemid, unsigned char value_type, zbx_vector_
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() itemid:" ZBX_FS_UI64 " value_type:%d count:%d period:%d end_timestamp"
 			" '%s'", __func__, itemid, value_type, count, seconds, zbx_timespec_str(ts));
+
+	if (ITEM_VALUE_TYPE_BIN == value_type)
+		return FAIL;
 
 	RDLOCK_CACHE;
 
@@ -2800,7 +2839,7 @@ void	zbx_vc_get_mem_stats(zbx_shmem_stats_t *mem)
  * Purpose: get statistics of cached items                                    *
  *                                                                            *
  ******************************************************************************/
-void	zbx_vc_get_item_stats(zbx_vector_ptr_t *stats)
+void	zbx_vc_get_item_stats(zbx_vector_vc_item_stats_ptr_t *stats)
 {
 	zbx_hashset_iter_t	iter;
 	zbx_vc_item_t		*item;
@@ -2811,7 +2850,7 @@ void	zbx_vc_get_item_stats(zbx_vector_ptr_t *stats)
 
 	RDLOCK_CACHE;
 
-	zbx_vector_ptr_reserve(stats, (size_t)vc_cache->items.num_data);
+	zbx_vector_vc_item_stats_ptr_reserve(stats, (size_t)vc_cache->items.num_data);
 
 	zbx_hashset_iter_reset(&vc_cache->items, &iter);
 	while (NULL != (item = (zbx_vc_item_t *)zbx_hashset_iter_next(&iter)))
@@ -2820,7 +2859,7 @@ void	zbx_vc_get_item_stats(zbx_vector_ptr_t *stats)
 		item_stats->itemid = item->itemid;
 		item_stats->values_num = item->values_total;
 		item_stats->hourly_num = item->last_hourly_num;
-		zbx_vector_ptr_append(stats, item_stats);
+		zbx_vector_vc_item_stats_ptr_append(stats, item_stats);
 	}
 
 	UNLOCK_CACHE;
@@ -2902,6 +2941,7 @@ void	zbx_vc_add_new_items(const zbx_vector_uint64_pair_t *items)
 					.itemid = items->values[i].first,
 					.value_type = (unsigned char)items->values[i].second,
 					.status = ZBX_ITEM_STATUS_CACHED_ALL,
+					.active_range = VC_MIN_RANGE,
 					.last_accessed = (int)time(NULL)
 
 			};

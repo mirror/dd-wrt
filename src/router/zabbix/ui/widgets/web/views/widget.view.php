@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -26,39 +21,48 @@
  * @var array $data
  */
 
-// indicator of sort field
-$sort_div = (new CSpan())->addClass(ZBX_STYLE_ARROW_UP);
+$table = new CTableInfo();
 
-$table = (new CTableInfo())
-	->setHeader([
-		[_x('Host group', 'compact table header'), $sort_div],
-		_x('Ok', 'compact table header'),
-		_x('Failed', 'compact table header'),
-		_x('Unknown', 'compact table header')
-	])
-	->setHeadingColumn(0);
+if ($data['error'] !== null) {
+	$table->setNoDataMessage($data['error']);
+}
+else {
+	// indicator of sort field
+	$sort_div = (new CSpan())->addClass(ZBX_STYLE_ARROW_UP);
 
-$url = $data['allowed_ui_hosts']
-	? (new CUrl('zabbix.php'))
-		->setArgument('action', 'web.view')
-		->setArgument('filter_set', '1')
-	: null;
+	$table
+		->setHeader([
+			[_x('Host group', 'compact table header'), $sort_div],
+			_x('Ok', 'compact table header'),
+			_x('Failed', 'compact table header'),
+			_x('Unknown', 'compact table header')
+		])
+		->setHeadingColumn(0);
 
-foreach ($data['groups'] as $group) {
-	if ($url !== null) {
-		$url->setArgument('filter_groupids', [$group['groupid']]);
-		$group_name = new CLink($group['name'], $url->getUrl());
+	$url = $data['allowed_ui_hosts']
+		? (new CUrl('zabbix.php'))
+			->setArgument('action', 'web.view')
+			->setArgument('filter_set', '1')
+		: null;
+
+	foreach ($data['groups'] as $group) {
+		if ($url !== null) {
+			$url->setArgument('filter_groupids', [$group['groupid']]);
+			$group_name = new CLink($group['name'], $url->getUrl());
+		}
+		else {
+			$group_name = $group['name'];
+		}
+
+		$table->addRow(
+			(new CRow([
+				$group_name,
+				$group['ok'] != 0 ? (new CSpan($group['ok']))->addClass(ZBX_STYLE_GREEN) : '',
+				$group['failed'] != 0 ? (new CSpan($group['failed']))->addClass(ZBX_STYLE_RED) : '',
+				$group['unknown'] != 0 ? (new CSpan($group['unknown']))->addClass(ZBX_STYLE_GREY) : ''
+			]))->setAttribute('data-hostgroupid', $group['groupid'])
+		);
 	}
-	else {
-		$group_name = $group['name'];
-	}
-
-	$table->addRow([
-		$group_name,
-		$group['ok'] != 0 ? (new CSpan($group['ok']))->addClass(ZBX_STYLE_GREEN) : '',
-		$group['failed'] != 0 ? (new CSpan($group['failed']))->addClass(ZBX_STYLE_RED) : '',
-		$group['unknown'] != 0 ? (new CSpan($group['unknown']))->addClass(ZBX_STYLE_GREY) : ''
-	]);
 }
 
 (new CWidgetView($data))

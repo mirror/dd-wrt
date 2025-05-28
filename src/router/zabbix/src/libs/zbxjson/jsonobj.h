@@ -1,26 +1,23 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_JSONOBJ_H
 #define ZABBIX_JSONOBJ_H
 
 #include "zbxjson.h"
+
+#include "zbxalgo.h"
 
 typedef struct
 {
@@ -34,17 +31,9 @@ zbx_jsonobj_ref_t;
 
 ZBX_VECTOR_DECL(jsonobj_ref, zbx_jsonobj_ref_t)
 
-typedef struct
-{
-	char				*value;		/* the value found at indexed path */
-	zbx_vector_jsonobj_ref_t	objects;	/* the objects matching value at indexed path */
-}
-zbx_jsonobj_index_el_t;
-
 void	jsonobj_init(zbx_jsonobj_t *obj, zbx_json_type_t type);
 
 void	jsonobj_el_init(zbx_jsonobj_el_t *el);
-void	jsonobj_init_index(zbx_jsonobj_t *obj, const char *path);
 void	jsonobj_el_clear(zbx_jsonobj_el_t *el);
 
 void	jsonobj_set_string(zbx_jsonobj_t *obj, char *str);
@@ -52,5 +41,7 @@ void	jsonobj_set_number(zbx_jsonobj_t *obj, double number);
 void	jsonobj_set_true(zbx_jsonobj_t *obj);
 void	jsonobj_set_false(zbx_jsonobj_t *obj);
 void	jsonobj_set_null(zbx_jsonobj_t *obj);
+
+void	jsonobj_clear_ref_vector(zbx_vector_jsonobj_ref_t *refs);
 
 #endif

@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package zbxcomms
@@ -23,14 +18,15 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/log"
-	"zabbix.com/pkg/tls"
+	"golang.zabbix.com/agent2/pkg/tls"
+	"golang.zabbix.com/sdk/log"
 )
 
 const (
@@ -48,6 +44,10 @@ const (
 	connStateEstablished
 )
 
+const (
+	responseFailed = "failed"
+)
+
 type Connection struct {
 	conn        net.Conn
 	tlsConfig   *tls.Config
@@ -60,6 +60,15 @@ type Connection struct {
 type Listener struct {
 	listener  net.Listener
 	tlsconfig *tls.Config
+}
+
+type redirectResponse struct {
+	Response string `json:"response"`
+	Redirect *struct {
+		Addr     string `json:"address"`
+		Revision uint64 `json:"revision"`
+		Reset    bool   `json:"reset"`
+	} `json:"redirect"`
 }
 
 func open(address string, localAddr *net.Addr, timeout time.Duration, connect_timeout time.Duration, timeoutMode int,
@@ -107,7 +116,9 @@ func (c *Connection) write(w io.Writer, data []byte) (err error) {
 	if err = binary.Write(&b, binary.LittleEndian, uint32(buf.Len())); nil != err {
 		return err
 	}
-	if err = binary.Write(&b, binary.LittleEndian, uint32(len(data))); nil != err {
+	if !c.compress {
+		b.Write([]byte{0, 0, 0, 0})
+	} else if err = binary.Write(&b, binary.LittleEndian, uint32(len(data))); nil != err {
 		return err
 	}
 	b.Write(buf.Bytes())
@@ -283,8 +294,20 @@ func (c *Connection) Read() (data []byte, err error) {
 }
 
 func (c *Connection) RemoteIP() string {
-	addr, _, _ := net.SplitHostPort(c.conn.RemoteAddr().String())
-	return addr
+	tcpAddr, ok := c.conn.RemoteAddr().(*net.TCPAddr)
+	if !ok {
+		// This should never happen. RemoteAddr() should always return *net.TCPAddr as long as the connection is
+		// opened only with net.Dial("tcp", ...).
+		log.Warningf(
+			"remote address %q has unexpected type %T in RemoteIP()",
+			c.conn.RemoteAddr().String(),
+			c.conn.RemoteAddr(),
+		)
+
+		return c.conn.RemoteAddr().String()
+	}
+
+	return tcpAddr.IP.String()
 }
 
 func (l *Listener) Accept(timeout time.Duration, timeoutMode int) (c *Connection, err error) {
@@ -313,9 +336,9 @@ func (c *Listener) Close() (err error) {
 	return c.listener.Close()
 }
 
-func Exchange(addresses *[]string, localAddr *net.Addr, timeout time.Duration, connect_timeout time.Duration,
+func Exchange(addrpool AddressSet, localAddr *net.Addr, timeout time.Duration, connect_timeout time.Duration,
 	data []byte, args ...interface{}) (b []byte, errs []error, errRead error) {
-	log.Tracef("connecting to %s [timeout:%s, connection timeout:%s]", *addresses, timeout, connect_timeout)
+	log.Tracef("connecting to %s [timeout:%s, connection timeout:%s]", addrpool, timeout, connect_timeout)
 
 	var tlsconfig *tls.Config
 	var err error
@@ -341,18 +364,16 @@ func Exchange(addresses *[]string, localAddr *net.Addr, timeout time.Duration, c
 		}
 	}
 
-	for i := 0; i < len(*addresses); i++ {
-		c, err = open((*addresses)[0], localAddr, timeout, connect_timeout, TimeoutModeFixed, tlsconfig)
+	for i := 0; i < addrpool.count(); i++ {
+		c, err = open(addrpool.Get(), localAddr, timeout, connect_timeout, TimeoutModeFixed, tlsconfig)
 		if err == nil {
 			break
 		}
 
-		errs = append(errs, fmt.Errorf("cannot connect to [%s]: %s", (*addresses)[0], err))
+		errs = append(errs, fmt.Errorf("cannot connect to [%s]: %s", addrpool.Get(), err))
 		log.Tracef("%s", errs[len(errs)-1])
 
-		tmp := (*addresses)[0]
-		*addresses = (*addresses)[1:]
-		*addresses = append(*addresses, tmp)
+		addrpool.Next()
 	}
 
 	if err != nil {
@@ -361,33 +382,83 @@ func Exchange(addresses *[]string, localAddr *net.Addr, timeout time.Duration, c
 
 	defer c.Close()
 
-	log.Tracef("sending [%s] to [%s]", string(data), (*addresses)[0])
+	log.Tracef("sending [%s] to [%s]", string(data), addrpool.Get())
 
 	err = c.Write(data)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("cannot send to [%s]: %s", (*addresses)[0], err))
+		errs = append(errs, fmt.Errorf("cannot send to [%s]: %s", addrpool.Get(), err))
 		log.Tracef("%s", errs[len(errs)-1])
 
+		addrpool.Next()
 		return nil, errs, nil
 	}
 
-	log.Tracef("receiving data from [%s]", (*addresses)[0])
+	log.Tracef("receiving data from [%s]", addrpool.Get())
 
 	b, err = c.Read()
 	if err != nil {
-		errs = append(errs, fmt.Errorf("cannot receive data from [%s]: %s", (*addresses)[0], err))
+		errs = append(errs, fmt.Errorf("cannot receive data from [%s]: %s", addrpool.Get(), err))
 		log.Tracef("%s", errs[len(errs)-1])
-
-		return nil, errs, errs[len(errs)-1]
 	}
-	log.Tracef("received [%s] from [%s]", string(b), (*addresses)[0])
+	log.Tracef("received [%s] from [%s]", string(b), addrpool.Get())
 
-	if len(b) == 0 && false == no_response {
-		errs = append(errs, fmt.Errorf("connection closed"))
-		log.Tracef("%s", errs[len(errs)-1])
+	if len(b) == 0 {
+		if !no_response {
+			errs = append(errs, fmt.Errorf("connection closed"))
+			log.Tracef("%s", errs[len(errs)-1])
 
-		return nil, errs, errs[len(errs)-1]
+			addrpool.Next()
+			return nil, errs, errs[len(errs)-1]
+		}
+	} else {
+		if nil != tlsconfig {
+			byte_slice := make([]byte, 1024)
+			c.conn.Read(byte_slice)
+		}
+
 	}
 
 	return b, nil, nil
+}
+
+func ExchangeWithRedirect(addrpool AddressSet, localAddr *net.Addr, timeout time.Duration,
+	connectTimeout time.Duration, data []byte, args ...interface{}) ([]byte, []error, error) {
+	retries := 0
+retry:
+	retries++
+
+	b, errs, err := Exchange(addrpool, localAddr, timeout, connectTimeout, data, args...)
+
+	if errs != nil {
+		return b, errs, err
+	}
+
+	var response redirectResponse
+
+	if json.Unmarshal(b, &response) != nil {
+		return b, errs, err
+	}
+
+	if response.Response != responseFailed || nil == response.Redirect {
+		return b, errs, err
+	}
+
+	if retries > 1 {
+		errs = append(errs, errors.New("sequential redirect responses detected"))
+
+		return nil, errs, err
+	}
+
+	if response.Redirect.Reset {
+		addrpool.reset()
+		log.Debugf("performing redirect reset, connecting to [%s]", addrpool.Get())
+
+		goto retry
+	}
+
+	if addrpool.addRedirect(response.Redirect.Addr, response.Redirect.Revision) {
+		log.Debugf("performing redirect to [%s]", addrpool.Get())
+	}
+
+	goto retry
 }

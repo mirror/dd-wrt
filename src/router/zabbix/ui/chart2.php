@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -39,13 +34,16 @@ $fields = [
 	'outer' =>			[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
 	'onlyHeight' =>		[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
 	'legend' =>			[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
-	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null]
+	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
+	'resolve_macros' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null]
 ];
 if (!check_fields($fields)) {
 	session_write_close();
 	exit();
 }
 validateTimeSelectorPeriod(getRequest('from'), getRequest('to'));
+
+$resolve_macros = (bool) getRequest('resolve_macros', 0);
 
 /*
  * Permissions
@@ -54,8 +52,8 @@ $dbGraph = API::Graph()->get([
 	'output' => API_OUTPUT_EXTEND,
 	'selectGraphItems' => API_OUTPUT_EXTEND,
 	'selectHosts' => ['hostid', 'name', 'host'],
-	'selectItems' => ['itemid', 'type', 'master_itemid', 'name', 'delay', 'units', 'hostid', 'history', 'trends',
-		'value_type', 'key_'
+	'selectItems' => ['itemid', 'type', 'master_itemid', $resolve_macros ? 'name_resolved' : 'name', 'delay', 'units',
+		'hostid', 'history', 'trends', 'value_type', 'key_'
 	],
 	'graphids' => $_REQUEST['graphid']
 ]);
@@ -63,8 +61,11 @@ $dbGraph = API::Graph()->get([
 if (!$dbGraph) {
 	access_deny();
 }
-else {
-	$dbGraph = reset($dbGraph);
+
+$dbGraph = reset($dbGraph);
+
+if ($resolve_macros) {
+	$dbGraph['items'] = CArrayHelper::renameObjectsKeys($dbGraph['items'], ['name_resolved' => 'name']);
 }
 
 /*
@@ -142,8 +143,29 @@ $graph->setYMinAxisType($dbGraph['ymin_type']);
 $graph->setYMaxAxisType($dbGraph['ymax_type']);
 $graph->setYAxisMin($dbGraph['yaxismin']);
 $graph->setYAxisMax($dbGraph['yaxismax']);
-$graph->setYMinItemId($dbGraph['ymin_itemid']);
-$graph->setYMaxItemId($dbGraph['ymax_itemid']);
+
+$yaxis_items = array_intersect_key($dbGraph, array_filter([
+	'ymin_itemid' => $dbGraph['ymin_type'] == GRAPH_YAXIS_TYPE_ITEM_VALUE && $dbGraph['ymin_itemid'] != 0,
+	'ymax_itemid' => $dbGraph['ymax_type'] == GRAPH_YAXIS_TYPE_ITEM_VALUE && $dbGraph['ymax_itemid'] != 0
+]));
+
+if ($yaxis_items) {
+	$db_items = API::Item()->get([
+		'itemids' => array_values($yaxis_items),
+		'filter' => ['value_type' => [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64]],
+		'webitems' => true,
+		'preservekeys' => true
+	]);
+
+	if (array_key_exists('ymin_itemid', $yaxis_items) && array_key_exists($yaxis_items['ymin_itemid'], $db_items)) {
+		$graph->setYMinItemId($yaxis_items['ymin_itemid']);
+	}
+
+	if (array_key_exists('ymax_itemid', $yaxis_items) && array_key_exists($yaxis_items['ymax_itemid'], $db_items)) {
+		$graph->setYMaxItemId($yaxis_items['ymax_itemid']);
+	}
+}
+
 $graph->setLeftPercentage($dbGraph['percent_left']);
 $graph->setRightPercentage($dbGraph['percent_right']);
 

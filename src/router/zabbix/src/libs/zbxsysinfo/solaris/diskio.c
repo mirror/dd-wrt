@@ -1,26 +1,19 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
 #include "../sysinfo.h"
-
-#include "log.h"
 
 typedef struct
 {
@@ -181,7 +174,6 @@ MODE_FUNCTION;
 static int	process_mode_function(AGENT_REQUEST *request, AGENT_RESULT *result, const MODE_FUNCTION *fl)
 {
 	const char	*devname, *mode;
-	int		i;
 
 	if (2 < request->nparam)
 	{
@@ -199,7 +191,7 @@ static int	process_mode_function(AGENT_REQUEST *request, AGENT_RESULT *result, c
 	if (NULL == mode || '\0' == *mode)
 		mode = "bytes";
 
-	for (i = 0; NULL != fl[i].mode; i++)
+	for (int i = 0; NULL != fl[i].mode; i++)
 	{
 		if (0 == strcmp(mode, fl[i].mode))
 			return (fl[i].function)(devname, result);

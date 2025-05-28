@@ -1,25 +1,20 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
- * In case if user has set incredibly long notification timeout - he would end up never seeing them, because JS would
+ * In case if user has set incredibly long notification timeout - they would end up never seeing them, because JS would
  * execute scheduled timeout immediately. So limit the upper bound.
  */
 ZBX_Notification.max_timeout = Math.pow(2, 30);
@@ -123,7 +118,7 @@ ZBX_Notification.prototype.makeNode = function() {
 	node.indicator = indicator;
 	node.title_node = title_node;
 	node.snooze_icon = document.createElement('div');
-	node.snooze_icon.className = 'notif-indic-snooze';
+	node.snooze_icon.classList.add('notif-indic-snooze', ZBX_ICON_BELL_OFF);
 	node.snooze_icon.style.opacity = 0;
 
 	node.indicator.appendChild(node.snooze_icon);

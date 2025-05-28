@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -55,7 +50,7 @@ class CControllerActionOperationConditionCheck extends CController {
 	}
 
 	protected function checkPermissions(): bool {
-		return $this->getUserType() >= USER_TYPE_ZABBIX_ADMIN;
+		return $this->checkAccess(CRoleHelper::UI_CONFIGURATION_TRIGGER_ACTIONS);
 	}
 
 	/**
@@ -63,17 +58,9 @@ class CControllerActionOperationConditionCheck extends CController {
 	 */
 	protected function doAction(): void {
 		$data = [
-			'title' => _('New condition'),
-			'command' => '',
-			'message' => '',
-			'errors' => null,
-			'action' => $this->getAction(),
-			'type' => $this->getInput('type'),
 			'conditiontype' => $this->getInput('condition_type'),
 			'value' => $this->getInput('value'),
-			'operator' => $this->getInput('operator'),
-			'eventsource' => $this->getInput('source'),
-			'allowed_conditions' => get_conditions_by_eventsource($this->getInput('source'))
+			'operator' => $this->getInput('operator')
 		];
 
 		$this->setResponse(new CControllerResponseData(['main_block' => json_encode($data, JSON_THROW_ON_ERROR)]));

@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package vfsfs
@@ -22,9 +17,9 @@ package vfsfs
 import (
 	"syscall"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
 	"golang.org/x/sys/windows"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
 )
 
 func init() {
@@ -54,6 +49,7 @@ func getMountPaths() (paths []string, err error) {
 		for {
 			if err = windows.GetVolumePathNamesForVolumeName(&volume[0], &buffer[0], uint32(len(buffer)), &size); err != nil {
 				if err.(syscall.Errno) != syscall.ERROR_MORE_DATA {
+					err = errs.Wrapf(err, "Cannot obtain a list of filesystems. Volume: %s Error", windows.UTF16ToString(volume))
 					return
 				}
 				buffer = make([]uint16, size)
@@ -128,18 +124,25 @@ func getFsInfo(path string) (fsname, fstype, drivetype, drivelabel string, err e
 }
 
 func getFsStats(path string) (stats *FsStats, err error) {
-	var totalFree, callerFree, total uint64
-	if err = windows.GetDiskFreeSpaceEx(windows.StringToUTF16Ptr(path), &callerFree, &total, &totalFree); err != nil {
+	var callerFree, total uint64
+
+	err = windows.GetDiskFreeSpaceEx(windows.StringToUTF16Ptr(path), &callerFree, &total, nil)
+	if err != nil {
 		return
 	}
-	totalUsed := total - totalFree
+
+	totalUsed := total - callerFree
 	stats = &FsStats{
 		Total: total,
-		Free:  totalFree,
+		Free:  callerFree,
 		Used:  totalUsed,
-		PFree: float64(totalFree) / float64(total) * 100,
-		PUsed: float64(totalUsed) / float64(total) * 100,
 	}
+
+	if total != 0 {
+		stats.PFree = float64(callerFree) * 100.0 / float64(total)
+		stats.PUsed = float64(totalUsed) * 100.0 / float64(total)
+	}
+
 	return
 }
 

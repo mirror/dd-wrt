@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,24 +24,40 @@ window.connector_edit_popup = new class {
 	init({connectorid, tags}) {
 		this.connectorid = connectorid;
 
-		this.overlay = overlays_stack.getById('connector_edit');
+		this.overlay = overlays_stack.getById('connector.edit');
 		this.dialogue = this.overlay.$dialogue[0];
 		this.form = this.overlay.$dialogue.$body[0].querySelector('form');
 		this.footer = this.overlay.$dialogue.$footer[0];
 
+		const return_url = new URL('zabbix.php', location.href);
+		return_url.searchParams.set('action', 'connector.list');
+		ZABBIX.PopupManager.setReturnUrl(return_url.href);
+
 		jQuery('#tags').dynamicRows({
 			template: '#tag-row-tmpl',
-			rows: tags
+			rows: tags,
+			allow_empty: true
 		});
 
-		for (const id of ['tags', 'authtype', 'advanced_configuration', 'max_records_mode']) {
+		for (const id of ['data_type', 'tags', 'authtype', 'max_records_mode', 'max_attempts']) {
 			document.getElementById(id).addEventListener('change', () => this._updateForm());
 		}
 
 		this._updateForm();
+
+		new CFormFieldsetCollapsible(document.getElementById('advanced-configuration'));
+
+		this.form.style.display = '';
+		this.overlay.recoverFocus();
 	}
 
 	_updateForm() {
+		const data_type = this.form.querySelector('[name="data_type"]:checked').value;
+
+		for (const element of this.form.querySelectorAll('.js-field-item-value-types')) {
+			element.style.display = data_type == <?= ZBX_CONNECTOR_DATA_TYPE_ITEM_VALUES ?> ? '' : 'none';
+		}
+
 		for (const tag_operator of document.getElementById('tags').querySelectorAll('.js-tag-operator')) {
 			const tag_value = tag_operator.closest('.form_row').querySelector('.js-tag-value');
 
@@ -67,18 +78,10 @@ window.connector_edit_popup = new class {
 			field.style.display = use_token ? '' : 'none';
 		}
 
-		const advanced_configuration_enabled = document.getElementById('advanced_configuration').checked;
-		const advanced_configuration_fields = ['.js-field-max-records', '.js-field-max-senders',
-			'.js-field-max-attempts', '.js-field-timeout', '.js-field-http-proxy', '.js-field-verify-peer',
-			'.js-field-verify-host', '.js-field-ssl-cert-file', '.js-field-ssl-key-file', '.js-field-ssl-key-password'
-		];
-
-		for (const field of this.form.querySelectorAll(advanced_configuration_fields.join())) {
-			field.style.display = advanced_configuration_enabled ? '' : 'none';
-		}
-
 		const max_records_mode = this.form.querySelector('[name="max_records_mode"]:checked').value;
 		document.getElementById('max_records').style.display = max_records_mode == 0 ? 'none' : '';
+
+		document.getElementById('attempt_interval').disabled = document.getElementById('max_attempts').value <= 1;
 	}
 
 	clone({title, buttons}) {
@@ -86,19 +89,19 @@ window.connector_edit_popup = new class {
 
 		this.overlay.unsetLoading();
 		this.overlay.setProperties({title, buttons});
+		this.overlay.recoverFocus();
+		this.overlay.containFocus();
 	}
 
 	delete() {
 		const curl = new Curl('zabbix.php');
 		curl.setArgument('action', 'connector.delete');
-		curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-			<?= json_encode(CCsrfTokenHelper::get('connector')) ?>
-		);
+		curl.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('connector')) ?>);
 
 		this._post(curl.getUrl(), {connectorids: [this.connectorid]}, (response) => {
 			overlayDialogueDestroy(this.overlay.dialogueid);
 
-			this.dialogue.dispatchEvent(new CustomEvent('dialogue.delete', {detail: response.success}));
+			this.dialogue.dispatchEvent(new CustomEvent('dialogue.submit', {detail: response}));
 		});
 	}
 
@@ -109,8 +112,8 @@ window.connector_edit_popup = new class {
 			fields.connectorid = this.connectorid;
 		}
 
-		const fields_to_trim = ['name', 'url', 'username', 'token', 'timeout', 'http_proxy', 'ssl_cert_file',
-			'ssl_key_file', 'description'
+		const fields_to_trim = ['name', 'url', 'username', 'token', 'attempt_interval', 'timeout', 'http_proxy',
+			'ssl_cert_file', 'ssl_key_file', 'description'
 		];
 		for (const field of fields_to_trim) {
 			if (field in fields) {
@@ -128,12 +131,12 @@ window.connector_edit_popup = new class {
 		this.overlay.setLoading();
 
 		const curl = new Curl('zabbix.php');
-		curl.setArgument('action', this.connectorid != null ? 'connector.update' : 'connector.create');
+		curl.setArgument('action', this.connectorid !== null ? 'connector.update' : 'connector.create');
 
 		this._post(curl.getUrl(), fields, (response) => {
 			overlayDialogueDestroy(this.overlay.dialogueid);
 
-			this.dialogue.dispatchEvent(new CustomEvent('dialogue.submit', {detail: response.success}));
+			this.dialogue.dispatchEvent(new CustomEvent('dialogue.submit', {detail: response}));
 		});
 	}
 

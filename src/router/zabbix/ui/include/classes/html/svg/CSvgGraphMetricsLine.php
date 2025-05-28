@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -87,8 +82,8 @@ class CSvgGraphMetricsLine extends CSvgGroup {
 		);
 
 		foreach ($this->metric_paths as $metric_path) {
-			// Draw single data point paths as circles instead of lines.
-			if (count($metric_path) > 1) {
+			// Draw as a line if more than one data point path.
+			if (count($metric_path['line']) > 1) {
 				$this->addItem(new CSvgGraphLine($metric_path['line'], $this->metric));
 
 				if (array_key_exists('min', $metric_path)) {
@@ -102,11 +97,24 @@ class CSvgGraphMetricsLine extends CSvgGroup {
 					);
 				}
 			}
+			// Draw as a circle if one data point path.
 			else {
 				$this->addItem(
-					(new CSvgCircle($metric_path['line'][0][0], $metric_path['line'][0][1], $this->options['pointsize']))
-						->setAttribute('label', $metric_path['line'][0][2])
+					(new CSvgCircle($metric_path['line'][0][0], $metric_path['line'][0][1],
+						$this->options['pointsize']
+					))->setAttribute('label', $metric_path['line'][0][2])
 				);
+
+				if (array_key_exists('min', $metric_path)) {
+					$this
+						->addItem(new CSvgCircle($metric_path['min'][0][0], $metric_path['min'][0][1],
+							$this->options['pointsize']
+						))
+						->addItem(new CSvgCircle($metric_path['max'][0][0], $metric_path['max'][0][1],
+							$this->options['pointsize']
+						)
+					);
+				}
 			}
 
 			if (array_key_exists('fill', $metric_path)) {

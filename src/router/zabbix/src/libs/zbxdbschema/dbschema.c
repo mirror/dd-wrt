@@ -1,2620 +1,2844 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxdbschema.h"
 #include "zbxcommon.h"
 
-ZBX_TABLE	tables[] = {
-
-#if defined(HAVE_ORACLE)
-#	define ZBX_TYPE_SHORTTEXT_LEN	2048
-#else
-#	define ZBX_TYPE_SHORTTEXT_LEN	65535
-#endif
-
 #define ZBX_TYPE_LONGTEXT_LEN	0
 #define ZBX_TYPE_TEXT_LEN	65535
 
-	{"role",	"roleid",	0,
+static zbx_db_table_t	tables[] = {
+	{"role", "roleid", 0,
 		{
-		{"roleid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"readonly",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"roleid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"readonly", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"users",	"userid",	0,
+	{"ugset", "ugsetid", 0,
 		{
-		{"userid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"username",	"",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"surname",	"",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"passwd",	"",	NULL,	NULL,	60,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"autologin",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"autologout",	"15m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"lang",	"default",	NULL,	NULL,	7,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"refresh",	"30s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"theme",	"default",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"attempt_failed",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"attempt_ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"attempt_clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"rows_per_page",	"50",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"timezone",	"default",	NULL,	NULL,	50,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"roleid",	"NULL",	"role",	"roleid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"userdirectoryid",	"NULL",	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"ts_provisioned",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"ugsetid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hash", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"users", "userid", 0,
+		{
+			{"userid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"username", "", NULL, NULL, 100, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 100, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"surname", "", NULL, NULL, 100, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"passwd", "", NULL, NULL, 60, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"autologin", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"autologout", "15m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"lang", "default", NULL, NULL, 7, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"refresh", "30s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"theme", "default", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"attempt_failed", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"attempt_ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"attempt_clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"rows_per_page", "50", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timezone", "default", NULL, NULL, 50, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"roleid", "NULL", "role", "roleid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"userdirectoryid", "NULL", "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, 0, 0},
+			{"ts_provisioned", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"username"
 	},
-	{"maintenances",	"maintenanceid",	0,
+	{"maintenances", "maintenanceid", 0,
 		{
-		{"maintenanceid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"maintenance_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"active_since",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"active_till",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"tags_evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"maintenanceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"maintenance_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"active_since", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"active_till", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"tags_evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"hosts",	"hostid",	0,
+	{"hgset", "hgsetid", 0,
 		{
-		{"hostid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"proxy_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"host",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ipmi_authtype",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ipmi_privilege",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ipmi_username",	"",	NULL,	NULL,	16,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ipmi_password",	"",	NULL,	NULL,	20,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"maintenance_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"maintenance_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"maintenance_from",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"templateid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"tls_connect",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tls_accept",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tls_issuer",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tls_subject",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tls_psk_identity",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tls_psk",	"",	NULL,	NULL,	512,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"proxy_address",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"auto_compress",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"discover",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"custom_interfaces",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"name_upper",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"vendor_name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"vendor_version",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"hgsetid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hash", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"hstgrp",	"groupid",	0,
+	{"hosts", "hostid", 0,
 		{
-		{"groupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"hostid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"proxyid", NULL, "proxy", "proxyid", 0, ZBX_TYPE_ID, 0, 0},
+			{"host", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ipmi_authtype", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ipmi_privilege", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ipmi_username", "", NULL, NULL, 16, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ipmi_password", "", NULL, NULL, 20, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"maintenanceid", NULL, "maintenances", "maintenanceid", 0, ZBX_TYPE_ID, 0, 0},
+			{"maintenance_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"maintenance_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"maintenance_from", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"templateid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"tls_connect", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_accept", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_issuer", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_subject", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_psk_identity", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_psk", "", NULL, NULL, 512, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"discover", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"custom_interfaces", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"name_upper", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"vendor_name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"vendor_version", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"proxy_groupid", NULL, "proxy_group", "proxy_groupid", 0, ZBX_TYPE_ID, 0, 0},
+			{"monitored_by", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"hstgrp", "groupid", 0,
+		{
+			{"groupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"type,name"
 	},
-	{"group_prototype",	"group_prototypeid",	0,
+	{"hgset_group", "hgsetid,groupid", 0,
 		{
-		{"group_prototypeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"templateid",	NULL,	"group_prototype",	"group_prototypeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"hgsetid", NULL, "hgset", "hgsetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"group_discovery",	"groupid",	0,
+	{"host_hgset", "hostid", 0,
 		{
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"parent_group_prototypeid",	NULL,	"group_prototype",	"group_prototypeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"lastcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ts_delete",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"hgsetid", NULL, "hgset", "hgsetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"drules",	"druleid",	0,
+	{"group_prototype", "group_prototypeid", 0,
 		{
-		{"druleid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"proxy_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"iprange",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"delay",	"1h",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"group_prototypeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, 0, 0},
+			{"templateid", NULL, "group_prototype", "group_prototypeid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
+		},
+		NULL
+	},
+	{"group_discovery", "groupdiscoveryid", 0,
+		{
+			{"groupdiscoveryid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_group_prototypeid", NULL, "group_prototype", "group_prototypeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		"groupid,parent_group_prototypeid"
+	},
+	{"drules", "druleid", 0,
+		{
+			{"druleid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"proxyid", NULL, "proxy", "proxyid", 0, ZBX_TYPE_ID, 0, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"iprange", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"delay", "1h", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"concurrency_max", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"error", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"dchecks",	"dcheckid",	0,
+	{"dchecks", "dcheckid", 0,
 		{
-		{"dcheckid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"druleid",	NULL,	"drules",	"druleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"key_",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmp_community",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ports",	"0",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_securityname",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_securitylevel",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_authpassphrase",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_privpassphrase",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"uniq",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_authprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_privprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmpv3_contextname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"host_source",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"name_source",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"dcheckid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"druleid", NULL, "drules", "druleid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"key_", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmp_community", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ports", "0", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_securityname", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_securitylevel", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_authpassphrase", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_privpassphrase", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"uniq", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_authprotocol", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_privprotocol", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmpv3_contextname", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"host_source", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"name_source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"allow_redirect", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"httptest",	"httptestid",	0,
+	{"httptest", "httptestid", 0,
 		{
-		{"httptestid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"delay",	"1m",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"agent",	"Zabbix",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"authentication",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"http_user",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"http_password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"templateid",	NULL,	"httptest",	"httptestid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"http_proxy",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"retries",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ssl_cert_file",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ssl_key_file",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ssl_key_password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"verify_peer",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"verify_host",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"httptestid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"delay", "1m", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"agent", "Zabbix", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"authentication", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"http_user", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"http_password", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"templateid", NULL, "httptest", "httptestid", 0, ZBX_TYPE_ID, 0, 0},
+			{"http_proxy", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"retries", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ssl_cert_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ssl_key_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ssl_key_password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"verify_peer", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"verify_host", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"hostid,name"
 	},
-	{"httpstep",	"httpstepid",	0,
+	{"httpstep", "httpstepid", 0,
 		{
-		{"httpstepid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"httptestid",	NULL,	"httptest",	"httptestid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"no",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"timeout",	"15s",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"posts",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"required",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"status_codes",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"follow_redirects",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"retrieve_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"post_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"httpstepid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"httptestid", NULL, "httptest", "httptestid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"no", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout", "15s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"posts", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"required", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"status_codes", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"follow_redirects", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"retrieve_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"post_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"interface",	"interfaceid",	0,
+	{"interface", "interfaceid", 0,
 		{
-		{"interfaceid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
-		{"main",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"useip",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ip",	"127.0.0.1",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"dns",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"port",	"10050",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"available",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"error",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"errors_from",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"disable_until",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"interfaceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, ZBX_FK_CASCADE_DELETE},
+			{"main", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"useip", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ip", "127.0.0.1", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"port", "10050", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"available", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"error", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"errors_from", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"disable_until", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"valuemap",	"valuemapid",	0,
+	{"valuemap", "valuemapid", 0,
 		{
-		{"valuemapid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"valuemapid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"hostid,name"
 	},
-	{"items",	"itemid",	0,
+	{"items", "itemid", 0,
 		{
-		{"itemid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmp_oid",	"",	NULL,	NULL,	512,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"key_",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"delay",	"0",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"history",	"90d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"trends",	"365d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"value_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"trapper_hosts",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"units",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"formula",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"logtimefmt",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"templateid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"valuemapid",	NULL,	"valuemap",	"valuemapid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"params",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ipmi_sensor",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"username",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"publickey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"privatekey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"interfaceid",	NULL,	"interface",	"interfaceid",	0,	ZBX_TYPE_ID,	ZBX_PROXY,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"inventory_link",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"lifetime",	"30d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"jmx_endpoint",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"master_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_PROXY,	0},
-		{"timeout",	"3s",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"query_fields",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"posts",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"status_codes",	"200",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"follow_redirects",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"post_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"http_proxy",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"headers",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"retrieve_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"request_method",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"output_format",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ssl_cert_file",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ssl_key_file",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"ssl_key_password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"verify_peer",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"verify_host",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"allow_traps",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"discover",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"name_upper",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"snmp_oid", "", NULL, NULL, 512, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"key_", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"delay", "0", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"history", "31d", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"trends", "365d", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"trapper_hosts", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"units", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"formula", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"logtimefmt", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"templateid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
+			{"valuemapid", NULL, "valuemap", "valuemapid", 0, ZBX_TYPE_ID, 0, 0},
+			{"params", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ipmi_sensor", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"authtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"username", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"password", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"publickey", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"privatekey", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"interfaceid", NULL, "interface", "interfaceid", 0, ZBX_TYPE_ID, ZBX_PROXY, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"inventory_link", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"lifetime", "7d", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"jmx_endpoint", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"master_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_PROXY, 0},
+			{"timeout", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"query_fields", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"posts", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"status_codes", "200", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"follow_redirects", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"post_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"http_proxy", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"headers", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"retrieve_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"request_method", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"output_format", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ssl_cert_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ssl_key_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"ssl_key_password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"verify_peer", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"verify_host", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"allow_traps", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"discover", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"lifetime_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"enabled_lifetime_type", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"enabled_lifetime", "0", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"httpstepitem",	"httpstepitemid",	0,
+	{"httpstepitem", "httpstepitemid", 0,
 		{
-		{"httpstepitemid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"httpstepid",	NULL,	"httpstep",	"httpstepid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"httpstepitemid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"httpstepid", NULL, "httpstep", "httpstepid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		"httpstepid,itemid"
 	},
-	{"httptestitem",	"httptestitemid",	0,
+	{"httptestitem", "httptestitemid", 0,
 		{
-		{"httptestitemid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"httptestid",	NULL,	"httptest",	"httptestid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"httptestitemid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"httptestid", NULL, "httptest", "httptestid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		"httptestid,itemid"
 	},
-	{"media_type",	"mediatypeid",	0,
+	{"media_type", "mediatypeid", 0,
 		{
-		{"mediatypeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"smtp_server",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"smtp_helo",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"smtp_email",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"exec_path",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"gsm_modem",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"username",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"passwd",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"smtp_port",	"25",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"smtp_security",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"smtp_verify_peer",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"smtp_verify_host",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"smtp_authentication",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"maxsessions",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"maxattempts",	"3",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"attempt_interval",	"10s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"content_type",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"script",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"timeout",	"30s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"process_tags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"show_event_menu",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"event_menu_url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"event_menu_name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"provider",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"mediatypeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 100, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"smtp_server", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"smtp_helo", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"smtp_email", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"exec_path", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"gsm_modem", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"username", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"passwd", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"smtp_port", "25", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"smtp_security", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"smtp_verify_peer", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"smtp_verify_host", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"smtp_authentication", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"maxsessions", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"maxattempts", "3", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"attempt_interval", "10s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"message_format", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"script", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"timeout", "30s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"process_tags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_event_menu", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"event_menu_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"event_menu_name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"provider", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"media_type_param",	"mediatype_paramid",	0,
+	{"media_type_param", "mediatype_paramid", 0,
 		{
-		{"mediatype_paramid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"sortorder",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"mediatype_paramid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"media_type_message",	"mediatype_messageid",	0,
+	{"media_type_message", "mediatype_messageid", 0,
 		{
-		{"mediatype_messageid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"eventsource",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"recovery",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"subject",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"message",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"mediatype_messageid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"eventsource", NULL, NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"recovery", NULL, NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"subject", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"message", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"mediatypeid,eventsource,recovery"
 	},
-	{"usrgrp",	"usrgrpid",	0,
+	{"usrgrp", "usrgrpid", 0,
 		{
-		{"usrgrpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"gui_access",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"users_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"debug_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"userdirectoryid",	"NULL",	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	0 ,	0},
-		{0}
+			{"usrgrpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"gui_access", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"users_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"debug_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"userdirectoryid", "NULL", "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, 0, 0},
+			{"mfa_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"mfaid", NULL, "mfa", "mfaid", 0, ZBX_TYPE_ID, 0 , 0},
+			{0}
 		},
 		"name"
 	},
-	{"users_groups",	"id",	0,
+	{"users_groups", "id", 0,
 		{
-		{"id",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"id", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"usrgrpid,userid"
 	},
-	{"scripts",	"scriptid",	0,
+	{"ugset_group", "ugsetid,usrgrpid", 0,
 		{
-		{"scriptid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"command",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"host_access",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"confirmation",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"type",	"5",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"execute_on",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"timeout",	"30s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"scope",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"port",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"username",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"publickey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"privatekey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"menu_path",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"new_window",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"ugsetid", NULL, "ugset", "ugsetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"user_ugset", "userid", 0,
+		{
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"ugsetid", NULL, "ugset", "ugsetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"scripts", "scriptid", 0,
+		{
+			{"scriptid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"command", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"host_access", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, 0, 0},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, 0, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"confirmation", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", "5", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"execute_on", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timeout", "30s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"scope", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"port", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"authtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"username", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"publickey", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"privatekey", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"menu_path", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"new_window", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"manualinput", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"manualinput_prompt", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"manualinput_validator", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"manualinput_validator_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"manualinput_default_value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name,menu_path"
 	},
-	{"script_param",	"script_paramid",	0,
+	{"script_param", "script_paramid", 0,
 		{
-		{"script_paramid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"scriptid",	NULL,	"scripts",	"scriptid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"script_paramid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"scriptid", NULL, "scripts", "scriptid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"scriptid,name"
 	},
-	{"actions",	"actionid",	0,
+	{"actions", "actionid", 0,
 		{
-		{"actionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"eventsource",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"esc_period",	"1h",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"formula",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"pause_suppressed",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"notify_if_canceled",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"pause_symptoms",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"actionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"eventsource", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"esc_period", "1h", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"formula", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"pause_suppressed", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"notify_if_canceled", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"pause_symptoms", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"operations",	"operationid",	0,
+	{"operations", "operationid", 0,
 		{
-		{"operationid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"actionid",	NULL,	"actions",	"actionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"operationtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"esc_period",	"0",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"esc_step_from",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"esc_step_to",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"recovery",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"operationid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"actionid", NULL, "actions", "actionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"operationtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"esc_period", "0", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"esc_step_from", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"esc_step_to", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"recovery", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"opmessage",	"operationid",	0,
+	{"optag", "optagid", 0,
 		{
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"default_msg",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"subject",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"message",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"optagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"opmessage_grp",	"opmessage_grpid",	0,
+	{"opmessage", "operationid", 0,
 		{
-		{"opmessage_grpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"default_msg", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"subject", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"message", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
+		},
+		NULL
+	},
+	{"opmessage_grp", "opmessage_grpid", 0,
+		{
+			{"opmessage_grpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"operationid,usrgrpid"
 	},
-	{"opmessage_usr",	"opmessage_usrid",	0,
+	{"opmessage_usr", "opmessage_usrid", 0,
 		{
-		{"opmessage_usrid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"opmessage_usrid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"operationid,userid"
 	},
-	{"opcommand",	"operationid",	0,
+	{"opcommand", "operationid", 0,
 		{
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"scriptid",	NULL,	"scripts",	"scriptid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"scriptid", NULL, "scripts", "scriptid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"opcommand_hst",	"opcommand_hstid",	0,
+	{"opcommand_hst", "opcommand_hstid", 0,
 		{
-		{"opcommand_hstid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"opcommand_hstid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
 		},
 		NULL
 	},
-	{"opcommand_grp",	"opcommand_grpid",	0,
+	{"opcommand_grp", "opcommand_grpid", 0,
 		{
-		{"opcommand_grpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"opcommand_grpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"opgroup",	"opgroupid",	0,
+	{"opgroup", "opgroupid", 0,
 		{
-		{"opgroupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"opgroupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"operationid,groupid"
 	},
-	{"optemplate",	"optemplateid",	0,
+	{"optemplate", "optemplateid", 0,
 		{
-		{"optemplateid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"templateid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"optemplateid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"templateid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"operationid,templateid"
 	},
-	{"opconditions",	"opconditionid",	0,
+	{"opconditions", "opconditionid", 0,
 		{
-		{"opconditionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"conditiontype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"opconditionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"conditiontype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"conditions",	"conditionid",	0,
+	{"conditions", "conditionid", 0,
 		{
-		{"conditionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"actionid",	NULL,	"actions",	"actionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"conditiontype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value2",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"conditionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"actionid", NULL, "actions", "actionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"conditiontype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value2", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"config",	"configid",	0,
+	{"config", "configid", 0,
 		{
-		{"configid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"work_period",	"1-5,09:00-18:00",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"alert_usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"default_theme",	"blue-theme",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"authentication_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"discovery_groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"max_in_table",	"50",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"search_limit",	"1000",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"severity_color_0",	"97AAB3",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_color_1",	"7499FF",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_color_2",	"FFC859",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_color_3",	"FFA059",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_color_4",	"E97659",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_color_5",	"E45959",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_name_0",	"Not classified",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_name_1",	"Information",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_name_2",	"Warning",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_name_3",	"Average",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_name_4",	"High",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity_name_5",	"Disaster",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ok_period",	"5m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"blink_period",	"2m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"problem_unack_color",	"CC0000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"problem_ack_color",	"CC0000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ok_unack_color",	"009900",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ok_ack_color",	"009900",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"problem_unack_style",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"problem_ack_style",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ok_unack_style",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ok_ack_style",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"snmptrap_logging",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"server_check_interval",	"10",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_events_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_events_trigger",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_events_internal",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_events_discovery",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_events_autoreg",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_services_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_services",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_audit_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_audit",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_sessions_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_sessions",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"hk_history_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_history_global",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hk_history",	"90d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hk_trends_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_trends_global",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_trends",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"default_inventory_mode",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"custom_color",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"http_auth_enabled",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"http_login_form",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"http_strip_domains",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"http_case_sensitive",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ldap_auth_enabled",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ldap_case_sensitive",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"db_extension",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"autoreg_tls_accept",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"compression_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"compress_older",	"7d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"instanceid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"saml_auth_enabled",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"saml_case_sensitive",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"default_lang",	"en_US",	NULL,	NULL,	5,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"default_timezone",	"system",	NULL,	NULL,	50,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"login_attempts",	"5",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"login_block",	"30s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"show_technical_errors",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"validate_uri_schemes",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"uri_valid_schemes",	"http,https,ftp,file,mailto,tel,ssh",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"x_frame_options",	"SAMEORIGIN",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"iframe_sandboxing_enabled",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"iframe_sandboxing_exceptions",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"max_overview_table_size",	"50",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"history_period",	"24h",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"period_default",	"1h",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"max_period",	"2y",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"socket_timeout",	"3s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"connect_timeout",	"3s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"media_type_test_timeout",	"65s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"script_timeout",	"60s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"item_test_timeout",	"60s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"session_key",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"report_test_timeout",	"60s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"dbversion_status",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"hk_events_service",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"passwd_min_length",	"8",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"passwd_check_rules",	"8",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"auditlog_enabled",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ha_failover_delay",	"1m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"geomaps_tile_provider",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"geomaps_tile_url",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"geomaps_max_zoom",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"geomaps_attribution",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"vault_provider",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ldap_userdirectoryid",	"NULL ",	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"server_status",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"jit_provision_interval",	"1h",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"saml_jit_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ldap_jit_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"disabled_usrgrpid",	"NULL",	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"configid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"work_period", "1-5,09:00-18:00", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"alert_usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, 0, 0},
+			{"default_theme", "blue-theme", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"authentication_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"discovery_groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, 0, 0},
+			{"max_in_table", "50", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"search_limit", "1000", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"severity_color_0", "97AAB3", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_color_1", "7499FF", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_color_2", "FFC859", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_color_3", "FFA059", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_color_4", "E97659", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_color_5", "E45959", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_name_0", "Not classified", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_name_1", "Information", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_name_2", "Warning", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_name_3", "Average", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_name_4", "High", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity_name_5", "Disaster", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"ok_period", "5m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"blink_period", "2m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"problem_unack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"problem_ack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"ok_unack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"ok_ack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"problem_unack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"problem_ack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ok_unack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ok_ack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"snmptrap_logging", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"server_check_interval", "10", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_events_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_events_trigger", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_events_internal", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_events_discovery", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_events_autoreg", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_services_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_services", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_audit_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_audit", "31d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_sessions_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_sessions", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hk_history_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_history_global", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hk_history", "31d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hk_trends_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_trends_global", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"hk_trends", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"default_inventory_mode", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"custom_color", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"http_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"http_login_form", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"http_strip_domains", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"http_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ldap_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ldap_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"db_extension", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"autoreg_tls_accept", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"compression_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"compress_older", "7d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"instanceid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"saml_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"saml_case_sensitive", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"default_lang", "en_US", NULL, NULL, 5, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"default_timezone", "system", NULL, NULL, 50, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"login_attempts", "5", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"login_block", "30s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"show_technical_errors", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"validate_uri_schemes", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"uri_valid_schemes", "http,https,ftp,file,mailto,tel,ssh", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"x_frame_options", "SAMEORIGIN", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"iframe_sandboxing_enabled", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"iframe_sandboxing_exceptions", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"max_overview_table_size", "50", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"history_period", "24h", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"period_default", "1h", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"max_period", "2y", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"socket_timeout", "3s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"connect_timeout", "3s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"media_type_test_timeout", "65s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"script_timeout", "60s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"item_test_timeout", "60s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"session_key", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"report_test_timeout", "60s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"dbversion_status", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"hk_events_service", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"passwd_min_length", "8", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"passwd_check_rules", "8", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"auditlog_enabled", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ha_failover_delay", "1m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"geomaps_tile_provider", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"geomaps_tile_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"geomaps_max_zoom", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"geomaps_attribution", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"vault_provider", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ldap_userdirectoryid", "NULL ", "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, 0, 0},
+			{"server_status", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"jit_provision_interval", "1h", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"saml_jit_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ldap_jit_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"disabled_usrgrpid", "NULL", "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, 0, 0},
+			{"timeout_zabbix_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_simple_check", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_snmp_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_external_check", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_db_monitor", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_http_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_ssh_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_telnet_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"timeout_script", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"auditlog_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"mfa_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"mfaid", NULL, "mfa", "mfaid", 0, ZBX_TYPE_ID, 0, 0},
+			{"software_update_checkid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"software_update_check_data", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"timeout_browser", "60s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"triggers",	"triggerid",	0,
+	{"triggers", "triggerid", 0,
 		{
-		{"triggerid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"expression",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"priority",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastchange",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"comments",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"error",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"templateid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"state",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"recovery_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"recovery_expression",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"correlation_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"correlation_tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"manual_close",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"opdata",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"discover",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"event_name",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url_name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"triggerid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"expression", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"priority", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastchange", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"comments", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"error", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"templateid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, 0, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"state", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"recovery_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"recovery_expression", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"correlation_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"correlation_tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"manual_close", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"opdata", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"discover", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"event_name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url_name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"trigger_depends",	"triggerdepid",	0,
+	{"trigger_depends", "triggerdepid", 0,
 		{
-		{"triggerdepid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"triggerid_down",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"triggerid_up",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"triggerdepid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"triggerid_down", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"triggerid_up", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"triggerid_down,triggerid_up"
 	},
-	{"functions",	"functionid",	0,
+	{"functions", "functionid", 0,
 		{
-		{"functionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	12,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"parameter",	"0",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"functionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 12, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"parameter", "0", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"graphs",	"graphid",	0,
+	{"graphs", "graphid", 0,
 		{
-		{"graphid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"width",	"900",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"height",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"yaxismin",	"0",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"yaxismax",	"100",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"templateid",	NULL,	"graphs",	"graphid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"show_work_period",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"show_triggers",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"graphtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"show_legend",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"show_3d",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"percent_left",	"0",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"percent_right",	"0",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"ymin_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ymax_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ymin_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"ymax_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"discover",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"graphid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"width", "900", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"height", "200", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"yaxismin", "0", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"yaxismax", "100", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"templateid", NULL, "graphs", "graphid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"show_work_period", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_triggers", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"graphtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_legend", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_3d", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"percent_left", "0", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"percent_right", "0", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"ymin_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ymax_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ymin_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
+			{"ymax_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"discover", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"graphs_items",	"gitemid",	0,
+	{"graphs_items", "gitemid", 0,
 		{
-		{"gitemid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"graphid",	NULL,	"graphs",	"graphid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"drawtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sortorder",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"color",	"009600",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"yaxisside",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"calc_fnc",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"gitemid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"graphid", NULL, "graphs", "graphid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"drawtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"color", "009600", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"yaxisside", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"calc_fnc", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"graph_theme",	"graphthemeid",	0,
+	{"graph_theme", "graphthemeid", 0,
 		{
-		{"graphthemeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"theme",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"backgroundcolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"graphcolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"gridcolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"maingridcolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"gridbordercolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"textcolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"highlightcolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"leftpercentilecolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"rightpercentilecolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"nonworktimecolor",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"colorpalette",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"graphthemeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"theme", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"backgroundcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"graphcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"gridcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"maingridcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"gridbordercolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"textcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"highlightcolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"leftpercentilecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"rightpercentilecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"nonworktimecolor", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"colorpalette", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"theme"
 	},
-	{"globalmacro",	"globalmacroid",	0,
+	{"globalmacro", "globalmacroid", 0,
 		{
-		{"globalmacroid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"macro",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"value",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"globalmacroid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"macro", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		"macro"
 	},
-	{"hostmacro",	"hostmacroid",	0,
+	{"hostmacro", "hostmacroid", 0,
 		{
-		{"hostmacroid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
-		{"macro",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"value",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"automatic",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"hostmacroid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, ZBX_FK_CASCADE_DELETE},
+			{"macro", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"automatic", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		"hostid,macro"
 	},
-	{"hosts_groups",	"hostgroupid",	0,
+	{"hosts_groups", "hostgroupid", 0,
 		{
-		{"hostgroupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"hostgroupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"hostid,groupid"
 	},
-	{"hosts_templates",	"hosttemplateid",	0,
+	{"hosts_templates", "hosttemplateid", 0,
 		{
-		{"hosttemplateid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
-		{"templateid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
-		{"link_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"hosttemplateid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, ZBX_FK_CASCADE_DELETE},
+			{"templateid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, ZBX_FK_CASCADE_DELETE},
+			{"link_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		"hostid,templateid"
 	},
-	{"valuemap_mapping",	"valuemap_mappingid",	0,
+	{"valuemap_mapping", "valuemap_mappingid", 0,
 		{
-		{"valuemap_mappingid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"valuemapid",	NULL,	"valuemap",	"valuemapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"value",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"newvalue",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sortorder",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"valuemap_mappingid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"valuemapid", NULL, "valuemap", "valuemapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"value", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"newvalue", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"valuemapid,value,type"
 	},
-	{"media",	"mediaid",	0,
+	{"media", "mediaid", 0,
 		{
-		{"mediaid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"sendto",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"active",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"severity",	"63",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"period",	"1-7,00:00-24:00",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"mediaid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"sendto", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"active", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"severity", "63", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"period", "1-7,00:00-24:00", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"userdirectory_mediaid", "NULL", "userdirectory_media", "userdirectory_mediaid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"rights",	"rightid",	0,
+	{"rights", "rightid", 0,
 		{
-		{"rightid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"groupid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"permission",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"id",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"rightid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"groupid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"permission", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"id", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"services",	"serviceid",	0,
+	{"permission", "ugsetid,hgsetid", 0,
 		{
-		{"serviceid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"algorithm",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sortorder",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"weight",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"propagation_rule",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"propagation_value",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"created_at",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"ugsetid", NULL, "ugset", "ugsetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"hgsetid", NULL, "hgset", "hgsetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"permission", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"services_links",	"linkid",	0,
+	{"services", "serviceid", 0,
 		{
-		{"linkid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"serviceupid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"servicedownid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"serviceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"algorithm", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"weight", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"propagation_rule", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"propagation_value", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"created_at", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"services_links", "linkid", 0,
+		{
+			{"linkid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"serviceupid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"servicedownid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"serviceupid,servicedownid"
 	},
-	{"icon_map",	"iconmapid",	0,
+	{"icon_map", "iconmapid", 0,
 		{
-		{"iconmapid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"default_iconid",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"iconmapid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"default_iconid", NULL, "images", "imageid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"icon_mapping",	"iconmappingid",	0,
+	{"icon_mapping", "iconmappingid", 0,
 		{
-		{"iconmappingid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"iconmapid",	NULL,	"icon_map",	"iconmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"iconid",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"inventory_link",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"expression",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"sortorder",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"iconmappingid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"iconmapid", NULL, "icon_map", "iconmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"iconid", NULL, "images", "imageid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"inventory_link", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"expression", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sysmaps",	"sysmapid",	0,
+	{"sysmaps", "sysmapid", 0,
 		{
-		{"sysmapid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"width",	"600",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"height",	"400",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"backgroundid",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"label_type",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_location",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"highlight",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"expandproblem",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"markelements",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"show_unack",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"grid_size",	"50",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"grid_show",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"grid_align",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_format",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_type_host",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_type_hostgroup",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_type_trigger",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_type_map",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_type_image",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"label_string_host",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"label_string_hostgroup",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"label_string_trigger",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"label_string_map",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"label_string_image",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"iconmapid",	NULL,	"icon_map",	"iconmapid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"expand_macros",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"severity_min",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"private",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"show_suppressed",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sysmapid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"width", "600", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"height", "400", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"backgroundid", NULL, "images", "imageid", 0, ZBX_TYPE_ID, 0, 0},
+			{"label_type", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_location", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"highlight", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"expandproblem", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"markelements", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_unack", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"grid_size", "50", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"grid_show", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"grid_align", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_format", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_type_host", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_type_hostgroup", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_type_trigger", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_type_map", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_type_image", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"label_string_host", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label_string_hostgroup", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label_string_trigger", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label_string_map", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label_string_image", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"iconmapid", NULL, "icon_map", "iconmapid", 0, ZBX_TYPE_ID, 0, 0},
+			{"expand_macros", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"severity_min", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"private", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_suppressed", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"sysmaps_elements",	"selementid",	0,
+	{"sysmaps_elements", "selementid", 0,
 		{
-		{"selementid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"elementid",	"0",	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"elementtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"iconid_off",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"iconid_on",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"label",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"label_location",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"x",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"y",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"iconid_disabled",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"iconid_maintenance",	NULL,	"images",	"imageid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"elementsubtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"areatype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"width",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"height",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"viewtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"use_iconmap",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"selementid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"elementid", "0", NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"elementtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"iconid_off", NULL, "images", "imageid", 0, ZBX_TYPE_ID, 0, 0},
+			{"iconid_on", NULL, "images", "imageid", 0, ZBX_TYPE_ID, 0, 0},
+			{"label", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label_location", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"x", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"y", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"iconid_disabled", NULL, "images", "imageid", 0, ZBX_TYPE_ID, 0, 0},
+			{"iconid_maintenance", NULL, "images", "imageid", 0, ZBX_TYPE_ID, 0, 0},
+			{"elementsubtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"areatype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"width", "200", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"height", "200", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"viewtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"use_iconmap", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sysmaps_links",	"linkid",	0,
+	{"sysmaps_links", "linkid", 0,
 		{
-		{"linkid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"selementid1",	NULL,	"sysmaps_elements",	"selementid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"selementid2",	NULL,	"sysmaps_elements",	"selementid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"drawtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"color",	"000000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"label",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"linkid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"selementid1", NULL, "sysmaps_elements", "selementid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"selementid2", NULL, "sysmaps_elements", "selementid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"drawtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"color", "000000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sysmaps_link_triggers",	"linktriggerid",	0,
+	{"sysmaps_link_triggers", "linktriggerid", 0,
 		{
-		{"linktriggerid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"linkid",	NULL,	"sysmaps_links",	"linkid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"drawtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"color",	"000000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"linktriggerid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"linkid", NULL, "sysmaps_links", "linkid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"drawtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"color", "000000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"linkid,triggerid"
 	},
-	{"sysmap_element_url",	"sysmapelementurlid",	0,
+	{"sysmap_element_url", "sysmapelementurlid", 0,
 		{
-		{"sysmapelementurlid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"selementid",	NULL,	"sysmaps_elements",	"selementid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	NULL,	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"sysmapelementurlid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"selementid", NULL, "sysmaps_elements", "selementid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", NULL, NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"selementid,name"
 	},
-	{"sysmap_url",	"sysmapurlid",	0,
+	{"sysmap_url", "sysmapurlid", 0,
 		{
-		{"sysmapurlid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	NULL,	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"elementtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sysmapurlid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", NULL, NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"elementtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"sysmapid,name"
 	},
-	{"sysmap_user",	"sysmapuserid",	0,
+	{"sysmap_user", "sysmapuserid", 0,
 		{
-		{"sysmapuserid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"permission",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sysmapuserid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"permission", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"sysmapid,userid"
 	},
-	{"sysmap_usrgrp",	"sysmapusrgrpid",	0,
+	{"sysmap_usrgrp", "sysmapusrgrpid", 0,
 		{
-		{"sysmapusrgrpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"permission",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sysmapusrgrpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"permission", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"sysmapid,usrgrpid"
 	},
-	{"maintenances_hosts",	"maintenance_hostid",	0,
+	{"maintenances_hosts", "maintenance_hostid", 0,
 		{
-		{"maintenance_hostid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"maintenance_hostid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"maintenanceid", NULL, "maintenances", "maintenanceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"maintenanceid,hostid"
 	},
-	{"maintenances_groups",	"maintenance_groupid",	0,
+	{"maintenances_groups", "maintenance_groupid", 0,
 		{
-		{"maintenance_groupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"maintenance_groupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"maintenanceid", NULL, "maintenances", "maintenanceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"maintenanceid,groupid"
 	},
-	{"timeperiods",	"timeperiodid",	0,
+	{"timeperiods", "timeperiodid", 0,
 		{
-		{"timeperiodid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"timeperiod_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"every",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"month",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"dayofweek",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"day",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"start_time",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"period",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"start_date",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"timeperiodid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"timeperiod_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"every", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"month", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"dayofweek", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"day", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"start_time", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"period", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"start_date", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"maintenances_windows",	"maintenance_timeperiodid",	0,
+	{"maintenances_windows", "maintenance_timeperiodid", 0,
 		{
-		{"maintenance_timeperiodid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"timeperiodid",	NULL,	"timeperiods",	"timeperiodid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"maintenance_timeperiodid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"maintenanceid", NULL, "maintenances", "maintenanceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"timeperiodid", NULL, "timeperiods", "timeperiodid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"maintenanceid,timeperiodid"
 	},
-	{"regexps",	"regexpid",	0,
+	{"regexps", "regexpid", 0,
 		{
-		{"regexpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"test_string",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"regexpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"test_string", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"expressions",	"expressionid",	0,
+	{"expressions", "expressionid", 0,
 		{
-		{"expressionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"regexpid",	NULL,	"regexps",	"regexpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
-		{"expression",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"expression_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"exp_delimiter",	"",	NULL,	NULL,	1,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"case_sensitive",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"expressionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"regexpid", NULL, "regexps", "regexpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, ZBX_FK_CASCADE_DELETE},
+			{"expression", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"expression_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"exp_delimiter", "", NULL, NULL, 1, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"case_sensitive", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"ids",	"table_name,field_name",	0,
+	{"ids", "table_name,field_name", 0,
 		{
-		{"table_name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"field_name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"nextid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"table_name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"field_name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"nextid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"alerts",	"alertid",	0,
+	{"alerts", "alertid", 0,
 		{
-		{"alertid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"actionid",	NULL,	"actions",	"actionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"sendto",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"subject",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"message",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"retries",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"error",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"esc_step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"alerttype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"p_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"parameters",	"{}",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"alertid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"actionid", NULL, "actions", "actionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"sendto", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"subject", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"message", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"retries", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"error", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"esc_step", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"alerttype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"p_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"acknowledgeid", NULL, "acknowledges", "acknowledgeid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"parameters", "{}", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"history",	"itemid,clock,ns",	0,
+	{"history", "itemid,clock,ns", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"0.0000",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "0.0000", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"history_uint",	"itemid,clock,ns",	0,
+	{"history_uint", "itemid,clock,ns", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"history_str",	"itemid,clock,ns",	0,
+	{"history_str", "itemid,clock,ns", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"history_log",	"itemid,clock,ns",	0,
+	{"history_log", "itemid,clock,ns", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"timestamp",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"source",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"logeventid",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timestamp", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"source", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"logeventid", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"history_text",	"itemid,clock,ns",	0,
+	{"history_text", "itemid,clock,ns", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"proxy_history",	"id",	0,
+	{"history_bin", "itemid,clock,ns", 0,
 		{
-		{"id",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"timestamp",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"source",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	ZBX_TYPE_LONGTEXT_LEN,	ZBX_TYPE_LONGTEXT,	ZBX_NOTNULL,	0},
-		{"logeventid",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"state",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastlogsize",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"mtime",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"write_clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 0, ZBX_TYPE_BLOB, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"proxy_dhistory",	"id",	0,
+	{"proxy_history", "id", 0,
 		{
-		{"id",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"druleid",	NULL,	"drules",	"druleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"dcheckid",	NULL,	"dchecks",	"dcheckid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"dns",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"id", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timestamp", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"source", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_LONGTEXT_LEN, ZBX_TYPE_LONGTEXT, ZBX_NOTNULL, 0},
+			{"logeventid", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"state", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastlogsize", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL, 0},
+			{"mtime", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"write_clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"events",	"eventid",	0,
+	{"proxy_dhistory", "id", 0,
 		{
-		{"eventid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"source",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"object",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"objectid",	"0",	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"acknowledged",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"id", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"druleid", NULL, "drules", "druleid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"port", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"dcheckid", NULL, "dchecks", "dcheckid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"error", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"event_symptom",	"eventid",	0,
+	{"events", "eventid", 0,
 		{
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"cause_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"eventid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"object", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"objectid", "0", NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"acknowledged", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"trends",	"itemid,clock",	0,
+	{"event_symptom", "eventid", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"num",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value_min",	"0.0000",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"value_avg",	"0.0000",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"value_max",	"0.0000",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{0}
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"cause_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"trends_uint",	"itemid,clock",	0,
+	{"trends", "itemid,clock", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"num",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value_min",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"value_avg",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"value_max",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"num", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value_min", "0.0000", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"value_avg", "0.0000", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"value_max", "0.0000", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"acknowledges",	"acknowledgeid",	0,
+	{"trends_uint", "itemid,clock", 0,
 		{
-		{"acknowledgeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"message",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"action",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"old_severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"new_severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"suppress_until",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"num", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value_min", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL, 0},
+			{"value_avg", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL, 0},
+			{"value_max", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"auditlog",	"auditid",	0,
+	{"acknowledges", "acknowledgeid", 0,
 		{
-		{"auditid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_CUID,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	0,	0},
-		{"username",	"",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"action",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"resourcetype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"resourceid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	0,	0},
-		{"resource_cuid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_CUID,	0,	0},
-		{"resourcename",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"recordsetid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_CUID,	ZBX_NOTNULL,	0},
-		{"details",	"",	NULL,	NULL,	ZBX_TYPE_LONGTEXT_LEN,	ZBX_TYPE_LONGTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"acknowledgeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"message", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"action", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"old_severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"new_severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"suppress_until", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"service_alarms",	"servicealarmid",	0,
+	{"auditlog", "auditid", 0,
 		{
-		{"servicealarmid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"auditid", NULL, NULL, NULL, 0, ZBX_TYPE_CUID, ZBX_NOTNULL, 0},
+			{"userid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, 0, 0},
+			{"username", "", NULL, NULL, 100, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"action", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"resourcetype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"resourceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, 0, 0},
+			{"resource_cuid", NULL, NULL, NULL, 0, ZBX_TYPE_CUID, 0, 0},
+			{"resourcename", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"recordsetid", NULL, NULL, NULL, 0, ZBX_TYPE_CUID, ZBX_NOTNULL, 0},
+			{"details", "", NULL, NULL, ZBX_TYPE_LONGTEXT_LEN, ZBX_TYPE_LONGTEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"autoreg_host",	"autoreg_hostid",	0,
+	{"service_alarms", "servicealarmid", 0,
 		{
-		{"autoreg_hostid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"proxy_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"host",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"listen_ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"listen_port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"listen_dns",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"host_metadata",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"tls_accepted",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"servicealarmid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"proxy_autoreg_host",	"id",	0,
+	{"autoreg_host", "autoreg_hostid", 0,
 		{
-		{"id",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"host",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"listen_ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"listen_port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"listen_dns",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"host_metadata",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"flags",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"tls_accepted",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"autoreg_hostid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"proxyid", NULL, "proxy", "proxyid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"host", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"listen_ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"listen_port", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"listen_dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"host_metadata", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"tls_accepted", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"dhosts",	"dhostid",	0,
+	{"proxy_autoreg_host", "id", 0,
 		{
-		{"dhostid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"druleid",	NULL,	"drules",	"druleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastup",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastdown",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"id", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"host", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"listen_ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"listen_port", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"listen_dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"host_metadata", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"flags", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"tls_accepted", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"dservices",	"dserviceid",	0,
+	{"dhosts", "dhostid", 0,
 		{
-		{"dserviceid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"dhostid",	NULL,	"dhosts",	"dhostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastup",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastdown",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"dcheckid",	NULL,	"dchecks",	"dcheckid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"dns",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"dhostid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"druleid", NULL, "drules", "druleid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastup", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastdown", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"dservices", "dserviceid", 0,
+		{
+			{"dserviceid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"dhostid", NULL, "dhosts", "dhostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"port", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastup", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastdown", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"dcheckid", NULL, "dchecks", "dcheckid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"dns", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"dcheckid,ip,port"
 	},
-	{"escalations",	"escalationid",	0,
+	{"escalations", "escalationid", 0,
 		{
-		{"escalationid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"actionid",	NULL,	"actions",	"actionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"r_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"nextcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"esc_step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"servicealarmid",	NULL,	"service_alarms",	"servicealarmid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"escalationid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"actionid", NULL, "actions", "actionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"r_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"nextcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"esc_step", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"acknowledgeid", NULL, "acknowledges", "acknowledgeid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"servicealarmid", NULL, "service_alarms", "servicealarmid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"triggerid,itemid,serviceid,escalationid"
 	},
-	{"globalvars",	"globalvarid",	0,
+	{"globalvars", "name", 0,
 		{
-		{"globalvarid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"snmp_lastsize",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{0}
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"graph_discovery",	"graphid",	0,
+	{"graph_discovery", "graphid", 0,
 		{
-		{"graphid",	NULL,	"graphs",	"graphid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"parent_graphid",	NULL,	"graphs",	"graphid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"lastcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ts_delete",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"graphid", NULL, "graphs", "graphid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_graphid", NULL, "graphs", "graphid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"host_inventory",	"hostid",	0,
+	{"host_inventory", "hostid", 0,
 		{
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"inventory_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"type",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type_full",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"alias",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"os",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"os_full",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"os_short",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"serialno_a",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"serialno_b",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tag",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"asset_tag",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"macaddress_a",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"macaddress_b",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hardware",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hardware_full",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software_full",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software_app_a",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software_app_b",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software_app_c",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software_app_d",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"software_app_e",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"contact",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"location",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"location_lat",	"",	NULL,	NULL,	16,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"location_lon",	"",	NULL,	NULL,	16,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"notes",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"chassis",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"model",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"hw_arch",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"vendor",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"contract_number",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"installer_name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"deployment_status",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"url_a",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"url_b",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"url_c",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"host_networks",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"host_netmask",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"host_router",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"oob_ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"oob_netmask",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"oob_router",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"date_hw_purchase",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"date_hw_install",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"date_hw_expiry",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"date_hw_decomm",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_address_a",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_address_b",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_address_c",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_city",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_state",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_country",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_zip",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_rack",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"site_notes",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_email",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_phone_a",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_phone_b",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_cell",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_screen",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_1_notes",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_email",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_phone_a",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_phone_b",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_cell",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_screen",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"poc_2_notes",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"inventory_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"type", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type_full", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"alias", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"os", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"os_full", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"os_short", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"serialno_a", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"serialno_b", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tag", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"asset_tag", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"macaddress_a", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"macaddress_b", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hardware", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hardware_full", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software_full", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software_app_a", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software_app_b", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software_app_c", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software_app_d", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"software_app_e", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"contact", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"location", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"location_lat", "", NULL, NULL, 16, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"location_lon", "", NULL, NULL, 16, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"notes", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"chassis", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"model", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"hw_arch", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"vendor", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"contract_number", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"installer_name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"deployment_status", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"url_a", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"url_b", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"url_c", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"host_networks", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"host_netmask", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"host_router", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"oob_ip", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"oob_netmask", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"oob_router", "", NULL, NULL, 39, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"date_hw_purchase", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"date_hw_install", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"date_hw_expiry", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"date_hw_decomm", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_address_a", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_address_b", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_address_c", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_city", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_state", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_country", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_zip", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_rack", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"site_notes", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_email", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_phone_a", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_phone_b", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_cell", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_screen", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_1_notes", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_email", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_phone_a", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_phone_b", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_cell", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_screen", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"poc_2_notes", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"housekeeper",	"housekeeperid",	0,
+	{"housekeeper", "housekeeperid", 0,
 		{
-		{"housekeeperid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"tablename",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"field",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	NULL,	"items",	"value",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"housekeeperid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"tablename", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"field", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", NULL, "items", "value", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"images",	"imageid",	0,
+	{"images", "imageid", 0,
 		{
-		{"imageid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"imagetype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"name",	"0",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"image",	"",	NULL,	NULL,	0,	ZBX_TYPE_BLOB,	ZBX_NOTNULL,	0},
-		{0}
+			{"imageid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"imagetype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "0", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"image", "", NULL, NULL, 0, ZBX_TYPE_BLOB, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"item_discovery",	"itemdiscoveryid",	0,
+	{"item_discovery", "itemdiscoveryid", 0,
 		{
-		{"itemdiscoveryid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"parent_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"key_",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"lastcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ts_delete",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemdiscoveryid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"key_", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"disable_source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_disable", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"itemid,parent_itemid"
 	},
-	{"host_discovery",	"hostid",	0,
+	{"host_discovery", "hostid", 0,
 		{
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"parent_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"parent_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"host",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"lastcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ts_delete",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, 0},
+			{"parent_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
+			{"host", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"disable_source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_disable", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"interface_discovery",	"interfaceid",	0,
+	{"interface_discovery", "interfaceid", 0,
 		{
-		{"interfaceid",	NULL,	"interface",	"interfaceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"parent_interfaceid",	NULL,	"interface",	"interfaceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"interfaceid", NULL, "interface", "interfaceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_interfaceid", NULL, "interface", "interfaceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"profiles",	"profileid",	0,
+	{"profiles", "profileid", 0,
 		{
-		{"profileid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"idx",	"",	NULL,	NULL,	96,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"idx2",	"0",	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"value_id",	"0",	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"value_int",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value_str",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"source",	"",	NULL,	NULL,	96,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"profileid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"idx", "", NULL, NULL, 96, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"idx2", "0", NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"value_id", "0", NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"value_int", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value_str", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"source", "", NULL, NULL, 96, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sessions",	"sessionid",	0,
+	{"sessions", "sessionid", 0,
 		{
-		{"sessionid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"lastaccess",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"secret",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"sessionid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"lastaccess", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"secret", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"trigger_discovery",	"triggerid",	0,
+	{"trigger_discovery", "triggerid", 0,
 		{
-		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"parent_triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"lastcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ts_delete",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"disable_source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ts_disable", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"item_condition",	"item_conditionid",	0,
+	{"item_condition", "item_conditionid", 0,
 		{
-		{"item_conditionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"operator",	"8",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"macro",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"item_conditionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"operator", "8", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"macro", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"item_rtdata",	"itemid",	0,
+	{"item_rtdata", "itemid", 0,
 		{
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"lastlogsize",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"state",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"mtime",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"error",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"lastlogsize", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"state", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"mtime", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"error", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"opinventory",	"operationid",	0,
+	{"item_rtname", "itemid", 0,
 		{
-		{"operationid",	NULL,	"operations",	"operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"inventory_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name_resolved", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"name_resolved_upper", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_UPPER, 0},
+			{0}
 		},
 		NULL
 	},
-	{"trigger_tag",	"triggertagid",	0,
+	{"opinventory", "operationid", 0,
 		{
-		{"triggertagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"operationid", NULL, "operations", "operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"inventory_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"event_tag",	"eventtagid",	0,
+	{"trigger_tag", "triggertagid", 0,
 		{
-		{"eventtagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"triggertagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"problem",	"eventid",	0,
+	{"event_tag", "eventtagid", 0,
 		{
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"source",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"object",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"objectid",	"0",	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"r_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"r_clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"r_ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"correlationid",	NULL,	"correlation",	"correlationid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"acknowledged",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"cause_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"eventtagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"problem_tag",	"problemtagid",	0,
+	{"problem", "eventid", 0,
 		{
-		{"problemtagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"eventid",	NULL,	"problem",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"object", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"objectid", "0", NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"r_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"r_clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"r_ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"correlationid", NULL, "correlation", "correlationid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"acknowledged", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"cause_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
 		},
 		NULL
 	},
-	{"tag_filter",	"tag_filterid",	0,
+	{"problem_tag", "problemtagid", 0,
 		{
-		{"tag_filterid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | 0 ,	ZBX_FK_CASCADE_DELETE},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"problemtagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"eventid", NULL, "problem", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"event_recovery",	"eventid",	0,
+	{"tag_filter", "tag_filterid", 0,
 		{
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"r_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"c_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"correlationid",	NULL,	"correlation",	"correlationid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"tag_filterid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | 0 , ZBX_FK_CASCADE_DELETE},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"correlation",	"correlationid",	0,
+	{"event_recovery", "eventid", 0,
 		{
-		{"correlationid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"formula",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"r_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"c_eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"correlationid", NULL, "correlation", "correlationid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
+		},
+		NULL
+	},
+	{"correlation", "correlationid", 0,
+		{
+			{"correlationid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"formula", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"corr_condition",	"corr_conditionid",	0,
+	{"corr_condition", "corr_conditionid", 0,
 		{
-		{"corr_conditionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"correlationid",	NULL,	"correlation",	"correlationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"corr_conditionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"correlationid", NULL, "correlation", "correlationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"corr_condition_tag",	"corr_conditionid",	0,
+	{"corr_condition_tag", "corr_conditionid", 0,
 		{
-		{"corr_conditionid",	NULL,	"corr_condition",	"corr_conditionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"corr_conditionid", NULL, "corr_condition", "corr_conditionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"corr_condition_group",	"corr_conditionid",	0,
+	{"corr_condition_group", "corr_conditionid", 0,
 		{
-		{"corr_conditionid",	NULL,	"corr_condition",	"corr_conditionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"corr_conditionid", NULL, "corr_condition", "corr_conditionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"corr_condition_tagpair",	"corr_conditionid",	0,
+	{"corr_condition_tagpair", "corr_conditionid", 0,
 		{
-		{"corr_conditionid",	NULL,	"corr_condition",	"corr_conditionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"oldtag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"newtag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"corr_conditionid", NULL, "corr_condition", "corr_conditionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"oldtag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"newtag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"corr_condition_tagvalue",	"corr_conditionid",	0,
+	{"corr_condition_tagvalue", "corr_conditionid", 0,
 		{
-		{"corr_conditionid",	NULL,	"corr_condition",	"corr_conditionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"corr_conditionid", NULL, "corr_condition", "corr_conditionid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"corr_operation",	"corr_operationid",	0,
+	{"corr_operation", "corr_operationid", 0,
 		{
-		{"corr_operationid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"correlationid",	NULL,	"correlation",	"correlationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"corr_operationid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"correlationid", NULL, "correlation", "correlationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"task",	"taskid",	0,
+	{"task", "taskid", 0,
 		{
-		{"taskid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"type",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ttl",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"proxy_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"taskid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"type", NULL, NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ttl", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"proxyid", NULL, "proxy", "proxyid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"task_close_problem",	"taskid",	0,
+	{"task_close_problem", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"acknowledgeid", NULL, "acknowledges", "acknowledgeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"item_preproc",	"item_preprocid",	0,
+	{"item_preproc", "item_preprocid", 0,
 		{
-		{"item_preprocid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"params",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"error_handler",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"error_handler_params",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"item_preprocid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"step", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"params", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"error_handler", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"error_handler_params", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"task_remote_command",	"taskid",	0,
+	{"task_remote_command", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"command_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"execute_on",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"username",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"publickey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"privatekey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"command",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"alertid",	NULL,	"alerts",	"alertid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"parent_taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"command_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"execute_on", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"port", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"authtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"username", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"publickey", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"privatekey", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"command", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"alertid", NULL, "alerts", "alertid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"parent_taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"task_remote_command_result",	"taskid",	0,
+	{"task_remote_command_result", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"parent_taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"info",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"parent_taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"info", "", NULL, NULL, ZBX_TYPE_LONGTEXT_LEN, ZBX_TYPE_LONGTEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"task_data",	"taskid",	0,
+	{"task_data", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"data",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
-		{"parent_taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"data", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"parent_taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"task_result",	"taskid",	0,
+	{"task_result", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"parent_taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"info",	"",	NULL,	NULL,	ZBX_TYPE_LONGTEXT_LEN,	ZBX_TYPE_LONGTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"parent_taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"info", "", NULL, NULL, ZBX_TYPE_LONGTEXT_LEN, ZBX_TYPE_LONGTEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"task_acknowledge",	"taskid",	0,
+	{"task_acknowledge", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"acknowledgeid", NULL, "acknowledges", "acknowledgeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"sysmap_shape",	"sysmap_shapeid",	0,
+	{"sysmap_shape", "sysmap_shapeid", 0,
 		{
-		{"sysmap_shapeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"x",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"y",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"width",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"height",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"text",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"font",	"9",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"font_size",	"11",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"font_color",	"000000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"text_halign",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"text_valign",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"border_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"border_width",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"border_color",	"000000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"background_color",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"zindex",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sysmap_shapeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"x", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"y", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"width", "200", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"height", "200", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"text", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"font", "9", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"font_size", "11", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"font_color", "000000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"text_halign", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"text_valign", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"border_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"border_width", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"border_color", "000000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"background_color", "", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"zindex", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sysmap_element_trigger",	"selement_triggerid",	0,
+	{"sysmap_element_trigger", "selement_triggerid", 0,
 		{
-		{"selement_triggerid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"selementid",	NULL,	"sysmaps_elements",	"selementid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"selement_triggerid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"selementid", NULL, "sysmaps_elements", "selementid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"triggerid", NULL, "triggers", "triggerid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"selementid,triggerid"
 	},
-	{"httptest_field",	"httptest_fieldid",	0,
+	{"httptest_field", "httptest_fieldid", 0,
 		{
-		{"httptest_fieldid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"httptestid",	NULL,	"httptest",	"httptestid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"value",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"httptest_fieldid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"httptestid", NULL, "httptest", "httptestid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"httpstep_field",	"httpstep_fieldid",	0,
+	{"httpstep_field", "httpstep_fieldid", 0,
 		{
-		{"httpstep_fieldid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"httpstepid",	NULL,	"httpstep",	"httpstepid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"value",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"httpstep_fieldid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"httpstepid", NULL, "httpstep", "httpstepid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"dashboard",	"dashboardid",	0,
+	{"dashboard", "dashboardid", 0,
 		{
-		{"dashboardid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	NULL,	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"private",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"templateid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"display_period",	"30",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"auto_start",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"uuid",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"dashboardid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", NULL, NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, 0},
+			{"private", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"templateid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"display_period", "30", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"auto_start", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"uuid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"dashboard_user",	"dashboard_userid",	0,
+	{"dashboard_user", "dashboard_userid", 0,
 		{
-		{"dashboard_userid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"permission",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"dashboard_userid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"dashboardid", NULL, "dashboard", "dashboardid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"permission", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"dashboardid,userid"
 	},
-	{"dashboard_usrgrp",	"dashboard_usrgrpid",	0,
+	{"dashboard_usrgrp", "dashboard_usrgrpid", 0,
 		{
-		{"dashboard_usrgrpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"permission",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"dashboard_usrgrpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"dashboardid", NULL, "dashboard", "dashboardid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"permission", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"dashboardid,usrgrpid"
 	},
-	{"dashboard_page",	"dashboard_pageid",	0,
+	{"dashboard_page", "dashboard_pageid", 0,
 		{
-		{"dashboard_pageid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"display_period",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sortorder",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"dashboard_pageid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"dashboardid", NULL, "dashboard", "dashboardid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"display_period", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"widget",	"widgetid",	0,
+	{"widget", "widgetid", 0,
 		{
-		{"widgetid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"type",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"x",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"y",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"width",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"height",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"view_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"dashboard_pageid",	NULL,	"dashboard_page",	"dashboard_pageid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"widgetid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"type", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"x", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"y", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"width", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"height", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"view_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"dashboard_pageid", NULL, "dashboard_page", "dashboard_pageid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"widget_field",	"widget_fieldid",	0,
+	{"widget_field", "widget_fieldid", 0,
 		{
-		{"widget_fieldid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"widgetid",	NULL,	"widget",	"widgetid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value_int",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value_str",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value_groupid",	NULL,	"hstgrp",	"groupid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_graphid",	NULL,	"graphs",	"graphid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_slaid",	NULL,	"sla",	"slaid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_actionid",	NULL,	"actions",	"actionid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"widget_fieldid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"widgetid", NULL, "widget", "widgetid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value_int", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value_str", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value_groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_graphid", NULL, "graphs", "graphid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_sysmapid", NULL, "sysmaps", "sysmapid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_slaid", NULL, "sla", "slaid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_actionid", NULL, "actions", "actionid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"task_check_now",	"taskid",	0,
+	{"task_check_now", "taskid", 0,
 		{
-		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"taskid", NULL, "task", "taskid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"event_suppress",	"event_suppressid",	0,
+	{"event_suppress", "event_suppressid", 0,
 		{
-		{"event_suppressid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"suppress_until",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"event_suppressid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"eventid", NULL, "events", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"maintenanceid", NULL, "maintenances", "maintenanceid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"suppress_until", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"eventid,maintenanceid"
 	},
-	{"maintenance_tag",	"maintenancetagid",	0,
+	{"maintenance_tag", "maintenancetagid", 0,
 		{
-		{"maintenancetagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"operator",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"maintenancetagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"maintenanceid", NULL, "maintenances", "maintenanceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"operator", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_macro_path",	"lld_macro_pathid",	0,
+	{"lld_macro_path", "lld_macro_pathid", 0,
 		{
-		{"lld_macro_pathid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"lld_macro",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"path",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_macro_pathid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"lld_macro", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"path", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"itemid,lld_macro"
 	},
-	{"host_tag",	"hosttagid",	0,
+	{"host_tag", "hosttagid", 0,
 		{
-		{"hosttagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"automatic",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"hosttagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"automatic", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"config_autoreg_tls",	"autoreg_tlsid",	0,
+	{"config_autoreg_tls", "autoreg_tlsid", 0,
 		{
-		{"autoreg_tlsid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"tls_psk_identity",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"tls_psk",	"",	NULL,	NULL,	512,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"autoreg_tlsid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"tls_psk_identity", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_psk", "", NULL, NULL, 512, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		"tls_psk_identity"
 	},
-	{"module",	"moduleid",	0,
+	{"module", "moduleid", 0,
 		{
-		{"moduleid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"id",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"relative_path",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"config",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"moduleid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"id", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"relative_path", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"config", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"interface_snmp",	"interfaceid",	0,
+	{"interface_snmp", "interfaceid", 0,
 		{
-		{"interfaceid",	NULL,	"interface",	"interfaceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"version",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"bulk",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"community",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"securityname",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"securitylevel",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"authpassphrase",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"privpassphrase",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"authprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"privprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"contextname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"max_repetitions",	"10",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"interfaceid", NULL, "interface", "interfaceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"version", "2", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"bulk", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"community", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"securityname", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"securitylevel", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"authpassphrase", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"privpassphrase", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"authprotocol", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"privprotocol", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"contextname", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"max_repetitions", "10", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override",	"lld_overrideid",	0,
+	{"lld_override", "lld_overrideid", 0,
 		{
-		{"lld_overrideid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"formula",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"stop",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_overrideid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"step", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"formula", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"stop", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"itemid,name"
 	},
-	{"lld_override_condition",	"lld_override_conditionid",	0,
+	{"lld_override_condition", "lld_override_conditionid", 0,
 		{
-		{"lld_override_conditionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"lld_overrideid",	NULL,	"lld_override",	"lld_overrideid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"operator",	"8",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"macro",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_conditionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"lld_overrideid", NULL, "lld_override", "lld_overrideid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"operator", "8", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"macro", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_operation",	"lld_override_operationid",	0,
+	{"lld_override_operation", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"lld_overrideid",	NULL,	"lld_override",	"lld_overrideid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"operationobject",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"lld_overrideid", NULL, "lld_override", "lld_overrideid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"operationobject", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_opstatus",	"lld_override_operationid",	0,
+	{"lld_override_opstatus", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_opdiscover",	"lld_override_operationid",	0,
+	{"lld_override_opdiscover", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"discover",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"discover", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_opperiod",	"lld_override_operationid",	0,
+	{"lld_override_opperiod", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"delay",	"0",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"delay", "0", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_ophistory",	"lld_override_operationid",	0,
+	{"lld_override_ophistory", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"history",	"90d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"history", "31d", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_optrends",	"lld_override_operationid",	0,
+	{"lld_override_optrends", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"trends",	"365d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"trends", "365d", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_opseverity",	"lld_override_operationid",	0,
+	{"lld_override_opseverity", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_optag",	"lld_override_optagid",	0,
+	{"lld_override_optag", "lld_override_optagid", 0,
 		{
-		{"lld_override_optagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_optagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"lld_override_optemplate",	"lld_override_optemplateid",	0,
+	{"lld_override_optemplate", "lld_override_optemplateid", 0,
 		{
-		{"lld_override_optemplateid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"templateid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_optemplateid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"templateid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"lld_override_operationid,templateid"
 	},
-	{"lld_override_opinventory",	"lld_override_operationid",	0,
+	{"lld_override_opinventory", "lld_override_operationid", 0,
 		{
-		{"lld_override_operationid",	NULL,	"lld_override_operation",	"lld_override_operationid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"inventory_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"lld_override_operationid", NULL, "lld_override_operation", "lld_override_operationid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"inventory_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"trigger_queue",	"trigger_queueid",	0,
+	{"trigger_queue", "trigger_queueid", 0,
 		{
-		{"trigger_queueid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"objectid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ns",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"trigger_queueid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"objectid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ns", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"item_parameter",	"item_parameterid",	0,
+	{"item_parameter", "item_parameterid", 0,
 		{
-		{"item_parameterid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"value",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{0}
+			{"item_parameterid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL | ZBX_PROXY, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
 		},
 		NULL
 	},
-	{"role_rule",	"role_ruleid",	0,
+	{"role_rule", "role_ruleid", 0,
 		{
-		{"role_ruleid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"roleid",	NULL,	"role",	"roleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value_int",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value_str",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value_moduleid",	NULL,	"module",	"moduleid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{"value_serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"role_ruleid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"roleid", NULL, "role", "roleid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value_int", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value_str", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value_moduleid", NULL, "module", "moduleid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{"value_serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"token",	"tokenid",	0,
+	{"token", "tokenid", 0,
 		{
-		{"tokenid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"token",	NULL,	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	0,	0},
-		{"lastaccess",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"expires_at",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"created_at",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"creator_userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"tokenid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"token", NULL, NULL, NULL, 128, ZBX_TYPE_CHAR, 0, 0},
+			{"lastaccess", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"expires_at", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"created_at", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"creator_userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
 		},
 		"token"
 	},
-	{"item_tag",	"itemtagid",	0,
+	{"item_tag", "itemtagid", 0,
 		{
-		{"itemtagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"itemtagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"httptest_tag",	"httptesttagid",	0,
+	{"httptest_tag", "httptesttagid", 0,
 		{
-		{"httptesttagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"httptestid",	NULL,	"httptest",	"httptestid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"httptesttagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"httptestid", NULL, "httptest", "httptestid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sysmaps_element_tag",	"selementtagid",	0,
+	{"sysmaps_element_tag", "selementtagid", 0,
 		{
-		{"selementtagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"selementid",	NULL,	"sysmaps_elements",	"selementid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"selementtagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"selementid", NULL, "sysmaps_elements", "selementid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"report",	"reportid",	0,
+	{"report", "reportid", 0,
 		{
-		{"reportid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"period",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"cycle",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"weekdays",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"start_time",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"active_since",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"active_till",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"state",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastsent",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"info",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"reportid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"dashboardid", NULL, "dashboard", "dashboardid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"period", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"cycle", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"weekdays", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"start_time", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"active_since", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"active_till", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"state", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastsent", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"info", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"report_param",	"reportparamid",	0,
+	{"report_param", "reportparamid", 0,
 		{
-		{"reportparamid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"reportid",	NULL,	"report",	"reportid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"reportparamid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"reportid", NULL, "report", "reportid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"report_user",	"reportuserid",	0,
+	{"report_user", "reportuserid", 0,
 		{
-		{"reportuserid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"reportid",	NULL,	"report",	"reportid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"exclude",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"access_userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"reportuserid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"reportid", NULL, "report", "reportid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"exclude", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"access_userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
 		},
 		NULL
 	},
-	{"report_usrgrp",	"reportusrgrpid",	0,
+	{"report_usrgrp", "reportusrgrpid", 0,
 		{
-		{"reportusrgrpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"reportid",	NULL,	"report",	"reportid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"access_userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	0,	0},
-		{0}
+			{"reportusrgrpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"reportid", NULL, "report", "reportid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"access_userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
 		},
 		NULL
 	},
-	{"service_problem_tag",	"service_problem_tagid",	0,
+	{"service_problem_tag", "service_problem_tagid", 0,
 		{
-		{"service_problem_tagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"service_problem_tagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"service_problem",	"service_problemid",	0,
+	{"service_problem", "service_problemid", 0,
 		{
-		{"service_problemid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"eventid",	NULL,	"problem",	"eventid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"severity",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"service_problemid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"eventid", NULL, "problem", "eventid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"severity", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"service_tag",	"servicetagid",	0,
+	{"service_tag", "servicetagid", 0,
 		{
-		{"servicetagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"servicetagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"service_status_rule",	"service_status_ruleid",	0,
+	{"service_status_rule", "service_status_ruleid", 0,
 		{
-		{"service_status_ruleid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"serviceid",	NULL,	"services",	"serviceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"limit_value",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"limit_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"new_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"service_status_ruleid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"serviceid", NULL, "services", "serviceid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"limit_value", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"limit_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"new_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"ha_node",	"ha_nodeid",	0,
+	{"ha_node", "ha_nodeid", 0,
 		{
-		{"ha_nodeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_CUID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"address",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"port",	"10051",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastaccess",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ha_sessionid",	"",	NULL,	NULL,	0,	ZBX_TYPE_CUID,	ZBX_NOTNULL,	0},
-		{0}
+			{"ha_nodeid", NULL, NULL, NULL, 0, ZBX_TYPE_CUID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"address", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"port", "10051", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lastaccess", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ha_sessionid", "", NULL, NULL, 0, ZBX_TYPE_CUID, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"sla",	"slaid",	0,
+	{"sla", "slaid", 0,
 		{
-		{"slaid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"period",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"slo",	"99.9",	NULL,	NULL,	0,	ZBX_TYPE_FLOAT,	ZBX_NOTNULL,	0},
-		{"effective_date",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"timezone",	"UTC",	NULL,	NULL,	50,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"status",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{0}
+			{"slaid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"period", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"slo", "99.9", NULL, NULL, 0, ZBX_TYPE_FLOAT, ZBX_NOTNULL, 0},
+			{"effective_date", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timezone", "UTC", NULL, NULL, 50, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"status", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"sla_schedule",	"sla_scheduleid",	0,
+	{"sla_schedule", "sla_scheduleid", 0,
 		{
-		{"sla_scheduleid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"slaid",	NULL,	"sla",	"slaid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"period_from",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"period_to",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sla_scheduleid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"slaid", NULL, "sla", "slaid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"period_from", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"period_to", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sla_excluded_downtime",	"sla_excluded_downtimeid",	0,
+	{"sla_excluded_downtime", "sla_excluded_downtimeid", 0,
 		{
-		{"sla_excluded_downtimeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"slaid",	NULL,	"sla",	"slaid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"period_from",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"period_to",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"sla_excluded_downtimeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"slaid", NULL, "sla", "slaid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"period_from", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"period_to", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"sla_service_tag",	"sla_service_tagid",	0,
+	{"sla_service_tag", "sla_service_tagid", 0,
 		{
-		{"sla_service_tagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"slaid",	NULL,	"sla",	"slaid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"sla_service_tagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"slaid", NULL, "sla", "slaid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"host_rtdata",	"hostid",	0,
+	{"host_rtdata", "hostid", 0,
 		{
-		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"active_available",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lastaccess",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"version",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"compatibility",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"active_available", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"userdirectory",	"userdirectoryid",	0,
+	{"userdirectory", "userdirectoryid", 0,
 		{
-		{"userdirectoryid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"idp_type",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"provision_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"userdirectoryid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"idp_type", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"provision_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"userdirectory_ldap",	"userdirectoryid",	0,
+	{"userdirectory_ldap", "userdirectoryid", 0,
 		{
-		{"userdirectoryid",	NULL,	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"host",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"port",	"389",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"base_dn",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"search_attribute",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"bind_dn",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"bind_password",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"start_tls",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"search_filter",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"group_basedn",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"group_name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"group_member",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"user_ref_attr",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"group_filter",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"group_membership",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"user_username",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"user_lastname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"userdirectoryid", NULL, "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"host", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"port", "389", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"base_dn", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"search_attribute", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"bind_dn", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"bind_password", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"start_tls", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"search_filter", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"group_basedn", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"group_name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"group_member", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"user_ref_attr", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"group_filter", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"group_membership", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"user_username", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"user_lastname", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"userdirectory_saml",	"userdirectoryid",	0,
+	{"userdirectory_saml", "userdirectoryid", 0,
 		{
-		{"userdirectoryid",	NULL,	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"idp_entityid",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"sso_url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"slo_url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"username_attribute",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"sp_entityid",	"",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"nameid_format",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"sign_messages",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sign_assertions",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sign_authn_requests",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sign_logout_requests",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"sign_logout_responses",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"encrypt_nameid",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"encrypt_assertions",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"group_name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"user_username",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"user_lastname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"scim_status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"userdirectoryid", NULL, "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"idp_entityid", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"sso_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"slo_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"username_attribute", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"sp_entityid", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"nameid_format", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"sign_messages", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sign_assertions", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sign_authn_requests", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sign_logout_requests", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"sign_logout_responses", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"encrypt_nameid", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"encrypt_assertions", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"group_name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"user_username", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"user_lastname", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"scim_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"userdirectory_media",	"userdirectory_mediaid",	0,
+	{"userdirectory_media", "userdirectory_mediaid", 0,
 		{
-		{"userdirectory_mediaid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userdirectoryid",	NULL,	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"mediatypeid",	NULL,	"media_type",	"mediatypeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"attribute",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"userdirectory_mediaid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userdirectoryid", NULL, "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"attribute", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"active", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"severity", "63", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"period", "1-7,00:00-24:00", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"userdirectory_usrgrp",	"userdirectory_usrgrpid",	0,
+	{"userdirectory_usrgrp", "userdirectory_usrgrpid", 0,
 		{
-		{"userdirectory_usrgrpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userdirectory_idpgroupid",	NULL,	"userdirectory_idpgroup",	"userdirectory_idpgroupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"userdirectory_usrgrpid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userdirectory_idpgroupid", NULL, "userdirectory_idpgroup", "userdirectory_idpgroupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		"userdirectory_idpgroupid,usrgrpid"
 	},
-	{"userdirectory_idpgroup",	"userdirectory_idpgroupid",	0,
+	{"userdirectory_idpgroup", "userdirectory_idpgroupid", 0,
 		{
-		{"userdirectory_idpgroupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userdirectoryid",	NULL,	"userdirectory",	"userdirectoryid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"roleid",	NULL,	"role",	"roleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"userdirectory_idpgroupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userdirectoryid", NULL, "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"roleid", NULL, "role", "roleid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"changelog",	"changelogid",	0,
+	{"changelog", "changelogid", 0,
 		{
-		{"changelogid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
-		{"object",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"objectid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"operation",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"changelogid", NULL, NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL, 0},
+			{"object", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"objectid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"operation", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"clock", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"scim_group",	"scim_groupid",	0,
+	{"scim_group", "scim_groupid", 0,
 		{
-		{"scim_groupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"scim_groupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"user_scim_group",	"user_scim_groupid",	0,
+	{"user_scim_group", "user_scim_groupid", 0,
 		{
-		{"user_scim_groupid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"scim_groupid",	NULL,	"scim_group",	"scim_groupid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{0}
+			{"user_scim_groupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"scim_groupid", NULL, "scim_group", "scim_groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{0}
 		},
 		NULL
 	},
-	{"connector",	"connectorid",	0,
+	{"connector", "connectorid", 0,
 		{
-		{"connectorid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"protocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"data_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"max_records",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"max_senders",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"max_attempts",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"timeout",	"5s",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"http_proxy",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"username",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"token",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"verify_peer",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"verify_host",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ssl_cert_file",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ssl_key_file",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ssl_key_password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"status",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"tags_evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"connectorid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"protocol", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"data_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"max_records", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"max_senders", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"max_attempts", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timeout", "5s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"http_proxy", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"authtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"username", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"password", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"token", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"verify_peer", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"verify_host", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"ssl_cert_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"ssl_key_file", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"ssl_key_password", "", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"status", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"tags_evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"item_value_type", "31", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"attempt_interval", "5s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		"name"
 	},
-	{"connector_tag",	"connector_tagid",	0,
+	{"connector_tag", "connector_tagid", 0,
 		{
-		{"connector_tagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"connectorid",	NULL,	"connector",	"connectorid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"operator",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{0}
+			{"connector_tagid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"connectorid", NULL, "connector", "connectorid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"tag", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"operator", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
-	{"dbversion",	"dbversionid",	0,
+	{"proxy", "proxyid", 0,
 		{
-		{"dbversionid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"mandatory",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"optional",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{0}
+			{"proxyid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"operating_mode", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"tls_connect", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"tls_accept", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"tls_issuer", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"tls_subject", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"tls_psk_identity", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"tls_psk", "", NULL, NULL, 512, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"allowed_addresses", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"address", "127.0.0.1", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"port", "10051", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"custom_timeouts", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"timeout_zabbix_agent", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_simple_check", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_snmp_agent", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_external_check", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_db_monitor", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_http_agent", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_ssh_agent", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_telnet_agent", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"timeout_script", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"local_address", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"local_port", "10051", NULL, NULL, 64, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"proxy_groupid", NULL, "proxy_group", "proxy_groupid", 0, ZBX_TYPE_ID, 0, 0},
+			{"timeout_browser", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
+		},
+		"name"
+	},
+	{"proxy_rtdata", "proxyid", 0,
+		{
+			{"proxyid", NULL, "proxy", "proxyid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"lastaccess", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"version", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"compatibility", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"state", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"proxy_group", "proxy_groupid", 0,
+		{
+			{"proxy_groupid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"failover_delay", "1m", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"min_online", "1", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"proxy_group_rtdata", "proxy_groupid", 0,
+		{
+			{"proxy_groupid", NULL, "proxy_group", "proxy_groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"state", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"host_proxy", "hostproxyid", 0,
+		{
+			{"hostproxyid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, 0},
+			{"host", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"proxyid", NULL, "proxy", "proxyid", 0, ZBX_TYPE_ID, ZBX_PROXY, 0},
+			{"revision", "0", NULL, NULL, 0, ZBX_TYPE_UINT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_accept", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_issuer", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_subject", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_psk_identity", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"tls_psk", "", NULL, NULL, 512, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{0}
+		},
+		"hostid"
+	},
+	{"mfa", "mfaid", 0,
+		{
+			{"mfaid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"name", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"hash_function", "1", NULL, NULL, 0, ZBX_TYPE_INT, 0, 0},
+			{"code_length", "6", NULL, NULL, 0, ZBX_TYPE_INT, 0, 0},
+			{"api_hostname", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, 0, 0},
+			{"clientid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, 0, 0},
+			{"client_secret", "", NULL, NULL, 64, ZBX_TYPE_CHAR, 0, 0},
+			{0}
+		},
+		"name"
+	},
+	{"mfa_totp_secret", "mfa_totp_secretid", 0,
+		{
+			{"mfa_totp_secretid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"mfaid", NULL, "mfa", "mfaid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"totp_secret", "", NULL, NULL, 32, ZBX_TYPE_CHAR, 0, 0},
+			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"used_codes", " ", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
+	{"dbversion", "dbversionid", 0,
+		{
+			{"dbversionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"mandatory", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"optional", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
 		},
 		NULL
 	},
 	{0}
-
-#undef ZBX_TYPE_LONGTEXT_LEN
-#undef ZBX_TYPE_SHORTTEXT_LEN
-
 };
 
-const zbx_db_table_changelog_t	changelog_tables[] = {
+#undef ZBX_TYPE_LONGTEXT_LEN
+
+static const zbx_db_table_changelog_t	changelog_tables[] =
+{
 	{"trigger_tag", 6},
-	{"host_tag", 2},
-	{"triggers", 5},
-	{"dchecks", 10},
-	{"hosts", 1},
-	{"item_preproc", 8},
 	{"httpstep_field", 15},
-	{"connector", 17},
-	{"httpstepitem", 16},
-	{"httptest", 11},
-	{"drules", 9},
-	{"items", 3},
-	{"connector_tag", 18},
 	{"httpstep", 14},
-	{"functions", 7},
-	{"httptestitem", 13},
+	{"connector_tag", 18},
+	{"httpstepitem", 16},
 	{"item_tag", 4},
+	{"connector", 17},
+	{"item_preproc", 8},
+	{"proxy", 19},
+	{"httptestitem", 13},
+	{"host_proxy", 21},
+	{"proxy_group", 20},
+	{"functions", 7},
+	{"hosts", 1},
+	{"triggers", 5},
 	{"httptest_field", 12},
+	{"drules", 9},
+	{"dchecks", 10},
+	{"httptest", 11},
+	{"host_tag", 2},
+	{"items", 3},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
-const char	*const db_schema = "\
+static const char	*db_schema = "\
 CREATE TABLE role (\n\
 roleid bigint  NOT NULL,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
@@ -2623,6 +2847,12 @@ readonly integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (roleid)\n\
 );\n\
 CREATE UNIQUE INDEX role_1 ON role (name);\n\
+CREATE TABLE ugset (\n\
+ugsetid bigint  NOT NULL,\n\
+hash varchar(64) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (ugsetid)\n\
+);\n\
+CREATE INDEX ugset_1 ON ugset (hash);\n\
 CREATE TABLE users (\n\
 userid bigint  NOT NULL,\n\
 username varchar(100) DEFAULT '' NOT NULL,\n\
@@ -2660,9 +2890,15 @@ PRIMARY KEY (maintenanceid)\n\
 );\n\
 CREATE INDEX maintenances_1 ON maintenances (active_since,active_till);\n\
 CREATE UNIQUE INDEX maintenances_2 ON maintenances (name);\n\
+CREATE TABLE hgset (\n\
+hgsetid bigint  NOT NULL,\n\
+hash varchar(64) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (hgsetid)\n\
+);\n\
+CREATE INDEX hgset_1 ON hgset (hash);\n\
 CREATE TABLE hosts (\n\
 hostid bigint  NOT NULL,\n\
-proxy_hostid bigint  NULL REFERENCES hosts (hostid),\n\
+proxyid bigint  NULL REFERENCES proxy (proxyid),\n\
 host varchar(128) DEFAULT '' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 ipmi_authtype integer DEFAULT '-1' NOT NULL,\n\
@@ -2683,23 +2919,25 @@ tls_issuer varchar(1024) DEFAULT '' NOT NULL,\n\
 tls_subject varchar(1024) DEFAULT '' NOT NULL,\n\
 tls_psk_identity varchar(128) DEFAULT '' NOT NULL,\n\
 tls_psk varchar(512) DEFAULT '' NOT NULL,\n\
-proxy_address varchar(255) DEFAULT '' NOT NULL,\n\
-auto_compress integer DEFAULT '1' NOT NULL,\n\
 discover integer DEFAULT '0' NOT NULL,\n\
 custom_interfaces integer DEFAULT '0' NOT NULL,\n\
 uuid varchar(32) DEFAULT '' NOT NULL,\n\
 name_upper varchar(128) DEFAULT '' NOT NULL,\n\
 vendor_name varchar(64) DEFAULT '' NOT NULL,\n\
 vendor_version varchar(32) DEFAULT '' NOT NULL,\n\
+proxy_groupid bigint  NULL REFERENCES proxy_group (proxy_groupid),\n\
+monitored_by integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (hostid)\n\
 );\n\
 CREATE INDEX hosts_1 ON hosts (host);\n\
 CREATE INDEX hosts_2 ON hosts (status);\n\
-CREATE INDEX hosts_3 ON hosts (proxy_hostid);\n\
+CREATE INDEX hosts_3 ON hosts (proxyid);\n\
 CREATE INDEX hosts_4 ON hosts (name);\n\
 CREATE INDEX hosts_5 ON hosts (maintenanceid);\n\
 CREATE INDEX hosts_6 ON hosts (name_upper);\n\
 CREATE INDEX hosts_7 ON hosts (templateid);\n\
+CREATE INDEX hosts_8 ON hosts (proxy_groupid);\n\
+CREATE INDEX hosts_9 ON hosts (uuid);\n\
 CREATE TABLE hstgrp (\n\
 groupid bigint  NOT NULL,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
@@ -2709,6 +2947,19 @@ type integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (groupid)\n\
 );\n\
 CREATE UNIQUE INDEX hstgrp_1 ON hstgrp (type,name);\n\
+CREATE INDEX hstgrp_2 ON hstgrp (uuid);\n\
+CREATE TABLE hgset_group (\n\
+hgsetid bigint  NOT NULL REFERENCES hgset (hgsetid) ON DELETE CASCADE,\n\
+groupid bigint  NOT NULL REFERENCES hstgrp (groupid),\n\
+PRIMARY KEY (hgsetid,groupid)\n\
+);\n\
+CREATE INDEX hgset_group_1 ON hgset_group (groupid);\n\
+CREATE TABLE host_hgset (\n\
+hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
+hgsetid bigint  NOT NULL REFERENCES hgset (hgsetid),\n\
+PRIMARY KEY (hostid)\n\
+);\n\
+CREATE INDEX host_hgset_1 ON host_hgset (hgsetid);\n\
 CREATE TABLE group_prototype (\n\
 group_prototypeid bigint  NOT NULL,\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
@@ -2721,24 +2972,29 @@ CREATE INDEX group_prototype_1 ON group_prototype (hostid);\n\
 CREATE INDEX group_prototype_2 ON group_prototype (groupid);\n\
 CREATE INDEX group_prototype_3 ON group_prototype (templateid);\n\
 CREATE TABLE group_discovery (\n\
+groupdiscoveryid bigint  NOT NULL,\n\
 groupid bigint  NOT NULL REFERENCES hstgrp (groupid) ON DELETE CASCADE,\n\
 parent_group_prototypeid bigint  NOT NULL REFERENCES group_prototype (group_prototypeid),\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
-PRIMARY KEY (groupid)\n\
+status integer DEFAULT '0' NOT NULL,\n\
+PRIMARY KEY (groupdiscoveryid)\n\
 );\n\
-CREATE INDEX group_discovery_1 ON group_discovery (parent_group_prototypeid);\n\
+CREATE UNIQUE INDEX group_discovery_1 ON group_discovery (groupid,parent_group_prototypeid);\n\
+CREATE INDEX group_discovery_2 ON group_discovery (parent_group_prototypeid);\n\
 CREATE TABLE drules (\n\
 druleid bigint  NOT NULL,\n\
-proxy_hostid bigint  NULL REFERENCES hosts (hostid),\n\
+proxyid bigint  NULL REFERENCES proxy (proxyid),\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
 iprange varchar(2048) DEFAULT '' NOT NULL,\n\
 delay varchar(255) DEFAULT '1h' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
+concurrency_max integer DEFAULT '0' NOT NULL,\n\
+error varchar(2048) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (druleid)\n\
 );\n\
-CREATE INDEX drules_1 ON drules (proxy_hostid);\n\
+CREATE INDEX drules_1 ON drules (proxyid);\n\
 CREATE UNIQUE INDEX drules_2 ON drules (name);\n\
 CREATE TABLE dchecks (\n\
 dcheckid bigint  NOT NULL,\n\
@@ -2757,6 +3013,7 @@ snmpv3_privprotocol integer DEFAULT '0' NOT NULL,\n\
 snmpv3_contextname varchar(255) DEFAULT '' NOT NULL,\n\
 host_source integer DEFAULT '1' NOT NULL,\n\
 name_source integer DEFAULT '0' NOT NULL,\n\
+allow_redirect integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dcheckid)\n\
 );\n\
 CREATE INDEX dchecks_1 ON dchecks (druleid,host_source,name_source);\n\
@@ -2767,8 +3024,8 @@ delay varchar(255) DEFAULT '1m' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 agent varchar(255) DEFAULT 'Zabbix' NOT NULL,\n\
 authentication integer DEFAULT '0' NOT NULL,\n\
-http_user varchar(64) DEFAULT '' NOT NULL,\n\
-http_password varchar(64) DEFAULT '' NOT NULL,\n\
+http_user varchar(255) DEFAULT '' NOT NULL,\n\
+http_password varchar(255) DEFAULT '' NOT NULL,\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid),\n\
 templateid bigint  NULL REFERENCES httptest (httptestid),\n\
 http_proxy varchar(255) DEFAULT '' NOT NULL,\n\
@@ -2784,6 +3041,7 @@ PRIMARY KEY (httptestid)\n\
 CREATE UNIQUE INDEX httptest_2 ON httptest (hostid,name);\n\
 CREATE INDEX httptest_3 ON httptest (status);\n\
 CREATE INDEX httptest_4 ON httptest (templateid);\n\
+CREATE INDEX httptest_5 ON httptest (uuid);\n\
 CREATE TABLE httpstep (\n\
 httpstepid bigint  NOT NULL,\n\
 httptestid bigint  NOT NULL REFERENCES httptest (httptestid),\n\
@@ -2826,6 +3084,7 @@ uuid varchar(32) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (valuemapid)\n\
 );\n\
 CREATE UNIQUE INDEX valuemap_1 ON valuemap (hostid,name);\n\
+CREATE INDEX valuemap_2 ON valuemap (uuid);\n\
 CREATE TABLE items (\n\
 itemid bigint  NOT NULL,\n\
 type integer DEFAULT '0' NOT NULL,\n\
@@ -2834,7 +3093,7 @@ hostid bigint  NOT NULL REFERENCES hosts (hostid),\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
 key_ varchar(2048) DEFAULT '' NOT NULL,\n\
 delay varchar(1024) DEFAULT '0' NOT NULL,\n\
-history varchar(255) DEFAULT '90d' NOT NULL,\n\
+history varchar(255) DEFAULT '31d' NOT NULL,\n\
 trends varchar(255) DEFAULT '365d' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 value_type integer DEFAULT '0' NOT NULL,\n\
@@ -2847,21 +3106,21 @@ valuemapid bigint  NULL REFERENCES valuemap (valuemapid),\n\
 params text DEFAULT '' NOT NULL,\n\
 ipmi_sensor varchar(128) DEFAULT '' NOT NULL,\n\
 authtype integer DEFAULT '0' NOT NULL,\n\
-username varchar(64) DEFAULT '' NOT NULL,\n\
-password varchar(64) DEFAULT '' NOT NULL,\n\
+username varchar(255) DEFAULT '' NOT NULL,\n\
+password varchar(255) DEFAULT '' NOT NULL,\n\
 publickey varchar(64) DEFAULT '' NOT NULL,\n\
 privatekey varchar(64) DEFAULT '' NOT NULL,\n\
 flags integer DEFAULT '0' NOT NULL,\n\
 interfaceid bigint  NULL REFERENCES interface (interfaceid),\n\
 description text DEFAULT '' NOT NULL,\n\
 inventory_link integer DEFAULT '0' NOT NULL,\n\
-lifetime varchar(255) DEFAULT '30d' NOT NULL,\n\
+lifetime varchar(255) DEFAULT '7d' NOT NULL,\n\
 evaltype integer DEFAULT '0' NOT NULL,\n\
 jmx_endpoint varchar(255) DEFAULT '' NOT NULL,\n\
 master_itemid bigint  NULL REFERENCES items (itemid),\n\
-timeout varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout varchar(255) DEFAULT '' NOT NULL,\n\
 url varchar(2048) DEFAULT '' NOT NULL,\n\
-query_fields varchar(2048) DEFAULT '' NOT NULL,\n\
+query_fields text DEFAULT '' NOT NULL,\n\
 posts text DEFAULT '' NOT NULL,\n\
 status_codes varchar(255) DEFAULT '200' NOT NULL,\n\
 follow_redirects integer DEFAULT '1' NOT NULL,\n\
@@ -2879,7 +3138,9 @@ verify_host integer DEFAULT '0' NOT NULL,\n\
 allow_traps integer DEFAULT '0' NOT NULL,\n\
 discover integer DEFAULT '0' NOT NULL,\n\
 uuid varchar(32) DEFAULT '' NOT NULL,\n\
-name_upper varchar(255) DEFAULT '' NOT NULL,\n\
+lifetime_type integer DEFAULT '0' NOT NULL,\n\
+enabled_lifetime_type integer DEFAULT '2' NOT NULL,\n\
+enabled_lifetime varchar(255) DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (itemid)\n\
 );\n\
 CREATE INDEX items_1 ON items (hostid,key_);\n\
@@ -2889,7 +3150,7 @@ CREATE INDEX items_5 ON items (valuemapid);\n\
 CREATE INDEX items_6 ON items (interfaceid);\n\
 CREATE INDEX items_7 ON items (master_itemid);\n\
 CREATE INDEX items_8 ON items (key_);\n\
-CREATE INDEX items_9 ON items (hostid,name_upper);\n\
+CREATE INDEX items_10 ON items (uuid);\n\
 CREATE TABLE httpstepitem (\n\
 httpstepitemid bigint  NOT NULL,\n\
 httpstepid bigint  NOT NULL REFERENCES httpstep (httpstepid),\n\
@@ -2928,7 +3189,7 @@ smtp_authentication integer DEFAULT '0' NOT NULL,\n\
 maxsessions integer DEFAULT '1' NOT NULL,\n\
 maxattempts integer DEFAULT '3' NOT NULL,\n\
 attempt_interval varchar(32) DEFAULT '10s' NOT NULL,\n\
-content_type integer DEFAULT '1' NOT NULL,\n\
+message_format integer DEFAULT '1' NOT NULL,\n\
 script text DEFAULT '' NOT NULL,\n\
 timeout varchar(32) DEFAULT '30s' NOT NULL,\n\
 process_tags integer DEFAULT '0' NOT NULL,\n\
@@ -2966,10 +3227,13 @@ gui_access integer DEFAULT '0' NOT NULL,\n\
 users_status integer DEFAULT '0' NOT NULL,\n\
 debug_mode integer DEFAULT '0' NOT NULL,\n\
 userdirectoryid bigint DEFAULT NULL NULL REFERENCES userdirectory (userdirectoryid),\n\
+mfa_status integer DEFAULT '0' NOT NULL,\n\
+mfaid bigint  NULL REFERENCES mfa (mfaid),\n\
 PRIMARY KEY (usrgrpid)\n\
 );\n\
 CREATE UNIQUE INDEX usrgrp_1 ON usrgrp (name);\n\
 CREATE INDEX usrgrp_2 ON usrgrp (userdirectoryid);\n\
+CREATE INDEX usrgrp_3 ON usrgrp (mfaid);\n\
 CREATE TABLE users_groups (\n\
 id bigint  NOT NULL,\n\
 usrgrpid bigint  NOT NULL REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE,\n\
@@ -2978,6 +3242,18 @@ PRIMARY KEY (id)\n\
 );\n\
 CREATE UNIQUE INDEX users_groups_1 ON users_groups (usrgrpid,userid);\n\
 CREATE INDEX users_groups_2 ON users_groups (userid);\n\
+CREATE TABLE ugset_group (\n\
+ugsetid bigint  NOT NULL REFERENCES ugset (ugsetid) ON DELETE CASCADE,\n\
+usrgrpid bigint  NOT NULL REFERENCES usrgrp (usrgrpid),\n\
+PRIMARY KEY (ugsetid,usrgrpid)\n\
+);\n\
+CREATE INDEX ugset_group_1 ON ugset_group (usrgrpid);\n\
+CREATE TABLE user_ugset (\n\
+userid bigint  NOT NULL REFERENCES users (userid) ON DELETE CASCADE,\n\
+ugsetid bigint  NOT NULL REFERENCES ugset (ugsetid),\n\
+PRIMARY KEY (userid)\n\
+);\n\
+CREATE INDEX user_ugset_1 ON user_ugset (ugsetid);\n\
 CREATE TABLE scripts (\n\
 scriptid bigint  NOT NULL,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
@@ -3000,6 +3276,11 @@ privatekey varchar(64) DEFAULT '' NOT NULL,\n\
 menu_path varchar(255) DEFAULT '' NOT NULL,\n\
 url varchar(2048) DEFAULT '' NOT NULL,\n\
 new_window integer DEFAULT '1' NOT NULL,\n\
+manualinput integer DEFAULT '0' NOT NULL,\n\
+manualinput_prompt varchar(255) DEFAULT '' NOT NULL,\n\
+manualinput_validator varchar(2048) DEFAULT '' NOT NULL,\n\
+manualinput_validator_type integer DEFAULT '0' NOT NULL,\n\
+manualinput_default_value varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (scriptid)\n\
 );\n\
 CREATE INDEX scripts_1 ON scripts (usrgrpid);\n\
@@ -3040,6 +3321,14 @@ recovery integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (operationid)\n\
 );\n\
 CREATE INDEX operations_1 ON operations (actionid);\n\
+CREATE TABLE optag (\n\
+optagid bigint  NOT NULL,\n\
+operationid bigint  NOT NULL REFERENCES operations (operationid) ON DELETE CASCADE,\n\
+tag varchar(255) DEFAULT '' NOT NULL,\n\
+value varchar(255) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (optagid)\n\
+);\n\
+CREATE INDEX optag_1 ON optag (operationid);\n\
 CREATE TABLE opmessage (\n\
 operationid bigint  NOT NULL REFERENCES operations (operationid) ON DELETE CASCADE,\n\
 default_msg integer DEFAULT '1' NOT NULL,\n\
@@ -3163,12 +3452,12 @@ hk_events_autoreg varchar(32) DEFAULT '1d' NOT NULL,\n\
 hk_services_mode integer DEFAULT '1' NOT NULL,\n\
 hk_services varchar(32) DEFAULT '365d' NOT NULL,\n\
 hk_audit_mode integer DEFAULT '1' NOT NULL,\n\
-hk_audit varchar(32) DEFAULT '365d' NOT NULL,\n\
+hk_audit varchar(32) DEFAULT '31d' NOT NULL,\n\
 hk_sessions_mode integer DEFAULT '1' NOT NULL,\n\
 hk_sessions varchar(32) DEFAULT '365d' NOT NULL,\n\
 hk_history_mode integer DEFAULT '1' NOT NULL,\n\
 hk_history_global integer DEFAULT '0' NOT NULL,\n\
-hk_history varchar(32) DEFAULT '90d' NOT NULL,\n\
+hk_history varchar(32) DEFAULT '31d' NOT NULL,\n\
 hk_trends_mode integer DEFAULT '1' NOT NULL,\n\
 hk_trends_global integer DEFAULT '0' NOT NULL,\n\
 hk_trends varchar(32) DEFAULT '365d' NOT NULL,\n\
@@ -3207,7 +3496,7 @@ media_type_test_timeout varchar(32) DEFAULT '65s' NOT NULL,\n\
 script_timeout varchar(32) DEFAULT '60s' NOT NULL,\n\
 item_test_timeout varchar(32) DEFAULT '60s' NOT NULL,\n\
 session_key varchar(32) DEFAULT '' NOT NULL,\n\
-url varchar(255) DEFAULT '' NOT NULL,\n\
+url varchar(2048) DEFAULT '' NOT NULL,\n\
 report_test_timeout varchar(32) DEFAULT '60s' NOT NULL,\n\
 dbversion_status text DEFAULT '' NOT NULL,\n\
 hk_events_service varchar(32) DEFAULT '1d' NOT NULL,\n\
@@ -3216,7 +3505,7 @@ passwd_check_rules integer DEFAULT '8' NOT NULL,\n\
 auditlog_enabled integer DEFAULT '1' NOT NULL,\n\
 ha_failover_delay varchar(32) DEFAULT '1m' NOT NULL,\n\
 geomaps_tile_provider varchar(255) DEFAULT '' NOT NULL,\n\
-geomaps_tile_url varchar(1024) DEFAULT '' NOT NULL,\n\
+geomaps_tile_url varchar(2048) DEFAULT '' NOT NULL,\n\
 geomaps_max_zoom integer DEFAULT '0' NOT NULL,\n\
 geomaps_attribution varchar(1024) DEFAULT '' NOT NULL,\n\
 vault_provider integer DEFAULT '0' NOT NULL,\n\
@@ -3226,12 +3515,28 @@ jit_provision_interval varchar(32) DEFAULT '1h' NOT NULL,\n\
 saml_jit_status integer DEFAULT '0' NOT NULL,\n\
 ldap_jit_status integer DEFAULT '0' NOT NULL,\n\
 disabled_usrgrpid bigint DEFAULT NULL NULL REFERENCES usrgrp (usrgrpid),\n\
+timeout_zabbix_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_simple_check varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_snmp_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_external_check varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_db_monitor varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_http_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_ssh_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_telnet_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
+timeout_script varchar(255) DEFAULT '3s' NOT NULL,\n\
+auditlog_mode integer DEFAULT '1' NOT NULL,\n\
+mfa_status integer DEFAULT '0' NOT NULL,\n\
+mfaid bigint  NULL REFERENCES mfa (mfaid),\n\
+software_update_checkid varchar(32) DEFAULT '' NOT NULL,\n\
+software_update_check_data text DEFAULT '' NOT NULL,\n\
+timeout_browser varchar(255) DEFAULT '60s' NOT NULL,\n\
 PRIMARY KEY (configid)\n\
 );\n\
 CREATE INDEX config_1 ON config (alert_usrgrpid);\n\
 CREATE INDEX config_2 ON config (discovery_groupid);\n\
 CREATE INDEX config_3 ON config (ldap_userdirectoryid);\n\
 CREATE INDEX config_4 ON config (disabled_usrgrpid);\n\
+CREATE INDEX config_5 ON config (mfaid);\n\
 CREATE TABLE triggers (\n\
 triggerid bigint  NOT NULL,\n\
 expression varchar(2048) DEFAULT '' NOT NULL,\n\
@@ -3262,6 +3567,7 @@ PRIMARY KEY (triggerid)\n\
 CREATE INDEX triggers_1 ON triggers (status);\n\
 CREATE INDEX triggers_2 ON triggers (value,lastchange);\n\
 CREATE INDEX triggers_3 ON triggers (templateid);\n\
+CREATE INDEX triggers_4 ON triggers (uuid);\n\
 CREATE TABLE trigger_depends (\n\
 triggerdepid bigint  NOT NULL,\n\
 triggerid_down bigint  NOT NULL REFERENCES triggers (triggerid) ON DELETE CASCADE,\n\
@@ -3308,6 +3614,7 @@ CREATE INDEX graphs_1 ON graphs (name);\n\
 CREATE INDEX graphs_2 ON graphs (templateid);\n\
 CREATE INDEX graphs_3 ON graphs (ymin_itemid);\n\
 CREATE INDEX graphs_4 ON graphs (ymax_itemid);\n\
+CREATE INDEX graphs_5 ON graphs (uuid);\n\
 CREATE TABLE graphs_items (\n\
 gitemid bigint  NOT NULL,\n\
 graphid bigint  NOT NULL REFERENCES graphs (graphid) ON DELETE CASCADE,\n\
@@ -3394,10 +3701,12 @@ sendto varchar(1024) DEFAULT '' NOT NULL,\n\
 active integer DEFAULT '0' NOT NULL,\n\
 severity integer DEFAULT '63' NOT NULL,\n\
 period varchar(1024) DEFAULT '1-7,00:00-24:00' NOT NULL,\n\
+userdirectory_mediaid bigint DEFAULT NULL NULL REFERENCES userdirectory_media (userdirectory_mediaid) ON DELETE CASCADE,\n\
 PRIMARY KEY (mediaid)\n\
 );\n\
 CREATE INDEX media_1 ON media (userid);\n\
 CREATE INDEX media_2 ON media (mediatypeid);\n\
+CREATE INDEX media_3 ON media (userdirectory_mediaid);\n\
 CREATE TABLE rights (\n\
 rightid bigint  NOT NULL,\n\
 groupid bigint  NOT NULL REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE,\n\
@@ -3407,6 +3716,13 @@ PRIMARY KEY (rightid)\n\
 );\n\
 CREATE INDEX rights_1 ON rights (groupid);\n\
 CREATE INDEX rights_2 ON rights (id);\n\
+CREATE TABLE permission (\n\
+ugsetid bigint  NOT NULL REFERENCES ugset (ugsetid) ON DELETE CASCADE,\n\
+hgsetid bigint  NOT NULL REFERENCES hgset (hgsetid) ON DELETE CASCADE,\n\
+permission integer DEFAULT '2' NOT NULL,\n\
+PRIMARY KEY (ugsetid,hgsetid)\n\
+);\n\
+CREATE INDEX permission_1 ON permission (hgsetid);\n\
 CREATE TABLE services (\n\
 serviceid bigint  NOT NULL,\n\
 name varchar(128) DEFAULT '' NOT NULL,\n\
@@ -3421,6 +3737,7 @@ uuid varchar(32) DEFAULT '' NOT NULL,\n\
 created_at integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (serviceid)\n\
 );\n\
+CREATE INDEX services_1 ON services (uuid);\n\
 CREATE TABLE services_links (\n\
 linkid bigint  NOT NULL,\n\
 serviceupid bigint  NOT NULL REFERENCES services (serviceid) ON DELETE CASCADE,\n\
@@ -3540,7 +3857,7 @@ CREATE TABLE sysmap_element_url (\n\
 sysmapelementurlid bigint  NOT NULL,\n\
 selementid bigint  NOT NULL REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE,\n\
 name varchar(255)  NOT NULL,\n\
-url varchar(255) DEFAULT '' NOT NULL,\n\
+url varchar(2048) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (sysmapelementurlid)\n\
 );\n\
 CREATE UNIQUE INDEX sysmap_element_url_1 ON sysmap_element_url (selementid,name);\n\
@@ -3548,7 +3865,7 @@ CREATE TABLE sysmap_url (\n\
 sysmapurlid bigint  NOT NULL,\n\
 sysmapid bigint  NOT NULL REFERENCES sysmaps (sysmapid) ON DELETE CASCADE,\n\
 name varchar(255)  NOT NULL,\n\
-url varchar(255) DEFAULT '' NOT NULL,\n\
+url varchar(2048) DEFAULT '' NOT NULL,\n\
 elementtype integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (sysmapurlid)\n\
 );\n\
@@ -3697,8 +4014,15 @@ value text DEFAULT '' NOT NULL,\n\
 ns integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (itemid,clock,ns)\n\
 );\n\
+CREATE TABLE history_bin (\n\
+itemid bigint  NOT NULL,\n\
+clock integer DEFAULT '0' NOT NULL,\n\
+ns integer DEFAULT '0' NOT NULL,\n\
+value longblob DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (itemid,clock,ns)\n\
+);\n\
 CREATE TABLE proxy_history (\n\
-id integer  NOT NULL PRIMARY KEY AUTOINCREMENT,\n\
+id bigint  NOT NULL,\n\
 itemid bigint  NOT NULL,\n\
 clock integer DEFAULT '0' NOT NULL,\n\
 timestamp integer DEFAULT '0' NOT NULL,\n\
@@ -3711,11 +4035,12 @@ state integer DEFAULT '0' NOT NULL,\n\
 lastlogsize bigint DEFAULT '0' NOT NULL,\n\
 mtime integer DEFAULT '0' NOT NULL,\n\
 flags integer DEFAULT '0' NOT NULL,\n\
-write_clock integer DEFAULT '0' NOT NULL\n\
+write_clock integer DEFAULT '0' NOT NULL,\n\
+PRIMARY KEY (id)\n\
 );\n\
-CREATE INDEX proxy_history_1 ON proxy_history (clock);\n\
+CREATE INDEX proxy_history_2 ON proxy_history (write_clock);\n\
 CREATE TABLE proxy_dhistory (\n\
-id integer  NOT NULL PRIMARY KEY AUTOINCREMENT,\n\
+id bigint  NOT NULL,\n\
 clock integer DEFAULT '0' NOT NULL,\n\
 druleid bigint  NOT NULL,\n\
 ip varchar(39) DEFAULT '' NOT NULL,\n\
@@ -3723,7 +4048,9 @@ port integer DEFAULT '0' NOT NULL,\n\
 value varchar(255) DEFAULT '' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 dcheckid bigint  NULL,\n\
-dns varchar(255) DEFAULT '' NOT NULL\n\
+dns varchar(255) DEFAULT '' NOT NULL,\n\
+error varchar(2048) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (id)\n\
 );\n\
 CREATE INDEX proxy_dhistory_1 ON proxy_dhistory (clock);\n\
 CREATE INDEX proxy_dhistory_2 ON proxy_dhistory (druleid);\n\
@@ -3800,6 +4127,8 @@ PRIMARY KEY (auditid)\n\
 CREATE INDEX auditlog_1 ON auditlog (userid,clock);\n\
 CREATE INDEX auditlog_2 ON auditlog (clock);\n\
 CREATE INDEX auditlog_3 ON auditlog (resourcetype,resourceid);\n\
+CREATE INDEX auditlog_4 ON auditlog (recordsetid);\n\
+CREATE INDEX auditlog_5 ON auditlog (ip);\n\
 CREATE TABLE service_alarms (\n\
 servicealarmid bigint  NOT NULL,\n\
 serviceid bigint  NOT NULL REFERENCES services (serviceid) ON DELETE CASCADE,\n\
@@ -3811,7 +4140,7 @@ CREATE INDEX service_alarms_1 ON service_alarms (serviceid,clock);\n\
 CREATE INDEX service_alarms_2 ON service_alarms (clock);\n\
 CREATE TABLE autoreg_host (\n\
 autoreg_hostid bigint  NOT NULL,\n\
-proxy_hostid bigint  NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
+proxyid bigint  NULL REFERENCES proxy (proxyid) ON DELETE CASCADE,\n\
 host varchar(128) DEFAULT '' NOT NULL,\n\
 listen_ip varchar(39) DEFAULT '' NOT NULL,\n\
 listen_port integer DEFAULT '0' NOT NULL,\n\
@@ -3822,9 +4151,9 @@ tls_accepted integer DEFAULT '1' NOT NULL,\n\
 PRIMARY KEY (autoreg_hostid)\n\
 );\n\
 CREATE INDEX autoreg_host_1 ON autoreg_host (host);\n\
-CREATE INDEX autoreg_host_2 ON autoreg_host (proxy_hostid);\n\
+CREATE INDEX autoreg_host_2 ON autoreg_host (proxyid);\n\
 CREATE TABLE proxy_autoreg_host (\n\
-id integer  NOT NULL PRIMARY KEY AUTOINCREMENT,\n\
+id bigint  NOT NULL,\n\
 clock integer DEFAULT '0' NOT NULL,\n\
 host varchar(128) DEFAULT '' NOT NULL,\n\
 listen_ip varchar(39) DEFAULT '' NOT NULL,\n\
@@ -3832,7 +4161,8 @@ listen_port integer DEFAULT '0' NOT NULL,\n\
 listen_dns varchar(255) DEFAULT '' NOT NULL,\n\
 host_metadata text DEFAULT '' NOT NULL,\n\
 flags integer DEFAULT '0' NOT NULL,\n\
-tls_accepted integer DEFAULT '1' NOT NULL\n\
+tls_accepted integer DEFAULT '1' NOT NULL,\n\
+PRIMARY KEY (id)\n\
 );\n\
 CREATE INDEX proxy_autoreg_host_1 ON proxy_autoreg_host (clock);\n\
 CREATE TABLE dhosts (\n\
@@ -3878,15 +4208,16 @@ CREATE UNIQUE INDEX escalations_1 ON escalations (triggerid,itemid,serviceid,esc
 CREATE INDEX escalations_2 ON escalations (eventid);\n\
 CREATE INDEX escalations_3 ON escalations (nextcheck);\n\
 CREATE TABLE globalvars (\n\
-globalvarid bigint  NOT NULL,\n\
-snmp_lastsize bigint DEFAULT '0' NOT NULL,\n\
-PRIMARY KEY (globalvarid)\n\
+name varchar(64) DEFAULT '' NOT NULL,\n\
+value varchar(2048) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (name)\n\
 );\n\
 CREATE TABLE graph_discovery (\n\
 graphid bigint  NOT NULL REFERENCES graphs (graphid) ON DELETE CASCADE,\n\
 parent_graphid bigint  NOT NULL REFERENCES graphs (graphid),\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
+status integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (graphid)\n\
 );\n\
 CREATE INDEX graph_discovery_1 ON graph_discovery (parent_graphid);\n\
@@ -3927,9 +4258,9 @@ vendor varchar(64) DEFAULT '' NOT NULL,\n\
 contract_number varchar(64) DEFAULT '' NOT NULL,\n\
 installer_name varchar(64) DEFAULT '' NOT NULL,\n\
 deployment_status varchar(64) DEFAULT '' NOT NULL,\n\
-url_a varchar(255) DEFAULT '' NOT NULL,\n\
-url_b varchar(255) DEFAULT '' NOT NULL,\n\
-url_c varchar(255) DEFAULT '' NOT NULL,\n\
+url_a varchar(2048) DEFAULT '' NOT NULL,\n\
+url_b varchar(2048) DEFAULT '' NOT NULL,\n\
+url_c varchar(2048) DEFAULT '' NOT NULL,\n\
 host_networks text DEFAULT '' NOT NULL,\n\
 host_netmask varchar(39) DEFAULT '' NOT NULL,\n\
 host_router varchar(39) DEFAULT '' NOT NULL,\n\
@@ -3987,6 +4318,9 @@ parent_itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
 key_ varchar(2048) DEFAULT '' NOT NULL,\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
+status integer DEFAULT '0' NOT NULL,\n\
+disable_source integer DEFAULT '0' NOT NULL,\n\
+ts_disable integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (itemdiscoveryid)\n\
 );\n\
 CREATE UNIQUE INDEX item_discovery_1 ON item_discovery (itemid,parent_itemid);\n\
@@ -3998,6 +4332,9 @@ parent_itemid bigint  NULL REFERENCES items (itemid),\n\
 host varchar(128) DEFAULT '' NOT NULL,\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
+status integer DEFAULT '0' NOT NULL,\n\
+disable_source integer DEFAULT '0' NOT NULL,\n\
+ts_disable integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (hostid)\n\
 );\n\
 CREATE INDEX host_discovery_1 ON host_discovery (parent_hostid);\n\
@@ -4036,6 +4373,9 @@ triggerid bigint  NOT NULL REFERENCES triggers (triggerid) ON DELETE CASCADE,\n\
 parent_triggerid bigint  NOT NULL REFERENCES triggers (triggerid),\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
+status integer DEFAULT '0' NOT NULL,\n\
+disable_source integer DEFAULT '0' NOT NULL,\n\
+ts_disable integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (triggerid)\n\
 );\n\
 CREATE INDEX trigger_discovery_1 ON trigger_discovery (parent_triggerid);\n\
@@ -4054,6 +4394,12 @@ lastlogsize bigint DEFAULT '0' NOT NULL,\n\
 state integer DEFAULT '0' NOT NULL,\n\
 mtime integer DEFAULT '0' NOT NULL,\n\
 error varchar(2048) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (itemid)\n\
+);\n\
+CREATE TABLE item_rtname (\n\
+itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
+name_resolved varchar(2048) DEFAULT '' NOT NULL,\n\
+name_resolved_upper varchar(2048) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (itemid)\n\
 );\n\
 CREATE TABLE opinventory (\n\
@@ -4183,11 +4529,11 @@ type integer  NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 clock integer DEFAULT '0' NOT NULL,\n\
 ttl integer DEFAULT '0' NOT NULL,\n\
-proxy_hostid bigint  NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
+proxyid bigint  NULL REFERENCES proxy (proxyid) ON DELETE CASCADE,\n\
 PRIMARY KEY (taskid)\n\
 );\n\
-CREATE INDEX task_1 ON task (status,proxy_hostid);\n\
-CREATE INDEX task_2 ON task (proxy_hostid);\n\
+CREATE INDEX task_1 ON task (status,proxyid);\n\
+CREATE INDEX task_2 ON task (proxyid);\n\
 CREATE TABLE task_close_problem (\n\
 taskid bigint  NOT NULL REFERENCES task (taskid) ON DELETE CASCADE,\n\
 acknowledgeid bigint  NOT NULL,\n\
@@ -4308,6 +4654,7 @@ PRIMARY KEY (dashboardid)\n\
 );\n\
 CREATE INDEX dashboard_1 ON dashboard (userid);\n\
 CREATE INDEX dashboard_2 ON dashboard (templateid);\n\
+CREATE INDEX dashboard_3 ON dashboard (uuid);\n\
 CREATE TABLE dashboard_user (\n\
 dashboard_userid bigint  NOT NULL,\n\
 dashboardid bigint  NOT NULL REFERENCES dashboard (dashboardid) ON DELETE CASCADE,\n\
@@ -4354,7 +4701,7 @@ widgetid bigint  NOT NULL REFERENCES widget (widgetid) ON DELETE CASCADE,\n\
 type integer DEFAULT '0' NOT NULL,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
 value_int integer DEFAULT '0' NOT NULL,\n\
-value_str varchar(255) DEFAULT '' NOT NULL,\n\
+value_str varchar(2048) DEFAULT '' NOT NULL,\n\
 value_groupid bigint  NULL REFERENCES hstgrp (groupid) ON DELETE CASCADE,\n\
 value_hostid bigint  NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
 value_itemid bigint  NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
@@ -4497,7 +4844,7 @@ PRIMARY KEY (lld_override_operationid)\n\
 );\n\
 CREATE TABLE lld_override_ophistory (\n\
 lld_override_operationid bigint  NOT NULL REFERENCES lld_override_operation (lld_override_operationid) ON DELETE CASCADE,\n\
-history varchar(255) DEFAULT '90d' NOT NULL,\n\
+history varchar(255) DEFAULT '31d' NOT NULL,\n\
 PRIMARY KEY (lld_override_operationid)\n\
 );\n\
 CREATE TABLE lld_override_optrends (\n\
@@ -4742,9 +5089,6 @@ CREATE INDEX sla_service_tag_1 ON sla_service_tag (slaid);\n\
 CREATE TABLE host_rtdata (\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
 active_available integer DEFAULT '0' NOT NULL,\n\
-lastaccess integer DEFAULT '0' NOT NULL,\n\
-version integer DEFAULT '0' NOT NULL,\n\
-compatibility integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (hostid)\n\
 );\n\
 CREATE TABLE userdirectory (\n\
@@ -4803,6 +5147,9 @@ userdirectoryid bigint  NOT NULL REFERENCES userdirectory (userdirectoryid) ON D
 mediatypeid bigint  NOT NULL REFERENCES media_type (mediatypeid) ON DELETE CASCADE,\n\
 name varchar(64) DEFAULT '' NOT NULL,\n\
 attribute varchar(255) DEFAULT '' NOT NULL,\n\
+active integer DEFAULT '0' NOT NULL,\n\
+severity integer DEFAULT '63' NOT NULL,\n\
+period varchar(1024) DEFAULT '1-7,00:00-24:00' NOT NULL,\n\
 PRIMARY KEY (userdirectory_mediaid)\n\
 );\n\
 CREATE INDEX userdirectory_media_1 ON userdirectory_media (userdirectoryid);\n\
@@ -4815,7 +5162,6 @@ PRIMARY KEY (userdirectory_usrgrpid)\n\
 );\n\
 CREATE UNIQUE INDEX userdirectory_usrgrp_1 ON userdirectory_usrgrp (userdirectory_idpgroupid,usrgrpid);\n\
 CREATE INDEX userdirectory_usrgrp_2 ON userdirectory_usrgrp (usrgrpid);\n\
-CREATE INDEX userdirectory_usrgrp_3 ON userdirectory_usrgrp (userdirectory_idpgroupid);\n\
 CREATE TABLE userdirectory_idpgroup (\n\
 userdirectory_idpgroupid bigint  NOT NULL,\n\
 userdirectoryid bigint  NOT NULL REFERENCES userdirectory (userdirectoryid) ON DELETE CASCADE,\n\
@@ -4859,8 +5205,8 @@ max_attempts integer DEFAULT '1' NOT NULL,\n\
 timeout varchar(255) DEFAULT '5s' NOT NULL,\n\
 http_proxy varchar(255) DEFAULT '' NOT NULL,\n\
 authtype integer DEFAULT '0' NOT NULL,\n\
-username varchar(64) DEFAULT '' NOT NULL,\n\
-password varchar(64) DEFAULT '' NOT NULL,\n\
+username varchar(255) DEFAULT '' NOT NULL,\n\
+password varchar(255) DEFAULT '' NOT NULL,\n\
 token varchar(128) DEFAULT '' NOT NULL,\n\
 verify_peer integer DEFAULT '1' NOT NULL,\n\
 verify_host integer DEFAULT '1' NOT NULL,\n\
@@ -4870,6 +5216,8 @@ ssl_key_password varchar(64) DEFAULT '' NOT NULL,\n\
 description text DEFAULT '' NOT NULL,\n\
 status integer DEFAULT '1' NOT NULL,\n\
 tags_evaltype integer DEFAULT '0' NOT NULL,\n\
+item_value_type integer DEFAULT '31' NOT NULL,\n\
+attempt_interval varchar(32) DEFAULT '5s' NOT NULL,\n\
 PRIMARY KEY (connectorid)\n\
 );\n\
 CREATE UNIQUE INDEX connector_1 ON connector (name);\n\
@@ -4882,13 +5230,105 @@ value varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (connector_tagid)\n\
 );\n\
 CREATE INDEX connector_tag_1 ON connector_tag (connectorid);\n\
+CREATE TABLE proxy (\n\
+proxyid bigint  NOT NULL,\n\
+name varchar(128) DEFAULT '' NOT NULL,\n\
+operating_mode integer DEFAULT '0' NOT NULL,\n\
+description text DEFAULT '' NOT NULL,\n\
+tls_connect integer DEFAULT '1' NOT NULL,\n\
+tls_accept integer DEFAULT '1' NOT NULL,\n\
+tls_issuer varchar(1024) DEFAULT '' NOT NULL,\n\
+tls_subject varchar(1024) DEFAULT '' NOT NULL,\n\
+tls_psk_identity varchar(128) DEFAULT '' NOT NULL,\n\
+tls_psk varchar(512) DEFAULT '' NOT NULL,\n\
+allowed_addresses varchar(255) DEFAULT '' NOT NULL,\n\
+address varchar(255) DEFAULT '127.0.0.1' NOT NULL,\n\
+port varchar(64) DEFAULT '10051' NOT NULL,\n\
+custom_timeouts integer DEFAULT '0' NOT NULL,\n\
+timeout_zabbix_agent varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_simple_check varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_snmp_agent varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_external_check varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_db_monitor varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_http_agent varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_ssh_agent varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_telnet_agent varchar(255) DEFAULT '' NOT NULL,\n\
+timeout_script varchar(255) DEFAULT '' NOT NULL,\n\
+local_address varchar(255) DEFAULT '' NOT NULL,\n\
+local_port varchar(64) DEFAULT '10051' NOT NULL,\n\
+proxy_groupid bigint  NULL REFERENCES proxy_group (proxy_groupid),\n\
+timeout_browser varchar(255) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (proxyid)\n\
+);\n\
+CREATE UNIQUE INDEX proxy_1 ON proxy (name);\n\
+CREATE INDEX proxy_2 ON proxy (proxy_groupid);\n\
+CREATE TABLE proxy_rtdata (\n\
+proxyid bigint  NOT NULL REFERENCES proxy (proxyid) ON DELETE CASCADE,\n\
+lastaccess integer DEFAULT '0' NOT NULL,\n\
+version integer DEFAULT '0' NOT NULL,\n\
+compatibility integer DEFAULT '0' NOT NULL,\n\
+state integer DEFAULT '0' NOT NULL,\n\
+PRIMARY KEY (proxyid)\n\
+);\n\
+CREATE TABLE proxy_group (\n\
+proxy_groupid bigint  NOT NULL,\n\
+name varchar(255) DEFAULT '' NOT NULL,\n\
+description text DEFAULT '' NOT NULL,\n\
+failover_delay varchar(255) DEFAULT '1m' NOT NULL,\n\
+min_online varchar(255) DEFAULT '1' NOT NULL,\n\
+PRIMARY KEY (proxy_groupid)\n\
+);\n\
+CREATE TABLE proxy_group_rtdata (\n\
+proxy_groupid bigint  NOT NULL REFERENCES proxy_group (proxy_groupid) ON DELETE CASCADE,\n\
+state integer DEFAULT '0' NOT NULL,\n\
+PRIMARY KEY (proxy_groupid)\n\
+);\n\
+CREATE TABLE host_proxy (\n\
+hostproxyid bigint  NOT NULL,\n\
+hostid bigint  NULL REFERENCES hosts (hostid),\n\
+host varchar(128) DEFAULT '' NOT NULL,\n\
+proxyid bigint  NULL REFERENCES proxy (proxyid),\n\
+revision bigint DEFAULT '0' NOT NULL,\n\
+tls_accept integer DEFAULT '1' NOT NULL,\n\
+tls_issuer varchar(1024) DEFAULT '' NOT NULL,\n\
+tls_subject varchar(1024) DEFAULT '' NOT NULL,\n\
+tls_psk_identity varchar(128) DEFAULT '' NOT NULL,\n\
+tls_psk varchar(512) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (hostproxyid)\n\
+);\n\
+CREATE UNIQUE INDEX host_proxy_1 ON host_proxy (hostid);\n\
+CREATE INDEX host_proxy_2 ON host_proxy (proxyid);\n\
+CREATE INDEX host_proxy_3 ON host_proxy (revision);\n\
+CREATE TABLE mfa (\n\
+mfaid bigint  NOT NULL,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+name varchar(128) DEFAULT '' NOT NULL,\n\
+hash_function integer DEFAULT '1' NULL,\n\
+code_length integer DEFAULT '6' NULL,\n\
+api_hostname varchar(1024) DEFAULT '' NULL,\n\
+clientid varchar(32) DEFAULT '' NULL,\n\
+client_secret varchar(64) DEFAULT '' NULL,\n\
+PRIMARY KEY (mfaid)\n\
+);\n\
+CREATE UNIQUE INDEX mfa_1 ON mfa (name);\n\
+CREATE TABLE mfa_totp_secret (\n\
+mfa_totp_secretid bigint  NOT NULL,\n\
+mfaid bigint  NOT NULL REFERENCES mfa (mfaid) ON DELETE CASCADE,\n\
+userid bigint  NOT NULL REFERENCES users (userid) ON DELETE CASCADE,\n\
+totp_secret varchar(32) DEFAULT '' NULL,\n\
+status integer DEFAULT '0' NOT NULL,\n\
+used_codes varchar(32) DEFAULT ''  NOT NULL,\n\
+PRIMARY KEY (mfa_totp_secretid)\n\
+);\n\
+CREATE INDEX mfa_totp_secret_1 ON mfa_totp_secret (mfaid);\n\
+CREATE INDEX mfa_totp_secret_2 ON mfa_totp_secret (userid);\n\
 CREATE TABLE dbversion (\n\
 dbversionid bigint  NOT NULL,\n\
 mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dbversionid)\n\
 );\n\
-INSERT INTO dbversion VALUES ('1','6040000','6040026');\n\
+INSERT INTO dbversion VALUES ('1','7020000','7020004');\n\
 create trigger hosts_insert after insert on hosts\n\
 for each row\n\
 begin\n\
@@ -5213,10 +5653,76 @@ begin\n\
 insert into changelog (object,objectid,operation,clock)\n\
 values (18,old.connector_tagid,3,cast(strftime('%s', 'now') as integer));\n\
 end;\n\
+create trigger proxy_insert after insert on proxy\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (19,new.proxyid,1,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger proxy_update after update on proxy\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (19,old.proxyid,2,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger proxy_delete before delete on proxy\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (19,old.proxyid,3,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger proxy_group_insert after insert on proxy_group\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (20,new.proxy_groupid,1,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger proxy_group_update after update on proxy_group\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (20,old.proxy_groupid,2,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger proxy_group_delete before delete on proxy_group\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (20,old.proxy_groupid,3,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger host_proxy_insert after insert on host_proxy\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (21,new.hostproxyid,1,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger host_proxy_update after update on host_proxy\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (21,old.hostproxyid,2,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
+create trigger host_proxy_delete before delete on host_proxy\n\
+for each row\n\
+begin\n\
+insert into changelog (object,objectid,operation,clock)\n\
+values (21,old.hostproxyid,3,cast(strftime('%s', 'now') as integer));\n\
+end;\n\
 ";
-const char	*const db_schema_fkeys[] = {
-	NULL
-};
 #else	/* HAVE_SQLITE3 */
-const char	*const db_schema = NULL;
+static const char	*db_schema = NULL;
 #endif	/* not HAVE_SQLITE3 */
+
+zbx_db_table_t	*zbx_dbschema_get_tables(void)
+{
+	return tables;
+}
+
+const zbx_db_table_changelog_t	*zbx_dbschema_get_changelog_tables(void)
+{
+	return changelog_tables;
+}
+
+const char	*zbx_dbschema_get_schema(void)
+{
+	return db_schema;
+}

@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_ZBXVARIANT_H
@@ -28,6 +23,9 @@
 #define ZBX_UNKNOWN_STR		"ZBX_UNKNOWN"	/* textual representation of ZBX_UNKNOWN */
 #define ZBX_UNKNOWN_STR_LEN	ZBX_CONST_STRLEN(ZBX_UNKNOWN_STR)
 
+ZBX_VECTOR_DECL(var, zbx_variant_t)
+void	zbx_vector_var_clear_ext(zbx_vector_var_t *v);
+
 typedef union
 {
 	zbx_uint64_t		ui64;
@@ -39,7 +37,7 @@ typedef union
 	/* length prefixed (4 bytes) binary data */
 	void			*bin;
 
-	zbx_vector_dbl_t	*dbl_vector;
+	zbx_vector_var_t	*vector;
 
 	/* null terminated error message */
 	char			*err;
@@ -57,7 +55,7 @@ struct zbx_variant
 #define ZBX_VARIANT_DBL		2
 #define ZBX_VARIANT_UI64	3
 #define ZBX_VARIANT_BIN		4
-#define ZBX_VARIANT_DBL_VECTOR	5
+#define ZBX_VARIANT_VECTOR	5
 #define ZBX_VARIANT_ERR		6
 
 void		zbx_variant_clear(zbx_variant_t *value);
@@ -80,12 +78,12 @@ const char	*zbx_variant_type_desc(const zbx_variant_t *value);
 int		zbx_variant_compare(const zbx_variant_t *value1, const zbx_variant_t *value2);
 
 void		*zbx_variant_data_bin_create(const void *data, zbx_uint32_t size);
-zbx_uint32_t	zbx_variant_data_bin_get(const void *bin, void **data);
+zbx_uint32_t	zbx_variant_data_bin_get(const void *bin, const void ** const data);
 
-int		zbx_variant_to_value_type(zbx_variant_t *value, unsigned char value_type, int dbl_precision,
-				char **errmsg);
+int		zbx_variant_to_value_type(zbx_variant_t *value, unsigned char value_type, char **errmsg);
 
-ZBX_VECTOR_DECL(var, zbx_variant_t)
+void		zbx_variant_set_vector(zbx_variant_t *value, zbx_vector_var_t *vector);
+int		zbx_vector_var_get_type(zbx_vector_var_t *v);
 
 typedef union
 {

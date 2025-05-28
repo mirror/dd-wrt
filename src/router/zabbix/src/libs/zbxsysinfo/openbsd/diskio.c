@@ -1,26 +1,20 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
 #include "../sysinfo.h"
 
-#include "log.h"
 #include "zbxstr.h"
 
 int	zbx_get_diskstat(const char *devname, zbx_uint64_t *dstat)
@@ -31,14 +25,12 @@ int	zbx_get_diskstat(const char *devname, zbx_uint64_t *dstat)
 static int	get_disk_stats(const char *devname, zbx_uint64_t *rbytes, zbx_uint64_t *wbytes, zbx_uint64_t *roper,
 		zbx_uint64_t *woper, char **error)
 {
-	int			ret = SYSINFO_RET_FAIL, mib[2], i, drive_count;
-	size_t			len;
+	int			ret = SYSINFO_RET_FAIL, mib[2], drive_count;
+	size_t			len = sizeof(drive_count);
 	struct diskstats	*stats;
 
 	mib[0] = CTL_HW;
 	mib[1] = HW_DISKCOUNT;
-
-	len = sizeof(drive_count);
 
 	if (0 != sysctl(mib, 2, &drive_count, &len, NULL, 0))
 	{
@@ -69,7 +61,7 @@ static int	get_disk_stats(const char *devname, zbx_uint64_t *rbytes, zbx_uint64_
 		return SYSINFO_RET_FAIL;
 	}
 
-	for (i = 0; i < drive_count; i++)
+	for (int i = 0; i < drive_count; i++)
 	{
 		if (NULL == devname || '\0' == *devname || 0 == strcmp(devname, "all") ||
 				0 == strcmp(devname, stats[i].ds_name))

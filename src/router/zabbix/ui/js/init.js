@@ -1,21 +1,16 @@
 /*
- ** Zabbix
- ** Copyright (C) 2001-2024 Zabbix SIA
- **
- ** This program is free software; you can redistribute it and/or modify
- ** it under the terms of the GNU General Public License as published by
- ** the Free Software Foundation; either version 2 of the License, or
- ** (at your option) any later version.
- **
- ** This program is distributed in the hope that it will be useful,
- ** but WITHOUT ANY WARRANTY; without even the implied warranty of
- ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- ** GNU General Public License for more details.
- **
- ** You should have received a copy of the GNU General Public License
- ** along with this program; if not, write to the Free Software
- ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- **/
+** Copyright (C) 2001-2025 Zabbix SIA
+**
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
+**
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
+**
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
+**/
 
 
 /**
@@ -45,13 +40,19 @@ window.ZABBIX = Object.create({
 	/**
 	 * Logs user out, also, handles side effects before that.
 	 */
-	logout: function(event) {
-		cancelEvent(event);
-
-		var ls = this.namespace('instances.localStorage');
+	logout: function(csrf_token) {
+		let ls = this.namespace('instances.localStorage');
 		ls && ls.destruct();
 
-		redirect('index.php?reconnect=1', 'post', 'sid', true);
+		redirect(`index.php?reconnect=1&${CSRF_TOKEN_NAME}=${csrf_token}`, 'post', CSRF_TOKEN_NAME, true);
+	}
+});
+
+document.addEventListener('click', e => {
+	const element = e.target;
+
+	if (element.matches('input[type="radio"][readonly], input[type="checkbox"][readonly]')) {
+		e.preventDefault();
 	}
 });
 
@@ -71,7 +72,7 @@ jQuery(function($) {
 	if ($search.length) {
 		createSuggest('search');
 
-		var $search_icon = $search.siblings('.search-icon');
+		var $search_icon = $search.siblings('.js-search');
 
 		$search.on('keyup', function() {
 			$search_icon.prop('disabled', $.trim($search.val()) === '');
@@ -168,6 +169,10 @@ jQuery(function($) {
 				sections = getMenuPopupSubmenu(data);
 				break;
 
+			case 'drule':
+				sections = getMenuPopupDRule(data);
+				break;
+
 			default:
 				return;
 		}
@@ -248,15 +253,16 @@ jQuery(function($) {
 					my: 'left top',
 					at: 'left bottom',
 					using: (pos, data) => {
-						let max_left = data.horizontal === 'left'
-							? document.querySelector('.wrapper').clientWidth
-							: document.querySelector('.wrapper').clientWidth - data.element.width;
+						const wrapper = document.querySelector('.wrapper');
+						const menu = data.element.element[0];
+						const wrapper_rect = document.querySelector('.wrapper').getBoundingClientRect();
+						const margin_right = Math.max(WRAPPER_PADDING_RIGHT, wrapper_rect.width - wrapper.clientWidth);
+						const max_left = wrapper_rect.right - menu.offsetWidth - margin_right;
 
-						pos.top = Math.max(0, pos.top);
-						pos.left = Math.max(0, Math.min(max_left, pos.left));
+						pos.left = Math.max(wrapper_rect.left, Math.min(max_left, pos.left));
 
-						data.element.element[0].style.top = `${pos.top}px`;
-						data.element.element[0].style.left = `${pos.left}px`;
+						menu.style.left = `${pos.left}px`;
+						menu.style.top = `${pos.top}px`;
 					}
 				};
 		}
@@ -392,7 +398,7 @@ jQuery(function($) {
 
 		if (typeof confirmation === 'undefined' || (typeof confirmation !== 'undefined' && confirm(confirmation))) {
 			if (button.attr('data-post')) {
-				return redirect(button.attr('data-url'), 'post', '_csrf_token', true);
+				return redirect(button.attr('data-url'), 'post', CSRF_TOKEN_NAME, true);
 			}
 
 			window.location = button.attr('data-url');

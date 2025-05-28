@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -38,7 +33,7 @@ function zbx_is_callable(array $names) {
 
 /************ REQUEST ************/
 function redirect($url) {
-	$curl = (new CUrl($url))->removeArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME);
+	$curl = (new CUrl($url))->removeArgument(CSRF_TOKEN_NAME);
 	header('Location: '.$curl->getUrl());
 	exit;
 }
@@ -129,51 +124,6 @@ function getDayOfWeekCaption($num) {
 	return _s('[Wrong value for day: "%1$s" ]', $num);
 }
 
-// Convert seconds (0..SEC_PER_WEEK) to string representation. For example, 212400 -> 'Tuesday 11:00'
-function dowHrMinToStr($value, $display24Hours = false) {
-	$dow = $value - $value % SEC_PER_DAY;
-	$hr = $value - $dow;
-	$hr -= $hr % SEC_PER_HOUR;
-	$min = $value - $dow - $hr;
-	$min -= $min % SEC_PER_MIN;
-
-	$dow /= SEC_PER_DAY;
-	$hr /= SEC_PER_HOUR;
-	$min /= SEC_PER_MIN;
-
-	if ($display24Hours && $hr == 0 && $min == 0) {
-		$dow--;
-		$hr = 24;
-	}
-
-	return sprintf('%s %02d:%02d', getDayOfWeekCaption($dow), $hr, $min);
-}
-
-// Convert Day Of Week, Hours and Minutes to seconds representation. For example, 2 11:00 -> 212400. false if error occurred
-function dowHrMinToSec($dow, $hr, $min) {
-	if (zbx_empty($dow) || zbx_empty($hr) || zbx_empty($min) || !zbx_ctype_digit($dow) || !zbx_ctype_digit($hr) || !zbx_ctype_digit($min)) {
-		return false;
-	}
-
-	if ($dow == 7) {
-		$dow = 0;
-	}
-
-	if ($dow < 0 || $dow > 6) {
-		return false;
-	}
-
-	if ($hr < 0 || $hr > 24) {
-		return false;
-	}
-
-	if ($min < 0 || $min > 59) {
-		return false;
-	}
-
-	return $dow * SEC_PER_DAY + $hr * SEC_PER_HOUR + $min * SEC_PER_MIN;
-}
-
 /**
  * Convert time to a string representation. Return 'Never' if timestamp is 0.
  *
@@ -185,7 +135,7 @@ function dowHrMinToSec($dow, $hr, $min) {
  *
  * @return string
  */
-function zbx_date2str($format, $time = null, string $timezone = null) {
+function zbx_date2str($format, $time = null, ?string $timezone = null) {
 	static $weekdaynames, $weekdaynameslong, $months, $monthslong;
 
 	if ($time === null) {
@@ -196,14 +146,7 @@ function zbx_date2str($format, $time = null, string $timezone = null) {
 		return _('Never');
 	}
 
-	if ($time > ZBX_MAX_DATE) {
-		$prefix = '> ';
-		$datetime = new DateTime('@'.ZBX_MAX_DATE);
-	}
-	else {
-		$prefix = '';
-		$datetime = new DateTime('@'.(int) $time);
-	}
+	$datetime = new DateTime(sprintf('@%f', (float) $time));
 
 	$datetime->setTimezone(new DateTimeZone($timezone ?? date_default_timezone_get()));
 
@@ -288,7 +231,7 @@ function zbx_date2str($format, $time = null, string $timezone = null) {
 		}
 	}
 
-	return $prefix.$output;
+	return $output;
 }
 
 /**
@@ -682,9 +625,8 @@ function convertUnits(array $options): string {
  *     'units' =>               (string)    Units to base the conversion on. Default: ''.
  *     'convert' =>             (int)       Default: ITEM_CONVERT_WITH_UNITS. Set to ITEM_CONVERT_NO_UNITS to
  *                                          force-convert a value with empty units.
- *     'power' =>               (int)       Convert to the specified power of "unit_base" (0 => '', 1 => K, 2 => M, ..).
+ *     'power' =>               (int)       Convert to the specified power of units. (0 => '', 1 => K, 2 => M, ...).
  *                                          By default, the power will be calculated automatically.
- *     'unit_base' =>           (string)    1000 or 1024. By default, will only use 1024 for "B" and "Bps" units.
  *     'ignore_milliseconds' => (bool)      Ignore milliseconds in time conversion ("s" units).
  *     'precision' =>           (int)       Max number of significant digits to take into account.
  *                                          Default: ZBX_FLOAT_DIG.
@@ -707,7 +649,6 @@ function convertUnitsRaw(array $options): array {
 		'units' => '',
 		'convert' => ITEM_CONVERT_WITH_UNITS,
 		'power' => null,
-		'unit_base' => null,
 		'ignore_milliseconds' => false,
 		'precision' => ZBX_FLOAT_DIG,
 		'decimals' => null,
@@ -745,6 +686,16 @@ function convertUnitsRaw(array $options): array {
 	}
 
 	if ($units === 's') {
+		if ($options['decimals'] !== null && $options['decimals'] != 0) {
+			return [
+				'value' => convertUnitsSWithDecimals($value, $options['ignore_milliseconds'], $options['decimals'],
+					$options['decimals_exact']
+				),
+				'units' => '',
+				'is_numeric' => false
+			];
+		}
+
 		return [
 			'value' => convertUnitsS($value, $options['ignore_milliseconds']),
 			'units' => '',
@@ -778,11 +729,7 @@ function convertUnitsRaw(array $options): array {
 		];
 	}
 
-	$unit_base = $options['unit_base'];
-
-	if ($unit_base != 1000 && $unit_base != ZBX_KIBIBYTE) {
-		$unit_base = isBinaryUnits($units) ? ZBX_KIBIBYTE : 1000;
-	}
+	$unit_base = isBinaryUnits($units) ? ZBX_KIBIBYTE : 1000;
 
 	if ($options['power'] === null) {
 		$result = null;
@@ -960,42 +907,6 @@ function zbx_array_diff(array $primary, array $secondary, $field) {
 	return $result;
 }
 
-function zbx_array_push(&$array, $add) {
-	foreach ($array as $key => $value) {
-		foreach ($add as $newKey => $newValue) {
-			$array[$key][$newKey] = $newValue;
-		}
-	}
-}
-
-/**
- * Find if array has any duplicate values and return an array with info about them.
- * In case of no duplicates, empty array is returned.
- * Example of usage:
- *     $result = zbx_arrayFindDuplicates(
- *         array('a', 'b', 'c', 'c', 'd', 'd', 'd', 'e')
- *     );
- *     array(
- *         'd' => 3,
- *         'c' => 2,
- *     )
- *
- * @param array $array
- *
- * @return array
- */
-function zbx_arrayFindDuplicates(array $array) {
-	$countValues = array_count_values($array); // counting occurrences of every value in array
-	foreach ($countValues as $value => $count) {
-		if ($count <= 1) {
-			unset($countValues[$value]);
-		}
-	}
-	arsort($countValues); // sorting, so that the most duplicates would be at the top
-
-	return $countValues;
-}
-
 /************* STRING *************/
 function zbx_nl2br($str) {
 	$str_res = [];
@@ -1105,7 +1016,7 @@ function order_result(&$data, $sortfield = null, $sortorder = ZBX_SORT_UP) {
 function order_macros(array $macros, $sortfield, $order = ZBX_SORT_UP) {
 	$temp = [];
 	foreach ($macros as $key => $macro) {
-		$temp[$key] = substr($macro[$sortfield], 2, strlen($macro[$sortfield]) - 3);
+		$temp[$key] = substr($macro[$sortfield], 2, -1);
 	}
 	order_result($temp, null, $order);
 
@@ -1332,18 +1243,6 @@ function zbx_objectValues($value, $field) {
 	return $result;
 }
 
-function zbx_cleanHashes(&$value) {
-	if (is_array($value)) {
-		// reset() is needed to move internal array pointer to the beginning of the array
-		reset($value);
-		if (zbx_ctype_digit(key($value))) {
-			$value = array_values($value);
-		}
-	}
-
-	return $value;
-}
-
 function zbx_toCSV($values) {
 	$csv = '';
 	$glue = '","';
@@ -1441,21 +1340,6 @@ function make_sorting_header($obj, $tabfield, $sortField, $sortOrder, $link = nu
 }
 
 /**
- * Get decimal point and thousands separator for number formatting according to the current locale.
- *
- * @return array  'decimal_point' and 'thousands_sep' values.
- */
-function getNumericFormatting(): array {
-	static $numeric_formatting = null;
-
-	if ($numeric_formatting === null) {
-		$numeric_formatting = array_intersect_key(localeconv(), array_flip(['decimal_point', 'thousands_sep']));
-	}
-
-	return $numeric_formatting;
-}
-
-/**
  * Format floating-point number in the best possible way for displaying.
  *
  * @param float $number   Valid number in decimal or scientific notation.
@@ -1550,36 +1434,23 @@ function formatFloat(float $number, array $options = []): string {
 		return '0';
 	}
 
-	[
-		'decimal_point' => $decimal_point,
-		'thousands_sep' => $thousands_sep
-	] = getNumericFormatting();
-
 	$exponent = (int) explode('E', sprintf('%.'.($precision - 1).'E', $number))[1];
 
 	if ($exponent < 0) {
 		if (!$small_scientific
 				|| $digits - $exponent <= ($decimals_exact ? min($decimals + 1, $precision) : $precision)) {
-			return number_format($number, $decimals_exact ? $decimals : $digits - $exponent - 1, $decimal_point,
-				$thousands_sep
-			);
+			return number_format($number, $decimals_exact ? $decimals : $digits - $exponent - 1, '.', '');
 		}
 		else {
-			return str_replace('.', $decimal_point,
-				sprintf('%.'.($decimals_exact ? $decimals : min($digits - 1, $decimals)).'E', $number)
-			);
+			return sprintf('%.'.($decimals_exact ? $decimals : min($digits - 1, $decimals)).'E', $number);
 		}
 	}
 	elseif ($exponent >= min(PHP_FLOAT_DIG, $precision + 3)
 			|| ($exponent >= $precision && $number != $number_original)) {
-		return str_replace('.', $decimal_point,
-			sprintf('%.'.($decimals_exact ? $decimals : min($digits - 1, $decimals)).'E', $number)
-		);
+		return sprintf('%.'.($decimals_exact ? $decimals : min($digits - 1, $decimals)).'E', $number);
 	}
 	else {
-		return number_format($number, $decimals_exact ? $decimals : max(0, min($digits - $exponent - 1, $decimals)),
-			$decimal_point, $thousands_sep
-		);
+		return number_format($number, $decimals_exact ? $decimals : max(0, min($digits - $exponent - 1, $decimals)), '.', '');
 	}
 }
 
@@ -1664,12 +1535,11 @@ function access_deny($mode = ACCESS_DENY_OBJECT) {
 	}
 	// deny access to a page
 	else {
-		// url to redirect the user to after he logs in
-		$url = (new CUrl(!empty($_REQUEST['request']) ? $_REQUEST['request'] : ''))
-			->removeArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME);
+		// URL to redirect the user to after logging in.
+		$url = (new CUrl(!empty($_REQUEST['request']) ? $_REQUEST['request'] : ''))->removeArgument(CSRF_TOKEN_NAME);
 
-		if (CAuthenticationHelper::get(CAuthenticationHelper::HTTP_LOGIN_FORM) == ZBX_AUTH_FORM_HTTP
-				&& CAuthenticationHelper::get(CAuthenticationHelper::HTTP_AUTH_ENABLED) == ZBX_AUTH_HTTP_ENABLED
+		if (CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_LOGIN_FORM) == ZBX_AUTH_FORM_HTTP
+				&& CAuthenticationHelper::getPublic(CAuthenticationHelper::HTTP_AUTH_ENABLED) == ZBX_AUTH_HTTP_ENABLED
 				&& (!CWebUser::isLoggedIn() || CWebUser::isGuest())) {
 			$redirect_to = (new CUrl('index_http.php'))->setArgument('request', $url->toString());
 			redirect($redirect_to->toString());
@@ -1766,50 +1636,8 @@ function detect_page_type($default = PAGE_TYPE_HTML) {
  *
  * @return CTag
  */
-function makeMessageBox(string $class, array $messages, string $title = null, bool $show_close_box = true,
+function makeMessageBox(string $class, array $messages, ?string $title = null, bool $show_close_box = true,
 		bool $show_details = false): CTag {
-	$msg_details = null;
-	$link_details = null;
-
-	if ($messages) {
-		if ($title !== null) {
-			$link_details = (new CLinkAction())
-				->addItem(_('Details'))
-				->addItem(' ') // space
-				->addItem((new CSpan())
-					->setId('details-arrow')
-					->addClass($show_details ? ZBX_STYLE_ARROW_UP : ZBX_STYLE_ARROW_DOWN)
-				)
-				->setAttribute('aria-expanded', $show_details ? 'true' : 'false')
-				->onClick('javascript: '.
-					'showHide(jQuery(this).siblings(\'.'.ZBX_STYLE_MSG_DETAILS.'\')'.
-						'.find(\'.'.ZBX_STYLE_MSG_DETAILS_BORDER.'\'));'.
-					'jQuery("#details-arrow", $(this)).toggleClass("'.ZBX_STYLE_ARROW_UP.' '.ZBX_STYLE_ARROW_DOWN.'");'.
-					'jQuery(this).attr(\'aria-expanded\', jQuery(this).find(\'.'.ZBX_STYLE_ARROW_DOWN.'\').length == 0)'
-				);
-		}
-
-		$list = (new CList())->addClass(ZBX_STYLE_LIST_DASHED);
-		if ($title !== null) {
-			$list->addClass(ZBX_STYLE_MSG_DETAILS_BORDER);
-
-			if (!$show_details) {
-				$list->setAttribute('style', 'display: none;');
-			}
-		}
-
-		foreach ($messages as $message) {
-			$list->addItem($message['message']);
-		}
-
-		$msg_details = (new CDiv())
-			->addClass(ZBX_STYLE_MSG_DETAILS)
-			->addItem($list);
-	}
-
-	if ($title !== null) {
-		$title = new CSpan($title);
-	}
 
 	$aria_labels = [
 		ZBX_STYLE_MSG_GOOD => _('Success message'),
@@ -1817,20 +1645,47 @@ function makeMessageBox(string $class, array $messages, string $title = null, bo
 		ZBX_STYLE_MSG_WARNING => _('Warning message')
 	];
 
-	// Details link should be in front of title.
-	$msg_box = (new CTag('output', true, [$link_details, $title, $msg_details]))
+	$message_box = (new CTag('output', true))
 		->addClass($class)
 		->setAttribute('role', 'contentinfo')
 		->setAttribute('aria-label', $aria_labels[$class]);
 
-	if ($show_close_box) {
-		$msg_box->addItem((new CSimpleButton())
-			->addClass(ZBX_STYLE_OVERLAY_CLOSE_BTN)
-			->onClick('jQuery(this).closest(\'.'.$class.'\').remove();')
-			->setTitle(_('Close')));
+	if ($messages && $title !== null) {
+		$message_box
+			->addItem(
+				(new CLinkAction(_('Details')))
+					->addItem(
+						(new CSpan())->addClass($show_details ? ZBX_STYLE_ARROW_UP : ZBX_STYLE_ARROW_DOWN)
+					)
+					->setAttribute('aria-expanded', $show_details ? 'true' : 'false')
+					->onClick('toggleMessageBoxDetails(this);')
+			)
+			->addClass(ZBX_STYLE_COLLAPSIBLE)
+			->addClass(!$show_details ? ZBX_STYLE_COLLAPSED : null);
 	}
 
-	return $msg_box;
+	if ($messages) {
+		$list = (new CList())->addClass(ZBX_STYLE_LIST_DASHED);
+
+		foreach ($messages as $message) {
+			$list->addItem($message['message']);
+		}
+	}
+
+	$message_box
+		->addItem($title !== null ? new CSpan($title) : null)
+		->addItem($messages ? (new CDiv($list))->addClass(ZBX_STYLE_MSG_DETAILS) : null);
+
+	if ($show_close_box) {
+		$message_box->addItem(
+			(new CSimpleButton())
+				->addClass(ZBX_STYLE_BTN_OVERLAY_CLOSE)
+				->onClick('jQuery(this).closest(\'.'.$class.'\').remove();')
+				->setTitle(_('Close'))
+		);
+	}
+
+	return $message_box;
 }
 
 /**
@@ -1839,7 +1694,7 @@ function makeMessageBox(string $class, array $messages, string $title = null, bo
  * @return array
  */
 function filter_messages(): array {
-	if (!CSettingsHelper::getGlobal(CSettingsHelper::SHOW_TECHNICAL_ERRORS)
+	if (!CSettingsHelper::getPublic(CSettingsHelper::SHOW_TECHNICAL_ERRORS)
 			&& CWebUser::getType() != USER_TYPE_SUPER_ADMIN && !CWebUser::getDebugMode()) {
 
 		$type = CMessageHelper::getType();
@@ -1882,7 +1737,7 @@ function filter_messages(): array {
  *
  * @return CTag|null
  */
-function getMessages(bool $good = false, string $title = null, bool $show_close_box = true): ?CTag {
+function getMessages(bool $good = false, ?string $title = null, bool $show_close_box = true): ?CTag {
 	$messages = get_and_clear_messages();
 
 	$message_box = ($title || $messages)
@@ -2741,4 +2596,23 @@ function getTileProviders(): array {
 			'geomaps_attribution' => 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
 		]
 	];
+}
+
+/**
+ * Check if a string is valid in a specified encoding.
+ *
+ * @param string $string   The string to check. Only string type values are allowed due to iconv().
+ * @param string $encoding The encoding to check against. Only string type values are allowed due to iconv().
+ *
+ * @return bool True if the string is valid in the specified encoding, false otherwise.
+ */
+function zbx_mb_check_encoding(string $string, string $encoding): bool {
+	if (function_exists('mb_check_encoding')) {
+		return mb_check_encoding($string, $encoding);
+	}
+
+	// Alternative implementation if mb_check_encoding does not exist.
+	$decoded_string = iconv($encoding, $encoding, $string);
+
+	return $decoded_string === $string;
 }

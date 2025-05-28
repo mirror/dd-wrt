@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -34,12 +29,15 @@ class CDocHelper {
 	const ADMINISTRATION_IMAGE_LIST =							'web_interface/frontend_sections/administration/general#images';
 	const ADMINISTRATION_MACROS_EDIT =							'web_interface/frontend_sections/administration/macros';
 	const ADMINISTRATION_MISCCONFIG_EDIT =						'web_interface/frontend_sections/administration/general#other-parameters';
-	const ADMINISTRATION_MODULE_EDIT =							'modules#manifest-preparation';
+	const ADMINISTRATION_MODULE_EDIT =							'extensions/frontendmodules#manifest-preparation';
 	const ADMINISTRATION_MODULE_LIST =							'web_interface/frontend_sections/administration/general#modules';
 	const ADMINISTRATION_PROXY_EDIT =							'distributed_monitoring/proxies#configuration';
 	const ADMINISTRATION_PROXY_LIST =							'web_interface/frontend_sections/administration/proxies';
+	const ADMINISTRATION_PROXY_GROUP_EDIT =						'distributed_monitoring/proxies/ha';
+	const ADMINISTRATION_PROXY_GROUP_LIST =						'web_interface/frontend_sections/administration/proxy_groups';
 	const ADMINISTRATION_REGEX_EDIT =							'regular_expressions#global-regular-expressions';
 	const ADMINISTRATION_REGEX_LIST =							'web_interface/frontend_sections/administration/general#regular-expressions';
+	const ADMINISTRATION_TIMEOUTS =								'web_interface/frontend_sections/administration/general#timeouts';
 	const ADMINISTRATION_TRIGDISPLAY_EDIT =						'web_interface/frontend_sections/administration/general#trigger-displaying-options';
 	const ALERTS_ACTION_EDIT =									'config/notifications/action#configuring-an-action';
 	const ALERTS_ACTION_LIST =									'web_interface/frontend_sections/alerts/actions';
@@ -48,7 +46,7 @@ class CDocHelper {
 	const ALERTS_SCRIPT_EDIT =									'web_interface/frontend_sections/alerts/scripts#configuring-a-global-script';
 	const ALERTS_SCRIPT_LIST =									'web_interface/frontend_sections/alerts/scripts';
 	const CONFIGURATION_DASHBOARDS_EDIT =						'web_interface/frontend_sections/dashboards#creating-a-dashboard';
-	const CONFIGURATION_DASHBOARDS_LIST =						'config/visualization/host_screens';
+	const CONFIGURATION_DASHBOARDS_LIST =						'web_interface/frontend_sections/monitoring/hosts/dashboards';
 	const DASHBOARDS_LIST =										'web_interface/frontend_sections/dashboards';
 	const DASHBOARDS_VIEW =										'web_interface/frontend_sections/dashboards';
 	const DASHBOARDS_PAGE_PROPERTIES_EDIT =						'web_interface/frontend_sections/dashboards#adding-pages';
@@ -69,7 +67,7 @@ class CDocHelper {
 	const DATA_COLLECTION_HOST_ITEM_PROTOTYPE_LIST =			'web_interface/frontend_sections/data_collection/hosts/discovery/item_prototypes';
 	const DATA_COLLECTION_HOST_EDIT =							'config/hosts/host#configuration';
 	const DATA_COLLECTION_HOST_LIST =							'web_interface/frontend_sections/data_collection/hosts';
-	const DATA_COLLECTION_HOST_PROTOTYPE_EDIT =					'vm_monitoring#host-prototypes';
+	const DATA_COLLECTION_HOST_PROTOTYPE_EDIT =					'discovery/low_level_discovery/host_prototypes';
 	const DATA_COLLECTION_HOST_PROTOTYPE_LIST =					'web_interface/frontend_sections/data_collection/hosts/discovery/host_prototypes';
 	const DATA_COLLECTION_HOST_TRIGGERS_LIST =					'web_interface/frontend_sections/data_collection/hosts/triggers';
 	const DATA_COLLECTION_HOST_TRIGGER_PROTOTYPE_LIST =			'web_interface/frontend_sections/data_collection/hosts/discovery/trigger_prototypes';
@@ -98,9 +96,16 @@ class CDocHelper {
 	const DATA_COLLECTION_TRIGGERS_EDIT =						'config/triggers/trigger#configuration';
 	const INVENTORY_HOST_LIST =									'web_interface/frontend_sections/inventory/hosts';
 	const INVENTORY_HOST_OVERVIEW =								'web_interface/frontend_sections/inventory/overview';
+	const ITEM_TYPES_DB_MONITOR =								'config/items/itemtypes/odbc_checks';
+	const ITEM_TYPES_IPMI_AGENT =								'config/items/itemtypes/ipmi';
+	const ITEM_TYPES_JMX_AGENT =								'config/items/itemtypes/jmx_monitoring';
+	const ITEM_TYPES_SIMPLE_CHECK =								'config/items/itemtypes/simple_checks';
+	const ITEM_TYPES_SNMP_TRAP =								'config/items/itemtypes/snmptrap';
+	const ITEM_TYPES_ZABBIX_AGENT =								'config/items/itemtypes/zabbix_agent';
+	const ITEM_TYPES_ZABBIX_INTERNAL =							'config/items/itemtypes/internal';
 	const MONITORING_CHARTS_VIEW =								'web_interface/frontend_sections/monitoring/hosts/graphs';
 	const MONITORING_DISCOVERY_VIEW =							'web_interface/frontend_sections/monitoring/discovery';
-	const MONITORING_HOST_DASHBOARD_VIEW =						'config/visualization/host_screens';
+	const MONITORING_HOST_DASHBOARD_VIEW =						'web_interface/frontend_sections/monitoring/hosts/dashboards';
 	const MONITORING_HOST_VIEW =								'web_interface/frontend_sections/monitoring/hosts';
 	const MONITORING_HISTORY =									'web_interface/frontend_sections/monitoring/latest_data#graphs';
 	const MONITORING_LATEST_VIEW =								'web_interface/frontend_sections/monitoring/latest_data';
@@ -134,9 +139,9 @@ class CDocHelper {
 	const QUEUE_OVERVIEW =										'web_interface/frontend_sections/administration/queue#overview-by-item-type';
 	const QUEUE_OVERVIEW_PROXY =								'web_interface/frontend_sections/administration/queue#overview-by-proxy';
 	const REPORT_STATUS =										'web_interface/frontend_sections/reports/status_of_zabbix';
-	const REPORT2 =												'web_interface/frontend_sections/reports/availability';
 	const REPORT4 =												'web_interface/frontend_sections/reports/notifications';
 	const REPORTS_AUDITLOG_LIST =								'web_interface/frontend_sections/reports/audit_log';
+	const REPORTS_AVAILABILITYREPORT_LIST =						'web_interface/frontend_sections/reports/availability';
 	const REPORTS_SCHEDULEDREPORT_EDIT =						'config/reports#configuration';
 	const REPORTS_SCHEDULEDREPORT_LIST =						'web_interface/frontend_sections/reports/scheduled';
 	const REPORTS_TOPTRIGGERS =									'web_interface/frontend_sections/reports/triggers_top';

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -36,12 +31,6 @@ class CControllerMiscConfigUpdate extends CController {
 			'x_frame_options' =>				'db config.x_frame_options',
 			'iframe_sandboxing_enabled' =>		'required|db config.iframe_sandboxing_enabled|in 0,1',
 			'iframe_sandboxing_exceptions' =>	'db config.iframe_sandboxing_exceptions',
-			'socket_timeout' =>					'required|db config.socket_timeout|time_unit '.implode(':', [1, 300]),
-			'connect_timeout' =>				'required|db config.connect_timeout|time_unit '.implode(':', [1, 30]),
-			'media_type_test_timeout' =>		'required|db config.media_type_test_timeout|time_unit '.implode(':', [1, 300]),
-			'script_timeout' =>					'required|db config.script_timeout|time_unit '.implode(':', [1, 300]),
-			'item_test_timeout' =>				'required|db config.item_test_timeout|time_unit '.implode(':', [1, 300]),
-			'report_test_timeout' =>			'required|db config.report_test_timeout|time_unit '.implode(':', [1, 300]),
 			'vault_provider' =>					'db config.vault_provider|in '.ZBX_VAULT_TYPE_HASHICORP.','.ZBX_VAULT_TYPE_CYBERARK
 		];
 
@@ -58,8 +47,8 @@ class CControllerMiscConfigUpdate extends CController {
 		if (!$ret) {
 			switch ($this->getValidationError()) {
 				case self::VALIDATION_ERROR:
-					$response = new CControllerResponseRedirect((new CUrl('zabbix.php'))
-						->setArgument('action', 'miscconfig.edit')
+					$response = new CControllerResponseRedirect(
+						(new CUrl('zabbix.php'))->setArgument('action', 'miscconfig.edit')
 					);
 
 					$response->setFormData($this->getInputAll() + [
@@ -94,12 +83,6 @@ class CControllerMiscConfigUpdate extends CController {
 			CSettingsHelper::LOGIN_BLOCK => $this->getInput('login_block'),
 			CSettingsHelper::VALIDATE_URI_SCHEMES => $this->getInput('validate_uri_schemes'),
 			CSettingsHelper::IFRAME_SANDBOXING_ENABLED => $this->getInput('iframe_sandboxing_enabled'),
-			CSettingsHelper::SOCKET_TIMEOUT => $this->getInput('socket_timeout'),
-			CSettingsHelper::CONNECT_TIMEOUT => $this->getInput('connect_timeout'),
-			CSettingsHelper::MEDIA_TYPE_TEST_TIMEOUT => $this->getInput('media_type_test_timeout'),
-			CSettingsHelper::SCRIPT_TIMEOUT => $this->getInput('script_timeout'),
-			CSettingsHelper::ITEM_TEST_TIMEOUT => $this->getInput('item_test_timeout'),
-			CSettingsHelper::SCHEDULED_REPORT_TEST_TIMEOUT => $this->getInput('report_test_timeout'),
 			CSettingsHelper::VAULT_PROVIDER => $this->getInput('vault_provider', ZBX_VAULT_TYPE_HASHICORP)
 		];
 
@@ -123,8 +106,8 @@ class CControllerMiscConfigUpdate extends CController {
 
 		$result = API::Settings()->update($settings);
 
-		$response = new CControllerResponseRedirect((new CUrl('zabbix.php'))
-			->setArgument('action', 'miscconfig.edit')
+		$response = new CControllerResponseRedirect(
+			(new CUrl('zabbix.php'))->setArgument('action', 'miscconfig.edit')
 		);
 
 		if ($result) {

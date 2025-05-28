@@ -1,27 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type,Authorization');
+header('Access-Control-Allow-Methods: POST,OPTIONS');
 header('Access-Control-Max-Age: 1000');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -62,21 +57,20 @@ try {
 	$jsonRpc = new CJsonRpc($apiClient, $data);
 	echo $jsonRpc->execute($http_request);
 }
-catch (Exception $e) {
-	// decode input json request to get request's id
-	$jsonData = json_decode($data, true);
+catch (Throwable $e) {
+	$json_data = json_decode($data, true);
 
-	$response = [
-		'jsonrpc' => '2.0',
-		'error' => [
-			'code' => 1,
-			'message' => $e->getMessage(),
-			'data' => ''
-		],
-		'id' => (isset($jsonData['id']) ? $jsonData['id'] : null)
-	];
-
-	echo json_encode($response);
+	if (array_key_exists('id', $json_data)) {
+		echo json_encode([
+			'jsonrpc' => '2.0',
+			'error' => [
+				'code' => -32603,
+				'message' => _('Internal error.'),
+				'data' => $e->getMessage()
+			],
+			'id' => $json_data['id']
+		]);
+	}
 }
 
 session_write_close();

@@ -9,23 +9,24 @@ libzbxpreproc_a_SOURCES = \
 	preproc_snmp.h \
 	pp_cache.c \
 	pp_cache.h \
+	pp_diag.c \
 	pp_error.c \
 	pp_error.h \
 	pp_execute.c \
 	pp_execute.h \
-	pp_history.c \
-	pp_history.h \
-	pp_item.c \
-	pp_item.h \
 	pp_manager.c \
 	pp_manager.h \
 	pp_queue.c \
 	pp_queue.h \
+	pp_stats.c \
 	pp_task.c \
 	pp_task.h \
 	pp_worker.c \
-	pp_worker.h
+	pp_worker.h \
+	pp_protocol.c \
+	pp_protocol.h
 
 libzbxpreproc_a_CFLAGS = \
 	$(LIBXML2_CFLAGS) \
-	$(TLS_CFLAGS)
+	$(TLS_CFLAGS) \
+	$(SNMP_CFLAGS)

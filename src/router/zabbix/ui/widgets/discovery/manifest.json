@@ -5,10 +5,12 @@
 	"name": "Discovery status",
 	"namespace": "Discovery",
 	"version": "1.0",
-	"author": "Zabbix SIA",
+	"author": "Zabbix",
+	"description": "Displays the status summary of the active network discovery rules.",
+	"url": "web_interface/frontend_sections/dashboards/widgets/discovery_status",
 	"widget": {
 		"size": {
-			"width": 6,
+			"width": 18,
 			"height": 3
 		}
 	},

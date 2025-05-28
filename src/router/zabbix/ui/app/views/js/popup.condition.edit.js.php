@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 ?>
 
@@ -26,10 +21,7 @@ window.condition_popup = new class {
 		if (overlays_stack.stack.includes('operation-condition')) {
 			this.overlay = overlays_stack.getById('operation-condition');
 		}
-		else if (overlays_stack.stack[0] === 'event_corr_condition') {
-			this.overlay = overlays_stack.getById('event_corr_condition');
-		}
-		else if (overlays_stack.stack[0] === 'action-edit') {
+		else if (overlays_stack.stack[0] === 'action.edit') {
 			this.overlay = overlays_stack.getById('action-condition');
 		}
 
@@ -61,11 +53,7 @@ window.condition_popup = new class {
 		const curl = new Curl('zabbix.php');
 		const fields = getFormFields(this.form);
 
-		if (this.overlay == overlays_stack.getById('event_corr_condition')) {
-			curl.setArgument('action', 'popup.condition.event.corr');
-			curl.setArgument('validate', '1');
-		}
-		else if (this.overlay == overlays_stack.getById('operation-condition')) {
+		if (this.overlay == overlays_stack.getById('operation-condition')) {
 			curl.setArgument('action', 'action.operation.condition.check');
 		}
 		else {
@@ -116,6 +104,7 @@ window.condition_popup = new class {
 				}
 
 				const message_box = makeMessageBox('bad', messages, title)[0];
+
 				this.form.parentNode.insertBefore(message_box, this.form);
 			})
 			.finally(() => {
@@ -148,8 +137,8 @@ window.condition_popup = new class {
 	}
 
 	selectServices() {
-		const overlay = PopUp('popup.services', {title: t('Services')},
-			{dialogueid: 'services', dialogue_class: 'modal-popup-generic'}
+		const overlay = PopUp('popup.services', {title: <?= json_encode(_('Services')) ?>},
+			{dialogueid: 'services'}
 		);
 		overlay.$dialogue[0].addEventListener('dialogue.submit', (e) => {
 			const data = [];

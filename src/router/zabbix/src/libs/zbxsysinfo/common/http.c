@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "http.h"
@@ -34,6 +29,8 @@
 #define ZBX_MAX_WEBPAGE_SIZE	(1 * 1024 * 1024)
 
 #else
+
+#include "zbxcurl.h"
 
 #define HTTPS_SCHEME_STR	"https://"
 
@@ -119,13 +116,14 @@ static int	check_common_params(const char *host, const char *path, char **error)
 }
 
 #ifdef HAVE_LIBCURL
-static int	curl_page_get(char *url, char **buffer, char **error)
+static int	curl_page_get(char *url, int timeout, char **buffer, char **error)
 {
 	CURLcode		err;
 	CURL			*easyhandle;
 	int			ret = SYSINFO_RET_FAIL;
 	zbx_http_response_t	body = {0}, header = {0};
 	char			errbuf[CURL_ERROR_SIZE];
+	struct curl_slist	*headers = NULL;
 
 	if (NULL == (easyhandle = curl_easy_init()))
 	{
@@ -133,16 +131,20 @@ static int	curl_page_get(char *url, char **buffer, char **error)
 		return SYSINFO_RET_FAIL;
 	}
 
+	headers = curl_slist_append(headers, "Connection: close");
+
 	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_USERAGENT, "Zabbix " ZABBIX_VERSION)) ||
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_SSL_VERIFYPEER, 0L)) ||
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_SSL_VERIFYHOST, 0L)) ||
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_FOLLOWLOCATION, 0L)) ||
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_URL, url)) ||
-			(NULL != CONFIG_SOURCE_IP &&
-			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_INTERFACE, CONFIG_SOURCE_IP))) ||
+			(NULL != sysinfo_get_config_source_ip() &&
+			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_INTERFACE,
+					sysinfo_get_config_source_ip()))) ||
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT,
-					(long)sysinfo_get_config_timeout())) ||
-			CURLE_OK != (err = curl_easy_setopt(easyhandle, ZBX_CURLOPT_ACCEPT_ENCODING, "")))
+					(long)timeout)) ||
+			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers)) ||
+			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_ACCEPT_ENCODING, "")))
 	{
 		*error = zbx_dsprintf(*error, "Cannot set cURL option: %s.", curl_easy_strerror(err));
 		goto out;
@@ -165,19 +167,9 @@ static int	curl_page_get(char *url, char **buffer, char **error)
 		}
 	}
 
-#if LIBCURL_VERSION_NUM >= 0x071304
-	/* CURLOPT_PROTOCOLS is supported starting with version 7.19.4 (0x071304) */
-	/* CURLOPT_PROTOCOLS was deprecated in favor of CURLOPT_PROTOCOLS_STR starting with version 7.85.0 (0x075500) */
-#	if LIBCURL_VERSION_NUM >= 0x075500
-	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_PROTOCOLS_STR, "HTTP,HTTPS")))
-#	else
-	if (CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS)))
-#	endif
-	{
-		*error = zbx_dsprintf(*error, "Cannot set allowed protocols: %s", curl_easy_strerror(err));
+	if (SUCCEED != zbx_curl_setopt_https(easyhandle, error))
 		goto out;
-	}
-#endif
+
 	*errbuf = '\0';
 	if (CURLE_OK == (err = curl_easy_perform(easyhandle)))
 	{
@@ -200,6 +192,7 @@ static int	curl_page_get(char *url, char **buffer, char **error)
 				curl_easy_strerror(err) : errbuf);
 	}
 out:
+	curl_slist_free_all(headers);
 	curl_easy_cleanup(easyhandle);
 	zbx_free(header.data);
 	zbx_free(body.data);
@@ -207,7 +200,8 @@ out:
 	return ret;
 }
 
-static int	get_http_page(const char *host, const char *path, const char *port, char **buffer, char **error)
+static int	get_http_page(const char *host, const char *path, const char *port, int timeout, char **buffer,
+		char **error)
 {
 	char	*url = NULL;
 	int	ret;
@@ -252,7 +246,7 @@ static int	get_http_page(const char *host, const char *path, const char *port, c
 		goto out;
 	}
 
-	ret = curl_page_get(url, buffer, error);
+	ret = curl_page_get(url, timeout, buffer, error);
 out:
 	zbx_free(url);
 
@@ -279,7 +273,8 @@ static char	*find_port_sep(char *host, size_t len)
 	return NULL;
 }
 
-static int	get_http_page(const char *host, const char *path, const char *port, char **buffer, char **error)
+static int	get_http_page(const char *host, const char *path, const char *port, int timeout, char **buffer,
+		char **error)
 {
 	char		*url = NULL, *hostname = NULL, *path_loc = NULL;
 	int		ret = SYSINFO_RET_OK, ipv6_host_found = 0;
@@ -393,7 +388,7 @@ static int	get_http_page(const char *host, const char *path, const char *port, c
 		goto out;
 	}
 
-	if (SUCCEED == (ret = zbx_tcp_connect(&s, CONFIG_SOURCE_IP, hostname, port_num, sysinfo_get_config_timeout(),
+	if (SUCCEED == (ret = zbx_tcp_connect(&s, sysinfo_get_config_source_ip(), hostname, port_num, timeout,
 			ZBX_TCP_SEC_UNENCRYPTED, NULL, NULL)))
 	{
 		char	*request = NULL;
@@ -454,7 +449,7 @@ int	web_page_get(AGENT_REQUEST *request, AGENT_RESULT *result)
 	path_str = get_rparam(request, 1);
 	port_str = get_rparam(request, 2);
 
-	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, &buffer, &error)))
+	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, request->timeout, &buffer, &error)))
 	{
 		zbx_rtrim(buffer, "\r\n");
 		SET_TEXT_RESULT(result, buffer);
@@ -483,7 +478,7 @@ int	web_page_perf(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 	start_time = zbx_time();
 
-	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, NULL, &error)))
+	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, request->timeout, NULL, &error)))
 		SET_DBL_RESULT(result, zbx_time() - start_time);
 	else
 		SET_MSG_RESULT(result, error);
@@ -528,7 +523,7 @@ int	web_page_regexp(AGENT_REQUEST *request, AGENT_RESULT *result)
 	if (NULL == output || '\0' == *output)
 		output = "\\0";
 
-	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, &buffer, &error)))
+	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, request->timeout, &buffer, &error)))
 	{
 		char	*ptr = NULL, *str;
 

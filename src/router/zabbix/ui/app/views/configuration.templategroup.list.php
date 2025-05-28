@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -71,7 +66,8 @@ $table = (new CTableInfo())
 		))->addClass(ZBX_STYLE_CELL_WIDTH),
 		make_sorting_header(_('Name'), 'name', $data['sort'], $data['sortorder'], $view_url),
 		(new CColHeader(_('Templates')))->setColSpan(2)
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 $current_time = time();
 
@@ -93,9 +89,13 @@ foreach ($data['groups'] as $group) {
 		}
 
 		if ($data['allowed_ui_conf_templates']) {
-			$templates_output[] = (new CLink($template['name'], (new CUrl('templates.php'))
-				->setArgument('form', 'update')
-				->setArgument('templateid', $template['templateid'])))
+			$template_url = (new CUrl('zabbix.php'))
+				->setArgument('action', 'popup')
+				->setArgument('popup', 'template.edit')
+				->setArgument('templateid', $template['templateid'])
+				->getUrl();
+
+			$templates_output[] = (new CLink($template['name'], $template_url))
 				->addClass(ZBX_STYLE_LINK_ALT)
 				->addClass(ZBX_STYLE_GREY);
 		}
@@ -106,18 +106,19 @@ foreach ($data['groups'] as $group) {
 
 	$template_count = $data['groupCounts'][$group['groupid']]['templates'];
 
-	$name = (new CLink($group['name'],
-		(new CUrl('zabbix.php'))
-			->setArgument('action', 'templategroup.edit')
-			->setArgument('groupid', $group['groupid'])
-	))
-		->addClass('js-edit-templategroup')
-		->setAttribute('data-groupid', $group['groupid']);
+	$templategroup_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', 'templategroup.edit')
+		->setArgument('groupid', $group['groupid'])
+		->getUrl();
+
+	$name = new CLink($group['name'], $templategroup_url);
 
 	$count = '';
 	if ($template_count > 0) {
 		if ($data['allowed_ui_conf_templates']) {
-			$count = new CLink($template_count, (new CUrl('templates.php'))
+			$count = new CLink($template_count, (new CUrl('zabbix.php'))
+				->setArgument('action', 'template.list')
 				->setArgument('filter_set', '1')
 				->setArgument('filter_groups', [$group['groupid']]));
 		}
@@ -125,26 +126,25 @@ foreach ($data['groups'] as $group) {
 			$count = new CSpan($template_count);
 		}
 
-		$count->addClass(ZBX_STYLE_ICON_COUNT);
+		$count->addClass(ZBX_STYLE_ENTITY_COUNT);
 	}
 
 	$table->addRow([
 		new CCheckBox('groupids['.$group['groupid'].']', $group['groupid']),
 		(new CCol($name))->addClass(ZBX_STYLE_NOWRAP),
 		(new CCol($count))->addClass(ZBX_STYLE_CELL_WIDTH),
-		$templates_output ? $templates_output : ''
+		$templates_output ?: ''
 	]);
 }
 
 $form->addItem([
 	$table,
-	$data['paging'],
 	new CActionButtonList('action', 'groupids', [
 		'templategroup.massdelete' => [
 			'content' => (new CSimpleButton(_('Delete')))
 				->addClass(ZBX_STYLE_BTN_ALT)
 				->addClass('js-massdelete-templategroup')
-				->addClass('no-chkbxrange')
+				->addClass('js-no-chkbxrange')
 		]
 	], 'templategroup')
 ]);
@@ -157,7 +157,7 @@ $html_page
 (new CScriptTag('view.init('.json_encode([
 	'delete_url' => (new CUrl('zabbix.php'))
 		->setArgument('action', 'templategroup.delete')
-		->setArgument(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('templategroup'))
+		->setArgument(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('templategroup'))
 		->getUrl()
 ]).');'))
 	->setOnDocumentReady()

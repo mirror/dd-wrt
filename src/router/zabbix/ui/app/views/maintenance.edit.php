@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,25 +20,25 @@
  */
 
 $form = (new CForm())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('maintenance')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('maintenance')))->removeId())
 	->setId('maintenance-form')
 	->setName('maintenance_form')
 	->addVar('maintenanceid', $data['maintenanceid'] ?: 0)
-	->addItem(getMessages());
+	->addItem(getMessages())
+	->addStyle('display: none;');
 
 // Enable form submitting on Enter.
-$form->addItem((new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
+$form->addItem((new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
 
 $timeperiods = (new CTable())
 	->setId('timeperiods')
 	->addStyle('min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
-	->setHeader(new CRowHeader([_('Period type'), _('Schedule'), _('Period'), _('Action')]))
+	->setHeader(new CRowHeader([_('Period type'), _('Schedule'), _('Period'), _('Actions')]))
 	->addItem(
 		(new CTag('tfoot', true))
 			->addItem(
 				(new CCol(
-					(new CSimpleButton(_('Add')))
-						->addClass(ZBX_STYLE_BTN_LINK)
+					(new CButtonLink(_('Add')))
 						->addClass('js-add')
 						->setEnabled($data['allowed_edit'])
 				))
@@ -66,12 +61,10 @@ $timeperiod_template = new CTemplateTag('timeperiod-row-tmpl',
 		(new CCol('#{formatted_period}')),
 		(new CCol(
 			(new CHorList([
-				(new CSimpleButton(_('Edit')))
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Edit')))
 					->addClass('js-edit')
 					->setEnabled($data['allowed_edit']),
-				(new CSimpleButton(_('Remove')))
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Remove')))
 					->addClass('js-remove')
 					->setEnabled($data['allowed_edit'])
 			]))
@@ -88,13 +81,12 @@ $tags = (new CTable())
 				->addValue(_('And/Or'), MAINTENANCE_TAG_EVAL_TYPE_AND_OR)
 				->addValue(_('Or'), MAINTENANCE_TAG_EVAL_TYPE_OR)
 				->setModern()
-				->setEnabled($data['allowed_edit'] && $data['maintenance_type'] == MAINTENANCE_TYPE_NORMAL)
+				->setReadonly(!$data['allowed_edit'] && $data['maintenance_type'] == MAINTENANCE_TYPE_NORMAL)
 		))
 	)
 	->setFooter(
 		(new CCol(
-			(new CSimpleButton(_('Add')))
-				->addClass(ZBX_STYLE_BTN_LINK)
+			(new CButtonLink(_('Add')))
 				->addClass('element-table-add')
 				->setEnabled($data['allowed_edit'] && $data['maintenance_type'] == MAINTENANCE_TYPE_NORMAL)
 		))
@@ -105,20 +97,19 @@ $tag_template = new CTemplateTag('tag-row-tmpl',
 		(new CTextBox('tags[#{rowNum}][tag]', '#{tag}', false, DB::getFieldLength('maintenance_tag', 'tag')))
 			->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
 			->setAttribute('placeholder', _('tag'))
-			->setReadonly(!$data['allowed_edit']),
+			->setReadonly(!$data['allowed_edit'] && $data['maintenance_type'] == MAINTENANCE_TYPE_NORMAL),
 		(new CRadioButtonList('tags[#{rowNum}][operator]', MAINTENANCE_TAG_OPERATOR_LIKE))
 			->addValue(_('Contains'), MAINTENANCE_TAG_OPERATOR_LIKE)
 			->addValue(_('Equals'), MAINTENANCE_TAG_OPERATOR_EQUAL)
 			->setModern()
-			->setReadonly(!$data['allowed_edit']),
+			->setReadonly(!$data['allowed_edit'] && $data['maintenance_type'] == MAINTENANCE_TYPE_NORMAL),
 		(new CTextBox('tags[#{rowNum}][value]', '#{value}', false, DB::getFieldLength('maintenance_tag', 'value')))
 			->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
 			->setAttribute('placeholder',  _('value'))
-			->setReadonly(!$data['allowed_edit']),
+			->setReadonly(!$data['allowed_edit'] && $data['maintenance_type'] == MAINTENANCE_TYPE_NORMAL),
 		(new CButton('tags[#{rowNum}][remove]', _('Remove')))
 			->addClass(ZBX_STYLE_BTN_LINK)
 			->addClass('element-table-remove')
-			->setEnabled($data['allowed_edit'])
 	]))->addClass('form_row')
 );
 
@@ -177,7 +168,7 @@ $form->addItem(
 					'name' => 'groupids[]',
 					'object_name' => 'hostGroup',
 					'data' => $data['groups_ms'],
-					'disabled' => !$data['allowed_edit'],
+					'readonly' => !$data['allowed_edit'],
 					'popup' => [
 						'parameters' => [
 							'srctbl' => 'host_groups',
@@ -197,7 +188,7 @@ $form->addItem(
 					'name' => 'hostids[]',
 					'object_name' => 'hosts',
 					'data' => $data['hosts_ms'],
-					'disabled' => !$data['allowed_edit'],
+					'readonly' => !$data['allowed_edit'],
 					'popup' => [
 						'parameters' => [
 							'srctbl' => 'hosts',
@@ -223,6 +214,7 @@ $form->addItem(
 				(new CTextArea('description', $data['description']))
 					->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 					->setReadonly(!$data['allowed_edit'])
+					->setMaxlength(DB::getFieldLength('maintenances', 'description'))
 			)
 		])
 	);
@@ -304,7 +296,8 @@ $output = [
 	'body' => $form->toString(),
 	'buttons' => $buttons,
 	'script_inline' => getPagePostJs().
-		$this->readJsFile('maintenance.edit.js.php')
+		$this->readJsFile('maintenance.edit.js.php'),
+	'dialogue_class' => 'modal-popup-large'
 ];
 
 if ($data['user']['debug_mode'] == GROUP_DEBUG_MODE_ENABLED) {

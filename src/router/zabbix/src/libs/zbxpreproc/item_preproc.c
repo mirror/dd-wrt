@@ -1,28 +1,25 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "item_preproc.h"
 
 #include "zbxregexp.h"
-#include "log.h"
 #include "zbxembed.h"
-#include "zbxprometheus.h"
+#include "zbxvariant.h"
+#include "zbxtime.h"
+#include "zbxjson.h"
+#include "zbxstr.h"
 
 #include "zbxxml.h"
 #ifdef HAVE_LIBXML2
@@ -36,7 +33,7 @@
  *                                                                            *
  * Purpose: returns numeric type hint based on item value type                *
  *                                                                            *
- * Parameters: value_type - [IN] the item value type                          *
+ * Parameters: value_type - [IN] item value type                              *
  *                                                                            *
  * Return value: variant numeric type or none                                 *
  *                                                                            *
@@ -58,9 +55,9 @@ static int	item_preproc_numeric_type_hint(unsigned char value_type)
  *                                                                            *
  * Purpose: convert variant value to the requested type                       *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to convert                         *
- *             type   - [IN] the new value type                               *
- *             errmsg - [OUT] error message                                   *
+ * Parameters: value  - [IN/OUT] value to convert                             *
+ *             type   - [IN] new value type                                   *
+ *             errmsg - [OUT]                                                 *
  *                                                                            *
  * Return value: SUCCEED - the value was converted successfully               *
  *               FAIL - otherwise, errmsg contains the error message          *
@@ -81,10 +78,10 @@ int	item_preproc_convert_value(zbx_variant_t *value, unsigned char type, char **
  *                                                                            *
  * Purpose: converts variant value to numeric                                 *
  *                                                                            *
- * Parameters: value_num  - [OUT] the converted value                         *
- *             value      - [IN] the value to convert                         *
+ * Parameters: value_num  - [OUT] converted value                             *
+ *             value      - [IN] value to convert                             *
  *             value_type - [IN] item value type                              *
- *             errmsg     - [OUT] error message                               *
+ *             errmsg     - [OUT]                                             *
  *                                                                            *
  * Return value: SUCCEED - the value was converted successfully               *
  *               FAIL - otherwise                                             *
@@ -126,10 +123,10 @@ int	zbx_item_preproc_convert_value_to_numeric(zbx_variant_t *value_num, const zb
  * Purpose: execute custom multiplier preprocessing operation on variant      *
  *          value type                                                        *
  *                                                                            *
- * Parameters: value_type - [IN] the item type                                *
- *             value      - [IN/OUT] the value to process                     *
- *             params     - [IN] the operation parameters                     *
- *             errmsg     - [OUT] error message                               *
+ * Parameters: value_type - [IN] item type                                    *
+ *             value      - [IN/OUT] value to process                         *
+ *             params     - [IN] operation parameters                         *
+ *             errmsg     - [OUT]                                             *
  *                                                                            *
  * Return value: SUCCEED - the preprocessing step finished successfully       *
  *               FAIL - otherwise, errmsg contains the error message          *
@@ -172,11 +169,11 @@ int	item_preproc_multiplier_variant(unsigned char value_type, zbx_variant_t *val
  *                                                                            *
  * Purpose: execute delta type preprocessing operation                        *
  *                                                                            *
- * Parameters: value         - [IN/OUT] the value to process                  *
- *             ts            - [IN] the value timestamp                       *
- *             op_type       - [IN] the operation type                        *
- *             history_value - [IN] the item historical data                  *
- *             history_ts    - [IN] the historical data timestamp             *
+ * Parameters: value         - [IN/OUT] value to process                      *
+ *             ts            - [IN] value timestamp                           *
+ *             op_type       - [IN] operation type                            *
+ *             history_value - [IN] item historical data                      *
+ *             history_ts    - [IN] historical data timestamp                 *
  *                                                                            *
  * Return value: SUCCEED - the value was calculated successfully              *
  *               FAIL - otherwise                                             *
@@ -210,11 +207,11 @@ static int	item_preproc_delta_float(zbx_variant_t *value, const zbx_timespec_t *
  *                                                                            *
  * Purpose: execute delta type preprocessing operation                        *
  *                                                                            *
- * Parameters: value         - [IN/OUT] the value to process                  *
- *             ts            - [IN] the value timestamp                       *
- *             op_type       - [IN] the operation type                        *
- *             history_value - [IN] the item historical data                  *
- *             history_ts    - [IN] the historical data timestamp             *
+ * Parameters: value         - [IN/OUT] value to process                      *
+ *             ts            - [IN] value timestamp                           *
+ *             op_type       - [IN] operation type                            *
+ *             history_value - [IN] item historical data                      *
+ *             history_ts    - [IN] historical data timestamp                 *
  *                                                                            *
  * Return value: SUCCEED - the value was calculated successfully              *
  *               FAIL - otherwise                                             *
@@ -248,45 +245,89 @@ static int	item_preproc_delta_uint64(zbx_variant_t *value, const zbx_timespec_t 
  *                                                                            *
  * Purpose: execute delta type preprocessing operation                        *
  *                                                                            *
- * Parameters: value_type    - [IN] the item value type                       *
- *             value         - [IN/OUT] the value to process                  *
- *             ts            - [IN] the value timestamp                       *
- *             op_type       - [IN] the operation type                        *
- *             history_value - [IN/OUT] the historical (previous) data        *
- *             history_ts    - [IN/OUT] the timestamp of the historical data  *
- *             errmsg        - [OUT] error message                            *
+ * Parameters: value_type    - [IN] item value type                           *
+ *             value         - [IN/OUT] value to process                      *
+ *             ts            - [IN] value timestamp                           *
+ *             op_type       - [IN] operation type                            *
+ *             history_value_in - [IN] historical (previous) data             *
+ *             history_value_out - [OUT] historical (next) data               *
+ *             history_ts    - [IN/OUT] timestamp of the historical data      *
+ *             errmsg        - [OUT]                                          *
  *                                                                            *
  * Return value: SUCCEED - the value was calculated successfully              *
  *               FAIL - otherwise                                             *
  *                                                                            *
  ******************************************************************************/
 int	item_preproc_delta(unsigned char value_type, zbx_variant_t *value, const zbx_timespec_t *ts,
-		int op_type, zbx_variant_t *history_value, zbx_timespec_t *history_ts, char **errmsg)
+		int op_type, const zbx_variant_t *history_value_in, zbx_variant_t *history_value_out,
+		zbx_timespec_t *history_ts, char **errmsg)
 {
-	zbx_variant_t			value_num;
+	zbx_variant_t	value_num;
 
 	if (FAIL == zbx_item_preproc_convert_value_to_numeric(&value_num, value, value_type, errmsg))
 		return FAIL;
 
+	zbx_variant_copy(history_value_out, history_value_in);
+
 	zbx_variant_clear(value);
 
-	if (ZBX_VARIANT_NONE != history_value->type)
+	if (ZBX_VARIANT_NONE != history_value_out->type)
 	{
-		int				ret;
+		int	ret;
 
 		zbx_variant_copy(value, &value_num);
 
-		if (ZBX_VARIANT_DBL == value->type || ZBX_VARIANT_DBL == history_value->type)
+		if (ZBX_VARIANT_DBL == value->type || ZBX_VARIANT_DBL == history_value_out->type)
 		{
-			zbx_variant_convert(value, ZBX_VARIANT_DBL);
-			zbx_variant_convert(history_value, ZBX_VARIANT_DBL);
-			ret = item_preproc_delta_float(value, ts, op_type, history_value, history_ts);
+			if (FAIL == zbx_variant_convert(value, ZBX_VARIANT_DBL))
+			{
+				*errmsg = zbx_dsprintf(*errmsg, "cannot convert value from %s to %s",
+						zbx_variant_type_desc(value),
+						zbx_get_variant_type_desc(ZBX_VARIANT_DBL));
+
+				zabbix_log(LOG_LEVEL_CRIT, "%s", *errmsg);
+				THIS_SHOULD_NEVER_HAPPEN;
+				return FAIL;
+			}
+
+			if (FAIL == zbx_variant_convert(history_value_out, ZBX_VARIANT_DBL))
+			{
+				*errmsg = zbx_dsprintf(*errmsg, "cannot convert value from %s to %s",
+						zbx_variant_type_desc(history_value_out),
+						zbx_get_variant_type_desc(ZBX_VARIANT_DBL));
+
+				zabbix_log(LOG_LEVEL_CRIT, "%s", *errmsg);
+				THIS_SHOULD_NEVER_HAPPEN;
+				return FAIL;
+			}
+
+			ret = item_preproc_delta_float(value, ts, op_type, history_value_out, history_ts);
 		}
 		else
 		{
-			zbx_variant_convert(value, ZBX_VARIANT_UI64);
-			zbx_variant_convert(history_value, ZBX_VARIANT_UI64);
-			ret = item_preproc_delta_uint64(value, ts, op_type, history_value, history_ts);
+			if (FAIL == zbx_variant_convert(value, ZBX_VARIANT_UI64))
+			{
+				*errmsg = zbx_dsprintf(*errmsg, "cannot convert value from %s to %s",
+						zbx_variant_type_desc(value),
+						zbx_get_variant_type_desc(ZBX_VARIANT_UI64));
+
+				zabbix_log(LOG_LEVEL_CRIT, "%s", *errmsg);
+				THIS_SHOULD_NEVER_HAPPEN;
+				return FAIL;
+			}
+
+			if (FAIL == zbx_variant_convert(history_value_out, ZBX_VARIANT_UI64))
+			{
+				*errmsg = zbx_dsprintf(*errmsg, "cannot convert value from %s to %s",
+						zbx_variant_type_desc(history_value_out),
+						zbx_get_variant_type_desc(ZBX_VARIANT_UI64));
+
+				zabbix_log(LOG_LEVEL_CRIT, "%s", *errmsg);
+				THIS_SHOULD_NEVER_HAPPEN;
+				return FAIL;
+			}
+
+			ret = item_preproc_delta_uint64(value, ts, op_type, history_value_out, history_ts);
 		}
 
 		if (SUCCEED != ret)
@@ -294,8 +335,8 @@ int	item_preproc_delta(unsigned char value_type, zbx_variant_t *value, const zbx
 	}
 
 	*history_ts = *ts;
-	zbx_variant_clear(history_value);
-	zbx_variant_copy(history_value, &value_num);
+	zbx_variant_clear(history_value_out);
+	zbx_variant_copy(history_value_out, &value_num);
 	zbx_variant_clear(&value_num);
 
 	return SUCCEED;
@@ -306,10 +347,10 @@ int	item_preproc_delta(unsigned char value_type, zbx_variant_t *value, const zbx
  * Purpose: copy first n chars from in to out, unescape escaped characters    *
  *          during copying                                                    *
  *                                                                            *
- * Parameters: op_type - [IN] the operation type                              *
- *             in      - [IN] the value to unescape                           *
- *             len     - [IN] the length of the value to be unescaped         *
- *             out     - [OUT] the value to process                           *
+ * Parameters: op_type - [IN] operation type                                  *
+ *             in      - [IN] value to unescape                               *
+ *             len     - [IN] length of the value to be unescaped             *
+ *             out     - [OUT] value to process                               *
  *                                                                            *
  ******************************************************************************/
 static void	unescape_param(int op_type, const char *in, size_t len, char *out)
@@ -356,10 +397,10 @@ static void	unescape_param(int op_type, const char *in, size_t len, char *out)
  *                                                                            *
  * Purpose: execute trim type preprocessing operation                         *
  *                                                                            *
- * Parameters: value   - [IN/OUT] the value to process                        *
- *             op_type - [IN] the operation type                              *
- *             params  - [IN] the characters to trim                          *
- *             errmsg  - [OUT] error message                                  *
+ * Parameters: value   - [IN/OUT] value to process                            *
+ *             op_type - [IN] operation type                                  *
+ *             params  - [IN] characters to trim                              *
+ *             errmsg  - [OUT]                                                *
  *                                                                            *
  * Return value: SUCCEED - the value was trimmed successfully                 *
  *               FAIL - otherwise                                             *
@@ -393,7 +434,8 @@ int	item_preproc_trim(zbx_variant_t *value, int op_type, const char *params, cha
  *                                                                            *
  * Purpose: check if the string is boolean                                    *
  *                                                                            *
- * Parameters: str - string to check                                          *
+ * Parameters: str   - [IN] string to check                                   *
+ *             value - [OUT] boolean value                                    *
  *                                                                            *
  * Return value:  SUCCEED - the string is boolean                             *
  *                FAIL - otherwise                                            *
@@ -432,7 +474,7 @@ static int	is_boolean(const char *str, zbx_uint64_t *value)
  *                                                                            *
  * Purpose: check if the string is unsigned octal                             *
  *                                                                            *
- * Parameters: str - string to check                                          *
+ * Parameters: str - [IN] string to check                                     *
  *                                                                            *
  * Return value:  SUCCEED - the string is unsigned octal                      *
  *                FAIL - otherwise                                            *
@@ -467,7 +509,7 @@ static int	is_uoct(const char *str)
  * Purpose: check if the string is unsigned hexadecimal representation of     *
  *          data in the form "0-9, a-f or A-F"                                *
  *                                                                            *
- * Parameters: str - string to check                                          *
+ * Parameters: str - [IN] string to check                                     *
  *                                                                            *
  * Return value:  SUCCEED - the string is unsigned hexadecimal                *
  *                FAIL - otherwise                                            *
@@ -501,9 +543,9 @@ static int	is_uhex(const char *str)
  *                                                                            *
  * Purpose: execute decimal value conversion operation                        *
  *                                                                            *
- * Parameters: value   - [IN/OUT] the value to convert                        *
- *             op_type - [IN] the operation type                              *
- *             errmsg  - [OUT] error message                                  *
+ * Parameters: value   - [IN/OUT] value to convert                            *
+ *             op_type - [IN] operation type                                  *
+ *             errmsg  - [OUT]                                                *
  *                                                                            *
  * Return value: SUCCEED - the value was converted successfully               *
  *               FAIL - otherwise                                             *
@@ -511,8 +553,8 @@ static int	is_uhex(const char *str)
  ******************************************************************************/
 int	item_preproc_2dec(zbx_variant_t *value, int op_type, char **errmsg)
 {
-#define OCT2UINT64(uint, string) sscanf(string, ZBX_FS_UO64, &uint)
-#define HEX2UINT64(uint, string) sscanf(string, ZBX_FS_UX64, &uint)
+#define OCT2UINT64(uint, string)	sscanf(string, ZBX_FS_UO64, &uint)
+#define HEX2UINT64(uint, string)	sscanf(string, ZBX_FS_UX64, &uint)
 
 	zbx_uint64_t	value_ui64;
 
@@ -569,9 +611,9 @@ int	item_preproc_2dec(zbx_variant_t *value, int op_type, char **errmsg)
  *                                                                            *
  * Purpose: execute regular expression substitution operation                 *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             errmsg - [OUT] error message                                   *
+ * Parameters: value  - [IN/OUT] value to process                             *
+ *             params - [IN] operation parameters                             *
+ *             errmsg - [OUT]                                                 *
  *                                                                            *
  * Return value: SUCCEED - the value was processed successfully               *
  *               FAIL - otherwise                                             *
@@ -626,10 +668,11 @@ out:
 /******************************************************************************
  *                                                                            *
  * Purpose: validates value to be within the specified range                  *
- * Parameters: value_type - [IN] the item type                                *
- *             value      - [IN/OUT] the value to process                     *
- *             params     - [IN] the operation parameters                     *
- *             errmsg     - [OUT] error message                               *
+ *                                                                            *
+ * Parameters: value_type - [IN] item type                                    *
+ *             value      - [IN/OUT] value to process                         *
+ *             params     - [IN] operation parameters                         *
+ *             errmsg     - [OUT]                                             *
  *                                                                            *
  * Return value: SUCCEED - the preprocessing step finished successfully       *
  *               FAIL - otherwise, errmsg contains the error message          *
@@ -705,10 +748,10 @@ out:
 /******************************************************************************
  *                                                                            *
  * Purpose: validates value to match regular expression                       *
- * Parameters: value_type - [IN] the item type                                *
- *             value      - [IN/OUT] the value to process                     *
- *             params     - [IN] the operation parameters                     *
- *             errmsg     - [OUT] error message                               *
+ *                                                                            *
+ * Parameters: value      - [IN/OUT] value to process                         *
+ *             params     - [IN] operation parameters                         *
+ *             error      - [OUT]                                             *
  *                                                                            *
  * Return value: SUCCEED - the preprocessing step finished successfully       *
  *               FAIL - otherwise, errmsg contains the error message          *
@@ -760,10 +803,10 @@ out:
 /******************************************************************************
  *                                                                            *
  * Purpose: validates value to not match regular expression                   *
- * Parameters: value_type - [IN] the item type                                *
- *             value      - [IN/OUT] the value to process                     *
- *             params     - [IN] the operation parameters                     *
- *             errmsg     - [OUT] error message                               *
+ *                                                                            *
+ * Parameters: value      - [IN/OUT] value to process                         *
+ *             params     - [IN] operation parameters                         *
+ *             error      - [OUT]                                             *
  *                                                                            *
  * Return value: SUCCEED - the preprocessing step finished successfully       *
  *               FAIL - otherwise, errmsg contains the error message          *
@@ -818,9 +861,9 @@ out:
  *                                                                            *
  * Purpose: checks for presence of error field in json data                   *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             error  - [OUT] error message                                   *
+ * Parameters: value  - [IN/OUT] value to process                             *
+ *             params - [IN] operation parameters                             *
+ *             error  - [OUT]                                                 *
  *                                                                            *
  * Return value: FAIL - preprocessing step error                              *
  *               SUCCEED - preprocessing step succeeded, error may contain    *
@@ -870,9 +913,9 @@ out:
  *                                                                            *
  * Purpose: checks for presence of error field in XML data                    *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             error  - [OUT] the error message                               *
+ * Parameters: value  - [IN/OUT] value to process                             *
+ *             params - [IN] operation parameters                             *
+ *             error  - [OUT]                                                 *
  *                                                                            *
  * Return value: FAIL - preprocessing step error                              *
  *               SUCCEED - preprocessing step succeeded, error may contain    *
@@ -889,7 +932,9 @@ int	item_preproc_get_error_from_xml(const zbx_variant_t *value, const char *para
 	ZBX_UNUSED(value);
 	ZBX_UNUSED(params);
 	ZBX_UNUSED(error);
+
 	*error = zbx_dsprintf(*error, "Zabbix was compiled without libxml2 support");
+
 	return FAIL;
 #else
 	zbx_variant_t		value_str;
@@ -972,9 +1017,9 @@ out:
  *                                                                            *
  * Purpose: checks for presence of error pattern matching regular expression  *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             error  - [OUT] the error message                               *
+ * Parameters: value  - [IN] value to process                                 *
+ *             params - [IN] operation parameters                             *
+ *             error  - [OUT]                                                 *
  *                                                                            *
  * Return value: FAIL - preprocessing step error                              *
  *               SUCCEED - preprocessing step succeeded, error may contain    *
@@ -1010,7 +1055,7 @@ int	item_preproc_get_error_from_regex(const zbx_variant_t *value, const char *pa
 
 	*output++ = '\0';
 
-	if (FAIL == zbx_mregexp_sub(value_str.data.str, pattern, output, error))
+	if (FAIL == zbx_mregexp_sub(value_str.data.str, pattern, output, ZBX_REGEXP_GROUP_CHECK_DISABLE, error))
 	{
 		*error = zbx_dsprintf(*error, "invalid regular expression \"%s\"", pattern);
 		ret = FAIL;
@@ -1032,27 +1077,119 @@ out:
 
 /******************************************************************************
  *                                                                            *
+ * Purpose: checks error for pattern matching regular expression              *
+ *                                                                            *
+ * Parameters: value            - [IN] value to process                       *
+ *             params           - [IN] operation parameters                   *
+ *             output_template  - [IN] the output string template             *
+ *             error            - [OUT] matched error using output template   *
+ *                                                                            *
+ * Return value: FAIL - preprocessing step error                              *
+ *               SUCCEED - preprocessing step succeeded, error may contain    *
+ *                         extracted error message                            *
+ *                                                                            *
+ ******************************************************************************/
+int	item_preproc_check_error_regex(const zbx_variant_t *value, const char *params, const char *output_template,
+		char **error)
+{
+#define ZBX_PP_MATCH_TYPE_MATCHES	0
+#define ZBX_PP_MATCH_TYPE_ANY		-1
+	zbx_variant_t	value_str;
+	int		ret = SUCCEED, match_type = ZBX_PP_MATCH_TYPE_ANY;
+	char		*pattern = NULL, *newline, *out = NULL, *errptr = NULL;
+	zbx_regexp_t	*regex;
+
+	zbx_variant_copy(&value_str, value);
+
+	if (NULL != (newline = strchr(params, '\n')))
+	{
+		newline++;
+		pattern = zbx_strdup(NULL, newline);
+		match_type = atoi(params);
+	}
+
+	if (ZBX_PP_MATCH_TYPE_ANY == match_type)
+		goto out;
+
+	if (ZBX_PP_MATCH_TYPE_MATCHES == match_type)
+	{
+		if (FAIL == zbx_regexp_compile_ext(pattern, &regex, 0, &errptr))
+		{
+			*error = zbx_dsprintf(*error, "invalid regular expression: %s", errptr);
+			zbx_free(errptr);
+			goto out;
+		}
+
+		if (SUCCEED == zbx_mregexp_sub_precompiled(value->data.str, regex, output_template,
+				ZBX_MAX_RECV_DATA_SIZE, &out))
+		{
+			if (NULL != out)
+			{
+				zbx_free(*error);
+				*error = out;
+			}
+		}
+		else
+			ret = FAIL;
+	}
+	else
+	{
+		int	res;
+
+		if (FAIL == zbx_regexp_compile(pattern, &regex, &errptr))
+		{
+			*error = zbx_dsprintf(*error, "invalid regular expression: %s", errptr);
+			zbx_free(errptr);
+			ret = FAIL;
+			goto out;
+		}
+
+		if (FAIL != (res = zbx_regexp_match_precompiled2(value_str.data.str, regex, &errptr)))
+		{
+			if (ZBX_REGEXP_MATCH == res)
+				ret = FAIL;
+		}
+		else
+		{
+			*error = zbx_dsprintf(*error, "regular expression execution failed: %s", errptr);
+			zbx_free(errptr);
+			ret = FAIL;
+		}
+	}
+
+	zbx_regexp_free(regex);
+out:
+	zbx_free(pattern);
+	zbx_variant_clear(&value_str);
+
+	return ret;
+#undef ZBX_PP_MATCH_TYPE_MATCHES
+#undef ZBX_PP_MATCH_TYPE_ANY
+}
+
+/******************************************************************************
+ *                                                                            *
  * Purpose: throttles value by suppressing identical values                   *
  *                                                                            *
- * Parameters: value         - [IN/OUT] the value to process                  *
- *             ts            - [IN] the value timestamp                       *
- *             history_value - [IN] historical data of item with delta        *
- *                                  preprocessing operation                   *
- *             errmsg        - [OUT] error message                            *
+ * Parameters: value             - [IN/OUT] value to process                  *
+ *             ts                - [IN] value timestamp                       *
+ *             history_value_in  - [IN] historical (previous) data            *
+ *             history_value_out - [OUT] historical (next) data               *
+ *             history_ts        - [OUT] timestamp of historical data         *
  *                                                                            *
  * Return value: SUCCEED - the value was calculated successfully              *
  *               FAIL - otherwise                                             *
  *                                                                            *
  ******************************************************************************/
 int	item_preproc_throttle_value(zbx_variant_t *value, const zbx_timespec_t *ts,
-		zbx_variant_t *history_value, zbx_timespec_t *history_ts)
+		const zbx_variant_t *history_value_in, zbx_variant_t *history_value_out, zbx_timespec_t *history_ts)
 {
 	int	ret;
 
-	ret = zbx_variant_compare(value, history_value);
+	ret = zbx_variant_compare(value, history_value_in);
 
-	zbx_variant_clear(history_value);
-	zbx_variant_copy(history_value, value);
+	zbx_variant_clear(history_value_out);
+	zbx_variant_copy(history_value_out, value);
 
 	if (0 == ret)
 		zbx_variant_clear(value);
@@ -1066,35 +1203,37 @@ int	item_preproc_throttle_value(zbx_variant_t *value, const zbx_timespec_t *ts,
  *                                                                            *
  * Purpose: throttles value by suppressing identical values                   *
  *                                                                            *
- * Parameters: value         - [IN/OUT] the value to process                  *
- *             ts            - [IN] the value timestamp                       *
- *             params        - [IN] the throttle period                       *
- *             history_value - [IN] historical data of item with delta        *
- *                                  preprocessing operation                   *
- *             errmsg        - [OUT] error message                            *
+ * Parameters: value             - [IN/OUT] value to process                  *
+ *             ts                - [IN] value timestamp                       *
+ *             params            - [IN] throttle period                       *
+ *             history_value_in  - [IN] historical (previous) data            *
+ *             history_value_out - [OUT] historical (next) data               *
+ *             history_ts        - [IN/OUT] timestamp of historical data      *
+ *             errmsg            - [OUT]                                      *
  *                                                                            *
  * Return value: SUCCEED - the value was calculated successfully              *
  *               FAIL - otherwise                                             *
  *                                                                            *
  ******************************************************************************/
 int	item_preproc_throttle_timed_value(zbx_variant_t *value, const zbx_timespec_t *ts, const char *params,
-		zbx_variant_t *history_value, zbx_timespec_t *history_ts, char **errmsg)
+		const zbx_variant_t *history_value_in, zbx_variant_t *history_value_out, zbx_timespec_t *history_ts,
+		char **errmsg)
 {
 	int	ret, timeout, period = 0;
 
 	if (FAIL == zbx_is_time_suffix(params, &timeout, (int)strlen(params)))
 	{
 		*errmsg = zbx_dsprintf(*errmsg, "invalid time period: %s", params);
-		zbx_variant_clear(history_value);
+		zbx_variant_clear(history_value_out);
 		return FAIL;
 	}
 
-	ret = zbx_variant_compare(value, history_value);
+	ret = zbx_variant_compare(value, history_value_in);
 
-	zbx_variant_clear(history_value);
-	zbx_variant_copy(history_value, value);
+	zbx_variant_clear(history_value_out);
+	zbx_variant_copy(history_value_out, value);
 
-	if (ZBX_VARIANT_NONE != history_value->type)
+	if (ZBX_VARIANT_NONE != history_value_out->type)
 		period = ts->sec - history_ts->sec;
 
 	if (0 == ret && period < timeout )
@@ -1109,43 +1248,51 @@ int	item_preproc_throttle_timed_value(zbx_variant_t *value, const zbx_timespec_t
  *                                                                            *
  * Purpose: executes script passed with params                                *
  *                                                                            *
- * Parameters: value    - [IN/OUT] the value to process                       *
- *             params   - [IN] the script to execute                          *
- *             bytecode - [IN] precompiled bytecode, can be NULL              *
- *             errmsg   - [OUT] error message                                 *
+ * Parameters: es               - [IN] execution environment                  *
+ *             value            - [IN/OUT] value to process                   *
+ *             params           - [IN] script to execute                      *
+ *             bytecode         - [IN] precompiled bytecode, can be NULL      *
+ *             bytecode_in      - [IN] historical (previous) bytecode         *
+ *             bytecode_out     - [IN] historical (next) bytecode             *
+ *             config_source_ip - [IN]                                        *
+ *             errmsg           - [OUT]                                       *
  *                                                                            *
  * Return value: SUCCEED - the value was calculated successfully              *
  *               FAIL - otherwise                                             *
  *                                                                            *
  ******************************************************************************/
-int	item_preproc_script(zbx_es_t *es, zbx_variant_t *value, const char *params, zbx_variant_t *bytecode,
-		char **errmsg)
+int	item_preproc_script(zbx_es_t *es, zbx_variant_t *value, const char *params, const zbx_variant_t *bytecode_in,
+		zbx_variant_t *bytecode_out, const char *config_source_ip, char **errmsg)
 {
-	char	*code, *output = NULL, *error = NULL;
-	int	size;
+	char		*output = NULL, *error = NULL;
+	const char	*code2;
+	int		size;
 
 	if (FAIL == item_preproc_convert_value(value, ZBX_VARIANT_STR, errmsg))
 		return FAIL;
 
 	if (SUCCEED != zbx_es_is_env_initialized(es))
 	{
-		if (SUCCEED != zbx_es_init_env(es, errmsg))
+		if (SUCCEED != zbx_es_init_env(es, config_source_ip, errmsg))
 			return FAIL;
 	}
 
-	if (ZBX_VARIANT_BIN != bytecode->type)
+	if (ZBX_VARIANT_BIN != bytecode_in->type)
 	{
+		char	*code;
+
 		if (SUCCEED != zbx_es_compile(es, params, &code, &size, errmsg))
 			goto fail;
 
-		zbx_variant_clear(bytecode);
-		zbx_variant_set_bin(bytecode, zbx_variant_data_bin_create(code, (zbx_uint32_t)size));
+		zbx_variant_set_bin(bytecode_out, zbx_variant_data_bin_create(code, (zbx_uint32_t)size));
 		zbx_free(code);
 	}
+	else
+		zbx_variant_copy(bytecode_out, bytecode_in);
 
-	size = (int)zbx_variant_data_bin_get(bytecode->data.bin, (void **)&code);
+	size = (int)zbx_variant_data_bin_get(bytecode_out->data.bin, (const void ** const)&code2);
 
-	if (SUCCEED == zbx_es_execute(es, params, code, size, value->data.str, &output, errmsg))
+	if (SUCCEED == zbx_es_execute(es, params, code2, size, value->data.str, &output, errmsg))
 	{
 		zbx_variant_clear(value);
 
@@ -1168,39 +1315,6 @@ fail:
 	return FAIL;
 }
 
-
-/******************************************************************************
- *                                                                            *
- * Purpose: convert Prometheus format metrics to JSON format                  *
- *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             errmsg - [OUT] error message                                   *
- *                                                                            *
- * Return value: SUCCEED - the value was processed successfully               *
- *               FAIL - otherwise                                             *
- *                                                                            *
- ******************************************************************************/
-int	item_preproc_prometheus_to_json(zbx_variant_t *value, const char *params, char **errmsg)
-{
-	char	*value_out = NULL, *err = NULL;
-
-	if (FAIL == item_preproc_convert_value(value, ZBX_VARIANT_STR, errmsg))
-		return FAIL;
-
-	if (FAIL == zbx_prometheus_to_json(value->data.str, params, &value_out, &err))
-	{
-		*errmsg = zbx_dsprintf(*errmsg, "cannot convert Prometheus data to JSON: %s", err);
-		zbx_free(err);
-		return FAIL;
-	}
-
-	zbx_variant_clear(value);
-	zbx_variant_set_str(value, value_out);
-
-	return SUCCEED;
-}
-
 /******************************************************************************
  *                                                                            *
  * Purpose: convert CSV format metrics to JSON format                         *
@@ -1211,7 +1325,7 @@ int	item_preproc_prometheus_to_json(zbx_variant_t *value, const char *params, ch
  *             num     - [IN] field number                                    *
  *             num_max - [IN] maximum number of fields                        *
  *             header  - [IN] header line option                              *
- *             errmsg  - [OUT] error message                                  *
+ *             errmsg  - [OUT]                                                *
  *                                                                            *
  * Return value: SUCCEED - the field was added successfully                   *
  *               FAIL - otherwise                                             *
@@ -1279,9 +1393,9 @@ static int	item_preproc_csv_to_json_add_field(struct zbx_json *json, char ***nam
  *                                                                            *
  * Purpose: convert CSV format metrics to JSON format                         *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             errmsg - [OUT] error message                                   *
+ * Parameters: value  - [IN/OUT] value to process                             *
+ *             params - [IN] operation parameters                             *
+ *             errmsg - [OUT]                                                 *
  *                                                                            *
  * Return value: SUCCEED - the value was processed successfully               *
  *               FAIL - otherwise                                             *
@@ -1535,8 +1649,8 @@ out:
  *                                                                            *
  * Purpose: convert XML format value to JSON format                           *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             errmsg - [OUT] error message                                   *
+ * Parameters: value  - [IN/OUT] value to process                             *
+ *             errmsg - [OUT]                                                 *
  *                                                                            *
  * Return value: SUCCEED - the value was processed successfully               *
  *               FAIL - otherwise                                             *
@@ -1562,9 +1676,9 @@ int	item_preproc_xml_to_json(zbx_variant_t *value, char **errmsg)
  *                                                                            *
  * Purpose: replace substrings in string                                      *
  *                                                                            *
- * Parameters: value  - [IN/OUT] the value to process                         *
- *             params - [IN] the operation parameters                         *
- *             errmsg - [OUT] error message                                   *
+ * Parameters: value  - [IN/OUT]  value to process                            *
+ *             params - [IN] operation parameters                             *
+ *             errmsg - [OUT]                                                 *
  *                                                                            *
  * Return value: SUCCEED - the value was processed successfully               *
  *               FAIL - otherwise                                             *

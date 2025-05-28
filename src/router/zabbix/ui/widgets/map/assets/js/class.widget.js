@@ -1,294 +1,270 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CWidgetMap extends CWidget {
 
-	static SOURCETYPE_MAP = 1;
-	static SOURCETYPE_FILTER = 2;
+	/**
+	 * @type {SVGMap|null}
+	 */
+	#map_svg = null;
 
-	static EVENT_SUBMAP_SELECT = 'widget-map.submap-select';
+	/**
+	 * @type {string|null}
+	 */
+	#sysmapid = null;
 
-	static WIDGET_NAVTREE_EVENT_MARK = 'widget-navtree.mark';
-	static WIDGET_NAVTREE_EVENT_SELECT = 'widget-navtree.select';
+	/**
+	 * @type {Array.<{sysmapid: string}>}
+	 */
+	#previous_maps = [];
 
-	static getForeignReferenceFields() {
-		return ['filter_widget_reference'];
+	/**
+	 * @type {Object}
+	 */
+	#event_handlers;
+
+	/**
+	 * @type {string|null}
+	 */
+	#selected_element_id = null;
+
+	onStart() {
+		this.#registerEvents();
 	}
 
-	_init() {
-		super._init();
-
-		this._map_svg = null;
-
-		this._source_type = this._fields.source_type || CWidgetMap.SOURCETYPE_MAP;
-		this._filter_widget = null;
-		this._filter_itemid = null;
-
-		this._previous_maps = [];
-		this._sysmapid = null;
-		this._initial_load = true;
-
-		this._has_contents = false;
+	onActivate() {
+		this.#activateContentEvents();
 	}
 
-	_doActivate() {
-		super._doActivate();
-
-		if (this._has_contents) {
-			this._activateContentsEvents();
-		}
+	onDeactivate() {
+		this.#deactivateContentEvents();
 	}
 
-	_doDeactivate() {
-		super._doDeactivate();
+	promiseUpdate() {
+		const sysmapid = this.getFieldsData().sysmapid[0];
 
-		if (this._has_contents) {
-			this._deactivateContentsEvents();
+		if (this.isFieldsReferredDataUpdated('sysmapid')) {
+			this.#previous_maps = [];
+			this.#sysmapid = sysmapid;
+			this.#map_svg = null;
 		}
-	}
-
-	_doDestroy() {
-		super._doDestroy();
-
-		if (this._filter_widget) {
-			this._filter_widget.off(CWidgetMap.WIDGET_NAVTREE_EVENT_MARK, this._events.mark);
-			this._filter_widget.off(CWidgetMap.WIDGET_NAVTREE_EVENT_SELECT, this._events.select);
-		}
-	}
-
-	announceWidgets(widgets) {
-		super.announceWidgets(widgets);
-
-		if (this._filter_widget !== null) {
-			this._filter_widget.off(CWidgetMap.WIDGET_NAVTREE_EVENT_MARK, this._events.mark);
-			this._filter_widget.off(CWidgetMap.WIDGET_NAVTREE_EVENT_SELECT, this._events.select);
+		else if (this.#sysmapid !== null && sysmapid != this.#sysmapid) {
+			this.feedback({sysmapid: [this.#sysmapid]});
 		}
 
-		if (this._source_type == CWidgetMap.SOURCETYPE_FILTER) {
-			for (const widget of widgets) {
-				if (widget._type === 'navtree' && widget._fields.reference === this._fields.filter_widget_reference) {
-					this._filter_widget = widget;
-
-					this._filter_widget.on(CWidgetMap.WIDGET_NAVTREE_EVENT_MARK, this._events.mark);
-					this._filter_widget.on(CWidgetMap.WIDGET_NAVTREE_EVENT_SELECT, this._events.select);
-				}
-			}
-		}
-	}
-
-	updateProperties({name, view_mode, fields}) {
-		this._deactivateContentsEvents();
-
-		this._map_svg = null;
-
-		this._source_type = fields.source_type;
-		this._previous_maps = [];
-		this._sysmapid = null;
-
-		this._initial_load = true;
-		this._has_contents = false;
-
-		if (this._source_type == CWidgetMap.SOURCETYPE_FILTER) {
-			if (this._filter_widget !== null) {
-				this._filter_widget.off(CWidgetMap.WIDGET_NAVTREE_EVENT_MARK, this._events.mark);
-				this._filter_widget.off(CWidgetMap.WIDGET_NAVTREE_EVENT_SELECT, this._events.select);
-			}
-
-			for (const widget of ZABBIX.Dashboard.getSelectedDashboardPage().getWidgets()) {
-				if (widget instanceof CWidgetNavTree && widget._fields.reference === fields.filter_widget_reference) {
-					this._filter_widget = widget;
-
-					this._filter_widget.on(CWidgetMap.WIDGET_NAVTREE_EVENT_MARK, this._events.mark);
-					this._filter_widget.on(CWidgetMap.WIDGET_NAVTREE_EVENT_SELECT, this._events.select);
-				}
-			}
-
-			this._filter_itemid = this._filter_widget._navtree[this._filter_widget._navtree_item_selected]?.sysmapid;
-			this._sysmapid = this._filter_itemid;
+		if (this.#map_svg === null) {
+			return super.promiseUpdate();
 		}
 
-		super.updateProperties({name, view_mode, fields});
-	}
-
-	_promiseUpdate() {
-		if (!this._has_contents || this._map_svg === null) {
-			if (this._sysmapid === null
-					&& this._source_type == CWidgetMap.SOURCETYPE_FILTER
-					&& Object.keys(this._filter_widget?._navtree || {}).length > 0) {
-				this._filter_itemid = this._filter_widget._navtree[this._filter_widget._navtree_item_selected]?.sysmapid;
-				this._sysmapid = this._filter_itemid;
-			}
-
-			if (this._sysmapid !== null
-					|| this._source_type == CWidgetMap.SOURCETYPE_MAP
-					|| this._filter_widget === null) {
-				return super._promiseUpdate();
-			}
-
-			return Promise.resolve();
-		}
-
-		const curl = new Curl(this._map_svg.options.refresh);
+		const curl = new Curl(this.#map_svg.options.refresh);
 
 		return fetch(curl.getUrl(), {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
 			},
-			body: urlEncodeData({
-				'curtime': new CDate().getTime(),
-				'initial_load': 0
-			})
+			body: JSON.stringify(this.getUpdateRequestData()),
+			signal: this._update_abort_controller.signal
 		})
-			.then((response) => response.json())
-			.then((response) => {
-				if (response.mapid > 0 && this._map_svg) {
-					this._map_svg.update(response);
+			.then(response => response.json())
+			.then(response => {
+				if (response.mapid != 0) {
+					this.#map_svg.selected_element_id = this.#selected_element_id;
+					this.#map_svg.update(response);
 				}
 				else {
-					this._restartUpdating();
+					this.#map_svg = null;
+					this._startUpdating({delay_sec: this._update_retry_sec});
 				}
 			});
 	}
 
-	_getUpdateRequestData() {
+	promiseReady() {
+		const readiness = [super.promiseReady()];
+
+		if (this.#map_svg !== null) {
+			readiness.push(this.#map_svg.promiseRendered());
+		}
+
+		return Promise.all(readiness);
+	}
+
+	getUpdateRequestData() {
 		return {
-			...super._getUpdateRequestData(),
-			current_sysmapid: this._sysmapid ?? undefined,
-			previous_maps: this._previous_maps.map((i) => i.sysmapid),
-			unique_id: this._unique_id,
-			initial_load: this._initial_load ? 1 : 0
+			...super.getUpdateRequestData(),
+			current_sysmapid: this.#sysmapid ?? undefined,
+			previous_maps: this.#previous_maps.map((map) => map.sysmapid),
+			initial_load: this.#map_svg === null ? 1 : 0,
+			unique_id: this.getUniqueId()
 		};
 	}
 
-	_processUpdateResponse(response) {
-		super._processUpdateResponse(response);
+	processUpdateResponse(response) {
+		this.clearContents();
 
-		if (response.sysmap_data !== undefined) {
-			this._has_contents = true;
+		super.processUpdateResponse(response);
 
-			this._sysmapid = response.sysmap_data.current_sysmapid;
-			this._initial_load = false;
+		const sysmap_data = response.sysmap_data;
 
-			const map_options = response.sysmap_data.map_options;
+		if (sysmap_data === undefined) {
+			return;
+		}
 
-			if (map_options !== null) {
-				this._makeSvgMap(map_options);
+		if (this.#sysmapid != sysmap_data.current_sysmapid) {
+			this.#sysmapid = sysmap_data.current_sysmapid;
+		}
 
-				if (this._state === WIDGET_STATE_ACTIVE) {
-					this._activateContentsEvents();
-				}
-			}
+		if (sysmap_data.error_msg !== undefined) {
+			this.setContents({body: sysmap_data.error_msg});
+		}
 
-			if (response.sysmap_data.error_msg !== undefined) {
-				this._content_body.innerHTML = response.sysmap_data.error_msg;
-			}
+		if (sysmap_data.map_options === null) {
+			return;
+		}
+
+		this.#makeSvgMap(sysmap_data.map_options);
+		this.#activateContentEvents();
+
+		if (!this.hasEverUpdated() && this.isReferred()) {
+			const closest_element = this.#getDefaultSelectable(
+				Object.values(sysmap_data.map_options.elements)
+			);
+
+			this.#selected_element_id = closest_element.selementid;
+
+			this.#map_svg.select(this.#selected_element_id);
+			this.#map_svg.selected_element_id = this.#selected_element_id;
+
+			this.#broadcast(closest_element.elements[0].groupid, closest_element.elements[0].hostid);
+		}
+		else if (this.#selected_element_id !== null) {
+			this.#map_svg.select(this.#selected_element_id);
+			this.#map_svg.selected_element_id = this.#selected_element_id;
 		}
 	}
 
-	_registerEvents() {
-		super._registerEvents();
-
-		this._events = {
-			...this._events,
-
-			back: () => {
-				const item = this._previous_maps.pop();
-
-				this._navigateToMap(item.sysmapid);
-
-				this.fire(CWidgetMap.EVENT_SUBMAP_SELECT, {
-					sysmapid: item.sysmapid,
-					parent_itemid: item.parent_itemid,
-					back: true
-				});
-			},
-
-			select: (e) => {
-				this._previous_maps = [];
-				this._filter_itemid = e.detail.itemid;
-
-				this._navigateToMap(e.detail.sysmapid);
-			},
-
-			mark: (e) => {
-				this._filter_itemid = e.detail.itemid;
-			}
+	onReferredUpdate() {
+		if (Object.keys(this.#map_svg.elements).length === 0 || this.#selected_element_id !== null) {
+			return;
 		}
+
+		const closest_element = this.#getDefaultSelectable(
+			Object.values(this.#map_svg.elements).map(element => element.options)
+		);
+
+		this.#selected_element_id = closest_element.selementid;
+
+		this.#map_svg.select(this.#selected_element_id);
+		this.#map_svg.selected_element_id = this.#selected_element_id;
+
+		this.#broadcast(closest_element.elements[0].groupid, closest_element.elements[0].hostid);
 	}
 
-	_activateContentsEvents() {
-		if (this._state === WIDGET_STATE_ACTIVE) {
-			this._target.querySelectorAll('.js-previous-map').forEach((link) => {
-				link.addEventListener('click', this._events.back);
-			});
-		}
+	onClearContents() {
+		this.#map_svg = null;
 	}
 
-	_deactivateContentsEvents() {
-		this._target.querySelectorAll('.js-previous-map').forEach((link) => {
-			link.removeEventListener('click', this._events.back);
-		});
-	}
-
-	_makeSvgMap(options) {
-		options.canvas.useViewBox = true;
-		options.show_timestamp = false;
-		options.container = this._target.querySelector('.sysmap-widget-container');
-
-		this._map_svg = new SVGMap(options);
+	hasPadding() {
+		return true;
 	}
 
 	navigateToSubmap(sysmapid) {
-		this._previous_maps.push({sysmapid: this._sysmapid, parent_itemid: this._filter_itemid});
+		jQuery('.menu-popup').menuPopup('close', null);
 
-		this._navigateToMap(sysmapid);
-
-		this.fire(CWidgetMap.EVENT_SUBMAP_SELECT, {
-			sysmapid,
-			parent_itemid: this._filter_itemid
-		});
-	}
-
-	_navigateToMap(sysmapid) {
-		this._sysmapid = sysmapid;
-
-		if (this._state === WIDGET_STATE_ACTIVE) {
-			jQuery('.menu-popup').menuPopup('close', null);
-			this._restartUpdating();
-		}
-	}
-
-	_restartUpdating() {
-		if (this._state === WIDGET_STATE_ACTIVE) {
-			this._deactivateContentsEvents();
-		}
-
-		this._has_contents = false;
-		this._map_svg = null;
-		this._initial_load = 1;
+		this.#previous_maps.push({sysmapid: this.#sysmapid});
+		this.#sysmapid = sysmapid;
+		this.#map_svg = null;
 
 		this._startUpdating();
 	}
 
-	_hasPadding() {
-		return true;
+	#makeSvgMap(options) {
+		options.canvas.useViewBox = true;
+		options.show_timestamp = false;
+		options.container = this._target.querySelector('.sysmap-widget-container');
+		options.can_select_element = true;
+
+		this.#map_svg = new SVGMap(options);
+	}
+
+	#activateContentEvents() {
+		this.#map_svg?.container.addEventListener(this.#map_svg.EVENT_ELEMENT_SELECT, this.#event_handlers.select);
+
+		this._target.querySelectorAll('.js-previous-map').forEach((link) => {
+			link.addEventListener('click', this.#event_handlers.back);
+		});
+	}
+
+	#deactivateContentEvents() {
+		this.#map_svg?.container.removeEventListener(this.#map_svg.EVENT_ELEMENT_SELECT, this.#event_handlers.select);
+
+		this._target.querySelectorAll('.js-previous-map').forEach((link) => {
+			link.removeEventListener('click', this.#event_handlers.back);
+		});
+	}
+
+	#broadcast(hostgroupid, hostid) {
+		this.broadcast({
+			[CWidgetsData.DATA_TYPE_HOST_GROUP_ID]: hostgroupid !== null && hostgroupid !== undefined
+				? [hostgroupid]
+				: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_GROUP_ID),
+			[CWidgetsData.DATA_TYPE_HOST_GROUP_IDS]: hostgroupid !== null && hostgroupid !== undefined
+				? [hostgroupid]
+				: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_GROUP_IDS),
+			[CWidgetsData.DATA_TYPE_HOST_ID]: hostid !== null && hostid !== undefined
+				? [hostid]
+				: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_ID),
+			[CWidgetsData.DATA_TYPE_HOST_IDS]: hostid !== null && hostid !== undefined
+				? [hostid]
+				: CWidgetsData.getDefault(CWidgetsData.DATA_TYPE_HOST_IDS)
+		});
+	}
+
+	#registerEvents() {
+		this.#event_handlers = {
+			back: () => {
+				const sysmap = this.#previous_maps.pop();
+
+				this.#sysmapid = sysmap.sysmapid;
+				this.#map_svg = null;
+
+				this._startUpdating();
+			},
+			select: ({detail}) => {
+				this.#selected_element_id = detail.selected_element_id;
+				this.#map_svg.select(this.#selected_element_id);
+
+				if (detail.hostgroupid !== null || detail.hostid !== null) {
+					this.#broadcast(detail.hostgroupid, detail.hostid);
+				}
+			}
+		};
+	}
+
+	#getDefaultSelectable(elements) {
+		return elements.reduce((closest, current) => {
+			if (current.elementtype == SYSMAP_ELEMENT_TYPE_HOST
+					|| current.elementtype == SYSMAP_ELEMENT_TYPE_HOST_GROUP) {
+				const current_distance = Math.sqrt(current.x * current.x + current.y * current.y);
+
+				if (closest === null || current_distance < Math.sqrt(closest.x * closest.x + closest.y * closest.y)) {
+					return current;
+				}
+			}
+
+			return closest;
+		}, null);
 	}
 }

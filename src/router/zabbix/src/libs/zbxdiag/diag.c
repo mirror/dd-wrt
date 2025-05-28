@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxdiag.h"
@@ -23,13 +18,12 @@
 #include "zbxalgo.h"
 #include "zbxshmem.h"
 #include "zbxcachehistory.h"
-#include "preproc.h"
 #include "zbxconnector.h"
-#include "log.h"
+#include "zbxlog.h"
 #include "zbxmutexs.h"
 #include "zbxtime.h"
 #include "zbxnum.h"
-#include "zbxpreproc.h"
+#include "zbxstr.h"
 
 #define ZBX_DIAG_SECTION_MAX	64
 #define ZBX_DIAG_FIELD_MAX	64
@@ -45,12 +39,10 @@
 #define ZBX_DIAG_HISTORYCACHE_MEMORY	(ZBX_DIAG_HISTORYCACHE_MEMORY_DATA | \
 					ZBX_DIAG_HISTORYCACHE_MEMORY_INDEX)
 
-#define ZBX_DIAG_PREPROC_INFO			0x00000001
-
-#define ZBX_DIAG_PREPROC_SIMPLE		(ZBX_DIAG_PREPROC_INFO)
-
 #define ZBX_DIAG_CONNECTOR_VALUES			0x00000001
 #define ZBX_DIAG_CONNECTOR_SIMPLE		(ZBX_DIAG_CONNECTOR_VALUES)
+
+ZBX_PTR_VECTOR_IMPL(diag_map_ptr, zbx_diag_map_t *)
 
 static zbx_diag_add_section_info_func_t	add_diag_cb;
 
@@ -77,7 +69,7 @@ void	zbx_diag_map_free(zbx_diag_map_t *map)
  *                                                                            *
  ******************************************************************************/
 int	zbx_diag_parse_request(const struct zbx_json_parse *jp, const zbx_diag_map_t *field_map,
-		zbx_uint64_t *field_mask, zbx_vector_ptr_t *top_views, char **error)
+		zbx_uint64_t *field_mask, zbx_vector_diag_map_ptr_t *top_views, char **error)
 {
 	struct zbx_json_parse	jp_stats;
 	int			ret = FAIL;
@@ -147,13 +139,13 @@ int	zbx_diag_parse_request(const struct zbx_json_parse *jp, const zbx_diag_map_t
 			top = (zbx_diag_map_t *)zbx_malloc(NULL, sizeof(zbx_diag_map_t));
 			top->name = zbx_strdup(NULL, name);
 			top->value = value_ui64;
-			zbx_vector_ptr_append(top_views, top);
+			zbx_vector_diag_map_ptr_append(top_views, top);
 		}
 	}
 	ret = SUCCEED;
 out:
 	if (FAIL == ret)
-		zbx_vector_ptr_clear_ext(top_views, (zbx_ptr_free_func_t)zbx_diag_map_free);
+		zbx_vector_diag_map_ptr_clear_ext(top_views, zbx_diag_map_free);
 
 	return ret;
 }
@@ -262,21 +254,22 @@ static void	diag_historycache_add_items(struct zbx_json *json, const char *field
  ******************************************************************************/
 int	zbx_diag_add_historycache_info(const struct zbx_json_parse *jp, struct zbx_json *json, char **error)
 {
-	zbx_vector_ptr_t	tops;
-	int			ret;
-	double			time1, time2, time_total = 0;
-	zbx_uint64_t		fields;
-	zbx_diag_map_t		field_map[] = {
-					{"", ZBX_DIAG_HISTORYCACHE_SIMPLE | ZBX_DIAG_HISTORYCACHE_MEMORY},
-					{"items", ZBX_DIAG_HISTORYCACHE_ITEMS},
-					{"values", ZBX_DIAG_HISTORYCACHE_VALUES},
-					{"memory", ZBX_DIAG_HISTORYCACHE_MEMORY},
-					{"memory.data", ZBX_DIAG_HISTORYCACHE_MEMORY_DATA},
-					{"memory.index", ZBX_DIAG_HISTORYCACHE_MEMORY_INDEX},
-					{NULL, 0}
-					};
+	zbx_vector_diag_map_ptr_t	tops;
+	int				ret;
+	double				time1, time2, time_total = 0;
+	zbx_uint64_t			fields;
+	zbx_diag_map_t			field_map[] = {
+							{"", ZBX_DIAG_HISTORYCACHE_SIMPLE |
+								ZBX_DIAG_HISTORYCACHE_MEMORY},
+							{"items", ZBX_DIAG_HISTORYCACHE_ITEMS},
+							{"values", ZBX_DIAG_HISTORYCACHE_VALUES},
+							{"memory", ZBX_DIAG_HISTORYCACHE_MEMORY},
+							{"memory.data", ZBX_DIAG_HISTORYCACHE_MEMORY_DATA},
+							{"memory.index", ZBX_DIAG_HISTORYCACHE_MEMORY_INDEX},
+							{NULL, 0}
+						};
 
-	zbx_vector_ptr_create(&tops);
+	zbx_vector_diag_map_ptr_create(&tops);
 
 	if (SUCCEED == (ret = zbx_diag_parse_request(jp, field_map, &fields, &tops, error)))
 	{
@@ -323,7 +316,7 @@ int	zbx_diag_add_historycache_info(const struct zbx_json_parse *jp, struct zbx_j
 
 			for (i = 0; i < tops.values_num; i++)
 			{
-				zbx_diag_map_t	*map = (zbx_diag_map_t *)tops.values[i];
+				zbx_diag_map_t	*map = tops.values[i];
 
 				if (0 == strcmp(map->name, "values"))
 				{
@@ -360,141 +353,8 @@ int	zbx_diag_add_historycache_info(const struct zbx_json_parse *jp, struct zbx_j
 		zbx_json_close(json);
 	}
 
-	zbx_vector_ptr_clear_ext(&tops, (zbx_ptr_free_func_t)zbx_diag_map_free);
-	zbx_vector_ptr_destroy(&tops);
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Purpose: add item top list to output json                                  *
- *                                                                            *
- * Parameters: json  - [OUT] the output json                                  *
- *             field - [IN] the field name                                    *
- *             items - [IN] a top item list                                   *
- *                                                                            *
- ******************************************************************************/
-static void	diag_add_preproc_sequences(struct zbx_json *json, const char *field,
-		const zbx_vector_pp_sequence_stats_ptr_t *sequences)
-{
-	int	i;
-
-	zbx_json_addarray(json, field);
-
-	for (i = 0; i < sequences->values_num; i++)
-	{
-		zbx_json_addobject(json, NULL);
-		zbx_json_adduint64(json, "itemid", sequences->values[i]->itemid);
-		zbx_json_addint64(json, "tasks", sequences->values[i]->tasks_num);
-		zbx_json_close(json);
-	}
-
-	zbx_json_close(json);
-}
-
-/******************************************************************************
- *                                                                            *
- * Purpose: add requested preprocessing diagnostic information to json data   *
- *                                                                            *
- * Parameters: jp    - [IN] the request                                       *
- *             json  - [IN/OUT] the json to update                            *
- *             error - [OUT] error message                                    *
- *                                                                            *
- * Return value: SUCCEED - the information was added successfully             *
- *               FAIL    - otherwise                                          *
- *                                                                            *
- ******************************************************************************/
-int	zbx_diag_add_preproc_info(const struct zbx_json_parse *jp, struct zbx_json *json, char **error)
-{
-	zbx_vector_ptr_t	tops;
-	int			ret = FAIL;
-	double			time1, time2, time_total = 0;
-	zbx_uint64_t		fields;
-	zbx_diag_map_t		field_map[] = {
-					{"", ZBX_DIAG_PREPROC_INFO},
-					{NULL, 0}
-					};
-
-	zbx_vector_ptr_create(&tops);
-
-	if (SUCCEED == (ret = zbx_diag_parse_request(jp, field_map, &fields, &tops, error)))
-	{
-		zbx_json_addobject(json, ZBX_DIAG_PREPROCESSING);
-
-		if (0 != (fields & ZBX_DIAG_PREPROC_SIMPLE))
-		{
-			zbx_uint64_t	preproc_num, pending_num, finished_num, sequences_num;
-
-			time1 = zbx_time();
-			if (FAIL == (ret = zbx_preprocessor_get_diag_stats(&preproc_num, &pending_num, &finished_num,
-					&sequences_num, error)))
-			{
-				goto out;
-			}
-
-			time2 = zbx_time();
-			time_total += time2 - time1;
-
-			if (0 != (fields & ZBX_DIAG_PREPROC_INFO))
-			{
-				zbx_json_adduint64(json, "cached items", preproc_num);
-				zbx_json_adduint64(json, "pending tasks", pending_num);
-				zbx_json_adduint64(json, "finished tasks", finished_num);
-				zbx_json_adduint64(json, "task sequences", sequences_num);
-			}
-		}
-
-		if (0 != tops.values_num)
-		{
-			int	i;
-
-			zbx_json_addobject(json, "top");
-
-			for (i = 0; i < tops.values_num; i++)
-			{
-				zbx_diag_map_t	*map = (zbx_diag_map_t *)tops.values[i];
-
-				if (0 == strcmp(map->name, "sequences"))
-				{
-					zbx_vector_pp_sequence_stats_ptr_t	sequences;
-
-					zbx_vector_pp_sequence_stats_ptr_create(&sequences);
-					time1 = zbx_time();
-
-					if (SUCCEED != (ret = zbx_preprocessor_get_top_sequences((int)map->value,
-							&sequences, error)))
-					{
-						zbx_vector_pp_sequence_stats_ptr_destroy(&sequences);
-						goto out;
-					}
-
-					time2 = zbx_time();
-					time_total += time2 - time1;
-
-					diag_add_preproc_sequences(json, map->name, &sequences);
-
-					zbx_vector_pp_sequence_stats_ptr_clear_ext(&sequences,
-							(zbx_pp_sequence_stats_ptr_free_func_t)(zbx_ptr_free));
-					zbx_vector_pp_sequence_stats_ptr_destroy(&sequences);
-				}
-				else
-				{
-					*error = zbx_dsprintf(*error, "Unsupported top field: %s", map->name);
-					ret = FAIL;
-					goto out;
-				}
-			}
-
-			zbx_json_close(json);
-		}
-
-		zbx_json_addfloat(json, "time", time_total);
-		zbx_json_close(json);
-	}
-out:
-	zbx_vector_ptr_clear_ext(&tops, (zbx_ptr_free_func_t)zbx_diag_map_free);
-	zbx_vector_ptr_destroy(&tops);
+	zbx_vector_diag_map_ptr_clear_ext(&tops, zbx_diag_map_free);
+	zbx_vector_diag_map_ptr_destroy(&tops);
 
 	return ret;
 }
@@ -509,7 +369,7 @@ out:
  *                                                                            *
  ******************************************************************************/
 static void	diag_add_connector_items(struct zbx_json *json, const char *field,
-		const zbx_vector_ptr_t *connector_stats)
+		const zbx_vector_connector_stat_ptr_t *connector_stats)
 {
 	int	i;
 
@@ -519,7 +379,7 @@ static void	diag_add_connector_items(struct zbx_json *json, const char *field,
 	{
 		const zbx_connector_stat_t	*connector_stat;
 
-		connector_stat = (const zbx_connector_stat_t *)connector_stats->values[i];
+		connector_stat = connector_stats->values[i];
 
 		zbx_json_addobject(json, NULL);
 		zbx_json_adduint64(json, "connectorid", connector_stat->connectorid);
@@ -555,13 +415,15 @@ void	zbx_diag_add_locks_info(struct zbx_json *json)
 				"ZBX_MUTEX_CACHE_IDS", "ZBX_MUTEX_SELFMON", "ZBX_MUTEX_CPUSTATS", "ZBX_MUTEX_DISKSTATS",
 				"ZBX_MUTEX_VALUECACHE", "ZBX_MUTEX_VMWARE", "ZBX_MUTEX_SQLITE3",
 				"ZBX_MUTEX_PROCSTAT", "ZBX_MUTEX_PROXY_HISTORY", "ZBX_MUTEX_KSTAT", "ZBX_MUTEX_MODBUS",
-				"ZBX_MUTEX_TREND_FUNC"};
+				"ZBX_MUTEX_TREND_FUNC", "ZBX_MUTEX_REMOTE_COMMANDS", "ZBX_MUTEX_PROXY_BUFFER",
+				"ZBX_MUTEX_VPS_MONITOR"};
 #else
 	const char	*names[ZBX_MUTEX_COUNT] = {"ZBX_MUTEX_LOG", "ZBX_MUTEX_CACHE", "ZBX_MUTEX_TRENDS",
 				"ZBX_MUTEX_CACHE_IDS", "ZBX_MUTEX_SELFMON", "ZBX_MUTEX_CPUSTATS", "ZBX_MUTEX_DISKSTATS",
 				"ZBX_MUTEX_VALUECACHE", "ZBX_MUTEX_VMWARE", "ZBX_MUTEX_SQLITE3",
 				"ZBX_MUTEX_PROCSTAT", "ZBX_MUTEX_PROXY_HISTORY", "ZBX_MUTEX_MODBUS",
-				"ZBX_MUTEX_TREND_FUNC"};
+				"ZBX_MUTEX_TREND_FUNC", "ZBX_MUTEX_REMOTE_COMMANDS", "ZBX_MUTEX_PROXY_BUFFER",
+				"ZBX_MUTEX_VPS_MONITOR"};
 #endif
 	zbx_json_addarray(json, ZBX_DIAG_LOCKS);
 
@@ -674,7 +536,7 @@ static void	diag_prepare_default_request(struct zbx_json *j, unsigned int flags)
 		diag_add_section_request(j, ZBX_DIAG_VALUECACHE, "values", "request.values", NULL);
 
 	if (0 != (flags & (1 << ZBX_DIAGINFO_PREPROCESSING)))
-		diag_add_section_request(j, ZBX_DIAG_PREPROCESSING, "sequences", NULL);
+		diag_add_section_request(j, ZBX_DIAG_PREPROCESSING, "peak", "sequences", NULL);
 
 	if (0 != (flags & (1 << ZBX_DIAGINFO_LLD)))
 		diag_add_section_request(j, ZBX_DIAG_LLD, "values", NULL);
@@ -687,6 +549,10 @@ static void	diag_prepare_default_request(struct zbx_json *j, unsigned int flags)
 
 	if (0 != (flags & (1 << ZBX_DIAGINFO_CONNECTOR)))
 		diag_add_section_request(j, ZBX_DIAG_CONNECTOR, "values", NULL);
+
+	if (0 != (flags & (1 << ZBX_DIAGINFO_PROXYBUFFER)))
+		diag_add_section_request(j, ZBX_DIAG_PROXYBUFFER, NULL);
+
 }
 
 /******************************************************************************
@@ -879,6 +745,7 @@ static void	diag_log_preprocessing(struct zbx_json_parse *jp, char **out, size_t
 	zbx_free(msg);
 
 	diag_log_top_view(jp, "top.sequences", "$.top.sequences", out, out_alloc, out_offset);
+	diag_log_top_view(jp, "top.peak", "$.top.peak", out, out_alloc, out_offset);
 
 	zbx_strlog_alloc(LOG_LEVEL_INFORMATION, out, out_alloc, out_offset, "==");
 }
@@ -947,6 +814,25 @@ static void	diag_log_connector(struct zbx_json_parse *jp, char **out, size_t *ou
 
 /******************************************************************************
  *                                                                            *
+ * Purpose: log history cache diagnostic information                          *
+ *                                                                            *
+ ******************************************************************************/
+static void	diag_log_proxybuffer(struct zbx_json_parse *jp, char **out, size_t *out_alloc, size_t *out_offset)
+{
+	char	*msg = NULL;
+	size_t	msg_alloc = 0, msg_offset = 0;
+
+	zbx_strlog_alloc(LOG_LEVEL_INFORMATION, out, out_alloc, out_offset, "== proxy buffer diagnostic information ==");
+
+	diag_log_memory_info(jp, "memory", "$.memory", &msg, &msg_alloc, &msg_offset);
+	zbx_strlog_alloc(LOG_LEVEL_INFORMATION, out, out_alloc, out_offset, "%s", msg);
+	zbx_free(msg);
+
+	zbx_strlog_alloc(LOG_LEVEL_INFORMATION, out, out_alloc, out_offset, "==");
+}
+
+/******************************************************************************
+ *                                                                            *
  * Purpose: log diagnostic information                                        *
  *                                                                            *
  * Parameters: flags - [IN] flags describing section to log                   *
@@ -1009,6 +895,8 @@ void	zbx_diag_log_info(unsigned int flags, char **result)
 			}
 			else if (0 == strcmp(section, ZBX_DIAG_CONNECTOR))
 				diag_log_connector(&jp_section, result, &result_alloc, &result_offset);
+			else if (0 == strcmp(section, ZBX_DIAG_PROXYBUFFER))
+				diag_log_proxybuffer(&jp_section, result, &result_alloc, &result_offset);
 		}
 	}
 	else
@@ -1035,17 +923,17 @@ out:
  ******************************************************************************/
 int	zbx_diag_add_connector_info(const struct zbx_json_parse *jp, struct zbx_json *json, char **error)
 {
-	zbx_vector_ptr_t	tops;
-	int			ret = FAIL;
-	double			time1, time2, time_total = 0;
-	zbx_uint64_t		fields;
-	zbx_diag_map_t		field_map[] = {
-					{(char *)"", ZBX_DIAG_CONNECTOR_VALUES},
-					{(char *)"values", ZBX_DIAG_CONNECTOR_VALUES},
-					{NULL, 0}
-					};
+	zbx_vector_diag_map_ptr_t	tops;
+	int				ret = FAIL;
+	double				time1, time2, time_total = 0;
+	zbx_uint64_t			fields;
+	zbx_diag_map_t			field_map[] = {
+							{(char *)"", ZBX_DIAG_CONNECTOR_VALUES},
+							{(char *)"values", ZBX_DIAG_CONNECTOR_VALUES},
+							{NULL, 0}
+						};
 
-	zbx_vector_ptr_create(&tops);
+	zbx_vector_diag_map_ptr_create(&tops);
 
 	if (SUCCEED == (ret = zbx_diag_parse_request(jp, field_map, &fields, &tops, error)))
 	{
@@ -1068,20 +956,19 @@ int	zbx_diag_add_connector_info(const struct zbx_json_parse *jp, struct zbx_json
 
 		if (0 != tops.values_num)
 		{
-			int	i;
-
 			zbx_json_addobject(json, "top");
 
-			for (i = 0; i < tops.values_num; i++)
+			for (int i = 0; i < tops.values_num; i++)
 			{
-				zbx_diag_map_t	*map = (zbx_diag_map_t *)tops.values[i];
+				zbx_diag_map_t	*map = tops.values[i];
 
 				if (0 == strcmp(map->name, "values"))
 				{
-					zbx_vector_ptr_t	connector_stats;
+					zbx_vector_connector_stat_ptr_t	connector_stats;
 
-					zbx_vector_ptr_create(&connector_stats);
+					zbx_vector_connector_stat_ptr_create(&connector_stats);
 					time1 = zbx_time();
+
 					if (0 == strcmp(map->name, "values"))
 					{
 						ret = zbx_connector_get_top_connectors((int)map->value,
@@ -1090,15 +977,16 @@ int	zbx_diag_add_connector_info(const struct zbx_json_parse *jp, struct zbx_json
 
 					if (FAIL == ret)
 					{
-						zbx_vector_ptr_destroy(&connector_stats);
+						zbx_vector_connector_stat_ptr_destroy(&connector_stats);
 						goto out;
 					}
+
 					time2 = zbx_time();
 					time_total += time2 - time1;
 
 					diag_add_connector_items(json, map->name, &connector_stats);
-					zbx_vector_ptr_clear_ext(&connector_stats, zbx_ptr_free);
-					zbx_vector_ptr_destroy(&connector_stats);
+					zbx_vector_connector_stat_ptr_clear_ext(&connector_stats, connector_stat_free);
+					zbx_vector_connector_stat_ptr_destroy(&connector_stats);
 				}
 				else
 				{
@@ -1115,8 +1003,8 @@ int	zbx_diag_add_connector_info(const struct zbx_json_parse *jp, struct zbx_json
 		zbx_json_close(json);
 	}
 out:
-	zbx_vector_ptr_clear_ext(&tops, (zbx_ptr_free_func_t)zbx_diag_map_free);
-	zbx_vector_ptr_destroy(&tops);
+	zbx_vector_diag_map_ptr_clear_ext(&tops, zbx_diag_map_free);
+	zbx_vector_diag_map_ptr_destroy(&tops);
 
 	return ret;
 }

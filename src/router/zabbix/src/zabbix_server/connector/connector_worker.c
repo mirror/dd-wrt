@@ -1,32 +1,32 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "connector_worker.h"
+#include "connector_server.h"
 
-#include "../db_lengths.h"
+#ifdef HAVE_LIBCURL
+#	include "zbxhttp.h"
+#	include "zbxnum.h"
+#endif
+
+#include "zbxtimekeeper.h"
+#include "zbxthreads.h"
 #include "zbxnix.h"
 #include "zbxself.h"
-#include "log.h"
+#include "zbxlog.h"
 #include "zbxipcservice.h"
 #include "zbxconnector.h"
 #include "zbxtime.h"
-#include "zbxhttp.h"
 #include "zbxcacheconfig.h"
 #include "zbxjson.h"
 #include "zbxstr.h"
@@ -37,11 +37,12 @@ static int	connector_object_compare_func(const void *d1, const void *d2)
 			&((const zbx_connector_data_point_t *)d2)->ts);
 }
 
-static void	worker_process_request(zbx_ipc_socket_t *socket, zbx_ipc_message_t *message,
+static void	worker_process_request(zbx_ipc_socket_t *socket, const char *config_source_ip,
+		const char *config_ssl_ca_location, const char *config_ssl_cert_location,
+		const char *config_ssl_key_location, zbx_ipc_message_t *message,
 		zbx_vector_connector_data_point_t *connector_data_points, zbx_uint64_t *processed_num)
 {
 	zbx_connector_t	connector;
-	int		i;
 	char		*str = NULL, *out = NULL, *error = NULL;
 	size_t		str_alloc = 0, str_offset = 0;
 
@@ -49,7 +50,7 @@ static void	worker_process_request(zbx_ipc_socket_t *socket, zbx_ipc_message_t *
 			connector_data_points);
 
 	zbx_vector_connector_data_point_sort(connector_data_points, connector_object_compare_func);
-	for (i = 0; i < connector_data_points->values_num; i++)
+	for (int i = 0; i < connector_data_points->values_num; i++)
 	{
 		zbx_strcpy_alloc(&str, &str_alloc, &str_offset, connector_data_points->values[i].str);
 		zbx_chrcpy_alloc(&str, &str_alloc, &str_offset, '\n');
@@ -59,14 +60,57 @@ static void	worker_process_request(zbx_ipc_socket_t *socket, zbx_ipc_message_t *
 
 	zbx_vector_connector_data_point_clear_ext(connector_data_points, zbx_connector_data_point_free);
 #ifdef HAVE_LIBCURL
-	char	headers[] = "", posts[] = "", status_codes[] = "200";
+#define ATTEMPT_DELAY_MAX	10
+	char			query_fields[] = "", headers[] = "", status_codes[] = "200,201,202,203,204";
+	zbx_http_context_t	context;
+	int			ret, timeout_seconds, attempt_interval_sec;
 
-	if (SUCCEED != zbx_http_request(HTTP_REQUEST_POST, connector.url, headers, posts,
-			str, ZBX_RETRIEVE_MODE_CONTENT, connector.http_proxy, 0,
-			connector.timeout, connector.max_attempts, connector.ssl_cert_file, connector.ssl_key_file,
+	zbx_http_context_create(&context);
+
+	if (FAIL == zbx_is_time_suffix(connector.timeout, &timeout_seconds, (int)strlen(connector.timeout)))
+	{
+		error = zbx_dsprintf(NULL, "Invalid timeout: %s", connector.timeout);
+		ret = FAIL;
+		goto skip;
+	}
+
+	if (FAIL == zbx_is_time_suffix(connector.attempt_interval, &attempt_interval_sec,
+			(int)strlen(connector.attempt_interval)) || ATTEMPT_DELAY_MAX < attempt_interval_sec)
+	{
+		error = zbx_dsprintf(NULL, "Invalid attempt delay: %s", connector.attempt_interval);
+		ret = FAIL;
+		goto skip;
+	}
+
+	if (SUCCEED == (ret = zbx_http_request_prepare(&context, HTTP_REQUEST_POST, connector.url, headers,
+			query_fields, str, ZBX_RETRIEVE_MODE_CONTENT, connector.http_proxy, 0, timeout_seconds,
+			connector.max_attempts, connector.ssl_cert_file, connector.ssl_key_file,
 			connector.ssl_key_password, connector.verify_peer, connector.verify_host, connector.authtype,
-			connector.username, connector.password, connector.token, ZBX_POSTTYPE_NDJSON, status_codes,
-			HTTP_STORE_RAW, &out, &error))
+			connector.username, connector.password, connector.token, ZBX_POSTTYPE_NDJSON,
+			HTTP_STORE_RAW, config_source_ip, config_ssl_ca_location, config_ssl_cert_location,
+			config_ssl_key_location, &error)))
+	{
+		long		response_code;
+		CURLcode	err;
+
+		if (!ZBX_IS_RUNNING())
+			attempt_interval_sec = 0;
+
+		err = zbx_http_request_sync_perform(context.easyhandle, &context, attempt_interval_sec,
+				ZBX_HTTP_CHECK_RESPONSE_CODE);
+
+		if (SUCCEED == (ret = zbx_http_handle_response(context.easyhandle, &context, err, &response_code,
+				&out, &error)))
+		{
+			if (FAIL == (ret = zbx_int_in_list(status_codes, (int)response_code)))
+			{
+				error = zbx_dsprintf(NULL, "Response code \"%ld\" did not match any of the"
+						" required status codes \"%s\"", response_code, status_codes);
+			}
+		}
+	}
+skip:
+	if (FAIL == ret)
 	{
 		char	*info = NULL;
 
@@ -102,7 +146,15 @@ static void	worker_process_request(zbx_ipc_socket_t *socket, zbx_ipc_message_t *
 
 		zbx_free(info);
 	}
+
+	zbx_http_context_destroy(&context);
+#undef ATTEMPT_DELAY_MAX
 #else
+	ZBX_UNUSED(config_source_ip);
+	ZBX_UNUSED(config_ssl_ca_location);
+	ZBX_UNUSED(config_ssl_cert_location);
+	ZBX_UNUSED(config_ssl_key_location);
+
 	zabbix_log(LOG_LEVEL_WARNING, "Support for connectors was not compiled in: missing cURL library");
 #endif
 	zbx_free(str);
@@ -118,6 +170,7 @@ static void	worker_process_request(zbx_ipc_socket_t *socket, zbx_ipc_message_t *
 	zbx_free(connector.ssl_cert_file);
 	zbx_free(connector.ssl_key_file);
 	zbx_free(connector.ssl_key_password);
+	zbx_free(connector.attempt_interval);
 
 	if (FAIL == zbx_ipc_socket_write(socket, ZBX_IPC_CONNECTOR_RESULT, NULL, 0))
 	{
@@ -136,11 +189,14 @@ ZBX_THREAD_ENTRY(connector_worker_thread, args)
 	zbx_ipc_message_t			message;
 	double					time_stat, time_idle = 0, time_now, time_read;
 	const zbx_thread_info_t			*info = &((zbx_thread_args_t *)args)->info;
-	int					server_num = ((zbx_thread_args_t *)args)->info.server_num;
-	int					process_num = ((zbx_thread_args_t *)args)->info.process_num;
+	int					server_num = ((zbx_thread_args_t *)args)->info.server_num,
+						process_num = ((zbx_thread_args_t *)args)->info.process_num;
 	unsigned char				process_type = ((zbx_thread_args_t *)args)->info.process_type;
 	zbx_vector_connector_data_point_t	connector_data_points;
 	zbx_uint64_t				processed_num = 0, connections_num = 0;
+
+	const zbx_thread_connector_worker_args	*connector_worker_args_in = (const zbx_thread_connector_worker_args *)
+						(((zbx_thread_args_t *)args)->args);
 
 	zbx_setproctitle("%s #%d starting", get_process_type_string(info->program_type), process_num);
 
@@ -208,7 +264,11 @@ ZBX_THREAD_ENTRY(connector_worker_thread, args)
 		switch (message.code)
 		{
 			case ZBX_IPC_CONNECTOR_REQUEST:
-				worker_process_request(&socket, &message, &connector_data_points, &processed_num);
+				worker_process_request(&socket, connector_worker_args_in->config_source_ip,
+						connector_worker_args_in->config_ssl_ca_location,
+						connector_worker_args_in->config_ssl_cert_location,
+						connector_worker_args_in->config_ssl_key_location,
+						&message, &connector_data_points, &processed_num);
 				connections_num++;
 				break;
 		}

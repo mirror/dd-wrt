@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -120,8 +115,8 @@ ZBX_NotificationCollection.prototype.consumeList = function(list) {
  * Creates detached DOM nodes.
  */
 ZBX_NotificationCollection.prototype.makeNodes = function() {
-	var header = document.createElement('div'),
-		controls = document.createElement('ul');
+	const header = document.createElement('div');
+	const controls = document.createElement('ul');
 
 	this.node = document.createElement('div');
 	this.node.style.display = 'none';
@@ -131,24 +126,26 @@ ZBX_NotificationCollection.prototype.makeNodes = function() {
 	this.btn_close = document.createElement('button');
 	this.btn_close.setAttribute('title', locale['S_CLOSE']);
 	this.btn_close.setAttribute('type', 'button');
-	this.btn_close.className = 'overlay-close-btn';
+	this.btn_close.className = 'btn-overlay-close';
 
-	header.className = 'dashboard-widget-head cursor-move';
+	header.className = 'overlay-dialogue-header cursor-move';
 	this.node.appendChild(header);
 
 	header.appendChild(controls);
 	header.appendChild(this.btn_close);
 
-	this.btn_mute = this.makeToggleBtn(
-		{class: 'btn-sound-on', title: locale['S_MUTE']},
-		{class: 'btn-sound-off', title: locale['S_UNMUTE']}
+	this.btn_snooze = this.makeToggleBtn(
+		{class: [ZBX_STYLE_BTN_ICON + ' ' + ZBX_ICON_BELL]},
+		{class: [ZBX_STYLE_BTN_ICON + ' ' + ZBX_ICON_BELL_OFF]}
 	);
-
-	this.btn_snooze = this.makeToggleBtn({class: 'btn-alarm-on'}, {class: 'btn-alarm-off'});
-	this.btn_snooze.setAttribute('title', locale['S_SNOOZE']);
 
 	const li_btn_snooze = document.createElement('li');
 	li_btn_snooze.appendChild(this.btn_snooze);
+
+	this.btn_mute = this.makeToggleBtn(
+		{class: ZBX_STYLE_BTN_ICON + ' ' + ZBX_ICON_SPEAKER},
+		{class: ZBX_STYLE_BTN_ICON + ' ' + ZBX_ICON_SPEAKER_OFF}
+	);
 
 	const li_btn_mute = document.createElement('li');
 	li_btn_mute.appendChild(this.btn_mute);
@@ -258,13 +255,23 @@ ZBX_NotificationCollection.prototype.removeDanglingNodes = function() {
 
 /**
  * Notification sequence is maintained in DOM, in server response notifications must be ordered.
- * Shows or hides list node, updates and appends notification nodes, then deligates to remove dangling nodes.
+ * Shows or hides list node, updates and appends notification nodes, then delegates to remove dangling nodes.
+ * Updates button tooltip text based on actual data.
  *
- * @param {object} severity_styles
- * @param {ZBX_NotificationsAlarm} alarm_state
+ * @param {object}                 severity_styles  Severity styles.
+ * @param {ZBX_NotificationsAlarm} alarm_state      Alarm state.
+ * @param {string}                 username         Username of logged-in user.
+ * @param {boolean}                muted            Indicator whether notifications are muted.
  */
-ZBX_NotificationCollection.prototype.render = function(severity_styles, alarm_state) {
+ZBX_NotificationCollection.prototype.render = function(severity_styles, alarm_state, username, muted) {
+	this.btn_snooze.setAttribute('title', t('Snooze for %1$s').replace('%1$s', username));
+	this.btn_mute.setAttribute('title', muted
+		? t('Unmute for %1$s').replace('%1$s', username)
+		: t('Mute for %1$s').replace('%1$s', username)
+	);
+
 	this.btn_snooze.renderState(alarm_state.isSnoozed(this.getRawList()));
+
 	if (alarm_state.supported) {
 		this.btn_mute.renderState(alarm_state.muted);
 	}
@@ -274,8 +281,8 @@ ZBX_NotificationCollection.prototype.render = function(severity_styles, alarm_st
 		this.btn_mute.title = locale['S_CANNOT_SUPPORT_NOTIFICATION_AUDIO'];
 	}
 
-	var list_node = this.list_node,
-		prev_notif_node = null;
+	const list_node = this.list_node;
+	let prev_notif_node = null;
 
 	if (this.isEmpty()) {
 		return this.hide().then(function() {
@@ -284,9 +291,9 @@ ZBX_NotificationCollection.prototype.render = function(severity_styles, alarm_st
 		}.bind(this));
 	}
 
-	var slide_down = list_node.children.length != 0;
+	const slide_down = list_node.children.length != 0;
 
-	this.map(function(notif, index) {
+	this.map(function(notif) {
 		notif.render(severity_styles);
 
 		if (notif.isNodeConnected()) {

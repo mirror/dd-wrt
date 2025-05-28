@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxtime.h"
@@ -55,6 +50,7 @@ void	zbx_timespec(zbx_timespec_t *ts)
 #if defined(_WINDOWS) || defined(__MINGW32__)
 	static ZBX_THREAD_LOCAL LARGE_INTEGER	tickPerSecond = {0};
 	struct _timeb				tb;
+	int					sec_diff;
 #else
 	struct timeval	tv;
 	int		rc = -1;
@@ -142,8 +138,10 @@ void	zbx_timespec(zbx_timespec_t *ts)
 #endif	/* not _WINDOWS */
 
 #if defined(_WINDOWS) || defined(__MINGW32__)
-	if (last_ts.sec == ts->sec && (last_ts.ns == ts->ns ||
-			(last_ts.ns + corr >= ts->ns && 1000000 > (last_ts.ns + corr - ts->ns))))
+	sec_diff = ts->sec - last_ts.sec;
+
+	/* correction window is 1 sec before the corrected last _ftime clock reading */
+	if ((0 == sec_diff && ts->ns <= last_ts.ns) || (-1 == sec_diff && ts->ns > last_ts.ns))
 #else
 	if (last_ts.ns == ts->ns && last_ts.sec == ts->sec)
 #endif
@@ -289,7 +287,7 @@ long	zbx_get_timezone_offset(time_t t, struct tm *tm)
  ******************************************************************************/
 struct tm	*zbx_localtime(const time_t *time, const char *tz)
 {
-#if defined(HAVE_GETENV) && defined(HAVE_PUTENV) && defined(HAVE_UNSETENV) && defined(HAVE_TZSET) && \
+#if defined(HAVE_GETENV) && defined(HAVE_UNSETENV) && defined(HAVE_TZSET) && \
 		!defined(_WINDOWS) && !defined(__MINGW32__)
 	char		*old_tz;
 	struct tm	*tm;
@@ -320,6 +318,29 @@ struct tm	*zbx_localtime(const time_t *time, const char *tz)
 	ZBX_UNUSED(tz);
 	return localtime(time);
 #endif
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: get broken-down representation of the time and cache result       *
+ *                                                                            *
+ * Parameters: time - [IN] input time                                         *
+ *                                                                            *
+ * Return value: broken-down representation of the time                       *
+ *                                                                            *
+ ******************************************************************************/
+const struct tm	*zbx_localtime_now(const time_t *time)
+{
+	static ZBX_THREAD_LOCAL struct tm	tm_last;
+	static ZBX_THREAD_LOCAL time_t		time_last;
+
+	if (time_last != *time)
+	{
+		time_last = *time;
+		localtime_r(time, &tm_last);
+	}
+
+	return &tm_last;
 }
 
 /******************************************************************************
@@ -393,6 +414,9 @@ int	zbx_day_in_month(int year, int mon)
  *                                                                            *
  * Return value: duration in milliseconds since time stamp till current time  *
  *                                                                            *
+ * Comments:                                                                  *
+ *     Timestamp value 'ts' must be before or equal to current time.          *
+ *                                                                            *
  ******************************************************************************/
 zbx_uint64_t	zbx_get_duration_ms(const zbx_timespec_t *ts)
 {
@@ -400,7 +424,7 @@ zbx_uint64_t	zbx_get_duration_ms(const zbx_timespec_t *ts)
 
 	zbx_timespec(&now);
 
-	return (now.sec - ts->sec) * 1e3 + (now.ns - ts->ns) / 1e6;
+	return (zbx_uint64_t)((now.sec - ts->sec) * 1e3 + (now.ns - ts->ns) / 1e6);
 }
 
 static void	tm_add(struct tm *tm, int multiplier, zbx_time_unit_t base);
@@ -476,6 +500,7 @@ int	zbx_tm_parse_period(const char *period, size_t *len, int *multiplier, zbx_ti
  *                                                                            *
  * Parameter: tm      - [IN/OUT] the time structure                           *
  *            seconds - [IN] the seconds to add (can be negative)             *
+ *            tz      - [IN] time zone                                        *
  *                                                                            *
  ******************************************************************************/
 static void	tm_add_seconds(struct tm *tm, int seconds)
@@ -1067,13 +1092,18 @@ static int zbx_iso8601_timezone(const char *zone, long int *offset)
 
 	ptr++;
 
-	if (ZBX_CONST_STRLEN("00:00") > strlen(ptr) || ':' != ptr[2])
+	if (ZBX_CONST_STRLEN("0000") > strlen(ptr))
 		return FAIL;
 
-	if (0 == isdigit(*ptr) || 23 < (h = atoi(ptr)))
+	if (SUCCEED != zbx_is_uint_n_range(ptr, 2, &h, sizeof(h), 0, 23))
 		return FAIL;
 
-	if (0 == isdigit(ptr[3]) || 59 < (m = atoi(&ptr[3])))
+	ptr += 2;
+
+	if (':' == *ptr)
+		ptr++;
+
+	if (0 == isdigit(*ptr) || 59 < (m = atoi(ptr)))
 		return FAIL;
 
 	*offset = sign * (m + h * 60) * 60;
@@ -1085,30 +1115,46 @@ static int zbx_iso8601_timezone(const char *zone, long int *offset)
  *                                                                            *
  * Purpose: parse string from iso8601 datetime (xml base) to UTC              *
  *          without millisecond, supported formats:                           *
- *              yyyy-mm-ddThh:mm:ss                                          *
+ *              yyyy-mm-ddThh:mm:ss                                           *
  *              yyyy-mm-ddThh:mm:ssZ                                          *
  *              yyyy-mm-ddThh:mm:ss+hh:mm                                     *
  *              yyyy-mm-ddThh:mm:ss-hh:mm                                     *
  *              yyyy-mm-ddThh:mm:ss +hh:mm                                    *
  *              yyyy-mm-ddThh:mm:ss -hh:mm                                    *
+ *              yyyy-mm-ddThh:mm:ss+hhmm                                      *
+ *              yyyy-mm-ddThh:mm:ss-hhmm                                      *
+ *              yyyy-mm-ddThh:mm:ss +hhmm                                     *
+ *              yyyy-mm-ddThh:mm:ss -hhmm                                     *
  *              yyyy-mm-ddThh:mm:ss.ccc                                       *
  *              yyyy-mm-ddThh:mm:ss.cccZ                                      *
  *              yyyy-mm-ddThh:mm:ss.ccc+hh:mm                                 *
  *              yyyy-mm-ddThh:mm:ss.ccc-hh:mm                                 *
  *              yyyy-mm-ddThh:mm:ss.ccc +hh:mm                                *
  *              yyyy-mm-ddThh:mm:ss.ccc -hh:mm                                *
- *              yyyy-mm-dd hh:mm:ss                                          *
+ *              yyyy-mm-ddThh:mm:ss.ccc+hhmm                                  *
+ *              yyyy-mm-ddThh:mm:ss.ccc-hhmm                                  *
+ *              yyyy-mm-ddThh:mm:ss.ccc +hhmm                                 *
+ *              yyyy-mm-ddThh:mm:ss.ccc -hhmm                                 *
+ *              yyyy-mm-dd hh:mm:ss                                           *
  *              yyyy-mm-dd hh:mm:ssZ                                          *
  *              yyyy-mm-dd hh:mm:ss+hh:mm                                     *
  *              yyyy-mm-dd hh:mm:ss-hh:mm                                     *
  *              yyyy-mm-dd hh:mm:ss +hh:mm                                    *
  *              yyyy-mm-dd hh:mm:ss -hh:mm                                    *
+ *              yyyy-mm-dd hh:mm:ss+hhmm                                      *
+ *              yyyy-mm-dd hh:mm:ss-hhmm                                      *
+ *              yyyy-mm-dd hh:mm:ss +hhmm                                     *
+ *              yyyy-mm-dd hh:mm:ss -hhmm                                     *
  *              yyyy-mm-dd hh:mm:ss.ccc                                       *
  *              yyyy-mm-dd hh:mm:ss.cccZ                                      *
  *              yyyy-mm-dd hh:mm:ss.ccc+hh:mm                                 *
  *              yyyy-mm-dd hh:mm:ss.ccc-hh:mm                                 *
  *              yyyy-mm-dd hh:mm:ss.ccc +hh:mm                                *
  *              yyyy-mm-dd hh:mm:ss.ccc -hh:mm                                *
+ *              yyyy-mm-dd hh:mm:ss.ccc+hhmm                                  *
+ *              yyyy-mm-dd hh:mm:ss.ccc-hhmm                                  *
+ *              yyyy-mm-dd hh:mm:ss.ccc +hhmm                                 *
+ *              yyyy-mm-dd hh:mm:ss.ccc -hhmm                                 *
  *                                                                            *
  * Parameters: str  - [IN] iso8601 datetime string                            *
  *             time - [OUT] parsed tm value                                   *
@@ -1122,7 +1168,7 @@ int	zbx_iso8601_utc(const char *str, time_t *time)
 	long int	offset;
 	struct tm	tm;
 
-	if ( 0 == isdigit(*str) || ZBX_CONST_STRLEN("1234-12-12T12:12:12") > strlen(str) ||
+	if (0 == isdigit(*str) || ZBX_CONST_STRLEN("1234-12-12T12:12:12") > strlen(str) ||
 			('T' != str[10] && ' ' != str[10]) ||
 			'-' != str[4] || '-' != str[7] || ':' != str[13] || ':' != str[16])
 	{
@@ -1156,11 +1202,39 @@ int	zbx_iso8601_utc(const char *str, time_t *time)
 	{
 		int	t;
 
-		if(FAIL == zbx_utc_time(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, &t))
+		if (FAIL == zbx_utc_time(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, &t))
 			return FAIL;
 
 		*time = t - offset;
 	}
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: get time deadline                                                 *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_ts_get_deadline(zbx_timespec_t *ts, int sec)
+{
+	zbx_timespec(ts);
+	ts->sec += sec;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: check if deadline has not been reached                            *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_ts_check_deadline(const zbx_timespec_t *deadline)
+{
+	zbx_timespec_t	ts;
+
+	zbx_timespec(&ts);
+
+	if (0 < zbx_timespec_compare(&ts, deadline))
+		return FAIL;
 
 	return SUCCEED;
 }

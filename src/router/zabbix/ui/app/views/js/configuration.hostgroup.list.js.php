@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -36,16 +31,13 @@
 			this.delete_url = delete_url;
 
 			this.initActionButtons();
+			this.initPopupListeners();
 		},
 
 		initActionButtons() {
-			document.addEventListener('click', (e) => {
+			document.addEventListener('click', e => {
 				if (e.target.classList.contains('js-create-hostgroup')) {
-					this.edit();
-				}
-				else if (e.target.classList.contains('js-edit-hostgroup')) {
-					e.preventDefault();
-					this.edit({groupid: e.target.dataset.groupid});
+					ZABBIX.PopupManager.open('hostgroup.edit');
 				}
 				else if (e.target.classList.contains('js-massenable-hostgroup')) {
 					this.enable(e.target, Object.keys(chkbxRange.getSelectedIds()));
@@ -57,25 +49,6 @@
 					this.delete(e.target, Object.keys(chkbxRange.getSelectedIds()));
 				}
 			});
-		},
-
-		edit(parameters = {}) {
-			const original_url = location.href;
-			const overlay = PopUp('popup.hostgroup.edit', parameters, {
-				dialogueid: 'hostgroup_edit',
-				dialogue_class: 'modal-popup-static',
-				prevent_navigation: true
-			});
-
-			overlay.$dialogue[0].addEventListener('dialogue.submit', (e) => this._reload(e.detail));
-			overlay.$dialogue[0].addEventListener('dialogue.delete', (e) => {
-				uncheckTableRows('hostgroup');
-
-				this._reload(e.detail);
-			});
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-			}, {once: true});
 		},
 
 		enable(target, groupids) {
@@ -108,29 +81,6 @@
 			}
 
 			this._post(target, groupids, this.delete_url);
-		},
-
-		editHost(e, hostid) {
-			e.preventDefault();
-			const host_data = {hostid};
-
-			this.openHostPopup(host_data);
-		},
-
-		openHostPopup(host_data) {
-			const original_url = location.href;
-			const overlay = PopUp('popup.host.edit', host_data, {
-				dialogueid: 'host_edit',
-				dialogue_class: 'modal-popup-large',
-				prevent_navigation: true
-			});
-
-			overlay.$dialogue[0].addEventListener('dialogue.create', (e) => this._reload(e.detail.success));
-			overlay.$dialogue[0].addEventListener('dialogue.update', (e) => this._reload(e.detail.success));
-			overlay.$dialogue[0].addEventListener('dialogue.delete', (e) => this._reload(e.detail.success));
-			overlay.$dialogue[0].addEventListener('overlay.close', () => {
-				history.replaceState({}, '', original_url);
-			});
 		},
 
 		_post(target, groupids, url) {
@@ -170,21 +120,20 @@
 
 					clearMessages();
 					addMessage(message_box);
-				})
-				.finally(() => {
+
 					target.classList.remove('is-loading');
+					target.blur();
 				});
 		},
 
-		_reload(success) {
-			postMessageOk(success.title);
-
-			if ('messages' in success) {
-				postMessageDetails('success', success.messages);
-			}
-
-			uncheckTableRows('hostgroup');
-			location.href = location.href;
-		}
+		initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: () => uncheckTableRows('hostgroup')
+			});
+		},
 	};
 </script>

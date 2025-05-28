@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -40,38 +35,55 @@ class WidgetView extends CControllerDashboardWidgetView {
 	}
 
 	protected function doAction(): void {
-		$filter = [
-			'groupids' => getSubGroups($this->fields_values['groupids']),
-			'exclude_groupids' => getSubGroups($this->fields_values['exclude_groupids']),
-			'hostids' => $this->fields_values['hostids'],
-			'problem' => $this->fields_values['problem'],
-			'severities' => $this->fields_values['severities'],
-			'show_type' => $this->fields_values['show_type'],
-			'layout' => $this->fields_values['layout'],
-			'show_suppressed' => $this->fields_values['show_suppressed'],
-			'hide_empty_groups' => $this->fields_values['hide_empty_groups'],
-			'show_opdata' => $this->fields_values['show_opdata'],
-			'ext_ack' => $this->fields_values['ext_ack'],
-			'show_timeline' => $this->fields_values['show_timeline'],
-			'evaltype' => $this->fields_values['evaltype'],
-			'tags' => $this->fields_values['tags']
-		];
-
-		$data = getSystemStatusData($filter);
-
-		if ($filter['show_type'] == Widget::SHOW_TOTALS) {
-			$data['groups'] = getSystemStatusTotals($data);
+		// Editing template dashboard?
+		if ($this->isTemplateDashboard() && !$this->fields_values['override_hostid']) {
+			$this->setResponse(new CControllerResponseData([
+				'name' => $this->getInput('name', $this->widget->getDefaultName()),
+				'error' => _('No data.'),
+				'user' => [
+					'debug_mode' => $this->getDebugMode()
+				]
+			]));
 		}
+		else {
+			$filter = [
+				'groupids' => !$this->isTemplateDashboard() ? getSubGroups($this->fields_values['groupids']) : null,
+				'exclude_groupids' => !$this->isTemplateDashboard()
+					? getSubGroups($this->fields_values['exclude_groupids'])
+					: null,
+				'hostids' => !$this->isTemplateDashboard()
+					? $this->fields_values['hostids']
+					: $this->fields_values['override_hostid'],
+				'problem' => $this->fields_values['problem'],
+				'severities' => $this->fields_values['severities'],
+				'show_type' => !$this->isTemplateDashboard() ? $this->fields_values['show_type'] : Widget::SHOW_TOTALS,
+				'layout' => $this->fields_values['layout'],
+				'show_suppressed' => $this->fields_values['show_suppressed'],
+				'hide_empty_groups' => !$this->isTemplateDashboard() ? $this->fields_values['hide_empty_groups'] : null,
+				'show_opdata' => $this->fields_values['show_opdata'],
+				'ext_ack' => $this->fields_values['ext_ack'],
+				'show_timeline' => $this->fields_values['show_timeline'],
+				'evaltype' => $this->fields_values['evaltype'],
+				'tags' => $this->fields_values['tags']
+			];
 
-		$this->setResponse(new CControllerResponseData([
-			'name' => $this->getInput('name', $this->widget->getDefaultName()),
-			'initial_load' => (bool) $this->getInput('initial_load', 0),
-			'data' => $data,
-			'filter' => $filter,
-			'user' => [
-				'debug_mode' => $this->getDebugMode()
-			],
-			'allowed' => $data['allowed']
-		]));
+			$data = getSystemStatusData($filter);
+
+			if ($filter['show_type'] == Widget::SHOW_TOTALS) {
+				$data['groups'] = getSystemStatusTotals($data);
+			}
+
+			$this->setResponse(new CControllerResponseData([
+				'name' => $this->getInput('name', $this->widget->getDefaultName()),
+				'error' => null,
+				'initial_load' => (bool) $this->getInput('initial_load', 0),
+				'data' => $data,
+				'filter' => $filter,
+				'user' => [
+					'debug_mode' => $this->getDebugMode()
+				],
+				'allowed' => $data['allowed']
+			]));
+		}
 	}
 }

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -34,7 +29,7 @@ $form = (new CForm('post', $form_action))
 	->addVar('userdirectoryid', $data['userdirectoryid']);
 
 // Enable form submitting on Enter.
-$form->addItem((new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
+$form->addItem((new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN));
 
 $form
 	->addItem((new CFormGrid())
@@ -242,9 +237,7 @@ $form
 						->addItem(
 							(new CTag('tfoot', true))->addItem(
 								(new CCol(
-									(new CSimpleButton(_('Add')))
-										->addClass(ZBX_STYLE_BTN_LINK)
-										->addClass('js-add')
+									(new CButtonLink(_('Add')))->addClass('js-add')
 								))->setColSpan(5)
 							)
 						)
@@ -272,9 +265,7 @@ $form
 						->addItem(
 							(new CTag('tfoot', true))->addItem(
 								(new CCol(
-									(new CSimpleButton(_('Add')))
-										->addClass(ZBX_STYLE_BTN_LINK)
-										->addClass('js-add')
+									(new CButtonLink(_('Add')))->addClass('js-add')
 								))->setColSpan(5)
 							)
 						)
@@ -284,33 +275,31 @@ $form
 					->addStyle('width: '.ZBX_TEXTAREA_STANDARD_WIDTH.'px;')
 			))->addClass('allow-jit-provisioning')
 		])
-		->addItem([
-			new CLabel(_('Advanced configuration'), 'advanced_configuration'),
-			new CFormField(
-				(new CCheckBox('advanced_configuration'))->setChecked($data['advanced_configuration'])
-			)
-		])
-		->addItem([
-			(new CLabel(_('StartTLS'), 'start_tls'))->addClass('advanced-configuration'),
-			(new CFormField(
-				(new CCheckBox('start_tls', ZBX_AUTH_START_TLS_ON))
-					->setChecked($data['start_tls'] == ZBX_AUTH_START_TLS_ON)
-			))->addClass('advanced-configuration')
-		])
-		->addItem([
-			(new CLabel(_('Search filter'), 'search_filter'))->addClass('advanced-configuration'),
-			(new CFormField(
-				(new CTextBox('search_filter', $data['search_filter'], false,
-					DB::getFieldLength('userdirectory_ldap', 'search_filter')
-				))
-					->setAttribute('placeholder', CLdap::DEFAULT_FILTER_USER)
-					->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-			))->addClass('advanced-configuration')
-		])
+		->addItem(
+			(new CFormFieldsetCollapsible(_('Advanced configuration')))
+				->setId('advanced-configuration')
+				->addItem([
+					new CLabel(_('StartTLS'), 'start_tls'),
+					new CFormField(
+						(new CCheckBox('start_tls', ZBX_AUTH_START_TLS_ON))
+							->setChecked($data['start_tls'] == ZBX_AUTH_START_TLS_ON)
+					)
+				])
+				->addItem([
+					new CLabel(_('Search filter'), 'search_filter'),
+					new CFormField(
+						(new CTextBox('search_filter', $data['search_filter'], false,
+							DB::getFieldLength('userdirectory_ldap', 'search_filter')
+						))
+							->setAttribute('placeholder', CLdap::DEFAULT_FILTER_USER)
+							->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+					)
+				])
+		)
 	)
 	->addItem(
 		(new CScriptTag('
-			ldap_edit_popup.init('. json_encode([
+			ldap_edit_popup.init('.json_encode([
 				'provision_groups' => $data['provision_groups'],
 				'provision_media' => $data['provision_media']
 			], JSON_FORCE_OBJECT) .');

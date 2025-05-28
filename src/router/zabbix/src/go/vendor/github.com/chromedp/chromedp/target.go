@@ -28,7 +28,7 @@ type Target struct {
 
 	messageQueue chan *cdproto.Message
 
-	// frameMu protects both frames and cur.
+	// frameMu protects frames, execContexts, and cur.
 	frameMu sync.RWMutex
 	// frames is the set of encountered frames.
 	frames       map[cdp.FrameID]*cdp.Frame
@@ -360,7 +360,10 @@ func (t *Target) pageEvent(ev interface{}) {
 
 // domEvent handles incoming DOM events.
 func (t *Target) domEvent(ctx context.Context, ev interface{}) {
+	t.frameMu.RLock()
 	f := t.frames[t.cur]
+	t.frameMu.RUnlock()
+
 	var id cdp.NodeID
 	var op nodeOp
 
@@ -411,6 +414,9 @@ func (t *Target) domEvent(ctx context.Context, ev interface{}) {
 
 	case *dom.EventDistributedNodesUpdated:
 		id, op = e.InsertionPointID, distributedNodesUpdated(e.DistributedNodes)
+
+	case *dom.EventScrollableFlagUpdated:
+		id, op = e.NodeID, scrollableFlagUpdated(f.Nodes, e.NodeID)
 
 	default:
 		t.errf("unhandled node event %T", ev)

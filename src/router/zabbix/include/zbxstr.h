@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_STR_H
@@ -49,6 +44,9 @@ void	zbx_strarr_free(char ***arr);
 void	zbx_strcpy_alloc(char **str, size_t *alloc_len, size_t *offset, const char *src);
 void	zbx_chrcpy_alloc(char **str, size_t *alloc_len, size_t *offset, char c);
 void	zbx_str_memcpy_alloc(char **str, size_t *alloc_len, size_t *offset, const char *src, size_t n);
+
+#define ZBX_STRQUOTE_DEFAULT		1
+#define ZBX_STRQUOTE_SKIP_BACKSLASH	0
 void	zbx_strquote_alloc_opt(char **str, size_t *str_alloc, size_t *str_offset, const char *value_str, int option);
 
 void	zbx_strsplit_first(const char *src, char delimiter, char **left, char **right);
@@ -81,7 +79,7 @@ void	zbx_strlower(char *str);
 void	zbx_strupper(char *str);
 
 #if defined(_WINDOWS) || defined(__MINGW32__) || defined(HAVE_ICONV)
-char	*zbx_convert_to_utf8(char *in, size_t in_size, const char *encoding);
+char	*zbx_convert_to_utf8(char *in, size_t in_size, const char *encoding, char **error);
 #endif	/* HAVE_ICONV */
 
 #define ZBX_MAX_BYTES_IN_UTF8_CHAR	4
@@ -92,8 +90,10 @@ char	*zbx_strshift_utf8(char *text, size_t num);
 size_t	zbx_strlen_utf8_nchars(const char *text, size_t utf8_maxlen);
 size_t	zbx_charcount_utf8_nbytes(const char *text, size_t maxlen);
 
+int	zbx_is_ascii_printable(const char *text);
 int	zbx_is_utf8(const char *text);
 void	zbx_replace_invalid_utf8(char *text);
+void	zbx_replace_invalid_utf8_and_nonprintable(char *text);
 
 void	zbx_dos2unix(char *str);
 
@@ -110,7 +110,6 @@ int	zbx_strcmp_natural(const char *s1, const char *s2);
 int	zbx_str_extract(const char *text, size_t len, char **value);
 char	*zbx_substr(const char *src, size_t left, size_t right);
 char	*zbx_substr_unquote(const char *src, size_t left, size_t right);
-char	*zbx_substr_unquote_opt(const char *src, size_t left, size_t right, int option);
 
 /* UTF-8 trimming */
 void	zbx_ltrim_utf8(char *str, const char *charlist);

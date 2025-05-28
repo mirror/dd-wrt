@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -40,7 +35,8 @@ $fields = [
 	'batch' =>			[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
 	'onlyHeight' =>		[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
 	'legend' =>			[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
-	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null]
+	'widget_view' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null],
+	'resolve_macros' =>	[T_ZBX_INT,			O_OPT, null,	IN('0,1'),	null]
 ];
 if (!check_fields($fields)) {
 	session_write_close();
@@ -49,13 +45,14 @@ if (!check_fields($fields)) {
 validateTimeSelectorPeriod(getRequest('from'), getRequest('to'));
 
 $itemIds = getRequest('itemids');
+$resolve_macros = (bool) getRequest('resolve_macros', 0);
 
 /*
  * Permissions
  */
 $items = API::Item()->get([
-	'output' => ['itemid', 'type', 'master_itemid', 'name', 'delay', 'units', 'hostid', 'history', 'trends',
-		'value_type', 'key_'
+	'output' => ['itemid', 'type', 'master_itemid', $resolve_macros ? 'name_resolved' : 'name', 'delay', 'units',
+		'hostid', 'history', 'trends', 'value_type', 'key_'
 	],
 	'selectHosts' => ['name', 'host'],
 	'itemids' => $itemIds,
@@ -66,6 +63,10 @@ foreach ($itemIds as $itemId) {
 	if (!isset($items[$itemId])) {
 		access_deny();
 	}
+}
+
+if ($resolve_macros) {
+	$items = CArrayHelper::renameObjectsKeys($items, ['name_resolved' => 'name']);
 }
 
 $hostNames = [];
@@ -125,11 +126,13 @@ if (getRequest('widget_view') === '1') {
 }
 
 foreach ($items as $item) {
-	$graph->addItem($item + [
-		'color' => rgb2hex(get_next_color(1)),
-		'yaxisside' => GRAPH_YAXIS_SIDE_DEFAULT,
-		'calc_fnc' => (getRequest('batch')) ? CALC_FNC_AVG : CALC_FNC_ALL
-	]);
+	if ($item['value_type'] != ITEM_VALUE_TYPE_BINARY) {
+		$graph->addItem($item + [
+			'color' => rgb2hex(get_next_color(1)),
+			'yaxisside' => GRAPH_YAXIS_SIDE_DEFAULT,
+			'calc_fnc' => (getRequest('batch')) ? CALC_FNC_AVG : CALC_FNC_ALL
+		]);
+	}
 }
 
 $min_dimensions = $graph->getMinDimensions();

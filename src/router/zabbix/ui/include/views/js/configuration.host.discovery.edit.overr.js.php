@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,33 +24,29 @@
 			(new CSpan('1:'))->setAttribute('data-row-num', ''),
 			(new CCol((new CLink('#{name}', 'javascript:lldoverrides.overrides.open(#{no});')))),
 			'#{stop_verbose}',
-			(new CCol((new CButton(null, _('Remove')))
-				->addClass(ZBX_STYLE_BTN_LINK)
-				->addClass('element-table-remove')
-				->setEnabled(false)
+			(new CCol(
+				(new CButtonLink(_('Remove')))
+					->addClass('element-table-remove')
+					->setEnabled(false)
 			))->addClass(ZBX_STYLE_NOWRAP)
 		]))->toString()
 	?>
 </script>
 <script type="text/x-jquery-tmpl" id="lldoverride-row">
 	<?= (new CRow([
-			(new CCol((new CDiv())->addClass(ZBX_STYLE_DRAG_ICON)))
-				->addClass(ZBX_STYLE_TD_DRAG_ICON)
-				->setWidth('15'),
+			(new CCol((new CDiv())->addClass(ZBX_STYLE_DRAG_ICON)))->addClass(ZBX_STYLE_TD_DRAG_ICON),
 			(new CCol((new CSpan('1:'))->setAttribute('data-row-num', '')))
 				->setWidth('15'),
 			(new CCol((new CLink('#{name}', 'javascript:lldoverrides.overrides.open(#{no});'))))
 				->setWidth('350'),
 			(new CCol('#{stop_verbose}'))
 				->setWidth('100'),
-			(new CCol((new CButton(null, _('Remove')))
-				->addClass(ZBX_STYLE_BTN_LINK)
-				->addClass('element-table-remove')
+			(new CCol(
+				(new CButtonLink(_('Remove')))->addClass('element-table-remove')
 			))
 				->addClass(ZBX_STYLE_NOWRAP)
 				->setWidth('50')
 		]))
-			->addClass('sortable')
 			->toString()
 	?>
 </script>
@@ -102,8 +93,7 @@
 	<?= (new CRow([
 			['#{condition_object} #{condition_operator} ', italic('#{value}')],
 			(new CCol(
-				(new CButton(null, _('View')))
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('View')))
 					->addClass('element-table-open')
 					->onClick('lldoverrides.operations.open(#{no});')
 			))->addClass(ZBX_STYLE_NOWRAP)
@@ -114,13 +104,10 @@
 	<?= (new CRow([
 			['#{condition_object} #{condition_operator} ', italic('#{value}')],
 			(new CHorList([
-				(new CButton(null, _('Edit')))
-					->addClass(ZBX_STYLE_BTN_LINK)
+				(new CButtonLink(_('Edit')))
 					->addClass('element-table-open')
 					->onClick('lldoverrides.operations.open(#{no});'),
-				(new CButton(null, _('Remove')))
-					->addClass(ZBX_STYLE_BTN_LINK)
-					->addClass('element-table-remove')
+				(new CButtonLink(_('Remove')))->addClass('element-table-remove')
 			]))->addClass(ZBX_STYLE_NOWRAP)
 		]))->toString()
 	?>
@@ -149,15 +136,12 @@
 	?>
 </script>
 <script type="text/x-jquery-tmpl" id="lldoverride-tag-row">
-	<?= renderTagTableRow('#{rowNum}', '', '', ZBX_TAG_MANUAL, ['field_name' => 'optag', 'add_post_js' => false]) ?>
+	<?= renderTagTableRow('#{rowNum}', ['tag' => '', 'value' => ''], ['field_name' => 'optag', 'add_post_js' => false]) ?>
 </script>
 <script type="text/javascript">
 	jQuery(function($) {
 		window.lldoverrides = {
-			templated:                           <?= $data['limited'] ? 1 : 0 ?>,
-			ZBX_STYLE_DRAG_ICON:                 <?= zbx_jsvalue(ZBX_STYLE_DRAG_ICON) ?>,
-			ZBX_STYLE_TD_DRAG_ICON:              <?= zbx_jsvalue(ZBX_STYLE_TD_DRAG_ICON) ?>,
-			ZBX_STYLE_DISABLED:                  <?= zbx_jsvalue(ZBX_STYLE_DISABLED) ?>,
+			templated:                      <?= $data['limited'] ? 1 : 0 ?>,
 			msg: {
 				yes:                        <?= json_encode(_('Yes')) ?>,
 				no:                         <?= json_encode(_('No')) ?>,
@@ -205,26 +189,6 @@
 	});
 
 	/**
-	 * Returns common $.sortable options.
-	 *
-	 * @return {object}
-	 */
-	function sortableOpts() {
-		return {
-			items: 'tbody tr.sortable',
-			axis: 'y',
-			containment: 'parent',
-			cursor: 'grabbing',
-			handle: 'div.' + lldoverrides.ZBX_STYLE_DRAG_ICON,
-			tolerance: 'pointer',
-			opacity: 0.6,
-			start: function(e, ui) {
-				ui.placeholder.height(ui.item.height());
-			}
-		};
-	}
-
-	/**
 	 * Writes data index as new nodes attribute. Bind remove event.
 	 */
 	function dynamicRowsBindNewRow($el) {
@@ -239,24 +203,6 @@
 					$el.trigger('dynamic_rows.updated', dynamic_rows);
 				});
 			});
-		});
-	}
-
-	/**
-	 * Implements disabling sortable if less than two data rows.
-	 */
-	function dynamicRowsBindSortableDisable($el) {
-		$el.on('dynamic_rows.updated', function(e, dynamic_rows) {
-			if (dynamic_rows.length < 2) {
-				dynamic_rows.$element.sortable('option', 'disabled', true);
-				dynamic_rows.$element.find('.' + lldoverrides.ZBX_STYLE_DRAG_ICON)
-					.addClass(lldoverrides.ZBX_STYLE_DISABLED);
-			}
-			else {
-				dynamic_rows.$element.sortable('option', 'disabled', false);
-				dynamic_rows.$element.find('.' + lldoverrides.ZBX_STYLE_DRAG_ICON)
-					.removeClass(lldoverrides.ZBX_STYLE_DISABLED);
-			}
 		});
 	}
 
@@ -487,14 +433,11 @@
 		});
 
 		if (!lldoverrides.templated) {
-			this.$container.sortable(sortableOpts());
-			this.$container.sortable('option', 'update', this.onSortOrderChange.bind(this));
 			this.$container.on('dynamic_rows.afterremove', function(e, dynamic_rows) {
 				delete this.data[e.data_index];
 				this.onSortOrderChange();
 			}.bind(this));
 
-			dynamicRowsBindSortableDisable(this.$container);
 			dynamicRowsBindNewRow(this.$container);
 		}
 		else {
@@ -502,6 +445,13 @@
 				e.new_node.setAttribute('data-index', e.data_index);
 			});
 		}
+
+		new CSortable(this.$container[0].querySelector('tbody'), {
+			selector_handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
+			freeze_end: 1,
+			enable_sorting: <?= json_encode(!$data['limited']) ?>
+		})
+			.on(CSortable.EVENT_SORT, () => this.onSortOrderChange());
 
 		this.renderData();
 	}
@@ -526,21 +476,17 @@
 			frag.appendChild(hiddenInput('name', override.data.name, prefix_override));
 			frag.appendChild(hiddenInput('stop', override.data.stop, prefix_override));
 
-			if (override.data.overrides_filters.length > 0) {
-				frag.appendChild(hiddenInput('evaltype', override.data.overrides_evaltype, prefix_filter));
+			frag.appendChild(hiddenInput('evaltype', override.data.overrides_evaltype, prefix_filter));
+			frag.appendChild(hiddenInput('formula', override.data.overrides_formula, prefix_filter));
 
-				if (override.data.overrides_evaltype == <?= CONDITION_EVAL_TYPE_EXPRESSION ?>) {
-					frag.appendChild(hiddenInput('formula', override.data.overrides_formula, prefix_filter));
-				}
+			override.data.overrides_filters.forEach(function(override_filter) {
+				var prefix = prefix_filter + '[conditions][' + (iter_filters++) + ']';
 
-				override.data.overrides_filters.forEach(function(override_filter) {
-					var prefix = prefix_filter + '[conditions][' + (iter_filters++) + ']';
-					frag.appendChild(hiddenInput('formulaid', override_filter.formulaid, prefix));
-					frag.appendChild(hiddenInput('macro', override_filter.macro, prefix));
-					frag.appendChild(hiddenInput('value', override_filter.value, prefix));
-					frag.appendChild(hiddenInput('operator', override_filter.operator, prefix));
-				});
-			}
+				frag.appendChild(hiddenInput('formulaid', override_filter.formulaid, prefix));
+				frag.appendChild(hiddenInput('macro', override_filter.macro, prefix));
+				frag.appendChild(hiddenInput('value', override_filter.value, prefix));
+				frag.appendChild(hiddenInput('operator', override_filter.operator, prefix));
+			});
 
 			override.data.operations.forEach(function(operation) {
 				var prefix = prefix_override + '[operations][' + (iter_operations++) + ']';
@@ -765,6 +711,7 @@
 			.dynamicRows({
 				template: '#override-filters-row',
 				counter: this.override.filter_counter,
+				allow_empty: true,
 				dataCallback: function(data) {
 					data.formulaId = num2letter(data.rowNum);
 					that.override.filter_counter++;
@@ -826,17 +773,10 @@
 		this.$form.trimValues(['input[type="text"]']);
 		this.$form.parent().find('.msg-bad, .msg-good').remove();
 
-		var form_data = this.$form.serializeJSON();
-
-		if (!('overrides_filters' in form_data) || Object.keys(form_data.overrides_filters).length <= 1) {
-			delete form_data.overrides_formula;
-			delete form_data.overrides_evaltype;
-		}
-
 		overlay.setLoading();
 		overlay.xhr = jQuery.ajax({
 			url: url.getUrl(),
-			data: form_data,
+			data: this.$form.serializeJSON(),
 			dataType: 'json',
 			type: 'post'
 		})
@@ -871,6 +811,25 @@
 		this.data = {};
 		this.new_id = 0;
 		this.sort_index = [];
+
+		operations.sort((a, b) => {
+			const a_operator = this.operatorName(a.operator);
+			const b_operator = this.operatorName(b.operator);
+
+			if (a.operationobject < b.operationobject
+					|| (a.operationobject === b.operationobject && a_operator < b_operator)
+					|| (a.operationobject === b.operationobject && a_operator === b_operator && a.value < b.value)) {
+				return -1;
+			}
+
+			if (a.operationobject > b.operationobject
+					|| (a.operationobject === b.operationobject && a_operator > b_operator)
+					|| (a.operationobject === b.operationobject && a_operator === b_operator && a.value > b.value)) {
+				return 1;
+			}
+
+			return 0;
+		});
 
 		operations.forEach(function(operation, no) {
 			this.data[no + 1] = new Operation(operation, no + 1);
@@ -1056,9 +1015,7 @@
 			}
 		});
 
-		$custom_intervals.dynamicRows({
-			template: '#lldoverride-custom-intervals-row'
-		});
+		$custom_intervals.dynamicRows({template: '#lldoverride-custom-intervals-row', allow_empty: true});
 
 		jQuery('#ophistory_history_mode', this.$form)
 			.change(function() {
@@ -1084,7 +1041,7 @@
 
 		jQuery('.tags-table .<?= ZBX_STYLE_TEXTAREA_FLEXIBLE ?>', this.$form).textareaFlexible();
 		jQuery('.tags-table', this.$form)
-			.dynamicRows({template: '#lldoverride-tag-row'})
+			.dynamicRows({template: '#lldoverride-tag-row', allow_empty: true})
 			.on('click', 'button.element-table-add', function() {
 				jQuery('.tags-table .<?= ZBX_STYLE_TEXTAREA_FLEXIBLE ?>', this.$form).textareaFlexible();
 			});

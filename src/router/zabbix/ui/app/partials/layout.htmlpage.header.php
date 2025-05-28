@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -30,7 +25,7 @@ $scripts = $data['javascript']['files'];
 $page_title = $data['page']['title'];
 
 if (isset($ZBX_SERVER_NAME) && $ZBX_SERVER_NAME !== '') {
-	$page_title = $ZBX_SERVER_NAME.NAME_DELIMITER.$page_title;
+	$page_title = $page_title !== '' ? $ZBX_SERVER_NAME.NAME_DELIMITER.$page_title : $ZBX_SERVER_NAME;
 }
 
 $page_header = new CHtmlPageHeader($page_title, CWebUser::getLang());
@@ -44,6 +39,10 @@ if (!empty($DB['DB'])) {
 	// Perform Zabbix server check only for standard pages.
 	if ($data['config']['server_check_interval']) {
 		$scripts[] = 'servercheck.js';
+	}
+
+	if (CSettingsHelper::isSoftwareUpdateCheckEnabled()) {
+		$scripts[] = 'class.software-version-check.js';
 	}
 }
 
@@ -70,7 +69,7 @@ foreach ($modules_assets as $module_id => $assets) {
 $page_header
 	->addJavaScript('
 		const PHP_TZ_OFFSETS = '.json_encode($tz_offsets).';
-		const PHP_ZBX_FULL_DATE_TIME = "'.ZBX_FULL_DATE_TIME.'";
+		const PHP_ZBX_FULL_DATE_TIME = "'.DATE_TIME_FORMAT_SECONDS.'";
 	')
 	->addJsFile((new CUrl('js/browsers.js'))->getUrl())
 	->addJsFile((new CUrl('jsLoader.php'))
@@ -111,5 +110,3 @@ if ($scripts) {
 }
 
 $page_header->show();
-
-echo '<body>';

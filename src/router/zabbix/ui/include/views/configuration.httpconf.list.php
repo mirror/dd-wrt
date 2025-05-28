@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 require_once dirname(__FILE__).'/js/configuration.httpconf.list.js.php';
 
@@ -68,7 +64,7 @@ $filter_column_left = (new CFormList())
 	)
 	->addRow(_('Status'),
 		(new CRadioButtonList('filter_status', (int) $data['filter']['status']))
-			->addValue(_('all'), -1)
+			->addValue(_('All'), -1)
 			->addValue(httptest_status2str(HTTPTEST_STATUS_ACTIVE), HTTPTEST_STATUS_ACTIVE)
 			->addValue(httptest_status2str(HTTPTEST_STATUS_DISABLED), HTTPTEST_STATUS_DISABLED)
 			->setModern(true)
@@ -148,7 +144,8 @@ $httpTable = (new CTableInfo())
 		make_sorting_header(_('Status'), 'status', $data['sort'], $data['sortorder'], $url),
 		_('Tags'),
 		($data['context'] === 'host') ? _('Info') : null
-	]);
+	])
+	->setPageNavigation($data['paging']);
 
 $httpTestsLastData = $this->data['httpTestsLastData'];
 $http_tests = $data['http_tests'];
@@ -187,9 +184,19 @@ foreach ($http_tests as $httpTestId => $httpTest) {
 		}
 	}
 
+	$host_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'popup')
+		->setArgument('popup', $data['context'] === 'host' ? 'host.edit' : 'template.edit')
+		->setArgument($data['context'] === 'host' ? 'hostid' : 'templateid', $httpTest['hostid'])
+		->getUrl();
+
+	$host = $this->data['hostid'] == 0
+		? new CLink($httpTest['hostname'], $host_url)
+		: null;
+
 	$httpTable->addRow([
 		new CCheckBox('group_httptestid['.$httpTest['httptestid'].']', $httpTest['httptestid']),
-		($this->data['hostid'] > 0) ? null : $httpTest['hostname'],
+		$host,
 		$name,
 		$httpTest['stepscnt'],
 		$httpTest['delay'],
@@ -206,6 +213,7 @@ foreach ($http_tests as $httpTestId => $httpTest) {
 					: 'httptest.massdisable'
 				)
 				->setArgument('context', $data['context'])
+				->setArgument('backurl', $url)
 				->getUrl()
 		))
 			->addCsrfToken($csrf_token)
@@ -217,10 +225,16 @@ foreach ($http_tests as $httpTestId => $httpTest) {
 }
 
 $button_list = [
-	'httptest.massenable' => ['name' => _('Enable'), 'confirm' => _('Enable selected web scenarios?'),
+	'httptest.massenable' => [
+		'name' => _('Enable'),
+		'confirm_singular' => _('Enable selected web scenario?'),
+		'confirm_plural' => _('Enable selected web scenarios?'),
 		'csrf_token' => $csrf_token
 	],
-	'httptest.massdisable' => ['name' => _('Disable'), 'confirm' => _('Disable selected web scenarios?'),
+	'httptest.massdisable' => [
+		'name' => _('Disable'),
+		'confirm_singular' => _('Disable selected web scenario?'),
+		'confirm_plural' => _('Disable selected web scenarios?'),
 		'csrf_token' => $csrf_token
 	]
 ];
@@ -229,27 +243,34 @@ if ($data['context'] === 'host') {
 	$button_list += [
 		'httptest.massclearhistory' => [
 			'name' => _('Clear history and trends'),
-			'confirm' => _('Clear history and trends of selected web scenarios?'),
+			'confirm_singular' => _('Clear history and trends of selected web scenario?'),
+			'confirm_plural' => _('Clear history and trends of selected web scenarios?'),
 			'csrf_token' => $csrf_token
 		]
 	];
 }
 
 $button_list += [
-	'httptest.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected web scenarios?'),
-			'csrf_token' => $csrf_token
+	'httptest.massdelete' => [
+		'name' => _('Delete'),
+		'confirm_singular' => _('Delete selected web scenario?'),
+		'confirm_plural' => _('Delete selected web scenarios?'),
+		'csrf_token' => $csrf_token
 	]
 ];
 
 // Append table to form.
-$httpForm->addItem([$httpTable, $data['paging'], new CActionButtonList('action', 'group_httptestid', $button_list,
-	$data['hostid']
-)]);
+$httpForm->addItem([$httpTable, new CActionButtonList('action', 'group_httptestid', $button_list, $data['hostid'])]);
 
 $html_page
 	->addItem($httpForm)
 	->show();
 
-(new CScriptTag('view.init();'))
+(new CScriptTag('
+	view.init('.json_encode([
+		'checkbox_hash' => $data['hostid'],
+		'form_name' => $httpForm->getName()
+	]).');
+'))
 	->setOnDocumentReady()
 	->show();

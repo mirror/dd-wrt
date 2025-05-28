@@ -7,6 +7,7 @@ libzbxcrypto_a_SOURCES = \
 	base64.c \
 	aes.c \
 	aes.h \
+	endian.c \
 	hmac.c \
 	rsa.c
 

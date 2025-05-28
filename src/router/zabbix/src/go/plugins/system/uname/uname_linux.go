@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package uname
@@ -22,10 +17,11 @@ package uname
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"syscall"
 
-	"zabbix.com/util"
+	"golang.zabbix.com/agent2/util"
 )
 
 func getUname(params []string) (uname string, err error) {
@@ -73,6 +69,16 @@ func getHostname(params []string) (hostname string, err error) {
 		if idx := strings.Index(hostname, "."); idx > 0 {
 			hostname = hostname[:idx]
 		}
+	case "fqdn":
+		var tmp string
+		hostname = util.UnameArrayToString(&utsname.Nodename)
+
+		tmp, err = net.LookupCNAME(hostname)
+		if err == nil {
+			hostname = tmp
+		}
+
+		hostname = strings.Trim(hostname, " .\n\r")
 	case "netbios":
 		return "", errors.New("NetBIOS is not supported on the current platform.")
 	default:

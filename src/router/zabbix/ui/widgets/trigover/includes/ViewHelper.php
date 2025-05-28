@@ -1,28 +1,23 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 namespace Widgets\TrigOver\Includes;
 
-use CCol,
-	CLink,
+use CButtonIcon,
+	CCol,
 	CMenuPopupHelper,
 	CSettingsHelper,
 	CSeverityHelper,
@@ -41,12 +36,14 @@ class ViewHelper {
 	 * @return CCol
 	 */
 	public static function getTriggerOverviewCell(array $trigger, array $dependencies): CCol {
-		$ack = $trigger['problem']['acknowledged'] == 1 ? (new CSpan())->addClass(ZBX_STYLE_ICON_ACKN) : null;
-		$desc = array_key_exists($trigger['triggerid'], $dependencies)
-			? self::makeTriggerDependencies($dependencies[$trigger['triggerid']])
-			: [];
-
-		$column = (new CCol([$desc, $ack]))
+		$column = (new CCol([
+			array_key_exists($trigger['triggerid'], $dependencies)
+				? self::makeTriggerDependencies($dependencies[$trigger['triggerid']])
+				: [],
+			$trigger['problem']['acknowledged'] == 1
+				? (new CSpan())->addClass(ZBX_ICON_CHECK)
+				: null
+		]))
 			->addClass(CSeverityHelper::getStyle((int) $trigger['priority'], $trigger['value'] == TRIGGER_VALUE_TRUE))
 			->addClass(ZBX_STYLE_CURSOR_POINTER);
 
@@ -94,20 +91,16 @@ class ViewHelper {
 
 		foreach (['down', 'up'] as $type) {
 			if (array_key_exists($type, $dependencies)) {
-				$header = $type === 'down' ? _('Depends on') : _('Dependent');
-				$class = $type === 'down' ? ZBX_STYLE_ICON_DEPEND_DOWN : ZBX_STYLE_ICON_DEPEND_UP;
-
 				$table = (new CTableInfo())
 					->setAttribute('style', 'max-width: '.ZBX_TEXTAREA_STANDARD_WIDTH.'px;')
-					->setHeader([$header]);
+					->setHeader([$type === 'down' ? _('Depends on') : _('Dependent')]);
 
 				foreach ($dependencies[$type] as $description) {
 					$table->addRow($description);
 				}
 
-				$result[] = (new CLink())
-					->addClass($class)
-					->addClass(ZBX_STYLE_CURSOR_POINTER)
+				$result[] = (new CButtonIcon($type === 'down' ? ZBX_ICON_BULLET_ALT_DOWN : ZBX_ICON_BULLET_ALT_UP))
+					->addClass(ZBX_STYLE_COLOR_ICON)
 					->setHint($table, '', false);
 			}
 		}

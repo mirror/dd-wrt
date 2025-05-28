@@ -1,26 +1,23 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_ZBXNIX_H
 #define ZABBIX_ZBXNIX_H
 
 #include "zbxsysinc.h"
+
+#include "zbxthreads.h"
 
 /* IPC start */
 #include "zbxtypes.h"
@@ -36,21 +33,26 @@ int	zbx_coredump_disable(void);
 #	error "This module allowed only for Unix OS"
 #endif
 
-typedef void	(*zbx_on_exit_t)(int);
+typedef int	(*zbx_get_process_info_by_thread_f)(int local_server_num, unsigned char *local_process_type,
+		int *local_process_num);
+
+void	zbx_init_library_nix(zbx_get_progname_f get_progname_cb, zbx_get_process_info_by_thread_f
+		get_process_info_by_thread_cb);
+
+typedef void	(*zbx_on_exit_t)(int, void*);
 typedef void	(*zbx_signal_handler_f)(int flags);
 typedef void	(*zbx_signal_redirect_f)(int flags, zbx_signal_handler_f signal_handler_cb);
+typedef	ZBX_THREAD_HANDLE *(*zbx_get_threads_f)(void);
 
 void	zbx_set_exiting_with_fail(void);
 void	zbx_set_exiting_with_succeed(void);
 int	ZBX_IS_RUNNING(void);
 int	ZBX_EXIT_STATUS(void);
 
-/* callback function prototype for getting PID file path */
-typedef const char*	(*zbx_get_pid_file_pathname_f)(void);
-
 int	zbx_daemon_start(int allow_root, const char *user, unsigned int flags,
-		zbx_get_pid_file_pathname_f get_pid_file_cb, zbx_on_exit_t zbx_on_exit_cb_arg, int config_log_type,
-		const char *config_log_file, zbx_signal_redirect_f signal_redirect_cb);
+		zbx_get_config_str_f get_pid_file_cb, zbx_on_exit_t zbx_on_exit_cb_arg, int config_log_type,
+		const char *config_log_file, zbx_signal_redirect_f signal_redirect_cb,
+		zbx_get_threads_f get_threads_cb,  zbx_get_config_int_f get_threads_num_cb);
 void	zbx_daemon_stop(void);
 
 int	zbx_sigusr_send(int flags, const char *pid_file_pathname);
@@ -121,7 +123,11 @@ void	zbx_set_exit_on_terminate(void);
 void	zbx_unset_exit_on_terminate(void);
 
 void	zbx_log_exit_signal(void);
+void	zbx_set_on_exit_args(void *args);
+void	zbx_set_child_pids(const pid_t *pids, size_t pid_num);
 /* sighandler end */
 
 int	zbx_parse_rtc_options(const char *opt, int *message);
+
+void	zbx_backtrace(void);
 #endif	/* ZABBIX_ZBXNIX_H */

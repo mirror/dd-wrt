@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -24,6 +19,7 @@ class CControllerAuditSettingsUpdate extends CController {
 	protected function checkInput(): bool {
 		$fields = [
 			'auditlog_enabled'	=> 'db config.auditlog_enabled|in 1',
+			'auditlog_mode'		=> 'db config.auditlog_mode|in 1',
 			'hk_audit_mode'		=> 'db config.hk_audit_mode|in 1',
 			'hk_audit'			=> 'db config.hk_audit|time_unit '.implode(':', [SEC_PER_DAY, 25 * SEC_PER_YEAR])
 		];
@@ -34,9 +30,7 @@ class CControllerAuditSettingsUpdate extends CController {
 			switch ($this->getValidationError()) {
 				case self::VALIDATION_ERROR:
 					$response = new CControllerResponseRedirect(
-						(new CUrl('zabbix.php'))
-							->setArgument('action', 'audit.settings.edit')
-							->getUrl()
+						(new CUrl('zabbix.php'))->setArgument('action', 'audit.settings.edit')
 					);
 					$response->setFormData($this->getInputAll() + [
 						'auditlog_enabled' => '0',
@@ -45,6 +39,7 @@ class CControllerAuditSettingsUpdate extends CController {
 					CMessageHelper::setErrorTitle(_('Cannot update configuration'));
 					$this->setResponse($response);
 					break;
+
 				case self::VALIDATION_FATAL_ERROR:
 					$this->setResponse(new CControllerResponseFatal());
 					break;
@@ -66,6 +61,10 @@ class CControllerAuditSettingsUpdate extends CController {
 		}
 
 		$settings = [CSettingsHelper::AUDITLOG_ENABLED => $this->getInput('auditlog_enabled', 0)];
+
+		if ($settings[CSettingsHelper::AUDITLOG_ENABLED] == 1) {
+			$settings[CSettingsHelper::AUDITLOG_MODE] = $this->getInput('auditlog_mode', 0);
+		}
 
 		$result_housekeeping = API::Housekeeping()->update($housekeeping);
 		$result_settings = API::Settings()->update($settings);

@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package hw
@@ -24,10 +19,10 @@ import (
 	"strings"
 	"time"
 
-	"git.zabbix.com/ap/plugin-support/errs"
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"git.zabbix.com/ap/plugin-support/zbxerr"
-	"zabbix.com/pkg/zbxcmd"
+	"golang.zabbix.com/agent2/pkg/zbxcmd"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
+	"golang.zabbix.com/sdk/zbxerr"
 )
 
 const (
@@ -44,6 +39,11 @@ const (
 	maxChassisTypeLen = 36
 	minChassisTypelen = 1
 )
+
+// Plugin -
+type Plugin struct {
+	plugin.Base
+}
 
 var impl Plugin
 
@@ -87,18 +87,6 @@ var chassisTypes = []string{
 	"Stick PC",
 }
 
-// Plugin -
-type Plugin struct {
-	plugin.Base
-	options Options
-}
-
-// Options -
-type Options struct {
-	plugin.SystemOptions `conf:"optional,name=System"`
-	Timeout              int
-}
-
 func init() {
 	err := plugin.RegisterMetrics(
 		&impl, "Hw",
@@ -112,7 +100,6 @@ func init() {
 
 // Configure -
 func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
-	p.options.Timeout = global.Timeout
 }
 
 // Validate -
@@ -124,7 +111,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 	case "system.hw.chassis":
 		return p.exportChassis(params)
 	case "system.hw.devices":
-		return p.exportDevices(params)
+		return p.exportDevices(params, ctx.Timeout())
 	default:
 		return nil, plugin.UnsupportedMetricError
 	}
@@ -277,13 +264,13 @@ func clen(n []byte) int {
 	return len(n)
 }
 
-func (p *Plugin) exportDevices(params []string) (result interface{}, err error) {
+func (p *Plugin) exportDevices(params []string, timeout int) (result interface{}, err error) {
 	cmd, err := getDeviceCmd(params)
 	if err != nil {
 		return
 	}
 
-	return zbxcmd.ExecuteStrict(cmd, time.Second*time.Duration(p.options.Timeout), "")
+	return zbxcmd.ExecuteStrict(cmd, time.Second*time.Duration(timeout), "")
 }
 
 func getDeviceCmd(params []string) (string, error) {

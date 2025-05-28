@@ -1,94 +1,103 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 ?>
 
 
 window.widget_tophosts_form = new class {
 
-	init() {
-		this._form = document.getElementById('widget-dialogue-form');
+	/**
+	 * Widget form.
+	 *
+	 * @type {HTMLFormElement}
+	 */
+	#form;
 
-		this._list_columns = document.getElementById('list_columns');
-		this.initSortable(this._list_columns);
+	/**
+	 * Template id.
+	 *
+	 * @type {string}
+	 */
+	#templateid;
 
-		this._list_columns.addEventListener('click', (e) => this.processColumnsAction(e));
-	}
+	/**
+	 * Column list container.
+	 *
+	 * @type {HTMLElement}
+	 */
+	#list_columns;
 
-	initSortable(element) {
-		const is_disabled = element.querySelectorAll('tr.sortable').length < 2;
+	init({templateid}) {
+		this.#form = document.getElementById('widget-dialogue-form');
+		this.#list_columns = document.getElementById('list_columns');
+		this.#templateid = templateid;
 
-		$(element).sortable({
-			disabled: is_disabled,
-			items: 'tbody tr.sortable',
-			axis: 'y',
-			containment: 'parent',
-			cursor: 'grabbing',
-			handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
-			tolerance: 'pointer',
-			opacity: 0.6,
-			helper: function(e, ui) {
-				for (let td of ui.find('>td')) {
-					let $td = $(td);
-					$td.attr('width', $td.width())
-				}
-
-				return ui;
-			},
-			stop: function(e, ui) {
-				ui.item.find('>td').removeAttr('width');
-				ui.item.removeAttr('style');
-			},
-			start: function(e, ui) {
-				$(ui.placeholder).height($(ui.helper).height());
-			}
+		new CSortable(this.#list_columns.querySelector('tbody'), {
+			selector_handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
+			freeze_end: 1
 		});
 
-		for (const drag_icon of element.querySelectorAll('div.<?= ZBX_STYLE_DRAG_ICON ?>')) {
-			drag_icon.classList.toggle('<?= ZBX_STYLE_DISABLED ?>', is_disabled);
-		}
+		this.#list_columns.addEventListener('click', (e) => this.#processColumnsAction(e));
 	}
 
-	processColumnsAction(e) {
+	#processColumnsAction(e) {
 		const target = e.target;
+		const form_fields = getFormFields(this.#form);
 
+		let column_index;
 		let column_popup;
 
 		switch (target.getAttribute('name')) {
 			case 'add':
-				this._column_index = this._list_columns.querySelectorAll('tr').length;
+				column_index = this.#list_columns.querySelectorAll('tr').length;
 
-				column_popup = PopUp('widget.tophosts.column.edit', {}, {dialogue_class: 'modal-popup-generic'})
-					.$dialogue[0];
-				column_popup.addEventListener('dialogue.submit', (e) => this.updateColumns(e));
-				column_popup.addEventListener('overlay.close', this.removeColorpicker);
+				column_popup = PopUp(
+					'widget.tophosts.column.edit',
+					{
+						templateid: this.#templateid,
+						groupids: form_fields.groupids,
+						hostids: form_fields.hostids
+					},
+					{
+						dialogueid: 'tophosts-column-edit-overlay',
+						dialogue_class: 'modal-popup-generic'
+					}
+				).$dialogue[0];
+
+				column_popup.addEventListener('dialogue.submit', (e) => this.#updateColumns(column_index, e.detail));
+				column_popup.addEventListener('dialogue.close', this.#removeColorpicker);
 				break;
 
 			case 'edit':
-				const form_fields = getFormFields(this._form);
+				column_index = target.closest('tr').querySelector('[name="sortorder[columns][]"]').value;
 
-				this._column_index = target.closest('tr').querySelector('[name="sortorder[columns][]"]').value;
+				column_popup = PopUp(
+					'widget.tophosts.column.edit',
+					{
+						...form_fields.columns[column_index],
+						edit: 1,
+						templateid: this.#templateid,
+						groupids: form_fields.groupids,
+						hostids: form_fields.hostids
+					}, {
+						dialogueid: 'tophosts-column-edit-overlay',
+						dialogue_class: 'modal-popup-generic'
+					}
+					).$dialogue[0];
 
-				column_popup = PopUp('widget.tophosts.column.edit',
-					{...form_fields.columns[this._column_index], edit: 1}).$dialogue[0];
-				column_popup.addEventListener('dialogue.submit', (e) => this.updateColumns(e));
-				column_popup.addEventListener('overlay.close', this.removeColorpicker);
+				column_popup.addEventListener('dialogue.submit', (e) => this.#updateColumns(column_index, e.detail));
+				column_popup.addEventListener('dialogue.close', this.#removeColorpicker);
 				break;
 
 			case 'remove':
@@ -98,48 +107,70 @@ window.widget_tophosts_form = new class {
 		}
 	}
 
-	updateColumns(e) {
-		const data = e.detail;
-		const input = document.createElement('input');
-
-		input.setAttribute('type', 'hidden');
+	#updateColumns(column_index, data) {
+		this.#list_columns.querySelectorAll(`[name^="columns[${column_index}]["]`).forEach(node => node.remove());
 
 		if (data.edit) {
-			this._list_columns.querySelectorAll(`[name^="columns[${this._column_index}][`)
-				.forEach((node) => node.remove());
-
 			delete data.edit;
 		}
 		else {
-			input.setAttribute('name', `sortorder[columns][]`);
-			input.setAttribute('value', this._column_index);
-			this._form.appendChild(input.cloneNode());
+			this.#addVar(`sortorder[columns][]`, column_index);
 		}
 
-		if (data.thresholds) {
-			for (const [key, value] of Object.entries(data.thresholds)) {
-				input.setAttribute('name', `columns[${this._column_index}][thresholds][${key}][color]`);
-				input.setAttribute('value', value.color);
-				this._form.appendChild(input.cloneNode());
-				input.setAttribute('name', `columns[${this._column_index}][thresholds][${key}][threshold]`);
-				input.setAttribute('value', value.threshold);
-				this._form.appendChild(input.cloneNode());
+		for (const [data_key, data_value] of Object.entries(data)) {
+			switch (data_key) {
+				case 'thresholds':
+					for (const [key, value] of Object.entries(data_value)) {
+						this.#addVar(`columns[${column_index}][thresholds][${key}][color]`, value.color);
+						this.#addVar(`columns[${column_index}][thresholds][${key}][threshold]`, value.threshold);
+					}
+					break;
+
+				case 'highlights':
+					for (const [key, value] of Object.entries(data_value)) {
+						this.#addVar(`columns[${column_index}][highlights][${key}][color]`, value.color);
+						this.#addVar(`columns[${column_index}][highlights][${key}][pattern]`, value.pattern);
+					}
+					break;
+
+				case 'time_period':
+					for (const [key, value] of Object.entries(data_value)) {
+						this.#addVar(`columns[${column_index}][time_period][${key}]`, value);
+					}
+					break;
+
+				case 'sparkline':
+					for (const [key, value] of Object.entries(data_value)) {
+						if (key === 'time_period') {
+							for (const [k, v] of Object.entries(value)) {
+								this.#addVar(`columns[${column_index}][sparkline][time_period][${k}]`, v);
+							}
+						}
+						else {
+							this.#addVar(`columns[${column_index}][sparkline][${key}]`, value);
+						}
+					}
+					break;
+
+				default:
+					this.#addVar(`columns[${column_index}][${data_key}]`, data_value);
+					break;
 			}
-
-			delete data.thresholds;
-		}
-
-		for (const [key, value] of Object.entries(data)) {
-			input.setAttribute('name', `columns[${this._column_index}][${key}]`);
-			input.setAttribute('value', value);
-			this._form.appendChild(input.cloneNode());
 		}
 
 		ZABBIX.Dashboard.reloadWidgetProperties();
 	}
 
+	#addVar(name, value) {
+		const input = document.createElement('input');
+		input.setAttribute('type', 'hidden');
+		input.setAttribute('name', name);
+		input.setAttribute('value', value);
+		this.#form.appendChild(input);
+	}
+
 	// Need to remove function after sub-popups auto close.
-	removeColorpicker() {
+	#removeColorpicker() {
 		$('#color_picker').hide();
 	}
 };

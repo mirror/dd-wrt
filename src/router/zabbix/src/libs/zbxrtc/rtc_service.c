@@ -1,32 +1,31 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
+#include "zbxcommon.h"
 #include "zbxrtc.h"
 #include "zbx_rtc_constants.h"
 
 #include "zbxserialize.h"
 #include "zbxjson.h"
 #include "zbxnix.h"
-#include "log.h"
 #include "zbxdiag.h"
 #include "zbxstr.h"
 #include "zbxnum.h"
+#include "zbxalgo.h"
+#include "zbxipcservice.h"
+#include "zbxprof.h"
+#include "zbxtime.h"
 
 ZBX_PTR_VECTOR_IMPL(rtc_sub, zbx_rtc_sub_t *)
 ZBX_PTR_VECTOR_IMPL(rtc_hook, zbx_rtc_hook_t *)
@@ -220,10 +219,6 @@ static void	rtc_process_diaginfo(const char *data, char **result)
 	{
 		scope = 1 << ZBX_DIAGINFO_LOCKS;
 	}
-	else if (0 == strcmp(buf, ZBX_DIAG_CONNECTOR))
-	{
-		scope = 1 << ZBX_DIAGINFO_CONNECTOR;
-	}
 	else
 	{
 		if (NULL == *result)
@@ -332,6 +327,43 @@ int	zbx_rtc_notify(zbx_rtc_t *rtc, unsigned char process_type, int process_num, 
 
 /******************************************************************************
  *                                                                            *
+ * Purpose: notifies remote subscribers                                       *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_rtc_notify_generic(zbx_ipc_async_socket_t *rtc, unsigned char process_type, int process_num,
+		zbx_uint32_t code, const char *data, zbx_uint32_t size)
+{
+	unsigned char	*notify_data, *ptr;
+	zbx_uint32_t	notify_data_size;
+	int		ret = FAIL;
+
+	/* <process type:uchar><process num:int><code:uint32><data size:uint32><data> */
+	notify_data_size = (zbx_uint32_t)(sizeof(process_type) + sizeof(process_num) +  sizeof(code) + 2 * sizeof(size))
+			+ size;
+	notify_data = (unsigned char *)zbx_malloc(NULL, notify_data_size);
+
+	ptr = notify_data;
+	ptr += zbx_serialize_value(ptr, process_type);
+	ptr += zbx_serialize_int(ptr, process_num);
+	ptr += zbx_serialize_value(ptr, code);
+	ptr += zbx_serialize_value(ptr, size);
+	(void)zbx_serialize_str(ptr, data, size);
+
+	if (FAIL == zbx_ipc_async_socket_send(rtc, ZBX_RTC_NOTIFY, notify_data, notify_data_size))
+	{
+		zabbix_log(LOG_LEVEL_CRIT, "cannot send %s notification", get_process_type_string(process_type));
+		goto out;
+	}
+
+	ret = (int)notify_data_size;
+out:
+	zbx_free(notify_data);
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Purpose: deserialize subscription target notification codes                *
  *                                                                            *
  ******************************************************************************/
@@ -414,6 +446,11 @@ static void	rtc_subscribe_service(zbx_rtc_t *rtc, const unsigned char *data)
 static void	rtc_process_request(zbx_rtc_t *rtc, zbx_uint32_t code, const unsigned char *data,
 		char **result)
 {
+	zbx_uint32_t	notify_code, notify_size;
+	int		process_num;
+	char		*notify_data = NULL;
+	unsigned char	process_type;
+
 	switch (code)
 	{
 #if defined(HAVE_SIGQUEUE)
@@ -434,10 +471,11 @@ static void	rtc_process_request(zbx_rtc_t *rtc, zbx_uint32_t code, const unsigne
 			return;
 		case ZBX_RTC_SNMP_CACHE_RELOAD:
 #ifdef HAVE_NETSNMP
+			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_SNMP_POLLER, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
 			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_POLLER, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
 			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_UNREACHABLE, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
 			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_TRAPPER, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
-			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_DISCOVERER, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
+			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_DISCOVERYMANAGER, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
 			zbx_rtc_notify(rtc, ZBX_PROCESS_TYPE_TASKMANAGER, 0, ZBX_RTC_SNMP_CACHE_RELOAD, NULL, 0);
 #else
 			*result = zbx_strdup(NULL, "Invalid runtime control option: no SNMP support enabled\n");
@@ -445,6 +483,15 @@ static void	rtc_process_request(zbx_rtc_t *rtc, zbx_uint32_t code, const unsigne
 			return;
 		case ZBX_RTC_DIAGINFO:
 			rtc_process_diaginfo((const char *)data, result);
+			return;
+		case ZBX_RTC_NOTIFY:
+			data += zbx_deserialize_value(data, &process_type);
+			data += zbx_deserialize_int(data, &process_num);
+			data += zbx_deserialize_value(data, &notify_code);
+			data += zbx_deserialize_value(data, &notify_size);
+			(void)zbx_deserialize_str(data, &notify_data, notify_size);
+			zbx_rtc_notify(rtc, process_type, process_num, notify_code, notify_data, notify_size);
+			zbx_free(notify_data);
 			return;
 		default:
 			*result = zbx_strdup(*result, "Unknown runtime control option\n");
@@ -502,18 +549,20 @@ static void	rtc_process(zbx_rtc_t *rtc, zbx_ipc_client_t *client, zbx_uint32_t c
 	if (NULL == cb_proc_req || FAIL == cb_proc_req(rtc, code, data, &result_ex))
 		rtc_process_request(rtc, code, data, &result);
 
-	if (NULL != result_ex)
-		result = zbx_strdcat(result, result_ex);
-
-	if (NULL == result)
+	if (ZBX_RTC_NOTIFY != code)
 	{
-		/* generate default success message if no specific success or error messages were returned */
-		result = zbx_strdup(NULL, "Runtime control command was forwarded successfully\n");
-	}
+		if (NULL != result_ex)
+			result = zbx_strdcat(result, result_ex);
 
-	size = (zbx_uint32_t)strlen(result) + 1;
-	zbx_ipc_client_send(client, code, (unsigned char *)result, size);
-	zbx_free(result);
+		if (NULL == result)
+		{
+			/* generate default success message if no specific success or error messages were returned */
+			result = zbx_strdup(NULL, "Runtime control command was forwarded successfully\n");
+		}
+
+		size = (zbx_uint32_t)strlen(result) + 1;
+		zbx_ipc_client_send(client, code, (unsigned char *)result, size);
+	}
 
 	zbx_free(result_ex);
 	zbx_free(result);
@@ -594,13 +643,14 @@ int	zbx_rtc_wait_for_sync_finish(zbx_rtc_t *rtc, zbx_rtc_process_request_ex_func
 				case ZBX_RTC_LOG_LEVEL_DECREASE:
 				case ZBX_RTC_LOG_LEVEL_INCREASE:
 				case ZBX_RTC_SUBSCRIBE:
+				case ZBX_RTC_SUBSCRIBE_SERVICE:
 					zbx_rtc_dispatch(rtc, client, message, cb_proc_req);
 					break;
 				default:
 					if (ZBX_IPC_RTC_MAX >= message->code)
 					{
 						const char *rtc_error = "Cannot perform specified runtime control"
-								" command during initial configuration cache sync\n";
+								" command during startup\n";
 						zbx_ipc_client_send(client, message->code,
 								(const unsigned char *)rtc_error,
 								(zbx_uint32_t)strlen(rtc_error) + 1);

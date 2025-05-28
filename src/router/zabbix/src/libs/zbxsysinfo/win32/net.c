@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
@@ -22,7 +17,7 @@
 
 #include "zbxstr.h"
 #include "zbxnum.h"
-#include "log.h"
+#include "zbxlog.h"
 #include "zbxjson.h"
 
 /* __stdcall calling convention is used for GetIfEntry2(). In order to declare a */
@@ -47,19 +42,18 @@ zbx_ifrow_t;
 
 /******************************************************************************
  *                                                                            *
- * Purpose: initialize the zbx_ifrow_t variable                               *
+ * Purpose: initializes zbx_ifrow_t variable                                  *
  *                                                                            *
  * Parameters:                                                                *
  *     pIfRow      - [IN/OUT] pointer to zbx_ifrow_t variable with all        *
  *                            members set to NULL                             *
  *                                                                            *
- * Comments: allocates memory, call zbx_ifrow_clean() with the same pointer   *
- *           to free it                                                       *
+ * Comments: allocates memory, calls zbx_ifrow_clean() with pointer to free   *
+ *           it                                                               *
  *                                                                            *
  ******************************************************************************/
 static void	zbx_ifrow_init(zbx_ifrow_t *pIfRow)
 {
-
 	HMODULE		module;
 	static	char	check_done = FALSE;
 
@@ -71,13 +65,13 @@ static void	zbx_ifrow_init(zbx_ifrow_t *pIfRow)
 			if (NULL == (pGetIfEntry2 = (pGetIfEntry2_t)GetProcAddress(module, "GetIfEntry2")))
 			{
 				zabbix_log(LOG_LEVEL_DEBUG, "GetProcAddress failed with error: %s",
-						strerror_from_system(GetLastError()));
+						zbx_strerror_from_system(GetLastError()));
 			}
 		}
 		else
 		{
 			zabbix_log(LOG_LEVEL_DEBUG, "GetModuleHandle failed with error: %s",
-					strerror_from_system(GetLastError()));
+					zbx_strerror_from_system(GetLastError()));
 		}
 
 		check_done = TRUE;
@@ -92,12 +86,12 @@ static void	zbx_ifrow_init(zbx_ifrow_t *pIfRow)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: clean the zbx_ifrow_t variable                                    *
+ * Purpose: cleans zbx_ifrow_t variable                                       *
  *                                                                            *
  * Parameters:                                                                *
  *     pIfRow      - [IN/OUT] pointer to initialized zbx_ifrow_t variable     *
  *                                                                            *
- * Comments: sets the members to NULL so the variable can be reused           *
+ * Comments: sets members to NULL so variable can be reused                   *
  *                                                                            *
  ******************************************************************************/
 static void	zbx_ifrow_clean(zbx_ifrow_t *pIfRow)
@@ -108,14 +102,15 @@ static void	zbx_ifrow_clean(zbx_ifrow_t *pIfRow)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: call either GetIfEntry() or GetIfEntry2() based on the Windows    *
+ * Purpose: Calls either GetIfEntry() or GetIfEntry2() based on the Windows   *
  *          release to fill the passed MIB interface structure.               *
  *                                                                            *
  * Parameters:                                                                *
  *     pIfRow      - [IN/OUT] pointer to initialized zbx_ifrow_t variable     *
  *                                                                            *
- * Comments: the index of the interface must be set with                      *
- *           zbx_ifrow_set_index(), otherwise this function will return error *
+ * Comments: The index of the interface must be set with                      *
+ *           zbx_ifrow_set_index(), otherwise this function will return       *
+ *           error.                                                           *
  *                                                                            *
  ******************************************************************************/
 static DWORD	zbx_ifrow_call_get_if_entry(zbx_ifrow_t *pIfRow)
@@ -275,7 +270,7 @@ static char	*zbx_ifrow_get_utf8_description(const zbx_ifrow_t *pIfRow)
 	else
 	{
 		static wchar_t *(*mb_to_unicode)(const char *) = NULL;
-		wchar_t 	*wdescr;
+		wchar_t		*wdescr;
 		char		*utf8_descr;
 
 		if (NULL == mb_to_unicode)
@@ -330,12 +325,14 @@ static char	*zbx_ifrow_get_guid_str(const zbx_ifrow_t *pIfRow)
 	return guid_cstr;
 }
 
-/*
- * returns interface statistics by IP address or interface name
- */
+/******************************************************************************
+ *                                                                            *
+ * Purpose: returns interface statistics by IP address or interface name      *
+ *                                                                            *
+ ******************************************************************************/
 static int	get_if_stats(const char *if_name, zbx_ifrow_t *ifrow)
 {
-	DWORD		dwSize, dwRetVal, i, j;
+	DWORD		dwSize, dwRetVal;
 	int		ret = FAIL;
 	char		ip[16];
 	/* variables used for GetIfTable and GetIfEntry */
@@ -357,7 +354,7 @@ static int	get_if_stats(const char *if_name, zbx_ifrow_t *ifrow)
 	   actual data we want */
 	if (NO_ERROR != (dwRetVal = GetIpAddrTable(pIPAddrTable, &dwSize, 0)))
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "GetIpAddrTable failed with error: %s", strerror_from_system(dwRetVal));
+		zabbix_log(LOG_LEVEL_DEBUG, "GetIpAddrTable failed with error: %s", zbx_strerror_from_system(dwRetVal));
 		goto clean;
 	}
 
@@ -374,11 +371,11 @@ static int	get_if_stats(const char *if_name, zbx_ifrow_t *ifrow)
 	/* Make a second call to GetIfTable to get the actual data we want. */
 	if (NO_ERROR != (dwRetVal = GetIfTable(pIfTable, &dwSize, 0)))
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "GetIfTable failed with error: %s", strerror_from_system(dwRetVal));
+		zabbix_log(LOG_LEVEL_DEBUG, "GetIfTable failed with error: %s", zbx_strerror_from_system(dwRetVal));
 		goto clean;
 	}
 
-	for (i = 0; i < pIfTable->dwNumEntries; i++)
+	for (DWORD i = 0; i < pIfTable->dwNumEntries; i++)
 	{
 		char	*utf8_descr;
 
@@ -386,7 +383,7 @@ static int	get_if_stats(const char *if_name, zbx_ifrow_t *ifrow)
 		if (NO_ERROR != (dwRetVal = zbx_ifrow_call_get_if_entry(ifrow)))
 		{
 			zabbix_log(LOG_LEVEL_DEBUG, "zbx_ifrow_call_get_if_entry failed with error: %s",
-					strerror_from_system(dwRetVal));
+					zbx_strerror_from_system(dwRetVal));
 			continue;
 		}
 #define ZBX_GUID_LEN	38
@@ -403,7 +400,7 @@ static int	get_if_stats(const char *if_name, zbx_ifrow_t *ifrow)
 		if (SUCCEED == ret)
 			break;
 
-		for (j = 0; j < pIPAddrTable->dwNumEntries; j++)
+		for (DWORD j = 0; j < pIPAddrTable->dwNumEntries; j++)
 		{
 			if (pIPAddrTable->table[j].dwIndex == zbx_ifrow_get_index(ifrow))
 			{
@@ -581,7 +578,7 @@ clean:
 
 int	net_if_discovery(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	DWORD		dwSize, dwRetVal, i;
+	DWORD		dwSize, dwRetVal;
 	int		ret = SYSINFO_RET_FAIL;
 
 	/* variables used for GetIfTable and GetIfEntry */
@@ -589,7 +586,7 @@ int	net_if_discovery(AGENT_REQUEST *request, AGENT_RESULT *result)
 	zbx_ifrow_t	ifrow = {NULL, NULL};
 
 	struct zbx_json	j;
-	char 		*utf8_descr, *guid;
+	char		*utf8_descr, *guid;
 
 	/* Allocate memory for our pointers. */
 	dwSize = sizeof(MIB_IFTABLE);
@@ -604,9 +601,9 @@ int	net_if_discovery(AGENT_REQUEST *request, AGENT_RESULT *result)
 	/* Make a second call to GetIfTable to get the actual data we want. */
 	if (NO_ERROR != (dwRetVal = GetIfTable(pIfTable, &dwSize, 0)))
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "GetIfTable failed with error: %s", strerror_from_system(dwRetVal));
+		zabbix_log(LOG_LEVEL_DEBUG, "GetIfTable failed with error: %s", zbx_strerror_from_system(dwRetVal));
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain system information: %s",
-				strerror_from_system(dwRetVal)));
+				zbx_strerror_from_system(dwRetVal)));
 		goto clean;
 	}
 
@@ -614,13 +611,13 @@ int	net_if_discovery(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 	zbx_ifrow_init(&ifrow);
 
-	for (i = 0; i < pIfTable->dwNumEntries; i++)
+	for (DWORD i = 0; i < pIfTable->dwNumEntries; i++)
 	{
 		zbx_ifrow_set_index(&ifrow, pIfTable->table[i].dwIndex);
 		if (NO_ERROR != (dwRetVal = zbx_ifrow_call_get_if_entry(&ifrow)))
 		{
 			zabbix_log(LOG_LEVEL_DEBUG, "zbx_ifrow_call_get_if_entry failed with error: %s",
-					strerror_from_system(dwRetVal));
+					zbx_strerror_from_system(dwRetVal));
 			continue;
 		}
 
@@ -681,7 +678,7 @@ static char	*get_if_adminstatus_string(DWORD status)
 
 int	net_if_list(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	DWORD		dwSize, dwRetVal, i, j;
+	DWORD		dwSize, dwRetVal;
 	char		*buf = NULL;
 	size_t		buf_alloc = 512, buf_offset = 0;
 	int		ret = SYSINFO_RET_FAIL;
@@ -704,9 +701,9 @@ int	net_if_list(AGENT_REQUEST *request, AGENT_RESULT *result)
 	   actual data we want */
 	if (NO_ERROR != (dwRetVal = GetIpAddrTable(pIPAddrTable, &dwSize, 0)))
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "GetIpAddrTable failed with error: %s", strerror_from_system(dwRetVal));
+		zabbix_log(LOG_LEVEL_DEBUG, "GetIpAddrTable failed with error: %s", zbx_strerror_from_system(dwRetVal));
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain IP address information: %s",
-				strerror_from_system(dwRetVal)));
+				zbx_strerror_from_system(dwRetVal)));
 		goto clean;
 	}
 
@@ -723,9 +720,9 @@ int	net_if_list(AGENT_REQUEST *request, AGENT_RESULT *result)
 	/* Make a second call to GetIfTable to get the actual data we want. */
 	if (NO_ERROR != (dwRetVal = GetIfTable(pIfTable, &dwSize, 0)))
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "GetIfTable failed with error: %s", strerror_from_system(dwRetVal));
+		zabbix_log(LOG_LEVEL_DEBUG, "GetIfTable failed with error: %s", zbx_strerror_from_system(dwRetVal));
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain network interface information: %s",
-				strerror_from_system(dwRetVal)));
+				zbx_strerror_from_system(dwRetVal)));
 		goto clean;
 	}
 
@@ -737,15 +734,15 @@ int	net_if_list(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 		zbx_ifrow_init(&ifrow);
 
-		for (i = 0; i < (int)pIfTable->dwNumEntries; i++)
+		for (DWORD i = 0; i < (int)pIfTable->dwNumEntries; i++)
 		{
-			char		*utf8_descr;
+			char	*utf8_descr;
 
 			zbx_ifrow_set_index(&ifrow, pIfTable->table[i].dwIndex);
 			if (NO_ERROR != (dwRetVal = zbx_ifrow_call_get_if_entry(&ifrow)))
 			{
 				zabbix_log(LOG_LEVEL_ERR, "zbx_ifrow_call_get_if_entry failed with error: %s",
-						strerror_from_system(dwRetVal));
+						zbx_strerror_from_system(dwRetVal));
 				continue;
 			}
 
@@ -755,7 +752,9 @@ int	net_if_list(AGENT_REQUEST *request, AGENT_RESULT *result)
 			zbx_snprintf_alloc(&buf, &buf_alloc, &buf_offset,
 					" %-8s", get_if_adminstatus_string(zbx_ifrow_get_admin_status(&ifrow)));
 
-			for (j = 0; j < pIPAddrTable->dwNumEntries; j++)
+			DWORD	j = 0;
+
+			for (; j < pIPAddrTable->dwNumEntries; j++)
 				if (pIPAddrTable->table[j].dwIndex == zbx_ifrow_get_index(&ifrow))
 				{
 					in_addr.S_un.S_addr = pIPAddrTable->table[j].dwAddr;
@@ -789,7 +788,7 @@ int	net_tcp_listen(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	MIB_TCPTABLE	*pTcpTable = NULL;
 	DWORD		dwSize, dwRetVal;
-	int		i, ret = SYSINFO_RET_FAIL;
+	int		ret = SYSINFO_RET_FAIL;
 	unsigned short	port;
 	char		*port_str;
 
@@ -819,7 +818,7 @@ int	net_tcp_listen(AGENT_REQUEST *request, AGENT_RESULT *result)
 	   the actual data we require */
 	if (NO_ERROR == (dwRetVal = GetTcpTable(pTcpTable, &dwSize, TRUE)))
 	{
-		for (i = 0; i < (int)pTcpTable->dwNumEntries; i++)
+		for (int i = 0; i < (int)pTcpTable->dwNumEntries; i++)
 		{
 			if (MIB_TCP_STATE_LISTEN == pTcpTable->table[i].dwState &&
 					port == ntohs((u_short)pTcpTable->table[i].dwLocalPort))
@@ -832,9 +831,9 @@ int	net_tcp_listen(AGENT_REQUEST *request, AGENT_RESULT *result)
 	}
 	else
 	{
-		zabbix_log(LOG_LEVEL_DEBUG, "GetTcpTable failed with error: %s", strerror_from_system(dwRetVal));
+		zabbix_log(LOG_LEVEL_DEBUG, "GetTcpTable failed with error: %s", zbx_strerror_from_system(dwRetVal));
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain system information: %s",
-				strerror_from_system(dwRetVal)));
+				zbx_strerror_from_system(dwRetVal)));
 		goto clean;
 	}
 

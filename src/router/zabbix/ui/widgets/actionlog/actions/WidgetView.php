@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,7 +20,6 @@ use API,
 	CControllerDashboardWidgetView,
 	CControllerResponseData,
 	CArrayHelper,
-	CRangeTimeParser,
 	CSettingsHelper;
 
 class WidgetView extends CControllerDashboardWidgetView {
@@ -34,8 +28,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		parent::init();
 
 		$this->addValidationRules([
-			'from' => 'string',
-			'to' => 'string'
+			'has_custom_time_period' => 'in 1'
 		]);
 	}
 
@@ -54,6 +47,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'message' => $this->fields_values['message'],
 			'sortfield' => $sortfield,
 			'sortorder' => $sortorder,
+			'info' => $this->makeWidgetInfo(),
 			'user' => [
 				'debug_mode' => $this->getDebugMode()
 			]
@@ -99,13 +93,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		$search = $data['message'] === '' ? null : $data['message'];
-		$range_time_parser = new CRangeTimeParser();
 
-		$range_time_parser->parse($this->getInput('from'));
-		$time_from = $range_time_parser->getDateTime(true)->getTimestamp();
+		$time_from = $this->fields_values['time_period']['from_ts'];
+		$time_to = $this->fields_values['time_period']['to_ts'];
 
-		$range_time_parser->parse($this->getInput('to'));
-		$time_to = $range_time_parser->getDateTime(false)->getTimestamp();
 		$alerts = [];
 		$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT);
 
@@ -248,5 +239,23 @@ class WidgetView extends CControllerDashboardWidgetView {
 		CArrayHelper::sort($prepared_data, ['name']);
 
 		return $prepared_data;
+	}
+
+	/**
+	 * Make widget specific info to show in widget's header.
+	 */
+	private function makeWidgetInfo(): array {
+		$info = [];
+
+		if ($this->hasInput('has_custom_time_period')) {
+			$info[] = [
+				'icon' => ZBX_ICON_TIME_PERIOD,
+				'hint' => relativeDateToText($this->fields_values['time_period']['from'],
+					$this->fields_values['time_period']['to']
+				)
+			];
+		}
+
+		return $info;
 	}
 }

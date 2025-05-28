@@ -5,9 +5,19 @@
 	"name": "Trigger overview",
 	"namespace": "TrigOver",
 	"version": "1.0",
-	"author": "Zabbix SIA",
+	"author": "Zabbix",
+	"description": "Displays trigger states for selected hosts.",
+	"url": "web_interface/frontend_sections/dashboards/widgets/trigger_overview",
 	"widget": {
-		"js_class": "CWidgetTrigerOver"
+		"js_class": "CWidgetTriggerOver",
+		"in": {
+			"hostids": {
+				"type": "_hostids"
+			},
+			"groupids": {
+				"type": "_hostgroupids"
+			}
+		}
 	},
 	"actions": {
 		"widget.trigover.view": {

@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_ZBXIPCSERVICE_H
@@ -60,25 +55,27 @@ zbx_ipc_socket_t;
 
 typedef struct zbx_ipc_client zbx_ipc_client_t;
 
+ZBX_PTR_VECTOR_DECL(ipc_client_ptr, zbx_ipc_client_t *)
+
 /* IPC service */
 typedef struct
 {
 	/* the listening socket descriptor */
-	int			fd;
+	int				fd;
 
-	struct event_base	*ev;
-	struct event		*ev_listener;
-	struct event		*ev_timer;
-	struct event		*ev_alert;
+	struct event_base		*ev;
+	struct event			*ev_listener;
+	struct event			*ev_timer;
+	struct event			*ev_alert;
 
 	/* the unix socket path */
-	char			*path;
+	char				*path;
 
 	/* the connected clients */
-	zbx_vector_ptr_t	clients;
+	zbx_vector_ipc_client_ptr_t	clients;
 
 	/* the clients with messages */
-	zbx_queue_ptr_t		clients_recv;
+	zbx_queue_ptr_t			clients_recv;
 }
 zbx_ipc_service_t;
 
@@ -103,6 +100,7 @@ void	zbx_ipc_service_close(zbx_ipc_service_t *service);
 
 int	zbx_ipc_client_send(zbx_ipc_client_t *client, zbx_uint32_t code, const unsigned char *data, zbx_uint32_t size);
 void	zbx_ipc_client_close(zbx_ipc_client_t *client);
+int	zbx_ipc_client_get_fd(zbx_ipc_client_t *client);
 
 void			zbx_ipc_client_addref(zbx_ipc_client_t *client);
 void			zbx_ipc_client_release(zbx_ipc_client_t *client);

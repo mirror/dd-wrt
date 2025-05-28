@@ -1,31 +1,26 @@
-<?php
+<?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CControllerScriptList extends CController {
 
-	protected function init() {
+	protected function init(): void {
 		$this->disableCsrfValidation();
 	}
 
-	protected function checkInput() {
+	protected function checkInput(): bool {
 		$fields = [
 			'sort' =>			'in name,command',
 			'sortorder' =>		'in '.ZBX_SORT_DOWN.','.ZBX_SORT_UP,
@@ -45,11 +40,11 @@ class CControllerScriptList extends CController {
 		return $ret;
 	}
 
-	protected function checkPermissions() {
+	protected function checkPermissions(): bool {
 		return $this->checkAccess(CRoleHelper::UI_ADMINISTRATION_SCRIPTS);
 	}
 
-	protected function doAction() {
+	protected function doAction(): void {
 		$sortField = $this->getInput('sort', CProfile::get('web.scripts.php.sort', 'name'));
 		$sortOrder = $this->getInput('sortorder', CProfile::get('web.scripts.php.sortorder', ZBX_SORT_UP));
 
@@ -118,8 +113,6 @@ class CControllerScriptList extends CController {
 			(new CUrl('zabbix.php'))->setArgument('action', $this->getAction())
 		);
 
-
-
 		/*
 		 * Find script host group name and user group name. Set to NULL if all host/user groups used. Find associated
 		 * actions in any of operations. Collect scriptids for action scope scripts.
@@ -153,6 +146,16 @@ class CControllerScriptList extends CController {
 		unset($script);
 
 		if ($action_scriptids) {
+			$access_to_actions = [
+				EVENT_SOURCE_TRIGGERS => $this->checkAccess(CRoleHelper::UI_CONFIGURATION_TRIGGER_ACTIONS),
+				EVENT_SOURCE_DISCOVERY => $this->checkAccess(CRoleHelper::UI_CONFIGURATION_DISCOVERY_ACTIONS),
+				EVENT_SOURCE_AUTOREGISTRATION => $this->checkAccess(
+					CRoleHelper::UI_CONFIGURATION_AUTOREGISTRATION_ACTIONS
+				),
+				EVENT_SOURCE_INTERNAL => $this->checkAccess(CRoleHelper::UI_CONFIGURATION_INTERNAL_ACTIONS),
+				EVENT_SOURCE_SERVICE => $this->checkAccess(CRoleHelper::UI_CONFIGURATION_SERVICE_ACTIONS)
+			];
+
 			$script_actions = API::Script()->get([
 				'output' => [],
 				'scriptids' => array_keys($action_scriptids),
@@ -161,9 +164,22 @@ class CControllerScriptList extends CController {
 			]);
 
 			foreach ($data['scripts'] as $scriptid => &$script) {
+				$script['action_count_total'] = 0;
+
 				if (array_key_exists($scriptid, $script_actions)) {
 					$script['actions'] = $script_actions[$scriptid]['actions'];
+					$script['action_count_total'] = count($script['actions']);
+
 					CArrayHelper::sort($script['actions'], ['name']);
+
+					$script['actions'] = array_slice($script['actions'], 0,
+						CSettingsHelper::get(CSettingsHelper::MAX_IN_TABLE)
+					);
+
+					foreach ($script['actions'] as &$action) {
+						$action['is_editable'] = $access_to_actions[$action['eventsource']];
+					}
+					unset($action);
 				}
 			}
 			unset($script);
@@ -200,10 +216,6 @@ class CControllerScriptList extends CController {
 			}
 			unset($script);
 		}
-
-		$data['config'] = [
-			'max_in_table' => CSettingsHelper::get(CSettingsHelper::MAX_IN_TABLE)
-		];
 
 		$response = new CControllerResponseData($data);
 		$response->setTitle(_('Configuration of scripts'));

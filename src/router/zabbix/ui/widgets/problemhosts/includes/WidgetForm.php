@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -30,6 +25,7 @@ use Zabbix\Widgets\Fields\{
 	CWidgetFieldCheckBox,
 	CWidgetFieldMultiSelectGroup,
 	CWidgetFieldMultiSelectHost,
+	CWidgetFieldMultiSelectOverrideHost,
 	CWidgetFieldRadioButtonList,
 	CWidgetFieldSeverities,
 	CWidgetFieldTags,
@@ -43,14 +39,17 @@ class WidgetForm extends CWidgetForm {
 
 	public function addFields(): self {
 		return $this
-			->addField(
-				new CWidgetFieldMultiSelectGroup('groupids', _('Host groups'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectGroup('groupids', _('Host groups'))
 			)
-			->addField(
-				new CWidgetFieldMultiSelectGroup('exclude_groupids', _('Exclude host groups'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectGroup('exclude_groupids', _('Exclude host groups'))
 			)
-			->addField(
-				new CWidgetFieldMultiSelectHost('hostids', _('Hosts'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldMultiSelectHost('hostids', _('Hosts'))
 			)
 			->addField(
 				new CWidgetFieldTextBox('problem', _('Problem'))
@@ -59,7 +58,7 @@ class WidgetForm extends CWidgetForm {
 				new CWidgetFieldSeverities('severities', _('Severity'))
 			)
 			->addField(
-				(new CWidgetFieldRadioButtonList('evaltype', _('Tags'), [
+				(new CWidgetFieldRadioButtonList('evaltype', _('Problem tags'), [
 					TAG_EVAL_TYPE_AND_OR => _('And/Or'),
 					TAG_EVAL_TYPE_OR => _('Or')
 				]))->setDefault(TAG_EVAL_TYPE_AND_OR)
@@ -70,17 +69,19 @@ class WidgetForm extends CWidgetForm {
 			->addField(
 				new CWidgetFieldCheckBox('show_suppressed', _('Show suppressed problems'))
 			)
-			->addField(
-				new CWidgetFieldCheckBox('hide_empty_groups', _('Hide groups without problems'))
+			->addField($this->isTemplateDashboard()
+				? null
+				: new CWidgetFieldCheckBox('hide_empty_groups', _('Hide groups without problems'))
 			)
 			->addField(
 				(new CWidgetFieldRadioButtonList('ext_ack', _('Problem display'), [
 					EXTACK_OPTION_ALL => _('All'),
 					EXTACK_OPTION_BOTH => _('Separated'),
 					EXTACK_OPTION_UNACK => _('Unacknowledged only')
-				]))
-					->setDefault(EXTACK_OPTION_ALL)
-					->setFlags(CWidgetField::FLAG_ACKNOWLEDGES)
+				]))->setDefault(EXTACK_OPTION_ALL)
+			)
+			->addField(
+				new CWidgetFieldMultiSelectOverrideHost()
 			);
 	}
 }

@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -106,7 +101,8 @@ $left_column = (new CFormList())
 			->setOptions(CSeverityHelper::getSeverities())
 			->setChecked($data['severities'])
 			->setColumns(3)
-			->setVertical(true)
+			->setVertical()
+			->showTitles()
 	);
 
 $filter_age = (new CNumericBox('age', $data['age'], 3, false, false, false))
@@ -138,16 +134,32 @@ $left_column
 			->setUncheckedValue(0)
 			->setId('show_suppressed_#{uniqid}')
 	])
-	->addRow(_('Show unacknowledged only'), [
-		(new CCheckBox('unacknowledged'))
-			->setChecked($data['unacknowledged'] == 1)
-			->setUncheckedValue(0)
-			->setId('unacknowledged_#{uniqid}')
-	]);
+	->addRow(
+		_('Acknowledgement status'),
+		(new CHorList())
+			->addItem((new CRadioButtonList('acknowledgement_status', (int) $data['acknowledgement_status']))
+				->addValue(_('All'), ZBX_ACK_STATUS_ALL, 'acknowledgement_status_0_#{uniqid}')
+				->addValue(_('Unacknowledged'), ZBX_ACK_STATUS_UNACK, 'acknowledgement_status_1_#{uniqid}')
+				->addValue(_('Acknowledged'), ZBX_ACK_STATUS_ACK, 'acknowledgement_status_2_#{uniqid}')
+				->setModern(true)
+			)
+			->addItem((new CCheckBox('acknowledged_by_me', 1))
+				->setLabelPosition(CCheckBox::LABEL_POSITION_LEFT)
+				->setChecked($data['acknowledged_by_me'] == 1)
+				->setUncheckedValue(0)
+				->setLabel(_('By me'))
+				->setId('acknowledged_by_me_#{uniqid}')
+			)
+	);
 
-$filter_inventory_table = new CTable();
-$filter_inventory_table->setId('filter-inventory_#{uniqid}');
+$filter_inventory_table = (new CTable())->setId('filter-inventory_#{uniqid}');
+
 $inventories = array_column(getHostInventories(), 'title', 'db_field');
+
+if(!$data['inventory']) {
+	$data['inventory'] = [['field' => '', 'value' => '']];
+}
+
 $i = 0;
 foreach ($data['inventory'] as $field) {
 	$filter_inventory_table->addRow([
@@ -185,6 +197,10 @@ $filter_tags_table->addRow(
 			->setId('evaltype_#{uniqid}')
 	))->setColSpan(4)
 );
+
+if(!$data['tags']) {
+	$data['tags'] = [['tag' => '', 'value' => '', 'operator' => TAG_OPERATOR_LIKE]];
+}
 
 $i = 0;
 foreach ($data['tags'] as $tag) {
@@ -311,7 +327,7 @@ $template = (new CForm('get'))
 	->setName('zbx_filter')
 	->addItem([
 		$template,
-		(new CSubmitButton(null))->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN),
+		(new CSubmitButton())->addClass(ZBX_STYLE_FORM_SUBMIT_HIDDEN),
 		(new CVar('filter_name', '#{filter_name}'))->removeId(),
 		(new CVar('filter_show_counter', '#{filter_show_counter}'))->removeId(),
 		(new CVar('filter_custom_time', '#{filter_custom_time}'))->removeId(),
@@ -378,7 +394,6 @@ if (array_key_exists('render_html', $data)) {
 				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH),
 			(new CCol(
 				(new CButton('tags[#{rowNum}][remove]', _('Remove')))
-					->removeId()
 					->addClass(ZBX_STYLE_BTN_LINK)
 					->addClass('element-table-remove')
 					->removeId()
@@ -397,8 +412,8 @@ if (array_key_exists('render_html', $data)) {
 			.filter(data.filter_configurable ? '[name="filter_update"]' : '[name="filter_new"]').show();
 
 		let fields = ['show', 'name', 'tag_priority', 'show_opdata', 'show_symptoms', 'show_suppressed', 'show_tags',
-				'unacknowledged', 'compact_view', 'show_timeline', 'details', 'highlight_row', 'age_state', 'age',
-				'tag_name_format', 'evaltype'
+				'acknowledgement_status', 'acknowledged_by_me', 'compact_view', 'show_timeline', 'details',
+				'highlight_row', 'age_state', 'age', 'tag_name_format', 'evaltype'
 			],
 			eventHandler = {
 				show: () => {
@@ -443,6 +458,18 @@ if (array_key_exists('render_html', $data)) {
 
 					$('[name="tag_priority"]', container).prop('disabled', disabled);
 					$('[name="tag_name_format"]', container).prop('disabled', disabled);
+				},
+				unack_by_me: () => {
+					const acknowledgement_status = container.querySelector('[name="acknowledgement_status"]:checked');
+					const disabled = acknowledgement_status.value != <?= ZBX_ACK_STATUS_ACK ?>;
+
+					if (disabled) {
+						container.querySelector('[name="acknowledged_by_me"]').disabled = true;
+						container.querySelector('[name="acknowledged_by_me"]').checked = false;
+					}
+					else {
+						container.querySelector('[name="acknowledged_by_me"]').disabled = false;
+					}
 				}
 			};
 
@@ -467,9 +494,12 @@ if (array_key_exists('render_html', $data)) {
 		}
 
 		// Inventory table.
-		if (data.inventory.length == 0) {
+		$('#filter-inventory_' + data.uniqid, container).find('.form_row').remove();
+
+		if (data.inventory.length === 0) {
 			data.inventory.push({'field': '', 'value': ''});
 		}
+
 		$('#filter-inventory_' + data.uniqid, container).dynamicRows({
 			template: '#filter-inventory-row',
 			rows: data.inventory,
@@ -477,8 +507,10 @@ if (array_key_exists('render_html', $data)) {
 		});
 
 		// Tags table.
-		if (data.tags.length == 0) {
-			data.tags.push({'tag': '', 'value': '', 'operator': <?= TAG_OPERATOR_LIKE ?>});
+		$('#filter-tags_' + data.uniqid, container).find('.form_row').remove();
+
+		if (data.tags.length === 0) {
+			data.tags.push({'tag': '', 'value': '', 'operator': <?= TAG_OPERATOR_LIKE ?>, uniqid: data.uniqid});
 		}
 
 		$('#filter-tags_' + data.uniqid, container)
@@ -572,6 +604,7 @@ if (array_key_exists('render_html', $data)) {
 		$('[name="age_state"]').change(eventHandler.age_state).trigger('change');
 		$('[name="compact_view"]', container).change(eventHandler.compact_view).trigger('change');
 		$('[name="show_tags"]', container).change(eventHandler.show_tags).trigger('change');
+		$('[name="acknowledgement_status"]', container).change(eventHandler.unack_by_me).trigger('change');
 
 		// Initialize src_url.
 		this.resetUnsavedState();

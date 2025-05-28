@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -28,7 +23,7 @@
 
 use Widgets\Item\Widget;
 
-if ($data['error'] !== '') {
+if (array_key_exists('error', $data)) {
 	$body = (new CTableInfo())->setNoDataMessage($data['error']);
 }
 else {
@@ -44,6 +39,16 @@ else {
 	];
 
 	$rows = [];
+
+	if ($data['sparkline']) {
+		$rows[] = (new CSparkline())
+			->setColor('#'.$data['sparkline']['color'])
+			->setLineWidth($data['sparkline']['width'])
+			->setFill($data['sparkline']['fill'])
+			->setValue($data['sparkline']['value'])
+			->setTimePeriodFrom($data['sparkline']['from'])
+			->setTimePeriodTo($data['sparkline']['to']);
+	}
 
 	foreach ($classes_vertical as $row_key => $row_class) {
 		$cols = [];
@@ -81,17 +86,10 @@ else {
 					break;
 
 				case 'item_value':
-					$div->addClass('item-value');
-
-					if (array_key_exists('value_type', $cell_data)) {
-						$div->addClass(($cell_data['value_type'] == ITEM_VALUE_TYPE_FLOAT
-								|| $cell_data['value_type'] == ITEM_VALUE_TYPE_UINT64)
-							? 'type-number'
-							: 'type-text'
-						);
-					}
-
-					$div->addItem(drawValueCell($cell_data));
+					$div
+						->addClass('item-value')
+						->addClass($cell_data['is_numeric'] ? 'type-number' : 'type-text')
+						->addItem(drawValueCell($cell_data));
 					break;
 			}
 
@@ -101,9 +99,7 @@ else {
 		$rows[] = new CDiv($cols);
 	}
 
-	$body = new CDiv(
-		new CLink($rows, $data['url'])
-	);
+	$body = new CLink($rows, $data['url']);
 
 	if ($data['bg_color'] !== '') {
 		$body->addStyle('background-color: #'.$data['bg_color'].';');
@@ -112,6 +108,7 @@ else {
 
 (new CWidgetView($data))
 	->addItem($body)
+	->setVar('info', $data['info'])
 	->show();
 
 /**
@@ -127,11 +124,11 @@ function drawValueCell(array $cell_data): array {
 	if (array_key_exists('units', $cell_data['parts'])) {
 		$units_div = (new CDiv())->addClass('units');
 		$units_div = addTextFormatting($units_div, $cell_data['parts']['units']);
-	}
 
-	// Units ABOVE value.
-	if (array_key_exists('units', $cell_data['parts']) && $cell_data['units_pos'] == Widget::POSITION_ABOVE) {
-		$item_cell[] = $units_div;
+		// Units ABOVE value.
+		if ($cell_data['units_pos'] == Widget::POSITION_ABOVE) {
+			$item_cell[] = $units_div;
+		}
 	}
 
 	$item_content_div = (new CDiv())->addClass('item-value-content');

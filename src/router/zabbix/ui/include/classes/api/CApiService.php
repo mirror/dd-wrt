@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,6 +24,7 @@ class CApiService {
 	public static $userData;
 
 	public const ACCESS_RULES = [];
+	public const OUTPUT_FIELDS = [];
 
 	/**
 	 * The name of the table.
@@ -371,7 +367,7 @@ class CApiService {
 	 * @param string $tableName
 	 * @param array  $options
 	 *
-	 * @return array
+	 * @return string
 	 */
 	protected function createSelectQuery($tableName, array $options) {
 		$sqlParts = $this->createSelectQueryParts($tableName, $this->tableAlias(), $options);
@@ -432,7 +428,8 @@ class CApiService {
 				$r_table = DB::getSchema($left_join['table']);
 
 				// Increase count when table linked by non-unique column.
-				if ($left_join['using'] !== $r_table['key']) {
+				if ((array_key_exists('using', $left_join) && $left_join['using'] !== $r_table['key'])
+						|| (!array_key_exists('using', $left_join) && $left_join['use_distinct'])) {
 					$count++;
 					break;
 				}
@@ -455,9 +452,11 @@ class CApiService {
 			$l_table = DB::getSchema($sqlParts['left_table']['table']);
 
 			foreach ($sqlParts['left_join'] as $left_join) {
-				$sql_left_join .= ' LEFT JOIN '.$left_join['table'].' '.$left_join['alias'].
-					' ON '.$sqlParts['left_table']['alias'].'.'.$l_table['key'].
-					'='.$left_join['alias'].'.'.$left_join['using'];
+				$sql_left_join .= ' LEFT JOIN '.$left_join['table'].' '.$left_join['alias'].' ON ';
+				$sql_left_join .= array_key_exists('condition', $left_join)
+					? $left_join['condition']
+					: $sqlParts['left_table']['alias'].'.'.$l_table['key'].'='.
+						$left_join['alias'].'.'.$left_join['using'];
 			}
 
 			// Moving a left table to the end.
@@ -481,59 +480,83 @@ class CApiService {
 	}
 
 	/**
-	 * Modifies the SQL parts to implement all of the output related options.
+	 * Modifies the SQL parts to implement all the output related options.
 	 *
-	 * @param string $tableName
-	 * @param string $tableAlias
+	 * @param string $table_name
+	 * @param string $table_alias
 	 * @param array  $options
-	 * @param array  $sqlParts
+	 * @param array  $sql_parts
 	 *
-	 * @return array		The resulting SQL parts array
+	 * @throws Exception
+	 *
+	 * @return array  The resulting SQL parts array.
 	 */
-	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
-		$pk = $this->pk($tableName);
-		$pk_composite = (strpos($pk, ',') !== false);
+	protected function applyQueryOutputOptions(string $table_name, string $table_alias, array $options,
+			array $sql_parts) {
+		$pk = $this->pk($table_name);
+		$pk_composite = strpos($pk, ',') !== false;
 
 		if (array_key_exists('countOutput', $options) && $options['countOutput']
 				&& !$this->requiresPostSqlFiltering($options)) {
-
-			$has_joins = (count($sqlParts['from']) > 1
-					|| (array_key_exists('left_join', $sqlParts) && $sqlParts['left_join']));
+			$has_joins = count($sql_parts['from']) > 1
+				|| (array_key_exists('left_join', $sql_parts) && $sql_parts['left_join']);
 
 			if ($pk_composite && $has_joins) {
 				throw new Exception('Joins with composite primary keys are not supported in this API version.');
 			}
 
-			$sqlParts['select'] = $has_joins
-				? ['COUNT(DISTINCT '.$this->fieldId($pk, $tableAlias).') AS rowscount']
+			$sql_parts['select'] = $has_joins
+				? ['COUNT(DISTINCT '.$this->fieldId($pk, $table_alias).') AS rowscount']
 				: ['COUNT(*) AS rowscount'];
 
 			// Select columns used by group count.
 			if (array_key_exists('groupCount', $options) && $options['groupCount']) {
-				foreach ($sqlParts['group'] as $fields) {
-					$sqlParts['select'][] = $fields;
+				foreach ($sql_parts['group'] as $fields) {
+					$sql_parts['select'][] = $fields;
+				}
+			}
+			elseif (array_key_exists('groupBy', $options) && $options['groupBy']) {
+				foreach ($options['groupBy'] as $field) {
+					if ($this->hasField($field, $table_name)) {
+						$field = $this->fieldId($field, $table_alias);
+
+						array_unshift($sql_parts['select'], $field);
+						$sql_parts['group'][] = $field;
+					}
+				}
+			}
+		}
+		elseif (array_key_exists('groupBy', $options) && $options['groupBy']) {
+			$sql_parts['select'] = [];
+
+			foreach ($options['groupBy'] as $field) {
+				if ($this->hasField($field, $table_name)) {
+					$field = $this->fieldId($field, $table_alias);
+
+					array_unshift($sql_parts['select'], $field);
+					$sql_parts['group'][] = $field;
 				}
 			}
 		}
 		// custom output
 		elseif (is_array($options['output'])) {
-			$sqlParts['select'] = $pk_composite ? [] : [$this->fieldId($pk, $tableAlias)];
+			$sql_parts['select'] = $pk_composite ? [] : [$this->fieldId($pk, $table_alias)];
 
 			foreach ($options['output'] as $field) {
-				if ($this->hasField($field, $tableName)) {
-					$sqlParts['select'][] = $this->fieldId($field, $tableAlias);
+				if ($this->hasField($field, $table_name)) {
+					$sql_parts['select'][] = $this->fieldId($field, $table_alias);
 				}
 			}
 
-			$sqlParts['select'] = array_unique($sqlParts['select']);
+			$sql_parts['select'] = array_unique($sql_parts['select']);
 		}
 		// extended output
 		elseif ($options['output'] == API_OUTPUT_EXTEND) {
 			// TODO: API_OUTPUT_EXTEND must return ONLY the fields from the base table
-			$sqlParts = $this->addQuerySelect($this->fieldId('*', $tableAlias), $sqlParts);
+			$sql_parts = $this->addQuerySelect($this->fieldId('*', $table_alias), $sql_parts);
 		}
 
-		return $sqlParts;
+		return $sql_parts;
 	}
 
 	/**
@@ -570,44 +593,64 @@ class CApiService {
 	}
 
 	/**
-	 * Modifies the SQL parts to implement all of the sorting related options.
+	 * Modifies the SQL parts to implement all the sorting related options.
 	 * Sorting is currently only supported for CApiService::get() methods.
 	 *
-	 * @param string $tableName
-	 * @param string $tableAlias
+	 * @param string $table_name
+	 * @param string $table_alias
 	 * @param array  $options
-	 * @param array  $sqlParts
+	 * @param array  $sql_parts
+	 *
+	 * @throws APIException
 	 *
 	 * @return array
 	 */
-	protected function applyQuerySortOptions($tableName, $tableAlias, array $options, array $sqlParts) {
-		if ($this->sortColumns && !zbx_empty($options['sortfield'])) {
+	protected function applyQuerySortOptions(string $table_name, string $table_alias, array $options,
+			array $sql_parts): array {
+		$count_output = array_key_exists('countOutput', $options) && $options['countOutput'];
+		$group_by = array_key_exists('groupBy', $options) && $options['groupBy'];
+		$aggregate_sort_columns = [];
+
+		if ($count_output && $group_by) {
+			$aggregate_sort_columns[] = 'rowscount';
+		}
+
+		$sort_columns = $group_by ? array_merge($options['groupBy'], $aggregate_sort_columns) : $this->sortColumns;
+
+		if ($sort_columns && !zbx_empty($options['sortfield'])) {
 			$options['sortfield'] = is_array($options['sortfield'])
 				? array_unique($options['sortfield'])
 				: [$options['sortfield']];
 
 			foreach ($options['sortfield'] as $i => $sortfield) {
-				// validate sortfield
-				if (!str_in_array($sortfield, $this->sortColumns)) {
-					throw new APIException(ZBX_API_ERROR_INTERNAL, _s('Sorting by field "%1$s" not allowed.', $sortfield));
+				// Validate sortfield.
+				if (!str_in_array($sortfield, $sort_columns)) {
+					throw new APIException(ZBX_API_ERROR_INTERNAL,
+						_s('Sorting by field "%1$s" not allowed.', $sortfield)
+					);
 				}
 
-				// add sort field to order
+				// Add sort field to order.
 				$sortorder = '';
 				if (is_array($options['sortorder'])) {
 					if (!empty($options['sortorder'][$i])) {
-						$sortorder = ($options['sortorder'][$i] == ZBX_SORT_DOWN) ? ' '.ZBX_SORT_DOWN : '';
+						$sortorder = $options['sortorder'][$i] === ZBX_SORT_DOWN ? ' '.ZBX_SORT_DOWN : '';
 					}
 				}
 				else {
-					$sortorder = ($options['sortorder'] == ZBX_SORT_DOWN) ? ' '.ZBX_SORT_DOWN : '';
+					$sortorder = $options['sortorder'] === ZBX_SORT_DOWN ? ' '.ZBX_SORT_DOWN : '';
 				}
 
-				$sqlParts = $this->applyQuerySortField($sortfield, $sortorder, $tableAlias, $sqlParts);
+				if (in_array($sortfield, $aggregate_sort_columns)) {
+					$sql_parts['order'][$sortfield] = $sortfield.$sortorder;
+				}
+				else {
+					$sql_parts = $this->applyQuerySortField($sortfield, $sortorder, $table_alias, $sql_parts);
+				}
 			}
 		}
 
-		return $sqlParts;
+		return $sql_parts;
 	}
 
 	/**
@@ -878,8 +921,6 @@ class CApiService {
 	/**
 	 * Throws an API exception.
 	 *
-	 * @static
-	 *
 	 * @param int    $code
 	 * @param string $error
 	 */
@@ -913,86 +954,74 @@ class CApiService {
 
 		$filter = [];
 		foreach ($options['filter'] as $field => $value) {
-			// skip missing fields and text fields (not supported by Oracle)
-			// skip empty values
-			if (!isset($tableSchema['fields'][$field]) || $tableSchema['fields'][$field]['type'] == DB::FIELD_TYPE_TEXT
-					|| $tableSchema['fields'][$field]['type'] == DB::FIELD_TYPE_NCLOB
-					|| zbx_empty($value)) {
+			if ($value === null || !array_key_exists($field, $tableSchema['fields'])
+					|| ($tableSchema['fields'][$field]['type'] & DB::SUPPORTED_FILTER_TYPES) == 0) {
 				continue;
 			}
 
 			$values = [];
 
-			switch ($tableSchema['fields'][$field]['type']) {
-				case DB::FIELD_TYPE_INT:
-					foreach ((array) $value as $val) {
-						if (!is_int($val) && (!is_string($val) || !preg_match('/^'.ZBX_PREG_INT.'$/', $val))) {
-							continue;
-						}
-
-						if ($val < ZBX_MIN_INT32 || $val > ZBX_MAX_INT32) {
-							continue;
-						}
-
-						$values[] = $val;
+			if ($tableSchema['fields'][$field]['type'] & DB::FIELD_TYPE_INT) {
+				foreach ((array) $value as $val) {
+					if (!is_int($val) && (!is_string($val) || !preg_match('/^'.ZBX_PREG_INT.'$/', $val))) {
+						continue;
 					}
-					break;
 
-				case DB::FIELD_TYPE_ID:
-					foreach ((array) $value as $val) {
-						if (!is_int($val) && (!is_string($val) || !ctype_digit($val))) {
-							continue;
-						}
-
-						if ($val < 0 || bccomp((string) $val, ZBX_DB_MAX_ID) > 0) {
-							continue;
-						}
-
-						$values[] = $val;
+					if ($val < ZBX_MIN_INT32 || $val > ZBX_MAX_INT32) {
+						continue;
 					}
-					break;
 
-				case DB::FIELD_TYPE_UINT:
-					foreach ((array) $value as $val) {
-						if (!is_int($val) && (!is_string($val) || !ctype_digit($val))) {
-							continue;
-						}
-
-						if (bccomp((string) $val, ZBX_MIN_INT64) < 0 || bccomp((string) $val, ZBX_MAX_INT64) > 0) {
-							continue;
-						}
-
-						$values[] = $val;
+					$values[] = $val;
+				}
+			}
+			elseif ($tableSchema['fields'][$field]['type'] & DB::FIELD_TYPE_ID) {
+				foreach ((array) $value as $val) {
+					if (!is_int($val) && (!is_string($val) || !ctype_digit($val))) {
+						continue;
 					}
-					break;
 
-				case DB::FIELD_TYPE_FLOAT:
-					foreach ((array) $value as $val) {
-						if (!is_numeric($val)) {
-							continue;
-						}
-
-						$values[] = $val;
+					if ($val < 0 || bccomp((string) $val, ZBX_DB_MAX_ID) > 0) {
+						continue;
 					}
-					break;
 
-				default:
-					$values = (array) $value;
+					$values[] = $val;
+				}
+			}
+			elseif ($tableSchema['fields'][$field]['type'] & DB::FIELD_TYPE_UINT) {
+				foreach ((array) $value as $val) {
+					if (!is_int($val) && (!is_string($val) || !ctype_digit($val))) {
+						continue;
+					}
+
+					if (bccomp((string) $val, ZBX_MIN_INT64) < 0 || bccomp((string) $val, ZBX_MAX_INT64) > 0) {
+						continue;
+					}
+
+					$values[] = $val;
+				}
+			}
+			elseif ($tableSchema['fields'][$field]['type'] & DB::FIELD_TYPE_FLOAT) {
+				foreach ((array) $value as $val) {
+					if (!is_numeric($val)) {
+						continue;
+					}
+
+					$values[] = $val;
+				}
+			}
+			else {
+				$values = (array) $value;
 			}
 
 			$fieldName = $this->fieldId($field, $tableShort);
-			switch ($tableSchema['fields'][$field]['type']) {
-				case DB::FIELD_TYPE_ID:
-					$filter[$field] = dbConditionId($fieldName, $values);
-					break;
-
-				case DB::FIELD_TYPE_INT:
-				case DB::FIELD_TYPE_UINT:
-					$filter[$field] = dbConditionInt($fieldName, $values);
-					break;
-
-				default:
-					$filter[$field] = dbConditionString($fieldName, $values);
+			if ($tableSchema['fields'][$field]['type'] & DB::FIELD_TYPE_ID) {
+				$filter[$field] = dbConditionId($fieldName, $values);
+			}
+			elseif ($tableSchema['fields'][$field]['type'] & (DB::FIELD_TYPE_INT | DB::FIELD_TYPE_UINT)) {
+				$filter[$field] = dbConditionInt($fieldName, $values);
+			}
+			else {
+				$filter[$field] = dbConditionString($fieldName, $values);
 			}
 		}
 
@@ -1204,7 +1233,7 @@ class CApiService {
 	 * @param array $objects
 	 * @param array $objects_old
 	 */
-	protected function addAuditBulk($action, $resourcetype, array $objects, array $objects_old = null) {
+	protected function addAuditBulk($action, $resourcetype, array $objects, ?array $objects_old = null) {
 		CAuditOld::addBulk(self::$userData['userid'], self::$userData['userip'], self::$userData['username'], $action,
 			$resourcetype, $objects, $objects_old
 		);
@@ -1244,8 +1273,6 @@ class CApiService {
 	/**
 	 * Check access to specific access rule.
 	 *
-	 * @static
-	 *
 	 * @param string $rule_name  Rule name.
 	 *
 	 * @return bool  Returns true if user has access to specified rule, and false otherwise.
@@ -1254,5 +1281,14 @@ class CApiService {
 	 */
 	protected static function checkAccess(string $rule_name): bool {
 		return (self::$userData && CRoleHelper::checkAccess($rule_name, self::$userData['roleid']));
+	}
+
+	/**
+	 * Return user session ID or user API token.
+	 *
+	 * @return string
+	 */
+	public static function getAuthIdentifier(): string {
+		return array_key_exists('sessionid', self::$userData) ? self::$userData['sessionid'] : self::$userData['token'];
 	}
 }

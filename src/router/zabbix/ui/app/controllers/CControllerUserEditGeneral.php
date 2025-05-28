@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -39,7 +34,7 @@ abstract class CControllerUserEditGeneral extends CController {
 	protected function init(): void {
 		$this->disableCsrfValidation();
 
-		$timezone = CSettingsHelper::get(CSettingsHelper::DEFAULT_TIMEZONE);
+		$timezone = CSettingsHelper::getPublic(CSettingsHelper::DEFAULT_TIMEZONE);
 
 		if ($timezone === ZBX_DEFAULT_TIMEZONE || $timezone === TIMEZONE_DEFAULT) {
 			$timezone = CTimezoneHelper::getSystemTimezone();
@@ -57,7 +52,7 @@ abstract class CControllerUserEditGeneral extends CController {
 	 */
 	protected function setUserMedias(array $data) {
 		if ($this->hasInput('new_media')) {
-			$data['medias'][] = $this->getInput('new_media');
+			$data['medias'][] = ['provisioned' => CUser::PROVISION_STATUS_NO] + $this->getInput('new_media');
 		}
 		elseif ($this->hasInput('enable_media')) {
 			if (array_key_exists($this->getInput('enable_media'), $data['medias'])) {
@@ -83,8 +78,12 @@ abstract class CControllerUserEditGeneral extends CController {
 		]);
 
 		foreach ($data['medias'] as &$media) {
-			$media['name'] = $mediatypes[$media['mediatypeid']]['name'];
-			$media['mediatype'] = $mediatypes[$media['mediatypeid']]['type'];
+			$media['name'] = array_key_exists($media['mediatypeid'], $mediatypes)
+				? $mediatypes[$media['mediatypeid']]['name']
+				: null;
+			$media['mediatype'] = array_key_exists($media['mediatypeid'], $mediatypes)
+				? (int) $mediatypes[$media['mediatypeid']]['type']
+				: null;
 			$media['send_to_sort_field'] = is_array($media['sendto'])
 				? implode(', ', $media['sendto'])
 				: $media['sendto'];

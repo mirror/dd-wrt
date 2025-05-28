@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -225,7 +220,10 @@ class CFilter extends CDiv {
 		}
 
 		return $this->addTab(
-			(new CLink($header, '#'.$anchor))->addClass(ZBX_STYLE_FILTER_TRIGGER),
+			(new CLink($header, '#'.$anchor))
+				->addClass(ZBX_STYLE_BTN)
+				->addClass(ZBX_ICON_FILTER)
+				->addClass(ZBX_STYLE_FILTER_TRIGGER),
 			(new CDiv($body))
 				->addClass(ZBX_STYLE_FILTER_CONTAINER)
 				->setId($anchor)
@@ -251,9 +249,9 @@ class CFilter extends CDiv {
 
 		if ($visible) {
 			$this->addTab(new CDiv([
-				(new CSimpleButton())->addClass(ZBX_STYLE_BTN_TIME_LEFT),
-				(new CSimpleButton(_('Zoom out')))->addClass(ZBX_STYLE_BTN_TIME_OUT),
-				(new CSimpleButton())->addClass(ZBX_STYLE_BTN_TIME_RIGHT)
+				(new CButtonIcon(ZBX_ICON_CHEVRON_LEFT))->addClass('js-btn-time-left'),
+				(new CSimpleButton(_('Zoom out')))->addClass(ZBX_STYLE_BTN_TIME_ZOOMOUT),
+				(new CButtonIcon(ZBX_ICON_CHEVRON_RIGHT))->addClass('js-btn-time-right')
 			]), null);
 
 			$predefined_ranges = [];
@@ -278,7 +276,13 @@ class CFilter extends CDiv {
 
 			$anchor = 'tab_'.count($this->tabs);
 
-			$this->addTab((new CLink($header, '#'.$anchor))->addClass(ZBX_STYLE_BTN_TIME), new CDiv());
+			$this->addTab(
+				(new CLink($header, '#'.$anchor))
+					->addClass(ZBX_STYLE_BTN)
+					->addClass(ZBX_ICON_CLOCK)
+					->addClass(ZBX_STYLE_BTN_TIME),
+				new CDiv()
+			);
 
 			$this->time_period = (new CDiv([
 				(new CDiv([
@@ -323,6 +327,17 @@ class CFilter extends CDiv {
 					new CVar('to', $to)
 				])));
 		}
+
+		return $this;
+	}
+
+	/**
+	 * Prevent modifying history URL with time selector parameters.
+	 *
+	 * @return CFilter
+	 */
+	public function preventHistoryUpdates(): CFilter {
+		$this->setAttribute('data-prevent-history-updates', 1);
 
 		return $this;
 	}

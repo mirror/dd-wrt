@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -29,7 +24,7 @@ require_once dirname(__FILE__).'/include/html.inc.php';
 $page['title'] = _('Event details');
 $page['file'] = 'tr_events.php';
 $page['type'] = detect_page_type();
-$page['scripts'] = ['layout.mode.js', 'class.calendar.js'];
+$page['scripts'] = ['layout.mode.js'];
 $page['web_layout_mode'] = CViewHelper::loadLayoutMode();
 
 require_once dirname(__FILE__).'/include/page_header.php';
@@ -63,10 +58,10 @@ $events = API::Event()->get([
 	'output' => ['eventid', 'r_eventid', 'clock', 'ns', 'objectid', 'name', 'acknowledged', 'severity',
 		'cause_eventid'
 	],
-	'selectTags' => ['tag', 'value'],
-	'select_acknowledges' => ['clock', 'message', 'action', 'userid', 'old_severity', 'new_severity',
+	'selectAcknowledges' => ['clock', 'message', 'action', 'userid', 'old_severity', 'new_severity',
 		'suppress_until'
 	],
+	'selectTags' => ['tag', 'value'],
 	'source' => EVENT_SOURCE_TRIGGERS,
 	'object' => EVENT_OBJECT_TRIGGER,
 	'eventids' => getRequest('eventid'),

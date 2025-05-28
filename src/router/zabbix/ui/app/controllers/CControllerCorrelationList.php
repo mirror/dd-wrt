@@ -1,40 +1,34 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CControllerCorrelationList extends CController {
 
-	protected function init() {
+	protected function init(): void {
 		$this->disableCsrfValidation();
 	}
 
-	protected function checkInput() {
+	protected function checkInput(): bool {
 		$fields = [
-			'sort'          => 'in name,status',
-			'sortorder'     => 'in '.ZBX_SORT_DOWN.','.ZBX_SORT_UP,
-			'uncheck'       => 'in 1',
-			'filter_set'    => 'in 1',
-			'filter_rst'    => 'in 1',
-			'filter_name'   => 'string',
-			'filter_status' => 'in -1,'.ZBX_CORRELATION_ENABLED.','.ZBX_CORRELATION_DISABLED,
-			'page'          => 'ge 1'
+			'sort' =>			'in name,status',
+			'sortorder' =>		'in '.ZBX_SORT_DOWN.','.ZBX_SORT_UP,
+			'filter_set' =>		'in 1',
+			'filter_rst' =>		'in 1',
+			'filter_name' =>	'string',
+			'filter_status' =>	'in -1,'.ZBX_CORRELATION_ENABLED.','.ZBX_CORRELATION_DISABLED,
+			'page' =>			'ge 1'
 		];
 
 		$ret = $this->validateInput($fields);
@@ -46,11 +40,11 @@ class CControllerCorrelationList extends CController {
 		return $ret;
 	}
 
-	protected function checkPermissions() {
+	protected function checkPermissions(): bool {
 		return $this->checkAccess(CRoleHelper::UI_CONFIGURATION_EVENT_CORRELATION);
 	}
 
-	protected function doAction() {
+	protected function doAction(): void {
 		$sort_field = $this->getInput('sort', CProfile::get('web.correlation.php.sort', 'name'));
 		$sort_order = $this->getInput('sortorder', CProfile::get('web.correlation.php.sortorder', ZBX_SORT_UP));
 		CProfile::update('web.correlation.php.sort', $sort_field, PROFILE_TYPE_STR);
@@ -72,7 +66,6 @@ class CControllerCorrelationList extends CController {
 		];
 
 		$data = [
-			'uncheck' => $this->hasInput('uncheck'),
 			'sort' => $sort_field,
 			'sortorder' => $sort_order,
 			'filter' => $filter,
@@ -83,7 +76,7 @@ class CControllerCorrelationList extends CController {
 		$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1;
 		$data['correlations'] = API::Correlation()->get([
 			'output' => ['correlationid', 'name', 'description', 'status'],
-			'selectFilter' => ['formula', 'conditions', 'evaltype', 'eval_formula'],
+			'selectFilter' => ['conditions'],
 			'selectOperations' => ['type'],
 			'search' => [
 				'name' => ($filter['name'] === '') ? null : $filter['name']
@@ -92,8 +85,6 @@ class CControllerCorrelationList extends CController {
 				'status' => ($filter['status'] == -1) ? null : $filter['status']
 			],
 			'editable' => true,
-			'sortfield' => $sort_field,
-			'sortorder' => $sort_order,
 			'limit' => $limit
 		]);
 
@@ -107,9 +98,11 @@ class CControllerCorrelationList extends CController {
 		);
 
 		$groupids = [];
-		foreach ($data['correlations'] as $correlation) {
+
+		foreach ($data['correlations'] as &$correlation) {
 			$groupids += array_column($correlation['filter']['conditions'], 'groupid', 'groupid');
 		}
+		unset($correlation);
 
 		if ($groupids) {
 			$groups = API::HostGroup()->get([

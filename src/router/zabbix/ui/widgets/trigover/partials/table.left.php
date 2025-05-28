@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,16 +20,16 @@ use Widgets\TrigOver\Includes\ViewHelper;
  * @var CPartial $this
  * @var array    $data
  */
+
 $table = (new CTableInfo())->setHeadingColumn(0);
 
-$headings[] = _('Hosts');
+$header[] = $data['is_template_dashboard'] ? _('Host') : _('Hosts');
+
 foreach ($data['triggers_by_name'] as $trigname => $host_to_trig) {
-	$headings[] = (new CSpan($trigname))
-		->addClass(ZBX_STYLE_TEXT_VERTICAL)
-		->setTitle($trigname);
+	$header[] = (new CVertical($trigname))->setTitle($trigname);
 }
 
-$table->setHeader($headings);
+$table->setHeader($header);
 
 foreach ($data['hosts_by_name'] as $hostname => $hostid) {
 	$name = (new CLinkAction($data['db_hosts'][$hostid]['name']))->setMenuPopup(CMenuPopupHelper::getHost($hostid));

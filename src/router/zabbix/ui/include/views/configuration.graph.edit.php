@@ -1,26 +1,22 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 $html_page = new CHtmlPage();
@@ -45,7 +41,7 @@ $url = (new CUrl('graphs.php'))
 
 // Create form.
 $graphForm = (new CForm('post', $url))
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('graphs.php')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('graphs.php')))->removeId())
 	->addItem((new CVar('form_refresh', $data['form_refresh'] + 1))->removeId())
 	->setName('graphForm')
 	->setAttribute('aria-labelledby', CHtmlPage::PAGE_TITLE_ID)
@@ -118,7 +114,7 @@ $graphFormList
 	->addRow(_('Show legend'),
 		(new CCheckBox('show_legend'))
 			->setChecked($data['show_legend'] == 1)
-			->setEnabled(!$readonly)
+			->setReadonly($readonly)
 	);
 
 // Append graph types to form list.
@@ -126,12 +122,12 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 	$graphFormList->addRow(_('Show working time'),
 		(new CCheckBox('show_work_period'))
 			->setChecked($data['show_work_period'] == 1)
-			->setEnabled(!$readonly)
+			->setReadonly($readonly)
 	);
 	$graphFormList->addRow(_('Show triggers'),
 		(new CCheckbox('show_triggers'))
 			->setchecked($data['show_triggers'] == 1)
-			->setEnabled(!$readonly)
+			->setReadonly($readonly)
 	);
 
 	if ($data['graphtype'] == GRAPH_TYPE_NORMAL) {
@@ -141,7 +137,7 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 		$percentLeftCheckbox = (new CCheckBox('visible[percent_left]'))
 			->setChecked(true)
 			->onClick('showHideVisible("percent_left");')
-			->setEnabled(!$readonly);
+			->setReadonly($readonly);
 
 		if(array_key_exists('visible', $data) && array_key_exists('percent_left', $data['visible'])) {
 			$percentLeftCheckbox->setChecked(true);
@@ -159,7 +155,7 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 		$percentRightCheckbox = (new CCheckBox('visible[percent_right]'))
 			->setChecked(true)
 			->onClick('showHideVisible("percent_right");')
-			->setEnabled(!$readonly);
+			->setReadonly($readonly);
 
 		if(array_key_exists('visible', $data) && array_key_exists('percent_right', $data['visible'])) {
 			$percentRightCheckbox->setChecked(true);
@@ -181,7 +177,7 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 			GRAPH_YAXIS_TYPE_FIXED => _('Fixed'),
 			GRAPH_YAXIS_TYPE_ITEM_VALUE => _('Item')
 		]))
-		->setDisabled($readonly)
+		->setReadonly($readonly)
 		->setFocusableElementId('ymin_type_label');
 
 	if ($data['ymin_type'] == GRAPH_YAXIS_TYPE_FIXED) {
@@ -218,7 +214,7 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 			'object_name' => 'items',
 			'data' => $ymin_axis_ms_data,
 			'multiple' => false,
-			'disabled' => $readonly,
+			'readonly' => $readonly,
 			'styles' => [
 				'display' => 'inline-flex'
 			],
@@ -276,7 +272,7 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 			GRAPH_YAXIS_TYPE_FIXED => _('Fixed'),
 			GRAPH_YAXIS_TYPE_ITEM_VALUE => _('Item')
 		]))
-		->setDisabled($readonly)
+		->setReadonly($readonly)
 		->setFocusableElementId('ymax_type_label');
 
 	if ($data['ymax_type'] == GRAPH_YAXIS_TYPE_FIXED) {
@@ -312,7 +308,7 @@ if ($data['graphtype'] == GRAPH_TYPE_NORMAL || $data['graphtype'] == GRAPH_TYPE_
 			'object_name' => 'items',
 			'data' => $ymax_axis_ms_data,
 			'multiple' => false,
-			'disabled' => $readonly,
+			'readonly' => $readonly,
 			'styles' => [
 				'display' => 'inline-flex'
 			],
@@ -365,13 +361,14 @@ else {
 	$graphFormList->addRow(_('3D view'),
 		(new CCheckBox('show_3d'))
 			->setChecked($data['show_3d'] == 1)
-			->setEnabled(!$readonly)
+			->setReadonly($readonly)
 	);
 }
 
 // Append items to form list.
 $items_table = (new CTable())
 	->setId('itemsTable')
+	->addClass(ZBX_STYLE_LIST_NUMBERED)
 	->setColumns([
 		(new CTableColumn())->addClass('table-col-handle'),
 		(new CTableColumn())->addClass('table-col-no'),
@@ -395,8 +392,8 @@ $items_table = (new CTable())
 			))
 				->addClass('table-col-y-axis-side')
 			: null,
-		(new CTableColumn(_('Color')))->addClass('table-col-colour'),
-		$readonly ? null : (new CTableColumn(_('Action')))->addClass('table-col-action')
+		(new CTableColumn(_('Color')))->addClass('table-col-color'),
+		$readonly ? null : (new CTableColumn(''))->addClass('table-col-action')
 	]);
 
 $parameters_add = [
@@ -500,7 +497,7 @@ if ($data['graphid'] != 0) {
 	$updateButton = new CSubmit('update', _('Update'));
 	$deleteButton = new CButtonDelete(
 		($data['parent_discoveryid'] === null) ? _('Delete graph?') : _('Delete graph prototype?'),
-		url_params(['graphid', 'parent_discoveryid', 'hostid', 'context']).'&'.CCsrfTokenHelper::CSRF_TOKEN_NAME.'='.
+		url_params(['graphid', 'parent_discoveryid', 'hostid', 'context']).'&'.CSRF_TOKEN_NAME.'='.
 		CCsrfTokenHelper::get('graphs.php'), 'context'
 	);
 
@@ -553,7 +550,9 @@ $html_page
 			'normal_only' => $data['normal_only'],
 			'parent_discoveryid' => $data['parent_discoveryid']
 		],
-		'items' => $data['items']
+		'items' => $data['items'],
+		'context' => $data['context'],
+		'parent_discoveryid' => $data['parent_discoveryid']
 	]).');
 '))
 	->setOnDocumentReady()

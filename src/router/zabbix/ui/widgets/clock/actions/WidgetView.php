@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -33,14 +28,6 @@ use API,
 use Widgets\Clock\Widget;
 
 class WidgetView extends CControllerDashboardWidgetView {
-
-	protected function init(): void {
-		parent::init();
-
-		$this->addValidationRules([
-			'dynamic_hostid' => 'db hosts.hostid'
-		]);
-	}
 
 	protected function doAction(): void {
 		$config_defaults = [
@@ -170,8 +157,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$items = [];
 		$clock = ['is_enabled' => true];
 
-		if ($this->hasInput('templateid')) {
-			if ($this->hasInput('dynamic_hostid')) {
+		if ($this->isTemplateDashboard()) {
+			if ($this->fields_values['override_hostid']) {
 				$template_items = API::Item()->get([
 					'output' => ['key_'],
 					'itemids' => $this->fields_values['itemid'],
@@ -182,7 +169,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					$items = API::Item()->get([
 						'output' => ['itemid', 'value_type'],
 						'selectHosts' => ['name'],
-						'hostids' => [$this->getInput('dynamic_hostid')],
+						'hostids' => $this->fields_values['override_hostid'],
 						'filter' => [
 							'key_' => $template_items[0]['key_']
 						],
@@ -212,7 +199,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$item = $items[0];
 			$clock['name'] = $item['hosts'][0]['name'];
 
-			$last_value = Manager::History()->getLastValues([$item]);
+			$last_value = $item['value_type'] == ITEM_VALUE_TYPE_BINARY
+				? []
+				: Manager::History()->getLastValues([$item]);
 
 			if ($last_value) {
 				$last_value = $last_value[$item['itemid']][0];
@@ -284,24 +273,21 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$show = $this->fields_values['show'];
 
 			if (in_array(Widget::SHOW_DATE, $show)) {
-				$cells['date'] = [
-					'size' => $this->fields_values['date_size'],
+				$cells[Widget::SHOW_DATE] = [
 					'bold' => ($this->fields_values['date_bold'] == 1),
 					'color' => $this->fields_values['date_color']
 				];
 			}
 
 			if (in_array(Widget::SHOW_TIME, $show)) {
-				$cells['time'] = [
-					'size' => $this->fields_values['time_size'],
+				$cells[Widget::SHOW_TIME] = [
 					'bold' => ($this->fields_values['time_bold'] == 1),
 					'color' => $this->fields_values['time_color']
 				];
 			}
 
 			if (in_array(Widget::SHOW_TIMEZONE, $show)) {
-				$cells['timezone'] = [
-					'size' => $this->fields_values['tzone_size'],
+				$cells[Widget::SHOW_TIMEZONE] = [
 					'bold' => ($this->fields_values['tzone_bold'] == 1),
 					'color' => $this->fields_values['tzone_color']
 				];

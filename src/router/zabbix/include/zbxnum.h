@@ -1,30 +1,21 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #ifndef ZABBIX_NUM_H
 #define ZABBIX_NUM_H
 
 #include "zbxcommon.h"
-
-/* database double precision upgrade states */
-#define ZBX_DB_DBL_PRECISION_DISABLED	0
-#define ZBX_DB_DBL_PRECISION_ENABLED	1
 
 #define zbx_is_ushort(str, value) \
 	zbx_is_uint_n_range(str, ZBX_SIZE_T_MAX, value, sizeof(unsigned short), 0x0, 0xFFFF)
@@ -59,7 +50,7 @@ double	zbx_get_double_epsilon(void);
 void	zbx_update_epsilon_to_float_precision(void);
 void	zbx_update_epsilon_to_python_compatible_precision(void);
 int	zbx_double_compare(double a, double b);
-int	zbx_validate_value_dbl(double value, int dbl_precision);
+int	zbx_validate_value_dbl(double value);
 
 int	zbx_int_in_list(char *list, int value);
 

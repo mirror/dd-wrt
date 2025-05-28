@@ -81,3 +81,11 @@ type Module struct {
 	BaseAddress string  `json:"baseAddress"` // Base address where the module is loaded into memory. Encoded as a decimal or hexadecimal (0x prefixed) string.
 	Size        float64 `json:"size"`        // Size of the module in bytes.
 }
+
+// DOMCounter DOM object counter data.
+//
+// See: https://chromedevtools.github.io/devtools-protocol/tot/Memory#type-DOMCounter
+type DOMCounter struct {
+	Name  string `json:"name"`  // Object name. Note: object names should be presumed volatile and clients should not expect the returned names to be consistent across runs.
+	Count int64  `json:"count"` // Object count.
+}

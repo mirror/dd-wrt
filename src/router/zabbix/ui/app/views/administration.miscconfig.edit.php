@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -167,55 +162,10 @@ $from_list = (new CFormList())
 				->setEnabled($data['iframe_sandboxing_enabled'] == 1)
 				->setAriaRequired()
 		]
-	)
-	->addRow((new CTag('h4', true, _('Communication with Zabbix server')))->addClass('input-section-header'))
-	->addRow(
-		(new CLabel(_('Network timeout'), 'socket_timeout'))->setAsteriskMark(),
-		(new CTextBox('socket_timeout', $data['socket_timeout'], false, DB::getFieldLength('config', 'socket_timeout')))
-			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
-			->setAriaRequired()
-	)
-	->addRow(
-		(new CLabel(_('Connection timeout'), 'connect_timeout'))->setAsteriskMark(),
-		(new CTextBox('connect_timeout', $data['connect_timeout'], false,
-			DB::getFieldLength('config', 'connect_timeout')
-		))
-			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
-			->setAriaRequired()
-	)
-	->addRow(
-		(new CLabel(_('Network timeout for media type test'), 'media_type_test_timeout'))->setAsteriskMark(),
-		(new CTextBox('media_type_test_timeout', $data['media_type_test_timeout'], false,
-			DB::getFieldLength('config', 'media_type_test_timeout')
-		))
-			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
-			->setAriaRequired()
-	)
-	->addRow(
-		(new CLabel(_('Network timeout for script execution'), 'script_timeout'))->setAsteriskMark(),
-		(new CTextBox('script_timeout', $data['script_timeout'], false, DB::getFieldLength('config', 'script_timeout')))
-			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
-			->setAriaRequired()
-	)
-	->addRow(
-		(new CLabel(_('Network timeout for item test'), 'item_test_timeout'))->setAsteriskMark(),
-		(new CTextBox('item_test_timeout', $data['item_test_timeout'], false,
-			DB::getFieldLength('config', 'item_test_timeout')
-		))
-			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
-			->setAriaRequired()
-	)
-	->addRow(
-		(new CLabel(_('Network timeout for scheduled report test'), 'report_test_timeout'))->setAsteriskMark(),
-		(new CTextBox('report_test_timeout', $data['report_test_timeout'], false,
-			DB::getFieldLength('config', 'report_test_timeout')
-		))
-			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
-			->setAriaRequired()
 	);
 
 $form = (new CForm())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('miscconfig')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('miscconfig')))->removeId())
 	->setId('miscconfig-form')
 	->setName('otherForm')
 	->setAction((new CUrl('zabbix.php'))
@@ -238,18 +188,12 @@ $html_page
 
 (new CScriptTag('
 	view.init('.json_encode([
-		'connect_timeout' => DB::getDefault('config', 'connect_timeout'),
 		'default_inventory_mode' => DB::getDefault('config', 'default_inventory_mode'),
 		'iframe_sandboxing_enabled' => DB::getDefault('config', 'iframe_sandboxing_enabled'),
 		'iframe_sandboxing_exceptions' => DB::getDefault('config', 'iframe_sandboxing_exceptions'),
-		'item_test_timeout' => DB::getDefault('config', 'item_test_timeout'),
 		'login_attempts' => DB::getDefault('config', 'login_attempts'),
 		'login_block' => DB::getDefault('config', 'login_block'),
-		'media_type_test_timeout' => DB::getDefault('config', 'media_type_test_timeout'),
-		'report_test_timeout' => DB::getDefault('config', 'report_test_timeout'),
-		'script_timeout' => DB::getDefault('config', 'script_timeout'),
 		'snmptrap_logging' => DB::getDefault('config', 'snmptrap_logging'),
-		'socket_timeout' => DB::getDefault('config', 'socket_timeout'),
 		'uri_valid_schemes' => DB::getDefault('config', 'uri_valid_schemes'),
 		'url' => DB::getDefault('config', 'url'),
 		'validate_uri_schemes' => DB::getDefault('config', 'validate_uri_schemes'),

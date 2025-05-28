@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -25,7 +20,7 @@
 
 // create form
 $form = (new CForm())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('host')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('host')))->removeId())
 	->setId('massupdate-form')
 	->addVar('action', 'popup.massupdate.host')
 	->addVar('hostids', $data['hostids'], 'ids')
@@ -50,7 +45,6 @@ $host_tab->addRow(
 		(new CMultiSelect([
 			'name' => 'templates[]',
 			'object_name' => 'templates',
-			'data' => [],
 			'popup' => [
 				'parameters' => [
 					'srctbl' => 'templates',
@@ -82,7 +76,6 @@ $host_tab->addRow(
 			'name' => 'groups[]',
 			'object_name' => 'hostGroup',
 			'add_new' => (CWebUser::getType() == USER_TYPE_SUPER_ADMIN),
-			'data' => [],
 			'popup' => [
 				'parameters' => [
 					'srctbl' => 'host_groups',
@@ -104,19 +97,53 @@ $host_tab->addRow(
 		->setMaxlength(DB::getFieldLength('hosts', 'description'))
 );
 
-// append proxy to form list
-$proxy_select = (new CSelect('proxy_hostid'))
-	->setId('proxy_hostid')
-	->setValue(0)
-	->addOption(new CSelectOption(0, _('(no proxy)')));
-
-foreach ($data['proxies'] as $proxy) {
-	$proxy_select->addOption(new CSelectOption($proxy['proxyid'], $proxy['host']));
-}
-
+// Append "Monitored by" to form list.
 $host_tab->addRow(
-	(new CVisibilityBox('visible[proxy_hostid]', 'proxy_hostid', _('Original')))->setLabel(_('Monitored by proxy')),
-	$proxy_select
+	(new CVisibilityBox('visible[monitored_by]', 'monitored-by-field', _('Original')))->setLabel(_('Monitored by')),
+	(new CDiv([
+		(new CRadioButtonList('monitored_by', ZBX_MONITORED_BY_SERVER))
+			->addValue(_('Server'), ZBX_MONITORED_BY_SERVER)
+			->addValue(_('Proxy'), ZBX_MONITORED_BY_PROXY)
+			->addValue(_('Proxy group'), ZBX_MONITORED_BY_PROXY_GROUP)
+			->setModern(),
+		(new CDiv(
+			(new CMultiSelect([
+				'name' => 'proxyid',
+				'object_name' => 'proxies',
+				'multiple' => false,
+				'popup' => [
+					'parameters' => [
+						'srctbl' => 'proxies',
+						'srcfld1' => 'proxyid',
+						'srcfld2' => 'name',
+						'dstfrm' => $form->getName(),
+						'dstfld1' => 'proxyid'
+					]
+				]
+			]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
+		))
+			->addClass('js-field-proxy')
+			->addStyle('margin-top: 5px;'),
+		(new CDiv(
+			(new CMultiSelect([
+				'name' => 'proxy_groupid',
+				'object_name' => 'proxy_groups',
+				'multiple' => false,
+				'popup' => [
+					'parameters' => [
+						'srctbl' => 'proxy_groups',
+						'srcfld1' => 'proxy_groupid',
+						'srcfld2' => 'name',
+						'dstfrm' => $form->getName(),
+						'dstfld1' => 'proxy_groupid'
+					]
+				]
+			]))
+				->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+		))
+			->addClass('js-field-proxy-group')
+			->addStyle('margin-top: 5px;')
+	]))->setId('monitored-by-field')
 );
 
 // append status to form list
@@ -151,13 +178,13 @@ $ipmi_tab->addRow(
 )
 ->addRow(
 	(new CVisibilityBox('visible[ipmi_username]', 'ipmi_username', _('Original')))->setLabel(_('Username')),
-	(new CTextBox('ipmi_username', ''))
+	(new CTextBox('ipmi_username', '', false, DB::getFieldLength('hosts', 'ipmi_username')))
 		->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 		->disableAutocomplete()
 )
 ->addRow(
 	(new CVisibilityBox('visible[ipmi_password]', 'ipmi_password', _('Original')))->setLabel(_('Password')),
-	(new CTextBox('ipmi_password', ''))
+	(new CTextBox('ipmi_password', '', false, DB::getFieldLength('hosts', 'ipmi_password')))
 		->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 		->disableAutocomplete()
 );
@@ -188,7 +215,7 @@ $tags_tab->addRow(
 			->setModern(true)
 			->addStyle('margin-bottom: 10px;'),
 		renderTagTable([['tag' => '', 'value' => '']])
-			->setHeader([_('Name'), _('Value'), _('Action')])
+			->setHeader([_('Name'), _('Value'), ''])
 			->addClass('tags-table')
 	]))->setId('tags-field')
 );
@@ -196,7 +223,7 @@ $tags_tab->addRow(
 $hostInventoryTable = DB::getSchema('host_inventory');
 foreach ($data['inventories'] as $field => $fieldInfo) {
 
-	if ($hostInventoryTable['fields'][$field]['type'] == DB::FIELD_TYPE_TEXT) {
+	if ($hostInventoryTable['fields'][$field]['type'] & DB::FIELD_TYPE_TEXT) {
 		$fieldInput = (new CTextArea('host_inventory['.$field.']', ''))
 			->setAdaptiveWidth(ZBX_TEXTAREA_BIG_WIDTH);
 	}

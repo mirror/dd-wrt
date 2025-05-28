@@ -1,20 +1,15 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 package wmi
@@ -25,8 +20,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
-
-	"git.zabbix.com/ap/plugin-support/log"
+	"golang.zabbix.com/sdk/log"
 )
 
 const S_FALSE = 0x1
@@ -47,7 +41,7 @@ type resultWriter interface {
 }
 
 type valueResult struct {
-	data interface{}
+	data any
 }
 
 func clearOle(quals *ole.VARIANT) {
@@ -95,9 +89,9 @@ func isPropertyKeyProperty(propsCol *ole.IDispatch) (isKeyProperty bool, err err
 // Key Qualifier ('Name', 'DeviceID', 'Tag' etc.) is always appended to results which are sorted alphabetically,
 // so it's location is not fixed.
 // The following processing rules will be applied depending on query:
-// * only Key Qualifier column is returned - it means Key Qualifier was explicitly selected and must be returned
-// * Key Qualifier and more columns are returned - return value of the first column not having a 'key' entry in
-//   its Qualifiers_ property list
+//   - only Key Qualifier column is returned - it means Key Qualifier was explicitly selected and must be returned
+//   - Key Qualifier and more columns are returned - return value of the first column not having a 'key' entry in
+//     its Qualifiers_ property list
 func (r *valueResult) write(rs *ole.IDispatch) (err error) {
 	v, err := oleutil.GetProperty(rs, "Count")
 	if err != nil {
@@ -108,7 +102,7 @@ func (r *valueResult) write(rs *ole.IDispatch) (err error) {
 		return errors.New("Empty WMI search result.")
 	}
 
-	var propertyKeyFieldValue interface{}
+	var propertyKeyFieldValue any
 
 	oleErr := oleutil.ForEach(rs, func(vr *ole.VARIANT) (err error) {
 		row := vr.ToIDispatch()
@@ -172,28 +166,76 @@ func (r *valueResult) write(rs *ole.IDispatch) (err error) {
 }
 
 type tableResult struct {
-	data []map[string]interface{}
+	data []map[string]any
 }
 
-func variantToValue(v *ole.VARIANT) (result interface{}) {
-	if (v.VT & ole.VT_ARRAY) == 0 {
-		return v.Value()
+func processValueArray(v *ole.VARIANT) []any {
+	values := v.ToArray().ToValueArray()
+
+	var result []any
+
+	for _, item := range values {
+		if s := sanitizeOLEValue(item); s != nil {
+			result = append(result, s)
+		}
 	}
-	return v.ToArray().ToValueArray()
+
+	return result
+}
+
+func sanitizeOLEValue(value any) any {
+	switch v := value.(type) {
+	case *ole.VARIANT:
+		return sanitizeOLEValue(v.Value())
+	case []*ole.VARIANT:
+		var sanitizedValues []any
+
+		for _, item := range v {
+			if s := sanitizeOLEValue(item); s != nil {
+				sanitizedValues = append(sanitizedValues, s)
+			}
+		}
+
+		return sanitizedValues
+	case *ole.IUnknown:
+		return nil
+	case *ole.IDispatch:
+		prop, err := oleutil.GetProperty(v, "Value")
+		if err != nil {
+			return nil
+		}
+
+		defer prop.Clear() //nolint:errcheck
+
+		return sanitizeOLEValue(prop.Value())
+	default:
+		return v
+	}
+}
+
+func variantToValue(v *ole.VARIANT) any {
+	if (v.VT & ole.VT_ARRAY) != 0 {
+		arr := processValueArray(v)
+		if len(arr) == 0 {
+			return nil
+		}
+	}
+
+	return sanitizeOLEValue(v.Value())
 }
 
 // Key Qualifier is always appended to the result from ole library. This behavior is different from agent 1 which
 // uses the wmi enumerator and can set the WBEM_FLAG_NONSYSTEM_ONLY flag that would filter it. Ole library has only
 // the basic enumerator that cannot set any flags.
 // So that, we end up with these results for wmi.getAll where cases 1 and 2 are inconsistent with agent 1:
-//   1) 1 non-Key qualifier field selected	- key qualifier attached to the result, 2 elements are returned
-//   2) N non-Key qualifier fields selected	- key qualifier attached to the result, N+1 elements are returned
-//   3) Key qualifier field selected		- single key qualifier element is returned
-//   4) 1 non-Key qualifier and 1 Key qualifier elements selected
-//						- 2 elements are returned
-//   5) N fields selected and one of them is a Key-qualifier
-//						- N elements are returned
-//   6) * is selected				- all elements are returned (including the Key-qualifier)
+//  1. 1 non-Key qualifier field selected	- key qualifier attached to the result, 2 elements are returned
+//  2. N non-Key qualifier fields selected	- key qualifier attached to the result, N+1 elements are returned
+//  3. Key qualifier field selected		- single key qualifier element is returned
+//  4. 1 non-Key qualifier and 1 Key qualifier elements selected
+//     - 2 elements are returned
+//  5. N fields selected and one of them is a Key-qualifier
+//     - N elements are returned
+//  6. * is selected				- all elements are returned (including the Key-qualifier)
 func (r *tableResult) write(rs *ole.IDispatch) (err error) {
 	v, err := oleutil.GetProperty(rs, "Count")
 	if err != nil {
@@ -201,10 +243,10 @@ func (r *tableResult) write(rs *ole.IDispatch) (err error) {
 	}
 	defer clearOle(v)
 
-	r.data = make([]map[string]interface{}, 0)
+	r.data = make([]map[string]any, 0)
 
 	oleErr := oleutil.ForEach(rs, func(v *ole.VARIANT) (err error) {
-		rsRow := make(map[string]interface{})
+		rsRow := make(map[string]any)
 		row := v.ToIDispatch()
 		defer row.Release()
 
@@ -297,11 +339,12 @@ func performQuery(namespace string, query string, w resultWriter) (err error) {
 
 // QueryValue returns the value of the first column of the first row returned by the query.
 // The value type depends on the column type and can one of the following:
-//   nil, int64, uin64, float64, string
-func QueryValue(namespace string, query string) (value interface{}, err error) {
+//
+//	nil, int64, uin64, float64, string
+func QueryValue(namespace, query string) (any, error) {
 	var r valueResult
-	if err = performQuery(namespace, query, &r); err != nil {
-		return
+	if err := performQuery(namespace, query, &r); err != nil {
+		return nil, err
 	}
 	return r.data, nil
 }
@@ -309,10 +352,10 @@ func QueryValue(namespace string, query string) (value interface{}, err error) {
 // QueryTable returns the result set returned by the query in a slice of maps, containing
 // field name, value pairs. The field values can be either nil (null value) or pointer of
 // the value in string format.
-func QueryTable(namespace string, query string) (table []map[string]interface{}, err error) {
+func QueryTable(namespace, query string) ([]map[string]any, error) {
 	var r tableResult
-	if err = performQuery(namespace, query, &r); err != nil {
-		return
+	if err := performQuery(namespace, query, &r); err != nil {
+		return nil, err
 	}
 	return r.data, nil
 }

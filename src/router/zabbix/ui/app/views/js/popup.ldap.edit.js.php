@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -30,31 +25,26 @@ window.ldap_edit_popup = new class {
 		this.overlay = null;
 		this.dialogue = null;
 		this.form = null;
-		this.advanced_chbox = null;
 	}
 
 	init({provision_groups, provision_media}) {
 		this.overlay = overlays_stack.getById('ldap_edit');
 		this.dialogue = this.overlay.$dialogue[0];
 		this.form = this.overlay.$dialogue.$body[0].querySelector('form');
-		this.advanced_chbox = document.getElementById('advanced_configuration');
 		this.allow_jit_chbox = document.getElementById('provision_status');
 		this.provision_groups_table = document.getElementById('ldap-user-groups-table');
 
-		this.toggleAdvancedConfiguration(this.advanced_chbox.checked);
 		this.toggleAllowJitProvisioning(this.allow_jit_chbox.checked);
 		this.toggleGroupConfiguration();
 
 		this._addEventListeners();
 		this._renderProvisionGroups(provision_groups);
 		this._renderProvisionMedia(provision_media);
+
+		new CFormFieldsetCollapsible(document.getElementById('advanced-configuration'));
 	}
 
 	_addEventListeners() {
-		this.advanced_chbox.addEventListener('change', (e) => {
-			this.toggleAdvancedConfiguration(e.target.checked);
-		});
-
 		this.allow_jit_chbox.addEventListener('change', (e) => {
 			this.toggleAllowJitProvisioning(e.target.checked);
 		});
@@ -91,12 +81,6 @@ window.ldap_edit_popup = new class {
 
 		if (document.getElementById('bind-password-btn') !== null) {
 			document.getElementById('bind-password-btn').addEventListener('click', this.showPasswordField);
-		}
-	}
-
-	toggleAdvancedConfiguration(checked) {
-		for (const element of this.form.querySelectorAll('.advanced-configuration')) {
-			element.classList.toggle('<?= ZBX_STYLE_DISPLAY_NONE ?>', !checked);
 		}
 	}
 
@@ -204,11 +188,6 @@ window.ldap_edit_popup = new class {
 	preprocessFormFields(fields) {
 		this.trimFields(fields);
 
-		if (fields.advanced_configuration != 1) {
-			delete fields.start_tls;
-			delete fields.search_filter;
-		}
-
 		if (fields.provision_status != <?= JIT_PROVISIONING_ENABLED ?>) {
 			delete fields.group_basedn;
 			delete fields.group_name;
@@ -224,8 +203,6 @@ window.ldap_edit_popup = new class {
 		if (fields.userdirectoryid == null) {
 			delete fields.userdirectoryid;
 		}
-
-		delete fields.advanced_configuration;
 
 		return fields;
 	}
@@ -309,11 +286,10 @@ window.ldap_edit_popup = new class {
 		else {
 			row_index = row.dataset.row_index;
 
-			popup_params = {
-				name: row.querySelector('[name="provision_media[' + row_index + '][name]"]').value,
-				attribute: row.querySelector('[name="provision_media[' + row_index + '][attribute]"]').value,
-				mediatypeid: row.querySelector('[name="provision_media[' + row_index + '][mediatypeid]"]').value
-			};
+			popup_params = Object.fromEntries(
+				[...row.querySelectorAll(`[name^="provision_media[${row_index}]"]`)].map(
+					i => [i.name.match(/\[([^\]]+)\]$/)[1], i.value]
+			));
 		}
 
 		const overlay = PopUp('popup.mediatypemapping.edit', popup_params,
@@ -406,10 +382,14 @@ window.ldap_edit_popup = new class {
 			<tr data-row_index="#{row_index}">
 				<td>
 					<a href="javascript:void(0);" class="wordwrap js-edit">#{name}</a>
+					<input type="hidden" name="provision_media[#{row_index}][userdirectory_mediaid]" value="#{userdirectory_mediaid}">
 					<input type="hidden" name="provision_media[#{row_index}][name]" value="#{name}">
 					<input type="hidden" name="provision_media[#{row_index}][mediatype_name]" value="#{mediatype_name}">
 					<input type="hidden" name="provision_media[#{row_index}][mediatypeid]" value="#{mediatypeid}">
 					<input type="hidden" name="provision_media[#{row_index}][attribute]" value="#{attribute}">
+					<input type="hidden" name="provision_media[#{row_index}][period]" value="#{period}">
+					<input type="hidden" name="provision_media[#{row_index}][severity]" value="#{severity}">
+					<input type="hidden" name="provision_media[#{row_index}][active]" value="#{active}">
 				</td>
 				<td class="wordbreak">#{mediatype_name}</td>
 				<td class="wordbreak">#{attribute}</td>
@@ -420,6 +400,10 @@ window.ldap_edit_popup = new class {
 
 		const template = document.createElement('template');
 		template.innerHTML = template_ldap_media_mapping_row.evaluate(provision_media).trim();
+
+		if (provision_media.userdirectory_mediaid === undefined) {
+			template.content.firstChild.querySelector('[name$="[userdirectory_mediaid]"]').remove();
+		}
 
 		return template.content.firstChild;
 	}

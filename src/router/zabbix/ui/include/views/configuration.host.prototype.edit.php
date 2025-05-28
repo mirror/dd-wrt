@@ -1,30 +1,25 @@
-<?php
+<?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 /**
  * @var CView $this
+ * @var array $data
  */
 
 require_once __DIR__.'/js/configuration.host.prototype.edit.js.php';
-require_once __DIR__.'/js/common.template.edit.js.php';
 
 $host_prototype = $data['host_prototype'];
 $parent_host = $data['parent_host'];
@@ -47,7 +42,7 @@ $url = (new CUrl('host_prototypes.php'))
 
 $form = (new CForm('post', $url))
 	->addItem((new CVar('form_refresh', $data['form_refresh'] + 1))->removeId())
-	->addItem((new CVar(CCsrfTokenHelper::CSRF_TOKEN_NAME, CCsrfTokenHelper::get('host_prototypes.php')))->removeId())
+	->addItem((new CVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('host_prototypes.php')))->removeId())
 	->setId('host-prototype-form')
 	->setName('hostPrototypeForm')
 	->setAttribute('aria-labelledby', CHtmlPage::PAGE_TITLE_ID)
@@ -101,11 +96,13 @@ if ($host_prototype['templateid']) {
 
 			if ($data['allowed_ui_conf_templates']
 					&& array_key_exists($template['templateid'], $host_prototype['writable_templates'])) {
-				$template_link = (new CLink($template['name'],
-					(new CUrl('templates.php'))
-						->setArgument('form', 'update')
-						->setArgument('templateid', $template['templateid'])
-				))->setTarget('_blank');
+				$template_url = (new CUrl('zabbix.php'))
+					->setArgument('action', 'popup')
+					->setArgument('popup', 'template.edit')
+					->setArgument('templateid', $template['templateid'])
+					->getUrl();
+
+				$template_link = new CLink($template['name'], $template_url);
 			}
 			else {
 				$template_link = new CSpan($template['name']);
@@ -130,11 +127,13 @@ else {
 
 			if ($data['allowed_ui_conf_templates']
 					&& array_key_exists($template['templateid'], $host_prototype['writable_templates'])) {
-				$template_link = (new CLink($template['name'],
-					(new CUrl('templates.php'))
-						->setArgument('form', 'update')
-						->setArgument('templateid', $template['templateid'])
-				))->setTarget('_blank');
+				$template_url = (new CUrl('zabbix.php'))
+					->setArgument('action', 'popup')
+					->setArgument('popup', 'template.edit')
+					->setArgument('templateid', $template['templateid'])
+					->getUrl();
+
+				$template_link = new CLink($template['name'], $template_url);
 			}
 			else {
 				$template_link = new CSpan($template['name']);
@@ -143,12 +142,11 @@ else {
 			$linked_templates->addRow([
 				$template_link->addClass(ZBX_STYLE_WORDWRAP),
 				(new CCol(
-					(new CSimpleButton(_('Unlink')))
+					(new CButtonLink(_('Unlink')))
 						->setAttribute('data-templateid', $template['templateid'])
 						->onClick('
 							submitFormWithParam("'.$form->getName().'", `unlink[${this.dataset.templateid}]`, 1);
 						')
-						->addClass(ZBX_STYLE_BTN_LINK)
 				))->addClass(ZBX_STYLE_NOWRAP)
 			]);
 		}
@@ -186,7 +184,7 @@ $host_tab->addRow(
 	(new CMultiSelect([
 		'name' => 'group_links[]',
 		'object_name' => 'hostGroup',
-		'disabled' => (bool) $host_prototype['templateid'],
+		'readonly' => (bool) $host_prototype['templateid'],
 		'data' => $data['groups_ms'],
 		'popup' => [
 			'parameters' => [
@@ -222,6 +220,30 @@ $host_tab->addRow(
 	))->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 );
 
+$group_prototype_template = (new CTemplateTag('groupPrototypeRow'))->addItem(
+	(new CRow([
+		new CCol([
+			(new CTextBox('group_prototypes[#{i}][name]', '#{name}'))
+				->addStyle('width: 448px')
+				->setAttribute('placeholder', '{#MACRO}'),
+			new CInput('hidden', 'group_prototypes[#{i}][group_prototypeid]', '#{group_prototypeid}')
+		]),
+		(new CCol(
+			(new CButtonLink(_('Remove')))
+				->setAttribute('name', 'remove')
+				->addClass('group-prototype-remove')
+		))->addClass(ZBX_STYLE_NOWRAP)
+	]))->addClass('form_row')
+);
+
+$host_interface_template = (new CTemplateTag('host-interface-row-tmpl'))->addItem(
+	new CPartial('configuration.host.interface.row')
+);
+
+$host_tab
+	->addItem($group_prototype_template)
+	->addItem($host_interface_template);
+
 $interface_header = renderInterfaceHeaders();
 
 $agent_interfaces = (new CDiv())
@@ -250,7 +272,7 @@ $host_tab->addRow(
 		(new CRadioButtonList('custom_interfaces', (int) $host_prototype['custom_interfaces']))
 			->addValue(_('Inherit'), HOST_PROT_INTERFACES_INHERIT)
 			->addValue(_('Custom'), HOST_PROT_INTERFACES_CUSTOM)
-			->setModern(true)
+			->setModern()
 			->setReadonly($host_prototype['templateid'] != 0),
 		(new CDiv([$interface_header, $agent_interfaces, $snmp_interfaces, $jmx_interfaces, $ipmi_interfaces]))
 			->setId('interfaces-table')
@@ -277,13 +299,55 @@ $host_tab->addRow(
 // Display inherited parameters only for hosts prototypes on hosts.
 if ($parent_host['status'] != HOST_STATUS_TEMPLATE) {
 	$host_tab->addRow(
-		_('Monitored by proxy'),
-		(new CTextBox(
-			'proxy_hostid',
-			($parent_host['proxy_hostid'] != 0) ? $this->data['proxy']['host'] : _('(no proxy)'),
-			true
-		))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+		_('Monitored by'),
+		(new CRadioButtonList('monitored_by', (int) $parent_host['monitored_by']))
+			->addValue(_('Server'), ZBX_MONITORED_BY_SERVER)
+			->addValue(_('Proxy'), ZBX_MONITORED_BY_PROXY)
+			->addValue(_('Proxy group'), ZBX_MONITORED_BY_PROXY_GROUP)
+			->setReadonly(true)
+			->setModern()
 	);
+
+	if ($parent_host['monitored_by'] == ZBX_MONITORED_BY_PROXY) {
+		$host_tab->addRow(
+			(new CMultiSelect([
+				'name' => 'proxyid',
+				'object_name' => 'proxies',
+				'multiple' => false,
+				'data' => $data['ms_proxy'],
+				'disabled' => true,
+				'popup' => [
+					'parameters' => [
+						'srctbl' => 'proxies',
+						'srcfld1' => 'proxyid',
+						'srcfld2' => 'name',
+						'dstfrm' => $form->getName(),
+						'dstfld1' => 'proxyid'
+					]
+				]
+			]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+		);
+	}
+	elseif ($parent_host['monitored_by'] == ZBX_MONITORED_BY_PROXY_GROUP) {
+		$host_tab->addRow(
+			(new CMultiSelect([
+				'name' => 'proxy_groupid',
+				'object_name' => 'proxy_groups',
+				'multiple' => false,
+				'data' => $data['ms_proxy_group'],
+				'disabled' => true,
+				'popup' => [
+					'parameters' => [
+						'srctbl' => 'proxy_groups',
+						'srcfld1' => 'proxy_groupid',
+						'srcfld2' => 'name',
+						'dstfrm' => $form->getName(),
+						'dstfld1' => 'proxy_groupid'
+					]
+				]
+			]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+		);
+	}
 }
 
 $host_tab->addRow(_('Create enabled'),
@@ -346,29 +410,106 @@ $tabs->addTab('tags-tab', _('Tags'),
 	TAB_INDICATOR_TAGS
 );
 
-$tabs->addTab('macroTab', _('Macros'),
-	(new CFormList('macrosFormList'))
-		->addRow(null, (new CRadioButtonList('show_inherited_macros', (int) $data['show_inherited_macros']))
-			->addValue(_('Host prototype macros'), 0)
-			->addValue(_('Inherited and host prototype macros'), 1)
-			->setModern(true)
-		)
-		->addRow(
-			null,
-			new CPartial(
-				$data['show_inherited_macros']
-					? 'hostmacros.inherited.list.html'
-					: 'hostmacros.list.html',
-				[
-					'macros' => $data['macros'],
-					'parent_hostid' => $data['parent_host']['hostid'],
-					'readonly' => $data['templates']
-				]
-			),
-			'macros_container'
+$macro_tab = (new CFormList('macrosFormList'))
+	->addRow(null, (new CRadioButtonList('show_inherited_macros', (int) $data['show_inherited_macros']))
+		->addValue(_('Host prototype macros'), 0)
+		->addValue(_('Inherited and host prototype macros'), 1)
+		->setModern()
+	)
+	->addRow(
+		null,
+		new CPartial(
+			$data['show_inherited_macros']
+				? 'hostmacros.inherited.list.html'
+				: 'hostmacros.list.html',
+			[
+				'macros' => $data['macros'],
+				'parent_hostid' => $data['parent_host']['hostid'],
+				'readonly' => $data['templates']
+			]
 		),
-	TAB_INDICATOR_MACROS
-);
+		'macros_container'
+	);
+
+if (!$data['readonly']) {
+	$macro_row_tmpl = (new CTemplateTag('macro-row-tmpl'))
+		->addItem(
+			(new CRow([
+				(new CCol([
+					(new CTextAreaFlexible('macros[#{rowNum}][macro]', '', ['add_post_js' => false]))
+						->addClass('macro')
+						->setWidth(ZBX_TEXTAREA_MACRO_WIDTH)
+						->setAttribute('placeholder', '{$MACRO}')
+						->disableSpellcheck()
+				]))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+				(new CCol(
+					new CMacroValue(ZBX_MACRO_TYPE_TEXT, 'macros[#{rowNum}]', '', false)
+				))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+				(new CCol(
+					(new CTextAreaFlexible('macros[#{rowNum}][description]', '', ['add_post_js' => false]))
+						->setMaxlength(DB::getFieldLength('globalmacro', 'description'))
+						->setWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
+						->setAttribute('placeholder', _('description'))
+				))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+				(new CCol(
+					(new CButton('macros[#{rowNum}][remove]', _('Remove')))
+						->addClass(ZBX_STYLE_BTN_LINK)
+						->addClass('element-table-remove')
+				))->addClass(ZBX_STYLE_NOWRAP)
+			]))->addClass('form_row')
+		);
+
+	$macro_row_inherited_tmpl = (new CTemplateTag('macro-row-tmpl-inherited'))
+		->addItem(
+			(new CRow([
+				(new CCol([
+					(new CTextAreaFlexible('macros[#{rowNum}][macro]', '', ['add_post_js' => false]))
+						->addClass('macro')
+						->setWidth(ZBX_TEXTAREA_MACRO_WIDTH)
+						->setAttribute('placeholder', '{$MACRO}')
+						->disableSpellcheck(),
+					new CInput('hidden', 'macros[#{rowNum}][inherited_type]', ZBX_PROPERTY_OWN)
+				]))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+				(new CCol(
+					new CMacroValue(ZBX_MACRO_TYPE_TEXT, 'macros[#{rowNum}]', '', false)
+				))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT),
+				(new CCol(
+					(new CButton('macros[#{rowNum}][remove]', _('Remove')))
+						->addClass(ZBX_STYLE_BTN_LINK)
+						->addClass('element-table-remove')
+				))->addClass(ZBX_STYLE_NOWRAP),
+				[
+					new CCol(
+						(new CDiv())
+							->addClass(ZBX_STYLE_OVERFLOW_ELLIPSIS)
+							->setAdaptiveWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
+					),
+					new CCol(),
+					new CCol(
+						(new CDiv())
+							->addClass(ZBX_STYLE_OVERFLOW_ELLIPSIS)
+							->setAdaptiveWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
+					)
+				]
+			]))->addClass('form_row')
+		)
+		->addItem(
+			(new CRow([
+				(new CCol(
+					(new CTextAreaFlexible('macros[#{rowNum}][description]', '', ['add_post_js' => false]))
+						->setMaxlength(DB::getFieldLength('globalmacro', 'description'))
+						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+						->setAttribute('placeholder', _('description'))
+				))->addClass(ZBX_STYLE_TEXTAREA_FLEXIBLE_PARENT)->setColSpan(8)
+			]))->addClass('form_row')
+		);
+
+	$macro_tab
+		->addItem($macro_row_tmpl)
+		->addItem($macro_row_inherited_tmpl);
+}
+
+$tabs->addTab('macro-tab', _('Macros'), $macro_tab, TAB_INDICATOR_HOST_PROTOTYPE_MACROS);
 
 $tabs->addTab('inventoryTab', _('Inventory'),
 	(new CFormList('inventorylist'))
@@ -379,7 +520,7 @@ $tabs->addTab('inventoryTab', _('Inventory'),
 				->addValue(_('Manual'), HOST_INVENTORY_MANUAL)
 				->addValue(_('Automatic'), HOST_INVENTORY_AUTOMATIC)
 				->setReadonly($host_prototype['templateid'] != 0)
-				->setModern(true)
+				->setModern()
 		),
 	TAB_INDICATOR_INVENTORY
 );
@@ -391,23 +532,27 @@ $encryption_tab = (new CFormList('encryption'))
 			->addValue(_('No encryption'), HOST_ENCRYPTION_NONE)
 			->addValue(_('PSK'), HOST_ENCRYPTION_PSK)
 			->addValue(_('Certificate'), HOST_ENCRYPTION_CERTIFICATE)
-			->setModern(true)
-			->setEnabled(false)
+			->setModern()
+			->setEnabled($data['context'] !== 'template')
+			->setReadonly($data['context'] !== 'template')
 	)
 	->addRow(_('Connections from host'),
 		(new CList())
 			->addClass(ZBX_STYLE_LIST_CHECK_RADIO)
 			->addItem((new CCheckBox('tls_in_none'))
 				->setLabel(_('No encryption'))
-				->setAttribute('disabled', 'disabled')
+				->setEnabled($data['context'] !== 'template')
+				->setReadonly($data['context'] !== 'template')
 			)
 			->addItem((new CCheckBox('tls_in_psk'))
 				->setLabel(_('PSK'))
-				->setAttribute('disabled', 'disabled')
+				->setEnabled($data['context'] !== 'template')
+				->setReadonly($data['context'] !== 'template')
 			)
 			->addItem((new CCheckBox('tls_in_cert'))
 				->setLabel(_('Certificate'))
-				->setAttribute('disabled', 'disabled')
+				->setEnabled($data['context'] !== 'template')
+				->setReadonly($data['context'] !== 'template')
 			)
 	)
 	->addRow(_('PSK'),
@@ -418,14 +563,14 @@ $encryption_tab = (new CFormList('encryption'))
 		'tls_psk'
 	)
 	->addRow(_('Issuer'),
-		(new CTextBox('tls_issuer', $parent_host['tls_issuer'], false, 1024))
+		(new CTextBox('tls_issuer', $parent_host['tls_issuer'], $data['context'] !== 'template', 1024))
 			->setWidth(ZBX_TEXTAREA_BIG_WIDTH)
-			->setAttribute('disabled', 'disabled')
+			->setEnabled($data['context'] !== 'template')
 	)
 	->addRow(_x('Subject', 'encryption certificate'),
-		(new CTextBox('tls_subject', $parent_host['tls_subject'], false, 1024))
+		(new CTextBox('tls_subject', $parent_host['tls_subject'], $data['context'] !== 'template', 1024))
 			->setWidth(ZBX_TEXTAREA_BIG_WIDTH)
-			->setAttribute('disabled', 'disabled')
+			->setEnabled($data['context'] !== 'template')
 	);
 
 $tabs->addTab('encryptionTab', _('Encryption'), $encryption_tab, TAB_INDICATOR_ENCRYPTION);
@@ -437,7 +582,7 @@ if ($host_prototype['hostid'] != 0) {
 			new CSubmit('clone', _('Clone')),
 			(new CButtonDelete(
 				_('Delete selected host prototype?'),
-				url_params(['form', 'hostid', 'parent_discoveryid', 'context']).'&'.CCsrfTokenHelper::CSRF_TOKEN_NAME.
+				url_params(['form', 'hostid', 'parent_discoveryid', 'context']).'&'.CSRF_TOKEN_NAME.
 				'='.CCsrfTokenHelper::get('host_prototypes.php'), 'context'
 			))->setEnabled($host_prototype['templateid'] == 0),
 			new CButtonCancel(url_params(['parent_discoveryid', 'context']))
@@ -455,4 +600,19 @@ $form->addItem($tabs);
 
 $html_page
 	->addItem($form)
+	->show();
+
+(new CScriptTag('
+	view.init('.json_encode([
+		'form_name' => $form->getName(),
+		'readonly' => $data['readonly'],
+		'parent_hostid' => array_key_exists('parent_hostid', $data) ? $data['parent_hostid'] : null,
+		'group_prototypes' => $host_prototype['groupPrototypes'],
+		'prototype_templateid' => $host_prototype['templateid'],
+		'prototype_interfaces' => array_values($host_prototype['interfaces']),
+		'parent_host_interfaces' => array_values($parent_host['interfaces']),
+		'parent_host_status' => $parent_host['status']
+	]).');
+'))
+	->setOnDocumentReady()
 	->show();

@@ -1,12 +1,17 @@
 .radio-list-control {
 	display: inline-block;
+	height: 24px;
+	line-height: 0;
 	white-space: nowrap;
 
 	li {
 		position: relative;
 		display: inline-block;
-		margin-right: -1px;
 		padding: 0;
+
+		&:not(:last-child) {
+			margin-right: -1px;
+		}
 
 		&:first-child {
 			border-top-left-radius: 3px;
@@ -34,8 +39,11 @@
 		border: 1px solid $form-border-color;
 		line-height: 14px;
 		padding: 4px 11px;
-		transition: background-color .2s ease-out;
 		cursor: pointer;
+
+		@if $ui-transitions {
+			transition: background-color $ui-controls-transition-duration ease-out;
+		}
 	}
 
 	input[type="radio"] {
@@ -51,12 +59,12 @@
 			background-color: $form-bg-color;
 
 			&:hover {
-				background-color: $btn-form-hover-color;
+				background-color: $btn-form-hover-bg-color;
 			}
 
 			&:active {
 				border-color: $form-border-color;
-				background-color: $btn-form-hover-color;
+				background-color: $btn-form-hover-bg-color;
 			}
 		}
 
@@ -70,22 +78,26 @@
 		}
 
 		&:focus + label {
-			box-shadow: 0 0 0 2px rgba($blue, .35);
+			box-shadow: 0 0 0 2px $btn-focus-outline-color;
 		}
 
-		&:checked[disabled] + label {
-			background-color: lighten($ui-bg-selected-color, 33%) !important;
-			transition: none;
+		&[readonly],
+		&[disabled] {
+			+ label {
+				transition: none;
+				cursor: default;
+				box-shadow: none;
+				@extend %form-disabled;
+			}
+
+			&:checked + label {
+				background-color: lighten($ui-bg-selected-color, 33%);
+			}
 		}
 
-		&[disabled] + label {
-			transition: none;
-			cursor: default;
-			@extend %form-disabled;
+		&[readonly]:checked + label {
+			color: $font-color;
+			-webkit-text-fill-color: $font-color;
 		}
-	}
-
-	+ .icon-info {
-		margin-left: 5px;
 	}
 }

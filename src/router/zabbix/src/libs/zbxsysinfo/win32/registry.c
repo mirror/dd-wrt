@@ -1,30 +1,26 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "zbxsysinfo.h"
 #include "../sysinfo.h"
 
 #include "zbxstr.h"
-#include "base64.h"
+#include "zbxcrypto.h"
 #include "zbxjson.h"
 #include "zbxalgo.h"
 #include "zbxregexp.h"
+#include "zbxlog.h"
 
 #include <locale.h>
 #include <winreg.h>
@@ -83,11 +79,9 @@ static const char	*registry_type_to_string(DWORD type)
 
 static void	registry_get_multistring_value(const wchar_t *wbuffer, struct zbx_json *j)
 {
-	char	*buffer;
-
 	while (L'\0' != *wbuffer)
 	{
-		buffer = zbx_unicode_to_utf8(wbuffer);
+		char	*buffer = zbx_unicode_to_utf8(wbuffer);
 		zbx_json_addstring(j, NULL, buffer, ZBX_JSON_TYPE_STRING);
 		zbx_free(buffer);
 		wbuffer += wcslen(wbuffer) + 1 ;
@@ -100,7 +94,7 @@ static int	convert_value(DWORD type, const char *value, DWORD value_len, char **
 
 	switch (type) {
 		case REG_BINARY:
-			str_base64_encode_dyn(value, out, (int)value_len);
+			zbx_base64_encode_dyn(value, out, (int)value_len);
 			return SUCCEED;
 		case REG_DWORD:
 			*out = zbx_dsprintf(NULL, "%u", *(DWORD *)value);
@@ -319,7 +313,7 @@ static int	split_fullkey(char **fullkey, HKEY *hive_handle, char **hive_str)
 
 static int	registry_discover(char *key, int mode, AGENT_RESULT *result, const char *regexp)
 {
-	wchar_t		*wkey, *wfullkey = NULL;;
+	wchar_t		*wkey, *wfullkey = NULL;
 	HKEY		hkey, hive_handle;
 	struct zbx_json	j;
 	DWORD		retCode;
@@ -344,7 +338,7 @@ static int	registry_discover(char *key, int mode, AGENT_RESULT *result, const ch
 	}
 	else
 	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, strerror_from_system(retCode)));
+		SET_MSG_RESULT(result, zbx_strdup(NULL, zbx_strerror_from_system(retCode)));
 		ret = FAIL;
 		goto out;
 	}
@@ -389,7 +383,7 @@ static int	registry_get_value(char *key, const char *value, AGENT_RESULT *result
 
 	if (ERROR_SUCCESS != errCode)
 	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, strerror_from_system(errCode)));
+		SET_MSG_RESULT(result, zbx_strdup(NULL, zbx_strerror_from_system(errCode)));
 		ret = FAIL;
 		goto out;
 	}

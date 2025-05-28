@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -49,6 +44,7 @@ class CControllerHostMassDelete extends CController {
 	protected function doAction(): void {
 		$output = [];
 		$hostids = $this->getInput('hostids');
+		$hosts_count = count($hostids);
 		$result = API::Host()->delete($hostids);
 
 		if (!$result) {
@@ -62,16 +58,17 @@ class CControllerHostMassDelete extends CController {
 		}
 
 		if ($result) {
-			$success = ['title' => _('Host deleted')];
+			$success = ['title' => _n('Host deleted', 'Hosts deleted', $hosts_count)];
 
 			if ($messages = get_and_clear_messages()) {
 				$success['messages'] = array_column($messages, 'message');
 			}
 
+			$success['action'] = 'delete';
 			$output['success'] = $success;
 		}
 		else {
-			CMessageHelper::setErrorTitle(_('Cannot delete host'));
+			CMessageHelper::setErrorTitle(_n('Cannot delete host', 'Cannot delete hosts', $hosts_count));
 
 			$output['error'] = [
 				'title' => CMessageHelper::getTitle(),

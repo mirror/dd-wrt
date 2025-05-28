@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -26,9 +21,9 @@ class CWidgetForm {
 	protected array $fields = [];
 
 	protected array $values;
-	protected ?string $templateid;
+	private $templateid;
 
-	public function __construct(array $values, ?string $templateid) {
+	public function __construct(array $values, $templateid = null) {
 		$this->values = $this->normalizeValues($values);
 		$this->templateid = $templateid;
 	}
@@ -39,6 +34,8 @@ class CWidgetForm {
 
 	public function addField(?CWidgetField $field): self {
 		if ($field !== null) {
+			$field->setTemplateId($this->templateid);
+
 			$this->fields[$field->getName()] = $field;
 		}
 
@@ -47,6 +44,10 @@ class CWidgetForm {
 
 	public function getFields(): array {
 		return $this->fields;
+	}
+
+	public function getField(string $field_name): CWidgetField {
+		return $this->fields[$field_name];
 	}
 
 	public function getFieldValue(string $field_name) {
@@ -73,11 +74,17 @@ class CWidgetForm {
 		return $this;
 	}
 
+	public function isTemplateDashboard(): bool {
+		return $this->templateid !== null;
+	}
+
 	/**
-	 * Validate form fields.
+	 * Validate widget fields.
 	 *
-	 * @param bool $strict  Enables more strict validation of the form fields.
-	 *                      Must be enabled for validation of input parameters in the widget configuration form.
+	 * @param bool $strict  If true, the submitted form data is strictly validated and all fields with not-empty flag
+	 *                      set must be filled-in. If false, the saved data is loosely validated and fields with
+	 *                      not-empty flag set, relating to database objects (like hosts or items) are allowed to be
+	 *                      missing (deleted or not available due to insufficient permissions).
 	 *
 	 * @return array
 	 */
@@ -107,68 +114,6 @@ class CWidgetForm {
 	}
 
 	protected function normalizeValues(array $values): array {
-		return self::convertDottedKeys($values);
-	}
-
-	/**
-	 * Convert all dot-delimited keys to arrays of objects.
-	 * Example:
-	 *   source:                             result:
-	 *   [                                   [
-	 *       'tags.tag.0' => 'tag1',             'tags' => [
-	 *       'tags.value.0' => 'value1',             ['tag' => 'tag1', 'value' => 'value1'],
-	 *       'tags.tag.1' => 'tag2',                 ['tag' => 'tag2', 'value' => 'value2']
-	 *       'tags.value.1' => 'value2',         ],
-	 *       'ds.hosts.0.0' => 'host1',          'ds' => [
-	 *       'ds.hosts.1.0' => 'host2',              [
-	 *       'ds.hosts.1.1' => 'host3',                  'hosts' => ['host1'],
-	 *       'ds.color.0' => 'AB43C5',                   'color' => 'AB43C5'
-	 *       'ds.color.1' => 'CCCCCC',               ],
-	 *       'ds.hosts.1.1' => 'host3',              [
-	 *       'problemhosts.0' => 'ph1',                  'hosts => ['host2', 'host3'],
-	 *       'problemhosts.1' => 'ph2'                   'color' => 'CCCCCC'
-	 *   ]                                           ],
-	 *                                           ],
-	 *                                           'problemhosts' => ['ph1', 'ph2']
-	 *                                       ]
-	 *
-	 * @static
-	 *
-	 * @param array $data  An array of key => value pairs.
-	 *
-	 * @return array
-	 */
-	protected static function convertDottedKeys(array $data): array {
-		// API doesn't guarantee fields to be retrieved in same order as stored. Sorting by key...
-		uksort($data, static function ($key1, $key2) {
-			foreach (['key1', 'key2'] as $var) {
-				if (preg_match('/^([a-z]+)\.([a-z_]+)\.(\d+)\.(\d+)$/', (string) $$var, $matches) === 1) {
-					$$var = $matches[1].'.'.$matches[3].'.'.$matches[2].'.'.$matches[4];
-				}
-				elseif (preg_match('/^([a-z]+)\.([a-z_]+)\.(\d+)$/', (string) $$var, $matches) === 1) {
-					$$var = $matches[1].'.'.$matches[3].'.'.$matches[2];
-				}
-			}
-
-			return strnatcmp((string) $key1, (string) $key2);
-		});
-
-		// Converting dot-delimited keys to the arrays.
-		foreach ($data as $key => $value) {
-			if (preg_match('/^([a-z]+)\.([a-z_]+)\.(\d+)\.(\d+)$/', (string) $key, $matches) === 1) {
-				$data[$matches[1]][$matches[3]][$matches[2]][$matches[4]] = $value;
-				unset($data[$key]);
-			}
-			elseif (preg_match('/^([a-z]+)\.([a-z_]+)\.(\d+)$/', (string) $key, $matches) === 1) {
-				$data[$matches[1]][$matches[3]][$matches[2]] = $value;
-				unset($data[$key]);
-			}
-			elseif (preg_match('/^([a-z]+)\.(\d+)$/', (string) $key, $matches) === 1) {
-				$data[$matches[1]][$matches[2]] = $value;
-				unset($data[$key]);
-			}
-		}
-
-		return $data;
+		return $values;
 	}
 }

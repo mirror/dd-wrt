@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -37,7 +32,7 @@
 		}
 
 		init({serviceid, path = null, is_filtered = null, mode_switch_url, parent_url = null, refresh_url,
-				refresh_interval, back_url = null}) {
+				refresh_interval, return_url = null}) {
 			this.serviceid = serviceid;
 			this.path = path;
 			this.is_filtered = is_filtered;
@@ -45,15 +40,16 @@
 			this.parent_url = parent_url;
 			this.refresh_url = refresh_url;
 			this.refresh_interval = refresh_interval;
-			this.back_url = back_url;
+			this.return_url = return_url;
 
-			this._initViewModeSwitcher();
-			this._initTagFilter();
-			this._initActions();
-			this._initRefresh();
+			this.#initViewModeSwitcher();
+			this.#initTagFilter();
+			this.#initActions();
+			this.#initRefresh();
+			this.#initPopupListeners();
 		}
 
-		_initViewModeSwitcher() {
+		#initViewModeSwitcher() {
 			for (const element of document.getElementsByName('list_mode')) {
 				if (!element.checked) {
 					element.addEventListener('click', () => {
@@ -63,7 +59,7 @@
 			}
 		}
 
-		_initTagFilter() {
+		#initTagFilter() {
 			$('#filter-tags')
 				.dynamicRows({template: '#filter-tag-row-tmpl'})
 				.on('afteradd.dynamicRows', function() {
@@ -77,80 +73,74 @@
 			});
 		}
 
-		_initActions() {
-			document.addEventListener('click', (e) => {
-				if (e.target.matches('.js-create-service, .js-add-child-service')) {
-					const parameters = e.target.dataset.serviceid !== undefined
-						? {parent_serviceids: [e.target.dataset.serviceid]}
-						: {};
-
-					this._edit(parameters);
+		#initActions() {
+			document.addEventListener('click', e => {
+				if (e.target.matches('.js-create-service')) {
+					ZABBIX.PopupManager.open('service.edit',
+						this.serviceid !== null ? {parent_serviceids: [this.serviceid]} : {}
+					);
 				}
-				else if (e.target.classList.contains('js-edit-service')) {
-					this._edit({serviceid: e.target.dataset.serviceid});
+				else if (e.target.classList.contains('js-add-child-service')) {
+					ZABBIX.PopupManager.open('service.edit', {parent_serviceids: [e.target.dataset.serviceid]});
 				}
 				else if (e.target.classList.contains('js-delete-service')) {
-					this._delete(e.target, [e.target.dataset.serviceid]);
+					this.#delete(e.target, [e.target.dataset.serviceid]);
 				}
 				else if (e.target.classList.contains('js-massupdate-service')) {
 					openMassupdatePopup('popup.massupdate.service', {
-							location_url: this.back_url,
-							<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?> :
-								<?= json_encode(CCsrfTokenHelper::get('service')) ?>
-						}, {
-							dialogue_class: 'modal-popup-static',
-							trigger_element: e.target
-						}
-					);
+						location_url: this.return_url,
+						[CSRF_TOKEN_NAME]: <?= json_encode(CCsrfTokenHelper::get('service')) ?>
+					}, {
+						dialogue_class: 'modal-popup-static',
+						trigger_element: e.target
+					});
 				}
 				else if (e.target.classList.contains('js-massdelete-service')) {
-					this._delete(e.target, Object.keys(chkbxRange.getSelectedIds()));
+					this.#delete(e.target, Object.keys(chkbxRange.getSelectedIds()));
 				}
 			});
 		}
 
-		_initRefresh() {
+		#initRefresh() {
 			if (this.refresh_interval > 0) {
-				setInterval(() => this._refresh(), this.refresh_interval);
+				setInterval(() => this.#refresh(), this.refresh_interval);
 			}
 		}
 
-		_edit(parameters = {}) {
-			this._pauseRefresh();
-
-			const overlay = PopUp('popup.service.edit', parameters, {
-				dialogueid: 'service_edit',
-				dialogue_class: 'modal-popup-medium'
+		#initPopupListeners() {
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_OPEN
+				},
+				callback: () => this.#pauseRefresh()
 			});
 
-			const dialogue = overlay.$dialogue[0];
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_CANCEL
+				},
+				callback: () => this.#resumeRefresh()
+			});
 
-			dialogue.addEventListener('dialogue.submit', (e) => {
-				postMessageOk(e.detail.title);
+			ZABBIX.EventHub.subscribe({
+				require: {
+					context: CPopupManager.EVENT_CONTEXT,
+					event: CPopupManagerEvent.EVENT_SUBMIT
+				},
+				callback: ({data, event}) => {
+					uncheckTableRows(chkbxRange.prefix);
 
-				if ('messages' in e.detail) {
-					postMessageDetails('success', e.detail.messages);
+					if (data.submit.success.action === 'delete'
+							&& data.action_parameters.serviceid === this.serviceid) {
+						event.setRedirectUrl(this.parent_url);
+					}
 				}
-
-				location.href = location.href;
 			});
-
-			dialogue.addEventListener('dialogue.delete', (e) => {
-				uncheckTableRows(chkbxRange.prefix);
-
-				postMessageOk(e.detail.title);
-
-				if ('messages' in e.detail) {
-					postMessageDetails('success', e.detail.messages);
-				}
-
-				location.href = parameters.serviceid === this.serviceid ? this.parent_url : location.href;
-			});
-
-			dialogue.addEventListener('overlay.close', () => this._resumeRefresh(), {once: true});
 		}
 
-		_delete(target, serviceids) {
+		#delete(target, serviceids) {
 			const confirmation = serviceids.length > 1
 				? <?= json_encode(_('Delete selected services?')) ?>
 				: <?= json_encode(_('Delete selected service?')) ?>;
@@ -163,9 +153,7 @@
 
 			const curl = new Curl('zabbix.php');
 			curl.setArgument('action', 'service.delete');
-			curl.setArgument('<?= CCsrfTokenHelper::CSRF_TOKEN_NAME ?>',
-				<?= json_encode(CCsrfTokenHelper::get('service')) ?>
-			);
+			curl.setArgument(CSRF_TOKEN_NAME, <?= json_encode(CCsrfTokenHelper::get('service')) ?>);
 
 			return fetch(curl.getUrl(), {
 				method: 'POST',
@@ -207,15 +195,15 @@
 				});
 		}
 
-		_pauseRefresh() {
+		#pauseRefresh() {
 			this.is_refresh_paused = true;
 		}
 
-		_resumeRefresh() {
+		#resumeRefresh() {
 			this.is_refresh_paused = false;
 		}
 
-		_refresh() {
+		#refresh() {
 			if (this.is_refresh_paused || this.is_refresh_pending) {
 				return;
 			}

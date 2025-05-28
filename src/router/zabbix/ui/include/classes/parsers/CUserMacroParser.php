@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -33,7 +28,25 @@ class CUserMacroParser extends CParser {
 	private $context_quoted = false;
 	private $regex = null;
 
-	public function __construct() {
+	/**
+	 * An options array.
+	 *
+	 * Supported options:
+	 *   'allow_regex' => false  Enable "regex:" context prefix. This prefix should be accessible in the user macro
+	 *                           configuration places (global-, template- and host-level macros) only.
+	 *
+	 * @var array
+	 */
+	private $options = [
+		'allow_regex' => false
+	];
+
+	/**
+	 * @param array $options
+	 */
+	public function __construct(array $options = []) {
+		$this->options = $options + $this->options;
+
 		$this->error_msgs['empty'] = _('macro is empty');
 		$this->error_msgs['unexpected_end'] = _('unexpected end of macro');
 	}
@@ -100,7 +113,7 @@ class CUserMacroParser extends CParser {
 		}
 		$p++;
 
-		if (preg_match("/^\s*".self::REGEX_PREFIX."/", substr($source, $p)) === 1) {
+		if ($this->options['allow_regex'] && preg_match("/^\s*".self::REGEX_PREFIX."/", substr($source, $p)) === 1) {
 			$has_regex = true;
 			$p += strpos(substr($source, $p), self::REGEX_PREFIX) + strlen(self::REGEX_PREFIX);
 		}
@@ -257,5 +270,47 @@ class CUserMacroParser extends CParser {
 	 */
 	public function getRegex(): ?string {
 		return ($this->regex !== null && $this->context_quoted) ? $this->unquoteContext($this->regex) : $this->regex;
+	}
+
+	/**
+	 * Quotes special symbols in context.
+	 *
+	 * @param string $context
+	 * @param bool   $force_quote  true - enclose context in " even if it does not contain any special characters.
+	 *                             false - do nothing if the context does not contain any special characters.
+	 *
+	 * @return string
+	 */
+	private static function quoteContext(string $context, bool $force_quote = false): string {
+		$force_quote = $force_quote
+			|| (isset($context[0]) && (strpos(' "', $context[0]) !== false || strpos($context, '}') !== false));
+
+		return $force_quote ? '"'.strtr($context, '"', '\"').'"': $context;
+	}
+
+	/**
+	 * Returns the full macro without insignificant spaces around the context/regular expression.
+	 * The context/regular expression will be quoted only if it contains special characters.
+	 *
+	 * NOTE: To retrieve the original macro, use the getMatch() method.
+	 *
+	 * @return string
+	 */
+	public function getMinifiedMacro(): string {
+		if ($this->match === '') {
+			return '';
+		}
+
+		$macro = '{$'.$this->macro;
+
+		if ($this->context !== null) {
+			$macro .= ':'.self::quoteContext($this->getContext());
+		}
+
+		if ($this->regex !== null) {
+			$macro .= ':regex:'.self::quoteContext($this->getRegex());
+		}
+
+		return $macro.'}';
 	}
 }

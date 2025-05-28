@@ -1,72 +1,46 @@
-<?php
+<?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
 class CControllerScriptEdit extends CController {
 
-	protected function init() {
+	protected function init(): void {
 		$this->disableCsrfValidation();
 	}
 
-	protected function checkInput() {
+	protected function checkInput(): bool {
 		$fields = [
-			'scriptid' =>				'db scripts.scriptid',
-			'name' =>					'db scripts.name',
-			'scope' =>					'db scripts.scope| in '.implode(',', [ZBX_SCRIPT_SCOPE_ACTION, ZBX_SCRIPT_SCOPE_HOST, ZBX_SCRIPT_SCOPE_EVENT]),
-			'type' =>					'db scripts.type|in '.implode(',', [ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT, ZBX_SCRIPT_TYPE_IPMI, ZBX_SCRIPT_TYPE_SSH, ZBX_SCRIPT_TYPE_TELNET, ZBX_SCRIPT_TYPE_WEBHOOK, ZBX_SCRIPT_TYPE_URL]),
-			'execute_on' =>				'db scripts.execute_on|in '.implode(',', [ZBX_SCRIPT_EXECUTE_ON_AGENT, ZBX_SCRIPT_EXECUTE_ON_SERVER, ZBX_SCRIPT_EXECUTE_ON_PROXY]),
-			'menu_path' =>				'db scripts.menu_path',
-			'authtype' =>				'db scripts.authtype|in '.implode(',', [ITEM_AUTHTYPE_PASSWORD, ITEM_AUTHTYPE_PUBLICKEY]),
-			'username' =>				'db scripts.username',
-			'password' =>				'db scripts.password',
-			'publickey' =>				'db scripts.publickey',
-			'privatekey' =>				'db scripts.privatekey',
-			'passphrase' =>				'db scripts.password',
-			'port' =>					'db scripts.port',
-			'command' =>				'db scripts.command',
-			'commandipmi' =>			'db scripts.command',
-			'parameters' =>				'array',
-			'script' => 				'db scripts.command',
-			'timeout' => 				'db media_type.timeout',
-			'url' => 					'db scripts.url',
-			'new_window' => 			'db scripts.new_window',
-			'description' =>			'db scripts.description',
-			'host_access' =>			'db scripts.host_access|in '.implode(',', [PERM_READ, PERM_READ_WRITE]),
-			'groupid' =>				'db scripts.groupid',
-			'usrgrpid' =>				'db scripts.usrgrpid',
-			'hgstype' =>				'in 0,1',
-			'confirmation' =>			'db scripts.confirmation',
-			'enable_confirmation' =>	'in 1',
-			'form_refresh' =>			'int32'
+			'scriptid' =>	'db scripts.scriptid'
 		];
 
 		$ret = $this->validateInput($fields);
 
 		if (!$ret) {
-			$this->setResponse(new CControllerResponseFatal());
+			$this->setResponse(
+				(new CControllerResponseData(['main_block' => json_encode([
+					'error' => [
+						'messages' => array_column(get_and_clear_messages(), 'message')
+					]
+				])]))->disableView()
+			);
 		}
 
 		return $ret;
 	}
 
-	protected function checkPermissions() {
+	protected function checkPermissions(): bool {
 		if (!$this->checkAccess(CRoleHelper::UI_ADMINISTRATION_SCRIPTS)) {
 			return false;
 		}
@@ -82,11 +56,10 @@ class CControllerScriptEdit extends CController {
 		return true;
 	}
 
-	protected function doAction() {
+	protected function doAction(): void {
 		// Default values.
 		$data = [
-			'form_refresh' => $this->getInput('form_refresh', 0),
-			'scriptid' => 0,
+			'scriptid' => null,
 			'name' => '',
 			'scope' => ZBX_SCRIPT_SCOPE_ACTION,
 			'type' => ZBX_SCRIPT_TYPE_WEBHOOK,
@@ -113,7 +86,12 @@ class CControllerScriptEdit extends CController {
 			'confirmation' => '',
 			'enable_confirmation' => false,
 			'hgstype' => 0,
-			'actions' => []
+			'actions' => [],
+			'manualinput' => ZBX_SCRIPT_MANUALINPUT_DISABLED,
+			'manualinput_prompt' => '',
+			'manualinput_validator_type' => ZBX_SCRIPT_MANUALINPUT_TYPE_STRING,
+			'manualinput_validator' => '',
+			'manualinput_default_value' => ''
 		];
 
 		// Get values from the database.
@@ -121,7 +99,9 @@ class CControllerScriptEdit extends CController {
 			$scripts = API::Script()->get([
 				'output' => ['scriptid', 'name', 'command', 'host_access', 'usrgrpid', 'groupid', 'description',
 					'confirmation', 'type', 'execute_on', 'timeout', 'scope', 'port', 'authtype', 'username',
-					'password', 'publickey', 'privatekey', 'menu_path', 'parameters', 'url', 'new_window'
+					'password', 'publickey', 'privatekey', 'menu_path', 'parameters', 'url', 'new_window',
+					'manualinput', 'manualinput_prompt', 'manualinput_validator', 'manualinput_validator_type',
+					'manualinput_default_value'
 				],
 				'scriptids' => $this->getInput('scriptid'),
 				'selectActions' => []
@@ -162,6 +142,11 @@ class CControllerScriptEdit extends CController {
 				$data['menu_path'] = $script['menu_path'];
 				$data['parameters'] = $script['parameters'];
 				$data['actions'] = $script['actions'];
+				$data['manualinput'] = $script['manualinput'];
+				$data['manualinput_prompt'] = $script['manualinput_prompt'];
+				$data['manualinput_validator'] = $script['manualinput_validator'];
+				$data['manualinput_validator_type'] = $script['manualinput_validator_type'];
+				$data['manualinput_default_value'] = $script['manualinput_default_value'];
 
 				if ($data['type'] == ZBX_SCRIPT_TYPE_WEBHOOK) {
 					CArrayHelper::sort($data['parameters'], ['name']);
@@ -169,24 +154,11 @@ class CControllerScriptEdit extends CController {
 			}
 		}
 
-		// Overwrite with input variables.
-		$this->getInputs($data, ['name', 'command', 'commandipmi', 'script', 'host_access', 'usrgrpid', 'hgstype',
-			'groupid', 'description', 'enable_confirmation', 'confirmation', 'type', 'execute_on', 'timeout', 'scope',
-			'port', 'authtype', 'username', 'password', 'publickey', 'privatekey', 'passphrase', 'menu_path',
-			'parameters', 'url', 'new_window'
-		]);
-
-		if ($this->hasInput('form_refresh') && array_key_exists('name', $data['parameters'])
-				&& array_key_exists('value', $data['parameters'])) {
-			$data['parameters'] = array_map(function ($name, $value) {
-					return compact('name', 'value');
-				}, $data['parameters']['name'], $data['parameters']['value']
-			);
-		}
+		$data['parameters'] = array_values($data['parameters']);
 
 		// Get host group.
 		if ($data['groupid'] == 0) {
-			$data['hostgroup'] = null;
+			$data['hostgroup'] = [];
 		}
 		else {
 			$hostgroups = API::HostGroup()->get([
@@ -209,6 +181,9 @@ class CControllerScriptEdit extends CController {
 		CArrayHelper::sort($usergroups, ['name']);
 
 		$data['usergroups'] = array_column($usergroups, 'name', 'usrgrpid');
+		$data['user'] = ['debug_mode' => $this->getDebugMode()];
+
+		$data['is_global_scripts_enabled'] = CSettingsHelper::isGlobalScriptsEnabled();
 
 		$response = new CControllerResponseData($data);
 		$response->setTitle(_('Configuration of scripts'));

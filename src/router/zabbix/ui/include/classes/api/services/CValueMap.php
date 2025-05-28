@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -74,20 +69,19 @@ class CValueMap extends CApiService {
 
 		// Permission check.
 		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
-			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
+			if (self::$userData['ugsetid'] == 0) {
+				return $options['countOutput'] ? '0' : [];
+			}
 
-			$sql_parts['where'][] = 'EXISTS ('.
-				'SELECT NULL'.
-				' FROM hosts_groups hgg'.
-					' JOIN rights r'.
-						' ON r.id=hgg.groupid'.
-							' AND '.dbConditionInt('r.groupid', $userGroups).
-				' WHERE vm.hostid=hgg.hostid'.
-				' GROUP BY hgg.hostid'.
-				' HAVING MIN(r.permission)>'.PERM_DENY.
-					' AND MAX(r.permission)>='.zbx_dbstr($permission).
-				')';
+			$sql_parts['from'][] = 'host_hgset hh';
+			$sql_parts['from'][] = 'permission p';
+			$sql_parts['where'][] = 'vm.hostid=hh.hostid';
+			$sql_parts['where'][] = 'hh.hgsetid=p.hgsetid';
+			$sql_parts['where'][] = 'p.ugsetid='.self::$userData['ugsetid'];
+
+			if ($options['editable']) {
+				$sql_parts['where'][] = 'p.permission='.PERM_READ_WRITE;
+			}
 		}
 
 		// hostids
@@ -110,7 +104,7 @@ class CValueMap extends CApiService {
 			$db_valuemaps = $this->unsetExtraFields($db_valuemaps, ['valuemapid'], $options['output']);
 
 			if (!$options['preservekeys']) {
-				$db_valuemaps = zbx_cleanHashes($db_valuemaps);
+				$db_valuemaps = array_values($db_valuemaps);
 			}
 		}
 
@@ -470,7 +464,7 @@ class CValueMap extends CApiService {
 	 *
 	 * @throws APIException
 	 */
-	private static function checkUuidDuplicates(array $valuemaps, array $db_valuemaps = null): void {
+	private static function checkUuidDuplicates(array $valuemaps, ?array $db_valuemaps = null): void {
 		$valuemap_indexes = [];
 
 		foreach ($valuemaps as $i => $valuemap) {
@@ -510,7 +504,7 @@ class CValueMap extends CApiService {
 	 *
 	 * @throws APIException if the input is invalid.
 	 */
-	private function validateUpdate(array &$valuemaps, array &$db_valuemaps = null) {
+	private function validateUpdate(array &$valuemaps, ?array &$db_valuemaps = null) {
 		$api_input_rules = ['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY | API_NORMALIZE, 'uniq' => [['valuemapid']], 'fields' => [
 			'uuid' => 		['type' => API_ANY],
 			'valuemapid' =>	['type' => API_ID, 'flags' => API_REQUIRED],

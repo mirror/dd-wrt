@@ -1,46 +1,35 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "fatal.h"
+#define _GNU_SOURCE	/* required for getting a CPU program counter and registers in sys/ucontext.h */
 
-#include "config.h"
+#include "zbxnix.h"
+
+#include "fatal.h"
+#include "nix_internal.h"
 
 #ifdef HAVE_SIGNAL_H
-#	if !defined(_GNU_SOURCE)
-#		define _GNU_SOURCE	/* required for getting at program counter */
-#	endif
 #	include <signal.h>
 #endif
 
 #ifdef HAVE_SYS_UCONTEXT_H
-#	if !defined(_GNU_SOURCE)
-#		define _GNU_SOURCE	/* required for getting at program counter */
-#	endif
 #	include <sys/ucontext.h>
 #endif
 
 #ifdef	HAVE_EXECINFO_H
 #	include <execinfo.h>
 #endif
-
-#include "zbxcommon.h"
-#include "log.h"
 
 const char	*get_signal_name(int sig)
 {
@@ -362,7 +351,8 @@ void	zbx_log_fatal_info(void *context, unsigned int flags)
 #ifdef	ZBX_GET_PC
 	zabbix_log(LOG_LEVEL_CRIT, "================================");
 	zabbix_log(LOG_LEVEL_CRIT, "Please consider attaching a disassembly listing to your bug report.");
-	zabbix_log(LOG_LEVEL_CRIT, "This listing can be produced with, e.g., objdump -DSswx %s.", progname);
+	zabbix_log(LOG_LEVEL_CRIT, "This listing can be produced with, e.g., objdump -DSswx %s.",
+			nix_get_progname_cb()());
 #endif
 
 	zabbix_log(LOG_LEVEL_CRIT, "================================");

@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -41,12 +36,18 @@ class CImportReferencer {
 	protected $iconmaps = [];
 	protected $images = [];
 	protected $maps = [];
+	protected $services = [];
+	protected $slas = [];
+	protected $users = [];
+	protected $actions = [];
+	protected $media_types = [];
 	protected $template_dashboards = [];
 	protected $template_macros = [];
 	protected $host_macros = [];
 	protected $group_prototypes = [];
 	protected $host_prototype_macros = [];
 	protected $proxies = [];
+	protected $proxy_groups = [];
 	protected $host_prototypes = [];
 	protected $httptests = [];
 	protected $httpsteps = [];
@@ -62,12 +63,18 @@ class CImportReferencer {
 	protected $db_iconmaps;
 	protected $db_images;
 	protected $db_maps;
+	protected $db_services;
+	protected $db_slas;
+	protected $db_users;
+	protected $db_actions;
+	protected $db_media_types;
 	protected $db_template_dashboards;
 	protected $db_template_macros;
 	protected $db_host_macros;
 	protected $db_group_prototypes;
 	protected $db_host_prototype_macros;
 	protected $db_proxies;
+	protected $db_proxy_groups;
 	protected $db_host_prototypes;
 	protected $db_httptests;
 	protected $db_httpsteps;
@@ -506,6 +513,111 @@ class CImportReferencer {
 	}
 
 	/**
+	 * Get service ID by name.
+	 *
+	 * @param string $name
+	 *
+	 * @return string|null
+	 */
+	public function findServiceidByName(string $name): ?string {
+		if ($this->db_services === null) {
+			$this->selectServices();
+		}
+
+		foreach ($this->db_services as $serviceid => $service) {
+			if ($service['name'] === $name) {
+				return $serviceid;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get action ID by name.
+	 *
+	 * @param string $name
+	 *
+	 * @return string|null
+	 */
+	public function findSlaidByName(string $name): ?string {
+		if ($this->db_slas === null) {
+			$this->selectSlas();
+		}
+
+		foreach ($this->db_slas as $slaid => $sla) {
+			if ($sla['name'] === $name) {
+				return $slaid;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get user ID by username.
+	 *
+	 * @param string $username
+	 *
+	 * @return string|null
+	 */
+	public function findUseridByUsername(string $username): ?string {
+		if ($this->db_users === null) {
+			$this->selectUsers();
+		}
+
+		foreach ($this->db_users as $userid => $user) {
+			if ($user['username'] === $username) {
+				return $userid;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get action ID by name.
+	 *
+	 * @param string $name
+	 *
+	 * @return string|null
+	 */
+	public function findActionidByName(string $name): ?string {
+		if ($this->db_actions === null) {
+			$this->selectActions();
+		}
+
+		foreach ($this->db_actions as $actionid => $action) {
+			if ($action['name'] === $name) {
+				return $actionid;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get media type ID by name.
+	 *
+	 * @param string $name
+	 *
+	 * @return string|null
+	 */
+	public function findMediaTypeidByName(string $name): ?string {
+		if ($this->db_media_types === null) {
+			$this->selectMediaTypes();
+		}
+
+		foreach ($this->db_media_types as $mediatypeid => $media_type) {
+			if ($media_type['name'] === $name) {
+				return $mediatypeid;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Get template dashboard ID by dashboard UUID.
 	 *
 	 * @param string $uuid
@@ -629,18 +741,39 @@ class CImportReferencer {
 	/**
 	 * Get proxy ID by name.
 	 *
-	 * @param string $host
+	 * @param string $name
 	 *
 	 * @return string|null
 	 */
-	public function findProxyidByHost(string $host): ?string {
+	public function findProxyidByName(string $name): ?string {
 		if ($this->db_proxies === null) {
 			$this->selectProxies();
 		}
 
 		foreach ($this->db_proxies as $proxyid => $proxy) {
-			if ($proxy['host'] === $host) {
+			if ($proxy['name'] === $name) {
 				return $proxyid;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get proxy group ID by name.
+	 *
+	 * @param string $name
+	 *
+	 * @return string|null
+	 */
+	public function findProxyGroupIdByName(string $name): ?string {
+		if ($this->db_proxy_groups === null) {
+			$this->selectProxyGroups();
+		}
+
+		foreach ($this->db_proxy_groups as $proxy_groupid => $proxy_group) {
+			if ($proxy_group['name'] === $name) {
+				return $proxy_groupid;
 			}
 		}
 
@@ -950,7 +1083,6 @@ class CImportReferencer {
 	 * @param array $maps
 	 */
 	public function addMaps(array $maps) {
-//		$this->maps = array_unique(array_merge($this->maps, $maps));
 		$this->maps = $maps;
 	}
 
@@ -964,6 +1096,51 @@ class CImportReferencer {
 		$this->db_maps[$mapid] =[
 			'name' => $map['name']
 		];
+	}
+
+	/**
+	 * Add service names that need association with a database service ID.
+	 *
+	 * @param array $services
+	 */
+	public function addServices(array $services) {
+		$this->services = $services;
+	}
+
+	/**
+	 * Add sla names that need association with a database sla ID.
+	 *
+	 * @param array $slas
+	 */
+	public function addSlas(array $slas) {
+		$this->slas = $slas;
+	}
+
+	/**
+	 * Add user usernames that need association with a database user ID.
+	 *
+	 * @param array $users
+	 */
+	public function addUsers(array $users) {
+		$this->users = $users;
+	}
+
+	/**
+	 * Add action names that need association with a database action ID.
+	 *
+	 * @param array $actions
+	 */
+	public function addActions(array $actions) {
+		$this->actions = $actions;
+	}
+
+	/**
+	 * Add media type names that need association with a database media type ID.
+	 *
+	 * @param array $media_types
+	 */
+	public function addMediaTypes(array $media_types) {
+		$this->media_types = $media_types;
 	}
 
 	/**
@@ -1018,6 +1195,15 @@ class CImportReferencer {
 	 */
 	public function addProxies(array $proxies): void {
 		$this->proxies = $proxies;
+	}
+
+	/**
+	 * Add proxy group names that need association with a database proxy group ID.
+	 *
+	 * @param array $proxy_groups
+	 */
+	public function addProxyGroups(array $proxy_groups): void {
+		$this->proxy_groups = $proxy_groups;
 	}
 
 	/**
@@ -1131,7 +1317,6 @@ class CImportReferencer {
 		$this->db_hosts = API::Host()->get([
 			'output' => ['host'],
 			'filter' => ['host' => array_keys($this->hosts)],
-			'templated_hosts' => true,
 			'preservekeys' => true
 		]);
 
@@ -1421,6 +1606,101 @@ class CImportReferencer {
 	}
 
 	/**
+	 * Select service ids for previously added names.
+	 */
+	protected function selectServices(): void {
+		$this->db_services = [];
+
+		if (!$this->services) {
+			return;
+		}
+
+		$this->db_services = API::Service()->get([
+			'output' => ['name'],
+			'filter' => ['name' => array_keys($this->services)],
+			'preservekeys' => true
+		]);
+
+		$this->services = [];
+	}
+
+	/**
+	 * Select sla ids for previously added names.
+	 */
+	protected function selectSlas(): void {
+		$this->db_slas = [];
+
+		if (!$this->slas) {
+			return;
+		}
+
+		$this->db_slas = API::Sla()->get([
+			'output' => ['name'],
+			'filter' => ['name' => array_keys($this->slas)],
+			'preservekeys' => true
+		]);
+
+		$this->slas = [];
+	}
+
+	/**
+	 * Select user ids for previously added usernames.
+	 */
+	protected function selectUsers(): void {
+		$this->db_users = [];
+
+		if (!$this->users) {
+			return;
+		}
+
+		$this->db_users = API::User()->get([
+			'output' => ['username'],
+			'filter' => ['username' => array_keys($this->users)],
+			'preservekeys' => true
+		]);
+
+		$this->users = [];
+	}
+
+	/**
+	 * Select action ids for previously added names.
+	 */
+	protected function selectActions(): void {
+		$this->db_actions = [];
+
+		if (!$this->actions) {
+			return;
+		}
+
+		$this->db_actions = API::Action()->get([
+			'output' => ['name'],
+			'filter' => ['name' => array_keys($this->actions)],
+			'preservekeys' => true
+		]);
+
+		$this->actions = [];
+	}
+
+	/**
+	 * Select media type ids for previously added names.
+	 */
+	protected function selectMediaTypes(): void {
+		$this->db_media_types = [];
+
+		if (!$this->media_types) {
+			return;
+		}
+
+		$this->db_media_types = API::MediaType()->get([
+			'output' => ['name'],
+			'filter' => ['name' => array_keys($this->media_types)],
+			'preservekeys' => true
+		]);
+
+		$this->media_types = [];
+	}
+
+	/**
 	 * Select template dashboard IDs for previously added dashboard names and template IDs.
 	 *
 	 * @throws APIException
@@ -1596,12 +1876,31 @@ class CImportReferencer {
 		}
 
 		$this->db_proxies = API::Proxy()->get([
-			'output' => ['host'],
-			'filter' => ['host' => array_keys($this->proxies)],
+			'output' => ['name'],
+			'filter' => ['name' => array_keys($this->proxies)],
 			'preservekeys' => true
 		]);
 
 		$this->proxies = [];
+	}
+
+	/**
+	 * Select proxy group IDs for previously added proxy group names.
+	 */
+	protected function selectProxyGroups(): void {
+		$this->db_proxy_groups = [];
+
+		if (!$this->proxy_groups) {
+			return;
+		}
+
+		$this->db_proxy_groups = API::ProxyGroup()->get([
+			'output' => ['name'],
+			'filter' => ['name' => array_keys($this->proxy_groups)],
+			'preservekeys' => true
+		]);
+
+		$this->proxy_groups = [];
 	}
 
 	/**

@@ -1,23 +1,17 @@
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
-#include "zbxsysinfo.h"
 #include "hardware.h"
 #include "../common/zbxsysinfo_common.h"
 #include "../sysinfo.h"
@@ -68,7 +62,7 @@ static void	remove_sigbus_handler(void)
 
 /******************************************************************************
  *                                                                            *
- * Comments: read the string #num from dmi data into a buffer                 *
+ * Comments: reads string #num from dmi data into buffer                      *
  *                                                                            *
  ******************************************************************************/
 static size_t	get_dmi_string(char *buf, int bufsize, unsigned char *data, int num)
@@ -533,9 +527,9 @@ int	system_hw_devices(AGENT_REQUEST *request, AGENT_RESULT *result)
 	type = get_rparam(request, 0);
 
 	if (NULL == type || '\0' == *type || 0 == strcmp(type, "pci"))
-		return execute_str("lspci", result);	/* list PCI devices by default */
+		return execute_str("lspci", result, request->timeout);	/* list PCI devices by default */
 	else if (0 == strcmp(type, "usb"))
-		return execute_str("lsusb", result);
+		return execute_str("lsusb", result, request->timeout);
 	else
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
@@ -546,7 +540,7 @@ int	system_hw_devices(AGENT_REQUEST *request, AGENT_RESULT *result)
 int	system_hw_macaddr(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	size_t			offset;
-	int			s, i, show_names;
+	int			s, show_names;
 	char			*format, *p, *regex, address[MAX_STRING_LEN], buffer[MAX_STRING_LEN];
 	struct ifreq		*ifr;
 	struct ifconf		ifc;
@@ -592,7 +586,7 @@ int	system_hw_macaddr(AGENT_REQUEST *request, AGENT_RESULT *result)
 	zbx_vector_str_reserve(&addresses, 8);
 
 	/* go through the list */
-	for (i = ifc.ifc_len / sizeof(struct ifreq); 0 < i--; ifr++)
+	for (int i = ifc.ifc_len / sizeof(struct ifreq); 0 < i--; ifr++)
 	{
 		if (NULL != regex && '\0' != *regex && NULL == zbx_regexp_match(ifr->ifr_name, regex, NULL))
 			continue;
@@ -633,7 +627,7 @@ int	system_hw_macaddr(AGENT_REQUEST *request, AGENT_RESULT *result)
 	{
 		zbx_vector_str_sort(&addresses, ZBX_DEFAULT_STR_COMPARE_FUNC);
 
-		for (i = 0; i < addresses.values_num; i++)
+		for (int i = 0; i < addresses.values_num; i++)
 		{
 			if (1 == show_names && NULL != (p = strchr(addresses.values[i], ' ')))
 				*p = ']';

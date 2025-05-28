@@ -1,21 +1,16 @@
 <?php declare(strict_types = 0);
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -26,18 +21,24 @@
  * @var array $data
  */
 
-$groupids = new CWidgetFieldMultiSelectGroupView($data['fields']['groupids'], $data['captions']['groups']['groupids']);
+$groupids = array_key_exists('groupids', $data['fields'])
+	? new CWidgetFieldMultiSelectGroupView($data['fields']['groupids'])
+	: null;
 
 (new CWidgetFormView($data))
 	->addField($groupids)
-	->addField(
-		new CWidgetFieldMultiSelectGroupView($data['fields']['exclude_groupids'],
-			$data['captions']['groups']['exclude_groupids']
-		)
+	->addField(array_key_exists('exclude_groupids', $data['fields'])
+		? new CWidgetFieldMultiSelectGroupView($data['fields']['exclude_groupids'])
+		: null
 	)
-	->addField(
-		(new CWidgetFieldMultiSelectHostView($data['fields']['hostids'], $data['captions']['hosts']['hostids']))
-			->setFilterPreselect(['id' => $groupids->getId(), 'submit_as' => 'groupid'])
+	->addField(array_key_exists('hostids', $data['fields'])
+		? (new CWidgetFieldMultiSelectHostView($data['fields']['hostids']))
+			->setFilterPreselect([
+				'id' => $groupids->getId(),
+				'accept' => CMultiSelect::FILTER_PRESELECT_ACCEPT_ID,
+				'submit_as' => 'groupid'
+			])
+		: null
 	)
 	->addField(
 		new CWidgetFieldTextBoxView($data['fields']['problem'])
@@ -51,11 +52,12 @@ $groupids = new CWidgetFieldMultiSelectGroupView($data['fields']['groupids'], $d
 	->addField(
 		new CWidgetFieldTagsView($data['fields']['tags'])
 	)
-	->addField(
-		new CWidgetFieldRadioButtonListView($data['fields']['show_type'])
+	->addField(array_key_exists('show_type', $data['fields'])
+		? new CWidgetFieldRadioButtonListView($data['fields']['show_type'])
+		: null
 	)
 	->addField(
-		new CWidgetFieldRadioButtonListView($data['fields']['layout'])
+		new CWidgetFieldRadioButtonListView($data['fields']['layout']),
 	)
 	->addField(
 		new CWidgetFieldRadioButtonListView($data['fields']['show_opdata'])
@@ -63,8 +65,9 @@ $groupids = new CWidgetFieldMultiSelectGroupView($data['fields']['groupids'], $d
 	->addField(
 		new CWidgetFieldCheckBoxView($data['fields']['show_suppressed'])
 	)
-	->addField(
-		new CWidgetFieldCheckBoxView($data['fields']['hide_empty_groups'])
+	->addField(array_key_exists('hide_empty_groups', $data['fields'])
+		? new CWidgetFieldCheckBoxView($data['fields']['hide_empty_groups'])
+		: null
 	)
 	->addField(
 		new CWidgetFieldRadioButtonListView($data['fields']['ext_ack'])

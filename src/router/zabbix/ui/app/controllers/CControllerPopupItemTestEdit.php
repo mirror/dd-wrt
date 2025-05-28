@@ -1,21 +1,16 @@
 <?php
 /*
-** Zabbix
-** Copyright (C) 2001-2024 Zabbix SIA
+** Copyright (C) 2001-2025 Zabbix SIA
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
+** This program is free software: you can redistribute it and/or modify it under the terms of
+** the GNU Affero General Public License as published by the Free Software Foundation, version 3.
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-** GNU General Public License for more details.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+** without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+** See the GNU Affero General Public License for more details.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+** You should have received a copy of the GNU Affero General Public License along with this program.
+** If not, see <https://www.gnu.org/licenses/>.
 **/
 
 
@@ -34,6 +29,8 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 			'data'					=> 'array',
 			'delay'					=> 'string',
 			'get_value'				=> 'in 0,1',
+			'test_with'				=> 'in '.implode(',', [self::TEST_WITH_SERVER, self::TEST_WITH_PROXY]),
+			'proxyid'				=> 'id',
 			'headers'				=> 'array',
 			'hostid'				=> 'db hosts.hostid',
 			'http_authtype'			=> 'in '.implode(',', [ZBX_HTTP_AUTH_NONE, ZBX_HTTP_AUTH_BASIC, ZBX_HTTP_AUTH_NTLM, ZBX_HTTP_AUTH_KERBEROS, ZBX_HTTP_AUTH_DIGEST, ITEM_AUTHTYPE_PASSWORD, ITEM_AUTHTYPE_PUBLICKEY]),
@@ -45,13 +42,14 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 			'interfaceid'			=> 'db interface.interfaceid',
 			'ipmi_sensor'			=> 'string',
 			'itemid'				=> 'db items.itemid',
-			'item_type'				=> 'in '.implode(',', [ITEM_TYPE_ZABBIX, ITEM_TYPE_TRAPPER, ITEM_TYPE_SIMPLE, ITEM_TYPE_INTERNAL, ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_HTTPTEST, ITEM_TYPE_EXTERNAL, ITEM_TYPE_DB_MONITOR, ITEM_TYPE_IPMI, ITEM_TYPE_SSH, ITEM_TYPE_TELNET, ITEM_TYPE_CALCULATED, ITEM_TYPE_JMX, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DEPENDENT, ITEM_TYPE_HTTPAGENT, ITEM_TYPE_SNMP, ITEM_TYPE_SCRIPT]),
+			'item_type'				=> 'in '.implode(',', [ITEM_TYPE_ZABBIX, ITEM_TYPE_TRAPPER, ITEM_TYPE_SIMPLE, ITEM_TYPE_INTERNAL, ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_HTTPTEST, ITEM_TYPE_EXTERNAL, ITEM_TYPE_DB_MONITOR, ITEM_TYPE_IPMI, ITEM_TYPE_SSH, ITEM_TYPE_TELNET, ITEM_TYPE_CALCULATED, ITEM_TYPE_JMX, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DEPENDENT, ITEM_TYPE_HTTPAGENT, ITEM_TYPE_SNMP, ITEM_TYPE_SCRIPT, ITEM_TYPE_BROWSER]),
 			'jmx_endpoint'			=> 'string',
 			'output_format'			=> 'in '.implode(',', [HTTPCHECK_STORE_RAW, HTTPCHECK_STORE_JSON]),
 			'params_ap'				=> 'string',
 			'params_es'				=> 'string',
 			'params_f'				=> 'string',
 			'script'				=> 'string',
+			'browser_script'		=> 'string',
 			'password'				=> 'string',
 			'post_type'				=> 'in '.implode(',', [ZBX_POSTTYPE_RAW, ZBX_POSTTYPE_JSON, ZBX_POSTTYPE_XML]),
 			'posts'					=> 'string',
@@ -73,7 +71,7 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 			'timeout'				=> 'string',
 			'username'				=> 'string',
 			'url'					=> 'string',
-			'value_type'			=> 'in '.implode(',', [ITEM_VALUE_TYPE_UINT64, ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_STR, ITEM_VALUE_TYPE_LOG, ITEM_VALUE_TYPE_TEXT]),
+			'value_type'			=> 'in '.implode(',', [ITEM_VALUE_TYPE_UINT64, ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_STR, ITEM_VALUE_TYPE_LOG, ITEM_VALUE_TYPE_TEXT, ITEM_VALUE_TYPE_BINARY]),
 			'valuemapid'			=> 'int32',
 			'verify_host'			=> 'in 0,1',
 			'verify_peer'			=> 'in 0,1'
@@ -84,82 +82,108 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 			unset($_REQUEST['interfaceid']);
 		}
 
-		$ret = $this->validateInput($fields);
+		$result = $this->validateInput($fields) && $this->checkTestInputs();
 
-		if ($ret) {
-			$testable_item_types = self::getTestableItemTypes($this->getInput('hostid', '0'));
-			$this->item_type = $this->hasInput('item_type') ? $this->getInput('item_type') : -1;
-			$this->test_type = $this->getInput('test_type');
-			$this->is_item_testable = in_array($this->item_type, $testable_item_types);
+		if (!$result) {
+			$output = [];
 
-			// Check if key is valid for item types it's mandatory.
-			if (in_array($this->item_type, $this->item_types_has_key_mandatory)) {
-				$item_key_parser = new CItemKey();
-
-				if ($item_key_parser->parse($this->getInput('key', '')) != CParser::PARSE_SUCCESS) {
-					error(_s('Incorrect value for field "%1$s": %2$s.', 'key_', $item_key_parser->getError()));
-					$ret = false;
-				}
+			if ($messages = get_and_clear_messages()) {
+				$output['error']['messages'] = array_column($messages, 'message');
 			}
 
-			/*
-			 * Either the item must be testable or at least one preprocessing test must be passed ("Test" button should
-			 * be disabled otherwise).
-			 */
-			$steps = $this->getInput('steps', []);
-			if ($ret && $steps) {
-				$steps = normalizeItemPreprocessingSteps($steps);
+			$this->setResponse((new CControllerResponseData(['main_block' => json_encode($output)]))->disableView());
+		}
 
-				if ($this->test_type == self::ZBX_TEST_TYPE_LLD) {
-					$lld_instance = new CDiscoveryRule();
-					$steps_validation_response = $lld_instance->validateItemPreprocessingSteps($steps);
+		return $result;
+	}
 
-					if ($steps_validation_response !== true) {
-						error($steps_validation_response);
-						$ret = false;
-					}
-				}
-				else {
-					switch ($this->test_type) {
-						case self::ZBX_TEST_TYPE_ITEM:
-							$api_input_rules = CItem::getPreprocessingValidationRules();
-							break;
+	private function checkTestInputs(): bool {
+		$testable_item_types = self::getTestableItemTypes((string) $this->getInput('hostid', '0'));
+		$this->item_type = $this->hasInput('item_type') ? (int) $this->getInput('item_type') : -1;
+		$this->test_type = (int) $this->getInput('test_type');
+		$this->is_item_testable = in_array($this->item_type, $testable_item_types);
 
-						case self::ZBX_TEST_TYPE_ITEM_PROTOTYPE:
-							$api_input_rules = CItemPrototype::getPreprocessingValidationRules();
-							break;
-					}
+		// Check if key is valid for item types it's mandatory.
+		if (in_array($this->item_type, $this->item_types_has_key_mandatory)) {
+			$item_key_parser = new CItemKey();
 
-					if (!CApiInputValidator::validate($api_input_rules, $steps, '/', $error)) {
-						error($error);
-						$ret = false;
-					}
-				}
-			}
-			elseif ($ret && !$this->is_item_testable) {
-				error(_s('Test of "%1$s" items is not supported.', item_type2str($this->item_type)));
-				$ret = false;
+			if ($item_key_parser->parse($this->getInput('key', '')) != CParser::PARSE_SUCCESS) {
+				error(_s('Incorrect value for field "%1$s": %2$s.', 'key_', $item_key_parser->getError()));
+
+				return false;
 			}
 		}
 
-		if (!$ret) {
-			$this->setResponse(
-				(new CControllerResponseData(['main_block' => json_encode([
-					'error' => [
-						'messages' => array_column(get_and_clear_messages(), 'message')
-					]
-				])]))->disableView()
-			);
+		/*
+		* Either the item must be testable or at least one preprocessing test must be passed ("Test" button should
+		* be disabled otherwise).
+		*/
+		$steps = $this->getInput('steps', []);
+
+		if ($steps) {
+			$steps = normalizeItemPreprocessingSteps($steps);
+
+			switch ($this->test_type) {
+				case self::ZBX_TEST_TYPE_ITEM:
+					$api_input_rules = CItem::getPreprocessingValidationRules();
+					break;
+
+				case self::ZBX_TEST_TYPE_ITEM_PROTOTYPE:
+					$api_input_rules = CItemPrototype::getPreprocessingValidationRules(API_ALLOW_LLD_MACRO);
+					break;
+
+				case self::ZBX_TEST_TYPE_LLD:
+					$api_input_rules = CDiscoveryRule::getPreprocessingValidationRules();
+					break;
+			}
+
+			if (!CApiInputValidator::validate($api_input_rules, $steps, '/', $error)) {
+				error($error);
+
+				return false;
+			}
+
+			if ($this->test_type != self::ZBX_TEST_TYPE_LLD) {
+				$api_input_rules = ['type' => API_OBJECTS, 'uniq' => [['type', 'params']], 'fields' => [
+					'type' =>	['type' => API_ANY],
+					'params' =>	['type' => API_ANY]
+				]];
+				$_steps = [];
+
+				foreach ($steps as $i => $step) {
+					if ($step['type'] == ZBX_PREPROC_VALIDATE_NOT_SUPPORTED) {
+						[$match_type] = explode("\n", $step['params']);
+
+						if ($match_type == ZBX_PREPROC_MATCH_ERROR_ANY) {
+							$_steps[$i] = [
+								'type' => ZBX_PREPROC_VALIDATE_NOT_SUPPORTED,
+								'params' => ZBX_PREPROC_MATCH_ERROR_ANY
+							];
+						}
+					}
+				}
+
+				if (!CApiInputValidator::validateUniqueness($api_input_rules, $_steps, '', $error)) {
+					error($error);
+
+					return false;
+				}
+			}
+		}
+		elseif (!$this->is_item_testable) {
+			error(_s('Test of "%1$s" items is not supported.', item_type2str($this->item_type)));
+
+			return false;
 		}
 
-		return $ret;
+		return true;
 	}
 
 	protected function doAction() {
 		// VMware and icmpping simple checks are not supported.
 		$key = $this->hasInput('key') ? $this->getInput('key') : '';
-		if ($this->item_type == ITEM_TYPE_SIMPLE
-				&& (substr($key, 0, 7) === 'vmware.' || substr($key, 0, 8) === 'icmpping')) {
+
+		if ($this->item_type == ITEM_TYPE_SIMPLE && (strpos($key, 'vmware.') === 0 || strpos($key, 'icmpping') === 0)) {
 			$this->is_item_testable = false;
 		}
 
@@ -168,19 +192,9 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 		$inputs = $this->getItemTestProperties($this->getInputAll());
 
 		// Work with preprocessing steps.
-		$preprocessing_steps_input = $this->getInput('steps', []);
-		$preprocessing_steps_input = normalizeItemPreprocessingSteps($preprocessing_steps_input);
-		$preprocessing_steps = [];
-		foreach ($preprocessing_steps_input as $preproc) {
-			if ($preproc['type'] == ZBX_PREPROC_VALIDATE_NOT_SUPPORTED) {
-				array_unshift($preprocessing_steps, $preproc);
-			}
-			else {
-				$preprocessing_steps[] = $preproc;
-			}
-		}
-
-		$preprocessing_types = zbx_objectValues($preprocessing_steps, 'type');
+		$preprocessing_steps = CItemGeneralHelper::sortPreprocessingSteps($this->getInput('steps', []));
+		$preprocessing_steps = normalizeItemPreprocessingSteps($preprocessing_steps);
+		$preprocessing_types = array_column($preprocessing_steps, 'type');
 		$preprocessing_names = get_preprocessing_types(null, false, $preprocessing_types);
 		$support_lldmacros = ($this->test_type == self::ZBX_TEST_TYPE_ITEM_PROTOTYPE);
 		$show_prev = (count(array_intersect($preprocessing_types, self::$preproc_steps_using_prev_value)) > 0);
@@ -190,7 +204,8 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 		$texts_support_user_macros = [];
 		$texts_support_lld_macros = [];
 		$supported_macros = [];
-		foreach (array_keys(array_intersect_key($inputs, $this->macros_by_item_props)) as $field) {
+
+		foreach (array_keys(array_intersect_key($inputs['item'], $this->macros_by_item_props)) as $field) {
 			// Special processing for calculated item formula.
 			if ($field === 'params_f') {
 				$expression_parser = new CExpressionParser([
@@ -201,7 +216,7 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 					'empty_host' => true
 				]);
 
-				if ($expression_parser->parse($inputs[$field]) == CParser::PARSE_SUCCESS) {
+				if ($expression_parser->parse($inputs['item'][$field]) == CParser::PARSE_SUCCESS) {
 					$tokens = $expression_parser->getResult()->getTokensOfTypes([
 						CExpressionParserResult::TOKEN_TYPE_USER_MACRO,
 						CExpressionParserResult::TOKEN_TYPE_LLD_MACRO,
@@ -247,8 +262,13 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 											}
 											break;
 
-										case CHistFunctionParser::PARAM_TYPE_PERIOD:
 										case CHistFunctionParser::PARAM_TYPE_QUOTED:
+											$match = CHistFunctionParser::unquoteParam($parameter['match']);
+											$texts_support_user_macros[] = $match;
+											$texts_support_lld_macros[] = $match;
+											break;
+
+										case CHistFunctionParser::PARAM_TYPE_PERIOD:
 										case CHistFunctionParser::PARAM_TYPE_UNQUOTED:
 											$texts_support_user_macros[] = $parameter['match'];
 											$texts_support_lld_macros[] = $parameter['match'] ;
@@ -265,28 +285,36 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 			$macros = $this->macros_by_item_props[$field];
 			unset($macros['support_lld_macros'], $macros['support_user_macros']);
 
-			if ($field === 'query_fields' || $field === 'headers' || $field === 'parameters') {
-				if (!array_key_exists($field, $inputs) || !$inputs[$field]) {
+			if (in_array($field, ['query_fields', 'headers', 'parameters'])) {
+				if (!array_key_exists($field, $inputs['item']) || !$inputs['item'][$field]) {
 					continue;
 				}
 
-				foreach (['name', 'value'] as $key) {
-					$texts_having_macros = array_filter($inputs[$field][$key], function($str) {
-						return (strstr($str, '{') !== false);
-					});
+				foreach ($inputs['item'][$field] as $num => $row) {
+					if ($row['name'] === '') {
+						unset($inputs['item'][$field][$num]);
+					}
+				}
 
-					if ($texts_having_macros) {
-						$supported_macros = array_merge_recursive($supported_macros, $macros);
-						$texts_support_macros = array_merge($texts_support_macros, $texts_having_macros);
-						$texts_support_user_macros = array_merge($texts_support_user_macros, $texts_having_macros);
+				$texts_having_macros = array_merge(
+					array_column($inputs['item'][$field], 'name'),
+					array_column($inputs['item'][$field], 'value')
+				);
+				$texts_having_macros = array_filter($texts_having_macros, static function(string $str): bool {
+					return (strstr($str, '{') !== false);
+				});
 
-						if ($support_lldmacros) {
-							$texts_support_lld_macros = array_merge($texts_support_lld_macros, $texts_having_macros);
-						}
+				if ($texts_having_macros) {
+					$supported_macros = array_merge_recursive($supported_macros, $macros);
+					$texts_support_macros = array_merge($texts_support_macros, $texts_having_macros);
+					$texts_support_user_macros = array_merge($texts_support_user_macros, $texts_having_macros);
+
+					if ($support_lldmacros) {
+						$texts_support_lld_macros = array_merge($texts_support_lld_macros, $texts_having_macros);
 					}
 				}
 			}
-			elseif (strstr($inputs[$field], '{') !== false) {
+			elseif (strstr($inputs['item'][$field], '{') !== false) {
 				if ($field === 'key') {
 					$item_key_parser = new CItemKey();
 
@@ -295,7 +323,7 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 						: [];
 				}
 				else {
-					$texts_having_macros = [$inputs[$field]];
+					$texts_having_macros = [$inputs['item'][$field]];
 				}
 
 				// Field support macros like {HOST.*}, {ITEM.*} etc.
@@ -332,27 +360,31 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 			'texts_support_user_macros' => $texts_support_user_macros,
 			'texts_support_lld_macros' => $texts_support_lld_macros,
 			'hostid' => $this->host ? $this->host['hostid'] : 0,
-			'macros_values' => $this->getSupportedMacros($inputs + ['interfaceid' => $this->getInput('interfaceid', 0)])
+			'macros_values' => $this->getSupportedMacros($inputs['item']
+				+ CArrayHelper::getByKeys($inputs['host'], ['interfaceid'])
+				+ ['interfaceid' => $this->getInput('interfaceid', 0)]
+			)
 		]);
 
 		$show_warning = false;
 
-		if (array_key_exists('interface', $inputs)) {
-			if (array_key_exists('address', $inputs['interface'])
-					&& strstr($inputs['interface']['address'], ZBX_SECRET_MASK) !== false) {
-				$inputs['interface']['address'] = '';
+		if (array_key_exists('interface', $inputs['host'])) {
+			if (array_key_exists('address', $inputs['host']['interface'])
+					&& strpos($inputs['host']['interface']['address'], ZBX_SECRET_MASK) !== false) {
+				$inputs['host']['interface']['address'] = '';
 				$show_warning = true;
 			}
 
-			if (array_key_exists('port', $inputs['interface']) && $inputs['interface']['port'] === ZBX_SECRET_MASK) {
-				$inputs['interface']['port'] = '';
+			if (array_key_exists('port', $inputs['host']['interface'])
+					&& $inputs['host']['interface']['port'] === ZBX_SECRET_MASK) {
+				$inputs['host']['interface']['port'] = '';
 				$show_warning = true;
 			}
 
-			if (array_key_exists('details', $inputs['interface'])) {
-				foreach ($inputs['interface']['details'] as $field => $value) {
-					if (strstr($value, ZBX_SECRET_MASK) !== false) {
-						$inputs['interface']['details'][$field] = '';
+			if (array_key_exists('details', $inputs['host']['interface'])) {
+				foreach ($inputs['host']['interface']['details'] as $field => $value) {
+					if (strpos($value, ZBX_SECRET_MASK) !== false) {
+						$inputs['host']['interface']['details'][$field] = '';
 						$show_warning = true;
 					}
 				}
@@ -406,10 +438,38 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 		}
 		unset($step);
 
+		if (in_array($this->item_type, $this->items_support_proxy)) {
+			if (array_key_exists('proxyid', $data)) {
+				$proxyid = $data['proxyid'];
+			}
+			elseif ($this->host['status'] != HOST_STATUS_TEMPLATE) {
+				$proxyid = $this->host['proxyid'];
+			}
+			else {
+				$proxyid = 0;
+			}
+
+			if (array_key_exists('test_with', $data)) {
+				$test_with = $data['test_with'];
+			}
+			else {
+				$test_with = $this->getInput('test_with', $proxyid == 0
+					? self::TEST_WITH_SERVER
+					: self::TEST_WITH_PROXY
+				);
+			}
+		}
+		else {
+			$test_with = self::TEST_WITH_SERVER;
+			$proxyid = 0;
+		}
+
 		$this->setResponse(new CControllerResponseData([
 			'title' => _('Test item'),
 			'steps' => $preprocessing_steps,
 			'value' => array_key_exists('value', $data) ? $data['value'] : '',
+			'not_supported' => array_key_exists('not_supported', $data) ? $data['not_supported'] : 0,
+			'runtime_error' => array_key_exists('runtime_error', $data) ? $data['runtime_error'] : '',
 			'eol' => array_key_exists('eol', $data) ? (int) $data['eol'] : ZBX_EOL_LF,
 			'macros' => $usermacros['macros'],
 			'show_prev' => $show_prev,
@@ -426,7 +486,13 @@ class CControllerPopupItemTestEdit extends CControllerPopupItemTest {
 				: $this->getInput('get_value', 0),
 			'is_item_testable' => $this->is_item_testable,
 			'inputs' => $inputs,
-			'proxies' => in_array($this->item_type, $this->items_support_proxy) ? $this->getHostProxies() : [],
+			'test_with' => $test_with,
+			'ms_proxy' => $proxyid != 0
+				? CArrayHelper::renameObjectsKeys(API::Proxy()->get([
+					'output' => ['proxyid', 'name'],
+					'proxyids' => [$proxyid]
+				]), ['proxyid' => 'id'])
+				: [],
 			'proxies_enabled' => in_array($this->item_type, $this->items_support_proxy),
 			'interface_address_enabled' => (array_key_exists($this->item_type, $this->items_require_interface)
 				&& $this->items_require_interface[$this->item_type]['address']
