@@ -133,7 +133,7 @@ module_param(mode, charp, 0);
 MODULE_PARM_DESC(mode, "Mode of operation; 0 for balance-rr, "
 		       "1 for active-backup, 2 for balance-xor, "
 		       "3 for broadcast, 4 for 802.3ad, 5 for balance-tlb, "
-		       "6 for balance-alb, 7 for weighted-rr, 8 duplex, 9 duplex-slave");
+		       "6 for balance-alb, 8 duplex, 9 duplex-slave");
 module_param(primary, charp, 0);
 MODULE_PARM_DESC(primary, "Primary network device to use");
 module_param(primary_reselect, charp, 0);
@@ -206,7 +206,6 @@ const struct bond_parm_tbl bond_mode_tbl[] = {
 {	"802.3ad",		BOND_MODE_8023AD},
 {	"balance-tlb",		BOND_MODE_TLB},
 {	"balance-alb",		BOND_MODE_ALB},
-{	"weighted-rr",		BOND_MODE_WEIGHTED_RR},
 {	"duplex",		BOND_MODE_DUPLEX},
 {	"duplex-slave",		BOND_MODE_DUPLEX_SLAVE},
 {	NULL,			-1},
@@ -265,7 +264,6 @@ const char *bond_mode_name(int mode)
 		[BOND_MODE_8023AD] = "IEEE 802.3ad Dynamic link aggregation",
 		[BOND_MODE_TLB] = "transmit load balancing",
 		[BOND_MODE_ALB] = "adaptive load balancing",
-		[BOND_MODE_WEIGHTED_RR] = "weighted round robin (weighted-rr)",
 		[BOND_MODE_DUPLEX] = "duplex master mode",
 		[BOND_MODE_DUPLEX_SLAVE] = "duplex slave mode",
 	};
@@ -1402,25 +1400,6 @@ out:
 	return features;
 }
 
-int bond_set_weight(struct net_device *bond_dev, struct net_device *slave_dev,
-		u16 weight)
-{
-	struct slave* slave;
-	slave = bond_get_slave_by_dev(netdev_priv(bond_dev), slave_dev);
-	if (!slave) {
-		return -EINVAL;
-	}
-
-	slave->weight = weight;
-
-	if (weight) {
-		slave->link = BOND_LINK_UP;
-		bond_set_active_slave(slave);
-	}
-	return 0;
-}
-
-
 #define BOND_VLAN_FEATURES	(NETIF_F_ALL_CSUM | NETIF_F_SG | \
 				 NETIF_F_FRAGLIST | NETIF_F_ALL_TSO | \
 				 NETIF_F_HIGHDMA | NETIF_F_LRO)
@@ -1712,9 +1691,6 @@ int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev)
 		pr_debug("Error %d calling dev_set_mtu\n", res);
 		goto err_free;
 	}
-
-	/* slave default weight = 1 */
-	new_slave->weight = 1;
 
 	/*
 	 * Save slave's original ("permanent") mac address for modes
@@ -3695,10 +3671,7 @@ static int bond_do_ioctl(struct net_device *bond_dev, struct ifreq *ifr, int cmd
 		return -EPERM;
 
 
- 	if (cmd != SIOCBONDSETWEIGHT)
-		slave_dev = dev_get_by_name(net, ifr->ifr_slave);
- 	else
- 		slave_dev = dev_get_by_name(net, ifr->ifr_weight_slave);
+	slave_dev = dev_get_by_name(net, ifr->ifr_slave);
 
 	pr_debug("slave_dev=%p:\n", slave_dev);
 
@@ -3723,9 +3696,6 @@ static int bond_do_ioctl(struct net_device *bond_dev, struct ifreq *ifr, int cmd
 		case BOND_CHANGE_ACTIVE_OLD:
 		case SIOCBONDCHANGEACTIVE:
 			res = bond_ioctl_change_active(bond_dev, slave_dev);
-			break;
-		case SIOCBONDSETWEIGHT:
-			res = bond_set_weight(bond_dev, slave_dev, ifr->ifr_weight_weight);
 			break;
 		default:
 			res = -EOPNOTSUPP;
@@ -4070,63 +4040,6 @@ out:
 	return NETDEV_TX_OK;
 }
 
-static int bond_xmit_weighted_rr(struct sk_buff *skb, struct net_device *bond_dev)
-{
-	struct bonding *bond = netdev_priv(bond_dev);
-	struct slave *slave, *start_at;
-	int i;
-	int res = 1;
-	int were_weight_tokens_recharged = 0;
-
-
-
-	read_lock(&bond->curr_slave_lock);
-	slave = start_at = bond->curr_active_slave;
-	read_unlock(&bond->curr_slave_lock);
-
-	if (!slave) {
-		goto out;
-	}
-
-try_send:
-	bond_for_each_slave_from(bond, slave, i, start_at) {
-		if (IS_UP(slave->dev) &&
-		    (slave->weight_tokens > 0) &&
-			(slave->link == BOND_LINK_UP) &&
-		    (bond_is_active_slave(slave))) {
-			
-			res = bond_dev_queue_xmit(bond, skb, slave->dev);
-			(slave->weight_tokens)--;
-			write_lock(&bond->curr_slave_lock);
-			bond->curr_active_slave = slave->next;
-			write_unlock(&bond->curr_slave_lock);
-
-			goto out;
-		}
-	}
-	
-	if (were_weight_tokens_recharged == 0) {
-		read_lock(&bond->curr_slave_lock);
-		slave = start_at = bond->curr_active_slave;
-		read_unlock(&bond->curr_slave_lock);
-
-		bond_for_each_slave_from(bond, slave, i, start_at) {
-			slave->weight_tokens = slave->weight;
-		}
-
-		were_weight_tokens_recharged = 1;
-		goto try_send;
-	}
-
-out:
-	if (res) {
-		/* no suitable interface, frame not sent */
-		dev_kfree_skb(skb);
-	}
-	return 0;
-}
-
-
 static int bond_xmit_duplex_master(struct sk_buff *skb, struct net_device *bond_dev)
 {
 	struct bonding *bond = netdev_priv(bond_dev);
@@ -4395,8 +4308,6 @@ static netdev_tx_t __bond_start_xmit(struct sk_buff *skb, struct net_device *dev
 	case BOND_MODE_ALB:
 	case BOND_MODE_TLB:
 		return bond_alb_xmit(skb, dev);
-	case BOND_MODE_WEIGHTED_RR:
-		return bond_xmit_weighted_rr(skb, dev);
 	case BOND_MODE_DUPLEX:
 		return bond_xmit_duplex_master(skb, dev);
 	case BOND_MODE_DUPLEX_SLAVE:
