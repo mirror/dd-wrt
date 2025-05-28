@@ -203,8 +203,6 @@ void __init identify_rtl9302(void)
 	case 0x93036810:
 		soc_info.name = "RTL9303 8x10G";
 		break;
-	default:
-		soc_info.name = "RTL9302";
 	}
 }
 
@@ -295,12 +293,10 @@ void __init prom_init(void)
 		break;
 	case 0x9310:
 		soc_info.name = "RTL9310";
-		identify_rtl9302();
 		soc_info.family = RTL9310_FAMILY_ID;
 		break;
 	case 0x9311:
 		soc_info.name = "RTL9311";
-		identify_rtl9302();
 		soc_info.family = RTL9310_FAMILY_ID;
 		break;
 	case 0x9312:
