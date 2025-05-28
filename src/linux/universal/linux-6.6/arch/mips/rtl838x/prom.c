@@ -43,6 +43,7 @@ void __init rtl9310_l2cache_init(void)
 	config2 = read_c0_config2();
 	l2_linesize = (config2 >> RTL9310_MIPSIA_L2SIZE_OFFSET) &
 		      RTL9310_MIPSIA_L2SIZE_MASK;
+	pr_info("L2 linesize is %d\n", 1 << l2_linesize);
 	/*if enable l2_bypass mode, linesize will be 0       */
 	/*if arch not implement L2cache, linesize will be 0  */
 	if (RTL9310_MIPSIA_L2_LINESIZE_0 < l2_linesize &&
@@ -50,6 +51,9 @@ void __init rtl9310_l2cache_init(void)
 		    RTL9310_MIPSIA_L2_LINESIZE_256) { //Scache linesize >0 and <=256 (B)
 		init_l2_cache();
 	}
+	l2_linesize = (config2 >> RTL9310_MIPSIA_L2SIZE_OFFSET) &
+		      RTL9310_MIPSIA_L2SIZE_MASK;
+	pr_info("L2 linesize is %d\n", 1 << l2_linesize);
 }
 
 void plat_smp_init_secondary(void)
@@ -213,7 +217,6 @@ void __init prom_init(void)
 	/* uart0 */
 	setup_8250_early_printk_port(0xb8002000, 2, 0);
 
-	pr_info("L2 linesize is %d\n", 1 << l2_linesize);
 	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	pr_info("RTL838X model is %x\n", model);
 	model = model >> 16 & 0xFFFF;
