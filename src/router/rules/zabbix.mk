@@ -11,11 +11,12 @@ zabbix-install:
 	install -D zabbix/config/zabbix.nvramconfig $(INSTALLDIR)/zabbix/etc/config/zabbix.nvramconfig
 #	install -D zabbix/config/zabbix.startup $(INSTALLDIR)/zabbix/etc/config/zabbix.startup
 	install -D zabbix/config/zabbix.webservices $(INSTALLDIR)/zabbix/etc/config/zabbix.webservices
-	install -D zabbix/config/zbx_template.xml $(INSTALLDIR)/zabbix/etc/zabbix_template.xml
 ifeq ($(CONFIG_MADWIFI),y)
+	install -D zabbix/config/zbx_mac80211_template.xml $(INSTALLDIR)/zabbix/etc/zabbix_template.xml
 	install -D zabbix/scripts/wclients.ath $(INSTALLDIR)/zabbix/usr/sbin/wclients
 	install -D zabbix/scripts/clients.ath $(INSTALLDIR)/zabbix/usr/sbin/clients
 else
+	install -D zabbix/config/zbx_brcm_template.xml $(INSTALLDIR)/zabbix/etc/zabbix_template.xml
 	install -D zabbix/scripts/wclients.brcm $(INSTALLDIR)/zabbix/usr/sbin/wclients
 	install -D zabbix/scripts/clients.brcm $(INSTALLDIR)/zabbix/usr/sbin/clients
 endif
