@@ -9,7 +9,7 @@ zabbix: zlib
 
 zabbix-install:
 	install -D zabbix/config/zabbix.nvramconfig $(INSTALLDIR)/zabbix/etc/config/zabbix.nvramconfig
-	install -D zabbix/config/zabbix.startup $(INSTALLDIR)/zabbix/etc/config/zabbix.startup
+#	install -D zabbix/config/zabbix.startup $(INSTALLDIR)/zabbix/etc/config/zabbix.startup
 	install -D zabbix/config/zabbix.webservices $(INSTALLDIR)/zabbix/etc/config/zabbix.webservices
 	install -D zabbix/config/zbx_template.xml $(INSTALLDIR)/zabbix/etc/zabbix_template.xml
 ifeq ($(CONFIG_MADWIFI),y)
