@@ -1507,7 +1507,7 @@ int set_hwaddr(const char *name, const char *hwaddr)
 
 char *get_hwaddr(const char *name, char *eabuf)
 {
-	unsigned char buf[6];
+	unsigned char buf[6] = {0};
 	if (!ifexists(name) && *nvram_safe_get("lan_hwaddr")) {
 		if (*nvram_safe_get("lan_hwaddr"))
 			strcpy(eabuf, nvram_safe_get("lan_hwaddr"));
@@ -1520,7 +1520,8 @@ char *get_hwaddr(const char *name, char *eabuf)
 		if (ether_etoa(mac, eabuf)) {
 			return eabuf;
 		}
-	}
+	 } else 
+			strcpy(eabuf, "00:00:00:00:00:00");
 	return NULL;
 }
 
