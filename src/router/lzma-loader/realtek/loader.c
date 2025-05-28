@@ -130,8 +130,9 @@ static inline int read_byte(void *object, const unsigned char **buffer, UInt32 *
 	*bufferSize = 1;
 	val = get_byte();
 	*buffer = &val;
-	if (icnt++ % (1024 * 10) == 0)
-		board_putc('.');
+	if (icnt++ % (1024 * 10) == 0) {
+		printf("[%d%%]\r", (100 * icnt) /  lzma_datasize);
+	}
 	return LZMA_RESULT_OK;
 }
 
