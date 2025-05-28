@@ -1496,35 +1496,6 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 	return ret;
 }
 
-int set_hwaddr(const char *name, const char *hwaddr)
-{
-	unsigned char mac[6];
-	if (ether_atoe(hwaddr, mac)) {
-		return set_ether_hwaddr(name, mac);
-	}
-	return -1;
-}
-
-char *get_hwaddr(const char *name, char *eabuf)
-{
-	unsigned char buf[6] = { 0 };
-	if (!ifexists(name) && *nvram_safe_get("lan_hwaddr")) {
-		if (*nvram_safe_get("lan_hwaddr"))
-			strcpy(eabuf, nvram_safe_get("lan_hwaddr"));
-		else
-			strcpy(eabuf, "00:00:00:00:00:00");
-		return eabuf;
-	}
-	unsigned char *mac = get_ether_hwaddr(name, buf);
-	if (mac) {
-		if (ether_etoa(mac, eabuf)) {
-			return eabuf;
-		}
-	} else
-		strcpy(eabuf, "00:00:00:00:00:00");
-	return NULL;
-}
-
 int getipv4fromipv6(char *dstip, const char *srcip)
 {
 	char ipcopy[INET6_ADDRSTRLEN];
