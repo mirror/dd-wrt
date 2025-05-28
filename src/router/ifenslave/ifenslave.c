@@ -109,7 +109,6 @@ static const char *usage_msg =
 "Usage: ifenslave [-f] <master-if> <slave-if> [<slave-if>...]\n"
 "       ifenslave -d   <master-if> <slave-if> [<slave-if>...]\n"
 "       ifenslave -c   <master-if> <slave-if>\n"
-"       ifenslave -w   <master-if> <slave-if> <weight>\n"
 "       ifenslave --help\n";
 
 static const char *help_msg =
@@ -139,9 +138,6 @@ static const char *help_msg =
 "\n"
 "       To show all interfaces info\n"
 "       # ifenslave {-a|--all-interfaces}\n"
-"\n"
-"       To change iface weight to 3\n"
-"       # ifenslave -w bond0 eth0 3\n"
 "\n"
 "       To be more verbose\n"
 "       # ifenslave {-v|--verbose} ...\n"
@@ -180,7 +176,6 @@ struct option longopts[] = {
 	{"all-interfaces",	0, 0, 'a'},	/* Show all interfaces. */
 	{"change-active",	0, 0, 'c'},	/* Change the active slave.  */
 	{"detach",		0, 0, 'd'},	/* Detach a slave interface. */
-	{"weight",		0, 0, 'w'},	/* Detach a slave interface. */
 	{"force",		0, 0, 'f'},	/* Force the operation. */
 	{"help",		0, 0, 'h'},	/* Give help */
 	{"usage",		0, 0, 'u'},	/* Give usage */
@@ -197,7 +192,6 @@ opt_d = 0,	/* Detach a slave interface. */
 opt_f = 0,	/* Force the operation. */
 opt_h = 0,	/* Help */
 opt_u = 0,	/* Usage */
-opt_w = 0,	/* Weight */
 opt_v = 0,	/* Verbose flag. */
 opt_V = 0;	/* Version */
 
@@ -205,7 +199,6 @@ int skfd = -1;		/* AF_INET socket for ioctl() calls.*/
 int abi_ver = 0;	/* userland - kernel ABI version */
 int hwaddr_set = 0;	/* Master's hwaddr is set */
 int saved_errno;
-int weight;
 
 struct ifreq master_mtu, master_flags, master_hwaddr;
 struct ifreq slave_mtu, slave_flags, slave_hwaddr;
@@ -236,8 +229,6 @@ static int get_if_settings(char *ifname, struct dev_ifr ifra[]);
 static int get_slave_flags(char *slave_ifname);
 static int set_master_hwaddr(char *master_ifname, struct sockaddr *hwaddr);
 static int set_slave_hwaddr(char *slave_ifname, struct sockaddr *hwaddr);
-static int set_slave_weight(char *master_ifname, char* slave_ifname,
-		int weight);
 static int set_slave_mtu(char *slave_ifname, int mtu);
 static int set_if_flags(char *ifname, short flags);
 static int set_if_up(char *ifname, short flags);
@@ -258,7 +249,7 @@ int main(int argc, char *argv[])
 	int res = 0;
 	int exclusive = 0;
 
-	while ((c = getopt_long(argc, argv, "acdfhuwvV", longopts, 0)) != EOF) {
+	while ((c = getopt_long(argc, argv, "acdfhuvV", longopts, 0)) != EOF) {
 		switch (c) {
 		case 'a': opt_a++; exclusive++; break;
 		case 'c': opt_c++; exclusive++; break;
@@ -266,7 +257,6 @@ int main(int argc, char *argv[])
 		case 'f': opt_f++; exclusive++; break;
 		case 'h': opt_h++; exclusive++; break;
 		case 'u': opt_u++; exclusive++; break;
-		case 'w': opt_w++; ; break;
 		case 'v': opt_v++; break;
 		case 'V': opt_V++; exclusive++; break;
 
@@ -434,36 +424,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if (opt_w) {
-		if (*spp == NULL) {
-			fprintf(stderr, usage_msg);
-			res = 2;
-			goto out;
-		}
-		weight = strtol(*spp++, 0, 10);
-		if (errno == ERANGE) {
-			fprintf(stderr, "invalid weight");
-			res = 2;
-			goto out;
-		}
-		res = get_slave_flags(slave_ifname);
-		if (res) {
-			fprintf(stderr,
-				"Slave '%s': Error: get flags failed. "
-				"Aborting\n",
-				slave_ifname);
-			goto out;
-		}
-		res = set_slave_weight(master_ifname, slave_ifname, weight);
-		if (res) {
-			fprintf(stderr,
-				"Master '%s', Slave '%s': Error: "
-				"Change weight failed\n",
-				master_ifname, slave_ifname);
-		}
-		goto out;
-	}
-
 	/* Accepts only one slave */
 	if (opt_c) {
 		/* change active slave */
@@ -1001,33 +961,6 @@ static int set_slave_hwaddr(char *slave_ifname, struct sockaddr *hwaddr)
 			"%2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x.\n",
 			slave_ifname, addr[0], addr[1], addr[2],
 			addr[3], addr[4], addr[5]);
-	}
-
-	return res;
-}
-
-static int set_slave_weight(char *master_ifname, char *slave_ifname, int weight)
-{
-	struct ifreq ifr;
-	int res = 0;
-
-	if (!(slave_flags.ifr_flags & IFF_SLAVE)) {
-		fprintf(stderr,
-			"Illegal operation: The specified slave interface "
-			"'%s' is not a slave\n",
-			slave_ifname);
-		return 1;
-	}
-
-	strncpy(ifr.ifr_name, master_ifname, IFNAMSIZ);
-	strncpy(ifr.ifr_weight_slave, slave_ifname, IFNAMSIZ);
-	ifr.ifr_weight_weight = weight;
-	if (ioctl(skfd, SIOCBONDSETWEIGHT, &ifr) < 0) {
-		saved_errno = errno;
-		v_print("Master '%s': Error: SIOCBONDSETWEIGHT failed: "
-			"%s\n",
-			master_ifname, strerror(saved_errno));
-		res = 1;
 	}
 
 	return res;
