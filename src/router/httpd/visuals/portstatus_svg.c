@@ -90,9 +90,7 @@ static void show_svg(webs_t wp, int speed, int fd, char *color, char *shadow)
 		sprintf(spd, "Down");
 	else
 		sprintf(spd, "%d%s", speed, fd ? "FD" : "HD");
-	websWrite(
-		wp,
-		"<img src=\"/port.svg?%s,%s,%s\" width=\"%d%%\" heigth=\"%d%%\">", spd, color, shadow, 100, 25 / MAXCOL);
+	websWrite(wp, "<img src=\"/port.svg?%s,%s,%s\" width=\"%d%%\" heigth=\"%d%%\">", spd, color, shadow, 100, 25 / MAXCOL);
 }
 static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 {

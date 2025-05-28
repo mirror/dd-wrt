@@ -81,26 +81,36 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td style=\"border: 1px solid black;\">");
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan_forwarding)\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
-				  nvram_default_matchi("br0_vlan", 1, 0) ? "checked" : "",
-				  tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan_forwarding)\" name=\"%s\" value=\"1\" %s />%s<br />\n",
+				bridge_name, nvram_default_matchi("br0_vlan", 1, 0) ? "checked" : "",
+				tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
 			sprintf(bridge_name, "bridgead%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan8021ad)\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
-				  nvram_default_matchi("br0_ad", 1, 0) ? "checked" : "",
-				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan8021ad)\" name=\"%s\" value=\"1\" %s />%s<br />\n",
+				bridge_name, nvram_default_matchi("br0_ad", 1, 0) ? "checked" : "",
+				tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
 			sprintf(bridge_name, "bridgenoll%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.ll_learn)\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
-				  nvram_default_matchi("br0_noll", 1, 0) ? "" : "checked",
-				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.ll_learn)\" name=\"%s\" value=\"1\" %s />%s<br />\n",
+				bridge_name, nvram_default_matchi("br0_noll", 1, 0) ? "" : "checked",
+				tran_string(buf, sizeof(buf), "networking.ll_learn"));
 			sprintf(bridge_name, "bridgetrunk%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.trunking)\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
-				  nvram_default_matchi("br0_trunk", 1, 0) ? "checked" : "",
-				  tran_string(buf, sizeof(buf), "networking.trunking"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.trunking)\" name=\"%s\" value=\"1\" %s />%s<br />\n",
+				bridge_name, nvram_default_matchi("br0_trunk", 1, 0) ? "checked" : "",
+				tran_string(buf, sizeof(buf), "networking.trunking"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.snooping)\" name=\"%s\" value=\"1\" %s />%s\n", bridge_name,
-			  nvram_default_matchi("br0_mcast", 1, 0) ? "checked" : "",
-			  tran_string(buf, sizeof(buf), "networking.snooping"));
+		websWrite(
+			wp,
+			"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.snooping)\" name=\"%s\" value=\"1\" %s />%s\n",
+			bridge_name, nvram_default_matchi("br0_mcast", 1, 0) ? "checked" : "",
+			tran_string(buf, sizeof(buf), "networking.snooping"));
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<td style=\"vertical-align:top\">");
@@ -110,17 +120,22 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</td>");
 
 		sprintf(bridge_name, "bridgeforward_delay%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.forward_delay)\" name=\"%s\" size=\"2\" value=\"15\" /></td>\n",
-			  bridge_name);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.forward_delay)\" name=\"%s\" size=\"2\" value=\"15\" /></td>\n",
+			bridge_name);
 		sprintf(bridge_name, "bridgemax_age%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.max_age)\" name=\"%s\" size=\"2\" value=\"20\" /></td>\n",
-			  bridge_name);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.max_age)\" name=\"%s\" size=\"2\" value=\"20\" /></td>\n",
+			bridge_name);
 
 		// Bridges are bridges, Ports are ports, show it again HERE
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp,
-			  "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"1500\" /></td>\n",
-			  bridge_name);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"1500\" /></td>\n",
+			bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
 		websWrite(
@@ -158,9 +173,10 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		if (!bridge || !stp)
 			break;
 		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp,
-			  "<tr><td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(nas.raidnametbl)\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
-			  bridge_name, bridge);
+		websWrite(
+			wp,
+			"<tr><td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(nas.raidnametbl)\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
+			bridge_name, bridge);
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td style=\"vertical-align:top\">");
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, stp, "min-width=\"0\"");
@@ -171,32 +187,43 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			sprintf(bridge_name, "bridgevlan%d", count);
 			char vlan_filter[32];
 			sprintf(vlan_filter, "%s_vlan", bridge);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan_forwarding)\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
-				  nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
-				  tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan_forwarding)\" name=\"%s\" value=\"1\" %s>%s<br />\n",
+				bridge_name, nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
+				tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
 			sprintf(bridge_name, "bridgead%d", count);
 			sprintf(vlan_filter, "%s_ad", bridge);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan8021ad)\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
-				  nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
-				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan8021ad)\" name=\"%s\" value=\"1\" %s>%s<br />\n",
+				bridge_name, nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
+				tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
 
 			sprintf(bridge_name, "bridgenoll%d", count);
 			sprintf(vlan_filter, "%s_noll", bridge);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.ll_learn)\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
-				  nvram_default_matchi(vlan_filter, 1, 0) ? "" : "checked",
-				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.ll_learn)\" name=\"%s\" value=\"1\" %s>%s<br />\n",
+				bridge_name, nvram_default_matchi(vlan_filter, 1, 0) ? "" : "checked",
+				tran_string(buf, sizeof(buf), "networking.ll_learn"));
 
 			sprintf(bridge_name, "bridgetrunk%d", count);
 			sprintf(vlan_filter, "%s_trunk", bridge);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.trunking)\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
-				  nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
-				  tran_string(buf, sizeof(buf), "networking.trunking"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.trunking)\" name=\"%s\" value=\"1\" %s>%s<br />\n",
+				bridge_name, nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
+				tran_string(buf, sizeof(buf), "networking.trunking"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
 		sprintf(mcast, "%s_mcast", bridge);
-		websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.snooping)\" name=\"%s\" value=\"1\" %s />%s\n", bridge_name,
-			  nvram_default_matchi(mcast, 1, 0) ? "checked" : "", tran_string(buf, sizeof(buf), "networking.snooping"));
+		websWrite(
+			wp,
+			"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.snooping)\" name=\"%s\" value=\"1\" %s />%s\n",
+			bridge_name, nvram_default_matchi(mcast, 1, 0) ? "checked" : "",
+			tran_string(buf, sizeof(buf), "networking.snooping"));
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<td style=\"vertical-align:top\">");
@@ -206,16 +233,22 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</td>");
 
 		sprintf(bridge_name, "bridgeforward_delay%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.forward_delay)\" name=\"%s\" size=\"2\" value=\"%s\" /></td>\n",
-			  bridge_name, forward_delay);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.forward_delay)\" name=\"%s\" size=\"2\" value=\"%s\" /></td>\n",
+			bridge_name, forward_delay);
 		sprintf(bridge_name, "bridgemax_age%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.max_age)\" name=\"%s\" size=\"2\" value=\"%s\" /></td>\n",
-			  bridge_name, max_age);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.max_age)\" name=\"%s\" size=\"2\" value=\"%s\" /></td>\n",
+			bridge_name, max_age);
 
 		// Bridges are bridges, Ports are ports, show it again HERE
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
-			  bridge_name, mtu != NULL ? mtu : "1500");
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
+			bridge_name, mtu != NULL ? mtu : "1500");
 		if (!strcmp(bridge, "br0")) {
 			sprintf(bridge_name, "lan_hwaddr");
 			websWrite(
@@ -260,8 +293,10 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 
 	for (i = count; i < realcount; i++) {
 		sprintf(bridge_name, "bridgename%d", i);
-		websWrite(wp, "<tr><td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.nas.raidnametbl)\" name=\"%s\" size=\"3\" /></td>\n",
-			  bridge_name);
+		websWrite(
+			wp,
+			"<tr><td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.nas.raidnametbl)\" name=\"%s\" size=\"3\" /></td>\n",
+			bridge_name);
 		sprintf(bridge_name, "bridgestp%d", i);
 		websWrite(wp, "<td style=\"vertical-align:top\">");
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, "STP", "min-width=\"0\"");
@@ -269,21 +304,30 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td style=\"border: 1px solid black;\">");
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan_forwarding)\" name=\"%s\" value=\"1\">%s<br />\n", bridge_name,
-				  tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan_forwarding)\" name=\"%s\" value=\"1\">%s<br />\n",
+				bridge_name, tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
 			sprintf(bridge_name, "bridgead%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan8021ad)\" name=\"%s\" value=\"1\">%s<br />\n", bridge_name,
-				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.vlan8021ad)\" name=\"%s\" value=\"1\">%s<br />\n",
+				bridge_name, tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
 			sprintf(bridge_name, "bridgenoll%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.ll_learn)\" name=\"%s\" value=\"1\" checked>%s<br />\n", bridge_name,
-				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.ll_learn)\" name=\"%s\" value=\"1\" checked>%s<br />\n",
+				bridge_name, tran_string(buf, sizeof(buf), "networking.ll_learn"));
 			sprintf(bridge_name, "bridgetrunk%d", count);
-			websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.trunking)\" name=\"%s\" value=\"1\">%s<br />\n", bridge_name,
-				  tran_string(buf, sizeof(buf), "networking.trunking"));
+			websWrite(
+				wp,
+				"<input type=\"checkbox\" aria-labeledby=\"Capture(networking.trunking)\" name=\"%s\" value=\"1\">%s<br />\n",
+				bridge_name, tran_string(buf, sizeof(buf), "networking.trunking"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		websWrite(wp, "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.snooping)\" name=\"%s\" value=\"1\" />%s\n", bridge_name,
-			  tran_string(buf, sizeof(buf), "networking.snooping"));
+		websWrite(wp,
+			  "<input type=\"checkbox\" aria-labeledby=\"Capture(networking.snooping)\" name=\"%s\" value=\"1\" />%s\n",
+			  bridge_name, tran_string(buf, sizeof(buf), "networking.snooping"));
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", i);
 		websWrite(wp, "<td style=\"vertical-align:top\">");
@@ -293,15 +337,21 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</td>");
 
 		sprintf(bridge_name, "bridgeforward_delay%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.forward_delay)\" name=\"%s\" size=\"2\" value=\"15\" /></td>\n",
-			  bridge_name);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.forward_delay)\" name=\"%s\" size=\"2\" value=\"15\" /></td>\n",
+			bridge_name);
 		sprintf(bridge_name, "bridgemax_age%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.max_age)\" name=\"%s\" size=\"2\" value=\"20\" /></td>\n",
-			  bridge_name);
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"Capture(networking.max_age)\" name=\"%s\" size=\"2\" value=\"20\" /></td>\n",
+			bridge_name);
 
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
-			  bridge_name, "1500");
+		websWrite(
+			wp,
+			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
+			bridge_name, "1500");
 		websWrite(wp, "<td></td>");
 		websWrite(
 			wp,
