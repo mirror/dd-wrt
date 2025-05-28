@@ -352,7 +352,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			wp,
 			"<td style=\"vertical-align:top\"><input class=\"num\" aria-labeledby=\"MTU\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n",
 			bridge_name, "1500");
-		websWrite(wp, "<td></td>");
+		websWrite(wp, "<td>&nbsp;</td>");
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script></tr>\n",
