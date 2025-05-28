@@ -176,7 +176,7 @@ static int lzma_decompress(unsigned char *outStream)
 	ret = LzmaDecode(&vs, &callback, outStream, lzma_outsize, &i);
 	if (ret != LZMA_RESULT_OK) {
 		printf("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n", ret, lzma_data + inptr, lzma_outsize, inptr, i);
-		return 0;
+		return ret;
 	}
 	return ret;
 }
