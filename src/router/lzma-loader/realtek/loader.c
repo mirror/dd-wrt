@@ -25,7 +25,7 @@
 
 #include "config.h"
 #include "cache.h"
-//#include "printf.h"
+#include "printf.h"
 #include "LzmaDecode.h"
 
 extern void board_putc(int ch);
@@ -85,6 +85,8 @@ static unsigned long lzma_datasize;
 static unsigned long lzma_outsize;
 static unsigned long kernel_la;
 
+static unsigned inptr = 0;	/* index of next byte to be processed in inbuf */
+
 #ifdef CONFIG_KERNEL_CMDLINE
 #define kernel_argc 2
 static const char kernel_cmdline[] = CONFIG_KERNEL_CMDLINE;
@@ -109,62 +111,78 @@ static __inline__ unsigned long get_be32(void *buf)
 	return (((unsigned long)p[0] << 24) + ((unsigned long)p[1] << 16) + ((unsigned long)p[2] << 8) + (unsigned long)p[3]);
 }
 
-static __inline__ unsigned char lzma_get_byte(void)
+static inline unsigned char get_byte(void)
 {
-	unsigned char c;
+	static unsigned int vall;
 
-	lzma_datasize--;
-	c = *lzma_data++;
-
-	return c;
+	if (((unsigned int)inptr % 4) == 0) {
+		vall = *(unsigned int *)lzma_data;
+		lzma_data += 4;
+	}
+	return *(((unsigned char *)&vall) + (inptr++ & 3));
 }
 
-static int lzma_init_props(void)
+/* reading 4 bytes at once is way more efficient and speeds up decompression */
+static unsigned int icnt = 1;
+static inline int read_byte(void *object, const unsigned char **buffer, UInt32 * bufferSize)
 {
-	unsigned char props[LZMA_PROPERTIES_SIZE];
-	int res;
-	int i;
-
-	/* read lzma properties */
-	for (i = 0; i < LZMA_PROPERTIES_SIZE; i++)
-		props[i] = lzma_get_byte();
-
-	/* read the lower half of uncompressed size in the header */
-	lzma_outsize = ((SizeT)lzma_get_byte()) + ((SizeT)lzma_get_byte() << 8) + ((SizeT)lzma_get_byte() << 16) +
-		       ((SizeT)lzma_get_byte() << 24);
-
-	/* skip rest of the header (upper half of uncompressed size) */
-	for (i = 0; i < 4; i++)
-		lzma_get_byte();
-
-	res = LzmaDecodeProperties(&lzma_state.Properties, props, LZMA_PROPERTIES_SIZE);
-	return res;
+	static unsigned char val;
+	*bufferSize = 1;
+	val = get_byte();
+	*buffer = &val;
+	if (icnt++ % (1024 * 10) == 0)
+		board_putc('.');
+	return LZMA_RESULT_OK;
 }
+
 
 static int lzma_decompress(unsigned char *outStream)
 {
-	SizeT ip, op;
+
+	unsigned int i;
+	unsigned char *workspace;
+	unsigned int lc, lp, pb;
+
+	CLzmaDecoderState vs;
+	ILzmaInCallback callback;
 	int ret;
+	
+	// lzma args
+	i = get_byte();
+	lc = i % 9, i = i / 9;
+	lp = i % 5, pb = i / 5;
 
-	lzma_state.Probs = (CProb *)workspace;
+	vs.Properties.lc = lc;
+	vs.Properties.lp = lp;
+	vs.Properties.pb = pb;
 
-	ret = LzmaDecode(&lzma_state, lzma_data, lzma_datasize, &ip, outStream, lzma_outsize, &op);
-
-	if (ret != LZMA_RESULT_OK) {
-		int i;
-
-		DBG("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n", ret, lzma_data + ip, lzma_outsize, ip, op);
-
-		for (i = 0; i < 16; i++)
-			DBG("%02x ", lzma_data[ip + i]);
-
-		DBG("\n");
+	// skip dictionary size
+	for (i = 0; i < 4; i++)
+		get_byte();
+	// get uncompressed size
+	int a, b, c, d;
+	a = get_byte();
+	b = get_byte();
+	c = get_byte();
+	d = get_byte();
+	lzma_outsize = (a) + (b << 8) + (c << 16) + (d << 24);
+	workspace = outStream + lzma_outsize;
+	vs.Probs = (CProb *) workspace;
+	printf("Decompressing %d bytes to address 0x%08x\n", lzma_outsize, kernel_la);
+	// skip high order bytes
+	for (i = 0; i < 4; i++)
+		get_byte();
+	// decompress kernel
+	callback.Read = &read_byte;
+	i = 0;
+	ret = LzmaDecode(&vs, &callback, outStream, lzma_outsize, &i);
+	if ( ret != LZMA_RESULT_OK) {
+		printf("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n", ret, lzma_data + inptr, lzma_outsize, inptr, i);
+		return 0;
 	}
-
 	return ret;
 }
 
-#if (LZMA_WRAPPER)
 static void lzma_init_data(void)
 {
 	extern unsigned char _lzma_data_start[];
@@ -173,47 +191,8 @@ static void lzma_init_data(void)
 	kernel_la = LOADADDR;
 	lzma_data = _lzma_data_start;
 	lzma_datasize = _lzma_data_end - _lzma_data_start;
+	inptr = 0;
 }
-#else
-static void lzma_init_data(void)
-{
-	struct image_header *hdr = NULL;
-	unsigned char *flash_base;
-	unsigned long flash_ofs;
-	unsigned long kernel_ofs;
-	unsigned long kernel_size;
-
-	flash_base = (unsigned char *)KSEG1ADDR(CONFIG_FLASH_START);
-
-	print("Looking for OpenWrt image... ");
-
-	for (flash_ofs = CONFIG_FLASH_OFFS; flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX); flash_ofs += CONFIG_FLASH_STEP) {
-		unsigned long magic;
-		unsigned char *p;
-
-		p = flash_base + flash_ofs;
-		magic = get_be32(p);
-		if (magic == IH_MAGIC_OKLI) {
-			hdr = (struct image_header *)p;
-			break;
-		}
-	}
-
-	if (hdr == NULL) {
-		print("not found!\n");
-		halt();
-	}
-
-	print("found at 0x%08x\n", flash_base + flash_ofs);
-
-	kernel_ofs = sizeof(struct image_header);
-	kernel_size = get_be32(&hdr->ih_size);
-	kernel_la = get_be32(&hdr->ih_load);
-
-	lzma_data = flash_base + flash_ofs + kernel_ofs;
-	lzma_datasize = kernel_size;
-}
-#endif /* (LZMA_WRAPPER) */
 
 void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a2, unsigned long reg_a3)
 {
@@ -222,18 +201,11 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a
 
 	board_init();
 
-	print("\n\nOpenWrt kernel loader for MIPS based SoC\n");
+	print("\n\nDD-WRT Kernel lzma Loader\n");
 	print("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
+	print("Copyright (C) 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>\n");
 
 	lzma_init_data();
-
-	res = lzma_init_props();
-	if (res != LZMA_RESULT_OK) {
-		print("Incorrect LZMA stream properties!\n");
-		halt();
-	}
-
-	print("Decompressing kernel... ");
 
 	res = lzma_decompress((unsigned char *)kernel_la);
 	if (res != LZMA_RESULT_OK) {
@@ -247,7 +219,7 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a
 		}
 		halt();
 	} else {
-		print("done!\n");
+		print("\ndone!\n");
 	}
 
 	flush_cache(kernel_la, lzma_outsize);
