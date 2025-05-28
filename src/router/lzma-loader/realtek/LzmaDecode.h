@@ -24,7 +24,7 @@
 
 #include "LzmaTypes.h"
 
-/* #define _LZMA_IN_CB */
+#define _LZMA_IN_CB
 /* Use callback for input data */
 
 /* #define _LZMA_OUT_READ */
