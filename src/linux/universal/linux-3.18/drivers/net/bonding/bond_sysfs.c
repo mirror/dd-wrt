@@ -193,12 +193,7 @@ static ssize_t bonding_show_slaves(struct device *d,
 			res += sprintf(buf + res, "++more++ ");
 			break;
 		}
-		if (bond->params.mode == BOND_MODE_WEIGHTED_RR) {
-			res += sprintf(buf + res, "%s %d ", slave->dev->name,
-					slave->weight);
-		} else {
-			res += sprintf(buf + res, "%s ", slave->dev->name);
-		}
+		res += sprintf(buf + res, "%s ", slave->dev->name);
 	}
 
 	rtnl_unlock();
