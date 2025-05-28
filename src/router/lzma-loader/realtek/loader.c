@@ -492,12 +492,10 @@ static void detect(void)
 		break;
 	case 0x9310:
 		name = "RTL9310";
-		identify_rtl9302();
 		family = RTL9310_FAMILY_ID;
 		break;
 	case 0x9311:
 		name = "RTL9311";
-		identify_rtl9302();
 		family = RTL9310_FAMILY_ID;
 		break;
 	case 0x9312:
