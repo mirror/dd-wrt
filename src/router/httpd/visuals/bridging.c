@@ -262,7 +262,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			if (hwmac && !*(mac))
 				nvram_nset(hwmac, "%s_hwaddr", bridge);
 			mac = nvram_nget("%s_hwaddr", bridge);
-			if (!strcmp(mac, "")) {
+			if (!*mac) {
 				websWrite(wp, "<td style=\"vertical-align:top\" class=\"center\">...</td>\n");
 			} else {
 				websWrite(
