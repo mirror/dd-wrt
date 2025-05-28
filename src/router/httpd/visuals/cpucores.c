@@ -199,7 +199,17 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "%d", freq / 1000000);
 		return;
 	} else {
-		websWrite(wp, "800");
+		char *str = cpustring();
+		if (!strncmp(str, "RTL839", 6))
+			websWrite(wp, "750");
+		else if (!strncmp(str, "RTL838", 6))
+			websWrite(wp, "500");
+		else if (!strncmp(str, "RTL930", 6))
+			websWrite(wp, "800");
+		else if (!strncmp(str, "RTL931", 6))
+			websWrite(wp, "1000");
+		else
+			websWrite(wp, "unknown");
 	}
 	return;
 }
