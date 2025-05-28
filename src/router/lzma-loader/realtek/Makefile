@@ -54,7 +54,7 @@ LDFLAGS		+= $(LTO) $(LDLTO) -Wl,-z,max-page-size=4096 $(LTO)
 
 O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
-OBJECTS		:= head.o loader.o cache.o board.o LzmaDecodeSize.o printf.o
+OBJECTS		:= head.o loader.o cache.o board.o LzmaDecodeSize.o
 
 ifeq ($(strip $(SUBTARGET)),)
 $(error "Please specify a SUBTARGET!")
