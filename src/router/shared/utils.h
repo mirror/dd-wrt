@@ -843,6 +843,8 @@
 
 #define ROUTER_EDGECORE_ECS4125 0x1270ff
 
+#define ROUTER_GLINET_AX1800 0x128112
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
