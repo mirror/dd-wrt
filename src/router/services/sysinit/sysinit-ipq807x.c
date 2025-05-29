@@ -814,6 +814,12 @@ void start_sysinit(void)
 		insmod("leds-gpio");
 		nvram_default_get("sfe", "3");
 		break;
+		break;
+	case ROUTER_GLINET_AX1800:
+		load_nss_ipq60xx(512);
+		insmod("leds-gpio");
+		nvram_default_get("sfe", "3");
+		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
 		fwlen = 0x20000;
@@ -990,6 +996,16 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 		}
+		case ROUTER_GLINET_AX1800: {
+			fseek(fp, 0, SEEK_SET);
+			unsigned char newmac2[6];
+			fread(newmac2, 6, 1, fp);
+			fclose(fp);
+			static char tempaddr[32];
+			maddr = tempaddr;
+			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
+				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
+		}
 		case ROUTER_FORTINET_FAP231F: {
 			fseek(fp, 0x33000, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
@@ -1071,6 +1087,19 @@ void start_sysinit(void)
 		nvram_set("wlan0_hwaddr", ethaddr);
 		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 20);
+		removeregdomain("/tmp/caldata.bin", IPQ6018);
+		removeregdomain("/tmp/board.bin", IPQ6018);
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_GLINET_AX1800:
+		MAC_ADD(ethaddr);
+		MAC_ADD(ethaddr);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_SUB(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
 		patch(ethaddr, 20);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
@@ -1260,6 +1289,11 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MR7350:
 		setscaling(1440000);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
+	case ROUTER_GLINET_AX1800: // todo. check real cpu clock on device
+		setscaling(1800000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;

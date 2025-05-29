@@ -76,6 +76,10 @@ void start_jffs2(void)
 		ubidev = 0;
 		rwpart = "rootfs_data";
 		break;
+	case ROUTER_GLINET_AX1800:
+		ubidev = 0;
+		rwpart = "rootfs_data";
+		break;
 	case ROUTER_FORTINET_FAP231F:
 		ubidev = 1;
 		mtd = getMTD("fap_data");
