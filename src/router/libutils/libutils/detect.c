@@ -1671,6 +1671,14 @@ generic:;
 		setRouter("Buffalo WXR-6000AX12P");
 		return ROUTER_BUFFALO_WXR5950AX12;
 	}
+	if (!strcmp(modelstr, "GL-AX1800")) {
+		setRouter("GL.iNet GL-AX1800");
+		return ROUTER_GLINET_AX1800;
+	}
+	if (!strcmp(modelstr, "GL-AXT1800")) {
+		setRouter("GL.iNet GL-AXT1800");
+		return ROUTER_GLINET_AX1800;
+	}
 	setRouter("Qualcomm IPQ6018");
 	return ROUTER_IPQ6018;
 #elif HAVE_IPQ806X
