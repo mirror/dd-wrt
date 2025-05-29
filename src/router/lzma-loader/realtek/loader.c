@@ -30,26 +30,8 @@
 #include "board.h"
 #include "LzmaDecode.h"
 
-static void print(char *s)
-{
-	int i = 0;
-	while (s[i]) {
-		board_putc(s[i]);
-		if (s[i] == '\n')
-			board_putc('\r');
-		i++;
-	}
-}
-
-#define KSEG0 0x80000000
-#define KSEG1 0xa0000000
-
-#define KSEG1ADDR(a) ((((unsigned)(a)) & 0x1fffffffU) | KSEG1)
-
-//#define LZMA_DEBUG
-
 #ifdef LZMA_DEBUG
-#define DBG(f, a...) print(f)
+#define DBG(f, a...) printf(f)
 #else
 #define DBG(f, a...) \
 	do {         \
@@ -97,11 +79,9 @@ static const char *kernel_argv[] = {
 };
 #endif /* CONFIG_KERNEL_CMDLINE */
 
-static void reset(void);
-
 static void halt(void)
 {
-	print("\nSystem reset!\n");
+	printf("\nSystem reset!\n");
 	board_reset();
 }
 
@@ -176,6 +156,10 @@ static int lzma_decompress(unsigned char *outStream)
 	ret = LzmaDecode(&vs, &callback, outStream, lzma_outsize, &i);
 	if (ret != LZMA_RESULT_OK) {
 		printf("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n", ret, lzma_data + inptr, lzma_outsize, inptr, i);
+		for (i = 0; i < 16; i++)
+			printf("%02x ", lzma_data[inptr + i]);
+
+		printf("\n");
 		return ret;
 	}
 	return ret;
@@ -196,9 +180,9 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a
 	void (*kernel_entry)(unsigned long, unsigned long, unsigned long, unsigned long);
 	int res;
 
-	print("\n\nDD-WRT Kernel lzma Loader\n");
-	print("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
-	print("Copyright (C) 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>\n");
+	printf("\n\nDD-WRT Kernel lzma Loader\n");
+	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
+	printf("Copyright (C) 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>\n");
 
 	board_init();
 
@@ -206,22 +190,22 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a
 
 	res = lzma_decompress((unsigned char *)kernel_la);
 	if (res != LZMA_RESULT_OK) {
-		print("failed, ");
+		printf("failed, ");
 		switch (res) {
 		case LZMA_RESULT_DATA_ERROR:
-			print("data error!\n");
+			printf("data error!\n");
 			break;
 		default:
-			print("unknown error!\n");
+			printf("unknown error!\n");
 		}
 		halt();
 	} else {
-		print("\ndone!\n");
+		printf("\ndone!\n");
 	}
 
 	flush_cache(kernel_la, lzma_outsize);
 
-	print("Starting kernel...\n\n");
+	printf("Starting kernel...\n\n");
 
 #ifdef CONFIG_KERNEL_CMDLINE
 	reg_a0 = kernel_argc;
