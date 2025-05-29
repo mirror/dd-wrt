@@ -603,6 +603,7 @@ endif
 	$(eval TARGETID:=qualcommax/ipq60xx)
 	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi)
 
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/glinet_gl-ax1800-webflash.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi
 
 	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D fortinet_fap231f -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-gl-axt1800.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
