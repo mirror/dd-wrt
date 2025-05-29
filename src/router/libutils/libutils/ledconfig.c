@@ -1697,6 +1697,11 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_power = 0x1e; // usb enable
 		cfg->usb_power1 = 0x1f;
 		break;
+	case ROUTER_GLINET_AX1800:
+		cfg->power_gpio = 0x0; // power led / green
+		cfg->diag_gpio = 0x0; // diag led / red
+		cfg->connected_gpio = 0x1; // blue wan led
+		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
