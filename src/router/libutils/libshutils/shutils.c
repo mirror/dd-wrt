@@ -1513,8 +1513,13 @@ char *get_hwaddr(const char *name, char *eabuf)
 		if (ether_etoa(mac, eabuf)) {
 			return eabuf;
 		}
-	} else
-		strcpy(eabuf, "00:00:00:00:00:00");
+	} else {
+		char *hwaddr = nvram_safe_get("lan_hwaddr");
+		if (*hwaddr)
+			strcpy(eabuf, hwaddr);
+		elee 
+			strcpy(eabuf, "00:00:00:00:00:00");
+	}
 	return NULL;
 }
 
