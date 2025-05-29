@@ -240,6 +240,8 @@ static int getbuttonstate()
 		return !get_gpio(28);
 	case ROUTER_ASUS_AX89X:
 		return !get_gpio(61);
+	case ROUTER_GLINET_AX1800:
+		return !get_gpio(18);
 	case ROUTER_BUFFALO_WXR5950AX12:
 		return !get_gpio(54);
 	default:
