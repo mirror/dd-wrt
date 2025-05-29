@@ -7,7 +7,7 @@
 
 / {
 	compatible = "edgecore,ecs4125-10p", "realtek,rtl838x-soc";
-	model = "Edgecore ECS4125-12P Switch";
+	model = "Edgecore ECS4125-10P Switch";
 /*
 	aliases {
 		led-boot = &led_sys;
@@ -111,10 +111,6 @@
 	};
 */
 };
-
-/*&uart1 {
-	status = "okay";
-};*/
 
 &spi0 {
 	status = "okay";
