@@ -1,3 +1,5 @@
+export DD_RELEASE := $(shell svnversion -n services)
+
 export MAKE := make -j 4
 export LTO := -flto -fwhole-program -flto-partition=none
 export LTOAUTO := -flto=auto -fno-fat-lto-objects

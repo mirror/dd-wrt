@@ -1,4 +1,5 @@
 export MAKE := make -j 4
+export DD_RELEASE := $(shell svnversion -n services)
 
 
 S_COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -DNDEBUG -Wno-unused-variable -Wno-unused-parameter
