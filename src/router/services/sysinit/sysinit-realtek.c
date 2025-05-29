@@ -115,8 +115,9 @@ void start_sysinit(void)
 		bootcmd = getUEnv("bootcmd");
 		if (!bootcmd || !strstr(bootcmd, "rtk network on")) {
 			fprintf(stderr, "change bootcmd to fix networking\n");
-			eval("fw_setenv","bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1250.bin");
-			eval("fw_setenv","bootcmd", "rtk network on; run bootnet; boota");
+			eval("fw_setenv","netretry","no");
+			eval("fw_setenv","bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1250.bin;bootm");
+			eval("fw_setenv","bootcmd", "rtk network on;run bootnet; boota");
 		}
 		mac = getUEnv("ethaddr");
 		if (mac) {
