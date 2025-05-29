@@ -1517,7 +1517,7 @@ char *get_hwaddr(const char *name, char *eabuf)
 		char *hwaddr = nvram_safe_get("lan_hwaddr");
 		if (*hwaddr)
 			strcpy(eabuf, hwaddr);
-		elee 
+		else 
 			strcpy(eabuf, "00:00:00:00:00:00");
 	}
 	return NULL;
