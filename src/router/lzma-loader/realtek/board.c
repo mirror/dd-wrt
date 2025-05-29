@@ -28,8 +28,6 @@
 #define KSEG0ADDR(a) (CPHYSADDR(a) | KSEG0)
 #define KSEG1ADDR(a) (CPHYSADDR(a) | KSEG1)
 
-#define UART_BASE_ADDR (0xb8002000)
-
 static inline unsigned int readl(const volatile void *addr)
 {
 	return *(const volatile unsigned int *)addr;
@@ -39,8 +37,17 @@ static inline void writel(unsigned int value, volatile void *addr)
 	*(volatile unsigned int *)addr = value;
 }
 
+#define BIT(val) (1 << val)
 #define RTL838X_SW_BASE ((volatile void *)0xBB000000)
 #define RTL838X_SOC_BASE ((volatile void *)0xB8000000)
+#define UART_BASE_ADDR (RTL838X_SOC_BASE + 0x2000)
+#define WDT_BASE_ADDR_RTL83XX (RTL838X_SOC_BASE + 0x3150)
+#define WDT_BASE_ADDR_RTL93XX (RTL838X_SOC_BASE + 0x3260)
+#define WDT_ENABLE BIT(31)
+#define WDT_TICKS_PHASE1(val) (val <= 32 ? ((val - 1) << 22) : (31 << 22))
+#define WDT_TICKS_PHASE2(val) (val <= 32 ? ((val - 1) << 22) : (31 << 15))
+#define WDT_PRESCALE(val) (val <= 3 ? (val << 29) : (3 << 29))
+#define WDT_RESET_MODE_SOC 0
 #define sw_r32(reg) readl(RTL838X_SW_BASE + reg)
 #define sw_w32(val, reg) writel(val, RTL838X_SW_BASE + reg)
 
@@ -62,8 +69,8 @@ unsigned int pll_reset_value;
 static void rtl838x_watchdog(void)
 {
 	//soc reset mode 0 + ctrl enable
-	unsigned int v = 1 << 31 | 3 << 29 | 31 << 22 | 31 << 15 | 0 << 0;
-	writel(v, RTL838X_SOC_BASE + 0x3150 + OTTO_WDT_REG_CTRL);
+	unsigned int v = WDT_ENABLE | WDT_TICKS_PHASE1(32) | WDT_TICKS_PHASE2(32) | WDT_PRESCALE(3) | WDT_RESET_MODE_SOC;
+	writel(v, WDT_BASE_ADDR_RTL83XX + OTTO_WDT_REG_CTRL);
 }
 static void rtl839x_watchdog(void)
 {
@@ -72,8 +79,8 @@ static void rtl839x_watchdog(void)
 
 static void rtl930x_watchdog(void)
 {
-	unsigned int v = 1 << 31 | 3 << 29 | 31 << 22 | 31 << 15 | 0 << 0;
-	writel(v, RTL838X_SOC_BASE + 0x3260 + OTTO_WDT_REG_CTRL);
+	unsigned int v = WDT_ENABLE | WDT_TICKS_PHASE1(32) | WDT_TICKS_PHASE2(32) | WDT_PRESCALE(3) | WDT_RESET_MODE_SOC;
+	writel(v, WDT_BASE_ADDR_RTL93XX + OTTO_WDT_REG_CTRL);
 }
 
 static void rtl931x_watchdog(void)

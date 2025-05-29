@@ -162,6 +162,7 @@ static int lzma_decompress(unsigned char *outStream)
 		printf("\n");
 		return ret;
 	}
+	printf("[%d%%]\r", 100);
 	return ret;
 }
 static void lzma_init_data(void)
