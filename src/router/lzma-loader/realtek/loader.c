@@ -185,6 +185,7 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1, unsigned long reg_a
 	printf("Copyright (C) 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>\n");
 
 	board_init();
+	board_watchdog(); // init watchdog and let it run for maximum time, of something hangs board will reset after 60 seconds or so
 
 	lzma_init_data();
 

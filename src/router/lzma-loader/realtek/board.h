@@ -4,5 +4,6 @@
 void board_init(void);
 void board_putc(int ch);
 void board_reset(void);
+void board_watchdog(void);
 
 #endif

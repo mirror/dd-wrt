@@ -40,6 +40,7 @@ static inline void writel(unsigned int value, volatile void *addr)
 }
 
 #define RTL838X_SW_BASE ((volatile void *)0xBB000000)
+#define RTL838X_SOC_BASE ((volatile void *)0xB8000000)
 #define sw_r32(reg) readl(RTL838X_SW_BASE + reg)
 #define sw_w32(val, reg) writel(val, RTL838X_SW_BASE + reg)
 
@@ -54,7 +55,32 @@ static inline void writel(unsigned int value, volatile void *addr)
 #define RTL930X_RST_GLB_CTRL_0 (0x000c)
 #define RTL931X_RST_GLB_CTRL (0x0400)
 
+#define OTTO_WDT_REG_CTRL 0x8
+
 unsigned int pll_reset_value;
+
+static void rtl838x_watchdog(void)
+{
+	//soc reset mode 0 + ctrl enable
+	unsigned int v = 1 << 31 | 3 << 29 | 31 << 22 | 31 << 15 | 0 << 0;
+	writel(v, RTL838X_SOC_BASE + 0x3150 + OTTO_WDT_REG_CTRL);
+}
+static void rtl839x_watchdog(void)
+{
+	rtl838x_watchdog();
+}
+
+static void rtl930x_watchdog(void)
+{
+	unsigned int v = 1 << 31 | 3 << 29 | 31 << 22 | 31 << 15 | 0 << 0;
+	writel(v, RTL838X_SOC_BASE + 0x3260 + OTTO_WDT_REG_CTRL);
+}
+
+static void rtl931x_watchdog(void)
+{
+	printk("Init Watchdog...\n");
+	rtl930x_watchdog();
+}
 
 static void rtl838x_restart(void)
 {
@@ -131,6 +157,26 @@ void board_reset(void)
 		break;
 	case RTL9310_FAMILY_ID:
 		rtl931x_restart();
+		break;
+	}
+	while (1)
+		;
+}
+
+void board_watchdog(void)
+{
+	switch (family) {
+	case RTL8380_FAMILY_ID:
+		rtl838x_watchdog();
+		break;
+	case RTL8390_FAMILY_ID:
+		rtl839x_watchdog();
+		break;
+	case RTL9300_FAMILY_ID:
+		rtl930x_watchdog();
+		break;
+	case RTL9310_FAMILY_ID:
+		rtl931x_watchdog();
 		break;
 	}
 	while (1)
