@@ -78,7 +78,6 @@ static void rtl930x_watchdog(void)
 
 static void rtl931x_watchdog(void)
 {
-	printk("Init Watchdog...\n");
 	rtl930x_watchdog();
 }
 
@@ -165,6 +164,7 @@ void board_reset(void)
 
 void board_watchdog(void)
 {
+	printf("Init Watchdog...\n");
 	switch (family) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_watchdog();
@@ -179,8 +179,6 @@ void board_watchdog(void)
 		rtl931x_watchdog();
 		break;
 	}
-	while (1)
-		;
 }
 static void identify_rtl9302(void)
 {
