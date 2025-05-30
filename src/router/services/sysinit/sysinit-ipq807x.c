@@ -813,7 +813,6 @@ void start_sysinit(void)
 		insmod("leds-gpio");
 		nvram_default_get("sfe", "3");
 		break;
-		break;
 	case ROUTER_GLINET_AX1800:
 		load_nss_ipq60xx(512);
 		insmod("leds-gpio");
