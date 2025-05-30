@@ -447,7 +447,7 @@ void start_setup_vlans(void)
 				}
 
 			} else
-				sprintf(linkstr, "autoneg on", linkstr);
+				sprintf(linkstr, "autoneg on");
 			if (i == 0) {
 				eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "link", linkstr);
 			} else {
