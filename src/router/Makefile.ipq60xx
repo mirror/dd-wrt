@@ -215,7 +215,7 @@ metadata_gl_json = \
 		"version": { \
 			"release": "$(call json_quote,$(VERSION_NUMBER))", \
 			"date": "$(shell TZ='Asia/Chongqing' date '+%Y%m%d%H%M%S')", \
-			"dist": "DD-WRT", \
+			"dist": "OpenWrt", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
 			"revision": "$(call json_quote,$(REVISION))", \
 			"target": "$(call json_quote,$(TARGETID))", \
@@ -224,7 +224,7 @@ metadata_gl_json = \
 	}'
 
 define build_image
-	$(eval VERSION_NUMBER:=SNAPSHOT)
+	$(eval VERSION_NUMBER:=5.0.0)
 	$(eval REVISION:=$(DD_RELEASE))
 	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_gl_json,$(SUPPORTED_DEVICES)) | ./tools/qcom/fwtool -I - $(1))
 	$(eval BUILD_KEY:=$(TOP)/key-build)
@@ -591,11 +591,12 @@ endif
 #glinet
 
 	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
-	tools/qcom/mkits.sh  -D fortinet_fap231f -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-gl-ax1800.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
+	tools/qcom/mkits.sh  -D glinet_gl-ax1800 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-gl-ax1800.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi
+	cp $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800-boot.ubi
 
 	$(eval DEVICE_NAME:=glinet_gl-ax1800)
 	$(eval SUPPORTED_DEVICES:=glinet,gl-ax1800)
@@ -606,12 +607,12 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/glinet_gl-ax1800-webflash.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi
 
 	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
-	tools/qcom/mkits.sh  -D fortinet_fap231f -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-gl-axt1800.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
+	tools/qcom/mkits.sh  -D glinet_gl-axt1800 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-gl-axt1800.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800.ubi
-
+	cp $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800.ubi $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-boot.ubi
 	$(eval DEVICE_NAME:=glinet_gl-axt1800)
 	$(eval SUPPORTED_DEVICES:=glinet,gl-axt1800)
 	$(eval SUPPORTED_DEVICES+=glinet,axt1800)
