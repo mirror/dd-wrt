@@ -784,7 +784,6 @@ void start_sysinit(void)
 	if (!nvram_matchi("disable_watchdog", 1)) {
 		insmod("imx2_wdt");
 	}
-
 	/*
 	 * Setup console 
 	 */
@@ -995,16 +994,17 @@ void start_sysinit(void)
 			for (i = 0; i < 12052; i++)
 				putc(getc(fp), out);
 			fclose(out);
+			break;
 		}
 		case ROUTER_GLINET_AX1800: {
 			fseek(fp, 0, SEEK_SET);
 			unsigned char newmac2[6];
 			fread(newmac2, 6, 1, fp);
-			fclose(fp);
 			static char tempaddr[32];
 			maddr = tempaddr;
 			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
 				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
+			break;
 		}
 		case ROUTER_FORTINET_FAP231F: {
 			fseek(fp, 0x33000, SEEK_SET);
@@ -1047,9 +1047,11 @@ void start_sysinit(void)
 	unsigned int newmac[6];
 	char ethaddr[32];
 	if (maddr) {
-		wait_for_eth("lan8");
-		wait_for_eth("10gcopper");
-		wait_for_eth("10gsfp");
+		if (brand == ROUTER_ASUS_AX89X) {
+			wait_for_eth("lan8");
+			wait_for_eth("10gcopper");
+			wait_for_eth("10gsfp");
+		}
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
 		sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
