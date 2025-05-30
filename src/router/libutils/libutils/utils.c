@@ -963,11 +963,15 @@ static int getclassnetint(const char *ifname, const char *fieldname)
 
 int ifexists(const char *ifname)
 {
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
+	return getifcount(ifname) > 0 ? 1 : 0;
+#else
 	char ret[32];
-	if (!getclassnetstring(ifname, "carrier",ret, sizeof(ret))
-		return getifcount(ifname) > 0 ? 1 : 0;
+	if (!getclassnetstring(ifname, "carrier", ret, sizeof(ret)))
+		return 0;
 	else
-	    return 1;
+		return 1;
+#endif
 }
 
 #define BRIDGESONLY 0x1
