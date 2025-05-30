@@ -1,4 +1,8 @@
 export DD_RELEASE := $(shell svnversion -n services)
+empty:=
+space:= $(empty) $(empty)
+comma:=,
+pound:=\#
 
 export MAKE := make -j 4
 export LTO := -flto -fwhole-program -flto-partition=none
