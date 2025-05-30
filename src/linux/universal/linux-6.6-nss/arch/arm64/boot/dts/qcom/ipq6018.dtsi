@@ -529,7 +529,7 @@
 			};
 		};
 
-		sdhc_1: mmc@7804000 {
+		sdhc: mmc@7804000 {
 			compatible = "qcom,ipq6018-sdhci", "qcom,sdhci-msm-v5";
 			reg = <0x0 0x07804000 0x0 0x1000>,
 			      <0x0 0x07805000 0x0 0x1000>,

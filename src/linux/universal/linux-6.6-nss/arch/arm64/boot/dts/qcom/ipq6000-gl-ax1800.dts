@@ -16,13 +16,9 @@
 &partitions {
 	partition@a00000 {
 		label = "rootfs";
-		reg = <0x0a00000 0x7280000>;
+		reg = <0x0a00000 0x7300000>;
 	};
 
-	partition@7c80000 {
-		label = "nvram";
-		reg = <0x7c80000 0x0080000>;
-	};
 };
 
 &switch {

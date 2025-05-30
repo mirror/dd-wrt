@@ -11,10 +11,6 @@
 
 / {
 	aliases {
-		led-boot = &led_run;
-		led-failsafe = &led_run;
-		led-running = &led_run;
-		led-upgrade = &led_run;
 		serial0 = &blsp1_uart3;
 		serial1 = &blsp1_uart4;
 		serial2 = &blsp1_uart5;
@@ -213,9 +209,8 @@
 			/* rootfs defined in variant dts */
 
 			partition@7d00000 {
-				label = "ethphyfw";
+				label = "nvram";
 				reg = <0x7d00000 0x0080000>;
-				read-only;
 			};
 		};
 	};
