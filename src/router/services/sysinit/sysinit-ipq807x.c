@@ -1104,7 +1104,7 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
 		removeregdomain("/tmp/board.bin", IPQ6018);
-		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 1);
 		break;
 	case ROUTER_LINKSYS_MR7500:
 		MAC_ADD(ethaddr);
