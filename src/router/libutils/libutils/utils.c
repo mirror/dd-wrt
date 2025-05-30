@@ -942,9 +942,32 @@ void set_ip_forward(char c)
 	writeprocsysnet("ipv4/ip_forward", ch);
 }
 
+static char *getclassnetstring(const char *ifname, const char *fieldname, char *ret, size_t retlen)
+{
+	char path[64];
+	snprintf(path, sizeof(path), "/sys/class/net/%s/%s", ifname, fieldname);
+	FILE *fp = fopen(path, "rb");
+	if (!fp)
+		return NULL;
+	fgets(ret, retlen, fp);
+	fclose(fp);
+	return ret;
+}
+static int getclassnetint(const char *ifname, const char *fieldname)
+{
+	char buf[64];
+	if (!getclassnetstring(ifname, fieldname, buf, sizeof(buf)))
+		return -1;
+	return atoi(buf);
+}
+
 int ifexists(const char *ifname)
 {
-	return getifcount(ifname) > 0 ? 1 : 0;
+	char ret[32];
+	if (!getclassnetstring(ifname, "carrier",ret, sizeof(ret))
+		return getifcount(ifname) > 0 ? 1 : 0;
+	else
+	    return 1;
 }
 
 #define BRIDGESONLY 0x1
@@ -2552,24 +2575,6 @@ static int getLanPortStatus_fallback(const char *ifname, struct portstatus *stat
 	status->link = (bmsr & BMSR_LSTATUS);
 	close(skfd);
 	return 0;
-}
-static char *getclassnetstring(const char *ifname, const char *fieldname, char *ret, size_t retlen)
-{
-	char path[64];
-	snprintf(path, sizeof(path), "/sys/class/net/%s/%s", ifname, fieldname);
-	FILE *fp = fopen(path, "rb");
-	if (!fp)
-		return NULL;
-	fgets(ret, retlen, fp);
-	fclose(fp);
-	return ret;
-}
-static int getclassnetint(const char *ifname, const char *fieldname)
-{
-	char buf[64];
-	if (!getclassnetstring(ifname, fieldname, buf, sizeof(buf)))
-		return -1;
-	return atoi(buf);
 }
 
 int getLanPortStatus(const char *ifname, struct portstatus *status)
