@@ -184,7 +184,7 @@ static int bound(void)
 		char *gateway = getenv("router");
 		char *dns = getenv("dns");
 		if (dns)
-			nvram_set("sv_localdns", dns);
+			nvram_set("lan_dns", dns);
 		if (gateway)
 			nvram_set("lan_gateway", gateway);
 		if (ip && netmask) {
