@@ -4572,7 +4572,6 @@ void wan_done(char *wan_ifname)
 	stop_smartdns();
 	start_smartdns();
 #endif
-
 #ifdef HAVE_OPENVPN
 	stop_openvpn_wandone();
 	start_openvpn();

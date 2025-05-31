@@ -178,6 +178,32 @@ static int bound(void)
 	char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
 	char *cidr;
+	if (wan_ifname && nvram_match("lan_ifname", wan_ifname)) {
+		char *ip = getenv("ip");
+		char *netmask = getenv("subnet");
+		char *gateway = getenv("router");
+		char *dns = getenv("dns");
+		if (dns)
+			nvram_set("sv_localdns", dns);
+		if (gateway)
+			nvram_set("lan_gateway", gateway);
+		if (ip && netmask) {
+			eval("ifconfig", wan_ifname, ip, "netmask", netmask, "up");
+			start_set_routes();
+#ifdef HAVE_DNSMASQ
+			restart_dnsmasq();
+#endif
+#ifdef HAVE_SMARTDNS
+			stop_smartdns();
+			start_smartdns();
+#endif
+			stop_unbound();
+			start_unbound();
+			nvram_seti("dhcpc_done", 1);
+		}
+		return 0;
+	}
+
 	if (nvram_match("wan_proto", "iphone"))
 		stop_process("ipheth-loop", "IPhone Pairing Daemon");
 
