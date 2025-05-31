@@ -1057,17 +1057,19 @@ void start_sysinit(void)
 
 		sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff,
 			newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
-		nvram_set("wlan0_hwaddr", ethaddr);
-		MAC_SUB(maddr);
-		MAC_SUB(maddr);
-		MAC_SUB(maddr);
-		MAC_SUB(maddr);
-		nvram_set("wlan1_hwaddr", ethaddr);
-		MAC_ADD(maddr);
-		MAC_ADD(maddr);
-		MAC_ADD(maddr);
-		MAC_ADD(maddr);
-		MAC_ADD(maddr);
+		if (brand == ROUTER_ASUS_AX89X) {
+			nvram_set("wlan0_hwaddr", ethaddr);
+			MAC_SUB(maddr);
+			MAC_SUB(maddr);
+			MAC_SUB(maddr);
+			MAC_SUB(maddr);
+			nvram_set("wlan1_hwaddr", ethaddr);
+			MAC_ADD(maddr);
+			MAC_ADD(maddr);
+			MAC_ADD(maddr);
+			MAC_ADD(maddr);
+			MAC_ADD(maddr);
+		}
 		nvram_set("et0macaddr", ethaddr);
 		nvram_set("et0macaddr_safe", ethaddr);
 		set_hwaddr("wan", ethaddr);
@@ -1294,7 +1296,6 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_GLINET_AX1800: // todo. check real cpu clock on device
-		setscaling(1800000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
