@@ -466,8 +466,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.localdns"); %></div>
-									<input type="hidden" name="sv_localdns" value="4" />
-									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","3"); %>"/>
+									<input type="hidden" name="lan_dns" value="4" />
+									<input class="num" maxlength="3" size="3" name="lan_dns_0" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("lan_dns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_dns_1" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("lan_dns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_dns_2" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("lan_dns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_dns_3" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("lan_dns","3"); %>"/>
 								</div>
 							</fieldset><br />	
 							<% show_dhcpd_settings(); %>						

@@ -288,7 +288,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.localdns"); %></div>
-									<span id="lan_dns"><% nvg("sv_localdns"); %></span>&nbsp;
+									<span id="lan_dns"><% nvg("lan_dns"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
 							<fieldset>

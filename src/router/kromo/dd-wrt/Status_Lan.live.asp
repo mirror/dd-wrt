@@ -1,7 +1,7 @@
 {lan_mac::<% nvg("lan_hwaddr"); %>}
 {lan_ip::<% nvg("lan_ipaddr"); %>/<% get_cidr_mask("lan_netmask"); %>}
 {lan_gateway::<% nvg("lan_gateway"); %>}
-{lan_dns::<% nvg("sv_localdns"); %>}
+{lan_dns::<% nvg("lan_dns"); %>}
 {lan_proto::<% dhcpenabled("dhcp","static"); %>}
 {dhcp_start::<% nvg("dhcp_start"); %>}
 {dhcp_end::<% calcendip(); %>}
