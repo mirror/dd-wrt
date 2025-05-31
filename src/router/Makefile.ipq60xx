@@ -597,12 +597,13 @@ endif
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi
 	cp $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800-boot.ubi
+	tools/qcom/sysupgrade-tar.sh --board glinet_gl-ax1800 --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs  $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800-squashfs-sysupgrade.bin	
 
-	$(eval DEVICE_NAME:=glinet_gl-ax1800)
+	$(eval DEVICE_NAME:=glinet_ax1800)
 	$(eval SUPPORTED_DEVICES:=glinet,gl-ax1800)
 	$(eval SUPPORTED_DEVICES+=glinet,ax1800)
-	$(eval TARGETID:=qualcommax/ipq60xx)
-	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800.ubi)
+	$(eval TARGETID:=ipq807x/ipq60xx)
+	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800-squashfs-sysupgrade.bin)
 
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/glinet_gl-ax1800-webflash.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-ax1800-boot.ubi
 
@@ -613,11 +614,12 @@ endif
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800.ubi
 	cp $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800.ubi $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-boot.ubi
-	$(eval DEVICE_NAME:=glinet_gl-axt1800)
+	tools/qcom/sysupgrade-tar.sh --board glinet_gl-axt1800 --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs  $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-squashfs-sysupgrade.bin	
+	$(eval DEVICE_NAME:=glinet_axt1800)
 	$(eval SUPPORTED_DEVICES:=glinet,gl-axt1800)
 	$(eval SUPPORTED_DEVICES+=glinet,axt1800)
-	$(eval TARGETID:=qualcommax/ipq60xx)
-	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800.ubi)
+	$(eval TARGETID:=ipq807x/ipq60xx)
+	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-squashfs-sysupgrade.bin)
 
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/glinet_gl-axt1800-webflash.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-boot.ubi
 
