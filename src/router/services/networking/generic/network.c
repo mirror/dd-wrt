@@ -1740,7 +1740,9 @@ void start_lan(void)
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_REALTEK)
-	nvram_setz(lan_ifnames, "lan01 lan02 lan03 lan04 lan05 lan06 lan07 lan08 lan09 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan49 lan50 lan51 lan52");
+	nvram_setz(
+		lan_ifnames,
+		"lan01 lan02 lan03 lan04 lan05 lan06 lan07 lan08 lan09 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan49 lan50 lan51 lan52");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
@@ -2140,7 +2142,8 @@ void start_lan(void)
 	!defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) &&       \
 	!defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) &&   \
 	!defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) &&                   \
-	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) && !defined(HAVE_IPQ6018) && !defined(HAVE_REALTEK)
+	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) && !defined(HAVE_IPQ6018) &&                    \
+	!defined(HAVE_REALTEK)
 			if (!strcmp(name, "eth2")) {
 				strcpy(realname, "wlan0");
 			} else
@@ -2150,7 +2153,7 @@ void start_lan(void)
 			// set proper mtu
 			if (!ifexists(realname))
 				continue;
-			/*
+				/*
 			 * Set the logical bridge address to that of the first interface 
 			 */
 
@@ -2909,10 +2912,11 @@ void run_wan(int status)
 	}
 	rmmod("n_hdlc");
 
-	if (strcmp(wan_ifname, "wwan0")) {
-		eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
+	if (!nvram_match("lan_ifname", wan_ifname)) {
+		if (strcmp(wan_ifname, "wwan0")) {
+			eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
+		}
 	}
-
 	start_firewall(); // start firewall once, to fix problem with rules which should exist even before wan is up
 	// wan test mode
 	if (nvram_matchi("wan_testmode", 1)) {
@@ -2984,112 +2988,118 @@ void run_wan(int status)
 	 */
 	bzero(ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
-	ifconfig(ethname, 0, NULL, NULL);
-	// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
-	char *wlifname = getSTA();
+	if (!nvram_match("lan_ifname", wan_ifname)) {
+		ifconfig(ethname, 0, NULL, NULL);
+		// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
+		char *wlifname = getSTA();
 
-	if (!wlifname) {
-		wlifname = getWET();
-	}
-
-	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_hwaddr", "")) {
-		ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
-	} else {
-		if (wlifname &&
-		    (!strcmp(ethname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") ||
-		     nvram_match("wan_proto", "pppoe_dual") || nvram_match("wan_proto", "pptp"))) // sta mode
-		{
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-			int instance = get_wl_instance(wlifname);
-			getWirelessMac(mac, instance, sizeof(mac));
-#else
-			getWirelessMac(mac, 0, sizeof(mac));
-#endif
-			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
-		} else {
-#ifdef HAVE_X86
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-#else
-			getWANMac(mac, sizeof(mac));
-			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
-#endif
+		if (!wlifname) {
+			wlifname = getWET();
 		}
-	}
 
-	if (!nvram_match("wan_proto", "disabled")) {
-		if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
-			ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+		if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
+		    nvram_invmatch("def_hwaddr", "")) {
+			ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
+		} else {
+			if (wlifname &&
+			    (!strcmp(ethname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") ||
+			     nvram_match("wan_proto", "pppoe_dual") || nvram_match("wan_proto", "pptp"))) // sta mode
+			{
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-
-			if (wlifname && !strcmp(ethname, wlifname))
-				eval("wl", "-i", ethname, "down");
-			else if (strcmp(ethname, "br0"))
-				eval("ifconfig", ethname, "down");
-
-			ioctl(s, SIOCSIFHWADDR, &ifr);
+				int instance = get_wl_instance(wlifname);
+				getWirelessMac(mac, instance, sizeof(mac));
 #else
-			if (!wlifname && strcmp(wan_ifname, "br0") && strcmp(wan_ifname, "wwan0")) {
-				eval("ifconfig", ethname, "down");
-				ioctl(s, SIOCSIFHWADDR, &ifr);
+				getWirelessMac(mac, 0, sizeof(mac));
+#endif
+				ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+			} else {
+#ifdef HAVE_X86
+				ioctl(s, SIOCGIFHWADDR, &ifr);
+#else
+				getWANMac(mac, sizeof(mac));
+				ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+#endif
 			}
+		}
+
+		if (!nvram_match("wan_proto", "disabled")) {
+			if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
+				ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+
+				if (wlifname && !strcmp(ethname, wlifname))
+					eval("wl", "-i", ethname, "down");
+				else if (strcmp(ethname, "br0"))
+					eval("ifconfig", ethname, "down");
+
+				ioctl(s, SIOCSIFHWADDR, &ifr);
+#else
+				if (!wlifname && strcmp(wan_ifname, "br0") && strcmp(wan_ifname, "wwan0")) {
+					eval("ifconfig", ethname, "down");
+					ioctl(s, SIOCSIFHWADDR, &ifr);
+				}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-			if (wlifname && !strcmp(ethname, wlifname)) {
-				eval("wl", "-i", ethname, "up");
-				config_macs(ethname);
-			}
+				if (wlifname && !strcmp(ethname, wlifname)) {
+					eval("wl", "-i", ethname, "up");
+					config_macs(ethname);
+				}
 #endif
-		} else
-			perror("Write WAN mac fail : \n");
-	}
-	// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
+			} else
+				perror("Write WAN mac fail : \n");
+		}
+		// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
-	/*
+		/*
 	 * Set MTU 
 	 */
-	init_mtu(wan_proto); // add by honor 2002/12/27
-	// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
+		init_mtu(wan_proto); // add by honor 2002/12/27
+		// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
-	// Set our Interface to the right MTU
-	int mtu = atoi(getMTU(ethname));
+		// Set our Interface to the right MTU
+		int mtu = atoi(getMTU(ethname));
 #ifdef HAVE_PPPOE
-	if (nvram_match("wan_proto", "pppoe")) {
-		ifr.ifr_mtu = mtu; // default ethernet frame size
-	} else
+		if (nvram_match("wan_proto", "pppoe")) {
+			ifr.ifr_mtu = mtu; // default ethernet frame size
+		} else
 #endif
 #ifdef HAVE_PPPOEDUAL
-		if (nvram_match("wan_proto", "pppoe_dual")) {
-		ifr.ifr_mtu = mtu; // default ethernet frame size
-	} else
+			if (nvram_match("wan_proto", "pppoe_dual")) {
+			ifr.ifr_mtu = mtu; // default ethernet frame size
+		} else
 #endif
 #ifdef HAVE_PPTP
-		if (nvram_match("wan_proto", "pptp")) {
-		ifr.ifr_mtu = mtu; // default ethernet frame size
-	} else
+			if (nvram_match("wan_proto", "pptp")) {
+			ifr.ifr_mtu = mtu; // default ethernet frame size
+		} else
 #endif
 #ifdef HAVE_L2TP
-		if (nvram_match("wan_proto", "l2tp")) {
-		ifr.ifr_mtu = mtu; // default ethernet frame size
-	} else
+			if (nvram_match("wan_proto", "l2tp")) {
+			ifr.ifr_mtu = mtu; // default ethernet frame size
+		} else
 #endif
-	{
-		int smtu = nvram_geti("wan_mtu");
-		if (smtu == 1500)
-			smtu = mtu;
-		ifr.ifr_mtu = smtu;
-	}
-	// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
-	ioctl(s, SIOCSIFMTU, &ifr);
-	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
-
-	if (strcmp(wan_proto, "disabled") == 0) {
-		char eabuf[32];
-		if (get_hwaddr(ifr.ifr_name, eabuf)) {
-			nvram_set("wan_hwaddr", eabuf);
+		{
+			int smtu = nvram_geti("wan_mtu");
+			if (smtu == 1500)
+				smtu = mtu;
+			ifr.ifr_mtu = smtu;
 		}
+		// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
+		ioctl(s, SIOCSIFMTU, &ifr);
+	}
+
+	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
+	if (strcmp(wan_proto, "disabled") == 0 || nvram_match("lan_ifname", wan_ifname)) {
 		close(s);
-		wan_done(wan_ifname);
+		if (nvram_match("lan_ifname", wan_ifname)) {
+			run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
+		} else {
+			char eabuf[32];
+			if (get_hwaddr(ifr.ifr_name, eabuf)) {
+				nvram_set("wan_hwaddr", eabuf);
+			}
+			wan_done(wan_ifname);
+		}
 		return;
 	}
 
