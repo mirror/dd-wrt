@@ -296,7 +296,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{ "lan_netmask", "255.255.255.0" },	/* LAN netmask */
 	{ "lan_gateway", "0.0.0.0" },	/* LAN gateway */
-	{ "sv_localdns", "0.0.0.0" },	/* Local DNS */
+	{ "lan_dns", "0.0.0.0" },	/* Local DNS */
 #ifdef HAVE_SKYTRON
 	{ "lan_stp", "0" },	/* LAN spanning tree protocol */
 #elif HAVE_MAKSAT

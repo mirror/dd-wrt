@@ -3701,8 +3701,12 @@ void start_nvram(void)
 		//		if (doreboot)
 		//			eval("reboot");
 	}
-	if (nvram_geti("nvram_ver") < 12) {
-		nvram_seti("nvram_ver", 12);
+	if (nvram_geti("nvram_ver") < 13) {
+	    nvram_set("lan_dns",nvram_safe_get("sv_localdns"));
+	    nvram_unset("sv_localdns");
+	}
+	if (nvram_geti("nvram_ver") < 13) {
+		nvram_seti("nvram_ver", 13);
 	}
 
 	return;
