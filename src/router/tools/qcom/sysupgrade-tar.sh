@@ -2,6 +2,7 @@
 
 . $(pwd)/tools/qcom/functions.sh
 
+toolpath="$(pwd)/tools/qcom"
 board=""
 kernel=""
 rootfs=""
@@ -72,7 +73,7 @@ if [ -n "$SOURCE_DATE_EPOCH" ]; then
 	mtime="--mtime=@${SOURCE_DATE_EPOCH}"
 fi
 
-(cd "$tmpdir"; $(pwd)/tools/qcom/tar --sort=name --owner=0 --group=0 --numeric-owner -cvf sysupgrade.tar sysupgrade-${board} ${mtime})
+(cd "$tmpdir"; $toolpath/tar --sort=name --owner=0 --group=0 --numeric-owner -cvf sysupgrade.tar sysupgrade-${board} ${mtime})
 err="$?"
 if [ -e "$tmpdir/sysupgrade.tar" ]; then
 	cp "$tmpdir/sysupgrade.tar" "$outfile"
