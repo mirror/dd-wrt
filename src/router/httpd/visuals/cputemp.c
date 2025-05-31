@@ -65,6 +65,7 @@ static SENSORMAPS maps[] = {
 	{ "90000mdio100", "Aquantia Phy0" },
 	{ "90000mdio107", "Aquantia Phy1" },
 	{ "90000mdio108", "Aquantia Phy1" },
+	{ "ath11k_hwmon", NULL }, // indicates that interface is disabled. so we dont show it
 };
 
 static char *getmappedname(char *name)
