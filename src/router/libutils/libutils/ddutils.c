@@ -555,7 +555,7 @@ struct dns_lists *get_dns_list(int v6)
 
 	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
 	bzero(dns_list, sizeof(struct dns_lists));
-	char *sv_localdns = nvram_safe_get("sv_localdns");
+	char *lan_dns = nvram_safe_get("lan_dns");
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
 	char *openvpn_get_dns = nvram_safe_get("openvpn_get_dns");
@@ -580,8 +580,8 @@ struct dns_lists *get_dns_list(int v6)
 			}
 			altdns_index++;
 		}
-		if (*sv_localdns)
-			add_dnslist(dns_list, sv_localdns, 0, 0);
+		if (*lan_dns)
+			add_dnslist(dns_list, lan_dns, 0, 0);
 		//egc if DNS server from WG or OpenVPN exist do not add existing DNS server from Static DNS to stop DNS leak
 		if (*wan_dns && !*wg_get_dns && !*openvpn_get_dns) {
 			add_dnslist(dns_list, wan_dns, 0, 0);
