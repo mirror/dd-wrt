@@ -65,6 +65,66 @@
 	};
 };
 
+&CPU0 {
+	operating-points = <
+		/* kHz   uV (fixed) */
+		864000   1100000
+		1056000  1100000
+		1320000  1100000
+		1440000  1100000
+		1608000  1100000
+		1800000  1100000
+	>;
+	clock-latency = <200000>;
+	/delete-property/ operating-points-v2;
+	/delete-property/ cpu-supply;
+};
+
+&CPU1 {
+	operating-points = <
+		/* kHz   uV (fixed) */
+		864000   1100000
+		1056000  1100000
+		1320000  1100000
+		1440000  1100000
+		1608000  1100000
+		1800000  1100000
+	>;
+	clock-latency = <200000>;
+	/delete-property/ operating-points-v2;
+	/delete-property/ cpu-supply;
+};
+
+&CPU2 {
+	operating-points = <
+		/* kHz   uV (fixed) */
+		864000   1100000
+		1056000  1100000
+		1320000  1100000
+		1440000  1100000
+		1608000  1100000
+		1800000  1100000
+	>;
+	clock-latency = <200000>;
+	/delete-property/ operating-points-v2;
+	/delete-property/ cpu-supply;
+};
+
+&CPU3 {
+	operating-points = <
+		/* kHz   uV (fixed) */
+		864000   1100000
+		1056000  1100000
+		1320000  1100000
+		1440000  1100000
+		1608000  1100000
+		1800000  1100000
+	>;
+	clock-latency = <200000>;
+	/delete-property/ operating-points-v2;
+	/delete-property/ cpu-supply;
+};
+
 &tlmm {
 	mdio_pins: mdio-pins {
 		mdc {
