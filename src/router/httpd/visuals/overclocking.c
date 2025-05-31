@@ -129,6 +129,8 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		oclk = defclock;
 		nvram_set("clkfreq", defclock);
 	}
+	if (!f_exists("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"))
+		nvram_unset("clkfreq");
 #elif defined(HAVE_HABANERO)
 	if (!*oclk) {
 		oclk = "716";
