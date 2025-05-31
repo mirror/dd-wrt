@@ -53,7 +53,7 @@
  "rc_firewall"  "Firewall Script"  "NULL"    "FALSE" "0"
  "rc_custom"  "Custom Script"  "NULL"    "FALSE" "0"
  "lan_gateway"  "LAN Gateway"  "MERGEIPADDRS"   "FALSE" "0"
- "sv_localdns"  "Local DNS"  "MERGEIPADDRS"   "FALSE" "0"
+ "lan_dns"  "Local DNS"  "MERGEIPADDRS"   "FALSE" "0"
  "lan_domain"  "LAN Domain Name"  "NAME"  "255"  "TRUE" "0"
  "wl_mode"  "Wireless Mode"  "CHOICE"  "4" "ap"  "wet" "sta" "infra"  "FALSE" "0"
  "wl0_txpwr"  "TX Power"  "RANGE"  "1" "251"   "FALSE" "0"
