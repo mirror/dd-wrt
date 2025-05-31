@@ -80,7 +80,8 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #endif
 #endif
 
-static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 1512000, 1800000, 0 };
+static unsigned int ipq6018_clocks_op1[] = { 864000, 1056000, 1320000, 1440000, 1608000, 1800000, 0 };
+static unsigned int ipq6018_clocks_op2[] = { 864000, 1200000, 1056000, 1320000, 1440000, 1512000, 16080000, 1800000, 0 };
 static unsigned int ipq807x_clocks[] = { 1017600, 1382400, 1651200, 1843200, 1920000, 2208000, 0 };
 static unsigned int ipq5018_clocks[] = { 800000, 1008000, 0 };
 
@@ -104,15 +105,15 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
 		defclock = "1440000";
-		c = ipq6018_clocks;
+		c = ipq6018_clocks_op2;
 		break;
 	case ROUTER_LINKSYS_MR7500:
 		defclock = "1800000";
-		c = ipq6018_clocks;
+		c = ipq6018_clocks_op2;
 		break;
 	case ROUTER_FORTINET_FAP231F:
 		defclock = "1800000";
-		c = ipq6018_clocks;
+		c = ipq6018_clocks_op2;
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
@@ -123,6 +124,10 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	case ROUTER_LINKSYS_MX5500:
 		defclock = "1008000";
 		c = ipq5018_clocks;
+		break;
+	case ROUTER_GLINET_AX1600:
+		defclock = "1200000";
+		c = ipq6018_clocks_op1;
 		break;
 	}
 	if (!*oclk) {
