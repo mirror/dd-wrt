@@ -382,7 +382,9 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 	};
 
 	int i = 7;
-
+	if (nvram_match("lan_ifname", wan_ifname))
+		dhcp_argv[i++] = "-B";
+	
 #ifdef HAVE_BUSYBOX_UDHCPC
 	dhcp_argv[i++] = "-O";
 	dhcp_argv[i++] = "routes";
