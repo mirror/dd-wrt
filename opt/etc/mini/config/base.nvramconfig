@@ -31,6 +31,7 @@
  "ppp_static_ip"  "Static IP"  "MERGEIPADDRS" "FALSE" "0"
  "wan_dns"  "WAN DNS Server"  "DNS"  "FALSE" "3" 
  "lan_proto"  "LAN Protocol"  "CHOICE" "2"  "dhcp"  "static"  "FALSE" "3" 
+ "lan_dhcp"  "Lan DHCP"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "dhcp_check"  "DHCP check"  "DHCP"  "FALSE" "0"
  "dhcp_start"  "DHCP Server LAN IP Address Range"  "MERGEDHCPSTART" "FALSE" "0"
  "dhcp_num"  "DHCP Users"  "RANGE"  "0" "999"  "FALSE" "0"
