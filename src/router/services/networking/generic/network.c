@@ -4877,7 +4877,7 @@ void start_set_routes(void)
 		eval("route", "del", "default");
 		eval("route", "add", "default", "gw", nvram_safe_get("lan_gateway"));
 	}
-	if (!*nvram_safe_get("lan_dhcpgw") && !nvram_match("lan_dhcpgw", "0.0.0.0")) {
+	if (*nvram_safe_get("lan_dhcpgw") && !nvram_match("lan_dhcpgw", "0.0.0.0")) {
 		eval("route", "del", "default");
 		eval("route", "add", "default", "gw", nvram_safe_get("lan_dhcpgw"));
 	}
