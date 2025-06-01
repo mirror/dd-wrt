@@ -1277,6 +1277,35 @@ ifeq ($(CONFIG_RTL838X),y)
 	tools/realtek/linksys-image.sh $(ARCH)-uclibc/vmlinux-lgs310c.webflash $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image.webflash 60402060
 	tools/realtek/belkin-header.py $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image.webflash $(ARCH)-uclibc/vmlinux-lgs310c.belkin.webflash 0x07800001 BKS-RTL83xx
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-lgs310c.trx $(ARCH)-uclibc/vmlinux-lgs310c.webflash
+
+#engenius
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v3.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_engenius_ews2910p-v3.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v3.dtb $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v3.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v3.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03010500  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03010500  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux_ews2910p-v3 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux_ews2910p-v3.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux_ews2910p-v3.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek_ews2910p-v3.trx $(ARCH)-uclibc/vmlinux_ews2910p-v3.webflash
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_engenius_ews2910p-v1.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v1.dtb $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v1.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03802910  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03802910  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux_ews2910p-v1 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux_ews2910p-v1.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux_ews2910p-v1.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek_ews2910p-v1.trx $(ARCH)-uclibc/vmlinux_ews2910p-v1.webflash
+
+
 endif
 endif
 
