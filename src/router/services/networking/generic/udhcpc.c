@@ -72,6 +72,14 @@ static int expires(unsigned int in)
 static int deconfig(void)
 {
 	char *wan_ifname = safe_getenv("interface");
+	if (wan_ifname && nvram_match("lan_ifname", wan_ifname))
+	{
+	    expires(0);
+	    unlink("/tmp/get_lease_time");
+	    unlink("/tmp/lease_time");
+	    nvram_seti("wan_lease", 0);
+	    return 0;
+	}
 
 	eval("ifconfig", wan_ifname, "0.0.0.0", "up");
 	expires(0);
@@ -94,6 +102,11 @@ static int update_value(void)
 {
 	char *value;
 	int changed = 0;
+	char *wan_ifname = safe_getenv("interface");
+	if (wan_ifname && nvram_match("lan_ifname", wan_ifname))
+	{
+	    return 0;
+	}
 
 	if ((value = getenv("ip"))) {
 		chomp(value);
@@ -503,7 +516,6 @@ int dhcpc_tv_main(int argc, char **argv)
 {
 	if (check_action() != ACT_IDLE)
 		return -1;
-
 	if (!argv[1])
 		return EINVAL;
 	else if (strstr(argv[1], "deconfig"))

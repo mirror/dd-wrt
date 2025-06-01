@@ -126,8 +126,20 @@ void end(char *argv[])
 
 int check_arguments(int argc, char *argv[])
 {
+	int i;
 	airbag_init();
-
+	char *filename = basename(argv[0]);
+	if (strcmp(filename, "service")) {
+		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
+			if (functiontable[i].main && !strcmp(functiontable[i].name, filename)) {
+				dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
+				int ret = functiontable[i].main(argc, argv);
+				return ret;
+			}
+		}
+		fprintf(stderr, "cannot find method %s\n", filename);
+		return -1;
+	}
 	if (argc < 2 || (strcmp(argv[1], "shutdown") && argc < 3)) {
 		fprintf(stdout, "%s servicename start|stop|restart|shutdown|main args... [-f]\n", argv[0]);
 		fprintf(stdout, "commands:\n");
@@ -179,7 +191,6 @@ int check_arguments(int argc, char *argv[])
 		return -1;
 	}
 	dd_debug(DEBUG_SERVICE, "call service for %s\n", argv[1]);
-	int i;
 	if (argc > 3 && !strcmp(argv[3], "-f"))
 		force = 1;
 	airbag_setpostinfo(argv[1]);
