@@ -845,6 +845,8 @@
 
 #define ROUTER_GLINET_AX1800 0x128112
 
+#define ROUTER_EWS2910P 0x12910b
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

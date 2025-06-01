@@ -388,6 +388,14 @@ int internal_getRouterBrand()
 		setRouter("Edgecore ECS4125-10P");
 		return ROUTER_EDGECORE_ECS4125;
 	}
+	if (!strcmp(modelstr, "EWS2910P") && !strcmp(version,"v1")) {
+		setRouter("EnGenius EWS2910P v1");
+		return ROUTER_EWS2910P;
+	}
+	if (!strcmp(modelstr, "EWS2910P") && !strcmp(version,"v3")) {
+		setRouter("EnGenius EWS2910P v3");
+		return ROUTER_EWS2910P;
+	}
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
