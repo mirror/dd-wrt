@@ -3314,6 +3314,9 @@ void bgp_best_selection(struct bgp *bgp, struct bgp_dest *dest,
 	}
 
 	if (do_mpath && new_select) {
+		bool first_reason = true;
+		enum bgp_path_selection_reason ignore;
+
 		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
 			if (debug)
 				bgp_path_info_path_with_addpath_rx_str(
@@ -3339,10 +3342,10 @@ void bgp_best_selection(struct bgp *bgp, struct bgp_dest *dest,
 				if (!peer_established(pi->peer->connection))
 					continue;
 
-			bgp_path_info_cmp(bgp, pi, new_select, &paths_eq,
-					  mpath_cfg, debug, pfx_buf, afi, safi,
-					  &dest->reason);
+			bgp_path_info_cmp(bgp, pi, new_select, &paths_eq, mpath_cfg, debug, pfx_buf,
+					  afi, safi, first_reason ? &dest->reason : &ignore);
 
+			first_reason = false;
 			if (paths_eq) {
 				if (debug)
 					zlog_debug(
@@ -5135,7 +5138,8 @@ void bgp_update(struct peer *peer, const struct prefix *p, uint32_t addpath_id,
 	 * attr->evpn_overlay with evpn directly. Instead memcpy
 	 * evpn to new_atr.evpn_overlay before it is interned.
 	 */
-	if (soft_reconfig && evpn && afi == AFI_L2VPN) {
+	if (evpn && afi == AFI_L2VPN &&
+	    (soft_reconfig || !CHECK_FLAG(peer->af_flags[afi][safi], PEER_FLAG_SOFT_RECONFIG))) {
 		bgp_attr_set_evpn_overlay(&new_attr, evpn);
 		p_evpn = NULL;
 	}
@@ -7142,7 +7146,7 @@ void bgp_static_update(struct bgp *bgp, const struct prefix *p,
 						&pi->extra->labels->label[0]);
 			}
 #endif
-			if (pi->extra && pi->extra->vrfleak->bgp_orig)
+			if (pi->extra && pi->extra->vrfleak && pi->extra->vrfleak->bgp_orig)
 				bgp_nexthop = pi->extra->vrfleak->bgp_orig;
 
 			bgp_nexthop_reachability_check(afi, safi, pi, p, dest,
@@ -12359,6 +12363,17 @@ static int bgp_show_table(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t sa
 	return CMD_SUCCESS;
 }
 
+static struct bgp_dest *bgp_route_find_prd_match(struct bgp_dest *curr, struct prefix_rd *match)
+{
+	const struct prefix *curr_p = bgp_dest_get_prefix(curr);
+
+	while (curr && match && memcmp(curr_p->u.val, match->val, 8) != 0) {
+		curr = bgp_route_next(curr);
+		curr_p = bgp_dest_get_prefix(curr);
+	}
+	return curr;
+}
+
 int bgp_show_table_rd(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
 		      struct bgp_table *table, struct prefix_rd *prd_match,
 		      enum bgp_show_type type, void *output_arg,
@@ -12374,12 +12389,10 @@ int bgp_show_table_rd(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
 
 	show_msg = (!use_json && type == bgp_show_type_normal);
 
-	for (dest = bgp_table_top(table); dest; dest = next) {
+	for (dest = bgp_route_find_prd_match(bgp_table_top(table), prd_match); dest; dest = next) {
 		const struct prefix *dest_p = bgp_dest_get_prefix(dest);
 
-		next = bgp_route_next(dest);
-		if (prd_match && memcmp(dest_p->u.val, prd_match->val, 8) != 0)
-			continue;
+		next = bgp_route_find_prd_match(bgp_route_next(dest), prd_match);
 
 		itable = bgp_dest_get_bgp_table_info(dest);
 		if (itable != NULL) {
@@ -12728,6 +12741,14 @@ void route_vty_out_detail_header(struct vty *vty, struct bgp *bgp,
 						"  Local BGP table not advertised");
 			}
 			vty_out(vty, "\n");
+		}
+
+		if (json) {
+			if (incremental_print) {
+				vty_out(vty, "\"pathCount\": %d", count);
+				vty_out(vty, ",");
+			} else
+				json_object_int_add(json, "pathCount", count);
 		}
 	}
 }
@@ -15248,11 +15269,15 @@ static int peer_adj_routes(struct vty *vty, struct peer *peer, afi_t afi,
 				} else {
 					json_object_object_add(json_ar, rd_str, json_routes);
 				}
-			}
+			} else if (json_routes)
+				json_object_free(json_routes);
 
 			output_count += output_count_per_rd;
 			filtered_count += filtered_count_per_rd;
 		}
+		if (json_ar &&
+		    (type == bgp_show_adj_route_advertised || type == bgp_show_adj_route_received))
+			json_object_free(json_ar);
 		if (first == false && json_routes)
 			vty_out(vty, "}");
 	} else {
