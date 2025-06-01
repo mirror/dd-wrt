@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <shutils.h>
 #include <ddnvram.h>
 
 #include <libubox/ustream.h>
@@ -1105,6 +1106,9 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (!poe.hardcore_hacking_mode_en)
+		dd_daemon();
+
 	config_load(&poe.config, 1);
 
 	uloop_init();
@@ -1112,8 +1116,6 @@ int main(int argc, char **argv)
 
 	if (poe_stream_open("/dev/ttyS1", &poe.mcu.stream, B19200) < 0)
 		return -1;
-
-
 	poe_initial_setup(&poe.mcu, &poe.config);
 	uloop_timeout_set(&poe.state_timeout, 1000);
 	uloop_run();
