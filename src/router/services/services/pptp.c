@@ -119,8 +119,8 @@ void start_pptpd(void)
 	struct dns_lists *dns_list = get_dns_list(0);
 
 	if (nvram_matchi("dnsmasq_enable", 1)) {
-		if (nvram_invmatch("lan_ipaddr", ""))
-			fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
+		if (*get_lan_ipaddr())
+			fprintf(fp, "ms-dns %s\n", get_lan_ipaddr());
 	} else {
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
@@ -225,8 +225,8 @@ void start_pptpd(void)
 	//              mss = 1500 - 40 - 108;
 	char bcast[32];
 
-	strcpy(bcast, nvram_safe_get("lan_ipaddr"));
-	get_broadcast(bcast, sizeof(bcast), nvram_safe_get("lan_netmask"));
+	strcpy(bcast, get_lan_ipaddr());
+	get_broadcast(bcast, sizeof(bcast), get_lan_netmask());
 
 	fp = fopen("/tmp/pptpd/ip-up", "w");
 	fprintf(fp,

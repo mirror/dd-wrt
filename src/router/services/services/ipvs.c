@@ -72,7 +72,7 @@ void start_ipvs(void)
 			}
 		}
 		if (!strcasecmp(sourceip, "lan"))
-			sourceip = nvram_safe_get("lan_ipaddr");
+			sourceip = get_lan_ipaddr();
 		snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
 		if (!strcmp(sourceproto, "tcp")) {
 			if (!strcmp(sourceport, "0"))
@@ -122,7 +122,7 @@ void start_ipvs(void)
 				if (!strcasecmp(sourceip, "wan"))
 					sourceip = get_wan_ipaddr();
 				if (!strcasecmp(sourceip, "lan"))
-					sourceip = nvram_safe_get("lan_ipaddr");
+					sourceip = get_lan_ipaddr();
 				break;
 			}
 		}

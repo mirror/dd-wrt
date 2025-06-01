@@ -239,7 +239,7 @@ void start_transmission(void)
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
 
 	char allowed[64];
-	strcpy(allowed, nvram_safe_get("lan_ipaddr"));
+	strcpy(allowed, get_lan_ipaddr());
 	char *p = strrchr(allowed, '.');
 	if (p) {
 		p[1] = '*';

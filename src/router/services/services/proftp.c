@@ -131,7 +131,7 @@ void start_ftpsrv(void)
 		"DelayEngine     off\n"
 		"WtmpLog         off\n"
 		"DefaultRoot     ~\n",
-		nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
+		get_lan_ipaddr(), nvram_safe_get("proftpd_port"));
 
 	samba3shares = getsamba3shares();
 	for (cs = samba3shares; cs; cs = csnext) {

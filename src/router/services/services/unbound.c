@@ -81,9 +81,8 @@ static void unbound_config(void)
 	if (range > 50)
 		range -= 50;
 	fprintf(fp, "outgoing-range: %d\n", range);
-
-	char *lan_ip = nvram_safe_get("lan_ipaddr");
-	char *lan_mask = nvram_safe_get("lan_netmask");
+	char *lan_ip = get_lan_ipaddr();
+	char *lan_mask = get_lan_netmask();
 	char *prefix;
 	int do_6to4 = 0;
 	if (nvram_match("ipv6_typ", "ipv6to4")) {

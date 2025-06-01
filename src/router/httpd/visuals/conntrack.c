@@ -122,7 +122,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t **argv)
 	char state[32] = "";
 	char dum1[32];
 	int dum2;
-	char *lanip = nvram_safe_get("lan_ipaddr");
+	char *lanip = get_lan_ipaddr();
 	char buf[128];
 	lock();
 	fp = fopen("/proc/net/nf_conntrack", "rb");

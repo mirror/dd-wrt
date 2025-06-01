@@ -101,7 +101,7 @@ void start_mdns(void)
 		"rlimit-nofile=30\n" //
 		"rlimit-stack=4194304\n" //
 		"rlimit-nproc=3\n",
-		nvram_safe_get("lan_ipaddr"), nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
+		get_lan_ipaddr(), nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
 	fclose(fp);
 
 #ifdef HAVE_SMBD //might need SAMBA

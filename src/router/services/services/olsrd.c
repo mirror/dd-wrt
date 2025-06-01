@@ -42,7 +42,7 @@ void start_olsrd(void)
 	char net[64];
 	insmod("ipip");
 
-	strcpy(net, nvram_safe_get("lan_ipaddr"));
+	strcpy(net, get_lan_ipaddr());
 	int a, b, c, d;
 
 	sscanf(net, "%d.%d.%d.%d", &a, &b, &c, &d);
@@ -58,7 +58,7 @@ void start_olsrd(void)
 		fprintf(fp, "Pollrate\t%s\n", nvram_safe_get("olsrd_pollsize"));
 		fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
 		fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
-		fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "MainIp %s\n", get_lan_ipaddr());
 #ifdef HAVE_IPV6
 		if (nvram_matchi("olsrd_smartgw", 1)) {
 			nvram_seti("ipv6_enable", 1);

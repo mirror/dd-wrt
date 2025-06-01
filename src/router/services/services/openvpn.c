@@ -631,13 +631,13 @@ void start_openvpnserver(void)
 			char lanaddr[32] = { 0 };
 			char *mypoint;
 			char srvnetwork[32] = { 0 };
-			snprintf(lanaddr, sizeof(lanaddr), "%s", nvram_safe_get("lan_ipaddr"));
+			snprintf(lanaddr, sizeof(lanaddr), "%s", get_lan_ipaddr());
 			//truncate and replace with .0
 			mypoint = strrchr(lanaddr, '.');
 			if (mypoint != NULL) {
 				*mypoint = '\0';
 				snprintf(srvnetwork, sizeof(srvnetwork), "%s%s", lanaddr, ".0");
-				fprintf(fp, "push \"route %s %s vpn_gateway\"\n", srvnetwork, nvram_safe_get("lan_netmask"));
+				fprintf(fp, "push \"route %s %s vpn_gateway\"\n", srvnetwork, get_lan_netmask());
 			}
 		}
 		if (nvram_invmatchi("openvpn_tlscip", 0))

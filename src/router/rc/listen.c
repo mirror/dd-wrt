@@ -281,13 +281,13 @@ static int listen_interface(char *interface)
 				goto Exit;
 			}
 
-			if (inet_addr(nvram_safe_get("lan_ipaddr")) == *(u_int32_t *)packet.daddr) {
+			if (inet_addr(get_lan_ipaddr()) == *(u_int32_t *)packet.daddr) {
 				DEBUG("dest ip equal to lan ipaddr\n");
 				ret = L_FAIL;
 				goto Exit;
 			}
 
-			DEBUG("inet_addr=%x, packet.daddr=%x", inet_addr(nvram_safe_get("lan_ipaddr")), *(u_int32_t *)packet.daddr);
+			DEBUG("inet_addr=%x, packet.daddr=%x", inet_addr(get_lan_ipaddr()), *(u_int32_t *)packet.daddr);
 
 			// for (i=0; i<34;i++) {
 			// if (i%16==0) printf("\n");
@@ -346,7 +346,7 @@ static int listen_interface(char *interface)
 #endif
 #ifdef HAVE_L2TP
 				if (nvram_match("wan_proto", "l2tp")) {
-				inet_aton(nvram_safe_get("lan_ipaddr"), &ipaddr);
+				inet_aton(get_lan_ipaddr(), &ipaddr);
 			}
 #endif
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP)

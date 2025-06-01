@@ -2762,6 +2762,8 @@ void start_restore_defaults(void)
 	nvram_seti("sysup", 0);
 	nvram_seti("ddns_once", 0);
 	nvram_unset("rc_opt_run");
+	nvram_unset("lan_dhcpaddr");
+	nvram_unset("lan_dhcpmask");
 
 	nvram_unset("ipv6_get_dns");
 	nvram_unset("ipv6_get_domain");

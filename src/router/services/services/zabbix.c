@@ -50,7 +50,7 @@ void start_zabbix(void)
 		else
 			HOST = nvram_safe_get("wan_hostname");
 		char *SRVIP = nvram_safe_get("zabbix_serverip");
-		char *IP = nvram_safe_get("lan_ipaddr");
+		char *IP = get_lan_ipaddr();
 		FILE *fp = fopen("/tmp/zabbix.conf", "wb");
 		fprintf(fp, "LogType=file\n");
 

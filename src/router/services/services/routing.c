@@ -274,8 +274,8 @@ static int zebra_ospf_init(void)
 		}
 		foreach(var, bufferif, next) {
 			if (!strcmp("br0", var)) {
-				char *ipaddr = nvram_safe_get("lan_ipaddr");
-				char *netmask = nvram_safe_get("lan_netmask");
+				char *ipaddr = get_lan_ipaddr();
+				char *netmask = get_lan_netmask();
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, "interface %s\n", var);
 				continue;
@@ -297,7 +297,7 @@ static int zebra_ospf_init(void)
 		fprintf(fp, "router ospf\n");
 		fprintf(fp, " passive-interface lo\n");
 		fprintf(fp, " passive-interface br0:0\n");
-		fprintf(fp, " ospf router-id %s\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, " ospf router-id %s\n", get_lan_ipaddr());
 		fprintf(fp, " redistribute kernel metric-type 1\n");
 		fprintf(fp, " redistribute connected metric-type 1\n");
 		fprintf(fp, " redistribute static metric-type 1\n");
@@ -329,8 +329,8 @@ static int zebra_ospf_init(void)
 				continue;
 			}
 			if (!strcmp("br0", var)) {
-				char *ipaddr = nvram_safe_get("lan_ipaddr");
-				char *netmask = nvram_safe_get("lan_netmask");
+				char *ipaddr = get_lan_ipaddr();
+				char *netmask = get_lan_netmask();
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 
@@ -436,7 +436,7 @@ static int zebra_ospf6_init(void)
 		fprintf(fp, "router osp6f\n");
 		// fprintf(fp, " passive-interface lo\n");
 		// fprintf(fp, " ospf router-id %s\n",
-		// nvram_safe_get("lan_ipaddr"));
+		// get_lan_ipaddr());
 		fprintf(fp, " redistribute kernel\n");
 		fprintf(fp, " redistribute connected\n");
 		fprintf(fp, " redistribute static\n");
@@ -592,7 +592,7 @@ static int zebra_bgp_init(void)
 		fwritenvram("bgpd_conf", fp);
 	} else {
 		fprintf(fp, "router bgp %s\n", nvram_safe_get("routing_bgp_as"));
-		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
+		fprintf(fp, "  network %s/%d\n", get_lan_ipaddr(), getmask(get_lan_netmask()));
 		if (wf && *wf && strcmp(get_wan_ipaddr(), "0.0.0.0"))
 			fprintf(fp, "  network %s/%s\n", get_wan_ipaddr(), nvram_safe_get("wan_netmask"));
 		fprintf(fp, "neighbor %s local-as %s\n", lf, nvram_safe_get("routing_bgp_as"));
@@ -656,7 +656,7 @@ static int bird_init(void)
 			perror("/tmp/bird/bird.conf");
 			return errno;
 		}
-		fprintf(fp, "router id %s;\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "router id %s;\n", get_lan_ipaddr());
 		fprintf(fp, "protocol kernel { learn; persist; scan time 10; import all; export all; }\n");
 		fprintf(fp, "protocol device { scan time 10; } \n");
 		fprintf(fp, "protocol direct { interface \"*\";}\n");

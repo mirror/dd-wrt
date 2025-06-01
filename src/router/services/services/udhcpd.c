@@ -47,8 +47,8 @@ static int adjust_dhcp_range(void)
 {
 	struct in_addr ipaddr, netaddr, netmask;
 
-	char *lan_ipaddr = nvram_safe_get("lan_ipaddr");
-	char *lan_netmask = nvram_safe_get("lan_netmask");
+	char *lan_ipaddr = get_lan_ipaddr();
+	char *lan_netmask = get_lan_netmask();
 	char *dhcp_num = nvram_safe_get("dhcp_num");
 	char *dhcp_start = nvram_safe_get("dhcp_start");
 
@@ -161,11 +161,11 @@ void start_udhcpd(void)
 		return;
 	}
 	fprintf(fp, "pidfile /var/run/udhcpd.pid\n");
-	fprintf(fp, "start %d.%d.%d.%s\n", get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+	fprintf(fp, "start %d.%d.%d.%s\n", get_single_ip(get_lan_ipaddr(), 0),
+		get_single_ip(get_lan_ipaddr(), 1), get_single_ip(get_lan_ipaddr(), 2),
 		nvram_safe_get("dhcp_start"));
-	fprintf(fp, "end %d.%d.%d.%d\n", get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+	fprintf(fp, "end %d.%d.%d.%d\n", get_single_ip(get_lan_ipaddr(), 0),
+		get_single_ip(get_lan_ipaddr(), 1), get_single_ip(get_lan_ipaddr(), 2),
 		nvram_geti("dhcp_start") + nvram_geti("dhcp_num") - 1);
 	int dhcp_max = nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 	fprintf(fp, "max_leases %d\n", dhcp_max);
@@ -178,13 +178,13 @@ void start_udhcpd(void)
 		fprintf(fp, "lease_file /tmp/udhcpd.leases\n");
 	fprintf(fp, "statics_file /tmp/udhcpd.statics\n");
 
-	if (nvram_invmatch("lan_netmask", "") && nvram_invmatch("lan_netmask", "0.0.0.0"))
-		fprintf(fp, "option subnet %s\n", nvram_safe_get("lan_netmask"));
+	if (*get_lan_netmask() && strcmp(get_lan_netmask(), "0.0.0.0"))
+		fprintf(fp, "option subnet %s\n", get_lan_netmask());
 
 	if (nvram_invmatch("dhcp_gateway", "") && nvram_invmatch("dhcp_gateway", "0.0.0.0"))
 		fprintf(fp, "option router %s\n", nvram_safe_get("dhcp_gateway"));
-	else if (nvram_invmatch("lan_ipaddr", "") && nvram_invmatch("lan_ipaddr", "0.0.0.0"))
-		fprintf(fp, "option router %s\n", nvram_safe_get("lan_ipaddr"));
+	else if (*get_lan_ipaddr() && strcmp(get_lan_ipaddr(), "0.0.0.0"))
+		fprintf(fp, "option router %s\n", get_lan_ipaddr());
 
 	if (nvram_invmatch("wan_wins", "") && nvram_invmatch("wan_wins", "0.0.0.0"))
 		fprintf(fp, "option wins %s\n", nvram_safe_get("wan_wins"));
@@ -204,14 +204,14 @@ void start_udhcpd(void)
 	dns_list = get_dns_list(0);
 
 	if (!dns_list || dns_list->num_servers == 0) {
-		if (nvram_invmatch("lan_ipaddr", ""))
-			fprintf(fp, "option dns %s\n", nvram_safe_get("lan_ipaddr"));
+		if (*get_lan_ipaddr())
+			fprintf(fp, "option dns %s\n", get_lan_ipaddr());
 	} else if (nvram_matchi("local_dns", 1)) {
-		if (nvram_invmatch("lan_ipaddr", "") || dns_list) {
+		if (*get_lan_ipaddr() || dns_list) {
 			fprintf(fp, "option dns");
 
-			if (nvram_invmatch("lan_ipaddr", ""))
-				fprintf(fp, " %s", nvram_safe_get("lan_ipaddr"));
+			if (*get_lan_ipaddr())
+				fprintf(fp, " %s", get_lan_ipaddr());
 			if (dns_list) {
 				for (i = 0; i < dns_list->num_servers; i++)
 					fprintf(fp, " %s", dns_list->dns_server[i].ip);
@@ -260,10 +260,10 @@ void start_udhcpd(void)
 
 	if (nvram_matchi("local_dns", 1)) {
 		if (nvram_matchi("port_swap", 1))
-			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("et1macaddr"),
+			fprintf(fp, "%s %s %s\n", get_lan_ipaddr(), nvram_safe_get("et1macaddr"),
 				nvram_safe_get("router_name"));
 		else
-			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"), mac, nvram_safe_get("router_name"));
+			fprintf(fp, "%s %s %s\n", get_lan_ipaddr(), mac, nvram_safe_get("router_name"));
 	}
 	int leasenum = nvram_geti("static_leasenum");
 

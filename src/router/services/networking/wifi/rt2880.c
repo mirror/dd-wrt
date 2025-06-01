@@ -694,13 +694,13 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 	char eapifname[64] = { 0 };
 
 	if (nvram_match("wan_proto", "disabled"))
-		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "own_ip_addr=%s\n", get_lan_ipaddr());
 	else {
 		char *wip = get_wan_ipaddr();
 		if (*wip)
 			fprintf(fp, "own_ip_addr=%s\n", wip);
 		else
-			fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "own_ip_addr=%s\n", get_lan_ipaddr());
 	}
 
 	if (nvram_nmatch("", "wl%d_key", idx))

@@ -34,7 +34,7 @@
 static char *getifip(void)
 {
 	if (nvram_match("pppoeserver_interface", "br0"))
-		return nvram_safe_get("lan_ipaddr");
+		return get_lan_ipaddr();
 	else
 		return nvram_nget("%s_ipaddr", nvram_safe_get("pppoeserver_interface"));
 }

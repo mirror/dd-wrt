@@ -93,7 +93,7 @@ void start_tor(void)
 		fprintf(fp, "SocksPort 0\n");
 	} else {
 		fprintf(fp, "SocksPort 9050\n");
-		fprintf(fp, "SocksPort %s:9050\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "SocksPort %s:9050\n", get_lan_ipaddr());
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
 	if (usecrypto) {
@@ -131,8 +131,8 @@ void start_tor(void)
 
 	fprintf(fp, "VirtualAddrNetworkIPv4 10.192.0.0/10\n");
 	fprintf(fp, "AutomapHostsOnResolve 1\n");
-	fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
-	fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
+	fprintf(fp, "TransPort %s:9040\n", get_lan_ipaddr());
+	fprintf(fp, "DNSPort %s:5353\n", get_lan_ipaddr());
 	if (nvram_default_matchi("tor_strict", 1, 0)) {
 		char *entry = getIsoName(nvram_safe_get("tor_entry"));
 		char *exit = getIsoName(nvram_safe_get("tor_exit"));
@@ -143,10 +143,10 @@ void start_tor(void)
 	}
 	if (nvram_matchi("tor_transparent", 1)) {
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353",
-			  nvram_safe_get("lan_ipaddr"));
+			  get_lan_ipaddr());
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353",
-			  nvram_safe_get("lan_ipaddr"));
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", nvram_safe_get("lan_ipaddr"));
+			  get_lan_ipaddr());
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", get_lan_ipaddr());
 	}
 #ifdef HAVE_X86
 	eval("mkdir", "-p", "/tmp/tor");

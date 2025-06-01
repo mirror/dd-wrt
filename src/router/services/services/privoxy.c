@@ -47,8 +47,8 @@ void start_privoxy(void)
 	const char *next;
 	char var[80];
 	char vifs[512];
-	char *ip = nvram_safe_get("lan_ipaddr");
-	char *mask = nvram_safe_get("lan_netmask");
+	char *ip = get_lan_ipaddr();
+	char *mask = get_lan_netmask();
 	char *webif_port = nvram_safe_get("http_lanport");
 
 	sysprintf("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
@@ -135,9 +135,9 @@ void start_privoxy(void)
 void stop_privoxy(void)
 {
 	char wan_if_buffer[33];
-	char *ip = nvram_safe_get("lan_ipaddr");
+	char *ip = get_lan_ipaddr();
 	char *wan = get_wan_ipaddr();
-	char *mask = nvram_safe_get("lan_netmask");
+	char *mask = get_lan_netmask();
 	char *webif_port = nvram_safe_get("http_lanport");
 	char *transp = nvram_safe_get("privoxy_transp_exclude");
 	const char *next;

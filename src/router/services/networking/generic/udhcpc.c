@@ -72,6 +72,8 @@ static int expires(unsigned int in)
 static int deconfig(void)
 {
 	char *wan_ifname = safe_getenv("interface");
+	nvram_unset("lan_dhcpaddr");
+	nvram_unset("lan_dhcpmask");
 	if (wan_ifname && nvram_match("lan_ifname", wan_ifname))
 	{
 	    expires(0);
@@ -191,6 +193,8 @@ static int bound(void)
 	char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
 	char *cidr;
+	nvram_unset("lan_dhcpaddr");
+	nvram_unset("lan_dhcpmask");
 	if (wan_ifname && nvram_match("lan_ifname", wan_ifname)) {
 		char *ip = getenv("ip");
 		char *netmask = getenv("subnet");
@@ -201,6 +205,8 @@ static int bound(void)
 		if (gateway)
 			nvram_set("lan_gateway", gateway);
 		if (ip && netmask) {
+			nvram_set("lan_dhcpaddr", ip);
+			nvram_set("lan_dhcpmask", netmask);
 			eval("ifconfig", wan_ifname, ip, "netmask", netmask, "up");
 			start_set_routes();
 #ifdef HAVE_DNSMASQ

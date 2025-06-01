@@ -93,8 +93,9 @@ void start_smartdns(void)
 	fprintf(fp, "ca-path /etc/ssl\n");
 #endif
 #ifdef HAVE_TOR
-	if (nvram_match("tor_enable", "1"))
-		fprintf(fp, "server %s:5353\n", nvram_safe_get("lan_ipaddr"));
+	if (nvram_match("tor_enable", "1")) {
+		fprintf(fp, "server %s:5353\n", get_lan_ipaddr());
+	}
 #endif
 	struct dns_lists *dns_list = NULL;
 	if (nvram_matchi("recursive_dns", 1)) {

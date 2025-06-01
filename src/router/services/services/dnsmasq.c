@@ -628,7 +628,7 @@ void start_dnsmasq(void)
 	} else if (nvram_matchi("pptpd_enable", 1)) {
 		fprintf(fp, "listen-address=127.0.0.1");
 		if (canlan()) {
-			fprintf(fp, ",%s", nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, ",%s", get_lan_ipaddr());
 #ifdef HAVE_IPV6
 			char buf[INET6_ADDRSTRLEN];
 			char *ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: NULL;
@@ -728,7 +728,7 @@ void start_dnsmasq(void)
 #endif
 #ifdef HAVE_TOR
 	if (nvram_match("tor_enable", "1") && !nvram_matchi("smartdns", 1))
-		fprintf(fp, "server=%s#5353\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "server=%s#5353\n", get_lan_ipaddr());
 #endif
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
@@ -826,7 +826,7 @@ void start_dnsmasq(void)
 		}
 		fprintf(fp, "dhcp-lease-max=%d\n", dhcp_max);
 		if (landhcp())
-			fprintf(fp, "dhcp-option=%s,3,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "dhcp-option=%s,3,%s\n", nvram_safe_get("lan_ifname"), get_lan_ipaddr());
 		for (i = 0; i < mdhcpcount; i++) {
 			char buffer[128];
 			if (strcmp(getmdhcp(IDX_DHCPON, i, buffer), "On"))
@@ -843,12 +843,12 @@ void start_dnsmasq(void)
 			fprintf(fp, "port=0\n");
 #ifdef HAVE_UNBOUND
 			if (nvram_matchi("recursive_dns", 1)) {
-				fprintf(fp, "dhcp-option=6,%s\n", nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, "dhcp-option=6,%s\n", get_lan_ipaddr());
 			} else
 #endif
 #ifdef HAVE_SMARTDNS
 				if (nvram_matchi("smartdns", 1)) {
-				fprintf(fp, "dhcp-option=6,%s\n", nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, "dhcp-option=6,%s\n", get_lan_ipaddr());
 			} else
 #endif
 			{
@@ -886,8 +886,8 @@ void start_dnsmasq(void)
 			fprintf(fp, "dhcp-authoritative\n");
 		if (landhcp()) {
 			unsigned int dhcpnum = nvram_geti("dhcp_num");
-			char *ip = nvram_safe_get("lan_ipaddr");
-			char *netmask = nvram_safe_get("lan_netmask");
+			char *ip = get_lan_ipaddr();
+			char *netmask = get_lan_netmask();
 			char *leasetime = nvram_safe_get("dhcp_lease");
 			makeentry_full(fp, nvram_safe_get("lan_ifname"), dhcpnum, nvram_safe_get("dhcp_start"), netmask, leasetime);
 		}
@@ -984,7 +984,7 @@ void start_dnsmasq(void)
 		if (nvram_matchi("privoxy_transp_enable", 1)) {
 			fprintf(fp, "dhcp-option=252,http://config.privoxy.org/wpad.dat\n");
 		} else {
-			fprintf(fp, "dhcp-option=252,http://%s/wpad.dat\n", nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "dhcp-option=252,http://%s/wpad.dat\n", get_lan_ipaddr());
 		}
 	} else {
 		fprintf(fp, "dhcp-option=252,\"\\n\"\n");

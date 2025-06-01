@@ -1849,13 +1849,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "own_ip_addr=%s\n", lip);
 		} else {
 			if (nvram_match("wan_proto", "disabled"))
-				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, "own_ip_addr=%s\n", get_lan_ipaddr());
 			else {
 				char *wip = get_wan_ipaddr();
 				if (*wip)
 					fprintf(fp, "own_ip_addr=%s\n", wip);
 				else
-					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+					fprintf(fp, "own_ip_addr=%s\n", get_lan_ipaddr());
 			}
 		}
 

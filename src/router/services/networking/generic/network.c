@@ -537,7 +537,7 @@ static int enable_dhcprelay(char *ifname)
 			if (nvram_match(mode, "wet") || nvram_match(mode, "apstawet")) {
 				uint32 ip;
 
-				inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
+				inet_aton(get_lan_ipaddr(), (struct in_addr *)&ip);
 #ifdef HAVE_DHDAP
 				is_dhd = !dhd_probe(name);
 				if (is_dhd) {
@@ -2453,7 +2453,7 @@ void start_lan(void)
 		set_hwaddr(wifi, nvram_safe_get("def_whwaddr"));
 		//              eval("ifconfig", wifi, "up");
 	}
-	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	ifconfig(lan_ifname, IFUP, get_lan_ipaddr(), get_lan_netmask());
 	/* start mactelnet (if enabled) as early as possible to allow early access if anything bad happens */
 #ifdef HAVE_MACTELNET
 	start_mactelnetd();
@@ -2467,7 +2467,7 @@ void start_lan(void)
 #endif
 	nvram_set("sta_ifname", getSTA());
 	reset_hwaddr(lan_ifname);
-	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	ifconfig(lan_ifname, IFUP, get_lan_ipaddr(), get_lan_netmask());
 #ifdef HAVE_QTN
 	start_qtn(); //bootup quantenna firmware
 #endif
@@ -4512,8 +4512,8 @@ void wan_done(char *wan_ifname)
 	uint32 lanip;
 	uint32 lannm;
 
-	inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&lanip);
-	inet_aton(nvram_safe_get("lan_netmask"), (struct in_addr *)&lannm);
+	inet_aton(get_lan_ipaddr(), (struct in_addr *)&lanip);
+	inet_aton(get_lan_netmask(), (struct in_addr *)&lannm);
 
 	if (wanip != 0 && !nvram_match("wan_proto", "disabled")) {
 		int iperror = 0;

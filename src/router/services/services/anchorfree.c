@@ -362,20 +362,20 @@ void start_anchorfreednat(void)
 
 		if (nvram_matchi("af_ssid", 1)) {
 			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+			     get_lan_ipaddr(), "-j", "DROP");
 		} else {
 			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
+			     get_lan_ipaddr(), "-j", "DNAT", "--to", get_lan_ipaddr());
 		}
 
 		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to",
 		     dest);
 		if (nvram_matchi("af_ssid", 1)) {
 			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+			     get_lan_ipaddr(), "-j", "DROP");
 		} else {
 			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
+			     get_lan_ipaddr(), "-j", "DNAT", "--to", get_lan_ipaddr());
 		}
 
 		eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to",
@@ -420,10 +420,10 @@ void stop_anchorfree(void)
 
 		if (nvram_matchi("af_ssid", 1)) {
 			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+			     get_lan_ipaddr(), "-j", "DROP");
 		} else {
 			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
+			     get_lan_ipaddr(), "-j", "DNAT", "--to", get_lan_ipaddr());
 		}
 
 		unlink("/tmp/.anchorfree");

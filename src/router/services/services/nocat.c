@@ -62,10 +62,10 @@ int mk_nocat_conf(void)
 	 * fprintf(fp, "InternalDevice\t%s\n", nvram_safe_get("NC_InternalDevice") ); 
 	 * fprintf(fp, "ExternalDevice\t%s\n", nvram_safe_get("NC_ExternalDevice") ); 
 	 * // InsideIP is now depreciated, use GatewayAddr
-	 * fprintf(fp, "InsideIP\t%s\n", nvram_safe_get("lan_ipaddr")); 
+	 * fprintf(fp, "InsideIP\t%s\n", get_lan_ipaddr()); 
 	 * fprintf(fp, "LocalNetwork\t%s/%s\n", 
-	 get_network(nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask")),
-	 nvram_safe_get("lan_netmask") );
+	 get_network(get_lan_ipaddr(), get_lan_netmask()),
+	 get_lan_netmask() );
 	 */
 	/*
 	 * These are now hardcoded as the defaults 
@@ -80,7 +80,7 @@ int mk_nocat_conf(void)
 	 */
 	fprintf(fp, "Verbosity\t%s\n", nvram_safe_get("NC_Verbosity"));
 	fprintf(fp, "GatewayName\t%s\n", nvram_safe_get("NC_GatewayName"));
-	fprintf(fp, "GatewayAddr\t%s\n", nvram_default_get("NC_GatewayAddr", nvram_safe_get("lan_ipaddr")));
+	fprintf(fp, "GatewayAddr\t%s\n", nvram_default_get("NC_GatewayAddr", get_lan_ipaddr()));
 	if (!nvram_match("NC_extifname", "auto")) {
 		fprintf(fp, "ExternalDevice\t%s\n", nvram_safe_get("NC_extifname"));
 	}
@@ -115,7 +115,7 @@ int mk_nocat_conf(void)
 	fprintf(fp, "FirewallPath\t%s\n", "/usr/libexec/nocat/");
 	fprintf(fp, "ExcludePorts\t%s\n", nvram_safe_get("NC_ExcludePorts"));
 	fprintf(fp, "IncludePorts\t%s\n", nvram_safe_get("NC_IncludePorts"));
-	fprintf(fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("NC_AllowedWebHosts"));
+	fprintf(fp, "AllowedWebHosts\t%s %s\n", get_lan_ipaddr(), nvram_safe_get("NC_AllowedWebHosts"));
 	/*
 	 * TJaqua: Added MACWhiteList to ignore given machines or routers on the
 	 * local net (e.g. routers with an alternate Auth). 
@@ -134,7 +134,7 @@ int mk_nocat_conf(void)
 
 		dns_list = get_dns_list(0);
 		if (!dns_list || dns_list->num_servers == 0) {
-			fprintf(fp, "DNSAddr \t%s\n", nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "DNSAddr \t%s\n", get_lan_ipaddr());
 		} else {
 			fprintf(fp, "DNSAddr \t");
 			for (i = 0; i < dns_list->num_servers; i++)

@@ -38,12 +38,12 @@ static int write_default_config(FILE *fp)
 	char cidr[24];
 	struct in_addr addr, mask;
 
-	valid = inet_aton(nvram_safe_get("lan_ipaddr"), &addr);
+	valid = inet_aton(get_lan_ipaddr(), &addr);
 	if (valid == -EINVAL) {
 		fprintf(stderr, "invalid address\n");
 		return 1;
 	}
-	valid = inet_aton(nvram_safe_get("lan_netmask"), &mask);
+	valid = inet_aton(get_lan_netmask(), &mask);
 	if (valid == -EINVAL) {
 		fprintf(stderr, "invalid mask\n");
 		return 1;
