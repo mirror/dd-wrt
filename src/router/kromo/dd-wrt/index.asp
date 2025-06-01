@@ -227,6 +227,9 @@ function submitcheck(F) {
 		if(F._wan_priority) {
 			F.wan_priority.value = F._wan_priority.checked ? 1 : 0;
 		}
+		if(F._lan_dhcp) {
+			F.lan_dhcp.value = F._lan_dhcp.checked ? 1 : 0;
+		}
 		if(F._auth_dnsmasq) {
 			F.auth_dnsmasq.value = F._auth_dnsmasq.checked ? 1 : 0;
 		}
@@ -328,6 +331,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="wan_priority" value="0" />
+							<input type="hidden" name="lan_dhcp" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="dns_redirect" value="0" />
 							<input type="hidden" name="dns_redirectdot" value="0" />
@@ -455,6 +459,10 @@ addEvent(window, "unload", function() {
 							<h2><% tran("idx.h23"); %></h2>
 							<fieldset>
 								<legend><% tran("idx.routerip"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("idx.lan_dhcp"); %></div>
+									<input type="checkbox" value="1" name="_lan_dhcp" <% nvc("lan_dhcp", "1"); %> />
+								</div>
 								<div class="setting">
 									<div class="label"><% tran("idx.lanip"); %></div>
 									<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,223,'IP')" name="lan_ipaddr_0" value="<% get_single_ip("lan_ipaddr","0"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_1" value="<% get_single_ip("lan_ipaddr","1"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_2" value="<% get_single_ip("lan_ipaddr","2"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,255,'IP')" name="lan_ipaddr_3" value="<% get_single_ip("lan_ipaddr","3"); %>"/> / <input class="num" maxlength="3" size="3" name="lan_netmask" onblur="valid_range(this,0,32,service.vpnd_mask)" value="<% get_cidr_mask("lan_netmask"); %>"/>

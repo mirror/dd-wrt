@@ -1296,6 +1296,7 @@ idx.dhcp_end="End IP Address";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximum DHCP Users";
 idx.dhcp_lease="Lease Expiration";
 idx.dhcp_dnsmasq="Use dnsmasq for DHCP";
+idx.lan_dhcp="Try DHCP on LAN";
 idx.dns_dnsmasq="Use dnsmasq for DNS";
 idx.wan_priority="Use VLAN Priority";
 idx.auth_dnsmasq="DHCP-Authoritative";

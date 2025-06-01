@@ -1215,6 +1215,7 @@ idx.dhcp_end="End-IP-Adresse";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximale DHCP-Nutzeranzahl";
 idx.dhcp_lease="Lease-Ablauf";
 idx.dhcp_dnsmasq="Nutze dnsmasq für DHCP";
+idx.lan_dhcp="Versuche DHCP on LAN";
 idx.dns_dnsmasq="Nutze dnsmasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Erzwungene DNS Umleitung";
