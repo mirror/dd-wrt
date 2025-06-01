@@ -273,6 +273,46 @@ EJ_VISIBLE void ej_get_cidr_mask(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "0");
 }
 
+EJ_VISIBLE void ej_get_lan_ipaddr(webs_t wp, int argc, char_t **argv)
+{
+	char *c;
+	c = get_lan_ipaddr());
+	if (*c) {
+		websWrite(wp, "%s", c);
+	} else
+		websWrite(wp, "0.0.0.0");
+}
+
+EJ_VISIBLE void ej_get_lan_dns(webs_t wp, int argc, char_t **argv)
+{
+	char *c;
+	c = get_lan_dns());
+	if (*c) {
+		websWrite(wp, "%s", c);
+	} else
+		websWrite(wp, "0.0.0.0");
+}
+
+EJ_VISIBLE void ej_get_lan_cidr_mask(webs_t wp, int argc, char_t **argv)
+{
+	char *c;
+	c = get_lan_netmask());
+	if (*c) {
+		websWrite(wp, "%d", getmask(c));
+	} else
+		websWrite(wp, "0");
+}
+
+EJ_VISIBLE void ej_get_lan_netmask(webs_t wp, int argc, char_t **argv)
+{
+	char *c;
+	c = get_lan_netmask());
+	if (*c) {
+		websWrite(wp, "%s", c);
+	} else
+		websWrite(wp, "0.0.0.0");
+}
+
 EJ_VISIBLE void ej_get_single_nm(webs_t wp, int argc, char_t **argv)
 {
 	char *c;

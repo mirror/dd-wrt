@@ -280,15 +280,15 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ip"); %></div>
-									<span id="lan_ip"><% nvg("lan_ipaddr"); %>/<% get_cidr_mask("lan_netmask"); %></span>&nbsp;
+									<span id="lan_ip"><% get_lan_ipaddr(); %>/<% get_lan_cidr_mask(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.gateway"); %></div>
-									<span id="lan_gateway"><% nvg("lan_gateway"); %></span>&nbsp;
+									<span id="lan_gateway"><% get_lan_gateway(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.localdns"); %></div>
-									<span id="lan_dns"><% nvg("lan_dns"); %></span>&nbsp;
+									<span id="lan_dns"><% get_lan_dns(); %></span>&nbsp;
 								</div>
 							</fieldset><br />
 							<fieldset>
