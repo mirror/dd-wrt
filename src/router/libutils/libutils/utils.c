@@ -810,11 +810,20 @@ char *get_lan_ipaddr(void)
 
 char *get_lan_dns(void)
 {
-	char *lan_ip = nvram_safe_get("lan_dns");
+	char *lan_dns = nvram_safe_get("lan_dns");
 	if (*nvram_safe_get("lan_dhcpdns") && strcmp(nvram_safe_get("lan_dhcpdns"), "0.0.0.0") && nvram_match("lan_dhcp","1")) {
-		lan_ip = nvram_safe_get("lan_dhcpdns");
+		lan_dns = nvram_safe_get("lan_dhcpdns");
 	}
-	return lan_ip;
+	return lan_dns;
+}
+
+char *get_lan_gateway(void)
+{
+	char *lan_gw = nvram_safe_get("lan_dns");
+	if (*nvram_safe_get("lan_dhcpgw") && strcmp(nvram_safe_get("lan_dhcpgw"), "0.0.0.0") && nvram_match("lan_dhcp","1")) {
+		lan_gw = nvram_safe_get("lan_dhcpgw");
+	}
+	return lan_gw;
 }
 
 char *get_lan_netmask(void)
