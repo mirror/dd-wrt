@@ -13,6 +13,7 @@
  */
 #include <upnp.h>
 #include <InternetGatewayDevice.h>
+#include <utils.h>
 
 /*
  * WARNNING: PLEASE IMPLEMENT YOUR CODES AFTER 

@@ -42,6 +42,7 @@
 #include "upnp.h"
 #include <InternetGatewayDevice.h>
 #include <wlutils.h>
+#include <utils.h>
 
 #define _PATH_PROCNET_DEV "/proc/net/dev"
 
