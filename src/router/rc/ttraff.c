@@ -31,8 +31,8 @@ void remove_oldest_entry(int cur_month, int cur_year)
 			snprintf(old, sizeof(old), "traff-%02u-%u", month, year);
 			len = strlen(nvram_safe_get(old));
 			if (len > 0) {
-				dd_logdebug("ttraff", "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year,
-					  len + 15);
+				dd_logdebug("ttraff", "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month,
+					    year, len + 15);
 				nvram_unset(old);
 				return;
 			}
