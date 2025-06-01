@@ -276,7 +276,7 @@ EJ_VISIBLE void ej_get_cidr_mask(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_lan_ipaddr(webs_t wp, int argc, char_t **argv)
 {
 	char *c;
-	c = get_lan_ipaddr());
+	c = get_lan_ipaddr();
 	if (*c) {
 		websWrite(wp, "%s", c);
 	} else
@@ -286,7 +286,7 @@ EJ_VISIBLE void ej_get_lan_ipaddr(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_lan_dns(webs_t wp, int argc, char_t **argv)
 {
 	char *c;
-	c = get_lan_dns());
+	c = get_lan_dns();
 	if (*c) {
 		websWrite(wp, "%s", c);
 	} else
@@ -296,7 +296,7 @@ EJ_VISIBLE void ej_get_lan_dns(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_lan_cidr_mask(webs_t wp, int argc, char_t **argv)
 {
 	char *c;
-	c = get_lan_netmask());
+	c = get_lan_netmask();
 	if (*c) {
 		websWrite(wp, "%d", getmask(c));
 	} else
@@ -306,7 +306,7 @@ EJ_VISIBLE void ej_get_lan_cidr_mask(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_lan_netmask(webs_t wp, int argc, char_t **argv)
 {
 	char *c;
-	c = get_lan_netmask());
+	c = get_lan_netmask();
 	if (*c) {
 		websWrite(wp, "%s", c);
 	} else
