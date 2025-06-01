@@ -205,7 +205,6 @@ static int bound(void)
 		if (ip && netmask) {
 			nvram_set("lan_dhcpaddr", ip);
 			nvram_set("lan_dhcpmask", netmask);
-			nvram_set("lan_proto", "static");
 
 			eval("ifconfig", wan_ifname, ip, "netmask", netmask, "up");
 			start_set_routes();

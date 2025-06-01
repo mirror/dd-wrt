@@ -40,7 +40,7 @@
 static int landhcp(void)
 {
 	if (!getWET())
-		if (nvram_match("lan_proto", "dhcp") && nvram_matchi("dhcpfwd_enable", 0))
+		if (nvram_match("lan_proto", "dhcp") && nvram_matchi("dhcpfwd_enable", 0) && !*nvram_safe_get("lan_dhcpaddr"))
 			return 1;
 	return 0;
 }

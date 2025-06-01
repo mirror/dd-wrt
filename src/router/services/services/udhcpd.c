@@ -121,7 +121,7 @@ void start_udhcpd(void)
 #endif
 #endif
 
-	if (nvram_invmatch("lan_proto", "dhcp") || nvram_matchi("dhcp_dnsmasq", 1)) {
+	if (nvram_invmatch("lan_proto", "dhcp") || *nvram_safe_get("lan_dhcpaddr") || nvram_matchi("dhcp_dnsmasq", 1)) {
 		stop_udhcpd();
 		return;
 	}
