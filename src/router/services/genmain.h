@@ -20,6 +20,7 @@
  * $Id:
  */
 
+#include <libgen.h>
 #include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
@@ -124,22 +125,9 @@ void end(char *argv[])
 	dd_debug(DEBUG_SERVICE, "function %s_%s not found\n", argv[2], argv[1]);
 }
 
-int check_arguments(int argc, char *argv[])
+static int service_main(int argc, char *argv[])
 {
 	int i;
-	airbag_init();
-	char *filename = basename(argv[0]);
-	if (strcmp(filename, "service")) {
-		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
-			if (functiontable[i].main && !strcmp(functiontable[i].name, filename)) {
-				dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
-				int ret = functiontable[i].main(argc, argv);
-				return ret;
-			}
-		}
-		fprintf(stderr, "cannot find method %s\n", filename);
-		return -1;
-	}
 	if (argc < 2 || (strcmp(argv[1], "shutdown") && argc < 3)) {
 		fprintf(stdout, "%s servicename start|stop|restart|shutdown|main args... [-f]\n", argv[0]);
 		fprintf(stdout, "commands:\n");
@@ -258,5 +246,24 @@ int check_arguments(int argc, char *argv[])
 	}
 	end(argv);
 	fprintf(stderr, "method %s not found\n", argv[1]);
+	return -1;
+}
+int check_arguments(int argc, char *argv[])
+{
+	int i;
+	airbag_init();
+	char *filename = basename(argv[0]);
+	if (!strcmp(filename, "service"))
+		return service_main(argc, argv);
+
+	for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
+		if (functiontable[i].main && !strcmp(functiontable[i].name, filename)) {
+			dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
+			int ret = functiontable[i].main(argc, argv);
+			return ret;
+		}
+	}
+	fprintf(stderr, "cannot find method %s\n", filename);
+
 	return -1;
 }
