@@ -2722,11 +2722,14 @@ void start_lan(void)
 #endif
 #undef HAVE_RB500
 #endif
-	/*
-	 * Sveasoft - set default IP gateway defined 
-	 */
-	if (strcmp(nvram_safe_get("lan_gateway"), "0.0.0.0"))
+
+	if (strcmp(nvram_safe_get("lan_gateway"), "0.0.0.0")) {
 		eval("ip", "route", "add", "default", "via", nvram_safe_get("lan_gateway"), "dev", "br0");
+	}
+	if (*nvram_safe_get("lan_dhcpgw") && strcmp(nvram_safe_get("lan_dhcpgw"), "0.0.0.0")) {
+		eval("ip", "route", "del", "default", "via", nvram_safe_get("lan_gateway"), "dev", "br0");
+		eval("ip", "route", "add", "default", "via", nvram_safe_get("lan_dhcpgw"), "dev", "br0");
+	}
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	for (c = 0; c < cnt; c++) {
@@ -4873,6 +4876,10 @@ void start_set_routes(void)
 	if (!nvram_match("lan_gateway", "0.0.0.0")) {
 		eval("route", "del", "default");
 		eval("route", "add", "default", "gw", nvram_safe_get("lan_gateway"));
+	}
+	if (!*nvram_safe_get("lan_dhcpgw") && !nvram_match("lan_dhcpgw", "0.0.0.0")) {
+		eval("route", "del", "default");
+		eval("route", "add", "default", "gw", nvram_safe_get("lan_dhcpgw"));
 	}
 	char *defgateway;
 

@@ -2769,6 +2769,7 @@ void start_restore_defaults(void)
 	nvram_unset("rc_opt_run");
 	nvram_unset("lan_dhcpaddr");
 	nvram_unset("lan_dhcpmask");
+	nvram_unset("lan_dhcpgw");
 
 	nvram_unset("ipv6_get_dns");
 	nvram_unset("ipv6_get_domain");
