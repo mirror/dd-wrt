@@ -3094,10 +3094,10 @@ void run_wan(int status)
 	}
 
 	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
-	if (strcmp(wan_proto, "disabled") == 0 || nvram_match("lan_ifname", wan_ifname)) {
+	if (strcmp(wan_proto, "disabled") == 0 || nvram_match("lan_ifname", wan_ifname) || nvram_match("lan_dhcp","1")) {
 		close(s);
-		if (nvram_match("lan_ifname", wan_ifname) && nvram_match("lan_ifname", nvram_safe_get("wan_ifname2"))) {
-			run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
+		if ((nvram_match("lan_ifname", wan_ifname) && nvram_match("lan_ifname", nvram_safe_get("wan_ifname2"))) || nvram_match("lan_dhcp","1")) {
+			run_dhcpc(nvram_safe_get("lan_ifname"), NULL, NULL, 1, 0, 0);
 		} else {
 			char eabuf[32];
 			if (get_hwaddr(ifr.ifr_name, eabuf)) {

@@ -1071,7 +1071,7 @@ void start_restore_defaults(void)
 		{ "lan_ifnames",
 		  "lan01 lan02 lan03 lan04 lan05 lan06 lan07 lan08 lan09 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan49 lan50 lan51 lan52" },
 		{ "wan_ifname", "lan01" },
-		{ "wan_ifname2", "br0" },
+		{ "wan_ifname2", "lan01" },
 		{ "wan_ifnames", "lan01" },
 		{ "wan_default", "lan01" },
 		{ 0, 0 }
