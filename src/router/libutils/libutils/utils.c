@@ -799,6 +799,23 @@ again:;
 }
 #endif
 
+char *get_lan_ipaddr(void)
+{
+	char *lan_ip = nvram_safe_get("lan_ipaddr");
+	if (*nvram_safe_get("lan_dhcpaddr")) {
+		lan_ip = nvram_safe_get("lan_dhcpaddr");
+	}
+	return lan_ip;
+}
+
+char *get_lan_netmask(void)
+{
+	char *lan_mask = nvram_safe_get("lan_netmask");
+	if (*nvram_safe_get("lan_dhcpmask")) {
+		lan_mask = nvram_safe_get("lan_dhcpmask");
+	}
+	return lan_mask;
+}
 char *get_wan_ipaddr(void)
 {
 	char *wan_ipaddr;

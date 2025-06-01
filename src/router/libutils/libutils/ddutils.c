@@ -636,6 +636,10 @@ int dns_to_resolv(void)
 		fprintf(fp_w, "search %s\n", nvram_safe_get("lan_domain"));
 	}
 	if (nvram_matchi("dnsmasq_enable", 1) && nvram_matchi("dns_dnsmasq", 1)) {
+	
+		if (*nvram_safe_get("lan_dhcpaddr"))
+		fprintf(fp_w, "nameserver %s\n", nvram_safe_get("lan_dhcpaddr"));
+		else
 		fprintf(fp_w, "nameserver %s\n", nvram_safe_get("lan_ipaddr"));
 		//egc set IPv6 adress either local address ::/1 or ipv6_rtr_addr
 		if (nvram_matchi("ipv6_enable", 1)) {
