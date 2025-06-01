@@ -1285,8 +1285,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v3.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03010500  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
-	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03010500  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -n 'IMG-0.00.00-c0.0.00' -a 0x80100000 -e 0x80100000 -M 0x03010500  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -n 'IMG-0.00.00-c0.0.00' -a 0x80100000 -e 0x80100000 -M 0x03010500  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux_ews2910p-v3 bs=64k conv=sync
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux_ews2910p-v3.webflash bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux_ews2910p-v3.webflash
@@ -1298,8 +1298,8 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_engenius_ews2910p-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03802910  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
-	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x03802910  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -n 'IMG-0.00.00-c0.0.00' -a 0x80100000 -e 0x80100000 -M 0x03802910  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -n 'IMG-0.00.00-c0.0.00' -a 0x80100000 -e 0x80100000 -M 0x03802910  -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux_ews2910p-v1 bs=64k conv=sync
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux_ews2910p-v1.webflash bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux_ews2910p-v1.webflash
