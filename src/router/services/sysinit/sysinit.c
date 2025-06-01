@@ -2770,7 +2770,7 @@ void start_restore_defaults(void)
 	nvram_unset("lan_dhcpaddr");
 	nvram_unset("lan_dhcpmask");
 	nvram_unset("lan_dhcpgw");
-
+	nvram_unset("lan_dhcpdns");
 	nvram_unset("ipv6_get_dns");
 	nvram_unset("ipv6_get_domain");
 	nvram_unset("ipv6_get_sip_name");

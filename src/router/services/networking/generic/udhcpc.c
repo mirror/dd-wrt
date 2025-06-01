@@ -75,6 +75,7 @@ static int deconfig(void)
 	nvram_unset("lan_dhcpaddr");
 	nvram_unset("lan_dhcpmask");
 	nvram_unset("lan_dhcpgw");
+	nvram_unset("lan_dhcpdns");
 	if (wan_ifname && nvram_match("lan_ifname", wan_ifname)) {
 		expires(0);
 		unlink("/tmp/get_lease_time");
@@ -200,7 +201,7 @@ static int bound(void)
 		char *gateway = getenv("router");
 		char *dns = getenv("dns");
 		if (dns)
-			nvram_set("lan_dns", dns);
+			nvram_set("lan_dhcpdns", dns);
 		if (gateway)
 			nvram_set("lan_dhcpgw", gateway);
 		if (ip && netmask) {

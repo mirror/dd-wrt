@@ -913,6 +913,7 @@ extern int check_wan_link(int num);
 extern int wanactive(char *wanaddr);
 extern char *get_wan_ipaddr(void);
 extern char *get_lan_ipaddr(void);
+extern char *get_lan_dns(void);
 extern char *get_lan_netmask(void);
 extern char *get_complete_ip(char *from, char *to);
 extern char *get_complete_lan_ip(char *ip);

@@ -808,6 +808,15 @@ char *get_lan_ipaddr(void)
 	return lan_ip;
 }
 
+char *get_lan_dns(void)
+{
+	char *lan_ip = nvram_safe_get("lan_dns");
+	if (*nvram_safe_get("lan_dhcpdns") && strcmp(nvram_safe_get("lan_dhcpdns"), "0.0.0.0") && nvram_match("lan_dhcp","1")) {
+		lan_ip = nvram_safe_get("lan_dhcpdns");
+	}
+	return lan_ip;
+}
+
 char *get_lan_netmask(void)
 {
 	char *lan_mask = nvram_safe_get("lan_netmask");

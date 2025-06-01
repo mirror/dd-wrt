@@ -548,6 +548,8 @@ struct dns_entry *get_dns_entry(struct dns_lists *dns_list, int idx)
 	return &dns_list->dns_server[idx];
 }
 
+
+
 struct dns_lists *get_dns_list(int v6)
 {
 	struct dns_lists *dns_list = NULL;
@@ -555,7 +557,7 @@ struct dns_lists *get_dns_list(int v6)
 
 	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
 	bzero(dns_list, sizeof(struct dns_lists));
-	char *lan_dns = nvram_safe_get("lan_dns");
+	char *lan_dns = get_lan_dns();
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
 	char *openvpn_get_dns = nvram_safe_get("openvpn_get_dns");

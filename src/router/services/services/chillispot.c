@@ -328,8 +328,8 @@ void chilli_config(void)
 		fprintf(fp, "localusers /tmp/chilli/fonusers.local\n");
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0") && nvram_invmatch("chilli_dns1", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_safe_get("chilli_dns1"));
-		if (nvram_invmatch("lan_dns", "0.0.0.0") && nvram_invmatch("lan_dns", ""))
-			fprintf(fp, "dns2 %s\n", nvram_safe_get("lan_dns"));
+		if (*get_lan_dns() && strcmp(get_lan_dns(), "0.0.0.0"))
+			fprintf(fp, "dns2 %s\n", get_lan_dns());
 	} else if (nvram_invmatch("wan_get_dns", "0.0.0.0") && nvram_invmatch("wan_get_dns", "")) {
 		dnslist = nvram_safe_get("wan_get_dns");
 		i = 1;
@@ -349,8 +349,8 @@ void chilli_config(void)
 			i++;
 		}
 	} else {
-		if (nvram_invmatch("lan_dns", "0.0.0.0") && nvram_invmatch("lan_dns", ""))
-			fprintf(fp, "dns1 %s\n", nvram_safe_get("lan_dns"));
+		if (*get_lan_dns() && strcmp(get_lan_dns(), "0.0.0.0"))
+			fprintf(fp, "dns1 %s\n", get_lan_dns());
 		if (nvram_invmatch("altdns1", "0.0.0.0") && nvram_invmatch("altdns1", ""))
 			fprintf(fp, "dns2 %s\n", nvram_safe_get("altdns1"));
 	}
@@ -491,8 +491,8 @@ void hotspotsys_config(void)
 			fprintf(fp, "dns%d %s\n", i, var);
 			i++;
 		}
-	} else if (nvram_invmatch("lan_dns", "0.0.0.0") && nvram_invmatch("lan_dns", "")) {
-		fprintf(fp, "dns1 %s\n", nvram_safe_get("lan_dns"));
+	} else if (*get_lan_dns() && strcmp(get_lan_dns(), "0.0.0.0")) {
+		fprintf(fp, "dns1 %s\n", get_lan_dns());
 		if (nvram_invmatch("altdns1", "0.0.0.0") && nvram_invmatch("altdns1", ""))
 			fprintf(fp, "dns2 %s\n", nvram_safe_get("altdns1"));
 	}
