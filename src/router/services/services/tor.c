@@ -142,10 +142,8 @@ void start_tor(void)
 			fprintf(fp, "ExitNodes {%s} StrictNodes 1\n", exit);
 	}
 	if (nvram_matchi("tor_transparent", 1)) {
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353",
-			  get_lan_ipaddr());
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353",
-			  get_lan_ipaddr());
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353", get_lan_ipaddr());
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353", get_lan_ipaddr());
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", get_lan_ipaddr());
 	}
 #ifdef HAVE_X86

@@ -161,12 +161,10 @@ void start_udhcpd(void)
 		return;
 	}
 	fprintf(fp, "pidfile /var/run/udhcpd.pid\n");
-	fprintf(fp, "start %d.%d.%d.%s\n", get_single_ip(get_lan_ipaddr(), 0),
-		get_single_ip(get_lan_ipaddr(), 1), get_single_ip(get_lan_ipaddr(), 2),
-		nvram_safe_get("dhcp_start"));
-	fprintf(fp, "end %d.%d.%d.%d\n", get_single_ip(get_lan_ipaddr(), 0),
-		get_single_ip(get_lan_ipaddr(), 1), get_single_ip(get_lan_ipaddr(), 2),
-		nvram_geti("dhcp_start") + nvram_geti("dhcp_num") - 1);
+	fprintf(fp, "start %d.%d.%d.%s\n", get_single_ip(get_lan_ipaddr(), 0), get_single_ip(get_lan_ipaddr(), 1),
+		get_single_ip(get_lan_ipaddr(), 2), nvram_safe_get("dhcp_start"));
+	fprintf(fp, "end %d.%d.%d.%d\n", get_single_ip(get_lan_ipaddr(), 0), get_single_ip(get_lan_ipaddr(), 1),
+		get_single_ip(get_lan_ipaddr(), 2), nvram_geti("dhcp_start") + nvram_geti("dhcp_num") - 1);
 	int dhcp_max = nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 	fprintf(fp, "max_leases %d\n", dhcp_max);
 	fprintf(fp, "interface %s\n", nvram_safe_get("lan_ifname"));
@@ -260,8 +258,7 @@ void start_udhcpd(void)
 
 	if (nvram_matchi("local_dns", 1)) {
 		if (nvram_matchi("port_swap", 1))
-			fprintf(fp, "%s %s %s\n", get_lan_ipaddr(), nvram_safe_get("et1macaddr"),
-				nvram_safe_get("router_name"));
+			fprintf(fp, "%s %s %s\n", get_lan_ipaddr(), nvram_safe_get("et1macaddr"), nvram_safe_get("router_name"));
 		else
 			fprintf(fp, "%s %s %s\n", get_lan_ipaddr(), mac, nvram_safe_get("router_name"));
 	}

@@ -384,7 +384,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 	int i = 7;
 	if (nvram_match("lan_ifname", wan_ifname))
 		dhcp_argv[i++] = "-B";
-	
+
 #ifdef HAVE_BUSYBOX_UDHCPC
 	dhcp_argv[i++] = "-O";
 	dhcp_argv[i++] = "routes";
@@ -3093,7 +3093,7 @@ void run_wan(int status)
 	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
 	if (strcmp(wan_proto, "disabled") == 0 || nvram_match("lan_ifname", wan_ifname)) {
 		close(s);
-		if (nvram_match("lan_ifname", wan_ifname) && nvram_match("lan_ifname",nvram_safe_get("wan_ifname2"))) {
+		if (nvram_match("lan_ifname", wan_ifname) && nvram_match("lan_ifname", nvram_safe_get("wan_ifname2"))) {
 			run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 		} else {
 			char eabuf[32];

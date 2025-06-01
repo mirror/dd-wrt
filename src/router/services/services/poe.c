@@ -29,7 +29,7 @@
 
 void start_poe(void)
 {
-//	log_eval("realtek-poe");
+	//	log_eval("realtek-poe");
 	return;
 }
 

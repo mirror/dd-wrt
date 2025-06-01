@@ -728,8 +728,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 	if (nvram_matchi("tor_enable", 1)) {
 		if (nvram_matchi("tor_transparent", 1)) {
 			save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", "br0", get_lan_ipaddr());
-			save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", "br0",
-					       get_lan_ipaddr());
+			save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", "br0", get_lan_ipaddr());
 			save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", "br0", get_lan_ipaddr());
 		}
 
@@ -741,8 +740,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 							       get_lan_ipaddr());
 					save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", var,
 							       get_lan_ipaddr());
-					save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", var,
-							       get_lan_ipaddr());
+					save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", var, get_lan_ipaddr());
 				}
 			}
 		}
@@ -770,10 +768,8 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var, target);
 					save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var, target);
 				} else {
-					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var,
-							       get_lan_ipaddr());
-					save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var,
-							       get_lan_ipaddr());
+					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var, get_lan_ipaddr());
+					save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var, get_lan_ipaddr());
 				}
 			}
 		}
@@ -805,8 +801,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		foreach(var, vifs, next) {
 			if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file_A_prerouting("-i %s -d %s/%s -j RETURN", var, lan_ip,
-							       get_lan_netmask());
+					save2file_A_prerouting("-i %s -d %s/%s -j RETURN", var, lan_ip, get_lan_netmask());
 					sprintf(vif_ip, "%s_ipaddr", var);
 					save2file_A_prerouting("-i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
 				}
@@ -992,8 +987,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		}
 		if (*wanface && wanactive(wanaddr) && !nvram_matchi("br0_nat", 0)) {
 			parse_ip_forward(ANT_IPF_POSTROUTING, wanface);
-			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", get_lan_ipaddr(), loopmask,
-						wanface, wanaddr);
+			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", get_lan_ipaddr(), loopmask, wanface,
+						wanaddr);
 			char *sr = nvram_safe_get("static_route");
 			foreach(word, sr, tmp) {
 				GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
@@ -1096,8 +1091,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
 			save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", nvram_safe_get("lan_ifname"));
 			save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", nvram_safe_get("lan_ifname"),
-						get_lan_ipaddr(), getmask(get_lan_netmask()),
-						get_lan_ipaddr(), getmask(get_lan_netmask()));
+						get_lan_ipaddr(), getmask(get_lan_netmask()), get_lan_ipaddr(),
+						getmask(get_lan_netmask()));
 		}
 
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
@@ -2524,8 +2519,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * port to make sure that it's redirected from WAN 
 	 */
 	if (remotemanage) {
-		save2file_A_input("-i %s -p tcp -d %s --dport %d -j %s", wanface, get_lan_ipaddr(), web_lanport,
-				  log_accept);
+		save2file_A_input("-i %s -p tcp -d %s --dport %d -j %s", wanface, get_lan_ipaddr(), web_lanport, log_accept);
 	}
 #ifdef HAVE_SSHD
 	/*
@@ -2543,8 +2537,8 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * management are not linked anymore 
 	 */
 	if (remotessh) {
-		save2file_A_input("-i %s -p tcp -d %s --dport %s -j %s", wanface, get_lan_ipaddr(),
-				  nvram_safe_get("sshd_port"), log_accept);
+		save2file_A_input("-i %s -p tcp -d %s --dport %s -j %s", wanface, get_lan_ipaddr(), nvram_safe_get("sshd_port"),
+				  log_accept);
 	}
 #endif
 
@@ -2921,8 +2915,8 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_forward("-i br0 -o %s -m state --state NEW -j %s", var, log_drop);
 				if (nvram_matchi("privoxy_transp_enable", 1)) {
-					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var,
-						  get_lan_ipaddr(), get_lan_netmask(), log_accept);
+					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var, get_lan_ipaddr(),
+						  get_lan_netmask(), log_accept);
 				}
 			}
 			if (*wanface) {
@@ -2970,22 +2964,18 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		save2file_A_postrouting("-m mark --mark 0x100000 -j CLASSIFY --set-class 0:1");
 		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:0", wanface);
 
-		evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark",
-				"0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark",
-				"0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark",
-				"0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark",
-				"0x100000");
-		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j",
-				"CLASSIFY", "--set-class", "0:1");
-		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j",
-				"CLASSIFY", "--set-class", "0:1");
-		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547",
-				"-j", "CLASSIFY", "--set-class", "0:0");
-		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547",
-				"-j", "CLASSIFY", "--set-class", "0:0");
+		evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY",
+			"--set-class", "0:1");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY",
+			"--set-class", "0:1");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547", "-j",
+			"CLASSIFY", "--set-class", "0:0");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547", "-j",
+			"CLASSIFY", "--set-class", "0:0");
 	}
 	if (nvram_matchi("filter_tos", 1)) {
 		insmod("xt_DSCP");
@@ -2995,9 +2985,9 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		}
 		save2file_A_postrouting("-m mark --mark 0x100000 -j TOS --set-tos 0x00");
 		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS",
-				"--set-tos", "0x00");
+			"--set-tos", "0x00");
 		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS",
-				"--set-tos", "0x00");
+			"--set-tos", "0x00");
 	}
 #endif
 #if 0
@@ -3022,10 +3012,8 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
-		evalip6("ip6tables", "-t", "mangle", "-D", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev",
-				"0");
-		evalip6("ip6tables", "-t", "mangle", "-I", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev",
-				"0");
+		evalip6("ip6tables", "-t", "mangle", "-D", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev", "0");
+		evalip6("ip6tables", "-t", "mangle", "-I", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev", "0");
 	}
 #endif
 
@@ -3820,7 +3808,8 @@ void start_firewall(void)
 #endif
 #endif
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || \
-	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC) || defined(HAVE_REALTEK)
+	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) ||                \
+	defined(HAVE_80211AC) || defined(HAVE_REALTEK)
 	writeprocsysnet("core/somaxconn", nvram_default_get("net.core.somaxconn", "1024"));
 	writeprocsysnet("ipv4/tcp_max_syn_backlog", nvram_default_get("net.ipv4.tcp_max_syn_backlog", "1024"));
 	writeprocsysnet("core/rmem_default", nvram_default_get("net.core.rmem_default", "262144"));

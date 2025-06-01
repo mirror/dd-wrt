@@ -1066,13 +1066,16 @@ void start_restore_defaults(void)
 					 { "wan_default", "eth0" },
 					 { 0, 0 } };
 #elif HAVE_REALTEK
-	struct nvram_param generic[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "lan01 lan02 lan03 lan04 lan05 lan06 lan07 lan08 lan09 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan49 lan50 lan51 lan52" },
-					 { "wan_ifname", "lan01" },
-					 { "wan_ifname2", "lan01" },
-					 { "wan_ifnames", "lan01" },
-					 { "wan_default", "lan01" },
-					 { 0, 0 } };
+	struct nvram_param generic[] = {
+		{ "lan_ifname", "br0" },
+		{ "lan_ifnames",
+		  "lan01 lan02 lan03 lan04 lan05 lan06 lan07 lan08 lan09 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan49 lan50 lan51 lan52" },
+		{ "wan_ifname", "lan01" },
+		{ "wan_ifname2", "lan01" },
+		{ "wan_ifnames", "lan01" },
+		{ "wan_default", "lan01" },
+		{ 0, 0 }
+	};
 #elif HAVE_IPQ6018
 	struct nvram_param *generic = NULL;
 	struct nvram_param generic_all[] = { { "lan_ifname", "br0" },
@@ -1961,12 +1964,13 @@ void start_restore_defaults(void)
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
-#elif defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||    \
-	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) ||                  \
-	defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) || defined(HAVE_NEWPORT) || defined(HAVE_GATEWORX) ||                 \
-	defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) ||    \
-	defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || \
-	defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_OCTEON)
+#elif defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||      \
+	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_IPQ6018) ||                    \
+	defined(HAVE_REALTEK) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) || defined(HAVE_NEWPORT) ||                    \
+	defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || \
+	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) ||      \
+	defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || \
+	defined(HAVE_OCTEON)
 
 	int brand = getRouterBrand();
 	linux_overrides = generic;
@@ -2147,12 +2151,13 @@ void start_restore_defaults(void)
 	/*
 	 * Restore defaults 
 	 */
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||          \
-	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) ||                      \
-	defined(HAVE_RB600) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_NEWPORT) || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || \
-	defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) ||        \
-	defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) ||       \
-	defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_80211AC) || defined(HAVE_OCTEON)
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_XSCALE) ||      \
+	defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || \
+	defined(HAVE_RB600) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_NEWPORT) ||                          \
+	defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) ||     \
+	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) ||          \
+	defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) ||     \
+	defined(HAVE_80211AC) || defined(HAVE_OCTEON)
 	if (restore_defaults) {
 		nvram_clear();
 	}
@@ -3704,8 +3709,8 @@ void start_nvram(void)
 		//			eval("reboot");
 	}
 	if (nvram_geti("nvram_ver") < 13) {
-	    nvram_set("lan_dns",nvram_safe_get("sv_localdns"));
-	    nvram_unset("sv_localdns");
+		nvram_set("lan_dns", nvram_safe_get("sv_localdns"));
+		nvram_unset("sv_localdns");
 	}
 	if (nvram_geti("nvram_ver") < 13) {
 		nvram_seti("nvram_ver", 13);

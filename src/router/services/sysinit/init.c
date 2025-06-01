@@ -115,7 +115,6 @@ void start_hostname(void)
 		setdomainname(domain, strlen(domain));
 }
 
-
 void start_post_sysinit(void)
 {
 	int brand = getRouterBrand();

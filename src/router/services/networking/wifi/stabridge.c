@@ -61,8 +61,8 @@ void start_stabridge(void)
 			sysprintf("relayd -I %s -I %s -G %s -L %s -D -B%s &", getBridge(getWET(), tmp), getWET(),
 				  nvram_safe_get(label), get_lan_ipaddr(), debug_string);
 		} else {
-			sysprintf("relayd -I %s -I %s -L %s -D -B%s &", getBridge(getWET(), tmp), getWET(),
-				  get_lan_ipaddr(), debug_string);
+			sysprintf("relayd -I %s -I %s -L %s -D -B%s &", getBridge(getWET(), tmp), getWET(), get_lan_ipaddr(),
+				  debug_string);
 		}
 	}
 #else

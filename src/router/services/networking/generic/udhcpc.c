@@ -74,13 +74,12 @@ static int deconfig(void)
 	char *wan_ifname = safe_getenv("interface");
 	nvram_unset("lan_dhcpaddr");
 	nvram_unset("lan_dhcpmask");
-	if (wan_ifname && nvram_match("lan_ifname", wan_ifname))
-	{
-	    expires(0);
-	    unlink("/tmp/get_lease_time");
-	    unlink("/tmp/lease_time");
-	    nvram_seti("wan_lease", 0);
-	    return 0;
+	if (wan_ifname && nvram_match("lan_ifname", wan_ifname)) {
+		expires(0);
+		unlink("/tmp/get_lease_time");
+		unlink("/tmp/lease_time");
+		nvram_seti("wan_lease", 0);
+		return 0;
 	}
 
 	eval("ifconfig", wan_ifname, "0.0.0.0", "up");
@@ -105,9 +104,8 @@ static int update_value(void)
 	char *value;
 	int changed = 0;
 	char *wan_ifname = safe_getenv("interface");
-	if (wan_ifname && nvram_match("lan_ifname", wan_ifname))
-	{
-	    return 0;
+	if (wan_ifname && nvram_match("lan_ifname", wan_ifname)) {
+		return 0;
 	}
 
 	if ((value = getenv("ip"))) {
