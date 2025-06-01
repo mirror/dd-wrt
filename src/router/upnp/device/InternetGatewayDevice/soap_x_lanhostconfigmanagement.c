@@ -94,13 +94,7 @@ static int statevar_IPRouters(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP
 	int ifid = context->focus_ifp->if_instance;
 	char name[32];
 
-	/* Get dhcp server nv name */
-	if (ifid == 0)
-		strcpy(name, "lan_ipaddr");
-	else
-		sprintf(name, "lan%d_ipaddr", ifid);
-
-	strlcpy(UPNP_STR(value), nvram_safe_get(name), sizeof(UPNP_STR(value)));
+	strlcpy(UPNP_STR(value), get_lan_ipaddr(), sizeof(UPNP_STR(value)));
 	return OK;
 }
 /* >> AUTO GENERATED FUNCTION */
@@ -122,16 +116,16 @@ static int statevar_DNSServers(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPN
 
 	/* Get DNS list */
 	if (nvram_match("dnsmasq_enable", "1")) {
-		strcpy(name, "lan_ipaddr");
+		dnslist = get_lan_ipaddr();
 	} else {
 		if (!nvram_match("wan_get_dns", "")) {
 			strcpy(name, "wan_get_dns");
 		} else {
 			strcpy(name, "wan_dns");
 		}
+		dnslist = nvram_safe_get(name);
 	}
 
-	dnslist = nvram_safe_get(name);
 
 	/* make token and rebuild the string with comma */
 	strlcpy(buf, dnslist, sizeof(buf));

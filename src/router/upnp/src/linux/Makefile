@@ -89,7 +89,7 @@ $(SOURCES.OBJ): upnp.h
 
 $(OBJDIR)/%.o:	%.c
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
 
 # uncomment BUILD_LIBS if you want this makefile to build the netconf and itables libraries.
 #BUILD_LIBS=1

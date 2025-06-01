@@ -567,8 +567,8 @@ static void add_nat_entry(netconf_nat_t *entry)
 	struct in_addr netmask = { 0xffffffff };
 	netconf_nat_t nat = *entry;
 	if (entry->ipaddr.s_addr == 0xffffffff) {
-		inet_aton(nvram_safe_get("lan_ipaddr"), &nat.ipaddr);
-		inet_aton(nvram_safe_get("lan_netmask"), &netmask);
+		inet_aton(get_lan_ipaddr(), &nat.ipaddr);
+		inet_aton(get_lan_netmask(), &netmask);
 		nat.ipaddr.s_addr &= netmask.s_addr;
 		nat.ipaddr.s_addr |= (0xffffffff & ~netmask.s_addr);
 	}
@@ -621,8 +621,8 @@ static void delete_nat_entry(netconf_nat_t *entry)
 	netconf_nat_t nat = *entry;
 
 	if (entry->ipaddr.s_addr == 0xffffffff) {
-		inet_aton(nvram_safe_get("lan_ipaddr"), &nat.ipaddr);
-		inet_aton(nvram_safe_get("lan_netmask"), &netmask);
+		inet_aton(get_lan_ipaddr(), &nat.ipaddr);
+		inet_aton(get_lan_netmask(), &netmask);
 		nat.ipaddr.s_addr &= netmask.s_addr;
 		nat.ipaddr.s_addr |= (0xffffffff & ~netmask.s_addr);
 	}

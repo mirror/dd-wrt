@@ -62,7 +62,7 @@ $(SOURCES.OBJ): upnp.h
 
 $(OBJDIR)/%.o:	%.c
 	@echo "[CC] $@"	
-	@$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
 
 
 $(TARGET) : $(SOURCES.OBJ)
