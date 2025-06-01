@@ -802,7 +802,7 @@ again:;
 char *get_lan_ipaddr(void)
 {
 	char *lan_ip = nvram_safe_get("lan_ipaddr");
-	if (*nvram_safe_get("lan_dhcpaddr")) {
+	if (*nvram_safe_get("lan_dhcpaddr") && nvram_match("lan_dhcp","1")) {
 		lan_ip = nvram_safe_get("lan_dhcpaddr");
 	}
 	return lan_ip;
@@ -811,7 +811,7 @@ char *get_lan_ipaddr(void)
 char *get_lan_netmask(void)
 {
 	char *lan_mask = nvram_safe_get("lan_netmask");
-	if (*nvram_safe_get("lan_dhcpmask")) {
+	if (*nvram_safe_get("lan_dhcpmask") && nvram_match("lan_dhcp","1")) {
 		lan_mask = nvram_safe_get("lan_dhcpmask");
 	}
 	return lan_mask;
