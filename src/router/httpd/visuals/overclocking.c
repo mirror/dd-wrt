@@ -126,7 +126,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		c = ipq5018_clocks;
 		break;
 	case ROUTER_GLINET_AX1800:
-		defclock = "1200000";
+		defclock = "1440000";
 		c = ipq6018_clocks_op1;
 		break;
 	}
