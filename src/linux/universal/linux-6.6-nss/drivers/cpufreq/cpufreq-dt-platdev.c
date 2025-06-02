@@ -200,6 +200,18 @@ static bool __init cpu0_node_has_opp_v2_prop(void)
 	return ret;
 }
 
+static bool __init cpu0_node_has_opp_v1_prop(void)
+{
+	struct device_node *np = of_cpu_device_node_get(0);
+	bool ret = false;
+
+	if (of_property_present(np, "operating-points"))
+		ret = true;
+
+	of_node_put(np);
+	return ret;
+}
+
 static int __init cpufreq_dt_platdev_init(void)
 {
 	struct device_node *np = of_find_node_by_path("/");
@@ -216,6 +228,9 @@ static int __init cpufreq_dt_platdev_init(void)
 	}
 
 	if (cpu0_node_has_opp_v2_prop() && !of_match_node(blocklist, np))
+		goto create_pdev;
+
+	if (!cpu0_node_has_opp_v2_prop() && cpu0_node_has_opp_v1_prop() && of_match_node(blocklist, np))
 		goto create_pdev;
 
 	of_node_put(np);
