@@ -470,6 +470,23 @@ ifeq ($(CONFIG_RTL931X),y)
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p.webflash bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p.webflash
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-edgecore_ecs4125-10p.trx $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p.webflash
+
+#v2
+	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9313_edgecore_ecs4125-10p-v2.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p-v2.dtb $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p-v2.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl9313_edgecore_ecs4125-10p-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+#	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate.webflash $(ARCH)-uclibc/vmlinux.bin.uimage.webflash
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p-v2 bs=64k conv=sync
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage.webflash of=$(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p-v2.webflash bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p-v2.webflash
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-edgecore_ecs4125-10p-v2.trx $(ARCH)-uclibc/vmlinux-edgecore_ecs4125-10p-v2.webflash
+
 else
 ifeq ($(CONFIG_RTL930X),y)
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
