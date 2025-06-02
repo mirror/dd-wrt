@@ -184,6 +184,7 @@ skip:;
 			asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*", dev);
 			globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 			int awdscount;
+			char *lastname = NULL;
 			for (awdscount = 0; awdscount < globbuf.gl_pathc; awdscount++) {
 				char *ifname;
 				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
@@ -192,7 +193,10 @@ skip:;
 					continue;
 				}
 				sprintf(name, "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"), ifname + 1);
+				if (lastname && !strcmp(lastname, ifname + 1))
+					continue;
 				show_bwif(wp, &ctx, ifname + 1, name);
+				lastname = ifname + 1;
 			}
 			globfree(&globbuf);
 			debug_free(globstring);
