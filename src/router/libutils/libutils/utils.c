@@ -57,6 +57,9 @@
 #include <bcmdevs.h>
 #include <linux/if_ether.h>
 #include <linux/sockios.h>
+
+#define _LINUX_IF_H
+#include <linux/types.h>
 #include <linux/mii.h>
 
 #ifdef HAVE_IPV6
@@ -2584,6 +2587,14 @@ static int mdio_read(int skfd, struct ifreq *ifr, int location)
 	}
 	return mii->val_out;
 }
+
+
+#ifndef MII_CTRL1000
+#define MII_CTRL1000        0x09        /* 1000BASE-T control          */
+#define MII_STAT1000        0x0a        /* 1000BASE-T status           */
+#define ADVERTISE_1000FULL      0x0200  /* Advertise 1000BASE-T full duplex */
+#define ADVERTISE_1000HALF      0x0100  /* Advertise 1000BASE-T half duplex */
+#endif
 
 static int getLanPortStatus_fallback(const char *ifname, struct portstatus *status)
 {
