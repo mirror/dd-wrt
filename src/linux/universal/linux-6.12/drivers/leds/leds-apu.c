@@ -182,7 +182,7 @@ static int __init apu_led_init(void)
 	int err;
 
 	if (!dmi_check_system(apu_led_dmi_table)) {
-		pr_err("No PC Engines APUv1 board detected. For APUv2,3 support, enable CONFIG_PCENGINES_APU2\n");
+		pr_err("No PC Engines APUv1 board detected. For APUv2,3,4,5,6 support, enable CONFIG_PCENGINES_APU2\n");
 		return -ENODEV;
 	}
 
