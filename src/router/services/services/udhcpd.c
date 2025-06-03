@@ -41,7 +41,6 @@ extern int usejffs;
 
 void stop_udhcpd(void);
 extern void addHost(char *host, char *ip, int withdomain);
-extern void genHosts(void);
 
 static int adjust_dhcp_range(void)
 {
@@ -281,7 +280,7 @@ void start_udhcpd(void)
 				continue;
 			fprintf(fp, "%s %s %s\n", ip, mac, host);
 			if (!first) {
-				genHosts();
+				generate_hosts();
 				first = 1;
 			}
 			addHost(host, ip, 1);

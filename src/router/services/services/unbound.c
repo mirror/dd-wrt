@@ -29,7 +29,6 @@
 #include <services.h>
 
 extern void addHost(char *host, char *ip, int withdomain);
-extern void genHosts(void);
 
 static void unbound_config(void)
 {
@@ -141,7 +140,7 @@ static void unbound_config(void)
 				continue;
 
 			if (!first) {
-				genHosts();
+				generate_hosts();
 				first = 1;
 			}
 			addHost(host, ip, 1);

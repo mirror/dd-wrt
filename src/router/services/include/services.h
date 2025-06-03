@@ -296,5 +296,6 @@ char *set_wan_state(int state);
 void create_openvpnserverrules(FILE *fp);
 void create_openvpnrules(FILE *fp);
 void load_drivers(int boot);
+void generate_hosts(void);
 
 #endif

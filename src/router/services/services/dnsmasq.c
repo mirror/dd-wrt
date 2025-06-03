@@ -41,7 +41,6 @@
 extern int usejffs;
 
 extern void addHost(char *host, char *ip, int withdomain);
-extern void genHosts(void);
 
 static void add_server(FILE *fp, char *server)
 {
@@ -940,7 +939,7 @@ void start_dnsmasq(void)
 #endif
 				{
 					if (!first) {
-						genHosts();
+						generate_hosts();
 						first = 1;
 					}
 					addHost(host, ip, 1);

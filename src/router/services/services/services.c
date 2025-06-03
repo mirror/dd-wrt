@@ -82,7 +82,7 @@ static int alreadyInHost(char *host)
 
 void addHost(char *host, char *ip, int withdomain);
 
-void genHosts(void)
+void generate_hosts(void)
 {
 	eval("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1", 0);
