@@ -185,7 +185,7 @@
 		phy3: ethernet-phy@3 {
 			reg = <24>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 8>;
+			rtl9300,smi-address = <0 1>;
 			sds = < 5 >;
 		};
 		phy4: ethernet-phy@4 {
