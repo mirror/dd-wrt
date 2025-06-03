@@ -242,6 +242,8 @@ static inline void nvmem_layout_unregister(struct nvmem_layout *layout) {}
 
 #if IS_ENABLED(CONFIG_NVMEM) && IS_ENABLED(CONFIG_OF)
 
+void nvmem_layout_parse_mac_base(struct nvmem_cell_info *info);
+
 /**
  * of_nvmem_layout_get_container() - Get OF node of layout container
  *
@@ -253,6 +255,8 @@ static inline void nvmem_layout_unregister(struct nvmem_layout *layout) {}
 struct device_node *of_nvmem_layout_get_container(struct nvmem_device *nvmem);
 
 #else  /* CONFIG_NVMEM && CONFIG_OF */
+
+static inline void nvmem_layout_parse_mac_base(struct nvmem_cell_info *info) {}
 
 static inline struct device_node *of_nvmem_layout_get_container(struct nvmem_device *nvmem)
 {

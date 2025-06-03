@@ -35,6 +35,12 @@ static const struct spi_nor_fixups gd25q256_fixups = {
 
 static const struct flash_info gigadevice_nor_parts[] = {
 	{
+		.id = SNOR_ID(0xc8, 0x40, 0x10),
+		.name = "gd25q05",
+		.size = SZ_64K,
+		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+	}, {
 		.id = SNOR_ID(0xc8, 0x40, 0x15),
 		.name = "gd25q16",
 		.size = SZ_2M,
@@ -63,6 +69,13 @@ static const struct flash_info gigadevice_nor_parts[] = {
 		.name = "gd25q256",
 		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB | SPI_NOR_TB_SR_BIT6,
 		.fixups = &gd25q256_fixups,
+		.fixup_flags = SPI_NOR_4B_OPCODES,
+	}, {
+		.id = SNOR_ID(0xc8, 0x40, 0x20),
+		.name = "gd25q512",
+		.size = SZ_64M,
+		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
 		.fixup_flags = SPI_NOR_4B_OPCODES,
 	}, {
 		.id = SNOR_ID(0xc8, 0x60, 0x16),

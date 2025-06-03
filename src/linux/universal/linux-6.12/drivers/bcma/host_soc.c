@@ -191,6 +191,8 @@ int __init bcma_host_soc_init(struct bcma_soc *soc)
 	struct bcma_bus *bus = &soc->bus;
 	int err;
 
+	bus->dev = soc->dev;
+
 	/* Scan bus and initialize it */
 	err = bcma_bus_early_register(bus);
 	if (err)

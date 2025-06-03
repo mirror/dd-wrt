@@ -339,6 +339,9 @@ void register_irq_proc(unsigned int irq, struct irq_desc *desc)
 	void __maybe_unused *irqp = (void *)(unsigned long) irq;
 	char name [MAX_NAMELEN];
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED) && !IS_ENABLED(CONFIG_SMP))
+		return;
+
 	if (!root_irq_dir || (desc->irq_data.chip == &no_irq_chip))
 		return;
 
@@ -397,6 +400,9 @@ void unregister_irq_proc(unsigned int irq, struct irq_desc *desc)
 {
 	char name [MAX_NAMELEN];
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED) && !IS_ENABLED(CONFIG_SMP))
+		return;
+
 	if (!root_irq_dir || !desc->dir)
 		return;
 #ifdef CONFIG_SMP
@@ -434,6 +440,9 @@ void init_irq_proc(void)
 {
 	unsigned int irq;
 	struct irq_desc *desc;
+
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED) && !IS_ENABLED(CONFIG_SMP))
+		return;
 
 	/* create /proc/irq */
 	root_irq_dir = proc_mkdir("irq", NULL);

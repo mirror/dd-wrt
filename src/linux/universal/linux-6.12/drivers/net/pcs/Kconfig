@@ -25,6 +25,17 @@ config PCS_MTK_LYNXI
 	  This module provides helpers to phylink for managing the LynxI PCS
 	  which is part of MediaTek's SoC and Ethernet switch ICs.
 
+config PCS_MTK_USXGMII
+	tristate "MediaTek USXGMII PCS"
+	select PCS_MTK_LYNXI
+	select PHY_MTK_PEXTP
+	select PHYLINK
+	help
+	  This module provides a driver for MediaTek's USXGMII PCS supporting
+	  10GBase-R, 5GBase-R and USXGMII interface modes.
+	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
+	  differential pairs via an embedded LynxI PHY.
+
 config PCS_RZN1_MIIC
 	tristate "Renesas RZ/N1 MII converter"
 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)

@@ -18,6 +18,15 @@ static const struct flash_info eon_nor_parts[] = {
 		.name = "en25p64",
 		.size = SZ_8M,
 	}, {
+		.id = SNOR_ID(0x1c, 0x30, 0x18),
+		.name = "en25q128",
+		.size = SZ_16M,
+		.no_sfdp_flags = SECT_4K,
+	}, {
+		.id = SNOR_ID(0x1c, 0x71, 0x18),
+		.name = "en25qx128a",
+		.size = SZ_16M,
+	}, {
 		.id = SNOR_ID(0x1c, 0x30, 0x14),
 		.name = "en25q80a",
 		.size = SZ_1M,

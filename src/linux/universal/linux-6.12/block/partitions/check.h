@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 #include <linux/pagemap.h>
 #include <linux/blkdev.h>
+#include <linux/of.h>
 #include "../blk.h"
 
 /*
@@ -16,6 +17,9 @@ struct parsed_partitions {
 		int flags;
 		bool has_info;
 		struct partition_meta_info info;
+#ifdef CONFIG_OF
+		struct device_node *np;
+#endif
 	} *parts;
 	int next;
 	int limit;
@@ -34,16 +38,26 @@ static inline void put_dev_sector(Sector p)
 }
 
 static inline void
-put_partition(struct parsed_partitions *p, int n, sector_t from, sector_t size)
+of_put_partition(struct parsed_partitions *p, int n, sector_t from, sector_t size,
+		 struct device_node *np)
 {
 	if (n < p->limit) {
 		char tmp[1 + BDEVNAME_SIZE + 10 + 1];
 
 		p->parts[n].from = from;
 		p->parts[n].size = size;
+#ifdef CONFIG_OF
+		p->parts[n].np = np;
+#endif
 		snprintf(tmp, sizeof(tmp), " %s%d", p->name, n);
 		strlcat(p->pp_buf, tmp, PAGE_SIZE);
 	}
+}
+
+static inline void
+put_partition(struct parsed_partitions *p, int n, sector_t from, sector_t size)
+{
+	of_put_partition(p, n, from, size, NULL);
 }
 
 /* detection routines go here in alphabetical order: */
@@ -62,6 +76,7 @@ int karma_partition(struct parsed_partitions *state);
 int ldm_partition(struct parsed_partitions *state);
 int mac_partition(struct parsed_partitions *state);
 int msdos_partition(struct parsed_partitions *state);
+int of_partition(struct parsed_partitions *state);
 int osf_partition(struct parsed_partitions *state);
 int sgi_partition(struct parsed_partitions *state);
 int sun_partition(struct parsed_partitions *state);

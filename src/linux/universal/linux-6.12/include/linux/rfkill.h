@@ -64,7 +64,7 @@ struct rfkill_ops {
 	int	(*set_block)(void *data, bool blocked);
 };
 
-#if defined(CONFIG_RFKILL) || defined(CONFIG_RFKILL_MODULE)
+#if defined(CONFIG_RFKILL_FULL) || defined(CONFIG_RFKILL_FULL_MODULE)
 /**
  * rfkill_alloc - Allocate rfkill structure
  * @name: name of the struct -- the string is not copied internally

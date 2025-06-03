@@ -174,7 +174,7 @@ static void gen_lo_setup(struct net_device *dev,
 	dev->lltx		= true;
 	dev->netns_local	= true;
 	netif_keep_dst(dev);
-	dev->hw_features	= NETIF_F_GSO_SOFTWARE;
+	dev->hw_features	= NETIF_F_GSO_SOFTWARE_ALL;
 	dev->features		= NETIF_F_SG | NETIF_F_FRAGLIST
 		| NETIF_F_GSO_SOFTWARE
 		| NETIF_F_HW_CSUM

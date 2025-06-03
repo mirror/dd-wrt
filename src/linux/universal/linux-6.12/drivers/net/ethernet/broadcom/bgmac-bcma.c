@@ -280,6 +280,7 @@ static int bgmac_probe(struct bcma_device *core)
 		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
 		bgmac->feature_flags |= BGMAC_FEAT_NO_RESET;
 		bgmac->feature_flags |= BGMAC_FEAT_FORCE_SPEED_2500;
+		bgmac->feature_flags |= BGMAC_FEAT_SRAB;
 		break;
 	default:
 		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;

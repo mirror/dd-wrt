@@ -8,6 +8,7 @@
 
 #include <linux/bcma/bcma.h>
 #include <linux/delay.h>
+#include "fallback-sprom.h"
 
 #define bcma_err(bus, fmt, ...) \
 	dev_err((bus)->dev, "bus%d: " fmt, (bus)->num, ##__VA_ARGS__)

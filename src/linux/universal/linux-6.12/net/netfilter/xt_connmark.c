@@ -24,13 +24,13 @@ MODULE_ALIAS("ipt_connmark");
 MODULE_ALIAS("ip6t_connmark");
 
 static unsigned int
-connmark_tg_shift(struct sk_buff *skb, const struct xt_connmark_tginfo2 *info)
+connmark_tg_shift(struct sk_buff *skb, const struct xt_connmark_tginfo3 *info)
 {
 	enum ip_conntrack_info ctinfo;
 	u_int32_t new_targetmark;
 	struct nf_conn *ct;
 	u_int32_t newmark;
-	u_int32_t oldmark;
+	u_int8_t dscp;
 
 	ct = nf_ct_get(skb, &ctinfo);
 	if (ct == NULL)
@@ -38,13 +38,24 @@ connmark_tg_shift(struct sk_buff *skb, const struct xt_connmark_tginfo2 *info)
 
 	switch (info->mode) {
 	case XT_CONNMARK_SET:
-		oldmark = READ_ONCE(ct->mark);
-		newmark = (oldmark & ~info->ctmask) ^ info->ctmark;
-		if (info->shift_dir == D_SHIFT_RIGHT)
-			newmark >>= info->shift_bits;
-		else
-			newmark <<= info->shift_bits;
+		newmark = READ_ONCE(ct->mark);
+		if (info->func & XT_CONNMARK_VALUE) {
+			newmark = (newmark & ~info->ctmask) ^ info->ctmark;
+			if (info->shift_dir == D_SHIFT_RIGHT)
+				newmark >>= info->shift_bits;
+			else
+				newmark <<= info->shift_bits;
+		} else if (info->func & XT_CONNMARK_DSCP) {
+			if (skb->protocol == htons(ETH_P_IP))
+				dscp = ipv4_get_dsfield(ip_hdr(skb)) >> 2;
+			else if (skb->protocol == htons(ETH_P_IPV6))
+				dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> 2;
+			else	/* protocol doesn't have diffserv */
+				break;
 
+			newmark = (newmark & ~info->ctmark) |
+				  (info->ctmask | (dscp << info->shift_bits));
+		}
 		if (READ_ONCE(ct->mark) != newmark) {
 			WRITE_ONCE(ct->mark, newmark);
 			nf_conntrack_event_cache(IPCT_MARK, ct);
@@ -83,20 +94,36 @@ static unsigned int
 connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
 	const struct xt_connmark_tginfo1 *info = par->targinfo;
-	const struct xt_connmark_tginfo2 info2 = {
+	const struct xt_connmark_tginfo3 info3 = {
 		.ctmark	= info->ctmark,
 		.ctmask	= info->ctmask,
 		.nfmask	= info->nfmask,
 		.mode	= info->mode,
+		.func	= XT_CONNMARK_VALUE
 	};
 
-	return connmark_tg_shift(skb, &info2);
+	return connmark_tg_shift(skb, &info3);
 }
 
 static unsigned int
 connmark_tg_v2(struct sk_buff *skb, const struct xt_action_param *par)
 {
 	const struct xt_connmark_tginfo2 *info = par->targinfo;
+	const struct xt_connmark_tginfo3 info3 = {
+		.ctmark	= info->ctmark,
+		.ctmask	= info->ctmask,
+		.nfmask	= info->nfmask,
+		.mode	= info->mode,
+		.func	= XT_CONNMARK_VALUE
+	};
+
+	return connmark_tg_shift(skb, &info3);
+}
+
+static unsigned int
+connmark_tg_v3(struct sk_buff *skb, const struct xt_action_param *par)
+{
+	const struct xt_connmark_tginfo3 *info = par->targinfo;
 
 	return connmark_tg_shift(skb, info);
 }
@@ -168,6 +195,16 @@ static struct xt_target connmark_tg_reg[] __read_mostly = {
 		.destroy        = connmark_tg_destroy,
 		.me             = THIS_MODULE,
 	},
+	{
+		.name           = "CONNMARK",
+		.revision       = 3,
+		.family         = NFPROTO_IPV4,
+		.checkentry     = connmark_tg_check,
+		.target         = connmark_tg_v3,
+		.targetsize     = sizeof(struct xt_connmark_tginfo3),
+		.destroy        = connmark_tg_destroy,
+		.me             = THIS_MODULE,
+	},
 #if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 	{
 		.name           = "CONNMARK",
@@ -186,6 +223,16 @@ static struct xt_target connmark_tg_reg[] __read_mostly = {
 		.checkentry     = connmark_tg_check,
 		.target         = connmark_tg_v2,
 		.targetsize     = sizeof(struct xt_connmark_tginfo2),
+		.destroy        = connmark_tg_destroy,
+		.me             = THIS_MODULE,
+	},
+	{
+		.name           = "CONNMARK",
+		.revision       = 3,
+		.family         = NFPROTO_IPV6,
+		.checkentry     = connmark_tg_check,
+		.target         = connmark_tg_v3,
+		.targetsize     = sizeof(struct xt_connmark_tginfo3),
 		.destroy        = connmark_tg_destroy,
 		.me             = THIS_MODULE,
 	},

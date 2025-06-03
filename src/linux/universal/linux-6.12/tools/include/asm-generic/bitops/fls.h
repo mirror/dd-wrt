@@ -2,6 +2,8 @@
 #ifndef _ASM_GENERIC_BITOPS_FLS_H_
 #define _ASM_GENERIC_BITOPS_FLS_H_
 
+#include <string.h>
+
 /**
  * generic_fls - find last (most-significant) bit set
  * @x: the word to search
@@ -10,6 +12,7 @@
  * Note fls(0) = 0, fls(1) = 1, fls(0x80000000) = 32.
  */
 
+#define generic_fls __linux_fls
 static __always_inline int generic_fls(unsigned int x)
 {
 	int r = 32;

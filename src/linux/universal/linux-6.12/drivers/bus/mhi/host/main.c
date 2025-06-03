@@ -906,6 +906,7 @@ int mhi_process_ctrl_ev_ring(struct mhi_controller *mhi_cntrl,
 			switch (event) {
 			case MHI_EE_SBL:
 				st = DEV_ST_TRANSITION_SBL;
+				mhi_cntrl->status_cb(mhi_cntrl, MHI_CB_EE_SBL_MODE);
 				break;
 			case MHI_EE_WFW:
 			case MHI_EE_AMSS:

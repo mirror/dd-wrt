@@ -26,6 +26,12 @@ menuconfig NET
 
 if NET
 
+config ETHERNET_PACKET_MANGLE
+	bool
+	help
+	  This option can be selected by phy drivers that need to mangle
+	  packets going in or out of an ethernet device.
+
 config WANT_COMPAT_NETLINK_MESSAGES
 	bool
 	help
@@ -68,7 +74,7 @@ config SKB_EXTENSIONS
 
 config NET_DEVMEM
 	def_bool y
-	depends on DMA_SHARED_BUFFER
+	depends on DMA_SHARED_BUFFER=y
 	depends on GENERIC_ALLOCATOR
 	depends on PAGE_POOL
 
@@ -131,6 +137,9 @@ source "net/netlabel/Kconfig"
 source "net/mptcp/Kconfig"
 
 endif # if INET
+
+config SOCK_DIAG
+	bool
 
 config NETWORK_SECMARK
 	bool "Security Marking"
@@ -484,7 +493,7 @@ config NET_DEVLINK
 	default n
 
 config PAGE_POOL
-	bool
+	bool "Page pool support"
 
 config PAGE_POOL_STATS
 	default n

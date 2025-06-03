@@ -2,6 +2,7 @@
 menuconfig NVMEM
 	bool "NVMEM Support"
 	imply NVMEM_LAYOUTS
+	select GENERIC_NET_UTILS
 	help
 	  Support for NVMEM(Non Volatile Memory) devices like EEPROM, EFUSES...
 
@@ -39,6 +40,17 @@ config NVMEM_APPLE_EFUSES
 
 	  This driver can also be built as a module. If so, the module will
 	  be called nvmem-apple-efuses.
+
+config NVMEM_BLOCK
+	tristate "Block device NVMEM provider"
+	depends on BLOCK
+	depends on OF
+	depends on NVMEM
+	select BLOCK_NOTIFIERS
+	help
+	  Allow block devices (or partitions) to act as NVMEM prodivers,
+	  typically used with eMMC to store MAC addresses or Wi-Fi
+	  calibration data on embedded devices.
 
 config NVMEM_BCM_OCOTP
 	tristate "Broadcom On-Chip OTP Controller support"

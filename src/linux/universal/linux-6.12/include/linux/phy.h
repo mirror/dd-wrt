@@ -877,8 +877,9 @@ struct phy_plca_status {
 
 /* Modes for PHY LED configuration */
 enum phy_led_modes {
-	PHY_LED_ACTIVE_LOW = 0,
-	PHY_LED_INACTIVE_HIGH_IMPEDANCE = 1,
+	PHY_LED_ACTIVE_HIGH = 0,
+	PHY_LED_ACTIVE_LOW = 1,
+	PHY_LED_INACTIVE_HIGH_IMPEDANCE = 2,
 
 	/* keep it last */
 	__PHY_LED_MODES_NUM,
@@ -997,6 +998,12 @@ struct phy_driver {
 
 	/** @handle_interrupt: Override default interrupt handling */
 	irqreturn_t (*handle_interrupt)(struct phy_device *phydev);
+
+	/*
+	 * Called before an ethernet device is detached
+	 * from the PHY.
+	 */
+	void (*detach)(struct phy_device *phydev);
 
 	/** @remove: Clears up any memory if needed */
 	void (*remove)(struct phy_device *phydev);

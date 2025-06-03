@@ -37,6 +37,19 @@ config NVMEM_LAYOUT_U_BOOT_ENV
 
 	  If unsure, say N.
 
+config NVMEM_LAYOUT_ASCII_ENV
+	tristate "ASCII environment variables layout"
+	help
+	  It's very common for devices to store simple text file format in
+	  partition for environment varibles. The most common pattern is variable
+	  name, a delimiter and variable value all separated by a new line
+	  character (\n).
+	  This driver adds support for exporting such data and expose NVMEM cells
+	  so they can be referenced by other drivers. This driver also supports
+	  parsing mac-base NVMEM cells to parse ASCII or HEX mac address.
+
+	  If unsure, say N.
+
 endmenu
 
 endif

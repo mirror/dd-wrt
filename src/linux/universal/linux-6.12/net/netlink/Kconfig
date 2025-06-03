@@ -5,6 +5,7 @@
 
 config NETLINK_DIAG
 	tristate "NETLINK: socket monitoring interface"
+	select SOCK_DIAG
 	default n
 	help
 	  Support for NETLINK socket monitoring interface used by the ss tool.

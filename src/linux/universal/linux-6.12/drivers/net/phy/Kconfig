@@ -77,6 +77,80 @@ config SFP
 	depends on HWMON || HWMON=n
 	select MDIO_I2C
 
+comment "Switch configuration API + drivers"
+
+config SWCONFIG
+	tristate "Switch configuration API"
+	help
+	  Switch configuration API using netlink. This allows
+	  you to configure the VLAN features of certain switches.
+
+config SWCONFIG_LEDS
+	bool "Switch LED trigger support"
+	depends on (SWCONFIG && LEDS_TRIGGERS)
+
+config ADM6996_PHY
+	tristate "Driver for ADM6996 switches"
+	select SWCONFIG
+	help
+	  Currently supports the ADM6996FC and ADM6996M switches.
+	  Support for FC is very limited.
+
+config AR8216_PHY
+	tristate "Driver for Atheros AR8216/8327 switches"
+	select SWCONFIG
+	select ETHERNET_PACKET_MANGLE
+
+config AR8216_PHY_LEDS
+	bool "Atheros AR8216 switch LED support"
+	depends on (AR8216_PHY && LEDS_CLASS)
+
+source "drivers/net/phy/b53/Kconfig"
+
+config IP17XX_PHY
+	tristate "Driver for IC+ IP17xx switches"
+	select SWCONFIG
+
+config PSB6970_PHY
+	tristate "Lantiq XWAY Tantos (PSB6970) Ethernet switch"
+	select SWCONFIG
+
+config RTL8306_PHY
+	tristate "Driver for Realtek RTL8306S switches"
+	select SWCONFIG
+
+config RTL8366_SMI
+	tristate "Driver for the RTL8366 SMI interface"
+	depends on GPIOLIB
+	help
+	  This module implements the SMI interface protocol which is used
+	  by some RTL8366 ethernet switch devices via the generic GPIO API.
+
+if RTL8366_SMI
+
+config RTL8366_SMI_DEBUG_FS
+	bool "RTL8366 SMI interface debugfs support"
+        depends on DEBUG_FS
+        default n
+
+config RTL8366S_PHY
+	tristate "Driver for the Realtek RTL8366S switch"
+	select SWCONFIG
+
+config RTL8366RB_PHY
+	tristate "Driver for the Realtek RTL8366RB switch"
+	select SWCONFIG
+
+config RTL8367_PHY
+	tristate "Driver for the Realtek RTL8367R/M switches"
+	select SWCONFIG
+
+config RTL8367B_PHY
+	tristate "Driver fot the Realtek RTL8367R-VB switch"
+	select SWCONFIG
+
+endif # RTL8366_SMI
+
 comment "MII PHY device drivers"
 
 config AIR_EN8811H_PHY
@@ -139,7 +213,7 @@ config BROADCOM_PHY
 	tristate "Broadcom 54XX PHYs"
 	select BCM_NET_PHYLIB
 	select BCM_NET_PHYPTP if NETWORK_PHY_TIMESTAMPING
-	depends on PTP_1588_CLOCK_OPTIONAL
+	depends on NETWORK_PHY_TIMESTAMPING=n || PTP_1588_CLOCK_OPTIONAL
 	help
 	  Currently supports the BCM5411, BCM5421, BCM5461, BCM54616S, BCM5464,
 	  BCM5481, BCM54810 and BCM5482 PHYs.
@@ -266,22 +340,7 @@ config MAXLINEAR_GPHY
 	  Support for the Maxlinear GPY115, GPY211, GPY212, GPY215,
 	  GPY241, GPY245 PHYs.
 
-config MEDIATEK_GE_PHY
-	tristate "MediaTek Gigabit Ethernet PHYs"
-	help
-	  Supports the MediaTek Gigabit Ethernet PHYs.
-
-config MEDIATEK_GE_SOC_PHY
-	tristate "MediaTek SoC Ethernet PHYs"
-	depends on (ARM64 && ARCH_MEDIATEK) || COMPILE_TEST
-	depends on NVMEM_MTK_EFUSE
-	help
-	  Supports MediaTek SoC built-in Gigabit Ethernet PHYs.
-
-	  Include support for built-in Ethernet PHYs which are present in
-	  the MT7981 and MT7988 SoCs. These PHYs need calibration data
-	  present in the SoCs efuse and will dynamically calibrate VCM
-	  (common-mode voltage) during startup.
+source "drivers/net/phy/mediatek/Kconfig"
 
 config MICREL_PHY
 	tristate "Micrel PHYs"
@@ -358,10 +417,9 @@ config QSEMI_PHY
 	help
 	  Currently supports the qs6612
 
-config REALTEK_PHY
-	tristate "Realtek PHYs"
-	help
-	  Supports the Realtek 821x PHY.
+source "drivers/net/phy/realtek/Kconfig"
+
+source "drivers/net/phy/rtl8261n/Kconfig"
 
 config RENESAS_PHY
 	tristate "Renesas PHYs"

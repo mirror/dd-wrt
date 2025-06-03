@@ -46,7 +46,17 @@
 #define ORC_TYPE_REGS_PARTIAL		4
 
 #ifndef __ASSEMBLY__
+#ifdef __APPLE__
+#include <endian.h>
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define __LITTLE_ENDIAN_BITFIELD
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define __BIG_ENDIAN_BITFIELD
+#endif
+#else
 #include <asm/byteorder.h>
+#endif
 
 /*
  * This struct is more or less a vastly simplified version of the DWARF Call

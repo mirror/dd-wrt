@@ -12,7 +12,10 @@
 #include "subcmd-config.h"
 
 #define MAX_ARGS	32
+
+#ifndef PATH_MAX
 #define PATH_MAX	4096
+#endif
 
 static const char *argv_exec_path;
 static const char *argv0_path;

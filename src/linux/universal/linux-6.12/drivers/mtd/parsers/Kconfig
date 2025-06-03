@@ -62,6 +62,22 @@ config MTD_CMDLINE_PARTS
 
 	  If unsure, say 'N'.
 
+config MTD_MYLOADER_PARTS
+	tristate "MyLoader partition parsing"
+	depends on ADM5120 || ATH79
+	help
+	  MyLoader is a bootloader which allows the user to define partitions
+	  in flash devices, by putting a table in the second erase block
+	  on the device, similar to a partition table. This table gives the
+	  offsets and lengths of the user defined partitions.
+
+	  If you need code which can detect and parse these tables, and
+	  register MTD 'partitions' corresponding to each image detected,
+	  enable this option.
+
+	  You will still need the parsing functions to be called by the driver
+	  for your particular device. It won't happen automatically.
+
 config MTD_OF_PARTS
 	tristate "OpenFirmware (device tree) partitioning parser"
 	default y
@@ -215,3 +231,12 @@ config MTD_SERCOMM_PARTS
 	  partition map. This partition table contains real partition
 	  offsets, which may differ from device to device depending on the
 	  number and location of bad blocks on NAND.
+
+config MTD_ROUTERBOOT_PARTS
+	tristate "RouterBoot flash partition parser"
+	depends on MTD && OF
+	help
+	 MikroTik RouterBoot is implemented as a multi segment system on the
+	 flash, some of which are fixed and some of which are located at
+	 variable offsets. This parser handles both cases via properly
+	 formatted DTS.

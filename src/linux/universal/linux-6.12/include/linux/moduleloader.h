@@ -122,4 +122,8 @@ void module_arch_cleanup(struct module *mod);
 /* Any cleanup before freeing mod->module_init */
 void module_arch_freeing_init(struct module *mod);
 
+enum execmem_type;
+void *arch_execmem_alloc(enum execmem_type type, size_t size);
+void arch_execmem_free(void *ptr);
+
 #endif

@@ -571,7 +571,7 @@ static struct class gpio_class = {
  * Returns:
  * 0 on success, or negative errno on failure.
  */
-int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
+int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name)
 {
 	const char *ioname = NULL;
 	struct gpio_device *gdev;
@@ -629,6 +629,8 @@ int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
 	offset = gpio_chip_hwgpio(desc);
 	if (guard.gc->names && guard.gc->names[offset])
 		ioname = guard.gc->names[offset];
+	if (name)
+		ioname = name;
 
 	dev = device_create_with_groups(&gpio_class, &gdev->dev,
 					MKDEV(0, 0), data, gpio_groups,
@@ -650,7 +652,20 @@ err_unlock:
 	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
 	return status;
 }
+EXPORT_SYMBOL_GPL(__gpiod_export);
+
+int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
+{
+	return __gpiod_export(desc, direction_may_change, NULL);
+}
 EXPORT_SYMBOL_GPL(gpiod_export);
+
+int gpio_export_with_name(struct gpio_desc *desc, bool direction_may_change,
+			  const char *name)
+{
+	return __gpiod_export(desc, direction_may_change, name);
+}
+EXPORT_SYMBOL_GPL(gpio_export_with_name);
 
 static int match_export(struct device *dev, const void *desc)
 {

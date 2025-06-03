@@ -97,6 +97,27 @@ int of_get_mac_address_nvmem(struct device_node *np, u8 *addr)
 }
 EXPORT_SYMBOL(of_get_mac_address_nvmem);
 
+static int of_add_mac_address(struct device_node *np, u8* addr)
+{
+	struct property *prop;
+
+	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
+	if (!prop)
+		return -ENOMEM;
+
+	prop->name = "mac-address";
+	prop->length = ETH_ALEN;
+	prop->value = kmemdup(addr, ETH_ALEN, GFP_KERNEL);
+	if (!prop->value || of_update_property(np, prop))
+		goto free;
+
+	return 0;
+free:
+	kfree(prop->value);
+	kfree(prop);
+	return -ENOMEM;
+}
+
 /**
  * of_get_mac_address()
  * @np:		Caller's Device Node
@@ -132,17 +153,23 @@ int of_get_mac_address(struct device_node *np, u8 *addr)
 
 	ret = of_get_mac_addr(np, "mac-address", addr);
 	if (!ret)
-		return 0;
+		goto found;
 
 	ret = of_get_mac_addr(np, "local-mac-address", addr);
 	if (!ret)
-		return 0;
+		goto found;
 
 	ret = of_get_mac_addr(np, "address", addr);
 	if (!ret)
-		return 0;
+		goto found;
 
-	return of_get_mac_address_nvmem(np, addr);
+	ret = of_get_mac_address_nvmem(np, addr);
+	if (ret)
+		return ret;
+
+found:
+	ret = of_add_mac_address(np, addr);
+	return ret;
 }
 EXPORT_SYMBOL(of_get_mac_address);
 

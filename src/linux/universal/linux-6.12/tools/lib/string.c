@@ -96,6 +96,7 @@ int strtobool(const char *s, bool *res)
  * If libc has strlcpy() then that version will override this
  * implementation:
  */
+#ifndef __APPLE__
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -113,6 +114,7 @@ size_t __weak strlcpy(char *dest, const char *src, size_t size)
 }
 #ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 #endif
 
 /**

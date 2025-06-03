@@ -204,7 +204,10 @@ void br_do_proxy_suppress_arp(struct sk_buff *skb, struct net_bridge *br,
 			if ((p && (p->flags & BR_PROXYARP)) ||
 			    (f->dst && (f->dst->flags & BR_PROXYARP_WIFI)) ||
 			    br_is_neigh_suppress_enabled(f->dst, vid)) {
-				if (!vid)
+				replied = true;
+				if (!memcmp(n->ha, sha, dev->addr_len))
+					replied = false;
+				else if (!vid)
 					br_arp_send(br, p, skb->dev, sip, tip,
 						    sha, n->ha, sha, 0, 0);
 				else
@@ -212,7 +215,6 @@ void br_do_proxy_suppress_arp(struct sk_buff *skb, struct net_bridge *br,
 						    sha, n->ha, sha,
 						    skb->vlan_proto,
 						    skb_vlan_tag_get(skb));
-				replied = true;
 			}
 
 			/* If we have replied or as long as we know the

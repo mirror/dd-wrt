@@ -180,6 +180,8 @@ static int ip6mr_rule_action(struct fib_rule *rule, struct flowi *flp,
 		return -ENETUNREACH;
 	case FR_ACT_PROHIBIT:
 		return -EACCES;
+	case FR_ACT_POLICY_FAILED:
+		return -EACCES;
 	case FR_ACT_BLACKHOLE:
 	default:
 		return -EINVAL;

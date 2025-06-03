@@ -628,7 +628,10 @@ static inline int devm_acpi_dev_add_driver_gpios(struct device *dev,
 
 #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
 
+int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name);
 int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
+int gpio_export_with_name(struct gpio_desc *desc, bool direction_may_change,
+			  const char *name);
 int gpiod_export_link(struct device *dev, const char *name,
 		      struct gpio_desc *desc);
 void gpiod_unexport(struct gpio_desc *desc);
@@ -637,8 +640,22 @@ void gpiod_unexport(struct gpio_desc *desc);
 
 #include <asm/errno.h>
 
+static inline int __gpiod_export(struct gpio_desc *desc,
+			       bool direction_may_change,
+			       const char *name)
+{
+	return -ENOSYS;
+}
+
 static inline int gpiod_export(struct gpio_desc *desc,
 			       bool direction_may_change)
+{
+	return -ENOSYS;
+}
+
+static inline int gpio_export_with_name(struct gpio_desc *desc,
+					bool direction_may_change,
+					const char *name)
 {
 	return -ENOSYS;
 }

@@ -35,6 +35,9 @@ typedef uint32_t	__u32;
 typedef uint16_t	__u16;
 typedef unsigned char	__u8;
 
+#ifdef __APPLE__
+#define uuid_t compat_uuid_t
+#endif
 /* UUID types for backward compatibility, don't use in new code */
 typedef struct {
 	__u8 b[16];

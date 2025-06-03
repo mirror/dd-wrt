@@ -198,7 +198,7 @@ config SOC_BUS
 source "drivers/base/regmap/Kconfig"
 
 config DMA_SHARED_BUFFER
-	bool
+	tristate
 	default n
 	select IRQ_WORK
 	help

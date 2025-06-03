@@ -93,7 +93,9 @@ const char *get_system_type(void);
 
 extern unsigned long mips_machtype;
 
+#ifndef CONFIG_64BIT
 extern void detect_memory_region(phys_addr_t start, phys_addr_t sz_min,  phys_addr_t sz_max);
+#endif
 
 extern void prom_init(void);
 extern void prom_free_prom_memory(void);

@@ -1750,6 +1750,117 @@ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
 	return DSA_TAG_PROTO_QCA;
 }
 
+static int qca8k_port_change_master(struct dsa_switch *ds, int port,
+				    struct net_device *master,
+				    struct netlink_ext_ack *extack)
+{
+	struct dsa_switch_tree *dst = ds->dst;
+	struct qca8k_priv *priv = ds->priv;
+	u8 cpu_port_mask = 0;
+	struct dsa_port *dp;
+	u32 val;
+	int ret;
+
+	/* With LAG of CPU port, compose the mask for port LOOKUP MEMBER */
+	if (netif_is_lag_master(master)) {
+		struct dsa_lag *lag;
+		int id;
+
+		id = dsa_lag_id(dst, master);
+		lag = dsa_lag_by_id(dst, id);
+
+		dsa_lag_foreach_port(dp, dst, lag)
+			if (dsa_port_is_cpu(dp))
+				cpu_port_mask |= BIT(dp->index);
+	} else {
+		dp = master->dsa_ptr;
+		cpu_port_mask |= BIT(dp->index);
+	}
+
+	/* Connect port to new cpu port */
+	ret = regmap_read(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port), &val);
+	if (ret)
+		return ret;
+
+	/* Reset connected CPU port in port LOOKUP MEMBER */
+	val &=  ~dsa_cpu_ports(ds);
+	/* Assign the new CPU port in port LOOKUP MEMBER */
+	val |= cpu_port_mask;
+
+	ret = regmap_update_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port),
+				 QCA8K_PORT_LOOKUP_MEMBER,
+				 val);
+	if (ret)
+		return ret;
+
+	/* Refresh CPU port LOOKUP MEMBER with new port */
+	dsa_tree_for_each_cpu_port(dp, ds->dst) {
+		u32 reg = QCA8K_PORT_LOOKUP_CTRL(dp->index);
+
+		/* If CPU port in mask assign port, else remove port */
+		if (BIT(dp->index) & cpu_port_mask)
+			ret = regmap_set_bits(priv->regmap, reg, BIT(port));
+		else
+			ret = regmap_clear_bits(priv->regmap, reg, BIT(port));
+
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int qca8k_port_lag_refresh_user_ports(struct dsa_switch *ds,
+					     struct dsa_lag lag)
+{
+	struct net_device *lag_dev = lag.dev;
+	struct dsa_port *dp;
+	int ret;
+
+	/* Ignore if LAG is not a DSA master */
+	if (!netif_is_lag_master(lag_dev))
+		return 0;
+
+	dsa_switch_for_each_user_port(dp, ds) {
+		/* Skip if assigned master is not the LAG */
+		if (dsa_port_to_conduit(dp) != lag_dev)
+			continue;
+
+		ret = qca8k_port_change_master(ds, dp->index,
+					       lag_dev, NULL);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int qca8xxx_port_lag_join(struct dsa_switch *ds, int port,
+				 struct dsa_lag lag,
+				 struct netdev_lag_upper_info *info,
+				 struct netlink_ext_ack *extack)
+{
+	int ret;
+
+	ret = qca8k_port_lag_join(ds, port, lag, info, extack);
+	if (ret)
+		return ret;
+
+	return qca8k_port_lag_refresh_user_ports(ds, lag);
+}
+
+static int qca8xxx_port_lag_leave(struct dsa_switch *ds, int port,
+				  struct dsa_lag lag)
+{
+	int ret;
+
+	ret = qca8k_port_lag_leave(ds, port, lag);
+	if (ret)
+		return ret;
+
+	return qca8k_port_lag_refresh_user_ports(ds, lag);
+}
+
 static void
 qca8k_conduit_change(struct dsa_switch *ds, const struct net_device *conduit,
 		     bool operational)
@@ -1911,17 +2022,20 @@ qca8k_setup(struct dsa_switch *ds)
 			dev_err(priv->dev, "failed enabling QCA header mode on port %d", dp->index);
 			return ret;
 		}
+
+		/* Disable learning by default on all ports */
+		ret = regmap_clear_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(dp->index),
+								QCA8K_PORT_LOOKUP_LEARN);
+		if (ret)
+			return ret;
 	}
 
-	/* Forward all unknown frames to CPU port for Linux processing
-	 * Notice that in multi-cpu config only one port should be set
-	 * for igmp, unknown, multicast and broadcast packet
-	 */
+	/* Forward all unknown frames to CPU port for Linux processing */
 	ret = qca8k_write(priv, QCA8K_REG_GLOBAL_FW_CTRL1,
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_MASK, BIT(cpu_port)) |
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_BC_DP_MASK, BIT(cpu_port)) |
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_MC_DP_MASK, BIT(cpu_port)) |
-			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_UC_DP_MASK, BIT(cpu_port)));
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_MASK, dsa_cpu_ports(ds)) |
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_BC_DP_MASK, dsa_cpu_ports(ds)) |
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_MC_DP_MASK, dsa_cpu_ports(ds)) |
+			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_UC_DP_MASK, dsa_cpu_ports(ds)));
 	if (ret)
 		return ret;
 
@@ -1940,11 +2054,6 @@ qca8k_setup(struct dsa_switch *ds)
 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
 				QCA8K_PORT_LOOKUP_MEMBER,
 				BIT(cpu_port));
-		if (ret)
-			return ret;
-
-		ret = regmap_clear_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port),
-					QCA8K_PORT_LOOKUP_LEARN);
 		if (ret)
 			return ret;
 
@@ -1999,6 +2108,9 @@ qca8k_setup(struct dsa_switch *ds)
 	/* Set max number of LAGs supported */
 	ds->num_lag_ids = QCA8K_NUM_LAGS;
 
+	/* HW learn on CPU port is limited and require manual setting */
+	ds->assisted_learning_on_cpu_port = true;
+
 	return 0;
 }
 
@@ -2031,6 +2143,8 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
 	.port_fdb_add		= qca8k_port_fdb_add,
 	.port_fdb_del		= qca8k_port_fdb_del,
 	.port_fdb_dump		= qca8k_port_fdb_dump,
+	.lag_fdb_add		= qca8k_lag_fdb_add,
+	.lag_fdb_del		= qca8k_lag_fdb_del,
 	.port_mdb_add		= qca8k_port_mdb_add,
 	.port_mdb_del		= qca8k_port_mdb_del,
 	.port_mirror_add	= qca8k_port_mirror_add,
@@ -2040,8 +2154,9 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
 	.port_vlan_del		= qca8k_port_vlan_del,
 	.phylink_get_caps	= qca8k_phylink_get_caps,
 	.get_phy_flags		= qca8k_get_phy_flags,
-	.port_lag_join		= qca8k_port_lag_join,
-	.port_lag_leave		= qca8k_port_lag_leave,
+	.port_lag_join		= qca8xxx_port_lag_join,
+	.port_lag_leave		= qca8xxx_port_lag_leave,
+	.port_change_conduit	= qca8k_port_change_master,
 	.conduit_state_change	= qca8k_conduit_change,
 	.connect_tag_protocol	= qca8k_connect_tag_protocol,
 };

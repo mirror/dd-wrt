@@ -2,7 +2,11 @@
 #
 # RF switch subsystem configuration
 #
-menuconfig RFKILL
+config RFKILL
+	bool
+	default y
+
+menuconfig RFKILL_FULL
 	tristate "RF switch subsystem support"
 	help
 	  Say Y here if you want to have control over RF switches
@@ -14,19 +18,19 @@ menuconfig RFKILL
 # LED trigger support
 config RFKILL_LEDS
 	bool
-	depends on RFKILL
+	depends on RFKILL_FULL
 	depends on LEDS_TRIGGERS = y || RFKILL = LEDS_TRIGGERS
 	default y
 
 config RFKILL_INPUT
 	bool "RF switch input support" if EXPERT
-	depends on RFKILL
+	depends on RFKILL_FULL
 	depends on INPUT = y || RFKILL = INPUT
 	default y if !EXPERT
 
 config RFKILL_GPIO
 	tristate "GPIO RFKILL driver"
-	depends on RFKILL
+	depends on RFKILL_FULL
 	depends on GPIOLIB || COMPILE_TEST
 	default n
 	help

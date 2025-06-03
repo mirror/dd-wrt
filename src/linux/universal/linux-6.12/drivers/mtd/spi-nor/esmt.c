@@ -10,6 +10,12 @@
 
 static const struct flash_info esmt_nor_parts[] = {
 	{
+		.id = SNOR_ID(0x8c, 0x21, 0x15),
+		.name = "f25l16pa-2s",
+		.size = SZ_2M,
+		.flags = SPI_NOR_HAS_LOCK,
+		.no_sfdp_flags = SECT_4K,
+	}, {
 		.id = SNOR_ID(0x8c, 0x20, 0x16),
 		.name = "f25l32pa",
 		.size = SZ_4M,

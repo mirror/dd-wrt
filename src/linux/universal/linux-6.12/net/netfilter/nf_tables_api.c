@@ -8658,7 +8658,7 @@ static int nft_register_flowtable_net_hooks(struct net *net,
 		err = flowtable->data.type->setup(&flowtable->data,
 						  hook->ops.dev,
 						  FLOW_BLOCK_BIND);
-		if (err < 0)
+		if (err < 0 && err != -EOPNOTSUPP)
 			goto err_unregister_net_hooks;
 
 		err = nf_register_net_hook(net, &hook->ops);

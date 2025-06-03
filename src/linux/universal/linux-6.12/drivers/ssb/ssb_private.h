@@ -8,7 +8,7 @@
 #include <linux/ssb/ssb.h>
 #include <linux/types.h>
 #include <linux/bcm47xx_wdt.h>
-
+#include "fallback-sprom.h"
 
 /* pci.c */
 #ifdef CONFIG_SSB_PCIHOST

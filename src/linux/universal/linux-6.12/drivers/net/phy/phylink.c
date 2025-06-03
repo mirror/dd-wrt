@@ -2086,7 +2086,7 @@ int phylink_fwnode_phy_connect(struct phylink *pl,
 {
 	struct fwnode_handle *phy_fwnode;
 	struct phy_device *phy_dev;
-	int ret;
+	int i, ret;
 
 	/* Fixed links and 802.3z are handled without needing a PHY */
 	if (pl->cfg_link_an_mode == MLO_AN_FIXED ||
@@ -2115,6 +2115,25 @@ int phylink_fwnode_phy_connect(struct phylink *pl,
 
 	if (pl->config->mac_requires_rxc)
 		flags |= PHY_F_RXC_ALWAYS_ON;
+
+	/* Assume single-lane SerDes interface modes share the same
+	 * lanes and allow the PHY to switch to slower also supported modes
+	 */
+	for (i = ARRAY_SIZE(phylink_sfp_interface_preference) - 1; i >= 0; i--) {
+		/* skip unsupported modes */
+		if (!test_bit(phylink_sfp_interface_preference[i], pl->config->supported_interfaces))
+			continue;
+
+		__set_bit(phylink_sfp_interface_preference[i], phy_dev->host_interfaces);
+
+		/* skip all faster modes */
+		if (phylink_sfp_interface_preference[i] == pl->link_interface)
+			break;
+	}
+
+	if (test_bit(pl->link_interface, phylink_sfp_interfaces))
+		phy_interface_and(phy_dev->host_interfaces, phylink_sfp_interfaces,
+				  pl->config->supported_interfaces);
 
 	ret = phy_attach_direct(pl->netdev, phy_dev, flags,
 				pl->link_interface);

@@ -312,6 +312,9 @@ static int conf_askvalue(struct symbol *sym, const char *def)
 		}
 		/* fall through */
 	default:
+		if (!tty_stdio && getenv("FAIL_ON_UNCONFIGURED")) {
+			exit(1);
+		}
 		fflush(stdout);
 		xfgets(line, sizeof(line), stdin);
 		break;
@@ -470,6 +473,9 @@ static void conf_choice(struct menu *menu)
 			}
 			/* fall through */
 		case oldaskconfig:
+			if (!tty_stdio && getenv("FAIL_ON_UNCONFIGURED")) {
+				exit(1);
+			}
 			fflush(stdout);
 			xfgets(line, sizeof(line), stdin);
 			strip(line);

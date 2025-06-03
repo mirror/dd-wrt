@@ -10,6 +10,16 @@ menuconfig MTD_SPI_NOR
 
 if MTD_SPI_NOR
 
+config MTD_SPI_NOR_USE_VARIABLE_ERASE
+	bool "Disable uniform_erase to allow use of all hardware supported erasesizes"
+	depends on !MTD_SPI_NOR_USE_4K_SECTORS
+	default n
+	help
+	  Allow mixed use of all hardware supported erasesizes,
+	  by forcing spi_nor to use the multiple eraseregions code path.
+	  For example: A 68K erase will use one 64K erase, and one 4K erase
+	  on supporting hardware.
+
 config MTD_SPI_NOR_USE_4K_SECTORS
 	bool "Use small 4096 B erase sectors"
 	default y

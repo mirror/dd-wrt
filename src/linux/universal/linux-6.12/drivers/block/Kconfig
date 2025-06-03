@@ -363,6 +363,18 @@ config BLK_DEV_RUST_NULL
 
 	  If unsure, say N.
 
+config UIMAGE_FIT_BLK
+	bool "uImage.FIT block driver"
+	help
+	  This driver allows using filesystems contained in uImage.FIT images
+	  by mapping them as block devices.
+
+	  It can currently not be built as a module due to libfdt symbols not
+	  being exported.
+
+	  Say Y if you want to mount filesystems sub-images of a uImage.FIT
+	  stored in a block device partition, mtdblock or ubiblock device.
+
 config BLK_DEV_RBD
 	tristate "Rados block device (RBD)"
 	depends on INET && BLOCK

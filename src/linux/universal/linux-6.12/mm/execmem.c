@@ -52,14 +52,19 @@ static void *__execmem_alloc(struct execmem_range *range, size_t size)
 	return kasan_reset_tag(p);
 }
 
-void *execmem_alloc(enum execmem_type type, size_t size)
+void *__weak arch_execmem_alloc(enum execmem_type type, size_t size)
 {
 	struct execmem_range *range = &execmem_info->ranges[type];
 
 	return __execmem_alloc(range, size);
 }
 
-void execmem_free(void *ptr)
+void *execmem_alloc(enum execmem_type type, size_t size)
+{
+	return arch_execmem_alloc(type, size);
+}
+
+void __weak arch_execmem_free(void *ptr)
 {
 	/*
 	 * This memory may be RO, and freeing RO memory in an interrupt is not
@@ -67,6 +72,11 @@ void execmem_free(void *ptr)
 	 */
 	WARN_ON(in_interrupt());
 	vfree(ptr);
+}
+
+void execmem_free(void *ptr)
+{
+	arch_execmem_free(ptr);
 }
 
 static bool execmem_validate(struct execmem_info *info)

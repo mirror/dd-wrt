@@ -5054,6 +5054,8 @@ static int __init proc_vmalloc_init(void)
 {
 	void *priv_data = NULL;
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	if (IS_ENABLED(CONFIG_NUMA))
 		priv_data = kmalloc(nr_node_ids * sizeof(unsigned int), GFP_KERNEL);
 

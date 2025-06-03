@@ -23,6 +23,9 @@
 #include <linux/cdrom.h>
 #include <linux/sched.h>
 #include <linux/async.h>
+#ifdef CONFIG_ATA_LEDS
+#include <linux/leds.h>
+#endif
 
 /*
  * Define if arch has non-standard setup.  This is a _PCI_ standard
@@ -933,6 +936,10 @@ struct ata_port {
 
 #ifdef CONFIG_ATA_ACPI
 	struct ata_acpi_gtm	__acpi_init_gtm; /* use ata_acpi_init_gtm() */
+#endif
+#ifdef CONFIG_ATA_LEDS
+	struct led_trigger	*ledtrig;
+	char			ledtrig_name[8];
 #endif
 };
 

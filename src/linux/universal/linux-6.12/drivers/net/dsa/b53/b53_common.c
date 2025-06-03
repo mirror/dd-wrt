@@ -21,6 +21,7 @@
 #include <linux/export.h>
 #include <linux/gpio.h>
 #include <linux/kernel.h>
+#include <linux/math.h>
 #include <linux/module.h>
 #include <linux/platform_data/b53.h>
 #include <linux/phy.h>
@@ -1061,8 +1062,7 @@ void b53_get_strings(struct dsa_switch *ds, int port, u32 stringset,
 
 	if (stringset == ETH_SS_STATS) {
 		for (i = 0; i < mib_size; i++)
-			strscpy(data + i * ETH_GSTRING_LEN,
-				mibs[i].name, ETH_GSTRING_LEN);
+			ethtool_puts(&data, mibs[i].name);
 	} else if (stringset == ETH_SS_PHY_STATS) {
 		phydev = b53_get_phy_device(ds, port);
 		if (!phydev)
@@ -1202,6 +1202,10 @@ static int b53_setup(struct dsa_switch *ds)
 	 * packets, so keep the CPU port always tagged.
 	 */
 	ds->untag_vlan_aware_bridge_pvid = true;
+
+	/* Ageing time is set in seconds */
+	ds->ageing_time_min = 1 * 1000;
+	ds->ageing_time_max = AGE_TIME_MAX * 1000;
 
 	ret = b53_reset_switch(dev);
 	if (ret) {
@@ -2359,13 +2363,16 @@ int b53_eee_init(struct dsa_switch *ds, int port, struct phy_device *phy)
 }
 EXPORT_SYMBOL(b53_eee_init);
 
-int b53_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
+bool b53_support_eee(struct dsa_switch *ds, int port)
 {
 	struct b53_device *dev = ds->priv;
 
-	if (is5325(dev) || is5365(dev))
-		return -EOPNOTSUPP;
+	return !is5325(dev) && !is5365(dev);
+}
+EXPORT_SYMBOL(b53_support_eee);
 
+int b53_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
+{
 	return 0;
 }
 EXPORT_SYMBOL(b53_get_mac_eee);
@@ -2374,9 +2381,6 @@ int b53_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct b53_device *dev = ds->priv;
 	struct ethtool_keee *p = &dev->ports[port].eee;
-
-	if (is5325(dev) || is5365(dev))
-		return -EOPNOTSUPP;
 
 	p->eee_enabled = e->eee_enabled;
 	b53_eee_enable_set(ds, port, e->eee_enabled);
@@ -2413,6 +2417,28 @@ static int b53_get_max_mtu(struct dsa_switch *ds, int port)
 	return B53_MAX_MTU;
 }
 
+int b53_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
+{
+	struct b53_device *dev = ds->priv;
+	u32 atc;
+	int reg;
+
+	if (is63xx(dev))
+		reg = B53_AGING_TIME_CONTROL_63XX;
+	else
+		reg = B53_AGING_TIME_CONTROL;
+
+	atc = DIV_ROUND_CLOSEST(msecs, 1000);
+
+	if (!is5325(dev) && !is5365(dev))
+		atc |= AGE_CHANGE;
+
+	b53_write32(dev, B53_MGMT_PAGE, reg, atc);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(b53_set_ageing_time);
+
 static const struct phylink_mac_ops b53_phylink_mac_ops = {
 	.mac_select_pcs	= b53_phylink_mac_select_pcs,
 	.mac_config	= b53_phylink_mac_config,
@@ -2434,8 +2460,10 @@ static const struct dsa_switch_ops b53_switch_ops = {
 	.port_setup		= b53_setup_port,
 	.port_enable		= b53_enable_port,
 	.port_disable		= b53_disable_port,
+	.support_eee		= b53_support_eee,
 	.get_mac_eee		= b53_get_mac_eee,
 	.set_mac_eee		= b53_set_mac_eee,
+	.set_ageing_time	= b53_set_ageing_time,
 	.port_bridge_join	= b53_br_join,
 	.port_bridge_leave	= b53_br_leave,
 	.port_pre_bridge_flags	= b53_br_flags_pre,
@@ -2547,6 +2575,19 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.arl_buckets = 1024,
 		.imp_port = 8,
 		.vta_regs = B53_VTA_REGS_9798,
+		.duplex_reg = B53_DUPLEX_STAT_GE,
+		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
+		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
+	},
+	{
+		.chip_id = BCM53101_DEVICE_ID,
+		.dev_name = "BCM53101",
+		.vlans = 4096,
+		.enabled_ports = 0x11f,
+		.arl_bins = 4,
+		.arl_buckets = 512,
+		.vta_regs = B53_VTA_REGS,
+		.imp_port = 8,
 		.duplex_reg = B53_DUPLEX_STAT_GE,
 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
 		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -2932,6 +2973,7 @@ int b53_switch_detect(struct b53_device *dev)
 			return ret;
 
 		switch (id32) {
+		case BCM53101_DEVICE_ID:
 		case BCM53115_DEVICE_ID:
 		case BCM53125_DEVICE_ID:
 		case BCM53128_DEVICE_ID:

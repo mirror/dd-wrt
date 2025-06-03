@@ -12,7 +12,6 @@
 #include <linux/tcp.h>
 #include <linux/workqueue.h>
 #include <linux/nospec.h>
-#include <linux/cookie.h>
 #include <linux/inet_diag.h>
 #include <linux/sock_diag.h>
 
@@ -21,23 +20,6 @@ static const struct sock_diag_handler __rcu *sock_diag_handlers[AF_MAX];
 static const struct sock_diag_inet_compat __rcu *inet_rcv_compat;
 
 static struct workqueue_struct *broadcast_wq;
-
-DEFINE_COOKIE(sock_cookie);
-
-u64 __sock_gen_cookie(struct sock *sk)
-{
-	u64 res = atomic64_read(&sk->sk_cookie);
-
-	if (!res) {
-		u64 new = gen_cookie_next(&sock_cookie);
-
-		atomic64_cmpxchg(&sk->sk_cookie, res, new);
-
-		/* Another thread might have changed sk_cookie before us. */
-		res = atomic64_read(&sk->sk_cookie);
-	}
-	return res;
-}
 
 int sock_diag_check_cookie(struct sock *sk, const __u32 *cookie)
 {

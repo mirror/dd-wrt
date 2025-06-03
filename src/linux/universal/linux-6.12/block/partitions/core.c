@@ -9,7 +9,10 @@
 #include <linux/slab.h>
 #include <linux/ctype.h>
 #include <linux/vmalloc.h>
+#include <linux/device.h>
 #include <linux/raid/detect.h>
+#include <linux/property.h>
+
 #include "check.h"
 
 static int (*const check_part[])(struct parsed_partitions *) = {
@@ -42,6 +45,9 @@ static int (*const check_part[])(struct parsed_partitions *) = {
 
 #ifdef CONFIG_CMDLINE_PARTITION
 	cmdline_partition,
+#endif
+#ifdef CONFIG_OF_PARTITION
+	of_partition,		/* cmdline have priority to OF */
 #endif
 #ifdef CONFIG_EFI_PARTITION
 	efi_partition,		/* this must come before msdos */
@@ -281,13 +287,82 @@ static ssize_t whole_disk_show(struct device *dev,
 }
 static const DEVICE_ATTR(whole_disk, 0444, whole_disk_show, NULL);
 
+static bool part_meta_match(const char *attr, const char *member, size_t length)
+{
+	/* check if length of attr exceeds specified maximum length */
+	if (strnlen(attr, length) == length)
+		return false;
+
+	/* return true if strings match */
+	return !strncmp(attr, member, length);
+}
+
+static struct fwnode_handle *find_partition_fwnode(struct block_device *bdev)
+{
+	struct fwnode_handle *fw_parts, *fw_part;
+	struct device *ddev = disk_to_dev(bdev->bd_disk);
+	const char *partname, *uuid;
+	u32 partno;
+	bool got_uuid, got_partname, got_partno;
+
+	fw_parts = device_get_named_child_node(ddev, "partitions");
+	if (!fw_parts)
+		return NULL;
+
+	fwnode_for_each_child_node(fw_parts, fw_part) {
+		got_uuid = false;
+		got_partname = false;
+		got_partno = false;
+		/*
+		 * In case 'uuid' is defined in the partitions firmware node
+		 * require partition meta info being present and the specified
+		 * uuid to match.
+		 */
+		got_uuid = !fwnode_property_read_string(fw_part, "uuid", &uuid);
+		if (got_uuid && (!bdev->bd_meta_info ||
+				 !part_meta_match(uuid, bdev->bd_meta_info->uuid,
+						  PARTITION_META_INFO_UUIDLTH)))
+			continue;
+
+		/*
+		 * In case 'partname' is defined in the partitions firmware node
+		 * require partition meta info being present and the specified
+		 * volname to match.
+		 */
+		got_partname = !fwnode_property_read_string(fw_part, "partname",
+							    &partname);
+		if (got_partname && (!bdev->bd_meta_info ||
+				     !part_meta_match(partname,
+						      bdev->bd_meta_info->volname,
+						      PARTITION_META_INFO_VOLNAMELTH)))
+			continue;
+
+		/*
+		 * In case 'partno' is defined in the partitions firmware node
+		 * the specified partno needs to match.
+		 */
+		got_partno = !fwnode_property_read_u32(fw_part, "partno", &partno);
+		if (got_partno && bdev_partno(bdev) != partno)
+			continue;
+
+		/* Skip if no matching criteria is present in firmware node */
+		if (!got_uuid && !got_partname && !got_partno)
+			continue;
+
+		return fw_part;
+	}
+
+	return NULL;
+}
+
 /*
  * Must be called either with open_mutex held, before a disk can be opened or
  * after all disk users are gone.
  */
 static struct block_device *add_partition(struct gendisk *disk, int partno,
 				sector_t start, sector_t len, int flags,
-				struct partition_meta_info *info)
+				struct partition_meta_info *info,
+				struct device_node *np)
 {
 	dev_t devt = MKDEV(0, 0);
 	struct device *ddev = disk_to_dev(disk);
@@ -336,6 +411,7 @@ static struct block_device *add_partition(struct gendisk *disk, int partno,
 	pdev->class = &block_class;
 	pdev->type = &part_type;
 	pdev->parent = ddev;
+	device_set_node(pdev, of_fwnode_handle(np));
 
 	/* in consecutive minor range? */
 	if (bdev_partno(bdev) < disk->minors) {
@@ -355,6 +431,9 @@ static struct block_device *add_partition(struct gendisk *disk, int partno,
 			goto out_put;
 	}
 
+	if (!pdev->fwnode && !pdev->of_node)
+		device_set_node(pdev, find_partition_fwnode(bdev));
+
 	/* delay uevent until 'holders' subdir is created */
 	dev_set_uevent_suppress(pdev, 1);
 	err = device_add(pdev);
@@ -372,6 +451,9 @@ static struct block_device *add_partition(struct gendisk *disk, int partno,
 		if (err)
 			goto out_del;
 	}
+
+	if (flags & ADDPART_FLAG_READONLY)
+		bdev_set_flag(bdev, BD_READ_ONLY);
 
 	/* everything is up and running, commence */
 	err = xa_insert(&disk->part_tbl, partno, bdev, GFP_KERNEL);
@@ -439,7 +521,7 @@ int bdev_add_partition(struct gendisk *disk, int partno, sector_t start,
 	}
 
 	part = add_partition(disk, partno, start, length,
-			ADDPART_FLAG_NONE, NULL);
+			ADDPART_FLAG_NONE, NULL, NULL);
 	ret = PTR_ERR_OR_ZERO(part);
 out:
 	mutex_unlock(&disk->open_mutex);
@@ -553,8 +635,13 @@ static bool blk_add_partition(struct gendisk *disk,
 		size = get_capacity(disk) - from;
 	}
 
+#ifdef CONFIG_OF
 	part = add_partition(disk, p, from, size, state->parts[p].flags,
-			     &state->parts[p].info);
+			     &state->parts[p].info, state->parts[p].np);
+#else
+	part = add_partition(disk, p, from, size, state->parts[p].flags,
+			     &state->parts[p].info, NULL);
+#endif
 	if (IS_ERR(part)) {
 		if (PTR_ERR(part) != -ENXIO) {
 			printk(KERN_ERR " %s: p%d could not be added: %pe\n",

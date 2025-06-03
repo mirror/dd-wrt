@@ -4,8 +4,7 @@
 # subsystems should select the appropriate symbols.
 
 config REGMAP
-	bool
-	default y if (REGMAP_I2C || REGMAP_SPI || REGMAP_SPMI || REGMAP_W1 || REGMAP_AC97 || REGMAP_MMIO || REGMAP_IRQ || REGMAP_SOUNDWIRE || REGMAP_SOUNDWIRE_MBQ || REGMAP_SCCB || REGMAP_I3C || REGMAP_SPI_AVMM || REGMAP_MDIO || REGMAP_FSI)
+	tristate
 	select IRQ_DOMAIN if REGMAP_IRQ
 	select MDIO_BUS if REGMAP_MDIO
 	help
@@ -19,7 +18,7 @@ config REGMAP
 
 config REGMAP_KUNIT
 	tristate "KUnit tests for regmap"
-	depends on KUNIT && REGMAP
+	depends on KUNIT
 	default KUNIT_ALL_TESTS
 	select REGMAP_RAM
 
@@ -34,60 +33,76 @@ config REGMAP_BUILD
 	  normally enabled.
 
 config REGMAP_AC97
+	select REGMAP
 	tristate
 
 config REGMAP_I2C
+	select REGMAP
 	tristate
 	depends on I2C
 
 config REGMAP_SLIMBUS
+	select REGMAP
 	tristate
 	depends on SLIMBUS
 
 config REGMAP_SPI
+	select REGMAP
 	tristate
 	depends on SPI
 
 config REGMAP_SPMI
+	select REGMAP
 	tristate
 	depends on SPMI
 
 config REGMAP_W1
+	select REGMAP
 	tristate
 	depends on W1
 
 config REGMAP_MDIO
+	select REGMAP
 	tristate
 
 config REGMAP_MMIO
+	select REGMAP
 	tristate
 
 config REGMAP_IRQ
+	select REGMAP
 	bool
 
 config REGMAP_RAM
+	select REGMAP
 	tristate
 
 config REGMAP_SOUNDWIRE
+	select REGMAP
 	tristate
 	depends on SOUNDWIRE
 
 config REGMAP_SOUNDWIRE_MBQ
+	select REGMAP
 	tristate
 	depends on SOUNDWIRE
 
 config REGMAP_SCCB
+	select REGMAP
 	tristate
 	depends on I2C
 
 config REGMAP_I3C
+	select REGMAP
 	tristate
 	depends on I3C
 
 config REGMAP_SPI_AVMM
+	select REGMAP
 	tristate
 	depends on SPI
 
 config REGMAP_FSI
+	select REGMAP
 	tristate
 	depends on FSI

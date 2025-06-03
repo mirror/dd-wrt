@@ -15,7 +15,11 @@
 #include "../include/asm/insn.h" /* __ignore_sync_check__ */
 #include <linux/unaligned.h> /* __ignore_sync_check__ */
 
+#ifdef __KERNEL__
 #include <linux/errno.h>
+#else
+#include <errno.h>
+#endif
 #include <linux/kconfig.h>
 
 #include "../include/asm/emulate_prefix.h" /* __ignore_sync_check__ */

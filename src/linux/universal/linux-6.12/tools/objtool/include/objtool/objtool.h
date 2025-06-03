@@ -12,6 +12,7 @@
 
 #include <objtool/elf.h>
 
+#undef __weak
 #define __weak __attribute__((weak))
 
 struct pv_state {

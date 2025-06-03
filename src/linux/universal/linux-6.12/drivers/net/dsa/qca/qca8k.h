@@ -592,5 +592,11 @@ int qca8k_port_lag_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 			struct netlink_ext_ack *extack);
 int qca8k_port_lag_leave(struct dsa_switch *ds, int port,
 			 struct dsa_lag lag);
+int qca8k_lag_fdb_add(struct dsa_switch *ds, struct dsa_lag lag,
+		      const unsigned char *addr, u16 vid,
+		      struct dsa_db db);
+int qca8k_lag_fdb_del(struct dsa_switch *ds, struct dsa_lag lag,
+		      const unsigned char *addr, u16 vid,
+		      struct dsa_db db);
 
 #endif /* __QCA8K_H */

@@ -42,4 +42,6 @@ obj-$(CONFIG_BLK_DEV_NULL_BLK)	+= null_blk/
 
 obj-$(CONFIG_BLK_DEV_UBLK)			+= ublk_drv.o
 
+obj-$(CONFIG_UIMAGE_FIT_BLK)	+= fitblk.o
+
 swim_mod-y	:= swim.o swim_asm.o

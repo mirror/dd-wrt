@@ -93,7 +93,7 @@ struct spi_ioc_transfer {
 
 /* not all platforms use <asm-generic/ioctl.h> or _IOC_TYPECHECK() ... */
 #define SPI_MSGSIZE(N) \
-	((((N)*(sizeof (struct spi_ioc_transfer))) < (1 << _IOC_SIZEBITS)) \
+	((((N)*(sizeof (struct spi_ioc_transfer))) < (1 << 13)) \
 		? ((N)*(sizeof (struct spi_ioc_transfer))) : 0)
 #define SPI_IOC_MESSAGE(N) _IOW(SPI_IOC_MAGIC, 0, char[SPI_MSGSIZE(N)])
 

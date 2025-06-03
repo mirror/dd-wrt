@@ -29,6 +29,13 @@ static struct sk_buff *mtk_tag_xmit(struct sk_buff *skb,
 
 	skb_set_queue_mapping(skb, dp->index);
 
+	/* The Ethernet switch we are interfaced with needs packets to be at
+	 * least 64 bytes (including FCS) otherwise their padding might be
+	 * corrupted. With tags enabled, we need to make sure that packets are
+	 * at least 68 bytes (including FCS and tag).
+	 */
+	eth_skb_pad(skb);
+
 	/* Build the special tag after the MAC Source Address. If VLAN header
 	 * is present, it's required that VLAN header and special tag is
 	 * being combined. Only in this way we can allow the switch can parse

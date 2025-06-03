@@ -641,7 +641,8 @@ static int ag71xx_mdio_get_divider(struct ag71xx *ag, u32 *div)
 	if (!ref_clock)
 		return -EINVAL;
 
-	if (ag71xx_is(ag, AR9330) || ag71xx_is(ag, AR9340)) {
+	if (ag71xx_is(ag, AR9330) || ag71xx_is(ag, AR9340) ||
+	    ag71xx_is(ag, QCA9530) || ag71xx_is(ag, QCA9550)) {
 		table = ar933x_mdio_div_table;
 		ndivs = ARRAY_SIZE(ar933x_mdio_div_table);
 	} else if (ag71xx_is(ag, AR7240)) {

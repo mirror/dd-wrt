@@ -180,10 +180,20 @@ int ssb_arch_register_fallback_sprom(int (*sprom_callback)(struct ssb_bus *bus,
 
 int ssb_fill_sprom_with_fallback(struct ssb_bus *bus, struct ssb_sprom *out)
 {
+	int err;
+
+	if (get_fallback_sprom)
+		err = get_fallback_sprom(bus, out);
+
+#ifdef CONFIG_SSB_FALLBACK_SPROM
+	if (!get_fallback_sprom || err)
+		err = ssb_get_fallback_sprom(bus, out);
+#else
 	if (!get_fallback_sprom)
 		return -ENOENT;
+#endif /* CONFIG_SSB_FALLBACK_SPROM */
 
-	return get_fallback_sprom(bus, out);
+	return err;
 }
 
 /* https://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */

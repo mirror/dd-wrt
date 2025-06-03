@@ -38,12 +38,16 @@ static inline bool usb_amd_pt_check_port(struct device *device, int port)
 #ifdef CONFIG_USB_PCI
 void uhci_reset_hc(struct pci_dev *pdev, unsigned long base);
 int uhci_check_and_reset_hc(struct pci_dev *pdev, unsigned long base);
+#endif
+
+#if defined(CONFIG_USB_PCI) && !defined(CONFIG_PCI_DISABLE_COMMON_QUIRKS)
 void usb_asmedia_modifyflowcontrol(struct pci_dev *pdev);
 void usb_enable_intel_xhci_ports(struct pci_dev *xhci_pdev);
 void usb_disable_xhci_ports(struct pci_dev *xhci_pdev);
 #else
 struct pci_dev;
 static inline void usb_asmedia_modifyflowcontrol(struct pci_dev *pdev) {}
+static inline void usb_enable_intel_xhci_ports(struct pci_dev *xhci_pdev) {}
 static inline void usb_disable_xhci_ports(struct pci_dev *xhci_pdev) {}
 #endif  /* CONFIG_USB_PCI */
 

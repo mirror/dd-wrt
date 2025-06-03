@@ -9,6 +9,8 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o mtdchar.o
 
 obj-y				+= parsers/
 
+obj-$(CONFIG_MTD_SPLIT)		+= mtdsplit/
+
 # 'Users' - code which presents functionality to userspace.
 obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o
 obj-$(CONFIG_MTD_BLOCK)		+= mtdblock.o
@@ -31,3 +33,6 @@ obj-y		+= chips/ lpddr/ maps/ devices/ nand/ tests/
 obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor/
 obj-$(CONFIG_MTD_UBI)		+= ubi/
 obj-$(CONFIG_MTD_HYPERBUS)	+= hyperbus/
+
+# Composite drivers must be loaded last
+obj-y				+= composite/

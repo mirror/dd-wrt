@@ -296,7 +296,7 @@ void __inet_twsk_schedule(struct inet_timewait_sock *tw, int timeo, bool rearm)
 	 */
 
 	if (!rearm) {
-		bool kill = timeo <= 4*HZ;
+		bool __maybe_unused  kill = timeo <= 4*HZ;
 
 		__NET_INC_STATS(twsk_net(tw), kill ? LINUX_MIB_TIMEWAITKILLED :
 						     LINUX_MIB_TIMEWAITED);

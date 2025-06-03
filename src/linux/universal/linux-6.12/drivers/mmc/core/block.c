@@ -2517,6 +2517,56 @@ static inline int mmc_blk_readonly(struct mmc_card *card)
 	       !(card->csd.cmdclass & CCC_BLOCK_WRITE);
 }
 
+/*
+ * Search for a declared partitions node for the disk in mmc-card related node.
+ *
+ * This is to permit support for partition table defined in DT in special case
+ * where a partition table is not written in the disk and is expected to be
+ * passed from the running system.
+ *
+ * For the user disk, "partitions" node is searched.
+ * For the special HW disk, "partitions-" node with the appended name is used
+ * following this conversion table (to adhere to JEDEC naming)
+ * - boot0 -> partitions-boot1
+ * - boot1 -> partitions-boot2
+ * - gp0 -> partitions-gp1
+ * - gp1 -> partitions-gp2
+ * - gp2 -> partitions-gp3
+ * - gp3 -> partitions-gp4
+ */
+static struct fwnode_handle *mmc_blk_get_partitions_node(struct device *mmc_dev,
+							 const char *subname)
+{
+	const char *node_name = "partitions";
+
+	if (subname) {
+		mmc_dev = mmc_dev->parent;
+
+		/*
+		 * Check if we are allocating a BOOT disk boot0/1 disk.
+		 * In DT we use the JEDEC naming boot1/2.
+		 */
+		if (!strcmp(subname, "boot0"))
+			node_name = "partitions-boot1";
+		if (!strcmp(subname, "boot1"))
+			node_name = "partitions-boot2";
+		/*
+		 * Check if we are allocating a GP disk gp0/1/2/3 disk.
+		 * In DT we use the JEDEC naming gp1/2/3/4.
+		 */
+		if (!strcmp(subname, "gp0"))
+			node_name = "partitions-gp1";
+		if (!strcmp(subname, "gp1"))
+			node_name = "partitions-gp2";
+		if (!strcmp(subname, "gp2"))
+			node_name = "partitions-gp3";
+		if (!strcmp(subname, "gp3"))
+			node_name = "partitions-gp4";
+	}
+
+	return device_get_named_child_node(mmc_dev, node_name);
+}
+
 static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 					      struct device *parent,
 					      sector_t size,
@@ -2525,6 +2575,7 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 					      int area_type,
 					      unsigned int part_type)
 {
+	struct fwnode_handle *disk_fwnode;
 	struct mmc_blk_data *md;
 	int devidx, ret;
 	char cap_str[10];
@@ -2593,6 +2644,7 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 	md->disk->major	= MMC_BLOCK_MAJOR;
 	md->disk->minors = perdev_minors;
 	md->disk->first_minor = devidx * perdev_minors;
+	md->disk->flags = GENHD_FL_NVMEM;
 	md->disk->fops = &mmc_bdops;
 	md->disk->private_data = md;
 	md->parent = parent;
@@ -2626,7 +2678,13 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 	/* used in ->open, must be set before add_disk: */
 	if (area_type == MMC_BLK_DATA_AREA_MAIN)
 		dev_set_drvdata(&card->dev, md);
-	ret = device_add_disk(md->parent, md->disk, mmc_disk_attr_groups);
+	disk_fwnode = mmc_blk_get_partitions_node(parent, subname);
+	if (!disk_fwnode)
+		disk_fwnode = device_get_named_child_node(subname ? md->parent->parent :
+							  md->parent,
+							  subname ? subname : "block");
+	ret = add_disk_fwnode(md->parent, md->disk, mmc_disk_attr_groups,
+			      disk_fwnode);
 	if (ret)
 		goto err_put_disk;
 	return md;

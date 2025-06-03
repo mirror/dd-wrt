@@ -97,7 +97,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file *m, void *private, bool bind)
 		if (bind && state != MTK_FOE_STATE_BIND)
 			continue;
 
-		acct = mtk_foe_entry_get_mib(ppe, i, NULL);
+		acct = mtk_ppe_mib_entry_read(ppe, i);
 
 		type = mtk_get_ib1_pkt_type(ppe->eth, entry->ib1);
 		seq_printf(m, "%05x %s %7s", i,

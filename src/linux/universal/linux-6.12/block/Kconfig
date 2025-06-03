@@ -209,6 +209,12 @@ config BLK_INLINE_ENCRYPTION_FALLBACK
 	  by falling back to the kernel crypto API when inline
 	  encryption hardware is not present.
 
+config BLOCK_NOTIFIERS
+	bool "Enable support for notifications in block layer"
+	help
+	  Enable this option to provide notifiers for other subsystems
+	  upon addition or removal of block devices.
+
 source "block/partitions/Kconfig"
 
 config BLK_MQ_PCI

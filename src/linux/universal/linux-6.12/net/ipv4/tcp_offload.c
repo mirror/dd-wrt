@@ -354,6 +354,7 @@ struct sk_buff *tcp_gro_receive(struct list_head *head, struct sk_buff *skb,
 		flush |= (__force int)(flags ^ tcp_flag_word(th2));
 		flush |= skb->ip_summed != p->ip_summed;
 		flush |= skb->csum_level != p->csum_level;
+		flush |= !pskb_may_pull(skb, skb_gro_offset(skb));
 		flush |= NAPI_GRO_CB(p)->count >= 64;
 
 		if (flush || skb_gro_receive_list(p, skb))

@@ -203,6 +203,10 @@ static int cryptomgr_schedule_test(struct crypto_alg *alg)
 	memcpy(param->alg, alg->cra_name, sizeof(param->alg));
 	param->type = alg->cra_flags;
 
+#ifdef CONFIG_CRYPTO_MANAGER_DISABLE_TESTS
+	param->type |= CRYPTO_ALG_TESTED;
+#endif
+
 	thread = kthread_run(cryptomgr_test, param, "cryptomgr_test");
 	if (IS_ERR(thread))
 		goto err_free_param;

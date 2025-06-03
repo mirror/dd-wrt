@@ -41,6 +41,7 @@
 #include <linux/scatterlist.h>
 #include <linux/idr.h>
 #include <asm/div64.h>
+#include <linux/root_dev.h>
 
 #include "ubi-media.h"
 #include "ubi.h"
@@ -431,6 +432,15 @@ int ubiblock_create(struct ubi_volume_info *vi)
 	dev_info(disk_to_dev(dev->gd), "created from ubi%d:%d(%s)",
 		 dev->ubi_num, dev->vol_id, vi->name);
 	mutex_unlock(&devices_mutex);
+
+	if (!strcmp(vi->name, "rootfs") &&
+	    IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
+	    ROOT_DEV == 0) {
+		pr_notice("ubiblock: device ubiblock%d_%d (%s) set to be root filesystem\n",
+			  dev->ubi_num, dev->vol_id, vi->name);
+		ROOT_DEV = MKDEV(gd->major, gd->first_minor);
+	}
+
 	return 0;
 
 out_remove_minor:
@@ -575,10 +585,47 @@ match_volume_desc(struct ubi_volume_info *vi, const char *name, int ubi_num, int
 	return true;
 }
 
+#define UBIFS_NODE_MAGIC  0x06101831
+static inline int ubi_vol_is_ubifs(struct ubi_volume_desc *desc)
+{
+	int ret;
+	uint32_t magic_of, magic;
+	ret = ubi_read(desc, 0, (char *)&magic_of, 0, 4);
+	if (ret)
+		return 0;
+	magic = le32_to_cpu(magic_of);
+	return magic == UBIFS_NODE_MAGIC;
+}
+
+static void ubiblock_create_auto_rootfs(struct ubi_volume_info *vi)
+{
+	int ret, is_ubifs;
+	struct ubi_volume_desc *desc;
+
+	if (strcmp(vi->name, "rootfs") &&
+	    strcmp(vi->name, "fit"))
+		return;
+
+	desc = ubi_open_volume(vi->ubi_num, vi->vol_id, UBI_READONLY);
+	if (IS_ERR(desc))
+		return;
+
+	is_ubifs = ubi_vol_is_ubifs(desc);
+	ubi_close_volume(desc);
+	if (is_ubifs)
+		return;
+
+	ret = ubiblock_create(vi);
+	if (ret)
+		pr_err("UBI error: block: can't add '%s' volume, err=%d\n",
+			vi->name, ret);
+}
+
 static void
 ubiblock_create_from_param(struct ubi_volume_info *vi)
 {
 	int i, ret = 0;
+	bool got_param = false;
 	struct ubiblock_param *p;
 
 	/*
@@ -591,6 +638,7 @@ ubiblock_create_from_param(struct ubi_volume_info *vi)
 		if (!match_volume_desc(vi, p->name, p->ubi_num, p->vol_id))
 			continue;
 
+		got_param = true;
 		ret = ubiblock_create(vi);
 		if (ret) {
 			pr_err(
@@ -599,6 +647,10 @@ ubiblock_create_from_param(struct ubi_volume_info *vi)
 		}
 		break;
 	}
+
+	/* auto-attach "rootfs" volume if existing and non-ubifs */
+	if (!got_param && IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV))
+		ubiblock_create_auto_rootfs(vi);
 }
 
 static int ubiblock_notify(struct notifier_block *nb,

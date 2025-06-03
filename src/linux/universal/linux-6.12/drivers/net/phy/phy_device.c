@@ -2013,6 +2013,9 @@ void phy_detach(struct phy_device *phydev)
 	if (phydev->devlink)
 		device_link_del(phydev->devlink);
 
+	if (phydev->drv && phydev->drv->detach)
+		phydev->drv->detach(phydev);
+
 	if (phydev->sysfs_links) {
 		if (dev)
 			sysfs_remove_link(&dev->dev.kobj, "phydev");
@@ -3385,10 +3388,16 @@ static int of_phy_led(struct phy_device *phydev,
 	if (index > U8_MAX)
 		return -EINVAL;
 
+	if (of_property_read_bool(led, "active-high"))
+		set_bit(PHY_LED_ACTIVE_HIGH, &modes);
 	if (of_property_read_bool(led, "active-low"))
 		set_bit(PHY_LED_ACTIVE_LOW, &modes);
 	if (of_property_read_bool(led, "inactive-high-impedance"))
 		set_bit(PHY_LED_INACTIVE_HIGH_IMPEDANCE, &modes);
+
+	if (WARN_ON(modes & BIT(PHY_LED_ACTIVE_LOW) &&
+		    modes & BIT(PHY_LED_ACTIVE_HIGH)))
+		return -EINVAL;
 
 	if (modes) {
 		/* Return error if asked to set polarity modes but not supported */

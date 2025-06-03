@@ -6,8 +6,11 @@
  * Author: Miquel Raynal <miquel.raynal@bootlin.com
  */
 
+#include <linux/ctype.h>
 #include <linux/device.h>
 #include <linux/dma-mapping.h>
+#include <linux/etherdevice.h>
+#include <linux/if_ether.h>
 #include <linux/nvmem-consumer.h>
 #include <linux/nvmem-provider.h>
 #include <linux/of.h>
@@ -20,6 +23,83 @@
 	(container_of_const((drv), struct nvmem_layout_driver, driver))
 #define to_nvmem_layout_device(_dev) \
 	container_of((_dev), struct nvmem_layout, dev)
+
+static int nvmem_mac_base_raw_read(void *context, const char *id, int index, unsigned int offset,
+				   void *buf, size_t bytes)
+{
+	if (WARN_ON(bytes != ETH_ALEN))
+		return -EINVAL;
+
+	if (index)
+		eth_addr_add(buf, index);
+
+	return 0;
+}
+
+static int nvmem_mac_base_ascii_read(void *context, const char *id, int index, unsigned int offset,
+				     void *buf, size_t bytes)
+{
+	u8 mac[ETH_ALEN];
+
+	if (WARN_ON(bytes != 3 * ETH_ALEN - 1))
+		return -EINVAL;
+
+	if (!mac_pton(buf, mac))
+		return -EINVAL;
+
+	if (index)
+		eth_addr_add(mac, index);
+
+	ether_addr_copy(buf, mac);
+
+	return 0;
+}
+
+static int nvmem_mac_base_hex_read(void *context, const char *id, int index, unsigned int offset,
+				   void *buf, size_t bytes)
+{
+	u8 mac[ETH_ALEN], *hexstr;
+	int i;
+
+	if (WARN_ON(bytes != 2 * ETH_ALEN))
+		return -EINVAL;
+
+	hexstr = (u8 *)buf;
+	for (i = 0; i < ETH_ALEN; i++) {
+		if (!isxdigit(hexstr[i * 2]) || !isxdigit(hexstr[i * 2 + 1]))
+			return -EINVAL;
+
+		mac[i] = (hex_to_bin(hexstr[i * 2]) << 4) | hex_to_bin(hexstr[i * 2 + 1]);
+	}
+
+	if (index)
+		eth_addr_add(mac, index);
+
+	ether_addr_copy(buf, mac);
+
+	return 0;
+}
+
+void nvmem_layout_parse_mac_base(struct nvmem_cell_info *info)
+{
+	if (!of_device_is_compatible(info->np, "mac-base"))
+		return;
+
+	if (info->bytes == ETH_ALEN) {
+		info->raw_len = info->bytes;
+		info->bytes = ETH_ALEN;
+		info->read_post_process = nvmem_mac_base_raw_read;
+	} else if (info->bytes == 2 * ETH_ALEN) {
+		info->raw_len = info->bytes;
+		info->bytes = ETH_ALEN;
+		info->read_post_process = nvmem_mac_base_hex_read;
+	} else if (info->bytes == 3 * ETH_ALEN - 1) {
+		info->raw_len = info->bytes;
+		info->bytes = ETH_ALEN;
+		info->read_post_process = nvmem_mac_base_ascii_read;
+	}
+}
+EXPORT_SYMBOL_GPL(nvmem_layout_parse_mac_base);
 
 static int nvmem_layout_bus_match(struct device *dev, const struct device_driver *drv)
 {

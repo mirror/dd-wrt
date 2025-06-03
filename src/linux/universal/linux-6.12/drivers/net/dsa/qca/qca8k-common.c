@@ -1234,6 +1234,42 @@ int qca8k_port_lag_leave(struct dsa_switch *ds, int port,
 	return qca8k_lag_refresh_portmap(ds, port, lag, true);
 }
 
+int qca8k_lag_fdb_add(struct dsa_switch *ds, struct dsa_lag lag,
+		      const unsigned char *addr, u16 vid,
+		      struct dsa_db db)
+{
+	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
+	struct dsa_port *dp;
+	u16 port_mask = 0;
+
+	/* Set the vid to the port vlan id if no vid is set */
+	if (!vid)
+		vid = QCA8K_PORT_VID_DEF;
+
+	dsa_lag_foreach_port(dp, ds->dst, &lag)
+		port_mask |= BIT(dp->index);
+
+	return qca8k_port_fdb_insert(priv, addr, port_mask, vid);
+}
+
+int qca8k_lag_fdb_del(struct dsa_switch *ds, struct dsa_lag lag,
+		      const unsigned char *addr, u16 vid,
+		      struct dsa_db db)
+{
+	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
+	struct dsa_port *dp;
+	u16 port_mask = 0;
+
+	/* Set the vid to the port vlan id if no vid is set */
+	if (!vid)
+		vid = QCA8K_PORT_VID_DEF;
+
+	dsa_lag_foreach_port(dp, ds->dst, &lag)
+	port_mask |= BIT(dp->index);
+
+	return qca8k_fdb_del(priv, addr, port_mask, vid);
+}
+
 int qca8k_read_switch_id(struct qca8k_priv *priv)
 {
 	u32 val;

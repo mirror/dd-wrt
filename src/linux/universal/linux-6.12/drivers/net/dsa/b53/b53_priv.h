@@ -66,6 +66,7 @@ enum {
 	BCM5395_DEVICE_ID = 0x95,
 	BCM5397_DEVICE_ID = 0x97,
 	BCM5398_DEVICE_ID = 0x98,
+	BCM53101_DEVICE_ID = 0x53101,
 	BCM53115_DEVICE_ID = 0x53115,
 	BCM53125_DEVICE_ID = 0x53125,
 	BCM53128_DEVICE_ID = 0x53128,
@@ -190,6 +191,7 @@ static inline int is531x5(struct b53_device *dev)
 {
 	return dev->chip_id == BCM53115_DEVICE_ID ||
 		dev->chip_id == BCM53125_DEVICE_ID ||
+		dev->chip_id == BCM53101_DEVICE_ID ||
 		dev->chip_id == BCM53128_DEVICE_ID ||
 		dev->chip_id == BCM53134_DEVICE_ID;
 }
@@ -341,6 +343,7 @@ void b53_get_strings(struct dsa_switch *ds, int port, u32 stringset,
 void b53_get_ethtool_stats(struct dsa_switch *ds, int port, uint64_t *data);
 int b53_get_sset_count(struct dsa_switch *ds, int port, int sset);
 void b53_get_ethtool_phy_stats(struct dsa_switch *ds, int port, uint64_t *data);
+int b53_set_ageing_time(struct dsa_switch *ds, unsigned int msecs);
 int b53_br_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
 		bool *tx_fwd_offload, struct netlink_ext_ack *extack);
 void b53_br_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge);
@@ -387,6 +390,7 @@ int b53_enable_port(struct dsa_switch *ds, int port, struct phy_device *phy);
 void b53_disable_port(struct dsa_switch *ds, int port);
 void b53_brcm_hdr_setup(struct dsa_switch *ds, int port);
 int b53_eee_init(struct dsa_switch *ds, int port, struct phy_device *phy);
+bool b53_support_eee(struct dsa_switch *ds, int port);
 int b53_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e);
 int b53_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e);
 
