@@ -209,6 +209,7 @@ static int bound(void)
 			nvram_set("lan_dhcpmask", netmask);
 
 			eval("ifconfig", wan_ifname, ip, "netmask", netmask, "up");
+			generate_hosts();
 			start_set_routes();
 #ifdef HAVE_DNSMASQ
 			restart_dnsmasq();

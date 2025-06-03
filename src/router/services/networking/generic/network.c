@@ -91,7 +91,6 @@
 #define evalip6(...)
 #endif
 
-extern void genHosts(void);
 extern int br_add_bridge(const char *brname);
 extern int br_del_bridge(const char *brname);
 extern int br_add_interface(const char *br, const char *dev);
@@ -2772,7 +2771,7 @@ void start_lan(void)
 	{
 		char word[256];
 		br_set_stp_state("br0", getBridgeSTP("br0", word));
-		genHosts();
+		generate_hosts();
 	}
 #ifdef HAVE_MICRO
 	br_shutdown();
