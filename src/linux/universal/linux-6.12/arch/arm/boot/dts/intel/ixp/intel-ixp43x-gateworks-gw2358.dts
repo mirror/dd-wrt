@@ -25,12 +25,16 @@
 	};
 
 	aliases {
+		led-boot = &usr_led;
+		led-failsafe = &usr_led;
+		led-running = &usr_led;
+		led-upgrade = &usr_led;
 		serial0 = &uart0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
-		led-user {
+		usr_led: led-user {
 			label = "gw2358:green:LED";
 			gpios = <&pld1 0 GPIO_ACTIVE_LOW>;
 			default-state = "on";

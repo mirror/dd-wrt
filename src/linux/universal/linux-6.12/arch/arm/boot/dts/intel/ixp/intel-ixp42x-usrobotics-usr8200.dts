@@ -29,6 +29,10 @@
 	};
 
 	aliases {
+		led-boot = &pwr_led;
+		led-failsafe = &pwr_led;
+		led-running = &pwr_led;
+		led-upgrade = &pwr_led;
 		/* These are switched around */
 		serial0 = &uart1;
 		serial1 = &uart0;
@@ -67,7 +71,6 @@
 			label = "usr8200:green:pwr";
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-			linux,default-trigger = "heartbeat";
 		};
 	};
 

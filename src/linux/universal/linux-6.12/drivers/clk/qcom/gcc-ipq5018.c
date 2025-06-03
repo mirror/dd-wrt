@@ -368,8 +368,8 @@ static const struct parent_map gcc_xo_gephy_gcc_tx_gephy_gcc_rx_ubi32_pll_gpll0_
 
 static const struct clk_parent_data gcc_xo_uniphy_gcc_rx_uniphy_gcc_tx_ubi32_pll_gpll0[] = {
 	{ .index = DT_XO },
-	{ .index = DT_UNIPHY_RX_CLK },
-	{ .index = DT_UNIPHY_TX_CLK },
+	{ .name =  "uniphy_gcc_rx", .index = -1 },
+	{ .name =  "uniphy_gcc_tx", .index = -1 },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -384,8 +384,8 @@ static const struct parent_map gcc_xo_uniphy_gcc_rx_uniphy_gcc_tx_ubi32_pll_gpll
 
 static const struct clk_parent_data gcc_xo_uniphy_gcc_tx_uniphy_gcc_rx_ubi32_pll_gpll0[] = {
 	{ .index = DT_XO },
-	{ .index = DT_UNIPHY_TX_CLK },
-	{ .index = DT_UNIPHY_RX_CLK },
+	{ .name =  "uniphy_gcc_tx", .index = -1 },
+	{ .name =  "uniphy_gcc_rx", .index = -1 },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -678,7 +678,7 @@ static const struct freq_tbl ftbl_gmac1_rx_clk_src[] = {
 	F(2500000, P_UNIPHY_RX, 12.5, 0, 0),
 	F(24000000, P_XO, 1, 0, 0),
 	F(25000000, P_UNIPHY_RX, 2.5, 0, 0),
-	F(125000000, P_UNIPHY_RX, 2.5, 0, 0),
+	/* F(125000000, P_UNIPHY_RX, 2.5, 0, 0), */
 	F(125000000, P_UNIPHY_RX, 1, 0, 0),
 	F(312500000, P_UNIPHY_RX, 1, 0, 0),
 	{ }
@@ -718,7 +718,7 @@ static const struct freq_tbl ftbl_gmac1_tx_clk_src[] = {
 	F(2500000, P_UNIPHY_TX, 12.5, 0, 0),
 	F(24000000, P_XO, 1, 0, 0),
 	F(25000000, P_UNIPHY_TX, 2.5, 0, 0),
-	F(125000000, P_UNIPHY_TX, 2.5, 0, 0),
+	/* F(125000000, P_UNIPHY_TX, 2.5, 0, 0), */
 	F(125000000, P_UNIPHY_TX, 1, 0, 0),
 	F(312500000, P_UNIPHY_TX, 1, 0, 0),
 	{ }
@@ -3647,7 +3647,7 @@ static const struct qcom_reset_map gcc_ipq5018_resets[] = {
 	[GCC_UNIPHY_SYS_ARES] = { 0x56104, 1 },
 	[GCC_UNIPHY_RX_ARES] = { 0x56104, 4 },
 	[GCC_UNIPHY_TX_ARES] = { 0x56104, 5 },
-	[GCC_UNIPHY_SOFT_RESET] = {0x56104, 0 },
+	[GCC_UNIPHY_SOFT_RESET] = {0x56104, .bitmask = 0x32 },
 	[GCC_USB0_BCR] = { 0x3e070, 0 },
 	[GCC_USB0_PHY_BCR] = { 0x3e034, 0 },
 	[GCC_WCSS_BCR] = { 0x18000, 0 },
@@ -3660,7 +3660,7 @@ static const struct qcom_reset_map gcc_ipq5018_resets[] = {
 	[GCC_WCSS_AXI_S_ARES] = { 0x59008, 6 },
 	[GCC_WCSS_Q6_BCR] = { 0x18004, 0 },
 	[GCC_WCSSAON_RESET] = { 0x59010, 0},
-	[GCC_GEPHY_MISC_ARES] = { 0x56004, 0 },
+	[GCC_GEPHY_MISC_ARES] = { 0x56004, .bitmask = GENMASK(3, 0) },
 };
 
 static const struct of_device_id gcc_ipq5018_match_table[] = {

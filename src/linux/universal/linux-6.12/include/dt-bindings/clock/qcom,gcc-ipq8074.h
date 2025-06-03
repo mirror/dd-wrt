@@ -381,6 +381,7 @@
 #define GCC_NSSPORT4_RESET			143
 #define GCC_NSSPORT5_RESET			144
 #define GCC_NSSPORT6_RESET			145
+#define GCC_WCSSAON_RESET			146
 
 #define USB0_GDSC				0
 #define USB1_GDSC				1

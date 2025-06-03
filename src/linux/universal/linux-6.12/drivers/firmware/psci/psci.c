@@ -87,6 +87,18 @@ static inline bool psci_has_ext_power_state(void)
 
 bool psci_has_osi_support(void)
 {
+	/*
+	 * Some older IPQ60xx SoC series boards ship with
+	 * TrustZone/QSEE firmware older than TZ.WNS.5.1-00084
+	 * which will advertise OSI but is broken and trying
+	 * to use OSI will cause the board to hang until WDT
+	 * kicks in.
+	 * So workaround it by checking for SoC compatible
+	 * and returning false so OSI is not used.
+	 */
+	if (of_machine_is_compatible("qcom,ipq6018"))
+		return false;
+
 	return psci_cpu_suspend_feature & PSCI_1_0_OS_INITIATED;
 }
 

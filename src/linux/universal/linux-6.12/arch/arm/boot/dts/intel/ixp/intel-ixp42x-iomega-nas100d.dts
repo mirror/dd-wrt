@@ -26,6 +26,10 @@
 	};
 
 	aliases {
+		led-boot = &pwr_led;
+		led-failsafe = &pwr_led;
+		led-running = &pwr_led;
+		led-upgrade = &pwr_led;
 		serial0 = &uart0;
 	};
 
@@ -36,7 +40,7 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 			/* We don't have WLAN trigger in the kernel (yet) */
-			linux,default-trigger = "netdev";
+			linux,default-trigger = "phy0tx";
 		};
 		led-disk {
 			label = "nas100d:red:disk";
@@ -44,11 +48,10 @@
 			default-state = "on";
 			linux,default-trigger = "disk-activity";
 		};
-		led-power {
+		pwr_led: led-power {
 			label = "nas100d:red:power";
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			default-state = "on";
-			linux,default-trigger = "heartbeat";
 		};
 	};
 

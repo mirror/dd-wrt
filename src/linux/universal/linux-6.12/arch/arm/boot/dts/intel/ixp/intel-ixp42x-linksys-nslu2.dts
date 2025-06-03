@@ -21,23 +21,26 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,115200n8 root=/dev/mtdblock2 rw rootfstype=squashfs,jffs2 rootwait";
+		bootargs = "console=ttyS0,115200n8 root=/dev/sda1 rw rootwait";
 		stdout-path = "uart0:115200n8";
 	};
 
 	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_ready;
+		led-upgrade = &led_status;
 		serial0 = &uart0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
-		led-status {
+		led_status: led-status {
 			label = "nslu2:red:status";
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-			linux,default-trigger = "heartbeat";
 		};
-		led-ready {
+		led_ready: led-ready {
 			label = "nslu2:green:ready";
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			default-state = "on";

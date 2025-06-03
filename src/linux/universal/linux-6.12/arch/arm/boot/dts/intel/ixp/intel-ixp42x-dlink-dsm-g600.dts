@@ -31,16 +31,19 @@
 	};
 
 	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 		serial0 = &uart0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
-		led-power {
+		led_power: led-power {
 			label = "dsmg600:green:power";
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-			linux,default-trigger = "heartbeat";
 		};
 		led-wlan {
 			label = "dsmg600:green:wlan";
@@ -48,7 +51,7 @@
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 			/* We don't have WLAN trigger in the kernel (yet) */
-			linux,default-trigger = "netdev";
+			linux,default-trigger = "phy0tx";
 		};
 	};
 

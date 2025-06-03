@@ -296,6 +296,24 @@ static int qcom_spi_ecc_init_ctx_pipelined(struct nand_device *nand)
 		ecc_cfg->spare_bytes = 2;
 		break;
 
+	case 1:
+	case 2:
+		/*
+		 * Many chips have set a minimum ECC strength requirement
+		 * lower than 4-bits but also support higher strength, so
+		 * check if ecc_cfg was set by chip reqs and try 4-bits.
+		 */
+		if (reqs->strength) {
+			dev_warn(snandc->dev,
+			         "ECC strength requirement of %u-bit(s) is unsupported, trying 4-bits\n",
+			         reqs->strength);
+			ecc_cfg->ecc_mode = ECC_MODE_4BIT;
+			ecc_cfg->ecc_bytes_hw = 7;
+			ecc_cfg->spare_bytes = 4;
+			break;
+		} else
+			fallthrough;
+
 	default:
 		dev_err(snandc->dev,
 			"only 4 or 8 bits ECC strength is supported\n");

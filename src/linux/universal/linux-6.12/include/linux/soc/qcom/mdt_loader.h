@@ -30,6 +30,11 @@ int qcom_mdt_load_no_init(struct device *dev, const struct firmware *fw,
 void *qcom_mdt_read_metadata(const struct firmware *fw, size_t *data_len,
 			     const char *fw_name, struct device *dev);
 
+int qcom_mdt_load_pd_seg(struct device *dev, const struct firmware *fw,
+			 const char *firmware, int pas_id, int pd_asid, void *mem_region,
+			 phys_addr_t mem_phys, size_t mem_size,
+			 phys_addr_t *reloc_base);
+
 #else /* !IS_ENABLED(CONFIG_QCOM_MDT_LOADER) */
 
 static inline ssize_t qcom_mdt_get_size(const struct firmware *fw)

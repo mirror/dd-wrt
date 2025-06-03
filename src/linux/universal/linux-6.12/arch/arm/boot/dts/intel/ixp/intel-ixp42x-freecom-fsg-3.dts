@@ -29,6 +29,10 @@
 	};
 
 	aliases {
+		led-boot = &led_ring;
+		led-failsafe = &led_sync;
+		led-running = &led_ring;
+		led-upgrade = &led_sync;
 		serial0 = &uart0;
 	};
 
@@ -112,7 +116,7 @@
 					reg = <0x00 0x02>;
 					mask = <0x01>;
 					label = "fsg:blue:wlan";
-					linux,default-trigger = "wlan";
+					linux,default-trigger = "phy0tx";
 					default-state = "on";
 				};
 				led@0,1 {
@@ -139,7 +143,7 @@
 					linux,default-trigger = "";
 					default-state = "on";
 				};
-				led@0,4 {
+				led_sync: led@0,4 {
 					compatible = "register-bit-led";
 					reg = <0x00 0x02>;
 					mask = <0x08>;
@@ -147,7 +151,7 @@
 					linux,default-trigger = "";
 					default-state = "on";
 				};
-				led@0,5 {
+				led_ring: led@0,5 {
 					compatible = "register-bit-led";
 					reg = <0x00 0x02>;
 					mask = <0x10>;
