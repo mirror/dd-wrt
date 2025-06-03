@@ -380,8 +380,11 @@ static bool gpy_2500basex_chk(struct phy_device *phydev)
 
 	phydev->speed = SPEED_2500;
 	phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
-	phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,
-		       VSPEC1_SGMII_CTRL_ANEN, 0);
+
+	if (!phydev->phylink)
+		phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,
+			       VSPEC1_SGMII_CTRL_ANEN, 0);
+
 	return true;
 }
 
@@ -431,6 +434,14 @@ static int gpy_config_aneg(struct phy_device *phydev)
 	bool changed = false;
 	u32 adv;
 	int ret;
+
+	/* Disable SGMII auto-negotiation if using phylink */
+	if (phydev->phylink) {
+		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,
+				     VSPEC1_SGMII_CTRL_ANEN, 0);
+		if (ret < 0)
+			return ret;
+	}
 
 	if (phydev->autoneg == AUTONEG_DISABLE) {
 		/* Configure half duplex with genphy_setup_forced,
@@ -554,6 +565,8 @@ static int gpy_update_interface(struct phy_device *phydev)
 	switch (phydev->speed) {
 	case SPEED_2500:
 		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
+		if (phydev->phylink)
+			break;
 		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,
 				     VSPEC1_SGMII_CTRL_ANEN, 0);
 		if (ret < 0) {
@@ -567,7 +580,7 @@ static int gpy_update_interface(struct phy_device *phydev)
 	case SPEED_100:
 	case SPEED_10:
 		phydev->interface = PHY_INTERFACE_MODE_SGMII;
-		if (gpy_sgmii_aneg_en(phydev))
+		if (phydev->phylink || gpy_sgmii_aneg_en(phydev))
 			break;
 		/* Enable and restart SGMII ANEG for 10/100/1000Mbps link speed
 		 * if ANEG is disabled (in 2500-BaseX mode).

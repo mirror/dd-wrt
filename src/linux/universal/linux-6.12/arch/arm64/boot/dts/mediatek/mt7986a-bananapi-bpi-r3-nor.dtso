@@ -52,10 +52,15 @@
 				reg = <0x180000 0xa80000>;
 			};
 
-			partition@c00000 {
+			nor_rootdisk: partition@c00000 {
 				label = "fit";
 				reg = <0xc00000 0x1400000>;
+				compatible = "denx,fit";
 			};
 		};
 	};
+};
+
+&{/chosen} {
+	rootdisk-nor = <&nor_rootdisk>;
 };

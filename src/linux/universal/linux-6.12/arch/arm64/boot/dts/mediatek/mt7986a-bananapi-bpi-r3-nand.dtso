@@ -29,25 +29,24 @@
 
 			partition@0 {
 				label = "bl2";
-				reg = <0x0 0x100000>;
-				read-only;
+				reg = <0x0 0x200000>;
 			};
 
-			partition@100000 {
-				label = "reserved";
-				reg = <0x100000 0x280000>;
-			};
-
-			partition@380000 {
-				label = "fip";
-				reg = <0x380000 0x200000>;
-				read-only;
-			};
-
-			partition@580000 {
+			partition@200000 {
 				label = "ubi";
-				reg = <0x580000 0x7a80000>;
+				reg = <0x200000 0x7e00000>;
+				compatible = "linux,ubi";
+
+				volumes {
+					nand_rootdisk: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
 			};
 		};
 	};
+};
+
+&{/chosen} {
+	rootdisk-spim-nand = <&nand_rootdisk>;
 };

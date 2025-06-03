@@ -231,6 +231,7 @@ struct mtk_wed_wo_queue {
 struct mtk_wed_wo {
 	struct mtk_wed_hw *hw;
 
+	struct regmap *boot_regmap;
 	struct mtk_wed_wo_queue q_tx;
 	struct mtk_wed_wo_queue q_rx;
 

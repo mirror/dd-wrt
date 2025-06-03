@@ -18,6 +18,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8";
 	};
 
 	gpio-keys {
@@ -70,6 +71,10 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
+
+		nvmem-cells = <&macaddr_factory_2a>;
+		nvmem-cell-names = "mac-address";
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -82,6 +87,9 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&phy0>;
+
+		nvmem-cells = <&macaddr_factory_24>;
+		nvmem-cell-names = "mac-address";
 	};
 
 	mdio: mdio-bus {
@@ -133,8 +141,9 @@
 			};
 
 			partition@b0000 {
-				label = "kernel";
+				label = "firmware";
 				reg = <0xb0000 0xb50000>;
+				compatible = "denx,fit";
 			};
 		};
 	};
@@ -246,6 +255,50 @@
 	};
 };
 
+&bch {
+	status = "okay";
+};
+
+&snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial_nand_pins>;
+	status = "okay";
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		nand-ecc-engine = <&snfi>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x00000 0x0100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "Config";
+				reg = <0x100000 0x0040000>;
+			};
+
+			partition@140000 {
+				label = "factory";
+				reg = <0x140000 0x0080000>;
+			};
+
+			partition@1c0000 {
+				label = "firmware";
+				reg = <0x1c0000 0x1000000>;
+			};
+		};
+	};
+};
+
 &spi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi_pins>;
@@ -272,4 +325,20 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&watchdog_pins>;
 	status = "okay";
+};
+
+&factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_factory_24: macaddr@24 {
+			reg = <0x24 0x6>;
+		};
+
+		macaddr_factory_2a: macaddr@2a {
+			reg = <0x2a 0x6>;
+		};
+	};
 };

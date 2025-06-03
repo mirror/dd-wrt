@@ -348,6 +348,40 @@ struct spi_driver {
 	struct device_driver	driver;
 };
 
+enum {
+	SPI_CAL_READ_DATA = 0,
+	SPI_CAL_READ_PP = 1, /* only for SPI-NAND */
+	SPI_CAL_READ_SFDP = 2, /* only for SPI-NOR */
+};
+
+struct nand_addr {
+	unsigned int lun;
+	unsigned int plane;
+	unsigned int eraseblock;
+	unsigned int page;
+	unsigned int dataoffs;
+};
+
+/**
+ * Read calibration rule from device dts node.
+ * Once calibration result matches the rule, we regard is as success.
+ */
+struct spi_cal_rule {
+	int datalen;
+	u8 *match_data;
+	int addrlen;
+	u32 *addr;
+	int mode;
+};
+
+struct spi_cal_target {
+	u32 *cal_item;
+	int cal_min; /* min of cal_item */
+	int cal_max; /* max of cal_item */
+	int step; /* Increase/decrease cal_item */
+	struct list_head list;
+};
+
 #define to_spi_driver(__drv)   \
 	( __drv ? container_of_const(__drv, struct spi_driver, driver) : NULL )
 
@@ -753,6 +787,11 @@ struct spi_controller {
 	/* Dummy data for full duplex devices */
 	void			*dummy_rx;
 	void			*dummy_tx;
+
+	/* For calibration */
+	int (*append_caldata)(struct spi_controller *ctlr);
+	struct list_head *cal_target;
+	struct spi_cal_rule *cal_rule;
 
 	int (*fw_translate_cs)(struct spi_controller *ctlr, unsigned cs);
 
@@ -1656,6 +1695,9 @@ static inline int
 spi_register_board_info(struct spi_board_info const *info, unsigned n)
 	{ return 0; }
 #endif
+
+extern int spi_do_calibration(struct spi_controller *ctlr,
+	struct spi_device *spi, int (*cal_read)(void *, u32 *, int, u8 *, int), void *drv_priv);
 
 /*
  * If you're hotplugging an adapter with devices (parport, USB, etc)

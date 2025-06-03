@@ -315,6 +315,7 @@
 #define EIP197_MST_CTRL_RD_CACHE(n)		(((n) & 0xf) << 0)
 #define EIP197_MST_CTRL_WD_CACHE(n)		(((n) & 0xf) << 4)
 #define EIP197_MST_CTRL_TX_MAX_CMD(n)		(((n) & 0xf) << 20)
+#define EIP97_MST_CTRL_TX_MAX_CMD(n)		(((n) & 0xf) << 4)
 #define EIP197_MST_CTRL_BYTE_SWAP		BIT(24)
 #define EIP197_MST_CTRL_NO_BYTE_SWAP		BIT(25)
 #define EIP197_MST_CTRL_BYTE_SWAP_BITS          GENMASK(25, 24)
@@ -741,6 +742,9 @@ struct safexcel_priv_data {
 
 /* Priority we use for advertising our algorithms */
 #define SAFEXCEL_CRA_PRIORITY		300
+
+/* System cache line size */
+#define SYSTEM_CACHELINE_SIZE		64
 
 /* SM3 digest result for zero length message */
 #define EIP197_SM3_ZEROM_HASH	"\x1A\xB2\x1D\x83\x55\xCF\xA1\x7F" \

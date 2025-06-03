@@ -24,6 +24,15 @@ config NET_DSA_LOOP
 	  This enables support for a fake mock-up switch chip which
 	  exercises the DSA APIs.
 
+config NET_DSA_AN8855
+	tristate "Airoha AN8855 Ethernet switch support"
+	depends on MFD_AIROHA_AN8855
+	depends on NET_DSA
+	select NET_DSA_TAG_MTK
+	help
+	  This enables support for the Airoha AN8855 Ethernet switch
+	  chip.
+
 source "drivers/net/dsa/hirschmann/Kconfig"
 
 config NET_DSA_LANTIQ_GSWIP

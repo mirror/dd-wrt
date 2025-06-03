@@ -466,6 +466,14 @@ int spi_mem_exec_op(struct spi_mem *mem, const struct spi_mem_op *op)
 }
 EXPORT_SYMBOL_GPL(spi_mem_exec_op);
 
+int spi_mem_do_calibration(struct spi_mem *mem,
+	int (*cal_read)(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen),
+	void *priv)
+{
+	return spi_do_calibration(mem->spi->controller, mem->spi, cal_read, priv);
+}
+EXPORT_SYMBOL_GPL(spi_mem_do_calibration);
+
 /**
  * spi_mem_get_name() - Return the SPI mem device name to be used by the
  *			upper layer if necessary

@@ -977,6 +977,16 @@ source "drivers/leds/flash/Kconfig"
 comment "RGB LED drivers"
 source "drivers/leds/rgb/Kconfig"
 
+config LEDS_SMARTRG_LED
+	tristate "LED support for Adtran SmartRG"
+	depends on LEDS_CLASS && I2C && OF
+	help
+	  This option enables support for the Adtran SmartRG platform
+	  system LED driver.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called leds-smartrg-system.
+
 comment "LED Triggers"
 source "drivers/leds/trigger/Kconfig"
 

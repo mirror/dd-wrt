@@ -1,0 +1,92 @@
+/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
+
+#include "mt7986a-rfb.dtsi"
+
+/ {
+	compatible = "mediatek,mt7986a-rfb-snand";
+
+	sound_wm8960 {
+		compatible = "mediatek,mt7986-wm8960-sound";
+		audio-routing = "Headphone", "HP_L",
+				"Headphone", "HP_R",
+				"LINPUT1", "AMIC",
+				"RINPUT1", "AMIC";
+
+		status = "okay";
+
+		platform {
+			sound-dai = <&afe>;
+		};
+
+		codec {
+			sound-dai = <&wm8960>;
+		};
+	};
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c_pins>;
+	status = "okay";
+
+	wm8960: wm8960@1a {
+		compatible = "wlf,wm8960";
+		#sound-dai-cells = <0>;
+		reg = <0x1a>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	spi_nand: spi_nand@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "BL2";
+				reg = <0x00000 0x0100000>;
+				read-only;
+			};
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x0100000 0x0080000>;
+			};
+			factory: partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x0200000>;
+			};
+			partition@380000 {
+				label = "FIP";
+				reg = <0x380000 0x0200000>;
+			};
+			partition@580000 {
+				label = "ubi";
+				reg = <0x580000 0x4000000>;
+			};
+		};
+	};
+};
+
+&wifi {
+	mediatek,mtd-eeprom = <&factory 0>;
+};
+
+&pio {
+	i2c_pins: i2c-pins-3-4 {
+		mux {
+			function = "i2c";
+			groups = "i2c";
+		};
+	};
+};
+

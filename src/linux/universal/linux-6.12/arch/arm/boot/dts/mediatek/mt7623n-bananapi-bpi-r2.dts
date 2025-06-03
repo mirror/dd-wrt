@@ -15,10 +15,20 @@
 
 	aliases {
 		serial2 = &uart2;
+		ethernet0 = &gmac0;
+		mmc0 = &mmc0;
+		mmc1 = &mmc1;
+		led-boot = &led_system_green;
+		led-failsafe = &led_system_blue;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_blue;
 	};
 
 	chosen {
 		stdout-path = "serial2:115200n8";
+		bootargs = "root=/dev/fit0 rootwait earlycon=uart8250,mmio32,0x11004000 console=ttyS2,115200n8 console=tty1";
+		rootdisk-emmc = <&emmc_rootdisk>;
+		rootdisk-sd = <&sd_rootdisk>;
 	};
 
 	connector {
@@ -109,13 +119,13 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&led_pins_a>;
 
-		blue {
+		led_system_blue: blue {
 			label = "bpi-r2:pio:blue";
 			gpios = <&pio 240 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		green {
+		led_system_green: green {
 			label = "bpi-r2:pio:green";
 			gpios = <&pio 241 GPIO_ACTIVE_LOW>;
 			default-state = "off";
@@ -330,6 +340,20 @@
 	vmmc-supply = <&reg_3p3v>;
 	vqmmc-supply = <&reg_1p8v>;
 	non-removable;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		partitions {
+			compatible = "msdos-partitions";
+			emmc_rootdisk: block-partition-fit {
+				partno = <3>;
+			};
+		};
+	};
 };
 
 &mmc1 {
@@ -343,6 +367,20 @@
 	cd-gpios = <&pio 261 GPIO_ACTIVE_LOW>;
 	vmmc-supply = <&reg_3p3v>;
 	vqmmc-supply = <&reg_3p3v>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		partitions {
+			compatible = "msdos-partitions";
+			sd_rootdisk: block-partition-fit {
+				partno = <3>;
+			};
+		};
+	};
 };
 
 &mt6323keys {

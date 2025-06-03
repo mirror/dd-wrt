@@ -21,5 +21,24 @@
 	non-removable;
 	no-sd;
 	no-sdio;
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		partitions {
+			compatible = "gpt-partitions";
+
+			emmc_rootdisk: block-partition-production {
+				partname = "production";
+			};
+		};
+	};
+};
+
+&{/chosen} {
+	rootdisk-emmc = <&emmc_rootdisk>;
 };

@@ -55,9 +55,9 @@ struct safexcel_ahash_req {
 	u8 block_sz;    /* block size, only set once */
 	u8 digest_sz;   /* output digest size, only set once */
 	__le32 state[SHA3_512_BLOCK_SIZE /
-		     sizeof(__le32)] __aligned(sizeof(__le32));
+		     sizeof(__le32)] __aligned(SYSTEM_CACHELINE_SIZE);
 
-	u64 len;
+	u64 len __aligned(SYSTEM_CACHELINE_SIZE);
 	u64 processed;
 
 	u8 cache[HASH_CACHE_SIZE] __aligned(sizeof(u32));

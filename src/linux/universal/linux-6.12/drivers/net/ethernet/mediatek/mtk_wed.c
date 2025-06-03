@@ -1322,6 +1322,24 @@ mtk_wed_rro_alloc(struct mtk_wed_device *dev)
 	struct device_node *np;
 	int index;
 
+	np = of_parse_phandle(dev->hw->node, "mediatek,wo-dlm", 0);
+	if (np) {
+		struct resource res;
+		int ret;
+
+		ret = of_address_to_resource(np, 0, &res);
+		of_node_put(np);
+
+		if (ret < 0)
+			return ret;
+
+		dev->rro.miod_phys = res.start;
+		goto out;
+	}
+
+	/* For backward compatibility, we need to check if DLM
+	 * node is defined through reserved memory property.
+	 */
 	index = of_property_match_string(dev->hw->node, "memory-region-names",
 					 "wo-dlm");
 	if (index < 0)
@@ -1338,6 +1356,7 @@ mtk_wed_rro_alloc(struct mtk_wed_device *dev)
 		return -ENODEV;
 
 	dev->rro.miod_phys = rmem->base;
+out:
 	dev->rro.fdbk_phys = MTK_WED_MIOD_COUNT + dev->rro.miod_phys;
 
 	return mtk_wed_rro_ring_alloc(dev, &dev->rro.ring,

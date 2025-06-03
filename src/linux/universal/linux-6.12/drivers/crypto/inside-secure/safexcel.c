@@ -608,6 +608,14 @@ static int safexcel_hw_init(struct safexcel_crypto_priv *priv)
 		val |= EIP197_MST_CTRL_TX_MAX_CMD(5);
 		writel(val, EIP197_HIA_AIC(priv) + EIP197_HIA_MST_CTRL);
 	}
+	/*
+	 * Set maximum number of TX commands to 2^4 = 16 for EIP97 HW2.1/HW2.3
+	 */
+	else {
+		val = 0;
+		val |= EIP97_MST_CTRL_TX_MAX_CMD(4);
+		writel(val, EIP197_HIA_AIC(priv) + EIP197_HIA_MST_CTRL);
+	}
 
 	/* Configure wr/rd cache values */
 	writel(EIP197_MST_CTRL_RD_CACHE(RD_CACHE_4BITS) |

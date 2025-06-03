@@ -372,6 +372,10 @@ bool spi_mem_supports_op(struct spi_mem *mem,
 int spi_mem_exec_op(struct spi_mem *mem,
 		    const struct spi_mem_op *op);
 
+int spi_mem_do_calibration(struct spi_mem *mem,
+			int (*cal_read)(void *, u32 *, int, u8 *, int),
+			void *priv);
+
 const char *spi_mem_get_name(struct spi_mem *mem);
 
 struct spi_mem_dirmap_desc *

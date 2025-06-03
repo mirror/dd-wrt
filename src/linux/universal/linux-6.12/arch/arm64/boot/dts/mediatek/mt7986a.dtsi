@@ -68,6 +68,14 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+
+		/* 64 KiB reserved for ramoops/pstore */
+		ramoops@42ff0000 {
+			compatible = "ramoops";
+			reg = <0 0x42ff0000 0 0x10000>;
+			record-size = <0x1000>;
+		};
+
 		/* 192 KiB reserved for ARM Trusted Firmware (BL31) */
 		secmon_reserved: secmon@43000000 {
 			reg = <0 0x43000000 0 0x30000>;
@@ -89,36 +97,10 @@
 			no-map;
 		};
 
-		wo_ilm0: wo-ilm@151e0000 {
-			reg = <0 0x151e0000 0 0x8000>;
-			no-map;
-		};
-
-		wo_ilm1: wo-ilm@151f0000 {
-			reg = <0 0x151f0000 0 0x8000>;
-			no-map;
-		};
-
 		wo_data: wo-data@4fd80000 {
 			reg = <0 0x4fd80000 0 0x240000>;
 			no-map;
 		};
-
-		wo_dlm0: wo-dlm@151e8000 {
-			reg = <0 0x151e8000 0 0x2000>;
-			no-map;
-		};
-
-		wo_dlm1: wo-dlm@151f8000 {
-			reg = <0 0x151f8000 0 0x2000>;
-			no-map;
-		};
-
-		wo_boot: wo-boot@15194000 {
-			reg = <0 0x15194000 0 0x1000>;
-			no-map;
-		};
-
 	};
 
 	soc {
@@ -192,6 +174,29 @@
 			interrupts = <GIC_SPI 225 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&gic>;
 			#interrupt-cells = <2>;
+		};
+
+		afe: audio-controller@11210000 {
+			compatible = "mediatek,mt7986-afe";
+			reg = <0 0x11210000 0 0x9000>;
+			#sound-dai-cells = <0>;
+			interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&infracfg CLK_INFRA_AUD_BUS_CK>,
+				 <&infracfg CLK_INFRA_AUD_26M_CK>,
+				 <&infracfg CLK_INFRA_AUD_L_CK>,
+				 <&infracfg CLK_INFRA_AUD_AUD_CK>,
+				 <&infracfg CLK_INFRA_AUD_EG2_CK>;
+			clock-names = "aud_bus_ck",
+				      "aud_26m_ck",
+				      "aud_l_ck",
+				      "aud_aud_ck",
+				      "aud_eg2_ck";
+			assigned-clocks = <&topckgen CLK_TOP_A1SYS_SEL>,
+					  <&topckgen CLK_TOP_AUD_L_SEL>,
+					  <&topckgen CLK_TOP_A_TUNER_SEL>;
+			assigned-clock-parents = <&topckgen CLK_TOP_APLL2_D4>,
+						 <&apmixedsys CLK_APMIXED_APLL2>,
+						 <&topckgen CLK_TOP_APLL2_D4>;
 		};
 
 		pwm: pwm@10048000 {
@@ -428,7 +433,7 @@
 			};
 		};
 
-		pcie_phy: t-phy {
+		pcie_phy: t-phy@11c00000 {
 			compatible = "mediatek,mt7986-tphy",
 				     "mediatek,generic-tphy-v2";
 			ranges;
@@ -501,11 +506,12 @@
 			reg = <0 0x15010000 0 0x1000>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
-			memory-region = <&wo_emi0>, <&wo_ilm0>, <&wo_dlm0>,
-					<&wo_data>, <&wo_boot>;
-			memory-region-names = "wo-emi", "wo-ilm", "wo-dlm",
-					      "wo-data", "wo-boot";
+			memory-region = <&wo_emi0>, <&wo_data>;
+			memory-region-names = "wo-emi", "wo-data";
 			mediatek,wo-ccif = <&wo_ccif0>;
+			mediatek,wo-ilm = <&wo_ilm0>;
+			mediatek,wo-dlm = <&wo_dlm0>;
+			mediatek,wo-cpuboot = <&wo_cpuboot>;
 		};
 
 		wed1: wed@15011000 {
@@ -514,11 +520,12 @@
 			reg = <0 0x15011000 0 0x1000>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
-			memory-region = <&wo_emi1>, <&wo_ilm1>, <&wo_dlm1>,
-					<&wo_data>, <&wo_boot>;
-			memory-region-names = "wo-emi", "wo-ilm", "wo-dlm",
-					      "wo-data", "wo-boot";
+			memory-region = <&wo_emi1>, <&wo_data>;
+			memory-region-names = "wo-emi", "wo-data";
 			mediatek,wo-ccif = <&wo_ccif1>;
+			mediatek,wo-ilm = <&wo_ilm1>;
+			mediatek,wo-dlm = <&wo_dlm1>;
+			mediatek,wo-cpuboot = <&wo_cpuboot>;
 		};
 
 		eth: ethernet@15100000 {
@@ -574,6 +581,31 @@
 			reg = <0 0x151ad000 0 0x1000>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		wo_ilm0: syscon@151e0000 {
+			compatible = "mediatek,mt7986-wo-ilm", "syscon";
+			reg = <0 0x151e0000 0 0x8000>;
+		};
+
+		wo_ilm1: syscon@151f0000 {
+			compatible = "mediatek,mt7986-wo-ilm", "syscon";
+			reg = <0 0x151f0000 0 0x8000>;
+		};
+
+		wo_dlm0: syscon@151e8000 {
+			compatible = "mediatek,mt7986-wo-dlm", "syscon";
+			reg = <0 0x151e8000 0 0x2000>;
+		};
+
+		wo_dlm1: syscon@151f8000 {
+			compatible = "mediatek,mt7986-wo-dlm", "syscon";
+			reg = <0 0x151f8000 0 0x2000>;
+		};
+
+		wo_cpuboot: syscon@15194000 {
+			compatible = "mediatek,mt7986-wo-cpuboot", "syscon";
+			reg = <0 0x15194000 0 0x1000>;
 		};
 
 		wifi: wifi@18000000 {

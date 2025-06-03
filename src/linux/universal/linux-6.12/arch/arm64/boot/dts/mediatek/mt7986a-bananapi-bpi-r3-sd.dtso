@@ -15,5 +15,24 @@
 	bus-width = <4>;
 	max-frequency = <52000000>;
 	cap-sd-highspeed;
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		partitions {
+			compatible = "gpt-partitions";
+
+			sd_rootdisk: block-partition-production {
+				partname = "production";
+			};
+		};
+	};
+};
+
+&{/chosen} {
+	rootdisk-sd = <&sd_rootdisk>;
 };

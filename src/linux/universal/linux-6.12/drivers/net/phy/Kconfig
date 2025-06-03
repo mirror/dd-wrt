@@ -153,6 +153,16 @@ endif # RTL8366_SMI
 
 comment "MII PHY device drivers"
 
+config AIROHA_EN8801SC_PHY
+	tristate "Airoha EN8801SC Gigabit PHY"
+	help
+	  Currently supports the Airoha EN8801SC PHY.
+
+config AIR_AN8855_PHY
+	tristate "Airoha AN8855 Internal Gigabit PHY"
+	help
+	  Currently supports the internal Airoha AN8855 Switch PHY.
+
 config AIR_EN8811H_PHY
 	tristate "Airoha EN8811H 2.5 Gigabit PHY"
 	help
@@ -430,6 +440,12 @@ config ROCKCHIP_PHY
 	tristate "Rockchip Ethernet PHYs"
 	help
 	  Currently supports the integrated Ethernet PHY.
+
+config RTL8367S_GSW
+	tristate "rtl8367 Gigabit Switch support for mt7622"
+	depends on NET_VENDOR_MEDIATEK
+	help
+	  This driver supports rtl8367s in mt7622
 
 config SMSC_PHY
 	tristate "SMSC PHYs"

@@ -1494,6 +1494,70 @@ static int spi_transfer_wait(struct spi_controller *ctlr,
 	return 0;
 }
 
+int spi_do_calibration(struct spi_controller *ctlr, struct spi_device *spi,
+	int (*cal_read)(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen), void *drv_priv)
+{
+	int datalen = ctlr->cal_rule->datalen;
+	int addrlen = ctlr->cal_rule->addrlen;
+	u8 *buf;
+	int ret;
+	int i;
+	struct list_head *cal_head, *listptr;
+	struct spi_cal_target *target;
+
+	/* Calculate calibration result */
+	int hit_val, total_hit, origin;
+	bool hit;
+
+	/* Make sure we can start calibration */
+	if(!ctlr->cal_target || !ctlr->cal_rule || !ctlr->append_caldata)
+		return 0;
+
+	buf = kzalloc(datalen * sizeof(u8), GFP_KERNEL);
+	if(!buf)
+		return -ENOMEM;
+
+	ret = ctlr->append_caldata(ctlr);
+	if (ret)
+		goto cal_end;
+
+	cal_head = ctlr->cal_target;
+	list_for_each(listptr, cal_head) {
+		target = list_entry(listptr, struct spi_cal_target, list);
+
+		hit = false;
+		hit_val = 0;
+		total_hit = 0;
+		origin = *target->cal_item;
+
+		for(i=target->cal_min; i<=target->cal_max; i+=target->step) {
+			*target->cal_item = i;
+			ret = (*cal_read)(drv_priv, ctlr->cal_rule->addr, addrlen, buf, datalen);
+			if(ret)
+				break;
+			dev_dbg(&spi->dev, "controller cal item value: 0x%x\n", i);
+			if(memcmp(ctlr->cal_rule->match_data, buf, datalen * sizeof(u8)) == 0) {
+				hit = true;
+				hit_val += i;
+				total_hit++;
+				dev_dbg(&spi->dev, "golden data matches data read!\n");
+			}
+		}
+		if(hit) {
+			*target->cal_item = DIV_ROUND_CLOSEST(hit_val, total_hit);
+			dev_info(&spi->dev, "calibration result: 0x%x", *target->cal_item);
+		} else {
+			*target->cal_item = origin;
+			dev_warn(&spi->dev, "calibration failed, fallback to default: 0x%x", origin);
+		}
+	}
+
+cal_end:
+	kfree(buf);
+	return ret? ret: 0;
+}
+EXPORT_SYMBOL_GPL(spi_do_calibration);
+
 static void _spi_transfer_delay_ns(u32 ns)
 {
 	if (!ns)
@@ -2352,6 +2416,75 @@ void spi_flush_queue(struct spi_controller *ctlr)
 /*-------------------------------------------------------------------------*/
 
 #if defined(CONFIG_OF)
+static inline void alloc_cal_data(struct list_head **cal_target,
+	struct spi_cal_rule **cal_rule, bool enable)
+{
+	if(enable) {
+		*cal_target = kmalloc(sizeof(struct list_head), GFP_KERNEL);
+		INIT_LIST_HEAD(*cal_target);
+		*cal_rule = kmalloc(sizeof(struct spi_cal_rule), GFP_KERNEL);
+	} else {
+		kfree(*cal_target);
+		kfree(*cal_rule);
+	}
+}
+
+static int of_spi_parse_cal_dt(struct spi_controller *ctlr, struct spi_device *spi,
+			   struct device_node *nc)
+{
+	u32 value;
+	int rc;
+	const char *cal_mode;
+
+	rc = of_property_read_bool(nc, "spi-cal-enable");
+	if (rc)
+		alloc_cal_data(&ctlr->cal_target, &ctlr->cal_rule, true);
+	else
+		return 0;
+
+	rc = of_property_read_string(nc, "spi-cal-mode", &cal_mode);
+	if(!rc) {
+		if(strcmp("read-data", cal_mode) == 0){
+			ctlr->cal_rule->mode = SPI_CAL_READ_DATA;
+		} else if(strcmp("read-pp", cal_mode) == 0) {
+			ctlr->cal_rule->mode = SPI_CAL_READ_PP;
+			return 0;
+		} else if(strcmp("read-sfdp", cal_mode) == 0){
+			ctlr->cal_rule->mode = SPI_CAL_READ_SFDP;
+			return 0;
+		}
+	} else
+		goto err;
+
+	ctlr->cal_rule->datalen = 0;
+	rc = of_property_read_u32(nc, "spi-cal-datalen", &value);
+	if(!rc && value > 0) {
+		ctlr->cal_rule->datalen = value;
+
+		ctlr->cal_rule->match_data = kzalloc(value * sizeof(u8), GFP_KERNEL);
+		rc = of_property_read_u8_array(nc, "spi-cal-data",
+				ctlr->cal_rule->match_data, value);
+		if(rc)
+			kfree(ctlr->cal_rule->match_data);
+	}
+
+	rc = of_property_read_u32(nc, "spi-cal-addrlen", &value);
+	if(!rc && value > 0) {
+		ctlr->cal_rule->addrlen = value;
+
+		ctlr->cal_rule->addr = kzalloc(value * sizeof(u32), GFP_KERNEL);
+		rc = of_property_read_u32_array(nc, "spi-cal-addr",
+				ctlr->cal_rule->addr, value);
+		if(rc)
+			kfree(ctlr->cal_rule->addr);
+	}
+	return 0;
+
+err:
+	alloc_cal_data(&ctlr->cal_target, &ctlr->cal_rule, false);
+	return 0;
+}
+
 static void of_spi_parse_dt_cs_delay(struct device_node *nc,
 				     struct spi_delay *delay, const char *prop)
 {
@@ -2513,6 +2646,10 @@ of_register_spi_device(struct spi_controller *ctlr, struct device_node *nc)
 	}
 
 	rc = of_spi_parse_dt(ctlr, spi, nc);
+	if (rc)
+		goto err_out;
+
+	rc = of_spi_parse_cal_dt(ctlr, spi, nc);
 	if (rc)
 		goto err_out;
 

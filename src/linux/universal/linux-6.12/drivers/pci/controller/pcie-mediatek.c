@@ -20,6 +20,7 @@
 #include <linux/of_address.h>
 #include <linux/of_pci.h>
 #include <linux/of_platform.h>
+#include <linux/of_address.h>
 #include <linux/pci.h>
 #include <linux/phy/phy.h>
 #include <linux/platform_device.h>
@@ -138,6 +139,11 @@
 #define PCIE_LINKDOWN_RST_EN	GENMASK(15, 13)
 #define PCIE_LINK_STATUS_V2	0x804
 #define PCIE_PORT_LINKUP_V2	BIT(10)
+
+/* DMA channel mapping */
+#define HIFSYS_DMA_AG_MAP	0x008
+#define HIFSYS_DMA_AG_MAP_PCIE0	BIT(0)
+#define HIFSYS_DMA_AG_MAP_PCIE1	BIT(1)
 
 struct mtk_pcie_port;
 
@@ -599,9 +605,9 @@ static void mtk_pcie_intr_handler(struct irq_desc *desc)
 	if (status & INTX_MASK) {
 		for_each_set_bit_from(bit, &status, PCI_NUM_INTX + INTX_SHIFT) {
 			/* Clear the INTx */
-			writel(1 << bit, port->base + PCIE_INT_STATUS);
 			generic_handle_domain_irq(port->irq_domain,
 						  bit - INTX_SHIFT);
+			writel(1 << bit, port->base + PCIE_INT_STATUS);
 		}
 	}
 
@@ -692,6 +698,13 @@ static int mtk_pcie_startup_port_v2(struct mtk_pcie_port *port)
 	 * space.
 	 */
 	writel(PCIE_LINKDOWN_RST_EN, port->base + PCIE_RST_CTRL);
+
+	/*
+	 * Described in PCIe CEM specification sections 2.2 (PERST# Signal) and
+	 * 2.2.1 (Initial Power-Up (G3 to S0)). The deassertion of PERST# should
+	 * be delayed 100ms (TPVPERL) for the power and clock to become stable.
+	 */
+	msleep(100);
 
 	/*
 	 * Described in PCIe CEM specification sections 2.2 (PERST# Signal) and
@@ -1044,6 +1057,27 @@ static int mtk_pcie_setup(struct mtk_pcie *pcie)
 	struct device_node *node = dev->of_node, *child;
 	struct mtk_pcie_port *port, *tmp;
 	int err, slot;
+
+	if (of_dma_is_coherent(node)) {
+		struct regmap *con;
+		u32 mask;
+
+		con = syscon_regmap_lookup_by_phandle(node,
+						      "mediatek,cci-control");
+		/* enable CPU/bus coherency */
+		if (!IS_ERR(con))
+			regmap_write(con, 0, 3);
+
+		con = syscon_regmap_lookup_by_phandle(node,
+						      "mediatek,hifsys");
+		if (IS_ERR(con)) {
+			dev_err(dev, "missing hifsys node\n");
+			return PTR_ERR(con);
+		}
+
+		mask = HIFSYS_DMA_AG_MAP_PCIE0 | HIFSYS_DMA_AG_MAP_PCIE1;
+		regmap_update_bits(con, HIFSYS_DMA_AG_MAP, mask, mask);
+	}
 
 	slot = of_get_pci_domain_nr(dev->of_node);
 	if (slot < 0) {

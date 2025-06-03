@@ -32,14 +32,25 @@ static struct mtk_wed_wo_memory_region mem_region[] = {
 	},
 };
 
-static u32 wo_r32(u32 reg)
+static u32 wo_r32(struct mtk_wed_wo *wo, u32 reg)
 {
-	return readl(mem_region[MTK_WED_WO_REGION_BOOT].addr + reg);
+	u32 val;
+
+	if (!wo->boot_regmap)
+		return readl(mem_region[MTK_WED_WO_REGION_BOOT].addr + reg);
+
+	if (regmap_read(wo->boot_regmap, reg, &val))
+		val = ~0;
+
+	return val;
 }
 
-static void wo_w32(u32 reg, u32 val)
+static void wo_w32(struct mtk_wed_wo *wo, u32 reg, u32 val)
 {
-	writel(val, mem_region[MTK_WED_WO_REGION_BOOT].addr + reg);
+	if (wo->boot_regmap)
+		regmap_write(wo->boot_regmap, reg, val);
+	else
+		writel(val, mem_region[MTK_WED_WO_REGION_BOOT].addr + reg);
 }
 
 static struct sk_buff *
@@ -234,8 +245,8 @@ int mtk_wed_mcu_msg_update(struct mtk_wed_device *dev, int id, void *data,
 }
 
 static int
-mtk_wed_get_memory_region(struct mtk_wed_hw *hw, int index,
-			  struct mtk_wed_wo_memory_region *region)
+mtk_wed_get_reserved_memory_region(struct mtk_wed_hw *hw, int index,
+				   struct mtk_wed_wo_memory_region *region)
 {
 	struct reserved_mem *rmem;
 	struct device_node *np;
@@ -309,6 +320,39 @@ next:
 }
 
 static int
+mtk_wed_mcu_load_ilm(struct mtk_wed_wo *wo)
+{
+	struct mtk_wed_wo_memory_region *ilm_region;
+	struct resource res;
+	struct device_node *np;
+	int ret;
+
+	np = of_parse_phandle(wo->hw->node, "mediatek,wo-ilm", 0);
+	if (!np)
+		return 0;
+
+	ret = of_address_to_resource(np, 0, &res);
+	of_node_put(np);
+
+	if (ret < 0)
+		return ret;
+
+	ilm_region = &mem_region[MTK_WED_WO_REGION_ILM];
+	ilm_region->phy_addr = res.start;
+	ilm_region->size = resource_size(&res);
+	ilm_region->addr = devm_ioremap(wo->hw->dev, res.start,
+					resource_size(&res));
+
+	if (!IS_ERR(ilm_region->addr))
+		return 0;
+
+	ret = PTR_ERR(ilm_region->addr);
+	ilm_region->addr = NULL;
+
+	return ret;
+}
+
+static int
 mtk_wed_mcu_load_firmware(struct mtk_wed_wo *wo)
 {
 	const struct mtk_wed_fw_trailer *trailer;
@@ -317,15 +361,27 @@ mtk_wed_mcu_load_firmware(struct mtk_wed_wo *wo)
 	u32 val, boot_cr;
 	int ret, i;
 
+	mtk_wed_mcu_load_ilm(wo);
+	wo->boot_regmap = syscon_regmap_lookup_by_phandle(wo->hw->node,
+							  "mediatek,wo-cpuboot");
+
 	/* load firmware region metadata */
 	for (i = 0; i < ARRAY_SIZE(mem_region); i++) {
-		int index = of_property_match_string(wo->hw->node,
-						     "memory-region-names",
-						     mem_region[i].name);
+		int index;
+
+		if (mem_region[i].addr)
+			continue;
+
+		index = of_property_match_string(wo->hw->node,
+						 "memory-region-names",
+						 mem_region[i].name);
 		if (index < 0)
 			continue;
 
-		ret = mtk_wed_get_memory_region(wo->hw, index, &mem_region[i]);
+		if (index == MTK_WED_WO_REGION_BOOT && !IS_ERR(wo->boot_regmap))
+			continue;
+
+		ret = mtk_wed_get_reserved_memory_region(wo->hw, index, &mem_region[i]);
 		if (ret)
 			return ret;
 	}
@@ -373,13 +429,13 @@ mtk_wed_mcu_load_firmware(struct mtk_wed_wo *wo)
 		boot_cr = MTK_WO_MCU_CFG_LS_WA_BOOT_ADDR_ADDR;
 	else
 		boot_cr = MTK_WO_MCU_CFG_LS_WM_BOOT_ADDR_ADDR;
-	wo_w32(boot_cr, mem_region[MTK_WED_WO_REGION_EMI].phy_addr >> 16);
+	wo_w32(wo, boot_cr, mem_region[MTK_WED_WO_REGION_EMI].phy_addr >> 16);
 	/* wo firmware reset */
-	wo_w32(MTK_WO_MCU_CFG_LS_WF_MCCR_CLR_ADDR, 0xc00);
+	wo_w32(wo, MTK_WO_MCU_CFG_LS_WF_MCCR_CLR_ADDR, 0xc00);
 
-	val = wo_r32(MTK_WO_MCU_CFG_LS_WF_MCU_CFG_WM_WA_ADDR) |
+	val = wo_r32(wo, MTK_WO_MCU_CFG_LS_WF_MCU_CFG_WM_WA_ADDR) |
 	      MTK_WO_MCU_CFG_LS_WF_WM_WA_WM_CPU_RSTB_MASK;
-	wo_w32(MTK_WO_MCU_CFG_LS_WF_MCU_CFG_WM_WA_ADDR, val);
+	wo_w32(wo, MTK_WO_MCU_CFG_LS_WF_MCU_CFG_WM_WA_ADDR, val);
 out:
 	release_firmware(fw);
 

@@ -1505,6 +1505,14 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND
 
 endchoice
 
+config CMDLINE_OVERRIDE
+	bool "Use alternative cmdline from device tree"
+	help
+	  Some bootloaders may have uneditable bootargs. While CMDLINE_FORCE can
+	  be used, this is not a good option for kernels that are shared across
+	  devices. This setting enables using "chosen/cmdline-override" as the
+	  cmdline if it exists in the device tree.
+
 config CMDLINE
 	string "Default kernel command string"
 	default ""

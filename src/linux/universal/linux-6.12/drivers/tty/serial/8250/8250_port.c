@@ -276,7 +276,7 @@ static const struct serial8250_config uart_config[] = {
 		.tx_loadsz	= 16,
 		.fcr		= UART_FCR_ENABLE_FIFO |
 				  UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT,
-		.flags		= UART_CAP_FIFO,
+		.flags		= UART_CAP_FIFO | UART_CAP_NMOD,
 	},
 	[PORT_NPCM] = {
 		.name		= "Nuvoton 16550",
@@ -2729,6 +2729,11 @@ serial8250_do_set_termios(struct uart_port *port, struct ktermios *termios,
 	unsigned char cval;
 	unsigned long flags;
 	unsigned int baud, quot, frac = 0;
+
+	if (up->capabilities & UART_CAP_NMOD) {
+		termios->c_cflag = 0;
+		return;
+	}
 
 	if (up->capabilities & UART_CAP_MINI) {
 		termios->c_cflag &= ~(CSTOPB | PARENB | PARODD | CMSPAR);

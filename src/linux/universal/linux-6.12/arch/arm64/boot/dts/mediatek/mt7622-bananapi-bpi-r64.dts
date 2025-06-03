@@ -20,11 +20,21 @@
 
 	aliases {
 		serial0 = &uart0;
+		ethernet0 = &gmac0;
+		led-boot = &led_system_green;
+		led-failsafe = &led_system_blue;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_blue;
+		mmc0 = &mmc0;
+		mmc1 = &mmc1;
 	};
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512";
+		rootdisk-emmc = <&emmc_rootfs>;
+		rootdisk-sd = <&sd_rootfs>;
+		rootdisk-snfi = <&ubi_rootfs>;
 	};
 
 	cpus {
@@ -43,8 +53,8 @@
 		compatible = "gpio-keys";
 
 		factory-key {
-			label = "factory";
-			linux,code = <BTN_0>;
+			label = "reset";
+			linux,code = <KEY_RESTART>;
 			gpios = <&pio 0 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -58,17 +68,17 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led-0 {
+		led_system_green: led-0 {
 			label = "bpi-r64:pio:green";
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 89 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 
-		led-1 {
-			label = "bpi-r64:pio:red";
-			color = <LED_COLOR_ID_RED>;
-			gpios = <&pio 88 GPIO_ACTIVE_HIGH>;
+		led_system_blue: led-1 {
+			label = "bpi-r64:pio:blue";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 85 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 	};
@@ -107,10 +117,6 @@
 
 &bch {
 	status = "disabled";
-};
-
-&btif {
-	status = "okay";
 };
 
 &cir {
@@ -168,22 +174,22 @@
 
 				port@1 {
 					reg = <1>;
-					label = "lan0";
+					label = "lan1";
 				};
 
 				port@2 {
 					reg = <2>;
-					label = "lan1";
+					label = "lan2";
 				};
 
 				port@3 {
 					reg = <3>;
-					label = "lan2";
+					label = "lan3";
 				};
 
 				port@4 {
 					reg = <4>;
-					label = "lan3";
+					label = "lan4";
 				};
 
 				port@5 {
@@ -242,6 +248,28 @@
 	assigned-clocks = <&topckgen CLK_TOP_MSDC30_0_SEL>;
 	assigned-clock-parents = <&topckgen CLK_TOP_UNIV48M>;
 	non-removable;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				block-partition-env {
+					partname = "ubootenv";
+					nvmem-layout {
+						compatible = "u-boot,env";
+					};
+				};
+				emmc_rootfs: block-partition-production {
+					partname = "production";
+				};
+			};
+		};
+	};
 };
 
 &mmc1 {
@@ -257,6 +285,28 @@
 	vqmmc-supply = <&reg_3p3v>;
 	assigned-clocks = <&topckgen CLK_TOP_MSDC30_1_SEL>;
 	assigned-clock-parents = <&topckgen CLK_TOP_UNIV48M>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				block-partition-env {
+					partname = "ubootenv";
+					nvmem-layout {
+						compatible = "u-boot,env";
+					};
+				};
+				sd_rootfs: block-partition-production {
+					partname = "production";
+				};
+			};
+		};
+	};
 };
 
 &nandc {
@@ -290,15 +340,30 @@
 				read-only;
 			};
 
-			partition@80000 {
-				label = "fip";
-				reg = <0x80000 0x200000>;
-				read-only;
-			};
-
-			ubi: partition@280000 {
+			ubi: partition@80000 {
 				label = "ubi";
-				reg = <0x280000 0x7d80000>;
+				reg = <0x80000 0x7f80000>;
+				compatible = "linux,ubi";
+
+				volumes {
+					ubi-volume-ubootenv {
+						volname = "ubootenv";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi-volume-ubootenv2 {
+						volname = "ubootenv2";
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+						};
+					};
+
+					ubi_rootfs: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
 			};
 		};
 	};
@@ -320,7 +385,7 @@
 	/* Attention: GPIO 90 is used to switch between PCIe@1,0 and
 	 * SATA functions. i.e. output-high: PCIe, output-low: SATA
 	 */
-	asm_sel {
+	asmsel: asm_sel {
 		gpio-hog;
 		gpios = <90 GPIO_ACTIVE_HIGH>;
 		output-high;
@@ -596,6 +661,10 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "disabled";
+};
+
 &sata {
 	status = "disabled";
 };
@@ -643,5 +712,28 @@
 };
 
 &wmac {
+	mediatek,eeprom-data = <0x22760500	0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x44000020	0x0		0x10002000
+				0x4400		0x4000000	0x0		0x0
+				0x200000b3	0x40b6c3c3	0x26000000	0x41c42600
+				0x41c4		0x26000000	0xc0c52600	0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0xc6c6
+				0xc3c3c2c1	0xc300c3	0x818181	0x83c1c182
+				0x83838382	0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x84002e00	0x90000087	0x8a000000	0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0xb000009	0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x0
+				0x0		0x0		0x0		0x7707>;
+
 	status = "okay";
 };
