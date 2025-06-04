@@ -105,7 +105,7 @@ void addHost(char *host, char *ip, int withdomain)
 	if (ip == NULL)
 		return;
 	strcpy(newhost, host);
-	char *domain = nvram_safe_get("wan_domain");
+	char *domain = nvram_safe_get("lan_domain");
 
 	if (withdomain && domain != NULL && *domain && strcmp(host, "localhost")) {
 		sprintf(newhost, "%s.%s", host, domain);
