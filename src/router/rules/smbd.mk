@@ -14,6 +14,8 @@ smbd-configure: libnl
 	    LDFLAGS="-L$(TOP)/_staging_static/usr/lib $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
+	    GLIB_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include" \
+	    GLIB_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
@@ -23,6 +25,8 @@ smbd-configure: libnl
 	    LDFLAGS="-L$(TOP)/_staging_static/usr/lib $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
+	    GLIB_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include" \
+	    GLIB_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
