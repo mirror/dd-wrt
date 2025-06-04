@@ -235,8 +235,8 @@ void start_udhcpd(void)
 		else if (nvram_invmatch("wan_get_domain", ""))
 			fprintf(fp, "option domain %s\n", nvram_safe_get("wan_get_domain"));
 	} else {
-		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "option domain %s\n", nvram_safe_get("lan_domain"));
+		if (nvram_invmatch("wan_domain", ""))
+			fprintf(fp, "option domain %s\n", nvram_safe_get("wan_domain"));
 	}
 
 	fwritenvram("dhcpd_options", fp);

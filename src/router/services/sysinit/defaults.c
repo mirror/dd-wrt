@@ -305,11 +305,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "lan_stp", "0" },	/* LAN spanning tree protocol */
 #endif
 	{ "lan_wins", "" },	/* x.x.x.x x.x.x.x ... */
-#ifdef HAVE_SKYTRON
-	{ "lan_domain", "local" },	/* LAN domain name */
-#else
-	{ "lan_domain", "" },	/* LAN domain name */
-#endif
 	{ "lan_lease", "86400" },	/* LAN lease time in seconds */
 	// {"lan_lease", "1440"}, /* LAN lease time in seconds */
 
