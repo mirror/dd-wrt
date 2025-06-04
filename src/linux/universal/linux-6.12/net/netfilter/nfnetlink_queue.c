@@ -309,7 +309,7 @@ static int nf_reroute(struct sk_buff *skb, struct nf_queue_entry *entry)
 }
 
 /* caller must hold rcu read-side lock */
-static void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict)
+void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict)
 {
 	const struct nf_hook_entry *hook_entry;
 	const struct nf_hook_entries *hooks;
@@ -356,6 +356,7 @@ next_hook:
 		local_bh_enable();
 		break;
 	case NF_QUEUE:
+	case NF_IMQ_QUEUE:
 		err = nf_queue(skb, &entry->state, i, verdict);
 		if (err == 1)
 			goto next_hook;
@@ -368,6 +369,7 @@ next_hook:
 
 	nf_queue_entry_free(entry);
 }
+EXPORT_SYMBOL(nf_reinject);
 
 static void nfqnl_reinject(struct nf_queue_entry *entry, unsigned int verdict)
 {

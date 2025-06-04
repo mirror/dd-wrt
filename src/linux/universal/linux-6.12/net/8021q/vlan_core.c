@@ -122,6 +122,15 @@ __be16 vlan_dev_vlan_proto(const struct net_device *dev)
 }
 EXPORT_SYMBOL(vlan_dev_vlan_proto);
 
+/* VLAN rx hw acceleration helper.  This acts like netif_{rx,receive_skb}(). */
+int __vlan_hwaccel_rx(struct sk_buff *skb, struct vlan_group *grp,
+		      u16 vlan_tci, int polling)
+{
+	__vlan_hwaccel_put_tag(skb, skb->protocol, vlan_tci);
+	return polling ? netif_receive_skb(skb) : netif_rx(skb);
+}
+EXPORT_SYMBOL(__vlan_hwaccel_rx);
+
 /*
  * vlan info and vid list
  */

@@ -366,6 +366,10 @@ static int ct_seq_show(struct seq_file *s, void *v)
 	ct_show_secctx(s, ct);
 	ct_show_zone(s, ct, NF_CT_DEFAULT_ZONE_DIR);
 	ct_show_delta_time(s, ct);
+#if defined(CONFIG_NETFILTER_XT_MATCH_LAYER7) || defined(CONFIG_NETFILTER_XT_MATCH_LAYER7_MODULE)
+	if(ct->layer7.app_proto)
+           seq_printf(s, "l7proto=%s ", ct->layer7.app_proto);
+#endif
 
 	seq_printf(s, "use=%u\n", refcount_read(&ct->ct_general.use));
 
@@ -598,9 +602,23 @@ nf_conntrack_hash_sysctl(const struct ctl_table *table, int write,
 	return ret;
 }
 
+static int nf_conntrack_flush_var = 0;
+
+static int
+nf_conntrack_flush_sysctl(const struct ctl_table *table, int write,
+			 void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	int ret;
+	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+	nf_conntrack_flush();
+	return ret;
+}
+
 static struct ctl_table_header *nf_ct_netfilter_header;
 
 enum nf_ct_sysctl_index {
+	NF_SYSCTL_CT_FLUSH,
+	NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK,
 	NF_SYSCTL_CT_MAX,
 	NF_SYSCTL_CT_COUNT,
 	NF_SYSCTL_CT_BUCKETS,
@@ -608,6 +626,7 @@ enum nf_ct_sysctl_index {
 	NF_SYSCTL_CT_LOG_INVALID,
 	NF_SYSCTL_CT_EXPECT_MAX,
 	NF_SYSCTL_CT_ACCT,
+	NF_SYSCTL_CT_HELPER,
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	NF_SYSCTL_CT_EVENTS,
 #endif
@@ -667,7 +686,23 @@ enum nf_ct_sysctl_index {
 	NF_SYSCTL_CT_LAST_SYSCTL,
 };
 
+extern int nf_ct_tcp_no_window_check;
+
 static struct ctl_table nf_ct_sysctl_table[] = {
+	[NF_SYSCTL_CT_FLUSH] = {
+		.procname	= "nf_conntrack_flush",
+		.data		= &nf_conntrack_flush_var,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= nf_conntrack_flush_sysctl,
+	},
+	[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK] = {
+		.procname       = "nf_conntrack_tcp_no_window_check",
+		.data		= &nf_ct_tcp_no_window_check,
+		.maxlen		= sizeof(int),
+		.mode           = 0644,
+		.proc_handler   = proc_dointvec,
+	},
 	[NF_SYSCTL_CT_MAX] = {
 		.procname	= "nf_conntrack_max",
 		.data		= &nf_conntrack_max,
@@ -718,6 +753,14 @@ static struct ctl_table nf_ct_sysctl_table[] = {
 	[NF_SYSCTL_CT_ACCT] = {
 		.procname	= "nf_conntrack_acct",
 		.data		= &init_net.ct.sysctl_acct,
+		.maxlen		= sizeof(u8),
+		.mode		= 0644,
+		.proc_handler	= proc_dou8vec_minmax,
+		.extra1 	= SYSCTL_ZERO,
+		.extra2 	= SYSCTL_ONE,
+	},
+	[NF_SYSCTL_CT_HELPER] = {
+		.procname	= "nf_conntrack_helper",
 		.maxlen		= sizeof(u8),
 		.mode		= 0644,
 		.proc_handler	= proc_dou8vec_minmax,
@@ -1120,6 +1163,7 @@ static int nf_conntrack_standalone_init_sysctl(struct net *net)
 	table[NF_SYSCTL_CT_CHECKSUM].data = &net->ct.sysctl_checksum;
 	table[NF_SYSCTL_CT_LOG_INVALID].data = &net->ct.sysctl_log_invalid;
 	table[NF_SYSCTL_CT_ACCT].data = &net->ct.sysctl_acct;
+	table[NF_SYSCTL_CT_HELPER].data = &cnet->sysctl_auto_assign_helper;
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	table[NF_SYSCTL_CT_EVENTS].data = &net->ct.sysctl_events;
 #endif

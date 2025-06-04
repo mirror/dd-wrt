@@ -10,6 +10,7 @@
 #define _BR_PRIVATE_H
 
 #include <linux/netdevice.h>
+#include <linux/netfilter.h>
 #include <linux/if_bridge.h>
 #include <linux/netpoll.h>
 #include <linux/u64_stats_sync.h>
@@ -1952,16 +1953,59 @@ struct nf_br_ops {
 };
 extern const struct nf_br_ops __rcu *nf_br_ops;
 
+extern unsigned int brnf_net_id __read_mostly;
+
+struct brnf_net {
+	bool enabled;
+
+#ifdef CONFIG_SYSCTL
+	struct ctl_table_header *ctl_hdr;
+#endif
+
+	/* default value is 1 */
+	int call_iptables;
+	int call_ip6tables;
+	int call_arptables;
+
+	/* default value is 0 */
+	int filter_vlan_tagged;
+	int filter_pppoe_tagged;
+	int pass_vlan_indev;
+};
+
 /* br_netfilter.c */
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
+extern int brnf_call_ebtables __read_mostly;
+extern int brnf_call_emf __read_mostly;
 int br_nf_core_init(void);
 void br_nf_core_fini(void);
 void br_netfilter_rtable_init(struct net_bridge *);
+static inline bool br_netfilter_run_hooks(struct brnf_net *brnet)
+{
+	return brnet->call_iptables | brnet->call_ip6tables | brnet->call_arptables | brnf_call_ebtables | brnf_call_emf;
+}
+
 #else
 static inline int br_nf_core_init(void) { return 0; }
 static inline void br_nf_core_fini(void) {}
 #define br_netfilter_rtable_init(x)
+#define br_netfilter_run_hooks(brnet)	false
 #endif
+
+
+static inline int
+BR_HOOK(uint8_t pf, unsigned int hook, struct net *net, struct sock *sk, struct sk_buff *skb,
+	struct net_device *in, struct net_device *out,
+	int (*okfn)(struct net *, struct sock *, struct sk_buff *))
+{
+	struct brnf_net *brnet;
+	brnet = net_generic(net, brnf_net_id);
+
+	if (!br_netfilter_run_hooks(brnet))
+		return okfn(net, sk, skb);
+
+	return NF_HOOK(pf, hook, net, sk, skb, in, out, okfn);
+}
 
 /* br_stp.c */
 void br_set_state(struct net_bridge_port *p, unsigned int state);

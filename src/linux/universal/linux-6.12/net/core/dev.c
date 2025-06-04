@@ -147,6 +147,9 @@
 #include <linux/netfilter_netdev.h>
 #include <linux/crash_dump.h>
 #include <linux/sctp.h>
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
 #include <net/udp_tunnel.h>
 #include <linux/net_namespace.h>
 #include <linux/indirect_call_wrapper.h>
@@ -551,7 +554,6 @@ static inline void netdev_set_addr_lockdep_class(struct net_device *dev)
  *
  *******************************************************************************/
 
-
 /*
  *	Add a protocol ID to the list. Now that the input handler is
  *	smarter we can dispense with all the messy stuff that used to be
@@ -653,12 +655,12 @@ void dev_remove_pack(struct packet_type *pt)
 }
 EXPORT_SYMBOL(dev_remove_pack);
 
-
 /*******************************************************************************
  *
  *			    Device Interface Subroutines
  *
  *******************************************************************************/
+int netdev_skb_tstamp __read_mostly = 1;
 
 /**
  *	dev_get_iflink	- get 'iflink' value of a interface
@@ -1677,7 +1679,6 @@ void dev_close(struct net_device *dev)
 }
 EXPORT_SYMBOL(dev_close);
 
-
 /**
  *	dev_disable_lro - disable Large Receive Offload on a device
  *	@dev: device
@@ -2229,12 +2230,13 @@ static inline void net_timestamp_set(struct sk_buff *skb)
 	skb->tstamp = 0;
 	skb->tstamp_type = SKB_CLOCK_REALTIME;
 	if (static_branch_unlikely(&netstamp_needed_key))
-		skb->tstamp = ktime_get_real();
+		if (netdev_skb_tstamp)
+			skb->tstamp = ktime_get_real();
 }
 
 #define net_timestamp_check(COND, SKB)				\
 	if (static_branch_unlikely(&netstamp_needed_key)) {	\
-		if ((COND) && !(SKB)->tstamp)			\
+		if (netdev_skb_tstamp && (COND) && !(SKB)->tstamp)			\
 			(SKB)->tstamp = ktime_get_real();	\
 	}							\
 
@@ -3267,7 +3269,6 @@ void dev_kfree_skb_any_reason(struct sk_buff *skb, enum skb_drop_reason reason)
 }
 EXPORT_SYMBOL(dev_kfree_skb_any_reason);
 
-
 /**
  * netif_device_detach - mark device as removed
  * @dev: network device
@@ -3643,8 +3644,13 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
-	if (dev_nit_active(dev))
-		dev_queue_xmit_nit(skb, dev);
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	if (unlikely(!skb->fast_forwarded) && !(skb->imq_flags & IMQ_F_ENQUEUE) && dev_nit_active(dev)) {
+#else
+	if (unlikely(!skb->fast_forwarded) && dev_nit_active(dev)) {
+#endif
+			dev_queue_xmit_nit(skb, dev);
+	}
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	if (dev->eth_mangle_tx && !(skb = dev->eth_mangle_tx(dev, skb)))
@@ -3686,6 +3692,8 @@ out:
 	*ret = rc;
 	return skb;
 }
+
+EXPORT_SYMBOL_GPL(dev_hard_start_xmit);
 
 static struct sk_buff *validate_xmit_vlan(struct sk_buff *skb,
 					  netdev_features_t features)
@@ -4391,6 +4399,65 @@ struct netdev_queue *netdev_core_pick_tx(struct net_device *dev,
 	skb_set_queue_mapping(skb, queue_index);
 	return netdev_get_tx_queue(dev, queue_index);
 }
+
+/**
+ *	dev_fast_xmit - fast xmit the skb
+ *	@skb:buffer to transmit
+ *	@dev: the device to be transmited to
+ *	@features: the skb features could bed used
+ *	sucessful return true
+ *	failed return false
+ */
+bool dev_fast_xmit(struct sk_buff *skb,
+		struct net_device *dev,
+		netdev_features_t features)
+{
+	struct netdev_queue *txq;
+	int cpu;
+	netdev_tx_t rc;
+
+	if (unlikely(!(dev->flags & IFF_UP))) {
+		return false;
+	}
+
+	if (unlikely(skb_needs_linearize(skb, features))) {
+		return false;
+	}
+
+	rcu_read_lock_bh();
+	cpu = smp_processor_id();
+
+	/* If device don't need the dst, release it now, otherwise make sure
+	 * the refcount increased.
+	 */
+	if (likely(dev->priv_flags & IFF_XMIT_DST_RELEASE)) {
+		skb_dst_drop(skb);
+	} else {
+		skb_dst_force(skb);
+	}
+
+	txq = netdev_core_pick_tx(dev, skb, NULL);
+
+	if (likely(txq->xmit_lock_owner != cpu)) {
+		HARD_TX_LOCK(dev, txq, cpu);
+		if (likely(!netif_xmit_stopped(txq))) {
+			rc = netdev_start_xmit(skb, dev, txq, 0);
+			if (unlikely(!dev_xmit_complete(rc))) {
+				HARD_TX_UNLOCK(dev, txq);
+				goto fail;
+			}
+			HARD_TX_UNLOCK(dev, txq);
+			rcu_read_unlock_bh();
+			return true;
+		}
+		HARD_TX_UNLOCK(dev, txq);
+	}
+fail:
+	rcu_read_unlock_bh();
+	return false;
+}
+EXPORT_SYMBOL(dev_fast_xmit);
+
 
 /**
  * __dev_queue_xmit() - transmit a buffer
@@ -5530,6 +5597,9 @@ static inline int nf_ingress(struct sk_buff *skb, struct packet_type **pt_prev,
 	return 0;
 }
 
+int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(fast_nat_recv);
+
 static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 				    struct packet_type **ppt_prev)
 {
@@ -5540,6 +5610,7 @@ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 	bool deliver_exact = false;
 	int ret = NET_RX_DROP;
 	__be16 type;
+	int (*fast_recv)(struct sk_buff *skb);
 
 	net_timestamp_check(!READ_ONCE(net_hotdata.tstamp_prequeue), skb);
 
@@ -5569,6 +5640,14 @@ another_round:
 
 		if (ret2 != XDP_PASS) {
 			ret = NET_RX_DROP;
+			goto out;
+		}
+	}
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv) {
+		if (fast_recv(skb)) {
+			ret = NET_RX_SUCCESS;
 			goto out;
 		}
 	}
@@ -8641,7 +8720,6 @@ void *netdev_lower_dev_get_private(struct net_device *dev,
 }
 EXPORT_SYMBOL(netdev_lower_dev_get_private);
 
-
 /**
  * netdev_lower_state_changed - Dispatch event about lower device state change
  * @lower_dev: device
@@ -9013,10 +9091,10 @@ int dev_validate_mtu(struct net_device *dev, int new_mtu,
 		return -EINVAL;
 	}
 
-	if (dev->max_mtu > 0 && new_mtu > dev->max_mtu) {
-		NL_SET_ERR_MSG(extack, "mtu greater than device maximum");
-		return -EINVAL;
-	}
+//	if (dev->max_mtu > 0 && new_mtu > dev->max_mtu) {
+//		NL_SET_ERR_MSG(extack, "mtu greater than device maximum");
+//		return -EINVAL;
+//	}
 	return 0;
 }
 
@@ -11016,8 +11094,6 @@ struct rtnl_link_stats64 *dev_get_stats(struct net_device *dev,
 		ops->ndo_get_stats64(dev, storage);
 	} else if (ops->ndo_get_stats) {
 		netdev_stats_to_stats64(storage, ops->ndo_get_stats(dev));
-	} else if (dev->pcpu_stat_type == NETDEV_PCPU_STAT_TSTATS) {
-		dev_get_tstats64(dev, storage);
 	} else if (dev->pcpu_stat_type == NETDEV_PCPU_STAT_DSTATS) {
 		dev_get_dstats64(dev, storage);
 	} else {
@@ -11317,8 +11393,7 @@ void free_netdev(struct net_device *dev)
 	netdev_free_phy_link_topology(dev);
 
 	/*  Compatibility with error handling in drivers */
-	if (dev->reg_state == NETREG_UNINITIALIZED ||
-	    dev->reg_state == NETREG_DUMMY) {
+	if (dev->reg_state == NETREG_UNINITIALIZED) {
 		kvfree(dev);
 		return;
 	}

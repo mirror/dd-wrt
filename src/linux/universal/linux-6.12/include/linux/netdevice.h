@@ -2074,6 +2074,9 @@ struct net_device {
 	struct list_head	ptype_specific;
 	int			ifindex;
 	unsigned int		real_num_rx_queues;
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	unsigned long		last_rx;
+#endif
 	struct netdev_rx_queue	*_rx;
 	unsigned long		gro_flush_timeout;
 	u32			napi_defer_hard_irqs;
@@ -2654,6 +2657,25 @@ netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	netif_napi_add_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
 }
 
+
+static inline void netif_threaded_napi_add_weight(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int),
+					   int weight)
+{
+	netif_napi_add_weight(dev, napi, poll, weight);
+	if (num_online_cpus() > 1) {
+		dev_set_threaded(dev, true);
+	}
+}
+
+static inline void netif_threaded_napi_add(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int))
+{
+	netif_threaded_napi_add_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
+}
+
 static inline void
 netif_napi_add_tx_weight(struct net_device *dev,
 			 struct napi_struct *napi,
@@ -2662,6 +2684,16 @@ netif_napi_add_tx_weight(struct net_device *dev,
 {
 	set_bit(NAPI_STATE_NO_BUSY_POLL, &napi->state);
 	netif_napi_add_weight(dev, napi, poll, weight);
+}
+
+static inline void
+netif_threaded_napi_add_tx_weight(struct net_device *dev,
+			 struct napi_struct *napi,
+			 int (*poll)(struct napi_struct *, int),
+			 int weight)
+{
+	set_bit(NAPI_STATE_NO_BUSY_POLL, &napi->state);
+	netif_threaded_napi_add_weight(dev, napi, poll, weight);
 }
 
 /**
@@ -2679,6 +2711,13 @@ static inline void netif_napi_add_tx(struct net_device *dev,
 				     int (*poll)(struct napi_struct *, int))
 {
 	netif_napi_add_tx_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
+}
+
+static inline void netif_threaded_napi_add_tx(struct net_device *dev,
+				     struct napi_struct *napi,
+				     int (*poll)(struct napi_struct *, int))
+{
+	netif_threaded_napi_add_tx_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
 }
 
 /**
@@ -3128,6 +3167,8 @@ static inline int dev_direct_xmit(struct sk_buff *skb, u16 queue_id)
 	return ret;
 }
 
+bool dev_fast_xmit(struct sk_buff *skb, struct net_device *dev,
+		   netdev_features_t features);
 int register_netdevice(struct net_device *dev);
 void unregister_netdevice_queue(struct net_device *dev, struct list_head *head);
 void unregister_netdevice_many(struct list_head *head);
@@ -4732,6 +4773,8 @@ void netdev_stats_to_stats64(struct rtnl_link_stats64 *stats64,
 void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
 			   const struct pcpu_sw_netstats __percpu *netstats);
 void dev_get_tstats64(struct net_device *dev, struct rtnl_link_stats64 *s);
+extern int		netdev_skb_tstamp;
+extern int              hh_output_relaxed;
 
 enum {
 	NESTED_SYNC_IMM_BIT,

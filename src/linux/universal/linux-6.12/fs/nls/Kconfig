@@ -618,6 +618,6 @@ config NLS_UTF8
 	  the Unicode/ISO9646 universal character set.
 
 config NLS_UCS2_UTILS
-	tristate
+	tristate "NLS UCS2 Utils"
 
 endif # NLS

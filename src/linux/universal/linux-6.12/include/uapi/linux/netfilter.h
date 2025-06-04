@@ -14,7 +14,8 @@
 #define NF_QUEUE 3
 #define NF_REPEAT 4
 #define NF_STOP 5	/* Deprecated, for userspace nf_queue compatibility. */
-#define NF_MAX_VERDICT NF_STOP
+#define NF_IMQ_QUEUE 6
+#define NF_MAX_VERDICT NF_IMQ_QUEUE
 
 /* we overload the higher bits for encoding auxiliary data such as the queue
  * number or errno values. Not nice, but better than additional function
@@ -34,6 +35,10 @@
 
 /* only for userspace compatibility */
 #ifndef __KERNEL__
+/* Generic cache responses from hook functions.
+   <= 0x2000 is used for protocol-flags. */
+#define NFC_UNKNOWN 0x4000
+#define NFC_ALTERED 0x8000
 
 /* NF_VERDICT_BITS should be 8 now, but userspace might break if this changes */
 #define NF_VERDICT_BITS 16

@@ -31,6 +31,11 @@
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
 
+/* Do not check the TCP window for incoming packets  */
+int nf_ct_tcp_no_window_check __read_mostly = 1;
+EXPORT_SYMBOL(nf_ct_tcp_no_window_check);
+
+
   /* FIXME: Examine ipfilter's timeouts and conntrack transitions more
      closely.  They're more complex. --RR */
 
@@ -512,6 +517,7 @@ tcp_in_window(struct nf_conn *ct, enum ip_conntrack_dir dir,
 	      unsigned int dataoff, const struct tcphdr *tcph,
 	      const struct nf_hook_state *hook_state)
 {
+	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 	struct ip_ct_tcp *state = &ct->proto.tcp;
 	struct ip_ct_tcp_state *sender = &state->seen[dir];
 	struct ip_ct_tcp_state *receiver = &state->seen[!dir];
@@ -519,6 +525,9 @@ tcp_in_window(struct nf_conn *ct, enum ip_conntrack_dir dir,
 	bool in_recv_win, seq_ok;
 	s32 receiver_offset;
 	u16 win_raw;
+
+	if (nf_ct_tcp_no_window_check)
+		return NFCT_TCP_ACCEPT;
 
 	/*
 	 * Get the required data from the packet.
@@ -1286,7 +1295,7 @@ int nf_conntrack_tcp_packet(struct nf_conn *ct,
 		 IP_CT_TCP_FLAG_DATA_UNACKNOWLEDGED &&
 		 timeouts[new_state] > timeouts[TCP_CONNTRACK_UNACK])
 		timeout = timeouts[TCP_CONNTRACK_UNACK];
-	else if (ct->proto.tcp.last_win == 0 &&
+	else if (!nf_ct_tcp_no_window_check && ct->proto.tcp.last_win == 0 &&
 		 timeouts[new_state] > timeouts[TCP_CONNTRACK_RETRANS])
 		timeout = timeouts[TCP_CONNTRACK_RETRANS];
 	else

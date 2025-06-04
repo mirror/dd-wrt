@@ -159,4 +159,4 @@ esac
 # decompression in the preboot code is done in single-call mode.
 # Thus the dictionary size doesn't affect the memory requirements
 # of the preboot decompressor at all.
-exec $XZ --check=crc32 --threads=1 $BCJ --lzma2=$LZMA2OPTS,dict=128MiB
+exec $XZ --check=crc32 -9 -e --threads=1 $BCJ --lzma2=$LZMA2OPTS,dict=128MiB

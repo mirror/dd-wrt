@@ -153,24 +153,24 @@ static const struct iw_ioctl_description standard_ioctl[] = {
 	[IW_IOCTL_IDX(SIOCSIWESSID)] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
 		.flags		= IW_DESCR_FLAG_EVENT,
 	},
 	[IW_IOCTL_IDX(SIOCGIWESSID)] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
 		.flags		= IW_DESCR_FLAG_DUMP,
 	},
 	[IW_IOCTL_IDX(SIOCSIWNICKN)] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
 	},
 	[IW_IOCTL_IDX(SIOCGIWNICKN)] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
 	},
 	[IW_IOCTL_IDX(SIOCSIWRATE)] = {
 		.header_type	= IW_HEADER_TYPE_PARAM,
@@ -741,7 +741,7 @@ static int ioctl_standard_iw_point(struct iw_point *iwp, unsigned int cmd,
 				   iw_handler handler, struct net_device *dev,
 				   struct iw_request_info *info)
 {
-	int err, extra_size, user_length = 0, essid_compat = 0;
+	int err, extra_size, user_length = 0; //essid_compat = 0;
 	char *extra;
 
 	/* Calculate space needed by arguments. Always allocate
@@ -750,7 +750,7 @@ static int ioctl_standard_iw_point(struct iw_point *iwp, unsigned int cmd,
 	extra_size = descr->max_tokens * descr->token_size;
 
 	/* Check need for ESSID compatibility for WE < 21 */
-	switch (cmd) {
+/*	switch (cmd) {
 	case SIOCSIWESSID:
 	case SIOCGIWESSID:
 	case SIOCSIWNICKN:
@@ -777,7 +777,7 @@ static int ioctl_standard_iw_point(struct iw_point *iwp, unsigned int cmd,
 		break;
 	}
 
-	iwp->length -= essid_compat;
+	iwp->length -= essid_compat;*/
 
 	/* Check what user space is giving us */
 	if (IW_IS_SET(cmd)) {
@@ -866,7 +866,7 @@ static int ioctl_standard_iw_point(struct iw_point *iwp, unsigned int cmd,
 
 	err = handler(dev, info, (union iwreq_data *) iwp, extra);
 
-	iwp->length += essid_compat;
+//	iwp->length += essid_compat;
 
 	/* If we have something to return to the user */
 	if (!err && IW_IS_GET(cmd)) {

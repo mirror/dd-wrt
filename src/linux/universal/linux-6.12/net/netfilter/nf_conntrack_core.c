@@ -552,6 +552,9 @@ EXPORT_SYMBOL_GPL(nf_ct_tmpl_alloc);
 
 void nf_ct_tmpl_free(struct nf_conn *tmpl)
 {
+#ifdef CONFIG_NF_CONNTRACK_RTCACHE
+	nf_conn_rtcache_destroy(tmpl);
+#endif
 	kfree(tmpl->ext);
 
 	if (ARCH_KMALLOC_MINALIGN <= NFCT_INFOMASK)
@@ -571,9 +574,30 @@ static void destroy_gre_conntrack(struct nf_conn *ct)
 #endif
 }
 
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+
+static void (*nf_ct_destroy_hook)(struct nf_conn *) __rcu __read_mostly = NULL;
+
+void register_nf_ct_destroy_hook(void (*hook)(struct nf_conn *))
+{
+	rcu_assign_pointer(nf_ct_destroy_hook, hook);
+}
+EXPORT_SYMBOL(register_nf_ct_destroy_hook);
+
+void unregister_nf_ct_destroy_hook(void)
+{
+	rcu_assign_pointer(nf_ct_destroy_hook, NULL);
+}
+
+EXPORT_SYMBOL(unregister_nf_ct_destroy_hook);
+#endif
+
 void nf_ct_destroy(struct nf_conntrack *nfct)
 {
 	struct nf_conn *ct = (struct nf_conn *)nfct;
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+	void (*hook)(struct nf_conn *);
+#endif
 
 	WARN_ON(refcount_read(&nfct->use) != 0);
 
@@ -581,6 +605,12 @@ void nf_ct_destroy(struct nf_conntrack *nfct)
 		nf_ct_tmpl_free(ct);
 		return;
 	}
+
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+	hook = rcu_dereference(nf_ct_destroy_hook);
+	if (hook)
+		hook(ct);
+#endif
 
 	if (unlikely(nf_ct_protonum(ct) == IPPROTO_GRE))
 		destroy_gre_conntrack(ct);
@@ -591,6 +621,12 @@ void nf_ct_destroy(struct nf_conntrack *nfct)
 	 * too.
 	 */
 	nf_ct_remove_expectations(ct);
+	#if defined(CONFIG_NETFILTER_XT_MATCH_LAYER7) || defined(CONFIG_NETFILTER_XT_MATCH_LAYER7_MODULE)
+	if(ct->layer7.app_proto)
+		kfree(ct->layer7.app_proto);
+	if(ct->layer7.app_data)
+	kfree(ct->layer7.app_data);
+	#endif
 
 	if (ct->master)
 		nf_ct_put(ct->master);
@@ -1721,6 +1757,10 @@ void nf_conntrack_free(struct nf_conn *ct)
 	 */
 	WARN_ON(refcount_read(&ct->ct_general.use) != 0);
 
+#ifdef CONFIG_NF_CONNTRACK_RTCACHE
+	nf_conn_rtcache_destroy(ct);
+#endif
+
 	if (ct->status & IPS_SRC_NAT_DONE) {
 		const struct nf_nat_hook *nat_hook;
 
@@ -1822,7 +1862,7 @@ init_conntrack(struct net *net, struct nf_conn *tmpl,
 		}
 		spin_unlock_bh(&nf_conntrack_expect_lock);
 	}
-	if (!exp && tmpl)
+	if (!exp)
 		__nf_ct_try_assign_helper(ct, tmpl, GFP_ATOMIC);
 
 	/* Other CPU might have obtained a pointer to this object before it was
@@ -2447,6 +2487,14 @@ static int kill_all(struct nf_conn *i, void *data)
 	return 1;
 }
 
+void nf_conntrack_flush(void)
+{
+	struct nf_ct_iter_data iter_data = {};
+	iter_data.net = &init_net;
+	nf_ct_iterate_cleanup_net(kill_all, &iter_data);
+}
+EXPORT_SYMBOL_GPL(nf_conntrack_flush);
+
 void nf_conntrack_cleanup_start(void)
 {
 	cleanup_nf_conntrack_bpf();
@@ -2751,8 +2799,12 @@ int nf_conntrack_init_net(struct net *net)
 	nf_conntrack_acct_pernet_init(net);
 	nf_conntrack_tstamp_pernet_init(net);
 	nf_conntrack_ecache_pernet_init(net);
+	nf_conntrack_helper_pernet_init(net);
 	nf_conntrack_proto_pernet_init(net);
 
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
+#endif
 	return 0;
 
 err_expect:

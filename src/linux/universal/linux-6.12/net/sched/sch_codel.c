@@ -66,7 +66,12 @@ static struct sk_buff *codel_qdisc_dequeue(struct Qdisc *sch)
 			    drop_func, dequeue_func);
 
 	if (q->stats.drop_count) {
-		qdisc_tree_reduce_backlog(sch, q->stats.drop_count, q->stats.drop_len);
+		if (skb)
+			sch->q.qlen++;
+		qdisc_tree_reduce_backlog(sch, q->stats.drop_count,
+					  q->stats.drop_len);
+		if (skb)
+			sch->q.qlen--;
 		q->stats.drop_count = 0;
 		q->stats.drop_len = 0;
 	}

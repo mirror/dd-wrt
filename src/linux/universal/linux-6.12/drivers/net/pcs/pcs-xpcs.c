@@ -611,10 +611,10 @@ static int xpcs_validate(struct phylink_pcs *pcs, unsigned long *supported,
 static unsigned int xpcs_inband_caps(struct phylink_pcs *pcs,
 				     phy_interface_t interface)
 {
-	struct dw_xpcs *xpcs = phylink_pcs_to_xpcs(pcs);
+	const struct dw_xpcs *xpcs = phylink_pcs_to_xpcs(pcs);
 	const struct dw_xpcs_compat *compat;
 
-	compat = xpcs_find_compat(xpcs, interface);
+	compat = xpcs_find_compat(xpcs->desc, interface);
 	if (!compat)
 		return 0;
 

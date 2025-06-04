@@ -49,25 +49,13 @@
 #include <net/netfilter/nf_conntrack_core.h>
 #endif
 
-static unsigned int brnf_net_id __read_mostly;
+unsigned int brnf_net_id __read_mostly;
+EXPORT_SYMBOL(brnf_net_id);
+int brnf_call_ebtables __read_mostly = 0;
+int brnf_call_emf __read_mostly = 0;
+EXPORT_SYMBOL(brnf_call_ebtables);
+EXPORT_SYMBOL(brnf_call_emf);
 
-struct brnf_net {
-	bool enabled;
-
-#ifdef CONFIG_SYSCTL
-	struct ctl_table_header *ctl_hdr;
-#endif
-
-	/* default value is 1 */
-	int call_iptables;
-	int call_ip6tables;
-	int call_arptables;
-
-	/* default value is 0 */
-	int filter_vlan_tagged;
-	int filter_pppoe_tagged;
-	int pass_vlan_indev;
-};
 
 #define IS_IP(skb) \
 	(!skb_vlan_tag_present(skb) && skb->protocol == htons(ETH_P_IP))
@@ -689,6 +677,12 @@ static int br_nf_forward_finish(struct net *net, struct sock *sk, struct sk_buff
 	}
 	nf_bridge_push_encap_header(skb);
 
+#ifdef HAVE_JUMP_LABEL
+	if (__builtin_constant_p(NF_BR_FORWARD) &&
+	    __builtin_constant_p(hook) &&
+	    !static_key_false(&nf_hooks_needed[NF_BR_FORWARD][hook]))
+		return br_forward_finish(net, sk, skb);
+#endif
 	br_nf_hook_thresh(NF_BR_FORWARD, net, sk, skb, in, skb->dev,
 			  br_forward_finish);
 	return 0;

@@ -13,6 +13,7 @@ obj-$(CONFIG_DUMMY) += dummy.o
 obj-$(CONFIG_WIREGUARD) += wireguard/
 obj-$(CONFIG_EQUALIZER) += eql.o
 obj-$(CONFIG_IFB) += ifb.o
+obj-$(CONFIG_IMQ) += imq.o
 obj-$(CONFIG_MACSEC) += macsec.o
 obj-$(CONFIG_AMT) += amt.o
 obj-$(CONFIG_MACVLAN) += macvlan.o

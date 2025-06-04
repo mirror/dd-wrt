@@ -400,6 +400,7 @@ struct mtd_info {
 
 	struct mtd_part part;
 	struct mtd_master master;
+	loff_t fixup_offset;
 };
 
 static inline struct mtd_info *mtd_get_master(struct mtd_info *mtd)

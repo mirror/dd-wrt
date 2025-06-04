@@ -33,6 +33,7 @@
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/namei.h>
 #include <linux/slab.h>
 #include <linux/mtd/ubi.h>
 #include <linux/blkdev.h>
@@ -484,7 +485,7 @@ int ubiblock_remove(struct ubi_volume_info *vi)
 	}
 
 	/* Found a device, let's lock it so we can check if it's busy */
-	mutex_lock(&dev->dev_mutex);
+	mutex_lock_nested(&dev->dev_mutex, SINGLE_DEPTH_NESTING);
 	if (dev->refcnt > 0) {
 		ret = -EBUSY;
 		goto out_unlock_dev;
@@ -547,22 +548,60 @@ static int ubiblock_resize(struct ubi_volume_info *vi)
 	return 0;
 }
 
+static int ubiblock_shutdown(struct ubi_volume_info *vi)
+{
+	struct ubiblock *dev;
+	struct gendisk *disk;
+	int ret = 0;
+
+	mutex_lock(&devices_mutex);
+	dev = find_dev_nolock(vi->ubi_num, vi->vol_id);
+	if (!dev) {
+		ret = -ENODEV;
+		goto out_unlock;
+	}
+	disk = dev->gd;
+
+out_unlock:
+	mutex_unlock(&devices_mutex);
+
+	if (!ret)
+		blk_mark_disk_dead(disk);
+
+	return ret;
+};
+
 static bool
 match_volume_desc(struct ubi_volume_info *vi, const char *name, int ubi_num, int vol_id)
 {
-	int err, len, cur_ubi_num, cur_vol_id;
+	int err, len;
+	struct path path;
+	struct kstat stat;
 
 	if (ubi_num == -1) {
 		/* No ubi num, name must be a vol device path */
-		err = ubi_get_num_by_path(name, &cur_ubi_num, &cur_vol_id);
-		if (err || vi->ubi_num != cur_ubi_num || vi->vol_id != cur_vol_id)
+		err = kern_path(name, LOOKUP_FOLLOW, &path);
+		if (err)
+			return false;
+
+		err = vfs_getattr(&path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
+		path_put(&path);
+		if (err)
+			return false;
+
+		if (!S_ISCHR(stat.mode))
+			return false;
+
+		if (vi->ubi_num != ubi_major2num(MAJOR(stat.rdev)))
+			return false;
+
+		if (vi->vol_id != MINOR(stat.rdev) - 1)
 			return false;
 
 		return true;
 	}
 
 	if (vol_id == -1) {
-		/* Got ubi_num, but no vol_id, name must be volume name */
 		if (vi->ubi_num != ubi_num)
 			return false;
 
@@ -597,7 +636,7 @@ static inline int ubi_vol_is_ubifs(struct ubi_volume_desc *desc)
 	return magic == UBIFS_NODE_MAGIC;
 }
 
-static void ubiblock_create_auto_rootfs(struct ubi_volume_info *vi)
+static void __init ubiblock_create_auto_rootfs(struct ubi_volume_info *vi)
 {
 	int ret, is_ubifs;
 	struct ubi_volume_desc *desc;
@@ -664,6 +703,9 @@ static int ubiblock_notify(struct notifier_block *nb,
 		break;
 	case UBI_VOLUME_REMOVED:
 		ubiblock_remove(&nt->vi);
+		break;
+	case UBI_VOLUME_SHUTDOWN:
+		ubiblock_shutdown(&nt->vi);
 		break;
 	case UBI_VOLUME_RESIZED:
 		ubiblock_resize(&nt->vi);

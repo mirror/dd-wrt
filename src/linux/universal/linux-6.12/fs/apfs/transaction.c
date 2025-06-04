@@ -1,0 +1,1034 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2019 Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
+ */
+
+#include <linux/blkdev.h>
+#include <linux/rmap.h>
+#include "apfs.h"
+
+/**
+ * apfs_checkpoint_end - End the new checkpoint
+ * @sb:	filesystem superblock
+ *
+ * Flushes all changes to disk, and commits the new checkpoint by setting the
+ * fletcher checksum on its superblock.  Returns 0 on success, or a negative
+ * error code in case of failure.
+ */
+static int apfs_checkpoint_end(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_obj_phys *obj = &nxi->nx_raw->nx_o;
+	struct buffer_head *bh = NULL;
+	struct apfs_blkdev_info *bd_info = nxi->nx_blkdev_info;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	struct address_space *bdev_map = bd_info->blki_bdev->bd_mapping;
+#else
+	struct inode *bdev_inode = bd_info->blki_bdev->bd_inode;
+	struct address_space *bdev_map = bdev_inode->i_mapping;
+#endif
+	int err;
+
+	ASSERT(!(sb->s_flags & SB_RDONLY));
+
+	bh = apfs_getblk(sb, nxi->nx_bno);
+	if (!bh) {
+		apfs_err(sb, "failed to map new checkpoint superblock");
+		return -EIO;
+	}
+	obj->o_xid = cpu_to_le64(nxi->nx_xid);
+	apfs_obj_set_csum(sb, obj);
+	memcpy(bh->b_data, obj, sb->s_blocksize);
+
+	err = filemap_write_and_wait(bdev_map);
+	if (err)
+		goto out;
+
+	mark_buffer_dirty(bh);
+	err = sync_dirty_buffer(bh);
+	if (err)
+		goto out;
+
+	err = filemap_write_and_wait(bdev_map);
+out:
+	brelse(bh);
+	bh = NULL;
+	return err;
+}
+
+/**
+ * apfs_transaction_has_room - Is there enough free space for this transaction?
+ * @sb:		superblock structure
+ * @kind:	transaction kind for space preallocation
+ */
+static bool apfs_transaction_has_room(struct super_block *sb, enum apfs_trans_kind kind)
+{
+	struct apfs_nx_transaction *trans = NULL;
+	struct apfs_spaceman *sm = NULL;
+	u64 max_blks;
+
+	trans = &APFS_NXI(sb)->nx_transaction;
+	sm = APFS_SM(sb);
+
+	/*
+	 * It's hard to keep track of the maximum number of blocks that each
+	 * operation could need because of the complexities of apfs btrees,
+	 * plus snapshots and clones. I try to keep things simple here.
+	 */
+	switch (kind) {
+	case APFS_TRANS_REG:
+		/*
+		 * For transactions that are expected to reduce free space, we
+		 * use a very coarse bound (512 KiB) that is certain to be much
+		 * more than enough, and will always leave room for deletions.
+		 */
+		max_blks = APFS_REG_ROOM;
+		break;
+	case APFS_TRANS_DEL:
+		/*
+		 * For transactions that are likely to increase free space, we
+		 * use a much tighter bound (80 KiB), so that users have the
+		 * opportunity to fix their ENOSPC situation.
+		 *
+		 * For huge filesystems with huge numbers of records, there is
+		 * a tiny chance that this might be too permissive, in which
+		 * case the transaction will later abort. I think that's
+		 * acceptable.
+		 */
+		max_blks = APFS_DEL_ROOM;
+		break;
+	case APFS_TRANS_SYNC:
+		/*
+		 * We try to allow sync as much as possible, for the user's
+		 * peace of mind and because flushing the free queues could
+		 * make some room.
+		 *
+		 * Even if we do nothing the transaction still allocates a new
+		 * volume superblock, and new roots for the omap and catalog,
+		 * which consumes 6 blocks in total. This could be avoided...
+		 */
+		if (trans->t_starts_count == 0)
+			max_blks = APFS_SYNC_ROOM;
+		else
+			max_blks = 0;
+		break;
+	default:
+		apfs_alert(sb, "invalid transaction kind %u - bug!", kind);
+		return false;
+	}
+
+	return max_blks <= sm->sm_free_count;
+}
+
+/**
+ * apfs_read_single_ephemeral_object - Read a single ephemeral object to memory
+ * @sb:		filesystem superblock
+ * @map:	checkpoint mapping for the object
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_read_single_ephemeral_object(struct super_block *sb, struct apfs_checkpoint_mapping *map)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_superblock *raw_sb = NULL;
+	struct apfs_ephemeral_object_info *list = NULL;
+	struct buffer_head *bh = NULL;
+	char *object = NULL;
+	int count;
+	u32 data_blks, size;
+	u64 data_base, bno, oid;
+	int err, i, data_idx;
+
+	raw_sb = nxi->nx_raw;
+	data_base = le64_to_cpu(raw_sb->nx_xp_data_base);
+	data_blks = le32_to_cpu(raw_sb->nx_xp_data_blocks);
+
+	list = nxi->nx_eph_list;
+	count = nxi->nx_eph_count;
+	if (count >= APFS_EPHEMERAL_LIST_LIMIT) {
+		apfs_err(sb, "too many ephemeral objects?");
+		return -EOPNOTSUPP;
+	}
+
+	bno = le64_to_cpu(map->cpm_paddr);
+	oid = le64_to_cpu(map->cpm_oid);
+	size = le32_to_cpu(map->cpm_size);
+	if (size > sb->s_blocksize << 1) {
+		/*
+		 * No reason not to support bigger objects, but there has to be
+		 * a limit somewhere and this is all I've seen so far.
+		 */
+		apfs_warn(sb, "ephemeral object has more than 2 blocks");
+		return -EOPNOTSUPP;
+	}
+	if (!size || (size & (sb->s_blocksize - 1))) {
+		apfs_err(sb, "invalid object size (0x%x)", size);
+		return -EFSCORRUPTED;
+	}
+	object = kmalloc(size, GFP_KERNEL);
+	if (!object)
+		return -ENOMEM;
+
+	data_idx = bno - data_base;
+	for (i = 0; i < size >> sb->s_blocksize_bits; ++i) {
+		bh = apfs_sb_bread(sb, data_base + data_idx);
+		if (!bh) {
+			apfs_err(sb, "failed to read ephemeral block");
+			err = -EIO;
+			goto fail;
+		}
+		memcpy(object + (i << sb->s_blocksize_bits), bh->b_data, sb->s_blocksize);
+		brelse(bh);
+		bh = NULL;
+		/* Somewhat surprisingly, objects can wrap around */
+		if (++data_idx == data_blks)
+			data_idx = 0;
+	}
+
+	/*
+	 * The official reference requires that we always verify ephemeral
+	 * checksums on mount, so do it even if the user didn't ask. We should
+	 * actually try to mount an older checkpoint when this fails (TODO),
+	 * which I guess means that the official driver writes all checkpoint
+	 * blocks at once, instead of leaving the superblock for last like we
+	 * do.
+	 */
+	if (!apfs_multiblock_verify_csum(object, size)) {
+		apfs_err(sb, "bad checksum for ephemeral object 0x%llx", oid);
+		err = -EFSBADCRC;
+		goto fail;
+	}
+
+	list[count].oid = oid;
+	list[count].size = size;
+	list[count].object = object;
+	object = NULL;
+	nxi->nx_eph_count = count + 1;
+	return 0;
+
+fail:
+	kfree(object);
+	object = NULL;
+	return err;
+}
+
+/**
+ * apfs_read_single_cpm_block - Read all ephemeral objects in a cpm block
+ * @sb:		filesystem superblock
+ * @cpm_bno:	block number for the cpm block
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_read_single_cpm_block(struct super_block *sb, u64 cpm_bno)
+{
+	struct buffer_head *bh = NULL;
+	struct apfs_checkpoint_map_phys *cpm = NULL;
+	u32 map_count;
+	int err, i;
+
+	bh = apfs_sb_bread(sb, cpm_bno);
+	if (!bh) {
+		apfs_err(sb, "failed to read cpm block");
+		return -EIO;
+	}
+	if (!apfs_obj_verify_csum(sb, bh)) {
+		/*
+		 * The reference seems to imply that we need to check these on
+		 * mount, and retry an older checkpoint on failure (TODO).
+		 */
+		apfs_err(sb, "bad checksum for cpm block at 0x%llx", cpm_bno);
+		err = -EFSBADCRC;
+		goto out;
+	}
+	cpm = (struct apfs_checkpoint_map_phys *)bh->b_data;
+
+	map_count = le32_to_cpu(cpm->cpm_count);
+	if (map_count > apfs_max_maps_per_block(sb)) {
+		apfs_err(sb, "block has too many maps (%d)", map_count);
+		err = -EFSCORRUPTED;
+		goto out;
+	}
+
+	for (i = 0; i < map_count; ++i) {
+		err = apfs_read_single_ephemeral_object(sb, &cpm->cpm_map[i]);
+		if (err) {
+			apfs_err(sb, "failed to read ephemeral object %u", i);
+			goto out;
+		}
+	}
+
+out:
+	brelse(bh);
+	cpm = NULL;
+	return err;
+}
+
+static void apfs_force_readonly(struct apfs_nxsb_info *nxi);
+
+/**
+ * apfs_read_ephemeral_objects - Read all ephemeral objects to memory
+ * @sb:	superblock structure
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+int apfs_read_ephemeral_objects(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_superblock *raw_sb = nxi->nx_raw;
+	u64 desc_base;
+	u32 desc_index, desc_blks, desc_len, i;
+	int err;
+
+	if (nxi->nx_eph_list) {
+		apfs_alert(sb, "attempt to reread ephemeral object list");
+		return -EFSCORRUPTED;
+	}
+	nxi->nx_eph_list = kzalloc(APFS_EPHEMERAL_LIST_SIZE, GFP_KERNEL);
+	if (!nxi->nx_eph_list)
+		return -ENOMEM;
+	nxi->nx_eph_count = 0;
+
+	desc_base = le64_to_cpu(raw_sb->nx_xp_desc_base);
+	desc_index = le32_to_cpu(raw_sb->nx_xp_desc_index);
+	desc_blks = le32_to_cpu(raw_sb->nx_xp_desc_blocks);
+	desc_len = le32_to_cpu(raw_sb->nx_xp_desc_len);
+
+	/* Last block in the area is superblock; the rest are mapping blocks */
+	for (i = 0; i < desc_len - 1; ++i) {
+		u64 cpm_bno = desc_base + (desc_index + i) % desc_blks;
+
+		err = apfs_read_single_cpm_block(sb, cpm_bno);
+		if (err) {
+			apfs_err(sb, "failed to read cpm block %u", i);
+			/* No transaction to abort yet */
+			apfs_force_readonly(nxi);
+			return err;
+		}
+	}
+	return 0;
+}
+
+static void apfs_trans_commit_work(struct work_struct *work)
+{
+	struct super_block *sb = NULL;
+	struct apfs_nxsb_info *nxi = NULL;
+	struct apfs_nx_transaction *trans = NULL;
+	int err;
+
+	trans = container_of(to_delayed_work(work), struct apfs_nx_transaction, t_work);
+	nxi = container_of(trans, struct apfs_nxsb_info, nx_transaction);
+	sb = trans->t_work_sb;
+
+	/*
+	 * If sb is set then the transaction already started, there is no need
+	 * for apfs_transaction_start() here. It would be cleaner to call it
+	 * anyway (and check in there if sb is set), but maxops is a problem
+	 * because we don't need any space. I really need to rethink that stuff
+	 * (TODO).
+	 */
+	down_write(&nxi->nx_big_sem);
+	if (!sb || sb->s_flags & SB_RDONLY) {
+		/* The commit already took place, or there was an abort */
+		up_write(&nxi->nx_big_sem);
+		return;
+	}
+
+	trans->t_state |= APFS_NX_TRANS_FORCE_COMMIT;
+	err = apfs_transaction_commit(sb);
+	if (err) {
+		apfs_err(sb, "queued commit failed (err:%d)", err);
+		apfs_transaction_abort(sb);
+	}
+}
+
+/**
+ * apfs_transaction_init - Initialize the transaction struct for the container
+ * @trans: the transaction structure
+ */
+void apfs_transaction_init(struct apfs_nx_transaction *trans)
+{
+	trans->t_state = 0;
+	INIT_DELAYED_WORK(&trans->t_work, apfs_trans_commit_work);
+	INIT_LIST_HEAD(&trans->t_inodes);
+	INIT_LIST_HEAD(&trans->t_buffers);
+	trans->t_buffers_count = 0;
+	trans->t_starts_count = 0;
+}
+
+/**
+ * apfs_transaction_start - Begin a new transaction
+ * @sb:		superblock structure
+ * @kind:	transaction kind for space preallocation
+ *
+ * Also locks the filesystem for writing; returns 0 on success or a negative
+ * error code in case of failure.
+ */
+int apfs_transaction_start(struct super_block *sb, enum apfs_trans_kind kind)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	int err;
+
+	down_write(&nxi->nx_big_sem);
+
+	if (sb->s_flags & SB_RDONLY) {
+		/* A previous transaction has failed; this should be rare */
+		up_write(&nxi->nx_big_sem);
+		return -EROFS;
+	}
+
+	/*
+	 * Ephemeral objects are read only once, kept in memory, and committed
+	 * to disk along with each transaction.
+	 */
+	if (!nxi->nx_eph_list) {
+		err = apfs_read_ephemeral_objects(sb);
+		if (err) {
+			up_write(&nxi->nx_big_sem);
+			apfs_err(sb, "failed to read the ephemeral objects");
+			return err;
+		}
+	}
+
+	if (nx_trans->t_starts_count == 0) {
+		++nxi->nx_xid;
+		nxi->nx_raw->nx_next_xid = cpu_to_le64(nxi->nx_xid + 1);
+
+		err = apfs_read_spaceman(sb);
+		if (err) {
+			apfs_err(sb, "failed to read the spaceman");
+			goto fail;
+		}
+	}
+
+	/* Don't start transactions unless we are sure they fit in disk */
+	if (!apfs_transaction_has_room(sb, kind)) {
+		/* Commit what we have so far to flush the queues */
+		nx_trans->t_state |= APFS_NX_TRANS_FORCE_COMMIT;
+		err = apfs_transaction_commit(sb);
+		if (err) {
+			apfs_err(sb, "commit failed");
+			goto fail;
+		}
+		return -ENOSPC;
+	}
+
+	if (nx_trans->t_starts_count == 0) {
+		err = apfs_map_volume_super(sb, true /* write */);
+		if (err) {
+			apfs_err(sb, "CoW failed for volume super");
+			goto fail;
+		}
+
+		/* TODO: don't copy these nodes for transactions that don't use them */
+		err = apfs_read_omap(sb, true /* write */);
+		if (err) {
+			apfs_err(sb, "CoW failed for omap");
+			goto fail;
+		}
+		err = apfs_read_catalog(sb, true /* write */);
+		if (err) {
+			apfs_err(sb, "Cow failed for catalog");
+			goto fail;
+		}
+	}
+
+	nx_trans->t_starts_count++;
+	return 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
+/**
+ * apfs_transaction_flush_all_inodes - Flush inode metadata to the buffer heads
+ * @sb: superblock structure
+ *
+ * This messes a lot with the disk layout, so it must be called ahead of time
+ * if we need it to be stable for the rest or the transaction (for example, if
+ * we are setting up a snapshot).
+ */
+int apfs_transaction_flush_all_inodes(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	int err = 0, curr_err;
+
+	ASSERT(!(sb->s_flags & SB_RDONLY));
+
+	while (!list_empty(&nx_trans->t_inodes)) {
+		struct apfs_inode_info *ai = NULL;
+		struct inode *inode = NULL;
+
+		ai = list_first_entry(&nx_trans->t_inodes, struct apfs_inode_info, i_list);
+		inode = &ai->vfs_inode;
+
+		/* This is a bit wasteful if the inode will get deleted */
+		curr_err = apfs_update_inode(inode, NULL /* new_name */);
+		if (curr_err)
+			err = curr_err;
+		inode->i_state &= ~I_DIRTY_ALL;
+
+		/*
+		 * The same inode may get dirtied again as soon as we release
+		 * the lock, and we don't want to miss that.
+		 */
+		list_del_init(&ai->i_list);
+
+		nx_trans->t_state |= APFS_NX_TRANS_COMMITTING;
+		up_write(&nxi->nx_big_sem);
+
+		/* Unlocked, so it may call evict() and wait for writeback */
+		iput(inode);
+
+		down_write(&nxi->nx_big_sem);
+		nx_trans->t_state = 0;
+
+		/* Transaction aborted during writeback, error code is lost */
+		if (sb->s_flags & SB_RDONLY) {
+			apfs_err(sb, "abort during inode writeback");
+			return -EROFS;
+		}
+	}
+
+	return err;
+}
+
+/**
+ * apfs_write_single_ephemeral_object - Write a single ephemeral object to bh's
+ * @sb:		filesystem superblock
+ * @obj_raw:	contents of the object
+ * @map:	checkpoint mapping for the object, already updated
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_write_single_ephemeral_object(struct super_block *sb, struct apfs_obj_phys *obj_raw, const struct apfs_checkpoint_mapping *map)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_superblock *raw_sb = NULL;
+	struct buffer_head *bh = NULL;
+	u64 data_base, bno;
+	u32 data_blks, size;
+	int err, i, data_idx;
+
+	raw_sb = nxi->nx_raw;
+	data_base = le64_to_cpu(raw_sb->nx_xp_data_base);
+	data_blks = le32_to_cpu(raw_sb->nx_xp_data_blocks);
+
+	bno = le64_to_cpu(map->cpm_paddr);
+	size = le32_to_cpu(map->cpm_size);
+	obj_raw->o_xid = cpu_to_le64(nxi->nx_xid);
+	apfs_multiblock_set_csum((char *)obj_raw, size);
+
+	data_idx = bno - data_base;
+	for (i = 0; i < size >> sb->s_blocksize_bits; ++i) {
+		bh = apfs_getblk(sb, data_base + data_idx);
+		if (!bh) {
+			apfs_err(sb, "failed to map ephemeral block");
+			return -EIO;
+		}
+		err = apfs_transaction_join(sb, bh);
+		if (err) {
+			brelse(bh);
+			bh = NULL;
+			return err;
+		}
+		memcpy(bh->b_data, (char *)obj_raw + (i << sb->s_blocksize_bits), sb->s_blocksize);
+		brelse(bh);
+		bh = NULL;
+		/* Somewhat surprisingly, objects can wrap around */
+		if (++data_idx == data_blks)
+			data_idx = 0;
+	}
+	return 0;
+}
+
+/**
+ * apfs_write_ephemeral_objects - Write all ephemeral objects to bh's
+ * @sb: filesystem superblock
+ *
+ * Returns 0 on sucess, or a negative error code in case of failure.
+ */
+static int apfs_write_ephemeral_objects(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_superblock *raw_sb = nxi->nx_raw;
+	struct apfs_checkpoint_map_phys *cpm = NULL;
+	struct buffer_head *cpm_bh = NULL;
+	struct apfs_ephemeral_object_info *eph_info = NULL;
+	u64 cpm_bno;
+	u64 desc_base, data_base;
+	u32 desc_index, desc_blks, desc_len, desc_next;
+	u32 data_index, data_blks, data_len, data_next;
+	u32 desc_limit, data_limit;
+	u32 obj_blkcnt;
+	int err, i, cpm_start;
+
+	if (!nxi->nx_eph_list) {
+		apfs_alert(sb, "missing ephemeral object list");
+		return -EFSCORRUPTED;
+	}
+
+	desc_next = le32_to_cpu(raw_sb->nx_xp_desc_next);
+	desc_base = le64_to_cpu(raw_sb->nx_xp_desc_base);
+	desc_index = desc_next; /* New checkpoint */
+	desc_blks = le32_to_cpu(raw_sb->nx_xp_desc_blocks);
+	desc_len = 0; /* For now */
+
+	data_next = le32_to_cpu(raw_sb->nx_xp_data_next);
+	data_base = le64_to_cpu(raw_sb->nx_xp_data_base);
+	data_index = data_next; /* New checkpoint */
+	data_blks = le32_to_cpu(raw_sb->nx_xp_data_blocks);
+	data_len = 0; /* For now */
+
+	/*
+	 * The reference doesn't mention anything about this, but I need to
+	 * put some sort of a limit or else the rings could wrap around and
+	 * corrupt themselves.
+	 */
+	desc_limit = desc_blks >> 2;
+	data_limit = data_blks >> 2;
+
+	for (i = 0; i < nxi->nx_eph_count; ++i) {
+		if (data_len == data_limit) {
+			apfs_err(sb, "too many checkpoint data blocks");
+			return -EFSCORRUPTED;
+		}
+
+		if (!cpm) {
+			cpm_start = i;
+			if (desc_len == desc_limit) {
+				apfs_err(sb, "too many checkpoint descriptor blocks");
+				return -EFSCORRUPTED;
+			}
+			cpm_bno = desc_base + (desc_index + desc_len) % desc_blks;
+			err = apfs_create_cpm_block(sb, cpm_bno, &cpm_bh);
+			if (err) {
+				apfs_err(sb, "failed to create cpm block");
+				return err;
+			}
+			cpm = (void *)cpm_bh->b_data;
+			desc_len += 1;
+		}
+
+		eph_info = &nxi->nx_eph_list[i];
+		data_next = (data_index + data_len) % data_blks;
+		obj_blkcnt = eph_info->size >> sb->s_blocksize_bits;
+
+		err = apfs_create_cpoint_map(sb, cpm, eph_info->object, data_base + data_next, eph_info->size);
+		if (err) {
+			if (err == -ENOSPC)
+				cpm->cpm_flags = 0; /* No longer the last */
+			brelse(cpm_bh);
+			cpm = NULL;
+			cpm_bh = NULL;
+			if (err == -ENOSPC) {
+				--i;
+				continue;
+			}
+			apfs_err(sb, "failed to create cpm map %d", i);
+			return err;
+		}
+		err = apfs_write_single_ephemeral_object(sb, eph_info->object, &cpm->cpm_map[i - cpm_start]);
+		if (err) {
+			brelse(cpm_bh);
+			cpm = NULL;
+			cpm_bh = NULL;
+			apfs_err(sb, "failed to write ephemeral object %d", i);
+			return err;
+		}
+		data_len += obj_blkcnt;
+	}
+
+	/*
+	 * The checkpoint superblock can't be set until the very end of the
+	 * transaction commit, but allocate its block here already.
+	 */
+	nxi->nx_bno = desc_base + (desc_index + desc_len) % desc_blks;
+	desc_len += 1;
+
+	desc_next = (desc_index + desc_len) % desc_blks;
+	data_next = (data_index + data_len) % data_blks;
+
+	raw_sb->nx_xp_desc_next = cpu_to_le32(desc_next);
+	raw_sb->nx_xp_desc_index = cpu_to_le32(desc_index);
+	raw_sb->nx_xp_desc_len = cpu_to_le32(desc_len);
+
+	raw_sb->nx_xp_data_next = cpu_to_le32(data_next);
+	raw_sb->nx_xp_data_index = cpu_to_le32(data_index);
+	raw_sb->nx_xp_data_len = cpu_to_le32(data_len);
+
+	return 0;
+}
+
+/**
+ * apfs_transaction_commit_nx - Definitely commit the current transaction
+ * @sb: superblock structure
+ */
+static int apfs_transaction_commit_nx(struct super_block *sb)
+{
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	struct apfs_bh_info *bhi, *tmp;
+	int err = 0;
+
+	ASSERT(!(sb->s_flags & SB_RDONLY));
+
+	/* Before committing the bhs, write all inode metadata to them */
+	err = apfs_transaction_flush_all_inodes(sb);
+	if (err) {
+		apfs_err(sb, "failed to flush all inodes");
+		return err;
+	}
+
+	/*
+	 * Now that nothing else will be freed, flush the last update to the
+	 * free queues so that it can be committed to disk along with all the
+	 * ephemeral objects.
+	 */
+	if (sm->sm_free_cache_base) {
+		err = apfs_free_queue_insert_nocache(sb, sm->sm_free_cache_base, sm->sm_free_cache_blkcnt);
+		if (err) {
+			apfs_err(sb, "fq cache flush failed (0x%llx-0x%llx)", sm->sm_free_cache_base, sm->sm_free_cache_blkcnt);
+			return err;
+		}
+		sm->sm_free_cache_base = sm->sm_free_cache_blkcnt = 0;
+	}
+	/*
+	 * Writing the ip bitmaps modifies the spaceman, so it must happen
+	 * before we commit the ephemeral objects. It must also happen after we
+	 * flush the free queue, in case the last freed range was in the ip.
+	 */
+	err = apfs_write_ip_bitmaps(sb);
+	if (err) {
+		apfs_err(sb, "failed to commit the ip bitmaps");
+		return err;
+	}
+	err = apfs_write_ephemeral_objects(sb);
+	if (err)
+		return err;
+
+	list_for_each_entry(bhi, &nx_trans->t_buffers, list) {
+		struct buffer_head *bh = bhi->bh;
+
+		ASSERT(buffer_trans(bh));
+
+		if (buffer_csum(bh))
+			apfs_obj_set_csum(sb, (void *)bh->b_data);
+
+		clear_buffer_dirty(bh);
+		get_bh(bh);
+		lock_buffer(bh);
+		bh->b_end_io = end_buffer_write_sync;
+		apfs_submit_bh(REQ_OP_WRITE, REQ_SYNC, bh);
+	}
+	list_for_each_entry_safe(bhi, tmp, &nx_trans->t_buffers, list) {
+		struct buffer_head *bh = bhi->bh;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+		struct folio *folio = NULL;
+#else
+		struct page *page = NULL;
+#endif
+		bool is_metadata;
+
+		ASSERT(buffer_trans(bh));
+
+		wait_on_buffer(bh);
+		if (!buffer_uptodate(bh)) {
+			apfs_err(sb, "failed to write some blocks");
+			return -EIO;
+		}
+
+		list_del(&bhi->list);
+		clear_buffer_trans(bh);
+		nx_trans->t_buffers_count--;
+
+		bh->b_private = NULL;
+		bhi->bh = NULL;
+		kfree(bhi);
+		bhi = NULL;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+		folio = page_folio(bh->b_page);
+		folio_get(folio);
+#else
+		page = bh->b_page;
+		get_page(page);
+#endif
+
+		is_metadata = buffer_csum(bh);
+		clear_buffer_csum(bh);
+		put_bh(bh);
+		bh = NULL;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+		folio_lock(folio);
+		folio_mkclean(folio);
+#else
+		/* Future writes to mmapped areas should fault for CoW */
+		lock_page(page);
+		page_mkclean(page);
+#endif
+		/* XXX: otherwise, the page cache fills up and crashes the machine */
+		if (!is_metadata) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+			try_to_free_buffers(folio);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0) || RHEL_VERSION_GE(9, 3)
+			try_to_free_buffers(page_folio(page));
+#else
+			try_to_free_buffers(page);
+#endif
+		}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+		folio_unlock(folio);
+		folio_put(folio);
+#else
+		unlock_page(page);
+		put_page(page);
+#endif
+	}
+	err = apfs_checkpoint_end(sb);
+	if (err) {
+		apfs_err(sb, "failed to end the checkpoint");
+		return err;
+	}
+
+	nx_trans->t_starts_count = 0;
+	nx_trans->t_buffers_count = 0;
+	return 0;
+}
+
+/**
+ * apfs_transaction_need_commit - Evaluate if a commit is required
+ * @sb: superblock structure
+ */
+static bool apfs_transaction_need_commit(struct super_block *sb)
+{
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+
+	if (nx_trans->t_state & APFS_NX_TRANS_DEFER_COMMIT) {
+		nx_trans->t_state &= ~APFS_NX_TRANS_DEFER_COMMIT;
+		return false;
+	}
+
+	/* Avoid nested commits on inode writeback */
+	if (nx_trans->t_state & APFS_NX_TRANS_COMMITTING)
+		return false;
+
+	if (nx_trans->t_state & APFS_NX_TRANS_FORCE_COMMIT) {
+		nx_trans->t_state = 0;
+		return true;
+	}
+
+	if (sm) {
+		struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
+		struct apfs_spaceman_free_queue *fq_ip = &sm_raw->sm_fq[APFS_SFQ_IP];
+		struct apfs_spaceman_free_queue *fq_main = &sm_raw->sm_fq[APFS_SFQ_MAIN];
+		int buffers_max = nxi->nx_trans_buffers_max;
+		int starts_max = APFS_TRANS_STARTS_MAX;
+		int mq_max = APFS_TRANS_MAIN_QUEUE_MAX;
+		int maxnodes;
+
+		/*
+		 * Try to avoid committing halfway through a data block write,
+		 * otherwise the block will be put through copy-on-write again,
+		 * causing unnecessary fragmentation.
+		 */
+		if (nx_trans->t_state & APFS_NX_TRANS_INCOMPLETE_BLOCK) {
+			buffers_max += 50;
+			starts_max += 50;
+			mq_max += 20;
+		}
+
+		if (nx_trans->t_buffers_count > buffers_max)
+			return true;
+		if (nx_trans->t_starts_count > starts_max)
+			return true;
+
+		/*
+		 * The internal pool has enough blocks to map the container
+		 * exactly 3 times. Don't allow large transactions if we can't
+		 * be sure the bitmap changes will all fit.
+		 */
+		if (le64_to_cpu(fq_ip->sfq_count) * 3 > le64_to_cpu(sm_raw->sm_ip_block_count))
+			return true;
+
+		/* Don't let the main queue get too full either */
+		if (le64_to_cpu(fq_main->sfq_count) > mq_max)
+			return true;
+
+		/*
+		 * The main free queue can become unbalanced enough to reach
+		 * the node limit while being mostly empty. For now, the only
+		 * way I have to rebalance it is to flush it entirely with a
+		 * new transaction. We could wait longer to do it, but I don't
+		 * see the point.
+		 */
+		maxnodes = le16_to_cpu(fq_main->sfq_tree_node_limit);
+		maxnodes = (maxnodes + 1) >> 1;
+		if (sm->sm_main_fq_nodes > 1 && sm->sm_main_fq_nodes >= maxnodes)
+			return true;
+	}
+
+	return false;
+}
+
+/**
+ * apfs_transaction_commit - Possibly commit the current transaction
+ * @sb: superblock structure
+ *
+ * On success returns 0 and releases the big filesystem lock. On failure,
+ * returns a negative error code, and the caller is responsibly for aborting
+ * the transaction.
+ */
+int apfs_transaction_commit(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *trans = NULL;
+	int err = 0;
+
+	trans = &nxi->nx_transaction;
+
+	if (apfs_transaction_need_commit(sb)) {
+		err = apfs_transaction_commit_nx(sb);
+		if (err) {
+			apfs_err(sb, "transaction commit failed");
+			return err;
+		}
+		trans->t_work_sb = NULL;
+		cancel_delayed_work(&trans->t_work);
+	} else {
+		trans->t_work_sb = sb;
+		mod_delayed_work(system_wq, &trans->t_work, msecs_to_jiffies(100));
+	}
+
+	up_write(&nxi->nx_big_sem);
+	return 0;
+}
+
+/**
+ * apfs_inode_join_transaction - Add an inode to the current transaction
+ * @sb:		superblock structure
+ * @inode:	vfs inode to add
+ */
+void apfs_inode_join_transaction(struct super_block *sb, struct inode *inode)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	struct apfs_inode_info *ai = APFS_I(inode);
+
+	ASSERT(!(sb->s_flags & SB_RDONLY));
+	lockdep_assert_held_write(&nxi->nx_big_sem);
+
+	if (!list_empty(&ai->i_list)) /* Already in the transaction */
+		return;
+
+	ihold(inode);
+	list_add(&ai->i_list, &nx_trans->t_inodes);
+}
+
+/**
+ * apfs_transaction_join - Add a buffer head to the current transaction
+ * @sb:	superblock structure
+ * @bh:	the buffer head
+ */
+int apfs_transaction_join(struct super_block *sb, struct buffer_head *bh)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	struct apfs_bh_info *bhi;
+
+	ASSERT(!(sb->s_flags & SB_RDONLY));
+	lockdep_assert_held_write(&nxi->nx_big_sem);
+
+	if (buffer_trans(bh)) /* Already part of the only transaction */
+		return 0;
+
+	/* TODO: use a slab cache */
+	bhi = kzalloc(sizeof(*bhi), GFP_NOFS);
+	if (!bhi)
+		return -ENOMEM;
+	get_bh(bh);
+	bhi->bh = bh;
+	list_add(&bhi->list, &nx_trans->t_buffers);
+	nx_trans->t_buffers_count++;
+
+	set_buffer_trans(bh);
+	bh->b_private = bhi;
+	return 0;
+}
+
+/**
+ * apfs_force_readonly - Set the whole container as read-only
+ * @nxi: container superblock info
+ */
+static void apfs_force_readonly(struct apfs_nxsb_info *nxi)
+{
+	struct apfs_sb_info *sbi = NULL;
+	struct super_block *sb = NULL;
+
+	list_for_each_entry(sbi, &nxi->vol_list, list) {
+		sb = sbi->s_vobject.sb;
+		sb->s_flags |= SB_RDONLY;
+	}
+	nxi->nx_flags &= ~APFS_READWRITE;
+}
+
+/**
+ * apfs_transaction_abort - Abort the current transaction
+ * @sb: superblock structure
+ *
+ * Releases the big filesystem lock and clears the in-memory transaction data;
+ * the on-disk changes are irrelevant because the superblock checksum hasn't
+ * been written yet. Leaves the filesystem in read-only state.
+ */
+void apfs_transaction_abort(struct super_block *sb)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_transaction *nx_trans = &nxi->nx_transaction;
+	struct apfs_bh_info *bhi, *tmp;
+	struct apfs_inode_info *ai, *ai_tmp;
+
+	if (sb->s_flags & SB_RDONLY) {
+		/* Transaction already aborted, do nothing */
+		ASSERT(list_empty(&nx_trans->t_inodes));
+		ASSERT(list_empty(&nx_trans->t_buffers));
+		up_write(&nxi->nx_big_sem);
+		return;
+	}
+
+	nx_trans->t_state = 0;
+	apfs_err(sb, "aborting transaction");
+
+	--nxi->nx_xid;
+	list_for_each_entry_safe(bhi, tmp, &nx_trans->t_buffers, list) {
+		struct buffer_head *bh = bhi->bh;
+
+		bh->b_private = NULL;
+		clear_buffer_dirty(bh);
+		clear_buffer_trans(bh);
+		clear_buffer_csum(bh);
+		brelse(bh);
+		bhi->bh = NULL;
+
+		list_del(&bhi->list);
+		kfree(bhi);
+	}
+
+	/*
+	 * It's not possible to undo in-memory changes from old operations in
+	 * the aborted transaction. To avoid corruption, never write again.
+	 */
+	apfs_force_readonly(nxi);
+
+	up_write(&nxi->nx_big_sem);
+
+	list_for_each_entry_safe(ai, ai_tmp, &nx_trans->t_inodes, i_list) {
+		list_del_init(&ai->i_list);
+		iput(&ai->vfs_inode);
+	}
+}

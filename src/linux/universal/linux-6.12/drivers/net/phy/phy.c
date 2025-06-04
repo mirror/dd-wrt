@@ -1099,6 +1099,7 @@ int phy_config_inband(struct phy_device *phydev, unsigned int modes)
 
 	return err;
 }
+EXPORT_SYMBOL_GPL(phy_config_inband);
 
 /**
  * _phy_start_aneg - start auto-negotiation for this PHY device

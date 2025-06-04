@@ -1081,6 +1081,7 @@ out_free:
  * ubi_detach_mtd_dev - detach an MTD device.
  * @ubi_num: UBI device number to detach from
  * @anyway: detach MTD even if device reference count is not zero
+ * @have_lock: called by MTD notifier holding mtd_table_mutex
  *
  * This function destroys an UBI device number @ubi_num and detaches the
  * underlying MTD device. Returns zero in case of success and %-EBUSY if the
@@ -1090,7 +1091,7 @@ out_free:
  * Note, the invocations of this function has to be serialized by the
  * @ubi_devices_mutex.
  */
-int ubi_detach_mtd_dev(int ubi_num, int anyway)
+int ubi_detach_mtd_dev(int ubi_num, int anyway, bool have_lock)
 {
 	struct ubi_device *ubi;
 
@@ -1105,6 +1106,7 @@ int ubi_detach_mtd_dev(int ubi_num, int anyway)
 	ubi->ref_count -= 1;
 	if (ubi->ref_count) {
 		if (!anyway) {
+			ubi->ref_count += 1;
 			spin_unlock(&ubi_devices_lock);
 			return -EBUSY;
 		}
@@ -1152,7 +1154,11 @@ int ubi_detach_mtd_dev(int ubi_num, int anyway)
 	vfree(ubi->peb_buf);
 	vfree(ubi->fm_buf);
 	ubi_msg(ubi, "mtd%d is detached", ubi->mtd->index);
-	put_mtd_device(ubi->mtd);
+	if (have_lock)
+		__put_mtd_device(ubi->mtd);
+	else
+		put_mtd_device(ubi->mtd);
+
 	put_device(&ubi->dev);
 	return 0;
 }
@@ -1255,7 +1261,7 @@ static void ubi_notify_add(struct mtd_info *mtd)
 
 static void ubi_notify_remove(struct mtd_info *mtd)
 {
-	/* do nothing for now */
+	WARN(1, "mtd%d removed despite UBI still being attached", mtd->index);
 }
 
 static struct mtd_notifier ubi_mtd_notifier = {
@@ -1263,6 +1269,117 @@ static struct mtd_notifier ubi_mtd_notifier = {
 	.remove = ubi_notify_remove,
 };
 
+
+#define ALT_PART_NAME_LENGTH 16
+struct per_part_info {
+	char name[ALT_PART_NAME_LENGTH];
+	uint32_t primaryboot;
+	uint32_t upgraded;
+};
+
+#define NUM_ALT_PARTITION 3
+typedef struct {
+#define _SMEM_DUAL_BOOTINFO_MAGIC       0xA5A3A1A0
+	/* Magic number for identification when reading from flash */
+	uint32_t magic;
+	/* upgradeinprogress indicates to attempting the upgrade */
+	uint32_t upgradeinprogress;
+	/* numaltpart indicate number of alt partitions */
+	uint32_t numaltpart;
+
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+} ipq_smem_bootconfig_info_t;
+
+/* version 2 */
+#define SMEM_DUAL_BOOTINFO_MAGIC_START 0xA3A2A1A0
+#define SMEM_DUAL_BOOTINFO_MAGIC_END 0xB3B2B1B0
+
+typedef struct {
+	uint32_t magic_start;
+	uint32_t upgradeinprogress;
+	uint32_t age;
+	uint32_t numaltpart;
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+	uint32_t magic_end;
+} ipq_smem_bootconfig_v2_info_t;
+
+
+
+
+static __init int getbootdevice(void)
+{
+	struct mtd_info *mtd;
+	size_t len;
+	int i;
+	int ret = -1;
+	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
+	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
+	unsigned int *smem, *p;
+	mtd = open_mtd_device("BOOTCONFIG");
+	if (IS_ERR(mtd))
+	    return -1;
+
+	smem = (unsigned int *)vmalloc(0x60000);
+	memset(smem, 0, 0x60000);
+	mtd_read(mtd, 0, 0x60000, &len, (void *)smem);
+	put_mtd_device(mtd);
+	if (len != 0x60000)
+	    return -1;
+	p = smem;
+	for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
+		if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
+			ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t *)p;
+			break;
+		}
+		if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
+			ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t *)p;
+			break;
+		}
+		p++;
+	}
+	
+	if (ipq_smem_bootconfig_v2_info) {
+		int upgrade = ipq_smem_bootconfig_v2_info->upgradeinprogress;
+		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+				if (ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot)
+					ret = 1;
+				else
+					ret = 0;
+				if (upgrade && ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded)
+					ret = 1 - ret;
+			}
+		}
+	}
+	if (ipq_smem_bootconfig_info) {
+		int upgrade = ipq_smem_bootconfig_info->upgradeinprogress;
+		printk(KERN_INFO "bootconfig upgrade %d\n", upgrade);
+		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+		printk(KERN_INFO "bootconfig name %s\n", ipq_smem_bootconfig_info->per_part_entry[i].name);
+		printk(KERN_INFO "bootconfig primaryboot %d\n", ipq_smem_bootconfig_info->per_part_entry[i].primaryboot);
+		printk(KERN_INFO "bootconfig upgraded %d\n", ipq_smem_bootconfig_info->per_part_entry[i].upgraded);
+
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
+					ret = 1;
+				else
+					ret = 0;
+				printk(KERN_INFO "primary boot device is %d\n",ret);
+				if (upgrade && ipq_smem_bootconfig_info->per_part_entry[i].upgraded) {
+					ret = 1 - ret;
+					printk(KERN_INFO "primary boot device is %d (invert since upgrade)\n",ret);
+				}
+			}
+		}
+	}
+	vfree(smem);
+	if (ret == -1)
+	    printk(KERN_INFO "no valid bootconfig found, use default\n");
+	else
+	    printk(KERN_INFO "boot from partition %d\n",ret);
+
+	return ret;
+}
 
 /*
  * This function tries attaching mtd partitions named either "ubi" or "data"
@@ -1272,23 +1389,32 @@ static void __init ubi_auto_attach(void)
 {
 	int err;
 	struct mtd_info *mtd;
-	struct device_node *np;
 	loff_t offset = 0;
 	size_t len;
 	char magic[4];
+	loff_t i;
+	struct mtd_info *copy;
 
 	/* try attaching mtd device named "ubi" or "data" */
-	mtd = open_mtd_device("ubi");
-	if (IS_ERR(mtd))
+	int bootdevice = getbootdevice();
+	if (bootdevice == 1)
+	    mtd = open_mtd_device("linux2");
+	else if (bootdevice == 0)
+	    mtd = open_mtd_device("linux");
+	else {
+	    mtd = open_mtd_device("ubi");
+	    if (IS_ERR(mtd))
 		mtd = open_mtd_device("data");
+	    if (IS_ERR(mtd))
+		mtd = open_mtd_device("linux");
+
+	}
+	/* Hack for the Asus RT-AC58U */
+	if (IS_ERR(mtd))
+		mtd = open_mtd_device("UBI_DEV");
 
 	if (IS_ERR(mtd))
 		return;
-
-	/* skip "linux,ubi" mtd as it has already been attached */
-	np = mtd_get_of_node(mtd);
-	if (of_device_is_compatible(np, "linux,ubi"))
-		goto cleanup;
 
 	/* get the first not bad block */
 	if (mtd_can_have_bb(mtd))
@@ -1303,17 +1429,26 @@ static void __init ubi_auto_attach(void)
 		}
 
 	/* check if the read from flash was successful */
-	err = mtd_read(mtd, offset, 4, &len, (void *) magic);
-	if ((err && !mtd_is_bitflip(err)) || len != 4) {
-		pr_err("UBI error: unable to read from mtd%d\n", mtd->index);
-		goto cleanup;
+	for (i = 0;i < mtd->size;i += mtd->erasesize) {
+		err = mtd_read(mtd, i, 4, &len, (void *) magic);
+		if ((err && !mtd_is_bitflip(err)) || len != 4) {
+			pr_err("UBI error: unable to read from mtd%d\n", mtd->index);
+			goto cleanup;
+		}
+		if (!strncmp(magic, "UBI#", 4)) 
+		    break;
 	}
 
-	/* check for a valid ubi magic */
-	if (strncmp(magic, "UBI#", 4)) {
+	if (i == mtd->size) {
 		pr_err("UBI error: no valid UBI magic found inside mtd%d\n", mtd->index);
 		goto cleanup;
 	}
+
+	pr_notice("found UBI with offset %lld\n", i);
+	copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
+	memcpy(copy, mtd, sizeof(*mtd));
+	mtd = copy;
+	mtd->fixup_offset = i;
 
 	/* don't auto-add media types where UBI doesn't makes sense */
 	if (mtd->type != MTD_NANDFLASH &&
@@ -1400,7 +1535,7 @@ out_detach:
 	for (k = 0; k < i; k++)
 		if (ubi_devices[k]) {
 			mutex_lock(&ubi_devices_mutex);
-			ubi_detach_mtd_dev(ubi_devices[k]->ubi_num, 1);
+			ubi_detach_mtd_dev(ubi_devices[k]->ubi_num, 1, false);
 			mutex_unlock(&ubi_devices_mutex);
 		}
 	return err;
@@ -1492,7 +1627,7 @@ static void __exit ubi_exit(void)
 	for (i = 0; i < UBI_MAX_DEVICES; i++)
 		if (ubi_devices[i]) {
 			mutex_lock(&ubi_devices_mutex);
-			ubi_detach_mtd_dev(ubi_devices[i]->ubi_num, 1);
+			ubi_detach_mtd_dev(ubi_devices[i]->ubi_num, 1, false);
 			mutex_unlock(&ubi_devices_mutex);
 		}
 	ubi_debugfs_exit();

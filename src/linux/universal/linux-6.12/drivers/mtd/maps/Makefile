@@ -3,6 +3,8 @@
 # linux/drivers/maps/Makefile
 #
 
+EXTRA_CFLAGS := -g
+
 ifeq ($(CONFIG_MTD_COMPLEX_MAPPINGS),y)
 obj-$(CONFIG_MTD)		+= map_funcs.o
 endif
@@ -41,3 +43,44 @@ obj-$(CONFIG_MTD_SCB2_FLASH)	+= scb2_flash.o
 obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
 obj-$(CONFIG_MTD_VMU)		+= vmu-flash.o
 obj-$(CONFIG_MTD_LANTIQ)	+= lantiq-flash.o
+obj-$(CONFIG_MTD_AR531X)	+= ar531x_flash.o
+obj-$(CONFIG_MTD_EOC5610)	+= eoc5610_flash.o
+obj-$(CONFIG_MTD_BCM947XX)	+= bcm947xx-flash.o
+ifneq ($(CONFIG_BCM47XX),y)
+obj-y				+= nvram.o 
+obj-$(CONFIG_MACH_AR7100)	+= nvram_kernel.o
+ifeq ($(CONFIG_RB2011),y)
+obj-$(CONFIG_MACH_AR7240)	+= nvram_kernel_x86.o
+else
+obj-$(CONFIG_MACH_AR7240)	+= nvram_kernel.o
+endif
+obj-$(CONFIG_SOC_MT7620_OPENWRT)	+= nvram_kernel.o
+obj-$(CONFIG_MACH_HORNET)	+= nvram_kernel.o
+obj-$(CONFIG_MACH_GW2388)	+= nvram_kernel.o
+obj-$(CONFIG_ARCH_MVEBU)	+= nvram_kernel.o
+obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel.o
+obj-$(CONFIG_MACH_REALTEK_RTL)		+= nvram_kernel.o
+obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o
+obj-$(CONFIG_ARCH_IXP4XX)	+= nvram_kernel.o
+obj-$(CONFIG_X86)		+= nvram_kernel_x86.o
+obj-$(CONFIG_ARCH_THUNDER)		+= nvram_kernel_x86.o
+obj-$(CONFIG_MACH_KS8695_VSOPENRISC) += nvram_kernel_x86.o
+obj-$(CONFIG_SOC_IMX6Q) 	+= nvram_kernel.o
+ifeq ($(CONFIG_TL_WDR4900_V1),y)
+obj-$(CONFIG_PPC)		+= nvram_kernel.o
+else
+ifeq ($(CONFIG_PPC_83xx),y)
+obj-$(CONFIG_PPC)		+= nvram_kernel.o
+else
+obj-$(CONFIG_PPC)		+= nvram_kernel_x86.o
+endif
+endif
+obj-$(CONFIG_RALINK)	+= nvram_kernel.o
+obj-$(CONFIG_ADM5120)	+= nvram_kernel.o
+obj-$(CONFIG_ATHEROS)		+= nvram_kernel.o
+obj-$(CONFIG_ARCH_ALPINE)		+= nvram_kernel.o
+obj-$(CONFIG_MTD_RALINK)        += ralink-flash.o
+obj-$(CONFIG_CAVIUM_OCTEON_SOC) += nvram_kernel.o
+
+endif
+

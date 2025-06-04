@@ -804,7 +804,7 @@ int add_mtd_device(struct mtd_info *mtd)
 	mutex_unlock(&mtd_table_mutex);
 
 	if (of_property_read_bool(mtd_get_of_node(mtd), "linux,rootfs") ||
-	    (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) && !strcmp(mtd->name, "rootfs") && ROOT_DEV == 0)) {
+	    (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) && (!strcmp(mtd->name, "rootfs") || !strcmp(mtd->name, "rootfs2")) && ROOT_DEV == 0)) {
 		if (IS_BUILTIN(CONFIG_MTD)) {
 			pr_info("mtd: setting mtd%d (%s) as root device\n", mtd->index, mtd->name);
 			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, mtd->index);
@@ -935,7 +935,7 @@ static struct nvmem_device *mtd_otp_nvmem_register(struct mtd_info *mtd,
 	config.name = compatible;
 	config.id = NVMEM_DEVID_AUTO;
 	config.owner = THIS_MODULE;
-	config.add_legacy_fixed_of_cells = !mtd_type_is_nand(mtd);
+	config.add_legacy_fixed_of_cells = !!np;
 	config.type = NVMEM_TYPE_OTP;
 	config.root_only = true;
 	config.ignore_wp = true;
@@ -1415,6 +1415,7 @@ int mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 	u64 mst_ofs = mtd_get_master_ofs(mtd, 0);
 	struct erase_info adjinstr;
 	int ret;
+	instr->addr += mtd->fixup_offset;
 
 	instr->fail_addr = MTD_FAIL_ADDR_UNKNOWN;
 	adjinstr = *instr;
@@ -1465,9 +1466,11 @@ int mtd_point(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 	      void **virt, resource_size_t *phys)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	from += mtd->fixup_offset;
 
 	*retlen = 0;
 	*virt = NULL;
+	from += mtd->fixup_offset;
 	if (phys)
 		*phys = 0;
 	if (!master->_point)
@@ -1486,6 +1489,7 @@ EXPORT_SYMBOL_GPL(mtd_point);
 int mtd_unpoint(struct mtd_info *mtd, loff_t from, size_t len)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	from += mtd->fixup_offset;
 
 	if (!master->_unpoint)
 		return -EOPNOTSUPP;
@@ -1547,6 +1551,7 @@ int mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 		.datbuf = buf,
 	};
 	int ret;
+	from += mtd->fixup_offset;
 
 	ret = mtd_read_oob(mtd, from, &ops);
 	*retlen = ops.retlen;
@@ -1566,6 +1571,7 @@ int mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 		.datbuf = (u8 *)buf,
 	};
 	int ret;
+	to += mtd->fixup_offset;
 
 	ret = mtd_write_oob(mtd, to, &ops);
 	*retlen = ops.retlen;
@@ -1586,6 +1592,7 @@ int mtd_panic_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 		    const u_char *buf)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	to += mtd->fixup_offset;
 
 	*retlen = 0;
 	if (!master->_panic_write)
@@ -2278,6 +2285,7 @@ EXPORT_SYMBOL_GPL(mtd_erase_user_prot_reg);
 int mtd_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	ofs += mtd->fixup_offset;
 
 	if (!master->_lock)
 		return -EOPNOTSUPP;
@@ -2298,6 +2306,7 @@ EXPORT_SYMBOL_GPL(mtd_lock);
 int mtd_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	ofs += mtd->fixup_offset;
 
 	if (!master->_unlock)
 		return -EOPNOTSUPP;
@@ -2318,6 +2327,7 @@ EXPORT_SYMBOL_GPL(mtd_unlock);
 int mtd_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	ofs += mtd->fixup_offset;
 
 	if (!master->_is_locked)
 		return -EOPNOTSUPP;
@@ -2338,6 +2348,7 @@ EXPORT_SYMBOL_GPL(mtd_is_locked);
 int mtd_block_isreserved(struct mtd_info *mtd, loff_t ofs)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	ofs += mtd->fixup_offset;
 
 	if (ofs < 0 || ofs >= mtd->size)
 		return -EINVAL;
@@ -2354,6 +2365,7 @@ EXPORT_SYMBOL_GPL(mtd_block_isreserved);
 int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
+	ofs += mtd->fixup_offset;
 
 	if (ofs < 0 || ofs >= mtd->size)
 		return -EINVAL;
@@ -2371,6 +2383,7 @@ int mtd_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	struct mtd_info *master = mtd_get_master(mtd);
 	int ret;
+	ofs += mtd->fixup_offset;
 
 	if (!master->_block_markbad)
 		return -EOPNOTSUPP;
@@ -2451,6 +2464,7 @@ int mtd_writev(struct mtd_info *mtd, const struct kvec *vecs,
 	if (!master->_writev)
 		return default_mtd_writev(mtd, vecs, count, to, retlen);
 
+	to += mtd->fixup_offset;
 	return master->_writev(master, vecs, count,
 			       mtd_get_master_ofs(mtd, to), retlen);
 }

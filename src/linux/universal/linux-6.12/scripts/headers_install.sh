@@ -29,7 +29,7 @@ if [ -n "$(sed -n -e "/SPDX-License-Identifier:.*GPL-/{/WITH Linux-syscall-note/
 	exit 1
 fi
 
-sed -E -e '
+sed -r -e '
 	s/([[:space:](])(__user|__force|__iomem)[[:space:]]/\1/g
 	s/__attribute_const__([[:space:]]|$)/\1/g
 	s@^#include <linux/compiler(|_types).h>@@

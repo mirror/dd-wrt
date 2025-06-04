@@ -388,7 +388,6 @@ static int __init br_init(void)
 		pr_err("bridge: can't register sap for STP\n");
 		return err;
 	}
-
 	err = br_fdb_init();
 	if (err)
 		goto err_out;
@@ -438,7 +437,7 @@ err_out5:
 err_out4:
 	unregister_netdevice_notifier(&br_device_notifier);
 err_out3:
-	br_nf_core_fini();
+//	br_nf_core_fini();
 err_out2:
 	unregister_pernet_subsys(&br_net_ops);
 err_out1:
