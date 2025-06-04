@@ -4,7 +4,7 @@
 #
 
 config PHYLINK
-	tristate
+	tristate "phylink"
 	depends on NETDEVICES
 	select PHYLIB
 	select SWPHY

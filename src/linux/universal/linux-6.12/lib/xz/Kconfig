@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: GPL-2.0-only
 config XZ_DEC
 	tristate "XZ decompression support"
 	select CRC32
@@ -17,6 +16,11 @@ config XZ_DEC_X86
 
 config XZ_DEC_POWERPC
 	bool "PowerPC BCJ filter decoder" if EXPERT
+	default y
+	select XZ_DEC_BCJ
+
+config XZ_DEC_IA64
+	bool "IA-64 BCJ filter decoder" if EXPERT
 	default y
 	select XZ_DEC_BCJ
 
@@ -42,6 +46,11 @@ config XZ_DEC_SPARC
 
 config XZ_DEC_RISCV
 	bool "RISC-V BCJ filter decoder" if EXPERT
+	default y
+	select XZ_DEC_BCJ
+
+config XZ_DEC_DELTA
+	bool "Delta BCJ filter decoder" if EXPERT
 	default y
 	select XZ_DEC_BCJ
 

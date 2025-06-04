@@ -18,6 +18,15 @@
 #	include <stdint.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* In Linux, this is used to make extern functions static when needed. */
+#ifndef XZ_EXTERN
+#	define XZ_EXTERN extern
+#endif
+
 /**
  * enum xz_mode - Operation mode
  *
@@ -137,7 +146,7 @@ struct xz_buf {
 	size_t out_size;
 };
 
-/*
+/**
  * struct xz_dec - Opaque type to hold the XZ decoder state
  */
 struct xz_dec;
@@ -185,10 +194,10 @@ struct xz_dec;
  * ready to be used with xz_dec_run(). If memory allocation fails,
  * xz_dec_init() returns NULL.
  */
-struct xz_dec *xz_dec_init(enum xz_mode mode, uint32_t dict_max);
+XZ_EXTERN struct xz_dec *xz_dec_init(enum xz_mode mode, uint32_t dict_max);
 
 /**
- * xz_dec_run() - Run the XZ decoder
+ * xz_dec_run() - Run the XZ decoder for a single XZ stream
  * @s:          Decoder state allocated using xz_dec_init()
  * @b:          Input and output buffers
  *
@@ -204,8 +213,50 @@ struct xz_dec *xz_dec_init(enum xz_mode mode, uint32_t dict_max);
  * cannot give the single-call decoder a too small buffer and then expect to
  * get that amount valid data from the beginning of the stream. You must use
  * the multi-call decoder if you don't want to uncompress the whole stream.
+ *
+ * Use xz_dec_run() when XZ data is stored inside some other file format.
+ * The decoding will stop after one XZ stream has been decompressed. To
+ * decompress regular .xz files which might have multiple concatenated
+ * streams, use xz_dec_catrun() instead.
  */
-enum xz_ret xz_dec_run(struct xz_dec *s, struct xz_buf *b);
+XZ_EXTERN enum xz_ret xz_dec_run(struct xz_dec *s, struct xz_buf *b);
+
+/**
+ * xz_dec_catrun() - Run the XZ decoder with support for concatenated streams
+ * @s:          Decoder state allocated using xz_dec_init()
+ * @b:          Input and output buffers
+ * @finish:     This is an int instead of bool to avoid requiring stdbool.h.
+ *              As long as more input might be coming, finish must be false.
+ *              When the caller knows that it has provided all the input to
+ *              the decoder (some possibly still in b->in), it must set finish
+ *              to true. Only when finish is true can this function return
+ *              XZ_STREAM_END to indicate successful decompression of the
+ *              file. In single-call mode (XZ_SINGLE) finish is assumed to
+ *              always be true; the caller-provided value is ignored.
+ *
+ * This is like xz_dec_run() except that this makes it easy to decode .xz
+ * files with multiple streams (multiple .xz files concatenated as is).
+ * The rarely-used Stream Padding feature is supported too, that is, there
+ * can be null bytes after or between the streams. The number of null bytes
+ * must be a multiple of four.
+ *
+ * When finish is false and b->in_pos == b->in_size, it is possible that
+ * XZ_BUF_ERROR isn't returned even when no progress is possible (XZ_OK is
+ * returned instead). This shouldn't matter because in this situation a
+ * reasonable caller will attempt to provide more input or set finish to
+ * true for the next xz_dec_catrun() call anyway.
+ *
+ * For any struct xz_dec that has been initialized for multi-call mode:
+ * Once decoding has been started with xz_dec_run() or xz_dec_catrun(),
+ * the same function must be used until xz_dec_reset() or xz_dec_end().
+ * Switching between the two decoding functions without resetting results
+ * in undefined behavior.
+ *
+ * xz_dec_catrun() is only available if XZ_DEC_CONCATENATED was defined
+ * at compile time.
+ */
+XZ_EXTERN enum xz_ret xz_dec_catrun(struct xz_dec *s, struct xz_buf *b,
+				    int finish);
 
 /**
  * xz_dec_reset() - Reset an already allocated decoder state
@@ -218,38 +269,32 @@ enum xz_ret xz_dec_run(struct xz_dec *s, struct xz_buf *b);
  * xz_dec_run(). Thus, explicit call to xz_dec_reset() is useful only in
  * multi-call mode.
  */
-void xz_dec_reset(struct xz_dec *s);
+XZ_EXTERN void xz_dec_reset(struct xz_dec *s);
 
 /**
  * xz_dec_end() - Free the memory allocated for the decoder state
  * @s:          Decoder state allocated using xz_dec_init(). If s is NULL,
  *              this function does nothing.
  */
-void xz_dec_end(struct xz_dec *s);
-
-/**
- * DOC: MicroLZMA decompressor
- *
- * This MicroLZMA header format was created for use in EROFS but may be used
- * by others too. **In most cases one needs the XZ APIs above instead.**
- *
- * The compressed format supported by this decoder is a raw LZMA stream
- * whose first byte (always 0x00) has been replaced with bitwise-negation
- * of the LZMA properties (lc/lp/pb) byte. For example, if lc/lp/pb is
- * 3/0/2, the first byte is 0xA2. This way the first byte can never be 0x00.
- * Just like with LZMA2, lc + lp <= 4 must be true. The LZMA end-of-stream
- * marker must not be used. The unused values are reserved for future use.
- */
+XZ_EXTERN void xz_dec_end(struct xz_dec *s);
 
 /*
+ * Decompressor for MicroLZMA, an LZMA variant with a very minimal header.
+ * See xz_dec_microlzma_alloc() below for details.
+ *
+ * These functions aren't used or available in preboot code and thus aren't
+ * marked with XZ_EXTERN. This avoids warnings about static functions that
+ * are never defined.
+ */
+/**
  * struct xz_dec_microlzma - Opaque type to hold the MicroLZMA decoder state
  */
 struct xz_dec_microlzma;
 
 /**
  * xz_dec_microlzma_alloc() - Allocate memory for the MicroLZMA decoder
- * @mode:       XZ_SINGLE or XZ_PREALLOC
- * @dict_size:  LZMA dictionary size. This must be at least 4 KiB and
+ * @mode        XZ_SINGLE or XZ_PREALLOC
+ * @dict_size   LZMA dictionary size. This must be at least 4 KiB and
  *              at most 3 GiB.
  *
  * In contrast to xz_dec_init(), this function only allocates the memory
@@ -262,30 +307,40 @@ struct xz_dec_microlzma;
  * On success, xz_dec_microlzma_alloc() returns a pointer to
  * struct xz_dec_microlzma. If memory allocation fails or
  * dict_size is invalid, NULL is returned.
+ *
+ * The compressed format supported by this decoder is a raw LZMA stream
+ * whose first byte (always 0x00) has been replaced with bitwise-negation
+ * of the LZMA properties (lc/lp/pb) byte. For example, if lc/lp/pb is
+ * 3/0/2, the first byte is 0xA2. This way the first byte can never be 0x00.
+ * Just like with LZMA2, lc + lp <= 4 must be true. The LZMA end-of-stream
+ * marker must not be used. The unused values are reserved for future use.
+ * This MicroLZMA header format was created for use in EROFS but may be used
+ * by others too.
  */
-struct xz_dec_microlzma *xz_dec_microlzma_alloc(enum xz_mode mode,
-						uint32_t dict_size);
+extern struct xz_dec_microlzma *xz_dec_microlzma_alloc(enum xz_mode mode,
+						       uint32_t dict_size);
 
 /**
  * xz_dec_microlzma_reset() - Reset the MicroLZMA decoder state
- * @s:          Decoder state allocated using xz_dec_microlzma_alloc()
- * @comp_size:  Compressed size of the input stream
- * @uncomp_size:  Uncompressed size of the input stream. A value smaller
+ * @s           Decoder state allocated using xz_dec_microlzma_alloc()
+ * @comp_size   Compressed size of the input stream
+ * @uncomp_size Uncompressed size of the input stream. A value smaller
  *              than the real uncompressed size of the input stream can
  *              be specified if uncomp_size_is_exact is set to false.
  *              uncomp_size can never be set to a value larger than the
  *              expected real uncompressed size because it would eventually
  *              result in XZ_DATA_ERROR.
- * @uncomp_size_is_exact:  This is an int instead of bool to avoid
+ * @uncomp_size_is_exact  This is an int instead of bool to avoid
  *              requiring stdbool.h. This should normally be set to true.
  *              When this is set to false, error detection is weaker.
  */
-void xz_dec_microlzma_reset(struct xz_dec_microlzma *s, uint32_t comp_size,
-			    uint32_t uncomp_size, int uncomp_size_is_exact);
+extern void xz_dec_microlzma_reset(struct xz_dec_microlzma *s,
+				   uint32_t comp_size, uint32_t uncomp_size,
+				   int uncomp_size_is_exact);
 
 /**
  * xz_dec_microlzma_run() - Run the MicroLZMA decoder
- * @s:          Decoder state initialized using xz_dec_microlzma_reset()
+ * @s           Decoder state initialized using xz_dec_microlzma_reset()
  * @b:          Input and output buffers
  *
  * This works similarly to xz_dec_run() with a few important differences.
@@ -319,14 +374,15 @@ void xz_dec_microlzma_reset(struct xz_dec_microlzma *s, uint32_t comp_size,
  * may be changed normally like with XZ_PREALLOC. This way input data can be
  * provided from non-contiguous memory.
  */
-enum xz_ret xz_dec_microlzma_run(struct xz_dec_microlzma *s, struct xz_buf *b);
+extern enum xz_ret xz_dec_microlzma_run(struct xz_dec_microlzma *s,
+					struct xz_buf *b);
 
 /**
  * xz_dec_microlzma_end() - Free the memory allocated for the decoder state
  * @s:          Decoder state allocated using xz_dec_microlzma_alloc().
  *              If s is NULL, this function does nothing.
  */
-void xz_dec_microlzma_end(struct xz_dec_microlzma *s);
+extern void xz_dec_microlzma_end(struct xz_dec_microlzma *s);
 
 /*
  * Standalone build (userspace build or in-kernel build for boot time use)
@@ -342,18 +398,54 @@ void xz_dec_microlzma_end(struct xz_dec_microlzma *s);
 #	endif
 #endif
 
+/*
+ * If CRC64 support has been enabled with XZ_USE_CRC64, a CRC64
+ * implementation is needed too.
+ */
+#ifndef XZ_USE_CRC64
+#	undef XZ_INTERNAL_CRC64
+#	define XZ_INTERNAL_CRC64 0
+#endif
+#ifndef XZ_INTERNAL_CRC64
+#	ifdef __KERNEL__
+#		error Using CRC64 in the kernel has not been implemented.
+#	else
+#		define XZ_INTERNAL_CRC64 1
+#	endif
+#endif
+
 #if XZ_INTERNAL_CRC32
 /*
  * This must be called before any other xz_* function to initialize
  * the CRC32 lookup table.
  */
-void xz_crc32_init(void);
+XZ_EXTERN void xz_crc32_init(void);
 
 /*
  * Update CRC32 value using the polynomial from IEEE-802.3. To start a new
  * calculation, the third argument must be zero. To continue the calculation,
  * the previously returned value is passed as the third argument.
  */
-uint32_t xz_crc32(const uint8_t *buf, size_t size, uint32_t crc);
+XZ_EXTERN uint32_t xz_crc32(const uint8_t *buf, size_t size, uint32_t crc);
 #endif
+
+#if XZ_INTERNAL_CRC64
+/*
+ * This must be called before any other xz_* function (except xz_crc32_init())
+ * to initialize the CRC64 lookup table.
+ */
+XZ_EXTERN void xz_crc64_init(void);
+
+/*
+ * Update CRC64 value using the polynomial from ECMA-182. To start a new
+ * calculation, the third argument must be zero. To continue the calculation,
+ * the previously returned value is passed as the third argument.
+ */
+XZ_EXTERN uint64_t xz_crc64(const uint8_t *buf, size_t size, uint64_t crc);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
