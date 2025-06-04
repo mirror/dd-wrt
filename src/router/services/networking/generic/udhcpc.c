@@ -200,6 +200,10 @@ static int bound(void)
 		char *netmask = getenv("subnet");
 		char *gateway = getenv("router");
 		char *dns = getenv("dns");
+		char *domain = getenv("domain");
+
+		if (domain)
+			nvram_set("wan_get_domain", domain);
 		if (dns)
 			nvram_set("lan_dhcpdns", dns);
 		if (gateway)

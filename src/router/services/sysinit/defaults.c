@@ -726,9 +726,6 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "dhcp_lease", "1440" },	/* LAN lease time in minutes */
 #endif
-	{ "dhcp_domain", "wan" },	/* Use WAN domain name first if available
-					 * (wan|lan) */
-	{ "dhcp_wins", "wan" },	/* Use WAN WINS first if available (wan|lan) */
 	{ "wan_get_dns", "" },	/* DNS IP address which get by dhcpc *//* Add */
 
 	/*

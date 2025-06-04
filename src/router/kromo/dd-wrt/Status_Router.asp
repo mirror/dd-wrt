@@ -110,12 +110,8 @@ addEvent(window, "unload", function() {
 									<% nvg("wan_hostname"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("share.wandomainname"); %></div>
-									<% show_wan_domain(); %>&nbsp;
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.landomainname"); %></div>
-									<% nvg("lan_domain"); %>&nbsp;
+									<div class="label"><% tran("share.domainname"); %></div>
+									<% show_domain(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_time"); %></div>

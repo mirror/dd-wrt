@@ -420,7 +420,7 @@ EJ_VISIBLE void ej_show_status(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-EJ_VISIBLE void ej_show_wan_domain(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_show_domain(webs_t wp, int argc, char_t **argv)
 {
 	if (nvram_invmatch("wan_domain", ""))
 		tf_webWriteESCNV(wp, "wan_domain");

@@ -781,15 +781,10 @@ void start_dnsmasq(void)
 	/*
 	 * Domain 
 	 */
-	if (nvram_match("dhcp_domain", "wan")) {
-		if (nvram_invmatch("wan_domain", ""))
-			fprintf(fp, "domain=%s\n", nvram_safe_get("wan_domain"));
-		else if (nvram_invmatch("wan_get_domain", ""))
-			fprintf(fp, "domain=%s\n", nvram_safe_get("wan_get_domain"));
-	} else {
-		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "domain=%s\n", nvram_safe_get("lan_domain"));
-	}
+	if (nvram_invmatch("wan_domain", ""))
+		fprintf(fp, "domain=%s\n", nvram_safe_get("wan_domain"));
+	else if (nvram_invmatch("wan_get_domain", ""))
+		fprintf(fp, "domain=%s\n", nvram_safe_get("wan_get_domain"));
 
 	/*
 	 * DD-WRT use dnsmasq as DHCP replacement 
