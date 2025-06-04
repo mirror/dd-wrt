@@ -523,7 +523,7 @@ static void gpiochip_set_desc_names(struct gpio_chip *gc)
  * names belong to the underlying firmware node and should not be released
  * by the caller.
  */
-static int gpiochip_set_names(struct gpio_chip *chip)
+int gpiochip_set_names(struct gpio_chip *chip)
 {
 	struct gpio_device *gdev = chip->gpiodev;
 	struct device *dev = &gdev->dev;
@@ -534,6 +534,7 @@ static int gpiochip_set_names(struct gpio_chip *chip)
 	count = device_property_string_array_count(dev, "gpio-line-names");
 	if (count < 0)
 		return 0;
+
 
 	/*
 	 * When offset is set in the driver side we assume the driver internally
@@ -2322,8 +2323,10 @@ static int gpiod_request_commit(struct gpio_desc *desc, const char *label)
 	if (!guard.gc)
 		return -ENODEV;
 
-	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags))
-		return -EBUSY;
+	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags)) {
+		if (label && strcmp(label, "sysfs"))
+			return -EBUSY;
+	}
 
 	/* NOTE:  gpio_request() can be called in early boot,
 	 * before IRQs are enabled, for non-sleeping (SOC) GPIOs.

@@ -1815,7 +1815,7 @@ static int iavf_alloc_q_vectors(struct iavf_adapter *adapter)
 		q_vector->v_idx = q_idx;
 		q_vector->reg_idx = q_idx;
 		cpumask_copy(&q_vector->affinity_mask, cpu_possible_mask);
-		netif_napi_add(adapter->netdev, &q_vector->napi,
+		netif_threaded_napi_add(adapter->netdev, &q_vector->napi,
 			       iavf_napi_poll);
 	}
 
@@ -2658,6 +2658,8 @@ static void iavf_init_config_adapter(struct iavf_adapter *adapter)
 
 	netif_carrier_off(netdev);
 	adapter->link_up = false;
+	dev_set_threaded(netdev, true);
+
 	netif_tx_stop_all_queues(netdev);
 
 	dev_info(&pdev->dev, "MAC address: %pM\n", adapter->hw.mac.addr);

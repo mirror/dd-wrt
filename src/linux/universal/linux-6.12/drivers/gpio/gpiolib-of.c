@@ -945,7 +945,7 @@ struct notifier_block gpio_of_notifier = {
  * Returns:
  * GPIO number (>= 0) on success, negative errno on failure.
  */
-static int of_gpio_simple_xlate(struct gpio_chip *gc,
+int of_gpio_simple_xlate(struct gpio_chip *gc,
 				const struct of_phandle_args *gpiospec,
 				u32 *flags)
 {
@@ -1253,6 +1253,7 @@ static int of_gpio_export_probe(struct platform_device *pdev)
 static struct platform_driver gpio_export_driver = {
 	.driver		= {
 		.name		= "gpio-export",
+		.owner	= THIS_MODULE,
 		.of_match_table	= of_match_ptr(gpio_export_ids),
 	},
 	.probe		= of_gpio_export_probe,

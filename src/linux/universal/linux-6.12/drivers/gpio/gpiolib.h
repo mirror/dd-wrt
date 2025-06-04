@@ -257,6 +257,10 @@ int gpiod_hog(struct gpio_desc *desc, const char *name,
 int gpiochip_get_ngpios(struct gpio_chip *gc, struct device *dev);
 struct gpio_desc *gpiochip_get_desc(struct gpio_chip *gc, unsigned int hwnum);
 const char *gpiod_get_label(struct gpio_desc *desc);
+int of_gpio_simple_xlate(struct gpio_chip *gc,
+				const struct of_phandle_args *gpiospec,
+				u32 *flags);
+int gpiochip_set_names(struct gpio_chip *chip);
 
 /*
  * Return the GPIO number of the passed descriptor relative to its chip

@@ -690,6 +690,7 @@ static int emac_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "could not register net device\n");
 		goto err_undo_napi;
 	}
+	dev_set_threaded(netdev, true);
 
 	reg =  readl_relaxed(adpt->base + EMAC_DMA_MAS_CTRL);
 	devid = (reg & DEV_ID_NUM_BMSK)  >> DEV_ID_NUM_SHFT;

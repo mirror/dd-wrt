@@ -130,6 +130,7 @@ static int pin_request(struct pinctrl_dev *pctldev,
 		pin, desc->name, owner);
 
 	scoped_guard(mutex, &desc->mux_lock) {
+#if 0
 		if ((!gpio_range || ops->strict) &&
 		    desc->mux_usecount && strcmp(desc->mux_owner, owner)) {
 			dev_err(pctldev->dev,
@@ -137,24 +138,24 @@ static int pin_request(struct pinctrl_dev *pctldev,
 				desc->name, desc->mux_owner, owner);
 			goto out;
 		}
-
+ 
 		if ((gpio_range || ops->strict) && desc->gpio_owner) {
 			dev_err(pctldev->dev,
 				"pin %s already requested by %s; cannot claim for %s\n",
 				desc->name, desc->gpio_owner, owner);
 			goto out;
 		}
-
+#endif 
 		if (gpio_range) {
 			desc->gpio_owner = owner;
 		} else {
 			desc->mux_usecount++;
 			if (desc->mux_usecount > 1)
 				return 0;
-
+ 
 			desc->mux_owner = owner;
 		}
-	}
+ 	}
 
 	/* Let each pin increase references to this module */
 	if (!try_module_get(pctldev->owner)) {

@@ -86,11 +86,83 @@ config OCTEON_MGMT_ETHERNET
 	depends on CAVIUM_OCTEON_SOC
 	select PHYLIB
 	select MDIO_OCTEON
+	select OCTEON_ETHERNET_COMMON
+	select OCTEON_BGX_PORT
 	default y
 	help
 	  Enable the ethernet driver for the management
 	  port on Cavium Networks' Octeon CN57XX, CN56XX, CN55XX,
 	  CN54XX, CN52XX, and CN6XXX chips.
+
+config OCTEON_ETHERNET
+	tristate "OCTEON Ethernet support"
+	depends on CAVIUM_OCTEON_SOC
+	select PHYLIB
+	select MDIO_OCTEON
+	select OCTEON_ETHERNET_MEM
+	select OCTEON_ETHERNET_COMMON
+	help
+	  This driver supports the builtin ethernet ports on Cavium
+	  Inc.' products in the Octeon family. This driver supports the
+	  CN3XXX, CN5XXX, CN6XXX and CNF7XXX OCTEON processors.
+
+	  To compile this driver as a module, choose M here.  The module
+	  will be called octeon-ethernet.
+
+config OCTEON3_ETHERNET
+	tristate "OCTEON III PKI/PKO Ethernet support (not cn70xx)"
+	depends on CAVIUM_OCTEON_SOC
+	select OCTEON_BGX_PORT
+	select OCTEON_FPA3
+	help
+	  Support for 'BGX' Ethernet via PKI/PKO units.  No support
+	  for cn70xx chips (use OCTEON_ETHERNET for cn70xx).
+
+config OCTEON3_ETHERNET_SRIO
+	tristate "SRIO support for OCTEON III Ethernet driver"
+	depends on (OCTEON3_ETHERNET && CAVIUM_OCTEON_RAPIDIO)
+	select OCTEON_SRIO_NEXUS
+	help
+	  This driver adds 'SRIO' support to the Ethernet driver via PKI/PKO
+	  units. It supports Caviums CNF75XX SOC. To compile this driver as a
+	  module, choose M here. The module will be called
+	  octeon3-ethernet-srio.
+
+config OCTEON_ETHERNET_MEM
+	tristate
+	depends on CAVIUM_OCTEON_SOC
+
+config OCTEON_POW_ONLY_ETHERNET
+	tristate "POW based internal only ethernet driver"
+	depends on CAVIUM_OCTEON_SOC
+	depends on OCTEON_ETHERNET
+	help
+	  This option enables a very simple ethernet driver for internal core
+	  to core traffic. It relies on another driver, octeon-ethernet,
+	  to perform all hardware setup. This driver's purpose is to supply
+	  basic networking between different Linux images running on the same
+	  chip. A single core loads the octeon-ethernet module, all other cores
+	  load this driver. On load, the driver waits for some other core to
+	  perform hardware setup.
+
+config OCTEON_ETHERNET_COMMON
+	tristate
+
+config OCTEON_BGX_NEXUS
+	tristate
+	depends on CAVIUM_OCTEON_SOC
+
+config OCTEON_SRIO_NEXUS
+	tristate
+
+config OCTEON_COMMON_NEXUS
+	tristate
+
+config OCTEON_BGX_PORT
+	tristate
+	depends on CAVIUM_OCTEON_SOC
+	select OCTEON_BGX_NEXUS
+	select OCTEON_COMMON_NEXUS
 
 config LIQUIDIO_VF
 	tristate "Cavium LiquidIO VF support"
