@@ -37,8 +37,13 @@ ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 	$(MAKE) -C smbd/smbd all
 	$(MAKE) -C smbd/tools all
+else
+	$(MAKE) -C smbd/smbd.61 all
+	$(MAKE) -C smbd/tools-glib.61 all
+endif
 else
 	$(MAKE) -C smbd/smbd.61 all
 	$(MAKE) -C smbd/tools-glib.61 all
@@ -61,12 +66,17 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 	$(MAKE) -C smbd/smbd install
 	$(MAKE) -C smbd/tools-glib install DESTDIR=$(INSTALLDIR)/smbd
 	rm -rf $(INSTALLDIR)/smbd/usr/lib
 	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.mountd
 	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.adduser
 	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.addshare
+else
+	$(MAKE) -C smbd/smbd.61 install
+	$(MAKE) -C smbd/tools-glib.61 install DESTDIR=$(INSTALLDIR)/smbd
+endif
 else
 	$(MAKE) -C smbd/smbd.61 install
 	$(MAKE) -C smbd/tools-glib.61 install DESTDIR=$(INSTALLDIR)/smbd
@@ -96,9 +106,14 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 	$(MAKE) -C smbd/smbd clean
 	$(MAKE) -C smbd/tools clean
 	$(MAKE) -C smbd/tools-glib clean
+else
+	$(MAKE) -C smbd/smbd.61 clean
+	$(MAKE) -C smbd/tools-glib.61 clean
+endif
 else
 	$(MAKE) -C smbd/smbd.61 clean
 	$(MAKE) -C smbd/tools-glib.61 clean

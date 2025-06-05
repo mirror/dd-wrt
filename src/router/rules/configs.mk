@@ -51,6 +51,11 @@ obj-$(CONFIG_IPV6) += nat46
 obj-y += portscan
 CONFIG_PORTSCAN=y
 endif
+ifeq ($(KERNELVERSION),6.12)
+obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
+endif
 ifeq ($(KERNELVERSION),6.6-nss)
 #obj-$(CONFIG_IPV6) += nat46
 obj-y += portscan
@@ -175,12 +180,16 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 ifneq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_ATH5K_AHB),y)
 obj-$(CONFIG_MADWIFI) += madwifi relayd
 endif
 else
 obj-$(CONFIG_MADWIFI) += madwifi
+endif
+else
+obj-$(CONFIG_MADWIFI) += relayd
 endif
 else
 obj-$(CONFIG_MADWIFI) += relayd
@@ -288,7 +297,11 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_NTFS3G) += ntfs3 ntfs-3g
+else
+obj-$(CONFIG_NTFS3G) += ntfs-3g
+endif
 else
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 endif
@@ -335,6 +348,9 @@ endif
 ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
+ifeq ($(KERNELVERSION),6.12)
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
+endif
 ifeq ($(KERNELVERSION),4.9)
 obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
@@ -360,6 +376,9 @@ ifeq ($(KERNELVERSION),6.6-nss)
 obj-$(CONFIG_BATMANADV) += batman-adv
 endif
 ifeq ($(KERNELVERSION),6.6)
+obj-$(CONFIG_BATMANADV) += batman-adv
+endif
+ifeq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_BATMANADV) += batman-adv
 endif
 ifeq ($(KERNELVERSION),4.14)
@@ -465,6 +484,9 @@ ifeq ($(KERNELVERSION),6.6-nss)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.6)
+obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+endif
+ifeq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
 endif
 
@@ -577,7 +599,9 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_RTL8125) += rtl8125
+endif
 endif
 endif
 endif
@@ -624,8 +648,10 @@ ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
+endif
 endif
 endif
 endif
@@ -635,7 +661,9 @@ ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_APFS) += apfs
+endif
 endif
 endif
 endif
@@ -647,7 +675,9 @@ ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_X86) += yukon
+endif
 endif
 endif
 endif
@@ -726,6 +756,7 @@ configs-update:
 	if [ -d "$(LINUXDIR)/../linux-6.1-nss" ]; then svn update $(LINUXDIR)/../linux-6.1-nss; fi
 	if [ -d "$(LINUXDIR)/../linux-6.6" ]; then svn update $(LINUXDIR)/../linux-6.6; fi
 	if [ -d "$(LINUXDIR)/../linux-6.6-nss" ]; then svn update $(LINUXDIR)/../linux-6.6-nss; fi
+	if [ -d "$(LINUXDIR)/../linux-6.12" ]; then svn update $(LINUXDIR)/../linux-6.12; fi
 
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
