@@ -18,6 +18,7 @@ zfs-configure: libtirpc libudev openssl zlib curl ncurses util-linux
 	touch $(SSLPATH)/include/openssl/opensslconf.h
 
 zfs: libtirpc libudev openssl zlib ncurses util-linux
+	cp -urv zfs/module zfs/$(KERNELVERSION)/
 	cd zfs/$(KERNELVERSION) && find . -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
 	cd zfs/$(KERNELVERSION) && find . -name "*.la" -exec touch {} +
 	touch $(TOP)/util-linux/libblkid/src/blkid.h
