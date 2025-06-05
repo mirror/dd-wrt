@@ -19,7 +19,7 @@
 #include "nat46-core.h"
 
 static DEFINE_MUTEX(ref_lock);
-int is_valid_nat46(nat46_instance_t *nat46) {
+static int is_valid_nat46(nat46_instance_t *nat46) {
   return (nat46 && (nat46->sig == NAT46_SIGNATURE));
 }
 
