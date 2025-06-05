@@ -14,7 +14,7 @@
 #GCC	= gcc
 #CCS	= /usr/ccs/bin/cc
 #NACC	= /opt/ansic/bin/cc
-CFLAGS	= -DNEED_PRINTF -fcommon $(COPTS) $(MIPS16_OPT) $(LTO)
+CFLAGS	= -DNEED_PRINTF -fcommon $(COPTS) $(MIPS16_OPT) $(LTO) -DHAVE_ANSIC_C
 LDFLAGS = $(LDLTO)
 #S10GCCFLAGS    = -m64
 #S10CCFLAGS     = -m64
