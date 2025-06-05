@@ -38,6 +38,11 @@ DCO=--enable-dco
 OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
 OVPN_LIBNL_LIBS=-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3
 endif
+ifeq ($(KERNELVERSION),6.12)
+DCO=--enable-dco
+OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
+OVPN_LIBNL_LIBS=-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3
+endif
 ifeq ($(KERNELVERSION),4.9)
 DCO=--enable-dco
 OVPN_LIBNL_CFLAGS=-I$(TOP)/libnl/include/linux-private -I$(TOP)/libnl/include
