@@ -412,7 +412,8 @@ metaslab_stat_fini(void)
  * ==========================================================================
  */
 metaslab_class_t *
-metaslab_class_create(spa_t *spa, const metaslab_ops_t *ops, boolean_t is_log)
+metaslab_class_create(spa_t *spa, const char *name,
+    const metaslab_ops_t *ops, boolean_t is_log)
 {
 	metaslab_class_t *mc;
 
@@ -420,6 +421,7 @@ metaslab_class_create(spa_t *spa, const metaslab_ops_t *ops, boolean_t is_log)
 	    mc_allocator[spa->spa_alloc_count]), KM_SLEEP);
 
 	mc->mc_spa = spa;
+	mc->mc_name = name;
 	mc->mc_ops = ops;
 	mc->mc_is_log = is_log;
 	mc->mc_alloc_io_size = SPA_OLD_MAXBLOCKSIZE;
@@ -687,6 +689,12 @@ metaslab_class_space_update(metaslab_class_t *mc, int64_t alloc_delta,
 	atomic_add_64(&mc->mc_deferred, defer_delta);
 	atomic_add_64(&mc->mc_space, space_delta);
 	atomic_add_64(&mc->mc_dspace, dspace_delta);
+}
+
+const char *
+metaslab_class_get_name(metaslab_class_t *mc)
+{
+	return (mc->mc_name);
 }
 
 uint64_t
@@ -2631,7 +2639,7 @@ metaslab_load_impl(metaslab_t *msp)
 	ASSERT3U(max_size, <=, msp->ms_max_size);
 	hrtime_t load_end = gethrtime();
 	msp->ms_load_time = load_end;
-	zfs_dbgmsg("metaslab_load: txg %llu, spa %s, vdev_id %llu, "
+	zfs_dbgmsg("metaslab_load: txg %llu, spa %s, class %s, vdev_id %llu, "
 	    "ms_id %llu, smp_length %llu, "
 	    "unflushed_allocs %llu, unflushed_frees %llu, "
 	    "freed %llu, defer %llu + %llu, unloaded time %llu ms, "
@@ -2639,6 +2647,7 @@ metaslab_load_impl(metaslab_t *msp)
 	    "max size error %lld, "
 	    "old_weight %llx, new_weight %llx",
 	    (u_longlong_t)spa_syncing_txg(spa), spa_name(spa),
+	    msp->ms_group->mg_class->mc_name,
 	    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
 	    (u_longlong_t)msp->ms_id,
 	    (u_longlong_t)space_map_length(msp->ms_sm),
@@ -2744,11 +2753,12 @@ metaslab_unload(metaslab_t *msp)
 		multilist_sublist_unlock(mls);
 
 		spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
-		zfs_dbgmsg("metaslab_unload: txg %llu, spa %s, vdev_id %llu, "
-		    "ms_id %llu, weight %llx, "
+		zfs_dbgmsg("metaslab_unload: txg %llu, spa %s, class %s, "
+		    "vdev_id %llu, ms_id %llu, weight %llx, "
 		    "selected txg %llu (%llu s ago), alloc_txg %llu, "
 		    "loaded %llu ms ago, max_size %llu",
 		    (u_longlong_t)spa_syncing_txg(spa), spa_name(spa),
+		    msp->ms_group->mg_class->mc_name,
 		    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
 		    (u_longlong_t)msp->ms_id,
 		    (u_longlong_t)msp->ms_weight,
@@ -5315,7 +5325,7 @@ metaslab_group_allocatable(spa_t *spa, metaslab_group_t *mg, uint64_t psize,
 
 static int
 metaslab_alloc_dva_range(spa_t *spa, metaslab_class_t *mc, uint64_t psize,
-    uint64_t max_psize, dva_t *dva, int d, dva_t *hintdva, uint64_t txg,
+    uint64_t max_psize, dva_t *dva, int d, const dva_t *hintdva, uint64_t txg,
     int flags, zio_alloc_list_t *zal, int allocator, uint64_t *actual_psize)
 {
 	metaslab_class_allocator_t *mca = &mc->mc_allocator[allocator];
@@ -5440,7 +5450,7 @@ next:
  */
 int
 metaslab_alloc_dva(spa_t *spa, metaslab_class_t *mc, uint64_t psize,
-    dva_t *dva, int d, dva_t *hintdva, uint64_t txg, int flags,
+    dva_t *dva, int d, const dva_t *hintdva, uint64_t txg, int flags,
     zio_alloc_list_t *zal, int allocator)
 {
 	return (metaslab_alloc_dva_range(spa, mc, psize, psize, dva, d, hintdva,
@@ -5932,7 +5942,7 @@ metaslab_claim_dva(spa_t *spa, const dva_t *dva, uint64_t txg)
 
 int
 metaslab_alloc(spa_t *spa, metaslab_class_t *mc, uint64_t psize, blkptr_t *bp,
-    int ndvas, uint64_t txg, blkptr_t *hintbp, int flags,
+    int ndvas, uint64_t txg, const blkptr_t *hintbp, int flags,
     zio_alloc_list_t *zal, int allocator, const void *tag)
 {
 	return (metaslab_alloc_range(spa, mc, psize, psize, bp, ndvas, txg,
@@ -5942,11 +5952,11 @@ metaslab_alloc(spa_t *spa, metaslab_class_t *mc, uint64_t psize, blkptr_t *bp,
 int
 metaslab_alloc_range(spa_t *spa, metaslab_class_t *mc, uint64_t psize,
     uint64_t max_psize, blkptr_t *bp, int ndvas, uint64_t txg,
-    blkptr_t *hintbp, int flags, zio_alloc_list_t *zal, int allocator,
+    const blkptr_t *hintbp, int flags, zio_alloc_list_t *zal, int allocator,
     const void *tag, uint64_t *actual_psize)
 {
 	dva_t *dva = bp->blk_dva;
-	dva_t *hintdva = (hintbp != NULL) ? hintbp->blk_dva : NULL;
+	const dva_t *hintdva = (hintbp != NULL) ? hintbp->blk_dva : NULL;
 	int error = 0;
 
 	ASSERT0(BP_GET_LOGICAL_BIRTH(bp));

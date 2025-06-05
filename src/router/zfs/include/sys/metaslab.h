@@ -81,12 +81,12 @@ uint64_t metaslab_largest_allocatable(metaslab_t *);
 #define	METASLAB_ASYNC_ALLOC		0x8
 
 int metaslab_alloc(spa_t *, metaslab_class_t *, uint64_t, blkptr_t *, int,
-    uint64_t, blkptr_t *, int, zio_alloc_list_t *, int, const void *);
+    uint64_t, const blkptr_t *, int, zio_alloc_list_t *, int, const void *);
 int metaslab_alloc_range(spa_t *, metaslab_class_t *, uint64_t, uint64_t,
-    blkptr_t *, int, uint64_t, blkptr_t *, int, zio_alloc_list_t *,
+    blkptr_t *, int, uint64_t, const blkptr_t *, int, zio_alloc_list_t *,
     int, const void *, uint64_t *);
 int metaslab_alloc_dva(spa_t *, metaslab_class_t *, uint64_t,
-    dva_t *, int, dva_t *, uint64_t, int, zio_alloc_list_t *, int);
+    dva_t *, int, const dva_t *, uint64_t, int, zio_alloc_list_t *, int);
 void metaslab_free(spa_t *, const blkptr_t *, uint64_t, boolean_t);
 void metaslab_free_concrete(vdev_t *, uint64_t, uint64_t, boolean_t);
 void metaslab_free_dva(spa_t *, const dva_t *, boolean_t);
@@ -102,8 +102,8 @@ void metaslab_trace_move(zio_alloc_list_t *, zio_alloc_list_t *);
 void metaslab_trace_init(zio_alloc_list_t *);
 void metaslab_trace_fini(zio_alloc_list_t *);
 
-metaslab_class_t *metaslab_class_create(spa_t *, const metaslab_ops_t *,
-    boolean_t);
+metaslab_class_t *metaslab_class_create(spa_t *, const char *,
+    const metaslab_ops_t *, boolean_t);
 void metaslab_class_destroy(metaslab_class_t *);
 void metaslab_class_validate(metaslab_class_t *);
 void metaslab_class_balance(metaslab_class_t *mc, boolean_t onsync);
@@ -114,6 +114,7 @@ boolean_t metaslab_class_throttle_reserve(metaslab_class_t *, int, zio_t *,
     boolean_t, boolean_t *);
 boolean_t metaslab_class_throttle_unreserve(metaslab_class_t *, int, zio_t *);
 void metaslab_class_evict_old(metaslab_class_t *, uint64_t);
+const char *metaslab_class_get_name(metaslab_class_t *);
 uint64_t metaslab_class_get_alloc(metaslab_class_t *);
 uint64_t metaslab_class_get_space(metaslab_class_t *);
 uint64_t metaslab_class_get_dspace(metaslab_class_t *);

@@ -744,8 +744,8 @@ zio_unique_parent(zio_t *cio)
 	return (pio);
 }
 
-void
-zio_add_child(zio_t *pio, zio_t *cio)
+static void
+zio_add_child_impl(zio_t *pio, zio_t *cio, boolean_t first)
 {
 	/*
 	 * Logical I/Os can have logical, gang, or vdev children.
@@ -765,7 +765,11 @@ zio_add_child(zio_t *pio, zio_t *cio)
 	zl->zl_child = cio;
 
 	mutex_enter(&pio->io_lock);
-	mutex_enter(&cio->io_lock);
+
+	if (first)
+		ASSERT(list_is_empty(&cio->io_parent_list));
+	else
+		mutex_enter(&cio->io_lock);
 
 	ASSERT(pio->io_state[ZIO_WAIT_DONE] == 0);
 
@@ -776,44 +780,22 @@ zio_add_child(zio_t *pio, zio_t *cio)
 	list_insert_head(&pio->io_child_list, zl);
 	list_insert_head(&cio->io_parent_list, zl);
 
-	mutex_exit(&cio->io_lock);
+	if (!first)
+		mutex_exit(&cio->io_lock);
+
 	mutex_exit(&pio->io_lock);
 }
 
 void
+zio_add_child(zio_t *pio, zio_t *cio)
+{
+	zio_add_child_impl(pio, cio, B_FALSE);
+}
+
+static void
 zio_add_child_first(zio_t *pio, zio_t *cio)
 {
-	/*
-	 * Logical I/Os can have logical, gang, or vdev children.
-	 * Gang I/Os can have gang or vdev children.
-	 * Vdev I/Os can only have vdev children.
-	 * The following ASSERT captures all of these constraints.
-	 */
-	ASSERT3S(cio->io_child_type, <=, pio->io_child_type);
-
-	/* Parent should not have READY stage if child doesn't have it. */
-	IMPLY((cio->io_pipeline & ZIO_STAGE_READY) == 0 &&
-	    (cio->io_child_type != ZIO_CHILD_VDEV),
-	    (pio->io_pipeline & ZIO_STAGE_READY) == 0);
-
-	zio_link_t *zl = kmem_cache_alloc(zio_link_cache, KM_SLEEP);
-	zl->zl_parent = pio;
-	zl->zl_child = cio;
-
-	ASSERT(list_is_empty(&cio->io_parent_list));
-	list_insert_head(&cio->io_parent_list, zl);
-
-	mutex_enter(&pio->io_lock);
-
-	ASSERT(pio->io_state[ZIO_WAIT_DONE] == 0);
-
-	uint64_t *countp = pio->io_children[cio->io_child_type];
-	for (int w = 0; w < ZIO_WAIT_TYPES; w++)
-		countp[w] += !cio->io_state[w];
-
-	list_insert_head(&pio->io_child_list, zl);
-
-	mutex_exit(&pio->io_lock);
+	zio_add_child_impl(pio, cio, B_TRUE);
 }
 
 static void
@@ -2307,12 +2289,12 @@ zio_deadman_impl(zio_t *pio, int ziodepth)
 	zio_t *cio, *cio_next;
 	zio_link_t *zl = NULL;
 	vdev_t *vd = pio->io_vd;
+	uint64_t failmode = spa_get_deadman_failmode(pio->io_spa);
 
 	if (zio_deadman_log_all || (vd != NULL && vd->vdev_ops->vdev_op_leaf)) {
 		vdev_queue_t *vq = vd ? &vd->vdev_queue : NULL;
 		zbookmark_phys_t *zb = &pio->io_bookmark;
 		uint64_t delta = gethrtime() - pio->io_timestamp;
-		uint64_t failmode = spa_get_deadman_failmode(pio->io_spa);
 
 		zfs_dbgmsg("slow zio[%d]: zio=%px timestamp=%llu "
 		    "delta=%llu queued=%llu io=%llu "
@@ -2336,11 +2318,15 @@ zio_deadman_impl(zio_t *pio, int ziodepth)
 		    pio->io_error);
 		(void) zfs_ereport_post(FM_EREPORT_ZFS_DEADMAN,
 		    pio->io_spa, vd, zb, pio, 0);
+	}
 
-		if (failmode == ZIO_FAILURE_MODE_CONTINUE &&
-		    taskq_empty_ent(&pio->io_tqent)) {
-			zio_interrupt(pio);
-		}
+	if (vd != NULL && vd->vdev_ops->vdev_op_leaf &&
+	    list_is_empty(&pio->io_child_list) &&
+	    failmode == ZIO_FAILURE_MODE_CONTINUE &&
+	    taskq_empty_ent(&pio->io_tqent) &&
+	    pio->io_queue_state == ZIO_QS_ACTIVE) {
+		pio->io_error = EINTR;
+		zio_interrupt(pio);
 	}
 
 	mutex_enter(&pio->io_lock);
@@ -2714,6 +2700,8 @@ zio_suspend(spa_t *spa, zio_t *zio, zio_suspend_reason_t reason)
 	}
 
 	mutex_exit(&spa->spa_suspend_lock);
+
+	txg_wait_kick(spa->spa_dsl_pool);
 }
 
 int
@@ -4162,7 +4150,7 @@ static zio_t *
 zio_dva_allocate(zio_t *zio)
 {
 	spa_t *spa = zio->io_spa;
-	metaslab_class_t *mc;
+	metaslab_class_t *mc, *newmc;
 	blkptr_t *bp = zio->io_bp;
 	int error;
 	int flags = 0;
@@ -4205,7 +4193,7 @@ zio_dva_allocate(zio_t *zio)
 again:
 	/*
 	 * Try allocating the block in the usual metaslab class.
-	 * If that's full, allocate it in the normal class.
+	 * If that's full, allocate it in some other class(es).
 	 * If that's full, allocate as a gang block,
 	 * and if all are full, the allocation fails (which shouldn't happen).
 	 *
@@ -4220,29 +4208,29 @@ again:
 	    &zio->io_alloc_list, zio->io_allocator, zio);
 
 	/*
-	 * Fallback to normal class when an alloc class is full
+	 * When the dedup or special class is spilling into the normal class,
+	 * there can still be significant space available due to deferred
+	 * frees that are in-flight.  We track the txg when this occurred and
+	 * back off adding new DDT entries for a few txgs to allow the free
+	 * blocks to be processed.
 	 */
-	if (error == ENOSPC && mc != spa_normal_class(spa)) {
-		/*
-		 * When the dedup or special class is spilling into the  normal
-		 * class, there can still be significant space available due
-		 * to deferred frees that are in-flight.  We track the txg when
-		 * this occurred and back off adding new DDT entries for a few
-		 * txgs to allow the free blocks to be processed.
-		 */
-		if ((mc == spa_dedup_class(spa) || (spa_special_has_ddt(spa) &&
-		    mc == spa_special_class(spa))) &&
-		    spa->spa_dedup_class_full_txg != zio->io_txg) {
-			spa->spa_dedup_class_full_txg = zio->io_txg;
-			zfs_dbgmsg("%s[%d]: %s class spilling, req size %d, "
-			    "%llu allocated of %llu",
-			    spa_name(spa), (int)zio->io_txg,
-			    mc == spa_dedup_class(spa) ? "dedup" : "special",
-			    (int)zio->io_size,
-			    (u_longlong_t)metaslab_class_get_alloc(mc),
-			    (u_longlong_t)metaslab_class_get_space(mc));
-		}
+	if (error == ENOSPC && spa->spa_dedup_class_full_txg != zio->io_txg &&
+	    (mc == spa_dedup_class(spa) || (mc == spa_special_class(spa) &&
+	    !spa_has_dedup(spa) && spa_special_has_ddt(spa)))) {
+		spa->spa_dedup_class_full_txg = zio->io_txg;
+		zfs_dbgmsg("%s[%llu]: %s class spilling, req size %llu, "
+		    "%llu allocated of %llu",
+		    spa_name(spa), (u_longlong_t)zio->io_txg,
+		    metaslab_class_get_name(mc),
+		    (u_longlong_t)zio->io_size,
+		    (u_longlong_t)metaslab_class_get_alloc(mc),
+		    (u_longlong_t)metaslab_class_get_space(mc));
+	}
 
+	/*
+	 * Fall back to some other class when this one is full.
+	 */
+	if (error == ENOSPC && (newmc = spa_preferred_class(spa, zio)) != mc) {
 		/*
 		 * If we are holding old class reservation, drop it.
 		 * Dispatch the next ZIO(s) there if some are waiting.
@@ -4257,16 +4245,18 @@ again:
 		}
 
 		if (zfs_flags & ZFS_DEBUG_METASLAB_ALLOC) {
-			zfs_dbgmsg("%s: metaslab allocation failure, "
-			    "trying normal class: zio %px, size %llu, error %d",
-			    spa_name(spa), zio, (u_longlong_t)zio->io_size,
-			    error);
+			zfs_dbgmsg("%s: metaslab allocation failure in %s "
+			    "class, trying fallback to %s class: zio %px, "
+			    "size %llu, error %d", spa_name(spa),
+			    metaslab_class_get_name(mc),
+			    metaslab_class_get_name(newmc),
+			    zio, (u_longlong_t)zio->io_size, error);
 		}
-		zio->io_metaslab_class = mc = spa_normal_class(spa);
+		zio->io_metaslab_class = mc = newmc;
 		ZIOSTAT_BUMP(ziostat_alloc_class_fallbacks);
 
 		/*
-		 * If normal class uses throttling, return to that pipeline
+		 * If the new class uses throttling, return to that pipeline
 		 * stage.  Otherwise just do another allocation attempt.
 		 */
 		if (zio->io_priority != ZIO_PRIORITY_SYNC_WRITE &&
