@@ -9,15 +9,17 @@ TCMODULES += q_sfq.o
 TCMODULES += q_red.o
 TCMODULES += q_prio.o
 TCMODULES += q_tbf.o
+ifneq ($(KERNELVERSION),6.12)
 TCMODULES += q_cbq.o
-#TCMODULES += q_wrr.o
 TCMODULES += f_rsvp.o
+TCMODULES += f_tcindex.o
+TCMODULES += q_dsmark.o
+endif
+#TCMODULES += q_wrr.o
 TCMODULES += f_u32.o
 TCMODULES += f_route.o
 TCMODULES += f_fw.o
-TCMODULES += q_dsmark.o
 TCMODULES += q_gred.o
-TCMODULES += f_tcindex.o
 TCMODULES += q_ingress.o
 TCMODULES += q_hfsc.o
 TCMODULES += q_htb.o
@@ -63,6 +65,62 @@ TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.14)
+CFLAGS += -DLOW_RATE_THRESHOLD
+CFLAGS += -DCE_THRESHOLD
+TCMODULES += q_multiq.o
+TCMODULES += q_cake.o
+TCMODULES += q_codel.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq_codel_fast.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+
+ifeq ($(KERNELVERSION),6.1)
+CFLAGS += -DLOW_RATE_THRESHOLD
+CFLAGS += -DCE_THRESHOLD
+TCMODULES += q_multiq.o
+TCMODULES += q_cake.o
+TCMODULES += q_codel.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq_codel_fast.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+ifeq ($(KERNELVERSION),6.1-nss)
+CFLAGS += -DLOW_RATE_THRESHOLD
+CFLAGS += -DCE_THRESHOLD
+TCMODULES += q_multiq.o
+TCMODULES += q_cake.o
+TCMODULES += q_codel.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq_codel_fast.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+ifeq ($(KERNELVERSION),6.6)
+CFLAGS += -DLOW_RATE_THRESHOLD
+CFLAGS += -DCE_THRESHOLD
+TCMODULES += q_multiq.o
+TCMODULES += q_cake.o
+TCMODULES += q_codel.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq_codel_fast.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
+CFLAGS += -DLOW_RATE_THRESHOLD
+CFLAGS += -DCE_THRESHOLD
+TCMODULES += q_multiq.o
+TCMODULES += q_cake.o
+TCMODULES += q_codel.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq_codel_fast.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+ifeq ($(KERNELVERSION),6.12)
 CFLAGS += -DLOW_RATE_THRESHOLD
 CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o

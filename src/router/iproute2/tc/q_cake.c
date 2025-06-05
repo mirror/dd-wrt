@@ -25,6 +25,7 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+#ifndef TCA_CAKE_MAX
 /* CAKE */
 enum {
 	TCA_CAKE_UNSPEC,
@@ -47,7 +48,6 @@ enum {
 	TCA_CAKE_SPLIT_GSO,
 	TCA_CAKE_FWMARK,
 	TCA_CAKE_FWMARK_STORE,
-	TCA_CAKE_SCE,
 	__TCA_CAKE_MAX
 };
 #define TCA_CAKE_MAX	(__TCA_CAKE_MAX - 1)
@@ -101,8 +101,6 @@ enum {
 	TCA_CAKE_TIN_STATS_UNRESPONSIVE_FLOWS,
 	TCA_CAKE_TIN_STATS_MAX_SKBLEN,
 	TCA_CAKE_TIN_STATS_FLOW_QUANTUM,
-	TCA_CAKE_TIN_STATS_SCE_MARKED_PACKETS,
-	TCA_CAKE_TIN_STATS_SCE_MARKED_BYTES64,
 	__TCA_CAKE_TIN_STATS_MAX
 };
 #define TCA_CAKE_TIN_STATS_MAX (__TCA_CAKE_TIN_STATS_MAX - 1)
@@ -142,7 +140,7 @@ enum {
 	CAKE_ATM_PTM,
 	CAKE_ATM_MAX
 };
-
+#endif
 
 struct cake_preset {
 	char *name;
@@ -539,9 +537,6 @@ static int cake_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 	if (ack_filter != -1)
 		addattr_l(n, 1024, TCA_CAKE_ACK_FILTER, &ack_filter,
 			  sizeof(ack_filter));
-	if (sce != -1)
-		addattr_l(n, 1024, TCA_CAKE_SCE, &sce, sizeof(sce));
-
 	tail->rta_len = (void *) NLMSG_TAIL(n) - (void *) tail;
 	return 0;
 }
@@ -661,10 +656,6 @@ static int cake_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 	if (tb[TCA_CAKE_FWMARK] &&
 	    RTA_PAYLOAD(tb[TCA_CAKE_FWMARK]) >= sizeof(__u32)) {
 		fwmark = rta_getattr_u32(tb[TCA_CAKE_FWMARK]);
-	}
-	if (tb[TCA_CAKE_SCE] &&
-	    RTA_PAYLOAD(tb[TCA_CAKE_SCE]) >= sizeof(__u32)) {
-		sce = rta_getattr_u32(tb[TCA_CAKE_SCE]);
 	}
 
 	if (wash)
@@ -894,8 +885,6 @@ static int cake_print_xstats(struct qdisc_util *qu, FILE *f,
 		PRINT_TSTAT_U32("  way_inds", WAY_INDIRECT_HITS);
 		PRINT_TSTAT_U32("  way_miss", WAY_MISSES);
 		PRINT_TSTAT_U32("  way_cols", WAY_COLLISIONS);
-		PRINT_TSTAT_U32("  sce     ", SCE_MARKED_PACKETS);
-		PRINT_TSTAT_U32("  marks   ", ECN_MARKED_PACKETS);
 		PRINT_TSTAT_U32("  drops   ", DROPPED_PACKETS);
 		PRINT_TSTAT_U32("  ack_drop", ACKS_DROPPED_PACKETS);
 		PRINT_TSTAT_U32("  sp_flows", SPARSE_FLOWS);
