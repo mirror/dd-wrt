@@ -639,6 +639,11 @@ smb2_get_name(const char *src, const int maxlen, struct nls_table *local_nls)
 		return name;
 	}
 
+	if (*name == '\0') {
+		kfree(name);
+		return ERR_PTR(-EINVAL);
+	}
+
 	if (*name == '\\') {
 		pr_err("not allow directory name included leading slash\n");
 		kfree(name);
@@ -1459,7 +1464,7 @@ static int ntlm_authenticate(struct ksmbd_work *work,
 {
 	struct ksmbd_conn *conn = work->conn;
 	struct ksmbd_session *sess = work->sess;
-	struct channel *chann = NULL;
+	struct channel *chann = NULL, *old;
 	struct ksmbd_user *user;
 	u64 prev_id;
 	int sz, rc;
@@ -1571,7 +1576,12 @@ binding_session:
 				return -ENOMEM;
 
 			chann->conn = conn;
-			xa_store(&sess->ksmbd_chann_list, (long)conn, chann, KSMBD_DEFAULT_GFP);
+			old = xa_store(&sess->ksmbd_chann_list, (long)conn, chann,
+					KSMBD_DEFAULT_GFP);
+			if (xa_is_err(old)) {
+				kfree(chann);
+				return xa_err(old);
+			}
 		}
 	}
 
@@ -1616,9 +1626,6 @@ static int krb5_authenticate(struct ksmbd_work *work,
 	prev_sess_id = le64_to_cpu(req->PreviousSessionId);
 	if (prev_sess_id && prev_sess_id != sess->id)
 		destroy_previous_session(conn, sess->user, prev_sess_id);
-
-	if (sess->state == SMB2_SESSION_VALID)
-		ksmbd_free_user(sess->user);
 
 	retval = ksmbd_krb5_authenticate(sess, in_blob, in_len,
 					 out_blob, &out_len);
@@ -2255,10 +2262,6 @@ int smb2_session_logoff(struct ksmbd_work *work)
 	sess->state = SMB2_SESSION_EXPIRED;
 	up_write(&conn->session_lock);
 
-	if (sess->user) {
-		ksmbd_free_user(sess->user);
-		sess->user = NULL;
-	}
 	ksmbd_all_conn_set_status(sess_id, KSMBD_SESS_NEED_SETUP);
 
 	rsp->StructureSize = cpu_to_le16(4);
@@ -3199,10 +3202,10 @@ int smb2_open(struct ksmbd_work *work)
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_FOLLOW,
+	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
 					&parent_path, &path, 1);
 #else
-	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 1);
 #endif
 	if (!rc) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
@@ -5671,7 +5674,7 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	if (!share->path)
 		return -EIO;
 
-	rc = kern_path(share->path, LOOKUP_FOLLOW, &path);
+	rc = kern_path(share->path, LOOKUP_NO_SYMLINKS, &path);
 	if (rc) {
 		pr_err("cannot create vfs path\n");
 		return -EIO;
@@ -6378,7 +6381,7 @@ static int smb2_rename(struct ksmbd_work *work,
 	}
 
 	ksmbd_debug(SMB, "new name %s\n", new_name);
-	rc = ksmbd_vfs_kern_path(work, new_name, LOOKUP_FOLLOW, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, new_name, LOOKUP_NO_SYMLINKS, &path, 1);
 	if (rc) {
 		if (rc != -ENOENT)
 			goto out;
@@ -6464,10 +6467,10 @@ static int smb2_create_link(struct ksmbd_work *work,
 
 	ksmbd_debug(SMB, "target name is %s\n", target_name);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, link_name, LOOKUP_FOLLOW,
+	rc = ksmbd_vfs_kern_path_locked(work, link_name, LOOKUP_NO_SYMLINKS,
 					&parent_path, &path, 0);
 #else
-	rc = ksmbd_vfs_kern_path(work, link_name, LOOKUP_FOLLOW, &path, 0);
+	rc = ksmbd_vfs_kern_path(work, link_name, LOOKUP_NO_SYMLINKS, &path, 0);
 #endif
 	if (rc) {
 		if (rc != -ENOENT)
@@ -6694,7 +6697,7 @@ static int set_end_of_file_info(struct ksmbd_work *work, struct ksmbd_file *fp,
 	 * truncate of some filesystem like FAT32 fill zero data in
 	 * truncated range.
 	 */
-/*	if (inode->i_sb->s_magic != MSDOS_SUPER_MAGIC) {
+	if (inode->i_sb->s_magic != MSDOS_SUPER_MAGIC) {
 		ksmbd_debug(SMB, "truncated to newsize %lld\n", newsize);
 		rc = ksmbd_vfs_truncate(work, fp, newsize);
 		if (rc) {
@@ -6703,7 +6706,7 @@ static int set_end_of_file_info(struct ksmbd_work *work, struct ksmbd_file *fp,
 				rc = -EBADF;
 			return rc;
 		}
-	}*/
+	}
 	return 0;
 }
 

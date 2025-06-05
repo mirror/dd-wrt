@@ -178,12 +178,9 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 		     char *newname, int flags);
-int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
-			char *newname);
-#else
-int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
-			char *newname);
 #endif
+int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
+			char *newname);
 int ksmbd_vfs_truncate(struct ksmbd_work *work,
 		       struct ksmbd_file *fp, loff_t size);
 struct srv_copychunk;
@@ -244,9 +241,6 @@ int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
 			       unsigned int flags, struct path *parent_path,
 			       struct path *path, bool caseless);
 void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path);
-int ksmbd_vfs_kern_path(struct ksmbd_work *work,
-			char *name, unsigned int flags, struct path *path,
-			bool caseless);
 #else
 int ksmbd_vfs_kern_path(struct ksmbd_work *work,
 			char *name, unsigned int flags, struct path *path,

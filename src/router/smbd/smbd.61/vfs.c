@@ -47,6 +47,7 @@ extern int vfs_path_lookup(struct dentry *, struct vfsmount *,
 			   const char *, unsigned int, struct path *);
 #endif
 
+#if 1 // LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 static char *extract_last_component(char *path)
 {
 	char *p = strrchr(path, '/');
@@ -59,6 +60,7 @@ static char *extract_last_component(char *path)
 	}
 	return p;
 }
+#endif
 
 static void ksmbd_vfs_inherit_owner(struct ksmbd_work *work,
 				    struct inode *parent_inode,
@@ -367,7 +369,7 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 	int err;
 
 	dentry = ksmbd_vfs_kern_path_create(work, name,
-					    LOOKUP_FOLLOW, &path);
+					    LOOKUP_NO_SYMLINKS, &path);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
 		if (err != -ENOENT)
@@ -419,7 +421,7 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	int err;
 
 	dentry = ksmbd_vfs_kern_path_create(work, name,
-					    LOOKUP_FOLLOW | LOOKUP_DIRECTORY,
+					    LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
 					    &path);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
@@ -687,10 +689,15 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 	ksmbd_debug(VFS, "write stream data pos : %llu, count : %zd\n",
 		    *pos, count);
 
+	if (XATTR_SIZE_MAX <= *pos) {
+		pr_err("stream write position %lld is out of bounds\n",	*pos);
+		return -EINVAL;
+	}
+
 	size = *pos + count;
 	if (size > XATTR_SIZE_MAX) {
 		size = XATTR_SIZE_MAX;
-		count = (*pos + count) - XATTR_SIZE_MAX;
+		count = XATTR_SIZE_MAX - *pos;
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -765,7 +772,8 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 	int err = 0;
 
 	if (work->conn->connection_type) {
-		if (!(fp->daccess & (FILE_WRITE_DATA_LE | FILE_APPEND_DATA_LE))) {
+		if (!(fp->daccess & (FILE_WRITE_DATA_LE | FILE_APPEND_DATA_LE)) ||
+		    S_ISDIR(file_inode(fp->filp)->i_mode)) {
 			pr_err("no right to write(%pD)\n", fp->filp);
 			err = -EACCES;
 			goto out;
@@ -1120,10 +1128,10 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 	name[file_pathlen] = '\0';
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_FOLLOW,
+	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
 					&parent_path, &path, true);
 #else
-	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, 1);
+	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 1);
 #endif
 	if (rc) {
 		pr_err("lookup failed: %s [%d]\n", name, rc);
@@ -1232,7 +1240,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
 
-	err = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW, &path, false);
+	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, false);
 	if (err) {
 		ksmbd_debug(VFS, "can't get %s, err %d\n", name, err);
 		ksmbd_revert_fsids(work);
@@ -1317,7 +1325,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
 
-	err = kern_path(oldname, LOOKUP_FOLLOW, &oldpath);
+	err = kern_path(oldname, LOOKUP_NO_SYMLINKS, &oldpath);
 	if (err) {
 		pr_err("cannot get linux path for %s, err = %d\n",
 		       oldname, err);
@@ -1325,7 +1333,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	}
 
 	dentry = ksmbd_vfs_kern_path_create(work, newname,
-					    LOOKUP_FOLLOW | LOOKUP_REVAL,
+					    LOOKUP_NO_SYMLINKS | LOOKUP_REVAL,
 					    &newpath);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
@@ -1377,7 +1385,7 @@ int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 	struct ksmbd_share_config *share_conf = work->tcon->share_conf;
 	struct ksmbd_file *parent_fp;
 	int new_type;
-	int err, lookup_flags = LOOKUP_FOLLOW;
+	int err, lookup_flags = LOOKUP_NO_SYMLINKS;
 
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
@@ -1492,7 +1500,7 @@ revert_fsids:
 	return err;
 }
 
-#endif
+#else
 static int ksmbd_validate_entry_in_use(struct dentry *src_dent)
 {
 	struct dentry *dst_dent;
@@ -1515,6 +1523,7 @@ static int ksmbd_validate_entry_in_use(struct dentry *src_dent)
 
 	return 0;
 }
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 static int __ksmbd_vfs_rename(struct ksmbd_work *work,
@@ -1539,12 +1548,13 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 	struct dentry *dst_dent;
 	int err;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 	if (!work->tcon->posix_extensions) {
 		err = ksmbd_validate_entry_in_use(src_dent);
 		if (err)
 			return err;
 	}
-
+#endif
 	if (d_really_is_negative(src_dent_parent))
 		return -ENOENT;
 	if (d_really_is_negative(dst_dent_parent))
@@ -1616,6 +1626,7 @@ out:
 	return err;
 }
 
+
 int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 			char *newname)
 {
@@ -1629,6 +1640,9 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	struct dentry *src_dent, *trap_dent, *src_child;
 	char *dst_name;
 	int err;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+	struct path parent_path;
+#endif
 
 	dst_name = extract_last_component(newname);
 	if (!dst_name) {
@@ -1639,9 +1653,13 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	src_dent_parent = dget_parent(fp->filp->f_path.dentry);
 	src_dent = fp->filp->f_path.dentry;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+	err = ksmbd_vfs_kern_path_locked(work, newname, LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY, &parent_path, &dst_path, 0);
+#else
 	err = ksmbd_vfs_kern_path(work, newname,
-				  LOOKUP_FOLLOW | LOOKUP_DIRECTORY,
+				  LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
 				  &dst_path, false);
+#endif
 	if (err) {
 		ksmbd_debug(VFS, "Cannot get path for %s [%d]\n", newname, err);
 		goto out;
@@ -1707,7 +1725,6 @@ out:
 	dput(src_dent_parent);
 	return err;
 }
-
 
 /**
  * ksmbd_vfs_truncate() - vfs helper for smb file truncate
@@ -2889,78 +2906,6 @@ void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path)
 	path_put(parent_path);
 }
 
-int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *name,
-			unsigned int flags, struct path *path, bool caseless)
-{
-	struct ksmbd_share_config *share_conf = work->tcon->share_conf;
-	int err;
-
-	flags |= LOOKUP_BENEATH;
-	err = vfs_path_lookup(share_conf->vfs_path.dentry,
-			      share_conf->vfs_path.mnt,
-			      name,
-			      flags,
-			      path);
-	if (!err)
-		return 0;
-
-	if (caseless) {
-		char *filepath;
-		struct path parent;
-		size_t path_len, remain_len;
-
-		filepath = kstrdup(name, KSMBD_DEFAULT_GFP);
-		if (!filepath)
-			return -ENOMEM;
-
-		path_len = strlen(filepath);
-		remain_len = path_len;
-
-		parent = share_conf->vfs_path;
-		path_get(&parent);
-
-		while (d_can_lookup(parent.dentry)) {
-			char *filename = filepath + path_len - remain_len;
-			char *next = strchrnul(filename, '/');
-			size_t filename_len = next - filename;
-			bool is_last = !next[0];
-
-			if (filename_len == 0)
-				break;
-
-			err = ksmbd_vfs_lookup_in_dir(&parent, filename,
-						      filename_len,
-						      work->conn->um);
-			path_put(&parent);
-			if (err)
-				goto out;
-
-			next[0] = '\0';
-
-			err = vfs_path_lookup(share_conf->vfs_path.dentry,
-					      share_conf->vfs_path.mnt,
-					      filepath,
-					      flags,
-					      &parent);
-			if (err)
-				goto out;
-			else if (is_last) {
-				*path = parent;
-				goto out;
-			}
-
-			next[0] = '/';
-			remain_len -= filename_len + 1;
-		}
-
-		path_put(&parent);
-		err = -EINVAL;
-out:
-		kfree(filepath);
-	}
-	return err;
-}
-
 #else
 /**
  * ksmbd_vfs_kern_path() - lookup a file and get path info
@@ -2992,7 +2937,7 @@ int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *name,
 		struct path parent;
 		size_t path_len, remain_len;
 
-		filepath = kstrdup(name, GFP_KERNEL);
+		filepath = kstrdup(name, KSMBD_DEFAULT_GFP);
 		if (!filepath)
 			return -ENOMEM;
 
