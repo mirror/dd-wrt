@@ -7,7 +7,11 @@
 #include "distributed-arp-table.h"
 #include "main.h"
 
+#if LINUX_VERSION_IS_LESS(6,12,0)
 #include <asm/unaligned.h>
+#else
+#include <linux/unaligned.h>
+#endif
 #include <linux/atomic.h>
 #include <linux/bitops.h>
 #include <linux/byteorder/generic.h>
