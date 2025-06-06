@@ -62,6 +62,7 @@ static ndpi_network6 ndpi_protocol_teamviewer_protocol_list_6[] = {
  { "2a0b:b580:ffff::", 48, NDPI_PROTOCOL_TEAMVIEWER },
  { "2a0b:b581::", 48, NDPI_PROTOCOL_TEAMVIEWER },
  { "2a0b:b582::", 48, NDPI_PROTOCOL_TEAMVIEWER },
+ { "2a0b:b583::", 48, NDPI_PROTOCOL_TEAMVIEWER },
  /* End */
  { NULL, 0, 0 }
 };

@@ -2075,7 +2075,7 @@ static void checkExtensions(struct ndpi_detection_module_struct *ndpi_struct,
 
   /* see: https://www.wireshark.org/docs/wsar_html/packet-tls-utils_8h_source.html */
   static u_int16_t const allowed_non_iana_extensions[] = {
-      /* 65486 ESNI is suspicious nowadays */ 13172 /* NPN - Next Proto Neg */, 17513 /* ALPS */,
+      /* 65486 ESNI is suspicious nowadays */ 13172 /* NPN - Next Proto Neg */,
       30032 /* Channel ID */, 65445 /* QUIC transport params */,
       /* GREASE extensions */
       2570, 6682, 10794, 14906, 19018, 23130, 27242,
@@ -2085,16 +2085,15 @@ static void checkExtensions(struct ndpi_detection_module_struct *ndpi_struct,
       1035, 10794, 16696, 23130, 31354, 35466, 51914,
       /* Ciphers */
       102, 129, 52243, 52244, 57363, 65279, 65413,
-      /* ECH */
-      65037,
-      /* ExtensionType value from draft-vvv-tls-alps. This is not an IANA defined extension number. */
+      /* ALPS */
       17513, 17613
   };
   size_t const allowed_non_iana_extensions_size = sizeof(allowed_non_iana_extensions) /
     sizeof(allowed_non_iana_extensions[0]);
 
   /* see: https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml */
-  if(extension_id > 59 && extension_id != 65281)
+  /* 65281 renegotiation_info, 65037 ECH */
+  if(extension_id > 59 && extension_id != 65281 && extension_id != 65037)
     {
       u_int8_t extension_found = 0;
       size_t i;
@@ -3549,37 +3548,17 @@ static void ndpi_search_tls_wrapper(struct ndpi_detection_module_struct *ndpi_st
   if(flow->tls_quic.obfuscated_heur_state) {
     tls_obfuscated_heur_search_again(ndpi_struct, flow);
   } else if(rc == 0) {
-    if(packet->udp != NULL || flow->stun.maybe_dtls)
-      NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_DTLS);
-    else
-      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
   }
 }
 
 /* **************************************** */
 
-void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct,
-			u_int32_t *id) {
-
-  ndpi_struct->cfg.tls_buf_size_limit = NDPI_MAX_TLS_REQUEST_SIZE;
-
-  ndpi_set_bitmask_protocol_detection("TLS", ndpi_struct, *id,
+void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
+  ndpi_set_bitmask_protocol_detection("TLS", ndpi_struct,
 				      NDPI_PROTOCOL_TLS,
 				      ndpi_search_tls_wrapper,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
-
-  *id += 1;
-
-  /* *************************************************** */
-
-  ndpi_set_bitmask_protocol_detection("DTLS", ndpi_struct, *id,
-				      NDPI_PROTOCOL_DTLS,
-				      ndpi_search_tls_wrapper,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
-				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
-				      ADD_TO_DETECTION_BITMASK);
-
-  *id += 1;
 }

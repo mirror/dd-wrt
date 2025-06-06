@@ -111,11 +111,11 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/git.c \
 		     protocols/gnutella.c \
 		     protocols/gtp.c \
-		     protocols/guildwars.c \
+		     protocols/guildwars2.c \
 		     protocols/h323.c \
-		     protocols/halflife2_and_mods.c \
 		     protocols/haproxy.c \
 		     protocols/hart-ip.c \
+		     protocols/hcl_notes.c \
 		     protocols/hislip.c \
 		     protocols/hl7.c \
 		     protocols/hots.c \
@@ -149,7 +149,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ldp.c \
 		     protocols/lagofast.c \
 		     protocols/lol_wild_rift.c \
-		     protocols/lotus_notes.c \
 		     protocols/line.c \
 		     protocols/lisp.c \
 		     protocols/lustre.c \
@@ -157,6 +156,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mail_pop.c \
 		     protocols/mail_smtp.c \
 		     protocols/megaco.c \
+		     protocols/melsec.c \
 		     protocols/memcached.c \
 		     protocols/merakicloud.c \
 		     protocols/mikrotik.c \
@@ -266,14 +266,11 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ultrasurf.c \
 		     protocols/usenet.c \
 		     protocols/viber.c \
-		     protocols/vhua.c \
 		     protocols/vmware.c \
 		     protocols/vnc.c \
 		     protocols/vxlan.c \
-		     protocols/warcraft3.c \
 		     protocols/websocket.c \
 		     protocols/whoisdas.c \
-		     protocols/world_of_kung_fu.c \
 		     protocols/wsd.c \
 		     protocols/xbox.c \
 		     protocols/xdmcp.c \

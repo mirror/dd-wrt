@@ -286,6 +286,18 @@ typedef struct ndpi_protocol_bitmask_struct {
   ndpi_ndpi_mask fds_bits[NDPI_NUM_FDS_BITS];
 } ndpi_protocol_bitmask_struct_t;
 
+
+#define NDPI_MAX_NUM_DISSECTORS         288      /* Multiple of 32, i.e. 8 * sizeof(ndpi_ndpi_mask) */
+#ifdef NDPI_CFFI_PREPROCESSING
+#undef NDPI_NUM_FDS_BITS_DISSECTORS
+#define NDPI_NUM_FDS_BITS_DISSECTORS    9
+#else
+#define NDPI_NUM_FDS_BITS_DISSECTORS    NDPI_MAX_NUM_DISSECTORS / (8 * sizeof(ndpi_ndpi_mask))
+#endif
+typedef struct ndpi_dissector_bitmask_struct {
+  ndpi_ndpi_mask fds_bits[NDPI_NUM_FDS_BITS_DISSECTORS];
+} ndpi_dissector_bitmask_struct_t;
+
 struct ndpi_detection_module_struct;
 
 /* NDPI_DEBUG_FUNCTION_PTR (cast) */
@@ -942,8 +954,8 @@ struct ndpi_flow_tcp_struct {
     char username[32], password[16];
   } ftp_imap_pop_smtp;
 
-  /* NDPI_PROTOCOL_LOTUS_NOTES */
-  u_int8_t lotus_notes_packet_id;
+  /* NDPI_PROTOCOL_HCL_NOTES */
+  u_int8_t hcl_notes_packet_id;
 
   /* NDPI_PROTOCOL_MAIL_SMTP */
   u_int16_t smtp_command_bitmask;
@@ -956,9 +968,6 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_IRC */
   u_int8_t irc_stage;
-
-  /* NDPI_PROTOCOL_GNUTELLA */
-  u_int8_t gnutella_msg_id[3];
 
   /* NDPI_PROTOCOL_NEST_LOG_SINK */
   u_int8_t nest_log_sink_matches;
@@ -1000,9 +1009,6 @@ struct ndpi_flow_tcp_struct {
 /* ************************************************** */
 
 struct ndpi_flow_udp_struct {
-  /* NDPI_PROTOCOL_HALFLIFE2 */
-  u_int32_t halflife2_stage:2;		  // 0 - 2
-
   /* NDPI_PROTOCOL_TFTP */
   u_int32_t tftp_stage:2;
 
@@ -1275,7 +1281,7 @@ typedef struct ndpi_proto_defaults {
   u_int8_t isClearTextProto:1, isAppProtocol:1, _notused:6;
   u_int16_t *subprotocols;
   u_int32_t subprotocol_count;
-  u_int16_t protoId, protoIdx;
+  u_int16_t protoId, dissector_idx;
   u_int16_t tcp_default_ports[MAX_DEFAULT_PORTS], udp_default_ports[MAX_DEFAULT_PORTS];
   ndpi_protocol_breed_t protoBreed;
   ndpi_protocol_qoe_category_t qoeCategory;
@@ -1486,6 +1492,7 @@ struct ndpi_flow_struct {
 
   struct {
     char *fingerprint;
+    char *fingerprint_raw;
     ndpi_os os_hint;
   } tcp;
 
@@ -1724,16 +1731,12 @@ struct ndpi_flow_struct {
   /* **Packet** metadata for flows where monitoring is enabled. It is reset after each packet! */
   struct ndpi_metadata_monitoring *monit;
 
-  /* protocols which have marked a connection as this connection cannot be protocol XXX, multiple u_int64_t */
-  NDPI_PROTOCOL_BITMASK excluded_protocol_bitmask;
+  NDPI_DISSECTOR_BITMASK excluded_dissectors_bitmask;
 
   /* NDPI_PROTOCOL_BITTORRENT */
   u_int32_t bittorrent_seq;
   u_int8_t bittorrent_stage;		      // can be 0 - 255
   u_int8_t bt_check_performed : 1;
-
-  /* NDPI_PROTOCOL_RTSP */
-  u_int8_t rtsprdt_stage:2;
 
   /* NDPI_PROTOCOL_ZATTOO */
   u_int8_t zattoo_stage:3;

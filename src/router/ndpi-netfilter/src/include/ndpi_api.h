@@ -282,29 +282,6 @@ extern "C" {
   NDPI_STATIC void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct);
 
   /**
-   * Sets a single protocol bitmask
-   * This function does not increment the index of the callback_buffer
-   *
-   * @par label                    = string for the protocol name
-   * @par ndpi_struct              = the detection module
-   * @par idx                      = the index of the callback_buffer
-   * @par func                     = function pointer of the protocol search
-   * @par ndpi_selection_bitmask   = the protocol selected bitmask
-   * @par b_save_bitmask_unknow    = if set as "true" save the detection bitmask as unknow
-   * @par b_add_detection_bitmask  = if set as "true" add the protocol bitmask to the detection bitmask
-   *
-   */
-  NDPI_STATIC void ndpi_set_bitmask_protocol_detection(char *label,
-					   struct ndpi_detection_module_struct *ndpi_struct,
-					   const u_int32_t idx,
-					   u_int16_t ndpi_protocol_id,
-					   void (*func) (struct ndpi_detection_module_struct *,
-							 struct ndpi_flow_struct *flow),
-					   const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
-					   u_int8_t b_save_bitmask_unknow,
-					   u_int8_t b_add_detection_bitmask);
-
-  /**
    * Sets the protocol bitmask2
    *
    * @par ndpi_struct        = the detection module
@@ -2460,6 +2437,26 @@ NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *
   NDPI_STATIC bool ndpi_cache_address_dump(struct ndpi_detection_module_struct *ndpi_struct, char *path, u_int32_t epoch_now);
   NDPI_STATIC u_int32_t ndpi_cache_address_restore(struct ndpi_detection_module_struct *ndpi_struct, char *path, u_int32_t epoch_now);
   NDPI_STATIC u_int32_t ndpi_cache_address_flush_expired(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t epoch_now);
+
+  /* Protocol normalization functions */
+  /**
+   * Checks if the specified protocol identifier can be placed only on the master_protocol field of ndpi_master_app_protocol
+   * @param ndpi_str nDPI detection module
+   * @param proto_id nDPI protocol identifier
+   * @return true if proto_id cannot be used s app_protocol but only on master_protocol, false is it can be used on both fields
+   */
+  NDPI_STATIC bool ndpi_is_master_only_protocol(struct ndpi_detection_module_struct *ndpi_str, u_int16_t proto_id);
+
+  /**
+   * Normalizes the ndpi_master_app_protocol by reworking values of the specified proto, placing the master/app protocols
+   * in the corresponding protocol fields
+   * @param ndpi_str nDPI detection module
+   * @param proto_id nDPI protocol identifier
+   * @return true if the protocok has been modified/normalized, false if proto has not been modified
+   */
+  NDPI_STATIC bool ndpi_normalize_protocol(struct ndpi_detection_module_struct *ndpi_str,
+			       ndpi_master_app_protocol *proto);
+
   
   /* ******************************* */
   NDPI_STATIC const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);

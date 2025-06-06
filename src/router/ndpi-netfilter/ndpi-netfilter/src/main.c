@@ -1417,7 +1417,7 @@ static inline uint16_t get_in_if(const struct net_device *dev) {
 }
 
 static inline int check_excluded_proto(const struct xt_ndpi_mtinfo *info,
-    const ndpi_protocol_bitmask_struct_t *excluded, int tls) {
+    const ndpi_dissector_bitmask_struct_t *excluded, int tls) {
     int i;
 
     for(i=0; i < NDPI_NUM_FDS_BITS; i++) {
@@ -1495,7 +1495,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 				flow->confidence,
 				flow->guessed_protocol_id_by_ip,
 				flow->guessed_protocol_id,
-				NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+				NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_dissectors_bitmask,
 					flow->guessed_protocol_id) != 0 ? "excluded":""
 				);
 	if(ct_ndpi->confidence >= NDPI_CONFIDENCE_DPI_CACHE) return 0;
@@ -1503,7 +1503,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 	if(proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) return 0;
 
 	if(flow->guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN &&
-	   NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+	   NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_dissectors_bitmask,
 						flow->guessed_protocol_id) == 0) {
 		proto->proto.app_protocol = flow->guessed_protocol_id;
 		if(_DBG_TRACE_GUESSED)
@@ -1553,8 +1553,8 @@ static const ndpi_risk unidir_traf = 1ull << NDPI_UNIDIRECTIONAL_TRAFFIC;
 
 	return ct_ndpi->risk;
 }
-static void pr_dc(const char *msg,uint8_t dc,ndpi_protocol_bitmask_struct_t *ex_p) {
-    uint32_t *e = &ex_p->fds_bits[0];
+static void pr_dc(const char *msg,uint8_t dc,const ndpi_dissector_bitmask_struct_t *ex_p) {
+    const uint32_t *e = &ex_p->fds_bits[0];
     pr_info("%-10s detect done:%d excl:%08x%08x%08x%08x%08x%08x%08x%08x\n",
 	msg,dc,e[0],e[1],e[2],e[3],e[4],e[5],e[6],e[7]);
 }
@@ -1578,7 +1578,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	struct nf_ct_ext_ndpi *ct_ndpi = NULL;
 	struct ndpi_cb *c_proto;
 	ndpi_risk risk = 0;
-	ndpi_protocol_bitmask_struct_t excluded_proto;
+	ndpi_dissector_bitmask_struct_t excluded_proto;
 	uint8_t l4_proto=0,ct_dir=0,detect_complete=1,untracked=1,confidence=0,tls=0;
 	bool result=false, host_matched = false, is_ipv6=false,
 	     ja3s_matched = false, ja3c_matched = false, ja4c_matched = false,
@@ -1747,7 +1747,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		    confidence == NDPI_CONFIDENCE_DPI)
 			detect_complete = 1;
 		if(!detect_complete && ct_ndpi->flow)
-			excluded_proto = ct_ndpi->flow->excluded_protocol_bitmask;
+			excluded_proto = ct_ndpi->flow->excluded_dissectors_bitmask;
 		    else
 			detect_complete = 1;
 		check_tls_done(ct_ndpi,&detect_complete,&tls);
@@ -1840,7 +1840,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		    break;
 		}
 
-		excluded_proto = flow->excluded_protocol_bitmask;
+		excluded_proto = flow->excluded_dissectors_bitmask;
 		check_guessed_protocol(ct_ndpi,&proto);
 		ct_ndpi->confidence = confidence = flow->confidence;
 		ct_ndpi->proto.app_protocol = proto.proto.app_protocol;

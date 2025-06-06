@@ -249,9 +249,8 @@
     <ClCompile Include="..\src\lib\protocols\git.c" />
     <ClCompile Include="..\src\lib\protocols\gnutella.c" />
     <ClCompile Include="..\src\lib\protocols\gtp.c" />
-    <ClCompile Include="..\src\lib\protocols\guildwars.c" />
+    <ClCompile Include="..\src\lib\protocols\guildwars2.c" />
     <ClCompile Include="..\src\lib\protocols\h323.c" />
-    <ClCompile Include="..\src\lib\protocols\halflife2_and_mods.c" />
     <ClCompile Include="..\src\lib\protocols\hots.c" />
     <ClCompile Include="..\src\lib\protocols\http.c" />
     <ClCompile Include="..\src\lib\protocols\http2.c" />
@@ -265,7 +264,7 @@
     <ClCompile Include="..\src\lib\protocols\kerberos.c" />
     <ClCompile Include="..\src\lib\protocols\lagofast.c" />
     <ClCompile Include="..\src\lib\protocols\ldap.c" />
-    <ClCompile Include="..\src\lib\protocols\lotus_notes.c" />
+    <ClCompile Include="..\src\lib\protocols\hcl_notes.c" />
     <ClCompile Include="..\src\lib\protocols\mail_imap.c" />
     <ClCompile Include="..\src\lib\protocols\mail_pop.c" />
     <ClCompile Include="..\src\lib\protocols\mail_smtp.c" />
@@ -332,13 +331,10 @@
     <ClCompile Include="..\src\lib\protocols\tuya_lp.c" />
     <ClCompile Include="..\src\lib\protocols\ubntac2.c" />
     <ClCompile Include="..\src\lib\protocols\usenet.c" />
-    <ClCompile Include="..\src\lib\protocols\vhua.c" />
     <ClCompile Include="..\src\lib\protocols\viber.c" />
     <ClCompile Include="..\src\lib\protocols\vmware.c" />
     <ClCompile Include="..\src\lib\protocols\vnc.c" />
-    <ClCompile Include="..\src\lib\protocols\warcraft3.c" />
     <ClCompile Include="..\src\lib\protocols\whoisdas.c" />
-    <ClCompile Include="..\src\lib\protocols\world_of_kung_fu.c" />
     <ClCompile Include="..\src\lib\protocols\xbox.c" />
     <ClCompile Include="..\src\lib\protocols\xdmcp.c" />
     <ClCompile Include="..\src\lib\protocols\zattoo.c" />
@@ -398,6 +394,7 @@
     <ClCompile Include="..\src\lib\protocols\dingtalk.c" />
     <ClCompile Include="..\src\lib\protocols\paltalk.c" />
     <ClCompile Include="..\src\lib\protocols\msdo.c" />
+    <ClCompile Include="..\src\lib\protocols\melsec.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />

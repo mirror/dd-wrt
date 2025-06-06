@@ -69,6 +69,9 @@ extern int bt_parse_debug;
 
 #define HEURISTICS_CODE 1
 
+/* Necessary to make sure protocols are properly defined */
+#define PROTO_DEBUG     1
+
 /** Client parameters **/
 
 static char *_pcap_file[MAX_NUM_READER_THREADS]; /**< Ingress pcap file/interfaces */
@@ -1856,6 +1859,26 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     if(flow->tunnel_type != ndpi_no_tunnel)
       fprintf(out, "%s:", ndpi_tunnel2str(flow->tunnel_type));
 
+#ifdef PROTO_DEBUG
+    if((flow->detected_protocol.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN) &&
+       (flow->detected_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)
+       && (flow->detected_protocol.proto.app_protocol !=
+	   flow->detected_protocol.proto.master_protocol)) {
+      if(ndpi_is_master_only_protocol(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+				      flow->detected_protocol.proto.app_protocol)) {
+	printf("[INTERNAL ERROR] %u/%s [%u.%u/%s] unexpected as application protocol\n",
+	       flow->detected_protocol.proto.app_protocol,
+	       ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+				   flow->detected_protocol.proto.app_protocol),
+	       flow->detected_protocol.proto.master_protocol,
+	       flow->detected_protocol.proto.app_protocol,
+	       ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+				  flow->detected_protocol, buf1, sizeof(buf1))
+	  );
+      }
+    }
+#endif
+
     fprintf(out, "%s/%s][IP: %u/%s]",
 	    ndpi_protocol2id(flow->detected_protocol, buf, sizeof(buf)),
 	    ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
@@ -1881,7 +1904,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
 	  if(flow->rtp[1 /* srv -> cli */].payload_detected) {
 	    if (flow->rtp[0].payload_detected) fprintf(out, " / ");
-	    
+
 	    fprintf(out, "%s (%u.%u)]",
 		    ndpi_rtp_payload_type2str(flow->rtp[1].payload_type, flow->rtp[1].evs_subtype), flow->rtp[1].payload_type, flow->rtp[1].evs_subtype);
 	  } else
@@ -3819,6 +3842,11 @@ static void printFlowsStats() {
 #endif
 
       for(i=0; i<num_flows; i++) {
+#ifdef PROTO_DEBUG
+	ndpi_normalize_protocol(ndpi_thread_info[all_flows[i].thread_id].workflow->ndpi_struct,
+				&all_flows[i].flow->detected_protocol.proto);
+#endif
+
 #ifndef DIRECTION_BINS
         if(enable_doh_dot_detection) {
           /* Discard flows with few packets per direction */
