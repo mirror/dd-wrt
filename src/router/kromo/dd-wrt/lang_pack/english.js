@@ -2454,6 +2454,7 @@ status_router.cpu="CPU Model";
 status_router.cores="CPU Cores";
 status_router.features="CPU Features";
 status_router.clock="CPU Clock";
+status_router.dhrystones="Dhrystones";
 status_router.legend3="Memory - Available / Total";
 status_router.mem_tot="Total";
 status_router.mem_free="Free";

@@ -139,6 +139,10 @@ addEvent(window, "unload", function() {
 									<span id="clkfreq"><% get_clkfreq(); %></span>&nbsp;MHz
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("status_router.dhrystones"); %></div>
+									<% get_dmips(); %>&nbsp;DMIPS
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("status_router.sys_load"); %></div>
 									<span id="uptime_load"></span>&nbsp;
 								</div>
