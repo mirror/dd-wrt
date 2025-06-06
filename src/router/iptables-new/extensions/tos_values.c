@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <linux/compiler_attributes.h>
 #include <linux/ip.h>
 
 #ifndef IPTOS_NORMALSVC
