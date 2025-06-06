@@ -1,0 +1,2 @@
+#include "dhrystones.c"
+
