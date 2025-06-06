@@ -510,7 +510,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"ubiquiti",
 	"msdo",
 	"rockstar_games",
-	"kick"
+	"kick",
 	NULL,
 };
 
