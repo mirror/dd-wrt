@@ -95,11 +95,9 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/gtp.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/guildwars.c"
+#include "protocols/guildwars2.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/h323.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/halflife2_and_mods.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/thrift.c"
 #undef NDPI_CURRENT_PROTO
@@ -135,7 +133,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/lisp.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/lotus_notes.c"
+#include "protocols/hcl_notes.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/mail_imap.c"
 #undef NDPI_CURRENT_PROTO
@@ -279,8 +277,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/usenet.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/vhua.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/viber.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/vmware.c"
@@ -289,8 +285,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/vxlan.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/warcraft3.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/websocket.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/whatsapp.c"
@@ -298,8 +292,6 @@
 #include "protocols/whoisdas.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/wireguard.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/world_of_kung_fu.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/wsd.c"
 #undef NDPI_CURRENT_PROTO
@@ -518,4 +510,6 @@
 #include "protocols/nexon.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/msdo.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/melsec.c"
 #undef NDPI_CURRENT_PROTO

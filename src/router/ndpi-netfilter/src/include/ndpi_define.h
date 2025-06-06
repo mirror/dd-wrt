@@ -218,7 +218,6 @@
 #endif							/* NDPI_ENABLE_DEBUG_MESSAGES */
 
 #define NDPI_EXCLUDE_PROTO(mod,flow) ndpi_exclude_protocol(mod, flow, NDPI_CURRENT_PROTO, __FILE__, __FUNCTION__, __LINE__)
-#define NDPI_EXCLUDE_PROTO_EXT(mod,flow,proto) ndpi_exclude_protocol(mod, flow, proto, __FILE__, __FUNCTION__, __LINE__)
 
 /**
  * macro for getting the string len of a static string
@@ -259,6 +258,10 @@
 #define NDPI_CLR_BIT(num, n)    num &= ~(1ULL << ( n ))
 #define NDPI_ISSET_BIT(num, n)  (num & (1ULL << ( n )))
 #define NDPI_ZERO_BIT(num)      num = 0
+
+#define NDPI_DISSECTOR_BITMASK                  ndpi_dissector_bitmask_struct_t
+#define NDPI_DISSECTOR_BITMASK_IS_SET(p, n)     NDPI_ISSET(&(p), (n))
+#define NDPI_DISSECTOR_BITMASK_SET(p, n)        NDPI_SET(&(p), (n) & NDPI_NUM_BITS_MASK)
 
 /* this is a very very tricky macro *g*,
  * the compiler will remove all shifts here if the protocol is static...
