@@ -317,6 +317,17 @@ EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "%d", count);
 }
 
+EJ_VISIBLE void ej_show_dmips(webs_t wp, int argc, char_t **argv)
+{
+	char *rating = nvram_safe_get("cpu_rating");
+	if (!*rating) {
+	    websWrite(wp, "unknown");
+	    return;
+	}
+	long long dmips = atoll(rating) / 1757;
+	websWrite(wp, "%lld DMIPS", dmips );
+}
+
 struct CPUFEATURES {
 	char *line;
 	char *field;
