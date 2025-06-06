@@ -682,7 +682,7 @@ void start_benchmark(void)
     fprintf (stderr, "%10.0f \n", Dhrystones_Per_Second);
     printf ("\n");
     char rating[64];
-    sprintf(rating, "%10.0f", Dhrystones_Per_Second);
+    sprintf(rating, "%.1f", Dhrystones_Per_Second);
     nvram_set("cpu_rating", rating);
 }
 
