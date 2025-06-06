@@ -324,8 +324,8 @@ EJ_VISIBLE void ej_show_dmips(webs_t wp, int argc, char_t **argv)
 	    websWrite(wp, "unknown");
 	    return;
 	}
-	long long dmips = atoll(rating) / 1757;
-	websWrite(wp, "%lld", dmips );
+	float dmips = atof(rating) / 1757.0f;
+	websWrite(wp, "%.2f", dmips);
 }
 
 struct CPUFEATURES {
