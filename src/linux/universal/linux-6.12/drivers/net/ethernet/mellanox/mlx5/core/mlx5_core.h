@@ -114,24 +114,7 @@ struct mlx5_cmd_alias_obj_create_attr {
 	u8 access_key[ACCESS_KEY_LEN];
 };
 
-static inline void mlx5_printk(struct mlx5_core_dev *dev, int level, const char *format, ...)
-{
-	struct device *device = dev->device;
-	struct va_format vaf;
-	va_list args;
-
-	if (WARN_ONCE(level < LOGLEVEL_EMERG || level > LOGLEVEL_DEBUG,
-		      "Level %d is out of range, set to default level\n", level))
-		level = LOGLEVEL_DEFAULT;
-
-	va_start(args, format);
-	vaf.fmt = format;
-	vaf.va = &args;
-
-	dev_printk_emit(level, device, "%s %s: %pV", dev_driver_string(device), dev_name(device),
-			&vaf);
-	va_end(args);
-}
+void mlx5_printk(struct mlx5_core_dev *dev, int level, const char *format, ...);
 
 #define mlx5_log(__dev, level, format, ...)			\
 	mlx5_printk(__dev, level, "%s:%d:(pid %d): " format,	\
