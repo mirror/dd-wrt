@@ -1,0 +1,256 @@
+{
+  "MediaContainer": {
+      "size": 1,
+      "Metadata": [
+          {
+              "index": 2,
+              "thumb": "file:///home/user/TV/Bomb%20Girls/season02.tbn",
+              "type": "season",
+              "Thumb": [
+                  {
+                      "key": "file:///home/user/TV/Bomb%20Girls/season02.tbn",
+                      "source": "local"
+                  }
+              ],
+              "Children": {
+                  "size": 12,
+                  "Metadata": [
+                      {
+                          "index": 1,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E01.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E01.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E01.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 2,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E02.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E02.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E02.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 3,
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E03.WEBDL-720p.mkv"
+                                      }
+                                  ]
+                              }
+                          ]
+                      },
+                      {
+                          "index": 4,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E04.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E04.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E04.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 5,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E05.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E05.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E05.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 6,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E06.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E06.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E06.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 7,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E07.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E07.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E07.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 8,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E08.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E08.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E08.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 9,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E09.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E09.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E09.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 10,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E10.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E10.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E10.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 11,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E11.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E11.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E11.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      },
+                      {
+                          "index": 12,
+                          "thumb": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E12.SD.TV.tbn",
+                          "type": "episode",
+                          "Media": [
+                              {
+                                  "Part": [
+                                      {
+                                          "file": "/home/user/TV/Bomb Girls/Season 02/Bomb.Girls.S02E12.SD.TV.mp4"
+                                      }
+                                  ]
+                              }
+                          ],
+                          "Thumb": [
+                              {
+                                  "key": "file:///home/user/TV/Bomb%20Girls/Season%2002/Bomb.Girls.S02E12.SD.TV.tbn",
+                                  "source": "local"
+                              }
+                          ]
+                      }
+                  ]
+              }
+          }
+      ]
+  }
+}

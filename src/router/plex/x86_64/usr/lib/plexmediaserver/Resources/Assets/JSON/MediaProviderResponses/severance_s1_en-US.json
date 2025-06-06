@@ -1,0 +1,3432 @@
+{
+  "MediaContainer": {
+    "librarySectionID": "home",
+    "librarySectionTitle": "Metadata",
+    "offset": 0,
+    "totalSize": 1,
+    "identifier": "tv.plex.provider.metadata",
+    "size": 1,
+    "Metadata": [
+      {
+        "art": "https://artworks.thetvdb.com/banners/v4/season/1971742/backgrounds/640194a576f32.jpg",
+        "banner": "https://artworks.thetvdb.com/banners/v4/season/1971742/banners/64019535f16a9.jpg",
+        "guid": "plex://season/61bc714e4fe00ccfae63bcf5",
+        "key": "/library/metadata/61bc714e4fe00ccfae63bcf5/children",
+        "ratingKey": "61bc714e4fe00ccfae63bcf5",
+        "type": "season",
+        "thumb": "https://artworks.thetvdb.com/banners/v4/season/1971742/posters/62113d7daa972.jpg",
+        "addedAt": 1645142400,
+        "publicPagesURL": "https://watch.plex.tv/show/severance/season/1",
+        "userState": false,
+        "title": "Season 1",
+        "hasGenericTitle": true,
+        "parentSlug": "severance",
+        "parentTitle": "Severance",
+        "parentType": "show",
+        "parentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+        "parentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+        "parentRatingKey": "5e1622d34f2292003e91314a",
+        "parentGuid": "plex://show/5e1622d34f2292003e91314a",
+        "parentKey": "/library/metadata/5e1622d34f2292003e91314a",
+        "leafCount": 9,
+        "index": 1,
+        "contentRating": "TV-MA",
+        "originallyAvailableAt": "2022-02-18",
+        "year": 2022,
+        "Image": [
+          {
+            "alt": "Season 1",
+            "type": "background",
+            "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+          },
+          {
+            "alt": "Season 1",
+            "type": "banner",
+            "url": "https://artworks.thetvdb.com/banners/v4/season/1971742/banners/64019535f16a9.jpg"
+          },
+          {
+            "alt": "Season 1",
+            "type": "clearLogo",
+            "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+          },
+          {
+            "alt": "Season 1",
+            "type": "clearLogoWide",
+            "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+          },
+          {
+            "alt": "Season 1",
+            "type": "coverArt",
+            "url": "https://artworks.thetvdb.com/banners/v4/season/1971742/backgrounds/640194a576f32.jpg"
+          },
+          {
+            "alt": "Season 1",
+            "type": "coverPoster",
+            "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+          },
+          {
+            "alt": "Season 1",
+            "type": "coverSquare",
+            "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+          }
+        ],
+        "Guid": [
+          {
+            "id": "tvdb://1971742"
+          }
+        ],
+        "Children": {
+          "size": 9,
+          "Metadata": [
+            {
+              "guid": "plex://episode/5e1622d34f2292003e913150",
+              "key": "/library/metadata/5e1622d34f2292003e913150",
+              "ratingKey": "5e1622d34f2292003e913150",
+              "summary": "Mark is promoted to lead a team who've had their memories surgically divided between their work and personal lives.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/8Ppx99arhViF65p9R12oSI8ie2h.jpg",
+              "addedAt": 1645056000,
+              "duration": 3420000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/1",
+              "userState": false,
+              "title": "Good News About Hell",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 1,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-02-17",
+              "year": 2022,
+              "audienceRating": 8.1,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 10457,
+              "Image": [
+                {
+                  "alt": "Good News About Hell",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "Good News About Hell",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/8Ppx99arhViF65p9R12oSI8ie2h.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt11650328"
+                },
+                {
+                  "id": "tmdb://1982925"
+                },
+                {
+                  "id": "tvdb://8891221"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.1
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.1
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776830151a60001f24cacd&type=99&availabilityType=free",
+                  "id": "5d776830151a60001f24cacd",
+                  "order": 11,
+                  "slug": "jeff-mccarthy",
+                  "tag": "Jeff McCarthy",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776830151a60001f24cacd.jpg",
+                  "role": "Nature Documentary Voice (voice)",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77685285719b001f3a8b49&type=99&availabilityType=free",
+                  "id": "5d77685285719b001f3a8b49",
+                  "order": 12,
+                  "slug": "anthoula-katsimatides",
+                  "tag": "Anthoula Katsimatides",
+                  "thumb": "https://metadata-static.plex.tv/8/people/8ef31b5c3572c014671093d5c3fa5f61.jpg",
+                  "role": "Florence",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb90a27&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb90a27",
+                  "order": 13,
+                  "slug": "yul-vazquez",
+                  "tag": "Yul Vazquez",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aa168ed7b0bf189c20570f16d646e00f.jpg",
+                  "role": "Peter 'Petey' Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7769d696b655001fddae83&type=99&availabilityType=free",
+                  "id": "5d7769d696b655001fddae83",
+                  "order": 14,
+                  "slug": "annie-mcnamara",
+                  "tag": "Annie McNamara",
+                  "role": "Danise",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f40007852f20000414de91a&type=99&availabilityType=free",
+                  "id": "5f40007852f20000414de91a",
+                  "order": 15,
+                  "slug": "donald-webber-jr",
+                  "tag": "Donald Webber Jr.",
+                  "thumb": "https://metadata-static.plex.tv/4/people/426049f7fe33bd9092dd977913742599.jpg",
+                  "role": "Patton",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776871374a5b001fec5948&type=99&availabilityType=free",
+                  "id": "5d776871374a5b001fec5948",
+                  "order": 16,
+                  "slug": "grace-rex",
+                  "tag": "Grace Rex",
+                  "thumb": "https://metadata-static.plex.tv/f/people/f84a92539142d3df2ec700950ffab9c7.jpg",
+                  "role": "Rebeck",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 17,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 18,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768334de0ee001fccaebe&type=99&availabilityType=free",
+                  "id": "5d7768334de0ee001fccaebe",
+                  "order": 19,
+                  "slug": "mark-kenneth-smaltz",
+                  "tag": "Mark Kenneth Smaltz",
+                  "thumb": "https://metadata-static.plex.tv/people/5d7768334de0ee001fccaebe.jpg",
+                  "role": "Judd",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776826999c64001ec2c606&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c606",
+                  "slug": "ben-stiller",
+                  "tag": "Ben Stiller",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d8b132580dd765b109fd203885aaa65b.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=6218d9ce2d063049b1889f77&type=99&availabilityType=free",
+                  "id": "6218d9ce2d063049b1889f77",
+                  "slug": "dan-erickson-12",
+                  "tag": "Dan Erickson",
+                  "thumb": "https://metadata-static.plex.tv/e/people/e4833fea85099f26968204c547beeec3.jpg",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Mark is promoted to lead a team who've had their memories surgically divided between their work and personal lives.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e88192342",
+              "key": "/library/metadata/61bca2111ebce73e88192342",
+              "ratingKey": "61bca2111ebce73e88192342",
+              "summary": "The team train new hire Helly on macrodata refinement. Mark takes a day off to meet with a mysterious former colleague.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/kvnyls1KdlHLxxefg4SODDXMfxp.jpg",
+              "addedAt": 1645056000,
+              "duration": 3180000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/2",
+              "userState": false,
+              "title": "Half Loop",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 2,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-02-17",
+              "year": 2022,
+              "audienceRating": 8,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 8852,
+              "Image": [
+                {
+                  "alt": "Half Loop",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "Half Loop",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/kvnyls1KdlHLxxefg4SODDXMfxp.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13393872"
+                },
+                {
+                  "id": "tmdb://3396429"
+                },
+                {
+                  "id": "tvdb://8891222"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.1
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776a1bfb0d55001f53aad0&type=99&availabilityType=free",
+                  "id": "5d776a1bfb0d55001f53aad0",
+                  "order": 11,
+                  "slug": "hudson-flynn",
+                  "tag": "Hudson Flynn",
+                  "role": "WMC Activist 1",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fc0835a76a80042cd1772&type=99&availabilityType=free",
+                  "id": "5f3fc0835a76a80042cd1772",
+                  "order": 12,
+                  "slug": "ruby-stevens",
+                  "tag": "Ruby Stevens",
+                  "role": "WMC Activist 2",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77691bad5437001f75838d&type=99&availabilityType=free",
+                  "id": "5d77691bad5437001f75838d",
+                  "order": 13,
+                  "slug": "nikki-m-james",
+                  "tag": "Nikki M. James",
+                  "thumb": "https://image.tmdb.org/t/p/original/e7jEbMKOnUD0EuB8W9H2GND6eev.jpg",
+                  "role": "Alexa",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb90a27&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb90a27",
+                  "order": 14,
+                  "slug": "yul-vazquez",
+                  "tag": "Yul Vazquez",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aa168ed7b0bf189c20570f16d646e00f.jpg",
+                  "role": "Peter 'Petey' Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 15,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 16,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776826999c64001ec2c606&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c606",
+                  "slug": "ben-stiller",
+                  "tag": "Ben Stiller",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d8b132580dd765b109fd203885aaa65b.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=6218d9ce2d063049b1889f77&type=99&availabilityType=free",
+                  "id": "6218d9ce2d063049b1889f77",
+                  "slug": "dan-erickson-12",
+                  "tag": "Dan Erickson",
+                  "thumb": "https://metadata-static.plex.tv/e/people/e4833fea85099f26968204c547beeec3.jpg",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "The team train new hire Helly on macrodata refinement. Mark takes a day off to meet with a mysterious former colleague.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e88192341",
+              "key": "/library/metadata/61bca2111ebce73e88192341",
+              "ratingKey": "61bca2111ebce73e88192341",
+              "summary": "Mark takes the team on a field trip, but Helly continues to rebel. A deteriorating Petey struggles to tell Mark about Lumon’s misdeeds.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/rhPKOr5Ax2v7452LqxajFz5T7iI.jpg",
+              "addedAt": 1645660800,
+              "duration": 3360000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/3",
+              "userState": false,
+              "title": "In Perpetuity",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 3,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-02-24",
+              "year": 2022,
+              "audienceRating": 7.7,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 8341,
+              "Image": [
+                {
+                  "alt": "In Perpetuity",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "In Perpetuity",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/rhPKOr5Ax2v7452LqxajFz5T7iI.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13399816"
+                },
+                {
+                  "id": "tmdb://3396430"
+                },
+                {
+                  "id": "tvdb://8891223"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 7.7
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fcdaa03883a0040ab9511&type=99&availabilityType=free",
+                  "id": "5f3fcdaa03883a0040ab9511",
+                  "order": 11,
+                  "slug": "alexis-cofield",
+                  "tag": "Alexis Cofield",
+                  "role": "Checkout Girl",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f405b451ae71000410cd61e&type=99&availabilityType=free",
+                  "id": "5f405b451ae71000410cd61e",
+                  "order": 12,
+                  "slug": "alexandra-ferrara",
+                  "tag": "Alexandra Ferrara",
+                  "role": "Weather Channel Voiceover (voice)",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fecaf03883a0040ae7fa0&type=99&availabilityType=free",
+                  "id": "5f3fecaf03883a0040ae7fa0",
+                  "order": 13,
+                  "slug": "michael-kayne",
+                  "tag": "Michael Kayne",
+                  "role": "Steven",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fab1ab981640042c9f34c&type=99&availabilityType=free",
+                  "id": "5f3fab1ab981640042c9f34c",
+                  "order": 14,
+                  "slug": "jillian-lindig",
+                  "tag": "Jillian Lindig",
+                  "role": "Myrtle Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768268a7581001f12bda7&type=99&availabilityType=free",
+                  "id": "5d7768268a7581001f12bda7",
+                  "order": 15,
+                  "slug": "lou-martini-jr",
+                  "tag": "Lou Martini Jr.",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d452d3a0ef8637f75573f3652b18864d.jpg",
+                  "role": "Cop Voiceover (voice)",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f404e3f52f2000041561039&type=99&availabilityType=free",
+                  "id": "5f404e3f52f2000041561039",
+                  "order": 16,
+                  "slug": "sydney-cole-alexander",
+                  "tag": "Sydney Cole Alexander",
+                  "thumb": "https://image.tmdb.org/t/p/original/biXz1aluHH2dod2v9gbY69AhTtx.jpg",
+                  "role": "Natalie Kalen",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb90a27&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb90a27",
+                  "order": 17,
+                  "slug": "yul-vazquez",
+                  "tag": "Yul Vazquez",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aa168ed7b0bf189c20570f16d646e00f.jpg",
+                  "role": "Peter 'Petey' Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 18,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77684a7228e5001f1e1592&type=99&availabilityType=free",
+                  "id": "5d77684a7228e5001f1e1592",
+                  "order": 19,
+                  "slug": "michael-siberry",
+                  "tag": "Michael Siberry",
+                  "thumb": "https://metadata-static.plex.tv/8/people/885f947a8c30449b3c73b93fb891e4e7.jpg",
+                  "role": "Jame Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 20,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686854c0f0001f307f8a&type=99&availabilityType=free",
+                  "id": "5d77686854c0f0001f307f8a",
+                  "order": 21,
+                  "slug": "claudia-robinson",
+                  "tag": "Claudia Robinson",
+                  "role": "Felicia",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768334de0ee001fccaebe&type=99&availabilityType=free",
+                  "id": "5d7768334de0ee001fccaebe",
+                  "order": 22,
+                  "slug": "mark-kenneth-smaltz",
+                  "tag": "Mark Kenneth Smaltz",
+                  "thumb": "https://metadata-static.plex.tv/people/5d7768334de0ee001fccaebe.jpg",
+                  "role": "Judd",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776826999c64001ec2c606&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c606",
+                  "slug": "ben-stiller",
+                  "tag": "Ben Stiller",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d8b132580dd765b109fd203885aaa65b.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5e16511fd92d86003d36aa6b&type=99&availabilityType=free",
+                  "id": "5e16511fd92d86003d36aa6b",
+                  "slug": "andrew-colville",
+                  "tag": "Andrew Colville",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 100,
+                  "tag": "Mark takes the team on a field trip, but Helly continues to rebel.",
+                  "type": "default"
+                },
+                {
+                  "size": 250,
+                  "tag": "Mark takes the team on a field trip, but Helly continues to rebel. A deteriorating Petey struggles to tell Mark about Lumon’s misdeeds.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e88192340",
+              "key": "/library/metadata/61bca2111ebce73e88192340",
+              "ratingKey": "61bca2111ebce73e88192340",
+              "summary": "Irving finds an intriguing book at work. Helly aggressively pursues a meeting with her Outie. Mark attends a funeral with Ms. Selvig.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/dzQJeDznS0I4spAqTImiLH9p252.jpg",
+              "addedAt": 1646265600,
+              "duration": 2760000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/4",
+              "userState": false,
+              "title": "The You You Are",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 4,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-03-03",
+              "year": 2022,
+              "audienceRating": 8.2,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 8332,
+              "Image": [
+                {
+                  "alt": "The You You Are",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "The You You Are",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/dzQJeDznS0I4spAqTImiLH9p252.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13411248"
+                },
+                {
+                  "id": "tmdb://3396431"
+                },
+                {
+                  "id": "tvdb://8891224"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.2
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.3
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776a40f617c9002016a871&type=99&availabilityType=free",
+                  "id": "5d776a40f617c9002016a871",
+                  "order": 11,
+                  "slug": "james-augustus-lee",
+                  "tag": "James Augustus Lee",
+                  "thumb": "https://metadata-static.plex.tv/6/people/6c683907ae853c77f4e7edd512c9d0dd.jpg",
+                  "role": "Bartender",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776844880197001ec96417&type=99&availabilityType=free",
+                  "id": "5d776844880197001ec96417",
+                  "order": 12,
+                  "slug": "joanne-kelly",
+                  "tag": "Joanne Kelly",
+                  "thumb": "https://metadata-static.plex.tv/0/people/0e5b7b7efb0f5627c1230adbde580455.jpg",
+                  "role": "Nina Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f4064ef52f200004158f01e&type=99&availabilityType=free",
+                  "id": "5f4064ef52f200004158f01e",
+                  "order": 13,
+                  "slug": "cassidy-layton",
+                  "tag": "Cassidy Layton",
+                  "role": "June Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb90a27&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb90a27",
+                  "order": 14,
+                  "slug": "yul-vazquez",
+                  "tag": "Yul Vazquez",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aa168ed7b0bf189c20570f16d646e00f.jpg",
+                  "role": "Peter 'Petey' Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 15,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f403d3ac63b480040e0e462&type=99&availabilityType=free",
+                  "id": "5f403d3ac63b480040e0e462",
+                  "order": 16,
+                  "slug": "rachel-addington",
+                  "tag": "Rachel Addington",
+                  "role": "Elizabeth",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 17,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686854c0f0001f307f8a&type=99&availabilityType=free",
+                  "id": "5d77686854c0f0001f307f8a",
+                  "order": 18,
+                  "slug": "claudia-robinson",
+                  "tag": "Claudia Robinson",
+                  "role": "Felicia",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=63239f8abe9bde8ef2751b15&type=99&availabilityType=free",
+                  "id": "63239f8abe9bde8ef2751b15",
+                  "slug": "kari-drake-1",
+                  "tag": "Kari Drake",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Irving finds an intriguing book at work. Helly aggressively pursues a meeting with her Outie. Mark attends a funeral with Ms. Selvig.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e8819233f",
+              "key": "/library/metadata/61bca2111ebce73e8819233f",
+              "ratingKey": "61bca2111ebce73e8819233f",
+              "summary": "Irving and Dylan confront Burt about his lies. Mark and Helly discover a strange new department.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/oy4BZotFbNX5YoPkWuWF3kcdMVw.jpg",
+              "addedAt": 1646870400,
+              "duration": 2580000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/5",
+              "userState": false,
+              "title": "The Grim Barbarity of Optics and Design",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 5,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-03-10",
+              "year": 2022,
+              "audienceRating": 7.7,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 7910,
+              "Image": [
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "The Grim Barbarity of Optics and Design",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/oy4BZotFbNX5YoPkWuWF3kcdMVw.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13424090"
+                },
+                {
+                  "id": "tmdb://3396432"
+                },
+                {
+                  "id": "tvdb://8891225"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 7.7
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.2
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77685285719b001f3a8b49&type=99&availabilityType=free",
+                  "id": "5d77685285719b001f3a8b49",
+                  "order": 11,
+                  "slug": "anthoula-katsimatides",
+                  "tag": "Anthoula Katsimatides",
+                  "thumb": "https://metadata-static.plex.tv/8/people/8ef31b5c3572c014671093d5c3fa5f61.jpg",
+                  "role": "Florence",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=6081ae19f9e7080035ee461f&type=99&availabilityType=free",
+                  "id": "6081ae19f9e7080035ee461f",
+                  "order": 12,
+                  "slug": "brian-rock",
+                  "tag": "Brian Rock",
+                  "role": "Goat Wrangler",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77691bad5437001f75838d&type=99&availabilityType=free",
+                  "id": "5d77691bad5437001f75838d",
+                  "order": 13,
+                  "slug": "nikki-m-james",
+                  "tag": "Nikki M. James",
+                  "thumb": "https://image.tmdb.org/t/p/original/e7jEbMKOnUD0EuB8W9H2GND6eev.jpg",
+                  "role": "Alexa",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 14,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f403d3ac63b480040e0e462&type=99&availabilityType=free",
+                  "id": "5f403d3ac63b480040e0e462",
+                  "order": 15,
+                  "slug": "rachel-addington",
+                  "tag": "Rachel Addington",
+                  "role": "Elizabeth",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f402c675a76a80042d65901&type=99&availabilityType=free",
+                  "id": "5f402c675a76a80042d65901",
+                  "order": 16,
+                  "slug": "nora-dale",
+                  "tag": "Nora Dale",
+                  "thumb": "https://metadata-static.plex.tv/9/people/90a9127c785a1bf472c7bf49575638d5.jpg",
+                  "role": "Gabriela 'Gabby' Arteta",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686854c0f0001f307f8a&type=99&availabilityType=free",
+                  "id": "5d77686854c0f0001f307f8a",
+                  "order": 17,
+                  "slug": "claudia-robinson",
+                  "tag": "Claudia Robinson",
+                  "role": "Felicia",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768334de0ee001fccaebe&type=99&availabilityType=free",
+                  "id": "5d7768334de0ee001fccaebe",
+                  "order": 18,
+                  "slug": "mark-kenneth-smaltz",
+                  "tag": "Mark Kenneth Smaltz",
+                  "thumb": "https://metadata-static.plex.tv/people/5d7768334de0ee001fccaebe.jpg",
+                  "role": "Judd",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=62169530b155842c7aad929f&type=99&availabilityType=free",
+                  "id": "62169530b155842c7aad929f",
+                  "slug": "anna-ouyang-moench",
+                  "tag": "Anna Ouyang Moench",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 100,
+                  "tag": "Irving and Dylan confront Burt about his lies. Mark and Helly discover a strange new department.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e8819233e",
+              "key": "/library/metadata/61bca2111ebce73e8819233e",
+              "ratingKey": "61bca2111ebce73e8819233e",
+              "summary": "The team angers Cobel by forming an alliance.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/3fQp0pUtgDkqqyEbXY8KKCZPMU7.jpg",
+              "addedAt": 1647475200,
+              "duration": 2400000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/6",
+              "userState": false,
+              "title": "Hide and Seek",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 6,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-03-17",
+              "year": 2022,
+              "audienceRating": 7.9,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 7778,
+              "Image": [
+                {
+                  "alt": "Hide and Seek",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "Hide and Seek",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/3fQp0pUtgDkqqyEbXY8KKCZPMU7.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13424092"
+                },
+                {
+                  "id": "tmdb://3396433"
+                },
+                {
+                  "id": "tvdb://8891226"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 7.9
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.1
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77691bad5437001f75838d&type=99&availabilityType=free",
+                  "id": "5d77691bad5437001f75838d",
+                  "order": 11,
+                  "slug": "nikki-m-james",
+                  "tag": "Nikki M. James",
+                  "thumb": "https://image.tmdb.org/t/p/original/e7jEbMKOnUD0EuB8W9H2GND6eev.jpg",
+                  "role": "Alexa",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f4064ef52f200004158f01e&type=99&availabilityType=free",
+                  "id": "5f4064ef52f200004158f01e",
+                  "order": 12,
+                  "slug": "cassidy-layton",
+                  "tag": "Cassidy Layton",
+                  "role": "June Kilmer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=62378a9b7626d2701bfc631e&type=99&availabilityType=free",
+                  "id": "62378a9b7626d2701bfc631e",
+                  "order": 13,
+                  "slug": "michael-caiazzo",
+                  "tag": "Michael Caiazzo",
+                  "role": "Lead Singer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776fc147dd6e001f7068d2&type=99&availabilityType=free",
+                  "id": "5d776fc147dd6e001f7068d2",
+                  "order": 14,
+                  "slug": "margaret-chardiet",
+                  "tag": "Margaret Chardiet",
+                  "role": "Bass",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776880decfcd001f2eae4f&type=99&availabilityType=free",
+                  "id": "5d776880decfcd001f2eae4f",
+                  "order": 15,
+                  "slug": "ethan-flower",
+                  "tag": "Ethan Flower",
+                  "thumb": "https://metadata-static.plex.tv/8/people/8e14c6beddb9885e22c2103f1d93a8a6.jpg",
+                  "role": "Angelo Arteta",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ea1f617c900201947a1&type=99&availabilityType=free",
+                  "id": "5d776ea1f617c900201947a1",
+                  "order": 16,
+                  "slug": "karen-aldridge",
+                  "tag": "Karen Aldridge",
+                  "thumb": "https://metadata-static.plex.tv/0/people/0ee89b94f69ac63fd4461df025a62f33.jpg",
+                  "role": "Asal Regabhi",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=62378a9b868ee4e44d3d7eea&type=99&availabilityType=free",
+                  "id": "62378a9b868ee4e44d3d7eea",
+                  "order": 17,
+                  "slug": "tye-miller",
+                  "tag": "Tye Miller",
+                  "role": "Guitarist",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=62378a9b7115333cb41485c2&type=99&availabilityType=free",
+                  "id": "62378a9b7115333cb41485c2",
+                  "order": 18,
+                  "slug": "blaze-james-gorman",
+                  "tag": "Blaze James Gorman",
+                  "role": "Dylan's Son",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c45594b2b001e6ef7bb&type=99&availabilityType=free",
+                  "id": "5d776c45594b2b001e6ef7bb",
+                  "order": 19,
+                  "slug": "jonathan-iglesias",
+                  "tag": "Jonathan Iglesias",
+                  "role": "Guy at Venue",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776e0e7a53e9001e76b742&type=99&availabilityType=free",
+                  "id": "5d776e0e7a53e9001e76b742",
+                  "order": 20,
+                  "slug": "griffin-stanton-ameisen",
+                  "tag": "Griffin Stanton-Ameisen",
+                  "role": "Waiter",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 21,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=62378a9badd0b86578b6c5d8&type=99&availabilityType=free",
+                  "id": "62378a9badd0b86578b6c5d8",
+                  "order": 22,
+                  "slug": "charles-henry-wood",
+                  "tag": "Charles Henry Wood",
+                  "role": "Drummer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f403d3ac63b480040e0e462&type=99&availabilityType=free",
+                  "id": "5f403d3ac63b480040e0e462",
+                  "order": 23,
+                  "slug": "rachel-addington",
+                  "tag": "Rachel Addington",
+                  "role": "Elizabeth",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f402c675a76a80042d65901&type=99&availabilityType=free",
+                  "id": "5f402c675a76a80042d65901",
+                  "order": 24,
+                  "slug": "nora-dale",
+                  "tag": "Nora Dale",
+                  "thumb": "https://metadata-static.plex.tv/9/people/90a9127c785a1bf472c7bf49575638d5.jpg",
+                  "role": "Gabriela 'Gabby' Arteta",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 25,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686854c0f0001f307f8a&type=99&availabilityType=free",
+                  "id": "5d77686854c0f0001f307f8a",
+                  "order": 26,
+                  "slug": "claudia-robinson",
+                  "tag": "Claudia Robinson",
+                  "role": "Felicia",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 100,
+                  "tag": "The team angers Cobel by forming an alliance.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e8819233d",
+              "key": "/library/metadata/61bca2111ebce73e8819233d",
+              "ratingKey": "61bca2111ebce73e8819233d",
+              "summary": "Mark and the team encounter new security measures from Cobel.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/gHoKlbC2esqq3SXm0ZCcl3bzpFZ.jpg",
+              "addedAt": 1648080000,
+              "duration": 2940000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/7",
+              "userState": false,
+              "title": "Defiant Jazz",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 7,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-03-24",
+              "year": 2022,
+              "audienceRating": 8.8,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 9627,
+              "Image": [
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "Defiant Jazz",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/gHoKlbC2esqq3SXm0ZCcl3bzpFZ.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13424094"
+                },
+                {
+                  "id": "tmdb://3396434"
+                },
+                {
+                  "id": "tvdb://8891227"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.8
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.7
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77691bad5437001f75838d&type=99&availabilityType=free",
+                  "id": "5d77691bad5437001f75838d",
+                  "order": 11,
+                  "slug": "nikki-m-james",
+                  "tag": "Nikki M. James",
+                  "thumb": "https://image.tmdb.org/t/p/original/e7jEbMKOnUD0EuB8W9H2GND6eev.jpg",
+                  "role": "Alexa",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f404e3f52f2000041561039&type=99&availabilityType=free",
+                  "id": "5f404e3f52f2000041561039",
+                  "order": 12,
+                  "slug": "sydney-cole-alexander",
+                  "tag": "Sydney Cole Alexander",
+                  "thumb": "https://image.tmdb.org/t/p/original/biXz1aluHH2dod2v9gbY69AhTtx.jpg",
+                  "role": "Natalie Kalen",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ea1f617c900201947a1&type=99&availabilityType=free",
+                  "id": "5d776ea1f617c900201947a1",
+                  "order": 13,
+                  "slug": "karen-aldridge",
+                  "tag": "Karen Aldridge",
+                  "thumb": "https://metadata-static.plex.tv/0/people/0ee89b94f69ac63fd4461df025a62f33.jpg",
+                  "role": "Asal Regabhi",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbf02&type=99&availabilityType=free",
+                  "id": "5d77682a3c3c2a001fbcbf02",
+                  "order": 14,
+                  "slug": "michael-cumpsty",
+                  "tag": "Michael Cumpsty",
+                  "thumb": "https://metadata-static.plex.tv/b/people/bee0e26f0ec001be038b7fe4a1e5d3e5.jpg",
+                  "role": "Doug Graner",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f403d3ac63b480040e0e462&type=99&availabilityType=free",
+                  "id": "5f403d3ac63b480040e0e462",
+                  "order": 15,
+                  "slug": "rachel-addington",
+                  "tag": "Rachel Addington",
+                  "role": "Elizabeth",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 16,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686854c0f0001f307f8a&type=99&availabilityType=free",
+                  "id": "5d77686854c0f0001f307f8a",
+                  "order": 17,
+                  "slug": "claudia-robinson",
+                  "tag": "Claudia Robinson",
+                  "role": "Felicia",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768334de0ee001fccaebe&type=99&availabilityType=free",
+                  "id": "5d7768334de0ee001fccaebe",
+                  "order": 18,
+                  "slug": "mark-kenneth-smaltz",
+                  "tag": "Mark Kenneth Smaltz",
+                  "thumb": "https://metadata-static.plex.tv/people/5d7768334de0ee001fccaebe.jpg",
+                  "role": "Judd",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776826999c64001ec2c606&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c606",
+                  "slug": "ben-stiller",
+                  "tag": "Ben Stiller",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d8b132580dd765b109fd203885aaa65b.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5e16478d275947003dc66c33&type=99&availabilityType=free",
+                  "id": "5e16478d275947003dc66c33",
+                  "slug": "helen-leigh-1",
+                  "tag": "Helen Leigh",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 100,
+                  "tag": "Mark and the team encounter new security measures from Cobel.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e8819233c",
+              "key": "/library/metadata/61bca2111ebce73e8819233c",
+              "ratingKey": "61bca2111ebce73e8819233c",
+              "summary": "The team prepares a plan. Mark attends Devon and Ricken’s party.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/hmfoVewhL4AxkU6ffUyn9OVsFxD.jpg",
+              "addedAt": 1648684800,
+              "duration": 2760000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/8",
+              "userState": false,
+              "title": "What's for Dinner?",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 8,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-03-31",
+              "year": 2022,
+              "audienceRating": 8.9,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 9523,
+              "Image": [
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "What's for Dinner?",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/hmfoVewhL4AxkU6ffUyn9OVsFxD.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13424096"
+                },
+                {
+                  "id": "tmdb://3396435"
+                },
+                {
+                  "id": "tvdb://8891228"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.9
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 8.7
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f404e3f52f2000041561039&type=99&availabilityType=free",
+                  "id": "5f404e3f52f2000041561039",
+                  "order": 11,
+                  "slug": "sydney-cole-alexander",
+                  "tag": "Sydney Cole Alexander",
+                  "thumb": "https://image.tmdb.org/t/p/original/biXz1aluHH2dod2v9gbY69AhTtx.jpg",
+                  "role": "Natalie Kalen",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7769d696b655001fddae83&type=99&availabilityType=free",
+                  "id": "5d7769d696b655001fddae83",
+                  "order": 12,
+                  "slug": "annie-mcnamara",
+                  "tag": "Annie McNamara",
+                  "role": "Danise",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f40007852f20000414de91a&type=99&availabilityType=free",
+                  "id": "5f40007852f20000414de91a",
+                  "order": 13,
+                  "slug": "donald-webber-jr",
+                  "tag": "Donald Webber Jr.",
+                  "thumb": "https://metadata-static.plex.tv/4/people/426049f7fe33bd9092dd977913742599.jpg",
+                  "role": "Patton",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776871374a5b001fec5948&type=99&availabilityType=free",
+                  "id": "5d776871374a5b001fec5948",
+                  "order": 14,
+                  "slug": "grace-rex",
+                  "tag": "Grace Rex",
+                  "thumb": "https://metadata-static.plex.tv/f/people/f84a92539142d3df2ec700950ffab9c7.jpg",
+                  "role": "Rebeck",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fd702fea1a1003f983e51&type=99&availabilityType=free",
+                  "id": "5f3fd702fea1a1003f983e51",
+                  "order": 15,
+                  "slug": "olivia-alboher",
+                  "tag": "Olivia Alboher",
+                  "role": "Woman in Old Woman Mask",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776883431c830024c0e25d&type=99&availabilityType=free",
+                  "id": "5d776883431c830024c0e25d",
+                  "order": 16,
+                  "slug": "samantha-farrow",
+                  "tag": "Samantha Farrow",
+                  "thumb": "https://metadata-static.plex.tv/9/people/9b52c1e1eb37a045b07d454ee6c632a4.jpg",
+                  "role": "Woman in Bride Mask",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fd705fea1a1003f983e79&type=99&availabilityType=free",
+                  "id": "5f3fd705fea1a1003f983e79",
+                  "order": 17,
+                  "slug": "sarah-gold",
+                  "tag": "Sarah Gold",
+                  "role": "Woman in Jester Mask",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fbd3c86422500427a24dd&type=99&availabilityType=free",
+                  "id": "5f3fbd3c86422500427a24dd",
+                  "order": 18,
+                  "slug": "tara-rodriguez-1",
+                  "tag": "Tara Rodriguez",
+                  "role": "Choreographer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fdd4d02101b0040eea765&type=99&availabilityType=free",
+                  "id": "5f3fdd4d02101b0040eea765",
+                  "order": 19,
+                  "slug": "weston-krukow",
+                  "tag": "Weston Krukow",
+                  "role": "Man in Sheep's Head Mask",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77684a7228e5001f1e1592&type=99&availabilityType=free",
+                  "id": "5d77684a7228e5001f1e1592",
+                  "order": 20,
+                  "slug": "michael-siberry",
+                  "tag": "Michael Siberry",
+                  "thumb": "https://metadata-static.plex.tv/8/people/885f947a8c30449b3c73b93fb891e4e7.jpg",
+                  "role": "Jame Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 21,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776826999c64001ec2c606&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c606",
+                  "slug": "ben-stiller",
+                  "tag": "Ben Stiller",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d8b132580dd765b109fd203885aaa65b.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5d776c0296b655001fe2316d&type=99&availabilityType=free",
+                  "id": "5d776c0296b655001fe2316d",
+                  "slug": "chris-black",
+                  "tag": "Chris Black",
+                  "thumb": "https://metadata-static.plex.tv/4/people/4b2449964a0d75e4820ef055d512014d.jpg",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 100,
+                  "tag": "The team prepares a plan. Mark attends Devon and Ricken’s party.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/61bca2111ebce73e8819233b",
+              "key": "/library/metadata/61bca2111ebce73e8819233b",
+              "ratingKey": "61bca2111ebce73e8819233b",
+              "summary": "The team discovers troubling revelations.",
+              "type": "episode",
+              "thumb": "https://image.tmdb.org/t/p/original/dzx8D2B0ELncXuCNwtPCags43Q.jpg",
+              "addedAt": 1649289600,
+              "duration": 2400000,
+              "publicPagesURL": "https://watch.plex.tv/show/severance/season/1/episode/9",
+              "userState": false,
+              "title": "The We We Are",
+              "grandparentTitle": "Severance",
+              "grandparentSlug": "severance",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg",
+              "grandparentRatingKey": "5e1622d34f2292003e91314a",
+              "grandparentGuid": "plex://show/5e1622d34f2292003e91314a",
+              "grandparentKey": "/library/metadata/5e1622d34f2292003e91314a",
+              "parentTitle": "Season 1",
+              "parentType": "season",
+              "parentArt": "http://assets.fanart.tv/fanart/tv/371980/seasonthumb/severance-640194737dcd7.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+              "parentRatingKey": "5e1622d34f2292003e91314e",
+              "parentGuid": "plex://season/5e1622d34f2292003e91314e",
+              "parentKey": "/library/metadata/5e1622d34f2292003e91314e",
+              "index": 9,
+              "parentIndex": 1,
+              "contentRating": "TV-MA",
+              "originallyAvailableAt": "2022-04-07",
+              "year": 2022,
+              "audienceRating": 9.7,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 21336,
+              "Image": [
+                {
+                  "alt": "The We We Are",
+                  "type": "background",
+                  "url": "https://image.tmdb.org/t/p/original/8MtMFngDWvIdRo34rz3ao0BGBAe.jpg"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/v4/series/371980/banners/61bb729db0947.jpg"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "clearLogo",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "clearLogoWide",
+                  "url": "https://metadata-static.plex.tv/e/683a142553/e9417ceebc95febe4676de5bcf1f9634.png"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/6/gracenote/6a2f7f07f2b0e30dcf830f27838d9f58.jpg"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/5/gracenote/538df6c08553929c2fbdbd06b48ed722.jpg"
+                },
+                {
+                  "alt": "The We We Are",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/dzx8D2B0ELncXuCNwtPCags43Q.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt13424098"
+                },
+                {
+                  "id": "tmdb://3396436"
+                },
+                {
+                  "id": "tvdb://8891229"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 9.7
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 9.2
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "order": 1,
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Mark Scout",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77697d47dd6e001f6c61db&type=99&availabilityType=free",
+                  "id": "5d77697d47dd6e001f6c61db",
+                  "order": 2,
+                  "slug": "britt-lower",
+                  "tag": "Britt Lower",
+                  "thumb": "https://metadata-static.plex.tv/7/people/742daea3117d3d53da7026eee18bab13.jpg",
+                  "role": "Helly Riggs",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d9c08f702391c001f593199&type=99&availabilityType=free",
+                  "id": "5d9c08f702391c001f593199",
+                  "order": 3,
+                  "slug": "tramell-tillman",
+                  "tag": "Tramell Tillman",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a2176b938f09e948c5cec69eb3a8c149.jpg",
+                  "role": "Seth Milchick",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776b5f7a53e9001e72396d&type=99&availabilityType=free",
+                  "id": "5d776b5f7a53e9001e72396d",
+                  "order": 4,
+                  "slug": "zach-cherry",
+                  "tag": "Zach Cherry",
+                  "thumb": "https://metadata-static.plex.tv/f/people/faa3b133ee8791a48715756ca043abf2.jpg",
+                  "role": "Dylan George",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776c129ab5440021512931&type=99&availabilityType=free",
+                  "id": "5d776c129ab5440021512931",
+                  "order": 5,
+                  "slug": "jen-tullock",
+                  "tag": "Jen Tullock",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac7515776ae71bd29ee340f00e102771.jpg",
+                  "role": "Devon",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c151a60001f24f3c6&type=99&availabilityType=free",
+                  "id": "5d77683c151a60001f24f3c6",
+                  "order": 6,
+                  "slug": "michael-chernus",
+                  "tag": "Michael Chernus",
+                  "thumb": "https://metadata-static.plex.tv/b/people/b2c3fce3d2f634425af4126ae1261035.jpg",
+                  "role": "Ricken Hale",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77683c961905001eb95455&type=99&availabilityType=free",
+                  "id": "5d77683c961905001eb95455",
+                  "order": 7,
+                  "slug": "dichen-lachman",
+                  "tag": "Dichen Lachman",
+                  "thumb": "https://metadata-static.plex.tv/d/people/dd621ae61b56b47f2f828bb51abeed07.jpg",
+                  "role": "Ms. Casey",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776825961905001eb909ba&type=99&availabilityType=free",
+                  "id": "5d776825961905001eb909ba",
+                  "order": 8,
+                  "slug": "john-turturro",
+                  "tag": "John Turturro",
+                  "thumb": "https://metadata-static.plex.tv/2/people/29837d436d9f88f288203b1333b77415.jpg",
+                  "role": "Irving Bailiff",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826999c64001ec2c375&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c375",
+                  "order": 9,
+                  "slug": "christopher-walken",
+                  "tag": "Christopher Walken",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1a46defb2529b3a12623da85b87fb64f.jpg",
+                  "role": "Burt Goodman",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "order": 10,
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Harmony Cobel",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f404e3f52f2000041561039&type=99&availabilityType=free",
+                  "id": "5f404e3f52f2000041561039",
+                  "order": 11,
+                  "slug": "sydney-cole-alexander",
+                  "tag": "Sydney Cole Alexander",
+                  "thumb": "https://image.tmdb.org/t/p/original/biXz1aluHH2dod2v9gbY69AhTtx.jpg",
+                  "role": "Natalie Kalen",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7769d696b655001fddae83&type=99&availabilityType=free",
+                  "id": "5d7769d696b655001fddae83",
+                  "order": 12,
+                  "slug": "annie-mcnamara",
+                  "tag": "Annie McNamara",
+                  "role": "Danise",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f40007852f20000414de91a&type=99&availabilityType=free",
+                  "id": "5f40007852f20000414de91a",
+                  "order": 13,
+                  "slug": "donald-webber-jr",
+                  "tag": "Donald Webber Jr.",
+                  "thumb": "https://metadata-static.plex.tv/4/people/426049f7fe33bd9092dd977913742599.jpg",
+                  "role": "Patton",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776871374a5b001fec5948&type=99&availabilityType=free",
+                  "id": "5d776871374a5b001fec5948",
+                  "order": 14,
+                  "slug": "grace-rex",
+                  "tag": "Grace Rex",
+                  "thumb": "https://metadata-static.plex.tv/f/people/f84a92539142d3df2ec700950ffab9c7.jpg",
+                  "role": "Rebeck",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776880decfcd001f2eae4f&type=99&availabilityType=free",
+                  "id": "5d776880decfcd001f2eae4f",
+                  "order": 15,
+                  "slug": "ethan-flower",
+                  "tag": "Ethan Flower",
+                  "thumb": "https://metadata-static.plex.tv/8/people/8e14c6beddb9885e22c2103f1d93a8a6.jpg",
+                  "role": "Angelo Arteta",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f402c675a76a80042d65901&type=99&availabilityType=free",
+                  "id": "5f402c675a76a80042d65901",
+                  "order": 16,
+                  "slug": "nora-dale",
+                  "tag": "Nora Dale",
+                  "thumb": "https://metadata-static.plex.tv/9/people/90a9127c785a1bf472c7bf49575638d5.jpg",
+                  "role": "Gabriela 'Gabby' Arteta",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77684a7228e5001f1e1592&type=99&availabilityType=free",
+                  "id": "5d77684a7228e5001f1e1592",
+                  "order": 17,
+                  "slug": "michael-siberry",
+                  "tag": "Michael Siberry",
+                  "thumb": "https://metadata-static.plex.tv/8/people/885f947a8c30449b3c73b93fb891e4e7.jpg",
+                  "role": "Jame Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776eb07a53e9001e77f253&type=99&availabilityType=free",
+                  "id": "5d776eb07a53e9001e77f253",
+                  "order": 18,
+                  "slug": "marc-geller",
+                  "tag": "Marc Geller",
+                  "thumb": "https://metadata-static.plex.tv/7/people/7899dbc4094b75d63baecb768492ffd6.jpg",
+                  "role": "Kier Eagan",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3f91ef86422500427813b2&type=99&availabilityType=free",
+                  "id": "5f3f91ef86422500427813b2",
+                  "order": 19,
+                  "slug": "arthur-brooks",
+                  "tag": "Arthur Brooks",
+                  "role": "Cecil",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f4035ebb8a032003d8733d1&type=99&availabilityType=free",
+                  "id": "5f4035ebb8a032003d8733d1",
+                  "order": 20,
+                  "slug": "rajat-suresh",
+                  "tag": "Rajat Suresh",
+                  "role": "Balf",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776831999c64001ec2e66e&type=99&availabilityType=free",
+                  "id": "5d776831999c64001ec2e66e",
+                  "order": 21,
+                  "slug": "amy-stiller",
+                  "tag": "Amy Stiller",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1eab70ad73508a5326324d3b9525d00f.jpg",
+                  "role": "Event Coordinator",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776826999c64001ec2c606&type=99&availabilityType=free",
+                  "id": "5d776826999c64001ec2c606",
+                  "slug": "ben-stiller",
+                  "tag": "Ben Stiller",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d8b132580dd765b109fd203885aaa65b.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5d776826151a60001f24a7b0&type=99&availabilityType=free",
+                  "id": "5d776826151a60001f24a7b0",
+                  "slug": "patricia-arquette",
+                  "tag": "Patricia Arquette",
+                  "thumb": "https://metadata-static.plex.tv/a/people/ac0d8dfc4d2a42b44fda7054293e0804.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776825880197001ec9031b&type=99&availabilityType=free",
+                  "id": "5d776825880197001ec9031b",
+                  "slug": "gerry-robert-byrne",
+                  "tag": "Gerry Robert Byrne",
+                  "thumb": "https://metadata-static.plex.tv/9/people/975c8b6e1c3c5a0e9c1d6f6e4915c4f8.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d776d6496b655001fe480a8&type=99&availabilityType=free",
+                  "id": "5d776d6496b655001fe480a8",
+                  "slug": "aoife-mcardle",
+                  "tag": "Aoife McArdle",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5f4000f6bf3e560040b57497&type=99&availabilityType=free",
+                  "id": "5f4000f6bf3e560040b57497",
+                  "slug": "amanda-overton",
+                  "tag": "Amanda Overton",
+                  "role": "Producer",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?producer=5d77682beb5d26001f1de8cb&type=99&availabilityType=free",
+                  "id": "5d77682beb5d26001f1de8cb",
+                  "slug": "adam-scott",
+                  "tag": "Adam Scott",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a9551343baea55b3308c8f54f174298d.jpg",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=6218d9ce2d063049b1889f77&type=99&availabilityType=free",
+                  "id": "6218d9ce2d063049b1889f77",
+                  "slug": "dan-erickson-12",
+                  "tag": "Dan Erickson",
+                  "thumb": "https://metadata-static.plex.tv/e/people/e4833fea85099f26968204c547beeec3.jpg",
+                  "role": "Writer",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 100,
+                  "tag": "The team discovers troubling revelations.",
+                  "type": "default"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

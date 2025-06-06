@@ -1,0 +1,2703 @@
+{
+  "MediaContainer": {
+    "librarySectionID": "home",
+    "librarySectionTitle": "Metadata",
+    "offset": 0,
+    "totalSize": 1,
+    "identifier": "tv.plex.provider.metadata",
+    "size": 1,
+    "Metadata": [
+      {
+        "guid": "plex://season/602e5f83c4f5e6002c24c58e",
+        "key": "/library/metadata/602e5f83c4f5e6002c24c58e/children",
+        "ratingKey": "602e5f83c4f5e6002c24c58e",
+        "summary": "It’s 1942 and America has finally entered the war – but even so, the Axis Powers are still winning every major battle. Canada is beginning to deeply feel the price of combat, complete with casualty lists, rationing, hidden foes, unholy alliances, and the ever-present danger of explosives. Yet at the same time, the women and men of Victory Munitions find ways to flourish under adversity, to defiantly live in joy, to forge unexpected bonds of friendship and love. In embracing risk, they find unexpected rewards and adventure. While they always know who they are fighting... they're constantly surprised to find who's standing by their side.",
+        "type": "season",
+        "thumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+        "addedAt": 1357084800,
+        "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2",
+        "userState": false,
+        "title": "Season 2",
+        "hasGenericTitle": true,
+        "parentSlug": "bomb-girls",
+        "parentTitle": "Bomb Girls",
+        "parentType": "show",
+        "parentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+        "parentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+        "parentRatingKey": "5d9c081e7b5c2e001e654f5a",
+        "parentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+        "parentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+        "leafCount": 12,
+        "index": 2,
+        "originallyAvailableAt": "2013-01-02",
+        "year": 2013,
+        "Image": [
+          {
+            "alt": "Season 2",
+            "type": "background",
+            "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+          },
+          {
+            "alt": "Season 2",
+            "type": "banner",
+            "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+          },
+          {
+            "alt": "Season 2",
+            "type": "coverArt",
+            "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+          },
+          {
+            "alt": "Season 2",
+            "type": "coverPoster",
+            "url": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg"
+          },
+          {
+            "alt": "Season 2",
+            "type": "coverSquare",
+            "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+          }
+        ],
+        "Guid": [
+          {
+            "id": "tmdb://52746"
+          },
+          {
+            "id": "tvdb://506866"
+          }
+        ],
+        "Role": [
+          {
+            "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+            "id": "5d77683554f42c001f8c48c9",
+            "order": 1,
+            "slug": "meg-tilly",
+            "tag": "Meg Tilly",
+            "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+            "role": "Lorna Corbett",
+            "type": "directory"
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+            "id": "5d7768866f4521001eaaa75d",
+            "order": 2,
+            "slug": "jodi-balfour",
+            "tag": "Jodi Balfour",
+            "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+            "role": "Gladys Witham",
+            "type": "directory"
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+            "id": "5d776ae051dd69001fe296bf",
+            "order": 3,
+            "slug": "charlotte-hegele",
+            "tag": "Charlotte Hegele",
+            "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+            "role": "Kate Andrews",
+            "type": "directory"
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+            "id": "5d77682a6f4521001ea99e53",
+            "order": 4,
+            "slug": "ali-liebert",
+            "tag": "Ali Liebert",
+            "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+            "role": "Betty McRae",
+            "type": "directory"
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+            "id": "5d776826e6d55c002040b00a",
+            "order": 5,
+            "slug": "peter-outerbridge",
+            "tag": "Peter Outerbridge",
+            "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+            "role": "Bob Corbett",
+            "type": "directory"
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+            "id": "5d7768c21999bc0020dd06a7",
+            "order": 6,
+            "slug": "anastasia-phillips",
+            "tag": "Anastasia Phillips",
+            "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+            "type": "directory"
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+            "id": "5d7768536f4521001eaa1bc4",
+            "order": 7,
+            "slug": "michael-seater",
+            "tag": "Michael Seater",
+            "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+            "type": "directory"
+          }
+        ],
+        "Children": {
+          "size": 12,
+          "Metadata": [
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb5086b",
+              "key": "/library/metadata/5d9c0e9be98e47001eb5086b",
+              "ratingKey": "5d9c0e9be98e47001eb5086b",
+              "summary": "With the war intensifying overseas, Gladys is inspired to organize a fundraiser for Canadian POWs, which her parents commandeer for their own means.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452988.jpg",
+              "addedAt": 1357084800,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/1",
+              "userState": false,
+              "title": "The Quickening",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 1,
+              "parentIndex": 2,
+              "contentRating": "TV-14",
+              "originallyAvailableAt": "2013-01-02",
+              "year": 2013,
+              "audienceRating": 8.6,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 103,
+              "Image": [
+                {
+                  "alt": "The Quickening",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "The Quickening",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "The Quickening",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "The Quickening",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "The Quickening",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "The Quickening",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452988.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2231895"
+                },
+                {
+                  "id": "tmdb://887194"
+                },
+                {
+                  "id": "tvdb://4452988"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.6
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "With the war intensifying overseas, Gladys is inspired to organize a fundraiser for Canadian POWs, which her parents commandeer for their own means.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb50868",
+              "key": "/library/metadata/5d9c0e9be98e47001eb50868",
+              "ratingKey": "5d9c0e9be98e47001eb50868",
+              "summary": "A surprise visit from a soldier makes Valentine’s Day special for Gladys. At the same time, Marco and Bob exchange words over Lorna, while Kate relies on her gift of gab when dealing with her dad.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452992.jpg",
+              "addedAt": 1357689600,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/2",
+              "userState": false,
+              "title": "Roses Red",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 2,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-01-09",
+              "year": 2013,
+              "audienceRating": 8.4,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 71,
+              "Image": [
+                {
+                  "alt": "Roses Red",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Roses Red",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Roses Red",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Roses Red",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Roses Red",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Roses Red",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452992.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2537336"
+                },
+                {
+                  "id": "tmdb://887195"
+                },
+                {
+                  "id": "tvdb://4452992"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.4
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "A surprise visit from a soldier makes Valentine’s Day special for Gladys. At the same time, Marco and Bob exchange words over Lorna, while Kate relies on her gift of gab when dealing with her dad.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb5085c",
+              "key": "/library/metadata/5d9c0e9be98e47001eb5085c",
+              "ratingKey": "5d9c0e9be98e47001eb5085c",
+              "summary": "Gladys travels with Marco and his mother to an internment camp in hopes of aiding Marco's detained father, while Lorna focuses her energy on impressing the girls at the factory. Elsewhere, Betty and Kate attend services at Leon's church; and Vera discovers the perks of being helpful to soldiers.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452993.jpg",
+              "addedAt": 1358294400,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/3",
+              "userState": false,
+              "title": "The Enemy Within",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 3,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-01-16",
+              "year": 2013,
+              "audienceRating": 8.4,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 74,
+              "Image": [
+                {
+                  "alt": "The Enemy Within",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "The Enemy Within",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "The Enemy Within",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "The Enemy Within",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "The Enemy Within",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "The Enemy Within",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452993.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2557482"
+                },
+                {
+                  "id": "tmdb://887196"
+                },
+                {
+                  "id": "tvdb://4452993"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.4
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d77687a103a2d001f572cd0&type=99&availabilityType=free",
+                  "id": "5d77687a103a2d001f572cd0",
+                  "slug": "don-mcbrearty",
+                  "tag": "Don McBrearty",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Gladys accompanies Marco and his mother on a journey to an internment camp in a bid to help Marco's detained father.",
+                  "type": "default"
+                },
+                {
+                  "size": 500,
+                  "tag": "Gladys travels with Marco and his mother to an internment camp in hopes of aiding Marco's detained father, while Lorna focuses her energy on impressing the girls at the factory. Elsewhere, Betty and Kate attend services at Leon's church; and Vera discovers the perks of being helpful to soldiers.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb50859",
+              "key": "/library/metadata/5d9c0e9be98e47001eb50859",
+              "ratingKey": "5d9c0e9be98e47001eb50859",
+              "summary": "Buzzing with excitement, Lorna hosts a dinner for her visiting son Gene - but the party hits some snags when Sheila brings an unexpected guest - while news of escaped POWs results in a city-wide blackout.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452994.jpg",
+              "addedAt": 1358899200,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/4",
+              "userState": false,
+              "title": "Guests of Honour",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 4,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-01-23",
+              "year": 2013,
+              "audienceRating": 8.3,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 78,
+              "Image": [
+                {
+                  "alt": "Guests of Honour",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Guests of Honour",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Guests of Honour",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Guests of Honour",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Guests of Honour",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Guests of Honour",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452994.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2628870"
+                },
+                {
+                  "id": "tmdb://887199"
+                },
+                {
+                  "id": "tvdb://4452994"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.3
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 3.5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d77687a103a2d001f572cd0&type=99&availabilityType=free",
+                  "id": "5d77687a103a2d001f572cd0",
+                  "slug": "don-mcbrearty",
+                  "tag": "Don McBrearty",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Lorna plans a dinner to celebrate Eugene's success.  Vera and Carol move towards a tenuous friendship despite their differences.  Kate decides to move on with her life",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb50871",
+              "key": "/library/metadata/5d9c0e9be98e47001eb50871",
+              "ratingKey": "5d9c0e9be98e47001eb50871",
+              "summary": "When a group of Maritimers arrive at the plant, one of the girls, Reggie, immediately draws Betty's suspicions and ire. Meanwhile, Lorna's hot-blooded son Gene convinces Gladys to join him on an adventure that leads where neither expected.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452995.jpg",
+              "addedAt": 1359504000,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/5",
+              "userState": false,
+              "title": "The Harder We Fight",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 5,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-01-30",
+              "year": 2013,
+              "audienceRating": 8,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 73,
+              "Image": [
+                {
+                  "alt": "The Harder We Fight",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "The Harder We Fight",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "The Harder We Fight",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "The Harder We Fight",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "The Harder We Fight",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "The Harder We Fight",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452995.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2628868"
+                },
+                {
+                  "id": "tmdb://887198"
+                },
+                {
+                  "id": "tvdb://4452995"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776829151a60001f24b15a&type=99&availabilityType=free",
+                  "id": "5d776829151a60001f24b15a",
+                  "order": 8,
+                  "slug": "ted-atherton",
+                  "tag": "Ted Atherton",
+                  "thumb": "https://metadata-static.plex.tv/d/people/d40b8d6f8c6b385def74407fea6304e2.jpg",
+                  "role": "Det. Prentiss",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776844880197001ec9640b&type=99&availabilityType=free",
+                  "id": "5d776844880197001ec9640b",
+                  "slug": "jerry-ciccoritti",
+                  "tag": "Jerry Ciccoritti",
+                  "thumb": "https://metadata-static.plex.tv/f/people/f46d523dd79f71105978ef7659b135a7.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "When a group of Maritimers arrive at the plant, one of the girls, Reggie, immediately draws Betty's suspicions and ire. Meanwhile, Lorna's hot-blooded son Gene convinces Gladys to join him on an adventure that leads where neither expected.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb5085f",
+              "key": "/library/metadata/5d9c0e9be98e47001eb5085f",
+              "ratingKey": "5d9c0e9be98e47001eb5085f",
+              "summary": "Victory Munitions hosts a star-studded cavalcade to raise money for war bonds. But with tensions rising between Lorna and Gladys, amplified by Gene's volatile behaviour, the fireworks finale isn't the night's only explosion.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452996.jpg",
+              "addedAt": 1360108800,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/6",
+              "userState": false,
+              "title": "Where There's Smoke",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 6,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-02-06",
+              "year": 2013,
+              "audienceRating": 8.5,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 74,
+              "Image": [
+                {
+                  "alt": "Where There's Smoke",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Where There's Smoke",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Where There's Smoke",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Where There's Smoke",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Where There's Smoke",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Where There's Smoke",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452996.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2633860"
+                },
+                {
+                  "id": "tmdb://887200"
+                },
+                {
+                  "id": "tvdb://4452996"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.5
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 2.5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776844880197001ec9640b&type=99&availabilityType=free",
+                  "id": "5d776844880197001ec9640b",
+                  "slug": "jerry-ciccoritti",
+                  "tag": "Jerry Ciccoritti",
+                  "thumb": "https://metadata-static.plex.tv/f/people/f46d523dd79f71105978ef7659b135a7.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Rising tension between Lorna and Gladys is amplified by Gene's volatile behaviour. VicMu hosts a cavalcade to raise money for war bonds.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9be98e47001eb5086e",
+              "key": "/library/metadata/5d9c0e9be98e47001eb5086e",
+              "ratingKey": "5d9c0e9be98e47001eb5086e",
+              "summary": "A worried Lorna worries for the safety of her sons during a difficult time.  Meanwhile, Gladys isolates herself to fight her own private battles, and Betty has an unexpected reunion with a soldier.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452997.jpg",
+              "addedAt": 1364169600,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/7",
+              "userState": false,
+              "title": "Party Line",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 7,
+              "parentIndex": 2,
+              "contentRating": "TV-14",
+              "originallyAvailableAt": "2013-03-25",
+              "year": 2013,
+              "audienceRating": 8.3,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 66,
+              "Image": [
+                {
+                  "alt": "Party Line",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Party Line",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Party Line",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Party Line",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Party Line",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Party Line",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452997.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2678270"
+                },
+                {
+                  "id": "tmdb://887202"
+                },
+                {
+                  "id": "tvdb://4452997"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.3
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776835e6d55c002040d24f&type=99&availabilityType=free",
+                  "id": "5d776835e6d55c002040d24f",
+                  "order": 8,
+                  "slug": "christopher-jacot",
+                  "tag": "Christopher Jacot",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a5cd01a9208be18764e344eeb31714da.jpg",
+                  "role": "Floyd Barker",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776832151a60001f24d34d&type=99&availabilityType=free",
+                  "id": "5d776832151a60001f24d34d",
+                  "slug": "rachel-talalay",
+                  "tag": "Rachel Talalay",
+                  "thumb": "https://metadata-static.plex.tv/3/people/38ee18bbe316d02bcf150bb06260f10d.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "A worried Lorna worries for the safety of her sons during a difficult time.  Meanwhile, Gladys isolates herself to fight her own private battles, and Betty has an unexpected reunion with a soldier.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9bba6eb9001fbe340e",
+              "key": "/library/metadata/5d9c0e9bba6eb9001fbe340e",
+              "ratingKey": "5d9c0e9bba6eb9001fbe340e",
+              "summary": "Gladys spends a night out with the ladies dealing with unwanted attention from a mystery man and an inquisitive redhead. Elsewhere, Lorna persuades Kate to volunteer with her at the hospital where Shelia works; and Betty's budding relationship intensifies.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452998.jpg",
+              "addedAt": 1364774400,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/8",
+              "userState": false,
+              "title": "Fifth Column",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 8,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-04-01",
+              "year": 2013,
+              "audienceRating": 8.4,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 64,
+              "Image": [
+                {
+                  "alt": "Fifth Column",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Fifth Column",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Fifth Column",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Fifth Column",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Fifth Column",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Fifth Column",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452998.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2751674"
+                },
+                {
+                  "id": "tmdb://887204"
+                },
+                {
+                  "id": "tvdb://4452998"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.4
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5f3fb9a8c63b480040d5a403&type=99&availabilityType=free",
+                  "id": "5f3fb9a8c63b480040d5a403",
+                  "order": 8,
+                  "slug": "christina-pitts-jazzar",
+                  "tag": "Christina Pitts Jazzar",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1d2dde40d57a570d6dd68d2ee1bf1526.jpg",
+                  "role": "Dancer",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776832151a60001f24d34d&type=99&availabilityType=free",
+                  "id": "5d776832151a60001f24d34d",
+                  "slug": "rachel-talalay",
+                  "tag": "Rachel Talalay",
+                  "thumb": "https://metadata-static.plex.tv/3/people/38ee18bbe316d02bcf150bb06260f10d.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "The women find themselves caught up in their own film noir action after seeing Hitchcock's spine-tingling Saboteur. Faced by threats on the home front, the women realize enemies are closer than they feared.",
+                  "type": "default"
+                },
+                {
+                  "size": 500,
+                  "tag": "Gladys spends a night out with the ladies dealing with unwanted attention from a mystery man and an inquisitive redhead. Elsewhere, Lorna persuades Kate to volunteer with her at the hospital where Shelia works; and Betty's budding relationship intensifies.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9bba6eb9001fbe3405",
+              "key": "/library/metadata/5d9c0e9bba6eb9001fbe3405",
+              "ratingKey": "5d9c0e9bba6eb9001fbe3405",
+              "summary": "An intrepid reporter visits VicMu, shaking things up and causing Lorna to examine her value at work; Kate takes an innovative approach to jump-starting her career.  Thanks to Clifford, Gladys sees a different side of her father.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4452999.jpg",
+              "addedAt": 1365379200,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/9",
+              "userState": false,
+              "title": "Something Fierce",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 9,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-04-08",
+              "year": 2013,
+              "audienceRating": 8,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 62,
+              "Image": [
+                {
+                  "alt": "Something Fierce",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Something Fierce",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Something Fierce",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Something Fierce",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Something Fierce",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Something Fierce",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4452999.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2770438"
+                },
+                {
+                  "id": "tmdb://887201"
+                },
+                {
+                  "id": "tvdb://4452999"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d7768324de0ee001fccacc1&type=99&availabilityType=free",
+                  "id": "5d7768324de0ee001fccacc1",
+                  "slug": "bruce-mcdonald",
+                  "tag": "Bruce McDonald",
+                  "thumb": "https://metadata-static.plex.tv/people/5d7768324de0ee001fccacc1.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "An intrepid reporter visits VicMu, shaking things up and causing Lorna to examine her value at work; Kate takes an innovative approach to jump-starting her career.  Thanks to Clifford, Gladys sees a different side of her father.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9bba6eb9001fbe3411",
+              "key": "/library/metadata/5d9c0e9bba6eb9001fbe3411",
+              "ratingKey": "5d9c0e9bba6eb9001fbe3411",
+              "summary": "Lorna takes up dancing and surprises both herself and the instructor; Kate and Ivan explore the terms of their engagement;  and Betty learns what it means to date a soldier.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4453000.jpg",
+              "addedAt": 1365984000,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/10",
+              "userState": false,
+              "title": "Romeo Foxtrot",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 10,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-04-15",
+              "year": 2013,
+              "audienceRating": 8.2,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 57,
+              "Image": [
+                {
+                  "alt": "Romeo Foxtrot",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Romeo Foxtrot",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Romeo Foxtrot",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Romeo Foxtrot",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Romeo Foxtrot",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Romeo Foxtrot",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4453000.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2783854"
+                },
+                {
+                  "id": "tmdb://887203"
+                },
+                {
+                  "id": "tvdb://4453000"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.2
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686a6f4521001eaa605b&type=99&availabilityType=free",
+                  "id": "5d77686a6f4521001eaa605b",
+                  "order": 8,
+                  "slug": "stuart-hughes",
+                  "tag": "Stuart Hughes",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a91e44a36597aae2e0b66c3842ecdde5.jpg",
+                  "role": "Mahoney",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d7768324de0ee001fccacc1&type=99&availabilityType=free",
+                  "id": "5d7768324de0ee001fccacc1",
+                  "slug": "bruce-mcdonald",
+                  "tag": "Bruce McDonald",
+                  "thumb": "https://metadata-static.plex.tv/people/5d7768324de0ee001fccacc1.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Lorna takes up dancing and surprises both herself and the instructor; Kate and Ivan explore the terms of their engagement;  and Betty learns what it means to date a soldier.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9bba6eb9001fbe340b",
+              "key": "/library/metadata/5d9c0e9bba6eb9001fbe340b",
+              "ratingKey": "5d9c0e9bba6eb9001fbe340b",
+              "summary": "Gladys is torn between her patriotic duty and her friendships. Lorna wrestles with her family's changing dynamics. Marco feels trapped as he realises that people he thought were on his side are working against him.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4453001.jpg",
+              "addedAt": 1366588800,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/11",
+              "userState": false,
+              "title": "Kings and Pawns",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 11,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-04-22",
+              "year": 2013,
+              "audienceRating": 8.1,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 50,
+              "Image": [
+                {
+                  "alt": "Kings and Pawns",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Kings and Pawns",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Kings and Pawns",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Kings and Pawns",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Kings and Pawns",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Kings and Pawns",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4453001.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2802278"
+                },
+                {
+                  "id": "tmdb://887205"
+                },
+                {
+                  "id": "tvdb://4453001"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 8.1
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77686a6f4521001eaa605b&type=99&availabilityType=free",
+                  "id": "5d77686a6f4521001eaa605b",
+                  "order": 8,
+                  "slug": "stuart-hughes",
+                  "tag": "Stuart Hughes",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a91e44a36597aae2e0b66c3842ecdde5.jpg",
+                  "role": "Mahoney",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776841e6d55c002040ef48&type=99&availabilityType=free",
+                  "id": "5d776841e6d55c002040ef48",
+                  "slug": "paolo-barzman",
+                  "tag": "Paolo Barzman",
+                  "thumb": "https://metadata-static.plex.tv/8/people/8875cc1685f2773cffc134ce0950aa83.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Gladys is torn between her duty and her friendships.  Lorna wrestles with her family's changing dynamics and Marco realizes that people are working against him.",
+                  "type": "default"
+                }
+              ]
+            },
+            {
+              "guid": "plex://episode/5d9c0e9bba6eb9001fbe341d",
+              "key": "/library/metadata/5d9c0e9bba6eb9001fbe341d",
+              "ratingKey": "5d9c0e9bba6eb9001fbe341d",
+              "summary": "Detective Brodie questions Kate about her father's death.  Clifford offers Gladys an unexpected opportunity.  Lorna grapples with some serious decisions, and Betty demonstrates her love.",
+              "type": "episode",
+              "thumb": "https://artworks.thetvdb.com/banners/episodes/254378/4453002.jpg",
+              "addedAt": 1367193600,
+              "duration": 3600000,
+              "publicPagesURL": "https://watch.plex.tv/show/bomb-girls/season/2/episode/12",
+              "userState": false,
+              "title": "Blood Relations",
+              "grandparentTitle": "Bomb Girls",
+              "grandparentSlug": "bomb-girls",
+              "grandparentType": "show",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/gCJjdLzRpvRiY4WtFN8NTiUpvRD.jpg",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg",
+              "grandparentRatingKey": "5d9c081e7b5c2e001e654f5a",
+              "grandparentGuid": "plex://show/5d9c081e7b5c2e001e654f5a",
+              "grandparentKey": "/library/metadata/5d9c081e7b5c2e001e654f5a",
+              "parentTitle": "Season 2",
+              "parentType": "season",
+              "parentArt": "https://metadata-static.plex.tv/7/gracenote/7fd9ce24d89e540f181f384b63778316.jpg",
+              "parentThumb": "https://image.tmdb.org/t/p/original/zfLJNFRxTJbVTFdhWQXq2ZcDn5i.jpg",
+              "parentRatingKey": "5d9c09797b5c2e001e66a37c",
+              "parentGuid": "plex://season/5d9c09797b5c2e001e66a37c",
+              "parentKey": "/library/metadata/5d9c09797b5c2e001e66a37c",
+              "index": 12,
+              "parentIndex": 2,
+              "originallyAvailableAt": "2013-04-29",
+              "year": 2013,
+              "audienceRating": 7.8,
+              "audienceRatingImage": "imdb://image.rating",
+              "imdbRatingCount": 61,
+              "Image": [
+                {
+                  "alt": "Blood Relations",
+                  "type": "background",
+                  "url": "http://assets.fanart.tv/fanart/tv/254378/showbackground/bomb-girls-55381679e8a83.jpg"
+                },
+                {
+                  "alt": "Blood Relations",
+                  "type": "banner",
+                  "url": "https://artworks.thetvdb.com/banners/graphical/254378-g3.jpg"
+                },
+                {
+                  "alt": "Blood Relations",
+                  "type": "coverArt",
+                  "url": "https://metadata-static.plex.tv/f/gracenote/f387751fe1cc2227c97e85cf44a2150f.jpg"
+                },
+                {
+                  "alt": "Blood Relations",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qZvYxdrvIXFtIYBR5R4bq9LseW4.jpg"
+                },
+                {
+                  "alt": "Blood Relations",
+                  "type": "coverSquare",
+                  "url": "https://metadata-static.plex.tv/d/gracenote/ddae9078fe67217584f3b01c8a8c47cc.jpg"
+                },
+                {
+                  "alt": "Blood Relations",
+                  "type": "snapshot",
+                  "url": "https://artworks.thetvdb.com/banners/episodes/254378/4453002.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "imdb://tt2802288"
+                },
+                {
+                  "id": "tmdb://887197"
+                },
+                {
+                  "id": "tvdb://4453002"
+                }
+              ],
+              "Rating": [
+                {
+                  "image": "imdb://image.rating",
+                  "type": "audience",
+                  "value": 7.8
+                },
+                {
+                  "image": "themoviedb://image.rating",
+                  "type": "audience",
+                  "value": 5
+                }
+              ],
+              "Role": [
+                {
+                  "key": "/library/sections/home/all?actor=5d77683554f42c001f8c48c9&type=99&availabilityType=free",
+                  "id": "5d77683554f42c001f8c48c9",
+                  "order": 1,
+                  "slug": "meg-tilly",
+                  "tag": "Meg Tilly",
+                  "thumb": "https://metadata-static.plex.tv/a/people/a29cd09d26585a5f5bfc9ad5ecc163b9.jpg",
+                  "role": "Lorna Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768866f4521001eaaa75d&type=99&availabilityType=free",
+                  "id": "5d7768866f4521001eaaa75d",
+                  "order": 2,
+                  "slug": "jodi-balfour",
+                  "tag": "Jodi Balfour",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3f4153f6bd2ec61f845c0300bc86977f.jpg",
+                  "role": "Gladys Witham",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776ae051dd69001fe296bf&type=99&availabilityType=free",
+                  "id": "5d776ae051dd69001fe296bf",
+                  "order": 3,
+                  "slug": "charlotte-hegele",
+                  "tag": "Charlotte Hegele",
+                  "thumb": "https://metadata-static.plex.tv/people/5d776ae051dd69001fe296bf.jpg",
+                  "role": "Kate Andrews",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d77682a6f4521001ea99e53&type=99&availabilityType=free",
+                  "id": "5d77682a6f4521001ea99e53",
+                  "order": 4,
+                  "slug": "ali-liebert",
+                  "tag": "Ali Liebert",
+                  "thumb": "https://metadata-static.plex.tv/3/people/3c67cab7475b9ee891cca0c6bc27e527.jpg",
+                  "role": "Betty McRae",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d776826e6d55c002040b00a&type=99&availabilityType=free",
+                  "id": "5d776826e6d55c002040b00a",
+                  "order": 5,
+                  "slug": "peter-outerbridge",
+                  "tag": "Peter Outerbridge",
+                  "thumb": "https://metadata-static.plex.tv/7/people/79d0e883b6f52a081db55cb48e132e1b.jpg",
+                  "role": "Bob Corbett",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768c21999bc0020dd06a7&type=99&availabilityType=free",
+                  "id": "5d7768c21999bc0020dd06a7",
+                  "order": 6,
+                  "slug": "anastasia-phillips",
+                  "tag": "Anastasia Phillips",
+                  "thumb": "https://metadata-static.plex.tv/1/people/1f505207619caeb3b7960dc42ba3e50a.jpg",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?actor=5d7768536f4521001eaa1bc4&type=99&availabilityType=free",
+                  "id": "5d7768536f4521001eaa1bc4",
+                  "order": 7,
+                  "slug": "michael-seater",
+                  "tag": "Michael Seater",
+                  "thumb": "https://metadata-static.plex.tv/7/people/754d437298e48011e6b01ed191946398.jpg",
+                  "type": "directory"
+                }
+              ],
+              "Director": [
+                {
+                  "key": "/library/sections/home/all?director=5d776841e6d55c002040ef48&type=99&availabilityType=free",
+                  "id": "5d776841e6d55c002040ef48",
+                  "slug": "paolo-barzman",
+                  "tag": "Paolo Barzman",
+                  "thumb": "https://metadata-static.plex.tv/8/people/8875cc1685f2773cffc134ce0950aa83.jpg",
+                  "role": "Director",
+                  "type": "directory"
+                }
+              ],
+              "Producer": [
+                {
+                  "key": "/library/sections/home/all?producer=5dcd417c0b62f5001e06549e&type=99&availabilityType=free",
+                  "id": "5dcd417c0b62f5001e06549e",
+                  "slug": "john-calvert",
+                  "tag": "John Calvert",
+                  "role": "Producer",
+                  "type": "directory"
+                }
+              ],
+              "Writer": [
+                {
+                  "key": "/library/sections/home/all?writer=5dcd39318d6e44001e5424ad&type=99&availabilityType=free",
+                  "id": "5dcd39318d6e44001e5424ad",
+                  "slug": "michael-maclennan",
+                  "tag": "Michael MacLennan",
+                  "thumb": "https://metadata-static.plex.tv/5/people/5eff38832a02462e0144ae79e74b5bec.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                },
+                {
+                  "key": "/library/sections/home/all?writer=5d776bb9fb0d55001f570c6b&type=99&availabilityType=free",
+                  "id": "5d776bb9fb0d55001f570c6b",
+                  "slug": "adrienne-mitchell",
+                  "tag": "Adrienne Mitchell",
+                  "thumb": "https://metadata-static.plex.tv/a/people/aaa3343b347034bd6c889cecb9883a79.jpg",
+                  "role": "Creator",
+                  "type": "directory"
+                }
+              ],
+              "Summary": [
+                {
+                  "size": 250,
+                  "tag": "Detective Brodie questions Kate about her father's death.  Clifford offers Gladys an unexpected opportunity.  Lorna grapples with some serious decisions, and Betty demonstrates her love.",
+                  "type": "default"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
