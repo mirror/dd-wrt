@@ -677,8 +677,8 @@ void start_benchmark(void)
 
     printf ("\nMicroseconds for one run through Dhrystone: ");
     printf ("%10.2f \n", Microseconds);
-    printf ("Dhrystones per Second:                      ");
-    printf ("%10.0f \n", Dhrystones_Per_Second);
+    fprintf (stderr, "Dhrystones per Second:                      ");
+    fprintf (stderr, "%10.0f \n", Dhrystones_Per_Second);
     printf ("\n");
     char rating[64];
     sprintf(rating, "%10.0f", Dhrystones_Per_Second);
