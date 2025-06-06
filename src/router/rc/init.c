@@ -491,6 +491,7 @@ int main(int argc, char **argv)
 	if (console_init())
 		noconsole = 1;
 #endif //HAVE_MICRO
+	start_service("benchmark");
 	/* 
 	 * Setup signal handlers 
 	 */
