@@ -980,6 +980,7 @@ define kernelfeatures
 	if [ "$(CONFIG_PROCPS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_SLUB_DEBUG is not set/CONFIG_SLUB_DEBUG=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_SLUB_DEBUG_ON is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_STACKDEPOT_MAX_FRAMES=64" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
 		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
