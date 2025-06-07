@@ -51,9 +51,8 @@ extern int ksmbd_debug_types;
 extern void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
 #endif
 
-#ifndef LOOKUP_NO_SYMLINKS
-#define LOOKUP_NO_SYMLINKS 0
-#endif
+#undef LOOKUP_NO_SYMLINKS
+#define LOOKUP_NO_SYMLINKS LOOKUP_FOLLOW
 
 #define KSMBD_DEFAULT_GFP	GFP_KERNEL | __GFP_RETRY_MAYFAIL
 
