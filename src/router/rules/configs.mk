@@ -712,6 +712,7 @@ obj-$(CONFIG_IPQ806X) += cryptodev
 obj-$(CONFIG_REALTEK) += cryptodev
 obj-$(CONFIG_MVEBU) += cryptodev
 obj-$(CONFIG_NUT) += nut
+obj-$(CONFIG_PROCPS) += ncurses procps
 obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 readline dbus bluez bluez-tools
 obj-$(CONFIG_IPTOOLS) += libmnl iptools
 obj-$(CONFIG_REALTEK) += libubox ubus realtek-poe

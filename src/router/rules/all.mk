@@ -408,6 +408,7 @@ include rules/smcroute.mk
 include rules/bluez.mk
 include rules/bluez-tools.mk
 include rules/jemalloc.mk
+include rules/procps.mk
 
 #
 # Generic rules
