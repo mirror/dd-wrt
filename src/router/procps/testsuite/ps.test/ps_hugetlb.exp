@@ -1,0 +1,35 @@
+#
+# check the ps htprv field
+#
+# You may have to enable huge tables for this to be supported
+# sudo sh -c 'echo 2 >  /proc/sys/vm/nr_hugepages'
+#
+set ps "${topdir}src/ps/pscommand"
+set hugetlb "${topdir}testsuite/test-hugetlb"
+set kbytes 2048
+
+set meminfo {/proc/meminfo}
+set test "ps with output flag htprv"
+if { [ file readable $meminfo ] != 0 } {
+    set free_hugetlb 0
+    set fd [ open $meminfo r]
+    while {[gets $fd line] != -1} {
+        set fields [regexp -all -inline {\S+} $line]
+        if { [lindex $fields 0] eq {HugePages_Free:} } {
+            set free_hugetlb [lindex $fields 1]
+        }
+    }
+    if [ expr  ${free_hugetlb} > 0 ] {
+        set testproc_pid [ spawn $hugetlb ${kbytes} ]
+
+        spawn $ps --no-header -o comm,htprv ${testproc_pid}
+        expect_pass "$test" "(?n)^test-hugetlb\\s+${kbytes}\\r?\$"
+
+        kill_process $testproc_pid
+    } else {
+        unsupported "$test (not enough free HugePages)"
+    }
+
+} else {
+    unsupported "$test (meminfo not available)"
+}

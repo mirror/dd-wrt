@@ -1,0 +1,377 @@
+This file summarizes changes to the top program and supporting documentation
+introduced on March 31, 2011.
+
+Contents:
+      DOCUMENT Changes
+      INTERNAL Improvements
+      EXTERNAL Improvements
+      BUGS Previously Fixed and Preserved
+      BUGS Newly/Nearly Fixed
+      BUGS/WISH-LISTS That Should Go Bye-bye
+      BUGS FIXED You Didn't Know You Had
+      OTHER Changes, Hopefully They Won't Bite You
+      BENCHMARKS
+
+
+DOCUMENT Changes =========================================================
+  . The entire file was cleaned up, standardized and expanded to include:
+    - a new section "2. SUMMARY Display" added for symmetry with Fields
+    - nine new fields were added to section "3a. DESCRIPTIONS of Fields"
+    - a new section "3b. MANAGING Fields" replaced the obsolete section
+      "2b. SELECTING and ORDERING Columns"
+    - section "5c. SCROLLING a Window" was added for that new feature
+
+  . I don't know when the explanations for CODE and DATA were changed to
+    show 'virtual' memory, but I think there's a reason their alternate
+    names contain the word 'resident'.  Thus they were changed back to
+    say 'physical memory'.
+
+  . And as I indicated in a previous email, the former string identifier
+    'ME' was restored as were the 'h' key/command conventions (vs. <h>).
+
+    Oops, the 'h' key/command conventions remain restored, but subsequent
+    testing revealed problems with the .ME string identifier.  Thus, it was
+    changed to .WE (along with the companion .Me/.We id).
+
+  . Also previously mentioned, the 'man2html' program translates top.1 to
+    HTML with near perfect fidelity.  I take that to mean there should be
+    no problems with the top.1 source on most other platforms.
+
+    To further improve translation to HTML, several .Bd and .Ed macros
+    were added to preserve literal (fixed width) spacing.
+
+
+INTERNAL Improvements ====================================================
+  . The old restriction of 26 fields has been lifted.  With this new-top
+    100+ fields are now possible.  It currently supports up to 55, of
+    which 35 are in use.  Adding a new field is almost too easy.
+
+  . Task row construction has been considerably improved -- both from
+    a programming perspective and a performance perspective.
+
+  . The column highlighting costs for sort field visibility were
+    virtually eliminated.
+
+    An optional define (USE_X_COLHDR) can be enabled to completely
+    eliminate any costs associated with the 'x' command toggle.
+
+  . The management of the HST_t structures, used for %cpu calculations,
+    was optimized with a hashing scheme.  Thus the need for a qsort then
+    a binary search in each frame was completely eliminated.
+
+    An optional define can restore the former qsort/bsearch approach but
+    with an internal inlined binary search function offering substantially
+    better performance than the old top.
+
+  . This far more capable new-top executable is no larger than old top.
+
+  . The above combine to produce substantially improved performance
+    whose details are documented below under BENCHMARKS.
+
+
+EXTERNAL Improvements ====================================================
+  . Field management has been completely redesigned.  It's now embodied
+    on a single screen where display-ability, position and sort selection
+    can be handled in one place -- for all windows at one time!
+
+    This function is dependent on cursor motion keys and should a device
+    not have the customary arrow keys, alternatives are provided and
+    documented under "Operation" near the beginning of the man page.
+
+  . The following new fields have been added:
+       Group Id
+       Minor Page Faults
+       Number of Threads
+       Process Group Id
+       Real User Id
+       Saved User Id
+       Saved User Name
+       Session Id
+       Tty Process Group Id
+
+  . Scrolling keys now allow one to move the view of any window vertically
+    or horizontally to reveal any desired task or column.  Previously, only
+    some tasks were viewable even with reversible, selectable sort columns.
+
+    Each of the four windows is capable of maintaining its own scrolled
+    coordinates and an optional toggle ('C') displays a message aiding
+    navigation within the available tasks and displayable fields.
+
+  . User interactive line oriented input now provides for true line
+    editing supported by these new keys:
+        Left/Right arrow keys, Delete key, Backspace and
+        Home/End keys (likely limited to xterm, not terminal)
+
+  . User filtering via the -u | -U interactive commands is now window
+    based which means that different windows could be used to filter
+    different users.
+
+  . Signal handling has been normalized and is now consistent regardless
+    of the particular top screen a user may have been using.
+
+  . The 'i' toggle now shows any task that has used *some* cpu since the
+    last screen update.  It's no longer limited to just running tasks.
+
+  . The summary area 'task states' line now reflects either 'Threads'
+    or 'Tasks' depending on the -H toggle.
+
+
+BUGS Previously Fixed and Preserved ======================================
+  ( but not necessarily literally)
+  . 228822, suspending top leaves xterm in slightly messed-up state
+  . 256376, segfaults, if the xterm is to small
+  . 320289, segv on sigwinch
+  . 351065, wrong highlight 1st column (escape characters displayed)
+  . 358724, accepts extra numeric args
+  . 378695, seg fault if "/proc" is not mounted
+  . 426782, UID field is too narrow
+  . 458986, should check xterm for EOF/EIO
+  . 459890, Irix mode should use %#4.1f when threads shown
+
+
+BUGS Newly/Nearly Fixed ==================================================
+  . 225542, 'Unknown command' message blocks further commands
+      The message is now displayed using usleep for 1.25 seconds, instead
+      of the former full 2 seconds.  And while it still blocks further
+      commands, the delay is much more tolerable.
+
+      Can we consider this bug 'nearly' fixed?
+
+  . 410292, interface error when using backspace
+      Full line editing was added but could be disabled via a #define.
+      And via that define, even under basic termios support, the backspace
+      problem was cured.
+
+  . 567509, top idle command ('i') not working for threaded programs
+      Since the 'i' command now reflects tasks that have used *some* cpu,
+      and is no longer dependent on an 'R' state, I *believe/hope* this
+      bug has been swatted.
+
+
+BUGS/WISH-LISTS That Should Go Bye-bye ===================================
+  . 340751, wish for hostname to benefit multiple top sessions
+      Craig's suggestion regarding symlinks is the perfect solution.
+      How dare Craig say that the solution was "not ideal" !
+
+  . 586497, wish for graceful degradation on small screen sizes
+      This objective could be accomplished by setting up 2 symlinks for
+      top, personalizing them for the 2 tiny phone displays, then writing
+      the respective configuration files.
+
+      I shudder at the programming effort suggested by Paul.  And when it
+      was done you'd find everybody else would have different criteria.
+
+
+BUGS FIXED You Didn't Know You Had =======================================
+  . Without amplifying the dirty details, the long standing occasionally
+    reported display corruption, and an unreported source of performance
+    degradation, has been eliminated.  The cure is in the elimination of
+    the Pseudo_cols variable and the improved PUFF macro.
+
+  . Line oriented input was not sensitive to screen width.  Thus a user
+    could hold down any key and ultimately line wrap, overwriting the
+    columns header and the entire screen.  New top prevents this.
+
+  . User filtering (-u|-U) via a user ID (not name) now validates that
+    number.  The old-top just made sure it was numeric, then blindly
+    displayed no matching users (i.e. an empty window).
+
+  . The threads toggle ('H') is no longer window based but more properly
+    applies to all windows.  The previous implementation produced the
+    following aberration if multiple windows were being shown:
+      . -H would be acknowledged and applied to all visible windows
+      . keying 'a' or 'w' would silently turn it off
+      . then keying -H would turn it back on, but the user expected off
+
+  . If you hit ^Z on any help or fields screen to suspend old-top, after
+    issuing 'fg' you would then be left with a seemingly hung application
+    inviting ^C.  In truth, one could recover with the space bar, but that
+    was far from intuitive.
+
+  . The old-top consistently writes 1 extra byte for each task row or 1
+    byte too few for columns headers, depending on your perspective.
+    The new top writes the same number of bytes for each.
+
+  . By failing to clear to eol, old top left the display in a terrible
+    state after exiting a 'fields' screen when only a few columns were
+    being displayed.
+
+  . The old-top used a zero value for the L_NONE library flag which could
+    cause repeated rebuilding of columns headers with each frame.  In truth,
+    this was not likely to happen in real life since only two fields actually
+    used that flag.  However, if it did happen, performance could be degraded
+    by 800%.
+
+
+OTHER Changes, Hopefully They Won't Bite You =============================
+  . The undocumented TOPRC environment variable is no longer supported.
+    Any similar need can be met through a symlink alias.
+
+  . The use of environment variables to override terminal size is now
+    off by default but could be enabled through '#define TTYGETENVYES'.
+
+  . The global 'bold enable' toggle is active by default and thus agrees
+    with the documentation.  It's been wrong ever since Al's wholesale
+    'cosmetic' changes in procps-3.2.2.
+
+  . Task defaults now show bold (not reverse) and row highlighting.
+    This agrees with what was always stated in the documentation.
+
+  . The 'H' toggle (thread mode) is not persistent.  Persistence can be
+    achieved with a simple shell script employing the -H switch.
+
+  . Then 'g' and 'G' commands were reversed to reflect their likely use.
+
+
+BENCHMARKS ===============================================================
+  Tested as root with nice -10 and using only common fields
+   ( on a pretty old, slow laptop under Debian Lenny )
+  but rcfiles specified identical sort fields and identical
+  settings for the 'B', 'b', 'x' and 'y' toggles (even though
+  the defaults are not necessarily identical).
+
+  In every case new-top outperforms old-top, but I've shown %
+  improvements for only the most significant.  Those cases mostly
+  involve colors with both row & column highlighting.  I suggested
+  above that the highlighting cost was virtually eliminated in
+  new-top, and these tests bare that out.
+
+  Note the much smaller differences for new-top between the 24x80
+  window results and full screen (but don't mix apples_terminal
+  with oranges_xterm).  This is a reflection of the simplification
+  of task row construction, also mentioned above.
+
+  It's always been the case that any top in an xterm outperforms
+  that top under the terminal application, even when the xterm
+  provides additional rows and columns.  It's true below with
+  Gnome and it was true nine years ago under KDE.
+
+  ----------------------------------------------------------
+   The following comparisons were run with:
+      100 tasks & 160 threads
+      -d0 -n5000
+                                 new-top        old-top
+  xterm     24x80
+ a  1 win,  lflgs_none         11.2 secs      51.8 secs    + 462.6%
+    1 win,  default            61.0 secs      66.8 secs
+    1 win,  colors w/ x+y      61.3 secs      83.0 secs    + 135.4%
+    1 win,  thread mode        88.3 secs      94.2 secs
+ b  1 win,  every field on     99.7 secs     106.0 secs
+    1 win,  cmdline            71.2 secs      76.6 secs
+    4 wins, defaults          101.3 secs     107.2 secs
+    4 wins, colors w/ x+y     101.5 secs     122.8 secs    + 121.0%
+
+  xterm, full screen (53x170)
+ a  1 win,  lflgs_none         15.9 secs      54.2 secs    + 340.9%
+    1 win,  default            70.0 secs      73.2 secs
+    1 win,  colors w/ x+y      69.4 secs     131.3 secs    + 189.2%
+    1 win,  thread mode        97.6 secs     102.6 secs
+ c  1 win,  every field on    122.1 secs     128.1 secs
+    1 win,  cmdline            80.8 secs      83.7 secs
+    4 wins, defaults          111.4 secs     115.8 secs
+    4 wins, colors w/ x+y     112.0 secs     172.9 secs    + 154.4%
+
+  terminal  24x80
+ a  1 win,  lflgs_none          8.9 secs      58.6 secs    + 658.4%
+    1 win,  default            70.1 secs      80.3 secs
+    1 win,  colors w/ x+y      70.6 secs     157.3 secs    + 222.8%
+    1 win,  thread mode       104.7 secs     120.5 secs
+ b  1 win,  every field on    111.2 secs     134.5 secs
+    1 win,  cmdline            83.8 secs      94.5 secs
+    4 wins, defaults          125.6 secs     146.7 secs
+    4 wins, colors w/ x+y     125.6 secs     206.9 secs    + 176.7%
+
+  terminal, full screen (39x125)
+ a  1 win,  lflgs_none          9.1 secs      60.6 secs    + 665.9%
+    1 win,  default            74.3 secs      88.0 secs
+    1 win,  colors w/ x+y      73.9 secs     314.5 secs    + 425.6%
+    1 win,  thread mode       113.0 secs     140.9 secs
+ b  1 win,  every field on    117.7 secs     154.9 secs
+    1 win,  cmdline            87.4 secs     107.2 secs
+    4 wins, defaults          139.1 secs     166.7 secs
+    4 wins, colors w/ x+y     157.3 secs     423.2 secs    + 269.0%
+
+  ----------------------------------------------------------
+   The following comarisons were run with:
+      300 tasks & 360 threads
+      -d0 -n3000
+                                 new-top        old-top
+  xterm, full screen (53x170)
+ a  1 win,  lflgs_none         14.3 secs      79.0 secs    + 552.4%
+    1 win,  default           101.1 secs     104.5 secs
+    1 win,  colors w/ x+y     101.3 secs     140.0 secs    + 138.2%
+    1 win,  thread mode       120.1 secs     123.1 secs
+ c  1 win,  every field on    179.8 secs     185.6 secs
+    1 win,  cmdline           124.9 secs     132.8 secs
+    4 wins, defaults          174.8 secs     179.2 secs
+    4 wins, colors w/ x+y     175.0 secs     215.2 secs    + 123.0%
+
+  terminal, full screen (39x125)
+ a  1 win,  lflgs_none         12.3 secs      98.5 secs    + 800.8%
+    1 win,  default           117.4 secs     134.0 secs
+    1 win,  colors w/ x+y     111.6 secs     296.1 secs    + 265.3%
+    1 win,  thread mode       141.3 secs     155.3 secs
+ b  1 win,  every field on    197.7 secs     204.8 secs
+    1 win,  cmdline           143.9 secs     157.3 secs
+    4 wins, defaults          204.0 secs     226.2 secs
+    4 wins, colors w/ x+y     216.9 secs     434.5 secs    + 200.3%
+
+  . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+notes:
+ a  these results represent the library flags L_NONE zero value and
+    thus the hidden cost of rebuilding column headers w/ every frame
+ b  while every common field was turned on, not all fields could be
+    displayed due to limited screen width
+ c  only in a full screen xterm window could all common fields
+    actually be displayed
+
+
+BENCHMARKS, Redux (for NLS) ==============================================
+  December, 2011 benchmarks produced on a much more modern
+  platform containing:
+     Intel(R) Core(TM) i3-2310M CPU @ 2.10GHz
+     SMP with 4 cpus
+  reflected in the substantially reduced elapsed times.
+
+  Tested as root with nice -10 and using only common fields
+  but rcfiles specified identical sort fields and identical
+  settings for the 'B', 'b', 'x' and 'y' toggles (even though
+  the defaults are not necessarily identical).
+
+  Each test was run outside of X-windows at a linux console
+  offering 48 rows and 170 columns.  This was done to reduce
+  contention which sometimes made comparisons problematic.
+
+  old-top = procps-3.2.8 (debian patched and memory leaking)
+  new-top = procps-ng-3.3.2 with NLS support
+
+  ----------------------------------------------------------
+   The following comparisons were run with
+      -d0 -n5000
+      140 tasks & 275 threads
+
+  linux console (48x170)         new-top        old-top
+ d  1 win,  lflgs_none          2.6 secs      15.0 secs    + 577.0%
+    1 win,  default            16.1 secs      19.3 secs
+    1 win,  colors w/ x+y      16.6 secs      35.0 secs    + 210.8%
+ e  1 win,  show cpus          16.2 secs      20.1 secs    + 124.1%
+    1 win,  thread mode        31.8 secs      34.1 secs
+ f  1 win,  every field on     30.5 secs      34.0 secs
+    1 win,  cmdline            19.9 secs      23.1 secs
+    4 wins, default            31.9 secs      35.2 secs
+    4 wins, colors w/ x+y      29.2 secs      47.4 secs    + 162.3%
+ g  1 win,  b&w w/ bold x      30.0 secs      33.2 secs
+ h  1 win,  scroll msg on      31.1 secs      33.9 secs
+
+  . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+notes:
+ d  these represent the same anamoly as the original 'a' footnote
+ e  these represent the '1' toggle, where each of 4 cpus was shown
+      (not possible on the original uniprocessor)
+ f  every common field was turned on and all fields were visible
+ g  on a black and white display, sort column was shown in bold
+      (further proof of column highlighting improvements)
+ h  similar to 'g', but new top was showing scroll msg
+      (old top has no such provision)

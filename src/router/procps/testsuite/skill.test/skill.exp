@@ -1,0 +1,32 @@
+#
+# Dejagnu testsuite for skill - part of procps
+#
+set skill ${topdir}src/skill
+set tty [ get_tty ]
+
+if { ![ file exists $skill ] } {
+    untested { skipping (not built)}
+    return
+}
+
+set test "skill with no arguments"
+spawn $skill
+expect_pass "$test" "Usage:\\s+\(lt-\)?skill \\\[signal\\\] \\\[options\\\] <expression>"
+
+set test "skill list signal names"
+spawn $skill -l
+expect_pass "$test" "^\(\[A-Z12+-\]\\s*\)+$"
+
+set test "skill list signal names in table"
+spawn $skill -L
+expect_pass "$test" "^\(\\s+\\d+ \[A-Z12+-\]+\)+\\s*$"
+
+make_testproc
+
+# Debian 1025915
+set test "skill find one process"
+spawn $skill -n -p $testproc1_pid
+expect_pass "$test" "^$testproc1_pid\\s*$"
+
+# Cleanup
+kill_testproc

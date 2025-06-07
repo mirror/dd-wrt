@@ -1,0 +1,109 @@
+.\"
+.\" Copyright (c) 2016-2023 Jim Warner <james.warner@comcast.net>
+.\" Copyright (c) 2019-2025 Craig Small <csmall@dropbear.xyz>
+.\" Copyright (c) 2011-2012 Sami Kerola <kerolasa@iki.fi>
+.\" Copyright (c) 1999      George Staikos <staikos@0wned.org>
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\"
+.TH SYSCTL.CONF 5 2025-05-29 procps-ng
+.SH NAME
+sysctl.conf \- Linux kernel configuration parameters
+.SH DESCRIPTION
+.B sysctl.conf
+is a set of configuration files that contain
+Linux kernel configuration parameters
+to be read and set by
+.BR sysctl (8).
+.PP
+This man page describes the configuration files for
+.I procps
+.BR sysctl .
+If you are using
+.BR systemd\-sysctl (8),
+refer to
+.BR sysctl.d (5)
+and note that it won't use the file
+.IR \%/etc/\:\%sysctl\:\%.conf .
+.SS "Configuration Format"
+Each line of a file read by
+.I procps
+.B sysctl
+describes a kernel parameter in the following format.
+.P
+.RS
+.EX
+token = value
+.EE
+.RE
+.P
+.P
+There is no need to use quotation marks for \fIvalue\fR, even if the value
+is a list of items.
+.P
+Blank lines and lines that start with
+.RB \[lq] # \[rq]
+or
+.RB \[lq] ; \[rq]
+are ignored.
+.P
+If a line begins with a single
+.RB \[lq] \- \[rq],
+a failing attempt to set the value is ignored.
+.SH FILES
+.I procps
+.BR sysctl ,
+when run with the
+.B \%\-\-system
+option,
+reads files from directories
+in the order shown below.
+.P
+.RS
+.TP
+.IR /etc/sysctl.d/ * .conf
+.TQ
+.IR /run/sysctl.d/ * .conf
+.TQ
+.IR /usr/local/lib/sysctl.d/ * .conf
+.TQ
+.IR /usr/lib/sysctl.d/ * .conf
+.TQ
+.IR /lib/sysctl.d/ * .conf
+.RE
+.P
+Finally,
+.I procps
+.B sysctl
+reads
+.IR \%/etc/\:\%sysctl\:\%.conf .
+This file is not used by
+.BR systemd\-sysctl ,
+which means that some kernel parameters are not set depending on the
+implementation of
+.B sysctl
+that is installed.
+.SH BUGS
+The maximum supported length of
+.I value
+is 4096 characters due to a limitation on
+.I /proc
+entry length in the Linux kernel.
+.SH EXAMPLES
+.EX
+#
+#
+kernel.domainname = example.com
+; A value containing a space is written to the sysctl.
+kernel.modprobe = /sbin/mod probe
+# A list of items for the value
+net.ipv4.ip_local_reserved_ports=8080,9148
+.EE
+.SH "SEE ALSO"
+.BR sysctl.d (5),
+.BR sysctl (8),
+.BR systemd\-sysctl (8)

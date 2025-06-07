@@ -1,0 +1,46 @@
+#
+# checks for hugetop
+#
+# You may have to enable huge tables for this to be supported
+# sudo sh -c 'echo 2 >  /proc/sys/vm/nr_hugepages'
+#
+set hugetop "${topdir}src/hugetop"
+set hugetlb "${topdir}testsuite/test-hugetlb"
+set kbytes 2048
+
+set hugetop_header {^hugetop - [^\r]+\s+node\(s\): ([0-9.]+[A-Z]i - \d+/\d+(, )?){1,}\s+PID\s+SHARED\s+PRIVATE\s+COMMAND\s*$}
+set hugetop_row "^\\s+\(\\d+\)\\s+\\d+\\s+\\d+\\s+test-hugetlb\\s*$"
+
+set test "hugetop zero delay"
+spawn $hugetop -d 0
+expect_pass $test "hugetop: delay must be positive integer"
+
+
+set test "hugetop alpha delay"
+spawn $hugetop -d a
+expect_pass $test "hugetop: illegal delay: 'a'"
+
+set meminfo {/proc/meminfo}
+set test "hugetop once"
+if { [ file readable $meminfo ] != 0 } {
+    set free_hugetlb 0
+    set fd [ open $meminfo r]
+    while {[gets $fd line] != -1} {
+        set fields [regexp -all -inline {\S+} $line]
+        if { [lindex $fields 0] eq {HugePages_Free:} } {
+            set free_hugetlb [lindex $fields 1]
+        }
+    }
+    if [ expr  ${free_hugetlb} > 0 ] {
+        set testproc_pid [ spawn $hugetlb ${kbytes} ]
+
+        spawn $hugetop -o
+        expect_table_dsc $test $hugetop_header $hugetop_row
+
+        kill_process $testproc_pid
+    } else {
+        unsupported "$test (not enough free HugePages)"
+    }
+} else {
+    unsupported "$test (meminfo not available)"
+}

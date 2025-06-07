@@ -1,0 +1,7 @@
+*.log
+*.sum
+site.bak
+site.exp
+test-schedbatch
+test-hugetlb
+test-zombie

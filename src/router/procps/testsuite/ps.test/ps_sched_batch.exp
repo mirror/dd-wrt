@@ -1,0 +1,13 @@
+#
+# check the ps SCHED_BATCH scheduler policy output
+#
+set ps "${topdir}src/ps/pscommand"
+
+set nice_val 18
+make_schedbatch_proc $nice_val
+
+set test "ps SCHED_BATCH scheduler"
+spawn $ps --no-header -o comm,cls,nice -ax
+expect_pass "$test" "(?n)^test-schedbatch\\s+B\\s+$nice_val\\r?\$"
+
+kill_schedbatch_proc

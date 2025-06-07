@@ -1,0 +1,85 @@
+From 61d22943abf8a31fbabedba42a13df7417a644e8 Mon Sep 17 00:00:00 2001
+From: Sami Kerola <kerolasa@iki.fi>
+Date: Tue, 17 Apr 2012 22:00:41 +0200
+Subject: [PATCH] New package: procps-ng
+
+This is an example how to add procps-ng to buildroot, to try upstream
+compilation.  I recommend you to 'git am' this patch to upstream
+buildroot git clone.
+
+Once the apply merge is done you need to run 'make menuconfig',
+choose Package Selection for the target --->, [*] Show packages that
+are also provided by busybox && System tools ---> [*] procps-ng.
+If you do not want to configure anything else save, exit and make.
+
+Notice that you almost certainly want to PROCPS_NG_VERSION
+procps-ng.mk file.
+
+Signed-off-by: Sami Kerola <kerolasa@iki.fi>
+---
+ package/Config.in              |    1 +
+ package/procps-ng/Config.in    |    8 ++++++++
+ package/procps-ng/procps-ng.mk |   24 ++++++++++++++++++++++++
+ 3 files changed, 33 insertions(+)
+ create mode 100644 package/procps-ng/Config.in
+ create mode 100644 package/procps-ng/procps-ng.mk
+
+diff --git a/package/Config.in b/package/Config.in
+index 5ae1c81..5fc2d7d 100644
+--- a/package/Config.in
++++ b/package/Config.in
+@@ -583,6 +583,7 @@ source "package/kmod/Config.in"
+ if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
+ source "package/module-init-tools/Config.in"
+ source "package/procps/Config.in"
++source "package/procps-ng/Config.in"
+ source "package/psmisc/Config.in"
+ source "package/rsyslog/Config.in"
+ source "package/sysklogd/Config.in"
+diff --git a/package/procps-ng/Config.in b/package/procps-ng/Config.in
+new file mode 100644
+index 0000000..deb1569
+--- /dev/null
++++ b/package/procps-ng/Config.in
+@@ -0,0 +1,8 @@
++config BR2_PACKAGE_PROCPS_NG
++	bool "procps-ng"
++	select BR2_PACKAGE_NCURSES
++	help
++	  Standard informational utilities and process-handling tools.
++	  Provides things like kill, ps, uptime, free, top, etc...
++
++	  https://gitorious.org/procps
+diff --git a/package/procps-ng/procps-ng.mk b/package/procps-ng/procps-ng.mk
+new file mode 100644
+index 0000000..0249b07
+--- /dev/null
++++ b/package/procps-ng/procps-ng.mk
+@@ -0,0 +1,24 @@
++#############################################################
++#
++# procps-ng
++#
++#############################################################
++
++PROCPS_NG_VERSION = 8c15d52bfddb582e5a43ce72f3d5d2d98f03b613
++PROCPS_NG_SITE = git://gitorious.org/procps/procps.git
++UTIL_LINUX_AUTORECONF = YES
++
++PROCPS_NG_DEPENDENCIES = ncurses
++
++define PROCPS_NG_AUTOGEN
++	AM_OPTS='--copy' $(@D)/autogen.sh
++endef
++
++PROCPS_NG_POST_PATCH_HOOKS += PROCPS_NG_AUTOGEN
++
++define PROCPS_NG_UNINSTALL_TARGET_CMDS
++	$(MAKE) DESTDIR=$(TARGET_DIR) uninstall -C $(FILE_DIR)
++endef
++
++$(eval $(call AUTOTARGETS))
++$(eval $(call AUTOTARGETS,host))
+--
+1.7.10
+

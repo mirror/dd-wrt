@@ -1,0 +1,181 @@
+.\"
+.\" Copyright (c) 2023 Roman Žilka <roman.zilka@gmail.com>
+.\" Copyright (c) 2009-2025 Craig Small <csmall@dropbear.xyz>
+.\" Copyright (c) 2018-2023 Jim Warner <james.warner@comcast.net>
+.\" Copyright (c) 2011-2012 Sami Kerola <kerolasa@iki.fi>
+.\" Copyright (c) 2003      Albert Cahalan
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\"
+.TH WATCH 1 2025-04-16 procps-ng
+.SH NAME
+watch \- execute a program periodically, showing output fullscreen
+.SH SYNOPSIS
+.B watch
+.RI [ option " .\|.\|.\&]"
+.I command
+.SH DESCRIPTION
+.B watch
+runs
+.I command
+repeatedly, displaying its output and errors (the first screenful). This
+allows you to watch the program output change over time. By default,
+\fIcommand\fR is run every 2 seconds and \fBwatch\fR will run until interrupted.
+A header informs of the start and running time of \fIcommand\fR as well as its
+exit code.
+.SH OPTIONS
+.TP
+\fB\-b\fR, \fB\-\-beep\fR
+Beep if \fIcommand\fR has a non-zero exit.
+.TP
+\fB\-c\fR, \fB\-\-color\fR
+Interpret ANSI color and style sequences.
+.TP
+\fB\-C\fR, \fB\-\-no-color\fR
+Do not interpret ANSI color and style sequences.
+.TP
+\fB\-d\fR, \fB\-\-differences\fR[=\fIpermanent\fR]
+Highlight the differences between successive updates. If the optional
+\fIpermanent\fR argument is specified then \fBwatch\fR will show all changes
+since the first iteration. The \fIpermanent\fR argument needs to be linked to
+the option, such as \fB\-d1\fR or \fB\-\-differences=1\fR.
+.TP
+\fB\-e\fR, \fB\-\-errexit\fR
+Freeze updates on \fIcommand\fR error, and exit after a key press. The exit code
+of \fBwatch\fR will be the code \fIcommand\fR exits with. If signal \fBn\fR is
+the cause of \fIcommand\fR termination, the exit code will be 128 + \fBn\fR.
+.TP
+\fB\-f\fR, \fB\-\-follow\fR
+Instead of clearing the screen at each update, \fBwatch\fR will scroll the
+output similiar to how \fItail -f\fR works. This option is not compatible
+with any option tracking the output of the screen, such as the
+\fB\-\-differences\fR, \fB\-\-chgexit\fR and \fB\-\-eqexit\fR options.
+.TP
+\fB\-g\fR, \fB\-\-chgexit\fR
+Exit when the visible output of \fIcommand\fR changes. Changes that are off
+the screen due to small screen size or large output will not cause \fBwatch\fR
+to exit.
+.TP
+\fB\-n\fR, \fB\-\-interval\fR \fIseconds\fR
+Specify update interval. Values smaller than 0.1 and larger than 2678400 (31
+days) are converted into these respective bounds. Both '.' and ',' work for any
+locale. The \fBWATCH_INTERVAL\fR environment variable can be used to
+persistently set a non-default interval (following the same rules and
+formatting).
+.TP
+\fB\-p\fR, \fB\-\-precise\fR
+Execute \fIcommand\fR \fB\-\-interval\fR seconds after its previous run started,
+instead of \fB\-\-interval\fR seconds after its previous run finished. If it's
+taking longer than \fB\-\-interval\fR seconds for \fIcommand\fR to complete, it
+is waited for in either case.
+.TP
+\fB\-q\fR, \fB\-\-equexit\fR <cycles>
+Exit when output of \fIcommand\fR does not change for the given number of
+cycles.
+.TP
+\fB\-r\fR, \fB\-\-no-rerun\fR
+Do not run the program on terminal resize, the output of the program will
+re-appear at the next regular run time.
+.TP
+\fB-s\fR, \fB--shotsdir\fR
+Directory to save screenshots into.
+.TP
+\fB\-t\fR, \fB\-\-no\-title\fR
+Turn off the header normally shown at the top of the screen.
+.TP
+\fB\-w\fR, \fB\-\-no\-wrap\fR
+Turn off line wrapping. Long lines will be truncated instead of wrapped to the
+next line.
+.TP
+\fB\-x\fR, \fB\-\-exec\fR
+Pass \fIcommand\fR to an
+.BR exec (3)
+call instead of \fBsh \-c\fR. The program will start a bit quicker. Shell
+features (environment setup, variable and pathname expansion, etc.) will be
+unavailable.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help text and exit.
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+Display version information and exit.
+.SH "KEY CONTROL"
+.TP
+.B spacebar
+Issue \fIcommand\fR immediately. If it's running at the moment, it is not
+interrupted and its next round will start without delay.
+.TP
+.B q
+Quit \fBwatch\fR. It currently does not interrupt a running \fIcommand\fR (as
+opposed to terminating signals, such as the SIGKILL following Ctrl+C).
+.TP
+.B s
+Take a screenshot. It will be saved in the working directory, unless specified
+otherwise by \fB\-\-shotsdir\fR. If \fIcommand\fR is running at the moment, the
+screenshot will be taken as soon as it finishes.
+.SH "EXIT STATUS"
+.TP
+.B 0
+Success. Does not represent \fIcommand\fR exit code.
+.TP
+.B 1
+Errors unrelated to \fIcommand\fR operation.
+.TP
+.B 2
+Errors related to \fIcommand\fR execution and management (not its exit code).
+.TP
+.B any non-zero (\-\-errexit)
+With \fB\-\-errexit\fR the last exit code of \fIcommand\fR is returned.
+.SH ENVIRONMENT
+The behavior of \fBwatch\fR is affected by the following environment variables.
+.TP
+.B WATCH_INTERVAL
+Update interval, follows the same rules as the \fB\-\-interval\fR command line
+option.
+.TP
+.B COLUMNS
+Terminal screen character width. Set to override autodetection.
+.TP
+.B LINES
+Terminal screen character height. Set to override autodetection.
+.SH NOTES
+POSIX option processing is used (i.e., option processing stops at the first
+non\-option argument). This means that flags after \fIcommand\fR don't get
+interpreted by \fBwatch\fR itself.
+.P
+Non-printing characters are stripped from program output. Use \fBcat -v\fR as
+part of the command pipeline if you want to see them.
+.SH EXAMPLES
+.PP
+To watch the contents of a directory change, you could use
+.IP
+watch \-d ls \-l
+.PP
+If you have CPUs with a dynamic frequency and want to observe it change, try the
+following. The command is passed to the shell, which allows you to make the
+pipeline. The quotes are a feature of the shell too.
+.IP
+watch \-n1 'grep "^cpu MHz" /proc/cpuinfo | sort -nrk4'
+.PP
+To monitor the up status of your servers, saving a copy of the output of each
+run to a file, you may use this. The \fB\-p\fR makes the command execute every
+10 seconds regardless of how long it took to complete the previous run.
+.IP
+watch \-n10 \-p \-d '{ date; for i in 10.0.0.31 10.0.0.32 10.0.0.33; do R=OK; ping \-c2 \-W2 "$i" &>/dev/null || R=FAIL; echo "$i: $R"; done } | tee \-a ~/log'
+.PP
+You can watch for your administrator to install the latest kernel with
+.IP
+watch uname \-r
+.SH BUGS
+When the terminal dimensions change, its contents changes are not registered on
+the next \fIcommand\fR run. \fB\-\-chgexit\fR will not trigger that turn and the
+counter of \fB\-\-equexit\fR will not restart even if \fIcommand\fR output
+changes meanwhile. \fB\-\-differences\fR highlighting is reset.
+.SH "REPORTING BUGS"
+Please send bug reports to
+.MT procps@freelists.org
+.ME .

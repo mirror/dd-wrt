@@ -1,0 +1,68 @@
+.\"
+.\" Copyright (c) 2024 zhenwei pi <pizhenwei@bytedance.com>
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\"
+.TH HUGETOP 1 2024-01-18 procps-ng
+.SH NAME
+hugetop \- report huge page information
+.SH SYNOPSIS
+.B hugetop
+.RI [ option " .\|.\|.]"
+.SH DESCRIPTION
+The
+.B hugetop
+command reports the huge page information of system and processes. It displays
+a summary of the system huge page status. For each process that has at
+least one huge page, the number of private and shared pages, along with
+the process PID and command name are displayed.
+.SH OPTIONS
+.TP
+\fB\-d\fR, \fB\-\-delay\fR=\fIN\fR
+Refresh the display every
+.I n
+in seconds.  By default,
+.B hugetop
+refreshes the display every three seconds.  To exit the program, hit
+.BR q .
+This cannot be combined with the \fB-o\fR option.
+.TP
+\fB\-n\fR, \fB\-\-numa\fR
+Display per NUMA node huge page information.
+.TP
+\fB\-o\fR, \fB\-\-once\fR
+Display the output once and then exit.
+.TP
+\fB\-H\fR, \fB\-\-human\fR
+Display human-readable output.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help text and exit.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display version information and exit.
+.SH "EXIT STATUS"
+.PP
+.RS
+.PD 0
+.TP
+.B 0
+Success.
+.TP
+.B Others
+Errno.
+.PD
+.SH AUTHOR
+zhenwei pi <pizhenwei@bytedance.com>
+.SH "SEE ALSO"
+.BR pmap (1)
+.SH STANDARDS
+No standards apply.
+.SH "REPORTING BUGS"
+Please send bug reports to
+.MT procps@freelists.org
+.ME .

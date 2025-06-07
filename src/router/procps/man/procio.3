@@ -1,0 +1,76 @@
+'\" t -*- coding: UTF-8 -*-
+.\"
+.\" This file describes the readproc interface to the /proc filesystem
+.\"
+.\" Copyright 2018 Werner Fink <werner@suse.de>
+.\"
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\"
+.TH PROCIO 3 2018-01-16 procps-ng
+.SH NAME
+fprocopen \- stream open functions on files below /proc/##
+.SH SYNOPSIS
+.nf
+.B #define _GNU_SOURCE
+.B #include <stdio.h>
+.B #include <proc/procio.h>
+.P
+.BI "FILE *fprocopen(const char *" path ", const char *" mode );
+.fi
+.SH DESCRIPTION
+The
+.B fprocopen
+function opens files below
+.I /proc/##
+whose name is the string to by path and associates a stream with it.
+The argument
+.I mode
+points to a string containing one of the following sequences
+.TP
+.B r
+Open a file below
+.I /proc/##
+for reading even large buffers.  The stream is positioned at
+the beginning of the file.
+.TP
+.BR w [ <del> ]
+Open a file below
+.I /proc/##
+for writing even large buffers.  The optional delimiter character
+can be one of the follwoing
+.BR '\ ' ,\  ',' ,\  '.' ,\ and\  ':'
+where the default is the comma
+.BR ',' .
+This allows to split very large input lines into pieces at this
+delimiter and write each of them to the opened file below
+.IR /proc/## .
+.TP
+.B e
+The underlying file descriptor will be closed if you use any
+of the \[oq]exec.\|.\|.\[cq] functions within your code.
+.PP
+The internal API allows the use of stdio functions to read and write
+large buffers below
+.IR /proc/## .
+.SH SEE ALSO
+.BR fopen (3),
+.br
+.BR fopencookie (3)
+.br
+.BR setvbuf (3)
+.br
+.BR lseek (3)
+.SH COPYRIGHT
+2018 Werner Fink,
+.SH AUTHOR
+Werner Fink <werner@suse.de>

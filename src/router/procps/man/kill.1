@@ -1,0 +1,211 @@
+.\"
+.\" Copyright (c) 2002-2024 Craig Small <csmall@dropbear.xyz>
+.\" Copyright (c) 2011-2023 Jim Warner <james.warner@comcast.net>
+.\" Copyright (c) 2011-2012 Sami Kerola <kerolasa@iki.fi>
+.\" Copyright (c) 1998-2003 Albert Cahalan
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.TH KILL 1 2023-12-27 procps-ng
+.SH NAME
+kill \- send a signal to one or more processes
+.SH SYNOPSIS
+.B kill
+.RB [ \-q\~\c
+.IR value |\c
+.BI \-\-queue \~value\c
+]
+.IR pid " .\|.\|."
+.P
+.B kill
+.BI \- signal
+.RB [ \-q\~\c
+.IR value |\c
+.BI \-\-queue \~value\c
+]
+.IR pid-or-pgid " .\|.\|."
+.br
+.B kill
+.BI \-s \~signal
+.RB [ \-q\~\c
+.IR value |\c
+.BI \-\-queue \~value\c
+]
+.IR pid-or-pgid " .\|.\|."
+.br
+.B kill
+.BI \-\-signal \~signal
+.RB [ \-q\~\c
+.IR value |\c
+.BI \-\-queue \~value\c
+]
+.IR pid-or-pgid " .\|.\|."
+.P
+.BR "kill \-l" \~[\c
+.IR signal ]
+.br
+.BR "kill \-\-list" \~[\c
+.IR signal ]
+.P
+.B "kill \-L"
+.br
+.B "kill \-\-table"
+.SH DESCRIPTION
+.B kill
+sends a signal to one or more processes by
+.I pid
+or
+.IR pgid ,
+a process or process group identifier.
+.BR signal (7)
+explains the varieties and behavior of signals.
+.BR kill 's
+default signal is TERM.
+The
+.B \-l
+and
+.B \-L
+options list available signals.
+Particularly useful signals include HUP,
+INT, KILL, STOP, CONT, and 0.
+Specify signals
+by number,
+by name,
+or by name with a \[lq]SIG\[rq] prefix;
+for example,
+.BR \-9 ,
+.BR \-SIGKILL ,
+and
+.B \-KILL
+are equivalent.
+A negative operand selects a process group;
+see the PGID column in
+.BR ps (1)
+command output.
+A
+.I pid
+of
+.B \-1
+is special;
+it indicates all processes except the
+.B kill
+process itself and
+.BR init (8).
+.P
+The
+.B \-q
+option uses an alternative signaling method to
+to additionally transmit an integral
+.I value
+to a receiving process.
+If that process has installed a handler for the signal and specified the
+SA_SIGINFO flag to
+.BR sigaction (2),
+then it can obtain this datum via the
+.I \%si_value
+field of the
+.I \%siginfo_t
+structure.
+.SH OPTIONS
+.TP
+.BI \- signal
+.TQ
+.BI \-s \~signal
+.TQ
+.BI \-\-signal \~signal
+Send
+.I signal
+by name or number as described above.
+If
+.I signal
+is 0 (zero),
+.B kill
+sends no signal,
+but still validates its operands;
+this behavior permits the caller to check whether
+the specified
+.IR pid s
+and/or
+.IR pgid s
+exist and it has permission to send them signals.
+.TP
+.BI \-q \~value
+.TQ
+.BI \-\-queue \~value
+Use
+.BR sigqueue (3)
+rather than
+.BR kill (2)
+to additionally send
+.I value
+to each
+.I pid
+or
+.IR pgid.
+.TP
+.BR \-l \~[\fIsignal\fR]
+.TQ
+.BR \-\-list \~[\\fIsignal\fR]
+Without an argument,
+list signal names.
+The optional argument causes
+.B kill
+to convert the specified
+.I signal
+from name to numeric form,
+or vice versa as appropriate,
+and report the translation.
+.TP
+.B \-L
+.TQ
+.B \-\-table
+List signal names in tabular format.
+.SH NOTES
+The shell (command-line interpreter) often has a built-in \[lq]kill\[rq]
+command.
+You may need to run the command described here as
+.I /bin/\:kill
+to override the shell built-in.
+.PP
+If you use a negative operand,
+specify a signal by name or number first so that
+.B kill
+can distinguish it from a process group.
+For example,
+the command
+.RB \[lq] "kill 123 \-9" \[rq]
+is ambiguous;
+it could mean to kill process 123 with signal 9,
+or to kill process 123 and process group 9 with the default signal.
+.SH EXAMPLES
+.TP
+.B kill \-HUP \-1
+Send hangup signal to all the processes you can.
+.TP
+.B kill \-l 11
+Report name corresponding to signal number 11.
+.TP
+.B kill 123 543
+Send the default signal,
+SIGTERM,
+to processes 123 and
+543.
+.TP
+.B kill -SIGTERM -123
+Send the signal SIGTERM to process group 123.
+.SH "SEE ALSO"
+.BR kill (2),
+.BR killall (1),
+.BR nice (1),
+.BR pkill (1),
+.BR renice (1),
+.BR signal (7),
+.BR sigqueue (3),
+.BR skill (1)
+.SH "REPORTING BUGS"
+Please send bug reports to
+.MT procps@freelists.org
+.ME .

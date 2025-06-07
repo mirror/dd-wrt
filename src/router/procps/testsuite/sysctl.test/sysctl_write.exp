@@ -1,0 +1,41 @@
+
+set sysctl ${topdir}src/sysctl
+
+set test "sysctl write from command line"
+spawn $sysctl --dry-run kernel.hostname=procps-test
+expect_pass "$test" "kernel.hostname = procps-test"
+
+set test "sysctl write from command line using slash"
+spawn $sysctl --dry-run kernel/hostname=procps-test
+expect_pass "$test" "kernel.hostname = procps-test"
+
+set test "sysctl write from configuration file"
+spawn $sysctl --dry-run -f ${topdir}testsuite/sysctl_glob_test.conf
+expect_pass "$test" "fs.protected_fifos = 2\\s+fs.protected_symlinks = 2\\s+fs.protected_hardlinks = 1"
+
+set test "sysctl write from file with slashes"
+spawn $sysctl --dry-run -f ${topdir}testsuite/sysctl_slash_test.conf
+expect_pass "$test" "kernel.hostname = procps-test"
+
+set hostname_file "/proc/sys/kernel/hostname"
+if {[file exists ${hostname_file}]} {
+  if {[file writable ${hostname_file}]} {
+    unsupported "sysctl write: hostname file is writable"
+  } else {
+    set test "sysctl write unwritable file"
+    spawn $sysctl -q kernel.hostname=procpstest
+    expect_pass "$test" "sysctl: permission denied on key \"kernel.hostname\"\\s*$"
+    expect_spawn_retval "$test" 1
+
+    set test "sysctl write unwritable file ignored"
+    spawn $sysctl -q -- -kernel.hostname=procpstest
+    expect_pass "$test" "sysctl: permission denied on key \"kernel.hostname\", ignoring\\s*$"
+    expect_spawn_retval "$test" 0
+  }
+} else {
+  unsupported "sysctl write: hostname file does not exist"
+}
+
+set test "sysctl write above /proc"
+spawn $sysctl /../../../etc=1
+expect_pass "$test" "sysctl: Path is not under /proc/sys/: /proc/sys//../../../etc"

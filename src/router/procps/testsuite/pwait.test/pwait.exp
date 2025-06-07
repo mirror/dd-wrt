@@ -1,0 +1,48 @@
+#
+# Dejagnu tests for pwait - part of procps
+#
+set mypid [pid]
+set not_ppid [ expr { $mypid + 1 } ]
+set pwait "${topdir}src/pwait"
+set uid [ exec id -u ]
+set not_uid [ expr { $uid + 1 } ]
+set gid [ exec id -g ]
+set not_gid [ expr { $gid + 1 } ]
+
+if { ![ file exists $pwait ] } {
+    untested { skipping (not build)}
+    return
+}
+
+set test "pwait with no arguments"
+spawn $pwait
+expect_pass "$test" "^\(lt-\)\?pwait: no matching criteria specified\\s*"
+
+make_testproc
+
+set ps "${topdir}src/ps/pscommand"
+set testproc1_sid [ string trim [ exec $ps --no-headers -o sid $testproc1_pid ] ]
+set not_testproc1_sid [ expr { $testproc1_sid + 1 } ]
+
+set test "pwait with not matching gid"
+spawn $pwait -G $not_gid $testproc_comm
+expect_blank $test
+
+set test "pwait doesn't match with bogus parent pid"
+spawn $pwait -P $not_ppid $testproc_comm
+expect_blank "$test"
+
+set test "pwait doesn't match with bogus sid"
+spawn $pwait -s $not_testproc1_sid $testproc_comm
+expect_blank "$test"
+
+set test "pwait doesn't match with bogus tty"
+spawn $pwait -t glass $testproc_comm
+expect_blank "$test"
+
+set test "pwait with not matching uid"
+spawn $pwait -U $not_uid $testproc_comm
+expect_blank $test
+
+# Cleanup
+kill_testproc

@@ -1,0 +1,46 @@
+#
+# check that zombie processes are correctly detected
+# The zombie process is in a different TTY so either use
+# BSD-style commands/personality or the -a option
+#
+set ps "${topdir}src/ps/pscommand"
+
+set zombie_cmd "\\\[test-zombie\\\] <defunct>"
+set zombie_comm "test-zombie <defunct>"
+set tty_name "\[a-z0-9/]+"
+set zombie_state "Z\[<NLsl+\]*"
+set start_time "\[0-9:\]+"
+
+make_zombie_proc
+if [ string is integer $zombie_pid ] {
+
+    set test "ps zombie - cmd"
+    spawn $ps -o pid,cmd ${zombie_pid}
+    expect_pass "$test" "$zombie_pid $zombie_cmd"
+
+    set test "ps zombie - comm"
+    spawn $ps -o pid,comm ${zombie_pid}
+    expect_pass "$test" "$zombie_pid $zombie_comm"
+
+    set test "ps zombie - linux no option"
+    spawn $ps -a
+    expect_pass "$test" "$zombie_pid\\s+$tty_name\\s+$start_time\\s+$zombie_comm"
+
+    set test "ps zombie - linux -f (full) option"
+    spawn $ps -af
+    expect_pass "$test" "\\S+\\s+$zombie_pid\\s+\\d+\\s+\\d+\\s+\\S+\\s+$tty_name\\s+$start_time\\s+$zombie_cmd"
+
+    set env(PS_PERSONALITY) "bsd"
+    set test "ps zombie - bsd no option"
+    spawn $ps
+    expect_pass "$test" "$zombie_pid\\s+$tty_name\\s+$zombie_state\\s+$start_time\\s+$zombie_cmd"
+
+    set test "ps zombie - bsd c option"
+    spawn $ps c
+    expect_pass "$test" "$zombie_pid\\s+$tty_name\\s+$zombie_state\\s+$start_time\\s+$zombie_comm"
+} else {
+    unsupported "Unable to make zombie process"
+}
+kill_zombie_proc
+
+set env(PS_PERSONALITY) ""
