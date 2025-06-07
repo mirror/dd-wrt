@@ -709,7 +709,11 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_NFCT=y" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_PE_SIP=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_TWOS=m" >> $(LINUXDIR)/.config; \
+	else \
+	sed -i 's/\CONFIG_IP_VS=m/# CONFIG_IP_VS is not set/g' $(LINUXDIR)/.config; \
+	sed -i 's/\CONFIG_IP_VS=y/# CONFIG_IP_VS is not set/g' $(LINUXDIR)/.config; \
 	fi
+	
 	echo "# CONFIG_ASN1 is not set" >> $(LINUXDIR)/.config; \
 	if [ "$(CONFIG_SMBD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_MD5 is not set/CONFIG_CRYPTO_MD5=m/g' $(LINUXDIR)/.config; \
@@ -973,6 +977,10 @@ define kernelfeatures
 		sed -i 's/CONFIG_RAID6_PQ=m/\# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/CONFIG_RAID6_PQ=y/\# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_PROCPS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_SLUB_DEBUG is not set/CONFIG_SLUB_DEBUG=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_SLUB_DEBUG_ON is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.1" ]; then \
 		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
@@ -986,6 +994,10 @@ define kernelfeatures
 		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.6-nss" ]; then \
+		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.12" ]; then \
 		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	fi
