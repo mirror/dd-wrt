@@ -18,10 +18,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
-	local \
-	po-man \
-	po \
-	testsuite
+	local
 
 AM_CFLAGS = -Ilibrary/include
 LDADD = ./library/libproc2.la $(CYGWINFLAGS)

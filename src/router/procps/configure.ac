@@ -443,8 +443,5 @@ AC_CHECK_FUNCS([__fpending alarm atexit dup2 clock_gettime error error_at_line g
 
 AC_CONFIG_FILES([Makefile
                  local/Makefile
-                 po-man/Makefile
-                 po/Makefile.in
-                 library/libproc2.pc
-                 testsuite/Makefile])
+                 library/libproc2.pc])
 AC_OUTPUT
