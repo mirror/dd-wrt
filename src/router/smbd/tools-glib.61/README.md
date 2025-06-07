@@ -5,7 +5,7 @@
 
 [ksmbd-tools](https://github.com/cifsd-team/ksmbd-tools)
 is a collection of userspace utilities for
-[the ksmbd kernel server](https://www.kernel.org/doc/html/latest/filesystems/cifs/ksmbd.html)  
+[the ksmbd kernel server](https://www.kernel.org/doc/html/latest/filesystems/smb/ksmbd.html)  
 merged to mainline in the Linux 5.15 release.
 
 ## Table of Contents

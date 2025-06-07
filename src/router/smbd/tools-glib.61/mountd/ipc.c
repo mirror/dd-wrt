@@ -191,8 +191,8 @@ static int ipc_ksmbd_starting_up(void)
 			strcpy(config_payload + sz, p);
 			sz += strlen(p) + 1;
 		}
+		ev->bind_interfaces_only = global_conf.bind_interfaces_only;
 
-		global_conf.bind_interfaces_only = 0;
 		cp_group_kv_list_free(global_conf.interfaces);
 	}
 

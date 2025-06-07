@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -45,7 +46,7 @@ struct smbconf_global {
 	unsigned short		tcp_port;
 	unsigned short		ipc_timeout;
 	unsigned int		deadtime;
-	int			bind_interfaces_only;
+	bool			bind_interfaces_only;
 	char			**interfaces;
 	unsigned long		file_max;
 	unsigned int		smb2_max_read;
