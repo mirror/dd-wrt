@@ -1,6 +1,6 @@
 procps-configure:
 	cd procps && ./autogen.sh
-	cd procps && ./configure --disable-nls --disable-static --prefix=/usr --host=$(ARCH)-linux \
+	cd procps && ./configure --disable-nls --disable-static --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
 	NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
 	CC="$(CC)" \
