@@ -735,6 +735,20 @@ ifeq ($(CONFIG_VLAN_FILTERING),y)
 else
 	echo "# CONFIG_BRIDGE is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_PROCPS),y)
+	sed -i 's/\CONFIG_FREE=y/# CONFIG_FREE is not set/g' busybox/.config
+	sed -i 's/\CONFIG_PGREP=y/# CONFIG_PGREP is not set/g' busybox/.config
+	sed -i 's/\CONFIG_PIDOF=y/# CONFIG_PIDOF is not set/g' busybox/.config
+	sed -i 's/\CONFIG_PKILL=y/# CONFIG_PKILL is not set/g' busybox/.config
+	sed -i 's/\CONFIG_PMAP=y/# CONFIG_PMAP is not set/g' busybox/.config
+	sed -i 's/\CONFIG_PS=y/# CONFIG_PS is not set/g' busybox/.config
+	sed -i 's/\CONFIG_PWDX=y/# CONFIG_PWDX is not set/g' busybox/.config
+	sed -i 's/\CONFIG_TOP=y/# CONFIG_TOP is not set/g' busybox/.config
+	sed -i 's/\CONFIG_UPTIME=y/# CONFIG_UPTIME is not set/g' busybox/.config
+	sed -i 's/\CONFIG_W=y/# CONFIG_W is not set/g' busybox/.config
+	sed -i 's/\CONFIG_WATCH=y/# CONFIG_WATCH is not set/g' busybox/.config
+	sed -i 's/\CONFIG_BB_SYSCTL=y/# CONFIG_BB_SYSCTL is not set/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
