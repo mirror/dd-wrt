@@ -23,6 +23,8 @@
 
 #include <sys/epoll.h>
 
+int _ssl_do_handevent(struct dns_server_info *server);
+
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */

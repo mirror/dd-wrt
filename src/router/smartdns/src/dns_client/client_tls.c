@@ -41,10 +41,11 @@
 static ssize_t _ssl_read_ext(struct dns_server_info *server, SSL *ssl, void *buff, int num)
 {
 	ssize_t ret = 0;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || buff == NULL || ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return SSL_ERROR_SYSCALL;
 	}
-	pthread_mutex_lock(&server->lock);
 	ret = SSL_read(ssl, buff, num);
 	pthread_mutex_unlock(&server->lock);
 	return ret;
@@ -54,11 +55,12 @@ static ssize_t _ssl_write_ext2(struct dns_server_info *server, SSL *ssl, const v
 {
 	ssize_t ret = 0;
 	size_t written = 0;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || buff == NULL || ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return SSL_ERROR_SYSCALL;
 	}
 
-	pthread_mutex_lock(&server->lock);
 #ifdef OSSL_QUIC1_VERSION
 	ret = SSL_write_ex2(ssl, buff, num, flags, &written);
 #else
@@ -76,11 +78,12 @@ static ssize_t _ssl_write_ext2(struct dns_server_info *server, SSL *ssl, const v
 int _ssl_shutdown(struct dns_server_info *server)
 {
 	int ret = 0;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || server->ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return SSL_ERROR_SYSCALL;
 	}
 
-	pthread_mutex_lock(&server->lock);
 	ret = SSL_shutdown(server->ssl);
 	pthread_mutex_unlock(&server->lock);
 	return ret;
@@ -89,11 +92,12 @@ int _ssl_shutdown(struct dns_server_info *server)
 static int _ssl_get_error_ext(struct dns_server_info *server, SSL *ssl, int ret)
 {
 	int err = 0;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return SSL_ERROR_SYSCALL;
 	}
 
-	pthread_mutex_lock(&server->lock);
 	err = SSL_get_error(ssl, ret);
 	pthread_mutex_unlock(&server->lock);
 	return err;
@@ -107,12 +111,30 @@ static int _ssl_get_error(struct dns_server_info *server, int ret)
 static int _ssl_do_handshake(struct dns_server_info *server)
 {
 	int err = 0;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || server->ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return SSL_ERROR_SYSCALL;
 	}
 
-	pthread_mutex_lock(&server->lock);
 	err = SSL_do_handshake(server->ssl);
+	pthread_mutex_unlock(&server->lock);
+	return err;
+}
+
+int _ssl_do_handevent(struct dns_server_info *server)
+{
+	int err = 0;
+	pthread_mutex_lock(&server->lock);
+	if (server == NULL || server->ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
+		return SSL_ERROR_SYSCALL;
+	}
+#ifdef OSSL_QUIC1_VERSION
+	err = SSL_handle_events(server->ssl);
+#else
+	err = SSL_ERROR_SYSCALL;
+#endif
 	pthread_mutex_unlock(&server->lock);
 	return err;
 }
@@ -120,11 +142,12 @@ static int _ssl_do_handshake(struct dns_server_info *server)
 static int _ssl_session_reused(struct dns_server_info *server)
 {
 	int err = 0;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || server->ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return SSL_ERROR_SYSCALL;
 	}
 
-	pthread_mutex_lock(&server->lock);
 	err = SSL_session_reused(server->ssl);
 	pthread_mutex_unlock(&server->lock);
 	return err;
@@ -133,11 +156,12 @@ static int _ssl_session_reused(struct dns_server_info *server)
 static SSL_SESSION *_ssl_get1_session(struct dns_server_info *server)
 {
 	SSL_SESSION *ret = NULL;
+	pthread_mutex_lock(&server->lock);
 	if (server == NULL || server->ssl == NULL) {
+		pthread_mutex_unlock(&server->lock);
 		return NULL;
 	}
 
-	pthread_mutex_lock(&server->lock);
 	ret = SSL_get1_session(server->ssl);
 	pthread_mutex_unlock(&server->lock);
 	return ret;
@@ -972,7 +996,7 @@ int _dns_client_process_tls(struct dns_server_info *server_info, struct epoll_ev
 	}
 
 	if (server_info->status == DNS_SERVER_STATUS_CONNECTING) {
-		/* do SSL hand shake */
+		/* do SSL handshake */
 		ret = _ssl_do_handshake(server_info);
 		if (ret <= 0) {
 			memset(&fd_event, 0, sizeof(fd_event));

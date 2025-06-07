@@ -44,7 +44,7 @@ endif
 CXXFLAGS+= -Wall -std=c++11 
 override CXXFLAGS +=-Iinclude
 
-USE_ATOMIC := $(shell printf '$(HASH)include <stdint.h>\nvoid main() { void *ptr; uint64_t value=0;__atomic_fetch_add_8(ptr, &value, 1);}' | $(CC) -x c - -o /dev/null >/dev/null 2>&1 && echo -n 1 || echo -n 0)
+USE_ATOMIC := $(shell printf '$(HASH)include <stdint.h>\nvoid main() { uint64_t value=0;__atomic_add_fetch(&value, 1, __ATOMIC_SEQ_CST);__atomic_load_n(&value,__ATOMIC_SEQ_CST);}' | $(CC) -x c - -o /dev/null >/dev/null 2>&1 && echo -n 1 || echo -n 0)
 ifeq ($(USE_ATOMIC), 0)
  override CFLAGS += -DUSE_ATOMIC
  override LDFLAGS += -latomic 
