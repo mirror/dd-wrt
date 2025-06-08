@@ -20,6 +20,7 @@
 #include <net/route.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 #include <net/ipv6.h>
+#include <net/ipv6_frag.h>
 #else
 #include <net/ipv6_frag.h>
 #endif
