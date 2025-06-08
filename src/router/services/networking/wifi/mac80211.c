@@ -2447,7 +2447,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		if (ispsk3) {
 #ifdef HAVE_SSID_PROTECTION
 			if (nvram_nmatch("1", "%s_ssid_protection", prefix))
-				fprintf(fp, "ssid_protection=1");
+				fprintf(fp, "ssid_protection=1\n");
 #endif
 		}
 		char extra[32];

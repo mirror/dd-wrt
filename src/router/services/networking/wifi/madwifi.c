@@ -1419,7 +1419,7 @@ void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 	}
 #ifdef HAVE_SSID_PROTECTION
 	if (nvram_nmatch("1", "%s_ssid_protection", prefix))
-		fprintf(fp, "ssid_protection=1");
+		fprintf(fp, "ssid_protection=1\n");
 #endif
 	int wpamask = 0;
 	if (ispsk || iswpa)
