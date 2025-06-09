@@ -874,6 +874,7 @@ extern void notifywanChange(void);
 extern int contains(const char *string, char value);
 extern int getcpurev(void);
 extern int getphysicalcores(void);
+extern int getlogicalcores(void);
 extern int nvram_used(int *space);
 extern int cpu_plltype(void);
 extern int check_switch_support(void);

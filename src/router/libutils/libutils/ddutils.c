@@ -238,13 +238,17 @@ int getphysicalcores(void)
 	fclose(fp);
 
 	if (!cores) {
-#ifdef _SC_NPROCESSORS_ONLN
-		cores = sysconf(_SC_NPROCESSORS_ONLN);
-#else
-		cores = 1
-#endif
+		return getphysicalcores();
 	}
 	return cores;
+}
+int getlogicalcores(void)
+{
+#ifdef _SC_NPROCESSORS_ONLN
+	return sysconf(_SC_NPROCESSORS_ONLN);
+#else
+	return 1;
+#endif
 }
 /* In the space-separated/null-terminated list(haystack), try to
  * locate the string "needle"
