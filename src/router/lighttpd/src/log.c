@@ -186,12 +186,36 @@ log_buffer_prefix (buffer * const restrict b,
 }
 
 
+__attribute_pure__
+static size_t
+log_buffer_isprint_ascii_len (const char * const s, const size_t n)
+{
+    size_t i;
+    for (i = 0; i < n && light_isprint(s[i]); ++i) ;
+    return i;
+}
+
+
+__attribute_pure__
+static size_t
+log_buffer_isprint_utf8_len (const char * const s, const size_t n)
+{
+    size_t i;
+    for (i = 0; i < n && !light_iscntrl_or_utf8_invalid_byte(s[i]); ++i) ;
+    return i;
+}
+
+
+static size_t
+(*log_buffer_isprint_len)(const char * const s, const size_t n) =
+  log_buffer_isprint_ascii_len;
+
+
 static void
 log_buffer_append_encoded (buffer * const b,
                            const char * const s, const size_t n)
 {
-    size_t i;
-    for (i = 0; i < n && ' ' <= s[i] && s[i] <= '~'; ++i) ;/*(ASCII isprint())*/
+    size_t i = log_buffer_isprint_len(s, n);
     if (i == n)
         buffer_append_string_len(b, s, n);  /* common case; nothing to encode */
     else
@@ -227,8 +251,7 @@ log_buffer_vsprintf (buffer * const restrict b,
         vsnprintf(s, n+1, fmt, ap);
     }
 
-    unsigned int i;
-    for (i = 0; i < n && ' ' <= s[i] && s[i] <= '~'; ++i) ;/*(ASCII isprint())*/
+    unsigned int i = (unsigned int)log_buffer_isprint_len(s, n);
     if (i == n) return; /* common case; nothing to encode */
 
     /* need to encode log line
@@ -472,4 +495,13 @@ log_set_global_errh (log_error_st * const errh, const int ts_high_precision)
 
     buffer_free_ptr(&log_stderrh.b);
     return (log_errh = errh ? errh : &log_stderrh);
+}
+
+
+void
+log_buffer_isprint_init (int utf8)
+{
+    log_buffer_isprint_len = utf8
+      ? log_buffer_isprint_utf8_len
+      : log_buffer_isprint_ascii_len;
 }

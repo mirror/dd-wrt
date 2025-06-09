@@ -107,19 +107,41 @@
 #include "log.h"
 #include "plugin.h"
 
+typedef struct mod_mbedtls_x509_crl {
+    mbedtls_x509_crl crl;
+    int refcnt;
+    struct mod_mbedtls_x509_crl *next;
+} mod_mbedtls_x509_crl;
+
+typedef struct {
+    mod_mbedtls_x509_crl *ca_crl;
+    const char *crl_file;
+    unix_time64_t crl_loadts;
+} plugin_crl;
+
+typedef struct mod_mbedtls_kp {
+    mbedtls_pk_context pk; /* parsed private key structure */
+    mbedtls_x509_crt crt;  /* parsed public key structure */
+    int refcnt;
+    int8_t need_chain;
+    struct mod_mbedtls_kp *next;
+} mod_mbedtls_kp;
+
 typedef struct {
     /* SNI per host: with COMP_SERVER_SOCKET, COMP_HTTP_SCHEME, COMP_HTTP_HOST */
-    mbedtls_pk_context ssl_pemfile_pkey;/* parsed private key structure */
-    mbedtls_x509_crt ssl_pemfile_x509;  /* parsed public key structure */
+    mod_mbedtls_kp *kp; /* parsed public/private key structures */
     const buffer *ssl_pemfile;
     const buffer *ssl_privkey;
-    int8_t need_chain;
+    unix_time64_t pkey_ts;
 } plugin_cert;
 
 typedef struct {
     mbedtls_ssl_config *ssl_ctx;        /* context shared between mbedtls_ssl_CONTEXT structures */
     int *ciphersuites;
     void *curves;
+    plugin_cert *pc;
+    mod_mbedtls_kp *kp;
+    mbedtls_x509_crt *ssl_ca_file;
 } plugin_ssl_ctx;
 
 typedef struct {
@@ -136,11 +158,7 @@ typedef struct {
 
     /*(copied from plugin_data for socket ssl_ctx config)*/
     plugin_cert *pc;
-    mbedtls_pk_context *ssl_pemfile_pkey; /* parsed private key structure */
-    mbedtls_x509_crt *ssl_pemfile_x509;   /* parsed public key structure */
     mbedtls_x509_crt *ssl_ca_file;
-    const buffer *ssl_pemfile;
-    const buffer *ssl_privkey;
     unsigned char ssl_session_ticket;
     unsigned char ssl_verifyclient;
     unsigned char ssl_verifyclient_enforce;
@@ -150,12 +168,9 @@ typedef struct {
 typedef struct {
     /* SNI per host: w/ COMP_SERVER_SOCKET, COMP_HTTP_SCHEME, COMP_HTTP_HOST */
     plugin_cert *pc;
-    mbedtls_pk_context *ssl_pemfile_pkey; /* parsed private key structure */
-    mbedtls_x509_crt *ssl_pemfile_x509;   /* parsed public key structure */
-    const buffer *ssl_pemfile;
     mbedtls_x509_crt *ssl_ca_file;
     mbedtls_x509_crt *ssl_ca_dn_file;
-    mbedtls_x509_crl *ssl_ca_crl_file;
+    plugin_crl *ssl_ca_crl_file;
 
     unsigned char ssl_verifyclient;
     unsigned char ssl_verifyclient_enforce;
@@ -169,7 +184,7 @@ typedef struct {
 
 typedef struct {
     PLUGIN_DATA;
-    plugin_ssl_ctx *ssl_ctxs;
+    plugin_ssl_ctx **ssl_ctxs;
     plugin_config defaults;
     server *srv;
   #if !defined(MBEDTLS_USE_PSA_CRYPTO)
@@ -194,6 +209,8 @@ static plugin_data *plugin_data_singleton;
 #define LOCAL_SEND_BUFSIZE MBEDTLS_SSL_MAX_CONTENT_LEN
 #endif
 static char *local_send_buffer;
+static int feature_refresh_certs;
+static int feature_refresh_crls;
 
 typedef struct {
     mbedtls_ssl_context ssl;      /* mbedtls request/connection context */
@@ -204,12 +221,91 @@ typedef struct {
     int handshake_done;
     size_t pending_write;
     plugin_config conf;
-    buffer *tmp_buf;
     log_error_st *errh;
     mbedtls_ssl_config *ssl_ctx;
-    mbedtls_pk_context *acme_tls_1_pkey;
-    mbedtls_x509_crt *acme_tls_1_x509;
+    /*plugin_cert *pc;*/
+    mod_mbedtls_kp *kp;
+    mod_mbedtls_x509_crl *crl;
 } handler_ctx;
+
+
+__attribute_cold__
+static mod_mbedtls_kp *
+mod_mbedtls_kp_init (void)
+{
+    mod_mbedtls_kp * const kp = ck_malloc(sizeof(*kp));
+    kp->refcnt = 1;
+    kp->need_chain = 0;
+    kp->next = NULL;
+    mbedtls_pk_init(&kp->pk);   /* init private key context */
+    mbedtls_x509_crt_init(&kp->crt); /* init cert structure */
+    return kp;
+}
+
+
+__attribute_cold__
+static void
+mod_mbedtls_kp_free (mod_mbedtls_kp *kp)
+{
+    mbedtls_pk_free(&kp->pk);
+    mbedtls_x509_crt_free(&kp->crt);
+    free(kp);
+}
+
+
+static mod_mbedtls_kp *
+mod_mbedtls_kp_acq (plugin_cert *pc)
+{
+    mod_mbedtls_kp *kp = pc->kp;
+    ++kp->refcnt;
+    return kp;
+}
+
+
+static void
+mod_mbedtls_kp_rel (mod_mbedtls_kp *kp)
+{
+    if (--kp->refcnt < 0)
+        mod_mbedtls_kp_free(kp); /* immed free for acme-tls/1 */
+}
+
+
+__attribute_cold__
+static mod_mbedtls_x509_crl *
+mod_mbedtls_x509_crl_init (void)
+{
+    mod_mbedtls_x509_crl *ca_crl = ck_malloc(sizeof(*ca_crl));
+    ca_crl->refcnt = 1;
+    ca_crl->next = NULL;
+    mbedtls_x509_crl_init(&ca_crl->crl);
+    return ca_crl;
+}
+
+
+__attribute_cold__
+static void
+mod_mbedtls_x509_crl_free (mod_mbedtls_x509_crl *ca_crl)
+{
+    mbedtls_x509_crl_free(&ca_crl->crl);
+    free(ca_crl);
+}
+
+
+static mod_mbedtls_x509_crl *
+mod_mbedtls_x509_crl_acq (plugin_crl *ssl_ca_crl)
+{
+    mod_mbedtls_x509_crl *ca_crl = ssl_ca_crl->ca_crl;
+    if (ca_crl)
+        ++ca_crl->refcnt;
+    return ca_crl;
+}
+
+
+static void
+mod_mbedtls_x509_crl_rel (mod_mbedtls_x509_crl *ca_crl)
+{
+    --ca_crl->refcnt;
+}
 
 
 static handler_ctx *
@@ -223,14 +319,10 @@ static void
 handler_ctx_free (handler_ctx *hctx)
 {
     mbedtls_ssl_free(&hctx->ssl);
-    if (hctx->acme_tls_1_pkey) {
-        mbedtls_pk_free(hctx->acme_tls_1_pkey);
-        free(hctx->acme_tls_1_pkey);
-    }
-    if (hctx->acme_tls_1_x509) {
-        mbedtls_x509_crt_free(hctx->acme_tls_1_x509);
-        free(hctx->acme_tls_1_x509);
-    }
+    if (hctx->kp)
+        mod_mbedtls_kp_rel(hctx->kp);
+    if (hctx->crl)
+        mod_mbedtls_x509_crl_rel(hctx->crl);
     free(hctx);
 }
 
@@ -469,25 +561,30 @@ static void mod_mbedtls_free_mbedtls (void)
 
 
 static void
+mod_mbedtls_free_plugin_ssl_ctx (plugin_ssl_ctx * const s)
+{
+    mbedtls_ssl_config_free(s->ssl_ctx);
+    free(s->ciphersuites);
+    free(s->curves);
+    if (s->kp)
+        mod_mbedtls_kp_rel(s->kp);
+    free(s);
+}
+
+
+static void
 mod_mbedtls_free_config (server *srv, plugin_data * const p)
 {
     if (NULL != p->ssl_ctxs) {
-        mbedtls_ssl_config * const ssl_ctx_global_scope = p->ssl_ctxs->ssl_ctx;
         /* free ssl_ctx from $SERVER["socket"] (if not copy of global scope) */
         for (uint32_t i = 1; i < srv->config_context->used; ++i) {
-            plugin_ssl_ctx * const s = p->ssl_ctxs + i;
-            if (s->ssl_ctx && s->ssl_ctx != ssl_ctx_global_scope) {
-                mbedtls_ssl_config_free(s->ssl_ctx);
-                free(s->ciphersuites);
-                free(s->curves);
-            }
+            plugin_ssl_ctx * const s = p->ssl_ctxs[i];
+            if (s && s != p->ssl_ctxs[0])
+                mod_mbedtls_free_plugin_ssl_ctx(s);
         }
         /* free ssl_ctx from global scope */
-        if (ssl_ctx_global_scope) {
-            mbedtls_ssl_config_free(ssl_ctx_global_scope);
-            free(p->ssl_ctxs[0].ciphersuites);
-            free(p->ssl_ctxs[0].curves);
-        }
+        if (p->ssl_ctxs[0])
+            mod_mbedtls_free_plugin_ssl_ctx(p->ssl_ctxs[0]);
         free(p->ssl_ctxs);
     }
 
@@ -500,8 +597,12 @@ mod_mbedtls_free_config (server *srv, plugin_data * const p)
               case 0: /* ssl.pemfile */
                 if (cpv->vtype == T_CONFIG_LOCAL) {
                     plugin_cert *pc = cpv->v.v;
-                    mbedtls_pk_free(&pc->ssl_pemfile_pkey);
-                    mbedtls_x509_crt_free(&pc->ssl_pemfile_x509);
+                    mod_mbedtls_kp *kp = pc->kp;
+                    while (kp) {
+                        mod_mbedtls_kp *o = kp;
+                        kp = kp->next;
+                        mod_mbedtls_kp_free(o);
+                    }
                     free(pc);
                 }
                 break;
@@ -515,9 +616,15 @@ mod_mbedtls_free_config (server *srv, plugin_data * const p)
                 break;
               case 4: /* ssl.ca-crl-file */
                 if (cpv->vtype == T_CONFIG_LOCAL) {
-                    mbedtls_x509_crl *crl = cpv->v.v;
-                    mbedtls_x509_crl_free(crl);
-                    free(crl);
+                    plugin_crl *ssl_ca_crl = cpv->v.v;
+                    mod_mbedtls_x509_crl *ca_crl = ssl_ca_crl->ca_crl;
+                    while (ca_crl) {
+                        mod_mbedtls_x509_crl *o = ca_crl;
+                        ca_crl = ca_crl->next;
+                        mbedtls_x509_crl_free(&o->crl);
+                        free(o);
+                    }
+                    free(ssl_ca_crl);
                 }
                 break;
               default:
@@ -557,7 +664,7 @@ mod_mbedtls_merge_config_cpv (plugin_config * const pconf, const config_plugin_v
         break;
       case 4: /* ssl.ca-crl-file */
         if (cpv->vtype == T_CONFIG_LOCAL)
-            pconf->ssl_ca_dn_file = cpv->v.v;
+            pconf->ssl_ca_crl_file = cpv->v.v;
         break;
       case 5: /* ssl.read-ahead */
         pconf->ssl_read_ahead = (0 != cpv->v.u);
@@ -630,6 +737,7 @@ mod_mbedtls_crt_is_self_issued (const mbedtls_x509_crt * const crt)
 }
 
 
+__attribute_cold__
 static int
 mod_mbedtls_construct_crt_chain (mbedtls_x509_crt *leaf, mbedtls_x509_crt *store, log_error_st *errh)
 {
@@ -779,23 +887,26 @@ mod_mbedtls_SNI (void *arg, mbedtls_ssl_context *ssl, const unsigned char *serve
         return mod_mbedtls_acme_tls_1(hctx);
   #endif
 
+    /*(future: if threaded, take mutex in (plugin_cert *)
+     * around access to x509, pkey, OCSP stapling)*/
+    /*hctx->pc = hctx->conf.pc;*/
+    hctx->kp = mod_mbedtls_kp_acq(hctx->conf.pc);
+
     /*(compare strings as ssl.pemfile might repeat same file in lighttpd.conf
      * and mod_mbedtls does not attempt to de-dup)*/
     if (!buffer_is_equal(hctx->conf.pc->ssl_pemfile, ssl_pemfile)) {
         /* if needed, attempt to construct certificate chain for server cert */
-        if (hctx->conf.pc->need_chain) {
-            hctx->conf.pc->need_chain = 0; /*(attempt once to complete chain)*/
-            mbedtls_x509_crt *ssl_cred = &hctx->conf.pc->ssl_pemfile_x509;
+        mod_mbedtls_kp * const kp = hctx->kp;
+        if (kp->need_chain) {
+            kp->need_chain = 0; /*(attempt once to complete chain)*/
+            mbedtls_x509_crt *ssl_cred = &kp->crt;
             mbedtls_x509_crt *store = hctx->conf.ssl_ca_file;
             if (0 != mod_mbedtls_construct_crt_chain(ssl_cred, store,
                                                      r->conf.errh))
                 return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
         }
         /* reconfigure to use SNI-specific cert */
-        int rc =
-          mbedtls_ssl_set_hs_own_cert(ssl,
-                                      &hctx->conf.pc->ssl_pemfile_x509,
-                                      &hctx->conf.pc->ssl_pemfile_pkey);
+        int rc = mbedtls_ssl_set_hs_own_cert(ssl, &kp->crt, &kp->pk);
         if (0 != rc) {
             elogf(r->conf.errh, __FILE__, __LINE__, rc,
                   "failed to set SNI certificate for TLS server name %s",
@@ -820,15 +931,16 @@ mod_mbedtls_conf_verify (handler_ctx *hctx)
         return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
     }
 
+    if (hctx->crl == NULL)
+        hctx->crl = mod_mbedtls_x509_crl_acq(hctx->conf.ssl_ca_crl_file);
     mbedtls_ssl_context * const ssl = &hctx->ssl;
-
   #if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.02.0 */
     int mode = (hctx->conf.ssl_verifyclient_enforce)
       ? MBEDTLS_SSL_VERIFY_REQUIRED
       : MBEDTLS_SSL_VERIFY_OPTIONAL;
     mbedtls_ssl_set_hs_authmode(ssl, mode);
-    mbedtls_ssl_set_hs_ca_chain(ssl, hctx->conf.ssl_ca_file,
-                                     hctx->conf.ssl_ca_crl_file);
+    mbedtls_x509_crl *ca_crl = hctx->crl ? &hctx->crl->crl : NULL;
+    mbedtls_ssl_set_hs_ca_chain(ssl, hctx->conf.ssl_ca_file, ca_crl);
     if (hctx->conf.ssl_ca_dn_file)
         mbedtls_ssl_set_hs_dn_hints(ssl, hctx->conf.ssl_ca_dn_file);
   #else
@@ -837,7 +949,8 @@ mod_mbedtls_conf_verify (handler_ctx *hctx)
     mbedtls_x509_crt *ca_certs = hctx->conf.ssl_ca_dn_file
                                ? hctx->conf.ssl_ca_dn_file
                                : hctx->conf.ssl_ca_file;
-    mbedtls_ssl_set_hs_ca_chain(ssl, ca_certs, hctx->conf.ssl_ca_crl_file);
+    mbedtls_x509_crl *ca_crl = hctx->crl ? &hctx->crl->crl : NULL;
+    mbedtls_ssl_set_hs_ca_chain(ssl, ca_certs, ca_crl);
   #endif
   #if MBEDTLS_VERSION_NUMBER >= 0x02120000 /* mbedtls 2.18.0 */
     mbedtls_ssl_set_verify(ssl, mod_mbedtls_verify_cb, hctx);
@@ -864,7 +977,7 @@ mod_mbedtls_conf_verify (handler_ctx *hctx)
 
 
 static int
-mod_mbedtls_x509_crl_parse_file (mbedtls_x509_crl *chain, const char *fn)
+mod_mbedtls_x509_crl_parse (mbedtls_x509_crl *chain, const char *fn)
 {
     int rc = MBEDTLS_ERR_X509_FILE_IO_ERROR;
     off_t dlen = 512*1024*1024;/*(arbitrary limit: 512 MB file; expect < 1 MB)*/
@@ -877,6 +990,83 @@ mod_mbedtls_x509_crl_parse_file (mbedtls_x509_crl *chain, const char *fn)
     free(data);
 
     return rc;
+}
+
+
+static mod_mbedtls_x509_crl *
+mod_mbedtls_x509_crl_parse_file (const char *fn, log_error_st *errh)
+{
+    mod_mbedtls_x509_crl *ca_crl = mod_mbedtls_x509_crl_init();
+    int rc = mod_mbedtls_x509_crl_parse(&ca_crl->crl, fn);
+    if (0 != rc) {
+        elogf(errh, __FILE__, __LINE__, rc,
+          "CRL file read failed (%s)", fn);
+        mod_mbedtls_x509_crl_free(ca_crl);
+        ca_crl = NULL;
+    }
+    return ca_crl;
+}
+
+
+__attribute_noinline__
+static void
+mod_mbedtls_reload_crl_file (server * const srv, plugin_crl *ssl_ca_crl)
+{
+    /* CRLs can be updated at any time, though expected on/before Next Update */
+    mod_mbedtls_x509_crl *ca_crl =
+      mod_mbedtls_x509_crl_parse_file(ssl_ca_crl->crl_file, srv->errh);
+    if (NULL == ca_crl)
+        return; /* ignore if crl error; keep using existing crl */
+
+    /*(future: if threaded, only one thread should update crls)*/
+
+    mod_mbedtls_x509_crl *ca_crl_prior = ca_crl->next = ssl_ca_crl->ca_crl;
+    ssl_ca_crl->ca_crl = ca_crl;
+    ssl_ca_crl->crl_loadts = log_epoch_secs;
+    if (ca_crl_prior)
+        mod_mbedtls_x509_crl_rel(ca_crl_prior);
+}
+
+
+static void
+mod_mbedtls_refresh_crl_file (server * const srv, plugin_crl *ssl_ca_crl)
+{
+    if (ssl_ca_crl->ca_crl) {
+        for (mod_mbedtls_x509_crl **crlp = &ssl_ca_crl->ca_crl->next; *crlp; ) {
+            mod_mbedtls_x509_crl *ca_crl = *crlp;
+            if (ca_crl->refcnt)
+                crlp = &ca_crl->next;
+            else {
+                *crlp = ca_crl->next;
+                mod_mbedtls_x509_crl_free(ca_crl);
+            }
+        }
+    }
+
+    struct stat st;
+    if (0 != stat(ssl_ca_crl->crl_file, &st)
+        || (TIME64_CAST(st.st_mtime) <= ssl_ca_crl->crl_loadts
+            && ssl_ca_crl->crl_loadts != (unix_time64_t)-1))
+        return;
+    mod_mbedtls_reload_crl_file(srv, ssl_ca_crl);
+}
+
+
+static void
+mod_mbedtls_refresh_crl_files (server *srv, plugin_data * const p)
+{
+    /* future: might construct array of (plugin_crl *) at startup
+     *         to avoid the need to search for them here */
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    if (NULL == p->cvlist) return;
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            if (cpv->k_id != 4) continue; /* k_id == 4 for ssl.ca-crl-file */
+            if (cpv->vtype != T_CONFIG_LOCAL) continue;
+            mod_mbedtls_refresh_crl_file(srv, cpv->v.v);
+        }
+    }
 }
 
 
@@ -970,6 +1160,7 @@ mod_mbedtls_x509_crt_parse_acme (mbedtls_x509_crt *chain, const char *fn)
 #endif
 
 
+__attribute_noinline__
 static int
 mod_mbedtls_x509_crt_parse_file (mbedtls_x509_crt *chain, const char *fn)
 {
@@ -987,6 +1178,7 @@ mod_mbedtls_x509_crt_parse_file (mbedtls_x509_crt *chain, const char *fn)
 }
 
 
+__attribute_noinline__
 static int
 mod_mbedtls_pk_parse_keyfile (mbedtls_pk_context *ctx, const char *fn, const char *pwd)
 {
@@ -1021,69 +1213,67 @@ mod_mbedtls_pk_parse_keyfile (mbedtls_pk_context *ctx, const char *fn, const cha
 }
 
 
+__attribute_noinline__
 static void *
 network_mbedtls_load_pemfile (server *srv, const buffer *pemfile, const buffer *privkey)
 {
-    mbedtls_x509_crt ssl_pemfile_x509;   /* parsed public key structure */
-    mbedtls_pk_context ssl_pemfile_pkey; /* parsed private key structure */
+    mod_mbedtls_kp * const kp = mod_mbedtls_kp_init();
     int rc;
 
-    mbedtls_x509_crt_init(&ssl_pemfile_x509); /* init cert structure */
-    rc = mod_mbedtls_x509_crt_parse_file(&ssl_pemfile_x509, pemfile->ptr);
+    rc = mod_mbedtls_x509_crt_parse_file(&kp->crt, pemfile->ptr);
     if (0 != rc) {
         elogf(srv->errh, __FILE__, __LINE__, rc,
               "PEM file cert read failed (%s)", pemfile->ptr);
+        mod_mbedtls_kp_free(kp);
         return NULL;
     }
-    else if (!mod_mbedtls_cert_is_active(&ssl_pemfile_x509)) {
+    else if (!mod_mbedtls_cert_is_active(&kp->crt)) {
         log_error(srv->errh, __FILE__, __LINE__,
           "MTLS: inactive/expired X509 certificate '%s'", pemfile->ptr);
     }
 
-    mbedtls_pk_init(&ssl_pemfile_pkey);  /* init private key context */
-    rc = mod_mbedtls_pk_parse_keyfile(&ssl_pemfile_pkey, privkey->ptr, NULL);
+    kp->need_chain = (kp->crt.next == NULL
+                      && !mod_mbedtls_crt_is_self_issued(&kp->crt));
+
+    rc = mod_mbedtls_pk_parse_keyfile(&kp->pk, privkey->ptr, NULL);
     if (0 != rc) {
         elogf(srv->errh, __FILE__, __LINE__, rc,
               "PEM file private key read failed %s", privkey->ptr);
-        mbedtls_x509_crt_free(&ssl_pemfile_x509);
+        mod_mbedtls_kp_free(kp);
         return NULL;
     }
 
   #if MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.00.0 */
    #if defined(MBEDTLS_USE_PSA_CRYPTO)
-    rc = mbedtls_pk_check_pair(&ssl_pemfile_x509.pk, &ssl_pemfile_pkey,
+    rc = mbedtls_pk_check_pair(&kp->crt.pk, &kp->pk,
                                mbedtls_psa_get_random,MBEDTLS_PSA_RANDOM_STATE);
    #else
     plugin_data * const p = plugin_data_singleton;
-    rc = mbedtls_pk_check_pair(&ssl_pemfile_x509.pk, &ssl_pemfile_pkey,
+    rc = mbedtls_pk_check_pair(&kp->crt.pk, &kp->pk,
                                mbedtls_ctr_drbg_random, &p->ctr_drbg);
    #endif
   #else
-    rc = mbedtls_pk_check_pair(&ssl_pemfile_x509.pk, &ssl_pemfile_pkey);
+    rc = mbedtls_pk_check_pair(&kp->crt.pk, &kp->pk);
   #endif
     if (0 != rc) {
         elogf(srv->errh, __FILE__, __LINE__, rc,
               "PEM cert and private key did not verify (%s) (%s)",
               pemfile->ptr, privkey->ptr);
-        mbedtls_pk_free(&ssl_pemfile_pkey);
-        mbedtls_x509_crt_free(&ssl_pemfile_x509);
+        mod_mbedtls_kp_free(kp);
         return NULL;
     }
 
     plugin_cert *pc = ck_malloc(sizeof(plugin_cert));
-    pc->ssl_pemfile_pkey = ssl_pemfile_pkey;
-    pc->ssl_pemfile_x509 = ssl_pemfile_x509;
+    pc->kp = kp;
     pc->ssl_pemfile = pemfile;
     pc->ssl_privkey = privkey;
-    pc->need_chain = (ssl_pemfile_x509.next == NULL
-                      && !mod_mbedtls_crt_is_self_issued(&ssl_pemfile_x509));
-    mbedtls_platform_zeroize(&ssl_pemfile_pkey, sizeof(ssl_pemfile_pkey));
+    pc->pkey_ts = log_epoch_secs;
 
   #if 0
     /* needed at top of file for portable timegm(): #include "sys-time.h" */
     struct tm tm;
     memset(&tm, 0, sizeof(tm));
-    mbedtls_x509_time *notAfter = &ssl_pemfile_x509->valid_to;
+    mbedtls_x509_time *notAfter = &kp->crt->valid_to;
     tm.tm_sec   = notAfter->sec;
     tm.tm_min   = notAfter->min;
     tm.tm_hour  = notAfter->hour;
@@ -1103,11 +1293,8 @@ network_mbedtls_load_pemfile (server *srv, const buffer *pemfile, const buffer *
 static int
 mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
 {
-    buffer * const b = hctx->tmp_buf;
     const buffer * const name = &hctx->r->uri.authority;
     log_error_st * const errh = hctx->r->conf.errh;
-    mbedtls_x509_crt *ssl_pemfile_x509 = NULL;
-    mbedtls_pk_context *ssl_pemfile_pkey = NULL;
     size_t len;
     int rc = MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
 
@@ -1125,18 +1312,19 @@ mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
     if (0 != http_request_host_policy(name,hctx->r->conf.http_parseopts,443))
         return rc;
   #endif
+    buffer * const b = buffer_init();
     buffer_copy_path_len2(b, BUF_PTR_LEN(hctx->conf.ssl_acme_tls_1),
                              BUF_PTR_LEN(name));
     len = buffer_clen(b);
 
+    mod_mbedtls_kp * const kp = mod_mbedtls_kp_init();
+    kp->refcnt = 0; /*(special-case for single-use and immed free in kp_free)*/
     do {
         buffer_append_string_len(b, CONST_STR_LEN(".crt.pem"));
-        ssl_pemfile_x509 = ck_malloc(sizeof(*ssl_pemfile_x509));
-        mbedtls_x509_crt_init(ssl_pemfile_x509); /* init cert structure */
       #if MBEDTLS_VERSION_NUMBER >= 0x02170000 /* mbedtls 2.23.0 */
-        rc = mod_mbedtls_x509_crt_parse_acme(ssl_pemfile_x509, b->ptr);
+        rc = mod_mbedtls_x509_crt_parse_acme(&kp->crt, b->ptr);
       #else /*(will fail; unable to handle id-pe-acmeIdentifier OID)*/
-        rc = mod_mbedtls_x509_crt_parse_file(ssl_pemfile_x509, b->ptr);
+        rc = mod_mbedtls_x509_crt_parse_file(&kp->crt, b->ptr);
       #endif
         if (0 != rc) {
             elogf(errh, __FILE__, __LINE__, rc,
@@ -1146,17 +1334,14 @@ mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
 
         buffer_truncate(b, len); /*(remove ".crt.pem")*/
         buffer_append_string_len(b, CONST_STR_LEN(".key.pem"));
-        ssl_pemfile_pkey = ck_malloc(sizeof(*ssl_pemfile_pkey));
-        mbedtls_pk_init(ssl_pemfile_pkey);  /* init private key context */
-        rc = mod_mbedtls_pk_parse_keyfile(ssl_pemfile_pkey, b->ptr, NULL);
+        rc = mod_mbedtls_pk_parse_keyfile(&kp->pk, b->ptr, NULL);
         if (0 != rc) {
             elogf(errh, __FILE__, __LINE__, rc,
                   "Failed to load acme-tls/1 pemfile: %s", b->ptr);
             break;
         }
 
-        rc = mbedtls_ssl_set_hs_own_cert(&hctx->ssl,
-                                         ssl_pemfile_x509, ssl_pemfile_pkey);
+        rc = mbedtls_ssl_set_hs_own_cert(&hctx->ssl, &kp->crt, &kp->pk);
         if (0 != rc) {
             elogf(errh, __FILE__, __LINE__, rc,
                   "failed to set acme-tls/1 certificate for TLS server "
@@ -1164,21 +1349,14 @@ mod_mbedtls_acme_tls_1 (handler_ctx *hctx)
             break;
         }
 
-        hctx->acme_tls_1_pkey = ssl_pemfile_pkey; /* save ptr and free later */
-        hctx->acme_tls_1_x509 = ssl_pemfile_x509; /* save ptr and free later */
-        return 0;
+        /*hctx->pc = NULL;*/
+        hctx->kp = kp;
 
     } while (0);
 
-    if (ssl_pemfile_pkey) {
-        mbedtls_pk_free(ssl_pemfile_pkey);
-        free(ssl_pemfile_pkey);
-    }
-    if (ssl_pemfile_x509) {
-        mbedtls_x509_crt_free(ssl_pemfile_x509);
-        free(ssl_pemfile_x509);
-    }
-
+    if (0 != rc)
+        mod_mbedtls_kp_free(kp);
+    buffer_free(b);
     return rc;
 }
 #endif
@@ -1329,7 +1507,14 @@ mod_mbedtls_cert_cb (mbedtls_ssl_context * const ssl)
     else if (hctx->alpn == MOD_MBEDTLS_ALPN_ACME_TLS_1)
         return MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
    #endif
+    else
   #endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
+    {
+        /*(future: if threaded, take mutex in (plugin_cert *)
+         * around access to x509, pkey, OCSP stapling)*/
+        /*hctx->pc = hctx->conf.pc;*/
+        hctx->kp = mod_mbedtls_kp_acq(hctx->conf.pc);
+    }
 
     if (hctx->conf.ssl_verifyclient
         && hctx->alpn != MOD_MBEDTLS_ALPN_ACME_TLS_1) { /*(not "acme-tls/1")*/
@@ -1498,19 +1683,20 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
     }
 
     /* if needed, attempt to construct certificate chain for server cert */
-    if (s->pc->need_chain) {
-        s->pc->need_chain = 0; /*(attempt once to complete chain)*/
-        if (0 != mod_mbedtls_construct_crt_chain(s->ssl_pemfile_x509,
+    /* network_init_ssl() caller performs mod_mbedtls_kp_acq(conf.pc) */
+    mod_mbedtls_kp * const kp = s->pc->kp;
+    if (kp->need_chain) {
+        kp->need_chain = 0; /*(attempt once to complete chain)*/
+        if (0 != mod_mbedtls_construct_crt_chain(&kp->crt,
                                                  s->ssl_ca_file, srv->errh))
             return -1;
     }
 
-    rc = mbedtls_ssl_conf_own_cert(s->ssl_ctx,
-                                   s->ssl_pemfile_x509, s->ssl_pemfile_pkey);
+    rc = mbedtls_ssl_conf_own_cert(s->ssl_ctx, &kp->crt, &kp->pk);
     if (0 != rc) {
         elogf(srv->errh, __FILE__, __LINE__, rc,
               "PEM cert and private key did not verify (%s) (%s)",
-              s->ssl_pemfile->ptr, s->ssl_privkey->ptr);
+              s->pc->ssl_pemfile->ptr, s->pc->ssl_privkey->ptr);
         return -1;
     }
 
@@ -1546,6 +1732,9 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
 
     mod_mbedtls_ssl_conf_proto(srv, s, NULL, 0); /* min */
 
+    if (!mod_mbedtls_ssl_conf_curves(srv, s, NULL))
+        return -1;
+
     if (s->ssl_conf_cmd && s->ssl_conf_cmd->used) {
         if (0 != mod_mbedtls_ssl_conf_cmd(srv, s)) return -1;
     }
@@ -1567,7 +1756,13 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
         rc = mbedtls_ssl_ticket_setup(&p->ticket_ctx,
                                       mbedtls_psa_get_random,
                                       MBEDTLS_PSA_RANDOM_STATE,
+          #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
                                       MBEDTLS_CIPHER_AES_256_GCM,
+          #else
+                                      PSA_ALG_CATEGORY_AEAD,
+                                      PSA_KEY_TYPE_AES,
+                                      256,
+          #endif
                                       43200); /* ticket timeout: 12 hours */
       #else
         rc = mbedtls_ssl_ticket_setup(&p->ticket_ctx, mbedtls_ctr_drbg_random,
@@ -1625,7 +1820,7 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
     static const buffer default_ssl_cipher_list =
       { CONST_STR_LEN(LIGHTTPD_DEFAULT_CIPHER_LIST), 0 };
 
-    p->ssl_ctxs = ck_calloc(srv->config_context->used, sizeof(plugin_ssl_ctx));
+    p->ssl_ctxs = ck_calloc(srv->config_context->used,sizeof(plugin_ssl_ctx *));
 
     int rc = HANDLER_GO_ON;
     plugin_data_base srvplug;
@@ -1701,12 +1896,11 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
         if (0 == i) memcpy(&defaults, &conf, sizeof(conf));
 
         if (0 != i && !conf.ssl_enabled) continue;
+        if (0 != i && !is_socket_scope) continue;
 
         /* fill plugin_config_socket with global context then $SERVER["socket"]
          * only for directives directly in current $SERVER["socket"] condition*/
 
-        /*conf.ssl_pemfile_pkey       = p->defaults.ssl_pemfile_pkey;*/
-        /*conf.ssl_pemfile_x509       = p->defaults.ssl_pemfile_x509;*/
         conf.ssl_verifyclient         = p->defaults.ssl_verifyclient;
         conf.ssl_verifyclient_enforce = p->defaults.ssl_verifyclient_enforce;
         conf.ssl_verifyclient_depth   = p->defaults.ssl_verifyclient_depth;
@@ -1721,14 +1915,8 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
                 ++count_not_engine;
                 switch (cpv->k_id) {
                   case 0: /* ssl.pemfile */
-                    if (cpv->vtype == T_CONFIG_LOCAL) {
-                        plugin_cert *pc = cpv->v.v;
-                        conf.pc               = pc;
-                        conf.ssl_pemfile_pkey = &pc->ssl_pemfile_pkey;
-                        conf.ssl_pemfile_x509 = &pc->ssl_pemfile_x509;
-                        conf.ssl_pemfile      = pc->ssl_pemfile;
-                        conf.ssl_privkey      = pc->ssl_privkey;
-                    }
+                    if (cpv->vtype == T_CONFIG_LOCAL)
+                        conf.pc = cpv->v.v;
                     break;
                   case 2: /* ssl.ca-file */
                     if (cpv->vtype == T_CONFIG_LOCAL)
@@ -1756,7 +1944,7 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
             break;
         }
 
-        if (NULL == conf.ssl_pemfile_x509) {
+        if (NULL == conf.pc) {
             if (0 == i && !conf.ssl_enabled) continue;
             if (0 != i) {
                 /* inherit ssl settings from global scope
@@ -1765,7 +1953,7 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
                  *  and desiring to inherit the ssl config from global context
                  *  without having to duplicate the directives)*/
                 if (count_not_engine
-                    || (conf.ssl_enabled && NULL == p->ssl_ctxs[0].ssl_ctx)) {
+                    || (conf.ssl_enabled && NULL == p->ssl_ctxs[0])) {
                     log_error(srv->errh, __FILE__, __LINE__,
                       "MTLS: ssl.pemfile has to be set in same "
                       "$SERVER[\"socket\"] scope as other ssl.* directives, "
@@ -1774,8 +1962,7 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
                     rc = HANDLER_ERROR;
                     continue;
                 }
-                plugin_ssl_ctx * const s = p->ssl_ctxs + sidx;
-                *s = *p->ssl_ctxs;/*(copy struct of ssl_ctx from global scope)*/
+                p->ssl_ctxs[sidx] = p->ssl_ctxs[0]; /*(copy global scope)*/
                 continue;
             }
             /* PEM file is required */
@@ -1795,10 +1982,14 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
 
         /*conf.ssl_ctx = NULL;*//*(filled by network_init_ssl() even on error)*/
         if (0 == network_init_ssl(srv, &conf, p)) {
-            plugin_ssl_ctx * const s = p->ssl_ctxs + sidx;
+            plugin_ssl_ctx * const s = p->ssl_ctxs[sidx] =
+              ck_malloc(sizeof(plugin_ssl_ctx));
             s->ssl_ctx            = conf.ssl_ctx;
             s->ciphersuites       = conf.ciphersuites;
             s->curves             = conf.curves;
+            s->pc                 = conf.pc;
+            s->kp                 = mod_mbedtls_kp_acq(conf.pc);
+            s->ssl_ca_file        = conf.ssl_ca_file;/* refresh w/ need_chain */
         }
         else {
             mbedtls_ssl_config_free(conf.ssl_ctx);
@@ -1808,12 +1999,15 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
         }
     }
 
-  #ifdef MBEDTLS_SSL_SESSION_TICKETS
-    if (rc == HANDLER_GO_ON && ssl_is_init)
-        mod_mbedtls_session_ticket_key_check(p, log_epoch_secs);
-  #endif
-
     free(srvplug.cvlist);
+
+    if (rc == HANDLER_GO_ON && ssl_is_init) {
+      #ifdef MBEDTLS_SSL_SESSION_TICKETS
+        mod_mbedtls_session_ticket_key_check(p, log_epoch_secs);
+      #endif
+        mod_mbedtls_refresh_crl_files(srv, p);
+    }
+
     return rc;
 }
 
@@ -1821,7 +2015,7 @@ mod_mbedtls_set_defaults_sockets(server *srv, plugin_data *p)
 SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
 {
     static const config_plugin_keys_t cpk[] = {
-      { CONST_STR_LEN("ssl.pemfile"),
+      { CONST_STR_LEN("ssl.pemfile"), /* expect pos 0 for refresh certs */
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.privkey"),
@@ -1833,7 +2027,7 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
      ,{ CONST_STR_LEN("ssl.ca-dn-file"),
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
-     ,{ CONST_STR_LEN("ssl.ca-crl-file"),
+     ,{ CONST_STR_LEN("ssl.ca-crl-file"), /* expect pos 4 for refresh crl */
         T_CONFIG_STRING,
         T_CONFIG_SCOPE_CONNECTION }
      ,{ CONST_STR_LEN("ssl.read-ahead"),
@@ -1930,20 +2124,12 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
                 __attribute_fallthrough__
               case 4: /* ssl.ca-crl-file */
                 if (!buffer_is_blank(cpv->v.b)) {
-                    mbedtls_x509_crl *crl = ck_malloc(sizeof(*crl));
-                    mbedtls_x509_crl_init(crl);
-                    int rc =
-                      mod_mbedtls_x509_crl_parse_file(crl, cpv->v.b->ptr);
-                    if (0 == rc) {
-                        cpv->vtype = T_CONFIG_LOCAL;
-                        cpv->v.v = crl;
-                    }
-                    else {
-                        elogf(srv->errh, __FILE__, __LINE__, rc,
-                              "CRL file read failed (%s)", cpv->v.b->ptr);
-                        free(crl);
-                        return HANDLER_ERROR;
-                    }
+                    plugin_crl *ssl_ca_crl = ck_malloc(sizeof(*ssl_ca_crl));
+                    ssl_ca_crl->ca_crl = NULL;
+                    ssl_ca_crl->crl_file = cpv->v.b->ptr;
+                    ssl_ca_crl->crl_loadts = (unix_time64_t)-1;
+                    cpv->vtype = T_CONFIG_LOCAL;
+                    cpv->v.v = ssl_ca_crl;
                 }
                 break;
               case 5: /* ssl.read-ahead */
@@ -2011,6 +2197,9 @@ SETDEFAULTS_FUNC(mod_mbedtls_set_defaults)
               "MTLS: No error strings available. "
               "Compile mbedtls with MBEDTLS_ERROR_C to enable.");
   #endif
+
+    feature_refresh_certs = config_feature_bool(srv, "ssl.refresh-certs", 0);
+    feature_refresh_crls  = config_feature_bool(srv, "ssl.refresh-crls",  0);
 
     return mod_mbedtls_set_defaults_sockets(srv, p);
 }
@@ -2244,10 +2433,12 @@ mod_mbedtls_ssl_handshake (handler_ctx *hctx)
              * verification (MBEDTLS_SSL_CERTIFICATE_VERIFY) */
             if (0 == rc && hctx->conf.ssl_ca_dn_file
                 && handshake_state(&hctx->ssl)==MBEDTLS_SSL_SERVER_HELLO_DONE) {
-                mbedtls_ssl_context * const ssl = &hctx->ssl;
+                if (hctx->crl == NULL)
+                    hctx->crl =
+                      mod_mbedtls_x509_crl_acq(hctx->conf.ssl_ca_crl_file);
                 mbedtls_x509_crt *ca_certs = hctx->conf.ssl_ca_file;
-                mbedtls_x509_crl *ca_crl = hctx->conf.ssl_ca_crl_file;
-                mbedtls_ssl_set_hs_ca_chain(ssl, ca_certs, ca_crl);
+                mbedtls_x509_crl *ca_crl = hctx->crl ? &hctx->crl->crl : NULL;
+                mbedtls_ssl_set_hs_ca_chain(&hctx->ssl, ca_certs, ca_crl);
             }
         }
     }
@@ -2384,15 +2575,17 @@ CONNECTION_FUNC(mod_mbedtls_handle_con_accept)
     request_st * const r = &con->request;
     hctx->r = r;
     hctx->con = con;
-    hctx->tmp_buf = con->srv->tmp_buf;
     hctx->errh = r->conf.errh;
     con->plugin_ctx[p->id] = hctx;
     buffer_blank(&r->uri.authority);
 
-    hctx->ssl_ctx = p->ssl_ctxs[srv_sock->sidx].ssl_ctx;
-    if (NULL == hctx->ssl_ctx) hctx->ssl_ctx = p->ssl_ctxs[0].ssl_ctx;
+    hctx->ssl_ctx = p->ssl_ctxs[srv_sock->sidx]
+                  ? p->ssl_ctxs[srv_sock->sidx]->ssl_ctx
+                  : p->ssl_ctxs[0] ? p->ssl_ctxs[0]->ssl_ctx : NULL;
     mbedtls_ssl_init(&hctx->ssl);
-    int rc = mbedtls_ssl_setup(&hctx->ssl, hctx->ssl_ctx);
+    int rc = hctx->ssl_ctx  /*(not NULL if properly configured)*/
+      ? mbedtls_ssl_setup(&hctx->ssl, hctx->ssl_ctx)
+      : MBEDTLS_ERR_SSL_INTERNAL_ERROR; /*(should not happen)*/
     if (0 == rc) {
         con->network_read = connection_read_cq_ssl;
         con->network_write = connection_write_cq_ssl;
@@ -2622,6 +2815,9 @@ https_add_ssl_client_entries (request_st * const r, handler_ctx * const hctx)
 
     /* mbedtls_x509_serial_gets() (inefficiently) formats to hex separated by
      * colons, but would differ from behavior of other lighttpd TLS modules */
+  #ifdef __COVERITY__
+    ck_assert(crt->serial.len); /*(otherwise, invalid crt returned above)*/
+  #endif
     size_t i = 0; /* skip leading 0's per Distinguished Encoding Rules (DER) */
     while (i < crt->serial.len && crt->serial.p[i] == 0) ++i;
     if (i == crt->serial.len) --i;
@@ -2766,16 +2962,144 @@ REQUEST_FUNC(mod_mbedtls_handle_request_reset)
 }
 
 
+#if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.02.0 */
+
+static void
+mod_mbedtls_refresh_plugin_ssl_ctx (server * const srv, plugin_ssl_ctx * const s)
+{
+    if (NULL == s->kp || NULL == s->pc || s->kp == s->pc->kp) return;
+    mod_mbedtls_kp_rel(s->kp);
+    mod_mbedtls_kp * const kp = s->kp = mod_mbedtls_kp_acq(s->pc);
+    if (kp->need_chain) {
+        kp->need_chain = 0; /*(attempt once to complete chain)*/
+        if (0 != mod_mbedtls_construct_crt_chain(&kp->crt,
+                                                 s->ssl_ca_file, srv->errh)) {
+            /*(ignore error on cert refresh; admins should provide full chain)*/
+        }
+    }
+    int rc = mbedtls_ssl_conf_own_cert(s->ssl_ctx, &kp->crt, &kp->pk);
+    if (0 != rc)
+        elogf(srv->errh, __FILE__, __LINE__, rc,
+              "PEM cert and private key did not verify (%s) (%s)",
+              s->pc->ssl_pemfile->ptr, s->pc->ssl_privkey->ptr);
+}
+
+
+__attribute_cold__
+static int
+mod_mbedtls_refresh_plugin_cert_fail (server * const srv, plugin_cert * const pc)
+{
+    log_perror(srv->errh, __FILE__, __LINE__,
+               "MTLS: unable to check/refresh cert key; "
+               "continuing to use already-loaded %s",
+               pc->ssl_privkey->ptr);
+    return 0;
+}
+
+
+static int
+mod_mbedtls_refresh_plugin_cert (server * const srv, plugin_cert * const pc)
+{
+    /* Check for and free updated items from prior refresh iteration and which
+     * now have refcnt 0.  Waiting for next iteration is a not-quite thread-safe
+     * but lock-free way to have extremely low probability that another thread
+     * might have a reference but was suspended between storing pointer and
+     * updating refcnt (kp_acq), and still suspended full refresh period later;
+     * highly unlikely unless thread is stopped in a debugger.  There should be
+     * single maint thread, other threads read only pc->kp head, and pc->kp head
+     * should always have refcnt >= 1, except possibly during process shutdown*/
+    /*(lighttpd is currently single-threaded)*/
+    for (mod_mbedtls_kp **kpp = &pc->kp->next; *kpp; ) {
+        mod_mbedtls_kp *kp = *kpp;
+        if (kp->refcnt)
+            kpp = &kp->next;
+        else {
+            *kpp = kp->next;
+            mod_mbedtls_kp_free(kp);
+        }
+    }
+
+    /* Note: check last modification timestamp only on privkey file, so when
+     * 'mv' updated files into place from generation location, script should
+     * update privkey last, after pem file (and OCSP stapling file) */
+    struct stat st;
+    if (0 != stat(pc->ssl_privkey->ptr, &st))
+        return mod_mbedtls_refresh_plugin_cert_fail(srv, pc);
+        /* ignore if stat() error; keep using existing crt/pk */
+    if (TIME64_CAST(st.st_mtime) <= pc->pkey_ts)
+        return 0; /* mtime match; no change */
+
+    plugin_cert *npc =
+      network_mbedtls_load_pemfile(srv, pc->ssl_pemfile, pc->ssl_privkey);
+    if (NULL == npc)
+        return mod_mbedtls_refresh_plugin_cert_fail(srv, pc);
+        /* ignore if crt/pk error; keep using existing crt/pk */
+
+    /*(future: if threaded, only one thread should update pcs)*/
+
+    mod_mbedtls_kp * const kp = pc->kp;
+    mod_mbedtls_kp * const nkp = npc->kp;
+    nkp->next = kp;
+    pc->pkey_ts = npc->pkey_ts;
+    pc->kp = nkp;
+    mod_mbedtls_kp_rel(kp);
+
+    free(npc);
+    return 1;
+}
+
+
+static void
+mod_mbedtls_refresh_certs (server *srv, plugin_data * const p)
+{
+    if (NULL == p->cvlist) return;
+    int newpcs = 0;
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            if (cpv->k_id != 0) continue; /* k_id == 0 for ssl.pemfile */
+            if (cpv->vtype != T_CONFIG_LOCAL) continue;
+            newpcs |= mod_mbedtls_refresh_plugin_cert(srv, cpv->v.v);
+        }
+    }
+
+    if (newpcs && NULL != p->ssl_ctxs) {
+        if (p->ssl_ctxs[0])
+            mod_mbedtls_refresh_plugin_ssl_ctx(srv, p->ssl_ctxs[0]);
+        /* refresh $SERVER["socket"] (if not copy of global scope) */
+        for (uint32_t i = 1; i < srv->config_context->used; ++i) {
+            plugin_ssl_ctx * const s = p->ssl_ctxs[i];
+            if (s && s != p->ssl_ctxs[0])
+                mod_mbedtls_refresh_plugin_ssl_ctx(srv, s);
+        }
+    }
+}
+
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03020000 */
+
+
 TRIGGER_FUNC(mod_mbedtls_handle_trigger) {
     plugin_data * const p = p_d;
     const unix_time64_t cur_ts = log_epoch_secs;
     if (cur_ts & 0x3f) return HANDLER_GO_ON; /*(continue once each 64 sec)*/
-    UNUSED(srv);
-    UNUSED(p);
 
   #ifdef MBEDTLS_SSL_SESSION_TICKETS
     mod_mbedtls_session_ticket_key_check(p, cur_ts);
   #endif
+
+  #if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.02.0 */
+    /* enable with mbedtls_ssl_conf_cert_cb() which runs unconditionally;
+     * not enabled for mbedtls 2.x since refcnt not incr if SNI not present */
+    /*if (!(cur_ts & 0x3ff))*/ /*(once each 1024 sec (~17 min))*/
+        if (feature_refresh_certs)
+            mod_mbedtls_refresh_certs(srv, p);
+  #else
+    UNUSED(feature_refresh_certs);
+  #endif
+
+    if (feature_refresh_crls)
+        mod_mbedtls_refresh_crl_files(srv, p);
 
     return HANDLER_GO_ON;
 }
@@ -2810,116 +3134,172 @@ static const int suite_CHACHAPOLY_ephemeral[] = {
     /* Chacha-Poly ephemeral suites */
     MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+  #endif
 };
 
 static const int suite_AES_256_ephemeral[] = {
     /* All AES-256 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM_8
+  #endif
+    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM_8
+  #endif
 };
 
 static const int suite_CAMELLIA_256_ephemeral[] = {
     /* All CAMELLIA-256 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384,
-    MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256,
+    MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256,
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA
+  #endif
 };
 
 static const int suite_ARIA_256_ephemeral[] = {
     /* All ARIA-256 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384,
-    MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384
+    MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384
+  #endif
 };
 
 static const int suite_AES_128_ephemeral[] = {
     /* All AES-128 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
-    MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM_8
+  #endif
+    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM_8
+  #endif
 };
 
 static const int suite_CAMELLIA_128_ephemeral[] = {
     /* All CAMELLIA-128 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256,
-    MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256,
+    MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256,
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA
+  #endif
 };
 
 static const int suite_ARIA_128_ephemeral[] = {
     /* All ARIA-128 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256,
-    MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256,
-    MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256
+    MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256
+  #endif
 };
 
 static const int suite_PSK_ephemeral[] = {
     /* The PSK ephemeral suites */
     MBEDTLS_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA,
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM_8,
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384,
 
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM_8,
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256,
-    MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256,
-    MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256
+  #endif
+    MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
+   ,MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256
+  #endif
 };
 
 #if 0
@@ -3001,6 +3381,7 @@ static const int suite_ARIA_128[] = {
     MBEDTLS_TLS_RSA_WITH_ARIA_128_CBC_SHA256
 };
 
+#ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 static const int suite_RSA_PSK[] = {
     /* The RSA PSK suites */
     MBEDTLS_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256,
@@ -3020,6 +3401,7 @@ static const int suite_RSA_PSK[] = {
     MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256
 };
+#endif
 
 static const int suite_PSK[] = {
     /* The PSK suites */
@@ -3056,7 +3438,9 @@ static const int suite_3DES[] = {
     MBEDTLS_TLS_RSA_WITH_3DES_EDE_CBC_SHA,
     MBEDTLS_TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,
     MBEDTLS_TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA,
+  #endif
     MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA
 };
 #endif
@@ -3072,7 +3456,9 @@ static const int suite_RC4[] = {
     MBEDTLS_TLS_RSA_WITH_RC4_128_MD5,
     MBEDTLS_TLS_ECDH_RSA_WITH_RC4_128_SHA,
     MBEDTLS_TLS_ECDH_ECDSA_WITH_RC4_128_SHA,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA,
+  #endif
     MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
 };
 #endif
@@ -3092,18 +3478,22 @@ static const int suite_null[] = {
     MBEDTLS_TLS_ECDHE_PSK_WITH_NULL_SHA384,
     MBEDTLS_TLS_ECDHE_PSK_WITH_NULL_SHA256,
     MBEDTLS_TLS_ECDHE_PSK_WITH_NULL_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_NULL_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_NULL_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_NULL_SHA,
+  #endif
 
     MBEDTLS_TLS_RSA_WITH_NULL_SHA256,
     MBEDTLS_TLS_RSA_WITH_NULL_SHA,
     MBEDTLS_TLS_RSA_WITH_NULL_MD5,
     MBEDTLS_TLS_ECDH_RSA_WITH_NULL_SHA,
     MBEDTLS_TLS_ECDH_ECDSA_WITH_NULL_SHA,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_NULL_SHA384,
     MBEDTLS_TLS_RSA_PSK_WITH_NULL_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_NULL_SHA,
+  #endif
     MBEDTLS_TLS_PSK_WITH_NULL_SHA384,
     MBEDTLS_TLS_PSK_WITH_NULL_SHA256,
     MBEDTLS_TLS_PSK_WITH_NULL_SHA
@@ -3116,63 +3506,99 @@ static const int suite_null[] = {
 static const int suite_TLSv12[] = {
     MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM_8,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384,
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM_8,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256,
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM,
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM_8,
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM,
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM_8,
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8,
     MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_RSA_WITH_AES_256_CCM,
@@ -3210,6 +3636,7 @@ static const int suite_TLSv12[] = {
     MBEDTLS_TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256,
     MBEDTLS_TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256,
     MBEDTLS_TLS_RSA_WITH_ARIA_128_CBC_SHA256,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384,
@@ -3219,6 +3646,7 @@ static const int suite_TLSv12[] = {
     MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_PSK_WITH_AES_256_CCM,
@@ -3267,12 +3695,14 @@ static const int suite_TLSv10[] = {
     MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256,
     MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_AES_256_CBC_SHA384,
     MBEDTLS_TLS_RSA_PSK_WITH_AES_256_CBC_SHA,
     MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384,
     MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_PSK_WITH_AES_256_CBC_SHA384,
     MBEDTLS_TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384,
     MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256,
@@ -3282,13 +3712,17 @@ static const int suite_TLSv10[] = {
     MBEDTLS_TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA,
     MBEDTLS_TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,
     MBEDTLS_TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
     MBEDTLS_TLS_ECDHE_RSA_WITH_RC4_128_SHA,
     MBEDTLS_TLS_ECDHE_PSK_WITH_RC4_128_SHA,
     MBEDTLS_TLS_ECDH_RSA_WITH_RC4_128_SHA,
     MBEDTLS_TLS_ECDH_ECDSA_WITH_RC4_128_SHA,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
+  #endif
 };
 #endif
 
@@ -3296,69 +3730,113 @@ static const int suite_TLSv10[] = {
 static const int suite_HIGH[] = {
     MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM_8,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256,
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM_8,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256,
     MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA,
+  #endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA384,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM_8,
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256,
+  #endif
     MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256,
+  #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
     MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM_8,
     MBEDTLS_TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_RSA_WITH_AES_256_CCM,
     MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256,
@@ -3375,6 +3853,7 @@ static const int suite_HIGH[] = {
     MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256,
     MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_CBC_SHA,
     MBEDTLS_TLS_RSA_WITH_ARIA_128_GCM_SHA256,
+  #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
     MBEDTLS_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_RSA_PSK_WITH_AES_256_CBC_SHA384,
@@ -3386,6 +3865,7 @@ static const int suite_HIGH[] = {
     MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA,
     MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256,
     MBEDTLS_TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256,
+  #endif
     MBEDTLS_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_PSK_WITH_AES_256_GCM_SHA384,
     MBEDTLS_TLS_PSK_WITH_AES_256_CCM,
@@ -3486,8 +3966,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
     if (ciphersuites) {
         buffer *b = ciphersuites;
         buffer_to_upper(b); /*(ciphersuites are all uppercase (currently))*/
-        for (const char *e = b->ptr-1; e; ) {
-            const char * const p = e+1;
+        for (const char *e, *p = b->ptr; p; p = e ? e+1 : NULL) {
             e = strchr(p, ':');
             size_t len = e ? (size_t)(e - p) : strlen(p);
             if (len >= sizeof(n)) {
@@ -3574,6 +4053,8 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
         else if (0 == strncmp_const(e, "SUITEB128")
               || 0 == strncmp_const(e, "SUITEB128ONLY")
               || 0 == strncmp_const(e, "SUITEB192")) {
+            default_suite = 0;
+            crt_profile_default = -1;
             mbedtls_ssl_conf_cert_profile(s->ssl_ctx,
                                           &mbedtls_x509_crt_profile_suiteb);
             /* re-initialize mbedtls_ssl_config defaults */
@@ -3679,7 +4160,9 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
             ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8;
             ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256;
             ids[++nids] = MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256;
+          #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
             ids[++nids] = MBEDTLS_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256;
+          #endif
         }
 
         if (e != b->ptr && *e != ':' && *e != '\0') {
@@ -3776,6 +4259,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 ids[++nids] = MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256;
                 continue;
             }
+          #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("DHE+AESGCM"))
              || buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("EDH+AESGCM"))) {
                 if (nids + 2 >= idsz) {
@@ -3787,6 +4271,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 ids[++nids] = MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256;
                 continue;
             }
+          #endif
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("AES256+EECDH"))) {
               #if defined(MBEDTLS_SSL_PROTO_TLS1_3)
                 if (nids + 9 >= idsz)
@@ -3811,6 +4296,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 ids[++nids] = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8;
                 continue;
             }
+          #if MBEDTLS_VERSION_NUMBER < 0x04000000 /* mbedtls 4.0.0 */
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("AES256+EDH"))) {
                 if (nids + 5 >= idsz) {
                     log_error(srv->errh, __FILE__, __LINE__,
@@ -3824,6 +4310,7 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                 ids[++nids] = MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM_8;
                 continue;
             }
+          #endif
 
             if (buffer_eq_icase_ss(n, nlen, CONST_STR_LEN("HIGH"))) {
                 nids = mod_mbedtls_ssl_append_ciphersuite(srv, ids, nids, idsz,
@@ -3942,10 +4429,12 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
                          (int)(sizeof(suite_PSK_ephemeral)
                               /sizeof(*suite_PSK_ephemeral)));
                 if (-1 == nids) return 0;
+              #ifdef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
                 nids = mod_mbedtls_ssl_append_ciphersuite(srv, ids, nids, idsz,
                          suite_RSA_PSK,
                          (int)(sizeof(suite_RSA_PSK)/sizeof(*suite_RSA_PSK)));
                 if (-1 == nids) return 0;
+              #endif
                 nids = mod_mbedtls_ssl_append_ciphersuite(srv, ids, nids, idsz,
                          suite_PSK,
                          (int)(sizeof(suite_PSK)/sizeof(*suite_PSK)));
@@ -4033,9 +4522,13 @@ mod_mbedtls_ssl_conf_ciphersuites (server *srv, plugin_config_socket *s, buffer 
     ids[++nids] = 0; /* terminate list */
     ++nids;
 
-    if (!crt_profile_default)
+    if (0 == crt_profile_default)
         mbedtls_ssl_conf_cert_profile(s->ssl_ctx,
                                       &mbedtls_x509_crt_profile_next);
+    else if (1 == crt_profile_default)
+        mbedtls_ssl_conf_cert_profile(s->ssl_ctx,
+                                      &mbedtls_x509_crt_profile_default);
+    /* else if (-1 == crt_profile_default) *//*(cert_profile set further up)*/
 
     /* ciphersuites list must be persistent for lifetime of mbedtls_ssl_config*/
     free(s->ciphersuites);
@@ -4069,9 +4562,36 @@ mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *
     const int idsz = (int)(sizeof(ids)/sizeof(*ids)-1);
     const mbedtls_ecp_curve_info * const curve_info = mbedtls_ecp_curve_list();
 
-    const buffer * const b = curvelist;
-    for (const char *e = b->ptr-1; e; ) {
-        const char * const n = e+1;
+    const char *groups = curvelist && !buffer_is_blank(curvelist)
+      ? curvelist->ptr
+      :
+       #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+        "x25519"
+       #endif
+       #if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+        #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+        ":"
+        #endif
+        "secp256r1"
+       #endif
+       #if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
+        #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED) \
+         || defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+        ":"
+        #endif
+        "secp384r1"
+       #endif
+       #if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
+        #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED) \
+         || defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)  \
+         || defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
+        ":"
+        #endif
+        "x448"
+       #endif
+        ;
+    for (const char *e; groups; groups = e ? e+1 : NULL) {
+        const char * const n = groups;
         e = strchr(n, ':');
         size_t len = e ? (size_t)(e - n) : strlen(n);
         /* similar to mbedtls_ecp_curve_info_from_name() */
@@ -4098,6 +4618,7 @@ mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *
     ++nids;
 
     /* curves list must be persistent for lifetime of mbedtls_ssl_config */
+    if (s->curves) free(s->curves);
     s->curves = ck_malloc(nids * sizeof(mbedtls_ecp_group_id));
     memcpy(s->curves, ids, nids * sizeof(mbedtls_ecp_group_id));
 
@@ -4126,9 +4647,36 @@ mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *
     const int idsz = (int)(sizeof(ids)/sizeof(*ids)-1);
     const mbedtls_ecp_curve_info * const curve_info = mbedtls_ecp_curve_list();
 
-    const buffer * const b = curvelist;
-    for (const char *e = b->ptr-1; e; ) {
-        const char * const n = e+1;
+    const char *groups = curvelist && !buffer_is_blank(curvelist)
+      ? curvelist->ptr
+      :
+       #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+        "x25519"
+       #endif
+       #if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+        #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+        ":"
+        #endif
+        "secp256r1"
+       #endif
+       #if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
+        #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED) \
+         || defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+        ":"
+        #endif
+        "secp384r1"
+       #endif
+       #if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
+        #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED) \
+         || defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)  \
+         || defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
+        ":"
+        #endif
+        "x448"
+       #endif
+        ;
+    for (const char *e; groups; groups = e ? e+1 : NULL) {
+        const char * const n = groups;
         e = strchr(n, ':');
         size_t len = e ? (size_t)(e - n) : strlen(n);
         /* similar to mbedtls_ecp_curve_info_from_name() */
@@ -4155,6 +4703,7 @@ mod_mbedtls_ssl_conf_curves(server *srv, plugin_config_socket *s, const buffer *
     ++nids;
 
     /* curves list must be persistent for lifetime of mbedtls_ssl_config */
+    if (s->curves) free(s->curves);
     s->curves = ck_malloc(nids * sizeof(uint16_t));
     memcpy(s->curves, ids, nids * sizeof(uint16_t));
 
@@ -4188,6 +4737,8 @@ mod_mbedtls_ssl_conf_dhparameters(server *srv, plugin_config_socket *s, const bu
 static void
 mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *b, int max)
 {
+    /* note: mbedtls does not support TLSv1.3 well on the server-side
+     * until well into the mbedtls 3.x branch: e.g. mbedtls 3.6.1 */
     int v = MBEDTLS_SSL_MINOR_VERSION_3; /* default: TLS v1.2 */
     if (NULL == b) /* default: min TLSv1.2, max TLSv1.3 */
       #ifdef MBEDTLS_SSL_MINOR_VERSION_4
@@ -4260,9 +4811,20 @@ mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *
 static void
 mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *b, int max)
 {
+  #ifndef MBEDTLS_SSL_PROTO_TLS1_3 /* use TLSv1.2 if TLSv1.3 not avail */
+  #define MBEDTLS_SSL_VERSION_TLS1_3 MBEDTLS_SSL_VERSION_TLS1_2
+  #endif
+  #if MBEDTLS_VERSION_NUMBER >= 0x03060100 /* mbedtls 3.6.1 */
+    /* note: mbedtls does not support TLSv1.3 well on the server-side
+     * until well into the mbedtls 3.x branch: e.g. mbedtls 3.6.1 */
+    int v = MBEDTLS_SSL_VERSION_TLS1_3; /* default: TLS v1.3 */
+    if (NULL == b) /* default: min TLSv1.3, max TLSv1.3 */
+        v = MBEDTLS_SSL_VERSION_TLS1_3;
+  #else
     int v = MBEDTLS_SSL_VERSION_TLS1_2; /* default: TLS v1.2 */
     if (NULL == b) /* default: min TLSv1.2, max TLSv1.3 */
         v = max ? MBEDTLS_SSL_VERSION_TLS1_3 : MBEDTLS_SSL_VERSION_TLS1_2;
+  #endif
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("None"))) /*"disable" limit*/
         v = max ? MBEDTLS_SSL_VERSION_TLS1_3 : MBEDTLS_SSL_VERSION_TLS1_2;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.2")))
@@ -4284,6 +4846,9 @@ mod_mbedtls_ssl_conf_proto (server *srv, plugin_config_socket *s, const buffer *
             return;
         }
     }
+  #ifndef MBEDTLS_SSL_PROTO_TLS1_3
+  #undef MBEDTLS_SSL_VERSION_TLS1_3
+  #endif
 
     max
       ? mbedtls_ssl_conf_max_tls_version(s->ssl_ctx, v)

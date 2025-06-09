@@ -516,6 +516,11 @@ static int connection_read_cq_err(connection *con) {
   #else
     switch (errno) {
     case EAGAIN:
+   #ifdef EWOULDBLOCK
+   #if EWOULDBLOCK != EAGAIN
+    case EWOULDBLOCK:
+   #endif
+   #endif
         return 0;
     case EINTR:
         /* we have been interrupted before we could read */
@@ -679,6 +684,10 @@ connection_state_machine_loop (request_st * const r, connection * const con)
 		case CON_STATE_RESPONSE_END: /* transient */
 		case CON_STATE_ERROR:        /* transient */
 			connection_handle_response_end_state(r, con);
+			if (r->state == CON_STATE_REQUEST_START) {
+				joblist_append(con);
+				return;
+			}
 			/*(make sure ostate will not match r->state)*/
 			ostate = CON_STATE_RESPONSE_END;/* != r->state */
 			break;
@@ -884,6 +893,7 @@ connection_graceful_shutdown_maint (server * const srv)
              * (from zero) *up to* one more second, but no more */
             if (HTTP_LINGER_TIMEOUT > 1)
                 con->close_timeout_ts -= (HTTP_LINGER_TIMEOUT - 1);
+            con->close_timeout_ts -= (graceful_expire << 1); /*(-2 if expired)*/
             if (log_monotonic_secs - con->close_timeout_ts > HTTP_LINGER_TIMEOUT)
                 changed = 1;
         }
@@ -907,7 +917,7 @@ connection_graceful_shutdown_maint (server * const srv)
             changed = 1;
         }
 
-        if (graceful_expire) {
+        if (graceful_expire && r->state != CON_STATE_CLOSE) {
             connection_set_state_error(r, CON_STATE_ERROR);
             changed = 1;
         }

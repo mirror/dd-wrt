@@ -719,6 +719,10 @@ static const char js_simple_table_resort[] = \
 "function get_inner_text(el) {\n" \
 " if((typeof el == 'string')||(typeof el == 'undefined'))\n" \
 "  return el;\n" \
+" if(el.dataset\n" \
+"    && (typeof el.dataset.value === 'string'\n" \
+"        || typeof el.dataset.value === 'number'))\n" \
+"  return el.dataset.value;\n" \
 " if(el.innerText)\n" \
 "  return el.innerText;\n" \
 " else {\n" \
@@ -733,19 +737,6 @@ static const char js_simple_table_resort[] = \
 " return str;\n" \
 "}\n" \
 "\n" \
-"function isdigit(c) {\n" \
-" return (c >= '0' && c <= '9');\n" \
-"}\n" \
-"\n" \
-"function unit_multiplier(unit) {\n" \
-" return (unit=='K') ? 1000\n" \
-"      : (unit=='M') ? 1000000\n" \
-"      : (unit=='G') ? 1000000000\n" \
-"      : (unit=='T') ? 1000000000000\n" \
-"      : (unit=='P') ? 1000000000000000\n" \
-"      : (unit=='E') ? 1000000000000000000 : 1;\n" \
-"}\n" \
-"\n" \
 "var li_date_regex=/(\\d{4})-(\\w{3})-(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})/;\n" \
 "\n" \
 "var li_mon = ['Jan','Feb','Mar','Apr','May','Jun',\n" \
@@ -755,16 +746,24 @@ static const char js_simple_table_resort[] = \
 " var i; for (i = 0; i < 12 && mon != li_mon[i]; ++i); return i;\n" \
 "}\n" \
 "\n" \
-"function li_date_cmp(s1, s2) {\n" \
-" var dp1 = li_date_regex.exec(s1)\n" \
-" var dp2 = li_date_regex.exec(s2)\n" \
-" for (var i = 1; i < 7; ++i) {\n" \
-"  var cmp = (2 != i)\n" \
-"   ? parseInt(dp1[i]) - parseInt(dp2[i])\n" \
-"   : li_mon_num(dp1[2]) - li_mon_num(dp2[2]);\n" \
-"  if (0 != cmp) return cmp;\n" \
+"function li_dates_to_dv(table) {\n" \
+" for (var j=1;j<table.rows.length;j++) {\n" \
+"  var el = table.rows[j].cells[date_column];\n" \
+"  if(el.dataset && typeof el.dataset.value != 'undefined') {\n" \
+"   if (typeof el.dataset.value == 'number')\n" \
+"    break;\n" \
+"   if (el.dataset.value === \"-1\")\n" \
+"    el.dataset.value = -1;\n" \
+"  } else {\n" \
+"   var d = li_date_regex.exec(get_inner_text(el));\n" \
+"   el.dataset.value = (parseInt(d[1])*(1<<26))\n" \
+"     + ( (li_mon_num(d[2])<<22)\n" \
+"        |(parseInt(d[3])  <<17)\n" \
+"        |(parseInt(d[4])  <<12)\n" \
+"        |(parseInt(d[5])  << 6)\n" \
+"        |(parseInt(d[6])) );\n" \
+"  }\n" \
 " }\n" \
-" return 0;\n" \
 "}\n" \
 "\n" \
 "function sortfn_then_by_name(a,b,sort_column) {\n" \
@@ -776,24 +775,15 @@ static const char js_simple_table_resort[] = \
 " var at = get_inner_text(a.cells[sort_column]);\n" \
 " var bt = get_inner_text(b.cells[sort_column]);\n" \
 " var cmp;\n" \
-" if (sort_column == name_column) {\n" \
-"  if (at == '../') return -1;\n" \
-"  if (bt == '../') return  1;\n" \
-" }\n" \
-" if (a.cells[sort_column].className == 'int') {\n" \
+" if (sort_column == size_column) {\n" \
 "  cmp = parseInt(at)-parseInt(bt);\n" \
 " } else if (sort_column == date_column) {\n" \
-"  var ad = isdigit(at.substr(0,1));\n" \
-"  var bd = isdigit(bt.substr(0,1));\n" \
-"  if (ad != bd) return (!ad ? -1 : 1);\n" \
-"  cmp = li_date_cmp(at,bt);\n" \
-" } else if (sort_column == size_column) {\n" \
-"  var ai = parseInt(at, 10) * unit_multiplier(at.substr(-1,1));\n" \
-"  var bi = parseInt(bt, 10) * unit_multiplier(bt.substr(-1,1));\n" \
-"  if (at.substr(0,1) == '-') ai = -1;\n" \
-"  if (bt.substr(0,1) == '-') bi = -1;\n" \
-"  cmp = ai - bi;\n" \
+"  cmp = at-bt;\n" \
 " } else {\n" \
+"  if (sort_column == name_column) {\n" \
+"   if (at == '../') return -1;\n" \
+"   if (bt == '../') return  1;\n" \
+"  }\n" \
 "  cmp = at.toLocaleUpperCase().localeCompare(bt.toLocaleUpperCase());\n" \
 "  if (0 != cmp) return cmp;\n" \
 "  cmp = at.localeCompare(bt);\n" \
@@ -809,10 +799,11 @@ static const char js_simple_table_resort[] = \
 "function resort(lnk) {\n" \
 " var span = lnk.childNodes[1];\n" \
 " var table = lnk.parentNode.parentNode.parentNode.parentNode;\n" \
+" click_column = lnk.parentNode.cellIndex;\n" \
+" if (click_column == date_column) li_dates_to_dv(table);\n" \
 " var rows = new Array();\n" \
 " for (var j=1;j<table.rows.length;j++)\n" \
 "  rows[j-1] = table.rows[j];\n" \
-" click_column = lnk.parentNode.cellIndex;\n" \
 " rows.sort(sortfn);\n" \
 "\n" \
 " if (prev_span != null) prev_span.innerHTML = '';\n" \
@@ -832,7 +823,7 @@ static const char js_simple_table_resort[] = \
 /* portions copied from mod_dirlist (lighttpd2) */
 static const char js_simple_table_init_sort[] = \
 "\n" \
-"function init_sort(init_sort_column, ascending) {\n" \
+"function init_sort(init_sort_column, descending) {\n" \
 " var tables = document.getElementsByTagName(\"table\");\n" \
 " for (var i = 0; i < tables.length; i++) {\n" \
 "  var table = tables[i];\n" \
@@ -856,7 +847,7 @@ static const char js_simple_table_init_sort[] = \
 "    }\n" \
 "   }\n" \
 "   var lnk = row[init_sort_column].firstChild;\n" \
-"   if (ascending) {\n" \
+"   if (descending) {\n" \
 "    var span = lnk.childNodes[1];\n" \
 "    span.setAttribute('sortdir','down');\n" \
 "   }\n" \
@@ -877,8 +868,8 @@ static const char js_simple_table_init_sort[] = \
 "    case \"D\": c=3; break;\n" \
 "  }\n" \
 "  switch (urlParams.get('O')) {\n" \
-"    case \"A\": o=1; break;\n" \
-"    case \"D\": o=0; break;\n" \
+"    case \"A\": o=0; break;\n" \
+"    case \"D\": o=1; break;\n" \
 "  }\n" \
 "  init_sort(c,o);\n" \
 "}\n" \
@@ -953,7 +944,14 @@ static void http_list_directory_header(request_st * const r, const handler_ctx *
 				" color: #787878;"
 				" padding-top: 4px;"
 				"}\n"
+				"@media (prefers-color-scheme: dark) {\n"
+				" a, a:active {color: #9E9EFF;}\n"
+				" a:visited {color: #D0ADF0;}\n"
+				" body, div.list {background-color: transparent;}\n"
+				" div.foot {color: #878787;}\n"
+				"}\n"
 				"</style>\n"
+				"<meta name=\"color-scheme\" content=\"light dark\">\n"
 			));
 		}
 
@@ -986,8 +984,8 @@ static void http_list_directory_header(request_st * const r, const handler_ctx *
 		buffer_append_string_len(out, CONST_STR_LEN(
 		"<tr class=\"d\">"
 			"<td class=\"n\"><a href=\"../\">..</a>/</td>"
-			"<td class=\"m\">&nbsp;</td>"
-			"<td class=\"s\">- &nbsp;</td>"
+			"<td class=\"m\" data-value=\"-1\">&nbsp;</td>"
+			"<td class=\"s\" data-value=\"-1\">- &nbsp;</td>"
 			"<td class=\"t\">Directory</td>"
 		"</tr>\n"
 		));
@@ -1019,7 +1017,7 @@ static void http_list_directory_dirname(buffer * const out, const dirls_entry_t 
 
 	http_list_directory_ent(out, ent, name);
 
-	buffer_append_string_len(out, CONST_STR_LEN("</td><td class=\"s\">- &nbsp;</td><td class=\"t\">Directory</td></tr>\n"));
+	buffer_append_string_len(out, CONST_STR_LEN("</td><td class=\"s\" data-value=\"-1\">- &nbsp;</td><td class=\"t\">Directory</td></tr>\n"));
 }
 
 static void http_list_file_ent(buffer * const out, const dirls_entry_t * const ent, const char * const name) {
@@ -1054,10 +1052,13 @@ static void http_list_directory_filename(buffer * const out, const dirls_entry_t
 	}
 
 	char sizebuf[sizeof("999.9K")];
+	char dvbuf[LI_ITOSTRING_LENGTH];
 	size_t buflen =
 	  http_list_directory_sizefmt(sizebuf, sizeof(sizebuf), ent->size);
 	struct const_iovec iov[] = {
-	  { CONST_STR_LEN("</td><td class=\"s\">") }
+	  { CONST_STR_LEN("</td><td class=\"s\" data-value=\"") }
+	 ,{ dvbuf, li_itostrn(dvbuf, sizeof(dvbuf), ent->size) }
+	 ,{ CONST_STR_LEN("\">") }
 	 ,{ sizebuf, buflen }
 	 ,{ CONST_STR_LEN("</td><td class=\"t\">") }
 	 ,{ BUF_PTR_LEN(content_type) }
@@ -1574,7 +1575,7 @@ URIHANDLER_FUNC(mod_dirlisting_subrequest_start) {
 
 	if (p->conf.json) {
 		hctx->jb = chunk_buffer_acquire();
-		buffer_append_string_len(hctx->jb, CONST_STR_LEN("{["));
+		buffer_append_char(hctx->jb, '[');
 		http_header_response_set(r, HTTP_HEADER_CONTENT_TYPE,
 		                         CONST_STR_LEN("Content-Type"),
 		                         CONST_STR_LEN("application/json"));
@@ -1638,7 +1639,7 @@ SUBREQUEST_FUNC(mod_dirlisting_subrequest) {
       case HANDLER_FINISHED:
         if (hctx->jb || hctx->hb) { /* (hctx->conf.json || !hctx->conf.sort) */
             if (hctx->jb)
-                buffer_append_string_len(hctx->jb, CONST_STR_LEN("]}"));
+                buffer_append_char(hctx->jb, ']');
             mod_dirlisting_stream_append(r, hctx, 1);
             if (hctx->hb)
                 mod_dirlisting_cache_stream_add_footer(r, hctx);
@@ -1713,10 +1714,10 @@ static handler_t mod_dirlisting_cache_check (request_st * const r, plugin_data *
     stat_cache_entry * const sce = stat_cache_get_entry_open(tb, 1);
     if (NULL == sce || sce->fd == -1)
         return HANDLER_GO_ON;
+    if (TIME64_CAST(sce->st.st_mtime) + p->conf.cache->max_age < log_epoch_secs)
+        return HANDLER_GO_ON;
     const unix_time64_t max_age =
       TIME64_CAST(sce->st.st_mtime) + p->conf.cache->max_age - log_epoch_secs;
-    if (max_age < 0)
-        return HANDLER_GO_ON;
 
     !p->conf.json
       ? mod_dirlisting_content_type(r, p->conf.encoding)

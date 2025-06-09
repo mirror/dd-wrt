@@ -330,7 +330,7 @@ static int config_has_opt_enabled (const server * const srv, const char * const 
         if (NULL == du) continue;
         if (du->type == TYPE_ARRAY
             ? ((data_array *)du)->value.used != 0
-            : config_plugin_value_tobool(du, 0))
+            : config_plugin_value_to_bool(du, 0))
             return 1;
     }
     return 0;
@@ -561,7 +561,7 @@ static int config_http_parseopts (server *srv, const array *a) {
         const data_string * const ds = (const data_string *)a->data[i];
         const buffer *k = &ds->key;
         unsigned short int opt;
-        int val = config_plugin_value_tobool((data_unset *)ds, 2);
+        int val = config_plugin_value_to_bool((data_unset *)ds, 2);
         if (2 == val) {
             log_error(srv->errh, __FILE__, __LINE__,
               "unrecognized value for server.http-parseopts: "
@@ -903,16 +903,16 @@ static int config_insert_srvconf(server *srv) {
               case 32:/* server.feature-flags */
                 srv->srvconf.feature_flags = cpv->v.a;
                 srv->srvconf.h2proto =
-                  config_plugin_value_tobool(
+                  config_plugin_value_to_bool(
                     array_get_element_klen(cpv->v.a,
                                            CONST_STR_LEN("server.h2proto")), 1);
                 if (srv->srvconf.h2proto)
                     srv->srvconf.h2proto +=
-                      config_plugin_value_tobool(
+                      config_plugin_value_to_bool(
                         array_get_element_klen(cpv->v.a,
                                                CONST_STR_LEN("server.h2c")), 1);
                 srv->srvconf.absolute_dir_redirect =
-                  config_plugin_value_tobool(
+                  config_plugin_value_to_bool(
                     array_get_element_klen(cpv->v.a,
                       CONST_STR_LEN("server.absolute-dir-redirect")), 0);
                 break;
@@ -924,6 +924,8 @@ static int config_insert_srvconf(server *srv) {
 
     if (0 == srv->srvconf.port)
         srv->srvconf.port = ssl_enabled ? 443 : 80;
+
+    log_buffer_isprint_init(config_feature_bool(srv,"server.errorlog-utf8",0));
 
     if (config_feature_bool(srv, "server.h2proto", 1))
         array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_h2"));
@@ -1030,7 +1032,7 @@ static void config_mimetypes_default(array * const a) {
         /* "application/octet-stream" okay to trigger download for archives,
          * but providing type (even if explicit "application/octet-stream")
          * allows http_response_send_file() to send ETag and Last-Modified.
-         * (implicit "application/octet-stream" skips sending caching headers
+         * (implicit "application/octet-stream" would omit caching headers
          *  when type is not found in mimetype.assign (or xattr, if enabled)) */
 
        ,".7z",    "application/x-7z-compressed"
@@ -1054,6 +1056,7 @@ static void config_mimetypes_default(array * const a) {
        ,".lha",   "application/x-lha"
        ,".lhz",   "application/x-lzh"
        ,".so",    "application/octet-stream"
+       ,".torrent","application/x-bittorrent"
 
        ,".deb",   "application/vnd.debian.binary-package"
        ,".dmg",   "application/x-apple-diskimage"
@@ -1062,11 +1065,7 @@ static void config_mimetypes_default(array * const a) {
 
        ,"README", "text/plain;charset=utf-8"
 
-      #if 0
-        /* intentionally omit catch-all to signal elsewhere internally
-         * to omit sending caching headers such as ETag, Last-Modified */
        ,"",       "application/octet-stream"
-      #endif
     };
 
     uint32_t i = 0;
@@ -2037,6 +2036,9 @@ static int config_tokenizer(tokenizer_t *t) {
                 return config_tokenizer_err(t, __FILE__, __LINE__,
                          "strings may be combined with '+' "
                          "or separated with ',' or '=>' in lists");
+            if (t->tid == TK_LKEY)
+                return config_tokenizer_err(t, __FILE__, __LINE__,
+                         "missing assignment operator ('=') ?");
 
             /* search for the terminating " */
             const char *start = s + 1;   /*buffer_blank(token);*/
@@ -2183,8 +2185,14 @@ static int config_tokenizer(tokenizer_t *t) {
                         return TK_ELSE;
                     else if (0 == strcmp(token->ptr, "else"))
                         return TK_ELSE;
-                    else
+                    else {
+                        /* sanity check that previous token was not also TK_LKEY */
+                        if (t->tid == TK_LKEY)
+                            return config_tokenizer_err(t, __FILE__, __LINE__,
+                                     "missing assignment operator ('=') or "
+                                     "missing string concat operator ('+') ?");
                         return TK_LKEY;
+                    }
                 }
                 else if (0 == i
                          && ((uint8_t *)s)[0] == 0xc2

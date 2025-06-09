@@ -49,7 +49,8 @@ sub new {
 	#   ($^O eq "MSWin32") is untested; not supported
 	$self->{"win32native"} = $^O eq "cygwin"
 	                      && 0 != system("ldd '$$self{LIGHTTPD_PATH}' | grep -q cygwin");
-	if ($^O eq "msys" && 0 != system("ldd '$$self{LIGHTTPD_PATH}' | grep -q msys-")) {
+	if (($^O eq "msys" || ($^O eq "cygwin" && exists $ENV{MSYSTEM}))
+            && 0 != system("ldd '$$self{LIGHTTPD_PATH}' | grep -q msys-")) {
 		$self->{"win32native"} = 1;
 		# Note: msys2 mingw cross compile/link hangs if MSYS_NO_PATHCONV is set,
 		#       so scope setting MSYS_NO_PATHCONV here for running tests
@@ -119,7 +120,7 @@ sub stop_proc {
 				chomp($winpid);
 				close($WH);
 			}
-			my $msys = ($^O eq "msys");
+			my $msys = ($^O eq "msys" || ($^O eq "cygwin" && exists $ENV{MSYSTEM}));
 			my $taskkill = $msys ? "/c/Windows/System32/taskkill.exe" : "/cygdrive/c/windows/system32/taskkill.exe";
 			if ($winpid) {
 				system($taskkill, '/F', '/T', '/PID', $winpid);
@@ -222,7 +223,7 @@ sub start_proc {
 			$conf               = cygpath_alm($conf);
 			$modules_path       = cygpath_alm($modules_path);
 
-			my $msys = ($^O eq "msys");
+			my $msys = ($^O eq "msys" || ($^O eq "cygwin" && exists $ENV{MSYSTEM}));
 			$ENV{CYGROOT}       = cygpath_alm("/", 1);
 			$ENV{CYGVOL}        = $ENV{CYGROOT} =~ m%^([a-z]):%i
 			                      ? $msys ? "/$1" : "/cygdrive/$1"
@@ -459,37 +460,29 @@ sub handle_http {
 
 			(my $k = $_) =~ tr/[A-Z]/[a-z]/;
 
-			my $verify_value = 1;
-			my $key_inverted = 0;
+			# prefix '+' or '-' to require presence (or not) of header
+			# prefix '<' to require response value < expected value
+			# no prefix to require response value match expected value
+			my $tag = $k =~ s/^([<+-])// ? $1 : '';
 
-			if (substr($k, 0, 1) eq '+') {
-				$k = substr($k, 1);
-				$verify_value = 0;
-			} elsif (substr($k, 0, 1) eq '-') {
-				## the key should NOT exist
-				$k = substr($k, 1);
-				$key_inverted = 1;
-				$verify_value = 0; ## skip the value check
+			if (defined($resp_hdr{$k}) ^ !!($tag ne '-')) {
+				diag(sprintf("\nheader '%s' %s", $k, ($tag ne '-' ? "is missing" : "MUST NOT be set")));
+				return -1;
 			}
 
-			if ($key_inverted) {
-				if (defined $resp_hdr{$k}) {
-					diag(sprintf("\nheader '%s' MUST not be set", $k));
-					return -1;
-				}
-			} else {
-				if (not defined $resp_hdr{$k}) {
-					diag(sprintf("\nrequired header '%s' is missing", $k));
-					return -1;
-				}
-			}
-
-			if ($verify_value) {
-				if ($href->{$_} =~ /^\/(.+)\/$/) {
-					if ($resp_hdr{$k} !~ /$1/) {
+			if ($tag ne '+' && $tag ne '-') {
+				if (ref($href->{$_}) eq "Regexp") {
+					if ($resp_hdr{$k} !~ $href->{$_}) {
 						diag(sprintf(
 							"\nresponse-header failed: expected '%s', got '%s', regex: %s",
 							$href->{$_}, $resp_hdr{$k}, $1));
+						return -1;
+					}
+				} elsif ($tag eq '<') {
+					if (!($resp_hdr{$k} < $href->{$_})) {
+						diag(sprintf(
+							"\nresponse-header failed: expected '%s' > '%s'",
+							$href->{$_}, $resp_hdr{$k}));
 						return -1;
 					}
 				} elsif ($href->{$_} ne $resp_hdr{$k}) {

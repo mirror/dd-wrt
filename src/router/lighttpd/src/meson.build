@@ -331,6 +331,16 @@ libmbedtls = []
 libmbedcrypto = []
 libmbedx509 = []
 libwolfssl = []
+if get_option('with_gnutls')
+	# manual search:
+	# header: gnutls/gnutls.h
+	# function: gnutls_check_version (-lgnutls)
+	libgnutls = [ dependency('gnutls') ]
+	conf_data.set('HAVE_GNUTLS_CRYPTO_H', true)
+	if compiler.get_define('FORCE_MBEDTLS_CRYPTO') == '' and compiler.get_define('FORCE_OPENSSL_CRYPTO') == '' and compiler.get_define('FORCE_WOLFSSL_CRYPTO') == ''
+	  libcrypto = [ dependency('gnutls') ]
+	endif
+endif
 if get_option('with_openssl')
 	# manual search:
 	# header: openssl/ssl.h
@@ -338,7 +348,9 @@ if get_option('with_openssl')
 	# function: RAND_bytes (-lcrypto)
 	libssl = [ dependency('libssl') ]
 	libsslcrypto = [ dependency('libcrypto') ]
-	libcrypto = [ dependency('libcrypto') ]
+	if compiler.get_define('FORCE_GNUTLS_CRYPTO') == '' and compiler.get_define('FORCE_MBEDTLS_CRYPTO') == '' and compiler.get_define('FORCE_WOLFSSL_CRYPTO') == ''
+	  libcrypto = [ dependency('libcrypto') ]
+	endif
 	conf_data.set('HAVE_OPENSSL_SSL_H', true)
 	conf_data.set('HAVE_LIBSSL', true)
 endif
@@ -347,7 +359,9 @@ if get_option('with_wolfssl')
 	# header: wolfssl/ssl.h
 	# function: wolfSSL_Init (-lwolfssl)
 	libwolfssl = [ dependency('wolfssl') ]
-	libcrypto = [ dependency('wolfssl') ]
+	if compiler.get_define('FORCE_GNUTLS_CRYPTO') == '' and compiler.get_define('FORCE_MBEDTLS_CRYPTO') == '' and compiler.get_define('FORCE_OPENSSL_CRYPTO') == ''
+	  libcrypto = [ dependency('wolfssl') ]
+	endif
 	conf_data.set('HAVE_WOLFSSL_SSL_H', true)
 endif
 if get_option('with_mbedtls')
@@ -356,11 +370,23 @@ if get_option('with_mbedtls')
 	# function: mbedtls_ssl_init (-lmbedtls)
 	# function: mbedtls_x509_get_name (-lmbedx509)
 	# function: mbedtls_base64_encode (-lmbedcrypto)
-	libmbedtls = [ compiler.find_library('mbedtls') ]
-	libmbedx509 = [ compiler.find_library('mbedx509') ]
-	libmbedcrypto = [ compiler.find_library('mbedcrypto') ]
-	if compiler.get_define('FORCE_WOLFSSL_CRYPTO') == ''
-	  libcrypto = [ compiler.find_library('mbedcrypto') ]
+	libmbedtls = dependency('mbedtls', required: false)
+	if not(libmbedtls.found())
+	  libmbedtls = [ compiler.find_library('mbedtls') ]
+	endif
+	libmbedx509 = dependency('mbedx509', required: false)
+	if not(libmbedx509.found())
+	  libmbedx509 = [ compiler.find_library('mbedx509') ]
+	endif
+	libmbedcrypto = dependency('mbedcrypto', required: false)
+	if not(libmbedcrypto.found())
+	  libmbedcrypto = [ compiler.find_library('mbedcrypto') ]
+	endif
+	if compiler.get_define('FORCE_GNUTLS_CRYPTO') == '' and compiler.get_define('FORCE_OPENSSL_CRYPTO') == '' and compiler.get_define('FORCE_WOLFSSL_CRYPTO') == ''
+	  libcrypto = dependency('mbedcrypto', required: false)
+	  if not(libcrypto.found())
+	    libcrypto = [ compiler.find_library('mbedcrypto') ]
+	  endif
 	endif
 	conf_data.set('HAVE_LIBMBEDCRYPTO', true)
 endif
@@ -368,19 +394,9 @@ if get_option('with_nettle')
 	# manual search:
 	# header: nettle/nettle-types.h
 	# function: nettle_md5_init (-lnettle)
-	if compiler.get_define('FORCE_WOLFSSL_CRYPTO') == '' and compiler.get_define('FORCE_MBEDTLS_CRYPTO') == ''
+	if compiler.get_define('FORCE_GNUTLS_CRYPTO') == '' and compiler.get_define('FORCE_MBEDTLS_CRYPTO') == '' and compiler.get_define('FORCE_OPENSSL_CRYPTO') == '' and compiler.get_define('FORCE_WOLFSSL_CRYPTO') == ''
 	  libcrypto = [ dependency('nettle') ]
 	  conf_data.set('HAVE_NETTLE_NETTLE_TYPES_H', true)
-	endif
-endif
-if get_option('with_gnutls')
-	# manual search:
-	# header: gnutls/gnutls.h
-	# function: gnutls_check_version (-lgnutls)
-	libgnutls = [ dependency('gnutls') ]
-	conf_data.set('HAVE_GNUTLS_CRYPTO_H', true)
-	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(get_option('with_nettle'))
-	  libcrypto = [ dependency('gnutls') ]
 	endif
 endif
 libssl3 = []
@@ -838,7 +854,7 @@ endif
 
 if get_option('with_mbedtls')
 	modules += [
-		[ 'mod_mbedtls', [ 'mod_mbedtls.c' ], libmbedtls + libmbedx509 + libmbedcrypto ],
+		[ 'mod_mbedtls', [ 'mod_mbedtls.c' ], [ libmbedtls, libmbedx509, libmbedcrypto ] ],
 	]
 endif
 

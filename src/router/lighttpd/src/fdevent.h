@@ -30,6 +30,16 @@ struct fdnode_st {
 #define FDEVENT_HUP    (0x0002)
 #define FDEVENT_NVAL   (0x0004)
 #define FDEVENT_RDHUP  0x2000
+
+#elif defined(__QNX__) /* QNX specific definitions */
+#define FDEVENT_IN     (0x0001 | 0x0004)
+#define FDEVENT_PRI    0x0008
+#define FDEVENT_OUT    0x0002
+#define FDEVENT_ERR    0x0020
+#define FDEVENT_HUP    0x0040
+#define FDEVENT_NVAL   0x1000
+#define FDEVENT_RDHUP  0x2000
+
 #else
 #define FDEVENT_IN     0x0001
 #define FDEVENT_PRI    0x0002
@@ -40,6 +50,8 @@ struct fdnode_st {
 #if (defined(__sun) && defined(__SVR4)) /* Solaris */ \
  || defined(__FreeBSD__)
 #define FDEVENT_RDHUP  0x4000
+#elif (defined(__linux__) && (defined(__sparc__) || defined(__sparc)))
+#define FDEVENT_RDHUP  0x2800 /*(0x2000 EPOLLRDHUP | 0x0800 POLLRDHUP)*/
 #else
 #define FDEVENT_RDHUP  0x2000
 #endif

@@ -176,7 +176,7 @@ static unsigned int mod_proxy_parse_forwarded(server *srv, const array *a)
               "by, for, host, proto, remote_user, but not: %s", du->key.ptr);
             return UINT_MAX;
         }
-        int val = config_plugin_value_tobool(du, 2);
+        int val = config_plugin_value_to_bool(du, 2);
         if (2 == val) {
             log_error(srv->errh, __FILE__, __LINE__,
               "proxy.forwarded values must be one of: "
@@ -197,7 +197,7 @@ static http_header_remap_opts * mod_proxy_parse_header_opts(server *srv, const a
     for (uint32_t j = 0, used = a->used; j < used; ++j) {
         data_array *da = (data_array *)a->data[j];
         if (buffer_eq_slen(&da->key, CONST_STR_LEN("https-remap"))) {
-            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            int val = config_plugin_value_to_bool((data_unset *)da, 2);
             if (2 == val) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "unexpected value for proxy.header; "
@@ -208,7 +208,7 @@ static http_header_remap_opts * mod_proxy_parse_header_opts(server *srv, const a
             continue;
         }
         else if (buffer_eq_slen(&da->key, CONST_STR_LEN("force-http10"))) {
-            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            int val = config_plugin_value_to_bool((data_unset *)da, 2);
             if (2 == val) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "unexpected value for proxy.header; "
@@ -219,7 +219,7 @@ static http_header_remap_opts * mod_proxy_parse_header_opts(server *srv, const a
             continue;
         }
         else if (buffer_eq_slen(&da->key, CONST_STR_LEN("upgrade"))) {
-            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            int val = config_plugin_value_to_bool((data_unset *)da, 2);
             if (2 == val) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "unexpected value for proxy.header; "
@@ -230,7 +230,7 @@ static http_header_remap_opts * mod_proxy_parse_header_opts(server *srv, const a
             continue;
         }
         else if (buffer_eq_slen(&da->key, CONST_STR_LEN("connect"))) {
-            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            int val = config_plugin_value_to_bool((data_unset *)da, 2);
             if (2 == val) {
                 log_error(srv->errh, __FILE__, __LINE__,
                   "unexpected value for proxy.header; "
@@ -879,9 +879,12 @@ static handler_t proxy_create_env(gw_handler_ctx *gwhctx) {
 		b->ptr[b->used-2] = '0'; /*(overwrite end of request line)*/
 	}
 
-	if (r->reqbody_length > 0
-	    || (0 == r->reqbody_length
-		&& !http_method_get_or_head(r->http_method))) {
+	if (hctx->gw.gw_mode == GW_AUTHORIZER) {
+		buffer_append_string_len(b, CONST_STR_LEN("\r\nContent-Length: 0"));
+	}
+	else if (r->reqbody_length > 0
+	         || (0 == r->reqbody_length
+		     && !http_method_get_or_head(r->http_method))) {
 		/* set Content-Length if client sent Transfer-Encoding: chunked
 		 * and not streaming to backend (request body has been fully received) */
 		const buffer *vb = http_header_request_get(r, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"));
@@ -921,6 +924,10 @@ static handler_t proxy_create_env(gw_handler_ctx *gwhctx) {
 			break;
 		case HTTP_HEADER_HOST:
 			continue; /*(handled further above)*/
+		case HTTP_HEADER_CONTENT_LENGTH:
+			if (hctx->gw.gw_mode == GW_AUTHORIZER)
+				continue; /*(handled further above)*/
+			break;
 		case HTTP_HEADER_OTHER:
 			if (__builtin_expect( ('p' == (ds->key.ptr[0] | 0x20)), 0)) {
 				if (buffer_eq_icase_slen(&ds->key, CONST_STR_LEN("Proxy-Connection"))) continue;
@@ -1025,7 +1032,7 @@ static handler_t proxy_create_env(gw_handler_ctx *gwhctx) {
 	hctx->gw.wb_reqlen = buffer_clen(b);
 	chunkqueue_prepend_buffer_commit(&hctx->gw.wb);
 
-	if (r->reqbody_length) {
+	if (r->reqbody_length && hctx->gw.gw_mode != GW_AUTHORIZER) {
 		if (r->reqbody_length > 0)
 			hctx->gw.wb_reqlen += r->reqbody_length; /* total req size */
 		else /* as-yet-unknown total request size (Transfer-Encoding: chunked)*/

@@ -72,7 +72,10 @@ my %manual_conflicts_resolve = (
 	},
 );
 
-open MIMETYPES, "/etc/mime.types" or die "Can't open /etc/mime.types: $!";
+# lighttpd 1.4.71 and later provide a default mimetype.assign with common web
+# media types, so only warn if create-mime.conf.pl fails to open /etc/mime.types
+open MIMETYPES, '<', "/etc/mime.types"
+  or (warn("open /etc/mime.types: $!\n"), exit(0));
 
 my %extensions;
 my %lcext;
@@ -177,10 +180,11 @@ add(".mjs", "text/javascript");
 
 # other useful mappings
 my %useful = (
+	".tgz"     => "application/x-gtar-compressed",
 	".tar.gz"  => "application/x-gtar-compressed",
 	".gz"      => "application/gzip",
-	".tbz"     => "application/x-gtar-compressed",
-	".tar.bz2" => "application/x-gtar-compressed",
+	".tbz"     => "application/x-bzip-compressed-tar",
+	".tar.bz2" => "application/x-bzip-compressed-tar",
 	".bz2"     => "application/x-bzip2",
 	".log"     => "text/plain",
 	".conf"    => "text/plain",
@@ -202,7 +206,7 @@ print <<EOF;
 ##  MimeType handling
 ## -------------------
 ##
-## https://redmine.lighttpd.net/projects/lighttpd/wiki/Mimetype_assignDetails
+## https://wiki.lighttpd.net/mimetype_assignDetails
 
 ##
 ## mimetype.xattr-name

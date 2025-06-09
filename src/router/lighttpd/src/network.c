@@ -6,6 +6,7 @@
 #include "log.h"
 #include "connections.h"
 #include "plugin.h"
+#include "plugin_config.h"
 #include "sock_addr.h"
 
 #include "network_write.h"
@@ -28,6 +29,8 @@
 #define setenv(name,value,overwrite)  _putenv_s((name), strdup(value))
 #define unsetenv(name)                _putenv_s((name), "")
 #endif
+
+static int network_mptcp = 0;
 
 void
 network_accept_tcp_nagle_disable (const int fd)
@@ -111,8 +114,10 @@ static handler_t network_server_handle_fdevent(void *context, int revents) {
       #else
         switch (errno) {
           case EAGAIN:
+         #ifdef EWOULDBLOCK
          #if EWOULDBLOCK != EAGAIN
           case EWOULDBLOCK:
+         #endif
          #endif
           case EINTR:
           case ECONNABORTED:
@@ -303,6 +308,7 @@ typedef struct {
     unsigned char set_v6only; /* set_v6only is only a temporary option */
     unsigned char defer_accept;
     int8_t v4mapped;
+    int8_t ip_transparent;
     const buffer *socket_perms;
     const buffer *bsd_accept_filter;
 } network_socket_config;
@@ -338,6 +344,9 @@ static void network_merge_config_cpv(network_socket_config * const pconf, const 
         break;
       case 7: /* server.v4mapped */
         pconf->v4mapped = (0 != cpv->v.u);
+        break;
+      case 8: /* server.ip-transparent */
+        pconf->ip_transparent = (0 != cpv->v.u);
         break;
       default:/* should not happen */
         return;
@@ -539,6 +548,19 @@ static int network_server_init(server *srv, const network_socket_config *s, buff
 	} else
 #endif
 	{
+	  #ifdef __linux__
+		if (network_mptcp) {
+			/* manually define mptcp protocol number in case the compiler is using an older version of libc */
+			#ifndef IPPROTO_MPTCP
+			#define IPPROTO_MPTCP 262
+			#endif
+			if (-1 == (srv_socket->fd = fdevent_socket_nb_cloexec(family, SOCK_STREAM, IPPROTO_MPTCP))) {
+				log_pdebug(srv->errh, __FILE__, __LINE__, "socket() IPPROTO_MPTCP");
+				network_mptcp = 0;
+			}
+		}
+		if (-1 != srv_socket->fd) { } else /*fallback to tcp*/
+	  #endif
 		if (-1 == (srv_socket->fd = fdevent_socket_nb_cloexec(family, SOCK_STREAM, IPPROTO_TCP))) {
 		  #ifndef _WIN32
 			/* some configs might always include IPv6 addresses,
@@ -563,6 +585,36 @@ static int network_server_init(server *srv, const network_socket_config *s, buff
 				}
 		}
 #endif
+
+	  #ifdef __linux__
+		if (s->ip_transparent) {
+			int opt = 1;
+			switch (family) {
+			  case AF_INET:
+				#ifndef IP_TRANSPARENT
+				#define IP_TRANSPARENT 19
+				#endif
+				if (-1 == setsockopt(srv_socket->fd, IPPROTO_IP, IP_TRANSPARENT, &opt, sizeof(opt))) {
+					log_serror(srv->errh, __FILE__, __LINE__, "setsockopt(IP_TRANSPARENT)");
+					return -1;
+				}
+				break;
+			#ifdef HAVE_IPV6
+			  case AF_INET6:
+				#ifndef IPV6_TRANSPARENT
+				#define IPV6_TRANSPARENT 75
+				#endif
+				if (-1 == setsockopt(srv_socket->fd, IPPROTO_IPV6, IPV6_TRANSPARENT, &opt, sizeof(opt))) {
+					log_serror(srv->errh, __FILE__, __LINE__, "setsockopt(IPV6_TRANSPARENT)");
+					return -1;
+				}
+				break;
+			#endif
+			  default:
+				break;
+			}
+		}
+	  #endif
 	}
 
   #ifdef _WIN32
@@ -792,6 +844,9 @@ int network_init(server *srv, int stdin_fd) {
      ,{ CONST_STR_LEN("server.v4mapped"),
         T_CONFIG_BOOL,
         T_CONFIG_SCOPE_SOCKET }
+     ,{ CONST_STR_LEN("server.ip-transparent"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_SOCKET }
      ,{ NULL, 0,
         T_CONFIG_UNSET,
         T_CONFIG_SCOPE_UNSET }
@@ -806,7 +861,7 @@ int network_init(server *srv, int stdin_fd) {
     if (!config_plugin_values_init(srv, p, cpk, "network"))
         return HANDLER_ERROR;
 
-    p->defaults.listen_backlog = 1024;
+    p->defaults.listen_backlog = SOMAXCONN > 1024 ? SOMAXCONN : 1024;
     p->defaults.defer_accept = 0;
     p->defaults.use_ipv6 = 0;
     p->defaults.set_v6only = 1;
@@ -818,6 +873,8 @@ int network_init(server *srv, int stdin_fd) {
         if (-1 != cpv->k_id)
             network_merge_config(&p->defaults, cpv);
     }
+
+    network_mptcp = config_feature_bool(srv, "server.network-mptcp", 0);
 
     if (config_feature_bool(srv, "server.graceful-restart-bg", 0))
         srv->srvconf.systemd_socket_activation = 1;

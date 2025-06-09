@@ -445,6 +445,9 @@ FREE_FUNC(mod_webdav_free) {
             }
         }
     }
+
+    /*(potentially disruptive if other modules also use sqlite)*/
+    /*sqlite3_shutdown();*/
 }
 
 
@@ -551,25 +554,25 @@ SETDEFAULTS_FUNC(mod_webdav_set_defaults) {
                         data_string *ds = (data_string *)cpv->v.a->data[j];
                         if (buffer_eq_slen(&ds->key,
                               CONST_STR_LEN("deprecated-unsafe-partial-put"))
-                            && config_plugin_value_tobool((data_unset *)ds,0)) {
+                            && config_plugin_value_to_bool((data_unset *)ds,0)) {
                             opts |= MOD_WEBDAV_UNSAFE_PARTIAL_PUT_COMPAT;
                             continue;
                         }
                         if (buffer_eq_slen(&ds->key,
                               CONST_STR_LEN("propfind-depth-infinity"))
-                            && config_plugin_value_tobool((data_unset *)ds,0)) {
+                            && config_plugin_value_to_bool((data_unset *)ds,0)) {
                             opts |= MOD_WEBDAV_PROPFIND_DEPTH_INFINITY;
                             continue;
                         }
                         if (buffer_eq_slen(&ds->key,
                               CONST_STR_LEN("unsafe-propfind-follow-symlink"))
-                            && config_plugin_value_tobool((data_unset *)ds,0)) {
+                            && config_plugin_value_to_bool((data_unset *)ds,0)) {
                             opts |= MOD_WEBDAV_UNSAFE_PROPFIND_FOLLOW_SYMLINK;
                             continue;
                         }
                         if (buffer_eq_slen(&ds->key,
                               CONST_STR_LEN("partial-put-copy-modify"))
-                            && config_plugin_value_tobool((data_unset *)ds,0)) {
+                            && config_plugin_value_to_bool((data_unset *)ds,0)) {
                             opts |= MOD_WEBDAV_CPYTMP_PARTIAL_PUT;
                             continue;
                         }
@@ -1307,6 +1310,13 @@ mod_webdav_sqlite3_init (const char * const restrict dbname,
 
   #else /* USE_PROPPATCH */
 
+    int sqlrc = sqlite3_initialize();
+    if (sqlrc != SQLITE_OK) {
+        log_error(errh, __FILE__, __LINE__, "sqlite3_initialize(): %s",
+                  sqlite3_errstr(sqlrc));
+        return 0;
+    }
+
   /*(expects (plugin_config *s) (log_error_st *errh) (char *err))*/
   #define MOD_WEBDAV_SQLITE_CREATE_TABLE(query, label)                   \
     if (sqlite3_exec(sqlh, query, NULL, NULL, &err) != SQLITE_OK) {      \
@@ -1321,8 +1331,8 @@ mod_webdav_sqlite3_init (const char * const restrict dbname,
     }
 
     sqlite3 *sqlh;
-    int sqlrc = sqlite3_open_v2(dbname, &sqlh,
-                                SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, NULL);
+    sqlrc = sqlite3_open_v2(dbname, &sqlh,
+                            SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, NULL);
     if (sqlrc != SQLITE_OK) {
         log_error(errh, __FILE__, __LINE__, "sqlite3_open() '%s': %s",
                   dbname, sqlh ? sqlite3_errmsg(sqlh) : sqlite3_errstr(sqlrc));
@@ -1339,9 +1349,9 @@ mod_webdav_sqlite3_init (const char * const restrict dbname,
     /* add ownerinfo column to locks table (update older mod_webdav sqlite db)
      * (could check if 'PRAGMA user_version;' is 0, add column, and increment)*/
   #define MOD_WEBDAV_SQLITE_SELECT_LOCKS_OWNERINFO_TEST \
-    "SELECT COUNT(*) FROM locks WHERE ownerinfo = \"\""
+    "SELECT COUNT(*) FROM locks WHERE ownerinfo = ''"
   #define MOD_WEBDAV_SQLITE_ALTER_TABLE_LOCKS \
-    "ALTER TABLE locks ADD COLUMN ownerinfo TEXT NOT NULL DEFAULT \"\""
+    "ALTER TABLE locks ADD COLUMN ownerinfo TEXT NOT NULL DEFAULT ''"
     if (sqlite3_exec(sqlh, MOD_WEBDAV_SQLITE_SELECT_LOCKS_OWNERINFO_TEST,
                      NULL, NULL, &err) != SQLITE_OK) {
         sqlite3_free(err); /* "no such column: ownerinfo" */
@@ -1362,20 +1372,40 @@ mod_webdav_sqlite3_init (const char * const restrict dbname,
 
 
 #ifdef USE_PROPPATCH
+__attribute_noinline__
+static int
+mod_webdav_sqlite3_prepare (sql_config * const restrict sql,
+                            const char *query,
+                            size_t qsz,
+                            sqlite3_stmt **stmt,
+                            log_error_st * const errh)
+{
+  #ifdef SQLITE_PREPARE_PERSISTENT
+    if (sqlite3_prepare_v3(sql->sqlh, query, qsz, SQLITE_PREPARE_PERSISTENT,
+                           stmt, NULL) != SQLITE_OK)
+  #else
+    if (sqlite3_prepare_v2(sql->sqlh, query, qsz,
+                           stmt, NULL) != SQLITE_OK)
+  #endif
+    {
+        log_error(errh, __FILE__, __LINE__, "sqlite3_prepare(): %s",
+                  sqlite3_errmsg(sql->sqlh));
+        return 0;
+    }
+    return 1;
+}
+
 __attribute_cold__
 static int
 mod_webdav_sqlite3_prep (sql_config * const restrict sql,
                          const char * const sqlite_db_name,
                          log_error_st * const errh)
 {
-  /*(expects (plugin_config *s) (log_error_st *errh))*/
-  #define MOD_WEBDAV_SQLITE_PREPARE_STMT(query, stmt)                      \
-    if (sqlite3_prepare_v2(sql->sqlh, query, sizeof(query)-1, &stmt, NULL) \
-        != SQLITE_OK) {                                                    \
-        log_error(errh, __FILE__, __LINE__, "sqlite3_prepare_v2(): %s",    \
-                  sqlite3_errmsg(sql->sqlh));                              \
-        return 0;                                                          \
-    }
+  /*(expects (sql_config *sql) (log_error_st *errh))*/
+  /*(note: include nul byte in sizeof(query) passed to sqlite3_prepare*())*/
+  #define MOD_WEBDAV_SQLITE_PREPARE_STMT(query, stmt)                        \
+    if (!mod_webdav_sqlite3_prepare(sql, query, sizeof(query), &stmt, errh)) \
+        return 0;
 
     int sqlrc = sqlite3_open_v2(sqlite_db_name, &sql->sqlh,
                                 SQLITE_OPEN_READWRITE, NULL);
@@ -1387,6 +1417,12 @@ mod_webdav_sqlite3_prep (sql_config * const restrict sql,
                     : sqlite3_errstr(sqlrc));
         return 0;
     }
+  #ifdef SQLITE_DBCONFIG_DQS_DDL
+    sqlite3_db_config(sql->sqlh, SQLITE_DBCONFIG_DQS_DDL, 0, NULL);
+  #endif
+  #ifdef SQLITE_DBCONFIG_DQS_DML
+    sqlite3_db_config(sql->sqlh, SQLITE_DBCONFIG_DQS_DML, 0, NULL);
+  #endif
 
     /* future: perhaps not all statements should be prepared;
      * infrequently executed statements could be run with sqlite3_exec(),
@@ -2384,7 +2420,7 @@ webdav_if_match_or_unmodified_since (request_st * const r, struct stat *st)
     if (NULL != ius) {
         if (NULL == st)
             return 412; /* Precondition Failed */
-        if (http_date_if_modified_since(BUF_PTR_LEN(ius), st->st_mtime))
+        if (http_date_if_modified_since(BUF_PTR_LEN(ius), TIME64_CAST(st->st_mtime)))
             return 412; /* Precondition Failed */
     }
 
@@ -2410,7 +2446,9 @@ webdav_parent_modified (const buffer *path)
 {
     uint32_t dirlen = buffer_clen(path);
     const char *fn = path->ptr;
-    /*force_assert(0 != dirlen);*/
+  #ifdef __COVERITY__
+    force_assert(0 != dirlen);
+  #endif
     /*force_assert(fn[0] == '/');*/
     if (fn[dirlen-1] == '/') --dirlen;
     if (0 != dirlen) while (fn[--dirlen] != '/') ;

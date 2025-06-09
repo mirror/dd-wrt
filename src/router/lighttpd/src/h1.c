@@ -606,7 +606,7 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
             force_assert(c->type == MEM_CHUNK);
             p = strchr(c->mem->ptr+c->offset, '\n');
             if (NULL != p) { /* found HTTP chunked header line */
-                off_t hsz = p + 1 - (c->mem->ptr+c->offset);
+                off_t hsz = ++p - (c->mem->ptr+c->offset);
                 unsigned char *s = (unsigned char *)c->mem->ptr+c->offset;
                 for (unsigned char u;(u=(unsigned char)hex2int(*s))!=0xFF;++s) {
                     if (te_chunked > (off_t)(1uLL<<(8*sizeof(off_t)-5))-1-2) {
@@ -618,14 +618,16 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
                     te_chunked <<= 4;
                     te_chunked |= u;
                 }
-                if (s == (unsigned char *)c->mem->ptr+c->offset) { /*(no hex)*/
-                    log_error(r->conf.errh, __FILE__, __LINE__,
-                      "chunked header invalid chars -> 400");
-                    /* 400 Bad Request */
-                    return http_response_reqbody_read_error(r, 400);
+                if (__builtin_expect( (p == (char *)s + hsz), 0) /*(no hex)*/
+                    || __builtin_expect( (p[-2] != '\r'), 0)) {  /*(no '\r')*/
+                    p = NULL;
                 }
-                while (*s == ' ' || *s == '\t') ++s;
-                if (*s != '\r' && *s != ';') {
+                else if (__builtin_expect( (p-2 != (char *)s), 0)) {
+                    while (*s == ' ' || *s == '\t') ++s;
+                    if (*s != '\r' && *s != ';')
+                        p = NULL;
+                }
+                if (NULL == p) {
                     log_error(r->conf.errh, __FILE__, __LINE__,
                       "chunked header invalid chars -> 400");
                     /* 400 Bad Request */
@@ -876,7 +878,7 @@ h1_check_timeout (connection * const con, const unix_time64_t cur_ts)
         int idle_timeout = keep_alive
           ? con->keep_alive_idle
           : (int)r->conf.max_read_idle;
-        if (cur_ts - con->read_idle_ts > idle_timeout) {
+        if (cur_ts - con->read_idle_ts > (unix_time64_t)idle_timeout) {
             if (r->conf.log_timeouts)
                 log_debug(r->conf.errh, __FILE__, __LINE__,
                   "connection closed - %s timeout: %d",

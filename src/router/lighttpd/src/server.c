@@ -14,7 +14,7 @@
 #include "stat_cache.h"
 #include "plugin.h"
 #include "plugins.h"
-#include "plugin_config.h"  /* config_plugin_value_tobool() */
+#include "plugin_config.h"
 #include "network_write.h"  /* network_write_show_handlers() */
 #include "reqpool.h"        /* request_pool_init() request_pool_free() */
 #include "response.h"       /* http_dispatch[] strftime_cache_reset() */
@@ -162,11 +162,6 @@ static size_t malloc_top_pad;
 #define TEXT_SSL " (ssl)"
 #else
 #define TEXT_SSL
-#endif
-
-#ifndef __sgi
-/* IRIX doesn't like the alarm based time() optimization */
-/* #define USE_ALARM */
 #endif
 
 #ifdef _WIN32
@@ -361,6 +356,15 @@ static void server_main_setup_signals (void) {
     sigaction(SIGALRM, &act, NULL);
     sigaction(SIGUSR1, &act, NULL);
 
+   #ifdef __QNX__
+      /*
+       * In QNX SDP 7.1 SA_RESTART is not supported
+       */
+      #ifndef SA_RESTART
+         #define SA_RESTART 0
+      #endif
+   #endif /* __QNX__ */
+
     /* it should be safe to restart syscalls after SIGCHLD */
     act.sa_flags |= SA_RESTART | SA_NOCLDSTOP;
     sigaction(SIGCHLD, &act, NULL);
@@ -474,7 +478,7 @@ server_epoch_secs (server * const srv, unix_time64_t mono_ts_delta)
           config_feature_int(srv, "server.clock-jump-restart", 1800);
         if (delta && (new_ts_adj > cur_ts
                       ? new_ts_adj-cur_ts
-                      : cur_ts-new_ts_adj) > delta) {
+                      : cur_ts-new_ts_adj) > (unix_time64_t)delta) {
             log_error(srv->errh, __FILE__, __LINE__,
               "clock jumped; "
               "attempting graceful restart in < ~5 seconds, else hard restart");
@@ -578,7 +582,7 @@ static void server_free(server *srv) {
 
 __attribute_cold__
 __attribute_noinline__
-static void remove_pid_file(server *srv) {
+static void server_pid_file_remove(server *srv) {
 	if (pid_fd <= -2) return;
 	if (srv->srvconf.pid_file && 0 <= pid_fd) {
 		if (0 != ftruncate(pid_fd, 0)) {
@@ -598,6 +602,43 @@ static void remove_pid_file(server *srv) {
 			}
 		}
 	}
+}
+
+__attribute_cold__
+static int server_pid_file_open(server * const srv, int i_am_root) {
+    if (NULL == srv->srvconf.pid_file)
+        return 0;
+    const char * const pidfile = srv->srvconf.pid_file->ptr;
+
+    pid_fd = fdevent_open_cloexec(pidfile, 0, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
+                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (-1 != pid_fd)
+        return 0;
+
+  #ifdef __linux__
+    if (errno == EACCES
+        && i_am_root && srv->srvconf.username && !srv->srvconf.changeroot)
+        /* root without CAP_DAC_OVERRIDE capability
+         * and pidfile owned by target user */
+        return 0;
+  #else
+    UNUSED(i_am_root);
+  #endif
+
+    struct stat st;
+    if (errno != EEXIST
+        || 0 != stat(pidfile, &st)
+        || !S_ISREG(st.st_mode)
+        || (pid_fd =
+              fdevent_open_cloexec(pidfile, 0,
+                                   O_WRONLY | O_CREAT | O_TRUNC,
+                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))==-1){
+        log_perror(srv->errh, __FILE__, __LINE__,
+          "opening pid-file failed: %s", pidfile);
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -1240,7 +1281,7 @@ static void server_graceful_state (server *srv) {
     }
     else {
         server_sockets_close(srv);
-        remove_pid_file(srv);
+        server_pid_file_remove(srv);
         /*(prevent more removal attempts)*/
         srv->srvconf.pid_file = NULL;
     }
@@ -1688,34 +1729,8 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 
 	/* open pid file BEFORE chroot */
 	if (-2 == pid_fd) pid_fd = -1; /*(initial startup state)*/
-	if (-1 == pid_fd && srv->srvconf.pid_file) {
-		const char *pidfile = srv->srvconf.pid_file->ptr;
-		if (-1 == (pid_fd = fdevent_open_cloexec(pidfile, 0, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
-			struct stat st;
-			if (errno != EEXIST) {
-				log_perror(srv->errh, __FILE__, __LINE__,
-				  "opening pid-file failed: %s", pidfile);
-				return -1;
-			}
-
-			if (0 != stat(pidfile, &st)) {
-				log_perror(srv->errh, __FILE__, __LINE__,
-				  "stating existing pid-file failed: %s", pidfile);
-			}
-
-			if (!S_ISREG(st.st_mode)) {
-				log_error(srv->errh, __FILE__, __LINE__,
-				  "pid-file exists and isn't regular file: %s", pidfile);
-				return -1;
-			}
-
-			if (-1 == (pid_fd = fdevent_open_cloexec(pidfile, 0, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
-				log_perror(srv->errh, __FILE__, __LINE__,
-				  "opening pid-file failed: %s", pidfile);
-				return -1;
-			}
-		}
-	}
+	if (-1 == pid_fd && 0 != server_pid_file_open(srv, i_am_root))
+		return -1;
 
 	{
 #ifdef HAVE_GETRLIMIT
@@ -1729,17 +1744,22 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 			log_perror(srv->errh, __FILE__, __LINE__, "getrlimit()");
 			use_rlimit = 0;
 		}
+		else if (0 == srv->srvconf.max_fds) {
+			/*(default upper limit of 4k if server.max-fds not specified)*/
+			/*(and if existing rlim_max >= 4096, whether or not root)*/
+			if (rlim.rlim_cur < 4096 && rlim.rlim_max >= 4096)
+				srv->srvconf.max_fds = 4096;
+		}
+		else if (i_am_root)
+				rlim.rlim_max = srv->srvconf.max_fds;
 
-		/**
-		 * if we are not root can can't increase the fd-limit above rlim_max, but we can reduce it
-		 */
 		if (use_rlimit && srv->srvconf.max_fds
 		    && (i_am_root || srv->srvconf.max_fds <= rlim.rlim_max)) {
 			/* set rlimits */
+			/* root can increase fd-limit above rlim_max, others can only reduce it */
 
 			rlim_t rlim_cur = rlim.rlim_cur;
 			rlim.rlim_cur = srv->srvconf.max_fds;
-			if (i_am_root) rlim.rlim_max = srv->srvconf.max_fds;
 
 			if (0 != setrlimit(RLIMIT_NOFILE, &rlim)) {
 				log_perror(srv->errh, __FILE__, __LINE__, "setrlimit()");
@@ -1883,6 +1903,21 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 #endif
 	}
 
+#if defined(HAVE_SYS_PRCTL_H) && defined(PR_CAP_AMBIENT)
+	/* clear Linux ambient capabilities, if any had been granted
+	 * (avoid leaking privileges to CGI or other subprocesses) */
+	if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0L, 0L, 0L) < 0) {
+		log_perror(srv->errh, __FILE__, __LINE__,
+		  "prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL)");
+		return -1;
+	}
+#endif
+
+#ifdef __linux__ /*(might occur w/ root on Linux and w/ limited Capabilities)*/
+	if (-1 == pid_fd && 0 != server_pid_file_open(srv, 0))
+		return -1;
+#endif
+
 #ifdef HAVE_FORK
 	/* network is up, let's daemonize ourself */
 	if (0 == srv->srvconf.dont_daemonize && 0 == graceful_restart) {
@@ -2023,21 +2058,6 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 		return -1;
 	}
 
-#ifdef USE_ALARM
-	{
-		/* setup periodic timer (1 second) */
-		struct itimerval interval;
-		interval.it_interval.tv_sec = 1;
-		interval.it_interval.tv_usec = 0;
-		interval.it_value.tv_sec = 1;
-		interval.it_value.tv_usec = 0;
-		if (setitimer(ITIMER_REAL, &interval, NULL)) {
-			log_perror(srv->errh, __FILE__, __LINE__, "setitimer()");
-			return -1;
-		}
-	}
-#endif
-
 	/* get the current number of FDs */
   #ifdef _WIN32
 	srv->cur_fds = 3; /*(estimate on _WIN32)*/
@@ -2103,7 +2123,7 @@ static void server_handle_sigalrm (server * const srv, unix_time64_t mono_ts, un
 				log_epoch_secs = server_epoch_secs(srv, 0);
 
 				/* check idle time limit, if enabled */
-				if (idle_limit && idle_limit < mono_ts - last_active_ts && !graceful_shutdown) {
+				if (idle_limit && (unix_time64_t)idle_limit < mono_ts - last_active_ts && !graceful_shutdown) {
 					log_notice(srv->errh, __FILE__, __LINE__,
 					  "[note] idle timeout %ds exceeded, "
 					  "initiating graceful shutdown", (int)idle_limit);
@@ -2192,8 +2212,8 @@ static void server_main_loop (server * const srv) {
 			server_handle_sighup(srv);
 		}
 
-		/*(USE_ALARM not used; fdevent_poll() is effective periodic timer)*/
-	      #ifdef USE_ALARM
+		/*(SIGALRM not used here; fdevent_poll() is effective periodic timer)*/
+	      #if 0
 		if (handle_sig_alarm) {
 			handle_sig_alarm = 0;
 	      #endif
@@ -2201,7 +2221,7 @@ static void server_main_loop (server * const srv) {
 			if (mono_ts != log_monotonic_secs) {
 				server_handle_sigalrm(srv, mono_ts, last_active_ts);
 			}
-	      #ifdef USE_ALARM
+	      #if 0
 		}
 	      #endif
 
@@ -2360,7 +2380,7 @@ int server_main (int argc, char ** argv) {
 
         /* clean-up */
         chunkqueue_internal_pipes(0);
-        remove_pid_file(srv);
+        server_pid_file_remove(srv);
         config_log_error_close(srv);
       #ifdef _WIN32
         fdevent_win32_cleanup();

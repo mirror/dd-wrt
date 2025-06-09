@@ -90,7 +90,7 @@ GET /12345.txt HTTP/1.0
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8' } ];
 ok($tf->handle_http($t) == 0, 'GET, content == 12345, mimetype text/plain');
 
 $t->{REQUEST}  = ( <<EOF
@@ -346,12 +346,12 @@ EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 206, 'HTTP-Content' => <<EOF
 --fkj49sn38dcn3\r
-Content-Type: text/plain\r
+Content-Type: text/plain;charset=utf-8\r
 Content-Range: bytes 0-1/100\r
 \r
 12\r
 --fkj49sn38dcn3\r
-Content-Type: text/plain\r
+Content-Type: text/plain;charset=utf-8\r
 Content-Range: bytes 97-98/100\r
 \r
 hi\r
@@ -510,7 +510,7 @@ GET /12345.txt HTTP/1.0
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8' } ];
 $t->{SLOWREQUEST} = 1;
 ok($tf->handle_http($t) == 0, 'GET, slow \\r\\n\\r\\n (#2105)');
 undef $t->{SLOWREQUEST};
@@ -529,7 +529,7 @@ Connection: ,close
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain', 'Connection' => 'close' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8', 'Connection' => 'close' } ];
 ok($tf->handle_http($t) == 0, 'Connection-header, leading comma');
 
 $t->{REQUEST}  = ( <<EOF
@@ -538,7 +538,7 @@ Connection: close,,TE
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain', 'Connection' => 'close' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8', 'Connection' => 'close' } ];
 ok($tf->handle_http($t) == 0, 'Connection-header, no value between two commas');
 
 $t->{REQUEST}  = ( <<EOF
@@ -547,7 +547,7 @@ Connection: close, ,TE
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain', 'Connection' => 'close' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8', 'Connection' => 'close' } ];
 ok($tf->handle_http($t) == 0, 'Connection-header, space between two commas');
 
 $t->{REQUEST}  = ( <<EOF
@@ -556,7 +556,7 @@ Connection: close,
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain', 'Connection' => 'close' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8', 'Connection' => 'close' } ];
 ok($tf->handle_http($t) == 0, 'Connection-header, comma after value');
 
 $t->{REQUEST}  = ( <<EOF
@@ -565,7 +565,7 @@ Connection: close,
 Host: 123.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain', 'Connection' => 'close' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'text/plain;charset=utf-8', 'Connection' => 'close' } ];
 ok($tf->handle_http($t) == 0, 'Connection-header, comma and space after value');
 
 
@@ -1208,7 +1208,7 @@ Authorization: Digest username="jan", realm="download archiv",
 	algorithm="md5", response="049b000fb00ab51dddea6f093a96aa2e"
 EOF
   );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 401, 'WWW-Authenticate' => '/, stale=true$/' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 401, 'WWW-Authenticate' => qr/, stale=true$/ } ];
 ok($tf->handle_http($t) == 0, 'Digest-Auth: stale nonce');
 
 $t->{REQUEST}  = ( <<EOF
@@ -1220,7 +1220,7 @@ Authorization: Digest username = "jan", realm = "download archiv",
 	algorithm = "md5", response = "049b000fb00ab51dddea6f093a96aa2e"     
 EOF
  ); # note: trailing whitespace at end of request line above is intentional
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 401, 'WWW-Authenticate' => '/, stale=true$/' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 401, 'WWW-Authenticate' => qr/, stale=true$/ } ];
 ok($tf->handle_http($t) == 0, 'Digest-Auth: BWS, trailing WS, stale nonce');
 
 
@@ -1405,13 +1405,15 @@ EOF
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '' } ];
 ok($tf->handle_http($t) == 0, 'Vary is set');
 
+# The compressed content should be less than half of the original content size for the specific index.html content used in these tests.
+
 $t->{REQUEST}  = ( <<EOF
 GET /index.html HTTP/1.0
 Accept-Encoding: deflate
 Host: deflate.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1294', '+Content-Encoding' => '' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', '<Content-Length' => '2174', '+Content-Encoding' => '' } ];
 ok($tf->handle_http($t) == 0, 'deflate - Content-Length and Content-Encoding is set');
 
 $t->{REQUEST}  = ( <<EOF
@@ -1420,7 +1422,7 @@ Accept-Encoding: deflate
 Host: deflate-cache.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1294', '+Content-Encoding' => '' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', '<Content-Length' => '2174', '+Content-Encoding' => '' } ];
 ok($tf->handle_http($t) == 0, 'deflate - Content-Length and Content-Encoding is set');
 
 $t->{REQUEST}  = ( <<EOF
@@ -1429,7 +1431,7 @@ Accept-Encoding: gzip
 Host: deflate.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1306', '+Content-Encoding' => '' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', '<Content-Length' => '2174', '+Content-Encoding' => '' } ];
 ok($tf->handle_http($t) == 0, 'gzip - Content-Length and Content-Encoding is set');
 
 $t->{REQUEST}  = ( <<EOF
@@ -1438,7 +1440,7 @@ Accept-Encoding: gzip
 Host: deflate-cache.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Length' => '1306', '+Content-Encoding' => '' } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', '<Content-Length' => '2174', '+Content-Encoding' => '' } ];
 ok($tf->handle_http($t) == 0, 'gzip - Content-Length and Content-Encoding is set');
 
 
@@ -1478,7 +1480,7 @@ Accept-Encoding: bzip2, gzip, deflate
 Host: deflate-cache.example.org
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Encoding' => 'gzip', 'Content-Type' => "text/plain" } ];
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, '+Vary' => '', 'Content-Encoding' => 'gzip', 'Content-Type' => "text/plain;charset=utf-8" } ];
 ok($tf->handle_http($t) == 0, 'bzip2 requested but disabled');
 
 }

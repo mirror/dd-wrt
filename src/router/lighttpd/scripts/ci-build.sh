@@ -43,9 +43,9 @@ ${WITH_UNWIND:=true}
 sysname="$(uname -s)"
 
 if [ "$sysname" = "Darwin" ]; then
-    # keg-only package installs not linked into /usr/local
-    #   brew install cyrus-sasl krb5 libpq
-    export PKG_CONFIG_PATH="/usr/local/opt/cyrus-sasl/lib/pkgconfig:/usr/local/opt/krb5/lib/pkgconfig:/usr/local/opt/libpq/lib/pkgconfig"
+    # keg-only package installs not linked into /opt/homebrew
+    #   brew install cyrus-sasl krb5 libressl libpq libxml2 mariadb-connector-c openldap zlib
+    export PKG_CONFIG_PATH="/opt/homebrew/opt/cyrus-sasl/lib/pkgconfig:/opt/homebrew/opt/krb5/lib/pkgconfig:/opt/homebrew/opt/libressl/lib/pkgconfig:/opt/homebrew/opt/libpq/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:/opt/homebrew/opt/mariadb-connector-c/lib/pkgconfig:/opt/homebrew/opt/openldap/lib/pkgconfig:/opt/homebrew/opt/zlib/lib/pkgconfig"
 fi
 
 if [ "$sysname" = "FreeBSD" ]; then
@@ -66,7 +66,7 @@ if [ "$sysname" = "OpenBSD" ]; then
 fi
 
 case "${build}" in
-"autobuild"|"coverity")
+"autobuild")
 	mkdir -p m4
 	autoreconf --force --install
 	./configure -C \
@@ -89,16 +89,8 @@ case "${build}" in
 		--with-openssl \
 		${WITH_WOLFSSL:+--with-wolfssl} \
 		--with-webdav-props
-	case "${build}" in
-	"autobuild")
-		make -j 4
-		make check
-		;;
-	"coverity")
-		[ -z "${COVERITY_PATH}" ] || export PATH="${COVERITY_PATH}"
-		cov-build --dir "cov-int" make
-		;;
-	esac
+	make -j 4
+	make check
 	;;
 "cmake"|"cmake-asan")
 	mkdir -p cmakebuild
@@ -138,7 +130,7 @@ case "${build}" in
 	make -j 4 VERBOSE=1
 	ctest -V
 	;;
-"meson")
+"meson"|"coverity")
 	[ -d build ] || meson setup build
 	meson configure --buildtype debugoptimized \
 	  -Dbuild_extra_warnings=true \
@@ -166,8 +158,16 @@ case "${build}" in
 	  -Dwith_zstd=enabled \
 	  build
 	cd build
-	meson compile --verbose
-	meson test --verbose
+	case "${build}" in
+	"meson")
+		meson compile -j 4 --verbose
+		meson test --verbose
+		;;
+	"coverity")
+		[ -z "${COVERITY_PATH}" ] || export PATH="${COVERITY_PATH}"
+		cov-build --dir "../cov-int" -- meson compile -j 4 --verbose
+		;;
+	esac
 	;;
 "scons")
 	case "${label}" in

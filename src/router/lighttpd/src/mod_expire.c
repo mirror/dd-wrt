@@ -188,7 +188,7 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
                 for (uint32_t k = 0; k < a->used; ++k, toff+=2, p->tused+=2) {
                     buffer *v = &((data_string *)a->data[k])->value;
                     toff[1] = mod_expire_get_offset(v->ptr, &toff[0]);
-                    if (-1 == *toff) {
+                    if ((time_t)-1 == *toff) {
                         log_error(srv->errh, __FILE__, __LINE__,
                           "invalid %s = \"%s\"", cpk[cpv->k_id].k, v->ptr);
                         return HANDLER_ERROR;
@@ -268,9 +268,8 @@ REQUEST_FUNC(mod_expire_handler) {
 	buffer *vb;
 	const data_string *ds;
 
-	/* Add caching headers only to http_status
-	 * 200 OK or 204 No Content or 206 Partial Content */
-	if (r->http_status != 200 && r->http_status != 204 && r->http_status != 206)
+	/* Add caching headers only to http_status 200 OK or 206 Partial Content */
+	if (r->http_status != 200 && r->http_status != 206)
 		return HANDLER_GO_ON;
 	/* Add caching headers only to GET, HEAD, QUERY requests */
 	if (!http_method_get_head_query(r->http_method)) return HANDLER_GO_ON;

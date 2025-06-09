@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ([2.60])
-AC_INIT([lighttpd],[1.4.75],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
+AC_INIT([lighttpd],[1.4.79],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -328,16 +328,18 @@ if test "$WITH_DBI" != no; then
     DBI_CFLAGS="-I$WITH_DBI/include"
     DBI_LIBS="-L$WITH_DBI/lib -ldbi"
   else
-    AC_CHECK_HEADERS([dbi/dbi.h],
-      [AC_CHECK_LIB([dbi], [dbi_version],
-        [
-          DBI_CFLAGS=
-          DBI_LIBS="-ldbi"
-        ],
-        [AC_MSG_ERROR([LibDBI not found])]
-      )],
-      [AC_MSG_ERROR([LibDBI header not found])]
-    )
+    PKG_CHECK_MODULES([DBI], [dbi], [], [
+      AC_CHECK_HEADERS([dbi/dbi.h],
+        [AC_CHECK_LIB([dbi], [dbi_version],
+          [
+            DBI_CFLAGS=
+            DBI_LIBS="-ldbi"
+          ],
+          [AC_MSG_ERROR([LibDBI not found])]
+        )],
+        [AC_MSG_ERROR([LibDBI header not found])]
+      )
+    ])
   fi
 
   AC_DEFINE([HAVE_DBI], [1], [LibDBI support])
@@ -689,11 +691,11 @@ AC_ARG_WITH([wolfssl],
 AC_MSG_RESULT([$WITH_WOLFSSL])
 AM_CONDITIONAL([BUILD_WITH_WOLFSSL], test ! "$WITH_WOLFSSL" = no)
 
-if test "$WITH_WOLFSSL" != no; then
-  CPPFLAGS_SAVE="${CPPFLAGS}"
-  LDFLAGS_SAVE="${LDFLAGS}"
-  if test "$WITH_WOLFSSL" != yes; then
-    WOLFSSL_CFLAGS="-I$WITH_WOLFSSL/include -I$WITH_WOLFSSL/include/wolfssl"
+if test "$WITH_WOLFSSL" != "no"; then
+  if test "$WITH_WOLFSSL" != "yes"; then
+    CPPFLAGS="$CPPFLAGS -I$WITH_WOLFSSL/include"
+    LDFLAGS="$LDFLAGS -L$WITH_WOLFSSL/lib"
+    WOLFSSL_CFLAGS="-I$WITH_WOLFSSL/include"
     WOLFSSL_LIBS="-L$WITH_WOLFSSL/lib -lwolfssl"
     LDFLAGS="${LDFLAGS} -L$WITH_WOLFSSL/lib"
   else
@@ -722,13 +724,8 @@ if test "$WITH_WOLFSSL" != no; then
 
   AC_SUBST([WOLFSSL_CFLAGS])
   AC_SUBST([WOLFSSL_LIBS])
-  if test "$WITH_OPENSSL" = no; then
-    CRYPTO_LIB="$WOLFSSL_CRYPTO_LIB"
-    AC_SUBST([CRYPTO_LIB])
-  else
-    CPPFLAGS="${CPPFLAGS_SAVE}"
-    LDFLAGS="${LDFLAGS_SAVE}"
-  fi
+  CRYPTO_LIB="$WOLFSSL_CRYPTO_LIB"
+  AC_SUBST([CRYPTO_LIB])
 fi
 
 dnl Check for mbedTLS
@@ -930,11 +927,16 @@ if test "$WITH_PCRE" != no; then
     PCRE_LIB="-L$WITH_PCRE/lib -lpcre"
     CPPFLAGS="$CPPFLAGS -I$WITH_PCRE/include"
   else
-    AC_PATH_PROG([PCRECONFIG], [pcre-config])
-    if test -n "$PCRECONFIG"; then
-      PCRE_LIB=`"$PCRECONFIG" --libs`
-      CPPFLAGS="$CPPFLAGS `"$PCRECONFIG" --cflags`"
-    fi
+    PKG_CHECK_MODULES([PCRE], [libpcre], [
+      PCRE_LIB="$PCRE_LIBS"
+      CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
+    ], [
+      AC_PATH_PROG([PCRECONFIG], [pcre-config])
+      if test -n "$PCRECONFIG"; then
+        PCRE_LIB=`"$PCRECONFIG" --libs`
+        CPPFLAGS="$CPPFLAGS `"$PCRECONFIG" --cflags`"
+      fi
+    ])
   fi
 
   if test -z "$PCRE_LIB"; then
@@ -1321,7 +1323,7 @@ if test "$WITH_LUA" != no; then
     fi
     PKG_CHECK_MODULES([LUA], [$WITH_LUA >= $lua_min_ver],
       [found_lua=1],
-      [AC_MSG_NOTICE([Couldn\'t find requested lua pkg-config module $WITH_LUA])]
+      [AC_MSG_NOTICE([Could not find requested lua pkg-config module $WITH_LUA])]
     )
     if test "$found_lua" = "0"; then
       LUA_LIBS="-L$WITH_LUA -llua"
@@ -1332,12 +1334,12 @@ if test "$WITH_LUA" != no; then
       if test "$found_lua" = "0"; then
         PKG_CHECK_MODULES([LUA], [$luaname >= 5.1],
           [found_lua=1],
-          [AC_MSG_NOTICE([Couldn\'t find $luaname])]
+          [AC_MSG_NOTICE([Could not find $luaname])]
         )
       fi
     done
     if test "$found_lua" = "0"; then
-      AC_MSG_ERROR([Couldn\'t find any lua pkg-config module])
+      AC_MSG_ERROR([Could not find any lua pkg-config module])
     fi
   fi
 
@@ -1644,7 +1646,6 @@ LIGHTTPD_VERSION_ID=m4_format([0x%x%02x%02x], m4_unquote(m4_split(AC_PACKAGE_VER
 AC_DEFINE_UNQUOTED([LIGHTTPD_VERSION_ID], [$LIGHTTPD_VERSION_ID], [lighttpd-version-id])
 
 AC_CONFIG_FILES([\
-  distribute.sh \
   doc/config/conf.d/Makefile \
   doc/config/Makefile \
   doc/config/vhosts.d/Makefile \
