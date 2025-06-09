@@ -229,7 +229,7 @@ int getphysicalcores(void)
 			char *ptr = strchr(line, ':');
 			if (ptr) {
 				ptr++;
-				int id = atoi(ptr);
+				int id = atoi(ptr) + 1;
 				if (id > cores)
 					cores = id;
 			}
