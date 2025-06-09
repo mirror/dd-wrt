@@ -219,6 +219,33 @@ int cpu_plltype(void)
 	return 0;
 }
 
+int getphysicalcores(void)
+{
+	FILE *fp = fopen("/proc/cpuinfo", "rb");
+	char line[128];
+	int cores = 0;
+	while (!feof(fp) && fgets(line, sizeof(line), fp)) {
+		if (strstr(line, "core id") || strstr(line, "core") && !strstr(line, "cpu cores")) {
+			char *ptr = strchr(line, ':');
+			if (ptr) {
+				ptr++;
+				int id = atoi(ptr);
+				if (id > cores)
+					cores = id;
+			}
+		}
+	}
+	fclose(fp);
+
+	if (!cores) {
+#ifdef _SC_NPROCESSORS_ONLN
+		cores = sysconf(_SC_NPROCESSORS_ONLN);
+#else
+		cores = 1
+#endif
+	}
+	return cores;
+}
 /* In the space-separated/null-terminated list(haystack), try to
  * locate the string "needle"
  */
@@ -548,8 +575,6 @@ struct dns_entry *get_dns_entry(struct dns_lists *dns_list, int idx)
 	return &dns_list->dns_server[idx];
 }
 
-
-
 struct dns_lists *get_dns_list(int v6)
 {
 	struct dns_lists *dns_list = NULL;
@@ -634,11 +659,7 @@ int dns_to_resolv(void)
 	} else if (nvram_invmatch("wan_domain", "")) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("wan_domain"));
 	}
-	if (nvram_invmatch("lan_domain", "")) {
-		fprintf(fp_w, "search %s\n", nvram_safe_get("lan_domain"));
-	}
 	if (nvram_matchi("dnsmasq_enable", 1) && nvram_matchi("dns_dnsmasq", 1)) {
-	
 		fprintf(fp_w, "nameserver %s\n", get_lan_ipaddr());
 		//egc set IPv6 adress either local address ::/1 or ipv6_rtr_addr
 		if (nvram_matchi("ipv6_enable", 1)) {
