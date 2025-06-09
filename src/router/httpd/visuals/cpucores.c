@@ -310,7 +310,7 @@ EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t **argv)
 	int physical = getphysicalcores();
 	int logical = getlogicalcores();
 	if (logical > physical)
-		websWrite(wp, "%d (Threads: %d)", physical, logical);
+		websWrite(wp, "%d (%d Threads)", physical, logical);
 	else
 		websWrite(wp, "%d", physical);
 }
