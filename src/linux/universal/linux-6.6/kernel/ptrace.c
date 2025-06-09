@@ -33,6 +33,7 @@
 #include <linux/sched/signal.h>
 #include <linux/minmax.h>
 #include <linux/syscall_user_dispatch.h>
+#include <linux/spinlock.h>
 
 #include <asm/syscall.h>	/* for syscall_get_* */
 
