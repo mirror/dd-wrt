@@ -325,7 +325,7 @@ EJ_VISIBLE void ej_get_dmips(webs_t wp, int argc, char_t **argv)
 	    return;
 	}
 	float dmips = atof(rating) / 1757.0f;
-	websWrite(wp, "%.2f", dmips);
+	websWrite(wp, "%.2f", dmips * getphysicalcores());
 }
 
 struct CPUFEATURES {
