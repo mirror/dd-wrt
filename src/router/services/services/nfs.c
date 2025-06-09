@@ -40,11 +40,7 @@ void start_nfs(void)
 {
 	struct nfs_share *cs, *csnext;
 	struct nfs_share *nfsshares;
-#ifdef _SC_NPROCESSORS_ONLN
-	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-#else
-	int cpucount = 1
-#endif
+	int cpucount = getlogicalcores();
 	if (!nvram_matchi("nfs_enable", 1))
 		return;
 	FILE *fp = fopen("/tmp/exports", "wb");

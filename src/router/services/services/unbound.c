@@ -33,11 +33,7 @@ extern void addHost(char *host, char *ip, int withdomain);
 static void unbound_config(void)
 {
 	char wan_if_buffer[33];
-#ifdef _SC_NPROCESSORS_ONLN
-	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-#else
-	int cpucount = 1;
-#endif
+	int cpucount = getlogicalcores();
 	int port = 7053;
 	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("smartdns", 1))
 		port = 53;

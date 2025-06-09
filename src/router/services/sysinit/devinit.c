@@ -268,14 +268,9 @@ void start_devinit(void)
 	if (nvram_match("tcp_congestion_control", "bbr")) {
 		writeprocsysnet("core/default_qdisc", "fq_codel");
 	}
-#ifdef _SC_NPROCESSORS_ONLN
-	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-#else
-	int cpucount = 1
-#endif
 #ifdef HAVE_IRQBALANCE
 	if (nvram_match("irqbalance_enabled", "1")) {
-		if (cpucount > 1) {
+		if (getlogicalcores() > 1) {
 			/* do not start irqbalance if it doesnt make sense at all, it will just create bogus warnings */
 			mkdir("/var/run/irqbalance", 0777);
 #ifdef HAVE_IPQ6018

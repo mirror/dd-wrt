@@ -114,11 +114,7 @@ void start_raid(void)
 	writeprocsys("vm/dirty_expire_centisecs", nvram_default_get("vm.dirty_expire_centisecs", "100"));
 	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "100"));
 
-#ifdef _SC_NPROCESSORS_ONLN
-	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-#else
-	int cpucount = 1;
-#endif
+	int cpucount = getlogicalcores();
 	if (todo) {
 		eval("service", "cron", "stop");
 		eval("service", "samba3", "stop");

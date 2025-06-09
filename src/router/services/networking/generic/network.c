@@ -5129,11 +5129,7 @@ void start_hotplug_net(void)
 	action = getenv("ACTION");
 	if (!action)
 		return;
-#ifdef _SC_NPROCESSORS_ONLN
-	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-#else
-	int cpucount = 1;
-#endif
+	int cpucount = getlogicalcores();
 
 	if (!strcmp(action, "add")) {
 		if (cpucount > 1) {
