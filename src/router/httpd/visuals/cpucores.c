@@ -307,22 +307,20 @@ EJ_VISIBLE void ej_show_cpuinfo(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t **argv)
 {
-	int count = 1;
-#ifdef _SC_NPROCESSORS_ONLN
-	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-	if (cpucount > 1) {
-		count = cpucount;
-	}
-#endif
-	websWrite(wp, "%d", count);
+	int physical = getphysicalcores();
+	int logical = getphysicalcores();
+	if (logical > physical)
+		websWrite(wp, "%d (Threads: %d)", physical, logical);
+	else
+		websWrite(wp, "%d", physical);
 }
 
 EJ_VISIBLE void ej_get_dmips(webs_t wp, int argc, char_t **argv)
 {
 	char *rating = nvram_safe_get("cpu_rating");
 	if (!*rating) {
-	    websWrite(wp, "unknown");
-	    return;
+		websWrite(wp, "unknown");
+		return;
 	}
 	float dmips = atof(rating) / 1757.0f;
 	websWrite(wp, "%.2f", dmips * getphysicalcores());
