@@ -225,7 +225,7 @@ int getphysicalcores(void)
 	char line[128];
 	int cores = 0;
 	while (!feof(fp) && fgets(line, sizeof(line), fp)) {
-		if (strstr(line, "core id") || strstr(line, "core") && !strstr(line, "cpu cores")) {
+		if (!strncmp(line, "core", 4) && strncmp(line, "cpu cores", 9)) {
 			char *ptr = strchr(line, ':');
 			if (ptr) {
 				ptr++;
