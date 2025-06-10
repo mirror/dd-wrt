@@ -315,6 +315,11 @@ EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "%d", physical);
 }
 
+EJ_VISIBLE void ej_logical_cpucores(webs_t wp, int argc, char_t **argv)
+{
+	websWrite(wp, "%d", getlogicalcores());
+}
+
 EJ_VISIBLE void ej_get_dmips(webs_t wp, int argc, char_t **argv)
 {
 	char *rating = nvram_safe_get("cpu_rating");
