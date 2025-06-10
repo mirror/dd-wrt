@@ -190,6 +190,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/os/unix/ngx_thread_mutex.o \
 	objs/src/os/unix/ngx_thread_id.o \
 	objs/src/event/ngx_event_openssl.o \
+	objs/src/event/ngx_event_openssl_cache.o \
 	objs/src/event/ngx_event_openssl_stapling.o \
 	objs/src/core/ngx_regex.o \
 	objs/src/http/ngx_http.o \
