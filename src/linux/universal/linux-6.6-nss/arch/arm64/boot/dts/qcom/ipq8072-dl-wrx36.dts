@@ -346,7 +346,7 @@
 
 			led@0 {
 				reg = <0>;
-				color = <LED_COLOR_ID_GREEN>;
+				color = <LED_COLOR_ID_YELLOW>;
 				function = LED_FUNCTION_WAN;
 				default-state = "keep";
 				active-low;
@@ -354,7 +354,7 @@
 
 			led@1 {
 				reg = <1>;
-				color = <LED_COLOR_ID_YELLOW>;
+				color = <LED_COLOR_ID_GREEN>;
 				function = LED_FUNCTION_WAN;
 				default-state = "keep";
 			};
