@@ -299,17 +299,19 @@ function refresh(F) {
 										<div class="label">WAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
-										document.write("<% nvg("wan_hwaddr"); %>\n</span>");
+										document.write("<span id=\"wan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>');\" >");
+										document.write("<% nvg("wan_hwaddr"); %>");
+										document.write("</span>");
 										//]]>
-										</script>
+										</script>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label">LAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"lan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
-										document.write("<% nvg("lan_hwaddr"); %>\n</span>");
+										document.write("<span id=\"wan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>');\" >");
+										document.write("<% nvg("lan_hwaddr"); %>");
+										document.write("</span>");
 										//]]>
 										</script>
 									</div>
