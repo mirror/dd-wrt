@@ -215,6 +215,7 @@ static int bound(void)
 			eval("ifconfig", wan_ifname, ip, "netmask", netmask, "up");
 			generate_hosts();
 			start_set_routes();
+			dns_to_resolv();
 #ifdef HAVE_DNSMASQ
 			restart_dnsmasq();
 #endif
@@ -224,6 +225,7 @@ static int bound(void)
 #endif
 			stop_unbound();
 			start_unbound();
+			start_wan_service();
 			nvram_seti("dhcpc_done", 1);
 		}
 		return 0;
