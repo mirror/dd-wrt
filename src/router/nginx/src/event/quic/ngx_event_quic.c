@@ -308,11 +308,16 @@ ngx_quic_new_connection(ngx_connection_t *c, ngx_quic_conf_t *conf,
     qc->streams.client_max_streams_uni = qc->tp.initial_max_streams_uni;
     qc->streams.client_max_streams_bidi = qc->tp.initial_max_streams_bidi;
 
-    qc->congestion.window = ngx_min(10 * qc->tp.max_udp_payload_size,
-                                    ngx_max(2 * qc->tp.max_udp_payload_size,
+    qc->congestion.window = ngx_min(10 * NGX_QUIC_MIN_INITIAL_SIZE,
+                                    ngx_max(2 * NGX_QUIC_MIN_INITIAL_SIZE,
                                             14720));
     qc->congestion.ssthresh = (size_t) -1;
-    qc->congestion.recovery_start = ngx_current_msec;
+    qc->congestion.mtu = NGX_QUIC_MIN_INITIAL_SIZE;
+    qc->congestion.recovery_start = ngx_current_msec - 1;
+
+    qc->max_frames = (conf->max_concurrent_streams_uni
+                      + conf->max_concurrent_streams_bidi)
+                     * conf->stream_buffer_size / 2000;
 
     if (pkt->validated && pkt->retried) {
         qc->tp.retry_scid.len = pkt->dcid.len;
@@ -1020,6 +1025,16 @@ ngx_quic_handle_payload(ngx_connection_t *c, ngx_quic_header_t *pkt)
             ngx_quic_path_dbg(c, "in handshake", qc->path);
             ngx_post_event(&qc->push, &ngx_posted_events);
         }
+    }
+
+    if (pkt->level == ssl_encryption_application) {
+        /*
+         * RFC 9001, 4.9.3.  Discarding 0-RTT Keys
+         *
+         * After receiving a 1-RTT packet, servers MUST discard
+         * 0-RTT keys within a short time
+         */
+        ngx_quic_keys_discard(qc->keys, ssl_encryption_early_data);
     }
 
     if (qc->closing) {

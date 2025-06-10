@@ -1,18 +1,56 @@
 
-Changes with nginx 1.26.3                                        05 Feb 2025
+Changes with nginx 1.28.0                                        23 Apr 2025
+
+    *) 1.28.x stable branch.
+
+    *) Bugfix: nginx could not be built by gcc 15 if ngx_http_v2_module or
+       ngx_http_v3_module modules were used.
+
+    *) Bugfix: nginx might not be built by gcc 14 or newer with -O3 -flto
+       optimization if ngx_http_v3_module was used.
+
+
+Changes with nginx 1.27.5                                        16 Apr 2025
+
+    *) Feature: CUBIC congestion control in QUIC connections.
+
+    *) Change: the maximum size limit for SSL sessions cached in shared
+       memory has been raised to 8192.
+
+    *) Bugfix: in the "grpc_ssl_password_file", "proxy_ssl_password_file",
+       and "uwsgi_ssl_password_file" directives when loading SSL
+       certificates and encrypted keys from variables; the bug had appeared
+       in 1.23.1.
+
+    *) Bugfix: in the $ssl_curve and $ssl_curves variables when using
+       pluggable curves in OpenSSL.
+
+    *) Bugfix: nginx could not be built with musl libc.
+       Thanks to Piotr Sikora.
+
+    *) Performance improvements and bugfixes in HTTP/3.
+
+
+Changes with nginx 1.27.4                                        05 Feb 2025
 
     *) Security: insufficient check in virtual servers handling with TLSv1.3
        SNI allowed to reuse SSL sessions in a different virtual server, to
        bypass client SSL certificates verification (CVE-2025-23419).
 
-    *) Bugfix: in the ngx_http_mp4_module.
-       Thanks to Nils Bars.
+    *) Feature: the "ssl_object_cache_inheritable", "ssl_certificate_cache",
+       "proxy_ssl_certificate_cache", "grpc_ssl_certificate_cache", and
+       "uwsgi_ssl_certificate_cache" directives.
+
+    *) Feature: the "keepalive_min_timeout" directive.
 
     *) Workaround: "gzip filter failed to use preallocated memory" alerts
        appeared in logs when using zlib-ng.
 
     *) Bugfix: nginx could not build libatomic library using the library
        sources if the --with-libatomic=DIR option was used.
+
+    *) Bugfix: QUIC connection might not be established when using 0-RTT;
+       the bug had appeared in 1.27.1.
 
     *) Bugfix: nginx now ignores QUIC version negotiation packets from
        clients.
@@ -23,15 +61,70 @@ Changes with nginx 1.26.3                                        05 Feb 2025
     *) Bugfixes in HTTP/3.
 
 
-Changes with nginx 1.26.2                                        14 Aug 2024
+Changes with nginx 1.27.3                                        26 Nov 2024
+
+    *) Feature: the "server" directive in the "upstream" block supports the
+       "resolve" parameter.
+
+    *) Feature: the "resolver" and "resolver_timeout" directives in the
+       "upstream" block.
+
+    *) Feature: SmarterMail specific mode support for IMAP LOGIN with
+       untagged CAPABILITY response in the mail proxy module.
+
+    *) Change: now TLSv1 and TLSv1.1 protocols are disabled by default.
+
+    *) Change: an IPv6 address in square brackets and no port can be
+       specified in the "proxy_bind", "fastcgi_bind", "grpc_bind",
+       "memcached_bind", "scgi_bind", and "uwsgi_bind" directives, and as
+       client address in ngx_http_realip_module.
+
+    *) Bugfix: in the ngx_http_mp4_module.
+       Thanks to Nils Bars.
+
+    *) Bugfix: the "so_keepalive" parameter of the "listen" directive might
+       be handled incorrectly on DragonFly BSD.
+
+    *) Bugfix: in the "proxy_store" directive.
+
+
+Changes with nginx 1.27.2                                        02 Oct 2024
+
+    *) Feature: SSL certificates, secret keys, and CRLs are now cached on
+       start or during reconfiguration.
+
+    *) Feature: client certificate validation with OCSP in the stream
+       module.
+
+    *) Feature: OCSP stapling support in the stream module.
+
+    *) Feature: the "proxy_pass_trailers" directive in the
+       ngx_http_proxy_module.
+
+    *) Feature: the "ssl_client_certificate" directive now supports
+       certificates with auxiliary information.
+
+    *) Change: now the "ssl_client_certificate" directive is not required
+       for client SSL certificates verification.
+
+
+Changes with nginx 1.27.1                                        14 Aug 2024
 
     *) Security: processing of a specially crafted mp4 file by the
        ngx_http_mp4_module might cause a worker process crash
        (CVE-2024-7347).
        Thanks to Nils Bars.
 
+    *) Change: now the stream module handler is not mandatory.
 
-Changes with nginx 1.26.1                                        29 May 2024
+    *) Bugfix: new HTTP/2 connections might ignore graceful shutdown of old
+       worker processes.
+       Thanks to Kasei Wang.
+
+    *) Bugfixes in HTTP/3.
+
+
+Changes with nginx 1.27.0                                        29 May 2024
 
     *) Security: when using HTTP/3, processing of a specially crafted QUIC
        session might cause a worker process crash, worker process memory
@@ -40,6 +133,10 @@ Changes with nginx 1.26.1                                        29 May 2024
        CVE-2024-35200, CVE-2024-34161).
        Thanks to Nils Bars of CISPA.
 
+    *) Feature: variables support in the "proxy_limit_rate",
+       "fastcgi_limit_rate", "scgi_limit_rate", and "uwsgi_limit_rate"
+       directives.
+
     *) Bugfix: reduced memory consumption for long-lived requests if "gzip",
        "gunzip", "ssi", "sub_filter", or "grpc_pass" directives are used.
 
@@ -47,12 +144,7 @@ Changes with nginx 1.26.1                                        29 May 2024
        option was used.
        Thanks to Edgar Bonet.
 
-    *) Bugfix: in HTTP/3.
-
-
-Changes with nginx 1.26.0                                        23 Apr 2024
-
-    *) 1.26.x stable branch.
+    *) Bugfixes in HTTP/3.
 
 
 Changes with nginx 1.25.5                                        16 Apr 2024
