@@ -238,7 +238,7 @@ int getphysicalcores(void)
 	fclose(fp);
 
 	if (!cores) {
-		return getphysicalcores();
+		return getlogicalcores();
 	}
 	return cores;
 }
