@@ -298,5 +298,6 @@ void create_openvpnserverrules(FILE *fp);
 void create_openvpnrules(FILE *fp);
 void load_drivers(int boot);
 void generate_hosts(void);
+void sys_overclocking(void);
 
 #endif

@@ -220,7 +220,7 @@ void start_wifi_drivers(void)
 void start_arch_defaults(void)
 {
 }
-void start_overclocking(void)
+void sys_overclocking(void)
 {
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {

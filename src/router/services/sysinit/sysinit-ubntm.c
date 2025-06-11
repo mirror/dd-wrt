@@ -448,7 +448,7 @@ char *set_wan_state(int state)
 	}
 }
 
-void start_overclocking(void)
+void sys_overclocking(void)
 {
 }
 
