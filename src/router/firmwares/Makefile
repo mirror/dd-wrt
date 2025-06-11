@@ -16,10 +16,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cp -v IPQ5018/* $(INSTALLDIR)$(FIRMWAREDIR)/IPQ5018
 endif
 ifeq ($(CONFIG_MVEBU),y)
-	mkdir $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
+	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
 	cp mrvl/sd8887_uapsta.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
 	cp mrvl/sdsd8997_combo_v4.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
-	ln -s ../mrvl/sdsd8997_combo_v4.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl/sd8997_uapsta.bin
+	ln -sf ../mrvl/sdsd8997_combo_v4.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl/sd8997_uapsta.bin
 endif
 ifeq ($(ARCH),i386)
 	cp -vr rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
@@ -38,6 +38,6 @@ ifeq ($(ARCH),x86_64)
 	cp -vr i915 $(INSTALLDIR)$(FIRMWAREDIR)
 endif
 	-rm -f $(INSTALLDIR)/usbdux/*dux $(INSTALLDIR)/*/*.asm
-	-rm $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
+	-rm -f $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
 
 clean:
