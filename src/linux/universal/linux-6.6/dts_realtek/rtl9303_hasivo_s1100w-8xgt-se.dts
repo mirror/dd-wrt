@@ -13,7 +13,7 @@
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x00000000 0x10000000> /* 256 MiB Lowmem */
+		reg = <0x00000000 0x10000000>; /* 256 MiB Lowmem */
 	};
 
 	memory@20000000 {
