@@ -61,6 +61,9 @@ static void getledconfig(struct ledconfig *cfg)
 	// number (f=disabled)
 	{
 #ifdef HAVE_REALTEK
+	case ROUTER_HASIVO_S1100W8XGT:
+		cfg->diag_gpio = GPIO_LOW | 21;
+		break;
 	case ROUTER_EWS2910P:
 		cfg->power_gpio = GPIO_LOW | 27;
 		cfg->diag_gpio = GPIO_LOW | 26;

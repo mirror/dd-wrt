@@ -396,6 +396,11 @@ int internal_getRouterBrand()
 		setRouter("EnGenius EWS2910P v3");
 		return ROUTER_EWS2910P;
 	}
+
+	if (!strcmp(modelstr, "S1100W-8XGT-SE")) {
+		setRouter("Hasivo S1100W-8XGT-SE");
+		return ROUTER_HASIVO_S1100W8XGT;
+	}
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)

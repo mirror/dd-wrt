@@ -847,6 +847,8 @@
 
 #define ROUTER_EWS2910P 0x12910b
 
+#define ROUTER_HASIVO_S1100W8XGT 0x12a105
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

@@ -215,6 +215,8 @@ static int getbuttonstate()
 		return !get_gpio(11);
 	case ROUTER_NETGEAR_GS:
 		return !get_gpio(0);
+	case ROUTER_HASIVO_S1100W8XGT:
+		return !get_gpio(5);
 	default:
 		return 0;
 	}
