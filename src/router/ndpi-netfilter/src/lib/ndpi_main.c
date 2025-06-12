@@ -146,6 +146,7 @@
 #include "ndpi_utils.c"
 #include "ndpi_hash.c"
 #include "ndpi_cache.c"
+#include "ndpi_fingerprint.c"
 #include "ndpi_serializer.c"
 #include "ndpi_memory.c"
 #include "ndpi_analyze.c"
@@ -168,7 +169,6 @@ static u_int32_t _ticks_per_second = 1000;
 
 /* ****************************************** */
 
-#include "ndpi_os_fingerprint.c.inc"
 
 static ndpi_risk_info ndpi_known_risks[] = {
   { NDPI_NO_RISK,                               NDPI_RISK_LOW,    CLIENT_FAIR_RISK_PERCENTAGE, NDPI_NO_ACCOUNTABILITY  },
@@ -199,7 +199,7 @@ static ndpi_risk_info ndpi_known_risks[] = {
   { NDPI_HTTP_SUSPICIOUS_CONTENT,               NDPI_RISK_HIGH,   CLIENT_HIGH_RISK_PERCENTAGE, NDPI_SERVER_ACCOUNTABLE },
   { NDPI_RISKY_ASN,                             NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_SERVER_ACCOUNTABLE },
   { NDPI_RISKY_DOMAIN,                          NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_SERVER_ACCOUNTABLE },
-  { NDPI_MALICIOUS_FINGERPRINT,                 NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
+  { NDPI_MALICIOUS_FINGERPRINT,                 NDPI_RISK_HIGH,   CLIENT_HIGH_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
   { NDPI_MALICIOUS_SHA1_CERTIFICATE,            NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_SERVER_ACCOUNTABLE },
   { NDPI_DESKTOP_OR_FILE_SHARING_SESSION,       NDPI_RISK_LOW,    CLIENT_FAIR_RISK_PERCENTAGE, NDPI_BOTH_ACCOUNTABLE   },
   { NDPI_TLS_UNCOMMON_ALPN,                     NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
@@ -440,6 +440,28 @@ u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct 
 
 /* ************************************************************************************* */
 
+static ndpi_port_range *ndpi_build_default_ports_range(ndpi_port_range *ports, u_int16_t portA_low, u_int16_t portA_high,
+                                                       u_int16_t portB_low, u_int16_t portB_high, u_int16_t portC_low,
+                                                       u_int16_t portC_high, u_int16_t portD_low, u_int16_t portD_high,
+                                                       u_int16_t portE_low, u_int16_t portE_high) {
+  int i = 0;
+
+  ports[i].port_low = portA_low, ports[i].port_high = portA_high;
+  i++;
+  ports[i].port_low = portB_low, ports[i].port_high = portB_high;
+  i++;
+  ports[i].port_low = portC_low, ports[i].port_high = portC_high;
+  i++;
+  ports[i].port_low = portD_low, ports[i].port_high = portD_high;
+  i++;
+  ports[i].port_low = portE_low, ports[i].port_high = portE_high;
+
+  return(ports);
+}
+
+
+/* ************************************************************************************* */
+
 ndpi_port_range *ndpi_build_default_ports(ndpi_port_range *ports, u_int16_t portA, u_int16_t portB, u_int16_t portC,
                                           u_int16_t portD, u_int16_t portE) {
   int i = 0;
@@ -537,24 +559,25 @@ u_int8_t ndpi_is_subprotocol_informative(u_int16_t protoId) {
     return(0);
   }
 }
+
 /* ********************************************************************************** */
 
-void ndpi_exclude_protocol(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
-                           u_int16_t protocol_id, const char *_file, const char *_func, int _line) {
-  if(ndpi_is_valid_protoId(protocol_id)) {
+void exclude_dissector(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+                       u_int16_t dissector_idx, const char *_file, const char *_func, int _line) {
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
-    if(ndpi_str && ndpi_str->cfg.log_level >= NDPI_LOG_DEBUG && ndpi_str->ndpi_debug_printf != NULL) {
-      (*(ndpi_str->ndpi_debug_printf))(protocol_id, ndpi_str, NDPI_LOG_DEBUG, _file, _func, _line, "exclude %s\n",
-				       ndpi_get_proto_name(ndpi_str, protocol_id));
-    }
-#else
-    (void)ndpi_str;
-    (void)_file;
-    (void)_func;
-    (void)_line;
-#endif
-    NDPI_DISSECTOR_BITMASK_SET(flow->excluded_dissectors_bitmask, ndpi_str->proto_defaults[protocol_id].dissector_idx);
+  /* TODO */
+  if(ndpi_str->cfg.log_level >= NDPI_LOG_DEBUG && ndpi_str->ndpi_debug_printf != NULL) {
+    (*(ndpi_str->ndpi_debug_printf))(ndpi_str->callback_buffer[dissector_idx].first_protocol_id,
+                                     ndpi_str, NDPI_LOG_DEBUG, _file, _func, _line, "exclude %s\n",
+                                     ndpi_str->callback_buffer[dissector_idx].name);
   }
+#else
+  (void)ndpi_str;
+  (void)_file;
+  (void)_func;
+  (void)_line;
+#endif
+  NDPI_DISSECTOR_BITMASK_SET(flow->excluded_dissectors_bitmask, dissector_idx);
 }
 
 /* ********************************************************************************** */
@@ -682,9 +705,8 @@ void ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_str,
       addDefaultPort(ndpi_str, &tcpDefPorts[j], &ndpi_str->proto_defaults[protoId], 0, &ndpi_str->tcpRoot,
 		     __FUNCTION__, __LINE__);
 
-    /* No port range, just the lower port */
-    ndpi_str->proto_defaults[protoId].tcp_default_ports[j] = tcpDefPorts[j].port_low;
-    ndpi_str->proto_defaults[protoId].udp_default_ports[j] = udpDefPorts[j].port_low;
+    ndpi_str->proto_defaults[protoId].tcp_default_ports[j] = tcpDefPorts[j];
+    ndpi_str->proto_defaults[protoId].udp_default_ports[j] = udpDefPorts[j];
   }
 }
 
@@ -1597,8 +1619,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
   ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 0 /* nw proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SIP,
 			  "SIP", NDPI_PROTOCOL_CATEGORY_VOIP, NDPI_PROTOCOL_QOE_CATEGORY_VOIP_CALLS,
-			  ndpi_build_default_ports(ports_a, 5060, 5061, 0, 0, 0) /* TCP */,
-			  ndpi_build_default_ports(ports_b, 5060, 5061, 0, 0, 0) /* UDP */);
+			  ndpi_build_default_ports_range(ports_a, 5060, 5061, 0, 0, 0, 0, 0, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports_range(ports_b, 5060, 5061, 0, 0, 0, 0, 0, 0, 0, 0) /* UDP */);
   ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 1 /* app proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TRUPHONE,
 			  "TruPhone", NDPI_PROTOCOL_CATEGORY_VOIP, NDPI_PROTOCOL_QOE_CATEGORY_VOIP_CALLS,
 			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
@@ -1619,7 +1641,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			  "Crossfire", NDPI_PROTOCOL_CATEGORY_RPC, NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED,
 			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
-  ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 0 /* nw proto */, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DOFUS,
+  ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 1 /* app proto */, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DOFUS,
 			  "Dofus", NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_QOE_CATEGORY_ONLINE_GAMING,
 			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
@@ -2581,6 +2603,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
                           "MSDO", NDPI_PROTOCOL_CATEGORY_SW_UPDATE, NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED,
                           ndpi_build_default_ports(ports_a, 7680, 0, 0, 0, 0) /* TCP */,
                           ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+  ndpi_set_proto_defaults(ndpi_str, 0 /* encrypted */, 1 /* app proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_HAMACHI,
+			  "Hamachi", NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED,
+			  ndpi_build_default_ports(ports_a, 12975, 32976, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports(ports_b, 17771, 0, 0, 0, 0) /* UDP */);
+
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_main.c"
@@ -3566,7 +3593,9 @@ static const char *categories[NDPI_PROTOCOL_NUM_CATEGORIES] = {
   "Hw/Sw",
   "Dating",
   "Travel",
-  "Food"
+  "Food",
+  "Bots",
+  "Scanners"
 };
 
 #if !defined(NDPI_CFFI_PREPROCESSING) && defined(__linux__)
@@ -3728,11 +3757,7 @@ struct ndpi_detection_module_struct *ndpi_init_detection_module(struct ndpi_glob
   ndpi_str->malicious_ja4_hashmap = NULL;   /* Initialized on demand */
   ndpi_str->malicious_sha1_hashmap = NULL;  /* Initialized on demand */
 
-  if(ndpi_hash_init(&ndpi_str->tcp_fingerprint_hashmap) == 0) {
-    for(i=0; tcp_fps[i].fingerprint != NULL; i++)
-      ndpi_add_tcp_fingerprint(ndpi_str, (char*)tcp_fps[i].fingerprint, tcp_fps[i].os);
-  }
-
+  ndpi_load_tcp_fingerprints(ndpi_str);
   ndpi_str->risky_domain_automa.ac_automa = NULL; /* Initialized on demand */
   ndpi_str->trusted_issuer_dn = NULL;
 
@@ -4192,7 +4217,7 @@ int ndpi_finalize_initialization(struct ndpi_detection_module_struct *ndpi_str) 
                    ndpi_str->cfg.signal_cache_num_entries);
     }
   }
-    
+
   if(ndpi_str->cfg.bittorrent_cache_num_entries > 0) {
     if(ndpi_str->cfg.bittorrent_cache_scope == NDPI_LRUCACHE_SCOPE_GLOBAL) {
       if(!ndpi_str->g_ctx->bittorrent_global_cache) {
@@ -5415,19 +5440,23 @@ int load_category_file_fd(struct ndpi_detection_module_struct *ndpi_str,
         line[i] = '\0';
         break;
       }
-      if (line[i] != '-' && line[i] != '.' && ndpi_isalnum(line[i]) == 0
+
+      if (line[i] != '-'
+	  && line[i] != '.'
+	  && line[i] != ':'
+	  && line[i] != '/'
+	  && ndpi_isalnum(line[i]) == 0
           /* non standard checks for the sake of compatibility */
           && line[i] != '_')
         break;
     }
 
-    if (i != len - 2 && i != len - 1)
-      {
-	NDPI_LOG_ERR(ndpi_str, "[NDPI] Failed to read file line #%u, invalid characters found\n",
-		     lines_read);
-	failed_lines++;
-	continue;
-      }
+    if ((i != len - 2) && (i != len - 1) && (line[i] != '\0')) {
+      NDPI_LOG_ERR(ndpi_str, "[NDPI] Failed to read file line #%u [%s], invalid characters [%c] found [pos: %u]\n",
+		   lines_read, line, line[i], i);
+      failed_lines++;
+      continue;
+    }
 
     if(ndpi_load_category(ndpi_str, line, category_id, NULL) >= 0)
       num_loaded++;
@@ -5435,7 +5464,101 @@ int load_category_file_fd(struct ndpi_detection_module_struct *ndpi_str,
 
   if(failed_lines)
     return(-1 * failed_lines);
+
   return(num_loaded);
+}
+
+/* ******************************************************************** */
+
+int load_protocol_id_file_fd(struct ndpi_detection_module_struct *ndpi_str,
+			     FILE *fd, u_int16_t protocol_id) {
+  char buffer[256], *line;
+  u_int num_loaded = 0;
+  unsigned int failed_lines = 0;
+  unsigned int lines_read = 0;
+
+  (void)lines_read;
+
+  if(!ndpi_str || !fd || !ndpi_str->protocols)
+    return(0);
+
+  while(1) {
+    int len;
+
+    line = fgets(buffer, sizeof(buffer), fd);
+
+    if(line == NULL)
+      break;
+
+    lines_read++;
+    len = strlen(line);
+
+    if(len <= 1 || len == sizeof(buffer) - 1) {
+      NDPI_LOG_ERR(ndpi_str, "[NDPI] Failed to read file line #%u, line too short/long\n",
+                   lines_read);
+      failed_lines++;
+      continue;
+    } else if (line[0] == '#')
+      continue;
+
+    int i = 0;
+
+    for (i = 0; i < len; ++i) {
+      if (line[i] == '\r' || line[i] == '\n') {
+        line[i] = '\0';
+        break;
+      }
+    }
+
+    if(strchr(line, ':') != NULL) {
+      if(ndpi_add_host_ip_subprotocol(ndpi_str, line, protocol_id, 1 /* IPv6 */) == 0)
+	num_loaded++;
+      else
+	failed_lines++;
+    } else if(strchr(line, '.') != NULL) {
+      /* IPv4 */
+      if(ndpi_add_host_ip_subprotocol(ndpi_str, line, protocol_id, 0 /* IPv4 */) == 0)
+	num_loaded++;
+      else
+	failed_lines++;
+    } else {
+      /* No clue */
+      failed_lines++;
+      continue;
+    }
+  }
+
+  if(failed_lines)
+    return(-1 * failed_lines);
+
+  return(num_loaded);
+}
+
+/* ******************************************************************** */
+
+/*
+  Loads a file (separated by <cr>) of IP addresses associated with the
+  specified protocol
+*/
+int ndpi_load_protocol_id_file(struct ndpi_detection_module_struct *ndpi_str,
+			       char *path, u_int16_t protocol_id) {
+  int rc;
+  FILE *fd;
+
+  if(!ndpi_str || !path)
+    return(-1);
+
+  fd = fopen(path, "r");
+  if(fd == NULL) {
+    NDPI_LOG_ERR(ndpi_str, "Unable to open file %s [%s]\n", path, strerror(errno));
+    return -1;
+  }
+
+  rc = load_protocol_id_file_fd(ndpi_str, fd, protocol_id);
+
+  fclose(fd);
+
+  return rc;
 }
 
 /* ******************************************************************** */
@@ -5486,6 +5609,70 @@ int ndpi_load_categories_dir(struct ndpi_detection_module_struct *ndpi_str,
 	snprintf(path, sizeof(path), "%s/%s", dir_path, dp->d_name);
 
 	if (ndpi_load_category_file(ndpi_str, path, (ndpi_protocol_category_t)cat_id) < 0) {
+	  NDPI_LOG_ERR(ndpi_str, "Failed to load '%s'\n", path);
+	  failed_files++;
+	}else
+	  num_loaded++;
+      }
+    }
+  }
+
+  (void)closedir(dirp);
+
+  if(failed_files)
+    return(-1 * failed_files);
+
+  return(num_loaded);
+}
+
+/* ******************************************************************** */
+
+/*
+  Load files (whose name is <protocolid>_<label>.<extension>) stored
+  in a directory and bind each domain to the specified protocol.
+
+  It can be used to load all files store in the lists/ directory
+
+  It returns the number of loaded files or -1 in case of failure
+*/
+int ndpi_load_protocols_dir(struct ndpi_detection_module_struct *ndpi_str,
+			    char *dir_path) {
+  DIR *dirp;
+  struct dirent *dp;
+  int failed_files = 0;
+  int num_loaded = 0;
+
+  if(!ndpi_str || !dir_path)
+    return(0);
+
+  dirp = opendir(dir_path);
+  if (dirp == NULL)
+    return(0);
+
+  while((dp = readdir(dirp)) != NULL) {
+    char *underscore, *extn;
+
+    if(dp->d_name[0] == '.') continue;
+    extn = strrchr(dp->d_name, '.');
+
+    if((extn == NULL) || strcmp(extn, ".list"))
+      continue;
+
+    /* Check if the format is <proto it>_<string>.<extension> */
+    if((underscore = strchr(dp->d_name, '_')) != NULL) {
+      int proto_id;
+      const char *errstrp;
+
+      underscore[0] = '\0';
+      proto_id = ndpi_strtonum(dp->d_name, 1, NDPI_LAST_IMPLEMENTED_PROTOCOL - 1, &errstrp, 10);
+      if(errstrp == NULL) {
+	/* Valid file */
+	char path[512];
+
+	underscore[0] = '_';
+	snprintf(path, sizeof(path), "%s/%s", dir_path, dp->d_name);
+
+	if (ndpi_load_protocol_id_file(ndpi_str, path, proto_id) < 0) {
 	  NDPI_LOG_ERR(ndpi_str, "Failed to load '%s'\n", path);
 	  failed_files++;
 	}else
@@ -5729,104 +5916,6 @@ int load_malicious_sha1_file_fd(struct ndpi_detection_module_struct *ndpi_str, F
 
 #endif // __KERNEL__
 
-/* ************************************************************** */
-
-/*
-  Add a new TCP fingerprint
-
-  Return code:
-  0   OK
-  -1  Duplicated fingerprint
-  -2  Unable to add a new entry
- */
-int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
-			     char *fingerprint, ndpi_os os) {
-  u_int len;
-  u_int16_t ret;
-
-  len = strlen(fingerprint);
-
-  if((ndpi_str->tcp_fingerprint_hashmap != NULL)
-     && (ndpi_hash_find_entry(ndpi_str->tcp_fingerprint_hashmap, fingerprint, len, &ret) == 0)) {
-    /* Duplicate fingerprint found */
-    return(-1);
-  } else {
-    if(ndpi_hash_add_entry(&ndpi_str->tcp_fingerprint_hashmap, fingerprint, len,
-			   (u_int16_t)os) == 0) {
-      return(0);
-    } else
-      return(-2);
-  }
-}
-
-/* ******************************************************************** */
-
-#ifndef __KERNEL__
-/*
- * Format:
- *
- * <TCP fingerprint>,<numeric OS>
- * Example: 2_64_14600_8c07a80cc645,3
- *
- */
-int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_struct *ndpi_str, const char *path)
-{
-  int rc;
-  FILE *fd;
-
-  if(!ndpi_str || !path)
-    return(-1);
-
-  fd = fopen(path, "r");
-  if(fd == NULL) {
-    NDPI_LOG_ERR(ndpi_str, "Unable to open file %s [%s]\n", path, strerror(errno));
-    return -1;
-  }
-
-  rc = load_tcp_fingerprint_file_fd(ndpi_str, fd);
-
-  fclose(fd);
-
-  return rc;
-}
-
-/* ******************************************************************** */
-
-int load_tcp_fingerprint_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd) {
-  char buffer[128];
-  int num = 0;
-
-  if(!ndpi_str || !fd)
-    return(-1);
-
-  if(ndpi_str->tcp_fingerprint_hashmap == NULL
-     && ndpi_hash_init(&ndpi_str->tcp_fingerprint_hashmap) != 0)
-    return(-1);
-
-  while (fgets(buffer, sizeof(buffer), fd) != NULL) {
-    char *fingerprint, *os, *tmp;
-    ndpi_os os_num;
-    size_t len = strlen(buffer);
-
-    if(len <= 1 || buffer[0] == '#')
-      continue;
-
-    fingerprint = strtok_r(buffer, "\t", &tmp);
-    if(!fingerprint) continue;
-
-    os = strtok_r(NULL, "\t", &tmp);
-    if(!os) continue; else os_num = (ndpi_os)atoi(os);
-
-    if(os_num >= ndpi_os_MAX_OS) continue;
-
-    if(ndpi_add_tcp_fingerprint(ndpi_str, fingerprint, os_num) == 0)
-      num++;
-  }
-
-  return num;
-}
-#endif   // __KERNEL
-
 /* ******************************************************************** */
 
 /*
@@ -5940,14 +6029,14 @@ int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *
 
 /* ******************************************************************** */
 
-void ndpi_set_bitmask_protocol_detection(char *label, struct ndpi_detection_module_struct *ndpi_str,
-                                         u_int16_t ndpi_protocol_id,
-                                         void (*func)(struct ndpi_detection_module_struct *,
-                                                      struct ndpi_flow_struct *flow),
-                                         const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
-                                         u_int8_t b_save_bitmask_unknow, u_int8_t b_add_detection_bitmask) {
-  (void)label;
-
+void register_dissector(char *dissector_name, struct ndpi_detection_module_struct *ndpi_str,
+                        void (*func)(struct ndpi_detection_module_struct *,
+                                     struct ndpi_flow_struct *flow),
+                        const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
+                        int num_protocol_ids, ...)
+{
+  va_list ap;
+  int i, dissector_enabled = 0, first_protocol_id = -1;
   u_int32_t idx = ndpi_str->callback_buffer_num;
 
   if(idx >= NDPI_MAX_NUM_DISSECTORS) {
@@ -5962,46 +6051,47 @@ void ndpi_set_bitmask_protocol_detection(char *label, struct ndpi_detection_modu
     return;
   }
 
-  if(is_proto_enabled(ndpi_str, ndpi_protocol_id)) {
-    NDPI_LOG_DBG2(ndpi_str,
-		  "[NDPI] ndpi_set_bitmask_protocol_detection: %s : [callback_buffer] idx= %u, [proto_defaults] "
-		  "protocol_id=%u\n",
-		  label, idx, ndpi_protocol_id);
-
-    if(ndpi_str->proto_defaults[ndpi_protocol_id].dissector_idx != 0) {
-      NDPI_LOG_DBG2(ndpi_str, "[NDPI] Internal error: protocol %s/%u has been already registered\n", label,
-		    ndpi_protocol_id);
+  va_start(ap, num_protocol_ids);
+  for(i = 0; i < num_protocol_ids; i++) {
+    int ndpi_protocol_id = va_arg(ap, int);
+    if(!is_proto_enabled(ndpi_str, ndpi_protocol_id)) {
+      NDPI_LOG_DBG(ndpi_str, "Protocol %d not enabled for dissector %s\n",
+                   ndpi_protocol_id, dissector_name);
     } else {
-      NDPI_LOG_DBG2(ndpi_str, "[NDPI] Adding %s with protocol id %d\n", label, ndpi_protocol_id);
+
+      if(ndpi_str->proto_defaults[ndpi_protocol_id].dissector_idx != 0) {
+        NDPI_LOG_ERR(ndpi_str, "Internal error: protocol %d/%s has been already registered (%d/%d)\n",
+                     ndpi_protocol_id, dissector_name,
+                     ndpi_str->proto_defaults[ndpi_protocol_id].dissector_idx,
+                     idx);
+        /* TODO */
+      } else {
+
+        if(first_protocol_id == -1)
+          first_protocol_id = ndpi_protocol_id;
+
+        ndpi_str->proto_defaults[ndpi_protocol_id].dissector_idx = idx;
+      }
+      dissector_enabled = 1;
     }
-
-    /*
-      Set function and index protocol within proto_default structure for port protocol detection
-      and callback_buffer function for DPI protocol detection
-    */
-    ndpi_str->proto_defaults[ndpi_protocol_id].dissector_idx = idx;
-    ndpi_str->proto_defaults[ndpi_protocol_id].func = ndpi_str->callback_buffer[idx].func = func;
-    ndpi_str->callback_buffer[idx].dissector_idx = idx;
-
-    /*
-      Set ndpi_selection_bitmask for protocol
-    */
-    ndpi_str->callback_buffer[idx].ndpi_selection_bitmask = ndpi_selection_bitmask;
-
-    /*
-      Reset protocol detection bitmask via NDPI_PROTOCOL_UNKNOWN and than add specify protocol bitmast to callback
-      buffer.
-    */
-    if(b_save_bitmask_unknow)
-      NDPI_SAVE_AS_BITMASK(ndpi_str->callback_buffer[idx].detection_bitmask, NDPI_PROTOCOL_UNKNOWN);
-    if(b_add_detection_bitmask)
-      NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_str->callback_buffer[idx].detection_bitmask, ndpi_protocol_id);
-
-  } else {
-    NDPI_LOG_DBG(ndpi_str, "[NDPI] Protocol %s/%u disabled\n", label, ndpi_protocol_id);
   }
+  va_end(ap);
 
-  ndpi_str->callback_buffer_num++;
+  if(dissector_enabled) {
+    NDPI_LOG_DBG2(ndpi_str, "Dissector %s enabled. Registering %d...\n", dissector_name, idx);
+
+    memcpy(ndpi_str->callback_buffer[idx].name, dissector_name,
+           ndpi_min(sizeof(ndpi_str->callback_buffer[idx].name) - 1, strlen(dissector_name)));
+    ndpi_str->callback_buffer[idx].func = func;
+    ndpi_str->callback_buffer[idx].dissector_idx = idx;
+    ndpi_str->callback_buffer[idx].ndpi_selection_bitmask = ndpi_selection_bitmask;
+    ndpi_str->callback_buffer[idx].first_protocol_id = first_protocol_id; /* Just for logging */
+
+    ndpi_str->callback_buffer_num++;
+  } else {
+    NDPI_LOG_DBG(ndpi_str, "Dissector %s disabled\n", dissector_name);
+  }
+  return;
 }
 
 /* ******************************************************************** */
@@ -6766,6 +6856,9 @@ static int ndpi_callback_init(struct ndpi_detection_module_struct *ndpi_str) {
   /* MELSEC Communication Protocol */
   init_melsec_dissector(ndpi_str);
 
+  /* Hamachi */
+  init_hamachi_dissector(ndpi_str);
+
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_main_init.c"
 #endif
@@ -6804,7 +6897,7 @@ static int ndpi_callback_init(struct ndpi_detection_module_struct *ndpi_str) {
 
   ndpi_enabled_callbacks_init(ndpi_str, 0);
 
-  NDPI_LOG_DBG(ndpi_str, "Tot num dissectors: %d (TCP: %d, TCP_NO_PAYLOAD: %d, UDP: %d, NO_TCP_UDP: %d\n",
+  NDPI_LOG_DBG(ndpi_str, "Tot num dissectors: %d (TCP: %d, TCP_NO_PAYLOAD: %d, UDP: %d, NO_TCP_UDP: %d)\n",
                ndpi_str->callback_buffer_size,
                ndpi_str->callback_buffer_size_tcp_payload,
                ndpi_str->callback_buffer_size_tcp_no_payload,
@@ -7402,12 +7495,14 @@ static int ndpi_init_packet(struct ndpi_detection_module_struct *ndpi_str,
 	  char fingerprint[128], options_fp[128];
 	  u_int8_t i, fp_idx = 0, options_fp_len = 0;
 
-	  if(tcp_header_len > sizeof(struct ndpi_tcphdr)) {
+	  if(tcp_header_len >= sizeof(struct ndpi_tcphdr)) {
 	    u_int8_t *options = (u_int8_t*)(&t[sizeof(struct ndpi_tcphdr)]);
 	    u_int8_t options_len = tcp_header_len - sizeof(struct ndpi_tcphdr);
 	    u_int16_t tcp_win = ntohs(packet->tcp->window);
 	    u_int8_t ip_ttl;
 	    u_int8_t sha_hash[NDPI_SHA256_BLOCK_SIZE];
+	    u_int32_t tcp_mss = 0, tcp_wscale = 0;
+	    int rc;
 
 	    if(packet->iph)
 	      ip_ttl = packet->iph->ttl;
@@ -7420,75 +7515,182 @@ static int ndpi_init_packet(struct ndpi_detection_module_struct *ndpi_str,
 	    else if(ip_ttl <= 192) ip_ttl = 192;
 	    else ip_ttl = 255;
 
-	    fp_idx = snprintf(fingerprint, sizeof(fingerprint), "%u_%u_%u_", flags, ip_ttl, tcp_win);
+	    switch(ndpi_str->cfg.tcp_fingerprint_format) {
+	    case NDPI_NATIVE_TCP_FINGERPRINT:
+	      fp_idx = snprintf(fingerprint, sizeof(fingerprint), "%u_%u_%u_", flags, ip_ttl, tcp_win);
+	      break;
 
-	    for(i=0; i<options_len; ) {
-	      u_int8_t kind = options[i];
-	      int rc;
+	    case NDPI_MUONFP_TCP_FINGERPRINT:
+	      fp_idx = snprintf(fingerprint, sizeof(fingerprint), "%u:", tcp_win);
+	      break;
+	    }
+
+	    if(options_len == 0) {
+	      const char *msg;
+
+	      /*
+		Massive Internet scanner detected. Examples:
+		- https://zmap.io
+		- https://github.com/robertdavidgraham/masscan
+	      */
+
+	      if(tcp_win == 1024)
+		msg = "Massive scanner detected (probably masscan)";
+	      else if(tcp_win == 65535)
+		msg = "Massive scanner detected (probably zmap)";
+	      else
+		msg = "Massive scanner detected";
+
+	      ndpi_set_risk(ndpi_str, flow, NDPI_MALICIOUS_FINGERPRINT, (char*)msg);
+	    } else {
+	      for(i=0; i<options_len; /* don't increase here */) {
+		u_int8_t kind = options[i];
 
 #ifdef DEBUG_TCP_OPTIONS
-	      printf("Option kind: %u\n", kind);
-#endif
-	      rc = snprintf(&options_fp[options_fp_len], sizeof(options_fp)-options_fp_len, "%02x", kind);
-	      if((rc < 0) || ((int)(options_fp_len + rc) == sizeof(options_fp))) break;
-
-	      options_fp_len += rc;
-
-	      if(kind == 0) /* EOL */ {
-		i++;
-		continue;
-	      } else if(kind == 1) /* NOP */
-		i++;
-	      else if((i+1) < options_len) {
-		u_int8_t len = options[i+1];
-
-#ifdef DEBUG_TCP_OPTIONS
-		printf("\tOption len: %u\n", len);
+		printf("Option kind: %u\n", kind);
 #endif
 
-		if(len == 0)
-		  continue;
-		else if(kind == 8) {
-		  /* Timestamp: ignore it */
-		} else if(len > 2) {
-		  int j = i+2;
-		  u_int8_t opt_len = len - 2;
+		if(ndpi_str->cfg.tcp_fingerprint_format == NDPI_NATIVE_TCP_FINGERPRINT) {
+		  rc = snprintf(&options_fp[options_fp_len], sizeof(options_fp)-options_fp_len, "%02x", kind);
 
-		  while((opt_len > 0) && (j < options_len)) {
-		    rc = snprintf(&options_fp[options_fp_len], sizeof(options_fp)-options_fp_len, "%02x", options[j]);
-		    if((rc < 0) || ((int)(options_fp_len + rc) == sizeof(options_fp))) break;
+		  if((rc < 0) || ((int)(options_fp_len + rc) == sizeof(options_fp)))
+		    break;
 
-		    options_fp_len += rc;
-		    j++, opt_len--;
-		  }
+		  options_fp_len += rc;
+		} else if(ndpi_str->cfg.tcp_fingerprint_format == NDPI_MUONFP_TCP_FINGERPRINT) {
+		  if(fp_idx >= sizeof(fingerprint))
+		    break;
+
+		  rc = snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, "%s%u", (i > 0) ? "-" : "", kind);
+
+		  if((rc < 0) || ((int)(fp_idx + rc) == sizeof(fingerprint)))
+		    break;
+
+		  fp_idx += rc;
 		}
 
-		i += len;
+		if(kind == 0) /* EOL */ {
+		  i++;
+		  continue;
+		} else if(kind == 1) /* NOP */
+		  i++;
+		else if((i+1) < options_len) {
+		  u_int8_t len = options[i+1];
+
+#ifdef DEBUG_TCP_OPTIONS
+		  printf("\tOption len: %u\n", len);
+#endif
+
+		  if(len == 0)
+		    continue;
+		  else if(kind == 8) {
+		    switch(ndpi_str->cfg.tcp_fingerprint_format) {
+		    case NDPI_NATIVE_TCP_FINGERPRINT:
+		      /* Timestamp: ignore it */
+		      break;
+
+		    case NDPI_MUONFP_TCP_FINGERPRINT:
+		      /* Nothing to do */
+		      break;
+		    }
+		  } else if(len > 2) {
+		    int j = i+2;
+		    u_int8_t opt_len = len - 2;
+
+		    if((kind == 2 /* Maximum segment size */) || (kind == 3 /* TCP window scale */)) {
+		      u_int32_t val = 0;
+
+		      if(opt_len == 1)
+			val = options[j];
+		      else if(opt_len == 2)
+			val = (options[j] << 8) + options[j+1];
+		      else if(opt_len == 3)
+			val = (options[j] << 16) + (options[j+1] << 8) + options[j+2];
+		      else if(opt_len == 4)
+			val = (options[j] << 24) + (options[j+1] << 16) + (options[j+2] << 8) + options[j+3];
+
+		      if(kind == 2)
+			tcp_mss = val;
+		      else if(kind == 3)
+			tcp_wscale = val;
+		    }
+
+		    if(ndpi_str->cfg.tcp_fingerprint_format == NDPI_NATIVE_TCP_FINGERPRINT) {
+		      while((opt_len > 0) && (j < options_len)) {
+			rc = snprintf(&options_fp[options_fp_len], sizeof(options_fp)-options_fp_len, "%02x", options[j]);
+			if((rc < 0) || ((int)(options_fp_len + rc) == sizeof(options_fp))) break;
+
+			options_fp_len += rc;
+			j++, opt_len--;
+		      }
+		    }
+		  }
+
+		  i += len;
+		} else
+		  break;
+	      } /* for */
+
+	      if((options_len == 4) && (tcp_mss > 0)) {
+		/*
+		  Not inherently malicious, but unusual for modern general-purpose OSes.
+		  More suspicious if coming from a device that should support full TCP options (e.g., a Windows/Linux server).
+		  Less suspicious if from an embedded device or legacy system.
+
+		  For this reason we ignore packets originating from private IP
+		  that might be originated by outdated systems.
+		*/
+		if(packet->iphv6 /* Modern IP stack */
+		   || (packet->iph
+		       && ndpi_is_public_ipv4(ntohl(packet->iph->saddr))))
+		  ndpi_set_risk(ndpi_str, flow, NDPI_MALICIOUS_FINGERPRINT,
+				"Unusual TCP fingerprint (scanner detected?)");
 	      }
-	    } /* for */
+	    }
 
 #ifdef DEBUG_TCP_OPTIONS
 	    printf("Raw Options Fingerprint: %s\n", options_fp);
 #endif
 
-	    ndpi_sha256((const u_char*)options_fp, options_fp_len, sha_hash);
+	    switch(ndpi_str->cfg.tcp_fingerprint_format) {
+	    case NDPI_NATIVE_TCP_FINGERPRINT:
+	      ndpi_sha256((const u_char*)options_fp, options_fp_len, sha_hash);
 
-	    snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, "%02x%02x%02x%02x%02x%02x",
-		     sha_hash[0], sha_hash[1], sha_hash[2],
-		     sha_hash[3], sha_hash[4], sha_hash[5]);
+	      snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, "%02x%02x%02x%02x%02x%02x",
+		       sha_hash[0], sha_hash[1], sha_hash[2],
+		       sha_hash[3], sha_hash[4], sha_hash[5]);
+	      break;
 
-	    flow->tcp.fingerprint = ndpi_strdup(fingerprint), flow->tcp.os_hint = ndpi_os_unknown;
+	    case NDPI_MUONFP_TCP_FINGERPRINT:
+	      if(fp_idx < sizeof(fingerprint)) {
+		if(tcp_mss > 0)
+		  rc = snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, ":%u", tcp_mss);
+		else
+		  rc = snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, ":");
+
+		if(rc > 0) {
+		  fp_idx += rc;
+
+		  if(fp_idx < sizeof(fingerprint)) {
+		    if(tcp_wscale > 0)
+		      rc = snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, ":%u", tcp_wscale);
+		    else
+		      rc = snprintf(&fingerprint[fp_idx], sizeof(fingerprint)-fp_idx, ":");
+
+		    if(rc > 0)
+		      fp_idx += rc;
+		  }
+		}
+	      }
+	      break;
+	    }
+
+	    flow->tcp.fingerprint = ndpi_strdup(fingerprint);
 
 	    if(ndpi_str->cfg.tcp_fingerprint_raw_enabled)
-		     flow->tcp.fingerprint_raw = ndpi_strdup(options_fp);
+	      flow->tcp.fingerprint_raw = ndpi_strdup(options_fp);
 
-	    if(ndpi_str->tcp_fingerprint_hashmap != NULL) {
-	      u_int16_t ret;
-
-	      if(ndpi_hash_find_entry(ndpi_str->tcp_fingerprint_hashmap,
-				      fingerprint, strlen(fingerprint), &ret) == 0)
-		flow->tcp.os_hint = ret;
-	    }
+	    flow->tcp.os_hint = ndpi_get_os_from_tcp_fingerprint(ndpi_str, flow->tcp.fingerprint);
 	  }
 	}
       }
@@ -7897,7 +8099,6 @@ static void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_s
 static u_int32_t check_ndpi_subprotocols(struct ndpi_detection_module_struct * const ndpi_str,
                                          struct ndpi_flow_struct * const flow,
                                          NDPI_SELECTION_BITMASK_PROTOCOL_SIZE const ndpi_selection_packet,
-                                         NDPI_PROTOCOL_BITMASK detection_bitmask,
                                          u_int16_t detected_protocol)
 {
   u_int32_t num_calls = 0, a;
@@ -7918,9 +8119,8 @@ static u_int32_t check_ndpi_subprotocols(struct ndpi_detection_module_struct * c
 
     if((ndpi_str->callback_buffer[subproto_index].ndpi_selection_bitmask & ndpi_selection_packet) ==
        ndpi_str->callback_buffer[subproto_index].ndpi_selection_bitmask &&
-       !NDPI_DISSECTOR_BITMASK_IS_SET(flow->excluded_dissectors_bitmask, subproto_index) &&
-       NDPI_BITMASK_COMPARE(ndpi_str->callback_buffer[subproto_index].detection_bitmask,
-			    detection_bitmask) != 0) {
+       !NDPI_DISSECTOR_BITMASK_IS_SET(flow->excluded_dissectors_bitmask, subproto_index)) {
+      ndpi_str->current_dissector_idx = subproto_index;
       ndpi_str->callback_buffer[subproto_index].func(ndpi_str, flow);
       num_calls++;
     }
@@ -7942,18 +8142,16 @@ static u_int32_t check_ndpi_detection_func(struct ndpi_detection_module_struct *
      if we don't already have a partial classification */
   u_int16_t fast_callback_protocol_id = flow->fast_callback_protocol_id ? flow->fast_callback_protocol_id : flow->guessed_protocol_id;
   u_int16_t dissector_idx = ndpi_str->proto_defaults[fast_callback_protocol_id].dissector_idx;
-  NDPI_PROTOCOL_BITMASK detection_bitmask;
-
-  NDPI_SAVE_AS_BITMASK(detection_bitmask, flow->detected_protocol_stack[0]);
 
   if(fast_callback_protocol_id != NDPI_PROTOCOL_UNKNOWN &&
-     ndpi_str->proto_defaults[fast_callback_protocol_id].func &&
+     ndpi_str->callback_buffer[dissector_idx].func &&
      !NDPI_DISSECTOR_BITMASK_IS_SET(flow->excluded_dissectors_bitmask, dissector_idx) &&
      (ndpi_str->callback_buffer[dissector_idx].ndpi_selection_bitmask & ndpi_selection_packet) ==
-     ndpi_str->callback_buffer[dissector_idx].ndpi_selection_bitmask &&
-     NDPI_BITMASK_COMPARE(ndpi_str->callback_buffer[dissector_idx].detection_bitmask, detection_bitmask) != 0) {
-    ndpi_str->proto_defaults[fast_callback_protocol_id].func(ndpi_str, flow);
-    func = ndpi_str->proto_defaults[fast_callback_protocol_id].func;
+     ndpi_str->callback_buffer[dissector_idx].ndpi_selection_bitmask) {
+
+    ndpi_str->current_dissector_idx = dissector_idx;
+    ndpi_str->callback_buffer[dissector_idx].func(ndpi_str, flow);
+    func = ndpi_str->callback_buffer[dissector_idx].func;
     num_calls++;
   }
 
@@ -7968,10 +8166,9 @@ static u_int32_t check_ndpi_detection_func(struct ndpi_detection_module_struct *
         if((func != callback_buffer[a].func) &&
 	   (callback_buffer[a].ndpi_selection_bitmask & ndpi_selection_packet) ==
 	   callback_buffer[a].ndpi_selection_bitmask &&
-	   !NDPI_DISSECTOR_BITMASK_IS_SET(flow->excluded_dissectors_bitmask, dissector_idx) &&
-	   NDPI_BITMASK_COMPARE(callback_buffer[a].detection_bitmask,
-				detection_bitmask) != 0)
+	   !NDPI_DISSECTOR_BITMASK_IS_SET(flow->excluded_dissectors_bitmask, dissector_idx))
 	  {
+            ndpi_str->current_dissector_idx = dissector_idx;
 	    callback_buffer[a].func(ndpi_str, flow);
 	    num_calls++;
 
@@ -7983,9 +8180,9 @@ static u_int32_t check_ndpi_detection_func(struct ndpi_detection_module_struct *
       }
     }
 
-  num_calls += check_ndpi_subprotocols(ndpi_str, flow, ndpi_selection_packet, detection_bitmask,
+  num_calls += check_ndpi_subprotocols(ndpi_str, flow, ndpi_selection_packet,
                                        flow->detected_protocol_stack[0]);
-  num_calls += check_ndpi_subprotocols(ndpi_str, flow, ndpi_selection_packet, detection_bitmask,
+  num_calls += check_ndpi_subprotocols(ndpi_str, flow, ndpi_selection_packet,
                                        flow->detected_protocol_stack[1]);
 
   return num_calls;
@@ -8696,6 +8893,7 @@ int ndpi_load_ip_category(struct ndpi_detection_module_struct *ndpi_str,
       NDPI_LOG_DBG2(ndpi_str, "Invalid ip4/ip4+netmask: %s\n", ip_address_and_mask);
       return(-1);
     }
+
     node = add_to_ptree(ndpi_str->custom_categories.ipAddresses_shadow, AF_INET, &pin, bits);
   } else if(is_ipv6 && ndpi_str->custom_categories.ipAddresses6_shadow) {
     struct in6_addr pin6;
@@ -9225,17 +9423,26 @@ static void fpc_check_eval(struct ndpi_detection_module_struct *ndpi_str,
 }
 /* ********************************************************************************* */
 
-static char* ndpi_expected_ports_str(u_int16_t *default_ports, char *str, u_int str_len) {
+static char* ndpi_expected_ports_str(ndpi_port_range *default_ports, char *str, u_int str_len) {
+  int rc;
+
   str[0] = '\0';
 
-  if(default_ports[0] != 0) {
+  if(default_ports[0].port_low != 0) {
     u_int8_t i, offset;
 
     offset = snprintf(str, str_len, "Expected on port ");
 
-    for(i=0; (i<MAX_DEFAULT_PORTS) && (default_ports[i] != 0); i++) {
-      int rc = snprintf(&str[offset], str_len-offset, "%s%u",
-			(i > 0) ? "," : "", default_ports[i]);
+    for(i=0; (i<MAX_DEFAULT_PORTS) && (default_ports[i].port_low != 0); i++) {
+      if(default_ports[i].port_low == default_ports[i].port_high)
+        rc = snprintf(&str[offset], str_len-offset, "%s%u",
+		      (i > 0) ? "," : "",
+		      default_ports[i].port_low);
+      else
+        rc = snprintf(&str[offset], str_len-offset, "%s%u-%u",
+                      (i > 0) ? "," : "",
+                      default_ports[i].port_low,
+                      default_ports[i].port_high);
 
       if(rc > 0)
 	offset += rc;
@@ -9440,7 +9647,7 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
      && ((ret.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN) || (ret.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN))
      ) {
     default_ports_tree_node_t *found;
-    u_int16_t *default_ports;
+    ndpi_port_range *default_ports;
 
     if(packet->udp)
       found = ndpi_get_guessed_protocol_id(ndpi_str, IPPROTO_UDP,
@@ -9470,8 +9677,9 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 	*/
 	u_int8_t found = 0, i;
 
-	for(i=0; (i<MAX_DEFAULT_PORTS) && (default_ports[i] != 0); i++) {
-	  if(default_ports[i] == ntohs(flow->s_port)) {
+	for(i=0; (i<MAX_DEFAULT_PORTS) && (default_ports[i].port_low != 0); i++) {
+	  if(default_ports[i].port_low >= ntohs(flow->s_port) &&
+	     default_ports[i].port_high <= ntohs(flow->s_port)) {
 	    found = 1;
 	    break;
 	  }
@@ -9483,7 +9691,7 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 
 	  if((r == NULL)
 	     || ((r->proto->protoId != ret.proto.app_protocol) && (r->proto->protoId != ret.proto.master_protocol))) {
-	    if(default_ports && (default_ports[0] != 0)) {
+	    if(default_ports && (default_ports[0].port_low != 0)) {
 	      char str[64];
 
 	      ndpi_set_risk(ndpi_str, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT,
@@ -9492,12 +9700,15 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 	  }
 	}
       }
-    } else if((!ndpi_is_ntop_protocol(&ret)) && default_ports && (default_ports[0] != 0)) {
+    } else if((!ndpi_is_ntop_protocol(&ret)) && default_ports && (default_ports[0].port_low != 0)) {
       u_int8_t found = 0, i, num_loops = 0;
 
     check_default_ports:
-      for(i=0; (i<MAX_DEFAULT_PORTS) && (default_ports[i] != 0); i++) {
-	if((default_ports[i] == ntohs(flow->c_port)) || (default_ports[i] == ntohs(flow->s_port))) {
+      for(i=0; (i<MAX_DEFAULT_PORTS) && (default_ports[i].port_low != 0); i++) {
+	if((default_ports[i].port_low >= ntohs(flow->c_port) &&
+            default_ports[i].port_high <= ntohs(flow->c_port)) ||
+           (default_ports[i].port_low >= ntohs(flow->s_port) &&
+            default_ports[i].port_high <= ntohs(flow->s_port))) {
 	  found = 1;
 	  break;
 	}
@@ -9521,7 +9732,7 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 	   || ((r->proto->protoId != ret.proto.app_protocol)
 	       && (r->proto->protoId != ret.proto.master_protocol))) {
 	  if(ret.proto.app_protocol != NDPI_PROTOCOL_FTP_DATA) {
-	    u_int16_t *default_ports;
+	    ndpi_port_range *default_ports;
 
 	    if(packet->udp)
 	      default_ports = ndpi_str->proto_defaults[ret.proto.master_protocol ? ret.proto.master_protocol : ret.proto.app_protocol].udp_default_ports;
@@ -9530,7 +9741,7 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 	    else
 	      default_ports = NULL;
 
-	    if(default_ports && (default_ports[0] != 0)) {
+	    if(default_ports && (default_ports[0].port_low != 0)) {
 	      char str[64];
 
 	      ndpi_set_risk(ndpi_str, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT,
@@ -10324,11 +10535,11 @@ ndpi_protocol ndpi_guess_undetected_protocol_v4(struct ndpi_detection_module_str
     if(shost && dhost) {
       struct in_addr addr;
       u_int16_t rcode = NDPI_PROTOCOL_UNKNOWN;
-      
+
       /* guess host protocol; server first */
       addr.s_addr = htonl(shost);
       rcode = ndpi_network_port_ptree_match(ndpi_str, &addr, htons(sport));
-      
+
       if(rcode == NDPI_PROTOCOL_UNKNOWN) {
 	addr.s_addr = htonl(dhost);
 	rcode = ndpi_network_port_ptree_match(ndpi_str, &addr, htons(dport));
@@ -10689,22 +10900,24 @@ int ndpi_get_category_id(struct ndpi_detection_module_struct *ndpi_str, char *ca
 /* ****************************************************** */
 
 
-static char *default_ports_string(char *ports_str,u_int16_t *default_ports){
+static char *default_ports_string(char *ports_str, ndpi_port_range *default_ports){
 
   //dont display zero ports on help screen
-  if (default_ports[0] == 0)
+  if (default_ports[0].port_low == 0)
     //- for readability
     return "-";
 
   int j=0;
   do
     {
-      //max port len 5(eg 65535) + comma + nul
-      char port[7];
-      sprintf(port,"%d,",default_ports[j]);
+      char port[18];
+      if(default_ports[j].port_low == default_ports[j].port_high)
+        sprintf(port,"%d,",default_ports[j].port_low);
+      else
+        sprintf(port,"%d-%d,",default_ports[j].port_low, default_ports[j].port_high);
       strcat(ports_str,port);
       j++;
-    } while (j < MAX_DEFAULT_PORTS && default_ports[j]!= 0);
+    } while (j < MAX_DEFAULT_PORTS && default_ports[j].port_low != 0);
 
   //remove last comma
   ports_str[strlen(ports_str)-1] = '\0';
@@ -10722,9 +10935,9 @@ void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_str, FILE *du
   if(!ndpi_str || !dump_out) return;
 
   for(i = 0; i < (int) ndpi_str->ndpi_num_supported_protocols; i++) {
-    //max port size(eg 65535) * 5 + 4 commas + nul
-    char udp_ports[30] = "";
-    char tcp_ports[30] = "";
+
+    char udp_ports[128] = "";
+    char tcp_ports[128] = "";
 
     fprintf(dump_out, "%3d %8d %-22s %-10s %-8s %-12s %-18s %-31s %-31s\n",
 	    i, ndpi_map_ndpi_id_to_user_proto_id(ndpi_str, i),
@@ -12444,6 +12657,7 @@ static const struct cfg_param {
 
   { NULL,            "metadata.tcp_fingerprint",                "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tcp_fingerprint_enabled), NULL, 1 },
   { NULL,            "metadata.tcp_fingerprint_raw",            "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tcp_fingerprint_raw_enabled), NULL, 1 },
+  { NULL,            "metadata.tcp_fingerprint_format",         "0", "0" /* min */, "1" /* max */, CFG_PARAM_INT, __OFF(tcp_fingerprint_format), NULL, 1 },
 
   { NULL,            "flow_risk_lists.load",                    "1", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(flow_risk_lists_enabled), NULL, 0 },
 
@@ -12523,6 +12737,9 @@ ndpi_cfg_error ndpi_set_config(struct ndpi_detection_module_struct *ndpi_str,
 
   NDPI_LOG_DBG(ndpi_str, "Set [%s][%s][%s]\n", proto, param, value);
 
+  if(proto && (strcmp(proto, "NULL") == 0))
+    proto = NULL;
+
   for(c = &cfg_params[0]; c && c->param; c++) {
     if((((proto == NULL && c->proto == NULL) ||
 	 (proto && c->proto && strcmp(proto, c->proto) == 0)) &&
@@ -12533,7 +12750,8 @@ ndpi_cfg_error ndpi_set_config(struct ndpi_detection_module_struct *ndpi_str,
        (proto == NULL && c->proto == NULL &&
 	strncmp(c->param, "flow_risk.$FLOWRISK_NAME_OR_ID", 30) == 0 &&
 	strncmp(param, "flow_risk.", 10) == 0 &&
-	!ndpi_str_endswith(param, ".info")) ||
+	!ndpi_str_endswith(param, ".info") &&
+	!ndpi_str_endswith(param, ".load")) ||
        (proto == NULL && c->proto == NULL &&
 	strncmp(c->param, "flow_risk.$FLOWRISK_NAME_OR_ID.info", 35) == 0 &&
 	strncmp(param, "flow_risk.", 10) == 0 &&
@@ -12760,4 +12978,51 @@ size_t ndpi_strlcpy(char *dst, const char* src, size_t dst_len, size_t src_len) 
   dst[copy_len] = '\0';
 
   return src_len;
+}
+
+int ndpi_memcasecmp(const void *s1, const void *s2, size_t n) {
+  if (s1 == NULL && s2 == NULL) {
+    return 0;
+  }
+
+  if (s1 == NULL) {
+    return -1;
+  }
+
+  if (s2 == NULL) {
+    return 1;
+  }
+
+  if (n == 0) {
+    return 0;
+  }
+
+  const unsigned char *p1 = (const unsigned char *)s1;
+  const unsigned char *p2 = (const unsigned char *)s2;
+
+  if (n == 1) {
+    return tolower(*p1) - tolower(*p2);
+  }
+
+  /* Early exit optimization - check first and last bytes */
+
+  int first_cmp = tolower(p1[0]) - tolower(p2[0]);
+  if (first_cmp != 0) {
+    return first_cmp;
+  }
+
+  int last_cmp = tolower(p1[n-1]) - tolower(p2[n-1]);
+  if (last_cmp != 0) {
+    return last_cmp;
+  }
+
+  size_t i;
+  for (i = 1; i < n-1; i++) {
+    int cmp = tolower(p1[i]) - tolower(p2[i]);
+    if (cmp != 0) {
+      return cmp;
+    }
+  }
+
+  return 0;
 }

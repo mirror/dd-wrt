@@ -1471,7 +1471,7 @@ static void ndpi_skip_bittorrent(struct ndpi_detection_module_struct *ndpi_struc
   if(search_into_bittorrent_cache(ndpi_struct, flow))
     ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 0, NDPI_CONFIDENCE_DPI_CACHE);
   else
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 }
 
 /* ************************************* */
@@ -1498,7 +1498,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
       if(is_port(sport, dport, 3544) /* teredo */
 	 || is_port(sport, dport, 5246) || is_port(sport, dport, 5247) /* CAPWAP */) {
       exclude_bt:
-	NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+	NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 	return;
       }
     }
@@ -1568,7 +1568,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
       if(match_utp_query_reply((uint32_t *)packet->payload,&flow->bittorrent_seq,
 			       packet->payload_packet_len,&utp_type)) {
 	      if(utp_type == 0xffff) {
-		        NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+		        NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 			return;
 	      }
 	      detect_type = utp_type ? "UTP_req":"UTP_ack";
@@ -1737,10 +1737,8 @@ if(ndpi_struct->bt6_ht) {
 
 void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  ndpi_set_bitmask_protocol_detection("BitTorrent", ndpi_struct,
-				      NDPI_PROTOCOL_BITTORRENT,
-				      ndpi_search_bittorrent,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
-				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
-				      ADD_TO_DETECTION_BITMASK);
+  register_dissector("BitTorrent", ndpi_struct,
+                     ndpi_search_bittorrent,
+                     NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     1, NDPI_PROTOCOL_BITTORRENT);
 }

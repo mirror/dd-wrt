@@ -636,12 +636,11 @@ static int is_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 			struct ndpi_dns_packet_header *dns_header,
 			u_int payload_offset, u_int8_t *is_query) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  u_int x = payload_offset;
 
   if(packet->payload_packet_len < sizeof(struct ndpi_dns_packet_header) + payload_offset)
     return 0;
 
-  memcpy(dns_header, (struct ndpi_dns_packet_header*)&packet->payload[x],
+  memcpy(dns_header, (struct ndpi_dns_packet_header*)&packet->payload[payload_offset],
 	 sizeof(struct ndpi_dns_packet_header));
 
   dns_header->tr_id = ntohs(dns_header->tr_id);
@@ -650,8 +649,6 @@ static int is_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
   dns_header->num_answers = ntohs(dns_header->num_answers);
   dns_header->authority_rrs = ntohs(dns_header->authority_rrs);
   dns_header->additional_rrs = ntohs(dns_header->additional_rrs);
-
-  x += sizeof(struct ndpi_dns_packet_header);
 
   if((dns_header->flags & FLAGS_MASK) == 0x0000)
     *is_query = 1;
@@ -810,7 +807,7 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
     printf("[DNS] invalid packet\n");
 #endif
     if(flow->extra_packets_func == NULL) {
-      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+      NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
     } else {
       ndpi_set_risk(ndpi_struct, flow, NDPI_MALFORMED_PACKET, "Invalid DNS Header");
     }
@@ -963,7 +960,7 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
           ntohs(get_u_int16_t(packet->payload, 2)) != 0 &&
           ntohs(get_u_int16_t(packet->payload, 4)) != 0)
       {
-        NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+        NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
         return;
       }
     }
@@ -977,7 +974,7 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
   if(!(s_port == DNS_PORT || d_port == DNS_PORT ||
        s_port == MDNS_PORT || d_port == MDNS_PORT ||
        d_port == LLMNR_PORT)) {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
     return;
   }
 
@@ -987,7 +984,7 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
      we must be able to detect these protocols on the first packet
   */
   if(packet->payload_packet_len < sizeof(struct ndpi_dns_packet_header) + payload_offset) {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
     return;
   }
 
@@ -997,10 +994,8 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
 /* *********************************************** */
 
 void init_dns_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
-  ndpi_set_bitmask_protocol_detection("DNS", ndpi_struct,
-				      NDPI_PROTOCOL_DNS,
-				      ndpi_search_dns,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
-				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
-				      ADD_TO_DETECTION_BITMASK);
+  register_dissector("DNS", ndpi_struct,
+                     ndpi_search_dns,
+                     NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     1, NDPI_PROTOCOL_DNS);
 }

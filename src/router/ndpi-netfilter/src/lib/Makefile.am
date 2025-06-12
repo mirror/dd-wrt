@@ -37,6 +37,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_geoip.c \
 		     ndpi_hash.c \
 		     ndpi_cache.c \
+		     ndpi_fingerprint.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
 		     protocols/alicloud.c \
@@ -113,6 +114,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/gtp.c \
 		     protocols/guildwars2.c \
 		     protocols/h323.c \
+		     protocols/hamachi.c \
 		     protocols/haproxy.c \
 		     protocols/hart-ip.c \
 		     protocols/hcl_notes.c \

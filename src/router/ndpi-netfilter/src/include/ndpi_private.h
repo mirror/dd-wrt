@@ -53,10 +53,14 @@ typedef struct {
 } ndpi_tls_cert_name_match;
 
 struct call_function_struct {
-  NDPI_PROTOCOL_BITMASK detection_bitmask;
+  char name[16];                /* Used only for logging/debugging */
   void (*func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
   NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask;
   u_int16_t dissector_idx;
+  /* We don't need to keep track of the list of protocols handled by this dissector */
+  u_int16_t first_protocol_id;  /* ID of the first protocol registered with this dissector.
+                                   It is used ONLY for logging, because logging configuration
+                                   is (still) for protocol, not for dissector */
 };
 
 struct subprotocol_conf_struct {
@@ -191,6 +195,16 @@ struct ndpi_global_context {
 
 #define CFG_MAX_LEN	256
 
+
+  /*
+    NOTE: keep it in sync with "metadata.tcp_fingerprint_format"
+    in ndpi_main.c
+   */
+  typedef enum  {
+    NDPI_NATIVE_TCP_FINGERPRINT = 0,
+    NDPI_MUONFP_TCP_FINGERPRINT /* https://github.com/sundruid/muonfp */
+  } ndpi_tcp_fingerprint_format;
+  
 struct ndpi_detection_module_config_struct {
   int max_packets_to_process;
   int direction_detect_enabled;
@@ -219,6 +233,7 @@ struct ndpi_detection_module_config_struct {
   int guess_ip_before_port;
   int use_client_ip_in_guess;
   int use_client_port_in_guess;
+  ndpi_tcp_fingerprint_format tcp_fingerprint_format;
   int tcp_fingerprint_enabled;
   int tcp_fingerprint_raw_enabled;
   
@@ -365,6 +380,7 @@ struct ndpi_detection_module_struct {
   u_int32_t callback_buffer_size_udp;
   u_int32_t callback_buffer_size_non_tcp_udp;
   u_int32_t callback_buffer_num;
+  u_int32_t current_dissector_idx;
 
   default_ports_tree_node_t *tcpRoot, *udpRoot;
 
@@ -637,14 +653,13 @@ struct ndpi_detection_module_struct {
 #define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 #define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 
-NDPI_STATIC void ndpi_set_bitmask_protocol_detection(char *label,
-                                         struct ndpi_detection_module_struct *ndpi_struct,
-                                         u_int16_t ndpi_protocol_id,
-                                         void (*func) (struct ndpi_detection_module_struct *,
-                                                       struct ndpi_flow_struct *flow),
-                                         const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
-                                         u_int8_t b_save_bitmask_unknow,
-                                         u_int8_t b_add_detection_bitmask);
+NDPI_STATIC void register_dissector(char *dissector_name, struct ndpi_detection_module_struct *ndpi_str,
+                        void (*func)(struct ndpi_detection_module_struct *,
+                                     struct ndpi_flow_struct *flow),
+                        const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
+                        int num_protocol_ids, ...);
+NDPI_STATIC void exclude_dissector(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+                       u_int16_t dissector_idx, const char *_file, const char *_func, int _line) ;
 
 /* Generic */
 
@@ -1059,6 +1074,7 @@ NDPI_STATIC void init_lagofast_dissector(struct ndpi_detection_module_struct *nd
 NDPI_STATIC void init_gearup_booster_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_msdo_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_melsec_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_hamachi_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 
 
 #ifdef CUSTOM_NDPI_PROTOCOLS

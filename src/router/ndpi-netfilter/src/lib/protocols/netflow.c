@@ -114,7 +114,7 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
     case 7:
     case 9:
       if((n == 0) || (n > 30)) {
-	NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+	NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 	return;
       }
       
@@ -137,7 +137,7 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
       }
 
       if((expected_len > 0) && (expected_len != payload_len)) {
-	NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+	NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 	return;
       }
 
@@ -149,7 +149,7 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
 	u_int16_t ipfix_len = n;
 
 	if(ipfix_len != payload_len) {
-	  NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+	  NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 	  return;
 	}
       }    
@@ -157,7 +157,7 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
       break;
       
     default:
-      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+      NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
       return;
     }
 
@@ -175,16 +175,14 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
       return;
     }
   } else
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 }
 
 void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  ndpi_set_bitmask_protocol_detection("NetFlow", ndpi_struct,
-				      NDPI_PROTOCOL_NETFLOW,
-				      ndpi_search_netflow,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
-				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
-				      ADD_TO_DETECTION_BITMASK);
+  register_dissector("NetFlow", ndpi_struct,
+                     ndpi_search_netflow,
+                     NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     1, NDPI_PROTOCOL_NETFLOW);
 }
 

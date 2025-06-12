@@ -1756,6 +1756,12 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
 
    { "kick.com",                                       "Kick", NDPI_PROTOCOL_KICK, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
+   { "ankama.com",                                     "Dofus", NDPI_PROTOCOL_DOFUS, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL},
+   { "ankama-games.com",                               "Dofus", NDPI_PROTOCOL_DOFUS, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL},
+   { "dofus-touch.com",                                "Dofus", NDPI_PROTOCOL_DOFUS, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL},
+
+   { "secure.logmein.com",                             "Hamachi", NDPI_PROTOCOL_HAMACHI, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_content_match_host_match.c.inc"
 #endif

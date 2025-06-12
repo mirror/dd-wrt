@@ -36,11 +36,6 @@ extern "C" {
 #define NDPI_DETECTION_ONLY_IPV4              ( 1 << 0 )
 #define NDPI_DETECTION_ONLY_IPV6              ( 1 << 1 )
 
-#define ADD_TO_DETECTION_BITMASK              1
-#define NO_ADD_TO_DETECTION_BITMASK           0
-#define SAVE_DETECTION_BITMASK_AS_UNKNOWN     1
-#define NO_SAVE_DETECTION_BITMASK_AS_UNKNOWN  0
-
 //  extern int ndpi_debug_print_level;
   /*
     In case a custom DGA function is used, the fucntion
@@ -504,18 +499,6 @@ extern "C" {
 				 struct ndpi_flow_struct *flow, u_int16_t subprotocol_id);
 
   /**
-   * Exclude protocol from search
-   *
-   * @par    ndpi_struct         = the detection module
-   * @par    flow                = the flow where match the host
-   * @par    master_protocol_id  = value of the ID associated to the master protocol detected
-   *
-   */
-  NDPI_STATIC void ndpi_exclude_protocol(struct ndpi_detection_module_struct *ndpi_struct,
-			     struct ndpi_flow_struct *flow,
-			     u_int16_t master_protocol_id,
-			     const char *_file, const char *_func,int _line);
-  /**
    * Check if the string -bigram_to_match- match with a bigram of -automa-
    *
    * @par     ndpi_mod         = the detection module
@@ -865,6 +848,19 @@ extern "C" {
 			       NDPI_STATIC char* path);
 #endif
   /**
+   * Load files (whose name is <protocolid>_<label>.<extension>) stored
+   * in a directory and binds each IP/network to the specified protocol.
+   * This function is used to bind IP addresses to protocols
+   *
+   * @par     ndpi_mod    = the detection module
+   * @par     path        = the path of the file
+   * @return  0 if the file is loaded correctly;
+   *          -1 else
+   */
+  int ndpi_load_protocols_dir(struct ndpi_detection_module_struct *ndpi_str,
+			       char* path);
+
+  /**
    * Read a file and load the list of risky domains
    *
    * @par     ndpi_mod = the detection module
@@ -895,6 +891,10 @@ extern "C" {
 NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
 			       char *fingerprint, ndpi_os os);
 
+  void ndpi_load_tcp_fingerprints(struct ndpi_detection_module_struct *ndpi_str);
+  ndpi_os ndpi_get_os_from_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
+					   char *tcp_fingerprint);
+ 
 #ifndef __KERNEL__
   /**
    * Read a file and load the list of TCP fingerprints
@@ -906,7 +906,7 @@ NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *
   int load_tcp_fingerprint_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
   int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
 
-#endif
+#endif // __KERNEL__   
   /**
    * Read a file and load the list of malicious SSL certificate SHA1 fingerprints.
    * @par     ndpi_mod = the detection module
@@ -2519,8 +2519,26 @@ NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *
    * @return The destination string buffer
    */
 NDPI_STATIC u_char* ndpi_str_to_utf8(u_char *in, u_int in_len, u_char *out, u_int out_len);
-  
-    
+
+
+  /**
+   * Performs a case-insensitive comparison of two memory regions
+   *
+   * @par    s1    Pointer to the first memory region
+   * @par    s2    Pointer to the second memory region
+   * @par    n     Number of bytes to compare
+   * @return       < 0 if s1 is less than s2 in a case-insensitive comparison
+   *               = 0 if s1 matches s2 in a case-insensitive comparison
+   *               > 0 if s1 is greater than s2 in a case-insensitive comparison
+   *               If s1 is NULL and s2 is not, returns -1
+   *               If s2 is NULL and s1 is not, returns 1
+   *               If both are NULL, returns 0
+   *
+   * This function works similarly to memcmp() but performs case-insensitive
+   * comparison.
+   */
+NDPI_STATIC int ndpi_memcasecmp(const void *s1, const void *s2, size_t n);
+
 #ifdef __cplusplus
 }
 #endif

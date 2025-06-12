@@ -96,6 +96,7 @@ static ndpi_serialization_format serialization_format = ndpi_serialization_forma
 static char* domain_to_check = NULL;
 static char* ip_port_to_check = NULL;
 static u_int8_t ignore_vlanid = 0;
+extern char *protocolsDirPath; /**< Directory containing protocol files */
 FILE *fingerprint_fp         = NULL; /**< for flow fingerprint export */
 #ifdef __linux__
 static char *bind_mask = NULL;
@@ -648,79 +649,80 @@ static void help(u_int long_help) {
          "          [-r <file>][-R][-j <file>][-S <file>][-T <num>][-U <num>] [-x <domain>]\n"
          "          [-a <mode>][-B proto_list][-L <domain suffixes>]\n\n"
          "Usage:\n"
-         "  -i <file.pcap|device>     | Specify a pcap file/playlist to read packets from or a\n"
-         "                            | device for live capture (comma-separated list)\n"
-         "  -f <BPF filter>           | Specify a BPF filter for filtering selected traffic\n"
-         "  -s <duration>             | Maximum capture duration in seconds (live traffic capture only)\n"
-         "  -m <duration>             | Split analysis duration in <duration> max seconds\n"
-         "  -p <file>.protos          | Specify a protocol file (eg. protos.txt)\n"
-         "  -l <num loops>            | Number of detection loops (test only)\n"
-	 "  -L <domain suffixes>      | Domain suffixes (e.g. ../lists/public_suffix_list.dat)\n"
-         "  -n <num threads>          | Number of threads. Default: number of interfaces in -i.\n"
-         "                            | Ignored with pcap files.\n"
-	 "  -N <path>                 | Address cache dump/restore pathxo.\n"
-         "  -b <num bin clusters>     | Number of bin clusters\n"
-         "  -k <file>                 | Specify a file to write serialized detection results\n"
-         "  -K <format>               | Specify the serialization format for `-k'\n"
-         "                            | Valid formats are tlv, csv or json (default)\n"
+         "  -i <file.pcap|device>      | Specify a pcap file/playlist to read packets from or a\n"
+         "                             | device for live capture (comma-separated list)\n"
+         "  -f <BPF filter>            | Specify a BPF filter for filtering selected traffic\n"
+         "  -s <duration>              | Maximum capture duration in seconds (live traffic capture only)\n"
+         "  -m <duration>              | Split analysis duration in <duration> max seconds\n"
+         "  -p <file>.protos           | Specify a protocol file (eg. protos.txt)\n"
+         "  -l <num loops>             | Number of detection loops (test only)\n"
+	 "  -L <domain suffixes>       | Domain suffixes (e.g. ../lists/public_suffix_list.dat)\n"
+         "  -n <num threads>           | Number of threads. Default: number of interfaces in -i.\n"
+         "                             | Ignored with pcap files.\n"
+	 "  -N <path>                  | Address cache dump/restore pathxo.\n"
+         "  -b <num bin clusters>      | Number of bin clusters\n"
+         "  -k <file>                  | Specify a file to write serialized detection results\n"
+         "  -K <format>                | Specify the serialization format for `-k'\n"
+         "                             | Valid formats are tlv, csv or json (default)\n"
 #ifdef __linux__
-         "  -g <id:id...>             | Thread affinity mask (one core id per thread)\n"
+         "  -g <id:id...>              | Thread affinity mask (one core id per thread)\n"
 #endif
-         "  -a <mode>                 | Generates option values for GUIs\n"
-         "                            | 0 - List known protocols\n"
-         "                            | 1 - List known categories\n"
-         "                            | 2 - List known risks\n"
-         "  -d                        | Disable protocol guess (by ip and by port) and use only DPI.\n"
-	 "                            | It is a shortcut to --cfg=dpi.guess_on_giveup,0\n"
-         "  -e <len>                  | Min human readeable string match len. Default %u\n"
-         "  -q                        | Quiet mode\n"
-         "  -F                        | Enable flow stats\n"
-         "  -t                        | Dissect GTP/TZSP tunnels\n"
-         "  -P <a>:<b>:<c>:<d>:<e>    | Enable payload analysis:\n"
-         "                            | <a> = min pattern len to search\n"
-         "                            | <b> = max pattern len to search\n"
-         "                            | <c> = max num packets per flow\n"
-         "                            | <d> = max packet payload dissection\n"
-         "                            | <e> = max num reported payloads\n"
-         "                            | Default: %u:%u:%u:%u:%u\n"
-         "  -c <path>                 | Load custom categories from the specified file\n"
-         "  -C <path>                 | Write output in CSV format on the specified file\n"
-	 "  -E <path>                 | Write flow fingerprints on the specified file\n"
-         "  -r <path>                 | Load risky domain file\n"
-         "  -R                        | Print detected realtime protocols\n"
-         "  -j <path>                 | Load malicious JA4 fingeprints\n"
-         "  -S <path>                 | Load malicious SSL certificate SHA1 fingerprints\n"
-	 "  -G <dir>                  | Bind domain names to categories loading files from <dir>\n"
-         "  -w <path>                 | Write test output on the specified file. This is useful for\n"
-         "                            | testing purposes in order to compare results across runs\n"
-         "  -h                        | This help\n"
-         "  -H                        | This help plus some information about supported protocols/risks\n"
-         "  -v <1|2|3|4>              | Verbose 'unknown protocol' packet print.\n"
-         "                            | 1 = verbose\n"
-         "                            | 2 = very verbose\n"
-         "                            | 3 = port stats\n"
-         "                            | 4 = hash stats\n"
-         "  -V <0-4>                  | nDPI logging level\n"
-         "                            | 0 - error, 1 - trace, 2 - debug, 3 - extra debug\n"
-         "                            | >3 - extra debug + log enabled for all protocols (i.e. '-u all')\n"
-         "  -u all|proto|num[,...]    | Enable logging only for such protocol(s)\n"
-         "                            | If this flag is present multiple times (directly, or via '-V'),\n"
-         "                            | only the last instance will be considered\n"
-         "  -B all|proto|num[,...]    | Disable such protocol(s). By defaul all protocols are enabled\n"
-         "  -T <num>                  | Max number of TCP processed packets before giving up [default: %u]\n"
-         "  -U <num>                  | Max number of UDP processed packets before giving up [default: %u]\n"
-         "  -D                        | Enable DoH traffic analysis based on content (no DPI)\n"
-         "  -x <domain>               | Check domain name [Test only]\n"
-         "  -I                        | Ignore VLAN id for flow hash calculation\n"
-         "  -A                        | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
-         "  -M                        | Memory allocation stats on data-path (only by the library).\n"
-	 "                            | It works only on single-thread configuration\n"
-         "  --openvp_heuristics       | Enable OpenVPN heuristics.\n"
-         "                            | It is a shortcut to --cfg=openvpn,dpi.heuristics,0x01\n"
-         "  --tls_heuristics          | Enable TLS heuristics.\n"
-         "                            | It is a shortcut to --cfg=tls,dpi.heuristics,0x07\n"
-         "  --cfg=proto,param,value   | Configure the specific attribute of this protocol\n"
-         "  --dump-fpc-stats          | Print FPC statistics\n"
+         "  -a <mode>                  | Generates option values for GUIs\n"
+         "                             | 0 - List known protocols\n"
+         "                             | 1 - List known categories\n"
+         "                             | 2 - List known risks\n"
+         "  -d                         | Disable protocol guess (by ip and by port) and use only DPI.\n"
+	 "                             | It is a shortcut to --cfg=dpi.guess_on_giveup,0\n"
+         "  -e <len>                   | Min human readeable string match len. Default %u\n"
+         "  -q                         | Quiet mode\n"
+         "  -F                         | Enable flow stats\n"
+         "  -t                         | Dissect GTP/TZSP tunnels\n"
+         "  -P <a>:<b>:<c>:<d>:<e>     | Enable payload analysis:\n"
+         "                             | <a> = min pattern len to search\n"
+         "                             | <b> = max pattern len to search\n"
+         "                             | <c> = max num packets per flow\n"
+         "                             | <d> = max packet payload dissection\n"
+         "                             | <e> = max num reported payloads\n"
+         "                             | Default: %u:%u:%u:%u:%u\n"
+         "  -c <path>                  | Load custom categories from the specified file\n"
+         "  -C <path>                  | Write output in CSV format on the specified file\n"
+	 "  -E <path>                  | Write flow fingerprints on the specified file\n"
+         "  -r <path>                  | Load risky domain file\n"
+         "  -R                         | Print detected realtime protocols\n"
+         "  -j <path>                  | Load malicious JA4 fingeprints\n"
+         "  -S <path>                  | Load malicious SSL certificate SHA1 fingerprints\n"
+	 "  -G <dir>                   | Bind domain names to categories loading files from <dir>\n"
+         "  -w <path>                  | Write test output on the specified file. This is useful for\n"
+         "                             | testing purposes in order to compare results across runs\n"
+	 "  --protocols-list-dir <dir> | Directory containing protocols directory (e.g. ../lists/protocols)\n"
+         "  -h                         | This help\n"
+         "  -H                         | This help plus some information about supported protocols/risks\n"
+         "  -v <1|2|3|4>               | Verbose 'unknown protocol' packet print.\n"
+         "                             | 1 = verbose\n"
+         "                             | 2 = very verbose\n"
+         "                             | 3 = port stats\n"
+         "                             | 4 = hash stats\n"
+         "  -V <0-4>                   | nDPI logging level\n"
+         "                             | 0 - error, 1 - trace, 2 - debug, 3 - extra debug\n"
+         "                             | >3 - extra debug + log enabled for all protocols (i.e. '-u all')\n"
+         "  -u all|proto|num[,...]     | Enable logging only for such protocol(s)\n"
+         "                             | If this flag is present multiple times (directly, or via '-V'),\n"
+         "                             | only the last instance will be considered\n"
+         "  -B all|proto|num[,...]     | Disable such protocol(s). By defaul all protocols are enabled\n"
+         "  -T <num>                   | Max number of TCP processed packets before giving up [default: %u]\n"
+         "  -U <num>                   | Max number of UDP processed packets before giving up [default: %u]\n"
+         "  -D                         | Enable DoH traffic analysis based on content (no DPI)\n"
+         "  -x <domain>                | Check domain name [Test only]\n"
+         "  -I                         | Ignore VLAN id for flow hash calculation\n"
+         "  -A                         | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
+         "  -M                         | Memory allocation stats on data-path (only by the library).\n"
+	 "                             | It works only on single-thread configuration\n"
+         "  --openvp_heuristics        | Enable OpenVPN heuristics.\n"
+         "                             | It is a shortcut to --cfg=openvpn,dpi.heuristics,0x01\n"
+         "  --tls_heuristics           | Enable TLS heuristics.\n"
+         "                             | It is a shortcut to --cfg=tls,dpi.heuristics,0x07\n"
+         "  --cfg=proto,param,value    | Configure the specific attribute of this protocol\n"
+         "  --dump-fpc-stats           | Print FPC statistics\n"
          ,
          human_readeable_string_len,
          min_pattern_len, max_pattern_len, max_num_packets_per_flow, max_packet_payload_dissection,
@@ -826,6 +828,7 @@ static struct option longopts[] = {
   { "payload-analysis", required_argument, NULL, 'P'},
   { "result-path", required_argument, NULL, 'w'},
   { "quiet", no_argument, NULL, 'q'},
+  { "protocols-list-dir", required_argument, NULL, 180},
 
   { "cfg", required_argument, NULL, OPTLONG_VALUE_CFG},
   { "openvpn_heuristics", no_argument, NULL, OPTLONG_VALUE_OPENVPN_HEURISTICS},
@@ -1532,6 +1535,10 @@ static void parse_parameters(int argc, char **argv)
       }
       break;
 
+    case 180:
+      protocolsDirPath = optarg;
+      break;
+      
     default:
 #ifdef DEBUG_TRACE
       if(trace) fprintf(trace, " #### Unknown option -%c: skipping it #### \n", opt);
@@ -2088,6 +2095,11 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
           {
             fprintf(out, "[User-agent: %s]", flow->fast_cgi.user_agent);
           }
+        break;
+
+      case INFO_BFCP:
+        fprintf(out, "[Conference Id: %d]", flow->bfcp.conference_id);
+        fprintf(out, "[User Id: %d]", flow->bfcp.user_id);
         break;
       }
 
@@ -6229,6 +6241,60 @@ void memmemUnitTest(void) {
 
 /* *********************************************** */
 
+void memcasecmpUnitTest(void)
+{
+  /* Test 1: NULL pointers */
+  assert(ndpi_memcasecmp(NULL, NULL, 5) == 0);
+  assert(ndpi_memcasecmp(NULL, "string", 6) == -1);
+  assert(ndpi_memcasecmp("string", NULL, 6) == 1);
+
+  /* Test 2: Zero length */
+  assert(ndpi_memcasecmp("string", "different", 0) == 0);
+
+  /* Test 3: Single byte comparison */
+  assert(ndpi_memcasecmp("a", "a", 1) == 0);
+  assert(ndpi_memcasecmp("a", "A", 1) == 0);
+  assert(ndpi_memcasecmp("a", "b", 1) < 0);
+  assert(ndpi_memcasecmp("b", "a", 1) > 0);
+
+  /* Test 4: Case insensitivity */
+  assert(ndpi_memcasecmp("STRING", "string", 6) == 0);
+  assert(ndpi_memcasecmp("String", "sTrInG", 6) == 0);
+
+  /* Test 5: Various string comparisons */
+  assert(ndpi_memcasecmp("string", "string", 6) == 0);
+  assert(ndpi_memcasecmp("string", "strong", 6) < 0);
+  assert(ndpi_memcasecmp("strong", "string", 6) > 0);
+  assert(ndpi_memcasecmp("abc", "abcd", 3) == 0);
+  assert(ndpi_memcasecmp("abcd", "abc", 3) == 0);
+
+  /* Test 6: Optimization for checking first and last bytes */
+  assert(ndpi_memcasecmp("aBc", "abc", 3) == 0);
+  assert(ndpi_memcasecmp("abc", "abC", 3) == 0);
+  assert(ndpi_memcasecmp("abc", "def", 3) < 0);
+  assert(ndpi_memcasecmp("abz", "abx", 3) > 0);
+  assert(ndpi_memcasecmp("axc", "ayc", 3) < 0);
+
+  /* Test 7: Edge cases with non-printable characters and embedded zeros */
+  const char str1[] = {0, 'a', 'b', 'c'};
+  const char str2[] = {0, 'a', 'b', 'c'};
+  assert(ndpi_memcasecmp(str1, str2, 4) == 0);
+
+  const char str3[] = {0, 'a', 'b', 'c'};
+  const char str4[] = {1, 'a', 'b', 'c'};
+  assert(ndpi_memcasecmp(str3, str4, 4) < 0);
+
+  const char str5[] = {'a', 'b', 'c', 0};
+  const char str6[] = {'a', 'b', 'c', 1};
+  assert(ndpi_memcasecmp(str5, str6, 4) < 0);
+
+  const char str7[] = {'a', 'b', 0, 'd'};
+  const char str8[] = {'a', 'b', 1, 'd'};
+  assert(ndpi_memcasecmp(str7, str8, 4) < 0);
+}
+
+/* *********************************************** */
+
 void mahalanobisUnitTest()
 {
   /* Example based on: https://supplychenmanagement.com/2019/03/06/calculating-mahalanobis-distance/ */
@@ -6565,6 +6631,18 @@ void encodeDomainsUnitTest() {
 
 /* *********************************************** */
 
+void checkProtocolIDsUnitTest() {
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+
+  if(ndpi_str != NULL) {
+    assert(ndpi_load_protocols_dir(ndpi_str, "../lists/protocols"));
+  }
+
+  ndpi_exit_detection_module(ndpi_str);
+}
+
+/* *********************************************** */
+
 void domainsUnitTest() {
   NDPI_PROTOCOL_BITMASK all;
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
@@ -6716,6 +6794,9 @@ int main(int argc, char **argv) {
   int skip_unit_tests = 1;
 #endif
 
+
+  //checkProtocolIDsUnitTest(); return(0);
+  
 #ifdef DEBUG_TRACE
   trace = fopen("/tmp/ndpiReader.log", "a");
 
@@ -6786,6 +6867,7 @@ int main(int argc, char **argv) {
     strnstrUnitTest();
     strncasestrUnitTest();
     memmemUnitTest();
+    memcasecmpUnitTest();
     mahalanobisUnitTest();
 #endif
   }

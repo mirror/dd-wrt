@@ -96,8 +96,12 @@ You can use nDPI to selectively block selected Internet traffic by embedding it 
 
 ### Videos and Presentations
 
-- [Using nDPI for Monitoring and Security](https://archive.fosdem.org/2021/schedule/event/nemondpi/)
-- [Network Traffic Classification for Cybersecurity and Monitoring](https://fosdem.org/2022/schedule/event/using_ndpi_to_efficiently_classify_network_traffic/)
+- [Knowing the Unknown: How to Monitor and Troubleshoot an Unfamiliar Network](https://www.ntop.org/wp-content/uploads/2017/06/nDPI_Sharkfest_2017.pdf) [SharkFest, 2017]
+- [Using nDPI for Monitoring and Security](https://archive.fosdem.org/2021/schedule/event/nemondpi/) [FOSDEM, 2021]
+- [Network Traffic Classification for Cybersecurity and Monitoring](https://fosdem.org/2022/schedule/event/using_ndpi_to_efficiently_classify_network_traffic/) [FOSDEM, 2022]
+- [A Deep Dive Into Traffic Fingerprints using Wireshark](https://www.dropbox.com/scl/fo/zm5amy8fkwz2pj3ojz12a/AMKbeuIToNPH9wCAqB1OWdQ?rlkey=ihnva3yz5heonw59m8br3lxvj&e=2&dl=0) [SharkFest, 2024]
+- [Passive Network Traffic Fingerprinting](https://fosdem.org/2025/schedule/event/fosdem-2025-5461-passive-network-traffic-fingerprinting/) [FOSDEM, 2025]
+- [Using nDPI to solve real life problems: from First Packet Classification to Obfuscated Traffic detection](https://packetfest.ntop.org/slides/Nardi.pdf) [PacketFest, 2025]
 
 ### nDPI-Related Projects
 

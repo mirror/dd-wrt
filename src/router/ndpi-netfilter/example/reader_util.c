@@ -89,6 +89,8 @@ extern bool do_load_lists;
 extern int malloc_size_stats;
 extern int monitoring_enabled;
 
+char *protocolsDirPath;
+
 /* ****************************************************** */
 
 struct flow_id_stats {
@@ -452,6 +454,9 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
     return NULL;
   }
 
+  if(protocolsDirPath != NULL)
+    ndpi_load_protocols_dir(module, protocolsDirPath);
+  
   workflow = ndpi_calloc(1, sizeof(struct ndpi_workflow));
   if(workflow == NULL) {
     LOG(NDPI_LOG_ERROR, "global structure initialization failed\n");
@@ -1525,6 +1530,12 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
       ndpi_snprintf(flow->sip.to, sizeof(flow->sip.to), "%s", flow->ndpi_flow->protos.sip.to);
     if(flow->ndpi_flow->protos.sip.to_imsi[0] != '\0')
       ndpi_snprintf(flow->sip.to_imsi, sizeof(flow->sip.to_imsi), "%s", flow->ndpi_flow->protos.sip.to_imsi);
+  }
+  /* BFCP */
+  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_BFCP)) {
+    flow->info_type = INFO_BFCP;
+    flow->bfcp.conference_id = flow->ndpi_flow->protos.bfcp.conference_id;
+    flow->bfcp.user_id = flow->ndpi_flow->protos.bfcp.user_id;
   }
   /* TELNET */
   else if(is_ndpi_proto(flow, NDPI_PROTOCOL_TELNET)) {

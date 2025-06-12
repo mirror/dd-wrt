@@ -287,13 +287,11 @@ typedef struct ndpi_protocol_bitmask_struct {
 } ndpi_protocol_bitmask_struct_t;
 
 
-#define NDPI_MAX_NUM_DISSECTORS         288      /* Multiple of 32, i.e. 8 * sizeof(ndpi_ndpi_mask) */
 #ifdef NDPI_CFFI_PREPROCESSING
 #undef NDPI_NUM_FDS_BITS_DISSECTORS
 #define NDPI_NUM_FDS_BITS_DISSECTORS    9
-#else
-#define NDPI_NUM_FDS_BITS_DISSECTORS    NDPI_MAX_NUM_DISSECTORS / (8 * sizeof(ndpi_ndpi_mask))
 #endif
+
 typedef struct ndpi_dissector_bitmask_struct {
   ndpi_ndpi_mask fds_bits[NDPI_NUM_FDS_BITS_DISSECTORS];
 } ndpi_dissector_bitmask_struct_t;
@@ -905,44 +903,6 @@ struct ndpi_flow_tcp_struct {
 
   /* Part of the TCP header */
   u_int8_t cli2srv_tcp_flags, srv2cli_tcp_flags;
-  u_int32_t seen_syn:1, seen_syn_ack:1, seen_ack:1;
-
-  /* NDPI_PROTOCOL_IRC */
-  u_int32_t irc_3a_counter:3;
-
-  /* NDPI_PROTOCOL_USENET */
-  u_int32_t usenet_stage:2;
-
-  /* NDPI_PROTOCOL_HTTP */
-  u_int32_t http_stage:3;
-  u_int32_t http_asymmetric_stage:2;
-
-  /* NDPI_PROTOCOL_GNUTELLA */
-  u_int32_t gnutella_stage:2;                  // 0 - 2
-
-  /* NDPI_PROTOCOL_SSH */
-  u_int32_t ssh_stage:3;
-
-  /* NDPI_PROTOCOL_VNC */
-  u_int32_t vnc_stage:2;                        // 0 - 3
-
-  /* NDPI_PROTOCOL_TELNET */
-  u_int32_t telnet_stage:2;                     // 0 - 2
-
-  /* NDPI_PROTOCOL_RADMIN */
-  u_int32_t radmin_stage:1;
-
-  /* NDPI_PROTOCOL_FTP_CONTROL */
-  u_int32_t ftp_control_stage:2;
-
-  /* NDPI_PROTOCOL_SOAP */
-  u_int32_t soap_stage:1;
-
-  /* NDPI_PROTOCOL_SOCKS */
-  u_int32_t socks5_stage:2, socks4_stage:2;
-
-  /* NDPI_PROTOCOL_Z3950 */
-  u_int32_t z3950_stage:2;
 
   /* NDPI_PROTOCOL_MAIL_SMTP */
   /* NDPI_PROTOCOL_MAIL_POP */
@@ -954,14 +914,26 @@ struct ndpi_flow_tcp_struct {
     char username[32], password[16];
   } ftp_imap_pop_smtp;
 
-  /* NDPI_PROTOCOL_HCL_NOTES */
-  u_int8_t hcl_notes_packet_id;
+  struct {
+    /* NDPI_PROTOCOL_TLS */
+    u_int8_t app_data_seen[2];
+    u_int8_t num_tls_blocks;
+    int16_t tls_application_blocks_len[NDPI_MAX_NUM_TLS_APPL_BLOCKS]; /* + = src->dst, - = dst->src */
+  } tls;
+
+
 
   /* NDPI_PROTOCOL_MAIL_SMTP */
   u_int16_t smtp_command_bitmask;
 
   /* NDPI_PROTOCOL_MAIL_POP */
   u_int16_t pop_command_bitmask;
+
+  /* NDPI_PROTOCOL_RTMP */
+  u_int16_t rtmp_client_buffer_len;
+
+  /* NDPI_PROTOCOL_HCL_NOTES */
+  u_int8_t hcl_notes_packet_id;
 
   /* NDPI_PROTOCOL_WHATSAPP */
   u_int8_t wa_matched_so_far;
@@ -975,35 +947,65 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_MEMCACHED */
   u_int8_t memcached_matches;
 
-  struct {
-    /* NDPI_PROTOCOL_TLS */
-    u_int8_t app_data_seen[2];
-    u_int8_t num_tls_blocks;
-    int16_t tls_application_blocks_len[NDPI_MAX_NUM_TLS_APPL_BLOCKS]; /* + = src->dst, - = dst->src */
-  } tls;
+  /* Part of the TCP header */
+  u_int64_t seen_syn:1, seen_syn_ack:1, seen_ack:1;
 
-  /* NDPI_PROTOCOL_ZMQ */
-  u_char prev_zmq_pkt[10];
-  u_int8_t prev_zmq_pkt_len;
+  /* NDPI_PROTOCOL_IRC */
+  u_int64_t irc_3a_counter:3;
+
+  /* NDPI_PROTOCOL_USENET */
+  u_int64_t usenet_stage:2;
+
+  /* NDPI_PROTOCOL_HTTP */
+  u_int64_t http_stage:3;
+  u_int64_t http_asymmetric_stage:2;
+
+  /* NDPI_PROTOCOL_GNUTELLA */
+  u_int64_t gnutella_stage:2;
+
+  /* NDPI_PROTOCOL_SSH */
+  u_int64_t ssh_stage:3;
+
+  /* NDPI_PROTOCOL_VNC */
+  u_int64_t vnc_stage:2;
+
+  /* NDPI_PROTOCOL_TELNET */
+  u_int64_t telnet_stage:2;
+
+  /* NDPI_PROTOCOL_RADMIN */
+  u_int64_t radmin_stage:1;
+
+  /* NDPI_PROTOCOL_FTP_CONTROL */
+  u_int64_t ftp_control_stage:2;
+
+  /* NDPI_PROTOCOL_SOAP */
+  u_int64_t soap_stage:1;
+
+  /* NDPI_PROTOCOL_SOCKS */
+  u_int64_t socks5_stage:2;
+  u_int64_t socks4_stage:2;
+
+  /* NDPI_PROTOCOL_Z3950 */
+  u_int64_t z3950_stage:2;
 
   /* NDPI_PROTOCOL_RTMP */
-  u_int16_t rtmp_client_buffer_len;
-  u_int32_t rtmp_stage:2;
+  u_int64_t rtmp_stage:2;
 
   /* NDPI_PROTOCOL_POSTGRES */
-  u_int32_t postgres_stage:3;
+  u_int64_t postgres_stage:3;
 
   /* NDPI_PROTOCOL_ICECAST */
-  u_int32_t icecast_stage:1;
-
-  /* NDPI_PROTOCOL_DOFUS */
-  u_int32_t dofus_stage:1;
+  u_int64_t icecast_stage:1;
 
   /* NDPI_PROTOCOL_MAIL_POP */
-  u_int32_t mail_pop_stage:2;
+  u_int64_t mail_pop_stage:2;
 
   /* NDPI_PROTOCOL_MAIL_IMAP */
-  u_int32_t mail_imap_stage:3, mail_imap_starttls:2;
+  u_int64_t mail_imap_stage:3;
+  u_int64_t mail_imap_starttls:1;
+
+  /* Reserved for future use */
+  u_int64_t reserved:20;
 };
 
 /* ************************************************** */
@@ -1032,6 +1034,9 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_MUMBLE */
   u_int32_t mumble_stage:1;
 
+  /* NDPI_PROTOCOL_HAMACHI */
+  u_int32_t hamachi_stage:2;
+
   /* NDPI_PROTOCOL_EPICGAMES */
   u_int32_t epicgames_stage:1;
   u_int32_t epicgames_word;
@@ -1053,6 +1058,10 @@ struct ndpi_flow_udp_struct {
 
   /* NDPI_PROTOCOL_MUMBLE */
   u_int64_t mumble_ident;
+
+  /* NDPI_PROTOCOL_HAMACHI */
+  u_int32_t hamachi_long[2];
+  u_int16_t hamachi_short[2];
 
   /* NDPI_PROTOCOL_QUIC */
   u_int8_t *quic_reasm_buf;
@@ -1237,6 +1246,10 @@ typedef enum {
   NDPI_PROTOCOL_CATEGORY_DATING,
   NDPI_PROTOCOL_CATEGORY_TRAVEL,
   NDPI_PROTOCOL_CATEGORY_FOOD,
+  
+  NDPI_PROTOCOL_CATEGORY_BOTS, /* Crawlers, bots */
+  NDPI_PROTOCOL_CATEGORY_SCANNERS, /* e.g. shodan.io, censys.io */
+
 
   /*
     IMPORTANT
@@ -1282,10 +1295,9 @@ typedef struct ndpi_proto_defaults {
   u_int16_t *subprotocols;
   u_int32_t subprotocol_count;
   u_int16_t protoId, dissector_idx;
-  u_int16_t tcp_default_ports[MAX_DEFAULT_PORTS], udp_default_ports[MAX_DEFAULT_PORTS];
+  ndpi_port_range tcp_default_ports[MAX_DEFAULT_PORTS], udp_default_ports[MAX_DEFAULT_PORTS];
   ndpi_protocol_breed_t protoBreed;
   ndpi_protocol_qoe_category_t qoeCategory;
-  void (*func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
 } ndpi_proto_defaults_t;
 
 
@@ -1726,6 +1738,11 @@ struct ndpi_flow_struct {
       char url[64];
     } fast_cgi;
 
+    struct {
+      u_int32_t conference_id;
+      u_int16_t user_id;
+    } bfcp;
+
   } protos;
 
   /* **Packet** metadata for flows where monitoring is enabled. It is reset after each packet! */
@@ -1746,10 +1763,6 @@ struct ndpi_flow_struct {
 
   /* NDPI_PROTOCOL_TEAMVIEWER */
   u_int8_t teamviewer_stage : 3;
-
-  /* NDPI_PROTOCOL_BFCP */
-  u_int8_t bfcp_stage:1;
-  u_int32_t bfcp_conference_id;
 
   /* NDPI_PROTOCOL_OPENVPN */
   u_int8_t ovpn_session_id[2][8];
