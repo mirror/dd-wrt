@@ -513,3 +513,5 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/melsec.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/hamachi.c"
+#undef NDPI_CURRENT_PROTO
