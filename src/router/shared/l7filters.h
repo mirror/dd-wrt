@@ -287,6 +287,7 @@ static l7filters filters_list[] = {
 	{ "halflife2-deathmatch", L7_ONLY, 0, NULL },
 	{ "hamachi1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "hamachi", NDPI_ONLY, 0, NULL },
 	{ "haproxy", NDPI_ONLY, 0, NULL },
 	{ "hart_ip", NDPI_ONLY, 0, NULL },
 	{ "hbo", NDPI_ONLY, 0, NULL },
