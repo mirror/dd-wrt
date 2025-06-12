@@ -511,6 +511,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"msdo",
 	"rockstar_games",
 	"kick",
+	"hamachi",
 	NULL,
 };
 
