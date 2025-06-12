@@ -165,28 +165,28 @@
 		#size-cells = <0>;
 		
 		phy0: ethernet-phy@0 {
-			reg = <8>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 2>;
-			sds = < 3 >;
-		};
-		phy1: ethernet-phy@1 {
 			reg = <0>;
 			compatible = "ethernet-phy-ieee802.3-c45";
 			rtl9300,smi-address = <0 4>;
 			sds = < 2 >;
 		};
-		phy2: ethernet-phy@2 {
-			reg = <24>;
+		phy1: ethernet-phy@1 {
+			reg = <8>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 1>;
-			sds = < 5 >;
+			rtl9300,smi-address = <0 2>;
+			sds = < 3 >;
 		};
-		phy3: ethernet-phy@3 {
+		phy2: ethernet-phy@2 {
 			reg = <16>;
 			compatible = "ethernet-phy-ieee802.3-c45";
 			rtl9300,smi-address = <0 6>;
 			sds = < 4 >;
+		};
+		phy3: ethernet-phy@3 {
+			reg = <24>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 1>;
+			sds = < 5 >;
 		};
 		phy4: ethernet-phy@4 {
 			reg = <32>;
@@ -233,32 +233,29 @@
 &switch0 {
 	ports {
 		#address-cells = <1>;
-	
-	
-	
 		#size-cells = <0>;
 
 		port@0 {
-			reg = <8>;
-			label = "lan01";
+			reg = <0>;
+			label = "lan02";
 			phy-handle = <&phy0>;
 			phy-mode = "hsgmii";
 		};
 		port@8 {
-			reg = <0>;
-			label = "lan02";
+			reg = <8>;
+			label = "lan01";
 			phy-handle = <&phy1>;
 			phy-mode = "hsgmii";
 		};
 		port@16 {
-			reg = <24>;
-			label = "lan03";
+			reg = <16>;
+			label = "lan04";
 			phy-handle = <&phy2>;
 			phy-mode = "hsgmii";
 		};
 		port@24 {
-			reg = <16>;
-			label = "lan04";
+			reg = <24>;
+			label = "lan03";
 			phy-handle = <&phy3>;
 			phy-mode = "hsgmii";
 		};
