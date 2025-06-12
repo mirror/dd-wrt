@@ -153,6 +153,22 @@ void start_sysinit(void)
 			}
 		}
 		break;
+	case ROUTER_HASIVO_S1100W8XGT:
+		mtd = getMTD("u-boot-env");
+		if (mtd != -1)
+			set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
+		eval("fw_setenv", "bootcmd", "rtk network on;boota");
+		mac = getUEnv("mac_start");
+		if (mac) {
+			char name[32];
+			int i;
+			for (i = 1; i < 9; i++) {
+				sprintf(name, "lan%02d", i);
+				set_hwaddr(name, mac);
+				MAC_ADD(mac);
+			}
+		}
+		break;
 	default:
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
