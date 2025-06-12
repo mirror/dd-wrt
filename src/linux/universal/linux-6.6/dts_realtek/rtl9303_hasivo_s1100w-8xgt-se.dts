@@ -104,8 +104,8 @@
 
 			/* stock is JFFS2_CFG */
 			partition@100000 {
-				label = "jffs";
-				reg = <0x0100000 0x0100000>;
+				label = "nvram";
+				reg = <0x0100000 0x020000>;
 			};
 
 			/* stock is JFFS2_LOG */
@@ -117,7 +117,8 @@
 			/* stock is RUNTIME */
 			partition@300000 {
 				compatible = "openwrt,uimage", "denx,uimage";
-				label = "firmware";
+				openwrt,ih-magic = <0x83800000>;
+				label = "linux";
 				reg = <0x0300000 0x0c00000>;
 			};
 
