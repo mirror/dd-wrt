@@ -204,7 +204,7 @@
 
 		port@0 {
 			reg = <0>;
-			label = "lan1";
+			label = "lan01";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy0>;
 			led-set = <0>;
@@ -212,7 +212,7 @@
 
 		port@8 {
 			reg = <8>;
-			label = "lan2";
+			label = "lan02";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy8>;
 			led-set = <0>;
@@ -220,7 +220,7 @@
 
 		port@16 {
 			reg = <16>;
-			label = "lan3";
+			label = "lan03";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy16>;
 			led-set = <0>;
@@ -228,7 +228,7 @@
 
 		port@20 {
 			reg = <20>;
-			label = "lan4";
+			label = "lan04";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy20>;
 			led-set = <0>;
@@ -236,7 +236,7 @@
 
 		port@24 {
 			reg = <24>;
-			label = "lan5";
+			label = "lan05";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy24>;
 			led-set = <0>;
@@ -244,7 +244,7 @@
 
 		port@25 {
 			reg = <25>;
-			label = "lan6";
+			label = "lan06";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy25>;
 			led-set = <0>;
@@ -252,7 +252,7 @@
 
 		port@26 {
 			reg = <26>;
-			label = "lan7";
+			label = "lan07";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy26>;
 			led-set = <0>;
@@ -260,7 +260,7 @@
 
 		port@27 {
 			reg = <27>;
-			label = "lan8";
+			label = "lan08";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy27>;
 			led-set = <0>;
