@@ -8,7 +8,7 @@
 #include <dt-bindings/leds/common.h>
 
 / {
-	compatible = "hasivo,s1100w-8xgt-se", "realtek,rtl838x-soc";
+	compatible = "hasivo,s1100w-8xgt-se", "realtek,rtl930x-soc";
 	model = "Hasivo S1100W-8XGT-SE";
 
 	memory@0 {
