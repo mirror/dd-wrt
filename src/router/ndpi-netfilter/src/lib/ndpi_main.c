@@ -150,6 +150,7 @@
 #include "ndpi_serializer.c"
 #include "ndpi_memory.c"
 #include "ndpi_analyze.c"
+#include "ndpi_geoip.c"
 
 /* #define MATCH_DEBUG 1 */
 

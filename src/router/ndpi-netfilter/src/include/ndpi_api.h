@@ -891,9 +891,9 @@ extern "C" {
 NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
 			       char *fingerprint, ndpi_os os);
 
-  void ndpi_load_tcp_fingerprints(struct ndpi_detection_module_struct *ndpi_str);
-  ndpi_os ndpi_get_os_from_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
-					   char *tcp_fingerprint);
+NDPI_STATIC     void ndpi_load_tcp_fingerprints(struct ndpi_detection_module_struct *ndpi_str);
+NDPI_STATIC     ndpi_os ndpi_get_os_from_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
+   					   char *tcp_fingerprint);
  
 #ifndef __KERNEL__
   /**
@@ -903,8 +903,8 @@ NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *
    * @return  0 if the file is loaded correctly;
    *          -1 else
    */
-  int load_tcp_fingerprint_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
-  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
+NDPI_STATIC  int load_tcp_fingerprint_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
+NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
 
 #endif // __KERNEL__   
   /**

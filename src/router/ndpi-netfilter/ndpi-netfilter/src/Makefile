@@ -20,9 +20,7 @@ endif
 NDPI_PROTO_SRC := $(shell cd $(src) ; echo $(NDPI_PRO)/*.c)
 
 obj-m := xt_ndpi.o
-xt_ndpi-y := main.o \
-		${NDPI_SRC}/lib/ndpi_geoip.o \
-
+xt_ndpi-y := main.o
 all:	modules
 
 test::
