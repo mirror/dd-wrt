@@ -185,6 +185,12 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 #if defined(HAVE_PB42) || defined(HAVE_LSX)
 	return; // this platform does not support sane mii values
 #endif
+	if (check_switch_support())
+		return;
+#if defined(ARCH_broadcom) || defined(HAVE_BCMMODERN) || defined(HAVE_NORTHSTAR)
+	return;
+#endif
+
 	memset(&ctx, 0, sizeof(ctx));
 	getIfLists(eths, sizeof(eths));
 	int lancount = 0;
