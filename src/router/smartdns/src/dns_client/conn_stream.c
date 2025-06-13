@@ -99,7 +99,7 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 		stream->server_info = NULL;
 #ifdef HAVE_OPENSSL
 		if (stream->quic_stream) {
-#ifdef OSSL_QUIC1_VERSION
+#if defined(OSSL_QUIC1_VERSION) && !defined (OPENSSL_NO_QUIC)
 			SSL_stream_reset(stream->quic_stream, NULL, 0);
 #endif
 			SSL_free(stream->quic_stream);
