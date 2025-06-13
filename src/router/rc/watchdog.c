@@ -179,7 +179,7 @@ static void watchdog(void)
 //#endif
 //#endif
 #ifdef HAVE_REALTEK
-		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12")) {
+		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 v2")) {
 			int psu = 0;
 			FILE *tempfp;
 			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
