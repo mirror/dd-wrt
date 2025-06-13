@@ -1290,6 +1290,36 @@ int dsa_port_bridge_host_mdb_del(const struct dsa_port *dp,
 	return dsa_port_host_mdb_del(dp, mdb, db);
 }
 
+int dsa_port_bridge_mdb_active(const struct dsa_port *dp,
+			       const struct switchdev_mc_active mc_active,
+			       struct netlink_ext_ack *extack,
+			       bool handled)
+{
+	struct dsa_switch *ds = dp->ds;
+	struct dsa_notifier_mdb_active_info info = {
+		.dp = dp,
+		.mc_active = mc_active,
+		.extack = extack,
+		.handled = handled,
+	};
+
+	if (!ds->ops->port_mdb_active)
+		return -EOPNOTSUPP;
+
+	return dsa_port_notify(dp, DSA_NOTIFIER_MDB_ACTIVE, &info);
+}
+
+int dsa_port_mrouter(struct dsa_port *dp, bool mrouter,
+		     struct netlink_ext_ack *extack)
+{
+	struct dsa_switch *ds = dp->ds;
+
+	if (!ds->ops->port_mdb_set_mrouter)
+		return -EOPNOTSUPP;
+
+	return ds->ops->port_mdb_set_mrouter(ds, dp->index, mrouter, extack);
+}
+
 int dsa_port_vlan_add(struct dsa_port *dp,
 		      const struct switchdev_obj_port_vlan *vlan,
 		      struct netlink_ext_ack *extack)

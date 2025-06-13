@@ -162,22 +162,6 @@ int rtl_table_write(struct table_reg *r, int idx)
 /* Returns the address of the ith data register of table register r
  * the address is relative to the beginning of the Switch-IO block at 0xbb000000
  */
-u16 rtl_table_data(struct table_reg *r, int i)
-{
-	if (i >= r->max_data)
-		i = r->max_data - 1;
-	return r->data + i * 4;
-}
-
-u32 rtl_table_data_r(struct table_reg *r, int i)
-{
-	return sw_r32(rtl_table_data(r, i));
-}
-
-void rtl_table_data_w(struct table_reg *r, u32 v, int i)
-{
-	sw_w32(v, rtl_table_data(r, i));
-}
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
@@ -329,7 +313,11 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	if (!bus)
 		return -ENOMEM;
 
-	bus->name = "rtldsa_mdio";
+	bus->name = "rtl838x slave mii";
+
+	/* Since the NIC driver is loaded first, we can use the mdio rw functions
+	 * assigned there.
+	 */
 	bus->read = rtldsa_bus_read;
 	bus->write = rtldsa_bus_write;
 	bus->read_c45 = rtldsa_bus_c45_read;
@@ -645,7 +633,7 @@ int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-static int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -712,7 +700,7 @@ static int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-static int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u32 key = nh->l2_id >> 2;
@@ -836,7 +824,7 @@ static int rtl83xx_netdevice_event(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
-static const struct rhashtable_params route_ht_params = {
+const static struct rhashtable_params route_ht_params = {
 	.key_len     = sizeof(u32),
 	.key_offset  = offsetof(struct rtl83xx_route, gw_ip),
 	.head_offset = offsetof(struct rtl83xx_route, linkage),
@@ -847,6 +835,8 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 {
 	struct rtl83xx_route *r;
 	struct rhlist_head *tmp, *list;
+	if (!priv->r->route_read)
+		return -ENOENT;
 
 	rcu_read_lock();
 	list = rhltable_lookup(&priv->routes, &ip_addr, route_ht_params);
@@ -887,7 +877,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 			int slot = priv->r->find_l3_slot(r, false);
 
 			pr_info("%s: Got slot for route: %d\n", __func__, slot);
-			priv->r->host_route_write(slot, r);
+			//priv->r->host_route_write(slot, r);
 		} else {
 			priv->r->route_write(r->id, r);
 			r->pr.fwd_sel = true;
@@ -971,7 +961,7 @@ static int rtl83xx_port_lower_walk(struct net_device *lower, struct netdev_neste
 	return ret;
 }
 
-static int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
+int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
 {
 	struct rtl83xx_walk_data data;
 	struct netdev_nested_priv _priv;
@@ -1221,7 +1211,7 @@ static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 	return free_mac;
 }
 
-static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
+int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 			    struct fib_entry_notifier_info *info)
 {
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
@@ -1644,11 +1634,12 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	for (int i = 0; i <= priv->cpu_port; i++)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
-	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
 
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
+
+	/* Enable link and media change interrupts. Are the SERDES masks needed? */
+	sw_w32_mask(0, 3, priv->r->isr_glb_src);
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
@@ -1723,7 +1714,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* TODO: put this into l2_setup() */
 	/* Flood BPDUs to all ports including cpu-port */
-	if (soc_info.family != RTL9300_FAMILY_ID) {
+	if (soc_info.family != RTL9300_FAMILY_ID || soc_info.family != RTL9310_FAMILY_ID) {
 		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
 		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
 

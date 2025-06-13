@@ -974,11 +974,11 @@ static int phylink_parse_mode(struct phylink *pl,
 
 		linkmode_copy(pl->link_config.advertising, pl->supported);
 
-		if (phylink_validate(pl, pl->supported, &pl->link_config)) {
+/*		if (phylink_validate(pl, pl->supported, &pl->link_config)) {
 			phylink_err(pl,
 				    "failed to validate link configuration for in-band status\n");
 			return -EINVAL;
-		}
+		}*/
 	}
 
 	return 0;
@@ -2136,7 +2136,7 @@ static int phylink_bringup_phy(struct phylink *pl, struct phy_device *phy,
 	linkmode_copy(config.advertising, phy->advertising);
 	config.interface = interface;
 
-	ret = phylink_validate_phy(pl, phy, supported, &config);
+/*	ret = phylink_validate_phy(pl, phy, supported, &config);
 	if (ret) {
 		phylink_warn(pl, "validation of %s with support %*pb and advertisement %*pb failed: %pe\n",
 			     phy_modes(config.interface),
@@ -2144,7 +2144,7 @@ static int phylink_bringup_phy(struct phylink *pl, struct phy_device *phy,
 			     __ETHTOOL_LINK_MODE_MASK_NBITS, config.advertising,
 			     ERR_PTR(ret));
 		return ret;
-	}
+	}*/
 
 	phy->phylink = pl;
 	phy->phy_link_change = phylink_phy_change;

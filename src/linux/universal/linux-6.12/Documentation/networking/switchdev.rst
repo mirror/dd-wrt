@@ -558,7 +558,7 @@ Because IGMP snooping can be turned on/off at runtime, the switchdev driver
 must be able to reconfigure the underlying hardware on the fly to honor the
 toggling of that option and behave appropriately.
 
-A switchdev driver can also refuse to support dynamic toggling of the multicast
-snooping knob at runtime and require the destruction of the bridge device(s)
-and creation of a new bridge device(s) with a different multicast snooping
-value.
+A switchdev driver must also be able to react to vanishing or appearing
+IGMP/MLD queriers. If no querier is present then, even if IGMP/MLD snooping
+is enabled, the switch must treat this as if IGMP/MLD snooping were disabled.
+The SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE notification allows to track this.

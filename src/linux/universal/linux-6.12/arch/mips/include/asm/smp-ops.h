@@ -66,6 +66,8 @@ static inline void register_smp_ops(const struct plat_smp_ops *ops)
 
 #endif /* !CONFIG_SMP */
 
+extern void plat_smp_init_secondary(void);
+
 static inline int register_up_smp_ops(void)
 {
 #ifdef CONFIG_SMP_UP

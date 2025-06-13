@@ -108,6 +108,9 @@ static void __init smvp_tc_init(unsigned int tc, unsigned int mvpconf0)
 
 static void vsmp_init_secondary(void)
 {
+#ifdef CONFIG_MACH_REALTEK_RTL
+	plat_smp_init_secondary();
+#else
 	/* This is Malta specific: IPI,performance and timer interrupts */
 	if (mips_gic_present())
 		change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 |
@@ -116,6 +119,7 @@ static void vsmp_init_secondary(void)
 	else
 		change_c0_status(ST0_IM, STATUSF_IP0 | STATUSF_IP1 |
 					 STATUSF_IP6 | STATUSF_IP7);
+#endif
 }
 
 static void vsmp_smp_finish(void)

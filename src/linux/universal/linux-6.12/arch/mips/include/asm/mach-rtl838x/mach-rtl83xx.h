@@ -190,6 +190,48 @@
 #define UART1_MCR		(RTL838X_UART1_BASE + 0x010)
 #define UART1_LSR		(RTL838X_UART1_BASE + 0x014)
 
+   #define FCR_EN		0x01
+   #define FCR_RXRST		0x02
+   #define XRST			0x02
+   #define FCR_TXRST		0x04
+   #define TXRST		0x04
+   #define FCR_DMA		0x08
+   #define FCR_RTRG		0xC0
+   #define CHAR_TRIGGER_01	0x00
+   #define CHAR_TRIGGER_04	0x40
+   #define CHAR_TRIGGER_08	0x80
+   #define CHAR_TRIGGER_14	0xC0
+   #define LCR_WLN		0x03
+   #define CHAR_LEN_5		0x00
+   #define CHAR_LEN_6		0x01
+   #define CHAR_LEN_7		0x02
+   #define CHAR_LEN_8		0x03
+   #define LCR_STB		0x04
+   #define ONE_STOP		0x00
+   #define TWO_STOP		0x04
+   #define LCR_PEN		0x08
+   #define PARITY_ENABLE	0x01
+   #define PARITY_DISABLE	0x00
+   #define LCR_EPS		0x30
+   #define PARITY_ODD		0x00
+   #define PARITY_EVEN		0x10
+   #define PARITY_MARK		0x20
+   #define PARITY_SPACE		0x30
+   #define LCR_BRK		0x40
+   #define LCR_DLAB		0x80
+   #define DLAB			0x80
+   #define LSR_DR		0x01
+   #define RxCHAR_AVAIL		0x01
+   #define LSR_OE		0x02
+   #define LSR_PE		0x04
+   #define LSR_FE		0x08
+   #define LSR_BI		0x10
+   #define LSR_THRE		0x20
+   #define TxCHAR_AVAIL		0x00
+   #define TxCHAR_EMPTY		0x20
+   #define LSR_TEMT		0x40
+   #define LSR_RFE		0x80
+
 /*
  * Memory Controller
  */
@@ -400,6 +442,30 @@ struct rtl83xx_soc_info {
 	volatile void *icu_base;
 	int cpu_port;
 };
+
+static inline u32 rtl931x_get_analog_sds(u32 sds)
+{
+	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+
+	if (sds < 14)
+		return sds_map[sds];
+
+	return sds;
+}
+
+u32 rtl930x_sds_mode_get(int sds_num);
+
+int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
+int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
+int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
+int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
+u32 rtl931x_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit);
+void rtl931x_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v);
+
+void rtl930x_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v);
+u32 rtl930x_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit);
 
 /* rtl83xx-related functions used across subsystems */
 int rtl838x_smi_wait_op(int timeout);

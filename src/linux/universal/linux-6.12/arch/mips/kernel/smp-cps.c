@@ -452,7 +452,9 @@ static void cps_init_secondary(void)
 	/* Disable MT - we only want to run 1 TC per VPE */
 	if (cpu_has_mipsmt)
 		dmt();
-
+#ifdef CONFIG_MACH_REALTEK_RTL
+	plat_smp_init_secondary();
+#else
 	if (mips_cm_revision() >= CM_REV_CM3) {
 		unsigned int ident = read_gic_vl_ident();
 
@@ -473,6 +475,7 @@ static void cps_init_secondary(void)
 		change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 |
 					 STATUSF_IP4 | STATUSF_IP5 |
 					 STATUSF_IP6 | STATUSF_IP7);
+#endif
 }
 
 static void cps_smp_finish(void)

@@ -24,6 +24,7 @@ enum {
 	DSA_NOTIFIER_MDB_DEL,
 	DSA_NOTIFIER_HOST_MDB_ADD,
 	DSA_NOTIFIER_HOST_MDB_DEL,
+	DSA_NOTIFIER_MDB_ACTIVE,
 	DSA_NOTIFIER_VLAN_ADD,
 	DSA_NOTIFIER_VLAN_DEL,
 	DSA_NOTIFIER_HOST_VLAN_ADD,
@@ -66,11 +67,19 @@ struct dsa_notifier_lag_fdb_info {
 	struct dsa_db db;
 };
 
-/* DSA_NOTIFIER_MDB_* */
+/* DSA_NOTIFIER_MDB_{ADD,DEL} */
 struct dsa_notifier_mdb_info {
 	const struct dsa_port *dp;
 	const struct switchdev_obj_port_mdb *mdb;
 	struct dsa_db db;
+};
+
+/* DSA_NOTIFIER_MDB_ACTIVE */
+struct dsa_notifier_mdb_active_info {
+	const struct dsa_port *dp;
+	const struct switchdev_mc_active mc_active;
+	struct netlink_ext_ack *extack;
+	int handled;
 };
 
 /* DSA_NOTIFIER_LAG_* */

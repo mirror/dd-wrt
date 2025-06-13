@@ -514,47 +514,80 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-static void rtl839x_vlan_profile_setup(int profile)
+static int
+rtl839x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 {
 	u32 p[2];
-	u32 pmask_id = UNKNOWN_MC_PMASK;
 
-	p[0] = pmask_id; /* Use portmaks 0xfff for unknown IPv6 MC flooding */
-	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding */
-	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
+	if (idx < 0 || idx > RTL839X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL839X_VLAN_PROFILE(idx));
+	p[1] = sw_r32(RTL839X_VLAN_PROFILE(idx) + 4);
+
+	*profile = (struct rtl83xx_vlan_profile) {
+		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks_idx = {
+			.l2 = RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 1,
+	};
+
+	return 0;
+}
+
+static void
+rtl839x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
+{
+	u32 p[2] = { 0, 0 };
+
+	p[1] = RTL839X_VLAN_L2_LEARN_EN(1);
+	p[1] |= RTL839X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4)
+		p[1] |= RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_MIN_PORTS_IDX);
+	else
+		p[1] |= RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6)
+		p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_MIN_PORTS_IDX);
+	else
+		p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
-
-	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
 }
 
-static u64 rtl839x_traffic_get(int source)
+u64 rtl839x_traffic_get(int source)
 {
 	return rtl839x_get_port_reg_be(rtl839x_port_iso_ctrl(source));
 }
 
-static void rtl839x_traffic_set(int source, u64 dest_matrix)
+void rtl839x_traffic_set(int source, u64 dest_matrix)
 {
 	rtl839x_set_port_reg_be(dest_matrix, rtl839x_port_iso_ctrl(source));
 }
 
-static void rtl839x_traffic_enable(int source, int dest)
+void rtl839x_traffic_enable(int source, int dest)
 {
 	rtl839x_mask_port_reg_be(0, BIT_ULL(dest), rtl839x_port_iso_ctrl(source));
 }
 
-static void rtl839x_traffic_disable(int source, int dest)
+void rtl839x_traffic_disable(int source, int dest)
 {
 	rtl839x_mask_port_reg_be(BIT_ULL(dest), 0, rtl839x_port_iso_ctrl(source));
 }
 
 static void rtl839x_l2_learning_setup(void)
 {
-	/* Set portmask for broadcast (offset bit 12) and unknown unicast (offset 0)
-	 * address flooding to the reserved entry in the portmask table used
-	 * also for multicast flooding */
-	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
+	/* Set portmask for broadcast traffic and unknown unicast address flooding
+	 * to the reserved entry in the portmask table used also for
+	 * multicast flooding */
+	sw_w32(RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+	       RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
+	       RTL839X_L2_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
@@ -817,21 +850,21 @@ void rtl8390_get_version(struct rtl838x_switch_priv *priv)
 	pr_debug("RTL839X Chip-Info: %x, version %c\n", info, priv->version);
 }
 
-void rtl839x_vlan_profile_dump(int profile)
+static void rtl839x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 {
-	u32 p[2];
+	struct rtl83xx_vlan_profile p;
 
-	if (profile < 0 || profile > 7)
+	if (rtl839x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
-	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
-
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
-		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
-		profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
-		(p[0]) & 0xfff);
-	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
+	dev_dbg(priv->dev,
+		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
+		 UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n"
+		"VLAN profile %d: raw %08x, %08x\n", idx,
+		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
+		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6, idx,
+		sw_r32(RTL839X_VLAN_PROFILE(idx)),
+		sw_r32(RTL839X_VLAN_PROFILE(idx) + 4));
 }
 
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -858,7 +891,7 @@ static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_839x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
+void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -880,6 +913,39 @@ static void rtldsa_839x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, 
 	priv->ports[port].eee_enabled = enable;
 }
 
+#if 0
+/* Get EEE own capabilities and negotiation result */
+int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
+{
+	u64 link, a;
+
+	if (port >= 48)
+		return -ENOTSUPP;
+
+	e->supported = SUPPORTED_100baseT_Full |
+	               SUPPORTED_1000baseT_Full;
+
+	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
+	if (!(link & BIT_ULL(port)))
+		return 0;
+
+	if (sw_r32(rtl839x_mac_force_mode_ctrl(port)) & BIT(8))
+		e->advertised |= ADVERTISED_100baseT_Full;
+
+	if (sw_r32(rtl839x_mac_force_mode_ctrl(port)) & BIT(10))
+		e->advertised |= ADVERTISED_1000baseT_Full;
+
+	a = rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY);
+	pr_debug("Link partner: %016llx\n", a);
+	if (rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY) & BIT_ULL(port)) {
+		e->lp_advertised = ADVERTISED_100baseT_Full;
+		e->lp_advertised |= ADVERTISED_1000baseT_Full;
+	}
+
+	return 0;
+}
+#endif
+
 static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
@@ -894,7 +960,7 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			rtl839x_port_eee_set(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -1098,7 +1164,7 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
  * however the RTL9310 has 2 more registers / fields and the physical field-ids
  * On the RTL8390 the template mask registers are not word-aligned!
  */
-static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		enum template_field_id field_type = t[i];
@@ -1371,7 +1437,7 @@ static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 	pr->bypass_ibc_sc = r[16] & BIT(7);
 }
 
-static void rtl839x_pie_rule_dump_raw(u32 r[])
+void rtl839x_pie_rule_dump_raw(u32 r[])
 {
 	pr_debug("Raw IACL table entry:\n");
 	pr_debug("Match  : %08x %08x %08x %08x %08x %08x\n", r[0], r[1], r[2], r[3], r[4], r[5]);
@@ -1707,14 +1773,14 @@ static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 	}
 }
 
-static int rtl839x_l3_setup(struct rtl838x_switch_priv *priv)
+int rtl839x_l3_setup(struct rtl838x_switch_priv *priv)
 {
 	rtl839x_setup_port_macs(priv);
 
 	return 0;
 }
 
-static void rtl839x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+void rtl839x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
 			  keep_outer ? RTL839X_VLAN_PORT_TAG_STS_TAGGED : RTL839X_VLAN_PORT_TAG_STS_UNTAG) |
@@ -1723,7 +1789,7 @@ static void rtl839x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_
 	       RTL839X_VLAN_PORT_TAG_STS_CTRL(port));
 }
 
-static void rtl839x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+void rtl839x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3, mode, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -1731,7 +1797,7 @@ static void rtl839x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum
 		sw_w32_mask(0x3 << 14, mode << 14, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
-static void rtl839x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+void rtl839x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0xfff << 2, pvid << 2, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -1767,14 +1833,14 @@ static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
 			RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-static void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 {
 	sw_w32_mask(3 << ((group & 0xf) << 1), algoidx << ((group & 0xf) << 1),
 		    RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2));
 	sw_w32(algomsk, RTL839X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
-static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
 	switch(type) {
 	case BPDU:
@@ -1794,7 +1860,70 @@ static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
+static void rtl839x_phylink_mac_link_up(struct dsa_switch *ds, int port,
+				   unsigned int mode,
+				   phy_interface_t interface,
+				   struct phy_device *phydev,
+				   int speed, int duplex,
+				   bool tx_pause, bool rx_pause)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+	mcr = sw_r32(rtl839x_mac_force_mode_ctrl(port));
+
+	pr_debug("%s portread %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	mcr &= ~RTL839X_RX_PAUSE_EN;
+	mcr &= ~RTL839X_TX_PAUSE_EN;
+	mcr &= ~RTL839X_DUPLEX_MODE;
+	mcr &= ~RTL839X_SPEED_MASK;
+	mcr |= RTL83XX_FORCE_LINK_EN;
+	mcr |= spdsel << RTL839X_SPEED_SHIFT;
+
+	if (tx_pause)
+		mcr |= RTL839X_TX_PAUSE_EN;
+	if (rx_pause)
+		mcr |= RTL839X_RX_PAUSE_EN;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL839X_DUPLEX_MODE;
+	if (dsa_port_is_cpu(dp))
+		mcr |= RTL83XX_FORCE_EN;
+
+	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, rtl839x_mac_force_mode_ctrl(port));
+
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, rtl839x_mac_port_ctrl(port));
+}
+
+static void rtl839x_phylink_mac_link_down(struct dsa_switch *ds, int port,
+				     unsigned int mode,
+				     phy_interface_t interface)
+{
+	int mask = 0;
+
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, rtl839x_mac_port_ctrl(port));
+
+	/* No longer force link */
+	mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN;
+	sw_w32_mask(mask, 0, rtl839x_mac_force_mode_ctrl(port));
+}
+
 const struct rtl838x_reg rtl839x_reg = {
+	.phylink_mac_link_down = rtl839x_phylink_mac_link_down,
+	.phylink_mac_link_up = rtl839x_phylink_mac_link_up,
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,
@@ -1825,6 +1954,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.vlan_tables_read = rtl839x_vlan_tables_read,
 	.vlan_set_tagged = rtl839x_vlan_set_tagged,
 	.vlan_set_untagged = rtl839x_vlan_set_untagged,
+	.vlan_profile_get = rtl839x_vlan_profile_get,
 	.vlan_profile_dump = rtl839x_vlan_profile_dump,
 	.vlan_profile_setup = rtl839x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl839x_vlan_fwd_on_inner,
@@ -1840,8 +1970,6 @@ const struct rtl838x_reg rtl839x_reg = {
 	.set_static_move_action = rtl839x_set_static_move_action,
 	.stp_get = rtl839x_stp_get,
 	.stp_set = rtl839x_stp_set,
-	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
-	.mac_port_ctrl = rtl839x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl839x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl839x_l2_port_new_sa_fwd,
 	.mir_ctrl = RTL839X_MIR_CTRL,
@@ -1860,7 +1988,10 @@ const struct rtl838x_reg rtl839x_reg = {
 	.rma_bpdu_fld_pmask = RTL839X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL839X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl839x_init_eee,
-	.set_mac_eee = rtldsa_839x_set_mac_eee,
+	.set_mac_eee = rtl839x_port_eee_set,
+#if 0
+	.eee_port_ability = rtl839x_eee_port_ability,
+#endif
 	.l2_hash_seed = rtl839x_l2_hash_seed,
 	.l2_hash_key = rtl839x_l2_hash_key,
 	.read_mcast_pmask = rtl839x_read_mcast_pmask,
@@ -1878,4 +2009,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.fast_age = rtl83xx_fast_age,
 };
