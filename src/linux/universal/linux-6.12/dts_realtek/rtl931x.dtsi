@@ -41,6 +41,11 @@
 		clock-frequency = <200000000>;
 	};
 
+	cpc: cpc@1bde0000 {
+		compatible = "mti,mips-cpc";
+		reg = <0x1bde0000 0x8000>;
+	};
+
 	cpuintc: cpuintc {
 		compatible = "mti,cpu-interrupt-controller";
 		#address-cells = <0>;
