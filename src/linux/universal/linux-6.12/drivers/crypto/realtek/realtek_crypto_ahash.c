@@ -6,7 +6,7 @@
  * Copyright (c) 2022, Markus Stockhausen <markus.stockhausen@gmx.de>
  */
 
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 #include <crypto/internal/hash.h>
 #include <linux/dma-mapping.h>
 

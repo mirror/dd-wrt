@@ -418,7 +418,7 @@ err_map:
 	return ret;
 }
 
-static int rtcr_crypto_remove(struct platform_device *pdev)
+static void rtcr_crypto_remove(struct platform_device *pdev)
 {
 	struct rtcr_crypto_dev *cdev = platform_get_drvdata(pdev);
 
@@ -430,7 +430,6 @@ static int rtcr_crypto_remove(struct platform_device *pdev)
 	rtcr_exit_engine(cdev);
 	rtcr_unregister_algorithms(ARRAY_SIZE(rtcr_algs));
 	tasklet_kill(&cdev->done_task);
-	return 0;
 }
 
 static const struct of_device_id rtcr_id_table[] = {
