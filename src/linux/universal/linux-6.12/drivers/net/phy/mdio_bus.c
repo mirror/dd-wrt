@@ -611,7 +611,7 @@ static int mdiobus_scan_bus_c22(struct mii_bus *bus)
 	int i;
 
 	for (i = 0; i < PHY_MAX_ADDR; i++) {
-		if ((bus->phy_mask & BIT(i)) == 0) {
+		if ((bus->phy_mask & BIT_ULL(i)) == 0ULL) {
 			struct phy_device *phydev;
 
 			phydev = mdiobus_scan_c22(bus, i);
@@ -627,7 +627,7 @@ static int mdiobus_scan_bus_c45(struct mii_bus *bus)
 	int i;
 
 	for (i = 0; i < PHY_MAX_ADDR; i++) {
-		if ((bus->phy_mask & BIT(i)) == 0) {
+		if ((bus->phy_mask & BIT_ULL(i)) == 0ULL) {
 			struct phy_device *phydev;
 
 			/* Don't scan C45 if we already have a C22 device */

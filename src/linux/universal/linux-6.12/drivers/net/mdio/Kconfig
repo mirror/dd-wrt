@@ -54,6 +54,17 @@ config MDIO_SUN4I
 	  interface units of the Allwinner SoC that have an EMAC (A10,
 	  A12, A10s, etc.)
 
+config MDIO_SMBUS
+	tristate
+	depends on I2C_SMBUS
+	help
+	  Support SMBus based PHYs. This provides a MDIO bus bridged
+	  to SMBus to allow PHYs connected in SMBus mode to be accessed
+	  using the existing infrastructure.
+
+	  This is library mode.
+
+
 config MDIO_XGENE
 	tristate "APM X-Gene SoC MDIO bus controller"
 	depends on ARCH_XGENE || COMPILE_TEST
@@ -204,6 +215,16 @@ config MDIO_REGMAP
 	  created, and its read/write operations are mapped to the underlying
 	  regmap. Users willing to use this driver must explicitly select
 	  REGMAP.
+
+config MDIO_REALTEK_OTTO_AUX
+	tristate "Realtek Otto auxiliary MDIO interface support"
+	default MACH_REALTEK_RTL
+	depends on MACH_REALTEK_RTL
+	depends on MFD_SYSCON
+	select MDIO_DEVRES
+	help
+	  This driver supports the auxilairy MDIO bus on RTL838x SoCs. This bus
+	  is typically used to attach RTL8231 GPIO extenders.
 
 config MDIO_THUNDER
 	tristate "ThunderX SOCs MDIO buses"

@@ -20,12 +20,12 @@
  * specified to be present in SFP modules.  These correspond with PHY
  * addresses 16 and 17.  Disallow access to these "phy" addresses.
  */
-static bool i2c_mii_valid_phy_id(int phy_id)
+bool i2c_mii_valid_phy_id(int phy_id)
 {
 	return phy_id != 0x10 && phy_id != 0x11;
 }
 
-static unsigned int i2c_mii_phy_addr(int phy_id)
+unsigned int i2c_mii_phy_addr(int phy_id)
 {
 	return phy_id + 0x40;
 }

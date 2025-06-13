@@ -126,6 +126,7 @@ do {									\
 static const phy_interface_t phylink_sfp_interface_preference[] = {
 	PHY_INTERFACE_MODE_25GBASER,
 	PHY_INTERFACE_MODE_USXGMII,
+	PHY_INTERFACE_MODE_HSGMII,
 	PHY_INTERFACE_MODE_10GBASER,
 	PHY_INTERFACE_MODE_5GBASER,
 	PHY_INTERFACE_MODE_2500BASEX,
@@ -259,6 +260,7 @@ static int phylink_interface_max_speed(phy_interface_t interface)
 
 	case PHY_INTERFACE_MODE_XGMII:
 	case PHY_INTERFACE_MODE_RXAUI:
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_XAUI:
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
@@ -572,6 +574,7 @@ static unsigned long phylink_get_capabilities(phy_interface_t interface,
 		break;
 
 	case PHY_INTERFACE_MODE_XGMII:
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_RXAUI:
 	case PHY_INTERFACE_MODE_XAUI:
 	case PHY_INTERFACE_MODE_10GBASER:
@@ -953,6 +956,7 @@ static int phylink_parse_mode(struct phylink *pl,
 		case PHY_INTERFACE_MODE_USXGMII:
 		case PHY_INTERFACE_MODE_10G_QXGMII:
 		case PHY_INTERFACE_MODE_10GKR:
+		case PHY_INTERFACE_MODE_HSGMII:
 		case PHY_INTERFACE_MODE_10GBASER:
 		case PHY_INTERFACE_MODE_XLGMII:
 			caps = ~(MAC_SYM_PAUSE | MAC_ASYM_PAUSE);
@@ -3088,8 +3092,11 @@ int phylink_ethtool_get_eee(struct phylink *pl, struct ethtool_keee *eee)
 
 	ASSERT_RTNL();
 
-	if (pl->phydev)
+	if (pl->phydev) {
+		if (pl->phydev->drv->get_eee)
+			return pl->phydev->drv->get_eee(pl->phydev, eee);
 		ret = phy_ethtool_get_eee(pl->phydev, eee);
+	}
 
 	return ret;
 }
@@ -3106,8 +3113,11 @@ int phylink_ethtool_set_eee(struct phylink *pl, struct ethtool_keee *eee)
 
 	ASSERT_RTNL();
 
-	if (pl->phydev)
+	if (pl->phydev) {
+		if (pl->phydev->drv->set_eee)
+			return pl->phydev->drv->set_eee(pl->phydev, eee);
 		ret = phy_ethtool_set_eee(pl->phydev, eee);
+	}
 
 	return ret;
 }

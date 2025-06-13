@@ -483,6 +483,17 @@ config PINCTRL_SCMI
 	  It uses SCMI Message Protocol to interact with the
 	  firmware providing all the pinctrl controls.
 
+config PINCTRL_RTL8231
+	tristate "Realtek RTL8231 GPIO expander's pin controller"
+	depends on MFD_RTL8231
+	default MFD_RTL8231
+	select GPIO_REGMAP
+	select GENERIC_PINCONF
+	select GENERIC_PINMUX_FUNCTIONS
+	help
+	  Support for RTL8231 expander's GPIOs and pin controller.
+	  When built as a module, the module will be called pinctrl-rtl8231.
+
 config PINCTRL_SINGLE
 	tristate "One-register-per-pin type device tree based pinctrl driver"
 	depends on OF

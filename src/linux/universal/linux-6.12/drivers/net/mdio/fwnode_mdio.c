@@ -89,7 +89,7 @@ int fwnode_mdiobus_phy_device_register(struct mii_bus *mdio,
 	}
 
 	if (fwnode_property_read_bool(child, "broken-turn-around"))
-		mdio->phy_ignore_ta_mask |= 1 << addr;
+		mdio->phy_ignore_ta_mask |= BIT_ULL(addr);
 
 	fwnode_property_read_u32(child, "reset-assert-us",
 				 &phy->mdio.reset_assert_delay);

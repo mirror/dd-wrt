@@ -20,5 +20,9 @@ enum mdio_i2c_proto {
 
 struct mii_bus *mdio_i2c_alloc(struct device *parent, struct i2c_adapter *i2c,
 			       enum mdio_i2c_proto protocol);
+struct mii_bus *mdio_smbus_alloc(struct device *parent, struct i2c_adapter *i2c,
+				 enum mdio_i2c_proto protocol);
+bool i2c_mii_valid_phy_id(int phy_id);
+unsigned int i2c_mii_phy_addr(int phy_id);
 
 #endif

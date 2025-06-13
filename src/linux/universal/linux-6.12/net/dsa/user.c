@@ -320,7 +320,7 @@ static int dsa_user_phy_read(struct mii_bus *bus, int addr, int reg)
 {
 	struct dsa_switch *ds = bus->priv;
 
-	if (ds->phys_mii_mask & (1 << addr))
+	if (ds->phys_mii_mask & BIT_ULL(addr))
 		return ds->ops->phy_read(ds, addr, reg);
 
 	return 0xffff;
@@ -330,7 +330,7 @@ static int dsa_user_phy_write(struct mii_bus *bus, int addr, int reg, u16 val)
 {
 	struct dsa_switch *ds = bus->priv;
 
-	if (ds->phys_mii_mask & (1 << addr))
+	if (ds->phys_mii_mask & BIT_ULL(addr))
 		return ds->ops->phy_write(ds, addr, reg, val);
 
 	return 0;
