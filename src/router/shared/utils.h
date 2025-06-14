@@ -1238,10 +1238,10 @@ int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
-#define DEFAULT_ETH_LIST "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
+#define DEFAULT_ETH_LIST "bond ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper bond 10gsfp vxlan ofdm"
 #else
-#define DEFAULT_ETH_LIST_DEFAULT "eth ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
-#define DEFAULT_ETH_LIST_DSA "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
+#define DEFAULT_ETH_LIST_DEFAULT "bond eth ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
+#define DEFAULT_ETH_LIST_DSA "bond ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
 #define DEFAULT_ETH_LIST nvram_match("dsa","1") ? DEFAULT_ETH_LIST_DSA : DEFAULT_ETH_LIST_DEFAULT
 #endif
 
