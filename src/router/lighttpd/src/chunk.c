@@ -168,6 +168,10 @@ static chunk_file_view * chunk_file_view_failed (chunk_file_view *cfv) {
 
 #endif /* HAVE_MMAP */
 
+#ifndef RWF_NOWAIT
+#define RWF_NOWAIT	(0x00000008)
+#endif
+
 ssize_t
 chunk_file_pread (int fd, void *buf, size_t count, off_t offset)
 {
