@@ -3398,10 +3398,12 @@ static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags,
 	}
 	xrtnl_open(&rth);
 	ll_init_map(&rth);
+	if (set && !type_str) {
+		return do_set(oldargv);
+	}
 	if (type_str && rtm == RTM_NEWLINK) {
 		struct rtattr *linkinfo = NLMSG_TAIL(&req.n);
-
-		if (set && strcmp(type_str, "dsa") && strcmp(type_str, "bridge") && strcmp(type_str, "bridge_slave")) {
+		if (set && strcmp(type_str, "dsa") && strcmp(type_str, "bridge") && strcmp(type_str, "bond") && strcmp(type_str, "bridge_slave")) {
 			return do_set(oldargv);
 		}
 
