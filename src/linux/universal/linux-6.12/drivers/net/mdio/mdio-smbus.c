@@ -335,6 +335,7 @@ struct mii_bus *mdio_smbus_alloc(struct device *parent, struct i2c_adapter *i2c,
 
 	return mii;
 }
+EXPORT_SYMBOL(mdio_smbus_alloc);
 
 MODULE_AUTHOR("Antoine Tenart");
 MODULE_DESCRIPTION("MDIO SMBus bridge library");

@@ -57,6 +57,7 @@ config MDIO_SUN4I
 config MDIO_SMBUS
 	tristate
 	depends on I2C_SMBUS
+	depends on MDIO_I2C
 	help
 	  Support SMBus based PHYs. This provides a MDIO bus bridged
 	  to SMBus to allow PHYs connected in SMBus mode to be accessed
