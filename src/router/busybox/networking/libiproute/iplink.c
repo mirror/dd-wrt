@@ -146,6 +146,48 @@ static void set_mtu(char *dev, int mtu)
 	close(s);
 }
 
+static bool matches(const char *prefix, const char *string)
+{
+	if (!*prefix)
+		return true;
+	while (*string && *prefix == *string) {
+		prefix++;
+		string++;
+	}
+
+	return !!*prefix;
+}
+
+static int parse_one_of(const char *msg, const char *realval, const char * const *list,
+		 size_t len, int *p_err)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		if (list[i] && matches(realval, list[i]) == 0) {
+			*p_err = 0;
+			return i;
+		}
+	}
+
+
+	fprintf(stderr, "Error: argument of \"%s\" must be one of ", msg);
+	for (i = 0; i < len; i++)
+		if (list[i])
+			fprintf(stderr, "\"%s\", ", list[i]);
+	fprintf(stderr, "not \"%s\"\n", realval);
+	*p_err = -EINVAL;
+	return 0;
+}
+
+static bool parse_on_off(const char *msg, const char *realval, int *p_err)
+{
+	static const char * const values_on_off[] = { "off", "on" };
+
+	return parse_one_of(msg, realval, values_on_off, ARRAY_SIZE(values_on_off), p_err);
+}
+
+
 /* Exits on error */
 static void set_master(char *dev, int master)
 {
@@ -1287,6 +1329,542 @@ static int get_s32(__s32 *val, const char *arg, int base)
 	*val = res;
 	return 0;
 }
+static int get_long(long *val, const char *arg, int base)
+{
+	long res;
+	char *ptr;
+
+	if (!arg || !*arg)
+		return -1;
+
+	res = strtol(arg, &ptr, base);
+
+	/* If there were no digits at all, strtol()  stores
+	 * the original value of nptr in *endptr (and returns 0).
+	 * In particular, if *nptr is not '\0' but **endptr is '\0' on return,
+	 * the entire string is valid.
+	 */
+	if (!ptr || ptr == arg || *ptr)
+		return -1;
+
+	/* If an underflow occurs, strtol() returns LONG_MIN.
+	 * If an overflow occurs,  strtol() returns LONG_MAX.
+	 * In both cases, errno is set to ERANGE.
+	 */
+	if ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE)
+		return -1;
+
+	if (val)
+		*val = res;
+	return 0;
+}
+
+static int get_integer(int *val, const char *arg, int base)
+{
+	long res;
+
+	if (get_long(&res, arg, base) < 0)
+		return -1;
+
+	/* Outside range of int */
+	if (res < INT_MIN || res > INT_MAX)
+		return -1;
+
+	*val = res;
+	return 0;
+}
+
+static int get_index(const char **tbl, char *name)
+{
+	int i, index;
+
+	/* check for integer index passed in instead of name */
+	if (get_integer(&index, name, 10) == 0)
+		for (i = 0; tbl[i]; i++)
+			if (i == index)
+				return i;
+
+	for (i = 0; tbl[i]; i++)
+		if (strcmp(tbl[i], name) == 0)
+			return i;
+
+	return -1;
+}
+
+enum {
+	IFLA_BOND_UNSPEC,
+	IFLA_BOND_MODE,
+	IFLA_BOND_ACTIVE_SLAVE,
+	IFLA_BOND_MIIMON,
+	IFLA_BOND_UPDELAY,
+	IFLA_BOND_DOWNDELAY,
+	IFLA_BOND_USE_CARRIER,
+	IFLA_BOND_ARP_INTERVAL,
+	IFLA_BOND_ARP_IP_TARGET,
+	IFLA_BOND_ARP_VALIDATE,
+	IFLA_BOND_ARP_ALL_TARGETS,
+	IFLA_BOND_PRIMARY,
+	IFLA_BOND_PRIMARY_RESELECT,
+	IFLA_BOND_FAIL_OVER_MAC,
+	IFLA_BOND_XMIT_HASH_POLICY,
+	IFLA_BOND_RESEND_IGMP,
+	IFLA_BOND_NUM_PEER_NOTIF,
+	IFLA_BOND_ALL_SLAVES_ACTIVE,
+	IFLA_BOND_MIN_LINKS,
+	IFLA_BOND_LP_INTERVAL,
+	IFLA_BOND_PACKETS_PER_SLAVE,
+	IFLA_BOND_AD_LACP_RATE,
+	IFLA_BOND_AD_SELECT,
+	IFLA_BOND_AD_INFO,
+	IFLA_BOND_AD_ACTOR_SYS_PRIO,
+	IFLA_BOND_AD_USER_PORT_KEY,
+	IFLA_BOND_AD_ACTOR_SYSTEM,
+	IFLA_BOND_TLB_DYNAMIC_LB,
+	IFLA_BOND_PEER_NOTIF_DELAY,
+	IFLA_BOND_AD_LACP_ACTIVE,
+	IFLA_BOND_MISSED_MAX,
+	IFLA_BOND_NS_IP6_TARGET,
+	IFLA_BOND_COUPLED_CONTROL,
+	__IFLA_BOND_MAX,
+};
+
+#define IFLA_BOND_MAX	(__IFLA_BOND_MAX - 1)
+
+#define BOND_MAX_ARP_TARGETS    16
+#define BOND_MAX_NS_TARGETS     BOND_MAX_ARP_TARGETS
+
+static const char *mode_tbl[] = {
+	"balance-rr",
+	"active-backup",
+	"balance-xor",
+	"broadcast",
+	"802.3ad",
+	"balance-tlb",
+	"balance-alb",
+	NULL,
+};
+
+static const char *arp_validate_tbl[] = {
+	"none",
+	"active",
+	"backup",
+	"all",
+	"filter",
+	"filter_active",
+	"filter_backup",
+	NULL,
+};
+
+static const char *arp_all_targets_tbl[] = {
+	"any",
+	"all",
+	NULL,
+};
+
+static const char *primary_reselect_tbl[] = {
+	"always",
+	"better",
+	"failure",
+	NULL,
+};
+
+static const char *fail_over_mac_tbl[] = {
+	"none",
+	"active",
+	"follow",
+	NULL,
+};
+
+static const char *xmit_hash_policy_tbl[] = {
+	"layer2",
+	"layer3+4",
+	"layer2+3",
+	"encap2+3",
+	"encap3+4",
+	"vlan+srcmac",
+	NULL,
+};
+
+static const char *lacp_active_tbl[] = {
+	"off",
+	"on",
+	NULL,
+};
+
+static const char *lacp_rate_tbl[] = {
+	"slow",
+	"fast",
+	NULL,
+};
+
+static const char *ad_select_tbl[] = {
+	"stable",
+	"bandwidth",
+	"count",
+	NULL,
+};
+
+static void bond_explain(void)
+{
+	bb_simple_error_msg_and_die(
+		"Usage: ... bond [ mode BONDMODE ] [ active_slave SLAVE_DEV ]\n"
+		"                [ clear_active_slave ] [ miimon MIIMON ]\n"
+		"                [ updelay UPDELAY ] [ downdelay DOWNDELAY ]\n"
+		"                [ peer_notify_delay DELAY ]\n"
+		"                [ use_carrier USE_CARRIER ]\n"
+		"                [ arp_interval ARP_INTERVAL ]\n"
+		"                [ arp_validate ARP_VALIDATE ]\n"
+		"                [ arp_all_targets ARP_ALL_TARGETS ]\n"
+		"                [ arp_ip_target [ ARP_IP_TARGET, ... ] ]\n"
+		"                [ ns_ip6_target [ NS_IP6_TARGET, ... ] ]\n"
+		"                [ primary SLAVE_DEV ]\n"
+		"                [ primary_reselect PRIMARY_RESELECT ]\n"
+		"                [ fail_over_mac FAIL_OVER_MAC ]\n"
+		"                [ xmit_hash_policy XMIT_HASH_POLICY ]\n"
+		"                [ resend_igmp RESEND_IGMP ]\n"
+		"                [ num_grat_arp|num_unsol_na NUM_GRAT_ARP|NUM_UNSOL_NA ]\n"
+		"                [ all_slaves_active ALL_SLAVES_ACTIVE ]\n"
+		"                [ min_links MIN_LINKS ]\n"
+		"                [ lp_interval LP_INTERVAL ]\n"
+		"                [ packets_per_slave PACKETS_PER_SLAVE ]\n"
+		"                [ tlb_dynamic_lb TLB_DYNAMIC_LB ]\n"
+		"                [ lacp_rate LACP_RATE ]\n"
+		"                [ lacp_active LACP_ACTIVE]\n"
+		"                [ coupled_control COUPLED_CONTROL ]\n"
+		"                [ ad_select AD_SELECT ]\n"
+		"                [ ad_user_port_key PORTKEY ]\n"
+		"                [ ad_actor_sys_prio SYSPRIO ]\n"
+		"                [ ad_actor_system LLADDR ]\n"
+		"                [ arp_missed_max MISSED_MAX ]\n"
+		"\n"
+		"BONDMODE := balance-rr|active-backup|balance-xor|broadcast|802.3ad|balance-tlb|balance-alb\n"
+		"ARP_VALIDATE := none|active|backup|all|filter|filter_active|filter_backup\n"
+		"ARP_ALL_TARGETS := any|all\n"
+		"PRIMARY_RESELECT := always|better|failure\n"
+		"FAIL_OVER_MAC := none|active|follow\n"
+		"XMIT_HASH_POLICY := layer2|layer2+3|layer3+4|encap2+3|encap3+4|vlan+srcmac\n"
+		"LACP_ACTIVE := off|on\n"
+		"LACP_RATE := slow|fast\n"
+		"AD_SELECT := stable|bandwidth|count\n"
+		"COUPLED_CONTROL := off|on\n"
+	);
+}
+static int bond_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
+{
+
+	uint8_t mode, use_carrier, primary_reselect, fail_over_mac;
+	uint8_t xmit_hash_policy, num_peer_notif, all_slaves_active;
+	uint8_t lacp_active, lacp_rate, ad_select, tlb_dynamic_lb, coupled_control;
+	uint16_t ad_user_port_key, ad_actor_sys_prio;
+	uint32_t miimon, updelay, downdelay, peer_notify_delay, arp_interval, arp_validate;
+	uint32_t arp_all_targets, resend_igmp, min_links, lp_interval;
+	uint32_t packets_per_slave;
+	uint8_t missed_max;
+	int arg;
+	unsigned int ifindex;
+	int ret;
+
+	static const char keywords[] ALIGN1 =
+		"mode = 0\0"
+		"active_slave\0"
+		"clear_active_slave\0"
+		"miimon\0"
+		"updelay\0"
+		"downdelay\0"
+		"peer_notify_delay\0"
+		"use_carrier\0"
+		"arp_interval\0"
+		"arp_ip_target\0"
+		"ns_ip6_target\0"
+		"arp_validate\0"
+		"arp_all_targets\0"
+		"arp_missed_max\0"
+		"primary\0"
+		"primary_reselect\0"
+		"fail_over_mac\0"
+		"xmit_hash_policy\0"
+		"resend_igmp\0"
+		"num_grat_arp\0"
+		"num_unsol_na\0"
+		"all_slaves_active\0"
+		"min_links\0"
+		"lp_interval\0"
+		"packets_per_slave\0"
+		"lacp_rate\0"
+		"lacp_active\0"
+		"coupled_control\0"
+		"ad_select\0"
+		"ad_user_port_key\0"
+		"ad_actor_sys_prio\0"
+		"ad_actor_system\0"
+		"tlb_dynamic_lb\0"
+		"help\0"
+	;
+
+	enum {
+		ARG_mode = 0,
+		ARG_active_slave,
+		ARG_clear_active_slave,
+		ARG_miimon,
+		ARG_updelay,
+		ARG_downdelay,
+		ARG_peer_notify_delay,
+		ARG_use_carrier,
+		ARG_arp_interval,
+		ARG_arp_ip_target,
+		ARG_ns_ip6_target,
+		ARG_arp_validate,
+		ARG_arp_all_targets,
+		ARG_arp_missed_max,
+		ARG_primary,
+		ARG_primary_reselect,
+		ARG_fail_over_mac,
+		ARG_xmit_hash_policy,
+		ARG_resend_igmp,
+		ARG_num_grat_arp,
+		ARG_num_unsol_na,
+		ARG_all_slaves_active,
+		ARG_min_links,
+		ARG_lp_interval,
+		ARG_packets_per_slave,
+		ARG_lacp_rate,
+		ARG_lacp_active,
+		ARG_coupled_control,
+		ARG_ad_select,
+		ARG_ad_user_port_key,
+		ARG_ad_actor_sys_prio,
+		ARG_ad_actor_system,
+		ARG_tlb_dynamic_lb,
+		ARG_help,
+	};
+
+
+	while (*argv) {
+		arg = index_in_substrings(keywords, *argv);
+		if (arg < 0)
+			invarg_1_to_2(*argv, "type macvlan");
+
+		if (arg == ARG_mode) {
+			NEXT_ARG();
+			if (get_index(mode_tbl, *argv) < 0)
+				invarg("invalid mode", *argv);
+			mode = get_index(mode_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_MODE, mode);
+		} else if (arg == ARG_active_slave) {
+			NEXT_ARG();
+			ifindex = xll_name_to_index(*argv);
+			if (!ifindex)
+				nodev(*argv);
+			addattr32(n, 1024, IFLA_BOND_ACTIVE_SLAVE, ifindex);
+		} else if (arg == ARG_clear_active_slave) {
+			addattr32(n, 1024, IFLA_BOND_ACTIVE_SLAVE, 0);
+		} else if (arg == ARG_miimon) {
+			NEXT_ARG();
+			miimon = get_u32(*argv, "miimon");
+			addattr32(n, 1024, IFLA_BOND_MIIMON, miimon);
+		} else if (arg == ARG_updelay) {
+			NEXT_ARG();
+			updelay = get_u32(*argv, "updelay");
+			addattr32(n, 1024, IFLA_BOND_UPDELAY, updelay);
+		} else if (arg == ARG_downdelay) {
+			NEXT_ARG();
+			downdelay = get_u32(*argv, "downdelay");
+			addattr32(n, 1024, IFLA_BOND_DOWNDELAY, downdelay);
+		} else if (arg == ARG_peer_notify_delay) {
+			NEXT_ARG();
+			peer_notify_delay = get_u32(*argv, "peer_notify_delay");
+			addattr32(n, 1024, IFLA_BOND_PEER_NOTIF_DELAY, peer_notify_delay);
+		} else if (arg == ARG_use_carrier) {
+			NEXT_ARG();
+			use_carrier = get_u8(*argv, "use_carrier");
+			addattr8(n, 1024, IFLA_BOND_USE_CARRIER, use_carrier);
+		} else if (arg == ARG_arp_interval) {
+			NEXT_ARG();
+			arp_interval = get_u32(*argv, "arp_interval");
+			addattr32(n, 1024, IFLA_BOND_ARP_INTERVAL, arp_interval);
+		} else if (arg == ARG_arp_ip_target) {
+			struct rtattr *nest = addattr_nest(n, 1024,
+				IFLA_BOND_ARP_IP_TARGET);
+			if (NEXT_ARG_OK()) {
+				NEXT_ARG();
+				char *targets = strdupa(*argv);
+				char *target = strtok(targets, ",");
+				int i;
+
+				for (i = 0; target && i < BOND_MAX_ARP_TARGETS; i++) {
+					uint32_t addr = get_addr32(target);
+
+					addattr32(n, 1024, i, addr);
+					target = strtok(NULL, ",");
+				}
+				addattr_nest_end(n, nest);
+			}
+			addattr_nest_end(n, nest);
+		} else if (arg == ARG_ns_ip6_target) {
+			struct rtattr *nest = addattr_nest(n, 1024,
+				IFLA_BOND_NS_IP6_TARGET);
+			if (NEXT_ARG_OK()) {
+				NEXT_ARG();
+				char *targets = strdupa(*argv);
+				char *target = strtok(targets, ",");
+				int i;
+
+				for (i = 0; target && i < BOND_MAX_NS_TARGETS; i++) {
+					inet_prefix ip6_addr;
+
+					get_addr(&ip6_addr, target, AF_INET6);
+					addattr_l(n, 1024, i, ip6_addr.data, sizeof(struct in6_addr));
+					target = strtok(NULL, ",");
+				}
+				addattr_nest_end(n, nest);
+			}
+			addattr_nest_end(n, nest);
+		} else if (arg == ARG_arp_validate) {
+			NEXT_ARG();
+			if (get_index(arp_validate_tbl, *argv) < 0)
+				invarg("invalid arp_validate", *argv);
+			arp_validate = get_index(arp_validate_tbl, *argv);
+			addattr32(n, 1024, IFLA_BOND_ARP_VALIDATE, arp_validate);
+		} else if (arg == ARG_arp_all_targets) {
+			NEXT_ARG();
+			if (get_index(arp_all_targets_tbl, *argv) < 0)
+				invarg("invalid arp_all_targets", *argv);
+			arp_all_targets = get_index(arp_all_targets_tbl, *argv);
+			addattr32(n, 1024, IFLA_BOND_ARP_ALL_TARGETS, arp_all_targets);
+		} else if (arg == ARG_arp_missed_max) {
+			NEXT_ARG();
+			missed_max = get_u8(*argv, "arp_missed_max");
+
+			addattr8(n, 1024, IFLA_BOND_MISSED_MAX, missed_max);
+		} else if (arg == ARG_primary) {
+			NEXT_ARG();
+			ifindex = xll_name_to_index(*argv);
+			if (!ifindex)
+				nodev(*argv);
+			addattr32(n, 1024, IFLA_BOND_PRIMARY, ifindex);
+		} else if (arg == ARG_primary_reselect) {
+			NEXT_ARG();
+			if (get_index(primary_reselect_tbl, *argv) < 0)
+				invarg("invalid primary_reselect", *argv);
+			primary_reselect = get_index(primary_reselect_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_PRIMARY_RESELECT,
+				 primary_reselect);
+		} else if (arg == ARG_fail_over_mac) {
+			NEXT_ARG();
+			if (get_index(fail_over_mac_tbl, *argv) < 0)
+				invarg("invalid fail_over_mac", *argv);
+			fail_over_mac = get_index(fail_over_mac_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_FAIL_OVER_MAC,
+				 fail_over_mac);
+		} else if (arg == ARG_xmit_hash_policy) {
+			NEXT_ARG();
+			if (get_index(xmit_hash_policy_tbl, *argv) < 0)
+				invarg("invalid xmit_hash_policy", *argv);
+
+			xmit_hash_policy = get_index(xmit_hash_policy_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_XMIT_HASH_POLICY,
+				 xmit_hash_policy);
+		} else if (arg == ARG_resend_igmp) {
+			NEXT_ARG();
+			resend_igmp = get_u32(*argv, "resend_igmp");
+
+			addattr32(n, 1024, IFLA_BOND_RESEND_IGMP, resend_igmp);
+		} else if (arg == ARG_num_grat_arp ||
+			   arg == ARG_num_unsol_na) {
+			NEXT_ARG();
+			num_peer_notif = get_u8(*argv, "num_grat_arp|num_unsol_na");
+
+			addattr8(n, 1024, IFLA_BOND_NUM_PEER_NOTIF,
+				 num_peer_notif);
+		} else if (arg == ARG_all_slaves_active) {
+			NEXT_ARG();
+			all_slaves_active = get_u8(*argv, "all_slaves_active");
+
+			addattr8(n, 1024, IFLA_BOND_ALL_SLAVES_ACTIVE,
+				 all_slaves_active);
+		} else if (arg == ARG_min_links) {
+			NEXT_ARG();
+			min_links = get_u32(*argv, "min_links");
+
+			addattr32(n, 1024, IFLA_BOND_MIN_LINKS, min_links);
+		} else if (arg == ARG_lp_interval) {
+			NEXT_ARG();
+			lp_interval = get_u32(*argv, "lp_interval");
+
+			addattr32(n, 1024, IFLA_BOND_LP_INTERVAL, lp_interval);
+		} else if (arg == ARG_packets_per_slave) {
+			NEXT_ARG();
+			packets_per_slave = get_u32(*argv, "packets_per_slave");
+
+			addattr32(n, 1024, IFLA_BOND_PACKETS_PER_SLAVE,
+				  packets_per_slave);
+		} else if (arg == ARG_lacp_rate) {
+			NEXT_ARG();
+			if (get_index(lacp_rate_tbl, *argv) < 0)
+				invarg("invalid lacp_rate", *argv);
+
+			lacp_rate = get_index(lacp_rate_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_AD_LACP_RATE, lacp_rate);
+		} else if (arg == ARG_lacp_active) {
+			NEXT_ARG();
+			if (get_index(lacp_active_tbl, *argv) < 0)
+				invarg("invalid lacp_active", *argv);
+
+			lacp_active = get_index(lacp_active_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_AD_LACP_ACTIVE, lacp_active);
+		} else if (arg == ARG_coupled_control) {
+			NEXT_ARG();
+			coupled_control = parse_on_off("coupled_control", *argv, &ret);
+			if (ret)
+				return ret;
+			addattr8(n, 1024, IFLA_BOND_COUPLED_CONTROL, coupled_control);
+		} else if (arg == ARG_ad_select) {
+			NEXT_ARG();
+			if (get_index(ad_select_tbl, *argv) < 0)
+				invarg("invalid ad_select", *argv);
+
+			ad_select = get_index(ad_select_tbl, *argv);
+			addattr8(n, 1024, IFLA_BOND_AD_SELECT, ad_select);
+		} else if (arg == ARG_ad_user_port_key) {
+			NEXT_ARG();
+			ad_user_port_key = get_u16(*argv, "ad_user_port_key");
+
+			addattr16(n, 1024, IFLA_BOND_AD_USER_PORT_KEY,
+				  ad_user_port_key);
+		} else if (arg == ARG_ad_actor_sys_prio) {
+			NEXT_ARG();
+			ad_actor_sys_prio = get_u32(*argv, "ad_actor_sys_prio");
+
+			addattr16(n, 1024, IFLA_BOND_AD_ACTOR_SYS_PRIO,
+				  ad_actor_sys_prio);
+		} else if (arg == ARG_ad_actor_system) {
+			int len;
+			char abuf[32];
+
+			NEXT_ARG();
+			len = ll_addr_a2n(abuf, sizeof(abuf), *argv);
+			if (len < 0)
+				return -1;
+			addattr_l(n, 1024, IFLA_BOND_AD_ACTOR_SYSTEM,
+				  abuf, len);
+		} else if (arg == ARG_tlb_dynamic_lb) {
+			NEXT_ARG();
+			tlb_dynamic_lb = get_u8(*argv, "tlb_dynamic_lb");
+			addattr8(n, 1024, IFLA_BOND_TLB_DYNAMIC_LB,
+				 tlb_dynamic_lb);
+		} else if (arg == ARG_help) {
+			bond_explain();
+			return -1;
+		} else {
+			bb_error_msg_and_die("bond: unknown command \"%s\"?", *argv);
+			bond_explain();
+			return -1;
+		}
+		argv++;
+	}
+return 0;
+
+}
 
 static int macvlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 {
@@ -1661,7 +2239,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			addattr32(n, size, IFLA_VXLAN_LINK, link);
 		} else if (arg == ARG_ttl || arg == ARG_hoplimit) {
 			unsigned int uval;
-			__u8 ttl = 0;
+			uint8_t ttl = 0;
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_TTL, "ttl", *argv);
@@ -1678,7 +2256,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			}
 		} else if (arg == ARG_tos || arg == ARG_dsfield) {
 			uint32_t uval;
-			__u8 tos;
+			uint8_t tos;
 
 			NEXT_ARG();
 			check_duparg(&attrs, IFLA_VXLAN_TOS, "tos", *argv);
@@ -1977,8 +2555,8 @@ enum {
 #define IFLA_BR_MAX	(__IFLA_BR_MAX - 1)
 
 struct ifla_bridge_id {
-	__u8	prio[2];
-	__u8	addr[6]; /* ETH_ALEN */
+	uint8_t	prio[2];
+	uint8_t	addr[6]; /* ETH_ALEN */
 };
 
 enum {
@@ -2055,8 +2633,8 @@ enum br_boolopt_id {
  * @optmask: options to change (bit per option)
  */
 struct br_boolopt_multi {
-	__u32 optval;
-	__u32 optmask;
+	uint32_t optval;
+	uint32_t optmask;
 };
 
 enum {
@@ -2544,53 +3122,11 @@ static void bridge_slave_explain(void)
 	);
 }
 
-static bool matches(const char *prefix, const char *string)
-{
-	if (!*prefix)
-		return true;
-	while (*string && *prefix == *string) {
-		prefix++;
-		string++;
-	}
-
-	return !!*prefix;
-}
-
-static int parse_one_of(const char *msg, const char *realval, const char * const *list,
-		 size_t len, int *p_err)
-{
-	int i;
-
-	for (i = 0; i < len; i++) {
-		if (list[i] && matches(realval, list[i]) == 0) {
-			*p_err = 0;
-			return i;
-		}
-	}
-
-
-	fprintf(stderr, "Error: argument of \"%s\" must be one of ", msg);
-	for (i = 0; i < len; i++)
-		if (list[i])
-			fprintf(stderr, "\"%s\", ", list[i]);
-	fprintf(stderr, "not \"%s\"\n", realval);
-	*p_err = -EINVAL;
-	return 0;
-}
-
-static bool parse_on_off(const char *msg, const char *realval, int *p_err)
-{
-	static const char * const values_on_off[] = { "off", "on" };
-
-	return parse_one_of(msg, realval, values_on_off, ARRAY_SIZE(values_on_off), p_err);
-}
-
-
 static void bridge_slave_parse_on_off(const char *arg_name, const char *arg_val,
 				      struct nlmsghdr *n, int type)
 {
 	int ret;
-	__u8 val = parse_on_off(arg_name, arg_val, &ret);
+	uint8_t val = parse_on_off(arg_name, arg_val, &ret);
 
 	if (ret)
 		exit(1);
@@ -2892,6 +3428,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags,
 #if ENABLE_MACVLAN
 			else if (strcmp(type_str, "macvlan") == 0)
 				macvlan_parse_opt(argv, &req.n, sizeof(req));
+#endif
+#if ENABLE_BONDING
+			else if (strcmp(type_str, "bond") == 0)
+				bond_parse_opt(argv, &req.n, sizeof(req));
 #endif
 #if ENABLE_DSA
 			else if (strcmp(type_str, "dsa") == 0)

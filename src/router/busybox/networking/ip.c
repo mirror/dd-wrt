@@ -72,6 +72,14 @@
 //config:	help
 //config:	macvlan support for iplink"
 //config:
+//config:config BONDING
+//config:	bool "bonding support"
+//config:	default y
+//config:	select FEATURE_BONDING
+//config:	depends on IPLINK
+//config:	help
+//config:	bonding support for iplink"
+//config:
 //config:config IPROUTE
 //config:	bool "iproute (15 kb)"
 //config:	default y
@@ -204,7 +212,7 @@
 //usage:#define iplink_full_usage "\n"
 //usage:       "iplink add [link IFACE] IFACE [address MAC] type TYPE [ARGS]\n"
 //usage:       "iplink delete IFACE type TYPE [ARGS]\n"
-//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM | vxlan VXLANARGS | ipvlan IPVLANARGS| macvlan IPVLANARGS"IF_FEATURE_IP_LINK_CAN(" | can CANARGS")"\n"
+//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM | vxlan VXLANARGS | ipvlan IPVLANARGS| macvlan MACVLANARGS | bond BONDINGARGS"IF_FEATURE_IP_LINK_CAN(" | can CANARGS")"\n"
 //usage:       "	VLANARGS := id VLANID [protocol 802.1q|802.1ad] [reorder_hdr on|off]\n"
 //usage:       "		[gvrp on|off] [mvrp on|off] [loose_binding on|off]\n"
 //usage:       IF_FEATURE_IP_LINK_CAN(

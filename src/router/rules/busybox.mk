@@ -735,6 +735,11 @@ ifeq ($(CONFIG_VLAN_FILTERING),y)
 else
 	echo "# CONFIG_BRIDGE is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_BONDING),y)
+	echo "CONFIG_BONDING=y" >> busybox/.config
+else
+	echo "# CONFIG_BONDING is not set" >> busybox/.config
+endif
 ifeq ($(CONFIG_PROCPS),y)
 	sed -i 's/\CONFIG_FREE=y/# CONFIG_FREE is not set/g' busybox/.config
 	sed -i 's/\CONFIG_PGREP=y/# CONFIG_PGREP is not set/g' busybox/.config
