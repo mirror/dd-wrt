@@ -495,6 +495,275 @@ out:
 	return ret;
 }
 
+static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_keee *e)
+{
+	int port = phydev->mdio.addr;
+	u64 poll_state;
+	u32 val;
+	bool an_enabled;
+
+	pr_debug("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
+
+	poll_state = disable_polling(port);
+
+	/* Set GPHY page to copper */
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
+
+	if (e->eee_enabled) {
+		/* 100/1000M EEE Capability */
+		phy_write(phydev, 13, 0x0007);
+		phy_write(phydev, 14, 0x003C);
+		phy_write(phydev, 13, 0x4007);
+		phy_write(phydev, 14, 0x0006);
+
+		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+		val |= BIT(4);
+		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+	} else {
+		/* 100/1000M EEE Capability */
+		phy_write(phydev, 13, 0x0007);
+		phy_write(phydev, 14, 0x003C);
+		phy_write(phydev, 13, 0x0007);
+		phy_write(phydev, 14, 0x0000);
+
+		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+		val &= ~BIT(4);
+		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+	}
+
+	/* Restart AN if enabled */
+	if (an_enabled) {
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
+	}
+
+	/* GPHY page back to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	pr_debug("%s done\n", __func__);
+	resume_polling(poll_state);
+
+	return 0;
+}
+
+static int rtl8218b_get_eee(struct phy_device *phydev,
+			    struct ethtool_keee *e)
+{
+	u32 val;
+	int addr = phydev->mdio.addr;
+
+	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+
+	/* Set GPHY page to copper */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
+	val = phy_read_paged(phydev, 7, MDIO_AN_EEE_ADV);
+	if (e->eee_enabled) {
+		/* Verify vs MAC-based EEE */
+		e->eee_enabled = !!(val & BIT(7));
+		if (!e->eee_enabled) {
+			val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+			e->eee_enabled = !!(val & BIT(4));
+		}
+	}
+	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
+
+	/* GPHY page to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	return 0;
+}
+
+static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
+{
+	struct mii_bus *bus = phydev->mdio.bus;
+	static int regs[] = {16, 19, 20, 21};
+	int addr = phydev->mdio.addr & ~3;
+	int reg = regs[phydev->mdio.addr & 3];
+	int oldpage, val;
+
+	/*
+	 * The fiber status cannot be read directly from the phy. It is a package "global"
+	 * attribute and therefore located in the first phy. To avoid state handling assume
+	 * an aligment to addresses divisible by 4.
+	 */
+
+	oldpage = __mdiobus_read(bus, addr, RTL8XXX_PAGE_SELECT);
+	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
+	val = __mdiobus_read(bus, addr, reg);
+	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, oldpage);
+
+	return !(val & BMCR_PDOWN);
+}
+
+static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
+{
+	struct mii_bus *bus = phydev->mdio.bus;
+	int ret;
+
+	mutex_lock(&bus->mdio_lock);
+	ret = __rtl8214fc_media_is_fibre(phydev);
+	mutex_unlock(&bus->mdio_lock);
+
+	return ret;
+}
+
+static int rtl8214fc_set_eee(struct phy_device *phydev,
+			     struct ethtool_keee *e)
+{
+	u32 poll_state;
+	int port = phydev->mdio.addr;
+	bool an_enabled;
+	u32 val;
+
+	pr_debug("In %s port %d, enabled %d\n", __func__, port, e->eee_enabled);
+
+	if (rtl8214fc_media_is_fibre(phydev)) {
+		netdev_err(phydev->attached_dev, "Port %d configured for FIBRE", port);
+		return -ENOTSUPP;
+	}
+
+	poll_state = disable_polling(port);
+
+	/* Set GPHY page to copper */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
+	/* Get auto-negotiation status */
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
+
+	pr_debug("%s: aneg: %d\n", __func__, an_enabled);
+	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+	val &= ~BIT(5);  /* Use MAC-based EEE */
+	phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+
+	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
+	phy_write_paged(phydev, 7, MDIO_AN_EEE_ADV, e->eee_enabled ? (MDIO_EEE_100TX | MDIO_EEE_1000T) : 0);
+
+	/* 500M EEE ability */
+	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
+	if (e->eee_enabled)
+		val |= BIT(7);
+	else
+		val &= ~BIT(7);
+
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
+
+	/* Restart AN if enabled */
+	if (an_enabled) {
+		pr_debug("%s: doing aneg\n", __func__);
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
+	}
+
+	/* GPHY page back to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	resume_polling(poll_state);
+
+	return 0;
+}
+
+static int rtl8214fc_get_eee(struct phy_device *phydev,
+			     struct ethtool_keee *e)
+{
+	int addr = phydev->mdio.addr;
+
+	pr_debug("In %s port %d, enabled %d\n", __func__, addr, e->eee_enabled);
+	if (rtl8214fc_media_is_fibre(phydev)) {
+		netdev_err(phydev->attached_dev, "Port %d configured for FIBRE", addr);
+		return -ENOTSUPP;
+	}
+
+	return rtl8218b_get_eee(phydev, e);
+}
+
+/* Enable EEE on the RTL8218B PHYs
+ * The method used is not the preferred way (which would be based on the MAC-EEE state,
+ * but the only way that works since the kernel first enables EEE in the MAC
+ * and then sets up the PHY. The MAC-based approach would require the oppsite.
+ */
+void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
+{
+	u32 val;
+	bool an_enabled;
+
+	pr_debug("In %s %d, enable %d\n", __func__, phydev->mdio.addr, enable);
+	/* Set GPHY page to copper */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	val |= MDIO_EEE_1000T | MDIO_EEE_100TX;
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, enable ? (MDIO_EEE_100TX | MDIO_EEE_1000T) : 0);
+
+	/* 500M EEE ability */
+	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
+	if (enable)
+		val |= BIT(7);
+	else
+		val &= ~BIT(7);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
+
+	/* Restart AN if enabled */
+	if (an_enabled) {
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
+	}
+
+	/* GPHY page back to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+}
+
+static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_keee *e)
+{
+	int addr = phydev->mdio.addr;
+	u64 poll_state;
+
+	pr_debug("In %s, port %d, enabled %d\n", __func__, addr, e->eee_enabled);
+
+	poll_state = disable_polling(addr);
+
+	rtl8218d_eee_set(phydev, (bool) e->eee_enabled);
+
+	resume_polling(poll_state);
+
+	return 0;
+}
+
+
+
+static int rtl8218d_get_eee(struct phy_device *phydev,
+			    struct ethtool_keee *e)
+{
+	u32 val;
+	int addr = phydev->mdio.addr;
+
+	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+
+	/* Set GPHY page to copper */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
+	val = phy_read_paged(phydev, 7, MDIO_AN_EEE_ADV);
+	if (e->eee_enabled)
+		e->eee_enabled = !!(val & BIT(7));
+	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
+
+	/* GPHY page to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	return 0;
+}
+
 static int rtl8226_get_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	u32 val;
@@ -844,42 +1113,6 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	rtl821x_phy_setup_package_broadcast(phydev, false);
 
 	return 0;
-}
-
-static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
-{
-	struct mii_bus *bus = phydev->mdio.bus;
-	static int regs[] = {16, 19, 20, 21};
-	int addr = phydev->mdio.addr & ~3;
-	int reg = regs[phydev->mdio.addr & 3];
-	int oldpage, val;
-
-	/*
-	 * The fiber status cannot be read directly from the phy. It is a package "global"
-	 * attribute and therefore located in the first phy. To avoid state handling assume
-	 * an aligment to addresses divisible by 4.
-	 */
-
-	oldpage = __mdiobus_read(bus, addr, RTL8XXX_PAGE_SELECT);
-	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
-	val = __mdiobus_read(bus, addr, reg);
-	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, oldpage);
-
-	return !(val & BMCR_PDOWN);
-}
-
-static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
-{
-	struct mii_bus *bus = phydev->mdio.bus;
-	int ret;
-
-	mutex_lock(&bus->mdio_lock);
-	ret = __rtl8214fc_media_is_fibre(phydev);
-	mutex_unlock(&bus->mdio_lock);
-
-	return ret;
 }
 
 static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
@@ -1760,6 +1993,8 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.suspend	= rtl8214fc_suspend,
 		.write_mmd	= rtl8214fc_write_mmd,
 		.write_page	= rtl821x_write_page,
+		.get_eee	= rtl8214fc_get_eee,
+		.set_eee	= rtl8214fc_set_eee,
 	},
 	{
 		.match_phy_device = rtl8218b_ext_match_phy_device,
@@ -1773,6 +2008,8 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.suspend	= genphy_suspend,
 		.write_mmd	= rtl821x_write_mmd,
 		.write_page	= rtl821x_write_page,
+		.set_eee	= rtl8218b_set_eee,
+		.get_eee	= rtl8218b_get_eee,
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_I),
@@ -1799,6 +2036,8 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.suspend	= genphy_suspend,
 		.write_mmd	= rtl821x_write_mmd,
 		.write_page	= rtl821x_write_page,
+		.set_eee	= rtl8218d_set_eee,
+		.get_eee	= rtl8218d_get_eee,
 	},
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_RTL8218E),
@@ -1809,6 +2048,8 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
+		.write_mmd	= rtl821x_write_mmd,
+		.write_page	= rtl821x_write_page,
 		.set_eee	= rtl8218d_set_eee,
 		.get_eee	= rtl8218d_get_eee,
 	},
