@@ -544,6 +544,9 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 
 	rtldsa_vlan_setup(ds);
 
+	rtl83xx_setup_bpdu_traps(priv);
+	rtl83xx_setup_lldp_traps(priv);
+
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup();

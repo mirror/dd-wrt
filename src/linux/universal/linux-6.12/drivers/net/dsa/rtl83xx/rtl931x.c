@@ -3423,4 +3423,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.set_l3_router_mac = rtl931x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl931x_set_l3_egress_intf,
 	.fast_age = rtl931x_fast_age,
+	.set_receive_management_action = rtl931x_set_receive_management_action,
 };
