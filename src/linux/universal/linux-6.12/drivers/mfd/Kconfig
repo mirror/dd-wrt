@@ -1207,6 +1207,7 @@ config MFD_RDC321X
 
 config MFD_RTL8231
 	tristate "Realtek RTL8231 GPIO and LED expander"
+	depends on MACH_REALTEK_RTL
 	select MFD_CORE
 	select REGMAP_MDIO
 	help

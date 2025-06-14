@@ -1063,6 +1063,7 @@ config I2C_RK3X
 
 config I2C_RTL9300
 	tristate "Realtek RTL9300 I2C adapter"
+	depends on MACH_REALTEK_RTL
 	depends on OF
 	help
 	  Say Y here to include support for the I2C adapter in Realtek RTL9300
