@@ -281,6 +281,10 @@ int internal_getRouterBrand()
 		setRouter("Zyxel XGS1250-12");
 		return ROUTER_ZYXEL_XGS1250;
 	}
+	if (!strcmp(modelstr, "XGS1210-12")) {
+		setRouter("Zyxel XGS1210-12");
+		return ROUTER_ZYXEL_XGS1250;
+	}
 	if (!strcmp(modelstr, "HPE 1920-8G") && !strcmp(version,"(JG920A)")) {
 		setRouter("HPE 1920-8G (JG920A)");
 		return ROUTER_HP_1920;
