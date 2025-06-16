@@ -9,7 +9,7 @@
 #include <dt-bindings/thermal/thermal.h>
 
 / {
-	compatible = "zyxel,xgs1250-12", "realtek,rtl838x-soc";
+	compatible = "zyxel,xgs1250-12", "realtek,rtl930x-soc";
 	model = "Zyxel XGS1250-12 Switch";
 
 	aliases {

@@ -9,8 +9,8 @@
 #include <dt-bindings/thermal/thermal.h>
 
 / {
-	compatible = "zyxel,xgs1250-12", "realtek,rtl930x-soc";
-	model = "Zyxel XGS1250-12 V2";
+	compatible = "zyxel,xgs1210-12", "realtek,rtl930x-soc";
+	model = "Zyxel XGS1210-12 Switch";
 
 	aliases {
 		led-boot = &led_pwr_sys;
@@ -29,15 +29,40 @@
 		};
 	};
 
-	/* i2c of the SFP cage: port 12 */
+	/* i2c of the SFP cage: port 11 & port 12 */
 	i2c0: i2c-rtl9300@1b00036c {
 		compatible = "realtek,rtl9300-i2c";
 		reg = <0x1b00036c 0x3c>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		sda-pin = <10>;
+		sda-pin = <9>;
 		scl-pin = <8>;
 		clock-frequency = <100000>;
+	};
+
+	i2cmux {
+		compatible = "realtek,rtl9302-i2c-mux", "realtek,i2c-mux-rtl9300";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c-parent = <&i2c0>;
+
+		/* i2c of the left SFP+ cage as seen from the front: port 11 */
+		i2c0_0: i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <9>;
+			scl-pin = <8>;
+		};
+
+		/* i2c of the right SFP+ cage as seen from the front: port 12 */
+		i2c0_1: i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <10>;
+			scl-pin = <8>;
+		};
 	};
 
 	leds {
@@ -47,15 +72,25 @@
 		pinctrl-0 = <&pinmux_disable_sys_led>;
 
 		led_pwr_sys: led-0 {
+			label = "green:power";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
-	sfp0: sfp-p12 {
+	sfp0: sfp-p11 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c0>;
+		i2c-bus = <&i2c0_0>;
+		los-gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpio = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp1: sfp-p12 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0_1>;
 		los-gpio = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 16 GPIO_ACTIVE_LOW>;
@@ -66,111 +101,24 @@
 		compatible = "realtek,rtl9300-leds";
 		active-low;
 
-		led_set0 = <0x0a20 0x0b80>; // LED set 0: 1000Mbps,  10/100Mbps
-		led_set1 = <0x0a0b 0x0a28 0x0a82 0x0a0b>; // LED set 1: (10G, 5G, 2.5G) (2.5G, 1G)
-							  // (5G, 10/100) (10G, 5G, 2.5G)
-		led_set2 = <0x0a20 0x0a01>; // LED set 2: 1000MBit, 10GBit
-	};
+		// LED set 0:
+		// Amber: 100M/10M
+		// Yellow: 1G
+		led_set0 = <0x0a20 0x0b80>;
 
-	thermal-zones {
-		phy24-thermal {
-			/* Poll every 10 seconds */
-			polling-delay-passive = <10000>;
-			polling-delay = <10000>;
-			thermal-sensors = <&phy24>;
+		// LED set 1:
+		// Blue: 2.5G
+		// Green: 2.5G
+		// Yellow: 1G
+		// Amber: 100M/10M
+		// (Blue + Green = Cyan)
+		led_set1 = <0x0b80 0x0a20 0x0a08 0x0a08>;
 
-			trips {
-				phy24_trip0: phy24-trip0 {
-					/* At 80 degrees turn on fan */
-					temperature = <80000>;
-					hysteresis = <1000>;
-					type = "active";
-				};
-
-				phy24_trip1: phy24-trip1 {
-					/* At 108 degrees phys exceed spec */
-					temperature = <108000>;
-					hysteresis = <5000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map {
-					trip = <&phy24_trip0>;
-					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-			};
-		};
-
-		phy25-thermal {
-			/* Poll every 10 seconds */
-			polling-delay-passive = <10000>;
-			polling-delay = <10000>;
-			thermal-sensors = <&phy25>;
-
-			trips {
-				phy25_trip0: phy25-trip0 {
-					/* At 80 degrees turn on fan */
-					temperature = <80000>;
-					hysteresis = <1000>;
-					type = "active";
-				};
-
-				phy25_trip1: phy25-trip1 {
-					/* At 108 degrees phys exceed spec */
-					temperature = <108000>;
-					hysteresis = <5000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map {
-					trip = <&phy25_trip0>;
-					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-			};
-		};
-
-		phy26-thermal {
-			/* Poll every 10 seconds */
-			polling-delay-passive = <10000>;
-			polling-delay = <10000>;
-			thermal-sensors = <&phy26>;
-
-			trips {
-				phy26_trip0: phy26-trip0 {
-					/* At 80 degrees turn on fan */
-					temperature = <80000>;
-					hysteresis = <1000>;
-					type = "active";
-				};
-
-				phy26_trip1: phy26-trip1 {
-					/* At 108 degrees phys exceed spec */
-					temperature = <108000>;
-					hysteresis = <5000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map {
-					trip = <&phy26_trip0>;
-					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-			};
-		};
-	};
-
-	/* YEN SUN TECHNOLOGY FD122510LL-N fan */
-	chassis_fan: gpio-fan {
-		compatible = "gpio-fan";
-		gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-		gpio-fan,speed-map = <0    0
-				      7000 1>;
-		#cooling-cells = <2>;
+		// LED set 2:
+		// Blue: 10G/5G/2.5G
+		// Yellow: 5G/2.5G/1G
+		// (Blue + Yellow = Purple)
+		led_set2 = <0x0a2a 0x0a0b>;
 	};
 };
 
@@ -201,22 +149,23 @@
 				read-only;
 			};
 			partition@100000 {
-				label = "jffs";
+				label = "jffs2-cfg";
 				reg = <0x100000 0x100000>;
 			};
 			partition@200000 {
-				label = "jffs2";
+				label = "jffs2-log";
 				reg = <0x200000 0x100000>;
 			};
-			partition@300000 {
-				label = "linux";
+			partition@b300000 {
+				label = "firmware";
 				reg = <0x300000 0xce0000>;
 				compatible = "openwrt,uimage", "denx,uimage";
-				openwrt,ih-magic = <0x93001250>;
+				openwrt,ih-magic = <0x93001210>;
 			};
 			partition@fe0000 {
 				label = "nvram";
 				reg = <0xfe0000 0x20000>;
+				read-only;
 			};
 		};
 	};
@@ -229,7 +178,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		/* External RTL8218E PHY */
+		/* External RTL8218D PHY */
 		phy0: ethernet-phy@0 {
 			reg = <0>;
 			compatible = "ethernet-phy-ieee802.3-c22";
@@ -274,38 +223,34 @@
 			rtl9300,smi-address = <0 7>;
 		};
 
-		/* External RTL8261N PHYs */
+		/* External RTL8226 PHYs */
 		phy24: ethernet-phy@24 {
 			reg = <24>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 0>;
+			rtl9300,smi-address = <1 8>;
 			sds = < 6 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			#thermal-sensor-cells = <0>;
 		};
 
 		phy25: ethernet-phy@25 {
 			reg = <25>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <2 1>;
+			rtl9300,smi-address = <2 9>;
 			sds = < 7 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			#thermal-sensor-cells = <0>;
 		};
 
+		/* SFP0 Ports */
 		phy26: ethernet-phy@26 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
 			reg = <26>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 2>;
 			sds = < 8 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			#thermal-sensor-cells = <0>;
 		};
 
-		/* SFP Ports */
+		/* SFP1 Ports */
 		phy27: ethernet-phy@27 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			phy-is-integrated;
@@ -381,31 +326,34 @@
 		port@24 {
 			reg = <24>;
 			label = "lan09";
-			phy-mode = "usxgmii";
+			phy-mode = "hsgmii";
 			phy-handle = <&phy24>;
 			led-set = <1>;
 		};
 		port@25 {
 			reg = <25>;
 			label = "lan10";
-			phy-mode = "usxgmii";
+			phy-mode = "hsgmii";
 			phy-handle = <&phy25>;
 			led-set = <1>;
 		};
+
 		port@26 {
 			reg = <26>;
 			label = "lan11";
-			phy-mode = "usxgmii";
-			phy-handle = <&phy26>;
-			led-set = <1>;
+			phy-mode = "1000base-x";	//"10gbase-r";
+			pseudo-phy-handle = <&phy26>;
+			sfp = <&sfp0>;
+			led-set = <2>;
+			managed = "in-band-status";
 		};
 
 		port@27 {
 			reg = <27>;
 			label = "lan12";
-			phy-mode = "10gbase-r";
+			phy-mode = "1000base-x";
 			pseudo-phy-handle = <&phy27>;
-			sfp = <&sfp0>;
+			sfp = <&sfp1>;
 			led-set = <2>;
 			managed = "in-band-status";
 		};
