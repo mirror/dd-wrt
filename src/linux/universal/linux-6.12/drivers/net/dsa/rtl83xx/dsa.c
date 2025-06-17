@@ -1542,7 +1542,7 @@ void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtldsa_fast_age(struct dsa_switch *ds, int port)
+static void rtldsa_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -2872,7 +2872,7 @@ out:
 	return 0;
 }
 
-int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
+static int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 {
 	u32 val;
 	u32 offset = 0;
@@ -2891,7 +2891,7 @@ int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 	return val;
 }
 
-int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
+static int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
 {
 	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;

@@ -417,15 +417,15 @@ search_soul(const unsigned char *payload, const unsigned int plen)
 		/* we need 19 chars + string */
 		if (y + 19 <= plen) {
 			const unsigned char *w = payload + 9 + y;
-			if (get_u32(w, 0) == 0x01 &&
-			    (get_u16(w, 4) == 0x4600 ||
-			    get_u16(w, 4) == 0x5000) &&
-			    get_u32(w, 6) == 0x00)
-				;
+			if ((get_u32(w, 0) == 0x01 &&
+			    (get_u16(w, 4) == 0x4600)) ||
+			    ((get_u16(w, 4) == 0x5000) &&
+			    get_u32(w, 6) == 0x00)) {
 #ifdef IPP2P_DEBUG_SOUL
 	    		printk(KERN_DEBUG "Soulssek special client command recognized\n");
 #endif
 	    		return IPP2P_SOUL * 100 + 9;
+	    		}
 		}
 	}
 	return 0;

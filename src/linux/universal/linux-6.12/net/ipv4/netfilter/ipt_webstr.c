@@ -286,7 +286,7 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 	{
 	    case IPT_WEBSTR_URL:	/* fall through */
 		flags |= HTTP_URL;
-
+		fallthrough;
 	    case IPT_WEBSTR_HOST:
 		flags |= HTTP_HOST;
 		break;

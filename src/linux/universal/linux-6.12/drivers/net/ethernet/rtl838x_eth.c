@@ -25,6 +25,34 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
+extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
+
+extern int rtl838x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+extern int rtl838x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+extern int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+
+extern int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
+extern int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+extern int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+extern int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
+
+extern int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+extern int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
+extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+extern int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+extern int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
+extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+extern int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
+extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+extern int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
 /* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
  * The ring is assigned by switch based on packet/port priortity
  * Maximum number of TX rings is 2, Ring 2 being the high priority
@@ -221,7 +249,7 @@ extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
  */
-void rtl838x_update_cntr(int r, int released)
+static void rtl838x_update_cntr(int r, int released)
 {
 	int pos = r * 4;
 	u32 reg = rtl838x_dma_if_rx_ring_cntr(r);
@@ -236,13 +264,13 @@ void rtl838x_update_cntr(int r, int released)
 	sw_w32(sw_r32(reg) & (0xf << pos), reg);
 }
 
-void rtl839x_update_cntr(int r, int released)
+static void rtl839x_update_cntr(int r, int released)
 {
 	/* This feature is not available on RTL839x SoCs */
 }
 
 
-void rtl930x_update_cntr(int r, int released)
+static void rtl930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
 	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
@@ -250,7 +278,7 @@ void rtl930x_update_cntr(int r, int released)
 	sw_w32(released << pos, reg);
 }
 
-void rtl931x_update_cntr(int r, int released)
+static void rtl931x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
 	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
@@ -267,7 +295,7 @@ struct dsa_tag {
 	bool	crc_error;
 };
 
-bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[4] & 0xf;
@@ -284,7 +312,7 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
@@ -302,7 +330,7 @@ bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -318,7 +346,7 @@ bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -374,7 +402,7 @@ struct fdb_update_work {
 	u64 macs[NOTIFY_EVENTS + 1];
 };
 
-void rtl838x_fdb_sync(struct work_struct *work)
+static void rtl838x_fdb_sync(struct work_struct *work)
 {
 	const struct fdb_update_work *uw = container_of(work, struct fdb_update_work, work);
 
@@ -1202,7 +1230,7 @@ txdone:
 /* Return queue number for TX. On the RTL83XX, these queues have equal priority
  * so we do round-robin
  */
-u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
+static u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 			  struct net_device *sb_dev)
 {
 	static u8 last = 0;
@@ -1213,7 +1241,7 @@ u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 
 /* Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
  */
-u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
+static u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 			  struct net_device *sb_dev)
 {
 	if (skb->priority >= TC_PRIO_CONTROL)
@@ -1226,8 +1254,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
 	struct sk_buff *skb;
-	int i, len, work_done = 0, idx;
-	unsigned int val;
+	int len, work_done = 0, idx;
 	struct p_hdr *h;
 	bool dsa = netdev_uses_dsa(dev);
 	struct dsa_tag tag;
@@ -2401,7 +2428,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
 	cpumask_t affinity_mask;
-	int i;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
 		(u32)pdev, (u32)(&(pdev->dev)));

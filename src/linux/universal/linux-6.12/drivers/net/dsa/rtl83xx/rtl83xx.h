@@ -171,7 +171,6 @@ u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id);
 void rtl8380_get_version(struct rtl838x_switch_priv *priv);
 int rtl83xx_dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg);
-void rtl8380_sds_rst(int mac);
 int rtl8380_sds_power(int mac, int val);
 void rtl838x_print_matrix(void);
 
@@ -184,14 +183,10 @@ void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtl839x_print_matrix(void);
 
 /* RTL930x-specific */
-u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 int rtl9300_sds_power(int mac, int val);
-void rtl930x_sds_rst(int sds_num, u32 mode);
-void rtl931x_sds_rst(int sds_num, phy_interface_t phy_mode);
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
-void rtl930x_sds_set_autoneg(int sds_num, bool autoneg);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */

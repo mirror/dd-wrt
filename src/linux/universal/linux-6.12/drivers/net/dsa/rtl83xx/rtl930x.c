@@ -681,7 +681,7 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-u64 rtl930x_traffic_get(int source)
+static u64 rtl930x_traffic_get(int source)
 {
 	u32 v;
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
@@ -695,7 +695,7 @@ u64 rtl930x_traffic_get(int source)
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-void rtl930x_traffic_set(int source, u64 dest_matrix)
+static void rtl930x_traffic_set(int source, u64 dest_matrix)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 
@@ -704,7 +704,7 @@ void rtl930x_traffic_set(int source, u64 dest_matrix)
 	rtl_table_release(r);
 }
 
-void rtl930x_traffic_enable(int source, int dest)
+static void rtl930x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -713,7 +713,7 @@ void rtl930x_traffic_enable(int source, int dest)
 	rtl_table_release(r);
 }
 
-void rtl930x_traffic_disable(int source, int dest)
+static void rtl930x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -721,8 +721,8 @@ void rtl930x_traffic_disable(int source, int dest)
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
-
-void rtl930x_dump_debug(void)
+#if 0
+static void rtl930x_dump_debug(void)
 {
 	u16 r = RTL930X_STAT_PRVTE_DROP_COUNTER0;
 
@@ -740,6 +740,7 @@ void rtl930x_dump_debug(void)
 
 	);
 }
+#endif
 
 irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 {
@@ -886,11 +887,12 @@ int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	return err;
 }
 
+#if 0
 /* Calculate both the block 0 and the block 1 hash, and return in
  * lower and higher word of the return value since only 12 bit of
  * the hash are significant
  */
-u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
+static u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 {
 	u32 k0, k1, h1, h2, h;
 
@@ -933,9 +935,10 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 
 	return h;
 }
+#endif
 
 /* Enables or disables the EEE/EEEP capability of a port */
-void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -1873,8 +1876,8 @@ static void rtl930x_write_pie_action(u32 r[],  struct pie_rule *pr)
 	r[17] |= ((u32)(pr->nopri_data) & 0x7) << 25;
 	r[17] |= pr->bypass_ibc_sc ? BIT(16) : 0;
 }
-
-void rtl930x_pie_rule_dump_raw(u32 r[])
+#if 0
+static void rtl930x_pie_rule_dump_raw(u32 r[])
 {
 	pr_debug("Raw IACL table entry:\n");
 	pr_debug("r 0 - 7: %08x %08x %08x %08x %08x %08x %08x %08x\n",
@@ -1893,6 +1896,7 @@ void rtl930x_pie_rule_dump_raw(u32 r[])
 	pr_debug("Valid / not / and1 / and2 : %1x\n", (r[13] >> 12) & 0xf);
 	pr_debug("r 13-16: %08x %08x %08x %08x\n", r[13], r[14], r[15], r[16]);
 }
+#endif
 
 static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
 {
@@ -2254,7 +2258,7 @@ static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
  * - The router's MAC address on which routed packets are expected
  * - MAC addresses used as source macs of routed packets
  */
-int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
+static int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
 {
 	/* Setup MTU with id 0 for default interface */
 	for (int i = 0; i < MAX_INTF_MTUS; i++)
@@ -2350,7 +2354,7 @@ static void rtl930x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+static void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK,
 			  keep_outer ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG) |
@@ -2359,9 +2363,10 @@ void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 	       RTL930X_VLAN_PORT_TAG_STS_CTRL(port));
 }
 
-void rtl930x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+static void rtl930x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
 	u32 value = 0;
+
 	
 	switch(action) {
 	case FORWARD:
@@ -2373,6 +2378,7 @@ void rtl930x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	case TRAP2CPU:
 	    value = 2;
 	break;
+	case COPY2CPU:
 	case TRAP2MASTERCPU:
 	    value = 3;
 	break;
@@ -2408,7 +2414,7 @@ void rtl930x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 }
 
 
-void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+static void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -2416,7 +2422,7 @@ void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 		sw_w32_mask(0x3 << 14, mode << 14 ,RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
-void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+static void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0xfff << 2, pvid << 2, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -2452,7 +2458,7 @@ static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 {
 	u32 l3shift = 0;
 	u32 newmask = 0;
@@ -2494,7 +2500,8 @@ void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 /* Wait for clock ready, this assumes the SerDes is in XGMII mode
  * timeout is in ms
  */
-int rtl930x_sds_clock_wait(int timeout)
+#if 0
+static int rtl930x_sds_clock_wait(int timeout)
 {
 	u32 v;
 	unsigned long start = jiffies;
@@ -2508,6 +2515,7 @@ int rtl930x_sds_clock_wait(int timeout)
 
 	return 1;
 }
+#endif
 
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
@@ -2802,7 +2810,7 @@ static void rtl930x_serdes_patch(int sds_num)
 	}
 }
 
-void rtl930x_phy_enable_10g_1g(int sds_num)
+static void rtl930x_phy_enable_10g_1g(int sds_num)
 {
 	u32 v;
 
@@ -2828,7 +2836,7 @@ void rtl930x_phy_enable_10g_1g(int sds_num)
 	pr_debug("%s set medium after: %08x\n", __func__, v);
 }
 
-void rtl930x_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
+static void rtl930x_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 {
 	u32 v10, v1;
 
@@ -2853,7 +2861,7 @@ void rtl930x_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 	pr_debug("%s: registers after %08x %08x\n", __func__, v10, v1);
 }
 
-void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
+static void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 {
 	int page = 0x2e; /* 10GR and USXGMII */
 
@@ -2865,7 +2873,7 @@ void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 	rtl930x_sds_field_w(sds_num, page, 0x15, 4, 4, 0x0);
 }
 
-void rtl930x_sds_lc_config(int sds, bool lc_on, int lc_value)
+static void rtl930x_sds_lc_config(int sds, bool lc_on, int lc_value)
 {
 	int lane_0 = (sds % 2) ? sds - 1 : sds;
 	u32 v;
@@ -2898,7 +2906,7 @@ void rtl930x_sds_lc_config(int sds, bool lc_on, int lc_value)
 
 /* Force PHY modes on 10GBit Serdes
  */
-void rtl930x_force_sds_mode(int sds, phy_interface_t phy_if)
+static void rtl930x_force_sds_mode(int sds, phy_interface_t phy_if)
 {
 	int lc_value;
 	int sds_mode;
@@ -3085,7 +3093,7 @@ void rtl930x_force_sds_mode(int sds, phy_interface_t phy_if)
 	pr_debug("%s --------------------- serdes %d forced to %x DONE\n", __func__, sds, sds_mode);
 }
 
-void rtl930x_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
+static void rtl930x_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 {
 	/* From both rtl930xrxCaliConf_serdes_myParam and rtl930xrxCaliConf_phy_myParam */
 	int tap0_init_val = 0x1f; /* Initial Decision Fed Equalizer 0 tap */
@@ -3180,7 +3188,7 @@ void rtl930x_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	pr_debug("end_1.1.5\n");
 }
 
-void rtl930x_do_rx_calibration_2_1(u32 sds_num)
+static void rtl930x_do_rx_calibration_2_1(u32 sds_num)
 {
 	pr_debug("start_1.2.1 ForegroundOffsetCal_Manual\n");
 
@@ -3193,7 +3201,7 @@ void rtl930x_do_rx_calibration_2_1(u32 sds_num)
 	pr_debug("end_1.2.1");
 }
 
-void rtl930x_do_rx_calibration_2_2(int sds_num)
+static void rtl930x_do_rx_calibration_2_2(int sds_num)
 {
 	/* Force Rx-Run = 0 */
 	rtl930x_sds_field_w(sds_num, 0x2e, 0x15, 8, 8, 0x0);
@@ -3201,7 +3209,7 @@ void rtl930x_do_rx_calibration_2_2(int sds_num)
 	rtl930x_sds_rx_rst(sds_num, PHY_INTERFACE_MODE_10GBASER);
 }
 
-void rtl930x_do_rx_calibration_2_3(int sds_num)
+static void rtl930x_do_rx_calibration_2_3(int sds_num)
 {
 	u32 fgcal_binary, fgcal_gray;
 	u32 offset_range;
@@ -3248,7 +3256,7 @@ void rtl930x_do_rx_calibration_2_3(int sds_num)
 	pr_debug("%s: end_1.2.3\n", __func__);
 }
 
-void rtl930x_do_rx_calibration_2(int sds)
+static void rtl930x_do_rx_calibration_2(int sds)
 {
 	rtl930x_sds_rx_rst(sds, PHY_INTERFACE_MODE_10GBASER);
 	rtl930x_do_rx_calibration_2_1(sds);
@@ -3256,7 +3264,8 @@ void rtl930x_do_rx_calibration_2(int sds)
 	rtl930x_do_rx_calibration_2_3(sds);
 }
 
-void rtl930x_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
+#if 0
+static void rtl930x_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
 {
 	if (manual) {
 		rtl930x_sds_field_w(sds_num, 0x2e, 0x18, 15, 15, 0x1);
@@ -3267,7 +3276,7 @@ void rtl930x_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
 	}
 }
 
-void rtl930x_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
+static void rtl930x_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
 {
 	if (manual) {
 		rtl930x_sds_field_w(sds_num, 0x2e, 0x17, 6, 2, offset);
@@ -3277,7 +3286,7 @@ void rtl930x_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
 	}
 }
 
-void rtl930x_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
+static void rtl930x_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
 {
 	pr_debug("start_1.3.1");
 
@@ -3292,9 +3301,11 @@ void rtl930x_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
 
 	pr_debug("end_1.3.1");
 }
+#endif
 
 #define GRAY_BITS 5
-u32 rtl930x_sds_rxcal_gray_to_binary(u32 gray_code)
+#if 0
+static u32 rtl930x_sds_rxcal_gray_to_binary(u32 gray_code)
 {
 	int i, j, m;
 	u32 g[GRAY_BITS];
@@ -3320,7 +3331,7 @@ u32 rtl930x_sds_rxcal_gray_to_binary(u32 gray_code)
 	return leq_binary;
 }
 
-u32 rtl930x_sds_rxcal_leq_read(int sds_num)
+static u32 rtl930x_sds_rxcal_leq_read(int sds_num)
 {
 	u32 leq_gray, leq_bin;
 	bool leq_manual;
@@ -3349,7 +3360,7 @@ u32 rtl930x_sds_rxcal_leq_read(int sds_num)
 }
 
 
-void rtl930x_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
+static void rtl930x_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
 {
 	u32 sum10 = 0, avg10, int10;
 	int dac_long_cable_offset;
@@ -3411,7 +3422,7 @@ void rtl930x_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
 	pr_debug("end_1.3.2");
 }
 
-void rtl930x_do_rx_calibration_3(int sds_num, phy_interface_t phy_mode)
+static void rtl930x_do_rx_calibration_3(int sds_num, phy_interface_t phy_mode)
 {
 	rtl930x_sds_rxcal_3_1(sds_num, phy_mode);
 
@@ -3420,8 +3431,8 @@ void rtl930x_do_rx_calibration_3(int sds_num, phy_interface_t phy_mode)
 	    phy_mode == PHY_INTERFACE_MODE_SGMII)
 		rtl930x_sds_rxcal_3_2(sds_num, phy_mode);
 }
-
-void rtl930x_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
+#endif
+static void rtl930x_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
 {
 	if (manual) {
 		rtl930x_sds_field_w(sds_num, 0x2e, 0x0f, 13, 13, 0x1);
@@ -3434,14 +3445,14 @@ void rtl930x_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
 }
 
 /* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
-u16 rtl930x_sds_regs[] = { 0x0194, 0x0194, 0x0194, 0x0194, 0x02a0, 0x02a0, 0x02a0, 0x02a0,
+static u16 rtl930x_sds_regs[] = { 0x0194, 0x0194, 0x0194, 0x0194, 0x02a0, 0x02a0, 0x02a0, 0x02a0,
 			   0x02A4, 0x02A4, 0x0198, 0x0198 };
-u8  rtl930x_sds_lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
+static u8  rtl930x_sds_lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
 
 /* Reset the SerDes by powering it off and set a new operation mode
  * of the SerDes.
  */
-void rtl930x_sds_rst(int sds_num, u32 mode)
+static void rtl930x_sds_rst(int sds_num, u32 mode)
 {
 	pr_debug("%s %d\n", __func__, mode);
 	if (sds_num < 0 || sds_num > 11) {
@@ -3462,8 +3473,9 @@ void rtl930x_sds_rst(int sds_num, u32 mode)
 	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 
 }
+#if 0
 
-void rtl930x_sds_set(int sds_num, u32 mode)
+static void rtl930x_sds_set(int sds_num, u32 mode)
 {
 	pr_debug("%s %d\n", __func__, mode);
 	if (sds_num < 0 || sds_num > 11) {
@@ -3478,6 +3490,7 @@ void rtl930x_sds_set(int sds_num, u32 mode)
 	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
 	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 }
+#endif
 
 u32 rtl930x_sds_mode_get(int sds_num)
 {
@@ -3494,7 +3507,8 @@ u32 rtl930x_sds_mode_get(int sds_num)
 	return v & RTL930X_SDS_MASK;
 }
 
-int rtl930x_sds_cmu_band_get(int sds)
+#if 0
+static int rtl930x_sds_cmu_band_get(int sds)
 {
 	u32 page;
 	u32 en;
@@ -3518,8 +3532,9 @@ int rtl930x_sds_cmu_band_get(int sds)
 
 	return cmu_band;
 }
+#endif
 
-void rtl930x_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
+static void rtl930x_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
 {
 	u32 vth_manual;
 
@@ -3550,7 +3565,7 @@ void rtl930x_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
 	pr_debug("Vth Maunal = %d", vth_manual);
 }
 
-void rtl930x_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_list[])
+static void rtl930x_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_list[])
 {
 	if (manual) {
 		switch(tap_id) {
@@ -3597,7 +3612,7 @@ void rtl930x_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_
 	}
 }
 
-void rtl930x_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
+static void rtl930x_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 {
 	u32 tap0_sign_out;
 	u32 tap0_coef_bin;
@@ -3675,7 +3690,7 @@ void rtl930x_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 	}
 }
 
-int rtl930x_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
+static int rtl930x_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
 {
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_XGMII:
@@ -3702,7 +3717,7 @@ int rtl930x_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
 	return 0;
 }
 
-u32 rtl930x_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
+static u32 rtl930x_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
 {
 	u32 v = 0;
 
@@ -3724,7 +3739,7 @@ u32 rtl930x_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
 }
 
 
-int rtl930x_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
+static int rtl930x_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 {
 	u32 errors1, errors2;
 
@@ -3759,7 +3774,7 @@ int rtl930x_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 	return 0;
 }
 
-void rtl930x_do_rx_calibration_4_1(int sds_num)
+static void rtl930x_do_rx_calibration_4_1(int sds_num)
 {
 	u32 vth_list[2] = {0, 0};
 	u32 tap0_list[4] = {0, 0, 0, 0};
@@ -3774,7 +3789,7 @@ void rtl930x_do_rx_calibration_4_1(int sds_num)
 	pr_debug("end_1.4.1");
 }
 
-void rtl930x_do_rx_calibration_4_2(u32 sds_num)
+static void rtl930x_do_rx_calibration_4_2(u32 sds_num)
 {
 	u32 vth_list[2];
 	u32 tap_list[4];
@@ -3792,13 +3807,13 @@ void rtl930x_do_rx_calibration_4_2(u32 sds_num)
 	pr_debug("end_1.4.2");
 }
 
-void rtl930x_do_rx_calibration_4(u32 sds_num)
+static void rtl930x_do_rx_calibration_4(u32 sds_num)
 {
 	rtl930x_do_rx_calibration_4_1(sds_num);
 	rtl930x_do_rx_calibration_4_2(sds_num);
 }
 
-void rtl930x_do_rx_calibration_5_2(u32 sds_num)
+static void rtl930x_do_rx_calibration_5_2(u32 sds_num)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
@@ -3817,14 +3832,14 @@ void rtl930x_do_rx_calibration_5_2(u32 sds_num)
 	pr_debug("end_1.5.2");
 }
 
-void rtl930x_do_rx_calibration_5(u32 sds_num, phy_interface_t phy_mode)
+static void rtl930x_do_rx_calibration_5(u32 sds_num, phy_interface_t phy_mode)
 {
 	if (phy_mode == PHY_INTERFACE_MODE_10GBASER) /* dfeTap1_4Enable true */
 		rtl930x_do_rx_calibration_5_2(sds_num);
 }
 
 
-void rtl930x_do_rx_calibration_dfe_disable(u32 sds_num)
+static void rtl930x_do_rx_calibration_dfe_disable(u32 sds_num)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
@@ -3839,7 +3854,7 @@ void rtl930x_do_rx_calibration_dfe_disable(u32 sds_num)
 	mdelay(10);
 }
 
-void rtl930x_do_rx_calibration(int sds, phy_interface_t phy_mode)
+static void rtl930x_do_rx_calibration(int sds, phy_interface_t phy_mode)
 {
 	u32 latch_sts;
 
@@ -3863,7 +3878,8 @@ void rtl930x_do_rx_calibration(int sds, phy_interface_t phy_mode)
 	}
 }
 
-void rtl930x_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dvcs_list[])
+#if 0
+static void rtl930x_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dvcs_list[])
 {
 	if (manual) {
 		switch(dcvs_id) {
@@ -3926,8 +3942,7 @@ void rtl930x_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dv
 		mdelay(1);
 	}
 }
-
-void rtl930x_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
+static void rtl930x_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 {
 	u32 dcvs_sign_out = 0, dcvs_coef_bin = 0;
 	bool dcvs_manual;
@@ -4018,9 +4033,9 @@ void rtl930x_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 	dcvs_list[0] = dcvs_sign_out;
 	dcvs_list[1] = dcvs_coef_bin;
 }
+#endif
 
-
-void rtl930x_sds_tx_config(int sds, phy_interface_t phy_if)
+static void rtl930x_sds_tx_config(int sds, phy_interface_t phy_if)
 {
 	/* parameters: rtl9303_80G_txParam_s2 */
 	int impedance = 0x8;
@@ -4069,7 +4084,7 @@ void rtl930x_sds_tx_config(int sds, phy_interface_t phy_if)
 	rtl930x_sds_field_w(sds, page, 0x18, 15, 12, impedance);
 }
 
-void rtl930x_sds_set_autoneg(int sds_num, bool autoneg)
+static void rtl930x_sds_set_autoneg(int sds_num, bool autoneg)
 {
 	u32 v;
 
@@ -4083,7 +4098,7 @@ void rtl930x_sds_set_autoneg(int sds_num, bool autoneg)
 	rtl930x_write_sds_phy(sds_num, PHY_PAGE_2, MII_BMCR, v);
 }
 
-int rtl930x_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
+static int rtl930x_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 {
 	int calib_tries = 0;
 
@@ -4171,7 +4186,7 @@ static int rtl93xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	return 0;
 }
 
-void rtl930x_fast_age(struct dsa_switch *ds, int port)
+static void rtl930x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 

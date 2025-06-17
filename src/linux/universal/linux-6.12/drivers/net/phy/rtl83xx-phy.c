@@ -232,84 +232,6 @@ static void rtl8380_phy_reset(struct phy_device *phydev)
 	phy_modify(phydev, 0, BMCR_RESET, BMCR_RESET);
 }
 
-/* On the RTL838x SoCs, the internal SerDes is accessed through direct access to
- * standard PHY registers, where a 32 bit register holds a 16 bit word as found
- * in a standard page 0 of a PHY
- */
-int rtl838x_read_sds_phy(int phy_addr, int phy_reg)
-{
-	int offset = 0;
-	u32 val;
-
-	if (phy_addr == 26)
-		offset = 0x100;
-	val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
-
-	return val;
-}
-
-/* On the RTL839x family of SoCs with inbuilt SerDes, these SerDes are accessed through
- * a 2048 bit register that holds the contents of the PHY being simulated by the SoC.
- */
-int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
-{
-	int offset = 0;
-	int reg;
-	u32 val;
-
-	if (phy_addr == 49)
-		offset = 0x100;
-
-	/* For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
-	 * which would otherwise read as 0.
-	 */
-	if (soc_info.id == 0x8393) {
-		if (phy_reg == MII_PHYSID1)
-			return 0x1c;
-		if (phy_reg == MII_PHYSID2)
-			return 0x8393;
-	}
-
-	/* Register RTL839X_SDS12_13_XSG0 is 2048 bit broad, the MSB (bit 15) of the
-	 * 0th PHY register is bit 1023 (in byte 0x80). Because PHY-registers are 16
-	 * bit broad, we offset by reg << 1. In the SoC 2 registers are stored in
-	 * one 32 bit register.
-	 */
-	reg = (phy_reg << 1) & 0xfc;
-	val = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
-
-	if (phy_reg & 1)
-		val = (val >> 16) & 0xffff;
-	else
-		val &= 0xffff;
-
-	return val;
-}
-
-
-int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v)
-{
-	int offset = 0;
-	int reg;
-	u32 val;
-
-	if (phy_addr == 49)
-		offset = 0x100;
-
-	reg = (phy_reg << 1) & 0xfc;
-	val = v;
-	if (phy_reg & 1) {
-		val = val << 16;
-		sw_w32_mask(0xffff0000, val,
-			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
-	} else {
-		sw_w32_mask(0xffff, val,
-			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
-	}
-
-	return 0;
-}
-
 /* Read the link and speed status of the 2 internal SGMII/1000Base-X
  * ports of the RTL838x SoCs
  */
@@ -689,7 +611,7 @@ static int rtl8214fc_get_eee(struct phy_device *phydev,
  * but the only way that works since the kernel first enables EEE in the MAC
  * and then sets up the PHY. The MAC-based approach would require the oppsite.
  */
-void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
+static void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 {
 	u32 val;
 	bool an_enabled;
@@ -1610,6 +1532,83 @@ static int rtl8390_configure_serdes(struct phy_device *phydev)
 	return 0;
 }
 
+/* On the RTL838x SoCs, the internal SerDes is accessed through direct access to
+ * standard PHY registers, where a 32 bit register holds a 16 bit word as found
+ * in a standard page 0 of a PHY
+ */
+int rtl838x_read_sds_phy(int phy_addr, int phy_reg)
+{
+	int offset = 0;
+	u32 val;
+
+	if (phy_addr == 26)
+		offset = 0x100;
+	val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
+
+	return val;
+}
+
+/* On the RTL839x family of SoCs with inbuilt SerDes, these SerDes are accessed through
+ * a 2048 bit register that holds the contents of the PHY being simulated by the SoC.
+ */
+int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
+{
+	int offset = 0;
+	int reg;
+	u32 val;
+
+	if (phy_addr == 49)
+		offset = 0x100;
+
+	/* For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
+	 * which would otherwise read as 0.
+	 */
+	if (soc_info.id == 0x8393) {
+		if (phy_reg == MII_PHYSID1)
+			return 0x1c;
+		if (phy_reg == MII_PHYSID2)
+			return 0x8393;
+	}
+
+	/* Register RTL839X_SDS12_13_XSG0 is 2048 bit broad, the MSB (bit 15) of the
+	 * 0th PHY register is bit 1023 (in byte 0x80). Because PHY-registers are 16
+	 * bit broad, we offset by reg << 1. In the SoC 2 registers are stored in
+	 * one 32 bit register.
+	 */
+	reg = (phy_reg << 1) & 0xfc;
+	val = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
+
+	if (phy_reg & 1)
+		val = (val >> 16) & 0xffff;
+	else
+		val &= 0xffff;
+
+	return val;
+}
+
+
+int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v)
+{
+	int offset = 0;
+	int reg;
+	u32 val;
+
+	if (phy_addr == 49)
+		offset = 0x100;
+
+	reg = (phy_reg << 1) & 0xfc;
+	val = v;
+	if (phy_reg & 1) {
+		val = val << 16;
+		sw_w32_mask(0xffff0000, val,
+			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
+	} else {
+		sw_w32_mask(0xffff, val,
+			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
+	}
+
+	return 0;
+}
 
 /* Read the link and speed status of the internal SerDes of the RTL9300
  */
@@ -1668,7 +1667,7 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	return 0;
 }
 
-int rtl931x_link_sts_get(u32 sds)
+static int rtl931x_link_sts_get(u32 sds)
 {
 	u32 sts, sts1, latch_sts, latch_sts1;
 	if (0){
@@ -1704,7 +1703,7 @@ static int rtl9310_read_status(struct phy_device *phydev)
 	struct device *dev = &phydev->mdio.dev;
 	int phy_addr = phydev->mdio.addr;
 	struct device_node *dn;
-	u32 sds_num = 0, status, latch_status, mode;
+	u32 sds_num = 0, latch_status;
 
 	if (dev->of_node) {
 		dn = dev->of_node;

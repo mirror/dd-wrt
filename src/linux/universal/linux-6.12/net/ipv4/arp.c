@@ -1543,7 +1543,7 @@ static const struct seq_operations arp_seq_ops = {
 #endif /* CONFIG_PROC_FS */
 
 #ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
-ssize_t arp_spoofing_enable_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
+static ssize_t arp_spoofing_enable_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
 {
 	int iLen = 0;
 
@@ -1562,7 +1562,7 @@ ssize_t arp_spoofing_enable_read(struct file *file,  char __user *buffer, size_t
 
 }
 
-ssize_t arp_spoofing_enable_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+static ssize_t arp_spoofing_enable_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
 {
 	char *buf = kmalloc(count, GFP_KERNEL);
 	unsigned long val;
@@ -1586,7 +1586,7 @@ ssize_t arp_spoofing_enable_write(struct file *file, const char __user *buffer, 
 	return count;
 }
 
-ssize_t arp_spoofing_table_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
+static ssize_t arp_spoofing_table_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
 {
 	int iLen = 0;
 	int i = 0;
@@ -1619,7 +1619,7 @@ ssize_t arp_spoofing_table_read(struct file *file,  char __user *buffer, size_t 
 }
 
 
-ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+static ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
 {
 	char *buf = kmalloc(count + 1, GFP_KERNEL);
 	int i = 0;

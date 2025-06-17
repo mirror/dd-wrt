@@ -61,3 +61,18 @@ struct __attribute__ ((__packed__)) fw_header {
 
 /* Registers of the internal SerDes of the 9310 */
 #define RTL931X_MAC_FORCE_MODE_CTRL(port)	(0xDCC + (((port) << 2)))
+
+int rtl838x_read_sds_phy(int phy_addr, int phy_reg);
+int rtl838x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
+
+int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
+int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
+
+int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
+int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
+int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+
+int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
+int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode);
+void rtl931x_sds_init(u32 sds, phy_interface_t mode);

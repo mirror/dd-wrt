@@ -456,7 +456,6 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	int err = 0;
 	u32 v;
 	int type = 1;
-	u64 pm;
 
 	mutex_lock(&smi_lock);
 
@@ -1111,7 +1110,8 @@ static void rtl931x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	rtl_table_release(r);
 }
 
-void rtl931x_print_matrix(void)
+#if 0
+static void rtl931x_print_matrix(void)
 {
 	volatile u64 *ptr = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
 
@@ -1120,8 +1120,9 @@ void rtl931x_print_matrix(void)
 			ptr[i + 0], ptr[i + 1], ptr[i + 2], ptr[i + 3]);
 	pr_debug("CPU_PORT> %16llx\n", ptr[52]);
 }
+#endif
 
-void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+static void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
 	u32 value = 0;
 
@@ -1177,7 +1178,7 @@ void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
-u64 rtl931x_traffic_get(int source)
+static u64 rtl931x_traffic_get(int source)
 {
 	u32 v;
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
@@ -1191,7 +1192,7 @@ u64 rtl931x_traffic_get(int source)
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-void rtl931x_traffic_set(int source, u64 dest_matrix)
+static void rtl931x_traffic_set(int source, u64 dest_matrix)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 
@@ -1200,7 +1201,7 @@ void rtl931x_traffic_set(int source, u64 dest_matrix)
 	rtl_table_release(r);
 }
 
-void rtl931x_traffic_enable(int source, int dest)
+static void rtl931x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -1209,7 +1210,7 @@ void rtl931x_traffic_enable(int source, int dest)
 	rtl_table_release(r);
 }
 
-void rtl931x_traffic_disable(int source, int dest)
+static void rtl931x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -1673,10 +1674,6 @@ static int rtl931x_set_ageing_time(unsigned long msec)
 
 	return 0;
 }
-void rtl931x_sw_init(struct rtl838x_switch_priv *priv)
-{
-/*	rtl931x_sds_init(priv); */
-}
 
 static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
 {
@@ -1694,7 +1691,8 @@ static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
  * pie_data_fill function for all SoCs, provided we have also for each SoC a
  * function to map between physical and intermediate field type
  */
-int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
+
+static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
 {
 	*data = *data_m = 0;
 
@@ -1986,7 +1984,7 @@ static void rtl931x_write_pie_action(u32 r[],  struct pie_rule *pr)
 	r[17] |= pr->bypass_ibc_sc ? BIT(16) : 0;
 }
 
-void rtl931x_pie_rule_dump_raw(u32 r[])
+static void rtl931x_pie_rule_dump_raw(u32 r[])
 {
 	pr_debug("Raw IACL table entry:\n");
 	pr_debug("r 0 - 7: %08x %08x %08x %08x %08x %08x %08x %08x\n",
@@ -2301,12 +2299,12 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 
 }
 
-int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
+static int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
 {
 	return 0;
 }
 
-void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+static void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
 			  keep_outer ? RTL931X_VLAN_PORT_TAG_STS_TAGGED : RTL931X_VLAN_PORT_TAG_STS_UNTAG) |
@@ -2315,7 +2313,7 @@ void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 	       RTL931X_VLAN_PORT_TAG_CTRL(port));
 }
 
-void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+static void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3 << 12, mode << 12, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
@@ -2323,7 +2321,7 @@ void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 		sw_w32_mask(0x3 << 26, mode << 26, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
-void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+static void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0xfff, pvid, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
@@ -2343,7 +2341,7 @@ static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 {
 	u32 l3shift = 0;
 	u32 newmask = 0;
@@ -2507,7 +2505,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_XGMII);
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_10BASER\n", __func__);
+		fallthrough;
 	case PHY_INTERFACE_MODE_10GKR:
 //		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_10GBASER);
@@ -2515,12 +2513,10 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 		/* Translates to MII_USXGMII_10GSXGMII */
-		pr_info("%s setting mode PHY_INTERFACE_MODE_USXGMII\n", __func__);
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_USXGMII);
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
 		rtl931x_sds_init(sds_num, port, PHY_INTERFACE_MODE_SGMII);
 		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
@@ -2560,7 +2556,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
  * 0x12: HISGMII	0x09: XSMII		0x02: SGMII
  * 0x1f: OFF
  */
-void rtl931x_sds_rst(int sds_num, phy_interface_t mode)
+static void rtl931x_sds_rst(int sds_num, phy_interface_t mode)
 {
 	u32 sds_ps, val;
 //	int pos = sds_num % 4;
@@ -2745,15 +2741,15 @@ static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
 
 	return;
 }
-
-void rtl931x_sds_fiber_disable(u32 sds)
+#if 0
+static void rtl931x_sds_fiber_disable(u32 sds)
 {
 	u32 v = 0x3F;
 	u32 asds = rtl931x_get_analog_sds(sds);
 
 	rtl931x_sds_field_w(asds, 0x1F, 0x9, 11, 6, v);
 }
-
+#endif
 static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 {
 	int pos;
@@ -3283,7 +3279,7 @@ int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 	return band;
 }
 
-void rtl931x_fast_age(struct dsa_switch *ds, int port)
+static void rtl931x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -3305,8 +3301,7 @@ static void rtl931x_phylink_mac_link_up(struct dsa_switch *ds, int port,
 				   int speed, int duplex,
 				   bool tx_pause, bool rx_pause)
 {
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	u32 mcr, spdsel;
+	u32 spdsel;
 
 	if (speed == SPEED_10000)
 		spdsel = RTL_SPEED_10000;
@@ -3330,7 +3325,6 @@ static void rtl931x_phylink_mac_link_down(struct dsa_switch *ds, int port,
 				     unsigned int mode,
 				     phy_interface_t interface)
 {
-	u32 v = 0;
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, rtl931x_mac_port_ctrl(port));
 }

@@ -1291,5 +1291,17 @@ u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
+int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val);
+int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val);
+
+int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+
+int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+
+int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
 #endif /* _RTL838X_H */
