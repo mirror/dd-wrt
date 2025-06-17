@@ -188,6 +188,22 @@ ifeq ($(CONFIG_OVERCLOCKING),y)
 VISOBJS += overclocking.o
 CFLAGS += -DHAVE_OVERCLOCKING
 endif
+ifeq ($(CONFIG_VLANTAGGING),y)
+VISOBJS += bridging.o mdhcp.o vlantagging.o
+ifeq ($(CONFIG_BONDING),y)
+VISOBJS += bonding.o
+endif
+ifeq ($(CONFIG_OLSRD),y)
+VISOBJS += olsrd.o
+endif
+ifeq ($(CONFIG_IPVS),y)
+VISOBJS += ipvs.o
+endif
+
+ifeq ($(CONFIG_VLAN_FILTERING),y)
+VISOBJS += vlanfiltering.o
+endif
+endif
 ifeq ($(CONFIG_RADLOCAL),y)
 CFLAGS += -DHAVE_RADLOCAL
 endif
@@ -720,6 +736,7 @@ CFLAGS += -DHAVE_RSTATS
 endif
 ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_PORTSETUP
+VISOBJS += portsetup.o
 endif
 ifeq ($(CONFIG_VLAN_FILTERING),y)
 CFLAGS += -DHAVE_VLAN_FILTERING
@@ -1644,7 +1661,7 @@ httpd: httpd.c $(ADDOBJ) $(OBJS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
-httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)  core.o dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
+httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)  core.o cputemp.o voltage.o arp.o dd-wrt.o packets.o portstatus.o bandwidth.o menu.o pagehead.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o cpucores.o switch.o qos.o conntrack.o diag.o macfilter.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o styles.o $(VISOBJS) $(REGOBJS2)
 
 	@echo "[LD] $@"
 ifeq ($(CONFIG_SUPERCHANNEL),y)

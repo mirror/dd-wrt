@@ -2609,8 +2609,6 @@ char *live_translate(webs_t wp,
 	return entry->translation;
 }
 
-void do_ddwrt_inspired_themes(webs_t wp);
-
 #ifdef HAVE_STATUS_SYSLOG
 static int do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {

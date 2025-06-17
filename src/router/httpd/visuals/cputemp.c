@@ -19,6 +19,35 @@
  *
  * $Id:
  */
+#define VISUALSOURCE 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <signal.h>
+
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/statfs.h>
+#include <sys/utsname.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <broadcom.h>
+
+#include <wlutils.h>
+#include <bcmparams.h>
+#include <dirent.h>
+#include <netdb.h>
+#include <utils.h>
+#include <ddnvram.h>
+#include <revision.h>
+#include <shutils.h>
+
 #ifdef HAVE_CPUTEMP
 
 #define CELSIUS 0
@@ -68,7 +97,7 @@ static SENSORMAPS maps[] = {
 	{ "ath11k_hwmon", NULL }, // indicates that interface is disabled. so we dont show it
 };
 
-static char *getmappedname(char *name)
+static const char *getmappedname(const char *name)
 {
 	int i;
 	for (i = 0; i < sizeof(maps) / sizeof(maps[0]); i++) {
@@ -120,7 +149,7 @@ static void sensorreset(void)
 		sensors = NULL;
 	}
 }
-static int singlesensor(char *sysfs)
+static int singlesensor(const char *sysfs)
 {
 	char p[64];
 	char p2[64];
@@ -140,7 +169,7 @@ static int singlesensor(char *sysfs)
 	return 0;
 }
 
-static char *gethwmon_base(char *sysfs)
+static char *gethwmon_base(const char *sysfs)
 {
 	if (!sysfs)
 		return NULL;
@@ -156,7 +185,7 @@ static char *gethwmon_base(char *sysfs)
 	return strdup(idx + 1);
 }
 
-static char *gethwmon(char *sysfs)
+static char *gethwmon(const char *sysfs)
 {
 	if (!sysfs)
 		return NULL;
@@ -173,7 +202,7 @@ static char *gethwmon(char *sysfs)
 	return sub;
 }
 
-static int checkhwmon(char *sysfs)
+static int checkhwmon(const char *sysfs)
 {
 	if (!sensors)
 		return 0;
@@ -195,7 +224,7 @@ static int checkhwmon(char *sysfs)
 	free(sub);
 	return 0;
 }
-static int alreadyshowed(char *path)
+static int alreadyshowed(const char *path)
 {
 	char *sub = NULL;
 	if (!path)
@@ -292,7 +321,7 @@ static int addsensor(const char *path, int (*method)(void), int scale, int type,
 	return cnt;
 }
 
-static int getscale(char *path)
+static int getscale(const char *path)
 {
 	int cnt = 0;
 	char *sub = NULL;
@@ -508,7 +537,7 @@ static int show_temp(webs_t wp, char *name)
 
 #ifdef HAVE_X86
 
-int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
+int getCoreTemp(const char *p, size_t len, int *ridx, int acpi)
 {
 	int idx = 0;
 	char path[64];

@@ -1221,8 +1221,6 @@ EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-#include "styles.c"
-
 #include "../webs.h"
 
 extern const websRomPageIndexType websRomPageIndex[];
@@ -1539,11 +1537,6 @@ EJ_VISIBLE void ej_get_totaltraff(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-#include "portstatus.c"
-#include "bandwidth.c"
-#include "menu.c"
-#include "pagehead.c"
-
 EJ_VISIBLE void ej_show_timeoptions(webs_t wp, int argc, char_t **argv) // Eko
 {
 	int i;
@@ -1795,9 +1788,6 @@ EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "&nbsp;</div>");
 #endif
 }
-
-#include "cputemp.c"
-#include "voltage.c"
 
 static void showencstatus(webs_t wp, char *prefix)
 {
@@ -2275,8 +2265,6 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t **argv)
 	get_radio_state(buf);
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
-
-#include "arp.c"
 
 #ifdef HAVE_PPPOESERVER
 

@@ -19,15 +19,36 @@
  *
  * $Id:
  */
-/*
- * todo stylesheet compatible code 
- */
-/*
- * lonewolf additions 
- */
+#define VISUALSOURCE 1
 
-// Note that there is no VLAN #16.  It's just a convieniant way of denoting a
-// "Tagged" port
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <signal.h>
+#include <time.h>
+
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/statfs.h>
+#include <sys/sysinfo.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <broadcom.h>
+
+#include <wlutils.h>
+#include <bcmparams.h>
+#include <dirent.h>
+#include <netdb.h>
+#include <utils.h>
+#include <wlutils.h>
+#include <ddnvram.h>
+
 EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t **argv)
 {
 	/*

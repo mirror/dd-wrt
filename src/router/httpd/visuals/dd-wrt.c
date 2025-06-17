@@ -58,12 +58,6 @@ int iscpe(void);
 #define COUNTRYLIST NULL
 #endif
 
-#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
-#define IFMAP(a) getRADev(a)
-#else
-#define IFMAP(a) (a)
-#endif
-
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
@@ -326,7 +320,6 @@ rept:;
 	goto rept;
 }
 
-#include "cpucores.c"
 
 #define ASSOCLIST_TMP "/tmp/.wl_assoclist"
 #define RSSI_TMP "/tmp/.rssi"
@@ -580,55 +573,6 @@ EJ_VISIBLE void ej_show_openvpnuserpass(webs_t wp, int argc, char_t **argv)
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"userpass_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
-			i);
-	}
-	debug_free(originalpointer);
-	return;
-}
-
-EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t **argv)
-{
-	int i;
-
-	char *sln = nvram_safe_get("static_leasenum");
-
-	if (sln == NULL || *(sln) == 0)
-		return;
-
-	int leasenum = atoi(sln);
-
-	if (leasenum == 0)
-		return;
-	char *nvleases = nvram_safe_get("static_leases");
-	char *leases = strdup(nvleases);
-	char *originalpointer = leases; // strsep destroys the pointer by
-
-	// moving it
-	for (i = 0; i < leasenum; i++) {
-		char *sep = strsep(&leases, "=");
-
-		websWrite(
-			wp,
-			"<tr><td><input name=\"lease%d_hwaddr\" value=\"%s\" size=\"18\" maxlength=\"18\" onblur=\"valid_name(this,share.mac,SPACE_NO)\" /></td>",
-			i, sep != NULL ? sep : "");
-		sep = strsep(&leases, "=");
-		websWrite(
-			wp,
-			"<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" onblur=\"valid_name(this,share.hostname,SPACE_NO)\" /></td>",
-			i, sep != NULL ? sep : "");
-		sep = strsep(&leases, "=");
-		websWrite(
-			wp,
-			"<td><input name=\"lease%d_ip\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,share.ip,SPACE_NO)\" /></td>\n",
-			i, sep != NULL ? sep : "");
-		sep = strsep(&leases, " ");
-		websWrite(
-			wp,
-			"<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" />&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n",
-			i, sep != NULL ? sep : "3600");
-		websWrite(
-			wp,
-			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
 			i);
 	}
 	debug_free(originalpointer);
@@ -952,167 +896,6 @@ EJ_VISIBLE void ej_getWET(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "0");
 }
 
-EJ_VISIBLE void ej_calcendip(webs_t wp, int argc, char_t **argv)
-{
-	char *ip = nvram_safe_get("dhcp_start");
-	char *netmask = nvram_safe_get("lan_netmask");
-	int dhcpnum = atoi(nvram_safe_get("dhcp_num"));
-	unsigned int ip1 = get_single_ip(ip, 0);
-	unsigned int ip2 = get_single_ip(ip, 1);
-	unsigned int ip3 = get_single_ip(ip, 2);
-	unsigned int ip4 = get_single_ip(ip, 3);
-	//      unsigned int im1 = get_single_ip(netmask, 0);
-	//      unsigned int im2 = get_single_ip(netmask, 1);
-	//      unsigned int im3 = get_single_ip(netmask, 2);
-	//      unsigned int im4 = get_single_ip(netmask, 3);
-
-	unsigned int im1 = 255;
-	unsigned int im2 = 255;
-	unsigned int im3 = 255;
-	unsigned int im4 = 255;
-	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + ip4;
-	unsigned int eip = sip + dhcpnum - 1;
-
-	websWrite(wp, "%d.%d.%d.%d", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
-}
-
-EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
-{
-	int i;
-
-	if (getWET()) // dhcpd settings disabled in client bridge mode, so we wont display it
-		return;
-
-	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n");
-	websWrite(wp, "<div class=\"setting\" name=\"dhcp_settings\">\n");
-	show_caption(wp, "label", "idx.dhcp_type", NULL);
-	websWrite(
-		wp,
-		"<select class=\"num\" size=\"1\" name=\"dhcpfwd_enable\" onchange=SelDHCPFWD(this.form.dhcpfwd_enable.selectedIndex,this.form)>\n");
-	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");\n",
-		  nvram_matchi("dhcpfwd_enable", 0) ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");\n",
-		  nvram_matchi("dhcpfwd_enable", 1) ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</select>\n");
-	websWrite(wp, "</div>\n");
-	if (nvram_matchi("dhcpfwd_enable", 1)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "idx.dhcp_srv", NULL);
-		websWrite(wp, "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" />\n");
-		show_ip(wp, NULL, "dhcpfwd_ip", 0, 0, "idx.dhcp_srv");
-		websWrite(wp, "</div>\n");
-	} else {
-		websWrite(wp, "<div class=\"setting\">\n");
-		// char *nv = nvram_safe_get ("wan_wins");
-		websWrite(
-			wp,
-			"<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div><input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"dhcp\" onclick=\"SelDHCP('dhcp',this.form)\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			nvram_match("lan_proto", "dhcp") ? "checked=\"checked\"" : "");
-		websWrite(
-			wp,
-			"<input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"static\" onclick=\"SelDHCP('static',this.form)\" %s /><script type=\"text/javascript\">Capture(share.disable)</script></div><input type=\"hidden\" name=\"dhcp_check\" /><div class=\"setting\">\n",
-			nvram_match("lan_proto", "static") ? "checked=\"checked\"" : "");
-		show_caption(wp, "label", "idx.dhcp_start", NULL);
-		char *dhcp_start = nvram_safe_get("dhcp_start");
-		websWrite(
-			wp,
-			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" disabled=\"true\" />.",
-			1, 254, "idx.dhcp_start", "dhcp_start", get_single_ip(nvram_safe_get("lan_ipaddr"), 0));
-		websWrite(
-			wp,
-			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.",
-			"idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 1));
-		websWrite(
-			wp,
-			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.",
-			"idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 2));
-		websWrite(
-			wp,
-			"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n",
-			"idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 3));
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(
-			wp,
-			"<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_maxusers)</script></div><input class=\"num\" name=\"dhcp_num\" size=\"5\" value=\"%s\" /></div>\n",
-			nvram_safe_get("dhcp_num"));
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(
-			wp,
-			"<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_lease)</script></div><input class=\"num\" name=\"dhcp_lease\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,99999,idx.dhcp_lease)\" value=\"%s\" > <script type=\"text/javascript\">Capture(share.minutes)</script></input></div>\n",
-			nvram_safe_get("dhcp_lease"));
-		if (nvram_invmatch("wan_proto", "static")) {
-			websWrite(wp, "<div class=\"setting\" id=\"dhcp_static_dns0\">\n");
-			websWrite(wp,
-				  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
-			websWrite(wp, "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
-			for (i = 0; i < 4; i++)
-				websWrite(
-					wp,
-					"<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-					i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 0, i), i < 3 ? "." : "");
-
-			websWrite(wp, "\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns1\">\n");
-			websWrite(wp,
-				  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
-			for (i = 0; i < 4; i++)
-				websWrite(
-					wp,
-					"<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-					i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 1, i), i < 3 ? "." : "");
-
-			websWrite(wp, "\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns2\">\n");
-			websWrite(wp,
-				  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
-			for (i = 0; i < 4; i++)
-				websWrite(
-					wp,
-					"<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-					i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 2, i), i < 3 ? "." : "");
-			websWrite(wp, "\n</div>");
-		}
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">WINS</div>\n");
-		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
-
-		show_ip(wp, NULL, "wan_wins", 1, 0, "&#34;WINS&#34;");
-		websWrite(wp, "</div>\n<div class=\"setting\">\n");
-		show_caption(wp, "label", "idx.dns_dnsmasq", NULL);
-		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_dnsmasq\" value=\"1\" %s />\n",
-			  nvram_matchi("dns_dnsmasq", 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n<div class=\"setting\">\n");
-		show_caption(wp, "label", "idx.auth_dnsmasq", NULL);
-		websWrite(wp, "<input type=\"checkbox\" name=\"_auth_dnsmasq\" value=\"1\" %s />\n",
-			  nvram_matchi("auth_dnsmasq", 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-
-#ifdef HAVE_UNBOUND
-		websWrite(
-			wp,
-			"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.recursive_dns)</script></div>\n");
-		websWrite(wp, "<input type=\"checkbox\" name=\"_recursive_dns\" value=\"1\" %s />\n",
-			  nvram_matchi("recursive_dns", 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-#endif
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "idx.force_dnsmasq", NULL);
-		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirect\" value=\"1\" %s />\n",
-			  nvram_matchi("dns_redirect", 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "idx.force_dnsmasqdot", NULL);
-		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirectdot\" value=\"1\" %s />\n",
-			  nvram_matchi("dns_redirectdot", 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-	}
-
-	websWrite(wp, "</fieldset><br />\n");
-	return;
-}
-
 #ifdef HAVE_MADWIFI
 EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 {
@@ -1319,24 +1102,6 @@ void show_legend(webs_t wp, char *labelname, int translate)
 		websWrite(wp, "<legend>%s</legend>\n", labelname);
 }
 
-#ifdef HAVE_OLSRD
-#include "olsrd.c"
-#endif
-
-#ifdef HAVE_VLANTAGGING
-#ifdef HAVE_BONDING
-#include "bonding.c"
-#endif
-
-#include "vlantagging.c"
-#include "vlanfiltering.c"
-#include "mdhcp.c"
-#include "bridging.c"
-#endif
-
-#ifdef HAVE_IPVS
-#include "ipvs.c"
-#endif
 #if 0
 static void showDynOption(webs_t wp, char *propname, char *nvname, char *options[], char *names[])
 {
@@ -7328,10 +7093,6 @@ EJ_VISIBLE void ej_get_clone_wmac(webs_t wp, int argc, char_t **argv)
 #endif
 }
 
-#include "switch.c"
-#include "qos.c"
-#include "conntrack.c"
-
 EJ_VISIBLE void ej_gethostnamebyip(webs_t wp, int argc, char_t **argv)
 {
 	char buf[200];
@@ -7529,11 +7290,6 @@ char *getNetworkLabel(webs_t wp, char *var)
 	snprintf(wp->label, sizeof(wp->label), "%s%s%s", var, strcmp(l, "") ? " - " : "", l);
 	return wp->label;
 }
-
-#ifdef HAVE_PORTSETUP
-#include "portsetup.c"
-#endif
-#include "macfilter.c"
 
 #ifdef HAVE_DNSCRYPT
 EJ_VISIBLE void ej_show_dnscrypt(webs_t wp, int argc, char_t **argv)

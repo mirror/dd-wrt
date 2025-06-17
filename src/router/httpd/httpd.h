@@ -223,11 +223,21 @@ void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, cha
 void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select);
 void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength);
 void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize);
+void show_legend(webs_t wp, char *labelname, int translate);
+void do_ddwrt_inspired_themes(webs_t wp);
+
 #ifdef HAVE_ATH9K
 #define ATH9K_ENABLED() 1
 #else
 #define ATH9K_ENABLED() 0
 #endif
+
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
+#define IFMAP(a) getRADev(a)
+#else
+#define IFMAP(a) (a)
+#endif
+
 int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 int is_ap(const char *prefix);
 int is_mesh(const char *prefix);
