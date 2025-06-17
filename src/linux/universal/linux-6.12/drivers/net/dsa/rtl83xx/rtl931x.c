@@ -3176,6 +3176,13 @@ void rtl931x_sds_init(u32 sds, u32 port, phy_interface_t mode)
 		rtl931x_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
 		rtl931x_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
 		rtl931x_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
+
+		rtl931x_write_sds_phy(asds, 0x20, 0x0, 0xc30);		
+		rtl931x_sds_field_w(asds, 0x20, 0x0, 9, 0, 0x30);
+		rtl931x_sds_field_w(asds, 0x2A, 0x12, 7, 6, 0x3);
+		rtl931x_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x1);
+		rtl931x_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
