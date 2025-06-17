@@ -683,6 +683,15 @@ config I2C_GPIO
 	  This is a very simple bitbanging I2C driver utilizing the
 	  arch-neutral GPIO API to control the SCL and SDA lines.
 
+config I2C_GPIO_SHARED
+	tristate "multiple GPIO-based bitbanging I2C with shared SCL"
+	depends on GPIOLIB || COMPILE_TEST
+	select I2C_ALGOBIT
+	help
+	  This is an alternative of the I2C GPIO driver for devices with only
+	  few GPIO pins where multiple busses with dedicated SDA lines share
+	  a single SCL line.
+
 config I2C_GPIO_FAULT_INJECTOR
 	bool "GPIO-based fault injector"
 	depends on I2C_GPIO
