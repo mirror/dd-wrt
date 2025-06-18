@@ -26,6 +26,7 @@
  */
 static inline void nss_dp_reset_netdev_features(struct net_device *netdev)
 {
+	printk(KERN_INFO "%s->%s\n", __func__, netdev->name);
 	netdev->features = 0;
 	netdev->hw_features = 0;
 	netdev->vlan_features = 0;
