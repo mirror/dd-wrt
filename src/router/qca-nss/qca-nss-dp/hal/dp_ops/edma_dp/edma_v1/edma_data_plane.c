@@ -605,6 +605,11 @@ static void edma_if_set_features(struct nss_dp_data_plane_ctx *dpc)
 {
 	struct net_device *netdev = dpc->dev;
 
+	netdev->features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
+	netdev->hw_features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
+	netdev->vlan_features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
+	netdev->wanted_features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
+
 	netdev->features |= NETIF_F_GRO;
 	netdev->hw_features |= NETIF_F_GRO;
 	netdev->vlan_features |= NETIF_F_GRO;
