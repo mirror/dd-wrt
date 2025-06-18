@@ -1252,6 +1252,9 @@ var _80=this.sortCaseInsensitive;
 if (itm != null && itm.match(/^\d+$/)){
 _80=this.sortNumeric;
 }
+if (itm != null && itm.match(/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/)) {
+_80=this.sortIP;
+}
 this.sortColumnIndex=_7f;
 var _81=new Array();
 for(j=1;j<this.tbody[0].rows.length;j++){
@@ -1279,6 +1282,11 @@ return -1;
 }
 return 1;
 };
+this.sortIP=function(aa,bb) {
+a = thisObject.getInnerText(aa.cells[thisObject.sortColumnIndex]);
+b = thisObject.getInnerText(bb.cells[thisObject.sortColumnIndex]);
+return a.split('.')[0] - b.split('.')[0] || a.split('.')[1] - b.split('.')[1] || a.split('.')[2] - b.split('.')[2] || a.split('.')[3] - b.split('.')[3];
+}
 this.sortNumeric=function(a,b){
 aa=parseFloat(_82.getInnerText(a.cells[_82.sortColumnIndex]));
 if(isNaN(aa)){

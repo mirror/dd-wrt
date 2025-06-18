@@ -1306,6 +1306,7 @@ function SortableTable(tableEl) {
 		var sortfn = this.sortCaseInsensitive;
 
 		if (itm != null && itm.match(/^\d+$/)) sortfn = this.sortNumeric;
+		if (itm != null && itm.match(/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/)) sortfn = this.sortIP;
 
 		this.sortColumnIndex = column;
 
@@ -1328,6 +1329,11 @@ function SortableTable(tableEl) {
 		}
 	}
 
+	this.sortIP=function(aa,bb) {
+		a = thisObject.getInnerText(aa.cells[thisObject.sortColumnIndex]);
+		b = thisObject.getInnerText(bb.cells[thisObject.sortColumnIndex]);
+		return a.split('.')[0] - b.split('.')[0] || a.split('.')[1] - b.split('.')[1] || a.split('.')[2] - b.split('.')[2] || a.split('.')[3] - b.split('.')[3];
+	}
 	this.sortCaseInsensitive = function(a, b) {
 		aa = thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]).toLowerCase();
 		bb = thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]).toLowerCase();
