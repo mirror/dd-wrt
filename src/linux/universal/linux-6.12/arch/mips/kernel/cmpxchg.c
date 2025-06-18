@@ -46,6 +46,7 @@ unsigned long __xchg_small(volatile void *ptr, unsigned long val, unsigned int s
 
 	return (load32 & mask) >> shift;
 }
+EXPORT_SYMBOL(__xchg_small);
 
 unsigned long __cmpxchg_small(volatile void *ptr, unsigned long old,
 			      unsigned long new, unsigned int size)
