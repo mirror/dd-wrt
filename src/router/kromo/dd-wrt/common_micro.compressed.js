@@ -1221,6 +1221,9 @@ this.thead=_7c.getElementsByTagName("tbody");
 this.getInnerText=function(el){
 if (typeof el == "undefined") return null;
 if (el == null) return null;
+if (el.children.length > 0 && typeof (el.children[0]) == 'object' && el.children[0].localName == 'input') {
+ return el.children[0].defaultValue;
+}
 if(typeof (el.textContent)!="undefined"){
 return el.textContent;
 }
@@ -1246,7 +1249,7 @@ this.sort=function(_7e){
 var _7f=_7e.cellIndex;
 var itm=this.getInnerText(this.tbody[0].rows[1].cells[_7f]);
 var _80=this.sortCaseInsensitive;
-if(itm != null && itm.replace(/^\s+|\s+$/g,"").match(/^[\d]+$/)){
+if (itm != null && itm.match(/^\d+$/)){
 _80=this.sortNumeric;
 }
 this.sortColumnIndex=_7f;

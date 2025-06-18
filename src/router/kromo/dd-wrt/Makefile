@@ -1153,7 +1153,7 @@ optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/*.html
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
-	-repugly $(INSTALLDIR)/www
+#	-repugly $(INSTALLDIR)/www
 ifeq ($(CONFIG_IAS),y)
 	-repugly $(INSTALLDIR)/www/intatstart/js
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/intatstart/js
@@ -1162,7 +1162,7 @@ ifeq ($(CONFIG_PWC),y)
 	-repugly $(INSTALLDIR)/www/js
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/js
 endif
-	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www
+#	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/help
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/lang_pack
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/images
@@ -1183,7 +1183,7 @@ endif
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/xirian
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/yellow
 
-	-repaccss $(INSTALLDIR)/www
+#	-repaccss $(INSTALLDIR)/www
 	-repaccss $(INSTALLDIR)/www/help
 	-repaccss $(INSTALLDIR)/www/lang_pack
 	-repaccss $(INSTALLDIR)/www/images

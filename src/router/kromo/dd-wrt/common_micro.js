@@ -1285,6 +1285,7 @@ function SortableTable(tableEl) {
 	this.getInnerText = function(el) {
 		if (typeof el == "undefined") return null;
 		if (el == null) return null;
+		if (el.children.length > 0 && typeof (el.children[0]) == 'object' && el.children[0].localName == 'input') return el.children[0].defaultValue;
 		if (typeof (el.textContent) != 'undefined') return el.textContent;
 		if (typeof (el.innerText) != 'undefined') return el.innerText;
 		if (typeof (el.innerHTML) == 'string') return el.innerHTML.replace(/<[^<>]+>/g, '');
@@ -1304,7 +1305,7 @@ function SortableTable(tableEl) {
 		var itm = this.getInnerText(this.tbody[0].rows[1].cells[column]);
 		var sortfn = this.sortCaseInsensitive;
 
-		if (itm != null && itm.replace(/^\s+|\s+$/g, "").match(/^[\d]+$/)) sortfn = this.sortNumeric;
+		if (itm != null && itm.match(/^\d+$/)) sortfn = this.sortNumeric;
 
 		this.sortColumnIndex = column;
 
