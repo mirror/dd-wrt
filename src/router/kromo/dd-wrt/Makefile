@@ -1153,6 +1153,7 @@ optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/*.html
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
+ifneq ($(CONFIG_WEBDEBUG),y)
 	-repugly $(INSTALLDIR)/www
 ifeq ($(CONFIG_IAS),y)
 	-repugly $(INSTALLDIR)/www/intatstart/js
@@ -1203,6 +1204,7 @@ endif
 	-repaccss $(INSTALLDIR)/www/style/wikar
 	-repaccss $(INSTALLDIR)/www/style/xirian
 	-repaccss $(INSTALLDIR)/www/style/yellow
+endif
 ifeq ($(CONFIG_ELEGANT),y)
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
