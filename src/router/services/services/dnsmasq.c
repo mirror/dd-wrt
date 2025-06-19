@@ -926,7 +926,7 @@ void start_dnsmasq(void)
 				}
 				if (!time || !*time)
 					fprintf(fp, "infinite\n");
-				if (!strcmp(time, "infinite") || !strcmp(time, "static") || !strcmp(time, "0"))
+				else if (!strcmp(time, "infinite") || !strcmp(time, "static") || !strcmp(time, "0"))
 					fprintf(fp, "infinite\n");
 				else
 					fprintf(fp, "%sm\n", time);
