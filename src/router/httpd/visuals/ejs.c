@@ -50,6 +50,9 @@
 #ifdef HAVE_SAMBA_SERVER
 #include <jansson.h>
 #endif
+#ifdef HAVE_QTN
+#include <qtnapi.h>
+#endif
 #include <glob.h>
 int iscpe(void);
 
