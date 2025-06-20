@@ -74,19 +74,28 @@ static void thermal_zone_trip_update(struct thermal_zone_device *tz,
 	int trip_id = thermal_zone_trip_id(tz, trip);
 	struct thermal_instance *instance;
 	bool throttle = false;
+	int hyst_temp;
 
-	if (tz->temperature >= trip_threshold) {
-		throttle = true;
-		trace_thermal_zone_trip(tz, trip_id, trip->type);
-	}
-
-	dev_dbg(&tz->device, "Trip%d[type=%d,temp=%d]:trend=%d,throttle=%d\n",
-		trip_id, trip->type, trip_threshold, trend, throttle);
+	hyst_temp =  trip->temperature - trip->hysteresis;
+	dev_dbg(&tz->device, "Trip%d[type=%d,temp=%d,hyst=%d]:trend=%d,throttle=%d\n",
+		trip_id, trip->type, trip->temperature, hyst_temp, trend, throttle);
 
 	list_for_each_entry(instance, &td->thermal_instances, trip_node) {
 		int old_target;
 
 		old_target = instance->target;
+		throttle = false;
+		/*
+		 * Lower the mitigation only if the temperature
+		 * goes below the hysteresis temperature.
+		 */
+		if (tz->temperature >= trip->temperature ||
+		   (tz->temperature >= hyst_temp &&
+		   old_target != THERMAL_NO_TARGET)) {
+			throttle = true;
+			trace_thermal_zone_trip(tz, trip_id, trip->type);
+		}
+
 		instance->target = get_target_state(instance, trend, throttle);
 
 		dev_dbg(&instance->cdev->device, "old_target=%d, target=%ld\n",

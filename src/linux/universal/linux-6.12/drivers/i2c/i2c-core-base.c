@@ -427,12 +427,18 @@ static int i2c_init_recovery(struct i2c_adapter *adap)
 	struct i2c_bus_recovery_info *bri = adap->bus_recovery_info;
 	bool is_error_level = true;
 	char *err_str;
+	int ret;
 
 	if (!bri)
 		return 0;
 
-	if (i2c_gpio_init_recovery(adap) == -EPROBE_DEFER)
+	if (bri->init_recovery) {
+		ret = bri->init_recovery(adap);
+		if (ret)
+			return ret;
+	} else if (i2c_gpio_init_recovery(adap) == -EPROBE_DEFER) {
 		return -EPROBE_DEFER;
+	}
 
 	if (!bri->recover_bus) {
 		err_str = "no suitable method provided";

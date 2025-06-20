@@ -218,19 +218,19 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "U-Boot";
+				label = "u-boot";
 				reg = <0x00000000 0x00800000>;
 				read-only;
 			};
 
 			partition@800000 {
-				label = "uImage";
+				label = "kernel";
 				reg = <0x00800000 0x00400000>;
 				read-only;
 			};
 
 			partition@c00000 {
-				label = "Root";
+				label = "ubi";
 				reg = <0x00c00000 0x3f400000>;
 			};
 		};

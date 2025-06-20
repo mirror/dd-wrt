@@ -635,6 +635,9 @@ struct i2c_timings {
  *	for generic GPIO recovery.
  * @get_bus_free: Returns the bus free state as seen from the IP core in case it
  *	has a more complex internal logic than just reading SDA. Optional.
+ * @init_recovery: If specified, it will be called instead of the generic GPIO
+ *	recovery initialization code. Platform may use a dummy callback to skip
+ *	calling the generic code, or it may use a custom implementation.
  * @prepare_recovery: This will be called before starting recovery. Platform may
  *	configure padmux here for SDA/SCL line or something else they want.
  * @unprepare_recovery: This will be called after completing recovery. Platform
@@ -659,6 +662,7 @@ struct i2c_bus_recovery_info {
 	void (*set_sda)(struct i2c_adapter *adap, int val);
 	int (*get_bus_free)(struct i2c_adapter *adap);
 
+	int (*init_recovery)(struct i2c_adapter *adap);
 	void (*prepare_recovery)(struct i2c_adapter *adap);
 	void (*unprepare_recovery)(struct i2c_adapter *adap);
 

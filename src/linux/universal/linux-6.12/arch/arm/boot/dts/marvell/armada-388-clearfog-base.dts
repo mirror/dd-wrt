@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include "armada-388-clearfog.dtsi"
+#include "armada-38x-solidrun-microsom-emmc.dtsi"
 
 / {
 	model = "SolidRun Clearfog Base A1";

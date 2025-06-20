@@ -1397,6 +1397,7 @@ static int mvebu_pcie_powerup(struct mvebu_pcie_port *port)
 
 	if (port->reset_gpio) {
 		u32 reset_udelay = PCI_PM_D3COLD_WAIT * 1000;
+		unsigned int i;
 
 		of_property_read_u32(port->dn, "reset-delay-us",
 				     &reset_udelay);
@@ -1404,7 +1405,13 @@ static int mvebu_pcie_powerup(struct mvebu_pcie_port *port)
 		udelay(100);
 
 		gpiod_set_value_cansleep(port->reset_gpio, 0);
-		msleep(reset_udelay / 1000);
+		for (i = 0; i < reset_udelay; i += 1000) {
+			if (mvebu_pcie_link_up(port))
+				break;
+			msleep(1);
+		}
+
+		printk("%s: reset completed in %dus\n", port->name, i);
 	}
 
 	return 0;
@@ -1521,15 +1528,16 @@ static int mvebu_pcie_probe(struct platform_device *pdev)
 		if (!child)
 			continue;
 
-		ret = mvebu_pcie_powerup(port);
-		if (ret < 0)
-			continue;
-
 		port->base = mvebu_pcie_map_registers(pdev, child, port);
 		if (IS_ERR(port->base)) {
 			dev_err(dev, "%s: cannot map registers\n", port->name);
 			port->base = NULL;
-			mvebu_pcie_powerdown(port);
+			continue;
+		}
+
+		ret = mvebu_pcie_powerup(port);
+		if (ret < 0) {
+			port->base = NULL;
 			continue;
 		}
 
