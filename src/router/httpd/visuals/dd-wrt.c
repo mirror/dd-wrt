@@ -2973,12 +2973,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\ onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"" /> dBm (Max %d)\n",
 		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
 #else
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\" /> dBm\n",
 		power, txpower + wifi_gettxpoweroffset(prefix));
 
 #endif
@@ -4810,12 +4810,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_ATH9K
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"/> dBm (Max %d)\n",
 		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
 #else
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"/> dBm\n",
 		power, txpower + wifi_gettxpoweroffset(prefix));
 #endif
 	websWrite(wp, "</div>\n");
