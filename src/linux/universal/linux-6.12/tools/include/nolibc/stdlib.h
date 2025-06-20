@@ -274,7 +274,7 @@ int itoa_r(long in, char *buffer)
 	int len = 0;
 
 	if (in < 0) {
-		in = -(unsigned long)in;
+		in = -in;
 		*(ptr++) = '-';
 		len++;
 	}
@@ -410,7 +410,7 @@ int i64toa_r(int64_t in, char *buffer)
 	int len = 0;
 
 	if (in < 0) {
-		in = -(uint64_t)in;
+		in = -in;
 		*(ptr++) = '-';
 		len++;
 	}

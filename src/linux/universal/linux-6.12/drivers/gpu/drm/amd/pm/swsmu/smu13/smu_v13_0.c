@@ -2088,18 +2088,21 @@ int smu_v13_0_get_current_pcie_link_speed(struct smu_context *smu)
 }
 
 int smu_v13_0_set_vcn_enable(struct smu_context *smu,
-			      bool enable,
-			      int inst)
+			     bool enable)
 {
 	struct amdgpu_device *adev = smu->adev;
-	int ret = 0;
+	int i, ret = 0;
 
-	if (adev->vcn.harvest_config & (1 << inst))
-		return ret;
+	for (i = 0; i < adev->vcn.num_vcn_inst; i++) {
+		if (adev->vcn.harvest_config & (1 << i))
+			continue;
 
-	ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
-					      SMU_MSG_PowerUpVcn : SMU_MSG_PowerDownVcn,
-					      inst << 16U, NULL);
+		ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
+						      SMU_MSG_PowerUpVcn : SMU_MSG_PowerDownVcn,
+						      i << 16U, NULL);
+		if (ret)
+			return ret;
+	}
 
 	return ret;
 }

@@ -1492,28 +1492,32 @@ int smu_v14_0_set_single_dpm_table(struct smu_context *smu,
 }
 
 int smu_v14_0_set_vcn_enable(struct smu_context *smu,
-			      bool enable,
-			      int inst)
+			     bool enable)
 {
 	struct amdgpu_device *adev = smu->adev;
-	int ret = 0;
+	int i, ret = 0;
 
-	if (adev->vcn.harvest_config & (1 << inst))
-		return ret;
+	for (i = 0; i < adev->vcn.num_vcn_inst; i++) {
+		if (adev->vcn.harvest_config & (1 << i))
+			continue;
 
-	if (smu->is_apu) {
-		if (inst == 0)
+		if (smu->is_apu) {
+			if (i == 0)
+				ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
+								      SMU_MSG_PowerUpVcn0 : SMU_MSG_PowerDownVcn0,
+								      i << 16U, NULL);
+			else if (i == 1)
+				ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
+								      SMU_MSG_PowerUpVcn1 : SMU_MSG_PowerDownVcn1,
+								      i << 16U, NULL);
+		} else {
 			ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
-							      SMU_MSG_PowerUpVcn0 : SMU_MSG_PowerDownVcn0,
-							      inst << 16U, NULL);
-		else if (inst == 1)
-			ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
-							      SMU_MSG_PowerUpVcn1 : SMU_MSG_PowerDownVcn1,
-							      inst << 16U, NULL);
-	} else {
-		ret = smu_cmn_send_smc_msg_with_param(smu, enable ?
-						      SMU_MSG_PowerUpVcn : SMU_MSG_PowerDownVcn,
-						      inst << 16U, NULL);
+							      SMU_MSG_PowerUpVcn : SMU_MSG_PowerDownVcn,
+							      i << 16U, NULL);
+		}
+
+		if (ret)
+			return ret;
 	}
 
 	return ret;
