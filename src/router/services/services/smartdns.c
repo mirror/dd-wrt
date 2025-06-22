@@ -89,8 +89,8 @@ void start_smartdns(void)
 	}
 //egc: do we really need these certificates and if so are these the right ones?
 #ifdef HAVE_HTTPS
-	fprintf(fp, "ca-file /etc/ssl/ca-bundle.crt\n");
-	fprintf(fp, "ca-path /etc/ssl\n");
+	fprintf(fp, "ca-file /etc/ssl/certs/ca-certificates.crt\n");
+	fprintf(fp, "ca-path /etc/ssl/certs/\n");
 #endif
 #ifdef HAVE_TOR
 	if (nvram_match("tor_enable", "1")) {
