@@ -227,6 +227,12 @@
 #define RTL930X_SDS_OFF			0x1f
 #define RTL930X_SDS_MASK		0x1f
 
+#define RTSDS_930X_PLL_1000		0x1
+#define RTSDS_930X_PLL_10000		0x5
+#define RTSDS_930X_PLL_2500		0x3
+#define RTSDS_930X_PLL_LC		0x3
+#define RTSDS_930X_PLL_RING		0x1
+
 
 /* MAC link state bits */
 #define RTL_SPEED_10				0

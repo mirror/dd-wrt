@@ -81,6 +81,12 @@ extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u3
 #define RTL930X_SDS_OFF			0x1f
 #define RTL930X_SDS_MASK		0x1f
 
+#define RTSDS_930X_PLL_1000		0x1
+#define RTSDS_930X_PLL_10000		0x5
+#define RTSDS_930X_PLL_2500		0x3
+#define RTSDS_930X_PLL_LC		0x3
+#define RTSDS_930X_PLL_RING		0x1
+
 /* This lock protects the state of the SoC automatically polling the PHYs over the SMI
  * bus to detect e.g. link and media changes. For operations on the PHYs such as
  * patching or other configuration changes such as EEE, polling needs to be disabled
