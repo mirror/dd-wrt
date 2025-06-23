@@ -74,6 +74,7 @@ struct i802_bss {
 	u64 wdev_id;
 	char ifname[IFNAMSIZ + 1];
 	char brname[IFNAMSIZ];
+	u32 radio_mask;
 	unsigned int added_if_into_bridge:1;
 	unsigned int already_in_bridge:1;
 	unsigned int added_bridge:1;
@@ -321,7 +322,7 @@ send_and_recv_resp(struct wpa_driver_nl80211_data *drv,
 
 int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
 			 const char *ifname, enum nl80211_iftype iftype,
-			 const u8 *addr, int wds,
+			 const u8 *addr, int wds, u32 radio_mask,
 			 int (*handler)(struct nl_msg *, void *),
 			 void *arg, int use_existing);
 void nl80211_remove_iface(struct wpa_driver_nl80211_data *drv, int ifidx);
