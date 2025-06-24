@@ -30,19 +30,13 @@
 
 void start_watchdog(void)
 {
-#ifndef HAVE_WZRG300NH	
 	if (!nvram_matchi("disable_watchdog", 1) && pidof("watchdog") <= 0) {
 		log_eval("watchdog"); // system watchdog
 	}
-#endif
-	return;
 }
 
 void stop_watchdog(void) // shall never be called
 {
-#ifndef HAVE_WZRG300NH	
 	stop_process("watchdog", "watchdog timer");
-#endif
-	return;
 }
 #endif

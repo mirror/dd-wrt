@@ -47,9 +47,11 @@ static void watchdog(void)
 	int dropcounter = 0;
 	static int lasttarget = 0;
 	int radioledinitcount = 0;
+#ifndef HAVE_WZRG300NH	
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
 	if (fd == -1)
 		fd = open("/dev/watchdog", O_WRONLY);
+#endif
 
 #ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
@@ -58,10 +60,12 @@ static void watchdog(void)
 #endif
 
 	while (1) {
+#ifndef HAVE_WZRG300NH	
 		if (fd != -1) {
 			write(fd, "\0", 1);
 			fsync(fd);
 		}
+#endif
 		if (!nvram_matchi("flash_active", 1)) {
 #ifndef HAVE_RT2880
 #ifdef HAVE_REGISTER
