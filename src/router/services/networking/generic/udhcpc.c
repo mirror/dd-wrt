@@ -347,6 +347,9 @@ static int bound(void)
 		start_heartbeat_boot();
 		stop_unbound();
 		start_unbound();
+#ifdef HAVE_MACTELNET
+		start_mactelnetd();
+#endif
 	}
 #else
 	if (0) {
