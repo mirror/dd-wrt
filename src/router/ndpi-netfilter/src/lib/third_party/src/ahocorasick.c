@@ -65,17 +65,18 @@ static void        node_release_pattern   (AC_NODE_t * thiz);
 static int         node_range_edges       (AC_AUTOMATA_t *thiz, AC_NODE_t * node);
 static inline void node_sort_edges        (AC_NODE_t * thiz);
 
-#ifndef __KERNEL__
 struct aho_dump_info {
   size_t memcnt,node_oc,node_8c,node_xc,node_xr;
   int    buf_pos,ip;
   char   *bufstr;
   size_t bufstr_len;
+#ifndef __KERNEL__
   FILE   *file;
+#endif
 };
 
 static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *);
-#endif
+
 static int ac_automata_global_debug = 0;
 
 /* Private function prototype */
@@ -661,6 +662,44 @@ static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *ai) {
     }
     ai->memcnt += sizeof(n->outgoing) + edge_data_size(n->outgoing->max);
 }
+#else
+static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *ai) {
+    char *c;
+    int i;
+    pr_err("%04d: ",n->id);
+    if(n->failure_node) pr_err(" failure %04d:",n->failure_node->id);
+    pr_err(" d:%d %c",n->depth, n->use ? '+':'-');
+    ai->memcnt += sizeof(*n);
+    if(n->matched_patterns) {
+        ai->memcnt += sizeof(n->matched_patterns) + 
+                n->matched_patterns->max*sizeof(n->matched_patterns->patterns[0]);
+    }
+    if(!n->use) { pr_err("\n"); return; }
+    if(n->one) {
+            (ai->node_oc)++;
+            pr_err(" '%c' next->%d\n",n->one_alpha,
+                n->outgoing ? ((AC_NODE_t *)n->outgoing)->id : -1);
+            return;
+    }
+    if(!n->outgoing) {
+            pr_err(" BUG! !outgoing\n");
+            return;
+    }
+    pr_err("%s\n",n->range ? " RANGE":"");
+    c = (char *)edge_get_alpha(n->outgoing);
+    if(n->outgoing->degree <= 8)
+            (ai->node_8c)++;
+       else
+            (ai->node_xc)++;
+    if(n->range)
+            (ai->node_xr)++;
+    for(i=0; i < n->outgoing->degree; i++) {
+            pr_err("  %d: \"%c\" -> %d\n",i,c[i],
+                    n->outgoing->next[i] ? n->outgoing->next[i]->id:-1);
+    }
+    ai->memcnt += sizeof(n->outgoing) + edge_data_size(n->outgoing->max);
+}
+#endif
 
 static AC_ERROR_t dump_node_common(AC_AUTOMATA_t * thiz,
         AC_NODE_t * n, int idx, void *data) {
@@ -668,7 +707,7 @@ static AC_ERROR_t dump_node_common(AC_AUTOMATA_t * thiz,
     char *rstr = ai->bufstr;
 
     if(idx) return ACERR_SUCCESS;
-    dump_node_header(n,ai);
+    // dump_node_header(n,ai);
     if (n->matched_patterns && n->matched_patterns->num && n->final) {
         char lbuf[512];
         int nl = 0,j,ret;
@@ -691,7 +730,11 @@ static AC_ERROR_t dump_node_common(AC_AUTOMATA_t * thiz,
                 break;
             nl += (unsigned int)ret;
         }
+#ifdef __KERNEL__
+        pr_err("%s}\n",lbuf);
+#else
         fprintf(ai->file,"%s}\n",lbuf);
+#endif
       }
     return ACERR_SUCCESS;
 }
@@ -712,18 +755,28 @@ static void dump_node_str(AC_AUTOMATA_t * thiz, AC_NODE_t * node,
  * rstr_size: size of rstr buffser
  * char repcast: 'n': print AC_REP_t as number, 's': print AC_REP_t as string
  ******************************************************************************/
-
+#ifndef __KERNEL__
 void ac_automata_dump(AC_AUTOMATA_t * thiz, FILE *file) {
+#else
+void ac_automata_dump(AC_AUTOMATA_t * thiz) {
+#endif
   struct aho_dump_info ai;
 
   if(!thiz) return;
 
   memset((char *)&ai,0,sizeof(ai));
+#ifdef __KERNEL__
+  pr_err("---DUMP- all nodes %u - max strlen %u -%s---\n",
+          (unsigned int)thiz->all_nodes_num,
+          (unsigned int)thiz->max_str_len,
+          thiz->automata_open ? "open":"ready");
+#else
   ai.file = file ? file : stdout;
   fprintf(ai.file,"---DUMP- all nodes %u - max strlen %u -%s---\n",
           (unsigned int)thiz->all_nodes_num,
           (unsigned int)thiz->max_str_len,
           thiz->automata_open ? "open":"ready");
+#endif
 
   ai.bufstr = acho_malloc(AC_PATTRN_MAX_LENGTH+1);
   ai.bufstr_len = AC_PATTRN_MAX_LENGTH;
@@ -731,16 +784,20 @@ void ac_automata_dump(AC_AUTOMATA_t * thiz, FILE *file) {
   ai.bufstr[0] = '\0';
 
   ac_automata_walk(thiz,dump_node_common,dump_node_str,(void *)&ai);
-#ifdef WIN32
+#ifdef __KERNEL__
+  pr_err("---\n mem size %lu avg node size %d, node one char %d, <=8c %d, >8c %d, range %d\n---DUMP-END-\n",
+         (long unsigned int)ai.memcnt,(int)ai.memcnt/(thiz->all_nodes_num+1),(int)ai.node_oc,(int)ai.node_8c,(int)ai.node_xc,(int)ai.node_xr);
+#else
+  #ifdef WIN32
   fprintf(ai.file,"---\n mem size %lu avg node size %d, node one char %d, <=8c %d, >8c %d, range %d\n---DUMP-END-\n",
               (long unsigned int)ai.memcnt,(int)ai.memcnt/(thiz->all_nodes_num+1),(int)ai.node_oc,(int)ai.node_8c,(int)ai.node_xc,(int)ai.node_xr);
-#else
+  #else
   fprintf(ai.file,"---\n mem size %zu avg node size %d, node one char %d, <=8c %d, >8c %d, range %d\n---DUMP-END-\n",
               ai.memcnt,(int)ai.memcnt/(thiz->all_nodes_num+1),(int)ai.node_oc,(int)ai.node_8c,(int)ai.node_xc,(int)ai.node_xr);
+  #endif
 #endif
   acho_free(ai.bufstr);
 }
-#endif
 
 /******************************************************************************
  * FUNCTION: ac_automata_union_matchstrs

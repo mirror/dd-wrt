@@ -1099,6 +1099,17 @@ unsigned int i,j,c;
 
 /* ******************************************************************** */
 
+ndpi_protocol_match *host_all_match_str[7] = {
+	&host_match[0],
+	&teams_host_match[0],
+	&outlook_host_match[0],
+	&ms_onedrive_host_match[0],
+	&microsoft365_host_match[0],
+	&azure_host_match[0],
+	NULL
+};
+
+
 static void init_string_based_protocols(struct ndpi_detection_module_struct *ndpi_str) {
   int i;
 

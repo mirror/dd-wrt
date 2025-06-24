@@ -2539,6 +2539,7 @@ NDPI_STATIC u_char* ndpi_str_to_utf8(u_char *in, u_int in_len, u_char *out, u_in
    */
 NDPI_STATIC int ndpi_memcasecmp(const void *s1, const void *s2, size_t n);
 
+  extern ndpi_protocol_match *host_all_match_str[7];
 #ifdef __cplusplus
 }
 #endif

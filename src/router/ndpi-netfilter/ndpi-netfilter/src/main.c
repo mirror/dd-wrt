@@ -928,9 +928,41 @@ ndpi_alloc_flow (struct nf_ct_ext_ndpi *ct_ndpi)
 
 /*****************************************************************/
 
+static int ndpi_init_host_ac_str(struct ndpi_net *n,ndpi_protocol_match *hm) {
+	size_t sml;
+	int i,i2;
+	ndpi_protocol_match_result s_ret;
+	i = hm->protocol_id;
+	if(i >= NDPI_NUM_BITS) {
+		pr_err("xt_ndpi: bad proto num %d \n",i);
+		return 0;
+	}
+	sml = strlen(hm->string_to_match);
+	/* Beginning checking for duplicates */
+	i2 = ndpi_match_string_subprotocol(n->ndpi_struct,
+						hm->string_to_match,sml,&s_ret);
+	if(i2 == NDPI_PROTOCOL_UNKNOWN || i != i2) {
+		pr_err("xt_ndpi: Warning! Hostdef missmatch '%s' proto_id %u, subproto %u, p:%u. Skipping.\n",
+				hm->string_to_match,i,i2,s_ret.protocol_id
+				);
+		return 0;
+	}
+	if(str_collect_look(n->hosts->p[i],hm->string_to_match,sml) >= 0) {
+		pr_err("xt_ndpi: Warning! Hostdef '%s' duplicated! Skipping.\n",
+				hm->string_to_match);
+		return 0;
+	}
+	/* Ending checking for duplicates */
+	if(str_collect_add(&n->hosts->p[i],hm->string_to_match,sml) == NULL) {
+		pr_err("xt_ndpi: Error add %s\n",hm->string_to_match);
+		return 1;
+	}
+	return 0;
+}
+
 static int ndpi_init_host_ac(struct ndpi_net *n) {
 	ndpi_protocol_match *hm;
-        int i,i2;
+        int err,nh;
 
 	AC_AUTOMATA_t *automa  = n->ndpi_struct->host_automa.ac_automa;
 	if(automa->automata_open)
@@ -943,40 +975,19 @@ static int ndpi_init_host_ac(struct ndpi_net *n) {
 	}
 	ac_automata_feature(n->host_ac,AC_FEATURE_LC);
 	ac_automata_name(n->host_ac,"host",AC_FEATURE_DEBUG);
-	for(hm = host_match; hm->string_to_match ; hm++) {
-		size_t sml;
-		ndpi_protocol_match_result s_ret;
-		i = hm->protocol_id;
-		if(i >= NDPI_NUM_BITS) {
-			pr_err("xt_ndpi: bad proto num %d \n",i);
-			continue;
-		}
-		sml = strlen(hm->string_to_match);
-		/* Beginning checking for duplicates */
-		i2 = ndpi_match_string_subprotocol(n->ndpi_struct,
-							hm->string_to_match,sml,&s_ret);
-		if(i2 == NDPI_PROTOCOL_UNKNOWN || i != i2) {
-			pr_err("xt_ndpi: Warning! Hostdef missmatch '%s' proto_id %u, subproto %u, p:%u. Skipping.\n",
-					hm->string_to_match,i,i2,s_ret.protocol_id
-					);
-			continue;
-		}
-		if(str_collect_look(n->hosts->p[i],hm->string_to_match,sml) >= 0) {
-			pr_err("xt_ndpi: Warning! Hostdef '%s' duplicated! Skipping.\n",
-					hm->string_to_match);
-			continue;
-		}
-		/* Ending checking for duplicates */
-		if(str_collect_add(&n->hosts->p[i],hm->string_to_match,sml) == NULL) {
-			hm = NULL; // error
-			pr_err("xt_ndpi: Error add %s\n",hm->string_to_match);
-			break;
-		}
+	err = 0;
+	for(nh=0; host_all_match_str[nh]; nh++) {
+	    for(hm = host_all_match_str[nh]; hm->string_to_match ; hm++) {
+		err |= ndpi_init_host_ac_str(n,hm);
+		if(err) break;
+	    }
 	}
-	if(hm && str_coll_to_automata(n->ndpi_struct,n->host_ac,n->hosts)) hm = NULL;
-	if(!hm)
+	
+	if(!err && str_coll_to_automata(n->ndpi_struct,n->host_ac,n->hosts)) err = 1;
+	if(err) {
 		pr_err("str_coll_to_automata failed\n");
-	if(!hm) return 0;
+		return 0;
+	}
 	ac_automata_release(n->ndpi_struct->host_automa.ac_automa,1);
 	n->ndpi_struct->host_automa.ac_automa = n->host_ac;
 	n->host_ac = NULL;

@@ -279,6 +279,8 @@ NDPI_STATIC void            ac_automata_enable_debug (int debug);
 #ifndef __KERNEL__
 /* See man open_memstream() for get result as string */
 NDPI_STATIC void            ac_automata_dump     (AC_AUTOMATA_t * thiz, FILE *);
+#else
+NDPI_STATIC void            ac_automata_dump     (AC_AUTOMATA_t * thiz);
 #endif
 NDPI_STATIC void            ac_automata_get_stats(AC_AUTOMATA_t * thiz, struct ac_stats *stats);
 #endif
