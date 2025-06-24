@@ -2907,7 +2907,7 @@ static void rtl930x_sds_lc_config(int sds, bool lc_on, int lc_value)
 #endif
 static void rtl930x_get_pll_data(int sds, int *pll, int *speed)
 {
-	int sbit, pbit = sds % 1 ? 6 : 4;
+	int sbit, pbit = sds & 1 ? 6 : 4;
 	int base_sds = sds & ~1;
 
 	/*
@@ -2923,7 +2923,7 @@ static void rtl930x_get_pll_data(int sds, int *pll, int *speed)
 static int rtl930x_set_pll_data(int sds, int pll, int speed)
 {
 	int sbit = pll == RTSDS_930X_PLL_LC ? 8 : 12;
-	int pbit = sds % 1 ? 6 : 4;
+	int pbit = sds & 1 ? 6 : 4;
 	int base_sds = sds & ~1;
 
 	if ((speed != RTSDS_930X_PLL_1000) &&
@@ -2981,7 +2981,7 @@ static int rtl930x_wait_clock_ready(int sds)
 	 */
 
 	for (i = 0; i < 20; i++) {
-		mdelay(10);
+		usleep_range(10000, 15000);
 
 		rtl930x_write_sds_phy(base_sds, 0x1f, 0x02, 53);
 		ready = rtl930x_sds_field_r(base_sds, 0x1f, 0x14, bit, bit);
@@ -3009,12 +3009,12 @@ static void rtl930x_set_power(int sds, bool on)
 {
 	int power = on ? 0 : 3;
 
-	rtl930x_sds_field_w(sds, 0x20, 0, 7, 6, power);
+	rtl930x_sds_field_w(sds, 0x20, 0x00, 7, 6, power);
 }
 
 static int rtl930x_config_pll(int sds, phy_interface_t interface)
 {
-	int neighbor_speed, neighbor_mode, neighbor_pll;
+	int neighbor_speed, neighbor_mode, neighbor_pll, neighbor = sds ^ 1;
 	bool speed_changed = true;
 	int pll, speed;
 
@@ -3032,8 +3032,8 @@ static int rtl930x_config_pll(int sds, phy_interface_t interface)
 	 * - For 2.5G prefer ring over LC PLL
 	 */
 
-	neighbor_mode = rtl930x_get_internal_mode(sds ^ 1);
-	rtl930x_get_pll_data(sds ^ 1, &neighbor_pll, &neighbor_speed);
+	neighbor_mode = rtl930x_get_internal_mode(neighbor);
+	rtl930x_get_pll_data(neighbor, &neighbor_pll, &neighbor_speed);
 
 	if ((interface == PHY_INTERFACE_MODE_1000BASEX) ||
 	    (interface == PHY_INTERFACE_MODE_SGMII))
@@ -3046,7 +3046,7 @@ static int rtl930x_config_pll(int sds, phy_interface_t interface)
 	else
 		return -ENOTSUPP;
 
-	if (neighbor_mode == RTL930X_SDS_OFF)
+	if (!neighbor_mode)
 		pll = speed == RTSDS_930X_PLL_10000 ? RTSDS_930X_PLL_LC : RTSDS_930X_PLL_RING;
 	else if (speed == neighbor_speed) {
 		speed_changed = false;
@@ -3068,6 +3068,43 @@ static int rtl930x_config_pll(int sds, phy_interface_t interface)
 
 	return 0;
 }
+
+static void rtl930x_reset_state_machine(int sds)
+{
+	rtl930x_sds_field_w(sds, 0x06, 0x02, 12, 12, 0x01); /* SM_RESET bit */
+	usleep_range(10000, 20000);
+	rtl930x_sds_field_w(sds, 0x06, 0x02, 12, 12, 0x00);
+	usleep_range(10000, 20000);
+}
+
+static int rtl930x_init_state_machine(int sds, phy_interface_t interface)
+{
+	int loopback, link, cnt = 20, ret = -EBUSY;
+
+	if (interface != PHY_INTERFACE_MODE_10GBASER)
+		return 0;
+	/*
+	 * After a SerDes mode change it takes some time until the frontend state machine
+	 * works properly for 10G. To verify operation readyness run a connection check via
+	 * loopback.
+	 */
+	loopback = rtl930x_sds_field_r(sds, 0x06, 0x01, 2, 2); /* CFG_AFE_LPK bit */
+	rtl930x_sds_field_w(sds, 0x06, 0x01, 2, 2, 0x01);
+
+	while (cnt-- && ret) {
+		rtl930x_reset_state_machine(sds);
+		link = rtl930x_sds_field_r(sds, 0x05, 0x00, 12, 12); /* 10G link state (latched) */
+		link = rtl930x_sds_field_r(sds, 0x05, 0x00, 12, 12);
+		if (link)
+			ret = 0;
+	}
+
+	rtl930x_sds_field_w(sds, 0x06, 0x01, 2, 2, loopback);
+	rtl930x_reset_state_machine(sds);
+
+	return ret;
+}
+
 
 static void rtl930x_force_mode(int sds, phy_interface_t interface)
 {
@@ -3110,51 +3147,15 @@ static void rtl930x_force_mode(int sds, phy_interface_t interface)
 	if (interface == PHY_INTERFACE_MODE_NA)
 		return;
 
-	if (rtl930x_config_pll(sds, interface)) {
-		pr_err("%s: SDS %d could not configure PLL for %s\n", __func__,
-			sds, phy_modes(interface));
-		return;
-	}
+	if (rtl930x_config_pll(sds, interface))
+		pr_err("%s: SDS %d could not configure PLL for %s\n", __func__, sds, phy_modes(interface));
+
 	rtl930x_set_internal_mode(sds, mode);
-	if (rtl930x_wait_clock_ready(sds)) {
+	if (rtl930x_wait_clock_ready(sds))
 		pr_err("%s: SDS %d could not sync clock\n", __func__, sds);
-		return;
-	}
 
-	if (interface == PHY_INTERFACE_MODE_10GBASER) {
-		/*
-		 * TODO: The following 10G sequence has not yet been analyzed and refactored.
-		 * It sounds as if some finite state machine (FSM) has to be initialized. For
-		 * now keep it as is.
-		 */
-		for (int i = 0; i < 20; i++) {
-			int t, v;
-
-			t = rtl930x_sds_field_r(sds, 0x6, 0x1, 2, 2);
-			rtl930x_sds_field_w(sds, 0x6, 0x1, 2, 2, 0x1);
-
-			/* Reset FSM */
-			rtl930x_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x1);
-			mdelay(10);
-			rtl930x_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x0);
-			mdelay(10);
-
-			/* Need to read this twice */
-			v = rtl930x_sds_field_r(sds, 0x5, 0, 12, 12);
-			v = rtl930x_sds_field_r(sds, 0x5, 0, 12, 12);
-
-			rtl930x_sds_field_w(sds, 0x6, 0x1, 2, 2, t);
-
-			/* Reset FSM again */
-			rtl930x_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x1);
-			mdelay(10);
-			rtl930x_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x0);
-			mdelay(10);
-
-			if (v == 1)
-				break;
-		}
-	}
+	if (rtl930x_init_state_machine(sds, interface))
+		pr_err("%s: SDS %d could not reset state machine\n", __func__, sds);
 
 	rtl930x_set_power(sds, true);
 	rtl930x_sds_rx_rst(sds, interface);
