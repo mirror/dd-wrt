@@ -98,8 +98,9 @@ extern int br_set_vlan_filtering(const char *br, int on);
 #ifdef HAVE_VLAN_FILTERING
 extern int br_has_vlan_filtering(void);
 #else
-static inline int br_has_vlan_filtering(void) {
-return 0;
+static inline int br_has_vlan_filtering(void)
+{
+	return 0;
 }
 #endif
 #ifndef HAVE_MICRO
