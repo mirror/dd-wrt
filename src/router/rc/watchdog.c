@@ -86,6 +86,7 @@ static void check_fan(int brand)
 	}
 #endif
 #ifdef HAVE_R9000
+	static int lasttarget = 0;
 	int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 	FILE *tempfp;
 	tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
@@ -153,7 +154,6 @@ static void watchdog(void)
 	int radiostate[16];
 	int oldstate[16];
 	int dropcounter = 0;
-	static int lasttarget = 0;
 	int radioledinitcount = 0;
 	memset(radiostate, -1, sizeof(radiostate));
 	memset(oldstate, -1, sizeof(oldstate));
