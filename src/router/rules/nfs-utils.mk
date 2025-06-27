@@ -18,7 +18,7 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent sqlite
 		--disable-nfsdctl \
 		--with-krb5=yes \
 		TIRPC_CFLAGS="-I$(TOP)/libtirpc  -I$(TOP)/libtirpc/tirpc" \
-		XML2_CLAGS="-I$(TOP)/libxml2/include" \
+		XML2_CFLAGS="-I$(TOP)/libxml2/include" \
 		XML2_LIBS="-L$(TOP)/libxml2/.libs -lxml2" \
 		KRBCFLAGS="-I$(TOP)/krb5/src/include" \
 		KRBLDFLAGS="-L$(TOP)/krb5/src/lib" \
