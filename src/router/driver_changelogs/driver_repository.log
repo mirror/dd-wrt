@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8457 | brainslayer | 2025-06-30 22:10:54 +0700 (Mon, 30 Jun 2025) | 1 line
+
+still running tests but it seems that the memory reduced version does make troubles under certain conditions
+------------------------------------------------------------------------
 r8456 | brainslayer | 2025-06-26 16:14:47 +0700 (Thu, 26 Jun 2025) | 1 line
 
 revert
