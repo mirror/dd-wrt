@@ -1291,12 +1291,12 @@ void start_sysinit(void)
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
-		setscaling(1440000);
+		setscaling(1512000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_GLINET_AX1800: // todo. check real cpu clock on device
-		setscaling(1608000);
+		setscaling(1512000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
