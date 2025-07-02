@@ -149,13 +149,16 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 		close(server_info->fd);
 	}
 
+	if (server_info->fd > 0) {
+		tlog(TLOG_DEBUG, "server %s:%d closed.", server_info->ip, server_info->port);
+	}
+
 	server_info->fd = -1;
 	/* update send recv time */
 	time(&server_info->last_send);
 	time(&server_info->last_recv);
 
 	pthread_mutex_unlock(&server_info->lock);
-	tlog(TLOG_DEBUG, "server %s:%d closed.", server_info->ip, server_info->port);
 }
 
 void _dns_client_close_socket(struct dns_server_info *server_info)
