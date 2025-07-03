@@ -201,9 +201,8 @@ void board_reset(void)
 		;
 }
 
-void board_watchdog(void)
+void trigger_watchdog(void)
 {
-	printf("Init Watchdog...\n");
 	switch (family) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_watchdog();
@@ -219,6 +218,13 @@ void board_watchdog(void)
 		break;
 	}
 }
+
+void board_watchdog(void)
+{
+	printf("Init Watchdog...\n");
+	trigger_watchdog();
+}
+
 static void identify_rtl9302(void)
 {
 	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
@@ -260,6 +266,62 @@ static void identify_rtl9302(void)
 		break;
 	default:
 		name = "RTL9302";
+	}
+}
+
+void start_memtest(void)
+{
+	volatile unsigned long *addr, *start, *end;
+	unsigned long val;
+	unsigned long readback;
+
+	unsigned long incr;
+	unsigned long pattern;
+
+	start = (unsigned long *)(KSEG1ADDR(workspace));
+#define MEMEND (KSEG1 + (board_get_memory() <= (128 << 20) ? board_get_memory() : 128 << 20))
+	end = (unsigned long *)(MEMEND - 0x200000);
+
+	pattern = 0xa0000000;
+
+	incr = 1;
+	int i;
+	printf("Starting memory test from 0x%08lX to 0x%08lX\n", (unsigned long)start, (unsigned long)end);
+	for (i = 0; i < 3; i++) {
+		printf("\rPattern %08lX  Writing..."
+		       "%12s"
+		       "\b\b\b\b\b\b\b\b\b\b",
+		       pattern, "");
+
+		for (addr = start, val = pattern; addr < end; addr++) {
+			*addr = val;
+			val += incr;
+		}
+
+		printf(" Reading...\n");
+
+		for (addr = start, val = pattern; addr < end; addr++) {
+			readback = *addr;
+			if (readback != val) {
+				printf("\nMem error @ 0x%08X: "
+				       "found %08lX, expected %08lX\n",
+				       (unsigned int)addr, readback, val);
+			}
+			val += incr;
+		}
+
+		/*
+		 * Flip the pattern each time to make lots of zeros and
+		 * then, the next time, lots of ones.  We decrement
+		 * the "negative" patterns and increment the "positive"
+		 * patterns to preserve this feature.
+		 */
+		if (pattern & 0x80000000) {
+			pattern = -pattern; /* complement & increment */
+		} else {
+			pattern = ~pattern;
+		}
+		incr = -incr;
 	}
 }
 
@@ -362,6 +424,8 @@ static void detect(void)
 	}
 	printf("Running on %s with %dMB\n", name, board_get_memory() >> 20);
 	printf("clock period is %d\n", get_clock_period());
+	board_watchdog(); // init watchdog and let it run for maximum time, of something hangs board will reset after 60 seconds or so
+	//	start_memtest();
 }
 
 void board_init(void)
