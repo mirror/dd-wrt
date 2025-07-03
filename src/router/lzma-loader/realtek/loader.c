@@ -112,7 +112,7 @@ static inline int read_byte(void *object, const unsigned char **buffer, UInt32 *
 	val = get_byte();
 	*buffer = &val;
 	if (icnt++ % (1024 * 10) == 0) {
-		printf("[%d%%]\r", (100 * icnt) / lzma_datasize);
+		printf("[%ld%%]\r", (100 * icnt) / lzma_datasize);
 	}
 	return LZMA_RESULT_OK;
 }
@@ -146,7 +146,7 @@ static int lzma_decompress(unsigned char *outStream)
 	d = get_byte();
 	lzma_outsize = (a) + (b << 8) + (c << 16) + (d << 24);
 	vs.Probs = (CProb *)workspace;
-	printf("Decompressing %d bytes to address 0x%08x\n", lzma_outsize, kernel_la);
+	printf("Decompressing %ld bytes to address 0x%08lx\n", lzma_outsize, kernel_la);
 	// skip high order bytes
 	for (i = 0; i < 4; i++)
 		get_byte();
@@ -155,7 +155,7 @@ static int lzma_decompress(unsigned char *outStream)
 	i = 0;
 	ret = LzmaDecode(&vs, &callback, outStream, lzma_outsize, &i);
 	if (ret != LZMA_RESULT_OK) {
-		printf("LzmaDecode error %d at %08x, osize:%d ip:%d op:%d\n", ret, lzma_data + inptr, lzma_outsize, inptr, i);
+		printf("LzmaDecode error %d at 0x%08lx, osize:%ld ip:%d op:%d\n", ret, (unsigned long)(lzma_data + inptr), lzma_outsize, inptr, i);
 		for (i = 0; i < 16; i++)
 			printf("%02x ", lzma_data[inptr + i]);
 

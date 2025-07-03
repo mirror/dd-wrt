@@ -12,7 +12,10 @@
 #ifndef _printf_h_
 #define _printf_h_
 
-#include <stdarg.h>
-void printf(char *fmt, ...);
+#include "nanoprintf.h"
+#include "board.h"
+
+#define printf(fmt, ...)	npf_pprintf(board_putchar, NULL, fmt, ##__VA_ARGS__)
+#define snprintf		npf_snprintf
 
 #endif /* _printf_h_ */

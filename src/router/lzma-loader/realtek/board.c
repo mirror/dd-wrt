@@ -64,8 +64,55 @@ static inline void writel(unsigned int value, volatile void *addr)
 
 #define OTTO_WDT_REG_CTRL 0x8
 
+
+#define RTL8389_FAMILY_ID (0x8389)
+#define RTL8328_FAMILY_ID (0x8328)
+#define RTL8390_FAMILY_ID (0x8390)
+#define RTL8350_FAMILY_ID (0x8350)
+#define RTL8380_FAMILY_ID (0x8380)
+#define RTL8330_FAMILY_ID (0x8330)
+#define RTL9300_FAMILY_ID (0x9300)
+#define RTL9310_FAMILY_ID (0x9310)
+
+static int model;
+static int family;
+static char *name;
+
 unsigned int pll_reset_value;
 
+#define DRAM_CONFIG_REG			0xb8001004
+
+unsigned int rtl83xx_board_get_memory(void)
+{
+	unsigned int dcr = readl((volatile void *)DRAM_CONFIG_REG);
+	char ROWCNTv[] = {11, 12, 13, 14, 15, 16};
+	char COLCNTv[] = {8, 9, 10, 11, 12};
+	char BNKCNTv[] = {1, 2, 3};
+	char BUSWIDv[] = {0, 1, 2};
+
+	return 1 << (BNKCNTv[(dcr >> 28) & 0x3] + BUSWIDv[(dcr >> 24) & 0x3] +
+		     ROWCNTv[(dcr >> 20) & 0xf] + COLCNTv[(dcr >> 16) & 0xf]);
+}
+
+unsigned int rtl931x_board_get_memory(void)
+{
+    unsigned int v = readl((volatile void *)0xB814304C);
+    unsigned int b = v >> 12;
+    unsigned int r = (v >> 6) & 0x3F;
+    unsigned int c = v & 0x3F;
+    return 1 << (b + r + c);
+}
+
+unsigned int board_get_memory(void)
+{
+	switch(family)
+	{
+	case RTL9310_FAMILY_ID:
+		return rtl931x_board_get_memory();
+	default:
+		return rtl83xx_board_get_memory();
+	}
+}
 static void rtl838x_watchdog(void)
 {
 	//soc reset mode 0 + ctrl enable
@@ -136,18 +183,6 @@ static void rtl931x_restart(void)
 	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
 }
 
-#define RTL8389_FAMILY_ID (0x8389)
-#define RTL8328_FAMILY_ID (0x8328)
-#define RTL8390_FAMILY_ID (0x8390)
-#define RTL8350_FAMILY_ID (0x8350)
-#define RTL8380_FAMILY_ID (0x8380)
-#define RTL8330_FAMILY_ID (0x8330)
-#define RTL9300_FAMILY_ID (0x9300)
-#define RTL9310_FAMILY_ID (0x9310)
-
-static int model;
-static int family;
-static char *name;
 
 void board_reset(void)
 {
@@ -328,7 +363,7 @@ static void detect(void)
 		name = "DEFAULT";
 		family = 0;
 	}
-	printf("Board Model is %s\n", name);
+	printf("Running on %s with %dMB\n", name, board_get_memory() >> 20);
 	printf("clock period is %d\n", get_clock_period());
 }
 
@@ -338,9 +373,13 @@ void board_init(void)
 	detect();
 }
 
-void board_putc(int ch)
+void board_putchar(int ch, void *ctx)
 {
 	while ((*((volatile unsigned int *)(UART_BASE_ADDR + 0x14)) & 0x20000000) == 0)
 		;
 	*((volatile unsigned char *)UART_BASE_ADDR) = ch;
+
+	if (ch == '\n')
+		board_putchar('\r', ctx);
+
 }
