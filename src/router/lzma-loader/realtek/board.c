@@ -64,7 +64,6 @@ static inline void writel(unsigned int value, volatile void *addr)
 
 #define OTTO_WDT_REG_CTRL 0x8
 
-
 #define RTL8389_FAMILY_ID (0x8389)
 #define RTL8328_FAMILY_ID (0x8328)
 #define RTL8390_FAMILY_ID (0x8390)
@@ -80,33 +79,32 @@ static char *name;
 
 unsigned int pll_reset_value;
 
-#define DRAM_CONFIG_REG			0xb8001004
+#define DRAM_CONFIG_REG 0xb8001004
 
 unsigned int rtl83xx_board_get_memory(void)
 {
 	unsigned int dcr = readl((volatile void *)DRAM_CONFIG_REG);
-	char ROWCNTv[] = {11, 12, 13, 14, 15, 16};
-	char COLCNTv[] = {8, 9, 10, 11, 12};
-	char BNKCNTv[] = {1, 2, 3};
-	char BUSWIDv[] = {0, 1, 2};
+	char ROWCNTv[] = { 11, 12, 13, 14, 15, 16 };
+	char COLCNTv[] = { 8, 9, 10, 11, 12 };
+	char BNKCNTv[] = { 1, 2, 3 };
+	char BUSWIDv[] = { 0, 1, 2 };
 
-	return 1 << (BNKCNTv[(dcr >> 28) & 0x3] + BUSWIDv[(dcr >> 24) & 0x3] +
-		     ROWCNTv[(dcr >> 20) & 0xf] + COLCNTv[(dcr >> 16) & 0xf]);
+	return 1 << (BNKCNTv[(dcr >> 28) & 0x3] + BUSWIDv[(dcr >> 24) & 0x3] + ROWCNTv[(dcr >> 20) & 0xf] +
+		     COLCNTv[(dcr >> 16) & 0xf]);
 }
 
 unsigned int rtl931x_board_get_memory(void)
 {
-    unsigned int v = readl((volatile void *)0xB814304C);
-    unsigned int b = v >> 12;
-    unsigned int r = (v >> 6) & 0x3F;
-    unsigned int c = v & 0x3F;
-    return 1 << (b + r + c);
+	unsigned int v = readl((volatile void *)0xB814304C);
+	unsigned int b = v >> 12;
+	unsigned int r = (v >> 6) & 0x3F;
+	unsigned int c = v & 0x3F;
+	return 1 << (b + r + c);
 }
 
 unsigned int board_get_memory(void)
 {
-	switch(family)
-	{
+	switch (family) {
 	case RTL9310_FAMILY_ID:
 		return rtl931x_board_get_memory();
 	default:
@@ -182,7 +180,6 @@ static void rtl931x_restart(void)
 	msleep(15);
 	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
 }
-
 
 void board_reset(void)
 {
@@ -381,5 +378,4 @@ void board_putchar(int ch, void *ctx)
 
 	if (ch == '\n')
 		board_putchar('\r', ctx);
-
 }

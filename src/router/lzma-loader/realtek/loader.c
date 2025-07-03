@@ -155,7 +155,8 @@ static int lzma_decompress(unsigned char *outStream)
 	i = 0;
 	ret = LzmaDecode(&vs, &callback, outStream, lzma_outsize, &i);
 	if (ret != LZMA_RESULT_OK) {
-		printf("LzmaDecode error %d at 0x%08lx, osize:%ld ip:%d op:%d\n", ret, (unsigned long)(lzma_data + inptr), lzma_outsize, inptr, i);
+		printf("LzmaDecode error %d at 0x%08lx, osize:%ld ip:%d op:%d\n", ret, (unsigned long)(lzma_data + inptr),
+		       lzma_outsize, inptr, i);
 		for (i = 0; i < 16; i++)
 			printf("%02x ", lzma_data[inptr + i]);
 
