@@ -69,7 +69,6 @@ extern void SST_GetFrequencyRange(SST_Stats inst, double *lo, double *hi);
 /* Get data needed for selection */
 extern void
 SST_GetSelectionData(SST_Stats inst, struct timespec *now,
-                     int *stratum, NTP_Leap *leap,
                      double *offset_lo_limit,
                      double *offset_hi_limit,
                      double *root_distance,
@@ -103,6 +102,10 @@ SST_GetTrackingData(SST_Stats inst, struct timespec *ref_time,
 
 extern void SST_SlewSamples(SST_Stats inst, struct timespec *when, double dfreq, double doffset);
 
+/* This routine corrects already accumulated samples to improve the
+   frequency estimate when a new sample is accumulated */
+extern void SST_CorrectOffset(SST_Stats inst, double doffset);
+
 /* This routine is called when an indeterminate offset is introduced
    into the local time. */
 extern void SST_AddDispersion(SST_Stats inst, double dispersion);
@@ -120,7 +123,7 @@ extern int SST_GetDelayTestData(SST_Stats inst, struct timespec *sample_time,
                                 double *last_sample_ago, double *predicted_offset,
                                 double *min_delay, double *skew, double *std_dev);
 
-extern void SST_SaveToFile(SST_Stats inst, FILE *out);
+extern int SST_SaveToFile(SST_Stats inst, FILE *out);
 
 extern int SST_LoadFromFile(SST_Stats inst, FILE *in);
 
@@ -129,6 +132,8 @@ extern void SST_DoSourceReport(SST_Stats inst, RPT_SourceReport *report, struct 
 extern void SST_DoSourcestatsReport(SST_Stats inst, RPT_SourcestatsReport *report, struct timespec *now);
 
 extern int SST_Samples(SST_Stats inst);
+
+extern int SST_GetMinSamples(SST_Stats inst);
 
 extern double SST_GetJitterAsymmetry(SST_Stats inst);
 

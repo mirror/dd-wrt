@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "intermittent connection"
+
+# Pass packets only for 1200 seconds every 10000 seconds
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* -1
+        (equal 0.1 (min (% time 10000) 1200) 1200)))
+EOF
+)
+
+time_max_limit=1e-1
+freq_max_limit=1e-2
+time_rms_limit=2e-3
+freq_rms_limit=2e-5
+limit=100000
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+
+check_log_messages "Can't.*no selectable sources (1 unreachable" 9 10 || test_fail
+check_log_messages "Selected source 192.168.123.1" 9 10 || test_fail
+
+# Pass every 20th request
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* -1
+        (equal 0.1 from 2)
+        (equal 0.1 (min (% (sum 1) 20) 1) 1)))
+EOF
+)
+
+time_max_limit=1e-2
+freq_max_limit=1e-4
+time_rms_limit=5e-3
+max_sync_time=22000
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+
+check_log_messages "Can't.*no selectable sources (1 unreachable" 5 15 || test_fail
+check_log_messages "Selected source 192.168.123.1" 5 15 || test_fail
+
+test_pass

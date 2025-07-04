@@ -30,16 +30,19 @@
 #include "sysincl.h"
 
 /* This type is used to represent an IPv4 address or IPv6 address.
+   Addresses which are not resolved yet can be represented with an ID.
    All parts are in HOST order, NOT network order. */
 
 #define IPADDR_UNSPEC 0
 #define IPADDR_INET4 1
 #define IPADDR_INET6 2
+#define IPADDR_ID 3
 
 typedef struct {
   union { 
     uint32_t in4;
     uint8_t in6[16];
+    uint32_t id;
   } addr;
   uint16_t family;
   uint16_t _pad;
@@ -47,8 +50,10 @@ typedef struct {
 
 typedef struct {
   IPAddr ip_addr;
-  unsigned short port;
-} NTP_Remote_Address;
+  uint16_t port;
+} IPSockAddr;
+
+typedef IPSockAddr NTP_Remote_Address;
 
 #define INVALID_IF_INDEX -1
 

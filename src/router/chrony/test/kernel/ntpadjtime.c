@@ -52,15 +52,15 @@ test_freqrange(void)
 
   printf("freq range:\n");
 
-  for (i = 0; i <= 1000; i += 50) {
+  for (i = -1000; i <= 1000; i += 50) {
     t.modes = MOD_FREQUENCY;
-    t.freq = i << 16;
+    t.freq = i * (1 << 16);
     printf("%4d ppm => ", i);
     if (try_ntpadjtime(&t) < 0)
       continue;
 
     printf("%4ld ppm : ", t.freq / (1 << 16));
-    printf("%s\n", t.freq == i << 16 ? "ok" : "fail");
+    printf("%s\n", t.freq == i * (1 << 16) ? "ok" : "fail");
   }
 }
 

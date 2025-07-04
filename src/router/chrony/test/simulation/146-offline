@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "online/offline switching"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+servers=2
+limit=$[10 * 1800]
+client_server_conf="
+server 192.168.123.1 offline iburst
+server 192.168.123.2 polltarget 64"
+chronyc_conf="timeout 4000000
+activity
+offline
+activity
+onoffline 192.168.123.1
+online 192.168.123.2
+activity
+offline
+activity
+"
+chronyc_start=1
+base_delay="(+ 1e-4 (* 1800 (equal 0.1 from 4)))"
+jitter=1e-6
+
+time_max_limit=2e-2
+freq_max_limit=1e-3
+time_rms_limit=2e-2
+freq_rms_limit=1e-5
+min_sync_time=120
+max_sync_time=140
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "	3	1	.*	123	" 30 90 log.packets || test_fail
+check_file_messages "	3	2	.*	123	" 130 150 log.packets || test_fail
+
+check_chronyc_output "^200 OK
+1 sources online
+1 sources offline
+0 sources doing burst \(return to online\)
+0 sources doing burst \(return to offline\)
+0 sources with unknown address
+200 OK
+200 OK
+0 sources online
+2 sources offline
+0 sources doing burst \(return to online\)
+0 sources doing burst \(return to offline\)
+0 sources with unknown address
+200 OK
+200 OK
+200 OK
+2 sources online
+0 sources offline
+0 sources doing burst \(return to online\)
+0 sources doing burst \(return to offline\)
+0 sources with unknown address
+200 OK
+200 OK
+0 sources online
+2 sources offline
+0 sources doing burst \(return to online\)
+0 sources doing burst \(return to offline\)
+0 sources with unknown address" \
+	|| test_fail
+
+test_pass

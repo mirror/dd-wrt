@@ -22,18 +22,25 @@ The software is distributed as source code which has to be compiled. The source
 code is supplied in the form of a gzipped tar file, which unpacks to a
 subdirectory identifying the name and version of the program.
 
-The following programs and libraries with their development files are needed to
-build `chrony`:
+A C compiler (e.g. `gcc` or `clang`) and GNU Make are needed to build `chrony`.
+The following libraries with their development files, and programs, are needed
+to enable optional features:
 
-* C compiler (gcc or clang recommended)
-* GNU Make
-* Nettle, NSS, or LibTomCrypt (optional)
-* Editline (optional)
-* libcap (Linux only, optional)
-* libseccomp (Linux only, optional)
-* timepps.h header (optional)
-* Asciidoctor (for HTML documentation)
-* Bash (for testing)
+* pkg-config: detection of development libraries
+* Nettle, GnuTLS, NSS, or LibTomCrypt: secure hash functions (`SECHASH`)
+* libcap: dropping root privileges on Linux (`DROPROOT`)
+* libseccomp: system call filter on Linux (`SCFILTER`)
+* GnuTLS and Nettle: Network Time Security (`NTS`)
+* Editline: line editing in `chronyc` (`READLINE`)
+* timepps.h header: PPS reference clock
+* Asciidoctor: documentation in HTML format
+* Bash: test suite
+
+The following programs are needed when building `chrony` from the git
+repository instead of a released tar file:
+
+* Asciidoctor: manual pages
+* Bison: parser for chronyc settime command
 
 After unpacking the source code, change directory into it, and type
 
@@ -78,22 +85,15 @@ will be built with support for dropping root privileges. On other systems no
 extra library is needed. The default user which `chronyd` should run as can be
 specified with the `--with-user` option of the `configure` script.
 
-If development files for the POSIX threads library are available, `chronyd`
-will be built with support for asynchronous resolving of hostnames specified in
-the `server`, `peer`, and `pool` directives. This allows `chronyd` operating as
-a server to respond to client requests when resolving a hostname. If you don't
-want to enable the support, specify the `--disable-asyncdns` flag to
-`configure`.
-
 If development files for the https://www.lysator.liu.se/~nisse/nettle/[Nettle],
 https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS[NSS], or
-http://www.libtom.net/LibTomCrypt/[libtomcrypt] library are available,
+https://www.libtom.net/LibTomCrypt/[libtomcrypt] library are available,
 `chronyd` will be built with support for other cryptographic hash functions
 than MD5, which can be used for NTP authentication with a symmetric key. If you
 don't want to enable the support, specify the `--disable-sechash` flag to
 `configure`.
 
-If development files for the editline or readline library are available,
+If development files for the editline library are available,
 `chronyc` will be built with line editing support. If you don't want this,
 specify the `--disable-readline` flag to `configure`.
 
@@ -162,43 +162,6 @@ https://github.com/seccomp/libseccomp[libseccomp] library and the
 `chronyd` will enable a system call filter, which should significantly reduce
 the kernel attack surface and possibly prevent kernel exploits from `chronyd`
 if it is compromised.
-
-== Support for line editing libraries
-
-`chronyc` can be built with support for line editing, this allows you to use
-the cursor keys to replay and edit old commands. Two libraries are supported
-which provide such functionality, editline and GNU readline.
-
-Please note that readline since version 6.0 is licensed under GPLv3+ which is
-incompatible with chrony's license GPLv2. You should use editline instead if
-you don't want to use older readline versions.
-
-The `configure` script will automatically enable the line editing support if
-one of the supported libraries is available. If they are both available, the
-editline library will be used.
-
-If you don't want to use it (in which case `chronyc` will use a minimal command
-line interface), invoke `configure` like this:
-
-----
-./configure --disable-readline other-options...
-----
-
-If you have editline, readline or ncurses installed in locations that aren't
-normally searched by the compiler and linker, you need to use extra options:
-
-`--with-readline-includes=directory_name`::
-  This defines the name of the directory above the one where `readline.h` is.
-  `readline.h` is assumed to be in `editline` or `readline` subdirectory of the
-  named directory.
-
-`--with-readline-library=directory_name`::
-  This defines the directory containing the `libedit.a` or `libedit.so` file,
-  or `libreadline.a` or `libreadline.so` file.
-
-`--with-ncurses-library=directory_name`::
-  This defines the directory containing the `libncurses.a` or `libncurses.so`
-  file.
 
 == Extra options for package builders
 

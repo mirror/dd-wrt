@@ -60,8 +60,8 @@ Support files
 Dates and sizes may differ
 -rw-r--r--  1 yourname  staff  2084  4 Aug 22:54 README.txt
 -rwxr-xr-x  1 yourname  staff   676  4 Aug 21:18 chronylogrotate.sh
--rw-r--r--  1 yourname  staff   543 18 Jul 20:10 org.tuxfamily.chronyc.plist
--rw-r--r--  1 yourname  staff   511 19 Jun 18:30 org.tuxfamily.chronyd.plist
+-rw-r--r--  1 yourname  staff   543 18 Jul 20:10 org.chrony-project.chronyc.plist
+-rw-r--r--  1 yourname  staff   511 19 Jun 18:30 org.chrony-project.chronyd.plist
 
 If you have used chrony support directories other than those suggested, you
 will need to edit each file and make the appropriate changes.
@@ -83,21 +83,21 @@ sudo chmod +x /usr/local/bin/chronylogrotate.sh
 sudo chown root:wheel /usr/local/bin/chronylogrotate.sh
 
 
-2. org.tuxfamily.chronyc.plist
+2. org.chrony-project.chronyc.plist
 This file is the launchd plist that runs logrotation each day. You may
 wish to edit this file to change the time of day at which the rotation
 will run, currently 04:05 am
 
-sudo cp org.tuxfamily.chronyc.plist /Library/LaunchDaemons
-sudo chown root:wheel /Library/LaunchDaemons/org.tuxfamily.chronyc.plist
-sudo chmod 0644 /Library/LaunchDaemons/org.tuxfamily.chronyc.plist
-sudo launchctl load -w /Library/LaunchDaemons/org.tuxfamily.chronyc.plist
+sudo cp org.chrony-project.chronyc.plist /Library/LaunchDaemons
+sudo chown root:wheel /Library/LaunchDaemons/org.chrony-project.chronyc.plist
+sudo chmod 0644 /Library/LaunchDaemons/org.chrony-project.chronyc.plist
+sudo launchctl load -w /Library/LaunchDaemons/org.chrony-project.chronyc.plist
 
 
-3. org.tuxfamily.chronyd.plist
+3. org.chrony-project.chronyd.plist
 This file is the launchd plist that runs chronyd when the Macintosh starts.
 
-sudo cp org.tuxfamily.chronyd.plist /Library/LaunchDaemons
-sudo chown root:wheel /Library/LaunchDaemons/org.tuxfamily.chronyd.plist
-sudo chmod 0644 /Library/LaunchDaemons/org.tuxfamily.chronyd.plist
-sudo launchctl load -w /Library/LaunchDaemons/org.tuxfamily.chronyd.plist
+sudo cp org.chrony-project.chronyd.plist /Library/LaunchDaemons
+sudo chown root:wheel /Library/LaunchDaemons/org.chrony-project.chronyd.plist
+sudo chmod 0644 /Library/LaunchDaemons/org.chrony-project.chronyd.plist
+sudo launchctl load -w /Library/LaunchDaemons/org.chrony-project.chronyd.plist

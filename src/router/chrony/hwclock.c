@@ -2,7 +2,7 @@
   chronyd/chronyc - Programs for keeping computer clocks accurate.
 
  **********************************************************************
- * Copyright (C) Miroslav Lichvar  2016-2018
+ * Copyright (C) Miroslav Lichvar  2016-2018, 2022
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -33,6 +33,7 @@
 #include "local.h"
 #include "logging.h"
 #include "memory.h"
+#include "quantiles.h"
 #include "regress.h"
 #include "util.h"
 
@@ -42,6 +43,14 @@
 
 /* Maximum acceptable frequency offset of the clock */
 #define MAX_FREQ_OFFSET (2.0 / 3.0)
+
+/* Quantiles for filtering readings by delay */
+#define DELAY_QUANT_MIN_K 1
+#define DELAY_QUANT_MAX_K 2
+#define DELAY_QUANT_Q 10
+#define DELAY_QUANT_REPEAT 7
+#define DELAY_QUANT_LARGE_STEP_DELAY 1000
+#define DELAY_QUANT_MIN_STEP 1.0e-9
 
 struct HCL_Instance_Record {
   /* HW and local reference timestamp */
@@ -64,12 +73,18 @@ struct HCL_Instance_Record {
   /* Minimum interval between samples */
   double min_separation;
 
+  /* Expected precision of readings */
+  double precision;
+
   /* Flag indicating the offset and frequency values are valid */
   int valid_coefs;
 
   /* Estimated offset and frequency of HW clock relative to local clock */
   double offset;
   double frequency;
+
+  /* Estimated quantiles of reading delay */
+  QNT_Instance delay_quants;
 };
 
 /* ================================================== */
@@ -92,7 +107,7 @@ handle_slew(struct timespec *raw, struct timespec *cooked, double dfreq,
 /* ================================================== */
 
 HCL_Instance
-HCL_CreateInstance(int min_samples, int max_samples, double min_separation)
+HCL_CreateInstance(int min_samples, int max_samples, double min_separation, double precision)
 {
   HCL_Instance clock;
 
@@ -110,6 +125,11 @@ HCL_CreateInstance(int min_samples, int max_samples, double min_separation)
   clock->n_samples = 0;
   clock->valid_coefs = 0;
   clock->min_separation = min_separation;
+  clock->precision = precision;
+  clock->delay_quants = QNT_CreateInstance(DELAY_QUANT_MIN_K, DELAY_QUANT_MAX_K,
+                                           DELAY_QUANT_Q, DELAY_QUANT_REPEAT,
+                                           DELAY_QUANT_LARGE_STEP_DELAY,
+                                           DELAY_QUANT_MIN_STEP);
 
   LCL_AddParameterChangeHandler(handle_slew, clock);
 
@@ -121,6 +141,7 @@ HCL_CreateInstance(int min_samples, int max_samples, double min_separation)
 void HCL_DestroyInstance(HCL_Instance clock)
 {
   LCL_RemoveParameterChangeHandler(handle_slew, clock);
+  QNT_DestroyInstance(clock->delay_quants);
   Free(clock->y_data);
   Free(clock->x_data);
   Free(clock);
@@ -134,6 +155,96 @@ HCL_NeedsNewSample(HCL_Instance clock, struct timespec *now)
   if (!clock->n_samples ||
       fabs(UTI_DiffTimespecsToDouble(now, &clock->local_ref)) >= clock->min_separation)
     return 1;
+
+  return 0;
+}
+
+/* ================================================== */
+
+int
+HCL_ProcessReadings(HCL_Instance clock, int n_readings, struct timespec tss[][3],
+                    struct timespec *hw_ts, struct timespec *local_ts, double *err)
+{
+  double delay, raw_delay, min_delay, low_delay, high_delay, e, pred_err;
+  double delay_sum, hw_sum, local_sum, local_prec, freq;
+  int i, min_reading, combined;
+  struct timespec ts1, ts2;
+
+  if (n_readings < 1)
+    return 0;
+
+  /* Work out the current correction multiplier needed to get cooked delays */
+  LCL_CookTime(&tss[0][0], &ts1, NULL);
+  LCL_CookTime(&tss[n_readings - 1][2], &ts2, NULL);
+  if (UTI_CompareTimespecs(&tss[0][0], &tss[n_readings - 1][2]) < 0)
+    freq = UTI_DiffTimespecsToDouble(&ts1, &ts2) /
+           UTI_DiffTimespecsToDouble(&tss[0][0], &tss[n_readings - 1][2]);
+  else
+    freq = 1.0;
+
+  for (i = 0; i < n_readings; i++) {
+    delay = freq * UTI_DiffTimespecsToDouble(&tss[i][2], &tss[i][0]);
+
+    if (delay < 0.0) {
+      /* Step in the middle of a reading? */
+      DEBUG_LOG("Bad reading delay=%e", delay);
+      return 0;
+    }
+
+    if (i == 0 || min_delay > delay) {
+      min_delay = delay;
+      min_reading = i;
+    }
+
+    QNT_Accumulate(clock->delay_quants, delay);
+  }
+
+  local_prec = LCL_GetSysPrecisionAsQuantum();
+
+  low_delay = QNT_GetQuantile(clock->delay_quants, QNT_GetMinK(clock->delay_quants)) -
+              QNT_GetMinStep(clock->delay_quants) / 2.0;
+  high_delay = QNT_GetQuantile(clock->delay_quants, QNT_GetMaxK(clock->delay_quants)) +
+               QNT_GetMinStep(clock->delay_quants) / 2.0;
+  low_delay = MIN(low_delay, high_delay);
+  high_delay = MAX(high_delay, low_delay + local_prec);
+
+  /* Combine readings with delay in the expected interval */
+  for (i = combined = 0, delay_sum = hw_sum = local_sum = 0.0; i < n_readings; i++) {
+    raw_delay = UTI_DiffTimespecsToDouble(&tss[i][2], &tss[i][0]);
+    delay = freq * raw_delay;
+
+    if (delay < low_delay || delay > high_delay)
+      continue;
+
+    delay_sum += delay;
+    hw_sum += UTI_DiffTimespecsToDouble(&tss[i][1], &tss[0][1]);
+    local_sum += UTI_DiffTimespecsToDouble(&tss[i][0], &tss[0][0]) + raw_delay / 2.0;
+    combined++;
+  }
+
+  DEBUG_LOG("Combined %d readings lo=%e hi=%e", combined, low_delay, high_delay);
+
+  if (combined > 0) {
+    UTI_AddDoubleToTimespec(&tss[0][1], hw_sum / combined, hw_ts);
+    UTI_AddDoubleToTimespec(&tss[0][0], local_sum / combined, local_ts);
+    *err = MAX(delay_sum / combined / 2.0, clock->precision);
+    return 1;
+  }
+
+  /* Accept the reading with minimum delay if its interval does not contain
+     the current offset predicted from previous samples */
+
+  *hw_ts = tss[min_reading][1];
+  UTI_AddDoubleToTimespec(&tss[min_reading][0], min_delay / freq / 2.0, local_ts);
+  *err = MAX(min_delay / 2.0, clock->precision);
+
+  pred_err = 0.0;
+  LCL_CookTime(local_ts, &ts1, NULL);
+  if (!HCL_CookTime(clock, hw_ts, &ts2, &e) ||
+      ((pred_err = UTI_DiffTimespecsToDouble(&ts1, &ts2)) > *err)) {
+    DEBUG_LOG("Accepted reading err=%e prerr=%e", *err, pred_err);
+    return 1;
+  }
 
   return 0;
 }

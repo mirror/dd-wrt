@@ -27,19 +27,19 @@
 #ifndef GOT_NTP_IO_LINUX_H
 #define GOT_NTP_IO_LINUX_H
 
+#include "socket.h"
+
 extern void NIO_Linux_Initialise(void);
 
 extern void NIO_Linux_Finalise(void);
 
+extern int NIO_Linux_IsHwTsEnabled(void);
+
 extern int NIO_Linux_SetTimestampSocketOptions(int sock_fd, int client_only, int *events);
 
-extern int NIO_Linux_ProcessEvent(int sock_fd, int event);
+extern int NIO_Linux_ProcessMessage(SCK_Message *message, NTP_Local_Address *local_addr,
+                                    NTP_Local_Timestamp *local_ts, int event);
 
-extern int NIO_Linux_ProcessMessage(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_addr,
-                                    NTP_Local_Timestamp *local_ts, struct msghdr *hdr, int length);
-
-extern int NIO_Linux_RequestTxTimestamp(struct msghdr *msg, int cmsglen, int sock_fd);
-
-extern void NIO_Linux_NotifySocketClosing(int sock_fd);
+extern void NIO_Linux_RequestTxTimestamp(SCK_Message *message, int sock_fd);
 
 #endif

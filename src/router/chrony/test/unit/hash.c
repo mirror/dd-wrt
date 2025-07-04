@@ -22,12 +22,13 @@
 #include <sysincl.h>
 #include <hash.h>
 #include <logging.h>
+#include <util.h>
 #include "test.h"
 
 struct hash_test {
   const char *name;
   const unsigned char out[MAX_HASH_LENGTH];
-  unsigned int length;
+  int length;
 };
 
 void
@@ -37,6 +38,7 @@ test_unit(void)
   unsigned char data2[] = "12345678910";
   unsigned char out[MAX_HASH_LENGTH];
   struct hash_test tests[] = {
+    { "MD5-NC",    "\xfc\x24\x97\x1b\x52\x66\xdc\x46\xef\xe0\xe8\x08\x46\x89\xb6\x88", 16 },
     { "MD5",       "\xfc\x24\x97\x1b\x52\x66\xdc\x46\xef\xe0\xe8\x08\x46\x89\xb6\x88", 16 },
     { "SHA1",      "\xd8\x85\xb3\x86\xce\xea\x93\xeb\x92\xcd\x7b\x94\xb9\x8d\xc2\x8e"
                    "\x3e\x31\x13\xdd", 20},
@@ -60,14 +62,6 @@ test_unit(void)
                    "\x39\xfc\xcb\xc1\x29\xe1\x23\x7d\x8b\x56\x54\xe3\x08\x9d\xf9\x74"
                    "\x78\x69\x2e\x3c\x7e\x51\x1e\x9d\xab\x09\xbe\xe7\x6b\x1a\xa1\x22"
                    "\x93\xb1\x2b\x82\x9d\x1e\xcf\xa8\x99\xc5\xec\x7b\x1d\x89\x07\x2b", 64 },
-    { "RMD128",    "\x6f\xd7\x1f\x37\x47\x0f\xbd\x42\x57\xc8\xbb\xee\xba\x65\xf9\x35", 16 },
-    { "RMD160",    "\x7a\x88\xec\xc7\x09\xc5\x65\x34\x11\x24\xe3\xf9\xf7\xa5\xbf\xc6"
-                   "\x01\xe2\xc9\x32", 20},
-    { "RMD256",    "\x59\xdf\xd4\xcb\xc9\xbe\x7c\x27\x08\xa7\x23\xf7\xb3\x0c\xf0\x0d"
-                   "\xa0\xcf\x5b\x18\x16\x51\x56\x6d\xda\x7b\x87\x24\x9d\x83\x35\xe1", 32 },
-    { "RMD320",    "\x68\x98\x10\xf4\xb6\x79\xb6\x15\xf1\x48\x2d\x73\xd0\x23\x84\x01"
-                   "\xbf\xaa\x67\xcf\x1e\x35\x5c\xbf\xe9\xb8\xaf\xe1\xee\x0d\xf0\x6b"
-                   "\xe2\x3a\x9a\x3a\xa7\x56\xad\x70", 40},
     { "TIGER",     "\x1c\xcd\x68\x74\xca\xd6\xd5\x17\xba\x3e\x82\xaf\xbd\x70\xdc\x66"
                    "\x99\xaa\xae\x16\x72\x59\xd1\x64", 24},
     { "WHIRLPOOL", "\xe3\xcd\xe6\xbf\xe1\x8c\xe4\x4d\xc8\xb4\xa5\x7c\x36\x8d\xc8\x8a"
@@ -77,27 +71,41 @@ test_unit(void)
     { "", "", 0 }
   };
 
-  unsigned int length;
-  int i, j, hash_id;
+  HSH_Algorithm algorithm;
+  int i, j, hash_id, length;
+
+  TEST_CHECK(HSH_INVALID == 0);
 
   for (i = 0; tests[i].name[0] != '\0'; i++) {
-    hash_id = HSH_GetHashId(tests[i].name);
+    algorithm = UTI_HashNameToAlgorithm(tests[i].name);
+    if (strcmp(tests[i].name, "MD5-NC") == 0) {
+      TEST_CHECK(algorithm == 0);
+      algorithm = HSH_MD5_NONCRYPTO;
+    } else {
+      TEST_CHECK(algorithm != 0);
+    }
+    hash_id = HSH_GetHashId(algorithm);
     if (hash_id < 0) {
-      TEST_CHECK(strcmp(tests[i].name, "MD5"));
+      TEST_CHECK(algorithm != HSH_MD5_NONCRYPTO);
+      TEST_CHECK(algorithm != HSH_MD5);
 #ifdef FEAT_SECHASH
-      TEST_CHECK(strcmp(tests[i].name, "SHA1"));
-      TEST_CHECK(strcmp(tests[i].name, "SHA256"));
-      TEST_CHECK(strcmp(tests[i].name, "SHA384"));
-      TEST_CHECK(strcmp(tests[i].name, "SHA512"));
+      TEST_CHECK(algorithm != HSH_SHA1);
+      TEST_CHECK(algorithm != HSH_SHA256);
+      TEST_CHECK(algorithm != HSH_SHA384);
+      TEST_CHECK(algorithm != HSH_SHA512);
 #endif
       continue;
     }
 
     DEBUG_LOG("testing %s", tests[i].name);
 
+    TEST_CHECK(HSH_Hash(hash_id, data1, -1, NULL, 0, out, sizeof (out)) == 0);
+    TEST_CHECK(HSH_Hash(hash_id, data1, sizeof (data1) - 1, data2, -1, out, sizeof (out)) == 0);
+    TEST_CHECK(HSH_Hash(hash_id, data1, sizeof (data1) - 1, NULL, 0, out, -1) == 0);
+
     for (j = 0; j <= sizeof (out); j++) {
-      TEST_CHECK(HSH_GetHashId(tests[i].name) == hash_id);
-      TEST_CHECK(HSH_GetHashId("nosuchhash") < 0);
+      TEST_CHECK(HSH_GetHashId(algorithm) == hash_id);
+      TEST_CHECK(HSH_GetHashId(0) < 0);
 
       memset(out, 0, sizeof (out));
       length = HSH_Hash(hash_id, data1, sizeof (data1) - 1, data2, sizeof (data2) - 1,

@@ -31,12 +31,16 @@
 
 #include "ntp.h"
 #include "addressing.h"
+#include "socket.h"
 
 /* Function to initialise the module. */
-extern void NIO_Initialise(int family);
+extern void NIO_Initialise(void);
 
 /* Function to finalise the module */
 extern void NIO_Finalise(void);
+
+/* Function to check if HW timestamping is enabled on any interface */
+extern int NIO_IsHwTsEnabled(void);
 
 /* Function to obtain a socket for sending client packets */
 extern int NIO_OpenClientSocket(NTP_Remote_Address *remote_addr);
@@ -53,8 +57,14 @@ extern void NIO_CloseServerSocket(int sock_fd);
 /* Function to check if socket is a server socket */
 extern int NIO_IsServerSocket(int sock_fd);
 
+/* Function to check if a server socket is currently open */
+extern int NIO_IsServerSocketOpen(void);
+
 /* Function to check if client packets can be sent to a server */
 extern int NIO_IsServerConnectable(NTP_Remote_Address *remote_addr);
+
+/* Function to unwrap an NTP message from non-native transport (e.g. PTP) */
+extern int NIO_UnwrapMessage(SCK_Message *message, int sock_fd, double *net_correction);
 
 /* Function to transmit a packet */
 extern int NIO_SendPacket(NTP_Packet *packet, NTP_Remote_Address *remote_addr,

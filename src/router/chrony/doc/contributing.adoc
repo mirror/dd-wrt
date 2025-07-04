@@ -1,0 +1,74 @@
+// This file is part of chrony
+//
+// Copyright (C) Miroslav Lichvar  2024
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of version 2 of the GNU General Public License as
+// published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+= Contributing
+
+== Patches
+
+The source code of `chrony` is maintained in a git repository at
+https://gitlab.com/chrony/chrony. Patches can be submitted to the `chrony-dev`
+mailing list, or as a merge request on gitlab. Before spending a lot of time
+implementing a new major feature, it is recommended to ask on the mailing list
+for comments about its design and whether such feature fits the goals of the
+project.
+
+Each commit should be a self-contained logical change, which does not break
+the build or tests. New functionality and fixed bugs should be covered by a new
+test or an extended existing test in the test suite. The test can be included
+in the same commit or added as a separate commit. The same rule applies to
+documentation. All command-line options, configuration directives, and
+`chronyc` commands should be documented.
+
+The most important tests can be executed by running `make check` or `make
+quickcheck`. The unit and system tests run on all supported systems. The system
+tests require root privileges. The simulation tests run only on Linux and
+require https://gitlab.com/chrony/clknetsim[clknetsim] to be compiled in the
+directory containing the tests, but they are executed with a merge request on
+gitlab.
+
+The commit message should explain any non-trivial changes, e.g. what problem is
+the commit solving and how. The commit subject (first line of the message)
+should be written in an imperative form, prefixed with the component name if it
+is not a more general change, starting in lower case, and no period at the end.
+See the git log for examples.
+
+Simpler code is better. Less code is better. Security is a top priority.
+
+Assertions should catch only bugs in the `chrony` code. Unexpected values in
+external input (e.g. anything received from network) must be handled correctly
+without crashing and memory corruption. Fuzzing support is available at
+https://gitlab.com/chrony/chrony-fuzz. The fuzzing coverage is checked by the
+project maintainer before each release.
+
+The code should mostly be self-documenting. Comments should explain the
+less obvious things.
+
+== Coding style
+
+The code uses two spaces for indentation. No tabs. The line length should
+normally not exceed 95 characters. Too much indentation indicates the code will
+not be very readable.
+
+Function names are in an imperative form. Names of static functions use
+lowercase characters and underscores. Public functions, structures, typedefs
+are in CamelCase with a prefix specific to the module (e.g. LCL - local, NCR
+- NTP core, NKS - NTS-KE server, SST - sourcestats).
+
+Function names are not followed by space, but keywords of the language (e.g.
+`if`, `for`, `while`, `sizeof`) are followed by space.
+
+Have a look at the existing code to get a better idea what is expected.

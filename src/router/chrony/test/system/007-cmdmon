@@ -5,53 +5,157 @@
 test_start "chronyc commands"
 
 start_chronyd || test_fail
+wait_for_sync || test_fail
+
+has_ipv6=$(check_chronyd_features IPV6 && ping6 -c 1 ::1 > /dev/null 2>&1 && echo 1 || echo 0)
 
 for command in \
-	"accheck 1.2.3.4" \
-	"delete $server" \
-	"add server $server" \
-	"deny" \
-	"allow" \
-	"burst 1/1" \
-	"clients" \
-	"cmdallow 1.2.3.4" \
-	"cmdaccheck 1.2.3.4" \
+	"allow 1.2.3.4" \
+	"deny 1.2.3.4" \
+	"cmddeny" \
+	"cmdallow" \
 	"cmddeny 1.2.3.4" \
+	"cmdallow 1.2.3.4" \
+	"add server 127.123.1.1" \
+	"delete 127.123.1.1" \
+	"burst 1/1" \
 	"cyclelogs" \
 	"dfreq 1.0e-3" \
 	"doffset -0.1" \
 	"dump" \
+	"offline" \
 	"local off" \
 	"local" \
-	"manual on" \
-	"settime now" \
-	"manual delete 0" \
-	"settime now" \
-	"manual reset" \
-	"manual off" \
-	"maxdelay $server 1e-2" \
-	"maxdelaydevratio $server 5.0" \
-	"maxdelayratio $server 3.0" \
-	"maxpoll $server 5" \
-	"maxupdateskew $server 10.0" \
-	"minpoll $server 3" \
-	"minstratum $server 1" \
-	"ntpdata $server" \
-	"offline" \
 	"online" \
 	"onoffline" \
+	"offset $server 0.0" \
+	"maxdelay $server 1e-1" \
+	"maxdelaydevratio $server 5.0" \
+	"maxdelayratio $server 3.0" \
+	"maxpoll $server 12" \
+	"maxupdateskew $server 10.0" \
+	"minpoll $server 10" \
+	"minstratum $server 1" \
 	"polltarget $server 10" \
 	"refresh" \
 	"rekey" \
+	"reload sources" \
 	"reselect" \
 	"reselectdist 1e-3" \
-	"serverstats" \
+	"reset sources" \
+	"selectopts $server -noselect +trust +prefer +require" \
 	"smoothtime reset" \
 	"smoothtime activate" \
-	"shutdown" \
 ; do
 	run_chronyc "$command" || test_fail
+	check_chronyc_output "^200 OK$" || test_fail
 done
+
+run_chronyc "accheck $server" || test_fail
+check_chronyc_output "^208 Access allowed$" || test_fail
+run_chronyc "accheck 1.2.3.4" || test_fail
+check_chronyc_output "^209 Access denied$" || test_fail
+
+run_chronyc "cmdaccheck 1.2.3.4" || test_fail
+check_chronyc_output "^208 Access allowed$" || test_fail
+
+run_chronyc "authdata" || test_fail
+check_chronyc_output "^Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================
+127\.0\.0\.1                      -     0    0    0    -    0    0    0    0$" \
+	|| test_chronyc
+
+run_chronyc "clients" || test_fail
+check_chronyc_output "^Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
+===============================================================================
+.*127\.0\.0\.1               [0-9 ]+    0 [-0-9 ]+   -  [ 0-9]+       0      0   -     -.*$" \
+	|| test_fail
+
+run_chronyc "ntpdata $server" || test_fail
+check_chronyc_output "^Remote address  : 127\.0\.0\.1 \(7F000001\)
+Remote port     : [0-9]+
+Local address   : 127\.0\.0\.1 \(7F000001\)
+Leap status     : Normal
+Version         : 4
+Mode            : Server
+Stratum         : 10
+Poll interval   : (-6|[0-9]+) \([0-9]+ seconds\)
+Precision       : [0-9 +-]+ \(0\.[0-9]+ seconds\)
+Root delay      : 0\.000000 seconds
+Root dispersion : 0\.000000 seconds
+Reference ID    : 7F7F0101 \(\)
+Reference time  : [A-Za-z0-9: ]+
+Offset          : [+-]0\.......... seconds
+Peer delay      : 0\.......... seconds
+Peer dispersion : 0\.......... seconds
+Response time   : 0\.......... seconds
+Jitter asymmetry: \+0\.00
+NTP tests       : 111 111 1110
+Interleaved     : No
+Authenticated   : No
+TX timestamping : (Daemon|Kernel)
+RX timestamping : (Daemon|Kernel)
+Total TX        : [0-9]+
+Total RX        : [0-9]+
+Total valid RX  : [0-9]+
+Total good RX   : [0-9]+
+Total kernel TX : [0-9]+
+Total kernel RX : [0-9]+
+Total HW TX     : 0
+Total HW RX     : 0$" || test_fail
+
+run_chronyc "selectdata" || test_fail
+check_chronyc_output "^S Name/IP Address        Auth COpts EOpts Last Score     Interval  Leap
+=======================================================================
+M 127\.0\.0\.1                 N -PTR- -PTR-    0   1\.0    \+0ns    \+0ns  [\?N]$" || test_fail
+
+run_chronyc "serverstats" || test_fail
+check_chronyc_output "^NTP packets received       : [0-9]+
+NTP packets dropped        : 0
+Command packets received   : [0-9]+
+Command packets dropped    : 0
+Client log records dropped : 0
+NTS-KE connections accepted: 0
+NTS-KE connections dropped : 0
+Authenticated NTP packets  : 0
+Interleaved NTP packets    : 0
+NTP timestamps held        : 0
+NTP timestamp span         : 0
+NTP daemon RX timestamps   : 0
+NTP daemon TX timestamps   : [0-9]+
+NTP kernel RX timestamps   : [0-9]+
+NTP kernel TX timestamps   : 0
+NTP hardware RX timestamps : 0
+NTP hardware TX timestamps : 0$"|| test_fail
+
+run_chronyc "manual on" || test_fail
+check_chronyc_output "^200 OK$" || test_fail
+
+run_chronyc "settime now" || test_fail
+check_chronyc_output "^200 OK
+Clock was.*$" || test_fail
+
+run_chronyc "manual delete 0" || test_fail
+check_chronyc_output "^200 OK$" || test_fail
+
+run_chronyc "settime now" || test_fail
+check_chronyc_output "^200 OK
+Clock was.*$" || test_fail
+
+run_chronyc "manual list" || test_fail
+check_chronyc_output "^210 n_samples = 1
+#    Date     Time\(UTC\)    Slewed   Original   Residual
+=======================================================
+ 0.*$" || test_fail
+
+run_chronyc "manual reset" || test_fail
+check_chronyc_output "^200 OK$" || test_fail
+
+run_chronyc "manual off" || test_fail
+check_chronyc_output "^200 OK$" || test_fail
+
+run_chronyc "shutdown" || test_fail
+check_chronyc_output "^200 OK$" || test_fail
 
 stop_chronyd || test_fail
 check_chronyd_messages || test_fail
@@ -59,10 +163,30 @@ start_chronyd || test_fail
 
 run_chronyc "makestep" && test_fail
 check_chronyc_output "500 Failure" || test_fail
+
 run_chronyc "trimrtc" && test_fail
 check_chronyc_output "513 RTC driver not running" || test_fail
+
 run_chronyc "writertc" && test_fail
 check_chronyc_output "513 RTC driver not running" || test_fail
+
+chronyc_host=127.0.0.1
+
+run_chronyc "tracking" || test_fail
+check_chronyc_output "^Reference ID" || test_fail
+
+run_chronyc "makestep" && test_fail
+check_chronyc_output "^501 Not authorised$" || test_fail
+
+if [ "$has_ipv6" = "1" ]; then
+	chronyc_host=::1
+
+	run_chronyc "tracking" || test_fail
+	check_chronyc_output "^Reference ID" || test_fail
+
+	run_chronyc "makestep" && test_fail
+	check_chronyc_output "^501 Not authorised$" || test_fail
+fi
 
 stop_chronyd || test_fail
 

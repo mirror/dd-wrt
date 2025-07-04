@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -18,9 +18,17 @@ servers=0
 refclock_offset="(+ -34 (equal 0.1 (max (sum 1.0) $leap) $leap))"
 client_conf="
 refclock SHM 0 dpoll 0 poll 0 tai
-leapsectz right/UTC
+leapseclist tmp/leap.list
 leapsecmode ignore
-maxchange 1e-3 1 0"
+maxchange 1e-3 10 0"
+
+cat > tmp/leap.list <<-EOF
+	#$	3676924800
+	#@	3928521600
+	3345062400	33	# 1 Jan 2006
+	3439756800	34	# 1 Jan 2009
+	3550089600	35	# 1 Jul 2012
+EOF
 
 run_test || test_fail
 check_chronyd_exit || test_fail
@@ -33,9 +41,9 @@ time_offset=-1000
 refclock_offset="(+ -34)"
 client_conf="
 refclock SHM 0 dpoll 0 poll 0 tai
-leapsectz right/UTC
+leapseclist tmp/leap.list
 makestep 1 1
-maxchange 1e-3 1 0"
+maxchange 1e-3 10 0"
 
 run_test || test_fail
 check_chronyd_exit || test_fail

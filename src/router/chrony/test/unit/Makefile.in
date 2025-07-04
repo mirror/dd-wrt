@@ -12,7 +12,8 @@ TEST_OBJS := $(sort $(patsubst %.c,%.o,$(wildcard *.c)))
 TESTS := $(patsubst %.o,%.test,$(filter-out $(SHARED_OBJS),$(TEST_OBJS)))
 
 CHRONYD_OBJS := $(patsubst %.o,$(CHRONY_SRCDIR)/%.o,$(filter-out main.o,\
-		  $(filter %.o,$(shell $(MAKE) -f $(CHRONY_SRCDIR)/Makefile print-chronyd-objects))))
+		  $(filter %.o,$(shell $(MAKE) -f $(CHRONY_SRCDIR)/Makefile \
+					print-chronyd-objects NODEPS=1))))
 
 all: $(TESTS)
 

@@ -31,9 +31,6 @@
 
 #include "sysincl.h"
 
-/* Flag indicating whether debug messages are logged */
-extern int log_debug_enabled;
-
 /* Line logging macros.  If the compiler is GNU C, we take advantage of
    being able to get the function name also. */
 
@@ -55,7 +52,7 @@ extern int log_debug_enabled;
 
 #define DEBUG_LOG(...) \
   do { \
-    if (DEBUG && log_debug_enabled) \
+    if (DEBUG && log_min_severity == LOGS_DEBUG) \
       LOG_MESSAGE(LOGS_DEBUG, __VA_ARGS__); \
   } while (0)
 
@@ -69,12 +66,15 @@ extern int log_debug_enabled;
 
 /* Definition of severity */
 typedef enum {
-  LOGS_INFO,
+  LOGS_DEBUG = -1,
+  LOGS_INFO = 0,
   LOGS_WARN,
   LOGS_ERR,
   LOGS_FATAL,
-  LOGS_DEBUG
 } LOG_Severity;
+
+/* Minimum severity of messages to be logged */
+extern LOG_Severity log_min_severity;
 
 /* Init function */
 extern void LOG_Initialise(void);
@@ -92,12 +92,30 @@ FORMAT_ATTRIBUTE_PRINTF(2, 3)
 extern void LOG_Message(LOG_Severity severity, const char *format, ...);
 #endif
 
-/* Set debug level:
-   0, 1 - only non-debug messages are logged
-   2    - debug messages are logged too, all messages are prefixed with
-          filename, line, and function name
-   */
-extern void LOG_SetDebugLevel(int level);
+/* Set the minimum severity of a message to be logged or printed to terminal.
+   If the severity is LOGS_DEBUG and DEBUG is enabled, all messages will be
+   prefixed with the filename, line number, and function name. */
+extern void LOG_SetMinSeverity(LOG_Severity severity);
+
+/* Get the minimum severity */
+extern LOG_Severity LOG_GetMinSeverity(void);
+
+/* Flags for info messages that should be logged only in specific contexts */
+typedef enum {
+  LOGC_Command = 1,
+  LOGC_SourceFile = 2,
+} LOG_Context;
+
+/* Modify current contexts */
+extern void LOG_SetContext(LOG_Context context);
+extern void LOG_UnsetContext(LOG_Context context);
+
+/* Get severity depending on the current active contexts: INFO if they contain
+   at least one of the specified contexts, DEBUG otherwise */
+extern LOG_Severity LOG_GetContextSeverity(LOG_Context contexts);
+
+/* Set a prefix for debug messages */
+extern void LOG_SetDebugPrefix(const char *prefix);
 
 /* Log messages to a file instead of stderr, or stderr again if NULL */
 extern void LOG_OpenFileLog(const char *log_file);
@@ -108,7 +126,10 @@ extern void LOG_OpenSystemLog(void);
 /* Stop using stderr and send fatal message to the foreground process */
 extern void LOG_SetParentFd(int fd);
 
-/* Close the pipe to the foreground process so it can exit */
+/* Send a message to the foreground process */
+extern int LOG_NotifyParent(const char *message);
+
+/* Close the pipe to the foreground process */
 extern void LOG_CloseParentFd(void);
 
 /* File logging functions */

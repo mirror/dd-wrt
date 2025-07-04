@@ -64,8 +64,53 @@ static inline void writel(unsigned int value, volatile void *addr)
 
 #define OTTO_WDT_REG_CTRL 0x8
 
+#define RTL8389_FAMILY_ID (0x8389)
+#define RTL8328_FAMILY_ID (0x8328)
+#define RTL8390_FAMILY_ID (0x8390)
+#define RTL8350_FAMILY_ID (0x8350)
+#define RTL8380_FAMILY_ID (0x8380)
+#define RTL8330_FAMILY_ID (0x8330)
+#define RTL9300_FAMILY_ID (0x9300)
+#define RTL9310_FAMILY_ID (0x9310)
+
+static int model;
+static int family;
+static char *name;
+
 unsigned int pll_reset_value;
 
+#define DRAM_CONFIG_REG 0xb8001004
+
+unsigned int rtl83xx_board_get_memory(void)
+{
+	unsigned int dcr = readl((volatile void *)DRAM_CONFIG_REG);
+	char ROWCNTv[] = { 11, 12, 13, 14, 15, 16 };
+	char COLCNTv[] = { 8, 9, 10, 11, 12 };
+	char BNKCNTv[] = { 1, 2, 3 };
+	char BUSWIDv[] = { 0, 1, 2 };
+
+	return 1 << (BNKCNTv[(dcr >> 28) & 0x3] + BUSWIDv[(dcr >> 24) & 0x3] + ROWCNTv[(dcr >> 20) & 0xf] +
+		     COLCNTv[(dcr >> 16) & 0xf]);
+}
+
+unsigned int rtl931x_board_get_memory(void)
+{
+	unsigned int v = readl((volatile void *)0xB814304C);
+	unsigned int b = v >> 12;
+	unsigned int r = (v >> 6) & 0x3F;
+	unsigned int c = v & 0x3F;
+	return 1 << (b + r + c);
+}
+
+unsigned int board_get_memory(void)
+{
+	switch (family) {
+	case RTL9310_FAMILY_ID:
+		return rtl931x_board_get_memory();
+	default:
+		return rtl83xx_board_get_memory();
+	}
+}
 static void rtl838x_watchdog(void)
 {
 	//soc reset mode 0 + ctrl enable
@@ -136,19 +181,6 @@ static void rtl931x_restart(void)
 	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
 }
 
-#define RTL8389_FAMILY_ID (0x8389)
-#define RTL8328_FAMILY_ID (0x8328)
-#define RTL8390_FAMILY_ID (0x8390)
-#define RTL8350_FAMILY_ID (0x8350)
-#define RTL8380_FAMILY_ID (0x8380)
-#define RTL8330_FAMILY_ID (0x8330)
-#define RTL9300_FAMILY_ID (0x9300)
-#define RTL9310_FAMILY_ID (0x9310)
-
-static int model;
-static int family;
-static char *name;
-
 void board_reset(void)
 {
 	switch (family) {
@@ -169,9 +201,8 @@ void board_reset(void)
 		;
 }
 
-void board_watchdog(void)
+void trigger_watchdog(void)
 {
-	printf("Init Watchdog...\n");
 	switch (family) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_watchdog();
@@ -187,6 +218,13 @@ void board_watchdog(void)
 		break;
 	}
 }
+
+void board_watchdog(void)
+{
+	printf("Init Watchdog...\n");
+	trigger_watchdog();
+}
+
 static void identify_rtl9302(void)
 {
 	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
@@ -228,6 +266,62 @@ static void identify_rtl9302(void)
 		break;
 	default:
 		name = "RTL9302";
+	}
+}
+
+void start_memtest(void)
+{
+	volatile unsigned long *addr, *start, *end;
+	unsigned long val;
+	unsigned long readback;
+
+	unsigned long incr;
+	unsigned long pattern;
+
+	start = (unsigned long *)(KSEG1ADDR(workspace));
+#define MEMEND (KSEG1 + (board_get_memory() <= (128 << 20) ? board_get_memory() : 128 << 20))
+	end = (unsigned long *)(MEMEND - 0x200000);
+
+	pattern = 0xa0000000;
+
+	incr = 1;
+	int i;
+	printf("Starting memory test from 0x%08lX to 0x%08lX\n", (unsigned long)start, (unsigned long)end);
+	for (i = 0; i < 3; i++) {
+		printf("\rPattern %08lX  Writing..."
+		       "%12s"
+		       "\b\b\b\b\b\b\b\b\b\b",
+		       pattern, "");
+
+		for (addr = start, val = pattern; addr < end; addr++) {
+			*addr = val;
+			val += incr;
+		}
+
+		printf(" Reading...\n");
+
+		for (addr = start, val = pattern; addr < end; addr++) {
+			readback = *addr;
+			if (readback != val) {
+				printf("\nMem error @ 0x%08X: "
+				       "found %08lX, expected %08lX\n",
+				       (unsigned int)addr, readback, val);
+			}
+			val += incr;
+		}
+
+		/*
+		 * Flip the pattern each time to make lots of zeros and
+		 * then, the next time, lots of ones.  We decrement
+		 * the "negative" patterns and increment the "positive"
+		 * patterns to preserve this feature.
+		 */
+		if (pattern & 0x80000000) {
+			pattern = -pattern; /* complement & increment */
+		} else {
+			pattern = ~pattern;
+		}
+		incr = -incr;
 	}
 }
 
@@ -328,8 +422,10 @@ static void detect(void)
 		name = "DEFAULT";
 		family = 0;
 	}
-	printf("Board Model is %s\n", name);
+	printf("Running on %s with %dMB\n", name, board_get_memory() >> 20);
 	printf("clock period is %d\n", get_clock_period());
+	board_watchdog(); // init watchdog and let it run for maximum time, of something hangs board will reset after 60 seconds or so
+	//	start_memtest();
 }
 
 void board_init(void)
@@ -338,9 +434,12 @@ void board_init(void)
 	detect();
 }
 
-void board_putc(int ch)
+void board_putchar(int ch, void *ctx)
 {
 	while ((*((volatile unsigned int *)(UART_BASE_ADDR + 0x14)) & 0x20000000) == 0)
 		;
 	*((volatile unsigned char *)UART_BASE_ADDR) = ch;
+
+	if (ch == '\n')
+		board_putchar('\r', ctx);
 }

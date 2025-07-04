@@ -162,6 +162,14 @@ SPF_GetNumberOfSamples(SPF_Instance filter)
 
 /* ================================================== */
 
+int
+SPF_GetMaxSamples(SPF_Instance filter)
+{
+  return filter->max_samples;
+}
+
+/* ================================================== */
+
 double
 SPF_GetAvgSampleDispersion(SPF_Instance filter)
 {
@@ -170,11 +178,21 @@ SPF_GetAvgSampleDispersion(SPF_Instance filter)
 
 /* ================================================== */
 
-void
-SPF_DropSamples(SPF_Instance filter)
+static void
+drop_samples(SPF_Instance filter, int keep_last)
 {
   filter->index = -1;
   filter->used = 0;
+  if (!keep_last)
+    filter->last = -1;
+}
+
+/* ================================================== */
+
+void
+SPF_DropSamples(SPF_Instance filter)
+{
+  drop_samples(filter, 0);
 }
 
 /* ================================================== */
@@ -267,7 +285,7 @@ select_samples(SPF_Instance filter)
     }
   }
 
-  for (i = j = 0, k = -1; i < filter->used; i++) {
+  for (i = j = 0; i < filter->used; i++) {
     if (selected[i] != -1)
       selected[j++] = (selected[i] + filter->used - o) % filter->used;
   }
@@ -386,8 +404,6 @@ combine_selected_samples(SPF_Instance filter, int n, NTP_Sample *result)
   result->root_dispersion = MAX(disp, mean_root_dispersion);
   result->peer_delay = mean_peer_delay;
   result->root_delay = mean_root_delay;
-  result->stratum = last_sample->stratum;
-  result->leap = last_sample->leap;
 
   return 1;
 }
@@ -401,16 +417,39 @@ SPF_GetFilteredSample(SPF_Instance filter, NTP_Sample *sample)
 
   n = select_samples(filter);
 
+  DEBUG_LOG("selected %d from %d samples", n, filter->used);
+
   if (n < 1)
     return 0;
 
   if (!combine_selected_samples(filter, n, sample))
     return 0;
 
-  SPF_DropSamples(filter);
+  drop_samples(filter, 1);
 
   return 1;
 }
+
+/* ================================================== */
+
+static int
+get_first_last(SPF_Instance filter, int *first, int *last)
+{
+  if (filter->last < 0)
+    return 0;
+
+  /* Always slew the last sample as it may be returned even if no new
+     samples were accumulated */
+  if (filter->used > 0) {
+    *first = 0;
+    *last = filter->used - 1;
+  } else {
+    *first = *last = filter->last;
+  }
+
+  return 1;
+}
+
 
 /* ================================================== */
 
@@ -420,23 +459,28 @@ SPF_SlewSamples(SPF_Instance filter, struct timespec *when, double dfreq, double
   int i, first, last;
   double delta_time;
 
-  if (filter->last < 0)
+  if (!get_first_last(filter, &first, &last))
     return;
-
-  /* Always slew the last sample as it may be returned even if no new
-     samples were accumulated */
-  if (filter->used > 0) {
-    first = 0;
-    last = filter->used - 1;
-  } else {
-    first = last = filter->last;
-  }
 
   for (i = first; i <= last; i++) {
     UTI_AdjustTimespec(&filter->samples[i].time, when, &filter->samples[i].time,
                        &delta_time, dfreq, doffset);
     filter->samples[i].offset -= delta_time;
   }
+}
+
+/* ================================================== */
+
+void
+SPF_CorrectOffset(SPF_Instance filter, double doffset)
+{
+  int i, first, last;
+
+  if (!get_first_last(filter, &first, &last))
+    return;
+
+  for (i = first; i <= last; i++)
+    filter->samples[i].offset -= doffset;
 }
 
 /* ================================================== */

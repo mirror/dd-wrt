@@ -1,5 +1,10 @@
-# Use public servers from the pool.ntp.org project.
-# Please consider joining the pool (http://www.pool.ntp.org/join.html).
+# Note: The general recommendation for an NTP client is to have at least
+# three NTP servers to be able to detect one server providing incorrect
+# time (falseticker).
+
+# Use four public NTP servers from the pool.ntp.org project. If this
+# host has a static public IP address, please consider joining the pool:
+# https://www.ntppool.org/join.html
 pool pool.ntp.org iburst
 
 # Record the rate at which the system clock gains/losses time.
@@ -25,11 +30,20 @@ rtcsync
 # Serve time even if not synchronized to a time source.
 #local stratum 10
 
+# Require authentication (nts or key option) for all NTP sources.
+#authselectmode require
+
 # Specify file containing keys for NTP authentication.
 #keyfile /etc/chrony.keys
 
-# Get TAI-UTC offset and leap seconds from the system tz database.
-#leapsectz right/UTC
+# Save NTS keys and cookies.
+ntsdumpdir /var/lib/chrony
+
+# Insert/delete leap seconds by slewing instead of stepping.
+#leapsecmode slew
+
+# Set the TAI-UTC offset of the system clock.
+#leapseclist /usr/share/zoneinfo/leap-seconds.list
 
 # Specify directory for log files.
 logdir /var/log/chrony

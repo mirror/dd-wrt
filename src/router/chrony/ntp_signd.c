@@ -34,6 +34,7 @@
 #include "ntp_io.h"
 #include "ntp_signd.h"
 #include "sched.h"
+#include "socket.h"
 #include "util.h"
 
 /* Declarations per samba/source4/librpc/idl/ntp_signd.idl */
@@ -90,21 +91,16 @@ static ARR_Instance queue;
 static unsigned int queue_head;
 static unsigned int queue_tail;
 
-#define INVALID_SOCK_FD -1
+#define INVALID_SOCK_FD (-6)
 
 /* Unix domain socket connected to ntp_signd */
 static int sock_fd;
 
-#define MIN_AUTH_DELAY 1.0e-5
-#define MAX_AUTH_DELAY 1.0e-2
-
-/* Average time needed for signing one packet.  This is used to adjust the
-   transmit timestamp in NTP packets.  The timestamp won't be very accurate as
-   the delay is variable, but it should be good enough for MS-SNTP clients. */
-static double auth_delay;
-
 /* Flag indicating if the MS-SNTP authentication is enabled */
 static int enabled;
+
+/* Flag limiting logging of connection error messages */
+static int logged_connection_error;
 
 /* ================================================== */
 
@@ -116,7 +112,7 @@ static void
 close_socket(void)
 {
   SCH_RemoveFileHandler(sock_fd);
-  close(sock_fd);
+  SCK_CloseSocket(sock_fd);
   sock_fd = INVALID_SOCK_FD;
 
   /* Empty the queue */
@@ -128,35 +124,31 @@ close_socket(void)
 static int
 open_socket(void)
 {
-  struct sockaddr_un s;
+  char path[PATH_MAX];
 
-  if (sock_fd >= 0)
+  if (sock_fd != INVALID_SOCK_FD)
     return 1;
 
-  sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (sock_fd < 0) {
-    DEBUG_LOG("Could not open signd socket : %s", strerror(errno));
-    return 0;
-  }
-
-  UTI_FdSetCloexec(sock_fd);
-  SCH_AddFileHandler(sock_fd, SCH_FILE_INPUT, read_write_socket, NULL);
-
-  s.sun_family = AF_UNIX;
-  if (snprintf(s.sun_path, sizeof (s.sun_path), "%s/socket",
-               CNF_GetNtpSigndSocket()) >= sizeof (s.sun_path)) {
+  if (snprintf(path, sizeof (path), "%s/socket", CNF_GetNtpSigndSocket()) >= sizeof (path)) {
     DEBUG_LOG("signd socket path too long");
-    close_socket();
     return 0;
   }
 
-  if (connect(sock_fd, (struct sockaddr *)&s, sizeof (s)) < 0) {
-    DEBUG_LOG("Could not connect to signd : %s", strerror(errno));
-    close_socket();
+  sock_fd = SCK_OpenUnixStreamSocket(path, NULL, 0);
+  if (sock_fd < 0) {
+    sock_fd = INVALID_SOCK_FD;
+
+    /* Log an error only once before a successful exchange to avoid
+       flooding the system log */
+    if (!logged_connection_error) {
+      LOG(LOGS_ERR, "Could not connect to signd socket %s : %s", path, strerror(errno));
+      logged_connection_error = 1;
+    }
+
     return 0;
   }
 
-  DEBUG_LOG("Connected to signd");
+  SCH_AddFileHandler(sock_fd, SCH_FILE_INPUT, read_write_socket, NULL);
 
   return 1;
 }
@@ -179,6 +171,8 @@ process_response(SignInstance *inst)
     return;
   }
 
+  logged_connection_error = 0;
+
   /* Check if the file descriptor is still valid */
   if (!NIO_IsServerSocket(inst->local_addr.sock_fd)) {
     DEBUG_LOG("Invalid NTP socket");
@@ -194,10 +188,6 @@ process_response(SignInstance *inst)
   NIO_SendPacket(&inst->response.signed_packet, &inst->remote_addr, &inst->local_addr,
                  ntohl(inst->response.length) + sizeof (inst->response.length) -
                  offsetof(SigndResponse, signed_packet), 0);
-
-  /* Update exponential moving average of the authentication delay */
-  delay = CLAMP(MIN_AUTH_DELAY, delay, MAX_AUTH_DELAY);
-  auth_delay += 0.1 * (delay - auth_delay);
 }
 
 /* ================================================== */
@@ -218,16 +208,14 @@ read_write_socket(int sock_fd, int event, void *anything)
     if (!inst->sent)
       SCH_GetLastEventTime(NULL, NULL, &inst->request_ts);
 
-    s = send(sock_fd, (char *)&inst->request + inst->sent,
-             inst->request_length - inst->sent, 0);
+    s = SCK_Send(sock_fd, (char *)&inst->request + inst->sent,
+                 inst->request_length - inst->sent, 0);
 
     if (s < 0) {
-      DEBUG_LOG("signd socket error: %s", strerror(errno));
       close_socket();
       return;
     }
 
-    DEBUG_LOG("Sent %d bytes to signd", s);
     inst->sent += s;
 
     /* Try again later if the request is not complete yet */
@@ -246,20 +234,14 @@ read_write_socket(int sock_fd, int event, void *anything)
     }
 
     assert(inst->received < sizeof (inst->response));
-    s = recv(sock_fd, (char *)&inst->response + inst->received,
-             sizeof (inst->response) - inst->received, 0);
+    s = SCK_Receive(sock_fd, (char *)&inst->response + inst->received,
+                    sizeof (inst->response) - inst->received, 0);
 
     if (s <= 0) {
-      if (s < 0)
-        DEBUG_LOG("signd socket error: %s", strerror(errno));
-      else
-        DEBUG_LOG("signd socket closed");
-
       close_socket();
       return;
     }
 
-    DEBUG_LOG("Received %d bytes from signd", s);
     inst->received += s;
 
     if (inst->received < sizeof (inst->response.length))
@@ -293,7 +275,6 @@ void
 NSD_Initialise()
 {
   sock_fd = INVALID_SOCK_FD;
-  auth_delay = MIN_AUTH_DELAY;
   enabled = CNF_GetNtpSigndSocket() && CNF_GetNtpSigndSocket()[0];
 
   if (!enabled)
@@ -320,15 +301,9 @@ NSD_Finalise()
 
 /* ================================================== */
 
-extern int NSD_GetAuthDelay(uint32_t key_id)
-{
-  return 1.0e9 * auth_delay;
-}
-
-/* ================================================== */
-
 int
-NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_Remote_Address *remote_addr, NTP_Local_Address *local_addr, int length)
+NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_PacketInfo *info,
+                      NTP_Remote_Address *remote_addr, NTP_Local_Address *local_addr)
 {
   SignInstance *inst;
 
@@ -342,7 +317,7 @@ NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_Remote_Address *r
     return 0;
   }
 
-  if (length != NTP_NORMAL_PACKET_LENGTH) {
+  if (info->length != NTP_HEADER_LENGTH) {
     DEBUG_LOG("Invalid packet length");
     return 0;
   }
@@ -355,7 +330,7 @@ NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_Remote_Address *r
   inst->local_addr = *local_addr;
   inst->sent = 0;
   inst->received = 0;
-  inst->request_length = offsetof(SigndRequest, packet_to_sign) + length;
+  inst->request_length = offsetof(SigndRequest, packet_to_sign) + info->length;
 
   /* The length field doesn't include itself */
   inst->request.length = htonl(inst->request_length - sizeof (inst->request.length));
@@ -365,7 +340,7 @@ NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_Remote_Address *r
   inst->request._pad = 0;
   inst->request.key_id = htonl(key_id);
 
-  memcpy(&inst->request.packet_to_sign, packet, length);
+  memcpy(&inst->request.packet_to_sign, packet, info->length);
 
   /* Enable output if there was no pending request */
   if (IS_QUEUE_EMPTY())

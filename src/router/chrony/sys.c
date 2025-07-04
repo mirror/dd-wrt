@@ -97,16 +97,16 @@ SYS_Finalise(void)
 
 /* ================================================== */
 
-void SYS_DropRoot(uid_t uid, gid_t gid)
+void SYS_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context)
 {
 #if defined(LINUX) && defined (FEAT_PRIVDROP)
-  SYS_Linux_DropRoot(uid, gid, !null_driver);
+  SYS_Linux_DropRoot(uid, gid, context, !null_driver);
 #elif defined(SOLARIS) && defined(FEAT_PRIVDROP)
-  SYS_Solaris_DropRoot(uid, gid);
+  SYS_Solaris_DropRoot(uid, gid, context);
 #elif (defined(NETBSD) || defined(FREEBSD)) && defined(FEAT_PRIVDROP)
-  SYS_NetBSD_DropRoot(uid, gid);
+  SYS_NetBSD_DropRoot(uid, gid, context, !null_driver);
 #elif defined(MACOSX) && defined(FEAT_PRIVDROP)
-  SYS_MacOSX_DropRoot(uid, gid);
+  SYS_MacOSX_DropRoot(uid, gid, context);
 #else
   LOG_FATAL("dropping root privileges not supported");
 #endif
@@ -114,10 +114,10 @@ void SYS_DropRoot(uid_t uid, gid_t gid)
 
 /* ================================================== */
 
-void SYS_EnableSystemCallFilter(int level)
+void SYS_EnableSystemCallFilter(int level, SYS_ProcessContext context)
 {
 #if defined(LINUX) && defined(FEAT_SCFILTER)
-  SYS_Linux_EnableSystemCallFilter(level);
+  SYS_Linux_EnableSystemCallFilter(level, context);
 #else
   LOG_FATAL("system call filter not supported");
 #endif

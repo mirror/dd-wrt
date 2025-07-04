@@ -51,7 +51,7 @@ struct DNS_Async_Instance {
   int pipe[2];
 };
 
-static int resolving_threads = 0;
+static pthread_mutex_t privops_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* ================================================== */
 
@@ -60,7 +60,9 @@ start_resolving(void *anything)
 {
   struct DNS_Async_Instance *inst = (struct DNS_Async_Instance *)anything;
 
+  pthread_mutex_lock(&privops_lock);
   inst->status = PRV_Name2IPAddress(inst->name, inst->addresses, DNS_MAX_ADDRESSES);
+  pthread_mutex_unlock(&privops_lock);
 
   /* Notify the main thread that the result is ready */
   if (write(inst->pipe[1], "", 1) < 0)
@@ -80,8 +82,6 @@ end_resolving(int fd, int event, void *anything)
   if (pthread_join(inst->thread, NULL)) {
     LOG_FATAL("pthread_join() failed");
   }
-
-  resolving_threads--;
 
   SCH_RemoveFileHandler(inst->pipe[0]);
   close(inst->pipe[0]);
@@ -115,9 +115,6 @@ DNS_Name2IPAddressAsync(const char *name, DNS_NameResolveHandler handler, void *
 
   UTI_FdSetCloexec(inst->pipe[0]);
   UTI_FdSetCloexec(inst->pipe[1]);
-
-  resolving_threads++;
-  assert(resolving_threads <= 1);
 
   if (pthread_create(&inst->thread, NULL, start_resolving, inst)) {
     LOG_FATAL("pthread_create() failed");

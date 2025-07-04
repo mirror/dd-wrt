@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2009-2012, 2014-2015, 2017
+ * Copyright (C) Miroslav Lichvar  2009-2012, 2014-2015, 2017, 2025
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -69,6 +69,18 @@ static int sys_tai_offset;
 /* ================================================== */
 
 static double
+convert_timex_frequency(const struct timex *txc)
+{
+  double freq_ppm;
+
+  freq_ppm = txc->freq / FREQ_SCALE;
+
+  return -freq_ppm;
+}
+
+/* ================================================== */
+
+static double
 read_frequency(void)
 {
   struct timex txc;
@@ -77,7 +89,7 @@ read_frequency(void)
 
   SYS_Timex_Adjust(&txc, 0);
 
-  return txc.freq / -FREQ_SCALE;
+  return convert_timex_frequency(&txc);
 }
 
 /* ================================================== */
@@ -92,7 +104,7 @@ set_frequency(double freq_ppm)
 
   SYS_Timex_Adjust(&txc, 0);
 
-  return txc.freq / -FREQ_SCALE;
+  return convert_timex_frequency(&txc);
 }
 
 /* ================================================== */
@@ -245,6 +257,8 @@ SYS_Timex_Finalise(void)
 int
 SYS_Timex_Adjust(struct timex *txc, int ignore_error)
 {
+  static long last_constant, last_freq;
+  static int last_status = -1;
   int state;
 
 #ifdef SOLARIS
@@ -256,11 +270,26 @@ SYS_Timex_Adjust(struct timex *txc, int ignore_error)
   state = NTP_ADJTIME(txc);
 
   if (state < 0) {
-    if (!ignore_error)
-      LOG_FATAL(NTP_ADJTIME_NAME"(0x%x) failed : %s", txc->modes, strerror(errno));
-    else
-      DEBUG_LOG(NTP_ADJTIME_NAME"(0x%x) failed : %s", txc->modes, strerror(errno));
+    LOG(ignore_error ? LOGS_DEBUG : LOGS_FATAL,
+        NTP_ADJTIME_NAME"(0x%x) failed : %s", txc->modes, strerror(errno));
+    return state;
   }
+
+  /* This a good place to verify that nothing else is touching the clock,
+     without making an additional timex call.  A clock update is normally
+     expected to have four driver calls:
+     - set_sync_status - primarily updating leap status
+     - set_frequency - correcting frequency error
+     - set_frequency - correcting phase error
+     - set_sync_status - updating leap and estimated/maximum error */
+  if (last_status != -1 &&
+      (((last_status ^ txc->status) & STA_PLL && !(txc->modes & MOD_STATUS)) ||
+       (last_constant != txc->constant && !(txc->modes & MOD_TIMECONST)) ||
+       (last_freq != txc->freq && !(txc->modes & MOD_FREQUENCY))))
+    LOG(LOGS_WARN, "System clock interference detected (another NTP client?)");
+  last_status = txc->status;
+  last_constant = txc->constant;
+  last_freq = txc->freq;
 
   return state;
 }

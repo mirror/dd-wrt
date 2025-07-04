@@ -92,6 +92,7 @@ MNL_Initialise(void)
 void
 MNL_Finalise(void)
 {
+  LCL_RemoveParameterChangeHandler(slew_samples, NULL);
 }
 
 /* ================================================== */

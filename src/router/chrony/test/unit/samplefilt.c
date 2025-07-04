@@ -35,12 +35,17 @@ test_unit(void)
 
   LCL_Initialise();
 
+  memset(&sample_in, 0, sizeof (sample_in));
+  memset(&sample_out, 0, sizeof (sample_out));
+
   for (i = 0; i <= 100; i++) {
     max_samples = random() % 20 + 1;
     min_samples = random() % (max_samples) + 1;
     combine_ratio = TST_GetRandomDouble(0.0, 1.0);
 
     filter = SPF_CreateInstance(min_samples, max_samples, 2.0, combine_ratio);
+
+    TEST_CHECK(max_samples == SPF_GetMaxSamples(filter));
 
     for (j = 0, sum_count = 0, sum_err = 0.0; j < 100; j++) {
       DEBUG_LOG("iteration %d/%d", i, j);
@@ -56,8 +61,6 @@ test_unit(void)
         sample_in.root_dispersion = TST_GetRandomDouble(1.0e-3, 2.0e-3);
         sample_in.peer_delay = TST_GetRandomDouble(1.0e-2, 2.0e-2);
         sample_in.root_delay = TST_GetRandomDouble(1.0e-1, 2.0e-1);
-        sample_in.stratum = random() % 16;
-        sample_in.leap = random() % 4;
 
         TEST_CHECK(SPF_AccumulateSample(filter, &sample_in));
         TEST_CHECK(!SPF_AccumulateSample(filter, &sample_in));
@@ -68,6 +71,7 @@ test_unit(void)
         TEST_CHECK(!memcmp(&sample_in, &sample_out, sizeof (sample_in)));
 
         SPF_SlewSamples(filter, &sample_in.time, 0.0, 0.0);
+        SPF_CorrectOffset(filter, 0.0);
         SPF_AddDispersion(filter, 0.0);
 
         if (k + 1 < min_samples)
@@ -95,14 +99,13 @@ test_unit(void)
                    sample_out.peer_delay <= 2.0e-2);
         TEST_CHECK(sample_out.root_delay >= 1.0e-1 &&
                    sample_out.root_delay <= 2.0e-1);
-        TEST_CHECK(sample_out.leap >= 0 && sample_out.leap <= 3);
-        TEST_CHECK(sample_out.stratum >= 0 && sample_out.stratum <= 15);
 
         if (max_samples == 1)
           TEST_CHECK(!memcmp(&sample_in, &sample_out, sizeof (sample_in)));
 
       } else {
         SPF_DropSamples(filter);
+        TEST_CHECK(filter->last < 0);
       }
 
       TEST_CHECK(SPF_GetNumberOfSamples(filter) == 0);

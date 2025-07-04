@@ -66,10 +66,9 @@ get_tempcomp(double temp)
     return k0 + (temp - T0) * k1 + (temp - T0) * (temp - T0) * k2;
 
   /* Otherwise interpolate/extrapolate between two nearest points */
-
-  for (i = 1; i < ARR_GetSize(points); i++) {
-    p2 = (struct Point *)ARR_GetElement(points, i);
-    if (p2->temp >= temp)
+  for (i = 1; ; i++) {
+    p2 = ARR_GetElement(points, i);
+    if (p2->temp >= temp || i + 1 >= ARR_GetSize(points))
       break;
   }
   p1 = p2 - 1;
@@ -84,7 +83,7 @@ read_timeout(void *arg)
   FILE *f;
   double temp, comp;
 
-  f = fopen(filename, "r");
+  f = UTI_OpenFile(NULL, filename, NULL, 'r', 0);
 
   if (f && fscanf(f, "%lf", &temp) == 1) {
     comp = get_tempcomp(temp);
@@ -122,11 +121,7 @@ read_points(const char *filename)
   char line[256];
   struct Point *p;
 
-  f = fopen(filename, "r");
-  if (!f) {
-    LOG_FATAL("Could not open tempcomp point file %s", filename);
-    return;
-  }
+  f = UTI_OpenFile(NULL, filename, NULL, 'R', 0);
 
   points = ARR_CreateInstance(sizeof (struct Point));
 

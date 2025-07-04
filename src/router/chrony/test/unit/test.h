@@ -44,9 +44,6 @@ extern void test_unit(void);
 extern void TST_Fail(int line);
 extern void TST_Skip(int line);
 
-extern void TST_SuspendLogging(void);
-extern void TST_ResumeLogging(void);
-
 extern double TST_GetRandomDouble(double min, double max);
 extern void TST_GetRandomAddress(IPAddr *ip, int family, int bits);
 extern void TST_SwapAddressBit(IPAddr *ip, unsigned int b);

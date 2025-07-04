@@ -81,8 +81,9 @@ get_driftfile_time(void)
 {
   struct stat buf;
   char *drift_file;
+  int interval;
 
-  drift_file = CNF_GetDriftFile();
+  drift_file = CNF_GetDriftFile(&interval);
   if (!drift_file)
     return 0;
 
@@ -148,6 +149,8 @@ RTC_Initialise(int initial_set)
     if (driver.init) {
       if ((driver.init)()) {
         driver_initialised = 1;
+      } else {
+        LOG(LOGS_ERR, "RTC driver could not be initialised");
       }
     } else {
       LOG(LOGS_ERR, "RTC not supported on this operating system");
@@ -160,7 +163,7 @@ RTC_Initialise(int initial_set)
 void
 RTC_Finalise(void)
 {
-  if (driver.fini) {
+  if (driver_initialised) {
     (driver.fini)();
   }
 }

@@ -27,9 +27,11 @@ fi
 # Default test testings
 
 default_limit=10000
+default_primary_time_offset=0.0
 default_time_offset=1e-1
 default_freq_offset=1e-4
 default_base_delay=1e-4
+default_delay_correction=""
 default_jitter=1e-4
 default_jitter_asymmetry=0.0
 default_wander=1e-9
@@ -37,6 +39,7 @@ default_refclock_jitter=""
 default_refclock_offset=0.0
 
 default_update_interval=0
+default_update_executable=""
 default_shift_pll=2
 
 default_server_strata=1
@@ -64,6 +67,7 @@ default_client_conf=""
 default_chronyc_conf=""
 default_server_chronyd_options=""
 default_client_chronyd_options=""
+default_chronyc_options=""
 
 default_time_max_limit=1e-3
 default_freq_max_limit=5e-4
@@ -75,6 +79,11 @@ default_max_sync_time=210
 default_client_min_mean_out_interval=0.0
 default_client_max_min_out_interval=inf
 
+default_ip_family=4
+default_cmdmon_unix=1
+default_pcap_dumps=0
+default_dns=0
+
 # Initialize test settings from their defaults
 for defoptname in ${!default_*}; do
 	optname=${defoptname#default_}
@@ -82,10 +91,8 @@ for defoptname in ${!default_*}; do
 done
 
 test_start() {
-	rm -f tmp/*
+	rm -rf tmp/*
 	echo "Testing $@:"
-
-	check_config_h 'FEAT_NTP 1' || test_skip
 }
 
 test_pass() {
@@ -180,6 +187,18 @@ get_chronyd_nodes() {
 	echo $[$servers * $server_strata + $clients]
 }
 
+get_node_name() {
+	local index=$1
+
+	if [ $dns -ne 0 ]; then
+		echo "node$index.net1.clk"
+	elif [ $ip_family -eq 6 ]; then
+		printf "fc00::123:%x" $index
+	else
+		echo "192.168.123.$index"
+	fi
+}
+
 get_chronyd_conf() {
 	local i stratum=$1 peer=$2
 
@@ -188,25 +207,26 @@ get_chronyd_conf() {
 		echo "$server_conf"
 	elif [ $stratum -le $server_strata ]; then
 		for i in $(seq 1 $servers); do
-			echo "server 192.168.123.$[$servers * ($stratum - 2) + $i] $server_server_options"
+			echo "server $(get_node_name $[$servers * ($stratum - 2) + $i]) $server_server_options"
 		done
 		for i in $(seq 1 $peers); do
 			[ $i -eq $peer -o $i -gt $servers ] && continue
-			echo -n "peer 192.168.123.$[$servers * ($stratum - 1) + $i] $server_peer_options "
+			echo -n "peer $(get_node_name $[$servers * ($stratum - 1) + $i]) $server_peer_options "
 			[ $i -lt $peer ] && echo "$server_lpeer_options" || echo "$server_rpeer_options"
 		done
 		echo "$server_conf"
 	else
+		echo "deny"
 		if [ -n "$client_server_conf" ]; then
 			echo "$client_server_conf"
 		else
 			for i in $(seq 1 $servers); do
-				echo "server 192.168.123.$[$servers * ($stratum - 2) + $i] $client_server_options"
+				echo "server $(get_node_name $[$servers * ($stratum - 2) + $i]) $client_server_options"
 			done
 		fi
 		for i in $(seq 1 $peers); do
 			[ $i -eq $peer -o $i -gt $clients ] && continue
-			echo -n "peer 192.168.123.$[$servers * ($stratum - 1) + $i] $client_peer_options "
+			echo -n "peer $(get_node_name $[$servers * ($stratum - 1) + $i]) $client_peer_options "
 			[ $i -lt $peer ] && echo "$client_lpeer_options" || echo "$client_rpeer_options"
 		done
 		echo "$client_conf"
@@ -221,7 +241,7 @@ check_config_h() {
 
 # Check if the clock was well synchronized
 check_sync() {
-	local i sync_time max_time_error max_freq_error ret=0
+	local i msg sync_time max_time_error max_freq_error r ret=0
 	local rms_time_error rms_freq_error
 
 	test_message 2 1 "checking clock sync time, max/rms time/freq error:"
@@ -236,17 +256,37 @@ check_sync() {
 		rms_time_error=$(get_stat 'RMS offset' $i)
 		rms_freq_error=$(get_stat 'RMS frequency' $i)
 
-		test_message 3 0 "node $i: $sync_time $(printf '%.2e %.2e %.2e %.2e' \
-			$max_time_error $max_freq_error $rms_time_error $rms_freq_error)"
+		r=0
+		msg="$sync_time"
+		if ! check_stat $sync_time $min_sync_time $max_sync_time; then
+			msg+="!"
+			r=1
+		fi
+		msg+="$(printf ' %.2e' $max_time_error)"
+		if ! check_stat $max_time_error 0.0 $time_max_limit; then
+			msg+="!"
+			r=1
+		fi
+		msg+="$(printf ' %.2e' $max_freq_error)"
+		if ! check_stat $max_freq_error 0.0 $freq_max_limit; then
+			msg+="!"
+			r=1
+		fi
+		msg+="$(printf ' %.2e' $rms_time_error)"
+		if ! check_stat $rms_time_error 0.0 $time_rms_limit; then
+			msg+="!"
+			r=1
+		fi
+		msg+="$(printf ' %.2e' $rms_freq_error)"
+		if ! check_stat $rms_freq_error 0.0 $freq_rms_limit; then
+			msg+="!"
+			r=1
+		fi
 
-		check_stat $sync_time $min_sync_time $max_sync_time && \
-			check_stat $max_time_error 0.0 $time_max_limit && \
-			check_stat $max_freq_error 0.0 $freq_max_limit && \
-			check_stat $rms_time_error 0.0 $time_rms_limit && \
-			check_stat $rms_freq_error 0.0 $freq_rms_limit && \
-			test_ok || test_bad
+		test_message 3 0 "node $i: $msg"
 
-		[ $? -eq 0 ] || ret=1
+		[ $r -eq 0 ] || ret=1
+		[ $r -eq 0 ] && test_ok || test_bad
 	done
 
 	return $ret
@@ -263,6 +303,7 @@ check_chronyd_exit() {
 
 		grep -q 'chronyd exiting' tmp/log.$i && \
 			! grep -q 'Adjustment.*exceeds.*exiting' tmp/log.$i && \
+			! grep -q 'Assertion.*failed' tmp/log.$i && \
 			test_ok || test_bad
 		[ $? -eq 0 ] || ret=1
 	done
@@ -391,9 +432,9 @@ check_packet_port() {
 	for i in $(seq 1 $(get_chronyd_nodes)); do
 		test_message 3 0 "node $i:"
 
-		grep -E -q "	$port	[0-9]+\$" tmp/log.packets && \
+		grep -E -q "^([0-9e.+-]+	){5}$port	" tmp/log.packets && \
 			! grep -E "^[0-9e.+-]+	$i	" tmp/log.packets | \
-			grep -E -q -v "	$port	[0-9]+\$" && \
+			grep -E -q -v "^([0-9e.+-]+	){5}$port	" && \
 			test_ok || test_bad
 		[ $? -eq 0 ] || ret=1
 	done
@@ -419,10 +460,13 @@ run_simulation() {
 	test_message 2 0 "running simulation:"
 
 	start_server $nodes \
+		-n 2 \
 		-o tmp/log.offset -f tmp/log.freq -p tmp/log.packets \
 		-R $(awk "BEGIN {print $update_interval < 0 ? 2^-($update_interval) : 1}") \
 		-r $(awk "BEGIN {print $max_sync_time * 2^$update_interval}") \
-		-l $(awk "BEGIN {print $limit * 2^$update_interval}") && test_ok || test_error
+		-l $(awk "BEGIN {print $limit * 2^$update_interval}") \
+		$([ "$update_executable" != "" ] && printf "%s" "-e $update_executable") && \
+			test_ok || test_error
 }
 
 run_test() {
@@ -434,12 +478,18 @@ run_test() {
 	nodes=$(get_chronyd_nodes)
 	[ -n "$chronyc_conf" ] && nodes=$[$nodes + $clients]
 
+	export CLKNETSIM_IP_FAMILY=$ip_family
+	export CLKNETSIM_UNIX_SUBNET=$[$cmdmon_unix != 0 ? 2 : 0]
+
 	for i in $(seq 1 $nodes); do
 		echo "node${i}_shift_pll = $shift_pll"
 		for j in $(seq 1 $nodes); do
-			[ $i -eq $j ] && continue
 			echo "node${i}_delay${j} = $(get_delay_expr up)"
 			echo "node${j}_delay${i} = $(get_delay_expr down)"
+			if [ -n "$delay_correction" ]; then
+				echo "node${i}_delay_correction${j} = $delay_correction"
+				echo "node${j}_delay_correction${i} = $delay_correction"
+			fi
 		done
 	done > tmp/conf
 
@@ -450,11 +500,15 @@ run_test() {
 
 		for i in $(seq 1 $n); do
 			test_message 2 0 "starting node $node:"
+
+			[ $pcap_dumps -ne 0 ] && export CLKNETSIM_PCAP_DUMP=tmp/pcap.$node
+
 			if [ $stratum -eq 1 ]; then
 				step=$server_step
 				start=$server_start
 				freq=""
-				[ $i -le $falsetickers ] && offset=$i.0 || offset=0.0
+				[ $i -le $falsetickers ] &&
+					offset=$i.0 || offset=$primary_time_offset
 				options=$server_chronyd_options
 			elif [ $stratum -le $server_strata ]; then
 				step=$server_step
@@ -489,9 +543,17 @@ run_test() {
 	for i in $(seq 1 $[$nodes - $node + 1]); do
 		test_message 2 0 "starting node $node:"
 
+		[ $pcap_dumps -ne 0 ] && export CLKNETSIM_PCAP_DUMP=tmp/pcap.$node
+
+		options=$([ $dns -eq 0 ] && printf "%s" "-n")
+		if [ $cmdmon_unix -ne 0 ]; then
+			options+=" -h /clknetsim/unix/$[$node - $clients]:1"
+		else
+			options+=" -h $(get_node_name $[$node - $clients])"
+		fi
+
 		echo "node${node}_start = $chronyc_start" >> tmp/conf
-		start_client $node chronyc "$chronyc_conf" "" \
-			"-n -h 192.168.123.$[$node - $clients]" && \
+		start_client $node chronyc "$chronyc_conf" "" "$options $chronyc_options" && \
 			test_ok || test_error
 
 		[ $? -ne 0 ] && return 1

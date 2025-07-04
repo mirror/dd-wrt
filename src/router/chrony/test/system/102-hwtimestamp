@@ -7,7 +7,7 @@
 hwts_iface=""
 for iface_path in /sys/class/net/*; do
 	iface=$(basename "$iface_path")
-	if ethtool -T "$iface" 2> /dev/null | grep -q HWTSTAMP_FILTER_ALL; then
+	if ethtool -T "$iface" 2> /dev/null | grep -q '	all\($\| \)'; then
 		hwts_iface="$iface"
 		break
 	fi

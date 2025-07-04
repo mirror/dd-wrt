@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+export TZ=UTC
+
+test_start "manual input"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+limit=$[12 * 3600]
+client_server_conf=" "
+client_conf="manual"
+chronyc_conf="timeout 4000000
+settime 1:00:00
+settime 2:00:00
+settime 3:00:00
+settime 4:00:00
+manual delete 2
+settime 6:00:00
+manual list
+settime 8:00:00
+manual reset
+settime 10:00:00
+manual list"
+chronyc_start=1800
+base_delay=1800
+jitter=1e-6
+
+time_max_limit=4e-3
+freq_max_limit=4e-3
+time_rms_limit=2e-3
+freq_rms_limit=2e-5
+min_sync_time=7204
+max_sync_time=7206
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+
+check_chronyc_output "^200 OK
+Clock was 0\.4. seconds fast\.  Frequency change = 0\.00ppm, new frequency = 0\.00ppm
+200 OK
+Clock was 0\.3. seconds fast\.  Frequency change = (99|100)\...ppm, new frequency = (99|100)\...ppm
+200 OK
+Clock was \-?0\.0. seconds fast\.  Frequency change = \-?0\.[01].ppm, new frequency = (99|100)\...ppm
+200 OK
+Clock was \-?0\.0. seconds fast\.  Frequency change = \-?0\.[01].ppm, new frequency = (99|100)\...ppm
+200 OK
+200 OK
+Clock was \-?0\.0. seconds fast\.  Frequency change = \-?0\.[012].ppm, new frequency = (99|100)\...ppm
+210 n_samples = 4
+#    Date     Time\(UTC\)    Slewed   Original   Residual
+=======================================================
+ 0 2010-01-01 (00:59:59|01:00:00)      [- ]0\.00       0\.46      [- ]0\.00
+ 1 2010-01-01 (01:59:59|02:00:00)      [- ]0\.00       0\.36      [- ]0\.00
+ 2 2010-01-01 (03:59:59|04:00:00)      [- ]0\.00      [- ]0\.00      [- ]0\.00
+ 3 2010-01-01 (05:59:59|06:00:00)      [- ]0\.00      [- ]0\.00      [- ]0\.00
+200 OK
+Clock was \-?0\.0. seconds fast\.  Frequency change = \-?0\.[012].ppm, new frequency = (99|100)\...ppm
+200 OK
+200 OK
+Clock was \-?0\.0. seconds fast\.  Frequency change = \-?0\.00ppm, new frequency = (99|100)\...ppm
+210 n_samples = 1
+#    Date     Time\(UTC\)    Slewed   Original   Residual
+=======================================================
+ 0 2010-01-01 (09:59:59|10:00:00)      [- ]0\.00      [- ]0\.00      [- ]0\.00$" \
+	|| test_fail
+
+test_pass

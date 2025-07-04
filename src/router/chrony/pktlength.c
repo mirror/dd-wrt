@@ -55,7 +55,7 @@ struct request_length {
 };
 
 static const struct request_length request_lengths[] = {
-  REQ_LENGTH_ENTRY(null, null),                 /* NULL */
+  { 0, 0 },                                     /* NULL - not supported */
   REQ_LENGTH_ENTRY(online, null),               /* ONLINE */
   REQ_LENGTH_ENTRY(offline, null),              /* OFFLINE */
   REQ_LENGTH_ENTRY(burst, null),                /* BURST */
@@ -65,7 +65,7 @@ static const struct request_length request_lengths[] = {
   REQ_LENGTH_ENTRY(modify_maxdelay, null),      /* MODIFY_MAXDELAY */
   REQ_LENGTH_ENTRY(modify_maxdelayratio, null), /* MODIFY_MAXDELAYRATIO */
   REQ_LENGTH_ENTRY(modify_maxupdateskew, null), /* MODIFY_MAXUPDATESKEW */
-  REQ_LENGTH_ENTRY(logon, null),                /* LOGON */
+  { 0, 0 },                                     /* LOGON - not supported */
   REQ_LENGTH_ENTRY(settime, manual_timestamp),  /* SETTIME */
   { 0, 0 },                                     /* LOCAL */
   REQ_LENGTH_ENTRY(manual, null),               /* MANUAL */
@@ -87,7 +87,7 @@ static const struct request_length request_lengths[] = {
   REQ_LENGTH_ENTRY(del_source, null),           /* DEL_SOURCE */
   REQ_LENGTH_ENTRY(null, null),                 /* WRITERTC */
   REQ_LENGTH_ENTRY(dfreq, null),                /* DFREQ */
-  REQ_LENGTH_ENTRY(doffset, null),              /* DOFFSET */
+  { 0, 0 },                                     /* DOFFSET - not supported */
   REQ_LENGTH_ENTRY(null, tracking),             /* TRACKING */
   REQ_LENGTH_ENTRY(sourcestats, sourcestats),   /* SOURCESTATS */
   REQ_LENGTH_ENTRY(null, rtc),                  /* RTCREPORT */
@@ -110,16 +110,28 @@ static const struct request_length request_lengths[] = {
   REQ_LENGTH_ENTRY(smoothtime, null),           /* SMOOTHTIME */
   REQ_LENGTH_ENTRY(null, null),                 /* REFRESH */
   REQ_LENGTH_ENTRY(null, server_stats),         /* SERVER_STATS */
-  REQ_LENGTH_ENTRY(client_accesses_by_index,
-                   client_accesses_by_index),   /* CLIENT_ACCESSES_BY_INDEX2 */
-  REQ_LENGTH_ENTRY(local, null),                /* LOCAL2 */
+  { 0, 0 },                                     /* CLIENT_ACCESSES_BY_INDEX2 - not supported */
+  { 0, 0 },                                     /* LOCAL2 - not supported */
   REQ_LENGTH_ENTRY(ntp_data, ntp_data),         /* NTP_DATA */
   { 0, 0 },                                     /* ADD_SERVER2 */
   { 0, 0 },                                     /* ADD_PEER2 */
-  REQ_LENGTH_ENTRY(ntp_source, null),           /* ADD_SERVER3 */
-  REQ_LENGTH_ENTRY(ntp_source, null),           /* ADD_PEER3 */
+  { 0, 0 },                                     /* ADD_SERVER3 */
+  { 0, 0 },                                     /* ADD_PEER3 */
   REQ_LENGTH_ENTRY(null, null),                 /* SHUTDOWN */
   REQ_LENGTH_ENTRY(null, null),                 /* ONOFFLINE */
+  REQ_LENGTH_ENTRY(ntp_source, null),           /* ADD_SOURCE */
+  REQ_LENGTH_ENTRY(ntp_source_name,
+                   ntp_source_name),            /* NTP_SOURCE_NAME */
+  REQ_LENGTH_ENTRY(null, null),                 /* RESET_SOURCES */
+  REQ_LENGTH_ENTRY(auth_data, auth_data),       /* AUTH_DATA */
+  REQ_LENGTH_ENTRY(client_accesses_by_index,
+                   client_accesses_by_index),   /* CLIENT_ACCESSES_BY_INDEX3 */
+  REQ_LENGTH_ENTRY(select_data, select_data),   /* SELECT_DATA */
+  REQ_LENGTH_ENTRY(null, null),                 /* RELOAD_SOURCES */
+  REQ_LENGTH_ENTRY(doffset, null),              /* DOFFSET2 */
+  REQ_LENGTH_ENTRY(modify_select_opts, null),   /* MODIFY_SELECTOPTS */
+  REQ_LENGTH_ENTRY(modify_offset, null),        /* MODIFY_OFFSET */
+  REQ_LENGTH_ENTRY(local, null),                /* LOCAL3 */
 };
 
 static const uint16_t reply_lengths[] = {
@@ -137,11 +149,19 @@ static const uint16_t reply_lengths[] = {
   0,                                            /* MANUAL_LIST - not supported */
   RPY_LENGTH_ENTRY(activity),                   /* ACTIVITY */
   RPY_LENGTH_ENTRY(smoothing),                  /* SMOOTHING */
-  RPY_LENGTH_ENTRY(server_stats),               /* SERVER_STATS */
-  RPY_LENGTH_ENTRY(client_accesses_by_index),   /* CLIENT_ACCESSES_BY_INDEX2 */
-  RPY_LENGTH_ENTRY(ntp_data),                   /* NTP_DATA */
+  0,                                            /* SERVER_STATS - not supported */
+  0,                                            /* CLIENT_ACCESSES_BY_INDEX2 - not supported */
+  0,                                            /* NTP_DATA - not supported */
   RPY_LENGTH_ENTRY(manual_timestamp),           /* MANUAL_TIMESTAMP2 */
   RPY_LENGTH_ENTRY(manual_list),                /* MANUAL_LIST2 */
+  RPY_LENGTH_ENTRY(ntp_source_name),            /* NTP_SOURCE_NAME */
+  RPY_LENGTH_ENTRY(auth_data),                  /* AUTH_DATA */
+  RPY_LENGTH_ENTRY(client_accesses_by_index),   /* CLIENT_ACCESSES_BY_INDEX3 */
+  0,                                            /* SERVER_STATS2 - not supported */
+  RPY_LENGTH_ENTRY(select_data),                /* SELECT_DATA */
+  0,                                            /* SERVER_STATS3 - not supported */
+  RPY_LENGTH_ENTRY(server_stats),               /* SERVER_STATS4 */
+  RPY_LENGTH_ENTRY(ntp_data),                   /* NTP_DATA2 */
 };
 
 /* ================================================== */

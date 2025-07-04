@@ -43,6 +43,7 @@ TST_Skip(int line)
 int
 main(int argc, char **argv)
 {
+  LOG_Severity log_severity;
   char *test_name, *s;
   int i, seed = 0;
   struct timeval tv;
@@ -55,9 +56,11 @@ main(int argc, char **argv)
   if (s)
     test_name = s + 1;
 
+  log_severity = LOGS_FATAL;
+
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "-d")) {
-      LOG_SetDebugLevel(2);
+      log_severity = LOGS_DEBUG;
     } else if (!strcmp(argv[i], "-s") && i + 1 < argc) {
       seed = atoi(argv[++i]);
     } else {
@@ -73,9 +76,11 @@ main(int argc, char **argv)
   fflush(stdout);
 
   LOG_Initialise();
+  LOG_SetMinSeverity(log_severity);
 
   test_unit();
 
+  UTI_ResetGetRandomFunctions();
   LOG_Finalise();
 
   printf("PASS\n");
@@ -83,20 +88,10 @@ main(int argc, char **argv)
   return 0;
 }
 
-void TST_SuspendLogging(void)
-{
-  LOG_OpenFileLog("/dev/null");
-}
-
-void TST_ResumeLogging(void)
-{
-  LOG_OpenFileLog(NULL);
-}
-
 double
 TST_GetRandomDouble(double min, double max)
 {
-  return min + (double)random() / RAND_MAX * (max - min);
+  return min + random() / 2147483647.0 * (max - min);
 }
 
 void

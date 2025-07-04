@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+. ./test.common
+test_start "RTC tracking"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+check_config_h 'FEAT_RTC 1' || test_skip
+
+export CLKNETSIM_START_DATE=$(date -d 'Jan  1 00:00:00 UTC 2010' +'%s')
+export CLKNETSIM_RTC_OFFSET=-10.0
+
+time_offset=$(awk "BEGIN {print -($freq_offset * $limit)}")
+wander=0.0
+chronyc_start=9900
+chronyc_conf="rtcdata"
+client_chronyd_options="-x"
+
+client_conf="
+hwclockfile /dev/null
+driftfile tmp/drift
+rtcfile tmp/rtc
+rtconutc"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_chronyc_output "^RTC ref time \(UTC\) : Fri Jan 01 02:4[34]:.. 2010
+Number of samples  : [0-9]+
+Number of runs     : [0-9]+
+Sample span period : [ 0-9]+
+RTC is fast by     :    -9\.01.... seconds
+RTC gains time at  :    99\.9[98]. ppm$" \
+|| test_fail
+
+export CLKNETSIM_START_DATE=$(date -d 'Jan  5 00:00:00 UTC 2010' +'%s')
+export CLKNETSIM_RTC_OFFSET=$(awk "BEGIN {print -(10.0 - 4 * 86400 * $freq_offset)}")
+touch -d 'Jan  1 00:00:00 UTC 2010' tmp/drift
+
+time_offset=10
+min_sync_time=2
+max_sync_time=12
+time_max_limit=1e-2
+freq_max_limit=1e-1
+time_rms_limit=1e-3
+freq_rms_limit=1e-3
+client_chronyd_options="-s"
+client_conf+="
+rtcautotrim 1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+check_chronyc_output "^RTC ref time \(UTC\) : Tue Jan 05 02:4[34]:.. 2010
+Number of samples  : [0-9]+
+Number of runs     : [0-9]+
+Sample span period : [ 0-9]+
+RTC is fast by     :     0\.1..... seconds
+RTC gains time at  :    [- ]0\.0.. ppm$" \
+|| test_fail
+
+export CLKNETSIM_START_DATE=$(date -d 'Jan 10 00:00:00 UTC 2010' +'%s')
+export CLKNETSIM_RTC_OFFSET=-10.0
+touch -d 'Jan 10 00:00:00 UTC 2010' tmp/drift
+
+time_offset=-10000
+min_sync_time=1
+max_sync_time=1
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+test_pass

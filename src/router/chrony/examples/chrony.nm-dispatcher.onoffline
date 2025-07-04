@@ -1,0 +1,29 @@
+#!/bin/sh
+# This is a NetworkManager dispatcher / networkd-dispatcher script for
+# chronyd to set its NTP sources online or offline when a network interface
+# is configured or removed
+
+export LC_ALL=C
+
+chronyc=/usr/bin/chronyc
+
+# For NetworkManager consider only selected events
+if [ $# -ge 2 ]; then
+    case "$2" in
+        up|down|connectivity-change)
+            ;;
+        dhcp4-change|dhcp6-change)
+            # Actions "up" and "connectivity-change" in some cases do not
+            # guarantee that the interface has a route (e.g. a bond).
+            # dhcp(x)-change handles at least cases that use DHCP.
+            ;;
+        *)
+            exit 0;;
+    esac
+fi
+
+# Note: for networkd-dispatcher routable.d ~= on and off.d ~= off
+
+$chronyc onoffline > /dev/null 2>&1
+
+exit 0

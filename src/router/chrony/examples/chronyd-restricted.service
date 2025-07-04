@@ -1,0 +1,59 @@
+# This is a more restricted version of the chronyd service intended for
+# minimal NTP/NTS client configurations. The daemon is started without root
+# privileges and is allowed to write only to its own runtime, state, and log
+# directories. It cannot bind to privileged ports in order to operate as an
+# NTP server, or provide monitoring access over IPv4/IPv6. It cannot use
+# reference clocks, HW timestamping, RTC tracking, and other features.
+[Unit]
+Description=NTP client (restricted)
+Documentation=man:chronyd(8) man:chrony.conf(5)
+After=chronyd.service ntpdate.service sntp.service ntpd.service
+Conflicts=chronyd.service ntpd.service systemd-timesyncd.service
+ConditionCapability=CAP_SYS_TIME
+
+[Service]
+Type=notify
+PIDFile=/run/chrony/chronyd.pid
+Environment="OPTIONS="
+EnvironmentFile=-/etc/sysconfig/chronyd
+ExecStart=/usr/sbin/chronyd -n -U $OPTIONS
+
+User=chrony
+LogsDirectory=chrony
+LogsDirectoryMode=0750
+RuntimeDirectory=chrony
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=restart
+StateDirectory=chrony
+StateDirectoryMode=0750
+
+AmbientCapabilities=CAP_SYS_TIME
+CapabilityBoundingSet=CAP_SYS_TIME
+DevicePolicy=closed
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+# This breaks adjtimex()
+#PrivateUsers=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+RemoveIPC=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=~@cpu-emulation @debug @module @mount @obsolete @raw-io
+SystemCallFilter=~@reboot @resources @swap
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

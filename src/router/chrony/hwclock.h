@@ -30,13 +30,18 @@ typedef struct HCL_Instance_Record *HCL_Instance;
 
 /* Create a new HW clock instance */
 extern HCL_Instance HCL_CreateInstance(int min_samples, int max_samples,
-                                       double min_separation);
+                                       double min_separation, double precision);
 
 /* Destroy a HW clock instance */
 extern void HCL_DestroyInstance(HCL_Instance clock);
 
 /* Check if a new sample should be accumulated at this time */
 extern int HCL_NeedsNewSample(HCL_Instance clock, struct timespec *now);
+
+/* Process new readings of the HW clock in form of (sys, hw, sys) triplets and
+   produce a sample which can be accumulated */
+extern int HCL_ProcessReadings(HCL_Instance clock, int n_readings, struct timespec tss[][3],
+                               struct timespec *hw_ts, struct timespec *local_ts, double *err);
 
 /* Accumulate a new sample */
 extern void HCL_AccumulateSample(HCL_Instance clock, struct timespec *hw_ts,

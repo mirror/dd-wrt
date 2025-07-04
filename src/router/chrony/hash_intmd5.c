@@ -36,20 +36,22 @@
 static MD5_CTX ctx;
 
 int
-HSH_GetHashId(const char *name)
+HSH_GetHashId(HSH_Algorithm algorithm)
 {
   /* only MD5 is supported */
-  if (strcmp(name, "MD5"))
+  if (algorithm != HSH_MD5 && algorithm != HSH_MD5_NONCRYPTO)
     return -1;
 
   return 0;
 }
 
-unsigned int
-HSH_Hash(int id, const unsigned char *in1, unsigned int in1_len,
-    const unsigned char *in2, unsigned int in2_len,
-    unsigned char *out, unsigned int out_len)
+int
+HSH_Hash(int id, const void *in1, int in1_len, const void *in2, int in2_len,
+         unsigned char *out, int out_len)
 {
+  if (in1_len < 0 || in2_len < 0 || out_len < 0)
+    return 0;
+
   MD5Init(&ctx);
   MD5Update(&ctx, in1, in1_len);
   if (in2)

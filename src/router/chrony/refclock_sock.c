@@ -33,6 +33,7 @@
 #include "logging.h"
 #include "util.h"
 #include "sched.h"
+#include "socket.h"
 
 #define SOCK_MAGIC 0x534f434b
 
@@ -57,23 +58,63 @@ struct sock_sample {
   int magic;
 };
 
+/* On 32-bit glibc-based systems enable conversion between timevals using
+   32-bit and 64-bit time_t to support SOCK clients compiled with different
+   time_t size than chrony */
+#ifdef __GLIBC_PREREQ
+#if __GLIBC_PREREQ(2, 34) && __TIMESIZE == 32
+#define CONVERT_TIMEVAL 1
+#if defined(_TIME_BITS) && _TIME_BITS == 64
+typedef int32_t alt_time_t;
+typedef int32_t alt_suseconds_t;
+#else
+typedef int64_t alt_time_t;
+typedef int64_t alt_suseconds_t;
+#endif
+struct alt_timeval {
+  alt_time_t tv_sec;
+  alt_suseconds_t tv_usec;
+};
+#endif
+#endif
+
 static void read_sample(int sockfd, int event, void *anything)
 {
+  char buf[sizeof (struct sock_sample) + 16];
+  struct timespec sys_ts, ref_ts;
   struct sock_sample sample;
-  struct timespec ts;
   RCL_Instance instance;
   int s;
 
   instance = (RCL_Instance)anything;
 
-  s = recv(sockfd, &sample, sizeof (sample), 0);
+  s = recv(sockfd, buf, sizeof (buf), 0);
 
   if (s < 0) {
     DEBUG_LOG("Could not read SOCK sample : %s", strerror(errno));
     return;
   }
 
-  if (s != sizeof (sample)) {
+  if (s == sizeof (sample)) {
+    memcpy(&sample, buf, sizeof (sample));
+#ifdef CONVERT_TIMEVAL
+  } else if (s == sizeof (sample) - sizeof (struct timeval) + sizeof (struct alt_timeval)) {
+    struct alt_timeval atv;
+    memcpy(&atv, buf, sizeof (atv));
+#ifndef HAVE_LONG_TIME_T
+    if (atv.tv_sec > INT32_MAX || atv.tv_sec < INT32_MIN ||
+        atv.tv_usec > INT32_MAX || atv.tv_usec < INT32_MIN) {
+      DEBUG_LOG("Could not convert 64-bit timeval");
+      return;
+    }
+#endif
+    sample.tv.tv_sec = atv.tv_sec;
+    sample.tv.tv_usec = atv.tv_usec;
+    DEBUG_LOG("Converted %d-bit timeval", 8 * (int)sizeof (alt_time_t));
+    memcpy((char *)&sample + sizeof (struct timeval), buf + sizeof (struct alt_timeval),
+           sizeof (sample) - sizeof (struct timeval));
+#endif
+  } else {
     DEBUG_LOG("Unexpected length of SOCK sample : %d != %ld",
               s, (long)sizeof (sample));
     return;
@@ -85,19 +126,25 @@ static void read_sample(int sockfd, int event, void *anything)
     return;
   }
 
-  UTI_TimevalToTimespec(&sample.tv, &ts);
-  UTI_NormaliseTimespec(&ts);
+  UTI_TimevalToTimespec(&sample.tv, &sys_ts);
+  UTI_NormaliseTimespec(&sys_ts);
+
+  RCL_UpdateReachability(instance);
+
+  if (!UTI_IsTimeOffsetSane(&sys_ts, sample.offset))
+    return;
+
+  UTI_AddDoubleToTimespec(&sys_ts, sample.offset, &ref_ts);
 
   if (sample.pulse) {
-    RCL_AddPulse(instance, &ts, sample.offset);
+    RCL_AddPulse(instance, &sys_ts, sample.offset);
   } else {
-    RCL_AddSample(instance, &ts, sample.offset, sample.leap);
+    RCL_AddSample(instance, &sys_ts, &ref_ts, sample.leap);
   }
 }
 
 static int sock_initialise(RCL_Instance instance)
 {
-  struct sockaddr_un s;
   int sockfd;
   char *path;
 
@@ -105,25 +152,9 @@ static int sock_initialise(RCL_Instance instance)
 
   path = RCL_GetDriverParameter(instance);
  
-  s.sun_family = AF_UNIX;
-  if (snprintf(s.sun_path, sizeof (s.sun_path), "%s", path) >= sizeof (s.sun_path)) {
-    LOG_FATAL("Path %s too long", path);
-    return 0;
-  }
-
-  sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
-  if (sockfd < 0) {
-    LOG_FATAL("socket() failed");
-    return 0;
-  }
-
-  UTI_FdSetCloexec(sockfd);
-
-  unlink(path);
-  if (bind(sockfd, (struct sockaddr *)&s, sizeof (s)) < 0) {
-    LOG_FATAL("bind(%s) failed : %s", path, strerror(errno));
-    return 0;
-  }
+  sockfd = SCK_OpenUnixDatagramSocket(NULL, path, 0);
+  if (sockfd < 0)
+    LOG_FATAL("Could not open socket %s", path);
 
   RCL_SetDriverData(instance, (void *)(long)sockfd);
   SCH_AddFileHandler(sockfd, SCH_FILE_INPUT, read_sample, instance);
@@ -136,7 +167,8 @@ static void sock_finalise(RCL_Instance instance)
 
   sockfd = (long)RCL_GetDriverData(instance);
   SCH_RemoveFileHandler(sockfd);
-  close(sockfd);
+  SCK_RemoveSocket(sockfd);
+  SCK_CloseSocket(sockfd);
 }
 
 RefclockDriver RCL_SOCK_driver = {

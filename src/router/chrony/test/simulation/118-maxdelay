@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 test_start "maxdelay options"
@@ -14,7 +14,6 @@ client_server_options="maxpoll 6 maxdelay 3e-5 maxdelayratio 2.0 maxdelaydevrati
 
 run_test || test_fail
 check_chronyd_exit || test_fail
-check_source_selection || test_fail
 check_packet_interval || test_fail
 check_sync || test_fail
 
@@ -24,5 +23,19 @@ for client_server_options in "maxpoll 6 maxdelay 2e-5"; do
 	check_packet_interval || test_fail
 	check_sync && test_fail
 done
+
+min_sync_time=10
+client_conf="
+logdir tmp
+log rawmeasurements"
+client_server_options="minpoll 2 maxpoll 2 maxdelayquant 0.1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "20.*123\.1.* 111 111 1111" 200 500 measurements.log || test_fail
+check_file_messages "20.*123\.1.* 111 111 1101" 2000 2300 measurements.log || test_fail
 
 test_pass

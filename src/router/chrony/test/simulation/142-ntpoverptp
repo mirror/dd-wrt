@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "NTP over PTP"
+
+# Block communication between 3 and 1
+base_delay="(+ 1e-4 (* -1 (equal 0.1 from 3) (equal 0.1 to 1)))"
+
+cat > tmp/peer.keys <<-EOF
+1 MD5 1234567890
+EOF
+
+clients=2
+peers=2
+max_sync_time=420
+
+server_conf="
+ptpdomain 123
+ptpport 319"
+client_conf="
+ptpport 319
+authselectmode ignore
+keyfile tmp/peer.keys"
+client_server_options="minpoll 6 maxpoll 6 port 319"
+client_peer_options="minpoll 6 maxpoll 6 port 319 key 1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+check_file_messages "	2	1	.*	319	319	1	96	" 150 160 \
+	log.packets || test_fail
+check_file_messages "	1	2	.*	319	319	1	96	" 150 160 \
+	log.packets || test_fail
+check_file_messages "	2	3	.*	319	319	1	116	" 150 160 \
+	log.packets || test_fail
+check_file_messages "	3	2	.*	319	319	1	116	" 150 160 \
+	log.packets || test_fail
+
+check_config_h 'HAVE_LINUX_TIMESTAMPING 1' || test_skip
+
+export CLKNETSIM_TIMESTAMPING=2
+export CLKNETSIM_LINK_SPEED=100
+
+client_server_options+=" extfield F324 minpoll 0 maxpoll 0"
+client_peer_options+=" extfield F324 minpoll 0 maxpoll 0 maxdelaydevratio 1e6"
+server_conf+="
+clockprecision 1e-9
+hwtimestamp eth0"
+client_conf+="
+clockprecision 1e-9
+hwtimestamp eth0"
+delay_correction="(+ delay (* -8e-8 (+ length 46)))"
+wander=1e-9
+limit=1000
+freq_offset=-1e-4
+min_sync_time=5
+max_sync_time=20
+time_max_limit=1e-7
+time_rms_limit=2e-8
+freq_max_limit=1e-7
+freq_rms_limit=5e-8
+client_chronyd_options="-d"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+if check_config_h 'FEAT_DEBUG 1'; then
+	check_log_messages "apply_net_correction.*Applied" 900 2100 || test_fail
+	check_log_messages "apply_net_correction.*Invalid" 0 4 || test_fail
+fi
+
+client_server_options+=" xleave"
+client_peer_options+=" xleave"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+if check_config_h 'FEAT_DEBUG 1'; then
+	check_log_messages "apply_net_correction.*Applied" 900 2100 || test_fail
+	check_log_messages "apply_net_correction.*Invalid" 0 4 || test_fail
+
+	freq_offset=0.0
+	delay_correction="(+ -1.0e-9 (* 1.0001 delay))"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+
+	check_log_messages "apply_net_correction.*Applied" 350 1400 || test_fail
+	check_log_messages "apply_net_correction.*Invalid" 350 1400 || test_fail
+
+	server_conf="ptpport 319"
+	client_conf="ptpport 319"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+
+	check_log_messages "apply_net_correction.*Applied" 0 0 || test_fail
+fi
+
+freq_offset=-1e-4
+delay_correction=""
+server_conf="ptpport 319"
+client_conf="ptpport 319
+ptpdomain 124
+authselectmode ignore
+keyfile tmp/peer.keys"
+time_max_limit=$default_time_max_limit
+time_rms_limit=$default_time_rms_limit
+freq_max_limit=$default_freq_max_limit
+freq_rms_limit=$default_freq_rms_limit
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync && test_fail
+
+test_pass

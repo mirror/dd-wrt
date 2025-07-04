@@ -39,11 +39,13 @@ extern void SPF_DestroyInstance(SPF_Instance filter);
 extern int SPF_AccumulateSample(SPF_Instance filter, NTP_Sample *sample);
 extern int SPF_GetLastSample(SPF_Instance filter, NTP_Sample *sample);
 extern int SPF_GetNumberOfSamples(SPF_Instance filter);
+extern int SPF_GetMaxSamples(SPF_Instance filter);
 extern double SPF_GetAvgSampleDispersion(SPF_Instance filter);
 extern void SPF_DropSamples(SPF_Instance filter);
 extern int SPF_GetFilteredSample(SPF_Instance filter, NTP_Sample *sample);
 extern void SPF_SlewSamples(SPF_Instance filter, struct timespec *when,
                             double dfreq, double doffset);
+extern void SPF_CorrectOffset(SPF_Instance filter, double doffset);
 extern void SPF_AddDispersion(SPF_Instance filter, double dispersion);
 
 #endif

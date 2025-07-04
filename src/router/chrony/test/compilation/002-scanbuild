@@ -3,12 +3,14 @@
 cd ../..
 
 for opts in \
+	"--enable-debug" \
 	"--host-system=Linux" \
 	"--host-system=NetBSD" \
 	"--host-system=FreeBSD" \
 	"--without-nettle" \
-	"--without-nettle --without-nss" \
-	"--without-nettle --without-nss --without-tomcrypt"
+	"--without-nettle --without-gnutls" \
+	"--without-nettle --without-gnutls --without-nss" \
+	"--without-nettle --without-gnutls --without-nss --without-tomcrypt"
 do
 	./configure $opts
 	scan-build make "$@" || exit 1

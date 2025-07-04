@@ -38,30 +38,33 @@ static NSSLOWInitContext *ictx;
 
 struct hash {
   HASH_HashType type;
-  const char *name;
+  HSH_Algorithm algorithm;
   NSSLOWHASHContext *context;
 };
 
 static struct hash hashes[] = {
-  { HASH_AlgMD5, "MD5", NULL },
-  { HASH_AlgSHA1, "SHA1", NULL },
-  { HASH_AlgSHA256, "SHA256", NULL },
-  { HASH_AlgSHA384, "SHA384", NULL },
-  { HASH_AlgSHA512, "SHA512", NULL },
-  { 0, NULL, NULL }
+  { HASH_AlgMD5, HSH_MD5, NULL },
+  { HASH_AlgSHA1, HSH_SHA1, NULL },
+  { HASH_AlgSHA256, HSH_SHA256, NULL },
+  { HASH_AlgSHA384, HSH_SHA384, NULL },
+  { HASH_AlgSHA512, HSH_SHA512, NULL },
+  { 0, 0, NULL }
 };
 
 int
-HSH_GetHashId(const char *name)
+HSH_GetHashId(HSH_Algorithm algorithm)
 {
   int i;
 
-  for (i = 0; hashes[i].name; i++) {
-    if (!strcmp(name, hashes[i].name))
+  if (algorithm == HSH_MD5_NONCRYPTO)
+    algorithm = HSH_MD5;
+
+  for (i = 0; hashes[i].algorithm != 0; i++) {
+    if (hashes[i].algorithm == algorithm)
       break;
   }
 
-  if (!hashes[i].name)
+  if (hashes[i].algorithm == 0)
     return -1; /* not found */
 
   if (!ictx && !(ictx = NSSLOW_Init()))
@@ -74,13 +77,15 @@ HSH_GetHashId(const char *name)
   return i;
 }
 
-unsigned int
-HSH_Hash(int id, const unsigned char *in1, unsigned int in1_len,
-    const unsigned char *in2, unsigned int in2_len,
-    unsigned char *out, unsigned int out_len)
+int
+HSH_Hash(int id, const void *in1, int in1_len, const void *in2, int in2_len,
+         unsigned char *out, int out_len)
 {
   unsigned char buf[MAX_HASH_LENGTH];
   unsigned int ret = 0;
+
+  if (in1_len < 0 || in2_len < 0 || out_len < 0)
+    return 0;
 
   NSSLOWHASH_Begin(hashes[id].context);
   NSSLOWHASH_Update(hashes[id].context, in1, in1_len);
@@ -99,7 +104,7 @@ HSH_Finalise(void)
 {
   int i;
 
-  for (i = 0; hashes[i].name; i++) {
+  for (i = 0; hashes[i].algorithm != 0; i++) {
     if (hashes[i].context)
       NSSLOWHASH_Destroy(hashes[i].context);
   }

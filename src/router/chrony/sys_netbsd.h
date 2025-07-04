@@ -28,10 +28,12 @@
 #ifndef GOT_SYS_NETBSD_H
 #define GOT_SYS_NETBSD_H
 
+#include "sys.h"
+
 void SYS_NetBSD_Initialise(void);
 
 void SYS_NetBSD_Finalise(void);
 
-void SYS_NetBSD_DropRoot(uid_t uid, gid_t gid);
+void SYS_NetBSD_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context, int clock_control);
 
 #endif

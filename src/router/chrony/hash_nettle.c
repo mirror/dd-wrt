@@ -35,37 +35,39 @@
 #include "memory.h"
 
 struct hash {
-  const char *name;
+  const HSH_Algorithm algorithm;
   const char *int_name;
   const struct nettle_hash *nettle_hash;
   void *context;
 };
 
 static struct hash hashes[] = {
-  { "MD5", "md5", NULL, NULL },
-  { "RMD160", "ripemd160", NULL, NULL },
-  { "SHA1", "sha1", NULL, NULL },
-  { "SHA256", "sha256", NULL, NULL },
-  { "SHA384", "sha384", NULL, NULL },
-  { "SHA512", "sha512", NULL, NULL },
-  { "SHA3-224", "sha3_224", NULL, NULL },
-  { "SHA3-256", "sha3_256", NULL, NULL },
-  { "SHA3-384", "sha3_384", NULL, NULL },
-  { "SHA3-512", "sha3_512", NULL, NULL },
-  { NULL, NULL, NULL, NULL }
+  { HSH_MD5, "md5", NULL, NULL },
+  { HSH_SHA1, "sha1", NULL, NULL },
+  { HSH_SHA256, "sha256", NULL, NULL },
+  { HSH_SHA384, "sha384", NULL, NULL },
+  { HSH_SHA512, "sha512", NULL, NULL },
+  { HSH_SHA3_224, "sha3_224", NULL, NULL },
+  { HSH_SHA3_256, "sha3_256", NULL, NULL },
+  { HSH_SHA3_384, "sha3_384", NULL, NULL },
+  { HSH_SHA3_512, "sha3_512", NULL, NULL },
+  { 0, NULL, NULL, NULL }
 };
 
 int
-HSH_GetHashId(const char *name)
+HSH_GetHashId(HSH_Algorithm algorithm)
 {
   int id, nid;
 
-  for (id = 0; hashes[id].name; id++) {
-    if (!strcmp(name, hashes[id].name))
+  if (algorithm == HSH_MD5_NONCRYPTO)
+    algorithm = HSH_MD5;
+
+  for (id = 0; hashes[id].algorithm != 0; id++) {
+    if (hashes[id].algorithm == algorithm)
       break;
   }
 
-  if (!hashes[id].name)
+  if (hashes[id].algorithm == 0)
     return -1;
 
   if (hashes[id].context)
@@ -85,13 +87,15 @@ HSH_GetHashId(const char *name)
   return id;
 }
 
-unsigned int
-HSH_Hash(int id, const unsigned char *in1, unsigned int in1_len,
-         const unsigned char *in2, unsigned int in2_len,
-         unsigned char *out, unsigned int out_len)
+int
+HSH_Hash(int id, const void *in1, int in1_len, const void *in2, int in2_len,
+         unsigned char *out, int out_len)
 {
   const struct nettle_hash *hash;
   void *context;
+
+  if (in1_len < 0 || in2_len < 0 || out_len < 0)
+    return 0;
 
   hash = hashes[id].nettle_hash;
   context = hashes[id].context;
@@ -113,7 +117,7 @@ HSH_Finalise(void)
 {
   int i;
 
-  for (i = 0; hashes[i].name; i++) {
+  for (i = 0; hashes[i].algorithm != 0; i++) {
     if (hashes[i].context)
       Free(hashes[i].context);
   }
