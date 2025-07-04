@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features NTS || test_skip "NTS support disabled"
+certtool --help &> /dev/null || test_skip "certtool missing"
+check_chronyd_features DEBUG || test_skip "DEBUG support disabled"
+systemd-socket-activate -h &> /dev/null || test_skip "systemd-socket-activate missing"
+has_ipv6=$(check_chronyd_features IPV6 && ping6 -c 1 ::1 > /dev/null 2>&1 && echo 1 || echo 0)
+
+test_start "systemd socket activation"
+
+cat > $TEST_DIR/cert.cfg <<EOF
+cn = "chrony-nts-test"
+dns_name = "chrony-nts-test"
+ip_address = "$server"
+$([ "$has_ipv6" = "1" ] && echo 'ip_address = "::1"')
+serial = 001
+activation_date = "$[$(date '+%Y') - 1]-01-01 00:00:00 UTC"
+expiration_date = "$[$(date '+%Y') + 2]-01-01 00:00:00 UTC"
+signing_key
+encryption_key
+EOF
+
+certtool --generate-privkey --key-type=ed25519 --outfile $TEST_DIR/server.key \
+	&> $TEST_DIR/certtool.log
+certtool --generate-self-signed --load-privkey $TEST_DIR/server.key \
+	--template $TEST_DIR/cert.cfg --outfile $TEST_DIR/server.crt &>> $TEST_DIR/certtool.log
+chown "$(get_user)" $TEST_DIR/server.*
+
+ntpport=$(get_free_port)
+ntsport=$(get_free_port)
+
+server_options="port $ntpport nts ntsport $ntsport"
+extra_chronyd_directives="
+port $ntpport
+ntsport $ntsport
+ntsserverkey $TEST_DIR/server.key
+ntsservercert $TEST_DIR/server.crt
+ntstrustedcerts $TEST_DIR/server.crt
+ntsdumpdir $TEST_LIBDIR
+ntsprocesses 3"
+
+if [ "$has_ipv6" = "1" ]; then
+  extra_chronyd_directives="$extra_chronyd_directives
+  bindaddress ::1
+  server ::1 minpoll -6 maxpoll -6 $server_options"
+fi
+
+# enable debug logging
+extra_chronyd_options="-L -1"
+# Hack to trigger systemd-socket-activate to activate the service.  Normally,
+# chronyd.service would be configured with the WantedBy= directive so it starts
+# without waiting for socket activation.
+# (https://0pointer.de/blog/projects/socket-activation.html).
+for i in $(seq 10); do
+  sleep 1
+  (echo "wake up" > /dev/udp/127.0.0.1/$ntpport) 2>/dev/null
+  (echo "wake up" > /dev/tcp/127.0.0.1/$ntsport) 2>/dev/null
+done &
+
+# Test with UDP sockets (unfortunately systemd-socket-activate doesn't support
+# both datagram and stream sockets in the same invocation:
+# https://github.com/systemd/systemd/issues/9983).
+CHRONYD_WRAPPER="systemd-socket-activate \
+  --datagram \
+  --listen 127.0.0.1:$ntpport \
+  --listen 127.0.0.1:$ntsport"
+if [ "$has_ipv6" = "1" ]; then
+  CHRONYD_WRAPPER="$CHRONYD_WRAPPER \
+    --listen [::1]:$ntpport \
+    --listen [::1]:$ntsport"
+fi
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+
+if [ "$has_ipv6" = "1" ]; then
+  run_chronyc "ntpdata ::1" || test_fail
+  check_chronyc_output "Total RX +: [1-9]" || test_fail
+fi
+run_chronyc "authdata" || test_fail
+check_chronyc_output "^Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================\
+$([ "$has_ipv6" = "1" ] && printf "\n%s\n" '::1                          NTS     1   (30|15)  (128|256)    [0-9]    0    0    [78]  ( 64|100)')
+127\.0\.0\.1                    NTS     1   (30|15)  (128|256)    [0-9]    0    0    [78]  ( 64|100)$" || test_fail
+
+stop_chronyd || test_fail
+# DGRAM ntpport socket should be used
+check_chronyd_message_count "Reusing UDPv4 socket fd=3 local=127.0.0.1:$ntpport" 1 1 || test_fail
+# DGRAM ntsport socket should be ignored
+check_chronyd_message_count "Reusing TCPv4 socket fd=4 local=127.0.0.1:$ntsport" 0 0 || test_fail
+if [ "$has_ipv6" = "1" ]; then
+  # DGRAM ntpport socket should be used
+  check_chronyd_message_count "Reusing UDPv6 socket fd=5 local=\[::1\]:$ntpport" 1 1 || test_fail
+  # DGRAM ntsport socket should be ignored
+  check_chronyd_message_count "Reusing TCPv6 socket fd=6 local=\[::1\]:$ntsport" 0 0 || test_fail
+fi
+
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+# Test with TCP sockets
+CHRONYD_WRAPPER="systemd-socket-activate \
+  --listen 127.0.0.1:$ntpport \
+  --listen 127.0.0.1:$ntsport"
+if [ "$has_ipv6" = "1" ]; then
+  CHRONYD_WRAPPER="$CHRONYD_WRAPPER \
+    --listen [::1]:$ntpport \
+    --listen [::1]:$ntsport"
+fi
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+
+if [ "$has_ipv6" = "1" ]; then
+  run_chronyc "ntpdata ::1" || test_fail
+  check_chronyc_output "Total RX +: [1-9]" || test_fail
+fi
+run_chronyc "authdata" || test_fail
+check_chronyc_output "^Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================\
+$([ "$has_ipv6" = "1" ] && printf "\n%s\n" '::1                          NTS     1   (30|15)  (128|256)    [0-9]    0    0    [78]  ( 64|100)')
+127\.0\.0\.1                    NTS     1   (30|15)  (128|256)    [0-9]    0    0    [78]  ( 64|100)$" || test_fail
+
+stop_chronyd || test_fail
+# STREAM ntpport should be ignored
+check_chronyd_message_count "Reusing TCPv4 socket fd=3 local=127.0.0.1:$ntpport" 0 0 || test_fail
+# STREAM ntsport should be used
+check_chronyd_message_count "Reusing TCPv4 socket fd=4 local=127.0.0.1:$ntsport" 1 1 || test_fail
+if [ "$has_ipv6" = "1" ]; then
+  # STREAM ntpport should be ignored
+  check_chronyd_message_count "Reusing TCPv6 socket fd=5 local=\[::1\]:$ntpport" 0 0 || test_fail
+  # STREAM ntsport should be used
+  check_chronyd_message_count "Reusing TCPv6 socket fd=6 local=\[::1\]:$ntsport" 1 1 || test_fail
+fi
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+test_pass

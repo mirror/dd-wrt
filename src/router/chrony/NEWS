@@ -1,3 +1,230 @@
+New in version 4.7
+==================
+
+Enhancements
+------------
+* Add opencommands directive to select remote monitoring commands
+* Add interval option to driftfile directive
+* Add waitsynced and waitunsynced options to local directive
+* Add sanity checks for integer values in configuration
+* Add support for systemd Type=notify service
+* Add RTC refclock driver
+* Allow PHC refclock to be specified with network interface name
+* Don't require multiple refclock samples per poll to simplify
+  filter configuration
+* Keep refclock reachable when dropping samples with large delay
+* Improve quantile-based filtering to adapt faster to larger delay
+* Improve logging of selection failures
+* Detect clock interference from other processes
+* Try to reopen message log (-l option) on cyclelogs command
+
+Bug fixes
+---------
+* Fix sourcedir reloading to not multiply sources
+* Fix tracking offset after failed clock step
+
+Removed features
+----------------
+* Drop support for NTS with Nettle < 3.6 and GnuTLS < 3.6.14
+* Drop support for building without POSIX threads
+
+New in version 4.6.1
+====================
+
+Enhancements
+------------
+* Add ntsaeads directive to enable only selected AEAD algorithms for NTS
+
+Workarounds
+-----------
+* Negotiate use of compliant NTS keys with AES-128-GCM-SIV AEAD algorithm
+  (by default the keys are generated differently than in RFC 8915 for
+  compatibility with chrony server and client versions 4.4, 4.5, and 4.6)
+* Switch to compliant NTS keys if first response from server is NTS NAK
+
+New in version 4.6
+==================
+
+Enhancements
+------------
+* Add activate option to local directive to set activation threshold
+* Add ipv4 and ipv6 options to server/pool/peer directive
+* Add kod option to ratelimit directive for server KoD RATE support
+* Add leapseclist directive to read NIST/IERS leap-seconds.list file
+* Add ptpdomain directive to set PTP domain for NTP over PTP
+* Allow disabling pidfile
+* Improve copy server option to accept unsynchronised status instantly
+* Log one selection failure on start
+* Add offset command to modify source offset correction
+* Add timestamp sources to ntpdata report
+
+Bug fixes
+---------
+* Fix crash on sources reload during initstepslew or RTC initialisation
+* Fix source refreshment to not repeat failed name resolving attempts
+
+New in version 4.5
+==================
+
+Enhancements
+------------
+* Add support for AES-GCM-SIV in GnuTLS
+* Add support for corrections from PTP transparent clocks
+* Add support for systemd socket activation
+
+Bug fixes
+---------
+* Fix presend in interleaved mode
+* Fix reloading of modified sources from sourcedir
+
+New in version 4.4
+==================
+
+Enhancements
+------------
+* Add support for AES-GCM-SIV with Nettle >= 3.9 to shorten NTS
+  cookies to avoid some length-specific blocking of NTP on Internet
+* Add support for multiple refclocks using extpps option on one PHC
+* Add maxpoll option to hwtimestamp directive to improve PHC tracking
+  with low packet rates
+* Add hwtstimeout directive to configure timeout for late timestamps
+* Handle late hardware transmit timestamps of NTP requests on all sockets
+* Handle mismatched 32/64-bit time_t in SOCK refclock samples
+* Improve source replacement
+* Log important changes made by command requests (chronyc)
+* Refresh address of NTP sources periodically
+* Request nanosecond kernel RX timestamping on FreeBSD
+* Set DSCP for IPv6 packets
+* Shorten NTS-KE retry interval when network is down
+* Update seccomp filter for musl
+* Warn if loading keys from file with unexpected permissions
+* Warn if source selection fails or falseticker is detected
+* Add selectopts command to modify source-specific selection options
+* Add timestamp sources to serverstats report and make its fields 64-bit
+* Add -e option to chronyc to indicate end of response
+
+New in version 4.3
+==================
+
+Enhancements
+------------
+* Add local option to refclock directive to stabilise system clock
+  with more stable free-running clock (e.g. TCXO, OCXO)
+* Add maxdelayquant option to server/pool/peer directive to replace
+  maxdelaydevratio filter with long-term quantile-based filtering
+* Add selection option to log directive
+* Allow external PPS in PHC refclock without configurable pin
+* Don't accept first interleaved response to minimise error in delay
+* Don't use arc4random on Linux to avoid server performance loss
+* Improve filter option to better handle missing NTP samples
+* Improve stability with hardware timestamping and PHC refclock
+* Update seccomp filter
+
+Bug fixes
+---------
+* Fix waitsync command to reconnect when not getting response
+
+New in version 4.2
+==================
+
+Enhancements
+------------
+* Add support for NTPv4 extension field improving synchronisation
+  stability and resolution of root delay and dispersion (experimental)
+* Add support for NTP over PTP (experimental)
+* Add support for AES-CMAC and hash functions in GnuTLS
+* Improve server interleaved mode to be more reliable and support
+  multiple clients behind NAT
+* Update seccomp filter
+* Add statistics about interleaved mode to serverstats report
+
+Bug fixes
+---------
+* Fix RTC support with 64-bit time_t on 32-bit Linux
+* Fix seccomp filter to work correctly with bind*device directives
+* Suppress kernel adjustments of system clock (dosynctodr) on illumos
+
+Other changes
+-------------
+* Switch Solaris support to illumos
+
+New in version 4.1
+==================
+
+Enhancements
+------------
+* Add support for NTS servers specified by IP address (matching
+  Subject Alternative Name in server certificate)
+* Add source-specific configuration of trusted certificates
+* Allow multiple files and directories with trusted certificates
+* Allow multiple pairs of server keys and certificates
+* Add copy option to server/pool directive
+* Increase PPS lock limit to 40% of pulse interval
+* Perform source selection immediately after loading dump files
+* Reload dump files for addresses negotiated by NTS-KE server
+* Update seccomp filter and add less restrictive level
+* Restart ongoing name resolution on online command
+
+Bug fixes
+---------
+* Fix responding to IPv4 command requests on FreeBSD
+* Fix dump files to not include uncorrected offset
+* Fix initstepslew to accept time from own NTP clients
+* Reset NTP address and port when no longer negotiated by NTS-KE server
+
+New in version 4.0
+==================
+
+Enhancements
+------------
+* Add support for Network Time Security (NTS) authentication
+* Add support for AES-CMAC keys (AES128, AES256) with Nettle
+* Add authselectmode directive to control selection of unauthenticated sources
+* Add binddevice, bindacqdevice, bindcmddevice directives
+* Add confdir directive to better support fragmented configuration
+* Add sourcedir directive and "reload sources" command to support dynamic
+  NTP sources specified in files
+* Add clockprecision directive
+* Add dscp directive to set Differentiated Services Code Point (DSCP)
+* Add -L option to limit log messages by severity
+* Add -p option to print whole configuration with included files
+* Add -U option to allow start under non-root user
+* Allow maxsamples to be set to 1 for faster update with -q/-Q option
+* Avoid replacing NTP sources with sources that have unreachable address
+* Improve pools to repeat name resolution to get "maxsources" sources
+* Improve source selection with trusted sources
+* Improve NTP loop test to prevent synchronisation to itself
+* Repeat iburst when NTP source is switched from offline state to online
+* Update clock synchronisation status and leap status more frequently
+* Update seccomp filter
+* Add "add pool" command
+* Add "reset sources" command to drop all measurements
+* Add authdata command to print details about NTP authentication
+* Add selectdata command to print details about source selection
+* Add -N option and sourcename command to print original names of sources
+* Add -a option to some commands to print also unresolved sources
+* Add -k, -p, -r options to clients command to select, limit, reset data
+
+Bug fixes
+---------
+* Don't set interface for NTP responses to allow asymmetric routing
+* Handle RTCs that don't support interrupts
+* Respond to command requests with correct address on multihomed hosts
+
+Removed features
+----------------
+* Drop support for RIPEMD keys (RMD128, RMD160, RMD256, RMD320)
+* Drop support for long (non-standard) MACs in NTPv4 packets (chrony 2.x
+  clients using non-MD5/SHA1 keys need to use option "version 3")
+* Drop support for line editing with GNU Readline
+
+New in version 3.5.1
+====================
+
+Security fixes
+--------------
+* Create new file when writing pidfile (CVE-2020-14367)
+
 New in version 3.5
 ==================
 

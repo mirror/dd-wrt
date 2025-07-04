@@ -1,4 +1,4 @@
-# Use public NTP servers from the pool.ntp.org project.
+# Use four public NTP servers from the pool.ntp.org project.
 pool pool.ntp.org iburst
 
 # Record the rate at which the system clock gains/losses time.

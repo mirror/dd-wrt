@@ -61,49 +61,36 @@ static int pps_initialise(RCL_Instance instance) {
   edge_clear = RCL_GetDriverOption(instance, "clear") ? 1 : 0;
 
   fd = open(path, O_RDWR);
-  if (fd < 0) {
+  if (fd < 0)
     LOG_FATAL("Could not open %s : %s", path, strerror(errno));
-    return 0;
-  }
 
   UTI_FdSetCloexec(fd);
 
-  if (time_pps_create(fd, &handle) < 0) {
+  if (time_pps_create(fd, &handle) < 0)
     LOG_FATAL("time_pps_create() failed on %s : %s", path, strerror(errno));
-    return 0;
-  }
 
-  if (time_pps_getcap(handle, &mode) < 0) {
+  if (time_pps_getcap(handle, &mode) < 0)
     LOG_FATAL("time_pps_getcap() failed on %s : %s", path, strerror(errno));
-    return 0;
-  }
 
-  if (time_pps_getparams(handle, &params) < 0) {
+  if (time_pps_getparams(handle, &params) < 0)
     LOG_FATAL("time_pps_getparams() failed on %s : %s", path, strerror(errno));
-    return 0;
-  }
 
   if (!edge_clear) {
-    if (!(mode & PPS_CAPTUREASSERT)) {
+    if (!(mode & PPS_CAPTUREASSERT))
       LOG_FATAL("CAPTUREASSERT not supported on %s", path);
-      return 0;
-    }
+
     params.mode |= PPS_CAPTUREASSERT;
     params.mode &= ~PPS_CAPTURECLEAR;
   } else {
-    if (!(mode & PPS_CAPTURECLEAR)) {
+    if (!(mode & PPS_CAPTURECLEAR))
       LOG_FATAL("CAPTURECLEAR not supported on %s", path);
-      return 0;
-    }
+
     params.mode |= PPS_CAPTURECLEAR;
     params.mode &= ~PPS_CAPTUREASSERT;
   }
 
-  if (time_pps_setparams(handle, &params) < 0) {
+  if (time_pps_setparams(handle, &params) < 0)
     LOG_FATAL("time_pps_setparams() failed on %s : %s", path, strerror(errno));
-    return 0;
-  }
-
 
   pps = MallocNew(struct pps_instance);
   pps->handle = handle;
@@ -155,6 +142,8 @@ static int pps_poll(RCL_Instance instance)
   }
 
   pps->last_seq = seq;
+
+  RCL_UpdateReachability(instance);
 
   return RCL_AddPulse(instance, &ts, 1.0e-9 * ts.tv_nsec);
 }

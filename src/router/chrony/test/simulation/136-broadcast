@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -8,7 +8,9 @@ server_conf="broadcast 64 192.168.123.255"
 client_server_options="offline"
 
 run_test || test_fail
-check_chronyd_exit || test_fail
+if check_config_h 'FEAT_CMDMON 1'; then
+	check_chronyd_exit || test_fail
+fi
 check_packet_interval && test_fail
 
 check_file_messages "	1	2	" 150 160 log.packets || test_fail

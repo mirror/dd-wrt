@@ -32,63 +32,54 @@
 #include "util.h"
 
 struct hash {
-  const char *name;
+  HSH_Algorithm algorithm;
   const char *int_name;
   const struct ltc_hash_descriptor *desc;
 };
 
 static const struct hash hashes[] = {
-  { "MD5", "md5", &md5_desc },
-#ifdef LTC_RIPEMD128
-  { "RMD128", "rmd128", &rmd128_desc },
-#endif
-#ifdef LTC_RIPEMD160
-  { "RMD160", "rmd160", &rmd160_desc },
-#endif
-#ifdef LTC_RIPEMD256
-  { "RMD256", "rmd256", &rmd256_desc },
-#endif
-#ifdef LTC_RIPEMD320
-  { "RMD320", "rmd320", &rmd320_desc },
-#endif
+  { HSH_MD5, "md5", &md5_desc },
 #ifdef LTC_SHA1
-  { "SHA1", "sha1", &sha1_desc },
+  { HSH_SHA1, "sha1", &sha1_desc },
 #endif
 #ifdef LTC_SHA256
-  { "SHA256", "sha256", &sha256_desc },
+  { HSH_SHA256, "sha256", &sha256_desc },
 #endif
 #ifdef LTC_SHA384
-  { "SHA384", "sha384", &sha384_desc },
+  { HSH_SHA384, "sha384", &sha384_desc },
 #endif
 #ifdef LTC_SHA512
-  { "SHA512", "sha512", &sha512_desc },
+  { HSH_SHA512, "sha512", &sha512_desc },
 #endif
 #ifdef LTC_SHA3
-  { "SHA3-224", "sha3-224", &sha3_224_desc },
-  { "SHA3-256", "sha3-256", &sha3_256_desc },
-  { "SHA3-384", "sha3-384", &sha3_384_desc },
-  { "SHA3-512", "sha3-512", &sha3_512_desc },
+  { HSH_SHA3_224, "sha3-224", &sha3_224_desc },
+  { HSH_SHA3_256, "sha3-256", &sha3_256_desc },
+  { HSH_SHA3_384, "sha3-384", &sha3_384_desc },
+  { HSH_SHA3_512, "sha3-512", &sha3_512_desc },
 #endif
 #ifdef LTC_TIGER
-  { "TIGER", "tiger", &tiger_desc },
+  { HSH_TIGER, "tiger", &tiger_desc },
 #endif
 #ifdef LTC_WHIRLPOOL
-  { "WHIRLPOOL", "whirlpool", &whirlpool_desc },
+  { HSH_WHIRLPOOL, "whirlpool", &whirlpool_desc },
 #endif
-  { NULL, NULL, NULL }
+  { 0, NULL, NULL }
 };
 
 int
-HSH_GetHashId(const char *name)
+HSH_GetHashId(HSH_Algorithm algorithm)
 {
   int i, h;
 
-  for (i = 0; hashes[i].name; i++) {
-    if (!strcmp(name, hashes[i].name))
+  if (algorithm == HSH_MD5_NONCRYPTO)
+    algorithm = HSH_MD5;
+
+  for (i = 0; hashes[i].algorithm != 0; i++) {
+    if (hashes[i].algorithm == algorithm)
       break;
   }
 
-  if (!hashes[i].name)
+  if (hashes[i].algorithm == 0)
     return -1; /* not found */
 
   h = find_hash(hashes[i].int_name);
@@ -101,14 +92,16 @@ HSH_GetHashId(const char *name)
   return find_hash(hashes[i].int_name);
 }
 
-unsigned int
-HSH_Hash(int id, const unsigned char *in1, unsigned int in1_len,
-    const unsigned char *in2, unsigned int in2_len,
-    unsigned char *out, unsigned int out_len)
+int
+HSH_Hash(int id, const void *in1, int in1_len, const void *in2, int in2_len,
+         unsigned char *out, int out_len)
 {
   unsigned char buf[MAX_HASH_LENGTH];
   unsigned long len;
   int r;
+
+  if (in1_len < 0 || in2_len < 0 || out_len < 0)
+    return 0;
 
   len = sizeof (buf);
   if (in2)

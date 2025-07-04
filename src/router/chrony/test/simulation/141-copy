@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "copy option"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+client_server_options="copy"
+chronyc_conf="tracking"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+check_chronyc_output "^Reference ID *: 7F7F0101 \(192\.168\.123\.1\)
+Stratum *: 1" || test_fail
+
+test_pass

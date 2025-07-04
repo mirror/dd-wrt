@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
 test_start "logchange directive"
 
 time_offset=2
-min_sync_time=600
+min_sync_time=590
 max_sync_time=700
 client_server_options="maxsamples 6"
 client_conf="logchange 0.1"
@@ -16,6 +16,6 @@ check_chronyd_exit || test_fail
 check_source_selection || test_fail
 check_packet_interval || test_fail
 check_sync || test_fail
-check_log_messages "clock wrong by" 4 8 || test_fail
+check_log_messages "clock wrong by" 3 8 || test_fail
 
 test_pass

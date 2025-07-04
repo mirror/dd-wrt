@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -11,7 +11,7 @@ client_server_options="maxpoll 6"
 client_conf="refclock PHC /dev/ptp0 dpoll 4 poll 6 noselect
 logbanner 10
 logdir tmp
-log tracking rawmeasurements measurements statistics rtc refclocks tempcomp
+log tracking rawmeasurements measurements selection statistics rtc refclocks tempcomp
 tempcomp tmp/tempcomp 64 0.0 0.0 0.0 0.0"
 
 echo 0.0 > tmp/tempcomp
@@ -26,6 +26,8 @@ check_file_messages "=============" 31 33 \
 	tracking.log measurements.log tempcomp.log || test_fail
 check_file_messages "20.*192\.168\.123\.1" 150 160 \
 	tracking.log measurements.log statistics.log || test_fail
+check_file_messages "20.*PHC0 * N " 300 320 selection.log || test_fail
+check_file_messages "20.*192\.168\.123\.1 *[M*]" 300 320 selection.log || test_fail
 check_file_messages "20.*PHC0" 150 160 statistics.log || test_fail
 check_file_messages "20.*PHC0" 750 800 refclocks.log || test_fail
 check_file_messages "20.* 0\.0000" 150 160 tempcomp.log || test_fail

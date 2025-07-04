@@ -21,15 +21,17 @@
 #######################################################################
 ### SPECIFY YOUR NTP SERVERS
 # Most computers using chrony will send measurement requests to one or
-# more 'NTP servers'.  You will probably find that your Internet Service
+# more NTP servers.  The general recommendation is to have at least
+# three NTP servers to be able to detect one server providing incorrect
+# time (falseticker).  You will probably find that your Internet Service
 # Provider or company have one or more NTP servers that you can specify.
 # Failing that, there are a lot of public NTP servers.  There is a list
-# you can access at http://support.ntp.org/bin/view/Servers/WebHome or
+# you can access at https://support.ntp.org/bin/view/Servers/WebHome or
 # you can use servers from the pool.ntp.org project.
 
-! server foo.example.net iburst
-! server bar.example.net iburst
-! server baz.example.net iburst
+! server ntp1.example.net iburst
+! server ntp2.example.net iburst
+! server ntp3.example.net iburst
 
 ! pool pool.ntp.org iburst
  
@@ -57,6 +59,20 @@
 
 ! maxdrift 100
 
+# By default, chronyd allows synchronisation to an unauthenticated NTP
+# source (i.e. specified without the nts and key options) if it agrees with
+# a majority of authenticated NTP sources, or if no authenticated source is
+# specified.  If you don't want chronyd to ever synchronise to an
+# unauthenticated NTP source, uncomment the first from the following lines.
+# If you don't want to synchronise to an unauthenticated NTP source only
+# when an authenticated source is specified, uncomment the second line.
+# If you want chronyd to ignore authentication in the source selection,
+# uncomment the third line.
+
+! authselectmode require
+! authselectmode prefer
+! authselectmode ignore
+
 #######################################################################
 ### FILENAMES ETC
 # Chrony likes to keep information about your computer's clock in files.
@@ -72,22 +88,37 @@ driftfile /var/lib/chrony/drift
 
 ! keyfile /etc/chrony.keys
 
+# If you specify an NTP server with the nts option to enable authentication
+# with the Network Time Security (NTS) mechanism, or enable server NTS with
+# the ntsservercert and ntsserverkey directives below, the following line will
+# allow the client/server to save the NTS keys and cookies in order to reduce
+# the number of key establishments (NTS-KE sessions).
+
+ntsdumpdir /var/lib/chrony
+
+# If chronyd is configured to act as an NTP server and you want to enable NTS
+# for its clients, you will need a TLS certificate and private key.  Uncomment
+# and edit the following lines to specify the locations of the certificate and
+# key.
+
+! ntsservercert /etc/.../nts-server.crt
+! ntsserverkey /etc/.../nts-server.key
+
 # chronyd can save the measurement history for the servers to files when
-# it it exits.  This is useful in 2 situations:
+# it exits.  This is useful in 2 situations:
 #
-# 1. On Linux, if you stop chronyd and restart it with '-r' (e.g. after
+# 1. If you stop chronyd and restart it with the '-r' option (e.g. after
 # an upgrade), the old measurements will still be relevant when chronyd
 # is restarted.  This will reduce the time needed to get accurate
-# gain/loss measurements, especially with a dial-up link.
+# gain/loss measurements.
 #
-# 2. Again on Linux, if you use the RTC support and start chronyd with
+# 2. On Linux, if you use the RTC support and start chronyd with
 # '-r -s' on bootup, measurements from the last boot will still be
 # useful (the real time clock is used to 'flywheel' chronyd between
 # boots).
 #
-# Enable these two options to use this.
+# Uncomment the following line to use this.
 
-! dumponexit
 ! dumpdir /var/lib/chrony
 
 # chronyd writes its process ID to a file.  If you try to start a second
@@ -97,11 +128,11 @@ driftfile /var/lib/chrony/drift
 
 ! pidfile /var/run/chrony/chronyd.pid
 
-# If the system timezone database is kept up to date and includes the
-# right/UTC timezone, chronyd can use it to determine the current
-# TAI-UTC offset and when will the next leap second occur.
+# The system timezone database usually comes with a list of leap seconds and
+# corresponding TAI-UTC offsets.  chronyd can use it to set the offset of the
+# system TAI clock and have an additional source of leap seconds.
 
-! leapsectz right/UTC
+! leapseclist /usr/share/zoneinfo/leap-seconds.list
 
 #######################################################################
 ### INITIAL CLOCK CORRECTION
@@ -115,6 +146,18 @@ driftfile /var/lib/chrony/drift
 # (especially backwards), so be careful!
 
 ! makestep 1.0 3
+
+#######################################################################
+### LEAP SECONDS
+# A leap second is an occasional one-second correction of the UTC
+# time scale.  By default, chronyd tells the kernel to insert/delete
+# the leap second, which makes a backward/forward step to correct the
+# clock for it.  As with the makestep directive, this jump can upset
+# some applications.  If you prefer chronyd to make a gradual
+# correction, causing the clock to be off for a longer time, uncomment
+# the following line.
+
+! leapsecmode slew
 
 #######################################################################
 ### LOGGING
@@ -135,8 +178,6 @@ driftfile /var/lib/chrony/drift
 #######################################################################
 ### ACTING AS AN NTP SERVER
 # You might want the computer to be an NTP server for other computers.
-# e.g.  you might be running chronyd on a dial-up machine that has a LAN
-# sitting behind it with several 'satellite' computers on it.
 #
 # By default, chronyd does not allow any clients to access it.  You need
 # to explicitly enable access using 'allow' and 'deny' directives.
@@ -151,15 +192,6 @@ driftfile /var/lib/chrony/drift
 
 # You can have as many allow and deny directives as you need.  The order
 # is unimportant.
-
-# If you want chronyd to act as an NTP broadcast server, enable and edit
-# (and maybe copy) the following line.  This means that a broadcast
-# packet is sent to the address 192.168.1.255 every 60 seconds.  The
-# address MUST correspond to the broadcast address of one of the network
-# interfaces on your machine.  If you have multiple network interfaces,
-# add a broadcast line for each.
-
-! broadcast 60 192.168.1.255
 
 # If you want to present your computer's time for others to synchronise
 # with, even if you don't seem to be synchronised to any NTP servers
@@ -208,7 +240,7 @@ driftfile /var/lib/chrony/drift
 # several people, you need to set up a mailing list or sendmail alias
 # for them and use the address of that.)
 
-! mailonchange wibble@foo.example.net 0.5
+! mailonchange wibble@example.net 0.5
 
 #######################################################################
 ### COMMAND ACCESS

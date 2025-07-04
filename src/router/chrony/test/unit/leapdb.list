@@ -1,0 +1,22 @@
+#
+# Cut down version of leap-seconds.list for unit test.
+#
+# Blank lines need to be ignored, so include a few for testing.
+# Whitespace errors on non-blank lines below are copied from the original file.
+#
+  	
+#	Leap second data update time
+#$	 3676924800
+#
+#	File update time
+#@	3928521600
+	  
+3439756800	34	# 1 Jan 2009
+3550089600	35	# 1 Jul 2012
+3644697600	36	# 1 Jul 2015
+3692217600	37	# 1 Jan 2017
+3786825600	36	# 1 Jan 2020 (fake entry to test negative leap second)
+
+#	FIPS 180-1 hash
+#	NOTE! this value has not been recomputed for this unit test file.
+#h 	16edd0f0 3666784f 37db6bdd e74ced87 59af48f1

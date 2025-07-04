@@ -2,7 +2,7 @@
 //
 // Copyright (C) Richard P. Curnow  1997-2003
 // Copyright (C) Stephen Wadeley  2016
-// Copyright (C) Miroslav Lichvar  2009-2017
+// Copyright (C) Miroslav Lichvar  2009-2017, 2019-2024
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of version 2 of the GNU General Public License as
@@ -39,7 +39,7 @@ running.
 If no commands are specified on the command line, *chronyc* will expect input
 from the user. The prompt _chronyc>_ will be displayed when it is being run
 from a terminal. If *chronyc*'s input or output are redirected from or to a file,
-the prompt is not shown.
+the prompt will not be shown.
 
 There are two ways *chronyc* can access *chronyd*. One is the Internet
 Protocol (IPv4 or IPv6) and the other is a Unix domain socket, which is
@@ -50,18 +50,20 @@ running under a non-root user), it will try to connect to 127.0.0.1 and then
 ::1.
 
 Only the following monitoring commands, which do not affect the behaviour of
-*chronyd*, are allowed from the network: *activity*, *manual list*,
-*rtcdata*, *smoothing*, *sources*, *sourcestats*, *tracking*, *waitsync*. The
+*chronyd*, are allowed from the network by default: *activity*, *manual list*,
+*rtcdata*, *smoothing*, *sourcename*, *sources*, *sourcestats*, *tracking*,
+*waitsync*. The
 set of hosts from which *chronyd* will accept these commands can be configured
 with the <<chrony.conf.adoc#cmdallow,*cmdallow*>> directive in the *chronyd*'s
 configuration file or the <<cmdallow,*cmdallow*>> command in *chronyc*. By
 default, the commands are accepted only from localhost (127.0.0.1 or ::1).
 
-All other commands are allowed only through the Unix domain socket. When sent
+Other monitoring commands can be enabled for network access by the
+<<chrony.conf.adoc#opencommands,*opencommands*>> directive. Monitoring commands
+with disabled network access and commands that affect the behaviour of
+*chronyd* are allowed only through the Unix domain socket. If they are sent
 over the network, *chronyd* will respond with a '`Not authorised`' error, even
-if it is from localhost. In chrony versions before 2.2 they were allowed
-from the network if they were authenticated with a password, but that is no
-longer supported.
+if it is from localhost.
 
 Having full access to *chronyd* via *chronyc* is more or less equivalent to
 being able to modify the *chronyd*'s configuration file and restart it.
@@ -78,11 +80,21 @@ With this option hostnames will be resolved only to IPv6 addresses.
 This option disables resolving of IP addresses to hostnames, e.g. to avoid slow
 DNS lookups. Long addresses will not be truncated to fit into the column.
 
+*-N*::
+This option enables printing of original hostnames or IP addresses of NTP
+sources that were specified in the configuration file, or *chronyc* commands.
+Without the *-n* and *-N* option, the printed hostnames are obtained from
+reverse DNS lookups and can be different from the specified hostnames.
+
 *-c*::
 This option enables printing of reports in a comma-separated values (CSV)
-format. IP addresses will not be resolved to hostnames, time will be printed as
-number of seconds since the epoch and values in seconds will not be converted
-to other units.
+format. Reverse DNS lookups will be disabled, time will be printed as number of
+seconds since the epoch, and values in seconds will not be converted to other
+units.
+
+*-e*::
+With this option each *chronyc* response will end with a line containing a
+single dot.
 
 *-d*::
 This option enables printing of debugging messages if *chronyc* was compiled
@@ -94,12 +106,15 @@ With this option multiple commands can be specified. Each argument will be
 interpreted as a whole command.
 
 *-h* _host_::
-This option allows the user to specify which host (or comma-separated list of
-addresses) running the *chronyd* program is to be contacted. This allows for
-remote monitoring, without having to connect over SSH to the other host first.
+This option specifies the host to be contacted by *chronyc*. It can be
+specified with a hostname, IP address, or path to the local Unix domain socket.
+Multiple values can be specified as a comma-separated list to provide a
+fallback.
 +
-The default is to contact *chronyd* running on the same host where
-*chronyc* is being run.
+The default value is _@CHRONYRUNDIR@/chronyd.sock,127.0.0.1,::1_, i.e. the host
+where *chronyc* is being run. First, it tries to connect to the Unix domain
+socket and if that fails (e.g. due to running under a non-root user), it
+will try to connect to 127.0.0.1 and then ::1.
 
 *-p* _port_::
 This option allows the user to specify the UDP port number which the target
@@ -112,8 +127,12 @@ This option is ignored and is provided only for compatibility.
 *-a*::
 This option is ignored and is provided only for compatibility.
 
-*-v*::
+*-v*, *--version*::
 With this option *chronyc* displays its version number on the terminal and
+exits.
+
+*--help*::
+With this option *chronyc* displays a help message on the terminal and
 exits.
 
 == COMMANDS
@@ -128,7 +147,7 @@ The *tracking* command displays parameters about the system's clock
 performance. An example of the output is shown below.
 +
 ----
-Reference ID    : CB00710F (foo.example.net)
+Reference ID    : CB00710F (ntp1.example.net)
 Stratum         : 3
 Ref time (UTC)  : Fri Jan 27 09:49:17 2017
 System time     : 0.000006523 seconds slow of NTP time
@@ -162,23 +181,29 @@ with an IPv4 address.
 *Stratum*:::
 The stratum indicates how many hops away from a computer with an attached
 reference clock we are. Such a computer is a stratum-1 computer, so the
-computer in the example is two hops away (i.e. _foo.example.net_ is a
+computer in the example is two hops away (i.e. _ntp1.example.net_ is a
 stratum-2 and is synchronised from a stratum-1).
 *Ref time*:::
 This is the time (UTC) at which the last measurement from the reference
 source was processed.
 *System time*:::
-In normal operation, *chronyd* by default never steps the system clock, because
-any jump in the time can have adverse consequences for certain application
-programs. Instead, any error in the system clock is corrected by slightly
-speeding up or slowing down the system clock until the error has been removed,
-and then returning to the system clock's normal speed. A consequence of this is
-that there will be a period when the system clock (as read by other programs)
-will be different from *chronyd*'s estimate of the current true time (which it
-reports to NTP clients when it is operating in server mode). The value reported
-on this line is the difference due to this effect.
+This is the current offset between the NTP clock and system clock. The NTP
+clock is a software (virtual) clock maintained by *chronyd*, which is
+synchronised to the configured time sources and provides time to NTP clients.
+The system clock is synchronised to the NTP clock. To avoid steps in the
+system time, which might have adverse consequences for certain applications,
+the system clock is normally corrected only by speeding up or slowing down (up
+to the rate configured by the <<chrony.conf.adoc#maxslewrate,*maxslewrate*>>
+directive). If the offset is too large, this correction will take a very long
+time. A step can be forced by the <<makestep,*makestep*>> command, or the
+<<chrony.conf.adoc#makestep,*makestep*>> directive in the configuration file.
++
+Note that all other offsets reported by *chronyc* and most offsets in the log
+files are relative to the NTP clock, not the system clock.
 *Last offset*:::
-This is the estimated local offset on the last clock update.
+This is the estimated local offset on the last clock update. A positive value
+indicates the local time (as previously estimated true time) was ahead of the
+time sources.
 *RMS offset*:::
 This is a long-term average of the offset value.
 *Frequency*:::
@@ -284,20 +309,23 @@ milliseconds.
 
 === Time sources
 
-[[sources]]*sources* [*-v*]::
+[[sources]]*sources* [*-a*] [*-v*]::
 This command displays information about the current time sources that *chronyd*
 is accessing.
 +
-The optional argument *-v* can be specified, meaning _verbose_. In this case,
+If the *-a* option is specified, all sources are displayed, including those that
+do not have a known address yet. Such sources have an identifier in the format
+_ID#XXXXXXXXXX_, which can be used in other commands expecting a source address.
++
+The *-v* option enables a verbose output. In this case,
 extra caption lines are shown as a reminder of the meanings of the columns.
 +
 ----
-210 Number of sources = 3
 MS Name/IP address         Stratum Poll Reach LastRx Last sample
 ===============================================================================
 #* GPS0                          0   4   377    11   -479ns[ -621ns] +/-  134ns
-^? foo.example.net               2   6   377    23   -923us[ -924us] +/-   43ms
-^+ bar.example.net               1   6   377    21  -2629us[-2619us] +/-   86ms
+^? ntp1.example.net              2   6   377    23   -923us[ -924us] +/-   43ms
+^+ ntp2.example.net              1   6   377    21  -2629us[-2619us] +/-   86ms
 ----
 +
 The columns are as follows:
@@ -306,18 +334,23 @@ The columns are as follows:
 This indicates the mode of the source. _^_ means a server, _=_ means a peer
 and _#_ indicates a locally connected reference clock.
 *S*:::
-This column indicates the state of the source.
-* _*_ indicates the source to which *chronyd* is currently synchronised.
-* _+_ indicates acceptable sources which are combined with the selected
-  source.
-* _-_ indicates acceptable sources which are excluded by the combining
-  algorithm.
-* _?_ indicates sources to which connectivity has been lost or whose packets
-  do not pass all tests. It is also shown at start-up, until at least 3 samples
-  have been gathered from it.
-* _x_ indicates a clock which *chronyd* thinks is a falseticker (i.e. its
-  time is inconsistent with a majority of other sources).
+This column indicates the selection state of the source.
+* _*_ indicates the best source which is currently selected for
+  synchronisation.
+* _+_ indicates other sources selected for synchronisation, which are combined
+  with the best source.
+* _-_ indicates a source which is considered to be selectable for
+  synchronisation, but not currently selected.
+* _x_ indicates a source which *chronyd* thinks is a falseticker (i.e. its
+  time is inconsistent with a majority of other sources, or sources specified
+  with the *trust* option).
 * _~_ indicates a source whose time appears to have too much variability.
+* _?_ indicates a source which is not considered to be selectable for
+  synchronisation for other reasons (e.g. unreachable, not synchronised, or
+  does not have enough measurements).
+{blank}:::
+The <<selectdata,*selectdata*>> command can be used to get more details about
+the selection state.
 *Name/IP address*:::
 This shows the name or the IP address of the source, or reference ID for reference
 clocks.
@@ -334,9 +367,12 @@ a measurement is being made every 64 seconds. *chronyd* automatically varies
 the polling rate in response to prevailing conditions.
 *Reach*:::
 This shows the source's reachability register printed as an octal number. The
-register has 8 bits and is updated on every received or missed packet from
-the source. A value of 377 indicates that a valid reply was received for all
-from the last eight transmissions.
+register has 8 bits. It is shifted to left by one bit with each poll and it is
+updated by 1 when a valid NTP response, or just a sample in case of a reference
+clock, is received from the source. A value of 377 indicates that a valid
+response or sample was received for all of the last 8 polls. Note that samples
+can be dropped if they are not considered good enough for synchronisation, but
+the reachability register will still have 1s for their polls.
 *LastRx*:::
 This column shows how long ago the last good sample (which is shown in the next
 column) was received from the source. Measurements that failed some tests are
@@ -349,25 +385,28 @@ offset. This can be suffixed by _ns_ (indicating nanoseconds), _us_
 (indicating microseconds), _ms_ (indicating milliseconds), or _s_ (indicating
 seconds). The number to the left of the square brackets shows the original
 measurement, adjusted to allow for any slews applied to the local clock
-since. The number following the _+/-_ indicator shows the margin of error in
-the measurement. Positive offsets indicate that the local clock is ahead of
-the source.
+since. Positive offsets indicate that the local clock is ahead of the source.
+The number following the _+/-_ indicator shows the margin of error in the
+measurement (NTP root distance).
 
-[[sourcestats]]*sourcestats* [*-v*]::
+[[sourcestats]]*sourcestats* [*-a*] [*-v*]::
 The *sourcestats* command displays information about the drift rate and offset
 estimation process for each of the sources currently being examined by
 *chronyd*.
 +
-The optional argument *-v* can be specified, meaning _verbose_. In this case,
+If the *-a* option is specified, all sources are displayed, including those that
+do not have a known address yet. Such sources have an identifier in the format
+_ID#XXXXXXXXXX_, which can be used in other commands expecting a source address.
++
+The *-v* option enables a verbose output. In this case,
 extra caption lines are shown as a reminder of the meanings of the columns.
 +
 An example report is:
 +
 ----
-210 Number of sources = 1
 Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
 ===============================================================================
-foo.example.net            11   5   46m     -0.001      0.045      1us    25us
+ntp1.example.net           11   5   46m     -0.001      0.045      1us    25us
 ----
 +
 The columns are as follows:
@@ -400,6 +439,116 @@ This is the estimated offset of the source.
 *Std Dev*:::
 This is the estimated sample standard deviation.
 
+[[selectdata]]*selectdata* [*-a*] [*-v*]::
+The *selectdata* command displays information specific to the selection of time
+sources. If the *-a* option is specified, all sources are displayed, including
+those that do not have a known address yet. With the *-v* option, extra caption
+lines are shown as a reminder of the meanings of the columns.
++
+An example of the output is shown below.
++
+----
+S Name/IP Address        Auth COpts EOpts Last Score     Interval  Leap
+=======================================================================
+D ntp1.example.net          Y ----- --TR-    4   1.0   -61ms   +62ms  N
+* ntp2.example.net          N ----- -----    0   1.0 -6846us +7305us  N
++ ntp3.example.net          N ----- -----   10   1.0 -7381us +7355us  N
+----
++
+The columns are as follows:
++
+*S*:::
+This column indicates the state of the source after the last source selection.
+It is similar to the state reported by the *sources* command, but more
+states are reported.
+{blank}:::
+The following states indicate the source is not considered selectable for
+synchronisation:
+* _N_ - has the *noselect* option.
+* _M_ - does not have enough measurements.
+* _s_ - is not synchronised.
+* _d_ - has a root distance larger than the maximum distance (configured by the
+        <<chrony.conf.adoc#maxdistance,*maxdistance*>> directive).
+* _~_ - has a jitter larger than the maximum jitter (configured by the
+        <<chrony.conf.adoc#maxjitter,*maxjitter*>> directive).
+* _w_ - waits for other sources to get out of the _M_ state.
+* _S_ - has older measurements than other sources.
+* _O_ - has a stratum equal or larger than the orphan stratum (configured by
+        the <<chrony.conf.adoc#local,*local*>> directive).
+* _T_ - does not fully agree with sources that have the *trust* option.
+* _x_ - does not agree with other sources (falseticker).
+{blank}:::
+The following states indicate the source is considered selectable, but it is
+not currently used for synchronisation:
+* _W_ - waits for other sources to be selectable (required by the
+        <<chrony.conf.adoc#minsources,*minsources*>> directive, or
+        the *require* option of another source).
+* _P_ - another selectable source is preferred due to the *prefer* option.
+* _U_ - waits for a new measurement (after selecting a different best source).
+* _D_ - has, or recently had, a root distance which is too large to be combined
+        with other sources (configured by the
+        <<chrony.conf.adoc#combinelimit,*combinelimit*>> directive).
+{blank}:::
+The following states indicate the source is used for synchronisation of the
+local clock:
+* _+_ - combined with the best source.
+* _*_ - selected as the best source to update the reference data (e.g. root
+        delay, root dispersion).
+*Name/IP address*:::
+This column shows the name or IP address of the source if it is an NTP server,
+or the reference ID if it is a reference clock.
+*Auth*:::
+This column indicates whether an authentication mechanism is enabled for the
+source. _Y_ means yes and _N_ means no.
+*COpts*:::
+This column displays the configured selection options of the source.
+* _N_ indicates the *noselect* option.
+* _P_ indicates the *prefer* option.
+* _T_ indicates the *trust* option.
+* _R_ indicates the *require* option.
+*EOpts*:::
+This column displays the current effective selection options of the source,
+which can be different from the configured options due to the authentication
+selection mode (configured by the
+<<chrony.conf.adoc#authselectmode,*authselectmode*>> directive). The symbols
+are the same as in the *COpts* column.
+*Last*:::
+This column displays how long ago was the last measurement of the source made
+when the selection was performed.
+*Score*:::
+This column displays the current score against the source in the _*_ state. The
+scoring system avoids frequent reselection when multiple sources have a similar
+root distance. A value larger than 1 indicates this source was better than the
+_*_ source in recent selections. If the score reaches 10, the best source will
+be reselected and the scores will be reset to 1.
+*Interval*:::
+This column displays the lower and upper endpoint of the interval which was
+expected to contain the true offset of the local clock considering the root
+distance at the time of the selection.
+*Leap*:::
+This column displays the current leap status of the source.
+* _N_ indicates the normal status (no leap second).
+* _+_ indicates that a leap second will be inserted at the end of the month.
+* _-_ indicates that a leap second will be deleted at the end of the month.
+* _?_ indicates the unknown status (i.e. no valid measurement was made).
+
+[[selectopts]]*selectopts* _address|refid_ [_+|-option_]...::
+The *selectopts* command modifies the configured selection options of an NTP
+source specified by IP address (or the _ID#XXXXXXXXXX_ identifier used for
+unknown addresses), or a reference clock specified by reference ID as a string.
++
+The selection options can be added with the *+* symbol or removed with the *-*
+symbol. The *selectdata* command can be used to verify the configuration. The
+modified options will be applied in the next source selection, e.g. when a new
+measurement is made, or the *reselect* command is executed.
++
+An example of using this command is shown below.
++
+----
+selectopts 1.2.3.4 -noselect +prefer
+selectopts GPS +trust
+----
+
 [[reselect]]*reselect*::
 To avoid excessive switching between sources, *chronyd* can stay synchronised
 to a source even when it is not currently the best one among the available
@@ -412,6 +561,13 @@ synchronisation source.
 The *reselectdist* command sets the reselection distance. It is equivalent to
 the <<chrony.conf.adoc#reselectdist,*reselectdist*>> directive in the
 configuration file.
+
+[[offset]]*offset* _address|refid_ _offset_::
+The *offset* command modifies the offset correction of an NTP source specified
+by IP address (or the _ID#XXXXXXXXXX_ identifier used for unknown addresses),
+or a reference clock specified by reference ID as a string. It is equivalent to
+the *offset* option in the <<chrony.conf.adoc#server,*server*>> or
+<<chrony.conf.adoc#refclock,*refclock*>> directive respectively.
 
 === NTP sources
 
@@ -440,10 +596,83 @@ the offline state.
 the name of the server or peer was not resolved to an address yet; this source is
 not visible in the *sources* and *sourcestats* reports.
 
+[[authdata]]*authdata* [*-a*]::
+The *authdata* command displays information specific to authentication of NTP
+sources. If the *-a* option is specified, all sources are displayed, including
+those that do not have a known address yet. An example of the output is
+shown below.
++
+----
+Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================
+ntp1.example.net             NTS     1   15  256 135m    0    0    8  100
+ntp2.example.net              SK    30   13  128    -    0    0    0    0
+ntp3.example.net               -     0    0    0    -    0    0    0    0
+----
++
+The columns are as follows:
++
+*Name/IP address*:::
+This column shows the name or the IP address of the source.
+*Mode*:::
+This column shows which mechanism authenticates NTP packets received from the
+source. _NTS_ means Network Time Security, _SK_ means a symmetric key, and _-_
+means authentication is disabled.
+*KeyID*:::
+This column shows an identifier of the key used for authentication. With a
+symmetric key, it is the ID from the <<chrony.conf.adoc#keyfile,key file>>.
+With NTS, it is a number starting at zero and incremented by one with each
+successful key establishment using the NTS-KE protocol, i.e. it shows how many
+times the key establishment was performed with this source.
+*Type*:::
+This columns shows an identifier of the algorithm used for authentication.
+With a symmetric key, it is the hash function or cipher specified in the key
+file. With NTS, it is an authenticated encryption with associated data (AEAD)
+algorithm, which is negotiated in the NTS-KE protocol. The following values can
+be reported:
+* 1: MD5
+* 2: SHA1
+* 3: SHA256
+* 4: SHA384
+* 5: SHA512
+* 6: SHA3-224
+* 7: SHA3-256
+* 8: SHA3-384
+* 9: SHA3-512
+* 10: TIGER
+* 11: WHIRLPOOL
+* 13: AES128
+* 14: AES256
+* 15: AEAD-AES-SIV-CMAC-256
+* 30: AEAD-AES-128-GCM-SIV
+*KLen*:::
+This column shows the length of the key in bits.
+*Last*:::
+This column shows how long ago the last successful key establishment was
+performed. It is in seconds, or letters _m_, _h_, _d_ or _y_ indicate minutes,
+hours, days, or years.
+*Atmp*:::
+This column shows the number of attempts to perform the key establishment since
+the last successful key establishment. A number larger than 1 indicates a
+problem with the network or server.
+*NAK*:::
+This column shows whether an NTS NAK was received since the last request.
+A NAK indicates that authentication failed on the server side due to
+*chronyd* using a cookie which is no longer valid and that it needs to perform
+the key establishment again in order to get new cookies.
+*Cook*:::
+This column shows the number of NTS cookies that *chronyd* currently has. If
+the key establishment was successful, a number smaller than 8 indicates a
+problem with the network or server.
+*CLen*:::
+This column shows the length in bytes of the NTS cookie which will be used in
+the next request.
+
 [[ntpdata]]*ntpdata* [_address_]::
 The *ntpdata* command displays the last valid measurement and other
-NTP-specific information about the specified NTP source, or all NTP sources if
-no address was specified. An example of the output is shown below.
+NTP-specific information about the specified NTP source, or all NTP sources
+(with a known address) if no address was specified. An example of the output is
+shown below.
 +
 ----
 Remote address  : 203.0.113.15 (CB00710F)
@@ -472,6 +701,11 @@ RX timestamping : Kernel
 Total TX        : 24
 Total RX        : 24
 Total valid RX  : 24
+Total good RX   : 22
+Total kernel TX : 24
+Total kernel RX : 24
+Total HW TX     : 0
+Total HW RX     : 0
 ----
 +
 The fields are explained as follows:
@@ -509,7 +743,8 @@ packets sent to the source is more variable than the delay of packets sent
 from the source back.
 *NTP tests*:::
 Results of RFC 5905 tests 1 through 3, 5 through 7, and tests for maximum
-delay, delay ratio, delay dev ratio, and synchronisation loop.
+delay, delay ratio, delay dev ratio (or delay quantile), and synchronisation
+loop.
 *Interleaved*:::
 This shows if the response was in the interleaved mode.
 *Authenticated*:::
@@ -524,38 +759,63 @@ The number of packets sent to the source.
 *Total RX*:::
 The number of all packets received from the source.
 *Total valid RX*:::
-The number of valid packets received from the source.
+The number of packets which passed the first two groups of NTP tests.
+*Total good RX*:::
+The number of packets which passed all three groups of NTP tests, i.e. the NTP
+measurement was accepted.
+*Total kernel TX*:::
+The number of packets sent to the source for which a timestamp was captured by
+the kernel.
+*Total kernel RX*:::
+The number of packets received from the source for which a timestamp was
+captured by the kernel.
+*Total HW TX*:::
+The number of packets sent to the source for which a timestamp was captured by
+the NIC.
+*Total HW RX*:::
+The number of packets received from the source for which a timestamp was
+captured by the NIC.
 
-[[add_peer]]*add peer* _address_ [_option_]...::
+[[add_peer]]*add peer* _name_ [_option_]...::
 The *add peer* command allows a new NTP peer to be added whilst
 *chronyd* is running.
 +
 Following the words *add peer*, the syntax of the following
-parameters and options is similar to that for the
+parameters and options is identical to that for the
 <<chrony.conf.adoc#peer,*peer*>> directive in the configuration file.
-The following peer options can be set in the command: *port*, *minpoll*,
-*maxpoll*, *presend*, *maxdelayratio*, *maxdelay*, *key*.
 +
 An example of using this command is shown below.
 +
 ----
-add peer foo.example.net minpoll 6 maxpoll 10 key 25
+add peer ntp1.example.net minpoll 6 maxpoll 10 key 25
 ----
 
-[[add_server]]*add server* _address_ [_option_]...::
-The *add server* command allows a new NTP server to be added whilst
+[[add_pool]]*add pool* _name_ [_option_]...::
+The *add pool* command allows a pool of NTP servers to be added whilst
 *chronyd* is running.
 +
-Following the words *add server*, the syntax of the following parameters and
-options is similar to that for the <<chrony.conf.adoc#server,*server*>>
+Following the words *add pool*, the syntax of the following parameters and
+options is identical to that for the <<chrony.conf.adoc#pool,*pool*>>
 directive in the configuration file.
-The following server options can be set in the command: *port*, *minpoll*,
-*maxpoll*, *presend*, *maxdelayratio*, *maxdelay*, *key*.
 +
 An example of using this command is shown below:
 +
 ----
-add server foo.example.net minpoll 6 maxpoll 10 key 25
+add pool ntp1.example.net maxsources 3 iburst
+----
+
+[[add_server]]*add server* _name_ [_option_]...::
+The *add server* command allows a new NTP server to be added whilst
+*chronyd* is running.
++
+Following the words *add server*, the syntax of the following parameters and
+options is identical to that for the <<chrony.conf.adoc#server,*server*>>
+directive in the configuration file.
++
+An example of using this command is shown below:
++
+----
+add server ntp1.example.net minpoll 6 maxpoll 10 key 25
 ----
 
 [[delete]]*delete* _address_::
@@ -601,7 +861,7 @@ alternative to the form with mask.
 _address_:::
 This is an IP address or a hostname. The burst command is applied only to
 that source.
-::
+{blank}::
 +
 If no _mask_ or _masked-address_ arguments are provided, every source will be
 matched.
@@ -631,7 +891,7 @@ IPv6 addresses have first 48 bits equal to _2001:db8:789a_.
 Example of the three-argument form of the command is:
 +
 ----
-burst 2/10 foo.example.net
+burst 2/10 ntp1.example.net
 ----
 
 [[maxdelay]]*maxdelay* _address_ _delay_::
@@ -688,7 +948,8 @@ the loaded periods. The *offline* and *online* commands can be used to achieve
 this.
 +
 There are four forms of the *offline* command. The first form is a wildcard,
-meaning all sources. The second form allows an IP address mask and a masked
+meaning all sources (including sources that do not have a known address yet).
+The second form allows an IP address mask and a masked
 address to be specified. The third form uses CIDR notation. The fourth form
 uses an IP address or a hostname. These forms are illustrated below.
 +
@@ -696,7 +957,7 @@ uses an IP address or a hostname. These forms are illustrated below.
 offline
 offline 255.255.255.0/1.2.3.0
 offline 2001:db8:789a::/48
-offline foo.example.net
+offline ntp1.example.net
 ----
 +
 The second form means that the *offline* command is to be applied to any source
@@ -725,10 +986,11 @@ The syntax is identical to that of the <<offline,*offline*>> command.
 
 [[onoffline]]
 *onoffline*::
-The *onoffline* command tells *chronyd* to switch all sources to the online or
+The *onoffline* command tells *chronyd* to switch all sources that have a known
+address to the online or
 offline status according to the current network configuration. A source is
-considered online if it is possible to send requests to it, i.e. a route to the
-network is present.
+considered online if it is possible to send requests to it, i.e. a network
+route to the source is present.
 
 [[polltarget]]*polltarget* _address_ _polltarget_::
 The *polltarget* command is used to modify the poll target for one of the
@@ -737,12 +999,35 @@ current set of sources. It is equivalent to the *polltarget* option in the
 
 [[refresh]]*refresh*::
 The *refresh* command can be used to force *chronyd* to resolve the names of
-configured sources to IP addresses again, e.g. after suspending and resuming
-the machine in a different network.
+configured NTP sources to IP addresses again and replace any addresses missing
+in the list of resolved addresses.
 +
-Sources that stop responding will be replaced with newly resolved addresses
-automatically after 8 polling intervals, but this command can still be useful
-to replace them immediately and not wait until they are marked as unreachable.
+Sources that stop responding are replaced with newly resolved addresses
+automatically after 8 polling intervals. This command can be used to replace
+them immediately, e.g. after suspending and resuming the machine in a different
+network.
++
+Note that with pools which have more than 16 addresses, or not all IPv4 or IPv6
+addresses are included in a single DNS response (e.g. pool.ntp.org), this
+command might replace the addresses even if they are still in the pool.
+
+[[reload]]*reload* *sources*::
+The *reload sources* command causes *chronyd* to re-read all _*.sources_ files
+from the directories specified by the
+<<chrony.conf.adoc#sourcedir,*sourcedir*>> directive.
++
+Note that modified sources (e.g. specified with a new option) are not modified
+in memory. They are removed and added again, which causes them to lose old
+measurements and reset the selection state.
+
+[[sourcename]]*sourcename* _address_::
+The *sourcename* command prints the original hostname or address that was
+specified for an NTP source in the configuration file, or the *add* command.
+This command is an alternative to the *-N* option, which can be useful in
+scripts.
++
+Note that different NTP sources can share the same name, e.g. servers from a
+pool.
 
 === Manual time input
 
@@ -780,7 +1065,7 @@ The columns are as as follows:
 . The regression residual at this point, in seconds. This allows '`outliers`'
   to be easily spotted, so that they can be deleted using the *manual delete*
   command.
-::
+{blank}::
 +
 The *delete* form of the command deletes a single sample. The parameter is the
 index of the sample, as shown in the first column of the output from *manual
@@ -842,7 +1127,7 @@ particular host.
 Examples of use, showing a named host and a numeric IP address, are as follows:
 +
 ----
-accheck foo.example.net
+accheck ntp1.example.net
 accheck 1.2.3.4
 accheck 2001:db8::1
 ----
@@ -851,10 +1136,17 @@ This command can be used to examine the effect of a series of *allow*, *allow
 all*, *deny*, and *deny all* commands specified either via *chronyc*, or in
 *chronyd*'s configuration file.
 
-[[clients]]*clients*::
+[[clients]]*clients* [*-p* _packets_] [*-k*] [*-r*]::
 This command shows a list of clients that have accessed the server, through
-either the NTP or command ports. It does not include accesses over
-the Unix domain command socket. There are no arguments.
+the NTP, command, or NTS-KE port. It does not include accesses over the Unix
+domain command socket.
++
+The *-p* option specifies the minimum number of received NTP or command
+packets, or accepted NTS-KE connections, needed to include a client in the
+list. The default value is 0, i.e. all clients are reported. With the *-k*
+option the last four columns will show the NTS-KE accesses instead of command
+accesses. If the *-r* option is specified, *chronyd* will reset the counters of
+received and dropped packets or connections after reporting the current values.
 +
 An example of the output is:
 +
@@ -862,7 +1154,7 @@ An example of the output is:
 Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
 ===============================================================================
 localhost                       2      0   2   -   133      15      0  -1     7
-foo.example.net                12      0   6   -    23       0      0   -     -
+ntp1.example.net               12      0   6   -    23       0      0   -     -
 ----
 +
 Each row shows the data for a single host. Only hosts that have passed the host
@@ -879,20 +1171,18 @@ The columns are as follows:
 . The average interval between NTP packets.
 . The average interval between NTP packets after limiting the response rate.
 . Time since the last NTP packet was received
-. The number of command packets received from the client.
-. The number of command packets dropped to limit the response rate.
-. The average interval between command packets.
-. Time since the last command packet was received.
+. The number of command packets or NTS-KE connections received/accepted from
+  the client.
+. The number of command packets or NTS-KE connections dropped to limit the
+  response rate.
+. The average interval between command packets or NTS-KE connections.
+. Time since the last command packet or NTS-KE connection was
+  received/accepted.
 
 [[serverstats]]*serverstats*::
-The *serverstats* command displays how many valid NTP and command requests
-*chronyd* as a server received from clients, how many of them were dropped to
-limit the response rate as configured by the
-<<chrony.conf.adoc#ratelimit,*ratelimit*>> and
-<<chrony.conf.adoc#cmdratelimit,*cmdratelimit*>> directives, and how many
-client log records were dropped due to the memory limit configured by the
-<<chrony.conf.adoc#clientloglimit,*clientloglimit*>> directive. An example of
-the output is shown below.
+The *serverstats* command displays NTP and command server statistics.
++
+An example of the output is shown below.
 +
 ----
 NTP packets received       : 1598
@@ -900,7 +1190,70 @@ NTP packets dropped        : 8
 Command packets received   : 19
 Command packets dropped    : 0
 Client log records dropped : 0
+NTS-KE connections accepted: 3
+NTS-KE connections dropped : 0
+Authenticated NTP packets  : 189
+Interleaved NTP packets    : 43
+NTP timestamps held        : 44
+NTP timestamp span         : 120
+NTP daemon RX timestamps   : 0
+NTP daemon TX timestamps   : 1537
+NTP kernel RX timestamps   : 1590
+NTP kernel TX timestamps   : 43
+NTP hardware RX timestamps : 0
+NTP hardware TX timestamps : 0
 ----
++
+The fields have the following meaning:
++
+*NTP packets received*:::
+The number of valid NTP requests received by the server.
+*NTP packets dropped*:::
+The number of NTP requests dropped by the server due to rate limiting
+(configured by the <<chrony.conf.adoc#ratelimit,*ratelimit*>> directive).
+*Command packets received*:::
+The number of command requests received by the server.
+*Command packets dropped*:::
+The number of command requests dropped by the server due to rate limiting
+(configured by the <<chrony.conf.adoc#cmdratelimit,*cmdratelimit*>> directive).
+*Client log records dropped*:::
+The number of client log records dropped by the server to limit the memory use
+(configured by the <<chrony.conf.adoc#clientloglimit,*clientloglimit*>>
+directive).
+*NTS-KE connections accepted*:::
+The number of NTS-KE connections accepted by the server.
+*NTS-KE connections dropped*:::
+The number of NTS-KE connections dropped by the server due to rate limiting
+(configured by the <<chrony.conf.adoc#ntsratelimit,*ntsratelimit*>> directive).
+*Authenticated NTP packets*:::
+The number of received NTP requests that were authenticated (with a symmetric
+key or NTS).
+*Interleaved NTP packets*:::
+The number of received NTP requests that were detected to be in the interleaved
+mode.
+*NTP timestamps held*:::
+The number of pairs of receive and transmit timestamps that the server is
+currently holding in memory for clients using the interleaved mode.
+*NTP timestamp span*:::
+The interval (in seconds) covered by the currently held NTP timestamps.
+*NTP daemon RX timestamps*:::
+The number of NTP responses which included a receive timestamp captured by the
+daemon.
+*NTP daemon TX timestamps*:::
+The number of NTP responses which included a transmit timestamp captured by the
+daemon.
+*NTP kernel RX timestamps*:::
+The number of NTP responses which included a receive timestamp captured by the
+kernel.
+*NTP kernel TX timestamps*:::
+The number of NTP responses (in the interleaved mode) which included a transmit
+timestamp captured by the kernel.
+*NTP hardware RX timestamps*:::
+The number of NTP responses which included a receive timestamp captured by the
+NIC.
+*NTP hardware TX timestamps*:::
+The number of NTP responses (in the interleaved mode) which included a transmit
+timestamp captured by the NIC.
 
 [[allow]]*allow* [*all*] [_subnet_]::
 The effect of the allow command is identical to the
@@ -909,11 +1262,8 @@ The effect of the allow command is identical to the
 The syntax is illustrated in the following examples:
 +
 ----
-allow foo.example.net
-allow all 1.2
-allow 3.4.5
-allow 6.7.8/22
-allow 6.7.8.9/22
+allow 1.2.3.4
+allow all 3.4.5.0/24
 allow 2001:db8:789a::/48
 allow 0/0
 allow ::/0
@@ -928,11 +1278,8 @@ The effect of the allow command is identical to the
 The syntax is illustrated in the following examples:
 +
 ----
-deny foo.example.net
-deny all 1.2
-deny 3.4.5
-deny 6.7.8/22
-deny 6.7.8.9/22
+deny 1.2.3.4
+deny all 3.4.5.0/24
 deny 2001:db8:789a::/48
 deny 0/0
 deny ::/0
@@ -945,8 +1292,8 @@ deny all
 *local* *off*::
 The *local* command allows *chronyd* to be told that it is to appear as a
 reference source, even if it is not itself properly synchronised to an external
-source. (This can be used on isolated networks, to allow one computer to be a
-master time server with the other computers slaving to it.)
+source. This can be used on isolated networks, to allow a computer to be the
+primary time server for other computers.
 +
 The first form enables the local reference mode on the host. The syntax is
 identical to the <<chrony.conf.adoc#local,*local*>> directive in the
@@ -1007,7 +1354,7 @@ used to check whether monitoring access is permitted from a named host.
 Examples of use are as follows:
 +
 ----
-cmdaccheck foo.example.net
+cmdaccheck ntp1.example.net
 cmdaccheck 1.2.3.4
 cmdaccheck 2001:db8::1
 ----
@@ -1085,7 +1432,7 @@ more than 1 second away from the system clock):
   error).
 . Save the RTC parameters to the RTC file (specified with the
   <<chrony.conf.adoc#rtcfile,*rtcfile*>> directive in the configuration file).
-::
+{blank}::
 +
 The last step is done as a precaution against the computer suffering a power
 failure before either the daemon exits or the <<writertc,*writertc*>> command
@@ -1118,25 +1465,43 @@ purged. An example of how to do this is shown below.
 ----
 # mv /var/log/chrony/measurements.log /var/log/chrony/measurements1.log
 # chronyc cyclelogs
-# ls -l /var/log/chrony
--rw-r--r--   1 root     root            0 Jun  8 18:17 measurements.log
--rw-r--r--   1 root     root        12345 Jun  8 18:17 measurements1.log
-# rm -f measurements1.log
+# rm /var/log/chrony/measurements1.log
 ----
++
+Note that log files enabled by the *log* directive are opened when the first
+entry is made. The message log file specified by the *chronyd*'s *-l* option is
+opened early on start and closed on the *cyclelogs* command only if opening of
+the new file succeeds to avoid losing messages. If *chronyd* is configured to
+drop root privileges and the directory containing the log file is not writable
+for the specified user, *chronyd* will not be able to open the file again.
 
 [[dump]]*dump*::
 The *dump* command causes *chronyd* to write its current history of
 measurements for each of its sources to dump files in the directory specified
 in the configuration file by the <<chrony.conf.adoc#dumpdir,*dumpdir*>>
+directive and also write server NTS keys and client NTS cookies to the
+directory specified by the <<chrony.conf.adoc#ntsdumpdir1,*ntsdumpdir*>>
 directive. Note that *chronyd* does this automatically when it exits. This
-command is mainly useful for inspection of the history whilst *chronyd* is
-running.
+command is mainly useful for inspection whilst *chronyd* is running.
 
 [[rekey]]*rekey*::
 The *rekey* command causes *chronyd* to re-read the key file specified in the
-configuration file by the <<chrony.conf.adoc#keyfile,*keyfile*>> directive.
+configuration file by the <<chrony.conf.adoc#keyfile,*keyfile*>> directive. It
+also re-reads the server NTS keys if
+<<chrony.conf.adoc#ntsdumpdir2,*ntsdumpdir*>> is specified and
+<<chrony.conf.adoc#ntsrotate,automatic rotation>> is disabled in the
+configuration file.
 
-[[rekey]]*shutdown*::
+[[reset]]*reset* *sources*::
+The *reset sources* command causes *chronyd* to drop all measurements and
+switch to the unsynchronised state. This command can help *chronyd* with
+recovery when the measurements are known to be no longer valid or accurate,
+e.g. due to moving the computer to a different network, or resuming the
+computer from a low-power state (which resets the system clock). *chronyd* will
+drop the measurements automatically when it detects the clock has made an
+unexpected jump, but the detection is not completely reliable.
+
+[[shutdown]]*shutdown*::
 The *shutdown* command causes *chronyd* to exit. This is equivalent to sending
 the process the SIGTERM signal.
 
@@ -1188,10 +1553,10 @@ generated from the _/dev/urandom_ device and it is printed to standard output.
 +
 The command has three optional arguments. The first argument is the key number
 (by default 1), which will be specified with the *key* option of the *server*
-or *peer* directives in the configuration file. The second argument is the hash
-function (by default SHA1 or MD5 if SHA1 is not available) and the third
-argument is the number of bits the key should have, between 80 and 4096 bits
-(by default 160 bits).
+or *peer* directives in the configuration file. The second argument is the name
+of the hash function or cipher (by default SHA1, or MD5 if SHA1 is not
+available). The third argument is the length of the key in bits if a hash
+function was selected, between 80 and 4096 bits (by default 160 bits).
 +
 An example is:
 +
@@ -1201,7 +1566,13 @@ keygen 73 SHA1 256
 +
 which generates a 256-bit SHA1 key with number 73. The printed line should
 then be securely transferred and added to the key files on both server and
-client, or peers.
+client, or peers. A different key should be generated for each client or peer.
++
+An example using the AES128 cipher is:
++
+----
+keygen 151 AES128
+----
 
 [[exit]]*exit*::
 [[quit]]*quit*::
@@ -1217,7 +1588,7 @@ The *help* command displays a summary of the commands and their arguments.
 == BUGS
 
 For instructions on how to report bugs, please visit
-https://chrony.tuxfamily.org/.
+https://chrony-project.org/.
 
 == AUTHORS
 

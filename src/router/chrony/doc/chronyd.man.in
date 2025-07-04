@@ -1,23 +1,32 @@
 '\" t
 .\"     Title: chronyd
-.\"    Author: [see the "AUTHORS" section]
-.\" Generator: Asciidoctor 1.5.6.1
-.\"      Date: 2019-05-10
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2025-06-11
 .\"    Manual: System Administration
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYD" "8" "2019-05-10" "chrony @CHRONY_VERSION@" "System Administration"
+.TH "CHRONYD" "8" "2025-06-11" "chrony @CHRONY_VERSION@" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
 .nh
 .ad l
 .de URL
-\\$2 \(laURL: \\$1 \(ra\\$3
+\fI\\$2\fP <\\$1>\\$3
 ..
-.if \n[.g] .mso www.tmac
-.LINKSTYLE blue R < >
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
 .SH "NAME"
 chronyd \- chrony daemon
 .SH "SYNOPSIS"
@@ -35,7 +44,7 @@ If no configuration directives are specified on the command line, \fBchronyd\fP
 will read them from a configuration file. The compiled\-in default location of
 the file is \fI@SYSCONFDIR@/chrony.conf\fP.
 .sp
-Information messages and warnings will be logged to syslog.
+Informational messages, warnings, and errors will be logged to syslog.
 .SH "OPTIONS"
 .sp
 \fB\-4\fP
@@ -53,7 +62,7 @@ IPv6 sockets will be created.
 \fB\-f\fP \fIfile\fP
 .RS 4
 This option can be used to specify an alternate location for the configuration
-file (default \fI@SYSCONFDIR@/chrony.conf\fP).
+file. The compiled\-in default value is \fI@SYSCONFDIR@/chrony.conf\fP.
 .RE
 .sp
 \fB\-n\fP
@@ -64,15 +73,31 @@ When run in this mode, the program will not detach itself from the terminal.
 \fB\-d\fP
 .RS 4
 When run in this mode, the program will not detach itself from the terminal,
-and all messages will be written to the terminal instead of syslog. When
-\fBchronyd\fP was compiled with debugging support, this option can be used twice to
-print also debugging messages.
+and all messages will be written to the terminal instead of syslog. If
+\fBchronyd\fP was compiled with enabled support for debugging, this option can be
+used twice to enable debug messages.
 .RE
 .sp
 \fB\-l\fP \fIfile\fP
 .RS 4
-This option specifies a file which should be used for logging instead of syslog
-or terminal.
+This option enables writing of log messages to a file instead of syslog or the
+terminal.
+.RE
+.sp
+\fB\-L\fP \fIlevel\fP
+.RS 4
+This option specifies the minimum severity level of messages to be written to
+the log file, syslog, or terminal. The following levels can be specified: \-1
+(debug, if compiled with enabled support for debugging), 0 (informational), 1
+(warning), 2 (non\-fatal error), and 3 (fatal error). The default value is 0.
+.RE
+.sp
+\fB\-p\fP
+.RS 4
+When run in this mode, \fBchronyd\fP will print the configuration and exit. It will
+not detach from the terminal. This option can be used to verify the syntax of
+the configuration and get the whole configuration, even if it is split into
+multiple files and read by the \fBinclude\fP or \fBconfdir\fP directive.
 .RE
 .sp
 \fB\-q\fP
@@ -84,8 +109,10 @@ will not detach from the terminal.
 \fB\-Q\fP
 .RS 4
 This option is similar to the \fB\-q\fP option, except it only prints the offset
-without making any corrections of the clock and it allows \fBchronyd\fP to be
-started without root privileges.
+without making any corrections of the clock and disables server ports to allow
+\fBchronyd\fP to be started without root privileges, assuming the configuration
+does not have any directives which would require them (e.g. \fBrefclock\fP,
+\fBhwtimestamp\fP, \fBrtcfile\fP, etc).
 .RE
 .sp
 \fB\-r\fP
@@ -97,8 +124,8 @@ files are expected to be in the directory specified by the
 directive in the configuration file. This option is useful if you want to stop
 and restart \fBchronyd\fP briefly for any reason, e.g. to install a new version.
 However, it should be used only on systems where the kernel can maintain clock
-compensation whilst not under \fBchronyd\fP\(cqs control (i.e. Linux, FreeBSD, NetBSD,
-Solaris, and macOS 10.13 or later).
+compensation whilst not under \fBchronyd\fP\*(Aqs control (i.e. Linux, FreeBSD, NetBSD,
+illumos, and macOS 10.13 or later).
 .RE
 .sp
 \fB\-R\fP
@@ -143,42 +170,67 @@ running, but still allow it to adjust the frequency of the system clock.
 .RS 4
 This option sets the name of the system user to which \fBchronyd\fP will switch
 after start in order to drop root privileges. It overrides the
-\fBuser\fP directive (default \fI@DEFAULT_USER@\fP).
+\fBuser\fP directive. The compiled\-in default value is
+\fI@DEFAULT_USER@\fP.
 .sp
 On Linux, \fBchronyd\fP needs to be compiled with support for the \fBlibcap\fP library.
-On macOS, FreeBSD, NetBSD and Solaris \fBchronyd\fP forks into two processes.
+On macOS, FreeBSD, NetBSD, and illumos \fBchronyd\fP forks into two processes.
 The child process retains root privileges, but can only perform a very limited
 range of privileged system calls on behalf of the parent.
 .RE
 .sp
+\fB\-U\fP
+.RS 4
+This option disables a check for root privileges to allow \fBchronyd\fP to be
+started under a non\-root user, assuming the process will have all capabilities
+(e.g. provided by the service manager) and access to all files, directories,
+and devices, needed to operate correctly in the specified configuration. Note
+that different capabilities might be needed with different configurations and
+different Linux kernel versions. Starting \fBchronyd\fP under a non\-root user is
+not recommended when the configuration is not known, or at least limited to
+specific directives.
+.RE
+.sp
 \fB\-F\fP \fIlevel\fP
 .RS 4
-This option configures a system call filter when \fBchronyd\fP is compiled with
-support for the Linux secure computing (seccomp) facility. In level 1 the
-process is killed when a forbidden system call is made, in level \-1 the SIGSYS
-signal is thrown instead and in level 0 the filter is disabled (default 0).
+This option configures system call filters loaded by \fBchronyd\fP processes if it
+was compiled with support for the Linux secure computing (seccomp) facility.
+Three levels are defined: 0, 1, 2. The filters are disabled at level 0. At
+levels 1 and 2, \fBchronyd\fP will be killed if it makes a system call which is
+blocked by the filters. The level can be specified as a negative number to
+trigger the SIGSYS signal instead of SIGKILL, which can be useful for
+debugging. The default value is 0.
 .sp
-It\(cqs recommended to enable the filter only when it\(cqs known to work on the
-version of the system where \fBchrony\fP is installed as the filter needs to allow
-also system calls made from libraries that \fBchronyd\fP is using (e.g. libc) and
-different versions or implementations of the libraries may make different
-system calls. If the filter is missing some system call, \fBchronyd\fP could be
-killed even in normal operation.
+At level 1, the filters allow only selected system calls that are normally
+expected to be made by \fBchronyd\fP. Other system calls are blocked. This level is
+recommended only if it is known to work on the version of the system where
+\fBchrony\fP is installed. The filters need to allow also system calls made by
+libraries that \fBchronyd\fP is using (e.g. libc), but different versions or
+implementations of the libraries might make different system calls. If the
+filters are missing a system call, \fBchronyd\fP could be killed even in normal
+operation.
+.sp
+At level 2, the filters block only a small number of specific system calls
+(e.g. fork and exec). This approach should avoid false positives, but the
+protection of the system against a compromised \fBchronyd\fP process is much more
+limited.
+.sp
+The filters cannot be enabled with the \fBmailonchange\fP directive.
 .RE
 .sp
 \fB\-P\fP \fIpriority\fP
 .RS 4
-On Linux, this option will select the SCHED_FIFO real\-time scheduler at the
-specified priority (which must be between 0 and 100). On macOS, this option
-must have either a value of 0 (the default) to disable the thread time
-constraint policy or 1 for the policy to be enabled. Other systems do not
-support this option.
+On Linux, FreeBSD, NetBSD, and illumos this option will select the SCHED_FIFO
+real\-time scheduler at the specified priority (which must be between 0 and
+100). On macOS, this option must have either a value of 0 to disable the thread
+time constraint policy or 1 for the policy to be enabled. Other systems do not
+support this option. The default value is 0.
 .RE
 .sp
 \fB\-m\fP
 .RS 4
 This option will lock \fBchronyd\fP into RAM so that it will never be paged out.
-This mode is only supported on Linux.
+This mode is only supported on Linux, FreeBSD, NetBSD, and illumos.
 .RE
 .sp
 \fB\-x\fP
@@ -186,15 +238,40 @@ This mode is only supported on Linux.
 This option disables the control of the system clock. \fBchronyd\fP will not try to
 make any adjustments of the clock. It will assume the clock is free running and
 still track its offset and frequency relative to the estimated true time. This
-option allows \fBchronyd\fP to run without the capability to adjust or set the
-system clock (e.g. in some containers) in order to operate as an NTP server. It
-is not recommended to run \fBchronyd\fP (with or without \fB\-x\fP) when another process
-is controlling the system clock.
+option allows \fBchronyd\fP to be started without the capability to adjust or set
+the system clock (e.g. in some containers) to operate as an NTP server.
 .RE
 .sp
-\fB\-v\fP
+\fB\-v\fP, \fB\-\-version\fP
 .RS 4
 With this option \fBchronyd\fP will print version number to the terminal and exit.
+.RE
+.sp
+\fB\-h\fP, \fB\-\-help\fP
+.RS 4
+With this option \fBchronyd\fP will print a help message to the terminal and exit.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.sp
+\fBLISTEN_FDS\fP
+.RS 4
+On Linux systems, the systemd service manager may pass file descriptors for
+pre\-initialised sockets to \fBchronyd\fP. The service manager allocates and binds
+the file descriptors, and passes a copy to each spawned instance of the
+service. This allows for zero\-downtime service restarts as the sockets buffer
+client requests until the service is able to handle them. The service manager
+sets the LISTEN_FDS environment variable to the number of passed file
+descriptors.
+.RE
+.sp
+\fBNOTIFY_SOCKET\fP
+.RS 4
+The systemd service manager sets this variable for services of the \fBnotify\fP
+type. \fBchronyd\fP sends a message to this socket when it it is fully initialised
+and ready to accept commands (e.g. from \fBchronyc\fP), with the clock already set
+if using the \fB\-s\fP option or \fBinitstepslew\fP directive. It is an alternative to
+the \fBforking\fP service type, which does not need the PID file. \fBchronyd\fP needs
+to be started with the \fB\-n\fP or \fB\-d\fP option to not fork.
 .RE
 .SH "FILES"
 .sp
@@ -205,7 +282,7 @@ With this option \fBchronyd\fP will print version number to the terminal and exi
 .SH "BUGS"
 .sp
 For instructions on how to report bugs, please visit
-.URL "https://chrony.tuxfamily.org/" "" "."
+.URL "https://chrony\-project.org/" "" "."
 .SH "AUTHORS"
 .sp
 chrony was written by Richard Curnow, Miroslav Lichvar, and others.

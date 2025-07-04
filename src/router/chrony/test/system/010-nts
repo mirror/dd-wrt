@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features NTS || test_skip "NTS support disabled"
+certtool --help &> /dev/null || test_skip "certtool missing"
+
+test_start "NTS authentication"
+
+cat > $TEST_DIR/cert.cfg <<EOF
+cn = "chrony-nts-test"
+dns_name = "chrony-nts-test"
+ip_address = "$server"
+serial = 001
+activation_date = "$[$(date '+%Y') - 1]-01-01 00:00:00 UTC"
+expiration_date = "$[$(date '+%Y') + 2]-01-01 00:00:00 UTC"
+signing_key
+encryption_key
+EOF
+
+certtool --generate-privkey --key-type=ed25519 --outfile $TEST_DIR/server.key \
+	&> $TEST_DIR/certtool.log
+certtool --generate-self-signed --load-privkey $TEST_DIR/server.key \
+	--template $TEST_DIR/cert.cfg --outfile $TEST_DIR/server.crt &>> $TEST_DIR/certtool.log
+chown "$(get_user)" $TEST_DIR/server.*
+
+ntpport=$(get_free_port)
+ntsport=$(get_free_port)
+
+server_options="port $ntpport nts ntsport $ntsport"
+extra_chronyd_directives="
+port $ntpport
+ntsport $ntsport
+ntsserverkey $TEST_DIR/server.key
+ntsservercert $TEST_DIR/server.crt
+ntstrustedcerts $TEST_DIR/server.crt
+ntsdumpdir $TEST_LIBDIR
+ntsprocesses 3"
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+
+run_chronyc "authdata" || test_fail
+check_chronyc_output "^Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================
+127\.0\.0\.1                    NTS     1   (30|15)  (128|256)    [0-9]    0    0    [78]  ( 64|100)$" || test_fail
+
+run_chronyc "serverstats" || test_fail
+check_chronyc_output "NTS-KE connections accepted: 1
+NTS-KE connections dropped : 0
+Authenticated NTP packets  : [1-9][0-9]*" || test_fail
+
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+server_options="port $ntpport nts ntsport $((ntsport + 1))"
+
+start_chronyd || test_fail
+wait_for_sync || test_fail
+
+run_chronyc "authdata" || test_fail
+check_chronyc_output "^Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================
+127\.0\.0\.1                    NTS     1   (30|15)  (128|256)    [0-9]    0    0    [78]  ( 64|100)$" || test_fail
+
+stop_chronyd || test_fail
+check_chronyd_messages || test_fail
+check_chronyd_files || test_fail
+
+test_pass

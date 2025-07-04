@@ -4,7 +4,7 @@
 
 check_chronyd_features PRIVDROP || test_skip "PRIVDROP support disabled"
 
-user="nobody"
+priv_drop=1
 
 test_start "dropping of root privileges"
 

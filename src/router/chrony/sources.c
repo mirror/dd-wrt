@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2011-2016, 2018
+ * Copyright (C) Miroslav Lichvar  2011-2016, 2018, 2020-2025
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -54,8 +54,6 @@ static int initialised = 0;
 /* ================================================== */
 /* Structure used to hold info for selecting between sources */
 struct SelectInfo {
-  NTP_Leap leap;
-  int stratum;
   int select_ok;
   double std_dev;
   double root_distance;
@@ -68,9 +66,10 @@ struct SelectInfo {
 /* This enum contains the flag values that are used to label
    each source */
 typedef enum {
-  SRC_OK,               /* OK so far, not a final status! */
+  SRC_OK = 0,           /* OK so far, not a final status! */
   SRC_UNSELECTABLE,     /* Has noselect option set */
   SRC_BAD_STATS,        /* Doesn't have valid stats data */
+  SRC_UNSYNCHRONISED,   /* Provides samples, but not synchronised */
   SRC_BAD_DISTANCE,     /* Has root distance longer than allowed maximum */
   SRC_JITTERY,          /* Had std dev larger than allowed maximum */
   SRC_WAITS_STATS,      /* Others have bad stats, selection postponed */
@@ -113,19 +112,41 @@ struct SRC_Instance_Record {
   /* Updates left before allowing combining */
   int distant;
 
+  /* Updates with a status requiring source replacement */
+  int bad;
+
   /* Flag indicating the status of the source */
   SRC_Status status;
 
   /* Type of the source */
   SRC_Type type;
 
-  /* Options used when selecting sources */ 
+  /* Flag indicating that the source is authenticated */
+  int authenticated;
+
+  /* Configured selection options */
+  int conf_sel_options;
+
+  /* Effective selection options */
   int sel_options;
 
   /* Score against currently selected source */
   double sel_score;
 
   struct SelectInfo sel_info;
+
+  /* Current stratum */
+  int stratum;
+
+  /* Current leap status */
+  NTP_Leap leap;
+
+  /* Flag indicating the source has a leap second vote */
+  int leap_vote;
+
+  /* Flags indicating which status was already reported for
+     the source since the last change of the system peer */
+  char reported_status[SRC_SELECTED + 1];
 };
 
 /* ================================================== */
@@ -151,6 +172,13 @@ static int max_n_sources; /* Capacity of the table */
 static int selected_source_index; /* Which source index is currently
                                      selected (set to INVALID_SOURCE
                                      if no current valid reference) */
+static int reported_no_majority;  /* Flag to avoid repeated log message
+                                     about no majority */
+static int report_selection_loss; /* Flag to force logging a message if
+                                     selection is lost in a transient state
+                                     (SRC_WAITS_STATS, SRC_WAITS_UPDATE) */
+static int forced_first_report;   /* Flag to allow one failed selection to be
+                                     logged before a successful selection */
 
 /* Score needed to replace the currently selected source */
 #define SCORE_LIMIT 10.0
@@ -158,22 +186,32 @@ static int selected_source_index; /* Which source index is currently
 /* Number of updates needed to reset the distant status */
 #define DISTANT_PENALTY 32
 
+/* Number of updates needed to trigger handling of bad sources */
+#define BAD_HANDLE_THRESHOLD 4
+
 static double max_distance;
 static double max_jitter;
 static double reselect_distance;
 static double stratum_weight;
 static double combine_limit;
 
+static SRC_Instance last_updated_inst;
+
+static LOG_FileID logfileid;
+
+/* Identifier of the dump file */
+#define DUMP_IDENTIFIER "SRC0\n"
+
 /* ================================================== */
 /* Forward prototype */
 
-static void
-slew_sources(struct timespec *raw, struct timespec *cooked, double dfreq,
-             double doffset, LCL_ChangeType change_type, void *anything);
-static void
-add_dispersion(double dispersion, void *anything);
-static char *
-source_to_string(SRC_Instance inst);
+static void update_sel_options(void);
+static void unselect_selected_source(LOG_Severity severity, const char *format, ...);
+static void slew_sources(struct timespec *raw, struct timespec *cooked, double dfreq,
+                         double doffset, LCL_ChangeType change_type, void *anything);
+static void add_dispersion(double dispersion, void *anything);
+static char *source_to_string(SRC_Instance inst);
+static char get_status_char(SRC_Status status);
 
 /* ================================================== */
 /* Initialisation function */
@@ -193,6 +231,12 @@ void SRC_Initialise(void) {
 
   LCL_AddParameterChangeHandler(slew_sources, NULL);
   LCL_AddDispersionNotifyHandler(add_dispersion, NULL);
+
+  last_updated_inst = NULL;
+
+  logfileid = CNF_GetLogSelection() ? LOG_FileOpen("selection",
+              "   Date (UTC) Time     IP Address   S EOpts Reach Score Last sample  Low end   High end")
+              : -1;
 }
 
 /* ================================================== */
@@ -213,9 +257,9 @@ void SRC_Finalise(void)
 /* Function to create a new instance.  This would be called by one of
    the individual source-type instance creation routines. */
 
-SRC_Instance SRC_CreateNewInstance(uint32_t ref_id, SRC_Type type, int sel_options,
-                                   IPAddr *addr, int min_samples, int max_samples,
-                                   double min_delay, double asymmetry)
+SRC_Instance SRC_CreateNewInstance(uint32_t ref_id, SRC_Type type, int authenticated,
+                                   int sel_options, IPAddr *addr, int min_samples,
+                                   int max_samples, double min_delay, double asymmetry)
 {
   SRC_Instance result;
 
@@ -248,12 +292,17 @@ SRC_Instance SRC_CreateNewInstance(uint32_t ref_id, SRC_Type type, int sel_optio
 
   result->index = n_sources;
   result->type = type;
+  result->authenticated = authenticated;
+  result->conf_sel_options = sel_options;
   result->sel_options = sel_options;
+  result->active = 0;
 
   SRC_SetRefid(result, ref_id, addr);
   SRC_ResetInstance(result);
 
   n_sources++;
+
+  update_sel_options();
 
   return result;
 }
@@ -268,7 +317,12 @@ void SRC_DestroyInstance(SRC_Instance instance)
 {
   int dead_index, i;
 
+  if (last_updated_inst == instance)
+    last_updated_inst = NULL;
+
   assert(initialised);
+  BRIEF_ASSERT(instance->index >= 0 && instance->index < n_sources &&
+               instance == sources[instance->index]);
 
   SST_DeleteInstance(instance->stats);
   dead_index = instance->index;
@@ -279,11 +333,14 @@ void SRC_DestroyInstance(SRC_Instance instance)
   --n_sources;
   Free(instance);
 
-  /* If this was the previous reference source, we have to reselect! */
-  if (selected_source_index == dead_index)
-    SRC_ReselectSource();
-  else if (selected_source_index > dead_index)
+  update_sel_options();
+
+  if (selected_source_index > dead_index)
     --selected_source_index;
+  else if (selected_source_index == dead_index)
+    unselect_selected_source(LOGS_INFO, NULL);
+
+  SRC_SelectSource(NULL);
 }
 
 /* ================================================== */
@@ -291,15 +348,24 @@ void SRC_DestroyInstance(SRC_Instance instance)
 void
 SRC_ResetInstance(SRC_Instance instance)
 {
-  instance->active = 0;
   instance->updates = 0;
   instance->reachability = 0;
   instance->reachability_size = 0;
   instance->distant = 0;
+  instance->bad = 0;
   instance->status = SRC_BAD_STATS;
   instance->sel_score = 1.0;
+  instance->stratum = 0;
+  instance->leap = LEAP_Unsynchronised;
+  instance->leap_vote = 0;
+
+  memset(instance->reported_status, 0, sizeof (instance->reported_status));
+  memset(&instance->sel_info, 0, sizeof (instance->sel_info));
 
   SST_ResetInstance(instance->stats);
+
+  if (selected_source_index == instance->index)
+    SRC_SelectSource(NULL);
 }
 
 /* ================================================== */
@@ -323,6 +389,50 @@ SRC_GetSourcestats(SRC_Instance instance)
 
 /* ================================================== */
 
+static NTP_Leap
+get_leap_status(void)
+{
+  int i, leap_votes, leap_ins, leap_del;
+
+  /* Accept a leap second if more than half of the sources with a vote agree */
+
+  for (i = leap_ins = leap_del = leap_votes = 0; i < n_sources; i++) {
+    if (!sources[i]->leap_vote)
+      continue;
+
+    leap_votes++;
+    if (sources[i]->leap == LEAP_InsertSecond)
+      leap_ins++;
+    else if (sources[i]->leap == LEAP_DeleteSecond)
+      leap_del++;
+  }
+
+  if (leap_ins > leap_votes / 2)
+    return LEAP_InsertSecond;
+  else if (leap_del > leap_votes / 2)
+    return LEAP_DeleteSecond;
+  else
+    return LEAP_Normal;
+}
+
+/* ================================================== */
+
+void
+SRC_UpdateStatus(SRC_Instance inst, int stratum, NTP_Leap leap)
+{
+  inst->stratum = stratum;
+
+  if (REF_IsLeapSecondClose(NULL, 0.0))
+    return;
+
+  inst->leap = leap;
+
+  if (inst->leap_vote)
+    REF_UpdateLeapStatus(get_leap_status());
+}
+
+/* ================================================== */
+
 /* This function is called by one of the source drivers when it has
    a new sample that is to be accumulated.
 
@@ -337,11 +447,11 @@ SRC_AccumulateSample(SRC_Instance inst, NTP_Sample *sample)
 
   assert(initialised);
 
-  DEBUG_LOG("ip=[%s] t=%s ofs=%f del=%f disp=%f str=%d",
+  DEBUG_LOG("src=%s ts=%s offset=%e delay=%e disp=%e",
             source_to_string(inst), UTI_TimespecToString(&sample->time), -sample->offset,
-            sample->root_delay, sample->root_dispersion, sample->stratum);
+            sample->root_delay, sample->root_dispersion);
 
-  if (REF_IsLeapSecondClose()) {
+  if (REF_IsLeapSecondClose(&sample->time, sample->offset)) {
     LOG(LOGS_INFO, "Dropping sample around leap second");
     return;
   }
@@ -378,7 +488,7 @@ special_mode_end(void)
       if (!sources[i]->active)
         continue;
 
-      /* Don't expect more updates than from an offline iburst NTP source */
+      /* Don't expect more updates than the initial burst of an NTP source */
       if (sources[i]->reachability_size >= SOURCE_REACH_BITS - 1)
         continue;
 
@@ -391,6 +501,19 @@ special_mode_end(void)
     return 1;
 }
 
+/* ================================================== */
+
+static void
+handle_bad_source(SRC_Instance inst)
+{
+  if (inst->type == SRC_NTP) {
+    DEBUG_LOG("Bad source status=%c", get_status_char(inst->status));
+    NSR_HandleBadSource(inst->ip_addr);
+  }
+}
+
+/* ================================================== */
+
 void
 SRC_UpdateReachability(SRC_Instance inst, int reachable)
 {
@@ -401,24 +524,18 @@ SRC_UpdateReachability(SRC_Instance inst, int reachable)
   if (inst->reachability_size < SOURCE_REACH_BITS)
       inst->reachability_size++;
 
-  if (!reachable && inst->index == selected_source_index) {
-    /* Try to select a better source */
-    SRC_SelectSource(NULL);
-  }
-
   /* Check if special reference update mode failed */
   if (REF_GetMode() != REF_ModeNormal && special_mode_end()) {
     REF_SetUnsynchronised();
   }
 
-  /* Try to replace NTP sources that are unreachable, falsetickers, or
-     have root distance or jitter larger than the allowed maximums */
-  if (inst->type == SRC_NTP &&
-      ((!inst->reachability && inst->reachability_size == SOURCE_REACH_BITS) ||
-       inst->status == SRC_BAD_DISTANCE || inst->status == SRC_JITTERY ||
-       inst->status == SRC_FALSETICKER)) {
-    NSR_HandleBadSource(inst->ip_addr);
-  }
+  /* Try to replace unreachable NTP sources */
+  if (inst->reachability == 0 && inst->reachability_size == SOURCE_REACH_BITS)
+    handle_bad_source(inst);
+
+  /* Source selection can change with unreachable sources */
+  if (inst->reachability == 0)
+    SRC_SelectSource(NULL);
 }
 
 /* ================================================== */
@@ -434,11 +551,124 @@ SRC_ResetReachability(SRC_Instance inst)
 /* ================================================== */
 
 static void
-log_selection_message(char *format, char *arg)
+update_sel_options(void)
 {
+  int options, auth_ntp_options, unauth_ntp_options, refclk_options;
+  int i, auth_ntp_sources, unauth_ntp_sources;
+
+  auth_ntp_sources = unauth_ntp_sources = 0;
+
+  for (i = 0; i < n_sources; i++) {
+    if (sources[i]->conf_sel_options & SRC_SELECT_NOSELECT)
+      continue;
+    if (sources[i]->type != SRC_NTP)
+      continue;
+    if (sources[i]->authenticated)
+      auth_ntp_sources++;
+    else
+      unauth_ntp_sources++;
+  }
+
+  auth_ntp_options = unauth_ntp_options = refclk_options = 0;
+
+  /* Determine which selection options need to be added to authenticated NTP
+     sources, unauthenticated NTP sources, and refclocks, to follow the
+     configured selection mode */
+  switch (CNF_GetAuthSelectMode()) {
+    case SRC_AUTHSELECT_IGNORE:
+      break;
+    case SRC_AUTHSELECT_MIX:
+      if (auth_ntp_sources > 0 && unauth_ntp_sources > 0)
+        auth_ntp_options = refclk_options = SRC_SELECT_REQUIRE | SRC_SELECT_TRUST;
+      break;
+    case SRC_AUTHSELECT_PREFER:
+      if (auth_ntp_sources > 0)
+        unauth_ntp_options = SRC_SELECT_NOSELECT;
+      break;
+    case SRC_AUTHSELECT_REQUIRE:
+      unauth_ntp_options = SRC_SELECT_NOSELECT;
+      break;
+    default:
+      assert(0);
+  }
+
+  for (i = 0; i < n_sources; i++) {
+    options = sources[i]->conf_sel_options;
+
+    if (!(options & SRC_SELECT_NOSELECT)) {
+      switch (sources[i]->type) {
+        case SRC_NTP:
+          options |= sources[i]->authenticated ? auth_ntp_options : unauth_ntp_options;
+          break;
+        case SRC_REFCLOCK:
+          options |= refclk_options;
+          break;
+        default:
+          assert(0);
+      }
+    }
+
+    if (sources[i]->sel_options != options) {
+      DEBUG_LOG("changing %s from %x to %x", source_to_string(sources[i]),
+                (unsigned int)sources[i]->sel_options, (unsigned int)options);
+      sources[i]->sel_options = options;
+    }
+  }
+}
+
+/* ================================================== */
+
+FORMAT_ATTRIBUTE_PRINTF(2, 3)
+static void
+log_selection_message(LOG_Severity severity, const char *format, ...)
+{
+  char buf[256];
+  va_list ap;
+
   if (REF_GetMode() != REF_ModeNormal)
     return;
-  LOG(LOGS_INFO, format, arg);
+
+  va_start(ap, format);
+  vsnprintf(buf, sizeof (buf), format, ap);
+  va_end(ap);
+
+  LOG(severity, "%s", buf);
+}
+
+/* ================================================== */
+
+FORMAT_ATTRIBUTE_PRINTF(3, 4)
+static void
+log_selection_source(LOG_Severity severity, SRC_Instance inst, const char *format, ...)
+{
+  char buf[320], buf2[256], *name, *ntp_name, *s;
+  va_list ap;
+
+  if (REF_GetMode() != REF_ModeNormal)
+    return;
+
+  va_start(ap, format);
+  vsnprintf(buf2, sizeof (buf2), format, ap);
+  va_end(ap);
+
+  /* Replace ## with %s in the formatted string to be the source name */
+  s = strstr(buf2, "##");
+  if (!s || strchr(buf2, '%'))
+    return;
+  s[0] = '%';
+  s[1] = 's';
+
+  name = source_to_string(inst);
+  ntp_name = inst->type == SRC_NTP ? NSR_GetName(inst->ip_addr) : NULL;
+
+  if (ntp_name && strcmp(name, ntp_name) != 0)
+    snprintf(buf, sizeof (buf), "%s (%s)", name, ntp_name);
+  else
+    snprintf(buf, sizeof (buf), "%s", name);
+
+  LOG(severity, buf2, buf);
+
+  inst->reported_status[inst->status] = 1;
 }
 
 /* ================================================== */
@@ -481,6 +711,89 @@ source_to_string(SRC_Instance inst)
 /* ================================================== */
 
 static void
+set_source_status(SRC_Instance inst, SRC_Status status)
+{
+  struct timespec now;
+
+  inst->status = status;
+
+  /* Try to replace NTP sources that are falsetickers, or have a root
+     distance or jitter larger than the allowed maximums */
+  if (inst == last_updated_inst) {
+    if (inst->bad < INT_MAX &&
+        (status == SRC_FALSETICKER || status == SRC_BAD_DISTANCE || status == SRC_JITTERY))
+      inst->bad++;
+    else
+      inst->bad = 0;
+    if (inst->bad >= BAD_HANDLE_THRESHOLD)
+      handle_bad_source(inst);
+  }
+
+  DEBUG_LOG("%s status=%c options=%x reach=%o/%d updates=%d distant=%d bad=%d leap=%d vote=%d lo=%f hi=%f",
+            source_to_string(inst), get_status_char(inst->status),
+            (unsigned int)inst->sel_options, (unsigned int)inst->reachability,
+            inst->reachability_size, inst->updates,
+            inst->distant, inst->bad, (int)inst->leap, inst->leap_vote,
+            inst->sel_info.lo_limit, inst->sel_info.hi_limit);
+
+  if (logfileid == -1)
+    return;
+
+  SCH_GetLastEventTime(&now, NULL, NULL);
+
+  LOG_FileWrite(logfileid,
+                "%s %-15s %c -%c%c%c%c %4o %5.2f %10.3e %10.3e %10.3e",
+                UTI_TimeToLogForm(now.tv_sec), source_to_string(inst),
+                get_status_char(inst->status),
+                inst->sel_options & SRC_SELECT_NOSELECT ? 'N' : '-',
+                inst->sel_options & SRC_SELECT_PREFER ? 'P' : '-',
+                inst->sel_options & SRC_SELECT_TRUST ? 'T' : '-',
+                inst->sel_options & SRC_SELECT_REQUIRE ? 'R' : '-',
+                (unsigned int)inst->reachability, inst->sel_score,
+                inst->sel_info.last_sample_ago,
+                inst->sel_info.lo_limit, inst->sel_info.hi_limit);
+}
+
+/* ================================================== */
+
+static void
+mark_source(SRC_Instance inst, SRC_Status status)
+{
+  set_source_status(inst, status);
+
+  BRIEF_ASSERT(status >= SRC_OK && status < sizeof (inst->reported_status));
+
+  if (!inst->reported_status[status]) {
+    switch (status) {
+      case SRC_BAD_DISTANCE:
+        if (inst->bad < BAD_HANDLE_THRESHOLD)
+          break;
+        log_selection_source(LOGS_WARN, inst,
+                             "Root distance of ## exceeds maxdistance of %.3f seconds",
+                             max_distance);
+        break;
+      case SRC_JITTERY:
+        if (inst->bad < BAD_HANDLE_THRESHOLD)
+          break;
+        log_selection_source(LOGS_WARN, inst,
+                             "Jitter of ## exceeds maxjitter of %.3f seconds",
+                             max_jitter);
+        break;
+      case SRC_FALSETICKER:
+        log_selection_source(LOGS_WARN, inst, "Detected falseticker ##");
+        break;
+      case SRC_SELECTED:
+        log_selection_source(LOGS_INFO, inst, "Selected source ##");
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/* ================================================== */
+
+static void
 mark_ok_sources(SRC_Status status)
 {
   int i;
@@ -488,7 +801,36 @@ mark_ok_sources(SRC_Status status)
   for (i = 0; i < n_sources; i++) {
     if (sources[i]->status != SRC_OK)
       continue;
-    sources[i]->status = status;
+    /* Don't log the status in this case (multiple sources at once) */
+    set_source_status(sources[i], status);
+  }
+}
+
+/* ================================================== */
+/* Reset the index of selected source and report the selection loss.  If no
+   message is provided, assume it is a transient state and wait for another
+   call providing a message or selection of another source, which resets the
+   report_selection_loss flag. */
+
+FORMAT_ATTRIBUTE_PRINTF(2, 3)
+static void
+unselect_selected_source(LOG_Severity severity, const char *format, ...)
+{
+  char buf[256];
+  va_list ap;
+
+  if (selected_source_index != INVALID_SOURCE) {
+    selected_source_index = INVALID_SOURCE;
+    report_selection_loss = 1;
+  }
+
+  if (report_selection_loss && format) {
+    va_start(ap, format);
+    vsnprintf(buf, sizeof (buf), format, ap);
+    va_end(ap);
+
+    log_selection_message(severity, "%s", buf);
+    report_selection_loss = 0;
   }
 }
 
@@ -539,12 +881,12 @@ combine_sources(int n_sel_sources, struct timespec *ref_time, double *offset,
     }
 
     if (sources[index]->distant) {
-      sources[index]->status = SRC_DISTANT;
+      mark_source(sources[index], SRC_DISTANT);
       continue;
     }
 
     if (sources[index]->status == SRC_OK)
-      sources[index]->status = SRC_UNSELECTED;
+      mark_source(sources[index], SRC_UNSELECTED);
 
     elapsed = UTI_DiffTimespecsToDouble(ref_time, &src_ref_time);
     src_offset += elapsed * src_frequency;
@@ -552,8 +894,8 @@ combine_sources(int n_sel_sources, struct timespec *ref_time, double *offset,
     offset_weight = 1.0 / sources[index]->sel_info.root_distance;
     frequency_weight = 1.0 / SQUARE(src_frequency_sd);
 
-    DEBUG_LOG("combining index=%d oweight=%e offset=%e osd=%e fweight=%e freq=%e fsd=%e skew=%e",
-              index, offset_weight, src_offset, src_offset_sd,
+    DEBUG_LOG("combining %s oweight=%e offset=%e osd=%e fweight=%e freq=%e fsd=%e skew=%e",
+              source_to_string(sources[index]), offset_weight, src_offset, src_offset_sd,
               frequency_weight, src_frequency, src_frequency_sd, src_skew);
 
     sum_offset_weight += offset_weight;
@@ -592,25 +934,25 @@ SRC_SelectSource(SRC_Instance updated_inst)
   struct SelectInfo *si;
   struct timespec now, ref_time;
   int i, j, j1, j2, index, sel_prefer, n_endpoints, n_sel_sources, sel_req_source;
-  int n_badstats_sources, max_sel_reach, max_sel_reach_size, max_badstat_reach;
-  int depth, best_depth, trust_depth, best_trust_depth;
+  int max_badstat_reach, max_badstat_reach_size, n_badstats_sources;
+  int max_sel_reach, max_sel_reach_size, n_unreach_sources;
+  int depth, best_depth, trust_depth, best_trust_depth, n_sel_trust_sources;
   int combined, stratum, min_stratum, max_score_index;
-  int orphan_stratum, orphan_source, leap_votes, leap_ins, leap_del;
+  int orphan_stratum, orphan_source;
   double src_offset, src_offset_sd, src_frequency, src_frequency_sd, src_skew;
   double src_root_delay, src_root_dispersion;
   double best_lo, best_hi, distance, sel_src_distance, max_score;
+  double best_trust_lo, best_trust_hi;
   double first_sample_ago, max_reach_sample_ago;
   NTP_Leap leap_status;
 
-  if (updated_inst)
+  if (updated_inst) {
     updated_inst->updates++;
+    last_updated_inst = updated_inst;
+  }
 
   if (n_sources == 0) {
-    /* In this case, we clearly cannot synchronise to anything */
-    if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: no sources", NULL);
-      selected_source_index = INVALID_SOURCE;
-    }
+    unselect_selected_source(LOGS_WARN, "Can't synchronise: no sources");
     return;
   }
 
@@ -620,15 +962,19 @@ SRC_SelectSource(SRC_Instance updated_inst)
   /* Step 1 - build intervals about each source */
 
   n_endpoints = 0;
-  n_sel_sources = 0;
+  n_sel_sources = n_sel_trust_sources = 0;
   n_badstats_sources = 0;
+  n_unreach_sources = 0;
   sel_req_source = 0;
   max_sel_reach = max_badstat_reach = 0;
-  max_sel_reach_size = 0;
+  max_sel_reach_size = max_badstat_reach_size = 0;
   max_reach_sample_ago = 0.0;
 
   for (i = 0; i < n_sources; i++) {
     assert(sources[i]->status != SRC_OK);
+
+    /* Don't allow the source to vote on leap seconds unless it's selectable */
+    sources[i]->leap_vote = 0;
 
     /* If some sources are specified with the require option, at least one
        of them will have to be selectable in order to update the clock */
@@ -637,21 +983,33 @@ SRC_SelectSource(SRC_Instance updated_inst)
 
     /* Ignore sources which were added with the noselect option */
     if (sources[i]->sel_options & SRC_SELECT_NOSELECT) {
-      sources[i]->status = SRC_UNSELECTABLE;
+      mark_source(sources[i], SRC_UNSELECTABLE);
       continue;
     }
 
+    /* Count unreachable sources for a warning message */
+    if (sources[i]->reachability == 0)
+      n_unreach_sources++;
+
     si = &sources[i]->sel_info;
-    SST_GetSelectionData(sources[i]->stats, &now, &si->stratum, &si->leap,
+    SST_GetSelectionData(sources[i]->stats, &now,
                          &si->lo_limit, &si->hi_limit, &si->root_distance,
                          &si->std_dev, &first_sample_ago,
                          &si->last_sample_ago, &si->select_ok);
 
     if (!si->select_ok) {
       ++n_badstats_sources;
-      sources[i]->status = SRC_BAD_STATS;
+      mark_source(sources[i], SRC_BAD_STATS);
       if (max_badstat_reach < sources[i]->reachability)
         max_badstat_reach = sources[i]->reachability;
+      if (max_badstat_reach_size < sources[i]->reachability_size)
+        max_badstat_reach_size = sources[i]->reachability_size;
+      continue;
+    }
+
+    /* Ignore sources which are not synchronised */
+    if (sources[i]->leap == LEAP_Unsynchronised) {
+      mark_source(sources[i], SRC_UNSYNCHRONISED);
       continue;
     }
 
@@ -665,15 +1023,16 @@ SRC_SelectSource(SRC_Instance updated_inst)
       si->hi_limit += extra_disp;
     }
 
-    /* Require the root distance to be below the allowed maximum */
-    if (si->root_distance > max_distance) {
-      sources[i]->status = SRC_BAD_DISTANCE;
+    /* Require the root distance to be below the allowed maximum and the
+       endpoints to be in the right order (i.e. a non-negative distance) */
+    if (!(si->root_distance <= max_distance && si->lo_limit <= si->hi_limit)) {
+      mark_source(sources[i], SRC_BAD_DISTANCE);
       continue;
     }
 
     /* And the same applies for the estimated standard deviation */
     if (si->std_dev > max_jitter) {
-      sources[i]->status = SRC_JITTERY;
+      mark_source(sources[i], SRC_JITTERY);
       continue;
     }
 
@@ -702,7 +1061,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
        can still be selected if its newest sample is not older than the oldest
        sample from reachable sources. */
     if (!sources[i]->reachability && max_reach_sample_ago < si->last_sample_ago) {
-      sources[i]->status = SRC_STALE;
+      mark_source(sources[i], SRC_STALE);
       continue;
     }
 
@@ -723,10 +1082,10 @@ SRC_SelectSource(SRC_Instance updated_inst)
        source can settle down to a state where only one server is serving its
        local unsychronised time and others are synchronised to it. */
 
-    if (si->stratum >= orphan_stratum && sources[i]->type == SRC_NTP) {
-      sources[i]->status = SRC_ORPHAN;
+    if (sources[i]->stratum >= orphan_stratum && sources[i]->type == SRC_NTP) {
+      mark_source(sources[i], SRC_ORPHAN);
 
-      if (si->stratum == orphan_stratum && sources[i]->reachability &&
+      if (sources[i]->stratum == orphan_stratum && sources[i]->reachability &&
           (orphan_source == INVALID_SOURCE ||
            sources[i]->ref_id < sources[orphan_source]->ref_id))
         orphan_source = i;
@@ -754,6 +1113,9 @@ SRC_SelectSource(SRC_Instance updated_inst)
     if (sources[i]->status != SRC_OK)
       continue;
 
+    if (sources[i]->sel_options & SRC_SELECT_TRUST)
+      n_sel_trust_sources++;
+
     si = &sources[i]->sel_info;
 
     j1 = n_endpoints;
@@ -770,7 +1132,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
     n_endpoints += 2;
   }
 
-  DEBUG_LOG("badstat=%d sel=%d badstat_reach=%x sel_reach=%x size=%d max_reach_ago=%f",
+  DEBUG_LOG("badstat=%d sel=%d badstat_reach=%o sel_reach=%o size=%d max_reach_ago=%f",
             n_badstats_sources, n_sel_sources, (unsigned int)max_badstat_reach,
             (unsigned int)max_sel_reach, max_sel_reach_size, max_reach_sample_ago);
 
@@ -782,15 +1144,22 @@ SRC_SelectSource(SRC_Instance updated_inst)
   if (n_badstats_sources && n_sel_sources && selected_source_index == INVALID_SOURCE &&
       max_sel_reach_size < SOURCE_REACH_BITS && max_sel_reach >> 1 == max_badstat_reach) {
     mark_ok_sources(SRC_WAITS_STATS);
+    unselect_selected_source(LOGS_INFO, NULL);
     return;
+  }
+
+  /* Wait for a source to have full reachability register to allow one
+     failed selection to be logged before first successful selection */
+  if (!forced_first_report &&
+      MAX(max_sel_reach_size, max_badstat_reach_size) == SOURCE_REACH_BITS) {
+    report_selection_loss = 1;
+    forced_first_report = 1;
   }
 
   if (n_endpoints == 0) {
     /* No sources provided valid endpoints */
-    if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: no selectable sources", NULL);
-      selected_source_index = INVALID_SOURCE;
-    }
+    unselect_selected_source(LOGS_WARN, "Can't synchronise: no selectable sources"
+                                        " (%d unreachable sources)", n_unreach_sources);
     return;
   }
 
@@ -826,7 +1195,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
 
   trust_depth = best_trust_depth = 0;
   depth = best_depth = 0;
-  best_lo = best_hi = 0.0;
+  best_lo = best_hi = best_trust_lo = best_trust_hi = 0.0;
 
   for (i = 0; i < n_endpoints; i++) {
     switch (sort_list[i].tag) {
@@ -836,14 +1205,20 @@ SRC_SelectSource(SRC_Instance updated_inst)
           trust_depth++;
         if (trust_depth > best_trust_depth ||
             (trust_depth == best_trust_depth && depth > best_depth)) {
-          best_trust_depth = trust_depth;
+          if (trust_depth > best_trust_depth) {
+            best_trust_depth = trust_depth;
+            best_trust_lo = sort_list[i].offset;
+          }
           best_depth = depth;
           best_lo = sort_list[i].offset;
         }
         break;
       case HIGH:
-        if (trust_depth == best_trust_depth && depth == best_depth)
-          best_hi = sort_list[i].offset;
+        if (trust_depth == best_trust_depth) {
+          if (depth == best_depth)
+            best_hi = sort_list[i].offset;
+          best_trust_hi = sort_list[i].offset;
+        }
         if (sources[sort_list[i].index]->sel_options & SRC_SELECT_TRUST)
           trust_depth--;
         depth--;
@@ -851,14 +1226,35 @@ SRC_SelectSource(SRC_Instance updated_inst)
       default:
         assert(0);
     }
+    assert(trust_depth <= depth);
+    assert(trust_depth >= 0);
   }
 
-  if (best_depth <= n_sel_sources / 2 && !best_trust_depth) {
-    /* Could not even get half the reachable sources to agree and there
-       are no trusted sources - clearly we can't synchronise */
+  assert(depth == 0 && trust_depth == 0);
+  assert(2 * n_sel_sources == n_endpoints);
+
+  if (best_trust_depth > 0) {
+    best_depth = best_trust_depth;
+    n_sel_sources = n_sel_trust_sources;
+  }
+
+  if (best_depth <= n_sel_sources / 2) {
+    /* Could not even get half the reachable (trusted) sources to agree */
+
+    if (!reported_no_majority) {
+      if (best_depth < 2)
+        log_selection_message(LOGS_WARN, "%s (no agreement among %d %ssources)",
+                              "Can't synchronise: no majority", n_sel_sources,
+                              best_trust_depth > 0 ? "trusted " : "");
+      else
+        log_selection_message(LOGS_WARN, "%s (only %d of %d %ssources agree)",
+                              "Can't synchronise: no majority", best_depth,
+                              n_sel_sources, best_trust_depth > 0 ? "trusted " : "");
+      reported_no_majority = 1;
+      report_selection_loss = 0;
+    }
 
     if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: no majority", NULL);
       REF_SetUnsynchronised();
       selected_source_index = INVALID_SOURCE;
     }
@@ -882,57 +1278,47 @@ SRC_SelectSource(SRC_Instance updated_inst)
       continue;
 
     /* Check if source's interval contains the best interval, or is wholly
-       contained within it.  If there are any trusted sources the first
-       condition is applied only to them to not allow non-trusted sources to
-       move the final offset outside the interval. */
-    if (((!best_trust_depth || sources[i]->sel_options & SRC_SELECT_TRUST) &&
-         sources[i]->sel_info.lo_limit <= best_lo &&
+       contained within it.  If there are any trusted sources, other sources
+       are required to be wholly contained within the best interval of the
+       trusted sources to not allow non-trusted sources to move the final
+       offset outside the trusted interval. */
+    if ((sources[i]->sel_info.lo_limit <= best_lo &&
          sources[i]->sel_info.hi_limit >= best_hi) ||
         (sources[i]->sel_info.lo_limit >= best_lo &&
          sources[i]->sel_info.hi_limit <= best_hi)) {
+
+      if (!(best_trust_depth == 0 || (sources[i]->sel_options & SRC_SELECT_TRUST) ||
+            (sources[i]->sel_info.lo_limit >= best_trust_lo &&
+             sources[i]->sel_info.hi_limit <= best_trust_hi))) {
+        mark_source(sources[i], SRC_UNTRUSTED);
+        continue;
+      }
 
       sel_sources[n_sel_sources++] = i;
 
       if (sources[i]->sel_options & SRC_SELECT_REQUIRE)
         sel_req_source = 0;
-    } else if (sources[i]->sel_info.lo_limit <= best_lo &&
-               sources[i]->sel_info.hi_limit >= best_hi) {
-      sources[i]->status = SRC_UNTRUSTED;
     } else {
-      sources[i]->status = SRC_FALSETICKER;
+      mark_source(sources[i], SRC_FALSETICKER);
     }
   }
 
   if (!n_sel_sources || sel_req_source || n_sel_sources < CNF_GetMinSources()) {
-    if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: %s selectable sources",
-                            !n_sel_sources ? "no" :
-                            sel_req_source ? "no required source in" : "not enough");
-      selected_source_index = INVALID_SOURCE;
-    }
+    unselect_selected_source(LOGS_WARN, "Can't synchronise: %s selectable sources",
+                             !n_sel_sources ? "no" :
+                             sel_req_source ? "no required source in" : "not enough");
     mark_ok_sources(SRC_WAITS_SOURCES);
     return;
   }
 
-  /* Accept leap second status if more than half of selectable (and trusted
-     if there are any) sources agree */
-  for (i = leap_ins = leap_del = leap_votes = 0; i < n_sel_sources; i++) {
+  /* Enable the selectable sources (and trusted if there are any) to
+     vote on leap seconds */
+  for (i = 0; i < n_sel_sources; i++) {
     index = sel_sources[i];
     if (best_trust_depth && !(sources[index]->sel_options & SRC_SELECT_TRUST))
       continue;
-    leap_votes++;
-    if (sources[index]->sel_info.leap == LEAP_InsertSecond)
-      leap_ins++;
-    else if (sources[index]->sel_info.leap == LEAP_DeleteSecond)
-      leap_del++;
+    sources[index]->leap_vote = 1;
   }
-
-  if (leap_ins > leap_votes / 2)
-    leap_status = LEAP_InsertSecond;
-  else if (leap_del > leap_votes / 2)
-    leap_status = LEAP_DeleteSecond;
-  else
-    leap_status = LEAP_Normal;
 
   /* If there are any sources with prefer option, reduce the list again
      only to the preferred sources */
@@ -943,7 +1329,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
   if (i < n_sel_sources) {
     for (i = j = 0; i < n_sel_sources; i++) {
       if (!(sources[sel_sources[i]]->sel_options & SRC_SELECT_PREFER))
-        sources[sel_sources[i]]->status = SRC_NONPREFERRED;
+        mark_source(sources[sel_sources[i]], SRC_NONPREFERRED);
       else
         sel_sources[j++] = sel_sources[i];
     }
@@ -957,10 +1343,10 @@ SRC_SelectSource(SRC_Instance updated_inst)
   /* Find minimum stratum */
 
   index = sel_sources[0];
-  min_stratum = sources[index]->sel_info.stratum;
+  min_stratum = sources[index]->stratum;
   for (i = 1; i < n_sel_sources; i++) {
     index = sel_sources[i];
-    stratum = sources[index]->sel_info.stratum;
+    stratum = sources[index]->stratum;
     if (stratum < min_stratum)
       min_stratum = stratum;
   }
@@ -973,7 +1359,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
 
   if (selected_source_index != INVALID_SOURCE)
     sel_src_distance = sources[selected_source_index]->sel_info.root_distance +
-      (sources[selected_source_index]->sel_info.stratum - min_stratum) * stratum_weight;
+      (sources[selected_source_index]->stratum - min_stratum) * stratum_weight;
 
   for (i = 0; i < n_sources; i++) {
     /* Reset score for non-selectable sources */
@@ -985,7 +1371,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
     }
 
     distance = sources[i]->sel_info.root_distance +
-      (sources[i]->sel_info.stratum - min_stratum) * stratum_weight;
+      (sources[i]->stratum - min_stratum) * stratum_weight;
     if (sources[i]->type == SRC_NTP)
       distance += reselect_distance;
 
@@ -1007,10 +1393,8 @@ SRC_SelectSource(SRC_Instance updated_inst)
       sources[i]->sel_score = 1.0 / distance;
     }
 
-    DEBUG_LOG("select score=%f refid=%"PRIx32" match_refid=%"PRIx32" status=%u dist=%f",
-              sources[i]->sel_score, sources[i]->ref_id,
-              updated_inst ? updated_inst->ref_id : 0,
-              sources[i]->status, distance);
+    DEBUG_LOG("%s score=%f dist=%f",
+              source_to_string(sources[i]), sources[i]->sel_score, distance);
 
     if (max_score < sources[i]->sel_score) {
       max_score = sources[i]->sel_score;
@@ -1029,24 +1413,26 @@ SRC_SelectSource(SRC_Instance updated_inst)
     /* Before selecting the new synchronisation source wait until the reference
        can be updated */
     if (sources[max_score_index]->updates == 0) {
-      selected_source_index = INVALID_SOURCE;
+      unselect_selected_source(LOGS_INFO, NULL);
       mark_ok_sources(SRC_WAITS_UPDATE);
-      DEBUG_LOG("best source has no updates");
       return;
     }
 
     selected_source_index = max_score_index;
-    log_selection_message("Selected source %s",
-                          source_to_string(sources[selected_source_index]));
 
     /* New source has been selected, reset all scores */
     for (i = 0; i < n_sources; i++) {
       sources[i]->sel_score = 1.0;
       sources[i]->distant = 0;
+      memset(sources[i]->reported_status, 0, sizeof (sources[i]->reported_status));
     }
+
+    reported_no_majority = 0;
+    report_selection_loss = 0;
+    forced_first_report = 1;
   }
 
-  sources[selected_source_index]->status = SRC_SELECTED;
+  mark_source(sources[selected_source_index], SRC_SELECTED);
 
   /* Don't update reference when the selected source has no new samples */
 
@@ -1056,14 +1442,15 @@ SRC_SelectSource(SRC_Instance updated_inst)
     for (i = 0; i < n_sel_sources; i++) {
       index = sel_sources[i];
       if (sources[index]->status == SRC_OK)
-        sources[index]->status = sources[index]->distant ?
-                                 SRC_DISTANT : SRC_UNSELECTED;
+        mark_source(sources[index], sources[index]->distant ? SRC_DISTANT : SRC_UNSELECTED);
     }
     return;
   }
 
   for (i = 0; i < n_sources; i++)
     sources[i]->updates = 0;
+
+  leap_status = get_leap_status();
 
   /* Now just use the statistics of the selected source combined with
      the other selectable sources for trimming the local clock */
@@ -1076,7 +1463,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
   combined = combine_sources(n_sel_sources, &ref_time, &src_offset, &src_offset_sd,
                              &src_frequency, &src_frequency_sd, &src_skew);
 
-  REF_SetReference(sources[selected_source_index]->sel_info.stratum,
+  REF_SetReference(sources[selected_source_index]->stratum,
                    leap_status, combined,
                    sources[selected_source_index]->ref_id,
                    sources[selected_source_index]->ip_addr,
@@ -1128,7 +1515,7 @@ slew_sources(struct timespec *raw, struct timespec *cooked, double dfreq,
   }
 
   if (change_type == LCL_ChangeUnknownStep) {
-    /* After resetting no source is selectable, set reference unsynchronised */
+    /* Update selection status */
     SRC_SelectSource(NULL);
   }
 }
@@ -1149,35 +1536,60 @@ add_dispersion(double dispersion, void *anything)
 
 /* ================================================== */
 
-static
-FILE *open_dumpfile(SRC_Instance inst, const char *mode)
+static int
+get_dumpfile(SRC_Instance inst, char *filename, size_t len)
 {
+  /* Use the IP address, or reference ID with reference clocks */
+  switch (inst->type) {
+    case SRC_NTP:
+      if (!UTI_IsIPReal(inst->ip_addr) ||
+          snprintf(filename, len, "%s", source_to_string(inst)) >= len)
+        return 0;
+      break;
+    case SRC_REFCLOCK:
+      if (snprintf(filename, len, "refid:%08"PRIx32, inst->ref_id) >= len)
+        return 0;
+      break;
+    default:
+      assert(0);
+  }
+
+  return 1;
+}
+
+/* ================================================== */
+
+static void
+save_source(SRC_Instance inst)
+{
+  char filename[64], *dumpdir, *ntp_name;
   FILE *f;
-  char filename[1024], *dumpdir;
 
   dumpdir = CNF_GetDumpDir();
-  if (dumpdir[0] == '\0') {
-    LOG(LOGS_WARN, "dumpdir not specified");
-    return NULL;
+  if (!dumpdir)
+    return;
+
+  if (!get_dumpfile(inst, filename, sizeof (filename)))
+    return;
+
+  f = UTI_OpenFile(dumpdir, filename, ".dat", 'w', 0644);
+  if (!f)
+    return;
+
+  ntp_name = inst->type == SRC_NTP ? NSR_GetName(inst->ip_addr) : ".";
+
+  if (fprintf(f, "%s%s\n%d %o %d %d %d\n",
+              DUMP_IDENTIFIER, ntp_name, inst->authenticated,
+              (unsigned int)inst->reachability, inst->reachability_size,
+              inst->stratum, (int)inst->leap) < 0 ||
+      !SST_SaveToFile(inst->stats, f)) {
+    fclose(f);
+    if (!UTI_RemoveFile(dumpdir, filename, ".dat"))
+      ;
+    return;
   }
 
-  /* Include IP address in the name for NTP sources, or reference ID in hex */
-  if ((inst->type == SRC_NTP &&
-       snprintf(filename, sizeof (filename), "%s/%s.dat", dumpdir,
-                source_to_string(inst)) >= sizeof (filename)) ||
-      (inst->type != SRC_NTP &&
-       snprintf(filename, sizeof (filename), "%s/refid:%08"PRIx32".dat",
-                dumpdir, inst->ref_id) >= sizeof (filename))) {
-    LOG(LOGS_WARN, "dumpdir too long");
-    return NULL;
-  }
-
-  f = fopen(filename, mode);
-  if (!f && mode[0] != 'r')
-    LOG(LOGS_WARN, "Could not open dump file for %s",
-        source_to_string(inst));
-
-  return f;
+  fclose(f);
 }
 
 /* ================================================== */
@@ -1186,16 +1598,60 @@ FILE *open_dumpfile(SRC_Instance inst, const char *mode)
 void
 SRC_DumpSources(void)
 {
-  FILE *out;
   int i;
 
-  for (i = 0; i < n_sources; i++) {
-    out = open_dumpfile(sources[i], "w");
-    if (!out)
-      continue;
-    SST_SaveToFile(sources[i]->stats, out);
-    fclose(out);
+  for (i = 0; i < n_sources; i++)
+    save_source(sources[i]);
+}
+
+/* ================================================== */
+
+#define MAX_WORDS 1
+
+static void
+load_source(SRC_Instance inst)
+{
+  char filename[64], line[256], *dumpdir, *ntp_name, *words[MAX_WORDS];
+  int auth, leap, reach_size, stratum;
+  unsigned int reach;
+  FILE *f;
+
+  dumpdir = CNF_GetDumpDir();
+  if (!dumpdir)
+    return;
+
+  if (!get_dumpfile(inst, filename, sizeof (filename)))
+    return;
+
+  f = UTI_OpenFile(dumpdir, filename, ".dat", 'r', 0);
+  if (!f)
+    return;
+
+  ntp_name = inst->type == SRC_NTP ? NSR_GetName(inst->ip_addr) : NULL;
+
+  if (!fgets(line, sizeof (line), f) || strcmp(line, DUMP_IDENTIFIER) != 0 ||
+      !fgets(line, sizeof (line), f) || UTI_SplitString(line, words, MAX_WORDS) != 1 ||
+        (inst->type == SRC_NTP && (!ntp_name || strcmp(words[0], ntp_name) != 0)) ||
+      !fgets(line, sizeof (line), f) ||
+        sscanf(words[0], "%d %o %d %d %d",
+               &auth, &reach, &reach_size, &stratum, &leap) != 5 ||
+        (!auth && inst->authenticated) ||
+        stratum < 0 || stratum >= NTP_MAX_STRATUM ||
+        leap < LEAP_Normal || leap >= LEAP_Unsynchronised ||
+      !SST_LoadFromFile(inst->stats, f)) {
+    LOG(LOGS_WARN, "Could not load dump file for %s", source_to_string(inst));
+    fclose(f);
+    return;
   }
+
+  inst->reachability = reach & ((1U << SOURCE_REACH_BITS) - 1);
+  inst->reachability_size = CLAMP(0, reach_size, SOURCE_REACH_BITS);
+  inst->stratum = stratum;
+  inst->leap = leap;
+
+  LOG(LOGS_INFO, "Loaded dump file for %s", source_to_string(inst));
+
+  fclose(f);
 }
 
 /* ================================================== */
@@ -1203,21 +1659,17 @@ SRC_DumpSources(void)
 void
 SRC_ReloadSources(void)
 {
-  FILE *in;
   int i;
 
   for (i = 0; i < n_sources; i++) {
-    in = open_dumpfile(sources[i], "r");
-    if (!in)
-      continue;
-    if (!SST_LoadFromFile(sources[i]->stats, in))
-      LOG(LOGS_WARN, "Could not load dump file for %s",
-          source_to_string(sources[i]));
-    else
-      LOG(LOGS_INFO, "Loaded dump file for %s",
-          source_to_string(sources[i]));
-    fclose(in);
+    load_source(sources[i]);
+
+    /* Allow an immediate update of the reference */
+    sources[i]->updates++;
   }
+
+  /* Select sources and set the reference */
+  SRC_SelectSource(NULL);
 }
 
 /* ================================================== */
@@ -1225,13 +1677,13 @@ SRC_ReloadSources(void)
 void
 SRC_RemoveDumpFiles(void)
 {
-  char pattern[1024], name[64], *dumpdir, *s;
+  char pattern[PATH_MAX], name[64], *dumpdir, *s;
   IPAddr ip_addr;
   glob_t gl;
   size_t i;
 
   dumpdir = CNF_GetDumpDir();
-  if (dumpdir[0] == '\0' ||
+  if (!dumpdir ||
       snprintf(pattern, sizeof (pattern), "%s/*.dat", dumpdir) >= sizeof (pattern))
     return;
 
@@ -1252,11 +1704,24 @@ SRC_RemoveDumpFiles(void)
     if (strncmp(name, "refid:", 6) && !UTI_StringToIP(name, &ip_addr))
       continue;
 
-    DEBUG_LOG("Removing %s", gl.gl_pathv[i]);
-    unlink(gl.gl_pathv[i]);
+    if (!UTI_RemoveFile(NULL, gl.gl_pathv[i], NULL))
+      ;
   }
 
   globfree(&gl);
+}
+
+/* ================================================== */
+
+void
+SRC_ResetSources(void)
+{
+  int i;
+
+  for (i = 0; i < n_sources; i++)
+    SRC_ResetInstance(sources[i]);
+
+  LOG(LOGS_INFO, "Reset all sources");
 }
 
 /* ================================================== */
@@ -1304,6 +1769,46 @@ SRC_ActiveSources(void)
 
 /* ================================================== */
 
+static SRC_Instance
+find_source(IPAddr *ip, uint32_t ref_id)
+{
+  int i;
+
+  for (i = 0; i < n_sources; i++) {
+    if ((ip->family != IPADDR_UNSPEC && sources[i]->type == SRC_NTP &&
+         UTI_CompareIPs(ip, sources[i]->ip_addr, NULL) == 0) ||
+        (ip->family == IPADDR_UNSPEC && sources[i]->type == SRC_REFCLOCK &&
+         ref_id == sources[i]->ref_id))
+      return sources[i];
+  }
+
+  return NULL;
+}
+
+/* ================================================== */
+
+int
+SRC_ModifySelectOptions(IPAddr *ip, uint32_t ref_id, int options, int mask)
+{
+  SRC_Instance inst;
+
+  inst = find_source(ip, ref_id);
+  if (!inst)
+    return 0;
+
+  if ((inst->conf_sel_options & mask) == options)
+    return 1;
+
+  inst->conf_sel_options = (inst->conf_sel_options & ~mask) | options;
+  LOG(LOGS_INFO, "Source %s selection options modified", source_to_string(inst));
+
+  update_sel_options();
+
+  return 1;
+}
+
+/* ================================================== */
+
 int
 SRC_ReportSource(int index, RPT_SourceReport *report, struct timespec *now)
 {
@@ -1321,6 +1826,8 @@ SRC_ReportSource(int index, RPT_SourceReport *report, struct timespec *now)
       report->ip_addr.family = IPADDR_INET4;
     }
 
+    report->stratum = src->stratum;
+
     switch (src->status) {
       case SRC_FALSETICKER:
         report->state = RPT_FALSETICKER;
@@ -1328,26 +1835,24 @@ SRC_ReportSource(int index, RPT_SourceReport *report, struct timespec *now)
       case SRC_JITTERY:
         report->state = RPT_JITTERY;
         break;
-      case SRC_UNTRUSTED:
       case SRC_WAITS_SOURCES:
       case SRC_NONPREFERRED:
       case SRC_WAITS_UPDATE:
       case SRC_DISTANT:
       case SRC_OUTLIER:
-        report->state = RPT_OUTLIER;
+        report->state = RPT_SELECTABLE;
         break;
       case SRC_UNSELECTED:
-        report->state = RPT_CANDIDATE;
+        report->state = RPT_UNSELECTED;
         break;
       case SRC_SELECTED:
-        report->state = RPT_SYNC;
+        report->state = RPT_SELECTED;
         break;
       default:
-        report->state = RPT_UNREACH;
+        report->state = RPT_NONSELECTABLE;
         break;
     }
 
-    report->sel_options = src->sel_options;
     report->reachability = src->reachability;
 
     /* Call stats module to fill out estimates */
@@ -1377,6 +1882,81 @@ SRC_ReportSourcestats(int index, RPT_SourcestatsReport *report, struct timespec 
     SST_DoSourcestatsReport(src->stats, report, now);
     return 1;
   }
+}
+
+/* ================================================== */
+
+static char
+get_status_char(SRC_Status status)
+{
+  switch (status) {
+    case SRC_UNSELECTABLE:
+      return 'N';
+    case SRC_BAD_STATS:
+      return 'M';
+    case SRC_UNSYNCHRONISED:
+      return 's';
+    case SRC_BAD_DISTANCE:
+      return 'd';
+    case SRC_JITTERY:
+      return '~';
+    case SRC_WAITS_STATS:
+      return 'w';
+    case SRC_STALE:
+      return 'S';
+    case SRC_ORPHAN:
+      return 'O';
+    case SRC_UNTRUSTED:
+      return 'T';
+    case SRC_FALSETICKER:
+      return 'x';
+    case SRC_WAITS_SOURCES:
+      return 'W';
+    case SRC_NONPREFERRED:
+      return 'P';
+    case SRC_WAITS_UPDATE:
+      return 'U';
+    case SRC_DISTANT:
+      return 'D';
+    case SRC_OUTLIER:
+      return 'L';
+    case SRC_UNSELECTED:
+      return '+';
+    case SRC_SELECTED:
+      return '*';
+    default:
+      return '?';
+  }
+}
+
+/* ================================================== */
+
+int
+SRC_GetSelectReport(int index, RPT_SelectReport *report)
+{
+  SRC_Instance inst;
+
+  if (index >= n_sources || index < 0)
+    return 0;
+
+  inst = sources[index];
+
+  report->ref_id = inst->ref_id;
+  if (inst->ip_addr)
+    report->ip_addr = *inst->ip_addr;
+  else
+    report->ip_addr.family = IPADDR_UNSPEC;
+  report->state_char = get_status_char(inst->status);
+  report->authentication = inst->authenticated;
+  report->leap = inst->leap;
+  report->conf_options = inst->conf_sel_options;
+  report->eff_options = inst->sel_options;
+  report->last_sample_ago = inst->sel_info.last_sample_ago;
+  report->score = inst->sel_score;
+  report->lo_limit = inst->sel_info.lo_limit;
+  report->hi_limit = inst->sel_info.hi_limit;
+
+  return 1;
 }
 
 /* ================================================== */

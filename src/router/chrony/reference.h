@@ -162,6 +162,13 @@ extern void REF_SetManualReference
 extern void
 REF_SetUnsynchronised(void);
 
+/* Make a small correction of the clock without updating the reference
+   parameters and calling the clock change handlers */
+extern int REF_AdjustReference(double offset, double frequency);
+
+/* Announce a leap second before the full reference update */
+extern void REF_UpdateLeapStatus(NTP_Leap leap);
+
 /* Return the current stratum of this host or 16 if the host is not
    synchronised */
 extern int REF_GetOurStratum(void);
@@ -178,12 +185,13 @@ extern void REF_ModifyMaxupdateskew(double new_max_update_skew);
 /* Modify makestep settings */
 extern void REF_ModifyMakestep(int limit, double threshold);
 
-extern void REF_EnableLocal(int stratum, double distance, int orphan);
+extern void REF_EnableLocal(int stratum, double distance, int orphan, double activate,
+                            double wait_synced, double wait_unsynced);
 extern void REF_DisableLocal(void);
 
-/* Check if current raw or cooked time is close to a leap second
-   and is better to discard any measurements */
-extern int REF_IsLeapSecondClose(void);
+/* Check if either of the current raw and cooked time, and optionally a
+   provided timestamp with an offset, is close to a leap second */
+extern int REF_IsLeapSecondClose(struct timespec *ts, double offset);
 
 /* Return TAI-UTC offset corresponding to a time in UTC if available */
 extern int REF_GetTaiOffset(struct timespec *ts);

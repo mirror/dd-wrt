@@ -51,6 +51,14 @@ extern void SRC_Initialise(void);
 /* Finalisation function */
 extern void SRC_Finalise(void);
 
+/* Modes for selecting NTP sources based on their authentication status */
+typedef enum {
+  SRC_AUTHSELECT_IGNORE,
+  SRC_AUTHSELECT_MIX,
+  SRC_AUTHSELECT_PREFER,
+  SRC_AUTHSELECT_REQUIRE,
+} SRC_AuthSelectMode;
+
 typedef enum {
   SRC_NTP,                      /* NTP client/peer */
   SRC_REFCLOCK                  /* Rerefence clock */
@@ -59,9 +67,9 @@ typedef enum {
 /* Function to create a new instance.  This would be called by one of
    the individual source-type instance creation routines. */
 
-extern SRC_Instance SRC_CreateNewInstance(uint32_t ref_id, SRC_Type type, int sel_options,
-                                          IPAddr *addr, int min_samples, int max_samples,
-                                          double min_delay, double asymmetry);
+extern SRC_Instance SRC_CreateNewInstance(uint32_t ref_id, SRC_Type type, int authenticated,
+                                          int sel_options, IPAddr *addr, int min_samples,
+                                          int max_samples, double min_delay, double asymmetry);
 
 /* Function to get rid of a source when it is being unconfigured.
    This may cause the current reference source to be reselected, if this
@@ -79,8 +87,10 @@ extern void SRC_SetRefid(SRC_Instance instance, uint32_t ref_id, IPAddr *addr);
 /* Function to get access to the sourcestats instance */
 extern SST_Stats SRC_GetSourcestats(SRC_Instance instance);
 
-/* This function is called by one of the source drivers when it has
-   a new sample that is to be accumulated */
+/* Function to update the stratum and leap status of the source */
+extern void SRC_UpdateStatus(SRC_Instance instance, int stratum, NTP_Leap leap);
+
+/* Function to accumulate a new sample from the source */
 extern void SRC_AccumulateSample(SRC_Instance instance, NTP_Sample *sample);
 
 /* This routine sets the source as receiving reachability updates */
@@ -114,13 +124,20 @@ extern void SRC_DumpSources(void);
 extern void SRC_ReloadSources(void);
 extern void SRC_RemoveDumpFiles(void);
 
+extern void SRC_ResetSources(void);
+
 extern int SRC_IsSyncPeer(SRC_Instance inst);
 extern int SRC_IsReachable(SRC_Instance inst);
 extern int SRC_ReadNumberOfSources(void);
 extern int SRC_ActiveSources(void);
-extern int SRC_ReportSource(int index, RPT_SourceReport *report, struct timespec *now);
 
+/* Modify selection options of an NTP source specified by address, or
+   refclock specified by its reference ID */
+extern int SRC_ModifySelectOptions(IPAddr *ip, uint32_t ref_id, int options, int mask);
+
+extern int SRC_ReportSource(int index, RPT_SourceReport *report, struct timespec *now);
 extern int SRC_ReportSourcestats(int index, RPT_SourcestatsReport *report, struct timespec *now);
+extern int SRC_GetSelectReport(int index, RPT_SelectReport *report);
 
 extern SRC_Type SRC_GetType(int index);
 

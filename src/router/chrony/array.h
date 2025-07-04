@@ -47,6 +47,9 @@ extern void *ARR_GetElements(ARR_Instance array);
 /* Add a new element to the end of the array */
 extern void ARR_AppendElement(ARR_Instance array, void *element);
 
+/* Remove element with given index */
+extern void ARR_RemoveElement(ARR_Instance array, unsigned int index);
+
 /* Set the size of the array */
 extern void ARR_SetSize(ARR_Instance array, unsigned int size);
 

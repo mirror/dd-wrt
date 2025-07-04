@@ -8,11 +8,39 @@ Wants=time-sync.target
 
 [Service]
 Type=oneshot
-# Wait up to ~10 minutes for chronyd to synchronize and the remaining
-# clock correction to be less than 0.1 seconds
-ExecStart=/usr/bin/chronyc -h 127.0.0.1,::1 waitsync 600 0.1 0.0 1
+# Wait for chronyd to update the clock and the remaining
+# correction to be less than 0.1 seconds
+ExecStart=/usr/bin/chronyc -h 127.0.0.1,::1 waitsync 0 0.1 0.0 1
+# Wait for at most 3 minutes
+TimeoutStartSec=180
 RemainAfterExit=yes
 StandardOutput=null
+
+CapabilityBoundingSet=
+DevicePolicy=closed
+DynamicUser=yes
+IPAddressAllow=localhost
+IPAddressDeny=any
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+PrivateDevices=yes
+PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+UMask=0777
 
 [Install]
 WantedBy=multi-user.target

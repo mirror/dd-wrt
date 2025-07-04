@@ -36,8 +36,14 @@ typedef struct {
   int stratum;
   int poll;
   enum {RPT_NTP_CLIENT, RPT_NTP_PEER, RPT_LOCAL_REFERENCE} mode;
-  enum {RPT_SYNC, RPT_UNREACH, RPT_FALSETICKER, RPT_JITTERY, RPT_CANDIDATE, RPT_OUTLIER} state;
-  int sel_options;
+  enum {
+    RPT_NONSELECTABLE,
+    RPT_FALSETICKER,
+    RPT_JITTERY,
+    RPT_SELECTABLE,
+    RPT_UNSELECTED,
+    RPT_SELECTED,
+  } state;
 
   int reachability;
   unsigned long latest_meas_ago; /* seconds */
@@ -78,8 +84,8 @@ typedef struct {
 
 typedef struct {
   struct timespec ref_time;
-  unsigned short n_samples;
-  unsigned short n_runs;
+  unsigned long n_samples;
+  unsigned long n_runs;
   unsigned long span_seconds;
   double rtc_seconds_fast;
   double rtc_gain_rate_ppm;
@@ -88,22 +94,38 @@ typedef struct {
 typedef struct {
   IPAddr ip_addr;
   uint32_t ntp_hits;
+  uint32_t nke_hits;
   uint32_t cmd_hits;
   uint16_t ntp_drops;
+  uint16_t nke_drops;
   uint16_t cmd_drops;
   int8_t ntp_interval;
+  int8_t nke_interval;
   int8_t cmd_interval;
   int8_t ntp_timeout_interval;
   uint32_t last_ntp_hit_ago;
+  uint32_t last_nke_hit_ago;
   uint32_t last_cmd_hit_ago;
 } RPT_ClientAccessByIndex_Report;
 
 typedef struct {
-  uint32_t ntp_hits;
-  uint32_t cmd_hits;
-  uint32_t ntp_drops;
-  uint32_t cmd_drops;
-  uint32_t log_drops;
+  uint64_t ntp_hits;
+  uint64_t nke_hits;
+  uint64_t cmd_hits;
+  uint64_t ntp_drops;
+  uint64_t nke_drops;
+  uint64_t cmd_drops;
+  uint64_t log_drops;
+  uint64_t ntp_auth_hits;
+  uint64_t ntp_interleaved_hits;
+  uint64_t ntp_timestamps;
+  uint64_t ntp_span_seconds;
+  uint64_t ntp_daemon_rx_timestamps;
+  uint64_t ntp_daemon_tx_timestamps;
+  uint64_t ntp_kernel_rx_timestamps;
+  uint64_t ntp_kernel_tx_timestamps;
+  uint64_t ntp_hw_rx_timestamps;
+  uint64_t ntp_hw_tx_timestamps;
 } RPT_ServerStatsReport;
 
 typedef struct {
@@ -158,6 +180,37 @@ typedef struct {
   uint32_t total_tx_count;
   uint32_t total_rx_count;
   uint32_t total_valid_count;
+  uint32_t total_good_count;
+  uint32_t total_kernel_tx_ts;
+  uint32_t total_kernel_rx_ts;
+  uint32_t total_hw_tx_ts;
+  uint32_t total_hw_rx_ts;
 } RPT_NTPReport;
+
+typedef struct {
+  NTP_AuthMode mode;
+  uint32_t key_id;
+  int key_type;
+  int key_length;
+  int ke_attempts;
+  uint32_t last_ke_ago;
+  int cookies;
+  int cookie_length;
+  int nak;
+} RPT_AuthReport;
+
+typedef struct {
+  uint32_t ref_id;
+  IPAddr ip_addr;
+  char state_char;
+  int authentication;
+  NTP_Leap leap;
+  int conf_options;
+  int eff_options;
+  uint32_t last_sample_ago;
+  double score;
+  double lo_limit;
+  double hi_limit;
+} RPT_SelectReport;
 
 #endif /* GOT_REPORTS_H */

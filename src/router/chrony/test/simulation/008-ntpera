@@ -1,40 +1,49 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 test_start "NTP eras"
 
-# Assume NTP_ERA_SPLIT is between years 1960 and 1990
+if check_config_h 'HAVE_LONG_TIME_T 1'; then
+	ntp_start=$(awk "BEGIN {print $(grep NTP_ERA_SPLIT ../../config.h | tr -dc '0-9*+-')}")
+else
+	ntp_start="-2147483648"
+fi
 
-# Set date to 500 seconds before NTP second overflows, this should
-# work correctly with both 32-bit and 64-bit time_t
+# Set the starting test date to 500 seconds before the second NTP era.
+# This should work with 32-bit time_t and also with 64-bit time_t if the
+# configured NTP interval covers the test interval.
 export CLKNETSIM_START_DATE=$(date -d 'Feb  7 06:19:56 UTC 2036' +'%s')
 
-run_test || test_fail
-check_chronyd_exit || test_fail
-check_source_selection || test_fail
-check_packet_interval || test_fail
-check_sync || test_fail
-
-# The following tests need 64-bit time_t
-check_config_h 'HAVE_LONG_TIME_T 1' || test_skip
-
-for year in 1990 2090; do
-	export CLKNETSIM_START_DATE=$(date -d "Jan  1 00:00:00 UTC $year" +'%s')
+if awk "BEGIN {exit !($ntp_start <= $CLKNETSIM_START_DATE && \
+		$CLKNETSIM_START_DATE + $limit < $ntp_start + 2^32)}"; then
 	run_test || test_fail
 	check_chronyd_exit || test_fail
 	check_source_selection || test_fail
 	check_packet_interval || test_fail
 	check_sync || test_fail
-done
+fi
 
-for year in 1950 2130; do
-	export CLKNETSIM_START_DATE=$(date -d "Jan  1 00:00:00 UTC $year" +'%s')
-	run_test || test_fail
-	check_chronyd_exit || test_fail
-	check_source_selection || test_fail
-	check_packet_interval || test_fail
-	# This check is expected to fail
-	check_sync && test_fail
+# The following tests need 64-bit time_t and ntp_start not before 1970
+check_config_h 'HAVE_LONG_TIME_T 1' || test_skip
+echo "$ntp_start" | grep -q '-' && test_skip
+
+for time_offset in -1e-1 1e-1; do
+	for start_offset in 0 "2^32 - $limit"; do
+		export CLKNETSIM_START_DATE=$(awk "BEGIN {printf \"%.0f\", $ntp_start + $start_offset}")
+		run_test || test_fail
+		check_chronyd_exit || test_fail
+		check_source_selection || test_fail
+		check_packet_interval || test_fail
+		check_sync || test_fail
+	done
+
+	for start_offset in -$limit "2^32"; do
+		export CLKNETSIM_START_DATE=$(awk "BEGIN {printf \"%.0f\", $ntp_start + $start_offset}")
+		run_test || test_fail
+		check_chronyd_exit || test_fail
+		check_packet_interval || test_fail
+		check_sync && test_fail
+	done
 done
 
 test_pass

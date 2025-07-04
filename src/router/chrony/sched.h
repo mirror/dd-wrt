@@ -37,6 +37,7 @@ typedef enum {
   SCH_NtpClientClass,
   SCH_NtpPeerClass,
   SCH_NtpBroadcastClass,
+  SCH_PhcPollClass,
   SCH_NumberOfClasses /* needs to be last */
 } SCH_TimeoutClass;
 
@@ -64,6 +65,9 @@ extern void SCH_SetFileHandlerEvent(int fd, int event, int enable);
 
 /* Get the time stamp taken after a file descriptor became ready or a timeout expired */
 extern void SCH_GetLastEventTime(struct timespec *cooked, double *err, struct timespec *raw);
+
+/* Get a low-precision monotonic timestamp (starting at 0.0) */
+extern double SCH_GetLastEventMonoTime(void);
 
 /* This queues a timeout to elapse at a given (raw) local time */
 extern SCH_TimeoutID SCH_AddTimeout(struct timespec *ts, SCH_TimeoutHandler handler, SCH_ArbitraryArgument arg);

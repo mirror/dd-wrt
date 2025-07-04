@@ -1,11 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
-test_start "SHM refclock"
+test_start "reference clocks"
 
 check_config_h 'FEAT_REFCLOCK 1' || test_skip
 check_config_h 'FEAT_PHC 1' || test_skip
 check_config_h 'FEAT_CMDMON 1' || test_skip
+
+export CLKNETSIM_PHC_DELAY=1e-6
+export CLKNETSIM_PHC_JITTER=1e-7
 
 servers=0
 limit=1000
@@ -15,13 +18,30 @@ max_sync_time=70
 chronyc_start=70
 chronyc_conf="tracking"
 
-for refclock in "SHM 0" "PHC /dev/ptp0"; do
-	client_conf="refclock $refclock stratum 3 delay 1e-3 refid GPS"
+for refclock in "SHM 0" "RTC /dev/rtc:utc" "PHC /dev/ptp0" "PHC /dev/ptp0:nocrossts"; do
+	client_conf="refclock $refclock stratum 3 delay 1e-3 refid GPS
+logdir tmp
+log refclocks"
+
+	if [[ $refclock =~ RTC ]]; then
+		check_config_h 'FEAT_RTC 1' || continue
+		wander=0.0
+		freq_offset=0.0
+		client_chronyd_options="-x"
+	else
+		wander=$default_wander
+		freq_offset=$default_freq_offset
+		client_chronyd_options=$default_client_chronyd_options
+	fi
 
 	run_test || test_fail
 	check_chronyd_exit || test_fail
 	check_source_selection || test_fail
-	check_sync || test_fail
+	if [[ $refclock =~ RTC ]]; then
+		check_chronyc_output "System time *: 0\.10000.... seconds fast" || test_fail
+	else
+		check_sync || test_fail
+	fi
 	check_chronyc_output "^Reference ID.*47505300 \(GPS\)
 Stratum.*: 4
 .*
@@ -29,6 +49,159 @@ Root delay      : 0.001000000 seconds
 .*
 Update interval : 16\.. seconds
 .*$" || test_fail
+
+	check_file_messages "20.* GPS.*[0-9] N " 997 1001 refclocks.log || test_fail
+	check_file_messages "20.* GPS.*- N " 61 63 refclocks.log || test_fail
+	rm -f tmp/refclocks.log
 done
+
+if check_config_h 'FEAT_PPS 1'; then
+	refclock_offset=0.35
+	refclock_jitter=0.05
+
+	client_conf="
+refclock SHM 0 refid NMEA noselect
+refclock PPS /dev/pps0 lock NMEA
+logdir tmp
+log refclocks"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+	check_chronyc_output "^Reference ID.*50505331 \(PPS1\)
+Stratum.*: 1
+.*
+Root delay      : 0\.000000001 seconds
+.*$" || test_fail
+
+	check_file_messages "20.* PPS1.*[0-9] N " 610 740 refclocks.log || test_fail
+	check_file_messages "20.* PPS1.*- N " 60 63 refclocks.log || test_fail
+	rm -f tmp/refclocks.log
+
+	client_conf="
+refclock SHM 0 noselect
+refclock PPS /dev/pps0
+local
+logdir tmp
+log refclocks"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+	check_chronyc_output "^Reference ID.*50505331 \(PPS1\)
+Stratum.*: 10
+.*
+Root delay      : 0\.000000001 seconds
+.*$" || test_fail
+
+	check_file_messages "20.* PPS1.*[0-9] N " 997 1001 refclocks.log || test_fail
+	check_file_messages "20.* PPS1.*- N " 60 63 refclocks.log || test_fail
+	rm -f tmp/refclocks.log
+
+	min_sync_time=180
+	max_sync_time=260
+	chronyc_start=270
+	client_conf="
+refclock SHM 0 refid NMEA offset 0.35 delay 0.1
+refclock PPS /dev/pps0
+logdir tmp
+log refclocks
+maxupdateskew 10000"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+	check_chronyc_output "^Reference ID.*50505331 \(PPS1\)
+Stratum.*: 1
+.*
+Root delay      : 0\.000000001 seconds
+.*$" || test_fail
+
+	check_file_messages "20.* PPS1.*[0-9] N " 800 960  refclocks.log || test_fail
+	check_file_messages "20.* PPS1.*- N " 50 63 refclocks.log || test_fail
+	rm -f tmp/refclocks.log
+
+	min_sync_time=80
+	max_sync_time=180
+	chronyc_start=220
+	# Swapped order of SHM and PPS impacts first accepted sample
+	client_conf="
+refclock PPS /dev/pps0
+refclock SHM 0 refid NMEA offset 0.35 delay 0.1
+logdir tmp
+log refclocks
+maxupdateskew 10000"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+	check_chronyc_output "^Reference ID.*50505330 \(PPS0\)
+Stratum.*: 1
+.*
+Root delay      : 0\.000000001 seconds
+.*$" || test_fail
+
+	check_file_messages "20.* PPS0.*[0-9] N " 800 960  refclocks.log || test_fail
+	check_file_messages "20.* PPS0.*- N " 50 63 refclocks.log || test_fail
+	rm -f tmp/refclocks.log
+fi
+
+export CLKNETSIM_PHC_JITTER_OFF=$[2 * 25 * 492]
+export CLKNETSIM_PHC_JITTER_ON=$[2 * 25 * 8]
+export CLKNETSIM_PHC_JITTER=1e-6
+refclock_offset=0.0
+refclock_jitter=1e-9
+min_sync_time=5
+max_sync_time=7
+time_max_limit=1e-7
+time_rms_limit=1e-8
+client_conf="refclock PHC /dev/ptp0:nocrossts poll 0
+logdir tmp
+log refclocks"
+chronyc_start=500
+chronyc_conf="sources"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+check_chronyc_output "^MS.*
+=*
+#\* PHC0                          0   0   377     8 .*$" || test_fail
+rm -f tmp/refclocks.log
+
+unset CLKNETSIM_PHC_JITTER_OFF
+unset CLKNETSIM_PHC_JITTER_ON
+export CLKNETSIM_PHC_JITTER=1e-7
+refclock_offset="(+ 0.399 (sum 1e-3))"
+refclock_jitter=1e-6
+servers=1
+freq_offset="(* 1e-4 (sine 1000))"
+base_delay="(* -1.0 (equal 0.1 (min time 5000) 5000))"
+client_server_options="minpoll 4 maxpoll 4 filter 5 minsamples 64"
+client_conf="
+refclock PHC /dev/ptp0 local poll 2
+logdir tmp
+log refclocks tracking"
+chronyc_conf=""
+limit=10000
+max_sync_time=5000
+time_max_limit=1e-3
+time_rms_limit=5e-4
+freq_max_limit=2e-5
+freq_rms_limit=5e-6
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+
+check_file_messages "20.* PHC0 .* [0-9] ? " 9999 10001 refclocks.log || test_fail
+check_file_messages "20.* PHC0 .* - ? " 2499 2501 refclocks.log || test_fail
+check_file_messages "20.* PHC0 " 0 0 tracking.log || test_fail
+rm -f tmp/refclocks.log tmp/tracking.log
 
 test_pass

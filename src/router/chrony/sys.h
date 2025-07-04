@@ -35,12 +35,17 @@ extern void SYS_Initialise(int clock_control);
 /* Called at the end of the run to do final clean-up */
 extern void SYS_Finalise(void);
 
-/* Drop root privileges to the specified user and group */
-extern void SYS_DropRoot(uid_t uid, gid_t gid);
+typedef enum {
+  SYS_MAIN_PROCESS,
+  SYS_NTSKE_HELPER,
+} SYS_ProcessContext;
+
+/* Switch to the specified user and group in given context */
+extern void SYS_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context);
 
 /* Enable a system call filter to allow only system calls
    which chronyd normally needs after initialization */
-extern void SYS_EnableSystemCallFilter(int level);
+extern void SYS_EnableSystemCallFilter(int level, SYS_ProcessContext context);
 
 extern void SYS_SetScheduler(int SchedPriority);
 extern void SYS_LockMemory(void);

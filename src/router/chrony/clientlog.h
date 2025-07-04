@@ -31,20 +31,43 @@
 #include "sysincl.h"
 #include "reports.h"
 
+typedef enum {
+  CLG_NTP = 0,
+  CLG_NTSKE,
+  CLG_CMDMON,
+} CLG_Service;
+
+typedef enum {
+  CLG_PASS = 0,
+  CLG_DROP,
+  CLG_KOD,
+} CLG_Limit;
+
 extern void CLG_Initialise(void);
 extern void CLG_Finalise(void);
 extern int CLG_GetClientIndex(IPAddr *client);
-extern int CLG_LogNTPAccess(IPAddr *client, struct timespec *now);
-extern int CLG_LogCommandAccess(IPAddr *client, struct timespec *now);
-extern int CLG_LimitNTPResponseRate(int index);
-extern int CLG_LimitCommandResponseRate(int index);
-extern void CLG_GetNtpTimestamps(int index, NTP_int64 **rx_ts, NTP_int64 **tx_ts);
+extern int CLG_LogServiceAccess(CLG_Service service, IPAddr *client, struct timespec *now);
+extern CLG_Limit CLG_LimitServiceRate(CLG_Service service, int index);
+extern void CLG_UpdateNtpStats(int auth, NTP_Timestamp_Source rx_ts_src,
+                               NTP_Timestamp_Source tx_ts_src);
 extern int CLG_GetNtpMinPoll(void);
+
+/* Functions to save and retrieve timestamps for server interleaved mode */
+extern void CLG_SaveNtpTimestamps(NTP_int64 *rx_ts, struct timespec *tx_ts,
+                                  NTP_Timestamp_Source tx_src);
+extern void CLG_UndoNtpTxTimestampSlew(NTP_int64 *rx_ts, struct timespec *tx_ts);
+extern void CLG_UpdateNtpTxTimestamp(NTP_int64 *rx_ts, struct timespec *tx_ts,
+                                     NTP_Timestamp_Source tx_src);
+extern int CLG_GetNtpTxTimestamp(NTP_int64 *rx_ts, struct timespec *tx_ts,
+                                 NTP_Timestamp_Source *tx_src);
+extern void CLG_DisableNtpTimestamps(NTP_int64 *rx_ts);
 
 /* And some reporting functions, for use by chronyc. */
 
 extern int CLG_GetNumberOfIndices(void);
-extern int CLG_GetClientAccessReportByIndex(int index, RPT_ClientAccessByIndex_Report *report, struct timespec *now);
+extern int CLG_GetClientAccessReportByIndex(int index, int reset, uint32_t min_hits,
+                                            RPT_ClientAccessByIndex_Report *report,
+                                            struct timespec *now);
 extern void CLG_GetServerStatsReport(RPT_ServerStatsReport *report);
 
 #endif /* GOT_CLIENTLOG_H */

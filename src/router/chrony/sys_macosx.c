@@ -4,7 +4,7 @@
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2001
  * Copyright (C) J. Hannken-Illjes  2001
- * Copyright (C) Bryan Christianson  2015, 2017
+ * Copyright (C) Bryan Christianson  2015, 2017, 2020
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -46,8 +46,9 @@
 #include "privops.h"
 #include "util.h"
 
-#ifdef HAVE_MACOS_SYS_TIMEX
 #include <dlfcn.h>
+
+#ifdef HAVE_MACOS_SYS_TIMEX
 #include "sys_netbsd.h"
 
 static int have_ntp_adjtime = 0;
@@ -414,9 +415,10 @@ SYS_MacOSX_SetScheduler(int SchedPriority)
 /* ================================================== */
 
 #ifdef FEAT_PRIVDROP
-void SYS_MacOSX_DropRoot(uid_t uid, gid_t gid)
+void SYS_MacOSX_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context)
 {
-  PRV_StartHelper();
+  if (context == SYS_MAIN_PROCESS)
+    PRV_StartHelper();
 
   UTI_DropRoot(uid, gid);
 }
@@ -448,6 +450,39 @@ legacy_MacOSX_Finalise(void)
 
   clock_finalise();
 }
+
+/* ================================================== */
+
+#if HAVE_CLOCK_GETTIME
+int
+clock_gettime(clockid_t clock_id, struct timespec *ts)
+{
+  /* Check that the system clock_gettime symbol is actually present before
+     attempting to call it. The symbol is available in macOS 10.12
+     and later. */
+
+  static int init = 0;
+  static int (*sys_clock_gettime)(clockid_t, struct timespec *) = NULL;
+  int ret = 0;
+
+  if (!init) {
+    sys_clock_gettime = dlsym(RTLD_NEXT, "clock_gettime");
+    init = 1;
+  }
+
+  if (sys_clock_gettime != NULL) {
+    ret = sys_clock_gettime(clock_id, ts);
+  } else {
+    struct timeval tv;
+
+    if (gettimeofday(&tv, NULL) < 0)
+      LOG_FATAL("gettimeofday() failed : %s", strerror(errno));
+
+    UTI_TimevalToTimespec(&tv, ts);
+  }
+  return ret;
+}
+#endif
 
 /* ================================================== */
 

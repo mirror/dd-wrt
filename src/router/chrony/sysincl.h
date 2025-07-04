@@ -21,14 +21,14 @@
 
   =======================================================================
 
-  This file includes all system header files that the software
-  requires.  This allows us to isolate system dependencies to this file
-  alone.
+  This file includes most system header files that the software
+  requires to better isolate system dependencies.
   */
 
 #ifndef GOT_SYSINCL_H
 #define GOT_SYSINCL_H
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -37,6 +37,7 @@
 #include <glob.h>
 #include <grp.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <math.h>
 #include <netinet/in.h>
 #include <pwd.h>
@@ -54,17 +55,11 @@
 #include <sys/un.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
-#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 
 #if defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(SOLARIS) || defined(HAVE_MACOS_SYS_TIMEX)
 #include <sys/timex.h>
-#endif
-
-#ifdef FEAT_IPV6
-/* For inet_ntop() */
-#include <arpa/inet.h>
 #endif
 
 #ifdef HAVE_GETRANDOM

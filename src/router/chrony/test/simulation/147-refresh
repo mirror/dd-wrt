@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "address refreshment"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+limit=1000
+servers=5
+client_conf="logdir tmp
+log measurements"
+client_server_conf="server nodes-1-2.net1.clk maxpoll 6
+pool nodes-3-4-5.net1.clk maxpoll 6 maxsources 2"
+client_chronyd_options="-d"
+chronyc_conf="refresh"
+chronyc_start=500
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "20.*192.168.123.1" 0 0 measurements.log || test_fail
+check_file_messages "20.*192.168.123.2" 15 17 measurements.log || test_fail
+check_file_messages "20.*192.168.123.[345]" 31 33 measurements.log || test_fail
+rm -f tmp/measurements.log
+if check_config_h 'FEAT_DEBUG 1'; then
+	check_log_messages "refreshing 192.168.123" 3 3 || test_fail
+	check_log_messages "resolved_name.*still fresh" 3 3 || test_fail
+fi
+
+limit=1100
+client_server_conf="
+server nodes-1-2.net1.clk maxpoll 6
+pool nodes-3-4-5.net1.clk maxpoll 6 maxsources 3"
+client_conf+="
+refresh 128"
+chronyc_conf=""
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "20.*192.168.123.1" 0 0 measurements.log || test_fail
+check_file_messages "20.*192.168.123.2" 16 18 measurements.log || test_fail
+check_file_messages "20.*192.168.123.[345]" 50 55 measurements.log || test_fail
+rm -f tmp/measurements.log
+if check_config_h 'FEAT_DEBUG 1'; then
+	check_log_messages "refreshing 192.168.123" 8 8 || test_fail
+	check_log_messages "resolved_name.*still fresh" 8 8 || test_fail
+	check_log_messages "refreshing 192.168.123.2" 2 2 || test_fail
+	check_log_messages "refreshing 192.168.123.3" 2 2 || test_fail
+	check_log_messages "refreshing 192.168.123.4" 2 2 || test_fail
+	check_log_messages "refreshing 192.168.123.5" 2 2 || test_fail
+fi
+
+test_pass

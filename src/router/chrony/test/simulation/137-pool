@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "pool directive"
+
+limit=500
+client_conf="logdir tmp
+log measurements"
+
+servers=3
+client_server_conf="pool nodes-1-2-3.net1.clk"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "20.*192.168.123.1" 5 10 measurements.log || test_fail
+check_file_messages "20.*192.168.123.2" 5 10 measurements.log || test_fail
+check_file_messages "20.*192.168.123.3" 5 10 measurements.log || test_fail
+rm -f tmp/measurements.log
+
+servers=6
+client_server_conf="pool nodes-1-2-3-4-5-6.net1.clk minpoll 6 maxpoll 6"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "20.*192.168.123.*" 30 35 measurements.log || test_fail
+rm -f tmp/measurements.log
+
+servers=6
+client_server_conf="pool nodes-1-2-3-4-5-6.net1.clk maxsources 2 minpoll 6 maxpoll 6"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "20.*192.168.123.*" 15 17 measurements.log || test_fail
+rm -f tmp/measurements.log
+
+test_pass

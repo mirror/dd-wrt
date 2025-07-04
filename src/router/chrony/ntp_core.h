@@ -38,16 +38,12 @@ typedef enum {
   NTP_SERVER, NTP_PEER
 } NTP_Source_Type;
 
-typedef enum {
-  NTP_TS_DAEMON = 0,
-  NTP_TS_KERNEL,
-  NTP_TS_HARDWARE
-} NTP_Timestamp_Source;
-
 typedef struct {
   struct timespec ts;
   double err;
   NTP_Timestamp_Source source;
+  double rx_duration;
+  double net_correction;
 } NTP_Local_Timestamp;
 
 /* This is a private data type used for storing the instance record for
@@ -59,7 +55,8 @@ extern void NCR_Initialise(void);
 extern void NCR_Finalise(void);
 
 /* Get a new instance for a server or peer */
-extern NCR_Instance NCR_GetInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type, SourceParameters *params);
+extern NCR_Instance NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
+                                       SourceParameters *params, const char *name);
 
 /* Destroy an instance */
 extern void NCR_DestroyInstance(NCR_Instance instance);
@@ -74,7 +71,8 @@ extern void NCR_ResetInstance(NCR_Instance inst);
 extern void NCR_ResetPoll(NCR_Instance instance);
 
 /* Change the remote address of an instance */
-extern void NCR_ChangeRemoteAddress(NCR_Instance inst, NTP_Remote_Address *remote_addr);
+extern void NCR_ChangeRemoteAddress(NCR_Instance inst, NTP_Remote_Address *remote_addr,
+                                    int ntp_only);
 
 /* This routine is called when a new packet arrives off the network,
    and it relates to a source we have an ongoing protocol exchange with */
@@ -115,11 +113,14 @@ extern void NCR_ModifyMaxdelaydevratio(NCR_Instance inst, double new_max_delay_d
 
 extern void NCR_ModifyMinstratum(NCR_Instance inst, int new_min_stratum);
 
+extern void NCR_ModifyOffset(NCR_Instance inst, double new_offset);
+
 extern void NCR_ModifyPolltarget(NCR_Instance inst, int new_poll_target);
 
 extern void NCR_InitiateSampleBurst(NCR_Instance inst, int n_good_samples, int n_total_samples);
 
 extern void NCR_ReportSource(NCR_Instance inst, RPT_SourceReport *report, struct timespec *now);
+extern void NCR_GetAuthReport(NCR_Instance inst, RPT_AuthReport *report);
 extern void NCR_GetNTPReport(NCR_Instance inst, RPT_NTPReport *report);
 
 extern int NCR_AddAccessRestriction(IPAddr *ip_addr, int subnet_bits, int allow, int all);
@@ -134,6 +135,8 @@ extern uint32_t NCR_GetLocalRefid(NCR_Instance inst);
 
 extern int NCR_IsSyncPeer(NCR_Instance instance);
 
-extern void NCR_AddBroadcastDestination(IPAddr *addr, unsigned short port, int interval);
+extern void NCR_DumpAuthData(NCR_Instance inst);
+
+extern void NCR_AddBroadcastDestination(NTP_Remote_Address *addr, int interval);
 
 #endif /* GOT_NTP_CORE_H */

@@ -35,10 +35,8 @@ extern void NSD_Initialise(void);
 /* Finalisation function */
 extern void NSD_Finalise(void);
 
-/* Function to get an estimate of delay due to signing */
-extern int NSD_GetAuthDelay(uint32_t key_id);
-
 /* Function to sign an NTP packet and send it */
-extern int NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_Remote_Address *remote_addr, NTP_Local_Address *local_addr, int length);
+extern int NSD_SignAndSendPacket(uint32_t key_id, NTP_Packet *packet, NTP_PacketInfo *info,
+                                 NTP_Remote_Address *remote_addr, NTP_Local_Address *local_addr);
 
 #endif

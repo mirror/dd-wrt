@@ -47,8 +47,13 @@ Realloc(void *ptr, size_t size)
 {
   void *r;
 
+  if (size == 0) {
+    Free(ptr);
+    return NULL;
+  }
+
   r = realloc(ptr, size);
-  if (!r && size)
+  if (!r)
     LOG_FATAL("Could not allocate memory");
 
   return r;

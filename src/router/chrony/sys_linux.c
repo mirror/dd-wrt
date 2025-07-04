@@ -5,6 +5,7 @@
  * Copyright (C) Richard P. Curnow  1997-2003
  * Copyright (C) John G. Hasler  2009
  * Copyright (C) Miroslav Lichvar  2009-2012, 2014-2018
+ * Copyright (C) Shachar Raindel  2025
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -35,6 +36,13 @@
 
 #if defined(FEAT_PHC) || defined(HAVE_LINUX_TIMESTAMPING)
 #include <linux/ptp_clock.h>
+#include <poll.h>
+#endif
+
+#ifdef HAVE_LINUX_TIMESTAMPING
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
+#include <net/if.h>
 #endif
 
 #ifdef FEAT_SCFILTER
@@ -46,9 +54,6 @@
 #endif
 #ifdef FEAT_RTC
 #include <linux/rtc.h>
-#endif
-#ifdef HAVE_LINUX_TIMESTAMPING
-#include <linux/sockios.h>
 #endif
 #endif
 
@@ -63,6 +68,7 @@
 #include "local.h"
 #include "logging.h"
 #include "privops.h"
+#include "socket.h"
 #include "util.h"
 
 /* Frequency scale to convert from ppm to the timex freq */
@@ -96,21 +102,6 @@ static int have_setoffset;
 /* The assumed rate at which the effective frequency and tick values are
    updated in the kernel */
 static int tick_update_hz;
-
-/* ================================================== */
-
-inline static long
-our_round(double x)
-{
-  long y;
-
-  if (x > 0.0)
-    y = x + 0.5;
-  else
-    y = x - 0.5;
-
-  return y;
-}
 
 /* ================================================== */
 /* Positive means currently fast of true time, i.e. jump backwards */
@@ -149,7 +140,7 @@ set_frequency(double freq_ppm)
   double required_freq;
   int required_delta_tick;
 
-  required_delta_tick = our_round(freq_ppm / dhz);
+  required_delta_tick = round(freq_ppm / dhz);
 
   /* Older kernels (pre-2.6.18) don't apply the frequency offset exactly as
      set by adjtimex() and a scaling constant (that depends on the internal
@@ -426,7 +417,7 @@ SYS_Linux_Finalise(void)
 
 #ifdef FEAT_PRIVDROP
 void
-SYS_Linux_DropRoot(uid_t uid, gid_t gid, int clock_control)
+SYS_Linux_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context, int clock_control)
 {
   char cap_text[256];
   cap_t cap;
@@ -437,12 +428,22 @@ SYS_Linux_DropRoot(uid_t uid, gid_t gid, int clock_control)
   
   UTI_DropRoot(uid, gid);
 
-  /* Keep CAP_NET_BIND_SERVICE only if a server NTP port can be opened
-     and keep CAP_SYS_TIME only if the clock control is enabled */
-  if (snprintf(cap_text, sizeof (cap_text), "%s %s",
-               CNF_GetNTPPort() ? "cap_net_bind_service=ep" : "",
+  /* Keep CAP_NET_BIND_SERVICE if the NTP server sockets may need to be bound
+     to a privileged port.
+     Keep CAP_NET_RAW if an NTP socket may need to be bound to a device on
+     kernels before 5.7.
+     Keep CAP_SYS_TIME if the clock control is enabled. */
+  if (snprintf(cap_text, sizeof (cap_text), "%s %s %s",
+               (CNF_GetNTPPort() > 0 && CNF_GetNTPPort() < 1024) ?
+                 "cap_net_bind_service=ep" : "",
+               (CNF_GetBindNtpInterface() || CNF_GetBindAcquisitionInterface()) &&
+                 !SYS_Linux_CheckKernelVersion(5, 7) ? "cap_net_raw=ep" : "",
                clock_control ? "cap_sys_time=ep" : "") >= sizeof (cap_text))
     assert(0);
+
+  /* Helpers don't need any capabilities */
+  if (context != SYS_MAIN_PROCESS)
+    cap_text[0] = '\0';
 
   if ((cap = cap_from_text(cap_text)) == NULL) {
     LOG_FATAL("cap_from_text() failed");
@@ -474,39 +475,161 @@ void check_seccomp_applicability(void)
 /* ================================================== */
 
 void
-SYS_Linux_EnableSystemCallFilter(int level)
+SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
 {
-  const int syscalls[] = {
+  const int allowed[] = {
     /* Clock */
-    SCMP_SYS(adjtimex), SCMP_SYS(clock_gettime), SCMP_SYS(gettimeofday),
-    SCMP_SYS(settimeofday), SCMP_SYS(time),
+    SCMP_SYS(adjtimex),
+    SCMP_SYS(clock_adjtime),
+#ifdef __NR_clock_adjtime64
+    SCMP_SYS(clock_adjtime64),
+#endif
+    SCMP_SYS(clock_gettime),
+#ifdef __NR_clock_gettime64
+    SCMP_SYS(clock_gettime64),
+#endif
+    SCMP_SYS(gettimeofday),
+    SCMP_SYS(settimeofday),
+    SCMP_SYS(time),
+
     /* Process */
-    SCMP_SYS(clone), SCMP_SYS(exit), SCMP_SYS(exit_group), SCMP_SYS(getpid),
-    SCMP_SYS(getrlimit), SCMP_SYS(rt_sigaction), SCMP_SYS(rt_sigreturn),
-    SCMP_SYS(rt_sigprocmask), SCMP_SYS(set_tid_address), SCMP_SYS(sigreturn),
-    SCMP_SYS(wait4), SCMP_SYS(waitpid),
+    SCMP_SYS(clone),
+#ifdef __NR_clone3
+    SCMP_SYS(clone3),
+#endif
+    SCMP_SYS(exit),
+    SCMP_SYS(exit_group),
+    SCMP_SYS(getpid),
+    SCMP_SYS(getrlimit),
+    SCMP_SYS(getuid),
+    SCMP_SYS(getuid32),
+#ifdef __NR_membarrier
+    SCMP_SYS(membarrier),
+#endif
+#ifdef __NR_rseq
+    SCMP_SYS(rseq),
+#endif
+    SCMP_SYS(rt_sigaction),
+    SCMP_SYS(rt_sigreturn),
+    SCMP_SYS(rt_sigprocmask),
+    SCMP_SYS(set_tid_address),
+    SCMP_SYS(sigreturn),
+    SCMP_SYS(wait4),
+    SCMP_SYS(waitpid),
+
     /* Memory */
-    SCMP_SYS(brk), SCMP_SYS(madvise), SCMP_SYS(mmap), SCMP_SYS(mmap2),
-    SCMP_SYS(mprotect), SCMP_SYS(mremap), SCMP_SYS(munmap), SCMP_SYS(shmdt),
+    SCMP_SYS(brk),
+    SCMP_SYS(madvise),
+    SCMP_SYS(mmap),
+    SCMP_SYS(mmap2),
+    SCMP_SYS(mprotect),
+    SCMP_SYS(mremap),
+    SCMP_SYS(munmap),
+    SCMP_SYS(shmdt),
+
     /* Filesystem */
-    SCMP_SYS(_llseek), SCMP_SYS(access), SCMP_SYS(chmod), SCMP_SYS(chown),
-    SCMP_SYS(chown32), SCMP_SYS(faccessat), SCMP_SYS(fchmodat), SCMP_SYS(fchownat),
-    SCMP_SYS(fstat), SCMP_SYS(fstat64), SCMP_SYS(getdents), SCMP_SYS(getdents64),
-    SCMP_SYS(lseek), SCMP_SYS(newfstatat), SCMP_SYS(rename), SCMP_SYS(renameat),
-    SCMP_SYS(stat), SCMP_SYS(stat64), SCMP_SYS(statfs), SCMP_SYS(statfs64),
-    SCMP_SYS(unlink), SCMP_SYS(unlinkat),
+    SCMP_SYS(_llseek),
+    SCMP_SYS(access),
+    SCMP_SYS(chmod),
+    SCMP_SYS(chown),
+    SCMP_SYS(chown32),
+    SCMP_SYS(faccessat),
+    SCMP_SYS(fchmodat),
+    SCMP_SYS(fchownat),
+    SCMP_SYS(fstat),
+    SCMP_SYS(fstat64),
+    SCMP_SYS(fstatat64),
+    SCMP_SYS(getdents),
+    SCMP_SYS(getdents64),
+    SCMP_SYS(lseek),
+    SCMP_SYS(lstat),
+    SCMP_SYS(lstat64),
+    SCMP_SYS(newfstatat),
+    SCMP_SYS(readlink),
+    SCMP_SYS(readlinkat),
+    SCMP_SYS(rename),
+    SCMP_SYS(renameat),
+#ifdef __NR_renameat2
+    SCMP_SYS(renameat2),
+#endif
+    SCMP_SYS(stat),
+    SCMP_SYS(stat64),
+    SCMP_SYS(statfs),
+    SCMP_SYS(statfs64),
+#ifdef __NR_statx
+    SCMP_SYS(statx),
+#endif
+    SCMP_SYS(unlink),
+    SCMP_SYS(unlinkat),
+
     /* Socket */
-    SCMP_SYS(bind), SCMP_SYS(connect), SCMP_SYS(getsockname), SCMP_SYS(getsockopt),
-    SCMP_SYS(recv), SCMP_SYS(recvfrom), SCMP_SYS(recvmmsg), SCMP_SYS(recvmsg),
-    SCMP_SYS(send), SCMP_SYS(sendmmsg), SCMP_SYS(sendmsg), SCMP_SYS(sendto),
+    SCMP_SYS(accept),
+    SCMP_SYS(bind),
+    SCMP_SYS(connect),
+    SCMP_SYS(getsockname),
+    SCMP_SYS(getsockopt),
+    SCMP_SYS(recv),
+    SCMP_SYS(recvfrom),
+    SCMP_SYS(recvmmsg),
+#ifdef __NR_recvmmsg_time64
+    SCMP_SYS(recvmmsg_time64),
+#endif
+    SCMP_SYS(recvmsg),
+    SCMP_SYS(send),
+    SCMP_SYS(sendmmsg),
+    SCMP_SYS(sendmsg),
+    SCMP_SYS(sendto),
+    SCMP_SYS(shutdown),
     /* TODO: check socketcall arguments */
     SCMP_SYS(socketcall),
+
     /* General I/O */
-    SCMP_SYS(_newselect), SCMP_SYS(close), SCMP_SYS(open), SCMP_SYS(openat), SCMP_SYS(pipe),
-    SCMP_SYS(pipe2), SCMP_SYS(poll), SCMP_SYS(ppoll), SCMP_SYS(pselect6), SCMP_SYS(read),
-    SCMP_SYS(futex), SCMP_SYS(select), SCMP_SYS(set_robust_list), SCMP_SYS(write),
+    SCMP_SYS(_newselect),
+    SCMP_SYS(close),
+    SCMP_SYS(open),
+    SCMP_SYS(openat),
+    SCMP_SYS(pipe),
+    SCMP_SYS(pipe2),
+    SCMP_SYS(poll),
+    SCMP_SYS(ppoll),
+#ifdef __NR_ppoll_time64
+    SCMP_SYS(ppoll_time64),
+#endif
+    SCMP_SYS(pread64),
+    SCMP_SYS(pselect6),
+#ifdef __NR_pselect6_time64
+    SCMP_SYS(pselect6_time64),
+#endif
+    SCMP_SYS(read),
+    SCMP_SYS(futex),
+#ifdef __NR_futex_time64
+    SCMP_SYS(futex_time64),
+#endif
+    SCMP_SYS(select),
+    SCMP_SYS(set_robust_list),
+    SCMP_SYS(write),
+    SCMP_SYS(writev),
+
     /* Miscellaneous */
-    SCMP_SYS(getrandom), SCMP_SYS(sysinfo), SCMP_SYS(uname),
+    SCMP_SYS(getrandom),
+    SCMP_SYS(sysinfo),
+    SCMP_SYS(uname),
+  };
+
+  const int denied_any[] = {
+    SCMP_SYS(execve),
+#ifdef __NR_execveat
+    SCMP_SYS(execveat),
+#endif
+    SCMP_SYS(fork),
+    SCMP_SYS(ptrace),
+    SCMP_SYS(vfork),
+  };
+
+  const int denied_ntske[] = {
+    SCMP_SYS(ioctl),
+    SCMP_SYS(setsockopt),
+    SCMP_SYS(socket),
   };
 
   const int socket_domains[] = {
@@ -517,21 +640,30 @@ SYS_Linux_EnableSystemCallFilter(int level)
   };
 
   const static int socket_options[][2] = {
-    { SOL_IP, IP_PKTINFO }, { SOL_IP, IP_FREEBIND },
+    { SOL_IP, IP_PKTINFO }, { SOL_IP, IP_FREEBIND }, { SOL_IP, IP_TOS },
 #ifdef FEAT_IPV6
     { SOL_IPV6, IPV6_V6ONLY }, { SOL_IPV6, IPV6_RECVPKTINFO },
+#ifdef IPV6_TCLASS
+    { SOL_IPV6, IPV6_TCLASS },
+#endif
+#endif
+#ifdef SO_BINDTODEVICE
+    { SOL_SOCKET, SO_BINDTODEVICE },
 #endif
     { SOL_SOCKET, SO_BROADCAST }, { SOL_SOCKET, SO_REUSEADDR },
+#ifdef SO_REUSEPORT
+    { SOL_SOCKET, SO_REUSEPORT },
+#endif
     { SOL_SOCKET, SO_TIMESTAMP }, { SOL_SOCKET, SO_TIMESTAMPNS },
 #ifdef HAVE_LINUX_TIMESTAMPING
     { SOL_SOCKET, SO_SELECT_ERR_QUEUE }, { SOL_SOCKET, SO_TIMESTAMPING },
 #endif
   };
 
-  const static int fcntls[] = { F_GETFD, F_SETFD, F_SETFL };
+  const static int fcntls[] = { F_GETFD, F_SETFD, F_GETFL, F_SETFL };
 
   const static unsigned long ioctls[] = {
-    FIONREAD, TCGETS,
+    FIONREAD, TCGETS, TIOCGWINSZ,
 #if defined(FEAT_PHC) || defined(HAVE_LINUX_TIMESTAMPING)
     PTP_EXTTS_REQUEST, PTP_SYS_OFFSET,
 #ifdef PTP_PIN_SETFUNC
@@ -555,64 +687,102 @@ SYS_Linux_EnableSystemCallFilter(int level)
 #endif
   };
 
+  unsigned int default_action, deny_action;
   scmp_filter_ctx *ctx;
   int i;
 
-  /* Check if the chronyd configuration is supported */
-  check_seccomp_applicability();
+  /* Sign of the level determines the deny action (kill or SIGSYS).
+     At level 1, selected syscalls are allowed, others are denied.
+     At level 2, selected syscalls are denied, others are allowed. */
 
-  /* Start the helper process, which will run without any seccomp filter.  It
-     will be used for getaddrinfo(), for which it's difficult to maintain a
-     list of required system calls (with glibc it depends on what NSS modules
-     are installed and enabled on the system). */
-  PRV_StartHelper();
+  deny_action = level > 0 ? SCMP_ACT_KILL : SCMP_ACT_TRAP;
+  if (level < 0)
+    level = -level;
 
-  ctx = seccomp_init(level > 0 ? SCMP_ACT_KILL : SCMP_ACT_TRAP);
+  switch (level) {
+    case 1:
+      default_action = deny_action;
+      break;
+    case 2:
+      default_action = SCMP_ACT_ALLOW;
+      break;
+    default:
+      LOG_FATAL("Unsupported filter level");
+  }
+
+  if (context == SYS_MAIN_PROCESS) {
+    /* Check if the chronyd configuration is supported */
+    check_seccomp_applicability();
+
+    /* At level 1, start a helper process which will not have a seccomp filter.
+       It will be used for getaddrinfo(), for which it is difficult to maintain
+       a list of required system calls (with glibc it depends on what NSS
+       modules are installed and enabled on the system). */
+    if (default_action != SCMP_ACT_ALLOW)
+      PRV_StartHelper();
+  }
+
+  ctx = seccomp_init(default_action);
   if (ctx == NULL)
       LOG_FATAL("Failed to initialize seccomp");
 
-  /* Add system calls that are always allowed */
-  for (i = 0; i < (sizeof (syscalls) / sizeof (*syscalls)); i++) {
-    if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscalls[i], 0) < 0)
-      goto add_failed;
+  if (default_action != SCMP_ACT_ALLOW) {
+    for (i = 0; i < sizeof (allowed) / sizeof (*allowed); i++) {
+      if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, allowed[i], 0) < 0)
+        goto add_failed;
+    }
+  } else {
+    for (i = 0; i < sizeof (denied_any) / sizeof (*denied_any); i++) {
+      if (seccomp_rule_add(ctx, deny_action, denied_any[i], 0) < 0)
+        goto add_failed;
+    }
+
+    if (context == SYS_NTSKE_HELPER) {
+      for (i = 0; i < sizeof (denied_ntske) / sizeof (*denied_ntske); i++) {
+        if (seccomp_rule_add(ctx, deny_action, denied_ntske[i], 0) < 0)
+          goto add_failed;
+      }
+    }
   }
 
-  /* Allow sockets to be created only in selected domains */
-  for (i = 0; i < sizeof (socket_domains) / sizeof (*socket_domains); i++) {
-    if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket), 1,
-                         SCMP_A0(SCMP_CMP_EQ, socket_domains[i])) < 0)
-      goto add_failed;
-  }
+  if (default_action != SCMP_ACT_ALLOW && context == SYS_MAIN_PROCESS) {
+    /* Allow opening sockets in selected domains */
+    for (i = 0; i < sizeof (socket_domains) / sizeof (*socket_domains); i++) {
+      if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket), 1,
+                           SCMP_A0(SCMP_CMP_EQ, socket_domains[i])) < 0)
+        goto add_failed;
+    }
 
-  /* Allow setting only selected sockets options */
-  for (i = 0; i < sizeof (socket_options) / sizeof (*socket_options); i++) {
-    if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(setsockopt), 3,
-                         SCMP_A1(SCMP_CMP_EQ, socket_options[i][0]),
-                         SCMP_A2(SCMP_CMP_EQ, socket_options[i][1]),
-                         SCMP_A4(SCMP_CMP_LE, sizeof (int))) < 0)
-      goto add_failed;
-  }
+    /* Allow selected socket options */
+    for (i = 0; i < sizeof (socket_options) / sizeof (*socket_options); i++) {
+      if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(setsockopt), 2,
+                           SCMP_A1(SCMP_CMP_EQ, socket_options[i][0]),
+                           SCMP_A2(SCMP_CMP_EQ, socket_options[i][1])))
+        goto add_failed;
+    }
 
-  /* Allow only selected fcntl calls */
-  for (i = 0; i < sizeof (fcntls) / sizeof (*fcntls); i++) {
-    if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fcntl), 1,
-                         SCMP_A1(SCMP_CMP_EQ, fcntls[i])) < 0 ||
-        seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fcntl64), 1,
-                         SCMP_A1(SCMP_CMP_EQ, fcntls[i])) < 0)
-      goto add_failed;
-  }
+    /* Allow selected fcntl calls */
+    for (i = 0; i < sizeof (fcntls) / sizeof (*fcntls); i++) {
+      if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fcntl), 1,
+                           SCMP_A1(SCMP_CMP_EQ, fcntls[i])) < 0 ||
+          seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fcntl64), 1,
+                           SCMP_A1(SCMP_CMP_EQ, fcntls[i])) < 0)
+        goto add_failed;
+    }
 
-  /* Allow only selected ioctls */
-  for (i = 0; i < sizeof (ioctls) / sizeof (*ioctls); i++) {
-    if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
-                         SCMP_A1(SCMP_CMP_EQ, ioctls[i])) < 0)
-      goto add_failed;
+    /* Allow selected ioctls */
+    for (i = 0; i < sizeof (ioctls) / sizeof (*ioctls); i++) {
+      if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
+                           SCMP_A1(SCMP_CMP_EQ, ioctls[i])) < 0)
+        goto add_failed;
+    }
   }
 
   if (seccomp_load(ctx) < 0)
     LOG_FATAL("Failed to load seccomp rules");
 
-  LOG(LOGS_INFO, "Loaded seccomp filter");
+  LOG(context == SYS_MAIN_PROCESS ? LOGS_INFO : LOGS_DEBUG,
+      "Loaded seccomp filter (level %d)", level);
   seccomp_release(ctx);
   return;
 
@@ -637,73 +807,25 @@ SYS_Linux_CheckKernelVersion(int req_major, int req_minor)
 
 #if defined(FEAT_PHC) || defined(HAVE_LINUX_TIMESTAMPING)
 
-#define PHC_READINGS 10
-
 static int
-process_phc_readings(struct timespec ts[][3], int n, double precision,
-                     struct timespec *phc_ts, struct timespec *sys_ts, double *err)
+get_phc_readings(int phc_fd, int max_samples, struct timespec ts[][3])
 {
-  double min_delay = 0.0, delays[PTP_MAX_SAMPLES], phc_sum, sys_sum, sys_prec;
-  int i, combined;
-
-  if (n > PTP_MAX_SAMPLES)
-    return 0;
-
-  for (i = 0; i < n; i++) {
-    delays[i] = UTI_DiffTimespecsToDouble(&ts[i][2], &ts[i][0]);
-
-    if (delays[i] < 0.0) {
-      /* Step in the middle of a PHC reading? */
-      DEBUG_LOG("Bad PTP_SYS_OFFSET sample delay=%e", delays[i]);
-      return 0;
-    }
-
-    if (!i || delays[i] < min_delay)
-      min_delay = delays[i];
-  }
-
-  sys_prec = LCL_GetSysPrecisionAsQuantum();
-
-  /* Combine best readings */
-  for (i = combined = 0, phc_sum = sys_sum = 0.0; i < n; i++) {
-    if (delays[i] > min_delay + MAX(sys_prec, precision))
-      continue;
-
-    phc_sum += UTI_DiffTimespecsToDouble(&ts[i][1], &ts[0][1]);
-    sys_sum += UTI_DiffTimespecsToDouble(&ts[i][0], &ts[0][0]) + delays[i] / 2.0;
-    combined++;
-  }
-
-  assert(combined);
-
-  UTI_AddDoubleToTimespec(&ts[0][1], phc_sum / combined, phc_ts);
-  UTI_AddDoubleToTimespec(&ts[0][0], sys_sum / combined, sys_ts);
-  *err = MAX(min_delay / 2.0, precision);
-
-  return 1;
-}
-
-/* ================================================== */
-
-static int
-get_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
-               struct timespec *sys_ts, double *err)
-{
-  struct timespec ts[PHC_READINGS][3];
   struct ptp_sys_offset sys_off;
   int i;
+
+  max_samples = CLAMP(0, max_samples, PTP_MAX_SAMPLES);
 
   /* Silence valgrind */
   memset(&sys_off, 0, sizeof (sys_off));
 
-  sys_off.n_samples = PHC_READINGS;
+  sys_off.n_samples = max_samples;
 
   if (ioctl(phc_fd, PTP_SYS_OFFSET, &sys_off)) {
     DEBUG_LOG("ioctl(%s) failed : %s", "PTP_SYS_OFFSET", strerror(errno));
     return 0;
   }
 
-  for (i = 0; i < PHC_READINGS; i++) {
+  for (i = 0; i < max_samples; i++) {
     ts[i][0].tv_sec = sys_off.ts[i * 2].sec;
     ts[i][0].tv_nsec = sys_off.ts[i * 2].nsec;
     ts[i][1].tv_sec = sys_off.ts[i * 2 + 1].sec;
@@ -712,31 +834,31 @@ get_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
     ts[i][2].tv_nsec = sys_off.ts[i * 2 + 2].nsec;
   }
 
-  return process_phc_readings(ts, PHC_READINGS, precision, phc_ts, sys_ts, err);
+  return max_samples;
 }
 
 /* ================================================== */
 
 static int
-get_extended_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
-                        struct timespec *sys_ts, double *err)
+get_extended_phc_readings(int phc_fd, int max_samples, struct timespec ts[][3])
 {
 #ifdef PTP_SYS_OFFSET_EXTENDED
-  struct timespec ts[PHC_READINGS][3];
   struct ptp_sys_offset_extended sys_off;
   int i;
+
+  max_samples = CLAMP(0, max_samples, PTP_MAX_SAMPLES);
 
   /* Silence valgrind */
   memset(&sys_off, 0, sizeof (sys_off));
 
-  sys_off.n_samples = PHC_READINGS;
+  sys_off.n_samples = max_samples;
 
   if (ioctl(phc_fd, PTP_SYS_OFFSET_EXTENDED, &sys_off)) {
     DEBUG_LOG("ioctl(%s) failed : %s", "PTP_SYS_OFFSET_EXTENDED", strerror(errno));
     return 0;
   }
 
-  for (i = 0; i < PHC_READINGS; i++) {
+  for (i = 0; i < max_samples; i++) {
     ts[i][0].tv_sec = sys_off.ts[i][0].sec;
     ts[i][0].tv_nsec = sys_off.ts[i][0].nsec;
     ts[i][1].tv_sec = sys_off.ts[i][1].sec;
@@ -745,7 +867,7 @@ get_extended_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
     ts[i][2].tv_nsec = sys_off.ts[i][2].nsec;
   }
 
-  return process_phc_readings(ts, PHC_READINGS, precision, phc_ts, sys_ts, err);
+  return max_samples;
 #else
   return 0;
 #endif
@@ -754,11 +876,13 @@ get_extended_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
 /* ================================================== */
 
 static int
-get_precise_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
-		       struct timespec *sys_ts, double *err)
+get_precise_phc_readings(int phc_fd, int max_samples, struct timespec ts[][3])
 {
 #ifdef PTP_SYS_OFFSET_PRECISE
   struct ptp_sys_offset_precise sys_off;
+
+  if (max_samples < 1)
+    return 0;
 
   /* Silence valgrind */
   memset(&sys_off, 0, sizeof (sys_off));
@@ -769,11 +893,11 @@ get_precise_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
     return 0;
   }
 
-  phc_ts->tv_sec = sys_off.device.sec;
-  phc_ts->tv_nsec = sys_off.device.nsec;
-  sys_ts->tv_sec = sys_off.sys_realtime.sec;
-  sys_ts->tv_nsec = sys_off.sys_realtime.nsec;
-  *err = MAX(LCL_GetSysPrecisionAsQuantum(), precision);
+  ts[0][0].tv_sec = sys_off.sys_realtime.sec;
+  ts[0][0].tv_nsec = sys_off.sys_realtime.nsec;
+  ts[0][1].tv_sec = sys_off.device.sec;
+  ts[0][1].tv_nsec = sys_off.device.nsec;
+  ts[0][2] = ts[0][0];
 
   return 1;
 #else
@@ -783,33 +907,100 @@ get_precise_phc_sample(int phc_fd, double precision, struct timespec *phc_ts,
 
 /* ================================================== */
 
-int
-SYS_Linux_OpenPHC(const char *path, int phc_index)
+/* Make sure an FD is a PHC.  Return the FD if it is, or close the FD
+   and return -1 if it is not. */
+
+static int
+verify_fd_is_phc(int phc_fd)
 {
   struct ptp_clock_caps caps;
-  char phc_path[64];
-  int phc_fd;
 
-  if (!path) {
-    if (snprintf(phc_path, sizeof (phc_path), "/dev/ptp%d", phc_index) >= sizeof (phc_path))
-      return -1;
-    path = phc_path;
-  }
-
-  phc_fd = open(path, O_RDONLY);
-  if (phc_fd < 0) {
-    LOG(LOGS_ERR, "Could not open %s : %s", path, strerror(errno));
-    return -1;
-  }
-
-  /* Make sure it is a PHC */
   if (ioctl(phc_fd, PTP_CLOCK_GETCAPS, &caps)) {
     LOG(LOGS_ERR, "ioctl(%s) failed : %s", "PTP_CLOCK_GETCAPS", strerror(errno));
     close(phc_fd);
     return -1;
   }
 
-  UTI_FdSetCloexec(phc_fd);
+  return phc_fd;
+}
+
+/* ================================================== */
+
+static int
+open_phc_by_iface_name(const char *iface)
+{
+#ifdef HAVE_LINUX_TIMESTAMPING
+  struct ethtool_ts_info ts_info;
+  char phc_device[PATH_MAX];
+  struct ifreq req;
+  int sock_fd;
+
+  sock_fd = SCK_OpenUdpSocket(NULL, NULL, NULL, 0);
+  if (sock_fd < 0)
+    return -1;
+
+  memset(&req, 0, sizeof (req));
+  memset(&ts_info, 0, sizeof (ts_info));
+
+  if (snprintf(req.ifr_name, sizeof (req.ifr_name), "%s", iface) >=
+      sizeof (req.ifr_name)) {
+    SCK_CloseSocket(sock_fd);
+    return -1;
+  }
+
+  ts_info.cmd = ETHTOOL_GET_TS_INFO;
+  req.ifr_data = (char *)&ts_info;
+
+  if (ioctl(sock_fd, SIOCETHTOOL, &req)) {
+    DEBUG_LOG("ioctl(%s) failed : %s", "SIOCETHTOOL", strerror(errno));
+    SCK_CloseSocket(sock_fd);
+    return -1;
+  }
+
+  /* Simplify failure paths by closing the socket as early as possible */
+  SCK_CloseSocket(sock_fd);
+  sock_fd = -1;
+
+  if (ts_info.phc_index < 0) {
+    DEBUG_LOG("PHC missing on %s", req.ifr_name);
+    return -1;
+  }
+
+  if (snprintf(phc_device, sizeof (phc_device),
+               "/dev/ptp%d", ts_info.phc_index) >= sizeof (phc_device))
+    return -1;
+
+  return open(phc_device, O_RDONLY);
+#else
+  return -1;
+#endif
+}
+
+/* ================================================== */
+
+int
+SYS_Linux_OpenPHC(const char *device)
+{
+  int phc_fd = -1;
+
+  if (device[0] == '/') {
+    phc_fd = open(device, O_RDONLY);
+    if (phc_fd >= 0)
+      phc_fd = verify_fd_is_phc(phc_fd);
+  }
+
+  if (phc_fd < 0) {
+    phc_fd = open_phc_by_iface_name(device);
+    if (phc_fd < 0) {
+      LOG(LOGS_ERR, "Could not open PHC of iface %s : %s",
+          device, strerror(errno));
+      return -1;
+    }
+    phc_fd = verify_fd_is_phc(phc_fd);
+  }
+
+  if (phc_fd >= 0)
+    UTI_FdSetCloexec(phc_fd);
 
   return phc_fd;
 }
@@ -817,23 +1008,23 @@ SYS_Linux_OpenPHC(const char *path, int phc_index)
 /* ================================================== */
 
 int
-SYS_Linux_GetPHCSample(int fd, int nocrossts, double precision, int *reading_mode,
-                       struct timespec *phc_ts, struct timespec *sys_ts, double *err)
+SYS_Linux_GetPHCReadings(int fd, int nocrossts, int *reading_mode, int max_readings,
+                         struct timespec tss[][3])
 {
-  if ((*reading_mode == 2 || !*reading_mode) && !nocrossts &&
-      get_precise_phc_sample(fd, precision, phc_ts, sys_ts, err)) {
+  int r = 0;
+
+  if ((*reading_mode == 2 || *reading_mode == 0) && !nocrossts &&
+      (r = get_precise_phc_readings(fd, max_readings, tss)) > 0) {
     *reading_mode = 2;
-    return 1;
-  } else if ((*reading_mode == 3 || !*reading_mode) &&
-      get_extended_phc_sample(fd, precision, phc_ts, sys_ts, err)) {
+  } else if ((*reading_mode == 3 || *reading_mode == 0) &&
+             (r = get_extended_phc_readings(fd, max_readings, tss)) > 0) {
     *reading_mode = 3;
-    return 1;
-  } else if ((*reading_mode == 1 || !*reading_mode) &&
-      get_phc_sample(fd, precision, phc_ts, sys_ts, err)) {
+  } else if ((*reading_mode == 1 || *reading_mode == 0) &&
+             (r = get_phc_readings(fd, max_readings, tss)) > 0) {
     *reading_mode = 1;
-    return 1;
   }
-  return 0;
+
+  return r;
 }
 
 /* ================================================== */
@@ -851,7 +1042,7 @@ SYS_Linux_SetPHCExtTimestamping(int fd, int pin, int channel,
   pin_desc.func = enable ? PTP_PF_EXTTS : PTP_PF_NONE;
   pin_desc.chan = channel;
 
-  if (ioctl(fd, PTP_PIN_SETFUNC, &pin_desc)) {
+  if (pin >= 0 && ioctl(fd, PTP_PIN_SETFUNC, &pin_desc)) {
     DEBUG_LOG("ioctl(%s) failed : %s", "PTP_PIN_SETFUNC", strerror(errno));
     return 0;
   }
@@ -871,6 +1062,14 @@ SYS_Linux_SetPHCExtTimestamping(int fd, int pin, int channel,
     return 0;
   }
 
+#if defined(PTP_MASK_CLEAR_ALL) && defined(PTP_MASK_EN_SINGLE)
+  /* Disable events from other channels on this descriptor */
+  if (ioctl(fd, PTP_MASK_CLEAR_ALL))
+    DEBUG_LOG("ioctl(%s) failed : %s", "PTP_MASK_CLEAR_ALL", strerror(errno));
+  else if (ioctl(fd, PTP_MASK_EN_SINGLE, &channel))
+    DEBUG_LOG("ioctl(%s) failed : %s", "PTP_MASK_EN_SINGLE", strerror(errno));
+#endif
+
   return 1;
 }
 
@@ -880,6 +1079,16 @@ int
 SYS_Linux_ReadPHCExtTimestamp(int fd, struct timespec *phc_ts, int *channel)
 {
   struct ptp_extts_event extts_event;
+  struct pollfd pfd;
+
+  /* Make sure the read will not block in case we have multiple
+     descriptors of the same PHC (O_NONBLOCK does not work) */
+  pfd.fd = fd;
+  pfd.events = POLLIN;
+  if (poll(&pfd, 1, 0) != 1 || pfd.revents != POLLIN) {
+    DEBUG_LOG("Missing PHC extts event");
+    return 0;
+  }
 
   if (read(fd, &extts_event, sizeof (extts_event)) != sizeof (extts_event)) {
     DEBUG_LOG("Could not read PHC extts event");

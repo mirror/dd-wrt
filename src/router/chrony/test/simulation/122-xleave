@@ -1,15 +1,36 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 test_start "interleaved mode"
 
 client_server_options="xleave"
+client_conf="
+logdir tmp
+log rawmeasurements"
+
+server_conf="noclientlog"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+check_file_messages "111 111 .111.* 4I [DKH] [DKH]\$" 0 0 measurements.log || test_fail
+rm -f tmp/measurements.log
+
+server_conf=""
+max_sync_time=270
 
 run_test || test_fail
 check_chronyd_exit || test_fail
 check_source_selection || test_fail
 check_packet_interval || test_fail
 check_sync || test_fail
+
+check_file_messages "111 111 1111.* 4B [DKH] [DKH]\$" 2 2 measurements.log || test_fail
+check_file_messages "111 111 1111.* 4I [DKH] [DKH]\$" 30 200 measurements.log || test_fail
+check_file_messages "111 111 0111.* 4I [DKH] [DKH]\$" 1 1 measurements.log || test_fail
+rm -f tmp/measurements.log
 
 clients=2
 peers=2
@@ -25,13 +46,45 @@ check_chronyd_exit || test_fail
 check_source_selection && test_fail
 check_sync && test_fail
 
+rm -f tmp/measurements.log
+
 for rpoll in 4 5 6; do
 	client_rpeer_options="xleave minpoll $rpoll maxpoll $rpoll"
 
 	run_test || test_fail
 	check_chronyd_exit || test_fail
-	check_source_selection || test_fail
 	check_sync || test_fail
+
+	if [ $rpoll -le 5 ]; then
+		check_file_messages "111 111 1111.* 1B [DKH] [DKH]\$" 0 0 measurements.log || test_fail
+		check_file_messages "111 111 1111.* 1I [DKH] [DKH]\$" 200 310 measurements.log || test_fail
+	else
+		check_file_messages "111 111 1111.* 1B [DKH] [DKH]\$" 125 135 measurements.log || test_fail
+		check_file_messages "111 111 1111.* 1I [DKH] [DKH]\$" 20 30 measurements.log || test_fail
+	fi
+	rm -f tmp/measurements.log
 done
+
+if check_config_h 'FEAT_CMDMON 1'; then
+	# test client timestamp selection and server timestamp correction
+	base_delay="(+ 1.25e-6 (* -1 (equal 0.1 from 5)))"
+	jitter=1e-9
+	wander=1e-12
+	client_lpeer_options="xleave minpoll 5 maxpoll 5 noselect"
+	client_rpeer_options="xleave minpoll 5 maxpoll 5 noselect"
+	chronyc_conf="doffset -0.1"
+	chronyc_start=7200
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync && test_fail
+
+	check_file_messages "\.2   N  2 111 111 ....   5  5 .\... ..\....e-..  2\....e-06" \
+		290 310 measurements.log || test_fail
+	check_file_messages "\.2   N  2 111 111 ....   5  5 .\... ..\....e-..  .\....e-0[0123]" \
+		0 0 measurements.log || test_fail
+	rm -f tmp/measurements.log
+fi
 
 test_pass

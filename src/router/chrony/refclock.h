@@ -37,6 +37,7 @@ typedef struct {
   int driver_poll;
   int poll;
   int filter_length;
+  int local;
   int pps_forced;
   int pps_rate;
   int min_samples;
@@ -67,6 +68,7 @@ extern void RCL_Finalise(void);
 extern int RCL_AddRefclock(RefclockParameters *params);
 extern void RCL_StartRefclocks(void);
 extern void RCL_ReportSource(RPT_SourceReport *report, struct timespec *now);
+extern int RCL_ModifyOffset(uint32_t ref_id, double offset);
 
 /* functions used by drivers */
 extern void RCL_SetDriverData(RCL_Instance instance, void *data);
@@ -74,10 +76,12 @@ extern void *RCL_GetDriverData(RCL_Instance instance);
 extern char *RCL_GetDriverParameter(RCL_Instance instance);
 extern void RCL_CheckDriverOptions(RCL_Instance instance, const char **options);
 extern char *RCL_GetDriverOption(RCL_Instance instance, char *name);
-extern int RCL_AddSample(RCL_Instance instance, struct timespec *sample_time, double offset, int leap);
+extern int RCL_AddSample(RCL_Instance instance, struct timespec *sample_time,
+                         struct timespec *ref_time, int leap);
 extern int RCL_AddPulse(RCL_Instance instance, struct timespec *pulse_time, double second);
 extern int RCL_AddCookedPulse(RCL_Instance instance, struct timespec *cooked_time,
                               double second, double dispersion, double raw_correction);
+extern void RCL_UpdateReachability(RCL_Instance instance);
 extern double RCL_GetPrecision(RCL_Instance instance);
 extern int RCL_GetDriverPoll(RCL_Instance instance);
 

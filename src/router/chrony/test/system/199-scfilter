@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_chronyd_features SCFILTER || test_skip "SCFILTER support disabled"
+
+[[ $CHRONYD_WRAPPER == *valgrind* ]] && test_skip "SCFILTER breaks valgrind"
+
+test_start "system call filter in destructive tests"
+
+for level in 1 2 -1 -2; do
+	test_message 1 1 "level $level:"
+	for test in 1[0-8][0-9]-*[^_]; do
+		test_message 2 0 "$test"
+		TEST_SCFILTER=$level "./$test" > /dev/null 2> /dev/null
+		result=$?
+
+		if [ $result != 0 ] && [ $result != 9 ] ; then
+			test_bad
+			test_fail
+		fi
+		test_ok
+	done
+done
+
+test_pass

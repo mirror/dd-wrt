@@ -20,9 +20,14 @@ TEST_DIR=${TEST_DIR:-$(pwd)/tmp}
 TEST_LIBDIR=${TEST_LIBDIR:-$TEST_DIR}
 TEST_LOGDIR=${TEST_LOGDIR:-$TEST_DIR}
 TEST_RUNDIR=${TEST_RUNDIR:-$TEST_DIR}
+TEST_SCFILTER=${TEST_SCFILTER:-0}
+TEST_ROOT_USER=${TEST_ROOT_USER:-root}
+TEST_PRIVDROP_USER=${TEST_PRIVDROP_USER:-nobody}
 
 test_start() {
-	check_chronyd_features NTP CMDMON || test_skip "NTP/CMDMON support disabled"
+	local user=$(get_user)
+
+	check_chronyd_features CMDMON || test_skip "CMDMON support disabled"
 
 	[ "${#TEST_DIR}" -ge 5 ] || test_skip "invalid TEST_DIR"
 
@@ -35,12 +40,14 @@ test_start() {
 
 	rm -f "$TEST_LIBDIR"/* "$TEST_LOGDIR"/* "$TEST_RUNDIR"/*
 
-	if [ "$user" != "root" ]; then
+	if [ "$user" != "$TEST_ROOT_USER" ]; then
 		id -u "$user" > /dev/null 2> /dev/null || test_skip "missing user $user"
 		chown "$user:$(id -g "$user")" "$TEST_DIR" || test_skip "could not chown $TEST_DIR"
 		su "$user" -s /bin/sh -c "touch $TEST_DIR/test" 2> /dev/null || \
 			test_skip "$user cannot access $TEST_DIR"
 		rm "$TEST_DIR/test"
+	else
+		chown 0:0 "$TEST_DIR" || test_skip "could not chown $TEST_DIR"
 	fi
 
 	echo "Testing $*:"
@@ -89,7 +96,13 @@ chronyc=$(command -v chronyc)
 [ -x "$chronyd" ] || test_skip "chronyd not found"
 [ -x "$chronyc" ] || test_skip "chronyc not found"
 
-netstat -aln > /dev/null 2> /dev/null || test_skip "missing netstat"
+if netstat -aln > /dev/null 2> /dev/null; then
+	port_list_command="netstat -aln"
+elif ss -atun > /dev/null 2> /dev/null; then
+	port_list_command="ss -atun"
+else
+	test_skip "missing netstat or ss"
+fi
 
 # Default test testings
 default_minimal_config=0
@@ -97,7 +110,9 @@ default_extra_chronyd_directives=""
 default_extra_chronyd_options=""
 default_clock_control=0
 default_server=127.0.0.1
-default_user=root
+default_server_name=127.0.0.1
+default_server_options=""
+default_priv_drop=0
 
 # Initialize test settings from their defaults
 for defoptname in ${!default_*}; do
@@ -172,13 +187,21 @@ get_cmdsocket() {
 	echo "$TEST_RUNDIR/chronyd.sock"
 }
 
+get_user() {
+	if [ "$priv_drop" -ne 0 ]; then
+		echo "$TEST_PRIVDROP_USER"
+	else
+		echo "$TEST_ROOT_USER"
+	fi
+}
+
 # Find a free port in the 10000-20000 range (their use is racy)
 get_free_port() {
 	local port
 
 	while true; do
 		port=$((RANDOM % 10000 + 10000))
-		netstat -aln | grep '^udp.*:'$port && continue
+		$port_list_command | grep -q '^\(tcp\|udp\).*[:.]'"$port " && continue
 		break
 	done
 
@@ -186,8 +209,9 @@ get_free_port() {
 }
 
 generate_chrony_conf() {
-	local ntpport cmdport
+	local user ntpport cmdport
 
+	user=$(get_user)
 	ntpport=$(get_free_port)
 	cmdport=$(get_free_port)
 
@@ -210,7 +234,7 @@ generate_chrony_conf() {
 		echo "cmdallow"
 		echo "local"
 
-		echo "server $server port $ntpport minpoll -6 maxpoll -6"
+		echo "server $server_name port $ntpport minpoll -6 maxpoll -6 $server_options"
 
 		[ "$server" = "127.0.0.1" ] && echo "bindacqaddress $server"
 		echo "bindaddress 127.0.0.1"
@@ -220,6 +244,8 @@ generate_chrony_conf() {
 		echo "log tempcomp rawmeasurements refclocks statistics tracking rtc"
 		echo "logbanner 0"
 		echo "smoothtime 100.0 0.001"
+		echo "leapsectz right/UTC"
+		echo "dscp 46"
 
 		echo "include /dev/null"
 		echo "keyfile $TEST_DIR/keys"
@@ -233,13 +259,14 @@ get_chronyd_options() {
 	[ "$clock_control" -eq 0 ] && echo "-x"
 	echo "-l $(get_logfile)"
 	echo "-f $(get_conffile)"
-	echo "-u $user"
+	echo "-u $(get_user)"
+	echo "-F $TEST_SCFILTER"
 	echo "$extra_chronyd_options"
 }
 
 # Start a chronyd instance
 start_chronyd() {
-	local pid pidfile=$(get_pidfile)
+	local pid pidfile=$(get_pidfile) wrapper_options=""
 
 	print_nondefaults
 	test_message 1 0 "starting chronyd"
@@ -248,14 +275,36 @@ start_chronyd() {
 
 	trap stop_chronyd EXIT
 
-	$CHRONYD_WRAPPER "$chronyd" $(get_chronyd_options) > "$TEST_DIR/chronyd.out" 2>&1
+	rm -f "$TEST_LOGDIR"/*.log
+
+	if [[ $CHRONYD_WRAPPER == *valgrind* ]]; then
+		wrapper_options="--log-file=$TEST_DIR/chronyd.valgrind --enable-debuginfod=no"
+	fi
+
+	$CHRONYD_WRAPPER $wrapper_options \
+		"$chronyd" $(get_chronyd_options) > "$TEST_DIR/chronyd.out" 2>&1
 
 	[ $? -eq 0 ] && [ -f "$pidfile" ] && ps -p "$(cat "$pidfile")" > /dev/null && test_ok || test_error
 }
 
 wait_for_sync() {
+	local prev_length
+
 	test_message 1 0 "waiting for synchronization"
-	sleep 1 && test_ok || test_error
+	prev_length=$msg_length
+
+	for i in $(seq 1 10); do
+		run_chronyc "ntpdata $server" > /dev/null 2>&1 || break
+		if check_chronyc_output "Total RX +: [1-9]" > /dev/null 2>&1; then
+			msg_length=$prev_length
+			test_ok
+			return
+		fi
+		sleep 1
+	done
+
+	msg_length=$prev_length
+	test_error
 }
 
 # Stop the chronyd instance
@@ -280,6 +329,12 @@ stop_chronyd() {
 	done
 
 	test_ok
+
+	if [ -f "$TEST_DIR/chronyd.valgrind" ]; then
+		test_message 2 0 "checking valgrind report"
+		! grep -q 'ERROR SUMMARY: [^0]' "$TEST_DIR/chronyd.valgrind" && \
+			test_ok || test_bad
+	fi
 }
 
 # Check chronyd log for expected and unexpected messages
@@ -293,7 +348,7 @@ check_chronyd_messages() {
 		([ "$clock_control" -ne 0 ] || grep -q 'Disabled control of system clock' "$logfile") && \
 		([ "$minimal_config" -ne 0 ] || grep -q 'Frequency .* read from' "$logfile") && \
 		grep -q 'chronyd exiting' "$logfile" && \
-		! grep -q 'Could not' "$logfile" && \
+		! (grep -v '^.\{19\}Z D:' "$logfile" | grep -q 'Could not') && \
 		! grep -q 'Disabled command socket' "$logfile" && \
 		test_ok || test_bad
 }
@@ -313,20 +368,40 @@ check_chronyd_message_count() {
 check_chronyd_files() {
 	test_message 1 0 "checking chronyd files"
 
-	grep -q " $server .* 111 111 1111 " "$TEST_LOGDIR/measurements.log" && \
-		grep -q " $server " "$TEST_LOGDIR/statistics.log" && \
-		grep -q " $server " "$TEST_LOGDIR/tracking.log" && \
+	grep -q " $server .* 111 111 1110 " "$TEST_LOGDIR/measurements.log" && \
 		[ -f "$TEST_LOGDIR/tempcomp.log" ] && [ "$(wc -l < "$TEST_LOGDIR/tempcomp.log")" -ge 2 ] && \
-		[ -f "$TEST_RUNDIR/$server.dat" ] && [ "$(wc -l < "$TEST_RUNDIR/$server.dat")" -ge 5 ] && \
 		test_ok || test_bad
 }
 
 # Run a chronyc command
 run_chronyc() {
-	test_message 1 0 "running chronyc $*"
+	local host=$chronyc_host options="-n -m" wrapper_options="" ret=0
 
-	$CHRONYC_WRAPPER "$chronyc" -h "$(get_cmdsocket)" -n -m "$@" > "$TEST_DIR/chronyc.out" && \
-		test_ok || test_error
+	test_message 1 0 "running chronyc $([ -n "$host" ] && echo "@$host ")$*"
+
+	if [ -z "$host" ]; then
+		host="$(get_cmdsocket)"
+	else
+		options="$options -p $(grep cmdport "$(get_conffile)" | awk '{print $2}')"
+	fi
+
+	if [[ $CHRONYC_WRAPPER == *valgrind* ]]; then
+		wrapper_options="--log-file=$TEST_DIR/chronyc.valgrind --enable-debuginfod=no"
+	fi
+
+	$CHRONYC_WRAPPER $wrapper_options \
+		"$chronyc" -h "$host" $options "$@" > "$TEST_DIR/chronyc.out" && \
+			test_ok || test_error
+	[ $? -ne 0 ] && ret=1
+
+	if [ -f "$TEST_DIR/chronyc.valgrind" ]; then
+		test_message 2 0 "checking valgrind report"
+		! grep -q 'ERROR SUMMARY: [^0]' "$TEST_DIR/chronyc.valgrind" && \
+			test_ok || test_bad
+		[ $? -ne 0 ] && ret=1
+	fi
+
+	return $ret
 }
 
 # Compare chronyc output with specified pattern

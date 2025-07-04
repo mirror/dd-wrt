@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -13,6 +13,10 @@ client_conf="dumpdir tmp
 maxupdateskew 10000"
 
 run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_log_messages "Loaded dump file" 0 0 || test_fail
+check_file_messages "." 6 6 192.168.123.1.dat || test_fail
 
 client_start=$limit
 limit=1000
@@ -22,5 +26,84 @@ check_chronyd_exit || test_fail
 check_source_selection || test_fail
 check_packet_interval || test_fail
 check_sync || test_fail
+
+check_log_messages "Loaded dump file" 1 1 || test_fail
+check_file_messages "." 10 30 192.168.123.1.dat || test_fail
+
+rm -f tmp/*.dat
+
+client_start=0
+limit=200
+jitter=1e-6
+client_conf="dumpdir tmp
+maxupdateskew 1e-6
+maxslewrate 1e-6"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_log_messages "Loaded dump file" 0 0 || test_fail
+check_file_messages "." 8 8 192.168.123.1.dat || test_fail
+cp tmp/192.168.123.1.dat tmp/backup.dat
+
+client_start=$limit
+limit=1000
+min_sync_time=201
+max_sync_time=203
+client_server_options="offline"
+client_conf="dumpdir tmp"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_log_messages "Loaded dump file" 1 1 || test_fail
+check_file_messages "." 8 8 192.168.123.1.dat || test_fail
+
+cp -f tmp/backup.dat tmp/192.168.123.1.dat
+
+client_server_options="key 1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync && test_fail
+
+check_log_messages "Could not load dump file" 1 1 || test_fail
+check_log_messages "Loaded dump file" 0 0 || test_fail
+
+client_server_options=""
+
+if check_config_h 'FEAT_REFCLOCK 1'; then
+	refclock_jitter=1e-6
+	servers=0
+	client_start=0
+	limit=40
+	min_sync_time=56
+	max_sync_time=58
+	client_chronyd_options="-r"
+	client_conf="dumpdir tmp
+	refclock SHM 0"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+
+	check_log_messages "Loaded dump file" 0 0 || test_fail
+	check_file_messages "." 6 6 refid:53484d30.dat || test_fail
+
+	client_start=$limit
+	limit=300
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection || test_fail
+	check_sync || test_fail
+
+	check_log_messages "Loaded dump file" 1 1 || test_fail
+	check_file_messages "." 6 23 refid:53484d30.dat || test_fail
+
+	rm -f tmp/*.dat
+fi
 
 test_pass

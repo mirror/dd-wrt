@@ -3,10 +3,11 @@
 TEST_LIBDIR=${CHRONY_LIBDIR:-/var/lib/chrony}
 TEST_LOGDIR=${CHRONY_LOGDIR:-/var/log/chrony}
 TEST_RUNDIR=${CHRONY_RUNDIR:-/var/run/chrony}
+TEST_PRIVDROP_USER=$(ls -ld "$TEST_RUNDIR" 2> /dev/null | awk '{print $3}')
 
 . ./test.common
 
-user=$(ls -ld "$TEST_RUNDIR" 2> /dev/null | awk '{print $3}')
+priv_drop=1
 
 test_start "system directories"
 

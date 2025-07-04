@@ -27,10 +27,12 @@
 #ifndef GOT_SYS_SOLARIS_H
 #define GOT_SYS_SOLARIS_H
 
+#include "sys.h"
+
 void SYS_Solaris_Initialise(void);
 
 void SYS_Solaris_Finalise(void);
 
-void SYS_Solaris_DropRoot(uid_t uid, gid_t gid);
+void SYS_Solaris_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context);
 
 #endif

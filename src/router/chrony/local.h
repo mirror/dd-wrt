@@ -149,7 +149,7 @@ extern void LCL_AccumulateDeltaFrequency(double dfreq);
    forwards (i.e. it is currently slow of true time).  Provided is also
    a suggested correction rate (correction time * offset). */
 
-extern void LCL_AccumulateOffset(double offset, double corr_rate);
+extern int LCL_AccumulateOffset(double offset, double corr_rate);
 
 /* Routine to apply an immediate offset by doing a sudden step if
    possible. (Intended for use after an initial estimate of offset has
@@ -171,7 +171,12 @@ extern void LCL_NotifyLeap(int leap);
 
 /* Perform the combination of modifying the frequency and applying
    a slew, in one easy step */
-extern void LCL_AccumulateFrequencyAndOffset(double dfreq, double doffset, double corr_rate);
+extern int LCL_AccumulateFrequencyAndOffset(double dfreq, double doffset, double corr_rate);
+
+/* Same as the routine above, except it does not call the registered
+   parameter change handlers */
+extern int LCL_AccumulateFrequencyAndOffsetNoHandlers(double dfreq, double doffset,
+                                                      double corr_rate);
 
 /* Routine to read the system precision as a log to base 2 value. */
 extern int LCL_GetSysPrecisionAsLog(void);
@@ -196,6 +201,9 @@ extern void LCL_Finalise(void);
    apply it, e.g. if the system clock has ended up an hour wrong due
    to a timezone problem. */
 extern int LCL_MakeStep(void);
+
+/* Routine to cancel the outstanding system clock correction */
+extern void LCL_CancelOffsetCorrection(void);
 
 /* Check if the system driver supports leap seconds, i.e. LCL_SetSystemLeap
    does something */

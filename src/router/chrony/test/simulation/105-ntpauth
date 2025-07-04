@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -23,16 +23,20 @@ EOF
 
 keys=4
 
-if check_config_h 'FEAT_SECHASH 1'; then
-	hashes="MD5 SHA1 SHA256 SHA384 SHA512"
-else
-	hashes="MD5"
-fi
+types="MD5"
+check_config_h 'FEAT_SECHASH 1' && types="$types SHA1 SHA256 SHA384 SHA512"
+check_config_h 'HAVE_CMAC 1' && types="$types AES128 AES256"
 
-for hash in $hashes; do
+for type in $types; do
 	keys=$[$keys + 1]
-	key=$(echo $keys $hash HEX:$(tr -c -d '0-9A-F' < /dev/urandom 2> /dev/null | \
-		head -c $[$RANDOM % 64 * 2 + 2]))
+	case $type in
+		AES128)	length=16;;
+		AES256)	length=32;;
+		*)	length=$[$RANDOM % 32 + 1];;
+	esac
+
+	key=$(echo $keys $type HEX:$(tr -c -d '0-9A-F' < /dev/urandom 2> /dev/null | \
+		head -c $[$length * 2]))
 	echo "$key" >> tmp/server.keys
 	echo "$key" >> tmp/client.keys
 done
@@ -70,13 +74,18 @@ clients=2
 peers=2
 max_sync_time=500
 base_delay="$default_base_delay (* -1 (equal 0.1 from 3) (equal 0.1 to 1))"
+
+for versions in "3 3" "3 4" "4 3" "4 4"; do
+	for key in 1 $keys; do
+		client_lpeer_options="version ${versions% *} key $key"
+		client_rpeer_options="version ${versions#* } key $key"
+		run_test || test_fail
+		check_chronyd_exit || test_fail
+		check_sync || test_fail
+	done
+done
+
 client_lpeer_options="key 1"
-client_rpeer_options="key 1"
-
-run_test || test_fail
-check_chronyd_exit || test_fail
-check_sync || test_fail
-
 client_rpeer_options="key 2"
 
 run_test || test_fail

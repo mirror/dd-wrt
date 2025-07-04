@@ -247,6 +247,8 @@ set_subnet_(ADF_AuthTable table,
           set_subnet(&table->base6, ip6, 4, 0, new_state, delete_children) == ADF_SUCCESS)
         return ADF_SUCCESS;
       break;
+    default:
+      break;
   }
 
   return ADF_BADSUBNET;
@@ -359,9 +361,9 @@ ADF_IsAllowed(ADF_AuthTable table,
     case IPADDR_INET6:
       split_ip6(ip_addr, ip6);
       return check_ip_in_node(&table->base6, ip6);
+    default:
+      return 0;
   }
-
-  return 0;
 }
 
 /* ================================================== */

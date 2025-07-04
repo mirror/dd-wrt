@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -8,12 +8,18 @@ check_config_h 'FEAT_REFCLOCK 1' || test_skip
 check_config_h 'FEAT_CMDMON 1' || test_skip
 
 refclock_jitter=$jitter
+client_server_conf="
+server node1.net1.clk
+server 192.168.123.2"
 client_conf="
 refclock SHM 0 noselect
 smoothtime 400 0.001 leaponly"
+cmdmon_unix=0
 
 chronyc_conf="activity
 tracking
+sourcename 192.168.123.1
+sourcename 192.168.123.2
 sources
 sourcestats
 manual list
@@ -25,7 +31,7 @@ run_test || test_fail
 check_chronyd_exit || test_fail
 
 check_chronyc_output "^200 OK
-1 sources online
+2 sources online
 0 sources offline
 0 sources doing burst \(return to online\)
 0 sources doing burst \(return to offline\)
@@ -43,16 +49,18 @@ Root delay      : 0\.000...... seconds
 Root dispersion : 0\.000...... seconds
 Update interval : [0-9]+\.. seconds
 Leap status     : Normal
-210 Number of sources = 2
+node1\.net1\.clk
+192\.168\.123\.2
 MS Name/IP address         Stratum Poll Reach LastRx Last sample               
 ===============================================================================
 #\? SHM0                          0   4   377    [0-9]+ [0-9 +-]+[un]s\[[0-9 +-]+[un]s\] \+/-[ 0-9]+[un]s
 \^\* 192\.168\.123\.1                 1   [67]   377    [0-9]+ [0-9 +-]+[un]s\[[0-9 +-]+[un]s\] \+/-[ 0-9]+[un]s
-210 Number of sources = 2
+\^\? 192\.168\.123\.2                 0   [0-9]+     0     -     \+0ns\[   \+0ns\] \+/-    0ns
 Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
 ==============================================================================
-SHM0                       [0-9 ]+ [0-9 ]+ [0-9 ]+ [ +-][01]\.... [0-9 ]+\....  [0-9 +-]+[un]s [0-9 ]+[un]s
+SHM0                       [0-9 ]+ [0-9 ]+ [0-9 ]+ [ +-][012]\.... [0-9 ]+\....  [0-9 +-]+[un]s [0-9 ]+[un]s
 192\.168\.123\.1              [0-9 ]+ [0-9 ]+ [0-9 ]+ [ +-][01]\.... [0-9 ]+\....  [0-9 +-]+[un]s [0-9 ]+[un]s
+192\.168\.123\.2               0   0     0     \+0\.000   2000\.000     \+0ns  4000ms
 210 n_samples = 0
 #    Date     Time\(UTC\)    Slewed   Original   Residual
 =======================================================
@@ -66,29 +74,64 @@ try: 1, refid: C0A87B01, correction: 0\.000......, skew: .\....
 513 RTC driver not running$" \
 || test_fail
 
+chronyc_conf="tracking"
+dns=1
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^Reference ID    : C0A87B01 \(node1\.net1\.clk\)" \
+	|| test_fail
+
+chronyc_options="-c"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^C0A87B01,192\.168\.123\.1,2,12623049..\..........,-?0\.0000.....,-?0\.000......,0\.000......,(99|100)\....,-?[0-9]\....,[0-9]\....,0\.000......,0\.000......,[0-9]+\..,Normal$" \
+	|| test_fail
+
+chronyc_options="-c -e"
+chronyc_conf="sources"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^#,.,SHM0.*
+\^,.,192\.168\.123\.1.*
+\^,.,192\.168\.123\.2.*
+\.$" \
+	|| test_fail
+
+chronyc_options=""
 server_strata=0
-chronyc_start=0
+chronyc_start=0.5
+client_server_conf=""
 client_conf=""
+server_conf="server 192.168.123.1"
 limit=1
 
 for chronyc_conf in \
 	"accheck 1.2.3.4" \
 	"add peer 10.0.0.0 minpoll 2 maxpoll 6" \
-	"add server 10.0.0.0 minpoll 6 maxpoll 10 iburst burst key 1 maxdelay 1e-3 maxdelayratio 10.0 maxdelaydevratio 10.0 mindelay 1e-4 asymmetry 0.5 offset 1e-5 minsamples 6 maxsamples 6 filter 3 offline auto_offline prefer noselect trust require xleave polltarget 20 port 123 presend 7 minstratum 3 version 4" \
+	"add server 10.0.0.0 minpoll 6 maxpoll 10 iburst burst key 1 certset 2 maxdelay 1e-3 maxdelayratio 10.0 maxdelaydevratio 10.0 maxdelayquant 0.5 mindelay 1e-4 asymmetry 0.5 offset 1e-5 minsamples 6 maxsamples 6 filter 3 offline auto_offline prefer noselect trust require xleave polltarget 20 port 123 presend 7 minstratum 3 version 4 nts ntsport 4460 copy extfield F323 extfield F324 ipv6 ipv4" \
+	"add server node1.net1.clk" \
 	"allow 1.2.3.4" \
 	"allow 1.2" \
 	"allow 3.4.5" \
 	"allow 6.7.8/22" \
 	"allow 6.7.8.9/22" \
-	"allow 2001:db8::/32" \
 	"allow 0/0" \
-	"allow ::/0" \
 	"allow" \
 	"allow all 10/24" \
+	"authdata" \
 	"burst 5/10" \
 	"burst 3/5 255.255.255.0/1.2.3.0" \
 	"burst 1/2 1.2.3.0/24" \
 	"clients" \
+	"clients -k" \
+	"clients -p 100" \
+	"clients -r" \
 	"cmdaccheck 1.2.3.4" \
 	"cmdallow 1.2.3.4" \
 	"cmdallow all 1.2.3.0/24" \
@@ -96,12 +139,13 @@ for chronyc_conf in \
 	"cmddeny all 1.2.3.0/24" \
 	"cyclelogs" \
 	"delete 10.0.0.0" \
+	"delete ID#0000000001" \
 	"deny 1.2.3.4" \
 	"deny all 1.2.3.0/24" \
 	"dfreq 1.0e-3" \
 	"doffset -1.0" \
 	"dump" \
-	"local stratum 5 distance 1.0 orphan" \
+	"local stratum 5 distance 1.0 activate 0.5 orphan waitsynced 100 waitunsynced 20" \
 	"local off" \
 	"makestep 10.0 3" \
 	"makestep" \
@@ -116,18 +160,26 @@ for chronyc_conf in \
 	"maxupdateskew 1.2.3.4 10.0" \
 	"minpoll 1.2.3.4 3" \
 	"minstratum 1.2.3.4 1" \
+	"minstratum ID#0000000001 1" \
 	"ntpdata 1.2.3.4" \
 	"offline" \
 	"offline 255.255.255.0/1.2.3.0" \
 	"offline 1.2.3.0/24" \
+	"offset 1.2.3.4 1.0" \
 	"online" \
 	"online 1.2.3.0/24" \
 	"onoffline" \
 	"polltarget 1.2.3.4 10" \
 	"refresh" \
 	"rekey" \
+	"reload sources" \
 	"reselect" \
 	"reselectdist 1e-3" \
+	"reset sources" \
+	"selectdata" \
+	"selectopts 1.2.3.4 -noselect +trust +require +prefer" \
+	"selectopts ID#0000000001 +prefer" \
+	"selectopts PPS0 +prefer" \
 	"settime 16:30" \
 	"settime 16:30:05" \
 	"settime Nov 21, 2015 16:30:05" \
@@ -140,8 +192,321 @@ for chronyc_conf in \
 do
 	run_test || test_fail
 	check_chronyd_exit || test_fail
-	check_chronyc_output "501 Not authorised" || test_fail
+	check_chronyc_output "501 Not authorised$" || test_fail
 done
+
+for chronyc_conf in \
+	"activity" \
+	"authdata" \
+	"clients" \
+	"manual list" \
+	"ntpdata" \
+	"rtcdata" \
+	"selectdata" \
+	"serverstats" \
+	"smoothing" \
+	"sourcename 192.168.123.1" \
+	"sources" \
+	"sourcestats" \
+	"tracking"
+do
+	server_conf="opencommands ${chronyc_conf% *}"
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_chronyc_output "501 Not authorised$" && test_fail
+
+	server_conf="opencommands"
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_chronyc_output "501 Not authorised$" || test_fail
+
+	server_conf="cmddeny 192.168.123.2"
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_chronyc_output "506 Cannot talk to daemon$" || test_fail
+done
+
+server_conf="server 192.168.123.1"
+cmdmon_unix=1
+
+chronyc_conf="
+authdata
+clients -k -p 2
+clients -r
+clients
+ntpdata
+selectdata
+serverstats"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
+=========================================================================
+node1\.net1\.clk                 -     0    0    0    -    0    0    0    0
+Hostname                      NTP   Drop Int IntL Last  NTS-KE   Drop Int  Last
+===============================================================================
+Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
+===============================================================================
+node1\.net1\.clk                  1      0   -   -     0       0      0   -     -
+Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
+===============================================================================
+node1\.net1\.clk                  0      0   -   -     0       0      0   -     -
+
+Remote address  : 192\.168\.123\.1 \(C0A87B01\)
+Remote port     : 123
+Local address   : 192\.168\.123\.1 \(C0A87B01\)
+Leap status     : Normal
+Version         : 4
+Mode            : Server
+Stratum         : 1
+Poll interval   : 6 \(64 seconds\)
+Precision       : -23 \(0\.000000119 seconds\)
+Root delay      : 0\.000000 seconds
+Root dispersion : 0\.000000 seconds
+Reference ID    : 7F7F0101 \(\)
+Reference time  : Thu Dec 31 23:59:5[89] 2009
+Offset          : [-+]0\.000...... seconds
+Peer delay      : 0\.00....... seconds
+Peer dispersion : 0\.00000.... seconds
+Response time   : 0\.000000... seconds
+Jitter asymmetry: \+0\.00
+NTP tests       : 111 111 1110
+Interleaved     : No
+Authenticated   : No
+TX timestamping : (Daemon|Kernel)
+RX timestamping : (Daemon|Kernel)
+Total TX        : 1
+Total RX        : 1
+Total valid RX  : 1
+Total good RX   : 0
+Total kernel TX : [01]
+Total kernel RX : [01]
+Total HW TX     : 0
+Total HW RX     : 0
+S Name/IP Address        Auth COpts EOpts Last Score     Interval  Leap
+=======================================================================
+M node1\.net1\.clk            N ----- -----    0   1\.0    \+0ns    \+0ns  N
+NTP packets received       : 1
+NTP packets dropped        : 0
+Command packets received   : 12
+Command packets dropped    : 0
+Client log records dropped : 0
+NTS-KE connections accepted: 0
+NTS-KE connections dropped : 0
+Authenticated NTP packets  : 0
+Interleaved NTP packets    : 0
+NTP timestamps held        : 0
+NTP timestamp span         : 0
+NTP daemon RX timestamps   : [01]
+NTP daemon TX timestamps   : 1
+NTP kernel RX timestamps   : [01]
+NTP kernel TX timestamps   : 0
+NTP hardware RX timestamps : 0
+NTP hardware TX timestamps : 0$" || test_fail
+
+chronyc_conf="
+deny all
+cmdallow all
+allow 1.2.3.4
+allow 1.2.3.0/28
+deny 1.2.3.0/27
+allow 1.2.4.5
+deny all 1.2.4.0/27
+cmddeny 5.6.7.8
+cmdallow all 5.6.7.0/28
+accheck 1.2.3.4
+accheck 1.2.3.5
+accheck 1.2.4.5
+cmdaccheck 5.6.7.8"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+208 Access allowed
+209 Access denied
+209 Access denied
+208 Access allowed$" || test_fail
+
+if check_config_h 'FEAT_IPV6 1'; then
+	chronyc_conf="
+	deny all
+	cmdallow all
+	allow 2001:db8::1
+	allow 2001:db8::/64
+	deny 2001:db8::/63
+	allow 2001:db8:1::1
+	deny all 2001:db8:1::/63
+	cmddeny 2001:db9::1
+	cmdallow all 2001:db9::/64
+	accheck 2001:db8::1
+	accheck 2001:db8::2
+	accheck 2001:db8:1::1
+	cmdaccheck 2001:db9::1"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+
+	check_chronyc_output "^200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+208 Access allowed
+209 Access denied
+209 Access denied
+208 Access allowed$" || test_fail
+fi
+
+chronyc_conf="
+delete 192.168.123.1
+add server node1.net1.clk minpoll 6 maxpoll 10 iburst
+offline 192.168.123.1
+burst 1/1 192.168.123.1
+online 192.168.123.1
+maxdelay 192.168.123.1 1e-2
+maxdelaydevratio 192.168.123.1 5.0
+maxdelayratio 192.168.123.1 3.0
+maxpoll 192.168.123.1 5
+maxupdateskew 192.168.123.1 10.0
+minpoll 192.168.123.1 3
+minstratum 192.168.123.1 1
+offset 192.168.123.1 -1.0
+polltarget 192.168.123.1 10
+selectopts 192.168.123.1 +trust +prefer -require
+selectdata
+selectopts 192.168.123.1 +noselect -prefer -trust +require
+selectdata
+delete 192.168.123.1"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+S Name/IP Address        Auth COpts EOpts Last Score     Interval  Leap
+=======================================================================
+M node1\.net1\.clk            N \-PT\-\- \-PT\-\-    0   1\.0    \+0ns    \+0ns  \?
+200 OK
+S Name/IP Address        Auth COpts EOpts Last Score     Interval  Leap
+=======================================================================
+M node1\.net1\.clk            N N\-\-R\- N\-\-R\-    0   1\.0    \+0ns    \+0ns  \?
+200 OK$" || test_fail
+
+chronyc_conf="
+cyclelogs
+dump
+dfreq 1.0e-3
+doffset -0.01
+local stratum 5 distance 1.0 orphan waitsynced 100 waitunsynced 10
+local off
+makestep 10.0 3
+makestep
+manual on
+settime now
+manual delete 0
+manual reset
+manual off
+onoffline
+refresh
+rekey
+reload sources
+reselect
+reselectdist 1e-3
+reset sources
+shutdown"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+
+check_chronyc_output "^200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+Clock was .\... seconds fast.  Frequency change = 0.00ppm, new frequency = 0.00ppm
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK
+200 OK$" || test_fail
+
+server_conf="
+server 192.168.123.1
+noclientlog"
+
+check_config_h 'FEAT_IPV6 1' && commands=(
+	"add server ::1 ipv4" "^515 Invalid address family$"
+	) || commands=()
+
+commands+=(
+	"add server 192.168.123.1 ipv6" "^515 Invalid address family$"
+	"add server nosuchnode.net1.clk" "^Invalid host/IP address$"
+	"allow nosuchnode.net1.clk" "^Could not read address$"
+	"allow 192.168.123.0/2 4" "^Could not read address$"
+	"allow 192.168.123.0/2e" "^Could not read address$"
+	"allow 192.168.12e" "^Could not read address$"
+	"allow 192.168123" "^Could not read address$"
+	"allow 192.168.123.2/33" "^507 Bad subnet$"
+	"clients" "Hostname.*519 Client logging is not active in the daemon$"
+	"delete 192.168.123.2" "^503 No such source$"
+	"minpoll 192.168.123.2 5" "^503 No such source$"
+	"ntpdata 192.168.123.2" "^503 No such source$"
+	"settime now" "^505 Facility not enabled in daemon$"
+	"smoothing" "^505 Facility not enabled in daemon$"
+	"smoothtime activate" "^505 Facility not enabled in daemon$"
+	"smoothtime reset" "^505 Facility not enabled in daemon$"
+	"sourcename 192.168.123.2" "^503 No such source$"
+	"trimrtc" "^513 RTC driver not running$"
+	"writertc" "^513 RTC driver not running$"
+)
+
+for i in $(seq 0 $[${#commands[*]} / 2]); do
+	chronyc_conf=${commands[$[i * 2]]}
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_chronyc_output "${commands[$[i * 2 + 1]]}" || test_fail
+done
+
+cmdmon_unix=0
+server_conf="server 192.168.123.1"
 
 chronyc_conf="dns -n
 dns +n
@@ -152,6 +517,7 @@ timeout 200
 retries 1
 keygen
 keygen 10 MD5 128
+keygen 11 MD5 40
 help
 quit
 nosuchcommand"
@@ -160,7 +526,48 @@ run_test || test_fail
 
 check_chronyc_output "^1 (MD5|SHA1) HEX:........................................
 10 MD5 HEX:................................
+11 MD5 HEX:....................
 System clock:.*this help
  *$" || test_fail
+
+chronyc_conf="keygen 10 NOSUCHTYPE 128
+help"
+run_test || test_fail
+check_chronyc_output "^Unknown hash function or cipher NOSUCHTYPE\$" || test_fail
+
+if check_config_h 'FEAT_SECHASH 1'; then
+	for hash in MD5 SHA1 SHA256 SHA384 SHA512; do
+		chronyc_conf="keygen 5 $hash"
+		run_test || test_fail
+		check_chronyc_output "^5 $hash HEX:........................................\$" || test_fail
+	done
+fi
+
+if check_config_h 'HAVE_CMAC 1'; then
+	chronyc_conf="keygen 6 AES128
+keygen 7 AES256"
+	run_test || test_fail
+	check_chronyc_output "^6 AES128 HEX:................................
+7 AES256 HEX:................................................................\$" || test_fail
+fi
+
+# Pass every fourth request
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* -1
+        (equal 0.1 from 2)
+        (equal 0.1 (min (% (sum 1) 4) 1) 1)))
+EOF
+)
+limit=15
+
+chronyc_conf="sources"
+run_test || test_fail
+check_chronyc_output "^506 Cannot talk to daemon$" || test_fail
+
+chronyc_conf="retries 3
+sources"
+run_test || test_fail
+check_chronyc_output "^MS.*0ns$" || test_fail
 
 test_pass

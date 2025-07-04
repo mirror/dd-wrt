@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "mono+root extension field"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+primary_time_offset=0.1
+server_strata=4
+min_sync_time=2000
+max_sync_time=2300
+chronyc_conf="doffset 0.1"
+chronyc_options="-h /clknetsim/unix/1:1"
+chronyc_start=2000
+
+for options in "extfield F323" "xleave extfield F323"; do
+	client_server_options="minpoll 6 maxpoll 6 $options"
+	server_server_options="$client_server_options"
+
+	run_test || test_fail
+	check_chronyd_exit || test_fail
+	check_source_selection && test_fail
+	check_sync || test_fail
+done
+
+server_server_options=""
+server_strata=1
+clients=4
+peers=4
+max_sync_time=2400
+# chain of peers and one enabled chronyc
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4 -1
+     (equal 0.1 from (+ to 1))
+     (equal 0.1 from (+ to -1))
+     (equal 0.1 from 6)
+     (equal 0.1 to 6))
+EOF
+)
+
+for lpoll in 5 6 7; do
+	for options in "minsamples 16 extfield F323" "minsamples 16 xleave extfield F323"; do
+		client_lpeer_options="minpoll $lpoll maxpoll $lpoll $options"
+		client_rpeer_options="minpoll 6 maxpoll 6 $options"
+		client_server_options="$client_rpeer_options"
+
+		run_test || test_fail
+		check_chronyd_exit || test_fail
+		check_source_selection && test_fail
+		check_sync || test_fail
+	done
+done
+
+test_pass

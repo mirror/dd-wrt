@@ -29,7 +29,7 @@
 
 #include "addressing.h"
 
-extern void CAM_Initialise(int family);
+extern void CAM_Initialise(void);
 
 extern void CAM_Finalise(void);
 

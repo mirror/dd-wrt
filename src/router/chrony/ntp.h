@@ -47,17 +47,20 @@ typedef uint32_t NTP_int32;
 /* Maximum stratum number (infinity) */
 #define NTP_MAX_STRATUM 16
 
-/* The minimum valid length of an extension field */
-#define NTP_MIN_EXTENSION_LENGTH 16
-
-/* The maximum assumed length of all extension fields in received
-   packets (RFC 5905 doesn't specify a limit on length or number of
-   extension fields in one packet) */
-#define NTP_MAX_EXTENSIONS_LENGTH 1024
+/* Invalid stratum number */
+#define NTP_INVALID_STRATUM 0
 
 /* The minimum and maximum supported length of MAC */
 #define NTP_MIN_MAC_LENGTH (4 + 16)
 #define NTP_MAX_MAC_LENGTH (4 + MAX_HASH_LENGTH)
+
+/* The minimum valid length of an extension field */
+#define NTP_MIN_EF_LENGTH 16
+
+/* The maximum assumed length of all extension fields in an NTP packet,
+   including a MAC (RFC 5905 doesn't specify a limit on length or number of
+   extension fields in one packet) */
+#define NTP_MAX_EXTENSIONS_LENGTH (1024 + NTP_MAX_MAC_LENGTH)
 
 /* The maximum length of MAC in NTPv4 packets which allows deterministic
    parsing of extension fields (RFC 7822) */
@@ -93,21 +96,10 @@ typedef struct {
   NTP_int64 receive_ts;
   NTP_int64 transmit_ts;
 
-  /* Optional extension fields, we don't send packets with them yet */
-  /* uint8_t extensions[] */
-
-  /* Optional message authentication code (MAC) */
-  NTP_int32 auth_keyid;
-  uint8_t auth_data[NTP_MAX_MAC_LENGTH - 4];
+  uint8_t extensions[NTP_MAX_EXTENSIONS_LENGTH];
 } NTP_Packet;
 
-#define NTP_NORMAL_PACKET_LENGTH (int)offsetof(NTP_Packet, auth_keyid)
-
-/* The buffer used to hold a datagram read from the network */
-typedef struct {
-  NTP_Packet ntp_pkt;
-  uint8_t extensions[NTP_MAX_EXTENSIONS_LENGTH];
-} NTP_Receive_Buffer;
+#define NTP_HEADER_LENGTH (int)offsetof(NTP_Packet, extensions)
 
 /* Macros to work with the lvm field */
 #define NTP_LVM_TO_LEAP(lvm) (((lvm) >> 6) & 0x3)
@@ -121,6 +113,70 @@ typedef struct {
 #define NTP_REFID_LOCAL 0x7F7F0101UL /* 127.127.1.1 */
 #define NTP_REFID_SMOOTH 0x7F7F01FFUL /* 127.127.1.255 */
 
+/* Non-authentication extension fields and corresponding internal flags */
+
+#define NTP_EF_EXP_MONO_ROOT            0xF323
+#define NTP_EF_EXP_NET_CORRECTION       0xF324
+
+#define NTP_EF_FLAG_EXP_MONO_ROOT       0x1
+#define NTP_EF_FLAG_EXP_NET_CORRECTION  0x2
+
+/* Pre-NTPv5 experimental extension field */
+typedef struct {
+  uint32_t magic;
+  NTP_int32 root_delay;
+  NTP_int32 root_dispersion;
+  NTP_int64 mono_receive_ts;
+  uint32_t mono_epoch;
+} NTP_EFExpMonoRoot;
+
+#define NTP_EF_EXP_MONO_ROOT_MAGIC      0xF5BEDD9AU
+
+/* Experimental extension field to provide PTP corrections */
+typedef struct {
+  uint32_t magic;
+  NTP_int64 correction;
+  uint32_t reserved[3];
+} NTP_EFExpNetCorrection;
+
+#define NTP_EF_EXP_NET_CORRECTION_MAGIC 0x07AC2CEBU
+
+/* Authentication extension fields */
+
+#define NTP_EF_NTS_UNIQUE_IDENTIFIER    0x0104
+#define NTP_EF_NTS_COOKIE               0x0204
+#define NTP_EF_NTS_COOKIE_PLACEHOLDER   0x0304
+#define NTP_EF_NTS_AUTH_AND_EEF         0x0404
+
+/* Enumeration for authentication modes of NTP packets */
+typedef enum {
+  NTP_AUTH_NONE = 0,            /* No authentication */
+  NTP_AUTH_SYMMETRIC,           /* NTP MAC or CMAC using a symmetric key
+                                   (RFC 1305, RFC 5905, RFC 8573) */
+  NTP_AUTH_MSSNTP,              /* MS-SNTP authenticator field */
+  NTP_AUTH_MSSNTP_EXT,          /* MS-SNTP extended authenticator field */
+  NTP_AUTH_NTS,                 /* Network Time Security (RFC 8915) */
+} NTP_AuthMode;
+
+/* Structure describing an NTP packet */
+typedef struct {
+  int length;
+  int version;
+  NTP_Mode mode;
+
+  int ext_fields;
+  int ext_field_flags;
+
+  struct {
+    NTP_AuthMode mode;
+    struct {
+      int start;
+      int length;
+      uint32_t key_id;
+    } mac;
+  } auth;
+} NTP_PacketInfo;
+
 /* Structure used to save NTP measurements.  time is the local time at which
    the sample is to be considered to have been made and offset is the offset at
    the time (positive indicates that the local clock is slow relative to the
@@ -132,8 +188,13 @@ typedef struct {
   double peer_dispersion;
   double root_delay;
   double root_dispersion;
-  int stratum;
-  NTP_Leap leap;
 } NTP_Sample;
+
+/* Possible sources of timestamps */
+typedef enum {
+  NTP_TS_DAEMON = 0,
+  NTP_TS_KERNEL,
+  NTP_TS_HARDWARE
+} NTP_Timestamp_Source;
 
 #endif /* GOT_NTP_H */

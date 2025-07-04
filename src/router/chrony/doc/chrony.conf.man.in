@@ -1,23 +1,32 @@
 '\" t
 .\"     Title: chrony.conf
-.\"    Author: [see the "AUTHORS" section]
-.\" Generator: Asciidoctor 1.5.6.1
-.\"      Date: 2019-05-10
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2025-06-11
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2019-05-10" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2025-06-11" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
 .nh
 .ad l
 .de URL
-\\$2 \(laURL: \\$1 \(ra\\$3
+\fI\\$2\fP <\\$1>\\$3
 ..
-.if \n[.g] .mso www.tmac
-.LINKSTYLE blue R < >
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
 .SH "NAME"
 chrony.conf \- chronyd configuration file
 .SH "SYNOPSIS"
@@ -26,12 +35,14 @@ chrony.conf \- chronyd configuration file
 .SH "DESCRIPTION"
 .sp
 This file configures the \fBchronyd\fP daemon. The compiled\-in location is
-\fI@SYSCONFDIR@/chrony.conf\fP, but other locations can be specified on the
+\fI@SYSCONFDIR@/chrony.conf\fP. Other locations can be specified on the
 \fBchronyd\fP command line with the \fB\-f\fP option.
 .sp
 Each directive in the configuration file is placed on a separate line. The
-following sections describe each of the directives in turn. The directives can
-occur in any order in the file and they are not case\-sensitive.
+following sections describe each of the directives in turn. The directives are
+not case\-sensitive. Generally, the directives can occur in any order in the file
+and if a directive is specified multiple times, only the last one will be
+effective. Exceptions are noted in the descriptions.
 .sp
 The configuration directives can also be specified directly on the \fBchronyd\fP
 command line. In this case each argument is parsed as a new line and the
@@ -54,16 +65,34 @@ source. The client\-server relationship is strictly hierarchical: a client might
 synchronise its system time to that of the server, but the server\(cqs system time
 will never be influenced by that of a client.
 .sp
-The \fBserver\fP directive is immediately followed by either the name of the
-server, or its IP address. The \fBserver\fP directive supports the following
-options:
+The server can be specified by its hostname or IP address. If the hostname cannot
+be resolved on start, \fBchronyd\fP will try it again in increasing intervals, and
+also when the \fBonline\fP command is issued in \fBchronyc\fP.
+.sp
+The DNS record can change over time. The used address will be replaced with a
+newly resolved address when the server becomes unreachable (i.e. no valid
+response to the last 8 requests), unsynchronised, a falseticker (i.e. does not
+agree with a majority of other sources), or the root distance is too large (the
+limit can be configured by the \fBmaxdistance\fP directive). The
+automatic replacement happens at most once per 30 minutes and only one
+server can be replaced at a time. The address is also refreshed periodically
+when the server is working normally (the interval can be configured by the
+\fBrefresh\fP directive).
+.sp
+This directive can be used multiple times to specify multiple servers. Each
+server must have a different IP address to be usable by \fBchronyd\fP. If a server
+is specified by a hostname that resolves only to addresses already used by
+other servers, the server will be treated as having an unknown address (e.g.
+reported by the \fBchronyc\fP \fBactivity\fP command).
+.sp
+The directive supports the following options:
 .sp
 \fBminpoll\fP \fIpoll\fP
 .RS 4
 This option specifies the minimum interval between requests sent to the server
 as a power of 2 in seconds. For example, \fBminpoll 5\fP would mean that the
 polling interval should not drop below 32 seconds. The default is 6 (64
-seconds), the minimum is \-6 (1/64th of a second), and the maximum is 24 (6
+seconds), the minimum is \-7 (1/128th of a second), and the maximum is 24 (6
 months). Note that intervals shorter than 6 (64 seconds) should generally not
 be used with public servers on the Internet, because it might be considered
 abuse. A sub\-second interval will be enabled only when the server is reachable
@@ -76,22 +105,22 @@ should be in a local network.
 This option specifies the maximum interval between requests sent to the server
 as a power of 2 in seconds. For example, \fBmaxpoll 9\fP indicates that the polling
 interval should stay at or below 9 (512 seconds). The default is 10 (1024
-seconds), the minimum is \-6 (1/64th of a second), and the maximum is 24 (6
+seconds), the minimum is \-7 (1/128th of a second), and the maximum is 24 (6
 months).
 .RE
 .sp
 \fBiburst\fP
 .RS 4
-With this option, the interval between the first four requests sent to the
-server will be 2 seconds or less instead of the interval specified by the
-\fBminpoll\fP option, which allows \fBchronyd\fP to make the first update of the clock
-shortly after start.
+With this option, \fBchronyd\fP will start with a burst of 4\-8 requests in order to
+make the first update of the clock sooner. It will also repeat the burst every
+time the source is switched from the offline state to online with the
+\fBonline\fP command in \fBchronyc\fP.
 .RE
 .sp
 \fBburst\fP
 .RS 4
-With this option, \fBchronyd\fP will shorten the interval between up to four
-requests to 2 seconds or less when it cannot get a good measurement from the
+With this option, \fBchronyd\fP will send a burst of up to 4 requests when it
+cannot get a good measurement from the
 server. The number of requests in the burst is limited by the current polling
 interval to keep the average interval at or above the minimum interval, i.e.
 the current interval needs to be at least two times longer than the minimum
@@ -101,13 +130,13 @@ interval in order to allow a burst with two requests.
 \fBkey\fP \fIID\fP
 .RS 4
 The NTP protocol supports a message authentication code (MAC) to prevent
-computers having their system time upset by rogue packets being sent to them.
-The MAC is generated as a function of a password specified in the key file,
+computers from having their system time upset by rogue packets being sent to them.
+The MAC is generated as a function of a key specified in the key file,
 which is specified by the \fBkeyfile\fP directive.
 .sp
 The \fBkey\fP option specifies which key (with an ID in the range 1 through 2^32\-1)
-should \fBchronyd\fP use to authenticate requests sent to the server and verify its
-responses. The server must have the same key for this number configured,
+\fBchronyd\fP should use to authenticate requests sent to the server and verify its
+responses. The server must have the same key for this number configured;
 otherwise no relationship between the computers will be possible.
 .sp
 If the server is running \fBntpd\fP and the output size of the hash function used
@@ -115,33 +144,61 @@ by the key is longer than 160 bits (e.g. SHA256), the \fBversion\fP option needs
 be set to 4 for compatibility.
 .RE
 .sp
+\fBnts\fP
+.RS 4
+This option enables authentication using the Network Time Security (NTS)
+mechanism. Unlike with the \fBkey\fP option, the server and client do not need to
+share a key in a key file. NTS has a Key Establishment (NTS\-KE) protocol using
+the Transport Layer Security (TLS) protocol to get the keys and cookies
+required by NTS for authentication of NTP packets.
+.sp
+With this option, the hostname specified in the server or pool directive is the
+NTS\-KE server or pool of NTS\-KE servers, respectively. The NTP server usually
+runs on the same host, but it can be separated from the NTS\-KE server (the
+hostname or address of the NTP server is provided to the client by the NTS\-KE
+server).
+.sp
+The NTS\-KE server can be specified by IP address if it is included in the
+server\(cqs certificate as a Subject Alternative Name (SAN).
+.RE
+.sp
+\fBcertset\fP \fIID\fP
+.RS 4
+This option specifies which set of trusted certificates should be used to verify
+the server\(cqs certificate when the \fBnts\fP option is enabled. Sets of certificates
+can be specified with the \fBntstrustedcerts\fP directive. The
+default set is 0, which by default contains certificates of the system\(cqs
+default trusted certificate authorities.
+.RE
+.sp
 \fBmaxdelay\fP \fIdelay\fP
 .RS 4
 \fBchronyd\fP uses the network round\-trip delay to the server to determine how
 accurate a particular measurement is likely to be. Long round\-trip delays
 indicate that the request, or the response, or both were delayed. If only one
-of the messages was delayed the measurement error is likely to be substantial.
+of the messages was delayed, the measurement error is likely to be substantial.
 .sp
 For small variations in the round\-trip delay, \fBchronyd\fP uses a weighting scheme
-when processing the measurements. However, beyond a certain level of delay the
+when processing the measurements. Beyond a certain level of delay, however, the
 measurements are likely to be so corrupted as to be useless. (This is
-particularly so on dial\-up or other slow links, where a long delay probably
-indicates a highly asymmetric delay caused by the response waiting behind a lot
-of packets related to a download of some sort).
+particularly so on wireless networks and other slow links, where a long delay
+probably indicates a highly asymmetric delay caused by the response waiting
+behind a lot of packets related to a download of some sort).
 .sp
 If the user knows that round trip delays above a certain level should cause the
 measurement to be ignored, this level can be defined with the \fBmaxdelay\fP
 option. For example, \fBmaxdelay 0.3\fP would indicate that measurements with a
-round\-trip delay of 0.3 seconds or more should be ignored. The default value is
-3 seconds and the maximum value is 1000 seconds.
+round\-trip delay greater than 0.3 seconds should be ignored. The default value
+is 3 seconds, and the maximum value is 1000 seconds.
 .RE
 .sp
 \fBmaxdelayratio\fP \fIratio\fP
 .RS 4
 This option is similar to the \fBmaxdelay\fP option above. \fBchronyd\fP keeps a record
 of the minimum round\-trip delay amongst the previous measurements that it has
-buffered. If a measurement has a round trip delay that is greater than the
-maxdelayratio times the minimum delay, it will be rejected.
+buffered. If a measurement has a round\-trip delay that is greater than the
+specified ratio times the minimum delay, it will be rejected. By default, this
+test is disabled.
 .RE
 .sp
 \fBmaxdelaydevratio\fP \fIratio\fP
@@ -150,6 +207,23 @@ If a measurement has a ratio of the increase in the round\-trip delay from the
 minimum delay amongst the previous measurements to the standard deviation of
 the previous measurements that is greater than the specified ratio, it will be
 rejected. The default is 10.0.
+.RE
+.sp
+\fBmaxdelayquant\fP \fIp\fP
+.RS 4
+This option disables the \fBmaxdelaydevratio\fP test and specifies the maximum
+acceptable delay as a quantile of the round\-trip delay instead of a function of
+the minimum delay amongst the buffered measurements. If a measurement has a
+round\-trip delay that is greater than a long\-term estimate of the \fIp\fP\-quantile,
+it will be rejected.
+.sp
+The specified \fIp\fP value should be between 0.05 and 0.95. For example,
+\fBmaxdelayquant 0.2\fP would indicate that only measurements with the lowest 20
+percent of round\-trip delays should be accepted. Note that it can take many
+measurements for the estimated quantile to reach the expected value. This
+option is intended for synchronisation in mostly static local networks with
+very short polling intervals and possibly combined with the \fBfilter\fP option.
+By default, this test is disabled in favour of the \fBmaxdelaydevratio\fP test.
 .RE
 .sp
 \fBmindelay\fP \fIdelay\fP
@@ -173,7 +247,7 @@ the source back. By default, \fBchronyd\fP estimates the asymmetry automatically
 .sp
 \fBoffset\fP \fIoffset\fP
 .RS 4
-This option specifies a correction (in seconds) which will be applied to
+This option specifies a correction (in seconds) that will be applied to
 offsets measured with this source. It\(cqs particularly useful to compensate for a
 known asymmetry in network delay or timestamping errors. For example, if
 packets sent to the source were on average delayed by 100 microseconds more
@@ -193,12 +267,13 @@ Set the maximum number of samples kept for this source. This overrides the
 \fBmaxsamples\fP directive.
 .RE
 .sp
-\fBfilter\fP \fIsamples\fP
+\fBfilter\fP \fIpolls\fP
 .RS 4
 This option enables a median filter to reduce noise in NTP measurements. The
-filter will reduce the specified number of samples to a single sample. It is
-intended to be used with very short polling intervals in local networks where
-it is acceptable to generate a lot of NTP traffic.
+filter will process samples collected in the specified number of polls
+into a single sample. It is intended to be used with very short polling
+intervals in local networks where it is acceptable to generate a lot of NTP
+traffic.
 .RE
 .sp
 \fBoffline\fP
@@ -221,7 +296,7 @@ enable measurements to start.)
 .sp
 \fBprefer\fP
 .RS 4
-Prefer this source over sources without the \fBprefer\fP option.
+Prefer this source over other selectable sources without the \fBprefer\fP option.
 .RE
 .sp
 \fBnoselect\fP
@@ -248,14 +323,14 @@ synchronisation only if they agree with the trusted and required source.
 .sp
 \fBxleave\fP
 .RS 4
-This option enables an interleaved mode which allows the server or the peer to
-send transmit timestamps captured after the actual transmission (e.g. when the
-server or the peer is running \fBchronyd\fP with software (kernel) or hardware
-timestamping). This can significantly improve the accuracy of the measurements.
+This option enables the interleaved mode of NTP (RFC 9769). It enables the
+server to respond with more accurate transmit timestamps (e.g. kernel or
+hardware timestamps), which cannot be contained in the transmitted packet
+itself and need to refer to a previous packet instead. This can significantly
+improve the accuracy and stability of the measurements.
 .sp
 The interleaved mode is compatible with servers that support only the basic
-mode, but peers must both support and have enabled the interleaved mode,
-otherwise the synchronisation will work only in one direction. Note that even
+mode. Note that even
 servers that support the interleaved mode might respond in the basic mode as
 the interleaved mode requires the servers to keep some state for each client
 and the state might be dropped when there are too many clients (e.g.
@@ -283,6 +358,12 @@ be specified. For normal servers this option should not be required (the
 default is 123, the standard NTP port).
 .RE
 .sp
+\fBntsport\fP \fIport\fP
+.RS 4
+This option specifies the TCP port on which the server is listening for NTS\-KE
+connections when the \fBnts\fP option is enabled. The default is 4460.
+.RE
+.sp
 \fBpresend\fP \fIpoll\fP
 .RS 4
 If the timing measurements being made by \fBchronyd\fP are the only network data
@@ -298,22 +379,20 @@ extra pair of NTP packets will be exchanged between the client and the server
 prior to the actual measurement. For example, with the following option
 included in a \fBserver\fP directive:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 presend 9
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-when the polling interval is 512 seconds or more, an extra NTP client packet
+When the polling interval is 512 seconds or more, an extra NTP client packet
 will be sent to the server a short time (2 seconds) before making the actual
 measurement.
 .sp
-The \fBpresend\fP option cannot be used in the \fBpeer\fP directive. If it is used
-with the \fBxleave\fP option, \fBchronyd\fP will send two extra packets instead of one.
+If the \fBpresend\fP option is used together with the \fBxleave\fP option, \fBchronyd\fP
+will send two extra packets instead of one.
 .RE
 .sp
 \fBminstratum\fP \fIstratum\fP
@@ -321,8 +400,8 @@ with the \fBxleave\fP option, \fBchronyd\fP will send two extra packets instead 
 When the synchronisation source is selected from available sources, sources
 with lower stratum are normally slightly preferred. This option can be used to
 increase stratum of the source to the specified minimum, so \fBchronyd\fP will
-avoid selecting that source. This is useful with low stratum sources that are
-known to be unreliable or inaccurate and which should be used only when other
+avoid selecting that source. This is useful with low\-stratum sources that are
+known to be unreliable or inaccurate and that should be used only when other
 sources are unreachable.
 .RE
 .sp
@@ -330,11 +409,72 @@ sources are unreachable.
 .RS 4
 This option sets the NTP version of packets sent to the server. This can be
 useful when the server runs an old NTP implementation that does not respond to
-requests using a newer version. The default version depends on whether a key is
-specified by the \fBkey\fP option and which authentication hash function the key
-is using. If the output size of the hash function is longer than 160 bits, the
-default version is 3 for compatibility with older \fBchronyd\fP servers. Otherwise,
+requests using a newer version. The default version depends on other options.
+If the \fBextfield\fP or \fBxleave\fP option is used, the default version is 4. If
+those options are not used and the \fBkey\fP option specifies a key using a hash
+function with an output size longer than 160 bits (e.g. SHA256), the default
+version is 3 for compatibility with older \fBchronyd\fP servers. In other cases,
 the default version is 4.
+.RE
+.sp
+\fBcopy\fP
+.RS 4
+This option specifies that the server and client are closely related, their
+configuration does not allow a synchronisation loop to form between them, and
+the client is allowed to assume the reference ID and stratum of the server.
+This is useful when multiple instances of \f(CRchronyd\fP are running on one computer
+(e.g. for security or performance reasons), one primarily operating as a client
+to synchronise the system clock and other instances started with the \fB\-x\fP
+option to operate as NTP servers for other computers with their NTP clocks
+synchronised to the first instance.
+.RE
+.sp
+\fBextfield\fP \fItype\fP
+.RS 4
+This option enables an NTPv4 extension field specified by its type as a
+hexadecimal number. It will be included in requests sent to the server and
+processed in received responses if the server supports it. Note that some
+server implementations do not respond to requests containing an unknown
+extension field (\fBchronyd\fP as a server responded to such requests since
+version 2.0).
+.sp
+This option can be used multiple times to enable multiple extension fields.
+.sp
+The following extension fields are supported:
+.sp
+\fIF323\fP
+.RS 4
+An experimental extension field to enable several improvements that were
+proposed for the next version of the NTP protocol (NTPv5). The field contains
+root delay and dispersion in higher resolution and a monotonic receive
+timestamp, which enables a frequency transfer between the server and client to
+significantly improve stability of the synchronisation. This field should be
+enabled only for servers known to be running \fBchronyd\fP version 4.2 or later.
+.RE
+.sp
+\fIF324\fP
+.RS 4
+An experimental extension field to enable the use of the Precision Time
+Protocol (PTP) correction field in NTP\-over\-PTP messages updated by one\-step
+end\-to\-end transparent clocks in network switches and routers to significantly
+improve accuracy and stability of the synchronisation. NTP\-over\-PTP can be
+enabled by the \fBptpport\fP directive and setting the \fBport\fP option to
+the PTP port. The corrections are applied only to NTP measurements with HW
+timestamps (enabled by the \fBhwtimestamp\fP directive). This
+field should be enabled only for servers known to be running \fBchronyd\fP version
+4.5 or later.
+.RE
+.RE
+.sp
+\fBipv4\fP, \fBipv6\fP
+.RS 4
+These options force \fBchronyd\fP to use only IPv4 or IPv6 addresses respectively
+for this source. They do not override the \fB\-4\fP or \fB\-6\fP option on the \fBchronyd\fP
+command line.
+.RE
+.sp
+
+.RS 4
 .RE
 .RE
 .sp
@@ -345,30 +485,28 @@ directive, except that it is used to specify a pool of NTP servers rather than
 a single NTP server. The pool name is expected to resolve to multiple addresses
 which might change over time.
 .sp
+This directive can be used multiple times to specify multiple pools.
+.sp
 All options valid in the \fBserver\fP directive can be used in this
 directive too. There is one option specific to the \fBpool\fP directive:
-\fBmaxsources\fP sets the maximum number of sources that can be used from the pool,
-the default value is 4.
 .sp
-On start, when the pool name is resolved, \fBchronyd\fP will add up to 16 sources,
-one for each resolved address. When the number of sources from which at least
-one valid reply was received reaches the number specified by the \fBmaxsources\fP
-option, the other sources will be removed. When a pool source is unreachable,
-marked as a falseticker, or has a distance larger than the limit set by the
-\fBmaxdistance\fP directive, \fBchronyd\fP will try to replace the
-source with a newly resolved address from the pool.
+\fBmaxsources\fP \fIsources\fP
+.RS 4
+This option sets the desired number of sources to be used from the pool.
+\fBchronyd\fP will repeatedly try to resolve the name until it gets this number of
+sources responding to requests. The default value is 4, and the maximum value is
+16.
 .sp
 An example of the \fBpool\fP directive is
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 pool pool.ntp.org iburst maxsources 3
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
 .RE
 .sp
 \fBpeer\fP \fIhostname\fP [\fIoption\fP]...
@@ -381,6 +519,14 @@ is mainly useful when the NTP implementation of the peer (e.g. \fBntpd\fP) suppo
 ephemeral symmetric associations and does not need to be configured with an
 address of this host. \fBchronyd\fP does not support ephemeral associations.
 .sp
+This directive can be used multiple times to specify multiple peers.
+.sp
+The following options of the \fBserver\fP directive do not work in the \fBpeer\fP
+directive: \fBiburst\fP, \fBburst\fP, \fBnts\fP, \fBpresend\fP, \fBcopy\fP.
+.sp
+When using the \fBxleave\fP option, both peers must support and have enabled the
+interleaved mode; otherwise the synchronisation will work in one direction
+only.
 When a key is specified by the \fBkey\fP option to enable authentication, both
 peers must use the same key and the same key number.
 .sp
@@ -405,22 +551,11 @@ recommended to use two separate client/server associations (specified by the
 .sp
 \fBinitstepslew\fP \fIstep\-threshold\fP [\fIhostname\fP]...
 .RS 4
-In normal operation, \fBchronyd\fP slews the time when it needs to adjust the
-system clock. For example, to correct a system clock which is 1 second slow,
-\fBchronyd\fP slightly increases the amount by which the system clock is advanced
-on each clock interrupt, until the error is removed. Note that at no time does
-time run backwards with this method.
-.sp
-On most Unix systems it is not desirable to step the system clock, because many
-programs rely on time advancing monotonically forwards.
-.sp
-When the \fBchronyd\fP daemon is initially started, it is possible that the system
-clock is considerably in error. Attempting to correct such an error by slewing
-might not be sensible, since it might take several hours to correct the error by
-this means.
+(This directive is deprecated in favour of the \fBmakestep\fP
+directive.)
 .sp
 The purpose of the \fBinitstepslew\fP directive is to allow \fBchronyd\fP to make a
-rapid measurement of the system clock error at boot time, and to correct the
+rapid measurement of the system clock error at boot time and to correct the
 system clock by stepping before normal operation begins. Since this would
 normally be performed only at an appropriate point in the system boot sequence,
 no other software should be adversely affected by the step.
@@ -437,36 +572,35 @@ error. \fBchronyd\fP then enters its normal operating mode.
 .sp
 An example of the use of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-initstepslew 30 foo.example.net bar.example.net
+.fam C
+initstepslew 30 ntp1.example.net ntp2.example.net ntp3.example.net
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-where 2 NTP servers are used to make the measurement. The \fI30\fP indicates that
+where 3 NTP servers are used to make the measurement. The \fI30\fP indicates that
 if the system\(cqs error is found to be 30 seconds or less, a slew will be used to
 correct it; if the error is above 30 seconds, a step will be used.
 .sp
 The \fBinitstepslew\fP directive can also be used in an isolated LAN environment,
 where the clocks are set manually. The most stable computer is chosen as the
-master, and the other computers are slaved to it. If each of the slaves is
-configured with the \fBlocal\fP directive, the master can be set up with
-an \fBinitstepslew\fP directive which references some or all of the slaves. Then,
-if the master machine has to be rebooted, the slaves can be relied on to act
-analogously to a flywheel and preserve the time for a short period while the
-master completes its reboot.
+primary server and the other computers are its clients. If each of the clients
+is configured with the \fBlocal\fP directive, the server can be set up
+with an \fBinitstepslew\fP directive that references some or all of the clients.
+Then, if the server machine has to be rebooted, the clients can be relied on to
+act analogously to a flywheel and preserve the time for a short period while
+the server completes its reboot.
 .sp
 The \fBinitstepslew\fP directive is functionally similar to a combination of the
 \fBmakestep\fP and \fBserver\fP directives with the \fBiburst\fP
 option. The main difference is that the \fBinitstepslew\fP servers are used only
 before normal operation begins and that the foreground \fBchronyd\fP process waits
-for \fBinitstepslew\fP to finish before exiting. This is useful to prevent programs
-started in the boot sequence after \fBchronyd\fP from reading the clock before it
-has been stepped.
+for \fBinitstepslew\fP to finish before exiting. This prevent programs started in
+the boot sequence after \fBchronyd\fP from reading the clock before it has been
+stepped. With the \fBmakestep\fP directive, the
+\fBwaitsync\fP command of \fBchronyc\fP can be used instead.
 .RE
 .sp
 \fBrefclock\fP \fIdriver\fP \fIparameter\fP[:\fIoption\fP]... [\fIoption\fP]...
@@ -477,7 +611,9 @@ driver\-specific parameter. The two parameters are followed by zero or more
 refclock options. Some drivers have special options, which can be appended to
 the driver\-specific parameter using the \fB:\fP character.
 .sp
-There are four drivers included in \fBchronyd\fP:
+This directive can be used multiple times to specify multiple reference clocks.
+.sp
+There are five drivers included in \fBchronyd\fP:
 .sp
 \fBPPS\fP
 .RS 4
@@ -500,25 +636,54 @@ instead.
 .RS 4
 Examples:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-refclock PPS /dev/pps0 lock NMEA refid GPS
-refclock SHM 0 offset 0.5 delay 0.2 refid NMEA noselect
+.fam C
+refclock PPS /dev/pps0 lock NMEA refid GPS1
+refclock SOCK /var/run/chrony.clk.ttyS0.sock offset 0.5 delay 0.2 refid NMEA noselect
 refclock PPS /dev/pps1:clear refid GPS2
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
+.sp
+\fBSOCK\fP
+.RS 4
+Unix domain socket driver. This driver uses a datagram socket to receive
+samples from another application running on the system. The parameter is the
+path to the socket, which \fBchronyd\fP will create on start. The format of the
+messages is described in the \fIrefclock_sock.c\fP file in the chrony source code.
+.sp
+An application that supports the SOCK protocol is the \fBgpsd\fP daemon. It can
+provide accurate measurements using the receiver\(cqs PPS signal, and since
+version 3.25 also (much less accurate) measurements based on the timing of
+serial data (e.g. NMEA), which can be useful when the receiver does not provide
+a PPS signal, or it cannot be connected to the computer. The paths where \fBgpsd\fP
+expects the sockets to be created by \fBchronyd\fP are described in the \fBgpsd(8)\fP
+man page. Note that \fBgpsd\fP needs to be started after \fBchronyd\fP in order to
+connect to the socket.
+.sp
+Examples:
+.sp
+.if n .RS 4
+.nf
+.fam C
+refclock SOCK /var/run/chrony.ttyS0.sock refid GPS1 poll 2 filter 4
+refclock SOCK /var/run/chrony.clk.ttyUSB0.sock refid GPS2 offset 0.2 delay 0.1
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBSHM\fP
 .RS 4
-NTP shared memory driver. This driver uses a shared memory segment to receive
-samples from another process (e.g. \fBgpsd\fP). The parameter is the number of the
-shared memory segment, typically a small number like 0, 1, 2, or 3. The driver
-supports the following option:
+NTP shared memory driver. This driver implements the protocol of the \fBntpd\fP
+driver type 28. It is functionally similar to the SOCK driver, but uses a
+shared memory segment instead of a socket. The parameter is the unit number,
+typically a small number like 0, 1, 2, or 3, from which is derived the key of
+the memory segment as 0x4e545030 + unit.
+.sp
+The driver supports the following option:
 .sp
 \fBperm\fP=\fImode\fP
 .RS 4
@@ -531,49 +696,33 @@ This option specifies the permissions of the shared memory segment created by
 
 .RS 4
 .sp
+Unlike with the SOCK driver, there is no prescribed order of starting \fBchronyd\fP
+and the program providing measurements. Both are expected to create the memory
+segment if it does not exist. \fBchronyd\fP will attach to an existing segment even
+if it has a different owner than root or different permissions than the
+permissions specified by the \fBperm\fP option. The segment needs to be created
+before untrusted applications or users can execute code to prevent an attacker
+from feeding \fBchronyd\fP with false measurements. The owner and permissions of
+the segment can be verified with the \fBipcs \-m\fP command. For this reason, the
+SHM driver is deprecated in favor of SOCK.
+.sp
 Examples:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 refclock SHM 0 poll 3 refid GPS1
 refclock SHM 1:perm=0644 refid GPS2
+.fam
 .fi
-.if n \{\
-.RE
-.\}
-.RE
-.sp
-\fBSOCK\fP
-.RS 4
-Unix domain socket driver. It is similar to the SHM driver, but samples are
-received from a Unix domain socket instead of shared memory and the messages
-have a different format. The parameter is the path to the socket, which
-\fBchronyd\fP creates on start. An advantage over the SHM driver is that SOCK does
-not require polling and it can receive PPS samples with incomplete time. The
-format of the messages is described in the \fIrefclock_sock.c\fP file in the chrony
-source code.
-.sp
-An application which supports the SOCK protocol is the \fBgpsd\fP daemon. The path
-where \fBgpsd\fP expects the socket to be created is described in the \fBgpsd(8)\fP man
-page. For example:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-refclock SOCK /var/run/chrony.ttyS0.sock
-.fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBPHC\fP
 .RS 4
-PTP hardware clock (PHC) driver. The parameter is the path to the device of
-the PTP clock which should be used as a time source. If the clock is kept in
+PTP hardware clock (PHC) driver. The parameter is the absolute path to the
+device of the PTP clock which should be used as a time source, or the name of
+the network interface whose PTP clock should be used. If the clock is kept in
 TAI instead of UTC (e.g. it is synchronised by a PTP daemon), the current
 UTC\-TAI offset needs to be specified by the \fBoffset\fP option. Alternatively, the
 \fBpps\fP refclock option can be enabled to treat the PHC as a PPS refclock, using
@@ -597,8 +746,10 @@ PPS samples.
 .sp
 \fBpin\fP=\fIindex\fP
 .RS 4
-This option specifies the index of the pin to which is connected the PPS
-signal. The default value is 0.
+This option specifies the index of the pin which should be enabled for the
+PPS timestamping. If the PHC does not have configurable pins (i.e. the channel
+function is fixed), the index needs to be set to \-1 to disable the pin
+configuration. The default value is 0.
 .RE
 .sp
 \fBchannel\fP=\fIindex\fP
@@ -620,17 +771,43 @@ clocks.
 .sp
 Examples:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 refclock PHC /dev/ptp0 poll 0 dpoll \-2 offset \-37
 refclock PHC /dev/ptp1:nocrossts poll 3 pps
 refclock PHC /dev/ptp2:extpps:pin=1 width 0.2 poll 2
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
+.sp
+\fBRTC\fP
+.RS 4
+Driver for using the Real Time Clock (RTC) as a reference clock. The parameter
+is the path to the RTC character device which should be used as a time source.
+This driver cannot be used together with the \fBrtcfile\fP or
+\fBrtcsync\fP directive. The driver supports the following option:
+.sp
+\fButc\fP
+.RS 4
+Assume that RTC keeps Universal Coordinated Time (UTC) instead of local
+time.
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+Examples:
+.sp
+.if n .RS 4
+.nf
+.fam C
+refclock RTC /dev/rtc0:utc
+.fam
+.fi
+.if n .RE
 .RE
 .RE
 .sp
@@ -674,14 +851,14 @@ directly with raw samples from the specified refclock.
 \fBrate\fP \fIrate\fP
 .RS 4
 This option sets the rate of the pulses in the PPS signal (in Hz). This option
-controls how the pulses will be completed with real time. To actually receive
+controls how the pulses will be completed with real time. In order to receive
 more than one pulse per second, a negative \fBdpoll\fP has to be specified (\-3 for
 a 5Hz signal). The default is 1.
 .RE
 .sp
 \fBmaxlockage\fP \fIpulses\fP
 .RS 4
-This option specifies in number of pulses how old can be samples from the
+This option specifies in number of pulses how old samples can be from the
 refclock specified by the \fBlock\fP option to be paired with the pulses.
 Increasing this value is useful when the samples are produced at a lower rate
 than the pulses. The default is 2.
@@ -691,7 +868,7 @@ than the pulses. The default is 2.
 .RS 4
 This option specifies the width of the pulses (in seconds). It is used to
 filter PPS samples when the driver provides samples for both rising and falling
-edges. Note that it reduces the maximum allowed error of the time source which
+edges. Note that it reduces the maximum allowed error of the time source that
 completes the PPS samples. If the duty cycle is configurable, 50% should be
 preferred in order to maximise the allowed error.
 .RE
@@ -714,7 +891,7 @@ The default is 0.0.
 \fBdelay\fP \fIdelay\fP
 .RS 4
 This option sets the NTP delay of the source (in seconds). Half of this value
-is included in the maximum assumed error which is used in the source selection
+is included in the maximum assumed error, which is used in the source selection
 algorithm. Increasing the delay is useful to avoid having no majority in the
 source selection or to make it prefer other sources. The default is 1e\-9 (1
 nanosecond).
@@ -740,17 +917,18 @@ larger estimated dispersion are ignored. By default, this limit is disabled.
 .sp
 \fBfilter\fP \fIsamples\fP
 .RS 4
-This option sets the length of the median filter which is used to reduce the
-noise in the measurements. With each poll about 40 percent of the stored
-samples are discarded and one final sample is calculated as an average of the
-remaining samples. If the length is 4 or more, at least 4 samples have to be
-collected between polls. For lengths below 4, the filter has to be full. The
-default is 64.
+This option sets the maximum number of samples that can be stored in the median
+filter between polls of the source. The filter combines about 60 percent of the
+samples closest to the median offset into one sample. If more samples are
+received by the driver between polls, the oldest samples will be dropped. One
+sample per poll is sufficient for the source to be selectable. The default
+is 64. Note that the PHC driver has additional filtering based on the reading
+delay.
 .RE
 .sp
 \fBprefer\fP
 .RS 4
-Prefer this source over sources without the prefer option.
+Prefer this source over other selectable sources without the \fBprefer\fP option.
 .RE
 .sp
 \fBnoselect\fP
@@ -781,9 +959,20 @@ trusted and required source.
 .RS 4
 This option indicates that the reference clock keeps time in TAI instead of UTC
 and that \fBchronyd\fP should correct its offset by the current TAI\-UTC offset. The
-\fBleapsectz\fP directive must be used with this option and the
-database must be kept up to date in order for this correction to work as
-expected. This option does not make sense with PPS refclocks.
+\fBleapsectz\fP or \fBleapseclist\fP directive must be
+used with this option and the database must be kept up to date in order for
+this correction to work as expected. This option does not make sense with PPS
+refclocks.
+.RE
+.sp
+\fBlocal\fP
+.RS 4
+This option specifies that the reference clock is an unsynchronised clock which
+is more stable than the system clock (e.g. TCXO, OCXO, or atomic clock) and
+it should be used as a local standard to stabilise the system clock. The
+refclock will bypass the source selection. There should be at most one refclock
+specified with this option and it should have the shortest polling interval
+among all configured sources.
 .RE
 .sp
 \fBminsamples\fP \fIsamples\fP
@@ -815,12 +1004,13 @@ time to be provided.)
 .sp
 \fBacquisitionport\fP \fIport\fP
 .RS 4
-By default, \fBchronyd\fP uses a separate client socket for each configured server
-and their source port is chosen arbitrarily by the operating system. However,
-you can use the \fBacquisitionport\fP directive to explicitly specify a port and
-use only one socket (per IPv4 or IPv6 address family) for all configured servers.
-This can be useful for getting through some firewalls. If set to 0, the source
-port of the socket will be chosen arbitrarily.
+By default, \fBchronyd\fP as an NTP client opens a new socket for each request with
+the source port chosen randomly by the operating system. The \fBacquisitionport\fP
+directive can be used to specify the source port and use only one socket (per
+IPv4 or IPv6 address family) for all configured servers. This can be useful for
+getting through some firewalls. It should not be used if not necessary as there
+is a small impact on security of the client. If set to 0, the source port of
+the permanent socket will be chosen randomly by the operating system.
 .sp
 It can be set to the same port as is used by the NTP server (which can be
 configured with the \fBport\fP directive) to use only one socket for all
@@ -828,15 +1018,13 @@ NTP packets.
 .sp
 An example of the \fBacquisitionport\fP directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 acquisitionport 1123
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 This would change the source port used for client requests to UDP port 1123.
 You could then persuade the firewall administrator to open that port.
@@ -844,13 +1032,51 @@ You could then persuade the firewall administrator to open that port.
 .sp
 \fBbindacqaddress\fP \fIaddress\fP
 .RS 4
-The \fBbindacqaddress\fP directive sets the network interface to which
-\fBchronyd\fP will bind its NTP client sockets. The syntax is similar to the
-\fBbindaddress\fP and \fBbindcmdaddress\fP
+The \fBbindacqaddress\fP directive specifies a local IP address to which
+\fBchronyd\fP will bind its NTP and NTS\-KE client sockets. The syntax is similar to
+the \fBbindaddress\fP and \fBbindcmdaddress\fP
 directives.
 .sp
 For each of the IPv4 and IPv6 protocols, only one \fBbindacqaddress\fP directive
 can be specified.
+.RE
+.sp
+\fBbindacqdevice\fP \fIinterface\fP
+.RS 4
+The \fBbindacqdevice\fP directive binds the client sockets to a network device
+specified by the interface name. This can be useful when the local address is
+dynamic, or to enable an NTP source specified with a link\-local IPv6 address.
+This directive can specify only one interface and it is supported on Linux
+only.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+bindacqdevice eth0
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBdscp\fP \fIpoint\fP
+.RS 4
+The \fBdscp\fP directive sets the Differentiated Services Code Point (DSCP) in
+transmitted NTP packets to the specified value. It can improve stability of NTP
+measurements in local networks where switches or routers are configured to
+prioritise forwarding of packets with specific DSCP values. The default value
+is 0 and the maximum value is 63.
+.sp
+An example of the directive (setting the Expedited Forwarding class) is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+dscp 46
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBdumpdir\fP \fIdirectory\fP
@@ -871,17 +1097,21 @@ behaviour whilst it is not running). The \fBdumpdir\fP directive defines the
 directory where the measurement histories are saved when \fBchronyd\fP exits,
 or the \fBdump\fP command in \fBchronyc\fP is issued.
 .sp
+If the directory does not exist, it will be created automatically.
+.sp
+The \fB\-r\fP option of \fBchronyd\fP enables loading of the dump files on start. All
+dump files found in the directory will be removed after start, even if the \fB\-r\fP
+option is not present.
+.sp
 An example of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 dumpdir @CHRONYRUNDIR@
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 A source whose IP address is \fI1.2.3.4\fP would have its measurement history saved
 in the file \fI@CHRONYRUNDIR@/1.2.3.4.dat\fP. History of reference clocks is saved
@@ -895,6 +1125,10 @@ The \fBmaxsamples\fP directive sets the default maximum number of samples that
 individual sources in the \fBserver\fP and \fBrefclock\fP
 directives. The default value is 0, which disables the configurable limit. The
 useful range is 4 to 64.
+.sp
+As a special case, setting \fBmaxsamples\fP to 1 disables frequency tracking in
+order to make the sources immediately selectable with only one sample. This can
+be useful when \fBchronyd\fP is started with the \fB\-q\fP or \fB\-Q\fP option.
 .RE
 .sp
 \fBminsamples\fP \fIsamples\fP
@@ -911,7 +1145,276 @@ changes in the frequency and offset of the clock. The offsets in the
 \fBsourcestats\fP reports (and the \fItracking.log\fP and
 \fIstatistics.log\fP files) may be smaller than the actual offsets.
 .RE
+.sp
+\fBntsaeads\fP \fIID\fP...
+.RS 4
+This directive specifies a list of IDs of Authenticated Encryption with
+Associated Data (AEAD) algorithms enabled for NTS authentication of NTP
+messages. The algorithms are specified in decreasing order of priority.
+Algorithms that are not supported by the installed version of the crypto
+library (Nettle, GnuTLS) are ignored.
+.sp
+The following IDs are supported:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+15: AES\-SIV\-CMAC\-256
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+30: AES\-128\-GCM\-SIV
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+The default list of IDs is \fI30 15\fP. AES\-128\-GCM\-SIV is preferred over
+AES\-SIV\-CMAC\-256 for shorter keys, which makes NTS cookies shorter and improves
+reliability of NTS in networks that block or limit rate of longer NTP messages.
+.sp
+The ID of the used algorithm is reported for each server by the
+\fBauthdata\fP command.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsaeads 15
+.fam
+.fi
+.if n .RE
+.sp
+This list is used also by the NTS server.
+.RE
+.sp
+\fBntsdumpdir\fP \fIdirectory\fP
+.RS 4
+This directive specifies a directory for the client to save NTS cookies it
+received from the server in order to avoid making an NTS\-KE request when
+\fBchronyd\fP is started again. The cookies are saved separately for each NTP
+source in files named by the IP address of the NTS\-KE server (e.g.
+\fI1.2.3.4.nts\fP). By default, the client does not save the cookies.
+.sp
+If the directory does not exist, it will be created automatically.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsdumpdir @CHRONYVARDIR@
+.fam
+.fi
+.if n .RE
+.sp
+This directory is used also by the NTS server to save keys.
+.RE
+.sp
+\fBntsrefresh\fP \fIinterval\fP
+.RS 4
+This directive specifies the maximum interval between NTS\-KE handshakes (in
+seconds) in order to refresh the keys authenticating NTP packets. The default
+value is 2419200 (4 weeks) and the maximum value is 2^31\-1 (68 years).
+.sp
+The interval must be longer than polling intervals of all configured NTP
+sources using NTS, otherwise the source with a longer polling interval will
+refresh the keys on each poll and no NTP packets will be exchanged.
+.RE
+.sp
+\fBntstrustedcerts\fP [\fIset\-ID\fP] \fIfile\fP|\fIdirectory\fP
+.RS 4
+This directive specifies a file or directory containing trusted certificates
+(in the PEM format) that are needed to verify certificates of NTS\-KE servers,
+e.g. certificates of trusted certificate authorities (CA) or self\-signed
+certificates of the servers.
+.sp
+The optional \fIset\-ID\fP argument is a number in the range 0 through 2^32\-1, which
+selects the set of certificates where certificates from the specified file
+or directory are added. The default ID is 0, which is a set containing the
+system\(cqs default trusted CAs (unless the \fBnosystemcert\fP directive is present).
+All other sets are empty by default. A set of certificates can be selected for
+verification of an NTS server by the \fBcertset\fP option in the \fBserver\fP or \fBpool\fP
+directive.
+.sp
+This directive can be used multiple times to specify one or more sets of
+trusted certificates, each containing certificates from one or more files
+and/or directories.
+.sp
+It is not necessary to restart \fBchronyd\fP in order to reload the certificates if
+they change (e.g. after a renewal).
+.sp
+An example is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntstrustedcerts /etc/pki/nts/ca1.example.net.crt
+ntstrustedcerts 1 /etc/pki/nts/ca2.example.net.crt
+ntstrustedcerts 1 /etc/pki/nts/ca3.example.net.crt
+ntstrustedcerts 2 /etc/pki/nts/ntp2.example.net.crt
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBnosystemcert\fP
+.RS 4
+This directive disables the system\(cqs default trusted CAs. Only certificates
+specified by the \fBntstrustedcerts\fP directive will be trusted.
+.RE
+.sp
+\fBnocerttimecheck\fP \fIlimit\fP
+.RS 4
+This directive disables the checks of the activation and expiration times of
+certificates for the specified number of clock updates. It allows the NTS
+authentication mechanism to be used on computers which start with the wrong time
+(e.g. due to not having an RTC or backup battery). Disabling the time checks
+has important security implications and should be used only as a last resort,
+preferably with a minimal number of trusted certificates. The default value is
+0, which means the time checks are always enabled.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nocerttimecheck 1
+.fam
+.fi
+.if n .RE
+.sp
+This would disable the time checks until the clock is updated for the first
+time, assuming the first update corrects the clock and later checks can work
+with the correct time.
+.RE
+.sp
+\fBrefresh\fP \fIinterval\fP
+.RS 4
+This directive specifies the minimum interval (in seconds) between refreshing
+IP addresses of NTP sources specified by hostname. If the hostname no longer
+resolves to the currently used address, it will be replaced with one of the new
+addresses to avoid using a server which is no longer intended for service, even
+if it is still responding correctly and would not be replaced as unreachable.
+Only one source is refreshed at a time and only when a valid response is
+received (unreachable sources are replaced independently). The default value is
+1209600 (2 weeks) and the maximum value is 2^31\-1 (68 years). A value of 0
+disables the periodic refreshment.
+.sp
+The \fBrefresh\fP command can be used to refresh all
+sources immediately.
+.RE
 .SS "Source selection"
+.sp
+\fBauthselectmode\fP \fImode\fP
+.RS 4
+NTP sources can be specified with the \fBkey\fP or \fBnts\fP option to enable
+authentication to limit the impact of man\-in\-the\-middle attacks. The
+attackers can drop or delay NTP packets (up to the \fBmaxdelay\fP and
+\fBmaxdistance\fP limits), but they cannot modify the timestamps
+contained in the packets. The attack can cause only a limited slew or step, and
+also cause the clock to run faster or slower than real time (up to double
+the \fBmaxdrift\fP limit).
+.sp
+When authentication is enabled for an NTP source, it is important to disable
+unauthenticated NTP sources that could be exploited in the attack, e.g. if
+they are not reachable only over a trusted network. Alternatively, the source
+selection can be configured with the \fBrequire\fP and \fBtrust\fP options to
+synchronise to the unauthenticated sources only if they agree with the
+authenticated sources and might have a positive impact on the accuracy of the
+clock. Note that in this case the impact of the attack is higher. The attackers
+cannot cause an arbitrarily large step or slew, but they have more control over
+the frequency of the clock and can cause \fBchronyd\fP to report false information,
+e.g. a significantly smaller root delay and dispersion.
+.sp
+This directive determines the default selection options for authenticated and
+unauthenticated sources in order to simplify the configuration with the
+configuration file and \fBchronyc\fP commands. It sets a policy for authentication.
+.sp
+Sources specified with the \fBnoselect\fP option are ignored (not counted as either
+authenticated or unauthenticated), and they always have only the selection
+options specified in the configuration.
+.sp
+There are four modes:
+.sp
+\fBrequire\fP
+.RS 4
+Authentication is strictly required for NTP sources in this mode. If any
+unauthenticated NTP sources are specified, they will automatically get the
+\fBnoselect\fP option to prevent them from being selected for synchronisation.
+.RE
+.sp
+\fBprefer\fP
+.RS 4
+In this mode, authentication is optional and preferred. If it is enabled for at
+least one NTP source, all unauthenticated NTP sources will get the \fBnoselect\fP
+option.
+.RE
+.sp
+\fBmix\fP
+.RS 4
+In this mode, authentication is optional and synchronisation to a mix of
+authenticated and unauthenticated NTP sources is allowed. If both authenticated
+and unauthenticated NTP sources are specified, all authenticated NTP sources
+and reference clocks will get the \fBrequire\fP and \fBtrust\fP options to prevent
+synchronisation to unauthenticated NTP sources if they do not agree with a
+majority of the authenticated sources and reference clocks. This is the default
+mode.
+.RE
+.sp
+\fBignore\fP
+.RS 4
+In this mode, authentication is ignored in the source selection. All sources
+will have only the selection options that were specified in the configuration
+file, or \fBchronyc\fP command. This was the behaviour of \fBchronyd\fP in versions
+before 4.0.
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+As an example, the following configuration using the default \fBmix\fP mode:
+.sp
+.if n .RS 4
+.nf
+.fam C
+server ntp1.example.net nts
+server ntp2.example.net nts
+server ntp3.example.net
+refclock SOCK /var/run/chrony.ttyS0.sock
+.fam
+.fi
+.if n .RE
+.sp
+is equivalent to the following configuration using the \fBignore\fP mode:
+.sp
+.if n .RS 4
+.nf
+.fam C
+authselectmode ignore
+server ntp1.example.net nts require trust
+server ntp2.example.net nts require trust
+server ntp3.example.net
+refclock /var/run/chrony.ttyS0.sock require trust
+.fam
+.fi
+.if n .RE
+.RE
 .sp
 \fBcombinelimit\fP \fIlimit\fP
 .RS 4
@@ -928,17 +1431,17 @@ If the selected source was specified with the \fBprefer\fP option, it can be
 combined only with other sources specified with this option.
 .sp
 By default, the limit is 3. Setting the limit to 0 effectively disables the
-source combining algorithm and only the selected source will be used to control
+source\-combining algorithm and only the selected source will be used to control
 the system clock.
 .RE
 .sp
 \fBmaxdistance\fP \fIdistance\fP
 .RS 4
-The \fBmaxdistance\fP directive sets the maximum allowed root distance of the
-sources to not be rejected by the source selection algorithm. The distance
-includes the accumulated dispersion, which might be large when the source is no
-longer synchronised, and half of the total round\-trip delay to the primary
-source.
+The \fBmaxdistance\fP directive sets the maximum root distance of a source to be
+acceptable for synchronisation of the clock. Sources that have a distance
+larger than the specified distance will be rejected. The distance estimates the
+maximum error of the source. It includes the root dispersion and half of the
+root delay (round\-trip time) accumulated on the path to the primary source.
 .sp
 By default, the maximum root distance is 3 seconds.
 .sp
@@ -963,7 +1466,7 @@ considered as selectable in the source selection algorithm before the local
 clock is updated. The default value is 1.
 .sp
 Setting this option to a larger number can be used to improve the reliability.
-More sources will have to agree with each other and the clock will not be
+More sources will have to agree with each other, and the clock will not be
 updated when only one source (which could be serving incorrect time) is
 reachable.
 .RE
@@ -971,8 +1474,8 @@ reachable.
 \fBreselectdist\fP \fIdistance\fP
 .RS 4
 When \fBchronyd\fP selects a synchronisation source from available sources, it
-will prefer the one with the shortest synchronisation distance. However, to
-avoid frequent reselecting when there are sources with similar distance, a
+will prefer the one with the shortest synchronisation distance. To avoid
+frequent reselecting when there are sources with similar distance, however, a
 fixed distance is added to the distance for sources that are currently not
 selected. This can be set with the \fBreselectdist\fP directive. By default, the
 distance is 100 microseconds.
@@ -990,6 +1493,33 @@ distances are in milliseconds.
 .RE
 .SS "System clock"
 .sp
+\fBclockprecision\fP \fIprecision\fP
+.RS 4
+The \fBclockprecision\fP directive specifies the precision of the system clock (in
+seconds). It is used by \fBchronyd\fP to estimate the minimum noise in NTP
+measurements and randomise low\-order bits of timestamps in NTP responses. By
+default, the precision is measured on start\-up as the minimum time to read the
+clock.
+.sp
+The measured value works well in most cases. It generally overestimates the
+precision and it can be sensitive to the CPU speed, however, which can
+change over time to save power. In some cases with a high\-precision clocksource
+(e.g. the Time Stamp Counter of the CPU) and hardware timestamping, setting the
+precision on the server to a smaller value can improve stability of clients\*(Aq
+NTP measurements. The server\(cqs precision is reported on clients by the
+\fBntpdata\fP command.
+.sp
+An example setting the precision to 8 nanoseconds is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+clockprecision 8e\-9
+.fam
+.fi
+.if n .RE
+.RE
+.sp
 \fBcorrtimeratio\fP \fIratio\fP
 .RS 4
 When \fBchronyd\fP is slewing the system clock to correct an offset, the rate at
@@ -1001,7 +1531,7 @@ The \fBcorrtimeratio\fP directive sets the ratio between the duration in which t
 clock is slewed for an average correction according to the source history and
 the interval in which the corrections are done (usually the NTP polling
 interval). Corrections larger than the average take less time and smaller
-corrections take more time, the amount of the correction and the correction
+corrections take more time; the amount of the correction and the correction
 time are inversely proportional.
 .sp
 Increasing \fBcorrtimeratio\fP improves the overall frequency error of the system
@@ -1015,7 +1545,7 @@ directive. The current remaining correction is shown in the
 \fBtracking\fP report as the \fBSystem time\fP value.
 .RE
 .sp
-\fBdriftfile\fP \fIfile\fP
+\fBdriftfile\fP \fIfile\fP [\fBinterval\fP \fIinterval\fP]
 .RS 4
 One of the main activities of the \fBchronyd\fP program is to work out the rate at
 which the system clock gains or loses time relative to real time.
@@ -1035,17 +1565,19 @@ microseconds in reality (so the true time has only advanced by 999900
 microseconds). The second is an estimate of the error bound around the first
 value in which the true rate actually lies.
 .sp
+The \fBinterval\fP option specifies the minimum interval between updates of the
+file in seconds. The file is written only on an update of the local clock.
+The default interval is 3600 seconds.
+.sp
 An example of the driftfile directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 driftfile @CHRONYVARDIR@/drift
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBfallbackdrift\fP \fImin\-interval\fP \fImax\-interval\fP
@@ -1060,19 +1592,17 @@ The directive specifies the minimum and maximum interval since the last clock
 update to switch between fallback drifts. They are defined as a power of 2 (in
 seconds). The syntax is as follows:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 fallbackdrift 16 19
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 In this example, the minimum interval is 16 (18 hours) and the maximum interval is
 19 (6 days). The system clock frequency will be set to the first fallback 18
-hours after last clock update, to the second after 36 hours, and so on. This
+hours after the last clock update, to the second after 36 hours, and so on. This
 might be a good setting to cover frequency changes due to daily and weekly
 temperature fluctuations. When the frequency is set to a fallback, the state of
 the clock will change to \(oqNot synchronised\(cq.
@@ -1126,7 +1656,11 @@ clock will be off for a longer time. On Linux with the default
 .RS 4
 No correction is applied to the clock for the leap second. The clock will be
 corrected later in normal operation when new measurements are made and the
-estimated offset includes the one second error.
+estimated offset includes the one second error. This option is particularly
+useful when multiple \fBchronyd\fP instances are running on the system, one
+controlling the system clock and others started with the \fB\-x\fP option, which
+should rely on the first instance to correct the system clock and ignore it for
+the correction of their own NTP clock running on top of the system clock.
 .RE
 .RE
 .sp
@@ -1140,10 +1674,10 @@ slightly different rates when it is necessary to keep them close together, the
 enable a server leap smear.
 .sp
 When smearing a leap second, the leap status is suppressed on the server and
-the served time is corrected slowly be slewing instead of stepping. The clients
+the served time is corrected slowly by slewing instead of stepping. The clients
 do not need any special configuration as they do not know there is any leap
 second and they follow the server time which eventually brings them back to
-UTC. Care must be taken to ensure they use only NTP servers which smear the
+UTC. Care must be taken to ensure they use only NTP servers that smear the
 leap second in exactly the same way for synchronisation.
 .sp
 This feature must be used carefully, because the server is intentionally not
@@ -1151,42 +1685,50 @@ serving its best estimate of the true time.
 .sp
 A recommended configuration to enable a server leap smear is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 leapsecmode slew
 maxslewrate 1000
-smoothtime 400 0.001 leaponly
+smoothtime 400 0.001024 leaponly
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The first directive is necessary to disable the clock step which would reset
 the smoothing process. The second directive limits the slewing rate of the
 local clock to 1000 ppm, which improves the stability of the smoothing process
 when the local correction starts and ends. The third directive enables the
 server time smoothing process. It will start when the clock gets to 00:00:00
-UTC and it will take 17 hours 34 minutes to finish. The frequency offset will
-be changing by 0.001 ppm per second and will reach a maximum of 31.623 ppm. The
-\fBleaponly\fP option makes the duration of the leap smear constant and allows the
-clients to safely synchronise with multiple identically configured leap
-smearing servers.
+UTC and it will take 62500 seconds (about 17.36 hours) to finish. The frequency
+offset will be changing by 0.001024 ppm per second and will reach a maximum of
+32 ppm in 31250 seconds. The \fBleaponly\fP option makes the duration of the leap
+smear constant and allows the clients to safely synchronise with multiple
+identically configured leap smearing servers.
+.sp
+The duration of the leap smear can be calculated from the specified wander as
+.sp
+.if n .RS 4
+.nf
+.fam C
+duration = sqrt(4 / wander)
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBleapsectz\fP \fItimezone\fP
 .RS 4
-This directive specifies a timezone in the system tz database which \fBchronyd\fP
-can use to determine when will the next leap second occur and what is the
-current offset between TAI and UTC. It will periodically check if 23:59:59 and
-23:59:60 are valid times in the timezone. This typically works with the
+This directive specifies a timezone in the system timezone database which
+\fBchronyd\fP can use to determine when the next leap second occurs and what
+the current offset between TAI and UTC is. It will periodically check if 23:59:59
+and 23:59:60 are valid times in the timezone. This normally works with the
 \fIright/UTC\fP timezone.
 .sp
 When a leap second is announced, the timezone needs to be updated at least 12
 hours before the leap second. It is not necessary to restart \fBchronyd\fP.
 .sp
-This directive is useful with reference clocks and other time sources which do
+This directive is useful with reference clocks and other time sources that do
 not announce leap seconds, or announce them too late for an NTP server to
 forward them to its own clients. Clients of leap smearing servers must not
 use this directive.
@@ -1202,82 +1744,101 @@ even if it is not included in the timezone.
 .sp
 An example of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 leapsectz right/UTC
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The following shell command verifies that the timezone contains leap seconds
 and can be used with this directive:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-$ TZ=right/UTC date \-d \(aqDec 31 2008 23:59:60\(aq
+.fam C
+$ TZ=right/UTC date \-d \*(AqDec 31 2008 23:59:60\*(Aq
 Wed Dec 31 23:59:60 UTC 2008
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
+.sp
+\fBleapseclist\fP \fIfile\fP
+.RS 4
+This directive specifies the path to a file containing a list of leap seconds
+and TAI\-UTC offsets in NIST/IERS format. It is recommended to use
+the file \fIleap\-seconds.list\fP usually included with the system timezone
+database. The behaviour of this directive is otherwise equivalent to
+\fBleapsectz\fP.
+.sp
+An example of this directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+leapseclist /usr/share/zoneinfo/leap\-seconds.list
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBmakestep\fP \fIthreshold\fP \fIlimit\fP
 .RS 4
-Normally \fBchronyd\fP will cause the system to gradually correct any time offset,
+Normally \fBchronyd\fP will cause the system to gradually correct any time offset
 by slowing down or speeding up the clock as required. In certain situations,
-the system clock might be so far adrift that this slewing process would take a
-very long time to correct the system clock.
+e.g. when \fBchronyd\fP is initially started, the system clock might be so far
+adrift that this slewing process would take a very long time to correct the
+system clock.
 .sp
 This directive forces \fBchronyd\fP to step the system clock if the adjustment is
 larger than a threshold value, but only if there were no more clock updates
-since \fBchronyd\fP was started than a specified limit (a negative value can be
-used to disable the limit).
+since \fBchronyd\fP was started than the specified limit. A negative value disables
+the limit.
 .sp
-This is particularly useful when using reference clocks, because the
-\fBinitstepslew\fP directive works only with NTP sources.
+On most systems it is desirable to step the system clock only on boot, before
+starting programs that rely on time advancing monotonically forwards.
 .sp
 An example of the use of this directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 makestep 0.1 3
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 This would step the system clock if the adjustment is larger than 0.1 seconds, but
 only in the first three clock updates.
+.sp
+Note that this directive does not work and should not be used when the system
+clock control is disabled by the \fB\-x\fP option of \fBchronyd\fP.
 .RE
 .sp
 \fBmaxchange\fP \fIoffset\fP \fIstart\fP \fIignore\fP
 .RS 4
-This directive sets the maximum allowed offset corrected on a clock update. The
-check is performed only after the specified number of updates to allow a large
-initial adjustment of the system clock. When an offset larger than the
-specified maximum occurs, it will be ignored for the specified number of times
-and then \fBchronyd\fP will give up and exit (a negative value can be used to never
-exit). In both cases a message is sent to syslog.
+This directive sets the maximum offset to be accepted on a clock update. The
+offset is measured relative to the current estimate of the true time, which is
+different from the system time if a previous slew did not finish.
+.sp
+The check is enabled after the specified number of clock updates to allow a
+large initial offset to be corrected on start. Offsets larger than the
+specified maximum will be ignored for the specified number of times. Another
+large offset will cause \fBchronyd\fP to give up and exit. A negative value
+can be used to disable the limit to ignore all large offsets. A syslog message
+will be generated when an offset is ignored or it causes the exit.
 .sp
 An example of the use of this directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 maxchange 1000 1 2
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 After the first clock update, \fBchronyd\fP will check the offset on every clock
 update, it will ignore two adjustments larger than 1000 seconds and exit on
@@ -1302,7 +1863,7 @@ This directive specifies the maximum assumed drift (frequency error) of the
 system clock. It limits the frequency adjustment that \fBchronyd\fP is allowed to
 use to correct the measured drift. It is an additional limit to the maximum
 adjustment that can be set by the system driver (100000 ppm on Linux, 500 ppm
-on FreeBSD, NetBSD, and macOS 10.13+, 32500 ppm on Solaris).
+on FreeBSD, NetBSD, and macOS 10.13+, 32500 ppm on illumos).
 .sp
 By default, the maximum assumed drift is 500000 ppm, i.e. the adjustment is
 limited by the system driver rather than this directive.
@@ -1310,7 +1871,7 @@ limited by the system driver rather than this directive.
 .sp
 \fBmaxupdateskew\fP \fIskew\-in\-ppm\fP
 .RS 4
-One of \fBchronyd\fP\(cqs tasks is to work out how fast or slow the computer\(cqs clock
+One of \fBchronyd\fP\*(Aqs tasks is to work out how fast or slow the computer\(cqs clock
 runs relative to its reference sources. In addition, it computes an estimate of
 the error bounds around the estimated value.
 .sp
@@ -1322,17 +1883,16 @@ The \fBmaxupdateskew\fP directive sets the threshold for determining whether an
 estimate might be so unreliable that it should not be used. By default, the
 threshold is 1000 ppm.
 .sp
-Typical values for \fIskew\-in\-ppm\fP might be 100 for a dial\-up connection to
-servers over a phone line, and 5 or 10 for a computer on a LAN.
+Typical values for \fIskew\-in\-ppm\fP might be 100 for NTP sources polled over a
+wireless network, and 10 or smaller for sources on a local wired network.
 .sp
 It should be noted that this is not the only means of protection against using
 unreliable estimates. At all times, \fBchronyd\fP keeps track of both the estimated
 gain or loss rate, and the error bound on the estimate. When a new estimate is
 generated following another measurement from one of the sources, a weighted
-combination algorithm is used to update the master estimate. So if \fBchronyd\fP
-has an existing highly\-reliable master estimate and a new estimate is generated
-which has large error bounds, the existing master estimate will dominate in the
-new master estimate.
+combination algorithm is used to update the existing estimate. If it has
+significantly smaller error bounds than the new estimate, the existing estimate
+will dominate in the new combined value.
 .RE
 .sp
 \fBmaxslewrate\fP \fIrate\-in\-ppm\fP
@@ -1345,13 +1905,9 @@ all supported systems with the exception of macOS 12 or earlier).
 .sp
 For each system there is a maximum frequency offset of the clock that can be set
 by the driver. On Linux it is 100000 ppm, on FreeBSD, NetBSD and macOS 10.13+ it
-is 5000 ppm, and on Solaris it is 32500 ppm. Also, due to a kernel limitation,
+is 5000 ppm, and on illumos it is 32500 ppm. Also, due to a kernel limitation,
 setting \fBmaxslewrate\fP on FreeBSD, NetBSD, macOS 10.13+ to a value between 500
 ppm and 5000 ppm will effectively set it to 500 ppm.
-.sp
-In early beta releases of macOS 13 this capability is disabled because of a
-system kernel bug. When the kernel bug is fixed, chronyd will detect this and
-re\-enable the capability (see above limitations) with no recompilation required.
 .sp
 By default, the maximum slew rate is set to 83333.333 ppm (one twelfth).
 .RE
@@ -1379,15 +1935,13 @@ coefficients \fIT0\fP, \fIk0\fP, \fIk1\fP, \fIk2\fP.
 .sp
 The frequency compensation is calculated (in ppm) as
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-k0 + (T \- T0) * k1 + (T \- T0)^2 * k2
+.fam C
+comp = k0 + (T \- T0) * k1 + (T \- T0)^2 * k2
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The result has to be between \-10 ppm and 10 ppm, otherwise the measurement is
 considered invalid and will be ignored. The \fIk0\fP coefficient can be adjusted to
@@ -1395,15 +1949,13 @@ keep the compensation in that range.
 .sp
 An example of the use is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 tempcomp /sys/class/hwmon/hwmon0/temp2_input 30 26000 0.0 0.000183 0.0
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The measured temperature will be read from the file in the Linux sysfs
 filesystem every 30 seconds. When the temperature is 26000 (26 degrees
@@ -1416,22 +1968,19 @@ points, from which the compensation is linearly interpolated or extrapolated.
 .sp
 An example is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 tempcomp /sys/class/hwmon/hwmon0/temp2_input 30 /etc/chrony.tempcomp
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 where the \fI/etc/chrony.tempcomp\fP file could have
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 20000 1.0
 21000 0.64
 22000 0.36
@@ -1443,10 +1992,9 @@ where the \fI/etc/chrony.tempcomp\fP file could have
 28000 0.36
 29000 0.64
 30000 1.0
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 Valid measurements with corresponding compensations are logged to the
 \fItempcomp.log\fP file if enabled by the \fBlog tempcomp\fP directive.
@@ -1456,89 +2004,90 @@ Valid measurements with corresponding compensations are logged to the
 \fBallow\fP [\fBall\fP] [\fIsubnet\fP]
 .RS 4
 The \fBallow\fP directive is used to designate a particular subnet from which NTP
-clients are allowed to access the computer as an NTP server.
+clients are allowed to access the computer as an NTP server. It also controls
+access of NTS\-KE clients when NTS is enabled on the server.
 .sp
 The default is that no clients are allowed access, i.e. \fBchronyd\fP operates
 purely as an NTP client. If the \fBallow\fP directive is used, \fBchronyd\fP will be
 both a client of its servers, and a server to other clients.
 .sp
+This directive can be used multiple times.
+.sp
 Examples of the use of the directive are as follows:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 allow 1.2.3.4
-allow 1.2
+allow 3.4.5.0/24
 allow 3.4.5
-allow 6.7.8/22
-allow 6.7.8.9/22
 allow 2001:db8::/32
 allow 0/0
 allow ::/0
 allow
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-The first directive allows a node with IPv4 address \fI1.2.3.4\fP to be an NTP
-client of this computer.
-The second directive allows any node with an IPv4 address of the form \fI1.2.x.y\fP
-(with \fIx\fP and \fIy\fP arbitrary) to be an NTP client of this computer. Likewise,
-the third directive allows any node with an IPv4 address of the form \fI3.4.5.x\fP
-to have client NTP access. The fourth and fifth forms allow access from any
-node with an IPv4 address of the form \fI6.7.8.x\fP, \fI6.7.9.x\fP, \fI6.7.10.x\fP or
-\fI6.7.11.x\fP (with \fIx\fP arbitrary), i.e. the value 22 is the number of bits
-defining the specified subnet. In the fifth form, the final byte is ignored.
-The sixth form is used for IPv6 addresses. The seventh and eighth forms allow
-access by any IPv4 and IPv6 node respectively. The ninth forms allows access by
-any node (IPv4 or IPv6).
+The first directive allows access from an IPv4 address. The second directive
+allows access from all computers in an IPv4 subnet specified in the CIDR
+notation. The third directive specifies the same subnet using a simpler
+notation where the prefix length is determined by the number of dots. The
+fourth directive specifies an IPv6 subnet. The fifth and sixth directives allow
+access from all IPv4 and IPv6 addresses respectively. The seventh directive
+allows access from all addresses (both IPv4 or IPv6).
 .sp
 A second form of the directive, \fBallow all\fP, has a greater effect, depending on
 the ordering of directives in the configuration file. To illustrate the effect,
 consider the two examples:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 allow 1.2.3.4
-deny 1.2.3
-allow 1.2
+deny 1.2.3.0/24
+allow 1.2.0.0/16
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 and
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 allow 1.2.3.4
-deny 1.2.3
-allow all 1.2
+deny 1.2.3.0/24
+allow all 1.2.0.0/16
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 In the first example, the effect is the same regardless of what order the three
-directives are given in. So the \fI1.2.x.y\fP subnet is allowed access, except for
-the \fI1.2.3.x\fP subnet, which is denied access, however the host \fI1.2.3.4\fP is
-allowed access.
+directives are given in. So the \fI1.2.0.0/16\fP subnet is allowed access, except
+for the \fI1.2.3.0/24\fP subnet, which is denied access, while the host \fI1.2.3.4\fP
+is allowed access.
 .sp
-In the second example, the \fBallow all 1.2\fP directives overrides the effect of
-\fIany\fP previous directive relating to a subnet within the specified subnet.
-Within a configuration file this capability is probably rather moot; however,
-it is of greater use for reconfiguration at run\-time via \fBchronyc\fP with the
-\fBallow all\fP command.
+In the second example, the \fBallow all 1.2.0.0/16\fP directive overrides the
+effect of \fIany\fP previous directive relating to a subnet within the specified
+subnet. Within a configuration file this capability is probably rather moot;
+yet, it is of greater use for reconfiguration at run\-time via \fBchronyc\fP
+with the \fBallow all\fP command.
 .sp
-The directive allows a hostname to be specified instead of an IP address, but
-the name must be resolvable when \fBchronyd\fP is started (i.e. \fBchronyd\fP needs
-to be started when the network is already up and DNS is working).
+The rules are internally represented as a tree of tables with one level per
+four bits of the IPv4 or IPv6 address. The order of the \fBallow\fP and \fBdeny\fP
+directives matters if they modify the same records of one table, i.e. if one
+subnet is included in the other subnet and their prefix lengths are at the same
+level. For example, \fI1.2.3.0/28\fP and \fI1.2.3.0/29\fP are in different tables, but
+\fI1.2.3.0/25\fP and \fI1.2.3.0/28\fP are in the same table. The configuration can be
+verified for individual addresses with the \fBaccheck\fP
+command in \fBchronyc\fP.
+.sp
+A hostname can be specified in the directives instead of the IP address, but
+the name must be resolvable when \fBchronyd\fP is started, i.e. the network is
+already up and DNS is working. If the hostname resolves to multiple addresses,
+only the first address (in the order returned by the system resolver) will be
+allowed or denied.
 .sp
 Note, if the \fBinitstepslew\fP directive is used in the
 configuration file, each of the computers listed in that directive must allow
@@ -1548,9 +2097,10 @@ client access by this computer for it to work.
 \fBdeny\fP [\fBall\fP] [\fIsubnet\fP]
 .RS 4
 This is similar to the \fBallow\fP directive, except that it denies NTP
-client access to a particular subnet or host, rather than allowing it.
+and NTS\-KE client access to a particular subnet or host, rather than allowing
+it.
 .sp
-The syntax is identical.
+The syntax is identical, and the directive can be used multiple times too.
 .sp
 There is also a \fBdeny all\fP directive with similar behaviour to the \fBallow all\fP
 directive.
@@ -1558,26 +2108,41 @@ directive.
 .sp
 \fBbindaddress\fP \fIaddress\fP
 .RS 4
-The \fBbindaddress\fP directive binds the socket on which \fBchronyd\fP listens for NTP
-requests to a local address of the computer. On systems other than Linux, the
-address of the computer needs to be already configured when \fBchronyd\fP is
-started.
+The \fBbindaddress\fP directive binds the sockets on which \fBchronyd\fP listens for
+NTP and NTS\-KE requests to a local address of the computer. On systems other
+than Linux, the address of the computer needs to be already configured when
+\fBchronyd\fP is started.
 .sp
 An example of the use of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 bindaddress 192.168.1.1
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 Currently, for each of the IPv4 and IPv6 protocols, only one \fBbindaddress\fP
-directive can be specified. Therefore, it is not useful on computers which
+directive can be specified. Therefore, it is not useful on computers that
 should serve NTP on multiple network interfaces.
+.RE
+.sp
+\fBbinddevice\fP \fIinterface\fP
+.RS 4
+The \fBbinddevice\fP directive binds the NTP and NTS\-KE server sockets to a network
+device specified by the interface name. This directive can specify only one
+interface and it is supported on Linux only.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+binddevice eth0
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBbroadcast\fP \fIinterval\fP \fIaddress\fP [\fIport\fP]
@@ -1587,23 +2152,23 @@ chronyd should send packets in the NTP broadcast mode (i.e. make \fBchronyd\fP a
 as a broadcast server). Broadcast clients on that subnet will be able to
 synchronise.
 .sp
+This directive can be used multiple times to specify multiple addresses.
+.sp
 The syntax is as follows:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-broadcast 30 192.168.1.255
-broadcast 60 192.168.2.255 12123
-broadcast 60 ff02::101
+.fam C
+broadcast 32 192.168.1.255
+broadcast 64 192.168.2.255 12123
+broadcast 64 ff02::101
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 In the first example, the destination port defaults to UDP port 123 (the normal NTP
 port). In the second example, the destination port is specified as 12123. The
-first parameter in each case (30 or 60 respectively) is the interval in seconds
+first parameter in each case (32 or 64 respectively) is the interval in seconds
 between broadcast packets being sent. The second parameter in each case is the
 broadcast address to send the packet to. This should correspond to the
 broadcast address of one of the network interfaces on the computer where
@@ -1628,23 +2193,22 @@ directive.
 This directive specifies the maximum amount of memory that \fBchronyd\fP is allowed
 to allocate for logging of client accesses and the state that \fBchronyd\fP as an
 NTP server needs to support the interleaved mode for its clients. The default
-limit is 524288 bytes, which is sufficient for monitoring about four thousand
-clients at the same time.
-.sp
-In older \fBchrony\fP versions if the limit was set to 0, the memory allocation was
-unlimited.
+limit is 524288 bytes, which enables monitoring of up to 4096 IP addresses at
+the same time and holding NTP timestamps for up to 4096 clients using the
+interleaved mode (depending on uniformity of their polling interval). The
+number of addresses and timestamps is always a power of 2. The maximum
+effective value is 2147483648 (2 GB), which corresponds to 16777216 addresses
+and timestamps.
 .sp
 An example of the use of this directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 clientloglimit 1048576
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBnoclientlog\fP
@@ -1677,7 +2241,7 @@ expected stratum in the network when external NTP servers are accessible.
 .sp
 Stratum 1 indicates a computer that has a true real\-time reference directly
 connected to it (e.g. GPS, atomic clock, etc.), such computers are expected to
-be very close to real time. Stratum 2 computers are those which have a stratum
+be very close to real time. Stratum 2 computers are those that have a stratum
 1 server; stratum 3 computers have a stratum 2 server and so on. A value
 of 10 indicates that the clock is so many hops away from a reference clock that
 its time is fairly unreliable.
@@ -1686,23 +2250,35 @@ its time is fairly unreliable.
 \fBdistance\fP \fIdistance\fP
 .RS 4
 This option sets the threshold for the root distance which will activate the local
-reference. If \fBchronyd\fP was synchronised to some source, the local reference
-will not be activated until its root distance reaches the specified value (the
-rate at which the distance is increasing depends on how well the clock was
-tracking the source). The default value is 1 second.
+reference. If \fBchronyd\fP was synchronised to a configured time source, the local
+reference will not be activated until its root distance reaches the specified
+value (the rate at which the distance is increasing depends on how well the
+clock was tracking the source). When the clock is not synchronised, it is
+considered to have an infinite root distance, i.e. the local reference
+activates as soon as allowed by the \fBwaitunsynced\fP option. The default
+threshold is 1 second.
 .sp
 The current root distance can be calculated from root delay and root dispersion
 (reported by the \fBtracking\fP command in \fBchronyc\fP) as:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 distance = delay / 2 + dispersion
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
+.sp
+\fBactivate\fP \fIdistance\fP
+.RS 4
+This option sets an activating root distance for the local reference. The
+local reference will not be used until the root distance drops below the
+configured value for the first time. This can be used to prevent the local
+reference from being activated on a server which has never been synchronised
+with an upstream server. The default value of 0.0 causes no activating
+distance to be used, such that the local reference is always eligible for
+activation.
 .RE
 .sp
 \fBorphan\fP
@@ -1713,31 +2289,55 @@ unless no other source is selectable and their reference IDs are smaller than
 the local reference ID.
 .sp
 This allows multiple servers in the network to use the same \fBlocal\fP
-configuration and to be synchronised to one another, without confusing clients
+configuration and to be synchronised to one another without confusing clients
 that poll more than one server. Each server needs to be configured to poll all
 other servers with the \fBlocal\fP directive. This ensures only the server with the
 smallest reference ID has the local reference active and others are
-synchronised to it. When that server fails, another will take over.
+synchronised to it. If that server stops responding, the server with the second
+smallest reference ID will take over when its local reference mode activates
+(root distance reaches the threshold configured by the \fBdistance\fP option).
 .sp
-The \fBorphan\fP mode is compatible with the \fBntpd\fP\(cqs orphan mode (enabled by the
+The \fBorphan\fP mode is compatible with the \fBntpd\fP\*(Aqs orphan mode (enabled by the
 \fBtos orphan\fP command).
+.RE
+.sp
+\fBwaitsynced\fP \fIinterval\fP
+.RS 4
+This option specifies the minimum interval (in seconds) between the last update
+of the clock and activation of the local reference as configured by the
+\fBdistance\fP and \fBactivate\fP options. The \fBdistance\fP option can be set to 0 to
+ignore the root distance and control the activation only by the interval. In
+such case it should be at least as long as the maximum expected polling
+interval to prevent frequent activation in normal polling of the source.
+The default minimum interval is 0.
+.RE
+.sp
+\fBwaitunsynced\fP \fIinterval\fP
+.RS 4
+This option specifies how long (in seconds) \fBchronyd\fP needs to wait before
+activating the local reference when the clock is not considered to be
+synchronised (e.g. after start or the source selection failing due to no
+majority). This delay prevents \fBchronyd\fP from serving incorrect time to clients
+before the configured time sources are given a chance to synchronise the local
+clock. The default interval is 300 seconds if the \fBorphan\fP option is set,
+otherwise it is 0 (i.e. local reference activates immediately).
 .RE
 .RE
 .sp
 
 .RS 4
 .sp
-An example of the directive is:
+Examples of the directive are:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-local stratum 10 orphan
+.fam C
+local stratum 5
+local stratum 10 orphan distance 0.1 activate 0.5
+local stratum 10 orphan distance 0.0 waitsynced 7200 waitunsynced 300
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBntpsigndsocket\fP \fIdirectory\fP
@@ -1754,15 +2354,199 @@ in a brute\-force attack. Access to the server should be carefully controlled.
 .sp
 An example of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 ntpsigndsocket /var/lib/samba/ntp_signd
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
+.sp
+\fBntsport\fP \fIport\fP
+.RS 4
+This directive specifies the TCP port on which \fBchronyd\fP will provide the NTS
+Key Establishment (NTS\-KE) service. The default port is 4460.
+.sp
+The port will be open only when a certificate and key is specified by the
+\fBntsservercert\fP and \fBntsserverkey\fP directives.
+.RE
+.sp
+\fBntsservercert\fP \fIfile\fP
+.RS 4
+This directive specifies a file containing a certificate in the PEM format
+for \fBchronyd\fP to operate as an NTS server. The file should also include
+any intermediate certificates that the clients will need to validate the
+server\(cqs certificate. The file needs to be readable by the user under which
+\fBchronyd\fP is running after dropping root privileges.
+.sp
+This directive can be used multiple times to specify multiple certificates for
+different names of the server.
+.sp
+The files are loaded only once. \fBchronyd\fP needs to be restarted in order to
+load a renewed certificate. The \fBntsdumpdir\fP and
+\fBdumpdir\fP directives with the \fB\-r\fP option of \fBchronyd\fP are
+recommended for a near\-seamless server operation.
+.RE
+.sp
+\fBntsserverkey\fP \fIfile\fP
+.RS 4
+This directive specifies a file containing a private key in the PEM format
+for \fBchronyd\fP to operate as an NTS server. The file needs to be readable by
+the user under which \fBchronyd\fP is running after dropping root privileges. For
+security reasons, it should not be readable by other users.
+.sp
+This directive can be used multiple times to specify multiple keys. The number
+of keys must be the same as the number of certificates, and the corresponding
+files must be specified in the same order.
+.RE
+.sp
+\fBntsprocesses\fP \fIprocesses\fP
+.RS 4
+This directive specifies how many helper processes will \fBchronyd\fP operating
+as an NTS server start for handling client NTS\-KE requests in order to improve
+performance with multi\-core CPUs and multithreading. If set to 0, no helper
+process will be started and all NTS\-KE requests will be handled by the main
+\fBchronyd\fP process. The default value is 1, and the maximum value is 1000.
+.RE
+.sp
+\fBmaxntsconnections\fP \fIconnections\fP
+.RS 4
+This directive specifies the maximum number of concurrent NTS\-KE connections
+per process that the NTS server will accept. The default value is 100. The
+maximum practical value is half of the system \fBFD_SETSIZE\fP constant (usually
+1024).
+.RE
+.sp
+\fBntsaeads\fP \fIID\fP...
+.RS 4
+This directive specifies a list of IDs of Authenticated Encryption with
+Associated Data (AEAD) algorithms enabled for NTS authentication of NTP
+messages. \fBchronyd\fP as a server uses the first enabled algorithm from the list
+provided by the client. Algorithms that are not supported by the installed
+version of the crypto library (Nettle, GnuTLS) are ignored.
+.sp
+The following IDs are supported:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
 .\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+15: AES\-SIV\-CMAC\-256
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+30: AES\-128\-GCM\-SIV
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+The default list of IDs is \fI30 15\fP. AES\-128\-GCM\-SIV is preferred over
+AES\-SIV\-CMAC\-256 for shorter keys, which makes NTS cookies shorter and improves
+reliability of NTS in networks that block or limit rate of longer NTP messages.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsaeads 15
+.fam
+.fi
+.if n .RE
+.sp
+This list is used also by the NTS client.
+.sp
+Note the the NTS specification (RFC 8915) requires servers to support
+AES\-SIV\-CMAC\-256, i.e. 15 should always be included in the specified list.
+.sp
+The AES\-128\-GCM\-SIV keys used by \fBchronyd\fP do not comply to RFC 8915 for
+compatibility with older \fBchrony\fP clients unless the use of compliant keys is
+negotiated with an
+.URL "https://chrony\-project.org/doc/spec/nts\-compliant\-128gcm.html" "NTS\-KE record" "."
+Support for this record was added in version 4.6.1. As a client, \fBchronyd\fP can
+interoperate with a server that uses compliant keys, but does not support the
+negotiation if it responds to incorrectly authenticated requests with an NTS
+NAK.
+.RE
+.sp
+\fBntsdumpdir\fP \fIdirectory\fP
+.RS 4
+This directive specifies a directory where \fBchronyd\fP operating as an NTS server
+can save the keys which encrypt NTS cookies provided to clients. The keys are
+saved to a single file named \fIntskeys\fP. When \fBchronyd\fP is restarted, reloading
+the keys allows the clients to continue using old cookies and avoids a storm of
+NTS\-KE requests. By default, the server does not save the keys.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsdumpdir @CHRONYVARDIR@
+.fam
+.fi
+.if n .RE
+.sp
+This directory is used also by the NTS client to save NTS cookies.
+.RE
+.sp
+\fBntsntpserver\fP \fIhostname\fP
+.RS 4
+This directive specifies the hostname (as a fully qualified domain name) or
+address of the NTP server(s) that is
+provided in the NTS\-KE response to the clients. It allows the NTS\-KE server to
+be separated from the NTP server. The servers need to share the keys, however,
+i.e. external key management needs to be enabled by setting
+\fBntsrotate\fP to 0. By default, no hostname or address is provided
+to the clients, which means they should use the same server for NTS\-KE and NTP.
+.RE
+.sp
+\fBntsrotate\fP \fIinterval\fP
+.RS 4
+This directive specifies the rotation interval (in seconds) of the server key
+which encrypts the NTS cookies. New keys are generated automatically from the
+\fI/dev/urandom\fP device. The server keeps two previous keys to give the clients
+time to get new cookies encrypted by the latest key. The interval is measured
+as the server\(cqs operating time, i.e. the actual interval can be longer if
+\fBchronyd\fP is not running continuously. The default interval is 604800 seconds
+(1 week). The maximum value is 2^31\-1 (68 years).
+.sp
+The automatic rotation of the keys can be disabled by setting \fBntsrotate\fP to 0.
+In this case the keys are assumed to be managed externally. \fBchronyd\fP will not
+save the keys to the \fIntskeys\fP file and will reload the keys from the file when
+the \fBrekey\fP command is issued in \fBchronyc\fP. The file can
+be periodically copied from another server running \fBchronyd\fP (which does
+not have \fBntsrotate\fP set to 0) in order to have one or more servers dedicated
+to NTS\-KE. The file includes the subsequent key to which the NTS\-KE server will
+switch on the next rotation, i.e. the process copying and reloading the file
+does not need to be timed precisely (it can be delayed by up to one rotation
+interval). The NTS\-KE servers need to be configured with the
+\fBntsntpserver\fP directive to point the clients to the right NTP
+server.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsrotate 2592000
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBport\fP \fIport\fP
@@ -1787,14 +2571,14 @@ addresses. If multiple clients share one IP address (e.g. multiple hosts behind
 NAT), the sum of their traffic will be limited. If a client that increases its
 polling rate when it does not receive a reply is detected, its rate limiting
 will be temporarily suspended to avoid increasing the overall amount of
-traffic. The maximum number of IP addresses which can be monitored at the same
+traffic. The maximum number of IP addresses that can be monitored at the same
 time depends on the memory limit set by the \fBclientloglimit\fP
 directive.
 .sp
 The \fBratelimit\fP directive supports a number of options (which can be defined
 in any order):
 .sp
-\fBinterval\fP
+\fBinterval\fP \fIinterval\fP
 .RS 4
 This option sets the minimum interval between responses. It is defined as a
 power of 2 in seconds. The default value is 3 (8 seconds). The minimum value
@@ -1804,23 +2588,34 @@ is \-19 (524288 packets per second) and the maximum value is 12 (one packet per
 than the specified interval).
 .RE
 .sp
-\fBburst\fP
+\fBburst\fP \fIresponses\fP
 .RS 4
 This option sets the maximum number of responses that can be sent in a burst,
 temporarily exceeding the limit specified by the \fBinterval\fP option. This is
 useful for clients that make rapid measurements on start (e.g. \fBchronyd\fP with
-the \fBiburst\fP option). The default value is 8. The minimum value is 1 and the
+the \fBiburst\fP option). The default value is 8. The minimum value is 1, and the
 maximum value is 255.
 .RE
 .sp
-\fBleak\fP
+\fBleak\fP \fIrate\fP
 .RS 4
 This option sets the rate at which responses are randomly allowed even if the
 limits specified by the \fBinterval\fP and \fBburst\fP options are exceeded. This is
 necessary to prevent an attacker who is sending requests with a spoofed
 source address from completely blocking responses to that address. The leak
 rate is defined as a power of 1/2 and it is 2 by default, i.e. on average at
-least every fourth request has a response. The minimum value is 1 and the
+least every fourth request has a response. The minimum value is 1, and the
+maximum value is 4.
+.RE
+.sp
+\fBkod\fP \fIrate\fP
+.RS 4
+This option sets the rate at which Kiss\-o\*(Aq\-Death (KoD) RATE responses are
+randomly sent when the limits specified by the \fBinterval\fP and \fBburst\fP options
+are exceeded. It is an additional stream of responses to the \fBleak\fP option. A
+KoD RATE response is a request for the client to reduce its polling rate. Few
+implementations actually support it. The rate is defined as a power of 1/2. The
+default value is 0, which means disabled. The minimum value is 0, and the
 maximum value is 4.
 .RE
 .RE
@@ -1830,19 +2625,34 @@ maximum value is 4.
 .sp
 An example use of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 ratelimit interval 1 burst 16
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 This would reduce the response rate for IP addresses sending packets on average
 more than once per 2 seconds, or sending packets in bursts of more than 16
 packets, by up to 75% (with default \fBleak\fP of 2).
+.RE
+.sp
+\fBntsratelimit\fP [\fIoption\fP]...
+.RS 4
+This directive enables rate limiting of NTS\-KE requests. It is similar to the
+\fBratelimit\fP directive, except the default interval is 6
+(1 connection per 64 seconds) and the \fBkod\fP option is not supported.
+.sp
+An example of the use of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsratelimit interval 3 burst 1
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBsmoothtime\fP \fImax\-freq\fP \fImax\-wander\fP [\fBleaponly\fP]
@@ -1850,13 +2660,13 @@ packets, by up to 75% (with default \fBleak\fP of 2).
 The \fBsmoothtime\fP directive can be used to enable smoothing of the time that
 \fBchronyd\fP serves to its clients to make it easier for them to track it and keep
 their clocks close together even when large offset or frequency corrections are
-applied to the server\(cqs clock, for example after being offline for a longer
+applied to the server\(cqs clock, for example, after being offline for a longer
 time.
 .sp
 BE WARNED: The server is intentionally not serving its best estimate of the
 true time. If a large offset has been accumulated, it can take a very long time
 to smooth it out. This directive should be used only when the clients are not
-configured to also poll another NTP server, because they could reject this
+configured to poll another NTP server also, because they could reject this
 server as a falseticker or fail to select a source completely.
 .sp
 The smoothing process is implemented with a quadratic spline function with two
@@ -1870,7 +2680,7 @@ reset\fP command.
 The first two arguments of the directive are the maximum frequency offset of
 the smoothed time to the tracked NTP time (in ppm) and the maximum rate at
 which the frequency offset is allowed to change (in ppm per second). \fBleaponly\fP
-is an optional third argument which enables a mode where only leap seconds are
+is an optional third argument that enables a mode where only leap seconds are
 smoothed out and normal offset and frequency changes are ignored. The \fBleaponly\fP
 option is useful in a combination with the \fBleapsecmode slew\fP
 directive to allow the clients to use multiple time smoothing servers safely.
@@ -1886,34 +2696,30 @@ monitor the process.
 An example suitable for clients using \fBntpd\fP and 1024 second polling interval
 could be:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 smoothtime 400 0.001
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 An example suitable for clients using \fBchronyd\fP on Linux could be:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 smoothtime 50000 0.01
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .SS "Command and monitoring access"
 .sp
 \fBbindcmdaddress\fP \fIaddress\fP
 .RS 4
-The \fBbindcmdaddress\fP directive allows you to specify an IP address of an
-interface on which \fBchronyd\fP will listen for monitoring command packets (issued
+The \fBbindcmdaddress\fP directive specifies a local IP address to which \fBchronyd\fP
+will bind the UDP socket listening for monitoring command packets (issued
 by \fBchronyc\fP). On systems other than Linux, the address of the interface needs
 to be already configured when \fBchronyd\fP is started.
 .sp
@@ -1924,20 +2730,19 @@ directory will be created on start if it does not exist. The compiled\-in defaul
 path of the socket is \fI@CHRONYRUNDIR@/chronyd.sock\fP. The socket can be
 disabled by setting the path to \fI/\fP.
 .sp
-By default, \fBchronyd\fP binds to the loopback interface (with addresses
-\fI127.0.0.1\fP and \fI::1\fP). This blocks all access except from localhost. To listen
-for command packets on all interfaces, you can add the lines:
+By default, \fBchronyd\fP binds the UDP sockets to the addresses \fI127.0.0.1\fP and
+\fI::1\fP (i.e. the loopback interface). This blocks all access except from
+localhost. To listen for command packets on all interfaces, you can add the
+lines:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 bindcmdaddress 0.0.0.0
 bindcmdaddress ::
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 to the configuration file.
 .sp
@@ -1946,15 +2751,30 @@ For each of the IPv4, IPv6, and Unix domain protocols, only one
 .sp
 An example that sets the path of the Unix domain command socket is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 bindcmdaddress /var/run/chrony/chronyd.sock
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
+.sp
+\fBbindcmddevice\fP \fIinterface\fP
+.RS 4
+The \fBbindcmddevice\fP directive binds the UDP command sockets to a network device
+specified by the interface name. This directive can specify only one interface
+and it is supported on Linux only.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+bindcmddevice eth0
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBcmdallow\fP [\fBall\fP] [\fIsubnet\fP]
@@ -1968,6 +2788,9 @@ The syntax is identical to the \fBallow\fP directive.
 .sp
 There is also a \fBcmdallow all\fP directive with similar behaviour to the \fBallow
 all\fP directive (but applying to monitoring access in this case, of course).
+.sp
+Addresses \fI127.0.0.1\fP and \fI::1\fP (i.e. the loopback interface) are always
+allowed.
 .sp
 Note that \fBchronyd\fP has to be configured with the
 \fBbindcmdaddress\fP directive to not listen only on the
@@ -1989,43 +2812,63 @@ all\fP directive.
 .RS 4
 The \fBcmdport\fP directive allows the port that is used for run\-time monitoring
 (via the \fBchronyc\fP program) to be altered from its default (323). If set to 0,
-\fBchronyd\fP will not open the port, this is useful to disable \fBchronyc\fP
-access from the Internet. (It does not disable the Unix domain command socket.)
+\fBchronyd\fP will not open the port, which disables remote \fBchronyc\fP access (with
+a non\-default \fBbindcmdaddress\fP) and local access for unprivileged users. It
+does not disable the Unix domain command socket.
 .sp
 An example shows the syntax:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 cmdport 257
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 This would make \fBchronyd\fP use UDP 257 as its command port. (\fBchronyc\fP would
-need to be run with the \fB\-p 257\fP switch to inter\-operate correctly.)
+need to be run with the \fB\-p 257\fP option to inter\-operate correctly.)
 .RE
 .sp
 \fBcmdratelimit\fP [\fIoption\fP]...
 .RS 4
 This directive enables response rate limiting for command packets. It is
 similar to the \fBratelimit\fP directive, except responses to
-localhost are never limited and the default interval is \-4 (16 packets per
-second).
+localhost are never limited, the default interval is \-4 (16 packets per
+second), and the \fBkod\fP option is not supported.
 .sp
 An example of the use of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 cmdratelimit interval 2
+.fam
 .fi
-.if n \{\
+.if n .RE
 .RE
-.\}
+.sp
+\fBopencommands\fP [\fIcommand\fP]...
+.RS 4
+This directive specifies a list of monitoring commands to be enabled for the
+hosts allowed by the \fBcmdallow\fP directive. The following commands can be
+specified (the naming follows \fBchronyc\fP):
+.sp
+\fBactivity\fP*, \fBauthdata\fP, \fBclients\fP, \fBmanual\fP*, \fBntpdata\fP, \fBrtcdata\fP*,
+\fBselectdata\fP, \fBserverstats\fP*, \fBsmoothing\fP*, \fBsourcename\fP*, \fBsources\fP*,
+\fBsourcestats\fP, \fBtracking\fP*.
+.sp
+The commands marked with * are enabled by default. The protocol of these
+commands is considered stable and can be expected to work between different
+versions of \fBchronyc\fP and \fBchronyd\fP. The protocol of the other commands is not
+considered stable and different versions of \fBchronyc\fP and \fBchronyd\fP may not
+interoperate. When that happens, \fBchronyc\fP will print an \(oqInvalid command\(cq or
+\(oqBad reply from daemon\(cq error.
+.sp
+Note that some of the reported data can be potentially useful to attackers,
+enabling them to observe and predict better the internal state of \fBchronyd\fP.
+It is recommended to enable only commands that are actually needed for
+monitoring and limit the access to the hosts that need it.
 .RE
 .SS "Real\-time clock (RTC)"
 .sp
@@ -2036,19 +2879,17 @@ used by the \fBhwclock\fP program on Linux. \fBchronyd\fP parses the file to fin
 if the RTC keeps local time or UTC. It overrides the \fBrtconutc\fP
 directive.
 .sp
-The compiled\-in default value is \(aq\fI@DEFAULT_HWCLOCK_FILE@\fP\(aq.
+The compiled\-in default value is \*(Aq\fI@DEFAULT_HWCLOCK_FILE@\fP\*(Aq.
 .sp
 An example of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 hwclockfile /etc/adjtime
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBrtcautotrim\fP \fIthreshold\fP
@@ -2057,21 +2898,20 @@ The \fBrtcautotrim\fP directive is used to keep the RTC close to the system cloc
 automatically. When the system clock is synchronised and the estimated error
 between the two clocks is larger than the specified threshold, \fBchronyd\fP will
 trim the RTC as if the \fBtrimrtc\fP command in \fBchronyc\fP
-was issued.
+was issued. The trimming operation is accurate to only about 1 second, which is
+the minimum effective threshold.
 .sp
 This directive is effective only with the \fBrtcfile\fP directive.
 .sp
 An example of the use of this directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 rtcautotrim 30
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 This would set the threshold error to 30 seconds.
 .RE
@@ -2089,15 +2929,13 @@ save parameters associated with tracking the accuracy of the RTC.
 .sp
 An example of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 rtcfile @CHRONYVARDIR@/rtc
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 \fBchronyd\fP saves information in this file when it exits and when the \fBwritertc\fP
 command is issued in \fBchronyc\fP. The information saved is the RTC\(cqs error at
@@ -2114,8 +2952,8 @@ option to \fBchronyd\fP) if the following three conditions apply:
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 You are running Linux.
 .RE
@@ -2125,8 +2963,8 @@ You are running Linux.
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 The kernel is compiled with extended real\-time clock support (i.e. the
 \fI/dev/rtc\fP device is capable of doing useful things).
@@ -2137,8 +2975,8 @@ The kernel is compiled with extended real\-time clock support (i.e. the
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 You do not have other applications that need to make use of \fI/dev/rtc\fP at all.
 .RE
@@ -2147,7 +2985,7 @@ You do not have other applications that need to make use of \fI/dev/rtc\fP at al
 \fBrtconutc\fP
 .RS 4
 \fBchronyd\fP assumes by default that the RTC keeps local time (including any
-daylight saving changes). This is convenient on PCs running Linux which are
+daylight saving changes). This is convenient on PCs running Linux that are
 dual\-booted with Windows.
 .sp
 If you keep the RTC on local time and your computer is off when daylight saving
@@ -2162,7 +3000,8 @@ The directive takes no arguments. It is equivalent to specifying the \fB\-u\fP
 switch to the Linux \fBhwclock\fP program.
 .sp
 Note that this setting is overridden by the \fBhwclockfile\fP file
-and is not relevant for the \fBrtcsync\fP directive.
+and is not relevant for the \fBrtcsync\fP directive or when the RTC
+is used as reference clock.
 .RE
 .sp
 \fBrtcsync\fP
@@ -2195,16 +3034,14 @@ source. This can be useful when debugging a problem. An example line (which
 actually appears as a single line in the file) from the log file is shown
 below.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 2016\-11\-09 05:40:50 203.0.113.15    N  2 111 111 1111  10 10 1.0 \(rs
    \-4.966e\-03  2.296e\-01  1.577e\-05  1.615e\-01  7.446e\-03 CB00717B 4B D K
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The columns are as follows (the quantities in square brackets are the values
 from the example line above):
@@ -2214,8 +3051,8 @@ from the example line above):
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 Date [2015\-10\-13]
 .RE
@@ -2225,8 +3062,8 @@ Date [2015\-10\-13]
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 Hour:Minute:Second. Note that the date\-time pair is expressed in UTC, not the
 local time zone. [05:40:50]
@@ -2237,8 +3074,8 @@ local time zone. [05:40:50]
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 IP address of server or peer from which measurement came [203.0.113.15]
 .RE
@@ -2248,8 +3085,8 @@ IP address of server or peer from which measurement came [203.0.113.15]
 \h'-04' 4.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 4." 4.2
+.  sp -1
+.  IP " 4." 4.2
 .\}
 Leap status (\fIN\fP means normal, \fI+\fP means that the last minute of the current
 month has 61 seconds, \fI\-\fP means that the last minute of the month has 59
@@ -2261,8 +3098,8 @@ seconds, \fI?\fP means the remote computer is not currently synchronised.) [N]
 \h'-04' 5.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 5." 4.2
+.  sp -1
+.  IP " 5." 4.2
 .\}
 Stratum of remote computer. [2]
 .RE
@@ -2272,8 +3109,8 @@ Stratum of remote computer. [2]
 \h'-04' 6.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 6." 4.2
+.  sp -1
+.  IP " 6." 4.2
 .\}
 RFC 5905 tests 1 through 3 (1=pass, 0=fail) [111]
 .RE
@@ -2283,8 +3120,8 @@ RFC 5905 tests 1 through 3 (1=pass, 0=fail) [111]
 \h'-04' 7.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 7." 4.2
+.  sp -1
+.  IP " 7." 4.2
 .\}
 RFC 5905 tests 5 through 7 (1=pass, 0=fail) [111]
 .RE
@@ -2294,12 +3131,14 @@ RFC 5905 tests 5 through 7 (1=pass, 0=fail) [111]
 \h'-04' 8.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 8." 4.2
+.  sp -1
+.  IP " 8." 4.2
 .\}
-Tests for maximum delay, maximum delay ratio and maximum delay dev ratio,
-against defined parameters, and a test for synchronisation loop (1=pass,
-0=fail) [1111]
+Results of the \fBmaxdelay\fP, \fBmaxdelayratio\fP, and \fBmaxdelaydevratio\fP (or
+\fBmaxdelayquant\fP) tests, and a test for synchronisation loop (1=pass,
+0=fail). The first test from these four also checks the server precision,
+response time, validity of the measured offset, and whether an interleaved
+response is acceptable for synchronisation. [1111]
 .RE
 .sp
 .RS 4
@@ -2307,8 +3146,8 @@ against defined parameters, and a test for synchronisation loop (1=pass,
 \h'-04' 9.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 9." 4.2
+.  sp -1
+.  IP " 9." 4.2
 .\}
 Local poll [10]
 .RE
@@ -2318,8 +3157,8 @@ Local poll [10]
 \h'-04' 10.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 10." 4.2
+.  sp -1
+.  IP " 10." 4.2
 .\}
 Remote poll [10]
 .RE
@@ -2329,8 +3168,8 @@ Remote poll [10]
 \h'-04' 11.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 11." 4.2
+.  sp -1
+.  IP " 11." 4.2
 .\}
 \(oqScore\(cq (an internal score within each polling level used to decide when to
 increase or decrease the polling level. This is adjusted based on number of
@@ -2342,8 +3181,8 @@ measurements currently being used for the regression algorithm). [1.0]
 \h'-04' 12.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 12." 4.2
+.  sp -1
+.  IP " 12." 4.2
 .\}
 The estimated local clock error (\fItheta\fP in RFC 5905). Positive indicates
 that the local clock is slow of the remote source. [\-4.966e\-03]
@@ -2354,8 +3193,8 @@ that the local clock is slow of the remote source. [\-4.966e\-03]
 \h'-04' 13.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 13." 4.2
+.  sp -1
+.  IP " 13." 4.2
 .\}
 The peer delay (\fIdelta\fP in RFC 5905). [2.296e\-01]
 .RE
@@ -2365,8 +3204,8 @@ The peer delay (\fIdelta\fP in RFC 5905). [2.296e\-01]
 \h'-04' 14.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 14." 4.2
+.  sp -1
+.  IP " 14." 4.2
 .\}
 The peer dispersion (\fIepsilon\fP in RFC 5905). [1.577e\-05]
 .RE
@@ -2376,8 +3215,8 @@ The peer dispersion (\fIepsilon\fP in RFC 5905). [1.577e\-05]
 \h'-04' 15.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 15." 4.2
+.  sp -1
+.  IP " 15." 4.2
 .\}
 The root delay (\fIDELTA\fP in RFC 5905). [1.615e\-01]
 .RE
@@ -2387,8 +3226,8 @@ The root delay (\fIDELTA\fP in RFC 5905). [1.615e\-01]
 \h'-04' 16.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 16." 4.2
+.  sp -1
+.  IP " 16." 4.2
 .\}
 The root dispersion (\fIEPSILON\fP in RFC 5905). [7.446e\-03]
 .RE
@@ -2398,8 +3237,8 @@ The root dispersion (\fIEPSILON\fP in RFC 5905). [7.446e\-03]
 \h'-04' 17.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 17." 4.2
+.  sp -1
+.  IP " 17." 4.2
 .\}
 Reference ID of the server\(cqs source as a hexadecimal number. [CB00717B]
 .RE
@@ -2409,8 +3248,8 @@ Reference ID of the server\(cqs source as a hexadecimal number. [CB00717B]
 \h'-04' 18.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 18." 4.2
+.  sp -1
+.  IP " 18." 4.2
 .\}
 NTP mode of the received packet (\fI1\fP=active peer, \fI2\fP=passive peer,
 \fI4\fP=server, \fIB\fP=basic, \fII\fP=interleaved). [4B]
@@ -2421,8 +3260,8 @@ NTP mode of the received packet (\fI1\fP=active peer, \fI2\fP=passive peer,
 \h'-04' 19.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 19." 4.2
+.  sp -1
+.  IP " 19." 4.2
 .\}
 Source of the local transmit timestamp
 (\fID\fP=daemon, \fIK\fP=kernel, \fIH\fP=hardware). [D]
@@ -2433,8 +3272,8 @@ Source of the local transmit timestamp
 \h'-04' 20.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 20." 4.2
+.  sp -1
+.  IP " 20." 4.2
 .\}
 Source of the local receive timestamp
 (\fID\fP=daemon, \fIK\fP=kernel, \fIH\fP=hardware). [K]
@@ -2444,7 +3283,7 @@ Source of the local receive timestamp
 \fBmeasurements\fP
 .RS 4
 This option is identical to the \fBrawmeasurements\fP option, except it logs only
-valid measurements from synchronised sources, i.e. measurements which passed
+valid measurements from synchronised sources, i.e. measurements that passed
 the RFC 5905 tests 1 through 7. This can be useful for producing graphs of the
 source\(cqs performance.
 .RE
@@ -2455,16 +3294,14 @@ This option logs information about the regression processing to a file called
 \fIstatistics.log\fP. An example line (which actually appears as a single line in
 the file) from the log file is shown below.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 2016\-08\-10 05:40:50 203.0.113.15     6.261e\-03 \-3.247e\-03 \(rs
      2.220e\-03  1.874e\-06  1.080e\-06 7.8e\-02  16   0   8  0.00
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The columns are as follows (the quantities in square brackets are the values
 from the example line above):
@@ -2474,8 +3311,8 @@ from the example line above):
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 Date [2015\-07\-22]
 .RE
@@ -2485,8 +3322,8 @@ Date [2015\-07\-22]
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 Hour:Minute:Second. Note that the date\-time pair is expressed in
 UTC, not the local time zone. [05:40:50]
@@ -2497,8 +3334,8 @@ UTC, not the local time zone. [05:40:50]
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 IP address of server or peer from which measurement comes [203.0.113.15]
 .RE
@@ -2508,8 +3345,8 @@ IP address of server or peer from which measurement comes [203.0.113.15]
 \h'-04' 4.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 4." 4.2
+.  sp -1
+.  IP " 4." 4.2
 .\}
 The estimated standard deviation of the measurements from the source (in
 seconds). [6.261e\-03]
@@ -2520,8 +3357,8 @@ seconds). [6.261e\-03]
 \h'-04' 5.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 5." 4.2
+.  sp -1
+.  IP " 5." 4.2
 .\}
 The estimated offset of the source (in seconds, positive means the local
 clock is estimated to be fast, in this case). [\-3.247e\-03]
@@ -2532,8 +3369,8 @@ clock is estimated to be fast, in this case). [\-3.247e\-03]
 \h'-04' 6.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 6." 4.2
+.  sp -1
+.  IP " 6." 4.2
 .\}
 The estimated standard deviation of the offset estimate (in seconds).
 [2.220e\-03]
@@ -2544,8 +3381,8 @@ The estimated standard deviation of the offset estimate (in seconds).
 \h'-04' 7.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 7." 4.2
+.  sp -1
+.  IP " 7." 4.2
 .\}
 The estimated rate at which the local clock is gaining or losing time
 relative to the source (in seconds per second, positive means the local clock
@@ -2559,8 +3396,8 @@ the local clock, \fInot\fP to the local clock without any compensation.
 \h'-04' 8.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 8." 4.2
+.  sp -1
+.  IP " 8." 4.2
 .\}
 The estimated error in the rate value (in seconds per second). [1.080e\-06].
 .RE
@@ -2570,8 +3407,8 @@ The estimated error in the rate value (in seconds per second). [1.080e\-06].
 \h'-04' 9.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 9." 4.2
+.  sp -1
+.  IP " 9." 4.2
 .\}
 The ratio of |old_rate \- new_rate| / old_rate_error. Large values
 indicate the statistics are not modelling the source very well. [7.8e\-02]
@@ -2582,8 +3419,8 @@ indicate the statistics are not modelling the source very well. [7.8e\-02]
 \h'-04' 10.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 10." 4.2
+.  sp -1
+.  IP " 10." 4.2
 .\}
 The number of measurements currently being used for the regression
 algorithm. [16]
@@ -2594,8 +3431,8 @@ algorithm. [16]
 \h'-04' 11.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 11." 4.2
+.  sp -1
+.  IP " 11." 4.2
 .\}
 The new starting index (the oldest sample has index 0; this is the method
 used to prune old samples when it no longer looks like the measurements fit a
@@ -2607,11 +3444,11 @@ linear model). [0, i.e. no samples discarded this time]
 \h'-04' 12.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 12." 4.2
+.  sp -1
+.  IP " 12." 4.2
 .\}
 The number of runs. The number of runs of regression residuals with the same
-sign is computed. If this is too small it indicates that the measurements are
+sign is computed. If this is too small, it indicates that the measurements are
 no longer represented well by a linear model and that some older samples need
 to be discarded. The number of runs for the data that is being retained is
 tabulated. Values of approximately half the number of samples are expected.
@@ -2623,14 +3460,400 @@ tabulated. Values of approximately half the number of samples are expected.
 \h'-04' 13.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 13." 4.2
+.  sp -1
+.  IP " 13." 4.2
 .\}
 The estimated or configured asymmetry of network jitter on the path to the
 source which was used to correct the measured offsets. The asymmetry can be
 between \-0.5 and +0.5. A negative value means the delay of packets sent to
 the source is more variable than the delay of packets sent from the source
 back. [0.00, i.e. no correction for asymmetry]
+.RE
+.RE
+.sp
+\fBselection\fP
+.RS 4
+This option logs information about selection of sources for synchronisation to
+a file called \fIselection.log\fP. Note that the rate of entries written to this
+file grows quadratically with the number of specified sources (each measurement
+triggers the selection for all sources). An example line (which actually
+appears as a single line in the file) from the log file is shown below.
+.sp
+.if n .RS 4
+.nf
+.fam C
+2022\-05\-01 02:01:20 203.0.113.15    * \-\-\-\-\-  377  1.00  \(rs
+     4.228e+01 \-1.575e\-04  1.239e\-04
+.fam
+.fi
+.if n .RE
+.sp
+The columns are as follows (the quantities in square brackets are the values
+from the example line above):
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 1." 4.2
+.\}
+Date [2022\-05\-01]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 2." 4.2
+.\}
+Hour:Minute:Second. Note that the date\-time pair is expressed in
+UTC, not the local time zone. [02:01:20]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 3." 4.2
+.\}
+IP address or reference ID of the source. [203.0.113.15]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 4." 4.2
+.\}
+State of the source indicated with one of the following symbols. [*]
+.sp
+
+.RS 4
+Not considered selectable for synchronisation:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIN\fP \- has the \fBnoselect\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIs\fP \- is not synchronised.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIM\fP \- does not have enough measurements.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fId\fP \- has a root distance larger than the maximum distance (configured by the
+\fBmaxdistance\fP directive).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fI~\fP \- has a jitter larger than the maximum jitter (configured by the
+\fBmaxjitter\fP directive).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIw\fP \- waits for other sources to get out of the \fIM\fP state.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIS\fP \- has older measurements than other sources.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIO\fP \- has a stratum equal or larger than the orphan stratum (configured by
+the \fBlocal\fP directive).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIT\fP \- does not fully agree with sources that have the \fBtrust\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIx\fP \- does not agree with other sources (falseticker).
+.RE
+.RE
+.sp
+
+.RS 4
+Considered selectable for synchronisation, but not currently used:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIW\fP \- waits for other sources to be selectable (required by the
+\fBminsources\fP directive, or the \fBrequire\fP option of
+another source).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIP\fP \- another selectable source is preferred due to the \fBprefer\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIU\fP \- waits for a new measurement (after selecting a different best source).
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fID\fP \- has, or recently had, a root distance which is too large to be combined
+with other sources (configured by the \fBcombinelimit\fP
+directive).
+.RE
+.RE
+.sp
+
+.RS 4
+Used for synchronisation of the local clock:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fI+\fP \- combined with the best source.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fI*\fP \- selected as the best source to update the reference data (e.g. root
+delay, root dispersion).
+.RE
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 5." 4.2
+.\}
+Current effective selection options of the source. which can be different
+from the configured options due to the authentication selection mode
+(configured by the \fBauthselectmode\fP directive). [\-\-\-\-\-]
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIN\fP indicates the \fBnoselect\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIP\fP indicates the \fBprefer\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIT\fP indicates the \fBtrust\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIR\fP indicates the \fBrequire\fP option.
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 6." 4.2
+.\}
+Reachability register printed as an octal number. The register has 8 bits and
+is updated on every received or missed packet from the source. A value of 377
+indicates that a valid reply was received for all from the last eight
+transmissions. [377]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 7." 4.2
+.\}
+Current score against the source in the \fI*\fP state. The scoring system avoids
+frequent reselection when multiple sources have a similar root distance. A
+value larger than 1 indicates this source was better than the \fI*\fP source in
+recent selections. If the score reaches 10, the best source will be reselected
+and the scores will be reset to 1. [1.00]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 8." 4.2
+.\}
+Interval since the last measurement of the source in seconds. [4.228e+01]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 9.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 9." 4.2
+.\}
+Lower endpoint of the interval which was expected to contain the true offset
+of the local clock determined by the root distance of the source. [\-1.575e\-04]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 10.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 10." 4.2
+.\}
+Upper endpoint of the interval which was expected to contain the true offset
+of the local clock determined by the root distance of the source. [1.239e\-04]
 .RE
 .RE
 .sp
@@ -2641,16 +3864,14 @@ any slews made, to a file called \fItracking.log\fP. An example line (which
 actually appears as a single line in the file) from the log file is shown
 below.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 2017\-08\-22 13:22:36 203.0.113.15     2     \-3.541      0.075 \-8.621e\-06 N \(rs
             2  2.940e\-03 \-2.084e\-04  1.534e\-02  3.472e\-04  8.304e\-03
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The columns are as follows (the quantities in square brackets are the
 values from the example line above) :
@@ -2660,8 +3881,8 @@ values from the example line above) :
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 Date [2017\-08\-22]
 .RE
@@ -2671,8 +3892,8 @@ Date [2017\-08\-22]
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 Hour:Minute:Second. Note that the date\-time pair is expressed in UTC, not the
 local time zone. [13:22:36]
@@ -2683,8 +3904,8 @@ local time zone. [13:22:36]
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 The IP address of the server or peer to which the local system is synchronised.
 [203.0.113.15]
@@ -2695,8 +3916,8 @@ The IP address of the server or peer to which the local system is synchronised.
 \h'-04' 4.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 4." 4.2
+.  sp -1
+.  IP " 4." 4.2
 .\}
 The stratum of the local system. [2]
 .RE
@@ -2706,8 +3927,8 @@ The stratum of the local system. [2]
 \h'-04' 5.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 5." 4.2
+.  sp -1
+.  IP " 5." 4.2
 .\}
 The local system frequency (in ppm, positive means the local system runs fast
 of UTC). [\-3.541]
@@ -2718,8 +3939,8 @@ of UTC). [\-3.541]
 \h'-04' 6.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 6." 4.2
+.  sp -1
+.  IP " 6." 4.2
 .\}
 The error bounds on the frequency (in ppm). [0.075]
 .RE
@@ -2729,8 +3950,8 @@ The error bounds on the frequency (in ppm). [0.075]
 \h'-04' 7.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 7." 4.2
+.  sp -1
+.  IP " 7." 4.2
 .\}
 The estimated local offset at the epoch, which is normally corrected by
 slewing the local clock (in seconds, positive indicates the clock is fast of
@@ -2742,8 +3963,8 @@ UTC). [\-8.621e\-06]
 \h'-04' 8.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 8." 4.2
+.  sp -1
+.  IP " 8." 4.2
 .\}
 Leap status (\fIN\fP means normal, \fI+\fP means that the last minute of this month
 has 61 seconds, \fI\-\fP means that the last minute of the month has 59 seconds,
@@ -2755,8 +3976,8 @@ has 61 seconds, \fI\-\fP means that the last minute of the month has 59 seconds,
 \h'-04' 9.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 9." 4.2
+.  sp -1
+.  IP " 9." 4.2
 .\}
 The number of combined sources. [2]
 .RE
@@ -2766,8 +3987,8 @@ The number of combined sources. [2]
 \h'-04' 10.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 10." 4.2
+.  sp -1
+.  IP " 10." 4.2
 .\}
 The estimated standard deviation of the combined offset (in seconds).
 [2.940e\-03]
@@ -2778,8 +3999,8 @@ The estimated standard deviation of the combined offset (in seconds).
 \h'-04' 11.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 11." 4.2
+.  sp -1
+.  IP " 11." 4.2
 .\}
 The remaining offset correction from the previous update (in seconds,
 positive means the system clock is slow of UTC). [\-2.084e\-04]
@@ -2790,8 +4011,8 @@ positive means the system clock is slow of UTC). [\-2.084e\-04]
 \h'-04' 12.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 12." 4.2
+.  sp -1
+.  IP " 12." 4.2
 .\}
 The total of the network path delays to the reference clock to which
 the local clock is ultimately synchronised (in seconds). [1.534e\-02]
@@ -2802,8 +4023,8 @@ the local clock is ultimately synchronised (in seconds). [1.534e\-02]
 \h'-04' 13.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 13." 4.2
+.  sp -1
+.  IP " 13." 4.2
 .\}
 The total dispersion accumulated through all the servers back to the
 reference clock to which the local clock is ultimately synchronised
@@ -2815,8 +4036,8 @@ reference clock to which the local clock is ultimately synchronised
 \h'-04' 14.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 14." 4.2
+.  sp -1
+.  IP " 14." 4.2
 .\}
 The maximum estimated error of the system clock in the interval since the
 previous update (in seconds). It includes the offset, remaining offset
@@ -2831,16 +4052,14 @@ This option logs information about the system\(cqs real\-time clock. An example
 line (which actually appears as a single line in the file) from the \fIrtc.log\fP
 file is shown below.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 2015\-07\-22 05:40:50     \-0.037360 1       \-0.037434\(rs
           \-37.948  12   5  120
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The columns are as follows (the quantities in square brackets are the
 values from the example line above):
@@ -2850,8 +4069,8 @@ values from the example line above):
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 Date [2015\-07\-22]
 .RE
@@ -2861,8 +4080,8 @@ Date [2015\-07\-22]
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 Hour:Minute:Second. Note that the date\-time pair is expressed in UTC, not the
 local time zone. [05:40:50]
@@ -2873,8 +4092,8 @@ local time zone. [05:40:50]
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 The measured offset between the RTC and the system clock in seconds.
 Positive indicates that the RTC is fast of the system time [\-0.037360].
@@ -2885,8 +4104,8 @@ Positive indicates that the RTC is fast of the system time [\-0.037360].
 \h'-04' 4.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 4." 4.2
+.  sp -1
+.  IP " 4." 4.2
 .\}
 Flag indicating whether the regression has produced valid coefficients.
 (1 for yes, 0 for no). [1]
@@ -2897,8 +4116,8 @@ Flag indicating whether the regression has produced valid coefficients.
 \h'-04' 5.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 5." 4.2
+.  sp -1
+.  IP " 5." 4.2
 .\}
 Offset at the current time predicted by the regression process. A large
 difference between this value and the measured offset tends to indicate that
@@ -2910,8 +4129,8 @@ the measurement is an outlier with a serious measurement error. [\-0.037434]
 \h'-04' 6.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 6." 4.2
+.  sp -1
+.  IP " 6." 4.2
 .\}
 The rate at which the RTC is losing or gaining time relative to the system
 clock. In ppm, with positive indicating that the RTC is gaining time.
@@ -2923,8 +4142,8 @@ clock. In ppm, with positive indicating that the RTC is gaining time.
 \h'-04' 7.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 7." 4.2
+.  sp -1
+.  IP " 7." 4.2
 .\}
 The number of measurements used in the regression. [12]
 .RE
@@ -2934,8 +4153,8 @@ The number of measurements used in the regression. [12]
 \h'-04' 8.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 8." 4.2
+.  sp -1
+.  IP " 8." 4.2
 .\}
 The number of runs of regression residuals of the same sign. Low values
 indicate that a straight line is no longer a good model of the measured data
@@ -2947,8 +4166,8 @@ and that older measurements should be discarded. [5]
 \h'-04' 9.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 9." 4.2
+.  sp -1
+.  IP " 9." 4.2
 .\}
 The measurement interval used prior to the measurement being made (in
 seconds). [120]
@@ -2961,15 +4180,13 @@ This option logs the raw and filtered reference clock measurements to a file
 called \fIrefclocks.log\fP. An example line (which actually appears as a single
 line in the file) from the log file is shown below.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 2009\-11\-30 14:33:27.000000 PPS2    7 N 1  4.900000e\-07 \-6.741777e\-07  1.000e\-06
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The columns are as follows (the quantities in square brackets are the values
 from the example line above):
@@ -2979,8 +4196,8 @@ from the example line above):
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 Date [2009\-11\-30]
 .RE
@@ -2990,8 +4207,8 @@ Date [2009\-11\-30]
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 Hour:Minute:Second.Microsecond. Note that the date\-time pair is expressed in
 UTC, not the local time zone. [14:33:27.000000]
@@ -3002,8 +4219,8 @@ UTC, not the local time zone. [14:33:27.000000]
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 Reference ID of the reference clock from which the measurement came. [PPS2]
 .RE
@@ -3013,8 +4230,8 @@ Reference ID of the reference clock from which the measurement came. [PPS2]
 \h'-04' 4.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 4." 4.2
+.  sp -1
+.  IP " 4." 4.2
 .\}
 Sequence number of driver poll within one polling interval for raw samples,
 or \fI\-\fP for filtered samples. [7]
@@ -3025,8 +4242,8 @@ or \fI\-\fP for filtered samples. [7]
 \h'-04' 5.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 5." 4.2
+.  sp -1
+.  IP " 5." 4.2
 .\}
 Leap status (\fIN\fP means normal, \fI+\fP means that the last minute of the current
 month has 61 seconds, \fI\-\fP means that the last minute of the month has 59
@@ -3038,8 +4255,8 @@ seconds). [N]
 \h'-04' 6.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 6." 4.2
+.  sp -1
+.  IP " 6." 4.2
 .\}
 Flag indicating whether the sample comes from PPS source. (1 for yes,
 0 for no, or \fI\-\fP for filtered sample). [1]
@@ -3050,8 +4267,8 @@ Flag indicating whether the sample comes from PPS source. (1 for yes,
 \h'-04' 7.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 7." 4.2
+.  sp -1
+.  IP " 7." 4.2
 .\}
 Local clock error measured by reference clock driver, or \fI\-\fP for filtered sample.
 [4.900000e\-07]
@@ -3062,8 +4279,8 @@ Local clock error measured by reference clock driver, or \fI\-\fP for filtered s
 \h'-04' 8.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 8." 4.2
+.  sp -1
+.  IP " 8." 4.2
 .\}
 Local clock error with applied corrections. Positive indicates that the local
 clock is slow. [\-6.741777e\-07]
@@ -3074,8 +4291,8 @@ clock is slow. [\-6.741777e\-07]
 \h'-04' 9.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 9." 4.2
+.  sp -1
+.  IP " 9." 4.2
 .\}
 Assumed dispersion of the sample. [1.000e\-06]
 .RE
@@ -3087,15 +4304,13 @@ This option logs the temperature measurements and system rate compensations to
 a file called \fItempcomp.log\fP. An example line (which actually appears as a
 single line in the file) from the log file is shown below.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 2015\-04\-19 10:39:48  2.8000e+04  3.6600e\-01
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The columns are as follows (the quantities in square brackets are the values
 from the example line above):
@@ -3105,8 +4320,8 @@ from the example line above):
 \h'-04' 1.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 1." 4.2
+.  sp -1
+.  IP " 1." 4.2
 .\}
 Date [2015\-04\-19]
 .RE
@@ -3116,8 +4331,8 @@ Date [2015\-04\-19]
 \h'-04' 2.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 2." 4.2
+.  sp -1
+.  IP " 2." 4.2
 .\}
 Hour:Minute:Second. Note that the date\-time pair is expressed in UTC, not the
 local time zone. [10:39:48]
@@ -3128,8 +4343,8 @@ local time zone. [10:39:48]
 \h'-04' 3.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 3." 4.2
+.  sp -1
+.  IP " 3." 4.2
 .\}
 Temperature read from the sensor. [2.8000e+04]
 .RE
@@ -3139,8 +4354,8 @@ Temperature read from the sensor. [2.8000e+04]
 \h'-04' 4.\h'+01'\c
 .\}
 .el \{\
-.sp -1
-.IP " 4." 4.2
+.  sp -1
+.  IP " 4." 4.2
 .\}
 Applied compensation in ppm, positive means the system clock is running
 faster than it would be without the compensation. [3.6600e\-01]
@@ -3152,15 +4367,13 @@ faster than it would be without the compensation. [3.6600e\-01]
 .RS 4
 An example of the directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 log measurements statistics tracking
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBlogbanner\fP \fIentries\fP
@@ -3168,9 +4381,9 @@ log measurements statistics tracking
 A banner is periodically written to the log files enabled by the \fBlog\fP
 directive to indicate the meanings of the columns.
 .sp
-The \fBlogbanner\fP directive specifies after how many entries in the log file
-should be the banner written. The default is 32, and 0 can be used to disable
-it entirely.
+The \fBlogbanner\fP directive specifies the cadence size of how many entries are
+written to the log file after which the banner is written anew. The default is
+32, and 0 can be used to disable it entirely.
 .RE
 .sp
 \fBlogchange\fP \fIthreshold\fP
@@ -3184,15 +4397,13 @@ By default, the threshold is 1 second.
 .sp
 An example of the use is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 logchange 0.1
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 which would cause a syslog message to be generated if a system clock error of over
 0.1 seconds starts to be compensated.
@@ -3200,20 +4411,19 @@ which would cause a syslog message to be generated if a system clock error of ov
 .sp
 \fBlogdir\fP \fIdirectory\fP
 .RS 4
-This directive allows the directory where log files are written to be
-specified.
+This directive specifies the directory for writing log files enabled by the
+\fBlog\fP directive. If the directory does not exist, it will be created
+automatically.
 .sp
 An example of the use of this directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 logdir /var/log/chrony
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \fBmailonchange\fP \fIemail\fP \fIthreshold\fP
@@ -3224,15 +4434,13 @@ clock.
 .sp
 An example of the use of this directive is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 mailonchange root@localhost 0.5
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 This would send a mail message to root if a change of more than 0.5 seconds
 were applied to the system clock.
@@ -3242,6 +4450,75 @@ option as the \fBchronyd\fP process will not be allowed to fork and execute the
 sendmail binary.
 .RE
 .SS "Miscellaneous"
+.sp
+\fBconfdir\fP \fIdirectory\fP...
+.RS 4
+The \fBconfdir\fP directive includes configuration files with the \fI.conf\fP suffix
+from a directory. The files are included in the lexicographical order of the
+file names.
+.sp
+Multiple directories (up to 10) can be specified with a single \fBconfdir\fP
+directive. In this case, if multiple directories contain a file with the same
+name, only the first file in the order of the specified directories will be
+included. This enables a fragmented configuration where existing fragments can
+be replaced by adding files to a different directory.
+.sp
+This directive can be used multiple times.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+confdir @SYSCONFDIR@/chrony.d
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBsourcedir\fP \fIdirectory\fP...
+.RS 4
+The \fBsourcedir\fP directive is identical to the \fBconfdir\fP directive, except the
+configuration files have the \fI.sources\fP suffix, they can only specify NTP
+sources (i.e. the \fBserver\fP, \fBpool\fP, and \fBpeer\fP directives), they are expected
+to have all lines terminated by the newline character, and they can be
+reloaded by the \fBreload sources\fP command in
+\fBchronyc\fP. It is particularly useful with dynamic sources like NTP servers
+received from a DHCP server, which can be written to a file specific to the
+network interface by a networking script.
+.sp
+This directive can be used multiple times.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+sourcedir /var/run/chrony\-dhcp
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBinclude\fP \fIpattern\fP
+.RS 4
+The \fBinclude\fP directive includes a configuration file, or multiple configuration
+files if a wildcard pattern is specified. Unlike with the \fBconfdir\fP directive,
+the full name of the files needs to be specified, and at least one file is
+required to exist.
+.sp
+This directive can be used multiple times.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+include @SYSCONFDIR@/chrony.d/*.conf
+.fam
+.fi
+.if n .RE
+.RE
 .sp
 \fBhwtimestamp\fP \fIinterface\fP [\fIoption\fP]...
 .RS 4
@@ -3259,32 +4536,51 @@ be enabled by the \fBxleave\fP option in the \fBserver\fP or the
 .sp
 This directive is supported on Linux 3.19 and newer. The NIC must support HW
 timestamping, which can be verified with the \fBethtool \-T\fP command. The list of
-capabilities should include \fISOF_TIMESTAMPING_RAW_HARDWARE\fP,
-\fISOF_TIMESTAMPING_TX_HARDWARE\fP, and \fISOF_TIMESTAMPING_RX_HARDWARE\fP. Receive
-filter \fIHWTSTAMP_FILTER_ALL\fP, or \fIHWTSTAMP_FILTER_NTP_ALL\fP, is necessary for
-timestamping of received packets. Timestamping of packets received from bridged
-and bonded interfaces is supported on Linux 4.13 and newer. When \fBchronyd\fP is
-running, no other process (e.g. a PTP daemon) should be working with the NIC
-clock.
+capabilities should include \fIhardware\-raw\-clock\fP, \fIhardware\-transmit\fP, and
+\fIhardware\-receive\fP. The receive filter \fIall\fP, or \fIntp\fP, is necessary for
+timestamping of received NTP packets. Timestamping of packets received on
+bridged and bonded interfaces is supported on Linux 4.13 and newer. If HW
+timestamping does not work for received packets, \fBchronyd\fP will use kernel
+receive timestamps instead. Transmit\-only HW timestamping can still be useful
+to improve stability of the synchronisation.
+.sp
+\fBchronyd\fP does not synchronise the NIC clock. It assumes the clock is running
+free. Multiple instances of \fBchronyd\fP can use the same interface with enabled
+HW timestamping. Applications which need HW timestamping with a synchronised
+clock (e.g. a PTP daemon) should use a virtual clock running on top of the
+physical clock created by writing to \fI/sys/class/ptp/ptpX/n_vclocks\fP. This
+feature is available on Linux 5.14 and newer.
 .sp
 If the kernel supports software timestamping, it will be enabled for all
-interfaces. The source of timestamps (i.e. hardware, kernel, or daemon) is
-indicated in the \fImeasurements.log\fP file if enabled by the \fBlog
-measurements\fP directive, and the \fBntpdata\fP report in
-\fBchronyc\fP.
+interfaces automatically.
 .sp
-If the specified interface is \fI*\fP, \fBchronyd\fP will try to enable HW timestamping
-on all available interfaces.
+The source of timestamps (i.e. hardware, kernel, or daemon) is indicated on the
+client side in the \fImeasurements.log\fP file (if enabled by the \fBlog\fP
+directive) and the \fBntpdata\fP report. On the server
+side, the number of served timestamps from each source is provided in the
+\fBserverstats\fP report.
+.sp
+This directive can be used multiple times to enable HW timestamping on multiple
+interfaces. If the specified interface is \fI*\fP, \fBchronyd\fP will try to enable HW
+timestamping on all available interfaces.
 .sp
 The \fBhwtimestamp\fP directive has the following options:
 .sp
 \fBminpoll\fP \fIpoll\fP
 .RS 4
 This option specifies the minimum interval between readings of the NIC clock.
-It\(cqs defined as a power of two. It should correspond to the minimum polling
+It\(cqs defined as a power of 2. It should correspond to the minimum polling
 interval of all NTP sources and the minimum expected polling interval of NTP
-clients. The default value is 0 (1 second) and the minimum value is \-6 (1/64th
-of a second).
+clients. The default value is 0 (1 second), the minimum value is \-6 (1/64th
+of a second), and the maximum value is 20 (about 12 days).
+.RE
+.sp
+\fBmaxpoll\fP \fIpoll\fP
+.RS 4
+This option specifies the maximum interval between readings of the NIC clock,
+as a power of 2. The default value is \fBminpoll\fP + 1, i.e. 1 (2 seconds) with
+the default \fBminpoll\fP of 0. The minimum and maximum values are the same as with
+the \fBminpoll\fP option.
 .RE
 .sp
 \fBminsamples\fP \fIsamples\fP
@@ -3322,8 +4618,8 @@ is 0.
 .sp
 \fBnocrossts\fP
 .RS 4
-Some hardware can precisely cross timestamp the NIC clock with the system
-clock. This option disables the use of the cross timestamping.
+Some hardware can precisely cross\-timestamp the NIC clock with the system
+clock. This option disables the use of the cross\-timestamping.
 .RE
 .sp
 \fBrxfilter\fP \fIfilter\fP
@@ -3341,6 +4637,11 @@ Enables timestamping of all received packets.
 Enables timestamping of received NTP packets.
 .RE
 .sp
+\fIptp\fP
+.RS 4
+Enables timestamping of received PTP packets.
+.RE
+.sp
 \fInone\fP
 .RS 4
 Disables timestamping of received packets.
@@ -3349,12 +4650,15 @@ Disables timestamping of received packets.
 .sp
 
 .RS 4
-The most specific filter for timestamping NTP packets which is supported by the
-NIC is selected by default. Some NICs can timestamp only PTP packets, which
-limits the selection to the \fInone\fP filter. Forcing timestamping of all packets
-with the \fIall\fP filter when the NIC supports both \fIall\fP and \fIntp\fP filters can be
-useful when packets are received from or on a non\-standard UDP port (e.g.
-specified by the \fBport\fP directive).
+The most specific filter for timestamping of NTP packets supported by the NIC
+is selected by default. Some NICs can timestamp PTP packets only. By default,
+they will be configured with the \fInone\fP filter and expected to provide hardware
+timestamps for transmitted packets only. Timestamping of PTP packets is useful
+with NTP\-over\-PTP enabled by the \fBptpport\fP
+directive, or when another application is receiving PTP packets on the
+interface. Forcing timestamping of all packets with the \fIall\fP filter could be
+useful if the NIC supported both the \fIall\fP and \fIntp\fP filters, and it should
+timestamp both NTP and PTP packets, or NTP packets on a different UDP port.
 .RE
 .RE
 .sp
@@ -3363,93 +4667,107 @@ specified by the \fBport\fP directive).
 .sp
 Examples of the directive are:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 hwtimestamp eth0
 hwtimestamp eth1 txcomp 300e\-9 rxcomp 645e\-9
 hwtimestamp *
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
-\fBinclude\fP \fIpattern\fP
+\fBhwtstimeout\fP \fItimeout\fP
 .RS 4
-The \fBinclude\fP directive includes a configuration file or multiple configuration
-files if a wildcard pattern is specified. This can be useful when maintaining
-configuration on multiple hosts to keep the differences in separate files.
+If hardware timestamping is used with a close NTP server, or the NIC or its
+driver is slow in providing the transmit timestamp of NTP requests, a response
+from the server can be received before the transmit timestamp of the request.
+To avoid calculating the offset with a less accurate transmit timestamp,
+\fBchronyd\fP can save the response for later processing and wait for the hardware
+transmit timestamp. There is no guarantee that the timestamp will be provided
+(NICs typically have a limited rate of transmit timestamping). This directive
+configures how long \fBchronyd\fP should wait for the timestamp after receiving a
+valid response from the server. If a second valid response is received from the
+server while waiting for the timestamp, they will be both processed
+immediately.
 .sp
-An example of the directive is:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-include @SYSCONFDIR@/chrony.d/*.conf
-.fi
-.if n \{\
-.RE
-.\}
+The default value is 0.001 seconds, which should be sufficient with most
+hardware. If you frequently see kernel transmit timestamps in the
+\fImeasurements.log\fP file or \fBntpdata\fP report, and it is
+not a server handling a high rate of requests in the interleaved mode on the
+same interface (which would compete with timestamping of the server\(cqs own
+requests), increasing the timeout to 0.01 or possibly even longer might help.
+Note that the maximum timeout is limited by the NTP polling interval.
 .RE
 .sp
 \fBkeyfile\fP \fIfile\fP
 .RS 4
-This directive is used to specify the location of the file containing ID\-key
-pairs for authentication of NTP packets.
+This directive is used to specify the location of the file containing symmetric
+keys, which are shared between NTP servers and clients, or peers, in order to
+authenticate NTP packets with a message authentication code (MAC) using a
+cryptographic hash function or cipher.
 .sp
 The format of the directive is shown in the example below:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 keyfile @SYSCONFDIR@/chrony.keys
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The argument is simply the name of the file containing the ID\-key pairs. The
 format of the file is shown below:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 10 tulip
 11 hyacinth
 20 MD5 ASCII:crocus
-25 SHA1 HEX:1dc764e0791b11fa67efc7ecbc4b0d73f68a070c
+25 SHA1 HEX:933F62BE1D604E68A81B557F18CFA200483F5B70
+30 AES128 HEX:7EA62AE64D190114D46D5A082F948EC1
+31 AES256 HEX:37DDCBC67BB902BCB8E995977FAB4D2B5642F5B32EBCEEE421921D97E5CBFE39
  ...
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-Each line consists of an ID, name of an authentication hash function (optional),
-and a password. The ID can be any unsigned integer in the range 1 through
-2^32\-1. The default hash function is \fBMD5\fP, which is always supported.
+Each line consists of an ID, optional type, and key.
 .sp
+The ID can be any positive integer in the range 1 through 2^32\-1.
+.sp
+The type is a name of a cryptographic hash function or cipher that is used to
+generate and verify the MAC. The default type is \fBMD5\fP, which is always
+supported.
 If \fBchronyd\fP was built with enabled support for hashing using a crypto library
-(nettle, nss, or libtomcrypt), the following functions are available: \fBMD5\fP,
+(Nettle, GnuTLS, NSS, or LibTomCrypt), the following functions are available: \fBMD5\fP,
 \fBSHA1\fP, \fBSHA256\fP, \fBSHA384\fP, \fBSHA512\fP. Depending on which library and version is
-\fBchronyd\fP using, some or all of the following functions may also be available:
-\fBSHA3\-224\fP, \fBSHA3\-256\fP, \fBSHA3\-384\fP, \fBSHA3\-512\fP, \fBRMD128\fP, \fBRMD160\fP, \fBRMD256\fP,
-\fBRMD320\fP, \fBTIGER\fP, \fBWHIRLPOOL\fP.
+\fBchronyd\fP using, some of the following hash functions and ciphers may
+also be available:
+\fBSHA3\-224\fP, \fBSHA3\-256\fP, \fBSHA3\-384\fP, \fBSHA3\-512\fP, \fBTIGER\fP, \fBWHIRLPOOL\fP, \fBAES128\fP,
+\fBAES256\fP.
 .sp
-The password can be specified as a string of characters not containing white
+The key can be specified as a string of ASCII characters not containing white
 space with an optional \fBASCII:\fP prefix, or as a hexadecimal number with the
 \fBHEX:\fP prefix. The maximum length of the line is 2047 characters.
+If the type is a cipher, the length of the key must match the cipher (i.e. 128
+bits for AES128 and 256 bits for AES256).
 .sp
-The password is used with the hash function to generate and verify a message
-authentication code (MAC) in NTP packets. It is recommended to use SHA1, or
-stronger, hash function with random passwords specified in the hexadecimal
-format that have at least 128 bits. \fBchronyd\fP will log a warning to
-syslog on start if a source is specified in the configuration file with a key
-that has password shorter than 80 bits.
+It is recommended to use randomly generated keys, specified in the hexadecimal
+format, which are at least 128 bits long (i.e. they have at least 32 characters
+after the \fBHEX:\fP prefix). \fBchronyd\fP will log a warning to syslog on start if a
+source is specified in the configuration file with a key shorter than 80 bits.
+.sp
+The recommended key types are AES ciphers and SHA3 hash functions. MD5 should
+be avoided unless no other type is supported on the server and client, or
+peers. A major weakness of MD5 for the NTP MAC is a length extension attack,
+where a man\-in\-the\-middle attacker can add arbitrary extension fields to the
+NTP message and update the MAC to pass the verification of the extended
+message. The \fBextfield\fP option (enabling processing of the specified extension
+field) should not be used for NTP sources authenticated with an MD5 key.
 .sp
 The \fBkeygen\fP command of \fBchronyc\fP can be used to
 generate random keys for the key file. By default, it generates 160\-bit MD5 or
@@ -3462,12 +4780,9 @@ file when the \fBrekey\fP command is issued by \fBchronyc\fP).
 .sp
 \fBlock_all\fP
 .RS 4
-The \fBlock_all\fP directive will lock chronyd into RAM so that it will never be
-paged out. This mode is supported on Linux, FreeBSD, NetBSD, and Solaris.  This
-directive uses the POSIX \fBmlockall()\fP system call to prevent \fBchronyd\fP from
-ever being swapped out. This should result in lower and more consistent
-latency. It should not have significant impact on performance as \fBchronyd\(cqs\fP
-memory usage is modest. The \fBmlockall(2)\fP man page has more details.
+The \fBlock_all\fP directive will lock the \fBchronyd\fP process into RAM so that it
+will never be paged out. This can result in lower and more consistent latency.
+The directive is supported on Linux, FreeBSD, NetBSD, and illumos.
 .RE
 .sp
 \fBpidfile\fP \fIfile\fP
@@ -3478,20 +4793,62 @@ might already be running on the system. By default, the file used is
 \fI@DEFAULT_PID_FILE@\fP. The \fBpidfile\fP directive allows the name to be changed,
 e.g.:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 pidfile /run/chronyd.pid
+.fam
 .fi
-.if n \{\
+.if n .RE
+.sp
+Setting this directive to \fI/\fP disables writing and checking of the PID file.
 .RE
-.\}
+.sp
+\fBptpport\fP \fIport\fP
+.RS 4
+The \fBptpport\fP directive enables \fBchronyd\fP to send and receive NTP messages
+contained in PTP event messages (NTP\-over\-PTP) to enable hardware timestamping
+on NICs that cannot timestamp NTP packets, but can timestamp unicast PTP
+packets, and also use corrections provided by PTP one\-step end\-to\-end
+transparent clocks in network switches and routers. The port recognized by the
+NICs and PTP transparent clocks is 319 (PTP event port). The default value is 0
+(disabled).
+.sp
+The NTP\-over\-PTP support is experimental. The protocol and configuration can
+change in future. It should be used only in local networks.
+.sp
+The PTP port will be open even if \fBchronyd\fP is not configured to operate as a
+server or client. The directive does not change the default protocol of
+specified NTP sources. Each NTP source that should use NTP\-over\-PTP needs to
+be specified with the \fBport\fP option set to the PTP port. To actually enable
+hardware timestamping on NICs that can timestamp PTP packets only, the
+\fBrxfilter\fP option of the \fBhwtimestamp\fP directive needs to be set to \fIptp\fP. The
+extension field \fIF324\fP needs to be enabled to use the corrections provided by
+the PTP transparent clocks.
+.sp
+An example of client configuration is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+server ntp1.example.net minpoll 0 maxpoll 0 xleave port 319 extfield F324
+hwtimestamp * rxfilter ptp
+ptpport 319
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBptpdomain\fP \fIdomain\fP
+.RS 4
+The \fBptpdomain\fP directive sets the PTP domain number of transmitted and
+accepted NTP\-over\-PTP messages. Messages from other domains are ignored.
+The default is 123, the minimum is 0, and the maximum is 255.
 .RE
 .sp
 \fBsched_priority\fP \fIpriority\fP
 .RS 4
-On Linux, FreeBSD, NetBSD, and Solaris, the \fBsched_priority\fP directive will
+On Linux, FreeBSD, NetBSD, and illumos, the \fBsched_priority\fP directive will
 select the SCHED_FIFO real\-time scheduler at the specified priority (which must
 be between 0 and 100). On macOS, this option must have either a value of 0 (the
 default) to disable the thread time constraint policy or 1 for the policy to be
@@ -3519,7 +4876,7 @@ The \fBuser\fP directive sets the name of the system user to which \fBchronyd\fP
 switch after start in order to drop root privileges.
 .sp
 On Linux, \fBchronyd\fP needs to be compiled with support for the \fBlibcap\fP library.
-On macOS, FreeBSD, NetBSD and Solaris \fBchronyd\fP forks into two processes.
+On macOS, FreeBSD, NetBSD and illumos \fBchronyd\fP forks into two processes.
 The child process retains root privileges, but can only perform a very limited
 range of privileged system calls on behalf of the parent.
 .sp
@@ -3529,7 +4886,7 @@ The compiled\-in default value is \fI@DEFAULT_USER@\fP.
 .SS "NTP client with permanent connection to NTP servers"
 .sp
 This section shows how to configure \fBchronyd\fP for computers that are connected
-to the Internet (or to any network containing true NTP servers which ultimately
+to the Internet (or to any network containing true NTP servers that ultimately
 derive their time from a reference clock) permanently or most of the time.
 .sp
 To operate in this mode, you will need to know the names of the NTP servers
@@ -3541,8 +4898,8 @@ the following methods:
 \h'-04'\(bu\h'+03'\c
 .\}
 .el \{\
-.sp -1
-.IP \(bu 2.3
+.  sp -1
+.  IP \(bu 2.3
 .\}
 Your institution might already operate servers on its network.
 Contact your system administrator to find out.
@@ -3553,8 +4910,8 @@ Contact your system administrator to find out.
 \h'-04'\(bu\h'+03'\c
 .\}
 .el \{\
-.sp -1
-.IP \(bu 2.3
+.  sp -1
+.  IP \(bu 2.3
 .\}
 Your ISP probably has one or more NTP servers available for its
 customers.
@@ -3565,8 +4922,8 @@ customers.
 \h'-04'\(bu\h'+03'\c
 .\}
 .el \{\
-.sp -1
-.IP \(bu 2.3
+.  sp -1
+.  IP \(bu 2.3
 .\}
 Somewhere under the NTP homepage there is a list of public
 stratum 1 and stratum 2 servers. You should find one or more servers that are
@@ -3579,68 +4936,80 @@ facilities.
 \h'-04'\(bu\h'+03'\c
 .\}
 .el \{\
-.sp -1
-.IP \(bu 2.3
+.  sp -1
+.  IP \(bu 2.3
 .\}
 Use public servers from the \c
-.URL "http://www.pool.ntp.org/" "pool.ntp.org" " "
+.URL "https://www.pool.ntp.org/" "pool.ntp.org" ""
 project.
 .RE
 .sp
-Assuming that your NTP servers are called \fIfoo.example.net\fP, \fIbar.example.net\fP
-and \fIbaz.example.net\fP, your \fIchrony.conf\fP file could contain as a minimum:
+Assuming that your NTP servers are called \fIntp1.example.net\fP, \fIntp2.example.net\fP
+and \fIntp3.example.net\fP, your \fIchrony.conf\fP file could contain as a minimum:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-server foo.example.net
-server bar.example.net
-server baz.example.net
+.fam C
+server ntp1.example.net
+server ntp2.example.net
+server ntp3.example.net
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-However, you will probably want to include some of the other directives. The
+You will probably want to include some of the other directives, however. The
 \fBdriftfile\fP, \fBmakestep\fP and \fBrtcsync\fP
 might be particularly useful. Also, the \fBiburst\fP option of the
 \fBserver\fP directive is useful to speed up the initial
 synchronisation. The smallest useful configuration file would look something
 like:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-server foo.example.net iburst
-server bar.example.net iburst
-server baz.example.net iburst
+.fam C
+server ntp1.example.net iburst
+server ntp2.example.net iburst
+server ntp3.example.net iburst
 driftfile @CHRONYVARDIR@/drift
 makestep 1.0 3
 rtcsync
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 When using a pool of NTP servers (one name is used for multiple servers which
 might change over time), it is better to specify them with the \fBpool\fP
 directive instead of multiple \fBserver\fP directives. The configuration file could
 in this case look like:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 pool pool.ntp.org iburst
 driftfile @CHRONYVARDIR@/drift
 makestep 1.0 3
 rtcsync
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
+.sp
+If the servers (or pool) support the Network Time Security (NTS)
+authentication mechanism and \fBchronyd\fP is compiled with NTS support, the \fBnts\fP
+option will enable a secure synchronisation to the servers. The configuration
+file could look like:
+.sp
+.if n .RS 4
+.nf
+.fam C
+server ntp1.example.net iburst nts
+server ntp2.example.net iburst nts
+server ntp3.example.net iburst nts
+driftfile @CHRONYVARDIR@/drift
+makestep 1.0 3
+rtcsync
+.fam
+.fi
+.if n .RE
 .SS "NTP client with infrequent connection to NTP servers"
 .sp
 This section shows how to configure \fBchronyd\fP for computers that have
@@ -3649,24 +5018,22 @@ additional configuration to tell \fBchronyd\fP when the connection goes up and
 down. This saves the program from continuously trying to poll the servers when
 they are inaccessible.
 .sp
-Again, assuming that your NTP servers are called \fIfoo.example.net\fP,
-\fIbar.example.net\fP and \fIbaz.example.net\fP, your \fIchrony.conf\fP file would now
+Again, assuming that your NTP servers are called \fIntp1.example.net\fP,
+\fIntp2.example.net\fP and \fIntp3.example.net\fP, your \fIchrony.conf\fP file would now
 contain:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-server foo.example.net offline
-server bar.example.net offline
-server baz.example.net offline
+.fam C
+server ntp1.example.net offline
+server ntp2.example.net offline
+server ntp3.example.net offline
 driftfile @CHRONYVARDIR@/drift
 makestep 1.0 3
 rtcsync
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The \fBoffline\fP keyword indicates that the servers start in an offline state, and
 that they should not be contacted until \fBchronyd\fP receives notification from
@@ -3678,52 +5045,48 @@ To give an example of their use, assuming that \fBpppd\fP is the program being
 used to connect to the Internet and that \fBchronyc\fP has been installed at
 \fI@BINDIR@/chronyc\fP, the script \fI/etc/ppp/ip\-up\fP would include:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 @BINDIR@/chronyc online
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 and the script \fI/etc/ppp/ip\-down\fP would include:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 @BINDIR@/chronyc offline
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-\fBchronyd\fP\(cqs polling of the servers would now only occur whilst the machine is
+\fBchronyd\fP\*(Aqs polling of the servers would now only occur whilst the machine is
 actually connected to the Internet.
 .SS "Isolated networks"
 .sp
 This section shows how to configure \fBchronyd\fP for computers that never have
-network conectivity to any computer which ultimately derives its time from a
+network connectivity to any computer that ultimately derives its time from a
 reference clock.
 .sp
-In this situation, one computer is selected to be the master timeserver. The
-other computers are either direct clients of the master, or clients of clients.
+In this situation, one computer is selected to be the primary timeserver. The
+other computers are either direct clients of the server, or clients of clients.
 .sp
 The \fBlocal\fP directive enables a local reference mode, which allows
 \fBchronyd\fP to appear synchronised even when it is not.
 .sp
-The rate value in the master\(cqs drift file needs to be set to the average rate
-at which the master gains or loses time. \fBchronyd\fP includes support for this,
+The rate value in the server\(cqs drift file needs to be set to the average rate
+at which the server gains or loses time. \fBchronyd\fP includes support for this,
 in the form of the \fBmanual\fP directive and the
 \fBsettime\fP command in the \fBchronyc\fP program.
 .sp
-If the master is rebooted, \fBchronyd\fP can re\-read the drift rate from the drift
-file. However, the master has no accurate estimate of the current time. To get
-around this, the system can be configured so that the master can initially set
-itself to a \(oqmajority\-vote\(cq of selected clients\(aq times; this allows the
-clients to \(oqflywheel\(cq the master while it is rebooting.
+If the server is rebooted, \fBchronyd\fP can re\-read the drift rate from the drift
+file. The server has no accurate estimate of the current time, however. To get
+around this, the system can be configured so that the server can initially set
+itself to a \(oqmajority\-vote\(cq of selected clients\*(Aq times; this allows the
+clients to \(oqflywheel\(cq the server while it is rebooting.
 .sp
 The \fBsmoothtime\fP directive is useful when the clocks of the
 clients need to stay close together when the local time is adjusted by the
@@ -3732,13 +5095,12 @@ activated by the \fBsmoothtime activate\fP command when
 the local time is ready to be served. After that point, any adjustments will be
 smoothed out.
 .sp
-A typical configuration file for the master (called \fImaster\fP) might be
-(assuming the clients and the master are in the \fI192.168.165.x\fP subnet):
+A typical configuration file for the server (called \fIntp.local\fP) might be
+(assuming the clients and the server are in the \fI192.168.165.x\fP subnet):
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 initstepslew 1 client1 client3 client6
 driftfile @CHRONYVARDIR@/drift
 local stratum 8
@@ -3746,66 +5108,61 @@ manual
 allow 192.168.165.0/24
 smoothtime 400 0.01
 rtcsync
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
-For the clients that have to resynchronise the master when it restarts,
+For the clients that have to resynchronise the server when it restarts,
 the configuration file might be:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-server master iburst
+.fam C
+server ntp.local iburst
 driftfile @CHRONYVARDIR@/drift
 allow 192.168.165.0/24
 makestep 1.0 3
 rtcsync
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The rest of the clients would be the same, except that the \fBallow\fP directive is
 not required.
 .sp
-If there is no suitable computer to be designated as the master, or there is a
-requirement to keep the clients synchronised even when it fails, the \fBorphan\fP
-option of the \fBlocal\fP directive enables a special mode where the master is
-selected from multiple computers automatically. They all need to use the same
-\fBlocal\fP configuration and poll one another. The server with the smallest
-reference ID (which is based on its IP address) will take the role of the
-master and others will be synchronised to it. When it fails, the server with
-the second smallest reference ID will take over and so on.
+If there is no suitable computer to be designated as the primary server, or
+there is a requirement to keep the clients synchronised even when it fails, the
+\fBorphan\fP option of the \fBlocal\fP directive enables a special mode where the
+server is selected from multiple computers automatically. They all need to use
+the same \fBlocal\fP configuration and poll one another. The server with the
+smallest reference ID (which is based on its IP address) will take the role of
+the primary server and others will be synchronised to it. When it fails, the
+server with the second smallest reference ID will take over and so on.
 .sp
 A configuration file for the first server might be (assuming there are three
-servers called \fImaster1\fP, \fImaster2\fP, and \fImaster3\fP):
+servers called \fIntp1.local\fP, \fIntp2.local\fP, and \fIntp3.local\fP):
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-initstepslew 1 master2 master3
-server master2
-server master3
+.fam C
+initstepslew 1 ntp2.local ntp3.local
+server ntp2.local
+server ntp3.local
 driftfile @CHRONYVARDIR@/drift
 local stratum 8 orphan
 manual
 allow 192.168.165.0/24
 rtcsync
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The other servers would be the same, except the hostnames in the \fBinitstepslew\fP
 and \fBserver\fP directives would be modified to specify the other servers. Their
 clients might be configured to poll all three servers.
 .SS "RTC tracking"
 .sp
-This section considers a computer which has occasional connections to the
+This section considers a computer that has occasional connections to the
 Internet and is turned off between \(oqsessions\(cq. In this case, \fBchronyd\fP relies
 on the computer\(cqs RTC to maintain the time between the periods when it is
 powered up. It assumes that Linux is run exclusively on the computer. Dual\-boot
@@ -3816,7 +5173,7 @@ enable the \fBHPET_EMULATE_RTC\fP option in your kernel configuration. Otherwise
 using it.
 .sp
 When the computer is connected to the Internet, \fBchronyd\fP has access to
-external NTP servers which it makes measurements from. These measurements are
+external NTP servers that it makes measurements from. These measurements are
 saved, and straight\-line fits are performed on them to provide an estimate of
 the computer\(cqs time error and rate of gaining or losing time.
 .sp
@@ -3841,7 +5198,7 @@ system clock to the best estimate of what its time would have been now, had it
 been left running continuously. The measurement histories for the servers are
 then reloaded.
 .sp
-The next time the computer goes online, the previous sessions\(aq measurements can
+The next time the computer goes online, the previous sessions\*(Aq measurements can
 contribute to the line\-fitting process, which gives a much better estimate of
 the computer\(cqs gain or loss rate.
 .sp
@@ -3859,7 +5216,7 @@ take \fBchronyd\fP offline; because \fBchronyd\fP free\-runs between online sess
 parameters will change significantly between going offline from the Internet
 and any power failure.
 .sp
-A final point regards computers which are left running for extended periods and
+A final point regards computers that are left running for extended periods and
 where it is desired to spin down the hard disc when it is not in use (e.g. when
 not accessed for 15 minutes). \fBchronyd\fP has been planned so it supports such
 operation; this is the reason why the RTC tracking parameters are not saved to
@@ -3873,13 +5230,12 @@ configuration files are shown.
 .sp
 For the \fIchrony.conf\fP file, the following can be used as an example.
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-server foo.example.net maxdelay 0.4 offline
-server bar.example.net maxdelay 0.4 offline
-server baz.example.net maxdelay 0.4 offline
+.fam C
+server ntp1.example.net maxdelay 0.4 offline
+server ntp2.example.net maxdelay 0.4 offline
+server ntp3.example.net maxdelay 0.4 offline
 logdir /var/log/chrony
 log statistics measurements tracking
 driftfile @CHRONYVARDIR@/drift
@@ -3887,10 +5243,9 @@ makestep 1.0 3
 maxupdateskew 100.0
 dumpdir @CHRONYVARDIR@
 rtcfile @CHRONYVARDIR@/rtc
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 \fBpppd\fP is used for connecting to the Internet. This runs two scripts
 \fI/etc/ppp/ip\-up\fP and \fI/etc/ppp/ip\-down\fP when the link goes online and offline
@@ -3898,31 +5253,27 @@ respectively.
 .sp
 The relevant part of the \fI/etc/ppp/ip\-up\fP file is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 @BINDIR@/chronyc online
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 and the relevant part of the \fI/etc/ppp/ip\-down\fP script is:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
+.fam C
 @BINDIR@/chronyc \-m offline dump writertc
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 \fBchronyd\fP is started during the boot sequence with the \fB\-r\fP and \fB\-s\fP options.
 It might need to be started before any software that depends on the system clock
-not jumping or moving backwards, depending on the directives in \fBchronyd\fP\(cqs
+not jumping or moving backwards, depending on the directives in \fBchronyd\fP\*(Aqs
 configuration file.
 .sp
 For the system shutdown, \fBchronyd\fP should receive a SIGTERM several seconds
@@ -3931,7 +5282,7 @@ information to be saved.
 .SS "Public NTP server"
 .sp
 \fBchronyd\fP can be configured to operate as a public NTP server, e.g. to join the
-.URL "http://www.pool.ntp.org/en/join.html" "pool.ntp.org" " "
+.URL "https://www.pool.ntp.org/en/join.html" "pool.ntp.org" ""
 project. The configuration
 is similar to the NTP client with permanent connection, except it needs to
 allow client access from all addresses. It is recommended to find at least four
@@ -3952,14 +5303,13 @@ configuration).
 .sp
 The configuration file could look like:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
-server foo.example.net iburst
-server bar.example.net iburst
-server baz.example.net iburst
-server qux.example.net iburst
+.fam C
+server ntp1.example.net iburst
+server ntp2.example.net iburst
+server ntp3.example.net iburst
+server ntp4.example.net iburst
 makestep 1.0 3
 rtcsync
 allow
@@ -3967,17 +5317,16 @@ clientloglimit 100000000
 leapsectz right/UTC
 driftfile @CHRONYVARDIR@/drift
 dumpdir @CHRONYRUNDIR@
+.fam
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .SH "SEE ALSO"
 .sp
 \fBchronyc(1)\fP, \fBchronyd(8)\fP
 .SH "BUGS"
 .sp
 For instructions on how to report bugs, please visit
-.URL "https://chrony.tuxfamily.org/" "" "."
+.URL "https://chrony\-project.org/" "" "."
 .SH "AUTHORS"
 .sp
 chrony was written by Richard Curnow, Miroslav Lichvar, and others.

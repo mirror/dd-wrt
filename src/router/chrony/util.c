@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2009, 2012-2018
+ * Copyright (C) Miroslav Lichvar  2009, 2012-2023
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -28,6 +28,12 @@
 #include "config.h"
 
 #include "sysincl.h"
+
+#if defined(HAVE_NETTLE_MEMEQL)
+#include <nettle/memops.h>
+#elif defined(HAVE_GNUTLS)
+#include <gnutls/gnutls.h>
+#endif
 
 #include "logging.h"
 #include "memory.h"
@@ -56,7 +62,7 @@ UTI_IsZeroTimespec(struct timespec *ts)
 /* ================================================== */
 
 void
-UTI_TimevalToTimespec(struct timeval *tv, struct timespec *ts)
+UTI_TimevalToTimespec(const struct timeval *tv, struct timespec *ts)
 {
   ts->tv_sec = tv->tv_sec;
   ts->tv_nsec = 1000 * tv->tv_usec;
@@ -65,7 +71,7 @@ UTI_TimevalToTimespec(struct timeval *tv, struct timespec *ts)
 /* ================================================== */
 
 void
-UTI_TimespecToTimeval(struct timespec *ts, struct timeval *tv)
+UTI_TimespecToTimeval(const struct timespec *ts, struct timeval *tv)
 {
   tv->tv_sec = ts->tv_sec;
   tv->tv_usec = ts->tv_nsec / 1000;
@@ -74,7 +80,7 @@ UTI_TimespecToTimeval(struct timespec *ts, struct timeval *tv)
 /* ================================================== */
 
 double
-UTI_TimespecToDouble(struct timespec *ts)
+UTI_TimespecToDouble(const struct timespec *ts)
 {
   return ts->tv_sec + 1.0e-9 * ts->tv_nsec;
 }
@@ -109,7 +115,7 @@ UTI_NormaliseTimespec(struct timespec *ts)
 /* ================================================== */
 
 double
-UTI_TimevalToDouble(struct timeval *tv)
+UTI_TimevalToDouble(const struct timeval *tv)
 {
   return tv->tv_sec + 1.0e-6 * tv->tv_usec;
 }
@@ -123,7 +129,7 @@ UTI_DoubleToTimeval(double a, struct timeval *b)
 
   b->tv_sec = a;
   frac_part = 1.0e6 * (a - b->tv_sec);
-  b->tv_usec = frac_part > 0 ? frac_part + 0.5 : frac_part - 0.5;
+  b->tv_usec = round(frac_part);
   UTI_NormaliseTimeval(b);
 }
 
@@ -149,7 +155,7 @@ UTI_NormaliseTimeval(struct timeval *x)
 /* ================================================== */
 
 int
-UTI_CompareTimespecs(struct timespec *a, struct timespec *b)
+UTI_CompareTimespecs(const struct timespec *a, const struct timespec *b)
 {
   if (a->tv_sec < b->tv_sec)
     return -1;
@@ -165,7 +171,7 @@ UTI_CompareTimespecs(struct timespec *a, struct timespec *b)
 /* ================================================== */
 
 void
-UTI_DiffTimespecs(struct timespec *result, struct timespec *a, struct timespec *b)
+UTI_DiffTimespecs(struct timespec *result, const struct timespec *a, const struct timespec *b)
 {
   result->tv_sec = a->tv_sec - b->tv_sec;
   result->tv_nsec = a->tv_nsec - b->tv_nsec;
@@ -176,7 +182,7 @@ UTI_DiffTimespecs(struct timespec *result, struct timespec *a, struct timespec *
 
 /* Calculate result = a - b and return as a double */
 double
-UTI_DiffTimespecsToDouble(struct timespec *a, struct timespec *b)
+UTI_DiffTimespecsToDouble(const struct timespec *a, const struct timespec *b)
 {
   return ((double)a->tv_sec - (double)b->tv_sec) + 1.0e-9 * (a->tv_nsec - b->tv_nsec);
 }
@@ -184,7 +190,7 @@ UTI_DiffTimespecsToDouble(struct timespec *a, struct timespec *b)
 /* ================================================== */
 
 void
-UTI_AddDoubleToTimespec(struct timespec *start, double increment, struct timespec *end)
+UTI_AddDoubleToTimespec(const struct timespec *start, double increment, struct timespec *end)
 {
   time_t int_part;
 
@@ -198,7 +204,7 @@ UTI_AddDoubleToTimespec(struct timespec *start, double increment, struct timespe
 
 /* Calculate the average and difference (as a double) of two timespecs */
 void
-UTI_AverageDiffTimespecs(struct timespec *earlier, struct timespec *later,
+UTI_AverageDiffTimespecs(const struct timespec *earlier, const struct timespec *later,
                          struct timespec *average, double *diff)
 {
   *diff = UTI_DiffTimespecsToDouble(later, earlier);
@@ -208,8 +214,8 @@ UTI_AverageDiffTimespecs(struct timespec *earlier, struct timespec *later,
 /* ================================================== */
 
 void
-UTI_AddDiffToTimespec(struct timespec *a, struct timespec *b,
-                      struct timespec *c, struct timespec *result)
+UTI_AddDiffToTimespec(const struct timespec *a, const struct timespec *b,
+                      const struct timespec *c, struct timespec *result)
 {
   double diff;
 
@@ -230,7 +236,7 @@ static int  pool_ptr = 0;
 /* Convert a timespec into a temporary string, largely for diagnostic display */
 
 char *
-UTI_TimespecToString(struct timespec *ts)
+UTI_TimespecToString(const struct timespec *ts)
 {
   char *result;
 
@@ -250,7 +256,7 @@ UTI_TimespecToString(struct timespec *ts)
    for diagnostic display */
 
 char *
-UTI_Ntp64ToString(NTP_int64 *ntp_ts)
+UTI_Ntp64ToString(const NTP_int64 *ntp_ts)
 {
   struct timespec ts;
   UTI_Ntp64ToTimespec(ntp_ts, &ts);
@@ -281,10 +287,10 @@ UTI_RefidToString(uint32_t ref_id)
 /* ================================================== */
 
 char *
-UTI_IPToString(IPAddr *addr)
+UTI_IPToString(const IPAddr *addr)
 {
   unsigned long a, b, c, d, ip;
-  uint8_t *ip6;
+  const uint8_t *ip6;
   char *result;
 
   result = NEXT_BUFFER;
@@ -311,6 +317,9 @@ UTI_IPToString(IPAddr *addr)
                  (unsigned int)(ip6[2 * a] << 8 | ip6[2 * a + 1]));
 #endif
       break;
+    case IPADDR_ID:
+      snprintf(result, BUFFER_LENGTH, "ID#%010"PRIu32, addr->addr.id);
+      break;
     default:
       snprintf(result, BUFFER_LENGTH, "[UNKNOWN]");
   }
@@ -322,9 +331,10 @@ UTI_IPToString(IPAddr *addr)
 int
 UTI_StringToIP(const char *addr, IPAddr *ip)
 {
-#ifdef FEAT_IPV6
   struct in_addr in4;
+#ifdef FEAT_IPV6
   struct in6_addr in6;
+#endif
 
   if (inet_pton(AF_INET, addr, &in4) > 0) {
     ip->family = IPADDR_INET4;
@@ -333,21 +343,11 @@ UTI_StringToIP(const char *addr, IPAddr *ip)
     return 1;
   }
 
+#ifdef FEAT_IPV6
   if (inet_pton(AF_INET6, addr, &in6) > 0) {
     ip->family = IPADDR_INET6;
     ip->_pad = 0;
     memcpy(ip->addr.in6, in6.s6_addr, sizeof (ip->addr.in6));
-    return 1;
-  }
-#else
-  unsigned long a, b, c, d, n;
-
-  n = sscanf(addr, "%lu.%lu.%lu.%lu", &a, &b, &c, &d);
-  if (n == 4) {
-    ip->family = IPADDR_INET4;
-    ip->_pad = 0;
-    ip->addr.in4 = ((a & 0xff) << 24) | ((b & 0xff) << 16) | 
-                   ((c & 0xff) << 8) | (d & 0xff);
     return 1;
   }
 #endif
@@ -357,8 +357,46 @@ UTI_StringToIP(const char *addr, IPAddr *ip)
 
 /* ================================================== */
 
+int
+UTI_IsStringIP(const char *string)
+{
+  IPAddr ip;
+
+  return UTI_StringToIP(string, &ip);
+}
+
+/* ================================================== */
+
+int
+UTI_StringToIdIP(const char *addr, IPAddr *ip)
+{
+  if (sscanf(addr, "ID#%"SCNu32, &ip->addr.id) == 1) {
+    ip->family = IPADDR_ID;
+    ip->_pad = 0;
+    return 1;
+  }
+
+  return 0;
+}
+
+/* ================================================== */
+
+int
+UTI_IsIPReal(const IPAddr *ip)
+{
+  switch (ip->family) {
+    case IPADDR_INET4:
+    case IPADDR_INET6:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+/* ================================================== */
+
 uint32_t
-UTI_IPToRefid(IPAddr *ip)
+UTI_IPToRefid(const IPAddr *ip)
 {
   static int MD5_hash = -1;
   unsigned char buf[16];
@@ -368,7 +406,7 @@ UTI_IPToRefid(IPAddr *ip)
       return ip->addr.in4;
     case IPADDR_INET6:
       if (MD5_hash < 0)
-        MD5_hash = HSH_GetHashId("MD5");
+        MD5_hash = HSH_GetHashId(HSH_MD5_NONCRYPTO);
 
       if (MD5_hash < 0 ||
           HSH_Hash(MD5_hash, (const unsigned char *)ip->addr.in6, sizeof (ip->addr.in6),
@@ -383,10 +421,10 @@ UTI_IPToRefid(IPAddr *ip)
 /* ================================================== */
 
 uint32_t
-UTI_IPToHash(IPAddr *ip)
+UTI_IPToHash(const IPAddr *ip)
 {
   static uint32_t seed = 0;
-  unsigned char *addr;
+  const unsigned char *addr;
   unsigned int i, len;
   uint32_t hash;
 
@@ -398,6 +436,10 @@ UTI_IPToHash(IPAddr *ip)
     case IPADDR_INET6:
       addr = ip->addr.in6;
       len = sizeof (ip->addr.in6);
+      break;
+    case IPADDR_ID:
+      addr = (unsigned char *)&ip->addr.id;
+      len = sizeof (ip->addr.id);
       break;
     default:
       return 0;
@@ -417,7 +459,7 @@ UTI_IPToHash(IPAddr *ip)
 /* ================================================== */
 
 void
-UTI_IPHostToNetwork(IPAddr *src, IPAddr *dest)
+UTI_IPHostToNetwork(const IPAddr *src, IPAddr *dest)
 {
   /* Don't send uninitialized bytes over network */
   memset(dest, 0, sizeof (IPAddr));
@@ -431,6 +473,9 @@ UTI_IPHostToNetwork(IPAddr *src, IPAddr *dest)
     case IPADDR_INET6:
       memcpy(dest->addr.in6, src->addr.in6, sizeof (dest->addr.in6));
       break;
+    case IPADDR_ID:
+      dest->addr.id = htonl(src->addr.id);
+      break;
     default:
       dest->family = htons(IPADDR_UNSPEC);
   }
@@ -439,7 +484,7 @@ UTI_IPHostToNetwork(IPAddr *src, IPAddr *dest)
 /* ================================================== */
 
 void
-UTI_IPNetworkToHost(IPAddr *src, IPAddr *dest)
+UTI_IPNetworkToHost(const IPAddr *src, IPAddr *dest)
 {
   dest->family = ntohs(src->family);
   dest->_pad = 0;
@@ -451,6 +496,9 @@ UTI_IPNetworkToHost(IPAddr *src, IPAddr *dest)
     case IPADDR_INET6:
       memcpy(dest->addr.in6, src->addr.in6, sizeof (dest->addr.in6));
       break;
+    case IPADDR_ID:
+      dest->addr.id = ntohl(src->addr.id);
+      break;
     default:
       dest->family = IPADDR_UNSPEC;
   }
@@ -459,7 +507,7 @@ UTI_IPNetworkToHost(IPAddr *src, IPAddr *dest)
 /* ================================================== */
 
 int
-UTI_CompareIPs(IPAddr *a, IPAddr *b, IPAddr *mask)
+UTI_CompareIPs(const IPAddr *a, const IPAddr *b, const IPAddr *mask)
 {
   int i, d;
 
@@ -486,120 +534,45 @@ UTI_CompareIPs(IPAddr *a, IPAddr *b, IPAddr *mask)
           d = a->addr.in6[i] - b->addr.in6[i];
       }
       return d;
+    case IPADDR_ID:
+      return a->addr.id - b->addr.id;
   }
   return 0;
 }
 
 /* ================================================== */
 
-void
-UTI_SockaddrToIPAndPort(struct sockaddr *sa, IPAddr *ip, unsigned short *port)
+char *
+UTI_IPSockAddrToString(const IPSockAddr *sa)
 {
-  switch (sa->sa_family) {
-    case AF_INET:
-      ip->family = IPADDR_INET4;
-      ip->addr.in4 = ntohl(((struct sockaddr_in *)sa)->sin_addr.s_addr);
-      *port = ntohs(((struct sockaddr_in *)sa)->sin_port);
-      break;
-#ifdef FEAT_IPV6
-    case AF_INET6:
-      ip->family = IPADDR_INET6;
-      memcpy(ip->addr.in6, ((struct sockaddr_in6 *)sa)->sin6_addr.s6_addr,
-             sizeof (ip->addr.in6));
-      *port = ntohs(((struct sockaddr_in6 *)sa)->sin6_port);
-      break;
-#endif
-    default:
-      ip->family = IPADDR_UNSPEC;
-      *port = 0;
-  }
-}
-
-/* ================================================== */
-
-int
-UTI_IPAndPortToSockaddr(IPAddr *ip, unsigned short port, struct sockaddr *sa)
-{
-  switch (ip->family) {
-    case IPADDR_INET4:
-      memset(sa, 0, sizeof (struct sockaddr_in));
-      sa->sa_family = AF_INET;
-      ((struct sockaddr_in *)sa)->sin_addr.s_addr = htonl(ip->addr.in4);
-      ((struct sockaddr_in *)sa)->sin_port = htons(port);
-#ifdef SIN6_LEN
-      ((struct sockaddr_in *)sa)->sin_len = sizeof (struct sockaddr_in);
-#endif
-      return sizeof (struct sockaddr_in);
-#ifdef FEAT_IPV6
-    case IPADDR_INET6:
-      memset(sa, 0, sizeof (struct sockaddr_in6));
-      sa->sa_family = AF_INET6;
-      memcpy(((struct sockaddr_in6 *)sa)->sin6_addr.s6_addr, ip->addr.in6,
-             sizeof (ip->addr.in6));
-      ((struct sockaddr_in6 *)sa)->sin6_port = htons(port);
-#ifdef SIN6_LEN
-      ((struct sockaddr_in6 *)sa)->sin6_len = sizeof (struct sockaddr_in6);
-#endif
-      return sizeof (struct sockaddr_in6);
-#endif
-    default:
-      memset(sa, 0, sizeof (struct sockaddr));
-      sa->sa_family = AF_UNSPEC;
-      return 0;
-  }
-}
-
-/* ================================================== */
-
-char *UTI_SockaddrToString(struct sockaddr *sa)
-{
-  unsigned short port;
-  IPAddr ip;
-  char *result, *sun_path;
+  char *result;
 
   result = NEXT_BUFFER;
-
-  switch (sa->sa_family) {
-    case AF_INET:
-#ifdef AF_INET6
-    case AF_INET6:
-#endif
-      UTI_SockaddrToIPAndPort(sa, &ip, &port);
-      snprintf(result, BUFFER_LENGTH, "%s:%hu", UTI_IPToString(&ip), port);
-      break;
-    case AF_UNIX:
-      sun_path = ((struct sockaddr_un *)sa)->sun_path;
-      snprintf(result, BUFFER_LENGTH, "%.*s", BUFFER_LENGTH - 1, sun_path);
-      /* Indicate truncated path */
-      if (strlen(sun_path) >= BUFFER_LENGTH)
-        result[BUFFER_LENGTH - 2] = '>';
-      break;
-    default:
-      snprintf(result, BUFFER_LENGTH, "[UNKNOWN]");
-  }
+  snprintf(result, BUFFER_LENGTH,
+           sa->ip_addr.family != IPADDR_INET6 ? "%s:%hu" : "[%s]:%hu",
+           UTI_IPToString(&sa->ip_addr), sa->port);
 
   return result;
 }
 
 /* ================================================== */
 
-const char *
-UTI_SockaddrFamilyToString(int family)
+char *
+UTI_IPSubnetToString(IPAddr *subnet, int bits)
 {
-  switch (family) {
-    case AF_INET:
-      return "IPv4";
-#ifdef AF_INET6
-    case AF_INET6:
-      return "IPv6";
-#endif
-    case AF_UNIX:
-      return "Unix";
-    case AF_UNSPEC:
-      return "UNSPEC";
-    default:
-      return "?";
-  }
+  char *result;
+
+  result = NEXT_BUFFER;
+
+  if (subnet->family == IPADDR_UNSPEC)
+    snprintf(result, BUFFER_LENGTH, "%s", "any address");
+  else if ((subnet->family == IPADDR_INET4 && bits == 32) ||
+           (subnet->family == IPADDR_INET6 && bits == 128))
+    snprintf(result, BUFFER_LENGTH, "%s", UTI_IPToString(subnet));
+  else
+    snprintf(result, BUFFER_LENGTH, "%s/%d", UTI_IPToString(subnet), bits);
+
+  return result;
 }
 
 /* ================================================== */
@@ -625,7 +598,8 @@ UTI_TimeToLogForm(time_t t)
 /* ================================================== */
 
 void
-UTI_AdjustTimespec(struct timespec *old_ts, struct timespec *when, struct timespec *new_ts, double *delta_time, double dfreq, double doffset)
+UTI_AdjustTimespec(const struct timespec *old_ts, const struct timespec *when,
+                   struct timespec *new_ts, double *delta_time, double dfreq, double doffset)
 {
   double elapsed;
 
@@ -689,6 +663,43 @@ UTI_DoubleToNtp32(double x)
 
 /* ================================================== */
 
+double
+UTI_Ntp32f28ToDouble(NTP_int32 x)
+{
+  uint32_t r = ntohl(x);
+
+  /* Maximum value is special */
+  if (r == 0xffffffff)
+    return MAX_NTP_INT32;
+
+  return r / (double)(1U << 28);
+}
+
+/* ================================================== */
+
+NTP_int32
+UTI_DoubleToNtp32f28(double x)
+{
+  NTP_int32 r;
+
+  if (x >= 4294967295.0 / (1U << 28)) {
+    r = 0xffffffff;
+  } else if (x <= 0.0) {
+    r = 0;
+  } else {
+    x *= 1U << 28;
+    r = x;
+
+    /* Round up */
+    if (r < x)
+      r++;
+  }
+
+  return htonl(r);
+}
+
+/* ================================================== */
+
 void
 UTI_ZeroNtp64(NTP_int64 *ts)
 {
@@ -698,7 +709,7 @@ UTI_ZeroNtp64(NTP_int64 *ts)
 /* ================================================== */
 
 int
-UTI_IsZeroNtp64(NTP_int64 *ts)
+UTI_IsZeroNtp64(const NTP_int64 *ts)
 {
   return !ts->hi && !ts->lo;
 }
@@ -706,7 +717,7 @@ UTI_IsZeroNtp64(NTP_int64 *ts)
 /* ================================================== */
 
 int
-UTI_CompareNtp64(NTP_int64 *a, NTP_int64 *b)
+UTI_CompareNtp64(const NTP_int64 *a, const NTP_int64 *b)
 {
   int32_t diff;
 
@@ -726,7 +737,8 @@ UTI_CompareNtp64(NTP_int64 *a, NTP_int64 *b)
 /* ================================================== */
 
 int
-UTI_IsEqualAnyNtp64(NTP_int64 *a, NTP_int64 *b1, NTP_int64 *b2, NTP_int64 *b3)
+UTI_IsEqualAnyNtp64(const NTP_int64 *a, const NTP_int64 *b1, const NTP_int64 *b2,
+                    const NTP_int64 *b3)
 {
   if (b1 && a->lo == b1->lo && a->hi == b1->hi)
     return 1;
@@ -748,7 +760,7 @@ UTI_IsEqualAnyNtp64(NTP_int64 *a, NTP_int64 *b1, NTP_int64 *b2, NTP_int64 *b3)
 #define NSEC_PER_NTP64 4.294967296
 
 void
-UTI_TimespecToNtp64(struct timespec *src, NTP_int64 *dest, NTP_int64 *fuzz)
+UTI_TimespecToNtp64(const struct timespec *src, NTP_int64 *dest, const NTP_int64 *fuzz)
 {
   uint32_t hi, lo, sec, nsec;
 
@@ -777,7 +789,7 @@ UTI_TimespecToNtp64(struct timespec *src, NTP_int64 *dest, NTP_int64 *fuzz)
 /* ================================================== */
 
 void
-UTI_Ntp64ToTimespec(NTP_int64 *src, struct timespec *dest)
+UTI_Ntp64ToTimespec(const NTP_int64 *src, struct timespec *dest)
 {
   uint32_t ntp_sec, ntp_frac;
 
@@ -802,6 +814,43 @@ UTI_Ntp64ToTimespec(NTP_int64 *src, struct timespec *dest)
 
 /* ================================================== */
 
+double
+UTI_DiffNtp64ToDouble(const NTP_int64 *a, const NTP_int64 *b)
+{
+  /* Don't convert to timespec to allow any epoch */
+  return (int32_t)(ntohl(a->hi) - ntohl(b->hi)) +
+         ((double)ntohl(a->lo) - (double)ntohl(b->lo)) / (1.0e9 * NSEC_PER_NTP64);
+}
+
+/* ================================================== */
+
+double
+UTI_Ntp64ToDouble(NTP_int64 *src)
+{
+  NTP_int64 zero;
+
+  UTI_ZeroNtp64(&zero);
+  return UTI_DiffNtp64ToDouble(src, &zero);
+}
+
+/* ================================================== */
+
+void
+UTI_DoubleToNtp64(double src, NTP_int64 *dest)
+{
+  int32_t hi;
+
+  src = CLAMP(INT32_MIN, src, INT32_MAX);
+  hi = round(src);
+  if (hi > src)
+    hi -= 1;
+
+  dest->hi = htonl(hi);
+  dest->lo = htonl((src - hi) * (1.0e9 * NSEC_PER_NTP64));
+}
+
+/* ================================================== */
+
 /* Maximum offset between two sane times */
 #define MAX_OFFSET 4294967296.0
 
@@ -809,7 +858,7 @@ UTI_Ntp64ToTimespec(NTP_int64 *src, struct timespec *dest)
 #define MIN_ENDOFTIME_DISTANCE (365 * 24 * 3600)
 
 int
-UTI_IsTimeOffsetSane(struct timespec *ts, double offset)
+UTI_IsTimeOffsetSane(const struct timespec *ts, double offset)
 {
   double t;
 
@@ -855,7 +904,7 @@ UTI_Log2ToDouble(int l)
 /* ================================================== */
 
 void
-UTI_TimespecNetworkToHost(Timespec *src, struct timespec *dest)
+UTI_TimespecNetworkToHost(const Timespec *src, struct timespec *dest)
 {
   uint32_t sec_low, nsec;
 #ifdef HAVE_LONG_TIME_T
@@ -880,7 +929,7 @@ UTI_TimespecNetworkToHost(Timespec *src, struct timespec *dest)
 /* ================================================== */
 
 void
-UTI_TimespecHostToNetwork(struct timespec *src, Timespec *dest)
+UTI_TimespecHostToNetwork(const struct timespec *src, Timespec *dest)
 {
   dest->tv_nsec = htonl(src->tv_nsec);
 #ifdef HAVE_LONG_TIME_T
@@ -889,6 +938,25 @@ UTI_TimespecHostToNetwork(struct timespec *src, Timespec *dest)
   dest->tv_sec_high = htonl(TV_NOHIGHSEC);
 #endif
   dest->tv_sec_low = htonl(src->tv_sec);
+}
+
+/* ================================================== */
+
+uint64_t
+UTI_Integer64NetworkToHost(Integer64 i)
+{
+  return (uint64_t)ntohl(i.high) << 32 | ntohl(i.low);
+}
+
+/* ================================================== */
+
+Integer64
+UTI_Integer64HostToNetwork(uint64_t i)
+{
+  Integer64 r;
+  r.high = htonl(i >> 32);
+  r.low = htonl(i);
+  return r;
 }
 
 /* ================================================== */
@@ -979,18 +1047,67 @@ UTI_FloatHostToNetwork(double x)
 
 /* ================================================== */
 
+CMC_Algorithm
+UTI_CmacNameToAlgorithm(const char *name)
+{
+  if (strcmp(name, "AES128") == 0)
+    return CMC_AES128;
+  else if (strcmp(name, "AES256") == 0)
+    return CMC_AES256;
+  return CMC_INVALID;
+}
+
+/* ================================================== */
+
+HSH_Algorithm
+UTI_HashNameToAlgorithm(const char *name)
+{
+  if (strcmp(name, "MD5") == 0)
+    return HSH_MD5;
+  else if (strcmp(name, "SHA1") == 0)
+    return HSH_SHA1;
+  else if (strcmp(name, "SHA256") == 0)
+    return HSH_SHA256;
+  else if (strcmp(name, "SHA384") == 0)
+    return HSH_SHA384;
+  else if (strcmp(name, "SHA512") == 0)
+    return HSH_SHA512;
+  else if (strcmp(name, "SHA3-224") == 0)
+    return HSH_SHA3_224;
+  else if (strcmp(name, "SHA3-256") == 0)
+    return HSH_SHA3_256;
+  else if (strcmp(name, "SHA3-384") == 0)
+    return HSH_SHA3_384;
+  else if (strcmp(name, "SHA3-512") == 0)
+    return HSH_SHA3_512;
+  else if (strcmp(name, "TIGER") == 0)
+    return HSH_TIGER;
+  else if (strcmp(name, "WHIRLPOOL") == 0)
+    return HSH_WHIRLPOOL;
+  return HSH_INVALID;
+}
+
+/* ================================================== */
+
 int
 UTI_FdSetCloexec(int fd)
 {
   int flags;
 
   flags = fcntl(fd, F_GETFD);
-  if (flags != -1) {
-    flags |= FD_CLOEXEC;
-    return !fcntl(fd, F_SETFD, flags);
+  if (flags == -1) {
+    DEBUG_LOG("fcntl() failed : %s", strerror(errno));
+    return 0;
   }
 
-  return 0;
+  flags |= FD_CLOEXEC;
+
+  if (fcntl(fd, F_SETFD, flags) < 0) {
+    DEBUG_LOG("fcntl() failed : %s", strerror(errno));
+    return 0;
+  }
+
+  return 1;
 }
 
 /* ================================================== */
@@ -1035,6 +1152,7 @@ char *
 UTI_PathToDir(const char *path)
 {
   char *dir, *slash;
+  size_t dir_len;
 
   slash = strrchr(path, '/');
 
@@ -1044,8 +1162,11 @@ UTI_PathToDir(const char *path)
   if (slash == path)
     return Strdup("/");
 
-  dir = Malloc(slash - path + 1);
-  snprintf(dir, slash - path + 1, "%s", path);
+  dir_len = slash - path;
+
+  dir = Malloc(dir_len + 1);
+  memcpy(dir, path, dir_len);
+  dir[dir_len] = '\0';
 
   return dir;
 }
@@ -1179,6 +1300,192 @@ UTI_CheckDirPermissions(const char *path, mode_t perm, uid_t uid, gid_t gid)
 
 /* ================================================== */
 
+int
+UTI_CheckFilePermissions(const char *path, mode_t perm)
+{
+  mode_t extra_perm;
+  struct stat buf;
+
+  if (stat(path, &buf) < 0 || !S_ISREG(buf.st_mode)) {
+    /* Not considered an error */
+    return 1;
+  }
+
+  extra_perm = (buf.st_mode & 0777) & ~perm;
+  if (extra_perm != 0) {
+    LOG(LOGS_WARN, "%s permissions on %s", extra_perm & 0006 ?
+        (extra_perm & 0004 ? "World-readable" : "World-writable") : "Wrong", path);
+    return 0;
+  }
+
+  return 1;
+}
+
+/* ================================================== */
+
+void
+UTI_CheckReadOnlyAccess(const char *path)
+{
+  if (access(path, R_OK) != 0 && errno != ENOENT)
+    LOG(LOGS_WARN, "Missing read access to %s : %s", path, strerror(errno));
+  if (access(path, W_OK) == 0)
+    LOG(LOGS_WARN, "Having write access to %s", path);
+}
+
+/* ================================================== */
+
+static int
+join_path(const char *basedir, const char *name, const char *suffix,
+          char *buffer, size_t length, LOG_Severity severity)
+{
+  const char *sep;
+
+  if (!basedir) {
+    basedir = "";
+    sep = "";
+  } else {
+    sep = "/";
+  }
+
+  if (!suffix)
+    suffix = "";
+
+  if (snprintf(buffer, length, "%s%s%s%s", basedir, sep, name, suffix) >= length) {
+    LOG(severity, "File path %s%s%s%s too long", basedir, sep, name, suffix);
+    return 0;
+  }
+
+  return 1;
+}
+
+/* ================================================== */
+
+FILE *
+UTI_OpenFile(const char *basedir, const char *name, const char *suffix,
+             char mode, mode_t perm)
+{
+  const char *file_mode;
+  char path[PATH_MAX];
+  LOG_Severity severity;
+  int fd, flags;
+  FILE *file;
+
+  severity = mode >= 'A' && mode <= 'Z' ? LOGS_FATAL : LOGS_ERR;
+
+  if (!join_path(basedir, name, suffix, path, sizeof (path), severity))
+    return NULL;
+
+  switch (mode) {
+    case 'r':
+    case 'R':
+      flags = O_RDONLY;
+      file_mode = "r";
+      if (severity != LOGS_FATAL)
+        severity = LOGS_DEBUG;
+      break;
+    case 'w':
+    case 'W':
+      flags = O_WRONLY | O_CREAT | O_EXCL;
+      file_mode = "w";
+      break;
+    case 'a':
+    case 'A':
+      flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW;
+      file_mode = "a";
+      break;
+    default:
+      assert(0);
+      return NULL;
+  }
+
+try_again:
+  fd = open(path, flags, perm);
+  if (fd < 0) {
+    if (errno == EEXIST) {
+      if (unlink(path) < 0) {
+        LOG(severity, "Could not remove %s : %s", path, strerror(errno));
+        return NULL;
+      }
+      DEBUG_LOG("Removed %s", path);
+      goto try_again;
+    }
+    LOG(severity, "Could not open %s : %s", path, strerror(errno));
+    return NULL;
+  }
+
+  UTI_FdSetCloexec(fd);
+
+  file = fdopen(fd, file_mode);
+  if (!file) {
+    LOG(severity, "Could not open %s : %s", path, strerror(errno));
+    close(fd);
+    return NULL;
+  }
+
+  DEBUG_LOG("Opened %s fd=%d mode=%c", path, fd, mode);
+
+  return file;
+}
+
+/* ================================================== */
+
+int
+UTI_RenameTempFile(const char *basedir, const char *name,
+                   const char *old_suffix, const char *new_suffix)
+{
+  char old_path[PATH_MAX], new_path[PATH_MAX];
+
+  if (!join_path(basedir, name, old_suffix, old_path, sizeof (old_path), LOGS_ERR))
+    return 0;
+
+  if (!join_path(basedir, name, new_suffix, new_path, sizeof (new_path), LOGS_ERR))
+    goto error;
+
+  if (rename(old_path, new_path) < 0) {
+    LOG(LOGS_ERR, "Could not replace %s with %s : %s", new_path, old_path, strerror(errno));
+    goto error;
+  }
+
+  DEBUG_LOG("Renamed %s to %s", old_path, new_path);
+
+  return 1;
+
+error:
+  if (unlink(old_path) < 0)
+    LOG(LOGS_ERR, "Could not remove %s : %s", old_path, strerror(errno));
+
+  return 0;
+}
+
+/* ================================================== */
+
+int
+UTI_RemoveFile(const char *basedir, const char *name, const char *suffix)
+{
+  char path[PATH_MAX];
+  struct stat buf;
+
+  if (!join_path(basedir, name, suffix, path, sizeof (path), LOGS_ERR))
+    return 0;
+
+  /* Avoid logging an error message if the file is not accessible */
+  if (stat(path, &buf) < 0) {
+    DEBUG_LOG("Could not remove %s : %s", path, strerror(errno));
+    return 0;
+  }
+
+  if (unlink(path) < 0) {
+    LOG(LOGS_ERR, "Could not remove %s : %s", path, strerror(errno));
+    return 0;
+  }
+
+  DEBUG_LOG("Removed %s", path);
+
+  return 1;
+}
+
+/* ================================================== */
+
 void
 UTI_DropRoot(uid_t uid, gid_t gid)
 {
@@ -1201,31 +1508,32 @@ UTI_DropRoot(uid_t uid, gid_t gid)
 
 #define DEV_URANDOM "/dev/urandom"
 
+static FILE *urandom_file = NULL;
+
 void
 UTI_GetRandomBytesUrandom(void *buf, unsigned int len)
 {
-  static FILE *f = NULL;
-
-  if (!f)
-    f = fopen(DEV_URANDOM, "r");
-  if (!f)
-    LOG_FATAL("Can't open %s : %s", DEV_URANDOM, strerror(errno));
-  if (fread(buf, 1, len, f) != len)
+  if (!urandom_file)
+    urandom_file = UTI_OpenFile(NULL, DEV_URANDOM, NULL, 'R', 0);
+  if (fread(buf, 1, len, urandom_file) != len)
     LOG_FATAL("Can't read from %s", DEV_URANDOM);
 }
 
 /* ================================================== */
 
 #ifdef HAVE_GETRANDOM
+
+static unsigned int getrandom_buf_available = 0;
+
 static void
 get_random_bytes_getrandom(char *buf, unsigned int len)
 {
   static char rand_buf[256];
-  static unsigned int available = 0, disabled = 0;
+  static unsigned int disabled = 0;
   unsigned int i;
 
   for (i = 0; i < len; i++) {
-    if (!available) {
+    if (getrandom_buf_available == 0) {
       if (disabled)
         break;
 
@@ -1234,10 +1542,10 @@ get_random_bytes_getrandom(char *buf, unsigned int len)
         break;
       }
 
-      available = sizeof (rand_buf);
+      getrandom_buf_available = sizeof (rand_buf);
     }
 
-    buf[i] = rand_buf[--available];
+    buf[i] = rand_buf[--getrandom_buf_available];
   }
 
   if (i < len)
@@ -1256,5 +1564,112 @@ UTI_GetRandomBytes(void *buf, unsigned int len)
   get_random_bytes_getrandom(buf, len);
 #else
   UTI_GetRandomBytesUrandom(buf, len);
+#endif
+}
+
+/* ================================================== */
+
+void
+UTI_ResetGetRandomFunctions(void)
+{
+  if (urandom_file) {
+    fclose(urandom_file);
+    urandom_file = NULL;
+  }
+#ifdef HAVE_GETRANDOM
+  getrandom_buf_available = 0;
+#endif
+}
+
+/* ================================================== */
+
+int
+UTI_BytesToHex(const void *buf, unsigned int buf_len, char *hex, unsigned int hex_len)
+{
+  unsigned int i, l;
+
+  if (hex_len < 1)
+    return 0;
+
+  hex[0] = '\0';
+
+  for (i = l = 0; i < buf_len; i++, l += 2) {
+    if (l + 2 >= hex_len ||
+        snprintf(hex + l, hex_len - l, "%02hhX", ((const char *)buf)[i]) != 2)
+      return 0;
+  }
+
+  return 1;
+}
+
+/* ================================================== */
+
+unsigned int
+UTI_HexToBytes(const char *hex, void *buf, unsigned int len)
+{
+  char *p, byte[3];
+  unsigned int i;
+
+  for (i = 0; i < len && *hex != '\0'; i++) {
+    byte[0] = *hex++;
+    if (*hex == '\0')
+      return 0;
+    byte[1] = *hex++;
+    byte[2] = '\0';
+    ((char *)buf)[i] = strtol(byte, &p, 16);
+
+    if (p != byte + 2)
+      return 0;
+  }
+
+  return *hex == '\0' ? i : 0;
+}
+
+/* ================================================== */
+
+int
+UTI_SplitString(char *string, char **words, int max_saved_words)
+{
+  char *s = string;
+  int i;
+
+  for (i = 0; i < max_saved_words; i++)
+    words[i] = NULL;
+
+  for (i = 0; ; i++) {
+    /* Zero white-space characters before the word */
+    while (*s != '\0' && isspace((unsigned char)*s))
+      *s++ = '\0';
+
+    if (*s == '\0')
+      break;
+
+    if (i < max_saved_words)
+      words[i] = s;
+
+    /* Find the next word */
+    while (*s != '\0' && !isspace((unsigned char)*s))
+      s++;
+  }
+
+  return i;
+}
+
+/* ================================================== */
+
+int
+UTI_IsMemoryEqual(const void *s1, const void *s2, unsigned int len)
+{
+#if defined(HAVE_NETTLE_MEMEQL)
+  return nettle_memeql_sec(s1, s2, len);
+#elif defined(HAVE_GNUTLS)
+  return gnutls_memcmp(s1, s2, len) == 0;
+#else
+  unsigned int i, x;
+
+  for (i = 0, x = 0; i < len; i++)
+    x |= ((const unsigned char *)s1)[i] ^ ((const unsigned char *)s2)[i];
+
+  return x == 0;
 #endif
 }

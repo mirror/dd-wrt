@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -14,7 +14,7 @@ max_sync_time=800
 
 run_test || test_fail
 check_chronyd_exit || test_fail
-check_source_selection || test_fail
+check_source_selection && test_fail
 check_sync || test_fail
 
 limit=10000

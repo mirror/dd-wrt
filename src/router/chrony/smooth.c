@@ -272,6 +272,10 @@ void SMT_Initialise(void)
 
 void SMT_Finalise(void)
 {
+  if (!enabled)
+    return;
+
+  LCL_RemoveParameterChangeHandler(handle_slew, NULL);
 }
 
 int SMT_IsEnabled(void)
@@ -298,7 +302,7 @@ SMT_Activate(struct timespec *now)
   if (!enabled || !locked)
     return;
 
-  LOG(LOGS_INFO, "Time smoothing activated%s", leap_only_mode ?
+  LOG(LOGS_INFO, "Activated %s%s", "time smoothing", leap_only_mode ?
       " (leap seconds only)" : "");
   locked = 0;
   last_update = *now;
@@ -318,6 +322,8 @@ SMT_Reset(struct timespec *now)
 
   for (i = 0; i < NUM_STAGES; i++)
     stages[i].wander = stages[i].length = 0.0;
+
+  LOG(LOGS_INFO, "Reset %s", "time smoothing");
 }
 
 void

@@ -21,47 +21,51 @@
 #
 # Makefile template
 
-SYSCONFDIR=@SYSCONFDIR@
-BINDIR=@BINDIR@
-SBINDIR=@SBINDIR@
-LOCALSTATEDIR=@LOCALSTATEDIR@
-CHRONYVARDIR=@CHRONYVARDIR@
+SYSCONFDIR = @SYSCONFDIR@
+BINDIR = @BINDIR@
+SBINDIR = @SBINDIR@
+LOCALSTATEDIR = @LOCALSTATEDIR@
+CHRONYVARDIR = @CHRONYVARDIR@
+DESTDIR =
 
 CC = @CC@
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
 
-DESTDIR=
+GETDATE_CFLAGS = @GETDATE_CFLAGS@
 
-HASH_OBJ = @HASH_OBJ@
+EXTRA_OBJS = @EXTRA_OBJS@
 
-OBJS = array.o cmdparse.o conf.o local.o logging.o main.o memory.o \
-       reference.o regress.o rtc.o samplefilt.o sched.o sources.o sourcestats.o stubs.o \
-       smooth.o sys.o sys_null.o tempcomp.o util.o $(HASH_OBJ)
+OBJS = addrfilt.o array.o clientlog.o cmdparse.o conf.o keys.o leapdb.o \
+       local.o logging.o main.o memory.o nameserv.o nameserv_async.o \
+       ntp_auth.o ntp_core.o ntp_ext.o ntp_io.o ntp_sources.o quantiles.o \
+       reference.o regress.o rtc.o samplefilt.o sched.o socket.o sources.o sourcestats.o \
+       stubs.o smooth.o sys.o sys_null.o tempcomp.o util.o $(EXTRA_OBJS)
 
-EXTRA_OBJS=@EXTRA_OBJECTS@
+EXTRA_CLI_OBJS = @EXTRA_CLI_OBJS@
 
 CLI_OBJS = array.o client.o cmdparse.o getdate.o memory.o nameserv.o \
-           pktlength.o util.o $(HASH_OBJ)
+           pktlength.o socket.o util.o $(EXTRA_CLI_OBJS)
 
-ALL_OBJS = $(OBJS) $(EXTRA_OBJS) $(CLI_OBJS)
+ALL_OBJS = $(OBJS) $(CLI_OBJS)
 
-LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-
-EXTRA_LIBS=@EXTRA_LIBS@
-EXTRA_CLI_LIBS=@EXTRA_CLI_LIBS@
+EXTRA_LIBS = @EXTRA_LIBS@
+EXTRA_CLI_LIBS = @EXTRA_CLI_LIBS@
 
 # Until we have a main procedure we can link, just build object files
 # to test compilation
 
 all : chronyd chronyc
 
-chronyd : $(OBJS) $(EXTRA_OBJS)
-	$(CC) $(CFLAGS) -o chronyd $(OBJS) $(EXTRA_OBJS) $(LDFLAGS) $(LIBS) $(EXTRA_LIBS)
+chronyd : $(OBJS)
+	$(CC) $(CFLAGS) -o chronyd $(OBJS) $(LDFLAGS) $(LIBS) $(EXTRA_LIBS)
 
 chronyc : $(CLI_OBJS)
 	$(CC) $(CFLAGS) -o chronyc $(CLI_OBJS) $(LDFLAGS) $(LIBS) $(EXTRA_CLI_LIBS)
+
+getdate.o: CFLAGS += $(GETDATE_CFLAGS)
 
 distclean : clean
 	$(MAKE) -C doc distclean
@@ -70,6 +74,7 @@ distclean : clean
 	-rm -f Makefile config.h config.log
 
 clean :
+	$(MAKE) -C test/unit clean
 	-rm -f *.o *.s chronyc chronyd core.* *~
 	-rm -f *.gcda *.gcno
 	-rm -rf .deps
@@ -121,7 +126,7 @@ check : chronyd chronyc
 	cd test/system && ./run
 
 print-chronyd-objects :
-	@echo $(OBJS) $(EXTRA_OBJS)
+	@echo $(OBJS)
 
 Makefile : Makefile.in configure
 	@echo
@@ -135,4 +140,6 @@ Makefile : Makefile.in configure
 .deps/%.d: %.c | .deps
 	@$(CC) -MM $(CPPFLAGS) -MT '$(<:%.c=%.o) $@' $< -o $@
 
+ifndef NODEPS
 -include $(ALL_OBJS:%.o=.deps/%.d)
+endif

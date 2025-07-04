@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+test_start "local options"
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+server_strata=3
+server_conf="local stratum 5 orphan waitunsynced 0
+server 192.168.123.1
+server 192.168.123.2
+server 192.168.123.3"
+max_sync_time=900
+client_start=140
+chronyc_start=700
+chronyc_conf="tracking"
+time_rms_limit=5e-4
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+check_chronyc_output "^.*Stratum *: 7.*$" || test_fail
+
+limit=1000
+server_conf="local stratum 5 orphan
+server 192.168.123.1 minpoll 6 maxpoll 6
+server 192.168.123.2 minpoll 6 maxpoll 6
+server 192.168.123.3 minpoll 6 maxpoll 6"
+server_server_options="minpoll 6 maxpoll 6"
+client_start=0
+client_server_conf="
+server 192.168.123.1 minpoll 6 maxpoll 6
+server 192.168.123.2 minpoll 6 maxpoll 6
+server 192.168.123.3 minpoll 6 maxpoll 6"
+client_conf="logdir tmp
+log measurements"
+chronyc_start=700
+chronyc_conf=""
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+check_file_messages "20.*123\.1.* 5 111 " 10 11 measurements.log || test_fail
+check_file_messages "20.*123\.1.* [6-9] 111 " 0 0 measurements.log || test_fail
+check_file_messages "20.*123\.2.* 5 111 " 2 4 measurements.log || test_fail
+check_file_messages "20.*123\.2.* 6 111 " 7 9 measurements.log || test_fail
+check_file_messages "20.*123\.2.* [7-9] 111 " 0 0 measurements.log || test_fail
+check_file_messages "20.*123\.3.* 5 111 " 2 4 measurements.log || test_fail
+check_file_messages "20.*123\.3.* 6 111 " 7 9 measurements.log || test_fail
+check_file_messages "20.*123\.3.* [7-9] 111 " 0 0 measurements.log || test_fail
+rm -f tmp/measurements.log
+
+server_conf="local stratum 5 orphan distance 0.0 waitsynced 150 waitunsynced 0"
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* -1
+        (equal 0.1 from 1)
+        (equal 0.1 to 2)
+        (equal 0.1 (min time 500) 500)))
+EOF
+)
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_sync || test_fail
+check_file_messages "20.*:1.:.*123\.1.* 5 111 " 6 6 measurements.log || test_fail
+check_file_messages "20.*:0.:.*123\.2.* 5 111 " 2 3 measurements.log || test_fail
+check_file_messages "20.*:1.:.*123\.2.* 5 111 " 6 7 measurements.log || test_fail
+check_file_messages "20.*:0.:.*123\.3.* 5 111 " 7 10 measurements.log || test_fail
+check_file_messages "20.*:1.:.*123\.3.* 5 111 " 0 1 measurements.log || test_fail
+rm -f tmp/measurements.log
+
+limit=4000
+wander=0.0
+jitter=0.0
+server_strata=1
+server_conf=""
+server_server_options=""
+client_server_conf=""
+client_server_options="minpoll 6 maxpoll 6 minsamples 64"
+chronyc_start=1
+chronyc_conf="timeout 1000000
+tracking
+tracking
+tracking
+tracking"
+base_delay=$(cat <<-EOF | tr -d '\n'
+  (+ 1e-4
+     (* 990
+        (equal 0.1 from 3))
+     (* -1
+        (equal 0.1 from 1)
+        (equal 0.1 (max (% time 2000) 1000) 1000)))
+EOF
+)
+
+client_conf="local
+maxclockerror 1000"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_chronyc_output "^.*7F7F0101.*C0A87B01.*7F7F0101.*C0A87B01.*$" || test_fail
+
+client_conf="local distance 0.5
+maxclockerror 1000"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_chronyc_output "^.*7F7F0101.*C0A87B01.*7F7F0101.*C0A87B01.*$" || test_fail
+
+client_conf="local distance 2.0
+maxclockerror 1000"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_chronyc_output "^.*7F7F0101.*C0A87B01.*C0A87B01.*C0A87B01.*$" || test_fail
+
+client_conf="local activate 1e-4
+maxclockerror 1000"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_chronyc_output "^.* 00000000 .*C0A87B01.*C0A87B01.*C0A87B01.*$" || test_fail
+
+client_conf="local activate 1e-1
+maxclockerror 1000"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_chronyc_output "^.* 00000000 .*C0A87B01.*7F7F0101.*C0A87B01.*$" || test_fail
+
+client_conf="local activate 1e-1 distance 2.0
+maxclockerror 1000"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_chronyc_output "^.* 00000000 .*C0A87B01.*C0A87B01.*C0A87B01.*$" || test_fail
+
+test_pass

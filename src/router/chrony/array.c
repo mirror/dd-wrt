@@ -117,6 +117,21 @@ ARR_AppendElement(ARR_Instance array, void *element)
 }
 
 void
+ARR_RemoveElement(ARR_Instance array, unsigned int index)
+{
+  void *e, *l;
+
+  e = ARR_GetElement(array, index);
+  l = ARR_GetElement(array, array->used - 1);
+
+  if (e < l)
+    memmove(e, (char *)e + array->elem_size, (char *)l - (char *)e);
+  array->used--;
+
+  realloc_array(array, array->used);
+}
+
+void
 ARR_SetSize(ARR_Instance array, unsigned int size)
 {
   realloc_array(array, size);

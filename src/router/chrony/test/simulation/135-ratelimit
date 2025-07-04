@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 test_start "ratelimit directive"
@@ -14,5 +14,16 @@ check_sync || test_fail
 
 check_file_messages "	2	1	" 1200 1300 log.packets || test_fail
 check_file_messages "	1	2	" 180 220 log.packets || test_fail
+
+server_conf="ratelimit interval 6 burst 2 leak 4 kod 2"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+
+check_file_messages "	2	1	" 700 850 log.packets || test_fail
+check_file_messages "	1	2	" 350 450 log.packets || test_fail
+check_log_messages "Received KoD RATE.*\.123.1" 100 140 || test_fail
 
 test_pass

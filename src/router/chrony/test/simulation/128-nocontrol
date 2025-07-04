@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./test.common
 
@@ -22,6 +22,24 @@ check_chronyd_exit || test_fail
 check_source_selection || test_fail
 check_packet_interval || test_fail
 check_sync || test_fail
-check_chronyc_output "^.*Stratum *: 2.*$" || test_fail
+check_chronyc_output "^.*Stratum *: 2
+Ref time.*
+System time *: 0.000.*
+Last offset *: [+-]0.000.*$" || test_fail
+check_log_messages "Could not step" 0 0 || test_fail
+
+client_conf="makestep 0.01 -1"
+client_server_options="offset 5.0005"
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_packet_interval || test_fail
+check_sync || test_fail
+check_chronyc_output "^.*Stratum *: 2
+Ref time.*
+System time *: 5.000.*
+Last offset *: [+-]0.000.*$" || test_fail
+check_log_messages "Could not step" 20 60 || test_fail
 
 test_pass

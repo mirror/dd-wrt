@@ -14,6 +14,6 @@ echo "1 $(date +%s) 0.0 0.0" > "$TEST_DIR/rtcfile"
 
 start_chronyd || test_fail
 stop_chronyd || test_fail
-check_chronyd_message_count "\(clock off from RTC\|RTC time before last\)" 1 1 || test_fail
+check_chronyd_message_count "\(clock off from RTC\|RTC time before last\|Could not \(enable\|disable\) RTC interrupt\)" 1 1 || test_fail
 
 test_pass

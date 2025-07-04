@@ -27,20 +27,22 @@
 #ifndef GOT_SYS_LINUX_H
 #define GOT_SYS_LINUX_H
 
+#include "sys.h"
+
 extern void SYS_Linux_Initialise(void);
 
 extern void SYS_Linux_Finalise(void);
 
-extern void SYS_Linux_DropRoot(uid_t uid, gid_t gid, int clock_control);
+extern void SYS_Linux_DropRoot(uid_t uid, gid_t gid, SYS_ProcessContext context, int clock_control);
 
-extern void SYS_Linux_EnableSystemCallFilter(int level);
+extern void SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context);
 
 extern int SYS_Linux_CheckKernelVersion(int req_major, int req_minor);
 
-extern int SYS_Linux_OpenPHC(const char *path, int phc_index);
+extern int SYS_Linux_OpenPHC(const char *device);
 
-extern int SYS_Linux_GetPHCSample(int fd, int nocrossts, double precision, int *reading_mode,
-                                  struct timespec *phc_ts, struct timespec *sys_ts, double *err);
+extern int SYS_Linux_GetPHCReadings(int fd, int nocrossts, int *reading_mode, int max_readings,
+                                    struct timespec tss[][3]);
 
 extern int SYS_Linux_SetPHCExtTimestamping(int fd, int pin, int channel,
                                            int rising, int falling, int enable);

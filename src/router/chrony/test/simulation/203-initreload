@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+. ./test.common
+
+check_config_h 'FEAT_CMDMON 1' || test_skip
+
+# Test fix "conf: don't load sourcedir during initstepslew and RTC init"
+
+test_start "reload during initstepslew"
+
+client_conf="initstepslew 5 192.168.123.1
+sourcedir tmp"
+client_server_conf="#"
+chronyc_conf="reload sources"
+chronyc_start=4
+
+echo 'server 192.168.123.1' > tmp/sources.sources
+
+run_test || test_fail
+check_chronyd_exit || test_fail
+check_source_selection || test_fail
+check_sync || test_fail
+
+check_log_messages "Added source 192\.168\.123\.1" 1 1 || test_fail
+
+test_pass
