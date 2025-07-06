@@ -522,10 +522,9 @@ static void fsl_qspi_invalidate(struct fsl_qspi *q)
 	qspi_writel(q, reg, q->iobase + QUADSPI_MCR);
 }
 
-static void fsl_qspi_select_mem(struct fsl_qspi *q, struct spi_device *spi,
-				const struct spi_mem_op *op)
+static void fsl_qspi_select_mem(struct fsl_qspi *q, struct spi_device *spi)
 {
-	unsigned long rate = op->max_freq;
+	unsigned long rate = spi->max_speed_hz;
 	int ret;
 
 	if (q->selected == spi_get_chipselect(spi, 0))
@@ -653,7 +652,7 @@ static int fsl_qspi_exec_op(struct spi_mem *mem, const struct spi_mem_op *op)
 	fsl_qspi_readl_poll_tout(q, base + QUADSPI_SR, (QUADSPI_SR_IP_ACC_MASK |
 				 QUADSPI_SR_AHB_ACC_MASK), 10, 1000);
 
-	fsl_qspi_select_mem(q, mem->spi, op);
+	fsl_qspi_select_mem(q, mem->spi);
 
 	if (needs_amba_base_offset(q))
 		addr_offset = q->memmap_phy;
@@ -840,10 +839,6 @@ static const struct spi_controller_mem_ops fsl_qspi_mem_ops = {
 	.get_name = fsl_qspi_get_name,
 };
 
-static const struct spi_controller_mem_caps fsl_qspi_mem_caps = {
-	.per_op_freq = true,
-};
-
 static void fsl_qspi_cleanup(void *data)
 {
 	struct fsl_qspi *q = data;
@@ -941,7 +936,6 @@ static int fsl_qspi_probe(struct platform_device *pdev)
 	ctlr->bus_num = -1;
 	ctlr->num_chipselect = 4;
 	ctlr->mem_ops = &fsl_qspi_mem_ops;
-	ctlr->mem_caps = &fsl_qspi_mem_caps;
 
 	fsl_qspi_default_setup(q);
 
