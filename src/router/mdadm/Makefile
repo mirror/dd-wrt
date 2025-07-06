@@ -80,7 +80,7 @@ CONFFILEFLAGS = -DCONFFILE=\"$(CONFFILE)\" -DCONFFILE2=\"$(CONFFILE2)\"
 # pivotroot from early boot to late boot.
 # /run is best, but for distros that don't support that.
 # /dev can work, in which case you probably want /dev/.mdadm
-RUN_DIR=/run/mdadm
+RUN_DIR=/var/run/mdadm
 CHECK_RUN_DIR=1
 MAP_DIR=$(RUN_DIR)
 MAP_FILE = map
