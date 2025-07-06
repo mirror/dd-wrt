@@ -579,6 +579,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 			"<table class=\"table\" summary=\"Raid Members\">\n"
 			"<thead><tr>\n"
 			"<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n"
+			"<th><script type=\"text/javascript\">Capture(share.state)</script></th>\n"
 			"<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"
 			"</tr></thead><tbody>\n");
 		char var[128];
@@ -610,6 +611,53 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 			}
 
 			websWrite(wp, "</td>\n");
+			char statestr[256] = { 0 };
+			char statepath[256];
+			char *devname = var;
+			char *p = strrchr(devname, '/');
+			if (p)
+				p++;
+			if (p) {
+				sprintf(statepath, "/sys/devices/virtual/block/md%d/md/dev-%s/state", i, p);
+				websWrite(wp, "<td>");
+				FILE *in = fopen(statepath, "rb");
+				if (in) {
+					fgets(statestr, sizeof(statestr), in);
+					if (strlen(statestr)) {
+						if (strstr(statestr, "in_sync"))
+							websWrite(
+								wp,
+								"<script type=\"text/javascript\">Capture(nas.state_in_sync)</script>\n");
+						else if (strstr(statestr, "faulty"))
+							websWrite(
+								wp,
+								"<script type=\"text/javascript\">Capture(nas.state_faulty)</script>\n");
+						else if (strstr(statestr, "spare"))
+							websWrite(
+								wp,
+								"<script type=\"text/javascript\">Capture(nas.state_spare)</script>\n");
+
+						if (strstr(statestr, "blocked"))
+							websWrite(
+								wp,
+								"&nbsp;<script type=\"text/javascript\">Capture(nas.state_blocked)</script>\n");
+						if (strstr(statestr, "want_replacement"))
+							websWrite(
+								wp,
+								"&nbsp;<script type=\"text/javascript\">Capture(nas.state_want_replacement)</script>\n");
+						if (strstr(statestr, "replacement"))
+							websWrite(
+								wp,
+								"&nbsp;<script type=\"text/javascript\">Capture(nas.state_replacement)</script>\n");
+					}
+					fclose(in);
+				} else {
+					websWrite(wp, "%s not found\n", statepath);
+				}
+			} else
+				websWrite(wp, "%s not found\n", devname);
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td><script type=\"text/javascript\">Capture(nas.raidmember)</script></td>\n");
 			websWrite(
 				wp,
 				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"member_del_submit(this.form,%d, %d)\\\" />\");\n//]]>\n</script>\n",
