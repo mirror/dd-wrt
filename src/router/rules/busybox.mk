@@ -740,6 +740,9 @@ ifeq ($(CONFIG_BONDING),y)
 else
 	echo "# CONFIG_BONDING is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_CONNTRACK),y)
+	sed -i 's/\# CONFIG_SENDMAIL is not set/CONFIG_SENDMAIL=y/g' busybox/.config
+endif
 ifeq ($(CONFIG_PROCPS),y)
 	sed -i 's/\CONFIG_FREE=y/# CONFIG_FREE is not set/g' busybox/.config
 	sed -i 's/\CONFIG_PGREP=y/# CONFIG_PGREP is not set/g' busybox/.config
