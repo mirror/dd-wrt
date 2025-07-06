@@ -282,7 +282,7 @@ else
 endif
 endif
 ifeq ($(ARCHITECTURE),mvebu)	
-	cp busybox/.config_bcmmodern_std busybox/.config
+	cp busybox/.config_laguna busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_USE_TERMIOS is not set/CONFIG_FEATURE_USE_TERMIOS=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
