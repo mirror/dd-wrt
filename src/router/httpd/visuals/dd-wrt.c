@@ -5542,7 +5542,7 @@ static int suiteb192(const char *prefix)
 static int disable_if_6ghz(const char *prefix)
 {
 	if (has_6ghz(prefix) && !has_5ghz(prefix))
-		return 1;
+		return 0;
 	return !has_6ghz(prefix) || !nvram_nmatch("ax6-only", "%s_net_mode", prefix);
 }
 
