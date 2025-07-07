@@ -660,7 +660,6 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 //				websWrite(wp, "%s not found\n", devname);
 			}
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td><script type=\"text/javascript\">Capture(nas.raidmember)</script></td>\n");
 			websWrite(
 				wp,
 				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"member_del_submit(this.form,%d, %d)\\\" />\");\n//]]>\n</script>\n",
