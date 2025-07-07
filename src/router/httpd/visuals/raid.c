@@ -671,7 +671,8 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 		}
 
 		websWrite(wp, "<tr>\n"
-			      "<td></td>\n"
+			      "<td>&nbsp;</td>\n"
+			      "<td>&nbsp;</td>\n"
 			      "<td class=\"center\">\n");
 		websWrite(
 			wp,
