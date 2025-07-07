@@ -617,9 +617,9 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 			char *p = strrchr(devname, '/');
 			if (p)
 				p++;
+			websWrite(wp, "<td>");
 			if (p) {
 				sprintf(statepath, "/sys/devices/virtual/block/md%d/md/dev-%s/state", i, p);
-				websWrite(wp, "<td>");
 				FILE *in = fopen(statepath, "rb");
 				if (in) {
 					fgets(statestr, sizeof(statestr), in);
