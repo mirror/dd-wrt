@@ -298,7 +298,7 @@ var sbutton=new Object();
 sbutton.save="Save";
 sbutton.download_config="Export Peer Config";
 sbutton.savetitle="Only save settings without commit";
-sbutton.apply="Save & Apply";
+sbutton.apply="Save &amp; Apply";
 sbutton.applied="Applying Settings";
 sbutton.applytitle="Apply settings immediately";
 sbutton.saving="Saved";
@@ -604,7 +604,7 @@ halive.page2="<dd></dd><dd>Check all values and click the <em>" + sbutton.save +
 
 // ** config.asp **//
 var config=new Object();
-config.titl="Backup & Restore";
+config.titl="Backup &amp; Restore";
 config.h2="Backup Configuration";
 config.legend="Backup Settings";
 config.mess1="Click the <em>" + sbutton.backup + "</em> button to download your current configuration settings file to disk.";
@@ -1343,7 +1343,7 @@ hidx.hname="<dd>This entry is necessary for some ISPs and can be provided by the
 hidx.dname=hidx.hname;
 hidx.mtu="<dd>Maximum Transmission Unit (MTU), specifies the largest packet size permitted for Internet transmission. The default option is <em>" + share.auto + "</em> and is resolved by the router for best results, you can alternatively select <em>" + share.manual + "</em> which has a default value of 1500. You should leave this value in the 1200 to 1500 range.</dd>";
 hidx.sfe="<dd>The options are <em>" + share.disable + "</em> <em>SFE</em> or <em>CTF</em>. SFE is Qualcomm's open-source in Linux kernel IP packet forwarding engine, providing very high-speed IP packet forwarding based on IP connection tracking. CTF is Broadcom's proprietary Cut Through Forwarding software optimization technique to accelerate NAT traffic.</dd>";
-hidx.fa="<dd>For Broadcom-based routers the available options are <b>Cut Through Forwarding</b> (CTF), on supported devices <b>Cut Through Forwarding & Flow Acceleration</b> (CTF & FA) will also be available and requires two reboots in order to become available.<br /><br /><div class=\"note\"><h4>Note:</h4><div>CTF supports adaptive QoS your mileage may vary, CTF & FA has no QoS support, in addition you may find that PPPoE, STP, port forwarding and parental controls may also not work.<br />Other caveats due to the increased retransmissions caused by these acceleration methods may cause shuttering on some streaming devices including VoIP.<br />SFE can present issues with multiple interfaces e.g. unbridged VAPs / bridges and latency sensitive traffic like VoIP.</div></div></dd>";
+hidx.fa="<dd>For Broadcom-based routers the available options are <b>Cut Through Forwarding</b> (CTF), on supported devices <b>Cut Through Forwarding &amp; Flow Acceleration</b> (CTF &amp; FA) will also be available and requires two reboots in order to become available.<br /><br /><div class=\"note\"><h4>Note:</h4><div>CTF supports adaptive QoS your mileage may vary, CTF &amp; FA has no QoS support, in addition you may find that PPPoE, STP, port forwarding and parental controls may also not work.<br />Other caveats due to the increased retransmissions caused by these acceleration methods may cause shuttering on some streaming devices including VoIP.<br />SFE can present issues with multiple interfaces e.g. unbridged VAPs / bridges and latency sensitive traffic like VoIP.</div></div></dd>";
 hidx.stp="<dd>To build a loop-free logical topology for your network, you can optionally enable the Spanning Tree Protocol (STP). It prevents bridge loops and the resulting broadcast radiation.</dd>";
 hidx.page5="<dd>This is the router's IP Address and Subnet Mask as seen by external users on the Internet (including your ISP). If your Internet connection requires a static IP address, then your ISP should provide you with a Static IP Address and a Subnet Mask.</dd>";
 hidx.page6="<dd>Your ISP will provide you with the Gateway IP Address.</dd>";
@@ -1367,7 +1367,7 @@ hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LA
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
 var hipv6=new Object();
-hipv6.right2="IPv6 is the most recent Internet Protocol standard used by electronic devices to exchange data across a packet-switched network.<br /><br />Changes over IPv4 fall primarily under the following categories:<ul style=\"margin-left: -1.5rem\"><br /><li>Expanded addressing capabilities</li><li>Header format simplification</li><li>Improved support for extensions & options</li><li>Flow labeling capability</li><li>Authentication & privacy capabilities</li></ul>";
+hipv6.right2="IPv6 is the most recent Internet Protocol standard used by electronic devices to exchange data across a packet-switched network.<br /><br />Changes over IPv4 fall primarily under the following categories:<ul style=\"margin-left: -1.5rem\"><br /><li>Expanded addressing capabilities</li><li>Header format simplification</li><li>Improved support for extensions &amp; options</li><li>Flow labeling capability</li><li>Authentication &amp; privacy capabilities</li></ul>";
 
 // ** DSL ** //
 var dsl=new Object();
@@ -1803,7 +1803,7 @@ route.ospf_copt="OSPF Config Style";
 route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
 
-route.ospf_rip2_mod="OSPF & RIP2-Router";
+route.ospf_rip2_mod="OSPF &amp; RIP2-Router";
 route.rip2_legend="RIP2 Routing";
 route.rip2_conf="RIP2 Configuration";
 route.rip2_copt="RIP2 Config Style";
@@ -2382,7 +2382,7 @@ eoip.bridging="Bridging";
 eoip.add=" Add Tunnel ";
 eoip.del="Delete Tunnel";
 eoip.importt="Import Configuration";
-eoip.filepicker="Upload / Adapt & Apply";
+eoip.filepicker="Upload / Adapt &amp; Apply";
 
 // help page
 var heoip=new Object();
@@ -2672,7 +2672,7 @@ vlan.switch_leds="Turn Off Switch LED's";
 vlan.bridge="Assigned To<br />Bridge";
 vlan.tagged="Tagged";
 vlan.negociate="Autonegotiation";
-vlan.aggregation="Link Aggregation<br />on Ports 3 & 4";
+vlan.aggregation="Link Aggregation<br />on Ports 3 &amp; 4";
 vlan.trunk="Trunk";
 vlan.linkstatus="Link Status";
 vlan.fullspeed="Full Speed";
