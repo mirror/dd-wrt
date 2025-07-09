@@ -115,11 +115,11 @@ endif
 
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
-export AR := $(CROSS_COMPILE)ar
+export AR := $(CROSS_COMPILE)gcc-ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
-export NM := $(CROSS_COMPILE)nm
-export RANLIB := $(CROSS_COMPILE)ranlib
+export NM := $(CROSS_COMPILE)gcc-nm
+export RANLIB := $(CROSS_COMPILE)gcc-ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 
@@ -217,6 +217,14 @@ ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.magicbox fq_codel_fast
 	-$(MAKE) -f Makefile.magicbox fq_codel_fast-install
 endif
+ifeq ($(CONFIG_RTL8125),y)
+	-$(MAKE) -f Makefile.magicbox rtl8125
+	-$(MAKE) -f Makefile.magicbox rtl8125-install
+endif
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.magicbox zfs
+	-$(MAKE) -f Makefile.magicbox zfs-install
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
@@ -253,7 +261,7 @@ endif
 	fi
 	
 
-include common-nolto.mk
+include common.mk
 
 makeimage:
 	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 64000 -i 65536 -N 65536 -q $(ARCH)-uclibc/root.ext2
