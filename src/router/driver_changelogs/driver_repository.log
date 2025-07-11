@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8462 | brainslayer | 2025-07-11 23:32:54 +0700 (Fri, 11 Jul 2025) | 1 line
+
+optimize roaming performance for ath11k station if channels perists
+------------------------------------------------------------------------
 r8461 | brainslayer | 2025-07-10 15:03:23 +0700 (Thu, 10 Jul 2025) | 1 line
 
 null check
