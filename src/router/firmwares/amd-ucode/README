@@ -42,23 +42,23 @@ Microcode patches in microcode_amd_fam17h.bin:
 
 Microcode patches in microcode_amd_fam19h.bin:
   Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a00107a Length=5568 bytes
-  Family=0x19 Model=0x7c Stepping=0x00: Patch=0x0a70c005 Length=5568 bytes
-  Family=0x19 Model=0x75 Stepping=0x02: Patch=0x0a705206 Length=5568 bytes
-  Family=0x19 Model=0x08 Stepping=0x02: Patch=0x0a00820c Length=5568 bytes
-  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101248 Length=5568 bytes
-  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00215 Length=5568 bytes
-  Family=0x19 Model=0x44 Stepping=0x01: Patch=0x0a404107 Length=5568 bytes
-  Family=0x19 Model=0x78 Stepping=0x00: Patch=0x0a708007 Length=5568 bytes
-  Family=0x19 Model=0x21 Stepping=0x00: Patch=0x0a20102d Length=5568 bytes
-  Family=0x19 Model=0x74 Stepping=0x01: Patch=0x0a704107 Length=5568 bytes
-  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001238 Length=5568 bytes
-  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101148 Length=5568 bytes
-  Family=0x19 Model=0x61 Stepping=0x02: Patch=0x0a601209 Length=5568 bytes
   Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d5 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001238 Length=5568 bytes
+  Family=0x19 Model=0x08 Stepping=0x02: Patch=0x0a00820d Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101148 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101248 Length=5568 bytes
+  Family=0x19 Model=0x18 Stepping=0x01: Patch=0x0a108109 Length=5568 bytes
+  Family=0x19 Model=0x21 Stepping=0x00: Patch=0x0a20102e Length=5568 bytes
+  Family=0x19 Model=0x21 Stepping=0x02: Patch=0x0a201211 Length=5568 bytes
+  Family=0x19 Model=0x44 Stepping=0x01: Patch=0x0a404108 Length=5568 bytes
+  Family=0x19 Model=0x50 Stepping=0x00: Patch=0x0a500012 Length=5568 bytes
+  Family=0x19 Model=0x61 Stepping=0x02: Patch=0x0a60120a Length=5568 bytes
+  Family=0x19 Model=0x74 Stepping=0x01: Patch=0x0a704108 Length=5568 bytes
+  Family=0x19 Model=0x75 Stepping=0x02: Patch=0x0a705208 Length=5568 bytes
+  Family=0x19 Model=0x78 Stepping=0x00: Patch=0x0a708008 Length=5568 bytes
+  Family=0x19 Model=0x7c Stepping=0x00: Patch=0x0a70c008 Length=5568 bytes
   Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116 Length=5568 bytes
-  Family=0x19 Model=0x18 Stepping=0x01: Patch=0x0a108108 Length=5568 bytes
-  Family=0x19 Model=0x50 Stepping=0x00: Patch=0x0a500011 Length=5568 bytes
-  Family=0x19 Model=0x21 Stepping=0x02: Patch=0x0a201210 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00215 Length=5568 bytes
 
 NOTE: For Genoa (Family=0x19 Model=0x11) and Bergamo (Family=0x19 Model=0xa0),
 either AGESA version >= 1.0.0.8 OR a kernel with the following commit is
