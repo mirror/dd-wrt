@@ -2396,7 +2396,6 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
-		u32 v;
 
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
@@ -2404,8 +2403,9 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		if (!priv->ports[i].phy)
 			continue;
 
-		v = 0x1; /* Found on the EdgeCore, but we do not have any HW description */
-		sw_w32_mask(0x3 << pos, v << pos, RTL931X_LED_PORT_NUM_CTRL(i));
+		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
+		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
+			    RTL931X_LED_PORT_NUM_CTRL(i));
 
 		if (priv->ports[i].phy_is_integrated)
 			pm_fiber |= BIT_ULL(i);
