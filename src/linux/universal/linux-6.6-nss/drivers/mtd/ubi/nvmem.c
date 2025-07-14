@@ -23,9 +23,10 @@ struct ubi_nvmem {
 static int ubi_nvmem_reg_read(void *priv, unsigned int from,
 			      void *val, size_t bytes)
 {
-	uint32_t offs, to_read, bytes_left;
+	size_t to_read, bytes_left = bytes;
 	struct ubi_nvmem *unv = priv;
 	struct ubi_volume_desc *desc;
+	uint32_t offs;
 	uint64_t lnum = from;
 	int err = 0;
 
@@ -33,7 +34,6 @@ static int ubi_nvmem_reg_read(void *priv, unsigned int from,
 	if (IS_ERR(desc))
 		return PTR_ERR(desc);
 
-	bytes_left = bytes;
 	offs = do_div(lnum, unv->usable_leb_size);
 	while (bytes_left) {
 		to_read = unv->usable_leb_size - offs;

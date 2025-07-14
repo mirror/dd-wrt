@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-//#include "ipq6018.dtsi"
-#include "ipq6018-512m.dtsi"
+#include "ipq6018.dtsi"
+//#include "ipq6018-512m.dtsi"
 #include "ipq6018-thermal.dtsi"
 #include "ipq6018-ess.dtsi"
 #include "ipq6018-nss.dtsi"
@@ -378,5 +378,5 @@
 &wifi {
 	status = "okay";
 
-/*	qcom,ath11k-fw-memory-mode = <0>;*/
+	qcom,ath11k-fw-memory-mode = <0>;
 };
