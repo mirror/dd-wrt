@@ -324,7 +324,7 @@ void soap_send_error(UPNP_CONTEXT *context, int error)
 		      "Content-Type: text/xml; charset=\"utf-8\"\r\n"
 		      "Date: %s\r\n"
 		      "EXT: \r\n"
-		      "Server: %s/%s POSIX UPnP/1.0 upnpd/0.9.0\r\n"
+		      "Server: %s/%s UPnP/1.0 upnpd/0.9.0\r\n"
 		      "Connection: close\r\n"
 		      "\r\n"
 		      "%s",
@@ -358,7 +358,7 @@ void soap_send(UPNP_CONTEXT *context)
 			   "Content-Type: text/xml; charset=\"utf-8\"\r\n"
 			   "Date: %s\r\n"
 			   "EXT: \r\n"
-			   "Server: %s/%s POSIX UPnP/1.0 upnpd/0.9.0\r\n"
+			   "Server: %s/%s UPnP/1.0 upnpd/0.9.0\r\n"
 			   "Connection: close\r\n"
 			   "\r\n"
 			   "%s",
