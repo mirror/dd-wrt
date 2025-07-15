@@ -642,7 +642,7 @@ int subscribe(UPNP_CONTEXT *context)
 
 	sprintf(context->head_buffer,
 		"HTTP/1.1 200 OK\r\n"
-		"Server: POSIX UPnP/1.0 %s/%s\r\n"
+		"Server: %s/%s POSIX UPnP/1.0 upnpd/0.9.0\r\n"
 		"Date: %s\r\n"
 		"SID: %s\r\n"
 		"Timeout: %s\r\n"
