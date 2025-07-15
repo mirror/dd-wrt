@@ -600,7 +600,7 @@ router_can_choose_node(const node_t *node, int flags)
     return false;
   if (initiate_ipv6_extend && !node_supports_initiating_ipv6_extends(node))
     return false;
-  /* MiddleOnly node should never be used for HS ndpoints (IP, RP, HSDir). */
+  /* MiddleOnly node should never be used for HS endpoints (IP, RP, HSDir). */
   if (for_hs && node->is_middle_only) {
     return false;
   }

@@ -12,7 +12,7 @@
 #ifndef TOR_CPUWORKER_H
 #define TOR_CPUWORKER_H
 
-void cpuworker_init(void);
+int cpuworker_init(void);
 void cpuworker_free_all(void);
 void cpuworkers_rotate_keyinfo(void);
 

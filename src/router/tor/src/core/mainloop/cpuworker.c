@@ -113,10 +113,8 @@ cpuworker_consensus_has_changed(const networkstatus_t *ns)
   set_max_pending_tasks(ns);
 }
 
-/** Initialize the cpuworker subsystem. It is OK to call this more than once
- * during Tor's lifetime.
- */
-void
+/** Initialize the cpuworker subsystem. */
+int
 cpuworker_init(void)
 {
   /*
@@ -132,11 +130,18 @@ cpuworker_init(void)
                               worker_state_free_void,
                               NULL);
 
+  if (!threadpool) {
+    log_err(LD_GENERAL, "Can't create worker thread pool");
+    return -1;
+  }
+
   int r = threadpool_register_reply_event(threadpool, NULL);
 
   tor_assert(r == 0);
 
   set_max_pending_tasks(NULL);
+
+  return 0;
 }
 
 /** Free all resources allocated by cpuworker. */

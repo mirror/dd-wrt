@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.8.16])
+AC_INIT([tor],[0.4.8.17])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -18,7 +18,7 @@ AC_DEFINE_UNQUOTED([CONFIG_FLAGS], ["$configure_flags"], [Flags passed to config
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2025-03-24"], # for 0.4.8.16
+AC_DEFINE(APPROX_RELEASE_DATE, ["2025-06-30"], # for 0.4.8.17
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -568,6 +568,21 @@ CFLAGS="$saved_CFLAGS"
 
 if test "$tor_cv_c_attr_fallthrough" = "yes"; then
   AC_DEFINE(HAVE_ATTR_FALLTHROUGH, [1], [defined if we have the fallthrough attribute.])
+fi
+
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Werror"
+AC_CACHE_CHECK([for __attribute__((nonstring))],
+      tor_cv_c_attr_nonstring,
+      [AC_COMPILE_IFELSE(
+         [AC_LANG_PROGRAM([],
+	       [[ __attribute__((nonstring)) const char foo[5] = "abcde"; ]])],
+	 [tor_cv_c_attr_nonstring=yes],
+	 [tor_cv_c_attr_nonstring=no] )])
+CFLAGS="$saved_CFLAGS"
+
+if test "$tor_cv_c_attr_nonstring" = "yes"; then
+  AC_DEFINE(HAVE_ATTR_NONSTRING, [1], [defined if we have the nonstring attribute.])
 fi
 
 TORUSER=_tor
@@ -1126,7 +1141,8 @@ AC_CHECK_FUNCS([ \
 		SSL_get_client_ciphers \
 		SSL_get_client_random \
 		SSL_get_server_random \
-		TLS_method \
+                SSL_set_ciphersuites \
+		TLS_method
 	       ])
 
 dnl Check if OpenSSL structures are opaque

@@ -4606,16 +4606,17 @@ am__noinst_HEADERS_DIST = src/ext/ht.h src/ext/byteorder.h \
 	src/lib/thread/numcpus.h src/lib/thread/thread_sys.h \
 	src/lib/thread/threads.h src/lib/time/compat_time.h \
 	src/lib/time/time_sys.h src/lib/time/tvdiff.h \
-	src/lib/tls/ciphers.inc src/lib/tls/buffers_tls.h \
-	src/lib/tls/nss_countbytes.h src/lib/tls/tortls.h \
-	src/lib/tls/tortls_internal.h src/lib/tls/tortls_st.h \
-	src/lib/tls/tortls_sys.h src/lib/tls/x509.h \
-	src/lib/tls/x509_internal.h src/lib/trace/trace.h \
-	src/lib/trace/trace_sys.h src/lib/trace/events.h \
-	src/lib/trace/debug.h src/lib/trace/usdt/usdt.h \
-	src/lib/trace/lttng/lttng.h src/lib/version/git_revision.h \
-	src/lib/version/torversion.h src/lib/wallclock/approx_time.h \
-	src/lib/wallclock/timeval.h src/lib/wallclock/time_to_tm.h \
+	src/lib/tls/ciphers.inc src/lib/tls/ciphers_v13.inc \
+	src/lib/tls/buffers_tls.h src/lib/tls/nss_countbytes.h \
+	src/lib/tls/tortls.h src/lib/tls/tortls_internal.h \
+	src/lib/tls/tortls_st.h src/lib/tls/tortls_sys.h \
+	src/lib/tls/x509.h src/lib/tls/x509_internal.h \
+	src/lib/trace/trace.h src/lib/trace/trace_sys.h \
+	src/lib/trace/events.h src/lib/trace/debug.h \
+	src/lib/trace/usdt/usdt.h src/lib/trace/lttng/lttng.h \
+	src/lib/version/git_revision.h src/lib/version/torversion.h \
+	src/lib/wallclock/approx_time.h src/lib/wallclock/timeval.h \
+	src/lib/wallclock/time_to_tm.h \
 	src/lib/wallclock/tor_gettimeofday.h \
 	src/lib/wallclock/wallclock_sys.h src/ext/trunnel/trunnel.h \
 	src/ext/trunnel/trunnel-impl.h src/trunnel/trunnel-local.h \
@@ -5640,11 +5641,11 @@ noinst_HEADERS = $(EXTHEADERS) $(ED25519_REF10_HDRS) \
 	src/lib/thread/numcpus.h src/lib/thread/thread_sys.h \
 	src/lib/thread/threads.h src/lib/time/compat_time.h \
 	src/lib/time/time_sys.h src/lib/time/tvdiff.h \
-	src/lib/tls/ciphers.inc src/lib/tls/buffers_tls.h \
-	src/lib/tls/nss_countbytes.h src/lib/tls/tortls.h \
-	src/lib/tls/tortls_internal.h src/lib/tls/tortls_st.h \
-	src/lib/tls/tortls_sys.h src/lib/tls/x509.h \
-	src/lib/tls/x509_internal.h $(TRACEHEADERS) \
+	src/lib/tls/ciphers.inc src/lib/tls/ciphers_v13.inc \
+	src/lib/tls/buffers_tls.h src/lib/tls/nss_countbytes.h \
+	src/lib/tls/tortls.h src/lib/tls/tortls_internal.h \
+	src/lib/tls/tortls_st.h src/lib/tls/tortls_sys.h \
+	src/lib/tls/x509.h src/lib/tls/x509_internal.h $(TRACEHEADERS) \
 	src/lib/version/git_revision.h src/lib/version/torversion.h \
 	src/lib/wallclock/approx_time.h src/lib/wallclock/timeval.h \
 	src/lib/wallclock/time_to_tm.h \

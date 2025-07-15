@@ -1,3 +1,73 @@
+Changes in version 0.4.8.17 - 2025-06-30
+  This is a minor providing a series of minor features especially in the realm
+  of TLS. It also brings a new set of recommended and required sub protocols.
+  And finally, few minor bugfixes, nothing major. As always, we strongly
+  recommend you upgrade as soon as possible.
+
+  o Minor features (security, TLS):
+    - When we are running with OpenSSL 3.5.0 or later, support using the
+      ML-KEM768 for post-quantum key agreement. Closes ticket 41041.
+
+  o Minor feature (client, TLS):
+    - Set the TLS 1.3 cipher list instead of falling back on the
+      default value.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 30, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/06/30.
+
+  o Minor features (hsdesc POW):
+    - Tolerate multiple PoW schemes in onion service descriptors, for
+      future extensibility. Implements torspec ticket 272.
+
+  o Minor features (performance TLS):
+    - When running with with OpenSSL 3.0.0 or later, support using
+      X25519 for TLS key agreement. (This should slightly improve
+      performance for TLS session establishment.)
+
+  o Minor features (portability):
+    - Fix warnings when compiling with GCC 15. Closes ticket 41079.
+
+  o Minor features (recommended protocols):
+    - Directory authorities now vote to recommend that clients support
+      certain protocols beyond those that are required. These include
+      improved support for connecting to relays on IPv6, NtorV3, and
+      congestion control. Part of ticket 40836.
+
+  o Minor features (required protocols):
+    - Directory authorities now vote to require clients to support the
+      authenticated SENDME feature, which was introduced in
+      0.4.1.1-alpha. Part of ticket 40836.
+    - Directory authorities now vote to require relays to support
+      certain protocols, all of which have been implemented since
+      0.4.7.4-alpha or earlier. These include improved support for
+      connecting to relays on IPv6, NtorV3, running as a rate-limited
+      introduction point, authenticated SENDMEs, and congestion control.
+      Part of ticket 40836.
+
+  o Minor bugfix (conflux):
+    - Avoid a non fatal assert when describing a conflux circuit on the
+      control port after being prepped to be freed. Fixes bug 41037;
+      bugfix on 0.4.8.15.
+
+  o Minor bugfixes (circuit handling):
+    - Prevent circuit_mark_for_close() from being called twice on the
+      same circuit. Fixes bug 40951; bugfix on 0.4.8.16-dev.
+
+  o Minor bugfixes (compiler warnings):
+    - Make sure the two bitfields in the half-closed edge struct are
+      unsigned, as we're using them for boolean values and assign 1 to
+      them. Fixes bug 40911; bugfix on 0.4.7.2-alpha.
+
+  o Minor bugfixes (threads, memory):
+    - Improvements in cleanup of resources used by threads. Fixes bug
+      40991; bugfix on 0.4.8.13-dev.
+    - Rework start and exit of worker threads.
+
+
 Changes in version 0.4.8.16 - 2025-03-24
   This is quick second release since 0.4.8.15 due to a typo in a directory
   authority rule file. This only affects directory authorities. Regardless,

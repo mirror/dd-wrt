@@ -2544,7 +2544,7 @@ test_dir_dirserv_read_measured_bandwidths(void *arg)
             smartlist_len(bw_file_headers));
   /* force bw_file_headers to be bigger than
    * MAX_BW_FILE_HEADER_COUNT_IN_VOTE */
-  char line[8] = "foo=bar\0";
+  NONSTRING char line[8] = "foo=bar\0";
   smartlist_add_strdup(bw_file_headers, line);
   tt_int_op(MAX_BW_FILE_HEADER_COUNT_IN_VOTE, OP_LT,
             smartlist_len(bw_file_headers));
@@ -4450,14 +4450,17 @@ test_dir_bwauth_bw_file_digest256(void *arg)
 
   char *fname = tor_strdup(get_fname("V3BandwidthsFile"));
   /* Initialize to a wrong digest. */
-  uint8_t digest[DIGEST256_LEN] = "01234567890123456789abcdefghijkl";
+  NONSTRING
+    uint8_t digest[DIGEST256_LEN] = "01234567890123456789abcdefghijkl";
 
   /* Digest of an empty string. Initialize to a wrong digest. */
-  char digest_empty_str[DIGEST256_LEN] = "01234567890123456789abcdefghijkl";
+  NONSTRING
+    char digest_empty_str[DIGEST256_LEN] = "01234567890123456789abcdefghijkl";
   crypto_digest256(digest_empty_str, "", 0, DIGEST_SHA256);
 
   /* Digest of the content. Initialize to a wrong digest. */
-  char digest_expected[DIGEST256_LEN] = "01234567890123456789abcdefghijkl";
+  NONSTRING
+    char digest_expected[DIGEST256_LEN] = "01234567890123456789abcdefghijkl";
   crypto_digest256(digest_expected, content, strlen(content), DIGEST_SHA256);
 
   /* When the bandwidth file can not be found. */

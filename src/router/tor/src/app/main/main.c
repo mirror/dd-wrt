@@ -1244,7 +1244,8 @@ run_tor_main_loop(void)
 
   /* launch cpuworkers. Need to do this *after* we've read the onion key. */
   /* launch them always for all tors, now that clients can solve onion PoWs. */
-  cpuworker_init();
+  if (cpuworker_init() == -1)
+    return -1;
 
   consdiffmgr_enable_background_compression();
 
