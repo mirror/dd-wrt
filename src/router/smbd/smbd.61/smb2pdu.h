@@ -578,6 +578,9 @@ struct smb2_tree_disconnect_rsp {
 #define SVHDX_OPEN_DEVICE_CONTEXT       0x83CE6F1AD851E0986E34401CC9BCFCE9
 #define SMB2_CREATE_TAG_POSIX		"\x93\xAD\x25\x50\x9C\xB4\x11\xE7\xB4\x23\x83\xDE\x96\x8B\xCD\x7C"
 
+/* Apple Defined Contexts */
+#define	SMB2_CREATE_AAPL			"AAPL"
+
 struct smb2_create_req {
 	struct smb2_hdr hdr;
 	__le16 StructureSize;	/* Must be 57 */

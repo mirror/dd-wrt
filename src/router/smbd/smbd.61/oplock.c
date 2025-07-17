@@ -153,11 +153,6 @@ static struct oplock_info *opinfo_get_list(struct ksmbd_inode *ci)
 	struct oplock_info *opinfo;
 
 	down_read(&ci->m_lock);
-	if (list_empty(&ci->m_op_list)) {
-		up_read(&ci->m_lock);
-		return NULL;
-	}
-
 	opinfo = list_first_entry_or_null(&ci->m_op_list, struct oplock_info,
 					  op_entry);
 	if (opinfo) {

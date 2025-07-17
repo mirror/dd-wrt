@@ -140,10 +140,12 @@ static int ksmbd_vfs_path_lookup_locked(struct ksmbd_share_config *share_conf,
 	if (IS_ERR(d))
 		goto err_out;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)
 	if (d_is_negative(d)) {
 		dput(d);
 		goto err_out;
 	}
+#endif
 
 	path->dentry = d;
 	path->mnt = mntget(parent_path->mnt);
@@ -417,8 +419,13 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	struct user_namespace *user_ns;
 #endif
 	struct path path;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	struct dentry *dentry, *d;
+	int err = 0;
+#else
 	struct dentry *dentry;
 	int err;
+#endif
 
 	dentry = ksmbd_vfs_kern_path_create(work, name,
 					    LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
@@ -437,6 +444,16 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	user_ns = mnt_user_ns(path.mnt);
 #endif
 	mode |= S_IFDIR;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	d = dentry;
+	dentry = vfs_mkdir(idmap, d_inode(path.dentry), dentry, mode);
+	if (IS_ERR(dentry))
+		err = PTR_ERR(dentry);
+	else if (d_is_negative(dentry))
+		err = -ENOENT;
+	if (!err && dentry != d)
+		ksmbd_vfs_inherit_owner(work, d_inode(path.dentry), d_inode(dentry));
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 	err = vfs_mkdir(idmap, d_inode(path.dentry), dentry, mode);
@@ -475,6 +492,7 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	}
 
 out_err:
+#endif
 	done_path_create(&path, dentry);
 	if (err)
 		pr_err("mkdir(%s): creation failed (err:%d)\n", name, err);
@@ -548,6 +566,7 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
 
 	if (v_len - *pos < count)
 		count = v_len - *pos;
+	fp->stream.pos = v_len;
 
 	memcpy(buf, &stream_buf[*pos], count);
 
@@ -743,8 +762,8 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				 true);
 	if (err < 0)
 		goto out;
-
-	fp->filp->f_pos = *pos;
+	else
+		fp->stream.pos = size;
 	err = 0;
 out:
 	kvfree(stream_buf);
@@ -1386,6 +1405,9 @@ int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 	struct ksmbd_file *parent_fp;
 	int new_type;
 	int err, lookup_flags = LOOKUP_NO_SYMLINKS;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	int target_lookup_flags = LOOKUP_RENAME_TARGET | LOOKUP_CREATE;
+#endif
 
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
@@ -1395,6 +1417,16 @@ int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 		err = PTR_ERR(to);
 		goto revert_fsids;
 	}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	/*
+	 * explicitly handle file overwrite case, for compatibility with
+	 * filesystems that may not support rename flags (e.g: fuse)
+	 */
+	if (flags & RENAME_NOREPLACE)
+		target_lookup_flags |= LOOKUP_EXCL;
+	flags &= ~(RENAME_NOREPLACE);
+#endif
 
 retry:
 	err = vfs_path_parent_lookup(to, lookup_flags | LOOKUP_BENEATH,
@@ -1435,8 +1467,13 @@ retry:
 		ksmbd_fd_put(work, parent_fp);
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	new_dentry = lookup_one_qstr_excl(&new_last, new_path.dentry,
+					  lookup_flags | target_lookup_flags);
+#else
 	new_dentry = lookup_one_qstr_excl(&new_last, new_path.dentry,
 					  lookup_flags | LOOKUP_RENAME_TARGET);
+#endif
 	if (IS_ERR(new_dentry)) {
 		err = PTR_ERR(new_dentry);
 		goto out3;
@@ -1447,6 +1484,7 @@ retry:
 		goto out4;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)
 	/*
 	 * explicitly handle file overwrite case, for compatibility with
 	 * filesystems that may not support rename flags (e.g: fuse)
@@ -1456,6 +1494,7 @@ retry:
 		goto out4;
 	}
 	flags &= ~(RENAME_NOREPLACE);
+#endif
 
 	if (old_child == trap) {
 		err = -EINVAL;
