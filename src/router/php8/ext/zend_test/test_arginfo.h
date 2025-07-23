@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: a7b5de3e4868f9a4aef78da6b98bbce882e129a9 */
+ * Stub hash: e6374018fbb4fa793905bd5cb34e5a56b9e310fe */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_test_array_return, 0, 0, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
@@ -169,6 +169,8 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_test_log_err_debug, 0, 1, I
 	ZEND_ARG_TYPE_INFO(0, str, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
+#define arginfo_zend_test_gh18756 arginfo_zend_test_void_return
+
 #define arginfo_ZendTestNS2_namespaced_func arginfo_zend_test_is_pcre_bundled
 
 #define arginfo_ZendTestNS2_namespaced_deprecated_func arginfo_zend_test_void_return
@@ -303,6 +305,7 @@ static ZEND_FUNCTION(zend_test_set_fmode);
 static ZEND_FUNCTION(zend_test_cast_fread);
 static ZEND_FUNCTION(zend_test_is_zend_ptr);
 static ZEND_FUNCTION(zend_test_log_err_debug);
+static ZEND_FUNCTION(zend_test_gh18756);
 static ZEND_FUNCTION(ZendTestNS2_namespaced_func);
 static ZEND_FUNCTION(ZendTestNS2_namespaced_deprecated_func);
 static ZEND_FUNCTION(ZendTestNS2_ZendSubNS_namespaced_func);
@@ -408,6 +411,7 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(zend_test_cast_fread, arginfo_zend_test_cast_fread)
 	ZEND_FE(zend_test_is_zend_ptr, arginfo_zend_test_is_zend_ptr)
 	ZEND_FE(zend_test_log_err_debug, arginfo_zend_test_log_err_debug)
+	ZEND_FE(zend_test_gh18756, arginfo_zend_test_gh18756)
 #if (PHP_VERSION_ID >= 80400)
 	ZEND_RAW_FENTRY(ZEND_NS_NAME("ZendTestNS2", "namespaced_func"), zif_ZendTestNS2_namespaced_func, arginfo_ZendTestNS2_namespaced_func, 0, NULL, NULL)
 #else
@@ -769,6 +773,25 @@ static zend_class_entry *register_class__ZendTestChildClass(zend_class_entry *cl
 	class_entry = zend_register_internal_class_with_flags(&ce, class_entry__ZendTestClass, 0);
 #else
 	class_entry = zend_register_internal_class_ex(&ce, class_entry__ZendTestClass);
+#endif
+
+	return class_entry;
+}
+
+static zend_class_entry *register_class_ZendTestGenStubFlagCompatibilityTest(void)
+{
+	zend_class_entry ce, *class_entry;
+
+	INIT_CLASS_ENTRY(ce, "ZendTestGenStubFlagCompatibilityTest", NULL);
+#if (PHP_VERSION_ID >= 80400)
+	class_entry = zend_register_internal_class_with_flags(&ce, NULL, ZEND_ACC_FINAL|ZEND_ACC_NOT_SERIALIZABLE);
+#else
+	class_entry = zend_register_internal_class_ex(&ce, NULL);
+#if (PHP_VERSION_ID >= 80100)
+	class_entry->ce_flags |= ZEND_ACC_FINAL|ZEND_ACC_NOT_SERIALIZABLE;
+#elif (PHP_VERSION_ID >= 80000)
+	class_entry->ce_flags |= ZEND_ACC_FINAL;
+#endif
 #endif
 
 	return class_entry;

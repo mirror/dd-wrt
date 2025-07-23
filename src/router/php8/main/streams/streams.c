@@ -1390,6 +1390,10 @@ PHPAPI int _php_stream_seek(php_stream *stream, zend_off_t offset, int whence)
 				}
  				whence = SEEK_SET;
 				break;
+			case SEEK_SET:
+				if (offset < 0) {
+					return -1;
+				}
 		}
 		ret = stream->ops->seek(stream, offset, whence, &stream->position);
 
@@ -2427,6 +2431,20 @@ PHPAPI void php_stream_context_set_option(php_stream_context *context,
 	Z_TRY_ADDREF_P(optionvalue);
 	SEPARATE_ARRAY(wrapperhash);
 	zend_hash_str_update(Z_ARRVAL_P(wrapperhash), optionname, strlen(optionname), optionvalue);
+}
+
+void php_stream_context_unset_option(php_stream_context *context,
+	const char *wrappername, const char *optionname)
+{
+	zval *wrapperhash;
+
+	wrapperhash = zend_hash_str_find(Z_ARRVAL(context->options), wrappername, strlen(wrappername));
+	if (NULL == wrapperhash) {
+		return;
+	}
+	SEPARATE_ARRAY(&context->options);
+	SEPARATE_ARRAY(wrapperhash);
+	zend_hash_str_del(Z_ARRVAL_P(wrapperhash), optionname, strlen(optionname));
 }
 /* }}} */
 

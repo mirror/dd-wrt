@@ -594,18 +594,19 @@ static void firebird_handle_closer(pdo_dbh_t *dbh) /* {{{ */
 	}
 	H->in_manually_txn = 0;
 
-	if (isc_detach_database(H->isc_status, &H->db)) {
+	/* isc_detach_database returns 0 on success, 1 on failure. */
+	if (H->db && isc_detach_database(H->isc_status, &H->db)) {
 		php_firebird_error(dbh);
 	}
 
 	if (H->date_format) {
-		efree(H->date_format);
+		pefree(H->date_format, dbh->is_persistent);
 	}
 	if (H->time_format) {
-		efree(H->time_format);
+		pefree(H->time_format, dbh->is_persistent);
 	}
 	if (H->timestamp_format) {
-		efree(H->timestamp_format);
+		pefree(H->timestamp_format, dbh->is_persistent);
 	}
 
 	if (H->einfo.errmsg) {
@@ -1091,9 +1092,10 @@ static bool pdo_firebird_set_attribute(pdo_dbh_t *dbh, zend_long attr, zval *val
 					return false;
 				}
 				if (H->date_format) {
-					efree(H->date_format);
+					pefree(H->date_format, dbh->is_persistent);
+					H->date_format = NULL;
 				}
-				spprintf(&H->date_format, 0, "%s", ZSTR_VAL(str));
+				H->date_format = pestrndup(ZSTR_VAL(str), ZSTR_LEN(str),dbh->is_persistent);
 				zend_string_release_ex(str, 0);
 			}
 			return true;
@@ -1105,9 +1107,10 @@ static bool pdo_firebird_set_attribute(pdo_dbh_t *dbh, zend_long attr, zval *val
 					return false;
 				}
 				if (H->time_format) {
-					efree(H->time_format);
+					pefree(H->time_format, dbh->is_persistent);
+					H->time_format = NULL;
 				}
-				spprintf(&H->time_format, 0, "%s", ZSTR_VAL(str));
+				H->time_format = pestrndup(ZSTR_VAL(str), ZSTR_LEN(str),dbh->is_persistent);
 				zend_string_release_ex(str, 0);
 			}
 			return true;
@@ -1119,9 +1122,10 @@ static bool pdo_firebird_set_attribute(pdo_dbh_t *dbh, zend_long attr, zval *val
 					return false;
 				}
 				if (H->timestamp_format) {
-					efree(H->timestamp_format);
+					pefree(H->timestamp_format, dbh->is_persistent);
+					H->timestamp_format = NULL;
 				}
-				spprintf(&H->timestamp_format, 0, "%s", ZSTR_VAL(str));
+				H->timestamp_format = pestrndup(ZSTR_VAL(str), ZSTR_LEN(str),dbh->is_persistent);
 				zend_string_release_ex(str, 0);
 			}
 			return true;

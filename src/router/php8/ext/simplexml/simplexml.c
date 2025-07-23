@@ -639,7 +639,9 @@ static zval *sxe_property_get_adr(zend_object *object, zend_string *zname, int f
 	SXE_ITER        type;
 	zval            member;
 
-	cache_slot[0] = cache_slot[1] = cache_slot[2] = NULL;
+	if (cache_slot) {
+		cache_slot[0] = cache_slot[1] = cache_slot[2] = NULL;
+	}
 
 	sxe = php_sxe_fetch_object(object);
 	GET_NODE(sxe, node);
@@ -1402,7 +1404,8 @@ PHP_METHOD(SimpleXMLElement, asXML)
 	if (!result) {
 		RETURN_FALSE;
 	} else {
-		RETURN_NEW_STR(result);
+		/* Defense-in-depth: don't use the NEW variant in case somehow an empty string gets returned */
+		RETURN_STR(result);
 	}
 }
 /* }}} */

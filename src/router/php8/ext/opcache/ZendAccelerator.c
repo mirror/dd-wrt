@@ -2964,9 +2964,7 @@ static void accel_globals_ctor(zend_accel_globals *accel_globals)
 
 static void accel_globals_dtor(zend_accel_globals *accel_globals)
 {
-#ifdef ZTS
 	zend_string_free(accel_globals->key);
-#endif
 	if (accel_globals->preloaded_internal_run_time_cache) {
 		pefree(accel_globals->preloaded_internal_run_time_cache, 1);
 	}
@@ -3558,7 +3556,7 @@ static void preload_shutdown(void)
 	if (EG(class_table)) {
 		ZEND_HASH_MAP_REVERSE_FOREACH_VAL(EG(class_table), zv) {
 			zend_class_entry *ce = Z_PTR_P(zv);
-			if (ce->type == ZEND_INTERNAL_CLASS) {
+			if (ce->type == ZEND_INTERNAL_CLASS && Z_TYPE_P(zv) != IS_ALIAS_PTR) {
 				break;
 			}
 		} ZEND_HASH_MAP_FOREACH_END_DEL();
@@ -3646,7 +3644,15 @@ static void preload_move_user_classes(HashTable *src, HashTable *dst)
 	zend_hash_extend(dst, dst->nNumUsed + src->nNumUsed, 0);
 	ZEND_HASH_MAP_FOREACH_BUCKET_FROM(src, p, EG(persistent_classes_count)) {
 		zend_class_entry *ce = Z_PTR(p->val);
-		ZEND_ASSERT(ce->type == ZEND_USER_CLASS);
+
+		/* Possible with internal class aliases */
+		if (ce->type == ZEND_INTERNAL_CLASS) {
+			ZEND_ASSERT(Z_TYPE(p->val) == IS_ALIAS_PTR);
+			_zend_hash_append(dst, p->key, &p->val);
+			zend_hash_del_bucket(src, p);
+			continue;
+		}
+
 		if (ce->info.user.filename != filename) {
 			filename = ce->info.user.filename;
 			if (filename) {
@@ -3800,6 +3806,11 @@ static bool preload_try_resolve_constants(zend_class_entry *ce)
 		ZEND_HASH_MAP_FOREACH_STR_KEY_PTR(&ce->constants_table, key, c) {
 			val = &c->value;
 			if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
+				/* For deprecated constants, we need to flag the zval for recursion
+				 * detection. Make sure the zval is separated out of shm. */
+				if (ZEND_CLASS_CONST_FLAGS(c) & ZEND_ACC_DEPRECATED) {
+					ok = false;
+				}
 				if (EXPECTED(zend_update_class_constant(c, key, c->ce) == SUCCESS)) {
 					was_changed = changed = true;
 				} else {
@@ -3944,7 +3955,12 @@ static void preload_link(void)
 
 		ZEND_HASH_MAP_FOREACH_STR_KEY_VAL_FROM(EG(class_table), key, zv, EG(persistent_classes_count)) {
 			ce = Z_PTR_P(zv);
-			ZEND_ASSERT(ce->type != ZEND_INTERNAL_CLASS);
+
+			/* Possible with internal class aliases */
+			if (ce->type == ZEND_INTERNAL_CLASS) {
+				ZEND_ASSERT(Z_TYPE_P(zv) == IS_ALIAS_PTR);
+				continue;
+			}
 
 			if (!(ce->ce_flags & (ZEND_ACC_TOP_LEVEL|ZEND_ACC_ANON_CLASS))
 					|| (ce->ce_flags & ZEND_ACC_LINKED)) {
@@ -4030,9 +4046,15 @@ static void preload_link(void)
 
 		ZEND_HASH_MAP_REVERSE_FOREACH_VAL(EG(class_table), zv) {
 			ce = Z_PTR_P(zv);
+
+			/* Possible with internal class aliases */
 			if (ce->type == ZEND_INTERNAL_CLASS) {
-				break;
+				if (Z_TYPE_P(zv) != IS_ALIAS_PTR) {
+					break; /* can stop already */
+				}
+				continue;
 			}
+
 			if ((ce->ce_flags & ZEND_ACC_LINKED) && !(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 				if (!(ce->ce_flags & ZEND_ACC_TRAIT)) { /* don't update traits */
 					CG(in_compilation) = true; /* prevent autoloading */
@@ -4049,7 +4071,13 @@ static void preload_link(void)
 	ZEND_HASH_MAP_FOREACH_STR_KEY_VAL_FROM(
 			EG(class_table), key, zv, EG(persistent_classes_count)) {
 		ce = Z_PTR_P(zv);
-		ZEND_ASSERT(ce->type != ZEND_INTERNAL_CLASS);
+
+		/* Possible with internal class aliases */
+		if (ce->type == ZEND_INTERNAL_CLASS) {
+			ZEND_ASSERT(Z_TYPE_P(zv) == IS_ALIAS_PTR);
+			continue;
+		}
+
 		if ((ce->ce_flags & (ZEND_ACC_TOP_LEVEL|ZEND_ACC_ANON_CLASS))
 				&& !(ce->ce_flags & ZEND_ACC_LINKED)) {
 			zend_string *lcname = zend_string_tolower(ce->name);
@@ -4202,12 +4230,52 @@ static void preload_remove_empty_includes(void)
 
 static void preload_register_trait_methods(zend_class_entry *ce) {
 	zend_op_array *op_array;
+	zend_property_info *info;
+
 	ZEND_HASH_MAP_FOREACH_PTR(&ce->function_table, op_array) {
 		if (!(op_array->fn_flags & ZEND_ACC_TRAIT_CLONE)) {
 			ZEND_ASSERT(op_array->refcount && "Must have refcount pointer");
 			zend_shared_alloc_register_xlat_entry(op_array->refcount, op_array);
 		}
 	} ZEND_HASH_FOREACH_END();
+
+	if (ce->num_hooked_props > 0) {
+		ZEND_HASH_MAP_FOREACH_PTR(&ce->properties_info, info) {
+			if (info->hooks) {
+				for (uint32_t i = 0; i < ZEND_PROPERTY_HOOK_COUNT; i++) {
+					if (info->hooks[i]) {
+						op_array = &info->hooks[i]->op_array;
+						if (!(op_array->fn_flags & ZEND_ACC_TRAIT_CLONE)) {
+							ZEND_ASSERT(op_array->refcount && "Must have refcount pointer");
+							zend_shared_alloc_register_xlat_entry(op_array->refcount, op_array);
+						}
+					}
+				}
+			}
+		} ZEND_HASH_FOREACH_END();
+	}
+}
+
+static void preload_fix_trait_op_array(zend_op_array *op_array)
+{
+	if (!(op_array->fn_flags & ZEND_ACC_TRAIT_CLONE)) {
+		return;
+	}
+
+	zend_op_array *orig_op_array = zend_shared_alloc_get_xlat_entry(op_array->refcount);
+	ZEND_ASSERT(orig_op_array && "Must be in xlat table");
+
+	zend_string *function_name = op_array->function_name;
+	zend_class_entry *scope = op_array->scope;
+	uint32_t fn_flags = op_array->fn_flags;
+	zend_function *prototype = op_array->prototype;
+	HashTable *ht = op_array->static_variables;
+	*op_array = *orig_op_array;
+	op_array->function_name = function_name;
+	op_array->scope = scope;
+	op_array->fn_flags = fn_flags;
+	op_array->prototype = prototype;
+	op_array->static_variables = ht;
 }
 
 static void preload_fix_trait_methods(zend_class_entry *ce)
@@ -4215,23 +4283,22 @@ static void preload_fix_trait_methods(zend_class_entry *ce)
 	zend_op_array *op_array;
 
 	ZEND_HASH_MAP_FOREACH_PTR(&ce->function_table, op_array) {
-		if (op_array->fn_flags & ZEND_ACC_TRAIT_CLONE) {
-			zend_op_array *orig_op_array = zend_shared_alloc_get_xlat_entry(op_array->refcount);
-			ZEND_ASSERT(orig_op_array && "Must be in xlat table");
-
-			zend_string *function_name = op_array->function_name;
-			zend_class_entry *scope = op_array->scope;
-			uint32_t fn_flags = op_array->fn_flags;
-			zend_function *prototype = op_array->prototype;
-			HashTable *ht = op_array->static_variables;
-			*op_array = *orig_op_array;
-			op_array->function_name = function_name;
-			op_array->scope = scope;
-			op_array->fn_flags = fn_flags;
-			op_array->prototype = prototype;
-			op_array->static_variables = ht;
-		}
+		preload_fix_trait_op_array(op_array);
 	} ZEND_HASH_FOREACH_END();
+
+	if (ce->num_hooked_props > 0) {
+		zend_property_info *info;
+		ZEND_HASH_MAP_FOREACH_PTR(&ce->properties_info, info) {
+			if (info->hooks) {
+				for (uint32_t i = 0; i < ZEND_PROPERTY_HOOK_COUNT; i++) {
+					if (info->hooks[i]) {
+						op_array = &info->hooks[i]->op_array;
+						preload_fix_trait_op_array(op_array);
+					}
+				}
+			}
+		} ZEND_HASH_FOREACH_END();
+	}
 }
 
 static void preload_optimize(zend_persistent_script *script)

@@ -1650,6 +1650,9 @@
 /* Define to 1 if you have the <tidybuffio.h> header file. */
 #undef HAVE_TIDYBUFFIO_H
 
+/* Define to 1 if Tidy library has the 'tidyOptGetCategory' function. */
+#undef HAVE_TIDYOPTGETCATEGORY
+
 /* Define to 1 if Tidy library has the 'tidyOptGetDoc' function. */
 #undef HAVE_TIDYOPTGETDOC
 

@@ -6094,8 +6094,15 @@ ZEND_VM_HANDLER(181, ZEND_FETCH_CLASS_CONSTANT, VAR|CONST|UNUSED|CLASS_FETCH, CO
 			}
 
 			bool is_constant_deprecated = ZEND_CLASS_CONST_FLAGS(c) & ZEND_ACC_DEPRECATED;
-			if (UNEXPECTED(is_constant_deprecated)) {
+			if (UNEXPECTED(is_constant_deprecated) && !CONST_IS_RECURSIVE(c)) {			
+				if (c->ce->type == ZEND_USER_CLASS) {
+					/* Recursion protection only applied to user constants, GH-18463 */
+					CONST_PROTECT_RECURSION(c);
+				}
 				zend_deprecated_class_constant(c, constant_name);
+				if (c->ce->type == ZEND_USER_CLASS) {
+					CONST_UNPROTECT_RECURSION(c);
+				}
 
 				if (EG(exception)) {
 					ZVAL_UNDEF(EX_VAR(opline->result.var));
@@ -6374,6 +6381,7 @@ ZEND_VM_HANDLER(71, ZEND_INIT_ARRAY, CONST|TMP|VAR|CV|UNUSED, CONST|TMPVAR|UNUSE
 	uint32_t size;
 	USE_OPLINE
 
+	SAVE_OPLINE();
 	array = EX_VAR(opline->result.var);
 	if (OP1_TYPE != IS_UNUSED) {
 		size = opline->extended_value >> ZEND_ARRAY_SIZE_SHIFT;
@@ -9049,7 +9057,6 @@ ZEND_VM_HANDLER(183, ZEND_BIND_STATIC, CV, ANY, REF)
 	value = (zval*)((char*)ht->arData + (opline->extended_value & ~(ZEND_BIND_REF|ZEND_BIND_IMPLICIT|ZEND_BIND_EXPLICIT)));
 
 	if (opline->extended_value & ZEND_BIND_REF) {
-		i_zval_ptr_dtor(variable_ptr);
 		if (UNEXPECTED(!Z_ISREF_P(value))) {
 			zend_reference *ref = (zend_reference*)emalloc(sizeof(zend_reference));
 			GC_SET_REFCOUNT(ref, 2);
@@ -9064,9 +9071,11 @@ ZEND_VM_HANDLER(183, ZEND_BIND_STATIC, CV, ANY, REF)
 			ref->sources.ptr = NULL;
 			Z_REF_P(value) = ref;
 			Z_TYPE_INFO_P(value) = IS_REFERENCE_EX;
+			i_zval_ptr_dtor(variable_ptr);
 			ZVAL_REF(variable_ptr, ref);
 		} else {
 			Z_ADDREF_P(value);
+			i_zval_ptr_dtor(variable_ptr);
 			ZVAL_REF(variable_ptr, Z_REF_P(value));
 			if (OP2_TYPE != IS_UNUSED) {
 				FREE_OP2();

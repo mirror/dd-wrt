@@ -1634,6 +1634,7 @@ static zval *date_period_it_current_data(zend_object_iterator *iter)
 	php_date_obj   *newdateobj;
 
 	/* Create new object */
+	zval_ptr_dtor(&iterator->current);
 	php_date_instantiate(get_base_date_class(object->start_ce), &iterator->current);
 	newdateobj = Z_PHPDATE_P(&iterator->current);
 	newdateobj->time = timelib_time_ctor();
@@ -4635,7 +4636,9 @@ static zval *date_interval_get_property_ptr_ptr(zend_object *object, zend_string
 		zend_string_equals_literal(name, "days") ||
 		zend_string_equals_literal(name, "invert") ) {
 		/* Fallback to read_property. */
-		cache_slot[0] = cache_slot[1] = cache_slot[2] = NULL;
+		if (cache_slot) {
+			cache_slot[0] = cache_slot[1] = cache_slot[2] = NULL;
+		}
 		ret = NULL;
 	} else {
 		ret = zend_std_get_property_ptr_ptr(object, name, type, cache_slot);
@@ -5588,7 +5591,7 @@ static void php_do_date_sunrise_sunset(INTERNAL_FUNCTION_PARAMETERS, bool calc_s
 	if (N > 24 || N < 0) {
 		N -= floor(N / 24) * 24;
 	}
-	if (N > 24 || N < 0) {
+	if (!(N <= 24 && N >= 0)) {
 		RETURN_FALSE;
 	}
 
@@ -5660,7 +5663,7 @@ PHP_FUNCTION(date_sun_info)
 	array_init(return_value);
 
 	/* Get sun up/down and transit */
-	rs = timelib_astro_rise_set_altitude(t, longitude, latitude, -50.0/60, 1, &ddummy, &ddummy, &rise, &set, &transit);
+	rs = timelib_astro_rise_set_altitude(t, longitude, latitude, -35.0/60, 1, &ddummy, &ddummy, &rise, &set, &transit);
 	switch (rs) {
 		case -1: /* always below */
 			add_assoc_bool(return_value, "sunrise", 0);
