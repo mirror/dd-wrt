@@ -1172,6 +1172,7 @@ void start_wifi_drivers(void)
 			set_named_smp_affinity("ath10k_pci", 1, 2);
 			break;
 		}
+		start_postnetwork();
 	}
 }
 void start_arch_defaults(void)

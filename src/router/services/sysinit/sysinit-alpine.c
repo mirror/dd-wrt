@@ -358,6 +358,7 @@ void start_wifi_drivers(void)
 		ifconfig("wlan2", IFUP, "0.0.0.0", NULL); // trigger firmware load and init
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+		start_postnetwork();
 	}
 }
 void start_arch_defaults(void)

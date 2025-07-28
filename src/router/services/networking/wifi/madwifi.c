@@ -3299,6 +3299,9 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	if (is_ath11k("wlan2"))
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath11k/ext_rx_stats");
 	sync_multicast_to_unicast();
+#if defined(HAVE_R9000) || defined(HAVE_IPQ806X)
+	start_postnetwork();
+#endif
 }
 
 void start_deconfigurewifi(void)
