@@ -405,7 +405,28 @@ static void setasrockcountry(void)
 	nvram_set("wlan0_regdomain", ctry);
 	nvram_set("wlan1_regdomain", ctry);
 }
+void start_wifileds(void)
+{
+	int board = getRouterBrand();
+	switch (board) {
+	case ROUTER_ASUS_AC58U:
+		sysprintf("echo phy0tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan2G/trigger");
+		sysprintf("echo phy1tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan5G/trigger");
+		break;
+	case ROUTER_LINKSYS_EA8300:
+		break;
+	case ROUTER_HABANERO:
+		break;
+	default:
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+		break;
+	}
 
+
+
+
+}
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -801,10 +822,6 @@ void start_sysinit(void)
 		nvram_default_get("clkfreq", "716");
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-
-		sysprintf("echo phy0tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan2G/trigger");
-		sysprintf("echo phy1tpt > /sys/devices/platform/leds/leds/rt-ac58u:blue:wlan5G/trigger");
-
 		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/trigger");
 		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/trigger");
 		sysprintf("echo eth0 > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/device_name");
@@ -847,9 +864,6 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
-
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -861,10 +875,6 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
-
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-
 		break;
 	}
 	switch (board) {
@@ -1172,6 +1182,7 @@ void start_wifi_drivers(void)
 			set_named_smp_affinity("ath10k_pci", 1, 2);
 			break;
 		}
+		start_wifileds();
 		start_postnetwork();
 	}
 }

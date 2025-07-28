@@ -1390,9 +1390,6 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	}
-	writestr("/sys/class/leds/wifi0/trigger", "phy0tpt");
-	writestr("/sys/class/leds/wifi1/trigger", "phy1tpt");
-	writestr("/sys/class/leds/wifi2/trigger", "phy2tpt");
 
 	//      sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
@@ -1556,6 +1553,9 @@ void start_wifi_drivers(void)
 		wait_for_wifi(minif);
 		start_setup_affinity();
 		start_initvlans();
+		writestr("/sys/class/leds/wifi0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/wifi1/trigger", "phy1tpt");
+		writestr("/sys/class/leds/wifi2/trigger", "phy2tpt");
 	}
 }
 

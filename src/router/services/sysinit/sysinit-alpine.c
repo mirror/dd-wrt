@@ -356,8 +356,7 @@ void start_wifi_drivers(void)
 		set_named_smp_affinity("ath10k_pci", 3, 2);
 		set_named_smp_affinity_mask("wil6210", 6, 1);
 		ifconfig("wlan2", IFUP, "0.0.0.0", NULL); // trigger firmware load and init
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+		start_resetleds();
 		start_postnetwork();
 	}
 }
