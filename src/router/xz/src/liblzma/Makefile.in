@@ -165,39 +165,37 @@ host_triplet = @host@
 
 @COND_SMALL_TRUE@am__append_12 = check/crc32_small.c
 @COND_SMALL_FALSE@am__append_13 = \
-@COND_SMALL_FALSE@	check/crc32_table.c \
+@COND_SMALL_FALSE@	check/crc32_fast.c \
 @COND_SMALL_FALSE@	check/crc32_table_le.h \
 @COND_SMALL_FALSE@	check/crc32_table_be.h
 
 @COND_ASM_X86_TRUE@@COND_SMALL_FALSE@am__append_14 = check/crc32_x86.S
-@COND_ASM_X86_FALSE@@COND_SMALL_FALSE@am__append_15 = check/crc32_fast.c
-@COND_CHECK_CRC64_TRUE@@COND_SMALL_TRUE@am__append_16 = check/crc64_small.c
-@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__append_17 = \
-@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@	check/crc64_table.c \
+@COND_CHECK_CRC64_TRUE@@COND_SMALL_TRUE@am__append_15 = check/crc64_small.c
+@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__append_16 = \
+@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@	check/crc64_fast.c \
 @COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@	check/crc64_table_le.h \
 @COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@	check/crc64_table_be.h
 
-@COND_ASM_X86_TRUE@@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__append_18 = check/crc64_x86.S
-@COND_ASM_X86_FALSE@@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__append_19 = check/crc64_fast.c
-@COND_CHECK_SHA256_TRUE@@COND_INTERNAL_SHA256_TRUE@am__append_20 = check/sha256.c
-@COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__append_21 = \
+@COND_ASM_X86_TRUE@@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__append_17 = check/crc64_x86.S
+@COND_CHECK_SHA256_TRUE@@COND_INTERNAL_SHA256_TRUE@am__append_18 = check/sha256.c
+@COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__append_19 = \
 @COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_encoder.c \
 @COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_encoder.h \
 @COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_encoder_hash.h \
 @COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_encoder_hash_table.h \
 @COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_encoder_mf.c
 
-@COND_DECODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__append_22 = \
+@COND_DECODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__append_20 = \
 @COND_DECODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_decoder.c \
 @COND_DECODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	lz/lz_decoder.h
 
-@COND_FILTER_LZMA1_TRUE@am__append_23 = lzma/fastpos_tablegen.c \
+@COND_FILTER_LZMA1_TRUE@am__append_21 = lzma/fastpos_tablegen.c \
 @COND_FILTER_LZMA1_TRUE@	rangecoder/price_tablegen.c
-@COND_FILTER_LZMA1_TRUE@am__append_24 = \
+@COND_FILTER_LZMA1_TRUE@am__append_22 = \
 @COND_FILTER_LZMA1_TRUE@	lzma/lzma_common.h \
 @COND_FILTER_LZMA1_TRUE@	lzma/lzma_encoder_presets.c
 
-@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_25 = \
+@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_23 = \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/fastpos.h \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma_encoder.h \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma_encoder.c \
@@ -205,64 +203,64 @@ host_triplet = @host@
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma_encoder_optimum_fast.c \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma_encoder_optimum_normal.c
 
-@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@@COND_SMALL_FALSE@am__append_26 = lzma/fastpos_table.c
-@COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_27 = \
+@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@@COND_SMALL_FALSE@am__append_24 = lzma/fastpos_table.c
+@COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_25 = \
 @COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma_decoder.c \
 @COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma_decoder.h
 
-@COND_ENCODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_28 = \
+@COND_ENCODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_26 = \
 @COND_ENCODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma2_encoder.c \
 @COND_ENCODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma2_encoder.h
 
-@COND_DECODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_29 = \
+@COND_DECODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_27 = \
 @COND_DECODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma2_decoder.c \
 @COND_DECODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@	lzma/lzma2_decoder.h
 
-@COND_FILTER_LZMA1_TRUE@am__append_30 = rangecoder/range_common.h
-@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_31 = \
+@COND_FILTER_LZMA1_TRUE@am__append_28 = rangecoder/range_common.h
+@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_29 = \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	rangecoder/range_encoder.h \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	rangecoder/price.h \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	rangecoder/price_table.c
 
-@COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_32 = rangecoder/range_decoder.h
-@COND_FILTER_DELTA_TRUE@am__append_33 = \
+@COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__append_30 = rangecoder/range_decoder.h
+@COND_FILTER_DELTA_TRUE@am__append_31 = \
 @COND_FILTER_DELTA_TRUE@	delta/delta_common.c \
 @COND_FILTER_DELTA_TRUE@	delta/delta_common.h \
 @COND_FILTER_DELTA_TRUE@	delta/delta_private.h
 
-@COND_ENCODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__append_34 = \
+@COND_ENCODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__append_32 = \
 @COND_ENCODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@	delta/delta_encoder.c \
 @COND_ENCODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@	delta/delta_encoder.h
 
-@COND_DECODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__append_35 = \
+@COND_DECODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__append_33 = \
 @COND_DECODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@	delta/delta_decoder.c \
 @COND_DECODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@	delta/delta_decoder.h
 
-@COND_FILTER_SIMPLE_TRUE@am__append_36 = \
+@COND_FILTER_SIMPLE_TRUE@am__append_34 = \
 @COND_FILTER_SIMPLE_TRUE@	simple/simple_coder.c \
 @COND_FILTER_SIMPLE_TRUE@	simple/simple_coder.h \
 @COND_FILTER_SIMPLE_TRUE@	simple/simple_private.h
 
-@COND_ENCODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_37 = \
+@COND_ENCODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_35 = \
 @COND_ENCODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@	simple/simple_encoder.c \
 @COND_ENCODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@	simple/simple_encoder.h
 
-@COND_DECODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_38 = \
+@COND_DECODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_36 = \
 @COND_DECODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@	simple/simple_decoder.c \
 @COND_DECODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@	simple/simple_decoder.h
 
-@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_X86_TRUE@am__append_39 = simple/x86.c
-@COND_FILTER_POWERPC_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_40 = simple/powerpc.c
-@COND_FILTER_IA64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_41 = simple/ia64.c
-@COND_FILTER_ARM_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_42 = simple/arm.c
-@COND_FILTER_ARMTHUMB_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_43 = simple/armthumb.c
-@COND_FILTER_ARM64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_44 = simple/arm64.c
-@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_SPARC_TRUE@am__append_45 = simple/sparc.c
-@COND_FILTER_RISCV_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_46 = simple/riscv.c
-@COND_W32_TRUE@am__append_47 = liblzma.def liblzma.def.in empty.c
-@COND_W32_TRUE@am__append_48 = liblzma_w32res.rc
-@COND_W32_TRUE@am__append_49 = -Xlinker --output-def -Xlinker liblzma.def.in
-@COND_SHARED_TRUE@@COND_W32_TRUE@am__append_50 = liblzma.def
+@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_X86_TRUE@am__append_37 = simple/x86.c
+@COND_FILTER_POWERPC_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_38 = simple/powerpc.c
+@COND_FILTER_IA64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_39 = simple/ia64.c
+@COND_FILTER_ARM_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_40 = simple/arm.c
+@COND_FILTER_ARMTHUMB_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_41 = simple/armthumb.c
+@COND_FILTER_ARM64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_42 = simple/arm64.c
+@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_SPARC_TRUE@am__append_43 = simple/sparc.c
+@COND_FILTER_RISCV_TRUE@@COND_FILTER_SIMPLE_TRUE@am__append_44 = simple/riscv.c
+@COND_W32_TRUE@am__append_45 = liblzma.def liblzma.def.in empty.c
+@COND_W32_TRUE@am__append_46 = liblzma_w32res.rc
+@COND_W32_TRUE@am__append_47 = -Xlinker --output-def -Xlinker liblzma.def.in
+@COND_SHARED_TRUE@@COND_W32_TRUE@am__append_48 = liblzma.def
 subdir = src/liblzma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_pthread.m4 \
@@ -352,15 +350,15 @@ am__liblzma_la_SOURCES_DIST = ../common/tuklib_physmem.c \
 	common/microlzma_decoder.c common/lzip_decoder.c \
 	common/lzip_decoder.h check/check.c check/check.h \
 	check/crc_common.h check/crc_x86_clmul.h check/crc32_arm64.h \
-	check/crc32_small.c check/crc32_table.c check/crc32_table_le.h \
-	check/crc32_table_be.h check/crc32_x86.S check/crc32_fast.c \
-	check/crc64_small.c check/crc64_table.c check/crc64_table_le.h \
-	check/crc64_table_be.h check/crc64_x86.S check/crc64_fast.c \
-	check/sha256.c lz/lz_encoder.c lz/lz_encoder.h \
-	lz/lz_encoder_hash.h lz/lz_encoder_hash_table.h \
-	lz/lz_encoder_mf.c lz/lz_decoder.c lz/lz_decoder.h \
-	lzma/lzma_common.h lzma/lzma_encoder_presets.c lzma/fastpos.h \
-	lzma/lzma_encoder.h lzma/lzma_encoder.c \
+	check/crc32_loongarch.h check/crc32_small.c check/crc32_fast.c \
+	check/crc32_table_le.h check/crc32_table_be.h \
+	check/crc32_x86.S check/crc64_small.c check/crc64_fast.c \
+	check/crc64_table_le.h check/crc64_table_be.h \
+	check/crc64_x86.S check/sha256.c lz/lz_encoder.c \
+	lz/lz_encoder.h lz/lz_encoder_hash.h \
+	lz/lz_encoder_hash_table.h lz/lz_encoder_mf.c lz/lz_decoder.c \
+	lz/lz_decoder.h lzma/lzma_common.h lzma/lzma_encoder_presets.c \
+	lzma/fastpos.h lzma/lzma_encoder.h lzma/lzma_encoder.c \
 	lzma/lzma_encoder_private.h lzma/lzma_encoder_optimum_fast.c \
 	lzma/lzma_encoder_optimum_normal.c lzma/fastpos_table.c \
 	lzma/lzma_decoder.c lzma/lzma_decoder.h lzma/lzma2_encoder.c \
@@ -417,44 +415,42 @@ am__liblzma_la_SOURCES_DIST = ../common/tuklib_physmem.c \
 @COND_MAIN_DECODER_TRUE@@COND_MICROLZMA_TRUE@am__objects_8 = liblzma_la-microlzma_decoder.lo
 @COND_LZIP_DECODER_TRUE@@COND_MAIN_DECODER_TRUE@am__objects_9 = liblzma_la-lzip_decoder.lo
 @COND_SMALL_TRUE@am__objects_10 = liblzma_la-crc32_small.lo
-@COND_SMALL_FALSE@am__objects_11 = liblzma_la-crc32_table.lo
+@COND_SMALL_FALSE@am__objects_11 = liblzma_la-crc32_fast.lo
 @COND_ASM_X86_TRUE@@COND_SMALL_FALSE@am__objects_12 =  \
 @COND_ASM_X86_TRUE@@COND_SMALL_FALSE@	liblzma_la-crc32_x86.lo
-@COND_ASM_X86_FALSE@@COND_SMALL_FALSE@am__objects_13 = liblzma_la-crc32_fast.lo
-@COND_CHECK_CRC64_TRUE@@COND_SMALL_TRUE@am__objects_14 = liblzma_la-crc64_small.lo
-@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__objects_15 = liblzma_la-crc64_table.lo
-@COND_ASM_X86_TRUE@@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__objects_16 = liblzma_la-crc64_x86.lo
-@COND_ASM_X86_FALSE@@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__objects_17 = liblzma_la-crc64_fast.lo
-@COND_CHECK_SHA256_TRUE@@COND_INTERNAL_SHA256_TRUE@am__objects_18 = liblzma_la-sha256.lo
-@COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__objects_19 = liblzma_la-lz_encoder.lo \
+@COND_CHECK_CRC64_TRUE@@COND_SMALL_TRUE@am__objects_13 = liblzma_la-crc64_small.lo
+@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__objects_14 = liblzma_la-crc64_fast.lo
+@COND_ASM_X86_TRUE@@COND_CHECK_CRC64_TRUE@@COND_SMALL_FALSE@am__objects_15 = liblzma_la-crc64_x86.lo
+@COND_CHECK_SHA256_TRUE@@COND_INTERNAL_SHA256_TRUE@am__objects_16 = liblzma_la-sha256.lo
+@COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__objects_17 = liblzma_la-lz_encoder.lo \
 @COND_ENCODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@	liblzma_la-lz_encoder_mf.lo
-@COND_DECODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__objects_20 = liblzma_la-lz_decoder.lo
-@COND_FILTER_LZMA1_TRUE@am__objects_21 =  \
+@COND_DECODER_LZ_TRUE@@COND_FILTER_LZ_TRUE@am__objects_18 = liblzma_la-lz_decoder.lo
+@COND_FILTER_LZMA1_TRUE@am__objects_19 =  \
 @COND_FILTER_LZMA1_TRUE@	liblzma_la-lzma_encoder_presets.lo
-@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_22 = liblzma_la-lzma_encoder.lo \
+@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_20 = liblzma_la-lzma_encoder.lo \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	liblzma_la-lzma_encoder_optimum_fast.lo \
 @COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@	liblzma_la-lzma_encoder_optimum_normal.lo
-@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@@COND_SMALL_FALSE@am__objects_23 = liblzma_la-fastpos_table.lo
-@COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_24 = liblzma_la-lzma_decoder.lo
-@COND_ENCODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_25 = liblzma_la-lzma2_encoder.lo
-@COND_DECODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_26 = liblzma_la-lzma2_decoder.lo
-am__objects_27 =
-@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_28 = liblzma_la-price_table.lo
-@COND_FILTER_DELTA_TRUE@am__objects_29 = liblzma_la-delta_common.lo
-@COND_ENCODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__objects_30 = liblzma_la-delta_encoder.lo
-@COND_DECODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__objects_31 = liblzma_la-delta_decoder.lo
-@COND_FILTER_SIMPLE_TRUE@am__objects_32 = liblzma_la-simple_coder.lo
-@COND_ENCODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_33 = liblzma_la-simple_encoder.lo
-@COND_DECODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_34 = liblzma_la-simple_decoder.lo
-@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_X86_TRUE@am__objects_35 = liblzma_la-x86.lo
-@COND_FILTER_POWERPC_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_36 = liblzma_la-powerpc.lo
-@COND_FILTER_IA64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_37 = liblzma_la-ia64.lo
-@COND_FILTER_ARM_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_38 = liblzma_la-arm.lo
-@COND_FILTER_ARMTHUMB_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_39 = liblzma_la-armthumb.lo
-@COND_FILTER_ARM64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_40 = liblzma_la-arm64.lo
-@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_SPARC_TRUE@am__objects_41 = liblzma_la-sparc.lo
-@COND_FILTER_RISCV_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_42 = liblzma_la-riscv.lo
-@COND_W32_TRUE@am__objects_43 = liblzma_w32res.lo
+@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@@COND_SMALL_FALSE@am__objects_21 = liblzma_la-fastpos_table.lo
+@COND_DECODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_22 = liblzma_la-lzma_decoder.lo
+@COND_ENCODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_23 = liblzma_la-lzma2_encoder.lo
+@COND_DECODER_LZMA2_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_24 = liblzma_la-lzma2_decoder.lo
+am__objects_25 =
+@COND_ENCODER_LZMA1_TRUE@@COND_FILTER_LZMA1_TRUE@am__objects_26 = liblzma_la-price_table.lo
+@COND_FILTER_DELTA_TRUE@am__objects_27 = liblzma_la-delta_common.lo
+@COND_ENCODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__objects_28 = liblzma_la-delta_encoder.lo
+@COND_DECODER_DELTA_TRUE@@COND_FILTER_DELTA_TRUE@am__objects_29 = liblzma_la-delta_decoder.lo
+@COND_FILTER_SIMPLE_TRUE@am__objects_30 = liblzma_la-simple_coder.lo
+@COND_ENCODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_31 = liblzma_la-simple_encoder.lo
+@COND_DECODER_SIMPLE_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_32 = liblzma_la-simple_decoder.lo
+@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_X86_TRUE@am__objects_33 = liblzma_la-x86.lo
+@COND_FILTER_POWERPC_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_34 = liblzma_la-powerpc.lo
+@COND_FILTER_IA64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_35 = liblzma_la-ia64.lo
+@COND_FILTER_ARM_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_36 = liblzma_la-arm.lo
+@COND_FILTER_ARMTHUMB_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_37 = liblzma_la-armthumb.lo
+@COND_FILTER_ARM64_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_38 = liblzma_la-arm64.lo
+@COND_FILTER_SIMPLE_TRUE@@COND_FILTER_SPARC_TRUE@am__objects_39 = liblzma_la-sparc.lo
+@COND_FILTER_RISCV_TRUE@@COND_FILTER_SIMPLE_TRUE@am__objects_40 = liblzma_la-riscv.lo
+@COND_W32_TRUE@am__objects_41 = liblzma_w32res.lo
 am_liblzma_la_OBJECTS = liblzma_la-tuklib_physmem.lo $(am__objects_1) \
 	liblzma_la-common.lo liblzma_la-block_util.lo \
 	liblzma_la-easy_preset.lo liblzma_la-filter_common.lo \
@@ -469,13 +465,12 @@ am_liblzma_la_OBJECTS = liblzma_la-tuklib_physmem.lo $(am__objects_1) \
 	$(am__objects_16) $(am__objects_17) $(am__objects_18) \
 	$(am__objects_19) $(am__objects_20) $(am__objects_21) \
 	$(am__objects_22) $(am__objects_23) $(am__objects_24) \
-	$(am__objects_25) $(am__objects_26) $(am__objects_27) \
-	$(am__objects_28) $(am__objects_27) $(am__objects_29) \
+	$(am__objects_25) $(am__objects_26) $(am__objects_25) \
+	$(am__objects_27) $(am__objects_28) $(am__objects_29) \
 	$(am__objects_30) $(am__objects_31) $(am__objects_32) \
 	$(am__objects_33) $(am__objects_34) $(am__objects_35) \
 	$(am__objects_36) $(am__objects_37) $(am__objects_38) \
-	$(am__objects_39) $(am__objects_40) $(am__objects_41) \
-	$(am__objects_42) $(am__objects_43)
+	$(am__objects_39) $(am__objects_40) $(am__objects_41)
 liblzma_la_OBJECTS = $(am_liblzma_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -516,11 +511,9 @@ am__depfiles_remade = ./$(DEPDIR)/liblzma_la-alone_decoder.Plo \
 	./$(DEPDIR)/liblzma_la-common.Plo \
 	./$(DEPDIR)/liblzma_la-crc32_fast.Plo \
 	./$(DEPDIR)/liblzma_la-crc32_small.Plo \
-	./$(DEPDIR)/liblzma_la-crc32_table.Plo \
 	./$(DEPDIR)/liblzma_la-crc32_x86.Plo \
 	./$(DEPDIR)/liblzma_la-crc64_fast.Plo \
 	./$(DEPDIR)/liblzma_la-crc64_small.Plo \
-	./$(DEPDIR)/liblzma_la-crc64_table.Plo \
 	./$(DEPDIR)/liblzma_la-crc64_x86.Plo \
 	./$(DEPDIR)/liblzma_la-delta_common.Plo \
 	./$(DEPDIR)/liblzma_la-delta_decoder.Plo \
@@ -848,10 +841,10 @@ top_srcdir = @top_srcdir@
 xz = @xz@
 SUBDIRS = api
 EXTRA_DIST = liblzma_generic.map liblzma_linux.map validate_map.sh \
-	check/crc32_tablegen.c check/crc64_tablegen.c $(am__append_23) \
-	liblzma.pc.in
-CLEANFILES = $(am__append_47)
-doc_DATA = $(am__append_50)
+	check/crc_clmul_consts_gen.c check/crc32_tablegen.c \
+	check/crc64_tablegen.c $(am__append_21) liblzma.pc.in
+CLEANFILES = $(am__append_45)
+doc_DATA = $(am__append_48)
 lib_LTLIBRARIES = liblzma.la
 liblzma_la_SOURCES = ../common/tuklib_physmem.c $(am__append_3) \
 	common/common.c common/common.h common/memcmplen.h \
@@ -864,18 +857,18 @@ liblzma_la_SOURCES = ../common/tuklib_physmem.c $(am__append_3) \
 	$(am__append_8) $(am__append_9) $(am__append_10) \
 	$(am__append_11) check/check.c check/check.h \
 	check/crc_common.h check/crc_x86_clmul.h check/crc32_arm64.h \
-	$(am__append_12) $(am__append_13) $(am__append_14) \
-	$(am__append_15) $(am__append_16) $(am__append_17) \
-	$(am__append_18) $(am__append_19) $(am__append_20) \
-	$(am__append_21) $(am__append_22) $(am__append_24) \
-	$(am__append_25) $(am__append_26) $(am__append_27) \
-	$(am__append_28) $(am__append_29) $(am__append_30) \
-	$(am__append_31) $(am__append_32) $(am__append_33) \
-	$(am__append_34) $(am__append_35) $(am__append_36) \
-	$(am__append_37) $(am__append_38) $(am__append_39) \
-	$(am__append_40) $(am__append_41) $(am__append_42) \
-	$(am__append_43) $(am__append_44) $(am__append_45) \
-	$(am__append_46) $(am__append_48)
+	check/crc32_loongarch.h $(am__append_12) $(am__append_13) \
+	$(am__append_14) $(am__append_15) $(am__append_16) \
+	$(am__append_17) $(am__append_18) $(am__append_19) \
+	$(am__append_20) $(am__append_22) $(am__append_23) \
+	$(am__append_24) $(am__append_25) $(am__append_26) \
+	$(am__append_27) $(am__append_28) $(am__append_29) \
+	$(am__append_30) $(am__append_31) $(am__append_32) \
+	$(am__append_33) $(am__append_34) $(am__append_35) \
+	$(am__append_36) $(am__append_37) $(am__append_38) \
+	$(am__append_39) $(am__append_40) $(am__append_41) \
+	$(am__append_42) $(am__append_43) $(am__append_44) \
+	$(am__append_46)
 liblzma_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblzma/api \
 	-I$(top_srcdir)/src/liblzma/common \
@@ -888,8 +881,8 @@ liblzma_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/common \
 	-DTUKLIB_SYMBOL_PREFIX=lzma_
 
-liblzma_la_LDFLAGS = -no-undefined -version-info 11:3:6 \
-	$(am__append_1) $(am__append_2) $(am__append_49)
+liblzma_la_LDFLAGS = -no-undefined -version-info 13:1:8 \
+	$(am__append_1) $(am__append_2) $(am__append_47)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = liblzma.pc
 pc_verbose = $(pc_verbose_@AM_V@)
@@ -989,11 +982,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-common.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc32_fast.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc32_small.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc32_table.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc32_x86.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc64_fast.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc64_small.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc64_table.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-crc64_x86.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-delta_common.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblzma_la-delta_decoder.Plo@am__quote@ # am--include-marker
@@ -1477,13 +1468,6 @@ liblzma_la-crc32_small.lo: check/crc32_small.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o liblzma_la-crc32_small.lo `test -f 'check/crc32_small.c' || echo '$(srcdir)/'`check/crc32_small.c
 
-liblzma_la-crc32_table.lo: check/crc32_table.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblzma_la-crc32_table.lo -MD -MP -MF $(DEPDIR)/liblzma_la-crc32_table.Tpo -c -o liblzma_la-crc32_table.lo `test -f 'check/crc32_table.c' || echo '$(srcdir)/'`check/crc32_table.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/liblzma_la-crc32_table.Tpo $(DEPDIR)/liblzma_la-crc32_table.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check/crc32_table.c' object='liblzma_la-crc32_table.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o liblzma_la-crc32_table.lo `test -f 'check/crc32_table.c' || echo '$(srcdir)/'`check/crc32_table.c
-
 liblzma_la-crc32_fast.lo: check/crc32_fast.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblzma_la-crc32_fast.lo -MD -MP -MF $(DEPDIR)/liblzma_la-crc32_fast.Tpo -c -o liblzma_la-crc32_fast.lo `test -f 'check/crc32_fast.c' || echo '$(srcdir)/'`check/crc32_fast.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/liblzma_la-crc32_fast.Tpo $(DEPDIR)/liblzma_la-crc32_fast.Plo
@@ -1497,13 +1481,6 @@ liblzma_la-crc64_small.lo: check/crc64_small.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check/crc64_small.c' object='liblzma_la-crc64_small.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o liblzma_la-crc64_small.lo `test -f 'check/crc64_small.c' || echo '$(srcdir)/'`check/crc64_small.c
-
-liblzma_la-crc64_table.lo: check/crc64_table.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblzma_la-crc64_table.lo -MD -MP -MF $(DEPDIR)/liblzma_la-crc64_table.Tpo -c -o liblzma_la-crc64_table.lo `test -f 'check/crc64_table.c' || echo '$(srcdir)/'`check/crc64_table.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/liblzma_la-crc64_table.Tpo $(DEPDIR)/liblzma_la-crc64_table.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check/crc64_table.c' object='liblzma_la-crc64_table.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o liblzma_la-crc64_table.lo `test -f 'check/crc64_table.c' || echo '$(srcdir)/'`check/crc64_table.c
 
 liblzma_la-crc64_fast.lo: check/crc64_fast.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblzma_la-crc64_fast.lo -MD -MP -MF $(DEPDIR)/liblzma_la-crc64_fast.Tpo -c -o liblzma_la-crc64_fast.lo `test -f 'check/crc64_fast.c' || echo '$(srcdir)/'`check/crc64_fast.c
@@ -1967,11 +1944,9 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/liblzma_la-common.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc32_fast.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc32_small.Plo
-	-rm -f ./$(DEPDIR)/liblzma_la-crc32_table.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc32_x86.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc64_fast.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc64_small.Plo
-	-rm -f ./$(DEPDIR)/liblzma_la-crc64_table.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc64_x86.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-delta_common.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-delta_decoder.Plo
@@ -2097,11 +2072,9 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/liblzma_la-common.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc32_fast.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc32_small.Plo
-	-rm -f ./$(DEPDIR)/liblzma_la-crc32_table.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc32_x86.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc64_fast.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc64_small.Plo
-	-rm -f ./$(DEPDIR)/liblzma_la-crc64_table.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-crc64_x86.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-delta_common.Plo
 	-rm -f ./$(DEPDIR)/liblzma_la-delta_decoder.Plo

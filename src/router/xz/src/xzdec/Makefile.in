@@ -91,18 +91,22 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @COND_W32_TRUE@am__append_1 = xzdec_w32res.rc
-@COND_GNULIB_TRUE@am__append_2 = $(top_builddir)/lib/libgnu.a
-@COND_W32_TRUE@am__append_3 = lzmadec_w32res.rc
+@COND_GNULIB_TRUE@am__append_2 = \
+@COND_GNULIB_TRUE@	-I$(top_builddir)/lib \
+@COND_GNULIB_TRUE@	-I$(top_srcdir)/lib
+
+@COND_GNULIB_TRUE@am__append_3 = $(top_builddir)/lib/libgnu.a
+@COND_W32_TRUE@am__append_4 = lzmadec_w32res.rc
 bin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
-@COND_XZDEC_TRUE@am__append_4 = xzdec
-@COND_LZMADEC_TRUE@am__append_5 = lzmadec
+@COND_XZDEC_TRUE@am__append_5 = xzdec
+@COND_LZMADEC_TRUE@am__append_6 = lzmadec
 
 # Create the symlink lzmadec.1->xzdec.1 only if xzdec.1 was installed.
 # This is better than creating a dangling symlink. The correct solution
 # would be to install xzdec.1 as lzmadec.1 but this code is already too
 # complicated so I won't do it. Installing only lzmadec is a bit unusual
 # situation anyway so it's not that important.
-@COND_LZMADEC_TRUE@@COND_XZDEC_TRUE@am__append_6 = lzmadec
+@COND_LZMADEC_TRUE@@COND_XZDEC_TRUE@am__append_7 = lzmadec
 subdir = src/xzdec
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_pthread.m4 \
@@ -134,15 +138,17 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__lzmadec_SOURCES_DIST = xzdec.c ../common/tuklib_progname.c \
-	../common/tuklib_exit.c lzmadec_w32res.rc
+	../common/tuklib_mbstr_nonprint.c ../common/tuklib_exit.c \
+	lzmadec_w32res.rc
 @COND_W32_TRUE@am__objects_1 = lzmadec_w32res.$(OBJEXT)
 am_lzmadec_OBJECTS = lzmadec-xzdec.$(OBJEXT) \
 	lzmadec-tuklib_progname.$(OBJEXT) \
+	lzmadec-tuklib_mbstr_nonprint.$(OBJEXT) \
 	lzmadec-tuklib_exit.$(OBJEXT) $(am__objects_1)
 lzmadec_OBJECTS = $(am_lzmadec_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/src/liblzma/liblzma.la \
-	$(am__append_2) $(am__DEPENDENCIES_1)
+	$(am__append_3) $(am__DEPENDENCIES_1)
 lzmadec_DEPENDENCIES = $(am__DEPENDENCIES_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -152,14 +158,16 @@ lzmadec_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(lzmadec_LDFLAGS) $(LDFLAGS) -o $@
 am__xzdec_SOURCES_DIST = xzdec.c ../common/tuklib_progname.c \
-	../common/tuklib_exit.c xzdec_w32res.rc
+	../common/tuklib_mbstr_nonprint.c ../common/tuklib_exit.c \
+	xzdec_w32res.rc
 @COND_W32_TRUE@am__objects_2 = xzdec_w32res.$(OBJEXT)
 am_xzdec_OBJECTS = xzdec-xzdec.$(OBJEXT) \
-	xzdec-tuklib_progname.$(OBJEXT) xzdec-tuklib_exit.$(OBJEXT) \
-	$(am__objects_2)
+	xzdec-tuklib_progname.$(OBJEXT) \
+	xzdec-tuklib_mbstr_nonprint.$(OBJEXT) \
+	xzdec-tuklib_exit.$(OBJEXT) $(am__objects_2)
 xzdec_OBJECTS = $(am_xzdec_OBJECTS)
 xzdec_DEPENDENCIES = $(top_builddir)/src/liblzma/liblzma.la \
-	$(am__append_2) $(am__DEPENDENCIES_1)
+	$(am__append_3) $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -176,8 +184,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/lzmadec-tuklib_exit.Po \
+	./$(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Po \
 	./$(DEPDIR)/lzmadec-tuklib_progname.Po \
 	./$(DEPDIR)/lzmadec-xzdec.Po ./$(DEPDIR)/xzdec-tuklib_exit.Po \
+	./$(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Po \
 	./$(DEPDIR)/xzdec-tuklib_progname.Po \
 	./$(DEPDIR)/xzdec-xzdec.Po
 am__mv = mv -f
@@ -416,21 +426,19 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 xz = @xz@
 xzdec_SOURCES = xzdec.c ../common/tuklib_progname.c \
-	../common/tuklib_exit.c $(am__append_1)
-xzdec_CPPFLAGS = \
-	-DTUKLIB_GETTEXT=0 \
-	-I$(top_srcdir)/src/common \
-	-I$(top_srcdir)/src/liblzma/api \
-	-I$(top_builddir)/lib
-
-xzdec_LDADD = $(top_builddir)/src/liblzma/liblzma.la $(am__append_2) \
+	../common/tuklib_mbstr_nonprint.c ../common/tuklib_exit.c \
+	$(am__append_1)
+xzdec_CPPFLAGS = -DTUKLIB_GETTEXT=0 -I$(top_srcdir)/src/common \
+	-I$(top_srcdir)/src/liblzma/api $(am__append_2)
+xzdec_LDADD = $(top_builddir)/src/liblzma/liblzma.la $(am__append_3) \
 	$(LTLIBINTL)
 lzmadec_SOURCES = xzdec.c ../common/tuklib_progname.c \
-	../common/tuklib_exit.c $(am__append_3)
+	../common/tuklib_mbstr_nonprint.c ../common/tuklib_exit.c \
+	$(am__append_4)
 lzmadec_CPPFLAGS = $(xzdec_CPPFLAGS) -DLZMADEC
 lzmadec_LDFLAGS = $(xzdec_LDFLAGS)
 lzmadec_LDADD = $(xzdec_LDADD)
-lzmadecmanlink = $(am__append_6)
+lzmadecmanlink = $(am__append_7)
 @COND_XZDEC_TRUE@dist_man_MANS = xzdec.1
 all: all-am
 
@@ -525,9 +533,11 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmadec-tuklib_exit.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmadec-tuklib_progname.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmadec-xzdec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xzdec-tuklib_exit.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xzdec-tuklib_progname.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xzdec-xzdec.Po@am__quote@ # am--include-marker
 
@@ -586,6 +596,20 @@ lzmadec-tuklib_progname.obj: ../common/tuklib_progname.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmadec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmadec-tuklib_progname.obj `if test -f '../common/tuklib_progname.c'; then $(CYGPATH_W) '../common/tuklib_progname.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_progname.c'; fi`
 
+lzmadec-tuklib_mbstr_nonprint.o: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmadec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmadec-tuklib_mbstr_nonprint.o -MD -MP -MF $(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Tpo -c -o lzmadec-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='lzmadec-tuklib_mbstr_nonprint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmadec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmadec-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+
+lzmadec-tuklib_mbstr_nonprint.obj: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmadec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmadec-tuklib_mbstr_nonprint.obj -MD -MP -MF $(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Tpo -c -o lzmadec-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='lzmadec-tuklib_mbstr_nonprint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmadec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmadec-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+
 lzmadec-tuklib_exit.o: ../common/tuklib_exit.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmadec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmadec-tuklib_exit.o -MD -MP -MF $(DEPDIR)/lzmadec-tuklib_exit.Tpo -c -o lzmadec-tuklib_exit.o `test -f '../common/tuklib_exit.c' || echo '$(srcdir)/'`../common/tuklib_exit.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmadec-tuklib_exit.Tpo $(DEPDIR)/lzmadec-tuklib_exit.Po
@@ -627,6 +651,20 @@ xzdec-tuklib_progname.obj: ../common/tuklib_progname.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_progname.c' object='xzdec-tuklib_progname.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xzdec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xzdec-tuklib_progname.obj `if test -f '../common/tuklib_progname.c'; then $(CYGPATH_W) '../common/tuklib_progname.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_progname.c'; fi`
+
+xzdec-tuklib_mbstr_nonprint.o: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xzdec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xzdec-tuklib_mbstr_nonprint.o -MD -MP -MF $(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Tpo -c -o xzdec-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='xzdec-tuklib_mbstr_nonprint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xzdec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xzdec-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+
+xzdec-tuklib_mbstr_nonprint.obj: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xzdec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xzdec-tuklib_mbstr_nonprint.obj -MD -MP -MF $(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Tpo -c -o xzdec-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='xzdec-tuklib_mbstr_nonprint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xzdec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xzdec-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
 
 xzdec-tuklib_exit.o: ../common/tuklib_exit.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xzdec_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xzdec-tuklib_exit.o -MD -MP -MF $(DEPDIR)/xzdec-tuklib_exit.Tpo -c -o xzdec-tuklib_exit.o `test -f '../common/tuklib_exit.c' || echo '$(srcdir)/'`../common/tuklib_exit.c
@@ -820,9 +858,11 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -f ./$(DEPDIR)/lzmadec-tuklib_exit.Po
+	-rm -f ./$(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Po
 	-rm -f ./$(DEPDIR)/lzmadec-tuklib_progname.Po
 	-rm -f ./$(DEPDIR)/lzmadec-xzdec.Po
 	-rm -f ./$(DEPDIR)/xzdec-tuklib_exit.Po
+	-rm -f ./$(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Po
 	-rm -f ./$(DEPDIR)/xzdec-tuklib_progname.Po
 	-rm -f ./$(DEPDIR)/xzdec-xzdec.Po
 	-rm -f Makefile
@@ -872,9 +912,11 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/lzmadec-tuklib_exit.Po
+	-rm -f ./$(DEPDIR)/lzmadec-tuklib_mbstr_nonprint.Po
 	-rm -f ./$(DEPDIR)/lzmadec-tuklib_progname.Po
 	-rm -f ./$(DEPDIR)/lzmadec-xzdec.Po
 	-rm -f ./$(DEPDIR)/xzdec-tuklib_exit.Po
+	-rm -f ./$(DEPDIR)/xzdec-tuklib_mbstr_nonprint.Po
 	-rm -f ./$(DEPDIR)/xzdec-tuklib_progname.Po
 	-rm -f ./$(DEPDIR)/xzdec-xzdec.Po
 	-rm -f Makefile

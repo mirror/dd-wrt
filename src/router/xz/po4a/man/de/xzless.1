@@ -4,7 +4,7 @@
 .\"          Lasse Collin
 .\"
 .\" German translation for xz-man.
-.\" Mario Blättermann <mario.blaettermann@gmail.com>, 2015, 2019-2020, 2022-2024.
+.\" Mario Blättermann <mario.blaettermann@gmail.com>, 2015, 2019-2020, 2022-2025.
 .\"
 .\" (Note that this file is not based on gzip's zless.1.)
 .\"
@@ -13,13 +13,13 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZLESS 1 "12. Februar 2024" Tukaani XZ\-Dienstprogramme
+.TH XZLESS 1 "6. März 2025" Tukaani XZ\-Dienstprogramme
 .SH BEZEICHNUNG
 xzless, lzless \- mit xz oder lzma komprimierte (Text\-)Dateien betrachten
 .SH ÜBERSICHT
 \fBxzless\fP [\fIDatei\fP …]
 .br
-\fBlzless\fP [\fIDatei\fP …]
+\fBlzless\fP [\fIDatei\fP …] (VERALTET)
 .SH BESCHREIBUNG
 \fBxzless\fP ist ein Filter, der Text aus komprimierten Dateien in einem
 Terminal anzeigt. Von \fBxz\fP(1) unterstützte Dateien werden dekomprimiert;
@@ -31,11 +31,12 @@ Standardeingabe.
 \fBxzmore\fP können Sie das zu verwendende Textanzeigeprogramm nicht durch
 Setzen einer Umgebungsvariable ändern. Die Befehle basieren auf \fBmore\fP(1)
 und \fBvi\fP(1) und ermöglichen Vorwärts\- und Rückwärtssprünge sowie
-Suchvorgänge. In der Handbuchseite zu \fBless\fP(1) finden Sie weiter
-Information.
+Suchvorgänge. In der Handbuchseite zu \fBless\fP(1) finden Sie weitere
+Informationen.
 .PP
 Der Befehl \fBlzless\fP dient der Abwärtskompatibilität zu den
-LZMA\-Dienstprogrammen.
+LZMA\-Dienstprogrammen. Er wird als veraltet angesehen und wird in einer
+zukünftigen Version entfernt.
 .SH UMGEBUNGSVARIABLEN
 .TP 
 \fBLESSMETACHARS\fP

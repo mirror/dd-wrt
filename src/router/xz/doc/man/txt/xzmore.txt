@@ -5,7 +5,7 @@ NAME
 
 SYNOPSIS
        xzmore [file...]
-       lzmore [file...]
+       lzmore [file...]  (DEPRECATED)
 
 DESCRIPTION
        xzmore displays text from compressed files to a terminal using more(1).
@@ -19,7 +19,7 @@ DESCRIPTION
        vides more advanced features.
 
        The command lzmore is provided for  backward  compatibility  with  LZMA
-       Utils.
+       Utils.  It is deprecated and will be removed in a future version.
 
 ENVIRONMENT
        PAGER  If  PAGER  is  set,  its  value  is used as the pager instead of
@@ -28,4 +28,4 @@ ENVIRONMENT
 SEE ALSO
        more(1), xz(1), xzless(1), zmore(1)
 
-Tukaani                           2024-02-12                         XZMORE(1)
+Tukaani                           2025-03-06                         XZMORE(1)

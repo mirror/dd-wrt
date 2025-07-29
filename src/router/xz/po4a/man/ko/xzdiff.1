@@ -13,7 +13,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZDIFF 1 2024\-02\-13 Tukaani "XZ 유틸리티"
+.TH XZDIFF 1 2025\-03\-06 Tukaani "XZ 유틸리티"
 .SH 이름
 xzcmp, xzdiff, lzcmp, lzdiff \- 압축 파일을 비교합니다
 .
@@ -22,9 +22,9 @@ xzcmp, xzdiff, lzcmp, lzdiff \- 압축 파일을 비교합니다
 .br
 \fBxzdiff\fP \&...
 .br
-\fBlzcmp\fP \&...
+\fBlzcmp\fP \&...  (사용 안 함)
 .br
-\fBlzdiff\fP \&...
+\fBlzdiff\fP \&...  (사용 안 함)
 .
 .SH 설명
 \fBxzcmp\fP 와 \fBxzdiff\fP 명령은 압축 해제한 두 파일의 내용을 비교합니다.  압축 해제한 파일의 데이터와 옵션은
@@ -40,7 +40,8 @@ xzcmp, xzdiff, lzcmp, lzdiff \- 압축 파일을 비교합니다
 파일 이름을 하나만 지정한다면, \fI<파일1>\fP의 확장자는 지원 압축 형식의 확장자여야 하며,
 \fI<파일2>\fP는 \fI<파일1>\fP에서 압축 파일 확장자를 제거한 파일로 간주합니다.
 .PP
-\fBlzcmp\fP와 \fBlzdiff\fP 명령은 LZMA 유틸리티 하위 호환용으로 제공합니다.
+\fBlzcmp\fP와 \fBlzdiff\fP 명령은 LZMA 유틸리티 하위 호환용으로 제공합니다.  해당 명령은 오래되어 이후 버전에서
+제거합니다.
 .
 .SH "종료 상태"
 압축 해제 오류가 나타나는 경우, 종료 코드는 \fB2\fP입니다.  그렇지 않을 경우 \fBcmp\fP(1)  또는 \fBdiff\fP(1) 명령의

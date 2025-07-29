@@ -1,4 +1,5 @@
-# progtest.m4 serial 10 (gettext-0.23)
+# progtest.m4
+# serial 10 (gettext-0.23)
 dnl Copyright (C) 1996-2003, 2005, 2008-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,

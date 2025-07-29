@@ -64,6 +64,9 @@
 /* Define to 1 if you have the <cpuid.h> header file. */
 #undef HAVE_CPUID_H
 
+/* Define to 1 if the 32-bit x86 CRC assembly files are used. */
+#undef HAVE_CRC_X86_ASM
+
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
 #undef HAVE_DCGETTEXT
@@ -183,6 +186,9 @@
 /* Define to 1 if Linux Landlock is supported. See configure.ac for details.
    */
 #undef HAVE_LINUX_LANDLOCK
+
+/* Define to 1 if 64-bit LoongArch CRC32 instructions are supported. */
+#undef HAVE_LOONGARCH_CRC32
 
 /* Define to 1 if .lz (lzip) decompression support is enabled. */
 #undef HAVE_LZIP_DECODER
@@ -323,6 +329,9 @@
 
 /* Define to 1 if you have the 'utimes' function. */
 #undef HAVE_UTIMES
+
+/* Define to 1 if you have the 'vasprintf' function. */
+#undef HAVE_VASPRINTF
 
 /* Define to 1 or 0, depending whether the compiler supports simple visibility
    declarations. */

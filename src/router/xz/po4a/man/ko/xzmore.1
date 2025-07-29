@@ -13,14 +13,14 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZMORE 1 2024\-02\-12 Tukaani "XZ 유틸리티"
+.TH XZMORE 1 2025\-03\-06 Tukaani "XZ 유틸리티"
 .SH 이름
 xzmore, lzmore \- xz 압축 (텍스트) 파일 또는 lzma 압축 (텍스트) 파일을 봅니다
 .
 .SH 요약
 \fBxzmore\fP [\fI<파일>\fP...]
 .br
-\fBlzmore\fP [\fI<파일>\fP...]
+\fBlzmore\fP [\fIfile\fP...] (사용 안 함)
 .
 .SH 설명
 \fBxzmore\fP 명령은 압축 파일에 들어있는 텍스트를 \fBmore\fP(1) 명령으로 터미널에 나타냅니다.  \fBxz\fP(1) 방식으로
@@ -31,12 +31,14 @@ xzmore, lzmore \- xz 압축 (텍스트) 파일 또는 lzma 압축 (텍스트) �
 \fBmore\fP(1) 명령에 압축 해제한 데이터를 파이프로 전달하기 때문입니다.  \fBxzless\fP(1)는   좀 더 나은 기능을 가진
 \fBless\fP(1) 명령을 활용합니다.
 .PP
-\fBlzmore\fP 명령은 LZMA 유틸리티 하위 호환용으로 제공합니다.
+\fBlzmore\fP 명령은 LZMA 유틸리티 하위 호환용으로 제공합니다.  해당 명령은 오래되어 이후 버전에서 제거합니다.
 .
 .SH 환경
 .TP 
+.\" TRANSLATORS: Don't translate the uppercase PAGER.
+.\" It is a name of an environment variable.
 \fBPAGER\fP
-\fBPAGER\fP 환경변수 값을 설정했다면 \fBmore\fP(1) 대신 해당 환경변수 값을 사용합니다.
+\fBPAGER\fP 환경변수 값을 설정했다면, \fBmore\fP(1) 대신 해당 환경변수 값을 화면 표시 프로그램으로 사용합니다.
 .
 .SH "추가 참조"
 \fBmore\fP(1), \fBxz\fP(1), \fBxzless\fP(1), \fBzmore\fP(1)

@@ -12,7 +12,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZ 1 2024\-04\-08 Tukaani "XZ 유틸리티"
+.TH XZ 1 2025\-03\-08 Tukaani "XZ 유틸리티"
 .
 .SH 이름
 xz, unxz, xzcat, lzma, unlzma, lzcat \- .xz 파일과 .lzma 파일을 압축 또는 압축 해제합니다
@@ -90,6 +90,8 @@ xz, unxz, xzcat, lzma, unlzma, lzcat \- .xz 파일과 .lzma 파일을 압축 또
 수단을 제공하긴 하지만, 여기에 의지하기에는 충분히 유연하지 않습니다(예를 들면, \fBulimit\fP(1)을 사용하면 가상 메모리를
 제한하여  \fBmmap\fP(2)을 먹통으로 만듭니다).
 .PP
+.\" TRANSLATORS: Don't translate the uppercase XZ_DEFAULTS.
+.\" It's a name of an environment variable.
 메모리 사용 제한 기능은 \fB\-\-memlimit=\fP\fI<제한용량>\fP 명령행 옵션으로 사용할 수 있습니다.  종종
 \fBXZ_DEFAULTS=\-\-memlimit=150MiB\fP와 같이 \fBXZ_DEFAULTS\fP 환경 변수를 설정하여 제한 기능을 켜는게 더
 편합니다.  \fB\-\-memlimit\-compress=\fP\fI<제한용량>\fP 옵션과
@@ -137,9 +139,18 @@ xz, unxz, xzcat, lzma, unlzma, lzcat \- .xz 파일과 .lzma 파일을 압축 또
 \fB\-z\fP, \fB\-\-compress\fP
 압축합니다.  어떤 동작 모드 옵션도 지정하지 않고 다른 동작 모드를 명령행에 따로 지정하지 않았다면 이 동작 모드는 기본입니다(예:
 \fBunxz\fP 는 \fB\-\-decompress\fP를 암시).
+.IP ""
+.\" The DESCRIPTION section already says this but it's good to repeat it
+.\" here because the default behavior is a bit dangerous and new users
+.\" in a hurry may skip reading the DESCRIPTION section.
+압축을 제대로 끝내고 나면, 표준 출력에 기록하거나 \fB\-\-keep\fP 옵션을 지정하지 않았다면 원본 파일을 제거합니다.
 .TP 
 \fB\-d\fP, \fB\-\-decompress\fP, \fB\-\-uncompress\fP
-압축을 해제합니다.
+.\" The DESCRIPTION section already says this but it's good to repeat it
+.\" here because the default behavior is a bit dangerous and new users
+.\" in a hurry may skip reading the DESCRIPTION section.
+압축 해제입니다.  압축 해제를 제대로 끝내고 나면, 표준 출력에 기록하거나 \fB\-\-keep\fP 옵션을 지정하지 않았다면 원본 파일을
+제거합니다.
 .TP 
 \fB\-t\fP, \fB\-\-test\fP
 압축 \fI<파일>\fP의 무결성을 시험해봅니다.  이 옵션은 압축 해제 데이터를 표준 출력으로 기록하는 대신 버린다는 점을
@@ -194,6 +205,8 @@ setgid, 끈적이 비트 세트를 설정한 상태라도 압축하거나 압축
 \fBxz\fP에서 \fB.lzma\fP 파일 또는 원시 스트림을 처리한 다음에 뒤따라오는 데이터를 무시하도록 합니다.
 .IP ""
 이 옵션은 동작 모드가 \fB\-\-decompress\fP 또는 \fB\-\-test\fP가 아니면 동작에 아무런 영향을 주지 않습니다.
+.IP ""
+\fBxz\fP 5.7.1alpha 부터는 \fB\-\-single\-stream\fP 옵션의 동작에 \fB\-\-keep\fP 동작이 들어갑니다.
 .TP 
 \fB\-\-no\-sparse\fP
 희소 파일을 만들지 않습니다.  기본적으로 일반 파일로 압축 해제할 경우 \fBxz\fP 에서는 압축 해제한 파일에 이진 0값이 길게 늘어질
@@ -227,6 +240,7 @@ setgid, 끈적이 비트 세트를 설정한 상태라도 압축하거나 압축
 압축 또는 압축해제 파일 \fI<형식>\fP을 지정합니다:
 .RS
 .TP 
+.\" TRANSLATORS: Don't translate bold string B<auto>.
 \fBauto\fP
 기본 값입니다.  압축할 때, \fBauto\fP는 \fBxz\fP의 기본 동작과 동일합니다.  압축을 해제할 때, 입력 파일 형식을 자동으로
 찾습니다.  참고로 원시 스트림(\fB\-\-format=raw\fP)의 경우 자동으로 찾을 수 없습니다.
@@ -261,6 +275,9 @@ setgid, 끈적이 비트 세트를 설정한 상태라도 압축하거나 압축
 지원 \fI검사\fP 형식:
 .RS
 .TP 
+.\" TRANSLATORS: Don't translate the bold strings B<none>, B<crc32>,
+.\" B<crc64>, and B<sha256>. The command line option --check accepts
+.\" only the untranslated strings.
 \fBnone\fP
 어떤 경우에도 무결성 검사 계산을 수행하지 않습니다.  보통 바람직하지 못한 생각입니다.  데이터 무결성을 다른 방식으로라도 검증해야
 하는 상황이면 쓸만할 수 있습니다.
@@ -473,6 +490,15 @@ Preset;DictSize;CompCPU;CompMem;DecMem
 \fB이 기능은 여전히 시험중입니다\fP.  현재로서는, \fBxz\fP 버퍼링 처리 방식 때문에 \fBxz\fP의 실시간 스트림 압축 해제 기능 활용은
 적절하지 않습니다.
 .TP 
+\fB\-\-no\-sync\fP
+원본 파일을 제거하기 전까지는 스토릿지 장치에 대상 파일과 디렉터리를 동기화하지 않습니다.  작은 여러 파일을 압축하거나 압축해제할 때
+성능을 개선할 수 있습니다.  그러나, 삭제 과정을 진행한 다음 시스템이 바로 치명적인 오류가 나타난다면, 대상 파일을 스토릿지 장치에
+저장하지 않았지만 삭제 동작이 이루어졌을 수도 있습니다.  이 경우 원본 파일 뿐만 아니라 대상 파일도 나타나지 않습니다.
+.IP ""
+이 옵션은 \fBxz\fP 프로그램이 원본 파일을 삭제할 때만 동작합니다.  다른 경우에는 전혀 동기화가 이루어지지 않습니다.
+.IP ""
+동기화 동작과 \fB\-\-no\-sync\fP 옵션은 \fBxz\fP 5.7.1alpha에 추가했습니다.
+.TP 
 \fB\-\-memlimit\-compress=\fP\fI<제한용량>\fP
 압축 수행시 메모리 사용 한계를 지정합니다.  이 옵션을 여러번 지정하면 마지막 값을 취합니다.
 .IP ""
@@ -635,6 +661,11 @@ LZMA1은 고전 필터로, LZMA1만 지원하는 고전 \fB.lzma\fP 파일 형�
 LZMA1과 LZMA2는 동일한 \fI<옵션>\fP 집합을 공유합니다:
 .RS
 .TP 
+.\" TRANSLATORS: Don't translate bold strings like B<preset>, B<dict>,
+.\" B<mode>, B<nice>, B<fast>, or B<normal> because those are command line
+.\" options. On the other hand, do translate the italic strings like
+.\" I<preset>, I<size>, and I<mode>, because such italic strings are
+.\" placeholders which a user replaces with an actual value.
 \fBpreset=\fP\fI<사전설정>\fP
 LZMA1 또는 LZMA2의 모든 \fI<옵션>\fP을 \fI<사전설정>\fP으로
 초기화합니다. \fI<사전설정>\fP 값은 정수 값으로 이루어져 있으며, 사전 설정에 변형을 줄 떄 단일 문자가 따라올 수도
@@ -795,7 +826,7 @@ LZMA1 또는 LZMA2로 종종 압축하는 파일 형식이라고 하면 고려�
 .TP 
 \fB\-\-sparc\fP[\fB=\fP\fI<옵션>\fP]
 .TP 
-\fB\-\-riscv\fP[\fB=\fP\fI<옵션>\fP]
+\fB\-\-riscv\fP[\fB=\fP\fIoptions\fP]
 .PD
 브랜치/호출/점프(BCJ) 필터를 필터 체인에 추가합니다.  이 필터는 필터 체인의 비종결 필터로만 사용할 수 있습니다.
 .IP ""
@@ -950,27 +981,32 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 \fBxz \-\-robot \-\-list\fP 명령은 탭으로 구분한 출력 형태를 활용합니다.  모든 행의 첫번째 컬럼에는 해당 행에서 찾을 수
 있는 정보의 형식을 나타냅니다:
 .TP 
-\fB이름\fP
+.\" TRANSLATORS: The bold strings B<name>, B<file>, B<stream>, B<block>,
+.\" B<summary>, and B<totals> are produced by the xz tool for scripts to
+.\" parse, thus the untranslated strings must be included in the translated
+.\" man page. It may be useful to provide a translated string in parenthesis
+.\" without bold, for example: "B<name> (nimi)"
+\fBname\fP
 이 행은 항상 파일 목록 시작 부분의 첫번째 줄에 있습니다.  이 행의 두번째 컬럼에 파일 이름이 들어있습니다.
 .TP 
-\fB파일\fP
-이 행에는 \fB.xz\fP 파일의 전반적인 정보가 들어있습니다.  이 행은 항상 \fB이름\fP 행 다음에 있습니다.
+\fBfile\fP
+이 행에는 \fB.xz\fP 파일의 전반적인 정보가 들어있습니다.  이 행은 항상 \fBname\fP 행 다음에 있습니다.
 .TP 
-\fB스트림\fP
-이 행 형식은 \fB\-\-verbose\fP 옵션을 지정했을 때만 사용합니다.  \fB.xz\fP 파일의 \fB스트림\fP 행 수만큼 나타납니다.
+\fBstream\fP
+이 행 형식은 \fB\-\-verbose\fP 옵션을 지정했을 때만 사용합니다.  \fB.xz\fP 파일의 \fBstream\fP 행 수만큼 나타납니다.
 .TP 
-\fB블록\fP
-이 행 형식은 \fB\-\-verbose\fP 옵션을 지정했을 때만 사용합니다.  \fB.xz\fP 파일의 블록 수만큼 \fB블록\fP 행이 나타납니다.
-\fB블록\fP 행은 모든 \fB스트림\fP 행 다음에 나타납니다. 다른 형식의 행이 끼어들지는 않습니다.
+\fBblock\fP
+이 행 형식은 \fB\-\-verbose\fP 옵션을 지정했을 때만 사용합니다.  \fB.xz\fP 파일의 블록 수만큼 \fBblock\fP 행이
+나타납니다.  \fBblock\fP 행은 모든 \fBstream\fP 행 다음에 나타납니다. 다른 형식의 행이 끼어들지는 않습니다.
 .TP 
-\fB요약\fP
-이 행 형식은 \fB\-\-verbose\fP 옵션을 두번 지정했을 때만 사용합니다.  이 행은 모든 \fB블록\fP 행 다음에 출력합니다.
-\fB파일\fP 행과 비슷하게, \fB요약\fP 행에는 \fB.xz\fP 파일의 전반적인 정보가 담겨있습니다.
+\fBsummary\fP
+이 행 형식은 \fB\-\-verbose\fP 옵션을 두번 지정했을 때만 사용합니다.  이 행은 모든 \fBblock\fP 행 다음에 출력합니다.
+\fBfile\fP 행과 비슷하게, \fBsummary\fP 행에는 \fB.xz\fP 파일의 전반적인 정보가 담겨있습니다.
 .TP 
-\fB총계\fP
+\fBtotals\fP
 이 행은 목록 출력의 가장 마지막에 항상 나타납니다.  총 갯수와 크기를 나타냅니다.
 .PP
-\fB파일\fP 행 컬럼:
+\fBfile\fP 행 컬럼:
 .PD 0
 .RS
 .IP 2. 4
@@ -984,6 +1020,9 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .IP 6. 4
 예를 들면, \fB0.123\fP과 같은 압축율 입니다.  비율이 9.999라면, 대시 문자 3개 (\fB\-\-\-\fP)를 비율 값 대신 나타냅니다.
 .IP 7. 4
+.\" TRANSLATORS: Don't translate the bold strings B<None>, B<CRC32>,
+.\" B<CRC64>, B<SHA-256>, or B<Unknown-> here. In robot mode, xz produces
+.\" them in untranslated form for scripts to parse.
 쉼표로 구분한 무결성 검사 이름 목록입니다.  \fBNone\fP, \fBCRC32\fP, \fBCRC64\fP, \fBSHA\-256\fP 문자열을 알려진
 검사 형식으로 사용합니다.  알 수 없는 검사 형식에 대해서는 \fBUnknown\-\fP\fIN\fP을 사용하며, 여기서 \fIN\fP은 (한 두자리)
 정수형 숫자값으로 이루어진 검사 ID 입니다.
@@ -992,7 +1031,7 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .RE
 .PD
 .PP
-\fB스트림\fP 행 컬럼:
+\fBstream\fP 행 컬럼:
 .PD 0
 .RS
 .IP 2. 4
@@ -1016,7 +1055,7 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .RE
 .PD
 .PP
-\fB블록\fP 행 컬럼:
+\fBblock\fP 행 컬럼:
 .PD 0
 .RS
 .IP 2. 4
@@ -1040,8 +1079,8 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .RE
 .PD
 .PP
-\fB\-\-verbose\fP를 두 번 지정하면, 추가 컬럼을 \fB블록\fP 행에 넣습니다.  \fB\-\-verbose\fP 단일 지정시에는 이 정보를 볼
-때 탐색을 여러번 수행해야 하기 때문에 실행 과정이 느려질 수 있어서 나타내지 않습니다:
+\fB\-\-verbose\fP를 두 번 지정하면, 추가 컬럼을 \fBblock\fP 행에 넣습니다.  \fB\-\-verbose\fP 단일 지정시에는 이
+정보를 볼 때 탐색을 여러번 수행해야 하기 때문에 실행 과정이 느려질 수 있어서 나타내지 않습니다:
 .PD 0
 .RS
 .IP 11. 4
@@ -1060,7 +1099,7 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .RE
 .PD
 .PP
-\fB요약\fP 행 컬럼:
+\fBsummary\fP 행 컬럼:
 .PD 0
 .RS
 .IP 2. 4
@@ -1074,7 +1113,7 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .RE
 .PD
 .PP
-\fB총계\fP 행 컬럼:
+\fBtotals\fP 행 컬럼:
 .PD 0
 .RS
 .IP 2. 4
@@ -1092,11 +1131,11 @@ x86 필터는 예외입니다.  x86 실행 파일을 압축할 경우에는 보�
 .IP 8. 4
 스트림 패딩 길이
 .IP 9. 4
-파일 갯수.  \fB파일\fP 행의 컬럼 순서를 따라갑니다.
+파일 갯수.  \fBfile\fP 행의 컬럼 순서를 따라갑니다.
 .PD
 .RE
 .PP
-\fB\-\-verbose\fP 옵션을 두 번 지정하면, \fB총계\fP 행에 추가 컬럼이 들어갑니다:
+\fB\-\-verbose\fP 옵션을 두 번 지정하면, \fBtotals\fP 행에 추가 컬럼이 들어갑니다:
 .PD 0
 .RS
 .IP 10. 4
@@ -1159,6 +1198,7 @@ for \fB\-\-memlimit\-mt\-decompress\fP.
 .SS 버전
 \fBxz \-\-robot \-\-version\fP 은 \fBxz\fP 와 liblzma의 버전 번호를 다음 형식으로 나타냅니다:
 .PP
+.\" TRANSLATORS: Don't translate the uppercase XZ_VERSION or LIBLZMA_VERSION.
 \fBXZ_VERSION=\fP\fIXYYYZZZS\fP
 .br
 \fBLIBLZMA_VERSION=\fP\fIXYYYZZZS\fP
@@ -1194,14 +1234,23 @@ for \fB\-\-memlimit\-mt\-decompress\fP.
 표준 오류에 출력하는 알림(경고 또는 오류 아님)는 종료 상태에 영향을 주지 않습니다.
 .
 .SH 환경
+.\" TRANSLATORS: Don't translate the uppercase XZ_DEFAULTS or XZ_OPT.
+.\" They are names of environment variables.
 \fBxz\fP는 빈칸으로 구분한 옵션 값 목록을 \fBXZ_DEFAULTS\fP, \fBXZ_OPT\fP 환경 변수에서 순서대로, 명령행에서 옵션을
 해석하기 전에 불러옵니다.  참고로 환경 변수에서 옵션만 해석하며, 옵션이 아닌 부분은 조용히 무시합니다.  해석은
 \fBgetopt_long\fP(3)으로 가능하며,  명령행 인자로 활용하기도 합니다.
+.PP
+\fB경고:\fP 환경 변수를 설정하면, 프로그램과 \fBxz\fP를 실행하는 스크립트의 동작이 바뀝니다.  대부분의 경우 메모리 사용 제한량,
+스레드 수, 압축 옵션을 환경 변수로 설정하는게 안전합니다.  그러나 일부 옵션은 스크립트의 동작을 망가뜨릴 수 있습니다.  분명한
+예제로는 \fBxz\fP에서 파일의 압축 및 해제 대신 도움말 내용을 표시하는 \fB\-\-help\fP 옵션이 있습니다.  좀 더 묘한 예제로는
+\fB\-\-quiet\fP 와 \fB\-\-verbose\fP 옵션이 있습니다.  대부분의 경우 \fB\-\-verbose\fP 옵션을 사용하여 프로세스 상황을
+표시하는데 잘 동작하지만, 어떤 경우에는 추가 메시지가 나타나는 문제가 있습니다.  출력 상세 수준은 \fB\-\-list\fP의 동작에도 영향을
+줍니다.
 .TP 
 \fBXZ_DEFAULTS\fP
-사용자별, 시스템 범위 기본 옵션입니다.  보통 \fBxz\fP의 메모리 사용량 제한을 기본으로 걸어둘 경우 셸 초기화 스크립트에
-설정합니다.  셸 초기화 스크립트와 별도의 유사한 경우를 제외하고라면, 스크립트에서는 \fBXZ_DEFAULTS\fP 환경 변수를 설정하지
-말거나 설정을 해제해야합니다.
+사용자별, 시스템 범위 기본 옵션입니다.  보통 \fBxz\fP의 메모리 사용량 제한을 기본으로 걸어두거나 기본 스레드 수를 설정할 경우 셸
+초기화 스크립트에 설정합니다.  셸 초기화 스크립트와 별도의 유사한 경우를 제외하고라면, 스크립트에서는 \fBXZ_DEFAULTS\fP 환경
+변수를 설정하지 않거나 설정을 해제해야합니다.
 .TP 
 \fBXZ_OPT\fP
 \fBxz\fP 명령행으로 옵션 설정 값을 직접 전달할 수 없을 경우 \fBxz\fP에 옵션을 전달하는 환경 변수입니다.  예를 들어, \fBxz\fP를
@@ -1531,8 +1580,8 @@ LZMA2와 델타 필터는 비트맵 그림에 최적의 결과를 가져다줄 �
 \fBxzdec\fP(1), \fBxzdiff\fP(1), \fBxzgrep\fP(1), \fBxzless\fP(1), \fBxzmore\fP(1),
 \fBgzip\fP(1), \fBbzip2\fP(1), \fB7z\fP(1)
 .PP
-XZ 유틸리티: <https://tukaani.org/xz\-utils/>
+XZ 유틸리티: <https://tukaani.org/xz/>
 .br
-XZ 임베디드: <https://tukaani.org/xz/embedded/>
+XZ 임베디드: <https://tukaani.org/xz/embedded.html>
 .br
 LZMA SDK: <https://7\-zip.org/sdk.html>

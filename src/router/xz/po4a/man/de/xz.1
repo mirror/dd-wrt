@@ -5,14 +5,14 @@
 .\"          Jia Tan
 .\"
 .\" German translation for xz-man.
-.\" Mario Blättermann <mario.blaettermann@gmail.com>, 2015, 2019-2020, 2022-2024.
+.\" Mario Blättermann <mario.blaettermann@gmail.com>, 2015, 2019-2020, 2022-2025.
 .\"
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZ 1 2024\-04\-08 Tukaani XZ\-Dienstprogramme
+.TH XZ 1 "8. März 2025" Tukaani XZ\-Dienstprogramme
 .
 .SH BEZEICHNUNG
 xz, unxz, xzcat, lzma, unlzma, lzcat \- .xz\- und .lzma\-Dateien komprimieren
@@ -128,6 +128,8 @@ Speicherbegrenzung, doch diese sind zu unflexibel (zum Beispiel kann
 \fBulimit\fP(1) beim Begrenzen des virtuellen Speichers \fBmmap\fP(2)
 beeinträchtigen).
 .PP
+.\" TRANSLATORS: Don't translate the uppercase XZ_DEFAULTS.
+.\" It's a name of an environment variable.
 Die Begrenzung des Speicherbedarfs kann mit der Befehlszeilenoption
 \fB\-\-memlimit=\fP\fIBegrenzung\fP aktiviert werden. Oft ist es jedoch bequemer,
 die Begrenzung durch Setzen der Umgebungsvariable \fBXZ_DEFAULTS\fP
@@ -196,9 +198,20 @@ verwendet.
 Kompression. Dies ist der voreingestellte Aktionsmodus, sofern keiner
 angegeben ist und auch kein bestimmter Modus aus dem Befehlsnamen abgeleitet
 werden kann (der Befehl \fBunxz\fP impliziert zum Beispiel \fB\-\-decompress\fP).
+.IP ""
+.\" The DESCRIPTION section already says this but it's good to repeat it
+.\" here because the default behavior is a bit dangerous and new users
+.\" in a hurry may skip reading the DESCRIPTION section.
+Nach erfolgreicher Kompression wird die Quelldatei gelöscht, außer wenn in
+die Standardausgabe geschrieben wird oder \fB\-\-keep\fP angegeben wurde.
 .TP 
 \fB\-d\fP, \fB\-\-decompress\fP, \fB\-\-uncompress\fP
-dekomprimpiert.
+.\" The DESCRIPTION section already says this but it's good to repeat it
+.\" here because the default behavior is a bit dangerous and new users
+.\" in a hurry may skip reading the DESCRIPTION section.
+Dekomprimieren. Nach erfolgreicher Dekompression wird die Quelldatei
+gelöscht, außer wenn in die Standardausgabe geschrieben wird oder \fB\-\-keep\fP
+angegeben wurde.
 .TP 
 \fB\-t\fP, \fB\-\-test\fP
 prüft die Integrität der komprimierten \fIDateien\fP. Diese Option ist
@@ -276,6 +289,9 @@ ignoriert.
 .IP ""
 Diese Option ist wirkungslos, wenn der Aktionsmodus nicht \fB\-\-decompress\fP
 oder \fB\-\-test\fP ist.
+.IP ""
+Seit der Programmversion \fBxz\fP 5.7.1alpha impliziert \fB\-\-single\-stream\fP
+zusätzlich die Option \fB\-\-keep\fP.
 .TP 
 \fB\-\-no\-sparse\fP
 verhindert die Erzeugung von Sparse\-Dateien. In der Voreinstellung versucht
@@ -322,6 +338,7 @@ Dateiname mit einem Null\-Zeichen abgeschlossen werden muss.
 gibt das \fIFormat\fP der zu komprimierenden oder dekomprimierenden Datei an:
 .RS
 .TP 
+.\" TRANSLATORS: Don't translate bold string B<auto>.
 \fBauto\fP
 Dies ist die Voreinstellung. Bei der Kompression ist \fBauto\fP gleichbedeutend
 mit \fBxz\fP. Bei der Dekompression wird das Format der Eingabedatei
@@ -373,6 +390,9 @@ dekomprimiert wird.
 Folgende Typen von \fIPrüfungen\fP werden unterstützt:
 .RS
 .TP 
+.\" TRANSLATORS: Don't translate the bold strings B<none>, B<crc32>,
+.\" B<crc64>, and B<sha256>. The command line option --check accepts
+.\" only the untranslated strings.
 \fBnone\fP
 führt keine Integritätsprüfung aus. Dies ist eine eher schlechte
 Idee. Dennoch kann es nützlich sein, wenn die Integrität der Daten auf
@@ -662,6 +682,21 @@ Dieses Funktionsmerkmal ist außerhalb von POSIX\-Systemen nicht verfügbar.
 aufgrund der Art und Weise, wie \fBxz\fP puffert, für Dekompression in Echtzeit
 ungeeignet.
 .TP 
+\fB\-\-no\-sync\fP
+synchronisiert die Zieldatei und deren Verzeichnis auf dem Speichergerät
+nicht, bevor die Quelldatei gelöscht wird. So kann die Performance beim
+Komprimieren oder Dekomprimieren vieler kleiner Dateien verbessert
+werden. Jedoch wäre es möglich, falls es kurz nach dem Löschen zu einem
+Systemabsturz kommt, dass die Zieldatei noch nicht auf dem Speichergerät
+geschrieben, aber der Löschvorgang bereits ausgeführt wurde. In diesem Fall
+gehen sowohl die Quelldatei als auch die Zieldatei verloren.
+.IP ""
+Diese Option ist nur wirksam, wenn \fBxz\fP die Quelldatei löscht. In anderen
+Fällen wird niemals synchronisiert.
+.IP ""
+Die Synchronisierung und \fB\-\-no\-sync\fP wurden in Version \fBxz\fP 5.7.1alpha
+hinzugefügt.
+.TP 
 \fB\-\-memlimit\-compress=\fP\fIGrenze\fP
 legt eine Grenze für die Speichernutzung bei der Kompression fest. Wenn
 diese Option mehrmals angegeben wird, ist die zuletzt angegebene wirksam.
@@ -908,6 +943,11 @@ LZMA2 praktisch gleich.
 LZMA1 und LZMA2 haben die gleichen \fIOptionen\fP:
 .RS
 .TP 
+.\" TRANSLATORS: Don't translate bold strings like B<preset>, B<dict>,
+.\" B<mode>, B<nice>, B<fast>, or B<normal> because those are command line
+.\" options. On the other hand, do translate the italic strings like
+.\" I<preset>, I<size>, and I<mode>, because such italic strings are
+.\" placeholders which a user replaces with an actual value.
 \fBpreset=\fP\fIVoreinstellung\fP
 setzt alle LZMA1\- oder LZMA2\-\fIOptionen\fP auf die \fIVoreinstellung\fP
 zurück. Diese \fIVoreinstellung\fP wird in Form einer Ganzzahl angegeben, der
@@ -1330,6 +1370,11 @@ unterstützt.
 der ersten Spalte jeder Zeile bezeichnet eine Zeichenkette den Typ der
 Information, die in dieser Zeile enthalten ist:
 .TP 
+.\" TRANSLATORS: The bold strings B<name>, B<file>, B<stream>, B<block>,
+.\" B<summary>, and B<totals> are produced by the xz tool for scripts to
+.\" parse, thus the untranslated strings must be included in the translated
+.\" man page. It may be useful to provide a translated string in parenthesis
+.\" without bold, for example: "B<name> (nimi)"
 \fBname\fP
 Dies ist stets die erste Zeile, wenn eine Datei aufgelistet wird. Die zweite
 Spalte in der Zeile enthält den Dateinamen.
@@ -1375,9 +1420,12 @@ Das Kompressionsverhältnis, zum Beispiel \fB0.123\fP. Wenn das Verhältnis übe
 9.999 liegt, werden drei Minuszeichen (\fB\-\-\-\fP) anstelle des
 Kompressionsverhältnisses angezeigt.
 .IP 7. 4
+.\" TRANSLATORS: Don't translate the bold strings B<None>, B<CRC32>,
+.\" B<CRC64>, B<SHA-256>, or B<Unknown-> here. In robot mode, xz produces
+.\" them in untranslated form for scripts to parse.
 Durch Kommata getrennte Liste der Namen der Integritätsprüfungen. Für die
 bekannten Überprüfungstypen werden folgende Zeichenketten verwendet:
-\fBNone\fP, \fBCRC32\fP, \fBCRC64\fP und \fBSHA\-256\fP. \fBUnbek.\fP\fIN\fP wird verwendet,
+\fBNone\fP, \fBCRC32\fP, \fBCRC64\fP und \fBSHA\-256\fP. \fBUnknown\-\fP\fIN\fP wird verwendet,
 wobei \fIN\fP die Kennung der Überprüfung als Dezimalzahl angibt (ein\- oder
 zweistellig).
 .IP 8. 4
@@ -1583,6 +1631,7 @@ Spalten enthalten, aber niemals mehr als eine einzelne Zeile.
 \fBxz \-\-robot \-\-version\fP gibt die Versionsnummern von \fBxz\fP und Liblzma im
 folgenden Format aus:
 .PP
+.\" TRANSLATORS: Don't translate the uppercase XZ_VERSION or LIBLZMA_VERSION.
 \fBXZ_VERSION=\fP\fIXYYYZZZS\fP
 .br
 \fBLIBLZMA_VERSION=\fP\fIXYYYZZZS\fP
@@ -1623,6 +1672,8 @@ In die Standardausgabe geschriebene Hinweise (keine Warnungen oder Fehler),
 welche den Exit\-Status nicht beeinflussen.
 .
 .SH UMGEBUNGSVARIABLEN
+.\" TRANSLATORS: Don't translate the uppercase XZ_DEFAULTS or XZ_OPT.
+.\" They are names of environment variables.
 \fBxz\fP wertet eine durch Leerzeichen getrennte Liste von Optionen in den
 Umgebungsvariablen \fBXZ_DEFAULTS\fP und \fBXZ_OPT\fP aus (in dieser Reihenfolge),
 bevor die Optionen aus der Befehlszeile ausgewertet werden. Beachten Sie,
@@ -1630,14 +1681,26 @@ dass beim Auswerten der Umgebungsvariablen nur Optionen berücksichtigt
 werden; alle Einträge, die keine Optionen sind, werden stillschweigend
 ignoriert. Die Auswertung erfolgt mit \fBgetopt_long\fP(3), welches auch für
 die Befehlszeilenargumente verwendet wird.
+.PP
+\fBWarnung:\fP Durch Setzen dieser Umgebungsvariablen könnte man effektiv
+Programme und Skripte modifizieren, die \fBxz\fP ausführen. Meist ist es
+sicher, die Speichernutzungsbegrenzung und Kompressionsoptionen über die
+Umgebungsvariablen zu setzen. Dennoch können einige Optionen Skripte
+beeinflussen. Ein typisches Beispiel ist die Option \fB\-\-help\fP, die einen
+Hilfetext anzeigt, anstatt eine Datei zu komprimieren oder zu
+dekomprimieren. Weniger augenfällige Beispiele sind die Optionen \fB\-\-quiet\fP
+und \fB\-\-verbose\fP. In vielen Fällen funktioniert es gut, den
+Fortschrittsindikator mit \fB\-\-verbose\fP zu aktivieren, aber in einigen
+Situationen können die zusätzlichen Meldungen Probleme verursachen. Die
+Ausführlichkeitsstufe beeinflusst auch das Verhalten von \fB\-\-list\fP.
 .TP 
 \fBXZ_DEFAULTS\fP
 Benutzerspezifische oder systemweite Standardoptionen. Typischerweise werden
 diese in einem Shell\-Initialisierungsskript gesetzt, um die
-Speicherbedarfsbegrenzung von \fBxz\fP standardmäßig zu aktivieren. Außer bei
-Shell\-Initialisierungsskripten und in ähnlichen Spezialfällen darf die
-Variable \fBXZ_DEFAULTS\fP in Skripten niemals gesetzt oder außer Kraft gesetzt
-werden.
+Speicherbedarfsbegrenzung von \fBxz\fP standardmäßig zu aktivieren oder die
+Anzahl der Threads festzulegen. Außer bei Shell\-Initialisierungsskripten und
+in ähnlichen Spezialfällen sollte die Variable \fBXZ_DEFAULTS\fP in Skripten
+niemals gesetzt oder außer Kraft gesetzt werden.
 .TP 
 \fBXZ_OPT\fP
 Dies dient der Übergabe von Optionen an \fBxz\fP, wenn es nicht möglich ist,
@@ -1894,7 +1957,7 @@ Beta\-Versionen kompatibel, welche die Option \fB\-\-robot\fP nicht unterstütze
 .nf
 \f(CRif ! eval "$(xz \-\-robot \-\-version 2> /dev/null)" ||
         [ "$XZ_VERSION" \-lt 50000002 ]; then
-    echo "Your xz is too old."
+    echo "Ihre Version von Xz ist zu alt."
 fi
 unset XZ_VERSION LIBLZMA_VERSION\fR
 .fi

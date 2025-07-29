@@ -6,8 +6,8 @@ NAME
 SYNOPSIS
        xzcmp [option...]  file1 [file2]
        xzdiff ...
-       lzcmp ...
-       lzdiff ...
+       lzcmp ...  (DEPRECATED)
+       lzdiff ...  (DEPRECATED)
 
 DESCRIPTION
        xzcmp  and  xzdiff  compare uncompressed contents of two files.  Uncom-
@@ -26,13 +26,14 @@ DESCRIPTION
        with the compression format suffix removed.
 
        The  commands  lzcmp and lzdiff are provided for backward compatibility
-       with LZMA Utils.
+       with LZMA Utils.  They are deprecated and will be removed in  a  future
+       version.
 
 EXIT STATUS
-       If a decompression error occurs, the exit status is 2.   Otherwise  the
+       If  a  decompression error occurs, the exit status is 2.  Otherwise the
        exit status of cmp(1) or diff(1) is used.
 
 SEE ALSO
        cmp(1), diff(1), xz(1), gzip(1), bzip2(1), lzop(1), zstd(1), lz4(1)
 
-Tukaani                           2024-02-13                         XZDIFF(1)
+Tukaani                           2025-03-06                         XZDIFF(1)

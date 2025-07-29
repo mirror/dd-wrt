@@ -96,8 +96,12 @@ bin_PROGRAMS = xz$(EXEEXT)
 @COND_MAIN_DECODER_TRUE@	list.h
 
 @COND_W32_TRUE@am__append_2 = xz_w32res.rc
-@COND_GNULIB_TRUE@am__append_3 = $(top_builddir)/lib/libgnu.a
-@COND_LZMALINKS_TRUE@am__append_4 = lzma unlzma lzcat
+@COND_GNULIB_TRUE@am__append_3 = \
+@COND_GNULIB_TRUE@	-I$(top_builddir)/lib \
+@COND_GNULIB_TRUE@	-I$(top_srcdir)/lib
+
+@COND_GNULIB_TRUE@am__append_4 = $(top_builddir)/lib/libgnu.a
+@COND_LZMALINKS_TRUE@am__append_5 = lzma unlzma lzcat
 subdir = src/xz
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_pthread.m4 \
@@ -132,7 +136,8 @@ am__xz_SOURCES_DIST = args.c args.h coder.c coder.h file_io.c \
 	sandbox.c sandbox.h signals.c signals.h suffix.c suffix.h \
 	util.c util.h ../common/tuklib_open_stdxxx.c \
 	../common/tuklib_progname.c ../common/tuklib_exit.c \
-	../common/tuklib_mbstr_width.c ../common/tuklib_mbstr_fw.c \
+	../common/tuklib_mbstr_fw.c ../common/tuklib_mbstr_nonprint.c \
+	../common/tuklib_mbstr_width.c ../common/tuklib_mbstr_wrap.c \
 	list.c list.h xz_w32res.rc
 @COND_MAIN_DECODER_TRUE@am__objects_1 = xz-list.$(OBJEXT)
 @COND_W32_TRUE@am__objects_2 = xz_w32res.$(OBJEXT)
@@ -142,12 +147,14 @@ am_xz_OBJECTS = xz-args.$(OBJEXT) xz-coder.$(OBJEXT) \
 	xz-sandbox.$(OBJEXT) xz-signals.$(OBJEXT) xz-suffix.$(OBJEXT) \
 	xz-util.$(OBJEXT) xz-tuklib_open_stdxxx.$(OBJEXT) \
 	xz-tuklib_progname.$(OBJEXT) xz-tuklib_exit.$(OBJEXT) \
-	xz-tuklib_mbstr_width.$(OBJEXT) xz-tuklib_mbstr_fw.$(OBJEXT) \
+	xz-tuklib_mbstr_fw.$(OBJEXT) \
+	xz-tuklib_mbstr_nonprint.$(OBJEXT) \
+	xz-tuklib_mbstr_width.$(OBJEXT) xz-tuklib_mbstr_wrap.$(OBJEXT) \
 	$(am__objects_1) $(am__objects_2)
 xz_OBJECTS = $(am_xz_OBJECTS)
 am__DEPENDENCIES_1 =
 xz_DEPENDENCIES = $(top_builddir)/src/liblzma/liblzma.la \
-	$(am__append_3) $(am__DEPENDENCIES_1)
+	$(am__append_4) $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -175,7 +182,9 @@ am__depfiles_remade = ./$(DEPDIR)/xz-args.Po ./$(DEPDIR)/xz-coder.Po \
 	./$(DEPDIR)/xz-signals.Po ./$(DEPDIR)/xz-suffix.Po \
 	./$(DEPDIR)/xz-tuklib_exit.Po \
 	./$(DEPDIR)/xz-tuklib_mbstr_fw.Po \
+	./$(DEPDIR)/xz-tuklib_mbstr_nonprint.Po \
 	./$(DEPDIR)/xz-tuklib_mbstr_width.Po \
+	./$(DEPDIR)/xz-tuklib_mbstr_wrap.Po \
 	./$(DEPDIR)/xz-tuklib_open_stdxxx.Po \
 	./$(DEPDIR)/xz-tuklib_progname.Po ./$(DEPDIR)/xz-util.Po
 am__mv = mv -f
@@ -418,20 +427,18 @@ xz_SOURCES = args.c args.h coder.c coder.h file_io.c file_io.h \
 	mytime.c mytime.h options.c options.h private.h sandbox.c \
 	sandbox.h signals.c signals.h suffix.c suffix.h util.c util.h \
 	../common/tuklib_open_stdxxx.c ../common/tuklib_progname.c \
-	../common/tuklib_exit.c ../common/tuklib_mbstr_width.c \
-	../common/tuklib_mbstr_fw.c $(am__append_1) $(am__append_2)
-xz_CPPFLAGS = \
-	-DLOCALEDIR=\"$(localedir)\" \
-	-I$(top_srcdir)/src/common \
-	-I$(top_srcdir)/src/liblzma/api \
-	-I$(top_builddir)/lib
-
+	../common/tuklib_exit.c ../common/tuklib_mbstr_fw.c \
+	../common/tuklib_mbstr_nonprint.c \
+	../common/tuklib_mbstr_width.c ../common/tuklib_mbstr_wrap.c \
+	$(am__append_1) $(am__append_2)
+xz_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" -I$(top_srcdir)/src/common \
+	-I$(top_srcdir)/src/liblzma/api $(am__append_3)
 
 # libgnu.a may need these libs, so this must be after libgnu.a.
-xz_LDADD = $(top_builddir)/src/liblzma/liblzma.la $(am__append_3) \
+xz_LDADD = $(top_builddir)/src/liblzma/liblzma.la $(am__append_4) \
 	$(LTLIBINTL)
 dist_man_MANS = xz.1
-xzlinks = unxz xzcat $(am__append_4)
+xzlinks = unxz xzcat $(am__append_5)
 all: all-am
 
 .SUFFIXES:
@@ -534,7 +541,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-suffix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_exit.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_mbstr_fw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_mbstr_nonprint.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_mbstr_width.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_mbstr_wrap.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_open_stdxxx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-tuklib_progname.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xz-util.Po@am__quote@ # am--include-marker
@@ -776,6 +785,34 @@ xz-tuklib_exit.obj: ../common/tuklib_exit.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_exit.obj `if test -f '../common/tuklib_exit.c'; then $(CYGPATH_W) '../common/tuklib_exit.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_exit.c'; fi`
 
+xz-tuklib_mbstr_fw.o: ../common/tuklib_mbstr_fw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_fw.o -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo -c -o xz-tuklib_mbstr_fw.o `test -f '../common/tuklib_mbstr_fw.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_fw.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo $(DEPDIR)/xz-tuklib_mbstr_fw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_fw.c' object='xz-tuklib_mbstr_fw.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_fw.o `test -f '../common/tuklib_mbstr_fw.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_fw.c
+
+xz-tuklib_mbstr_fw.obj: ../common/tuklib_mbstr_fw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_fw.obj -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo -c -o xz-tuklib_mbstr_fw.obj `if test -f '../common/tuklib_mbstr_fw.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_fw.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_fw.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo $(DEPDIR)/xz-tuklib_mbstr_fw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_fw.c' object='xz-tuklib_mbstr_fw.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_fw.obj `if test -f '../common/tuklib_mbstr_fw.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_fw.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_fw.c'; fi`
+
+xz-tuklib_mbstr_nonprint.o: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_nonprint.o -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_nonprint.Tpo -c -o xz-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/xz-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='xz-tuklib_mbstr_nonprint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+
+xz-tuklib_mbstr_nonprint.obj: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_nonprint.obj -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_nonprint.Tpo -c -o xz-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/xz-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='xz-tuklib_mbstr_nonprint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+
 xz-tuklib_mbstr_width.o: ../common/tuklib_mbstr_width.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_width.o -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_width.Tpo -c -o xz-tuklib_mbstr_width.o `test -f '../common/tuklib_mbstr_width.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_width.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_width.Tpo $(DEPDIR)/xz-tuklib_mbstr_width.Po
@@ -790,19 +827,19 @@ xz-tuklib_mbstr_width.obj: ../common/tuklib_mbstr_width.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_width.obj `if test -f '../common/tuklib_mbstr_width.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_width.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_width.c'; fi`
 
-xz-tuklib_mbstr_fw.o: ../common/tuklib_mbstr_fw.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_fw.o -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo -c -o xz-tuklib_mbstr_fw.o `test -f '../common/tuklib_mbstr_fw.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_fw.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo $(DEPDIR)/xz-tuklib_mbstr_fw.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_fw.c' object='xz-tuklib_mbstr_fw.o' libtool=no @AMDEPBACKSLASH@
+xz-tuklib_mbstr_wrap.o: ../common/tuklib_mbstr_wrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_wrap.o -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_wrap.Tpo -c -o xz-tuklib_mbstr_wrap.o `test -f '../common/tuklib_mbstr_wrap.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_wrap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_wrap.Tpo $(DEPDIR)/xz-tuklib_mbstr_wrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_wrap.c' object='xz-tuklib_mbstr_wrap.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_fw.o `test -f '../common/tuklib_mbstr_fw.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_fw.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_wrap.o `test -f '../common/tuklib_mbstr_wrap.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_wrap.c
 
-xz-tuklib_mbstr_fw.obj: ../common/tuklib_mbstr_fw.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_fw.obj -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo -c -o xz-tuklib_mbstr_fw.obj `if test -f '../common/tuklib_mbstr_fw.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_fw.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_fw.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_fw.Tpo $(DEPDIR)/xz-tuklib_mbstr_fw.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_fw.c' object='xz-tuklib_mbstr_fw.obj' libtool=no @AMDEPBACKSLASH@
+xz-tuklib_mbstr_wrap.obj: ../common/tuklib_mbstr_wrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-tuklib_mbstr_wrap.obj -MD -MP -MF $(DEPDIR)/xz-tuklib_mbstr_wrap.Tpo -c -o xz-tuklib_mbstr_wrap.obj `if test -f '../common/tuklib_mbstr_wrap.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_wrap.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_wrap.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xz-tuklib_mbstr_wrap.Tpo $(DEPDIR)/xz-tuklib_mbstr_wrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_wrap.c' object='xz-tuklib_mbstr_wrap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_fw.obj `if test -f '../common/tuklib_mbstr_fw.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_fw.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_fw.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xz-tuklib_mbstr_wrap.obj `if test -f '../common/tuklib_mbstr_wrap.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_wrap.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_wrap.c'; fi`
 
 xz-list.o: list.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xz_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xz-list.o -MD -MP -MF $(DEPDIR)/xz-list.Tpo -c -o xz-list.o `test -f 'list.c' || echo '$(srcdir)/'`list.c
@@ -1007,7 +1044,9 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/xz-suffix.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_exit.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_fw.Po
+	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_nonprint.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_width.Po
+	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_wrap.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_open_stdxxx.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_progname.Po
 	-rm -f ./$(DEPDIR)/xz-util.Po
@@ -1072,7 +1111,9 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/xz-suffix.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_exit.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_fw.Po
+	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_nonprint.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_width.Po
+	-rm -f ./$(DEPDIR)/xz-tuklib_mbstr_wrap.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_open_stdxxx.Po
 	-rm -f ./$(DEPDIR)/xz-tuklib_progname.Po
 	-rm -f ./$(DEPDIR)/xz-util.Po

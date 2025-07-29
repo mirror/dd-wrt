@@ -5,7 +5,7 @@
 .\"
 .\" Romanian translation for xz-man.
 .\" Mesajele în limba română pentru manualul pachetului XZ Utils.
-.\" Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2022 - 2024.
+.\" Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2022 - 2025.
 .\" Cronologia traducerii fișierului „xz-man”:
 .\" Traducerea inițială, făcută de R-GC, pentru versiunea xz-man 5.4.0-pre1.
 .\" Actualizare a traducerii pentru versiunea 5.4.0-pre2, făcută de R-GC, dec-2022.
@@ -13,6 +13,8 @@
 .\" Actualizare a traducerii pentru versiunea 5.4.4-pre1, făcută de R-GC, iul-2023.
 .\" Actualizare a traducerii pentru versiunea 5.6.0-pre1, făcută de R-GC, feb-2024.
 .\" Actualizare a traducerii pentru versiunea 5.6.0-pre2, făcută de R-GC, feb-2024.
+.\" Actualizare a traducerii pentru versiunea 5.7.1-dev1, făcută de R-GC, ian-2025.
+.\" Actualizare a traducerii pentru versiunea 5.8.0-pre1, făcută de R-GC, mar-2025.
 .\" Actualizare a traducerii pentru versiunea Y, făcută de X, Z(luna-anul).
 .\"
 .\" (Note that this file is not based on gzip's zgrep.1.)
@@ -22,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZGREP 1 "13 februarie 2024" Tukaani "Utilități XZ"
+.TH XZGREP 1 "6 martie 2025" Tukaani "Utilități XZ"
 .SH NUME
 xzgrep \- caută modele în fișiere posibil comprimate
 .
@@ -33,11 +35,11 @@ xzgrep \- caută modele în fișiere posibil comprimate
 .br
 \fBxzfgrep\fP \&...
 .br
-\fBlzgrep\fP \&...
+\fBlzgrep\fP \&...  (DEPRECIATĂ)
 .br
-\fBlzegrep\fP \&...
+\fBlzegrep\fP \&...  (DEPRECIATĂ)
 .br
-\fBlzfgrep\fP \&...
+\fBlzfgrep\fP \&...  (DEPRECIATĂ)
 .
 .SH DESCRIERE
 \fBxzgrep\fP invocă \fBgrep\fP(1) asupra conținutului necomprimat al
@@ -76,7 +78,8 @@ următoarele opțiuni nu sunt acceptate:
 pentru \fBxzgrep \-F\fP.
 .PP
 Comenzile \fBlzgrep\fP, \fBlzegrep\fP și \fBlzfgrep\fP sunt furnizate pentru
-compatibilitate retroactivă cu LZMA Utils.
+compatibilitate retroactivă cu LZMA Utils. Acestea sunt depreciate și vor fi
+eliminate într\-o versiune viitoare.
 .
 .SH "STARE DE IEȘIRE"
 .TP 

@@ -5,7 +5,7 @@
 .\"
 .\" Romanian translation for xz-man.
 .\" Mesajele în limba română pentru manualul pachetului XZ Utils.
-.\" Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2022 - 2024.
+.\" Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2022 - 2025.
 .\" Cronologia traducerii fișierului „xz-man”:
 .\" Traducerea inițială, făcută de R-GC, pentru versiunea xz-man 5.4.0-pre1.
 .\" Actualizare a traducerii pentru versiunea 5.4.0-pre2, făcută de R-GC, dec-2022.
@@ -13,6 +13,8 @@
 .\" Actualizare a traducerii pentru versiunea 5.4.4-pre1, făcută de R-GC, iul-2023.
 .\" Actualizare a traducerii pentru versiunea 5.6.0-pre1, făcută de R-GC, feb-2024.
 .\" Actualizare a traducerii pentru versiunea 5.6.0-pre2, făcută de R-GC, feb-2024.
+.\" Actualizare a traducerii pentru versiunea 5.7.1-dev1, făcută de R-GC, ian-2025.
+.\" Actualizare a traducerii pentru versiunea 5.8.0-pre1, făcută de R-GC, mar-2025.
 .\" Actualizare a traducerii pentru versiunea Y, făcută de X, Z(luna-anul).
 .\"
 .\" (Note that this file is based on xzless.1 instead of gzip's zmore.1.)
@@ -22,14 +24,14 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZMORE 1 "12 februarie 2024" Tukaani "Utilități XZ"
+.TH XZMORE 1 "6 martie 2025" Tukaani "Utilități XZ"
 .SH NUME
 xzmore, lzmore \- vizualizează fișierele (text) comprimate xz sau lzma
 .
 .SH REZUMAT
 \fBxzmore\fP [\fIfișier\fP...]
 .br
-\fBlzmore\fP [\fIfișier\fP...]
+\fBlzmore\fP [\fIfișier\fP...] (DEPRECIATĂ)
 .
 .SH DESCRIERE
 \fBxzmore\fP afișează textul din fișierele comprimate pe un terminal folosind
@@ -45,10 +47,12 @@ de implementarea lui \fBmore\fP(1). Acest lucru se datorează faptului că
 avansate.
 .PP
 Comanda \fBlzmore\fP este furnizată pentru compatibilitate retroactivă cu LZMA
-Utils.
+Utils. Aceasta este depreciată și va fi eliminată într\-o versiune viitoare.
 .
 .SH "VARIABILE DE MEDIU"
 .TP 
+.\" TRANSLATORS: Don't translate the uppercase PAGER.
+.\" It is a name of an environment variable.
 \fBPAGER\fP
 Dacă variabila de mediu \fBPAGER\fP, este definită, valoarea sa este utilizată
 ca paginator în loc de \fBmore\fP(1).

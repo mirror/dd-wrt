@@ -13,7 +13,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZGREP 1 2024\-02\-13 Tukaani "XZ 유틸리티"
+.TH XZGREP 1 2025\-03\-06 Tukaani "XZ 유틸리티"
 .SH 이름
 xzgrep \- 패턴을 활용하여 가능한 방식으로 압축한 파일의 내용을 검색합니다
 .
@@ -24,11 +24,11 @@ xzgrep \- 패턴을 활용하여 가능한 방식으로 압축한 파일의 내�
 .br
 \fBxzfgrep\fP \&...
 .br
-\fBlzgrep\fP \&...
+\fBlzgrep\fP \&...  (사용 안 함)
 .br
-\fBlzegrep\fP \&...
+\fBlzegrep\fP \&...  (사용 안 함)
 .br
-\fBlzfgrep\fP \&...
+\fBlzfgrep\fP \&...  (사용 안 함)
 .
 .SH 설명
 \fBxzgrep\fP은 압축 해제한 파일의 내용에 \fBgrep\fP(1)을 실행합니다.  \fI<파일>\fP 형식은 파일 이름 확장으로
@@ -61,7 +61,8 @@ xzgrep \- 패턴을 활용하여 가능한 방식으로 압축한 파일의 내�
 .PP
 \fBxzegrep\fP은 \fBxzgrep \-E\fP 명령의 별칭입니다.  \fBxzfgrep\fP은 \fBxzgrep \-F\fP 명령의 별칭입니다.
 .PP
-\fBlzgrep\fP, \fBlzegrep\fP, \fBlzfgrep\fP 명령은 LZMA 유틸리티 하위 호환용으로 제공합니다.
+\fBlzgrep\fP, \fBlzegrep\fP, \fBlzfgrep\fP 명령은 LZMA 유틸리티 하위 호환용으로 제공합니다.  해당 명령은 오래되어
+이후 버전에서 제거합니다.
 .
 .SH "종료 상태"
 .TP 

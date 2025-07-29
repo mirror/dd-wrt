@@ -14,13 +14,13 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZLESS 1 2024\-02\-12 Tukaani "XZ Utils"
+.TH XZLESS 1 2025\-03\-06 Tukaani "XZ Utils"
 .SH NOME
 xzless, lzless \- visualiza arquivos (texto) compactados em xz ou lzma
 .SH SINOPSE
 \fBxzless\fP [\fIarquivo\fP...]
 .br
-\fBlzless\fP [\fIarquivo\fP...]
+\fBlzless\fP [\fIfile\fP...] (DEPRECATED)
 .SH DESCRIÇÃO
 \fBxzless\fP is a filter that displays text from compressed files to a
 terminal.  Files supported by \fBxz\fP(1)  are decompressed; other files are
@@ -33,8 +33,8 @@ uma variável de ambiente. Os comandos são baseados em \fBmore\fP(1) e \fBvi\fP
 e permitem movimento e busca para frente e para trás. Consulte o manual
 \fBless\fP(1) para obter mais informações.
 .PP
-O comando denominado \fBlzless\fP é fornecido para compatibilidade com versões
-anteriores do LZMA Utils.
+The command named \fBlzless\fP is provided for backward compatibility with LZMA
+Utils.  It is deprecated and will be removed in a future version.
 .SH AMBIENTE
 .TP 
 \fBLESSMETACHARS\fP

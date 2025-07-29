@@ -5,7 +5,7 @@
 .\"
 .\" Romanian translation for xz-man.
 .\" Mesajele în limba română pentru manualul pachetului XZ Utils.
-.\" Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2022 - 2024.
+.\" Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2022 - 2025.
 .\" Cronologia traducerii fișierului „xz-man”:
 .\" Traducerea inițială, făcută de R-GC, pentru versiunea xz-man 5.4.0-pre1.
 .\" Actualizare a traducerii pentru versiunea 5.4.0-pre2, făcută de R-GC, dec-2022.
@@ -13,6 +13,8 @@
 .\" Actualizare a traducerii pentru versiunea 5.4.4-pre1, făcută de R-GC, iul-2023.
 .\" Actualizare a traducerii pentru versiunea 5.6.0-pre1, făcută de R-GC, feb-2024.
 .\" Actualizare a traducerii pentru versiunea 5.6.0-pre2, făcută de R-GC, feb-2024.
+.\" Actualizare a traducerii pentru versiunea 5.7.1-dev1, făcută de R-GC, ian-2025.
+.\" Actualizare a traducerii pentru versiunea 5.8.0-pre1, făcută de R-GC, mar-2025.
 .\" Actualizare a traducerii pentru versiunea Y, făcută de X, Z(luna-anul).
 .\"
 .\" (Note that this file is not based on gzip's zless.1.)
@@ -22,17 +24,17 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZLESS 1 "12 februarie 2024" Tukaani "Utilități XZ"
+.TH XZLESS 1 "6 martie 2025" Tukaani "Utilități XZ"
 .SH NUME
 xzless, lzless \- vizualizează fișierele (text) comprimate xz sau lzma
 .SH REZUMAT
 \fBxzless\fP [\fIfișier\fP...]
 .br
-\fBlzless\fP [\fIfișier\fP...]
+\fBlzless\fP [\fIfișier\fP...] (DEPRECIATĂ)
 .SH DESCRIERE
 \fBxzless\fP este un filtru care afișează textul din fișierele comprimate pe un
-terminal.  Fișierele acceptate de \fBxz\fP(1) sunt decomprimate; se presupune
-că celelalte fișiere sunt deja în format necomprimat. Dacă nu se dă nici un
+terminal. Fișierele acceptate de \fBxz\fP(1) sunt decomprimate; se presupune că
+celelalte fișiere sunt deja în format necomprimat. Dacă nu se dă nici un
 \fIfișier\fP, \fBxzless\fP citește de la intrarea standard.
 .PP
 \fBxzless\fP folosește \fBless\fP(1) pentru a\-și prezenta rezultatul. Spre
@@ -42,7 +44,7 @@ cât și pe \fBvi\fP(1) și permit mișcarea înainte și înapoi și
 căutarea. Consultați manualul \fBless\fP(1) pentru mai multe informații.
 .PP
 Comanda numită \fBlzless\fP este furnizată pentru compatibilitatea cu LZMA
-Utils.
+Utils. Aceasta este depreciată și va fi eliminată într\-o versiune viitoare.
 .SH "VARIABILE DE MEDIU"
 .TP 
 \fBLESSMETACHARS\fP

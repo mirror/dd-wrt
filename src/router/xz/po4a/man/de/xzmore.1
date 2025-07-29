@@ -4,7 +4,7 @@
 .\"          Lasse Collin
 .\"
 .\" German translation for xz-man.
-.\" Mario Blättermann <mario.blaettermann@gmail.com>, 2015, 2019-2020, 2022-2024.
+.\" Mario Blättermann <mario.blaettermann@gmail.com>, 2015, 2019-2020, 2022-2025.
 .\"
 .\" (Note that this file is based on xzless.1 instead of gzip's zmore.1.)
 .\"
@@ -13,14 +13,14 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH XZMORE 1 "12. Februar 2024" Tukaani XZ\-Dienstprogramme
+.TH XZMORE 1 "6. März 2025" Tukaani XZ\-Dienstprogramme
 .SH BEZEICHNUNG
 xzmore, lzmore \- mit xz oder lzma komprimierte (Text\-)Dateien lesen
 .
 .SH ÜBERSICHT
 \fBxzmore\fP [\fIDatei\fP …]
 .br
-\fBlzmore\fP [\fIDatei\fP …]
+\fBlzmore\fP [\fIDatei\fP …] (VERALTET)
 .
 .SH BESCHREIBUNG
 \fBxzmore\fP zeigt Text aus komprimierten Dateien mit Hilfe des Pagers
@@ -37,12 +37,15 @@ verwendet, um die dekomprimierten Daten an \fBmore\fP(1) zu
 Funktionen bietet.
 .PP
 Der Befehl \fBlzmore\fP dient der Abwärtskompatibilität zu den
-LZMA\-Dienstprogrammen.
+LZMA\-Dienstprogrammen. Er wird als veraltet angesehen und wird in einer
+zukünftigen Version entfernt.
 .
 .SH UMGEBUNGSVARIABLEN
 .TP 
+.\" TRANSLATORS: Don't translate the uppercase PAGER.
+.\" It is a name of an environment variable.
 \fBPAGER\fP
-Falls die Umgebungsvariable \fBPAGER\fP gesetzt ist, wird diese als Pager
+Falls die Umgebungsvariable \fBPAGER\fP gesetzt ist, wird deren Wert als Pager
 (Textanzeigeprogramm) anstelle von \fBmore\fP(1) verwendet.
 .
 .SH "SIEHE AUCH"

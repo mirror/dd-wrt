@@ -92,7 +92,11 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = lzmainfo$(EXEEXT)
 @COND_W32_TRUE@am__append_1 = lzmainfo_w32res.rc
-@COND_GNULIB_TRUE@am__append_2 = $(top_builddir)/lib/libgnu.a
+@COND_GNULIB_TRUE@am__append_2 = \
+@COND_GNULIB_TRUE@	-I$(top_builddir)/lib \
+@COND_GNULIB_TRUE@	-I$(top_srcdir)/lib
+
+@COND_GNULIB_TRUE@am__append_3 = $(top_builddir)/lib/libgnu.a
 subdir = src/lzmainfo
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_pthread.m4 \
@@ -122,15 +126,20 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__lzmainfo_SOURCES_DIST = lzmainfo.c ../common/tuklib_progname.c \
+	../common/tuklib_mbstr_nonprint.c \
+	../common/tuklib_mbstr_width.c ../common/tuklib_mbstr_wrap.c \
 	../common/tuklib_exit.c lzmainfo_w32res.rc
 @COND_W32_TRUE@am__objects_1 = lzmainfo_w32res.$(OBJEXT)
 am_lzmainfo_OBJECTS = lzmainfo-lzmainfo.$(OBJEXT) \
 	lzmainfo-tuklib_progname.$(OBJEXT) \
+	lzmainfo-tuklib_mbstr_nonprint.$(OBJEXT) \
+	lzmainfo-tuklib_mbstr_width.$(OBJEXT) \
+	lzmainfo-tuklib_mbstr_wrap.$(OBJEXT) \
 	lzmainfo-tuklib_exit.$(OBJEXT) $(am__objects_1)
 lzmainfo_OBJECTS = $(am_lzmainfo_OBJECTS)
 am__DEPENDENCIES_1 =
 lzmainfo_DEPENDENCIES = $(top_builddir)/src/liblzma/liblzma.la \
-	$(am__append_2) $(am__DEPENDENCIES_1)
+	$(am__append_3) $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -152,6 +161,9 @@ depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/lzmainfo-lzmainfo.Po \
 	./$(DEPDIR)/lzmainfo-tuklib_exit.Po \
+	./$(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Po \
+	./$(DEPDIR)/lzmainfo-tuklib_mbstr_width.Po \
+	./$(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Po \
 	./$(DEPDIR)/lzmainfo-tuklib_progname.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -389,15 +401,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 xz = @xz@
 lzmainfo_SOURCES = lzmainfo.c ../common/tuklib_progname.c \
+	../common/tuklib_mbstr_nonprint.c \
+	../common/tuklib_mbstr_width.c ../common/tuklib_mbstr_wrap.c \
 	../common/tuklib_exit.c $(am__append_1)
-lzmainfo_CPPFLAGS = \
-	-DLOCALEDIR=\"$(localedir)\" \
-	-I$(top_srcdir)/src/common \
-	-I$(top_srcdir)/src/liblzma/api \
-	-I$(top_builddir)/lib
-
+lzmainfo_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
+	-I$(top_srcdir)/src/common -I$(top_srcdir)/src/liblzma/api \
+	$(am__append_2)
 lzmainfo_LDADD = $(top_builddir)/src/liblzma/liblzma.la \
-	$(am__append_2) $(LTLIBINTL)
+	$(am__append_3) $(LTLIBINTL)
 dist_man_MANS = lzmainfo.1
 all: all-am
 
@@ -489,6 +500,9 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmainfo-lzmainfo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmainfo-tuklib_exit.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmainfo-tuklib_mbstr_width.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzmainfo-tuklib_progname.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -545,6 +559,48 @@ lzmainfo-tuklib_progname.obj: ../common/tuklib_progname.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_progname.c' object='lzmainfo-tuklib_progname.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_progname.obj `if test -f '../common/tuklib_progname.c'; then $(CYGPATH_W) '../common/tuklib_progname.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_progname.c'; fi`
+
+lzmainfo-tuklib_mbstr_nonprint.o: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_mbstr_nonprint.o -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Tpo -c -o lzmainfo-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='lzmainfo-tuklib_mbstr_nonprint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_mbstr_nonprint.o `test -f '../common/tuklib_mbstr_nonprint.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_nonprint.c
+
+lzmainfo-tuklib_mbstr_nonprint.obj: ../common/tuklib_mbstr_nonprint.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_mbstr_nonprint.obj -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Tpo -c -o lzmainfo-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Tpo $(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_nonprint.c' object='lzmainfo-tuklib_mbstr_nonprint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_mbstr_nonprint.obj `if test -f '../common/tuklib_mbstr_nonprint.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_nonprint.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_nonprint.c'; fi`
+
+lzmainfo-tuklib_mbstr_width.o: ../common/tuklib_mbstr_width.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_mbstr_width.o -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_mbstr_width.Tpo -c -o lzmainfo-tuklib_mbstr_width.o `test -f '../common/tuklib_mbstr_width.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_width.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmainfo-tuklib_mbstr_width.Tpo $(DEPDIR)/lzmainfo-tuklib_mbstr_width.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_width.c' object='lzmainfo-tuklib_mbstr_width.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_mbstr_width.o `test -f '../common/tuklib_mbstr_width.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_width.c
+
+lzmainfo-tuklib_mbstr_width.obj: ../common/tuklib_mbstr_width.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_mbstr_width.obj -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_mbstr_width.Tpo -c -o lzmainfo-tuklib_mbstr_width.obj `if test -f '../common/tuklib_mbstr_width.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_width.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_width.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmainfo-tuklib_mbstr_width.Tpo $(DEPDIR)/lzmainfo-tuklib_mbstr_width.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_width.c' object='lzmainfo-tuklib_mbstr_width.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_mbstr_width.obj `if test -f '../common/tuklib_mbstr_width.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_width.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_width.c'; fi`
+
+lzmainfo-tuklib_mbstr_wrap.o: ../common/tuklib_mbstr_wrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_mbstr_wrap.o -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Tpo -c -o lzmainfo-tuklib_mbstr_wrap.o `test -f '../common/tuklib_mbstr_wrap.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_wrap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Tpo $(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_wrap.c' object='lzmainfo-tuklib_mbstr_wrap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_mbstr_wrap.o `test -f '../common/tuklib_mbstr_wrap.c' || echo '$(srcdir)/'`../common/tuklib_mbstr_wrap.c
+
+lzmainfo-tuklib_mbstr_wrap.obj: ../common/tuklib_mbstr_wrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_mbstr_wrap.obj -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Tpo -c -o lzmainfo-tuklib_mbstr_wrap.obj `if test -f '../common/tuklib_mbstr_wrap.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_wrap.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_wrap.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Tpo $(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../common/tuklib_mbstr_wrap.c' object='lzmainfo-tuklib_mbstr_wrap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lzmainfo-tuklib_mbstr_wrap.obj `if test -f '../common/tuklib_mbstr_wrap.c'; then $(CYGPATH_W) '../common/tuklib_mbstr_wrap.c'; else $(CYGPATH_W) '$(srcdir)/../common/tuklib_mbstr_wrap.c'; fi`
 
 lzmainfo-tuklib_exit.o: ../common/tuklib_exit.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lzmainfo_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lzmainfo-tuklib_exit.o -MD -MP -MF $(DEPDIR)/lzmainfo-tuklib_exit.Tpo -c -o lzmainfo-tuklib_exit.o `test -f '../common/tuklib_exit.c' || echo '$(srcdir)/'`../common/tuklib_exit.c
@@ -737,6 +793,9 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 distclean: distclean-am
 	-rm -f ./$(DEPDIR)/lzmainfo-lzmainfo.Po
 	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_exit.Po
+	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Po
+	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_mbstr_width.Po
+	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Po
 	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_progname.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -786,6 +845,9 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/lzmainfo-lzmainfo.Po
 	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_exit.Po
+	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_mbstr_nonprint.Po
+	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_mbstr_width.Po
+	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_mbstr_wrap.Po
 	-rm -f ./$(DEPDIR)/lzmainfo-tuklib_progname.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
