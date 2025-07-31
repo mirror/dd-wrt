@@ -48,16 +48,19 @@ ifeq ($(origin CC), environment)
     endif
   endif
 
-  # find sysroot
-  SYSROOT:=$(shell $(CC) -print-sysroot)
-  ifeq ($(SYSROOT),)
-    # if sysroot is not set, try find sysroot from compiler default include path
-    SYSROOT:=$(shell $(CC) -xc /dev/null -E -Wp,-v 2>&1 | sed -n 's,^ ,,p' | head -n 1)
-    ifneq ($(SYSROOT),)
-      # find sysroot, add sysroot to BINDGEN_EXTRA_CLANG_ARGS
-      SYSROOT:=$(SYSROOT)/..
-      override CARGO_BUILD_ENV += BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT)"
-      CARGO_BUILD_ARGS +=--target=$(CARGO_BUILD_TARGET)
+  IS_NATIVE_BUILD=$(shell [ "$(CC)" = "cc" ] || [ "$(CC)" = "gcc" ] && echo 1 || echo 0)
+  ifeq ($(IS_NATIVE_BUILD), 0)
+    # find sysroot
+    SYSROOT:=$(shell $(CC) -print-sysroot)
+    ifeq ($(SYSROOT),)
+      # if sysroot is not set, try find sysroot from compiler default include path
+      SYSROOT:=$(shell $(CC) -xc /dev/null -E -Wp,-v 2>&1 | sed -n 's,^ ,,p' | head -n 1)
+      ifneq ($(SYSROOT),)
+        # find sysroot, add sysroot to BINDGEN_EXTRA_CLANG_ARGS
+        SYSROOT:=$(SYSROOT)/..
+        override CARGO_BUILD_ENV += BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT)"
+        CARGO_BUILD_ARGS +=--target=$(CARGO_BUILD_TARGET)
+      endif
     endif
   endif
 endif
@@ -109,10 +112,10 @@ test-prepare:
 
 $(BIN):
 	MAKEFLAGS= RUSTFLAGS="$(CARGO_RUSTFLAGS) $(RUSTFLAGS)" $(CARGO_BUILD_ENV) cargo build $(CARGO_BUILD_ARGS) --features "build-release"
-	cp $(CARGO_BUILD_PATH)/libsmartdns_ui.so target/ 
+	cp $(CARGO_BUILD_PATH)/libsmartdns_ui.so target/smartdns_ui.so
 
 install: $(BIN)
-	install -v -m 0644 -D -t $(DESTDIR)$(SLIBDIR)/smartdns target/libsmartdns_ui.so
+	install -v -m 0644 -D -t $(DESTDIR)$(SLIBDIR)/smartdns target/smartdns_ui.so
 
 test: test-prepare
 	MAKEFLAGS= cargo test
@@ -120,4 +123,4 @@ test: test-prepare
 clean:
 	cargo clean
 	$(MAKE) -C $(SMARTDNS_SRC_DIR) clean
-	rm -rf target/libsmartdns_ui.so
+	rm -rf target/smartdns_ui.so
