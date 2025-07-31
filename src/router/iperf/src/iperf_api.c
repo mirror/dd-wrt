@@ -603,25 +603,25 @@ iperf_set_mapped_v4(struct iperf_test *ipt, const int val)
 }
 
 void 
-iperf_set_on_new_stream_callback(struct iperf_test* ipt, void (*callback)())
+iperf_set_on_new_stream_callback(struct iperf_test* ipt, void (*callback)(struct iperf_stream *))
 {
         ipt->on_new_stream = callback;
 }
 
 void 
-iperf_set_on_test_start_callback(struct iperf_test* ipt, void (*callback)())
+iperf_set_on_test_start_callback(struct iperf_test* ipt, void (*callback)(struct iperf_test *))
 {
         ipt->on_test_start = callback;
 }
 
 void 
-iperf_set_on_test_connect_callback(struct iperf_test* ipt, void (*callback)())
+iperf_set_on_test_connect_callback(struct iperf_test* ipt, void (*callback)(struct iperf_test *))
 {
         ipt->on_connect = callback;
 }
 
 void 
-iperf_set_on_test_finish_callback(struct iperf_test* ipt, void (*callback)())
+iperf_set_on_test_finish_callback(struct iperf_test* ipt, void (*callback)(struct iperf_test *))
 {
         ipt->on_test_finish = callback;
 }
@@ -695,6 +695,12 @@ void
 iperf_set_test_json_stream(struct iperf_test *ipt, int json_stream)
 {
     ipt->json_stream = json_stream;
+}
+
+void
+iperf_set_test_json_callback(struct iperf_test *ipt, void (*callback)(struct iperf_test *, char *))
+{
+    ipt->json_callback = callback;
 }
 
 int
@@ -1136,6 +1142,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 #if defined(HAVE_DONT_FRAGMENT)
 	{"dont-fragment", no_argument, NULL, OPT_DONT_FRAGMENT},
 #endif /* HAVE_DONT_FRAGMENT */
+#if defined(HAVE_MSG_TRUNC)
+	{"skip-rx-copy", no_argument, NULL, OPT_SKIP_RX_COPY},
+#endif /* HAVE_MSG_TRUNC */
 #if defined(HAVE_SSL)
     {"username", required_argument, NULL, OPT_CLIENT_USERNAME},
     {"rsa-public-key-path", required_argument, NULL, OPT_CLIENT_RSA_PUBLIC_KEY},
@@ -1150,6 +1159,12 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"idle-timeout", required_argument, NULL, OPT_IDLE_TIMEOUT},
         {"rcv-timeout", required_argument, NULL, OPT_RCV_TIMEOUT},
         {"snd-timeout", required_argument, NULL, OPT_SND_TIMEOUT},
+#if defined(HAVE_TCP_KEEPALIVE)
+        {"cntl-ka", optional_argument, NULL, OPT_CNTL_KA},
+#endif /* HAVE_TCP_KEEPALIVE */
+#if defined(HAVE_IPPROTO_MPTCP)
+        {"mptcp", no_argument, NULL, 'm'},
+#endif
         {"debug", optional_argument, NULL, 'd'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0}
@@ -1163,6 +1178,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     char* comma;
 #endif /* HAVE_CPU_AFFINITY */
     char* slash;
+#if defined(HAVE_TCP_KEEPALIVE)
+    char* slash2;
+#endif /* HAVE_TCP_KEEPALIVE */
     char *p, *p1;
     struct xbind_entry *xbe;
     double farg;
@@ -1175,7 +1193,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     FILE *ptr_file;
 #endif /* HAVE_SSL */
     test->settings->noentropy = 0;
-    while ((flag = getopt_long(argc, argv, "p:f:i:DE1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
+    while ((flag = getopt_long(argc, argv, "p:f:i:DE1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:mhX:", longopts, NULL)) != -1) {
         switch (flag) {
             case 'p':
 		portno = atoi(optarg);
@@ -1534,6 +1552,39 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 snd_timeout_flag = 1;
 	        break;
 #endif /* HAVE_TCP_USER_TIMEOUT */
+#if defined (HAVE_TCP_KEEPALIVE)
+            case OPT_CNTL_KA:
+                test->settings->cntl_ka = 1;
+                if (optarg) {
+                    slash = strchr(optarg, '/');
+		    if (slash) {
+		        *slash = '\0';
+		        ++slash;
+                        slash2 = strchr(slash, '/');
+                        if (slash2) {
+                            *slash2 = '\0';
+		            ++slash2;
+                            if (strlen(slash2) > 0) {
+                                test->settings->cntl_ka_count = atoi(slash2);
+                            }
+                        }
+                        if (strlen(slash) > 0) {
+                            test->settings->cntl_ka_interval = atoi(slash);
+                        }
+                    }
+                    if (strlen(optarg) > 0) {
+                        test->settings->cntl_ka_keepidle = atoi(optarg);
+                    }
+                }
+                // Seems that at least in Windows WSL2, TCP keepalive retries full inteval must be
+                // smaller than the idle interval. Otherwise, the keepalive message is sent only once.
+                if (test->settings->cntl_ka_keepidle &&
+                    test->settings->cntl_ka_keepidle <= (test->settings->cntl_ka_count * test->settings->cntl_ka_interval)) {
+                        i_errno = IECNTLKA;
+                        return -1;
+                }
+                break;
+#endif /* HAVE_TCP_KEEPALIVE */
             case 'A':
 #if defined(HAVE_CPU_AFFINITY)
                 test->affinity = strtol(optarg, &endptr, 0);
@@ -1643,6 +1694,12 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	    test->use_pkcs1_padding = 1;
 	    break;
 #endif /* HAVE_SSL */
+#if defined(HAVE_MSG_TRUNC)
+            case OPT_SKIP_RX_COPY:
+                test->settings->skip_rx_copy = 1;
+                client_flag = 1;
+                break;
+#endif /* HAVE_MSG_TRUNC */
 	    case OPT_PACING_TIMER:
 		test->settings->pacing_timer = unit_atoi(optarg);
 		client_flag = 1;
@@ -1651,6 +1708,12 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		test->settings->connect_timeout = unit_atoi(optarg);
 		client_flag = 1;
 		break;
+#if defined(HAVE_IPPROTO_MPTCP)
+	    case 'm':
+		set_protocol(test, Ptcp);
+		test->mptcp = 1;
+		break;
+#endif
 	    case 'h':
 		usage_long(stdout);
 		exit(0);
@@ -1917,7 +1980,7 @@ iperf_check_throttle(struct iperf_stream *sp, struct iperf_time *nowP)
         delta_bits = bits_sent - (seconds * sp->test->settings->rate);
         // Calclate time until next data send is required
         time_to_green_light = (SEC_TO_NS * delta_bits / sp->test->settings->rate);
-        // Whether shouuld wait before next send
+        // Whether should wait before next send
         if (time_to_green_light >= 0) {
 #if defined(HAVE_CLOCK_NANOSLEEP)
             if (clock_gettime(CLOCK_MONOTONIC, &nanosleep_time) == 0) {
@@ -2001,6 +2064,9 @@ iperf_send_mt(struct iperf_stream *sp)
     register struct iperf_test *test = sp->test;
     struct iperf_time now;
     int throttle_check_per_message;
+#if defined(HAVE_CLOCK_NANOSLEEP) || defined(HAVE_NANOSLEEP)
+    int throttle_check;
+#endif /* HAVE_CLOCK_NANOSLEEP, HAVE_NANOSLEEP */
 
     /* Can we do multisend mode? */
     if (test->settings->burst != 0)
@@ -2011,7 +2077,20 @@ iperf_send_mt(struct iperf_stream *sp)
         multisend = 1;	/* nope */
 
     /* Should bitrate throttle be checked for every send */
+#if defined(HAVE_CLOCK_NANOSLEEP) || defined(HAVE_NANOSLEEP)
+    if (test->settings->rate != 0) {
+        throttle_check = 1;
+        if (test->settings->burst == 0)
+            throttle_check_per_message = 1;
+        else
+            throttle_check_per_message = 0;
+    } else {
+        throttle_check = 0;
+        throttle_check_per_message = 0;
+    }
+#else /* !HAVE_CLOCK_NANOSLEEP && !HAVE_NANOSLEEP */
     throttle_check_per_message = test->settings->rate != 0 && test->settings->burst == 0;
+#endif /* HAVE_CLOCK_NANOSLEEP, HAVE_NANOSLEEP */
 
     for (message_sent = 0; sp->green_light && multisend > 0; --multisend) {
         // XXX If we hit one of these ending conditions maybe
@@ -2037,7 +2116,8 @@ iperf_send_mt(struct iperf_stream *sp)
         message_sent = 1;
     }
 #if defined(HAVE_CLOCK_NANOSLEEP) || defined(HAVE_NANOSLEEP)
-    if (!sp->green_light) { /* Should check if green ligh can be set, as pacing timer is not supported in this case */
+     /* Should check if green light can be set, as pacing timer is not supported in this case */
+    if (throttle_check && (!throttle_check_per_message || message_sent == 0)) {
 #else /* !HAVE_CLOCK_NANOSLEEP && !HAVE_NANOSLEEP */
     if (!throttle_check_per_message || message_sent == 0) {   /* Throttle check if was not checked for each send */
 #endif /* HAVE_CLOCK_NANOSLEEP, HAVE_NANOSLEEP */
@@ -2173,12 +2253,17 @@ iperf_exchange_parameters(struct iperf_test *test)
                 i_errno = IECTRLWRITE;
                 return -1;
             }
+            err = htonl(errno);
+            if (Nwrite(test->ctrl_sck, (char*) &err, sizeof(err), Ptcp) < 0) {
+                i_errno = IECTRLWRITE;
+                return -1;
+            }
             return -1;
         }
 #endif //HAVE_SSL
 
         if ((s = test->protocol->listen(test)) < 0) {
-	        if (iperf_set_send_state(test, SERVER_ERROR) != 0)
+	    if (iperf_set_send_state(test, SERVER_ERROR) != 0)
                 return -1;
             err = htonl(i_errno);
             if (Nwrite(test->ctrl_sck, (char*) &err, sizeof(err), Ptcp) < 0) {
@@ -2263,6 +2348,10 @@ send_parameters(struct iperf_test *test)
 	    cJSON_AddTrueToObject(j, "reverse");
 	if (test->bidirectional)
 	            cJSON_AddTrueToObject(j, "bidirectional");
+#if defined(HAVE_IPPROTO_MPTCP)
+	if (test->mptcp)
+	    cJSON_AddTrueToObject(j, "mptcp");
+#endif
 	if (test->settings->socket_bufsize)
 	    cJSON_AddNumberToObject(j, "window", test->settings->socket_bufsize);
 	if (test->settings->blksize)
@@ -2313,6 +2402,8 @@ send_parameters(struct iperf_test *test)
 	    cJSON_AddStringToObject(j, "authtoken", test->settings->authtoken);
 	}
 #endif // HAVE_SSL
+	if (test->settings->skip_rx_copy)
+	    cJSON_AddNumberToObject(j, "skip_rx_copy", test->settings->skip_rx_copy);
 	cJSON_AddStringToObject(j, "client_version", IPERF_VERSION);
 
 	if (test->debug) {
@@ -2379,6 +2470,10 @@ get_parameters(struct iperf_test *test)
 	    iperf_set_test_reverse(test, 1);
         if ((j_p = iperf_cJSON_GetObjectItemType(j, "bidirectional", cJSON_True)) != NULL)
             iperf_set_test_bidirectional(test, 1);
+#if defined(HAVE_IPPROTO_MPTCP)
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "mptcp", cJSON_True)) != NULL)
+	    test->mptcp = 1;
+#endif
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "window", cJSON_Number)) != NULL)
 	    test->settings->socket_bufsize = j_p->valueint;
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "len", cJSON_Number)) != NULL)
@@ -2419,6 +2514,8 @@ get_parameters(struct iperf_test *test)
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "authtoken", cJSON_String)) != NULL)
         test->settings->authtoken = strdup(j_p->valuestring);
 #endif //HAVE_SSL
+	if ((j_p = cJSON_GetObjectItem(j, "skip_rx_copy")) != NULL)
+	    test->settings->skip_rx_copy = j_p->valueint;
 	if (test->mode && test->protocol->id == Ptcp && has_tcpinfo_retransmits())
 	    test->sender_has_retransmits = 1;
 	if (test->settings->rate)
@@ -2765,6 +2862,7 @@ JSON_read(int fd, int max_size)
     char *str;
     cJSON *json = NULL;
     int rc;
+    char msg_buf[WARN_STR_LEN * 2];
 
     /*
      * Read a four-byte integer, which is the length of the JSON to follow.
@@ -2792,26 +2890,34 @@ JSON_read(int fd, int max_size)
                             json = cJSON_Parse(str);
                         }
                         else {
-                            warning("JSON size of data read does not correspond to offered length");
+                            snprintf(msg_buf, sizeof(msg_buf), "JSON size of data read does not correspond to offered length - expected %d bytes but received %d; errno=%d", hsize, rc, errno);
+                            warning(msg_buf);
                         }
 	            }
+                    else {
+                        snprintf(msg_buf, sizeof(msg_buf), "JSON data read failed; errno=%d", errno);
+                        warning(msg_buf);
+                    }
 	            free(str);
                 }
             }
 	}
 	else {
-	    warning("JSON data length overflow");
+            snprintf(msg_buf, sizeof(msg_buf), "JSON data length overflow - %d bytes JSON size is not allowed", hsize);
+	    warning(msg_buf);
 	}
     }
     else {
         warning("Failed to read JSON data size");
+        snprintf(msg_buf, sizeof(msg_buf), "Failed to read JSON data size - read returned %d; errno=%d", rc, errno);
+        warning(msg_buf);
     }
     return json;
 }
 
 /*************************************************************/
 /**
- * JSONStream_Output - outputs an obj as event without distrubing it
+ * JSONStream_Output - outputs an obj as event without disturbing it
  */
 
 static int
@@ -2825,12 +2931,16 @@ JSONStream_Output(struct iperf_test * test, const char * event_name, cJSON * obj
     char *str = cJSON_PrintUnformatted(event);
     if (str == NULL)
         return -1;
-    if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
-        perror("iperf_json_finish: pthread_mutex_lock");
-    }
-    fprintf(test->outfile, "%s\n", str);
-    if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
-        perror("iperf_json_finish: pthread_mutex_unlock");
+    if (test->json_callback != NULL) {
+        (test->json_callback)(test, str);
+    } else {
+        if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+            perror("iperf_json_finish: pthread_mutex_lock");
+        }
+        fprintf(test->outfile, "%s\n", str);
+        if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+            perror("iperf_json_finish: pthread_mutex_unlock");
+        }
     }
     iflush(test);
     cJSON_free(str);
@@ -2847,6 +2957,14 @@ void
 add_to_interval_list(struct iperf_stream_result * rp, struct iperf_interval_results * new)
 {
     struct iperf_interval_results *irp;
+
+    /* Only the last interval result is needed, so removing last old entry to reduce memory consupmtion */
+    if (!TAILQ_EMPTY(&rp->interval_results) &&
+        (irp = TAILQ_LAST(&rp->interval_results, irlisthead)) != NULL
+    ) {
+        TAILQ_REMOVE(&rp->interval_results, irp, irlistentries);
+	free(irp);
+    }
 
     irp = (struct iperf_interval_results *) malloc(sizeof(struct iperf_interval_results));
     memcpy(irp, new, sizeof(struct iperf_interval_results));
@@ -3020,6 +3138,14 @@ iperf_defaults(struct iperf_test *testp)
     testp->settings->rcv_timeout.secs = DEFAULT_NO_MSG_RCVD_TIMEOUT / SEC_TO_mS;
     testp->settings->rcv_timeout.usecs = (DEFAULT_NO_MSG_RCVD_TIMEOUT % SEC_TO_mS) * mS_TO_US;
     testp->zerocopy = 0;
+    testp->settings->skip_rx_copy = 0;
+    testp->settings->cntl_ka = 0;
+    testp->settings->cntl_ka_keepidle = 0;
+    testp->settings->cntl_ka_interval = 0;
+    testp->settings->cntl_ka_count = 0;
+
+    testp->json_callback = NULL;
+
 
     memset(testp->cookie, 0, COOKIE_SIZE);
 
@@ -3266,6 +3392,9 @@ iperf_reset_test(struct iperf_test *test)
 
     SLIST_INIT(&test->streams);
 
+    if (test->congestion)
+        free(test->congestion);
+    test->congestion = NULL;
     if (test->remote_congestion_used)
         free(test->remote_congestion_used);
     test->remote_congestion_used = NULL;
@@ -3317,6 +3446,7 @@ iperf_reset_test(struct iperf_test *test)
     test->settings->tos = 0;
     test->settings->dont_fragment = 0;
     test->zerocopy = 0;
+    test->settings->skip_rx_copy = 0;
 
 #if defined(HAVE_SSL)
     if (test->settings->authtoken) {
@@ -4824,8 +4954,10 @@ iperf_catch_sigend(void (*handler)(int))
  * before cleaning up and exiting.
  */
 void
-iperf_got_sigend(struct iperf_test *test)
+iperf_got_sigend(struct iperf_test *test, int sig)
 {
+    int exit_normal;
+
     /*
      * If we're the client, or if we're a server and running a test,
      * then dump out the accumulated stats so far.
@@ -4847,7 +4979,25 @@ iperf_got_sigend(struct iperf_test *test)
 	(void) Nwrite(test->ctrl_sck, (char*) &test->state, sizeof(signed char), Ptcp);
     }
     i_errno = (test->role == 'c') ? IECLIENTTERM : IESERVERTERM;
-    iperf_errexit(test, "interrupt - %s", iperf_strerror(i_errno));
+
+    exit_normal = 0;
+#ifdef SIGTERM
+    if (sig == SIGTERM)
+        exit_normal = 1;
+#endif
+#ifdef SIGINT
+    if (sig == SIGINT)
+        exit_normal = 1;
+#endif
+#ifdef SIGHUP
+    if (sig == SIGHUP)
+        exit_normal = 1;
+#endif
+    if (exit_normal) {
+        iperf_signormalexit(test, "interrupt - %s by signal %s(%d)", iperf_strerror(i_errno), strsignal(sig), sig);
+    } else {
+        iperf_errexit(test, "interrupt - %s by signal %s(%d)", iperf_strerror(i_errno), strsignal(sig), sig);
+    }
 }
 
 /* Try to write a PID file if requested, return -1 on an error. */
@@ -4889,6 +5039,7 @@ iperf_create_pidfile(struct iperf_test *test)
 		    }
 		}
 	    }
+        (void)close(fd);
 	}
 
 	/*
@@ -4997,14 +5148,18 @@ iperf_json_finish(struct iperf_test *test)
             if (test->json_output_string == NULL) {
                 return -1;
             }
-            if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
-                perror("iperf_json_finish: pthread_mutex_lock");
+            if (test->json_callback != NULL) {
+                (test->json_callback)(test, test->json_output_string);
+            } else {
+                if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+                    perror("iperf_json_finish: pthread_mutex_lock");
+                }
+                fprintf(test->outfile, "%s\n", test->json_output_string);
+                if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+                    perror("iperf_json_finish: pthread_mutex_unlock");
+                }
+                iflush(test);
             }
-            fprintf(test->outfile, "%s\n", test->json_output_string);
-            if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
-                perror("iperf_json_finish: pthread_mutex_unlock");
-            }
-            iflush(test);
         }
         cJSON_Delete(test->json_top);
     }
@@ -5222,3 +5377,82 @@ iflush(struct iperf_test *test)
 
     return rc2;
 }
+
+#if defined (HAVE_TCP_KEEPALIVE)
+// Set Control Connection TCP Keepalive (especially useful for long UDP test sessions)
+int
+iperf_set_control_keepalive(struct iperf_test *test)
+{
+    int opt, kaidle, kainterval, kacount;
+    socklen_t len;
+
+    if (test->settings->cntl_ka) {
+        // Set keepalive using system defaults
+        opt = 1;
+        if (setsockopt(test->ctrl_sck, SOL_SOCKET, SO_KEEPALIVE, (char *) &opt, sizeof(opt))) {
+            i_errno = IESETCNTLKA;
+            return -1;
+        }
+
+        // Get default values when not specified
+        if ((kaidle = test->settings->cntl_ka_keepidle) == 0) {
+            len = sizeof(kaidle);
+            if (getsockopt(test->ctrl_sck, IPPROTO_TCP, TCP_KEEPIDLE, (char *) &kaidle, &len)) {
+                i_errno = IESETCNTLKAINTERVAL;
+                return -1;
+            }
+        }
+        if ((kainterval = test->settings->cntl_ka_interval) == 0) {
+            len = sizeof(kainterval);
+            if (getsockopt(test->ctrl_sck, IPPROTO_TCP, TCP_KEEPINTVL, (char *) &kainterval, &len)) {
+                i_errno = IESETCNTLKAINTERVAL;
+                return -1;
+            }
+        }
+        if ((kacount = test->settings->cntl_ka_count) == 0) {
+            len = sizeof(kacount);
+            if (getsockopt(test->ctrl_sck, IPPROTO_TCP, TCP_KEEPCNT, (char *) &kacount, &len)) {
+                i_errno = IESETCNTLKACOUNT;
+                return -1;
+            }
+        }
+   
+        // Seems that at least in Windows WSL2, TCP keepalive retries full inteval must be
+        // smaller than the idle interval. Otherwise, the keepalive message is sent only once.
+        if (test->settings->cntl_ka_keepidle) {
+            if (test->settings->cntl_ka_keepidle <= (kainterval * kacount)) {
+                iperf_err(test, "Keepalive Idle time (%d) should be greater than Retries-interval (%d) times Retries-count (%d)", kaidle, kainterval, kacount);
+                i_errno = IECNTLKA;
+                return -1;
+            }
+        }
+
+        // Set keep alive values when specified
+        if ((opt = test->settings->cntl_ka_keepidle)) {
+            if (setsockopt(test->ctrl_sck, IPPROTO_TCP, TCP_KEEPIDLE, (char *) &opt, sizeof(opt))) {
+                i_errno = IESETCNTLKAKEEPIDLE;
+                return -1;
+            }
+        }
+        if ((opt = test->settings->cntl_ka_interval)) {
+            if (setsockopt(test->ctrl_sck, IPPROTO_TCP, TCP_KEEPINTVL, (char *) &opt, sizeof(opt))) {
+                i_errno = IESETCNTLKAINTERVAL;
+                return -1;
+            }
+        }
+        if ((opt = test->settings->cntl_ka_count)) {
+            if (setsockopt(test->ctrl_sck, IPPROTO_TCP, TCP_KEEPCNT, (char *) &opt, sizeof(opt))) {
+                i_errno = IESETCNTLKACOUNT;
+                return -1;
+            }
+        }
+
+        if (test->verbose) {
+            printf("Control connection TCP Keepalive TCP_KEEPIDLE/TCP_KEEPINTVL/TCP_KEEPCNT are set to %d/%d/%d\n",
+                   kaidle, kainterval, kacount);
+        }
+    }
+
+    return 0;
+}
+#endif //HAVE_TCP_KEEPALIVE

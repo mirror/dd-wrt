@@ -59,7 +59,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE
@@ -128,6 +128,13 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  --snd-timeout #           timeout for unacknowledged TCP data\n"
                            "                            (in ms, default is system settings)\n"
 #endif /* HAVE_TCP_USER_TIMEOUT */
+#if defined(HAVE_TCP_KEEPALIVE)
+                           "  --cntl-ka[=#/#/#]         use control connection TCP keepalive - KEEPIDLE/KEEPINTV/KEEPCNT\n"
+                           "                            each value is optional with system settings default\n"
+#endif //HAVE_TCP_KEEPALIVE
+#if defined(HAVE_IPPROTO_MPTCP)
+                           "  -m, --mptcp               use MPTCP rather than plain TCP\n"
+#endif
                            "  -d, --debug[=#]           emit debugging output\n"
                            "                            (optional optional \"=\" and debug level: 1-4. Default is 4 - all messages)\n"
                            "  -v, --version             show version information and quit\n"
@@ -170,8 +177,10 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
 			   "                            bits/sec (Linux only)\n"
 #endif
                            "  -t, --time      #         time in seconds to transmit for (default %d secs)\n"
-                           "  -n, --bytes     #[KMG]    number of bytes to transmit (instead of -t)\n"
-                           "  -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead of -t or -n)\n"
+                           "  -n, --bytes     #[KMG]    transmit until the end of the interval when the client sent or received\n"
+                           "                            (per direction) at least this number of bytes (instead of -t or -k)\n"
+                           "  -k, --blockcount #[KMG]   transmit until the end of the interval when the client sent or received\n"
+                           "                            (per direction) at least this number of blocks (instead of -t or -n)\n"
                            "  -l, --length    #[KMG]    length of buffer to read or write\n"
 			   "                            (default %d KB for TCP, dynamic or %d for UDP)\n"
                            "  --cport         <port>    bind to a specific client port (TCP and UDP, default: ephemeral port)\n"
@@ -201,6 +210,9 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  -L, --flowlabel N         set the IPv6 flow label (only supported on Linux)\n"
 #endif /* HAVE_FLOWLABEL */
                            "  -Z, --zerocopy            use a 'zero copy' method of sending data\n"
+#if defined(HAVE_MSG_TRUNC)
+                           "  --skip-rx-copy            ignore received messages using MSG_TRUNC option\n"
+#endif /* HAVE_MSG_TRUNC */
                            "  -O, --omit N              perform pre-test for N seconds and omit the pre-test statistics\n"
                            "  -T, --title str           prefix every output line with this string\n"
                            "  --extra-data str          data string to include in client and server JSON\n"

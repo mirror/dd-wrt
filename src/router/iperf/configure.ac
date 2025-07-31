@@ -1,4 +1,4 @@
-# iperf, Copyright (c) 2014-2024, The Regents of the University of
+# iperf, Copyright (c) 2014-2025, The Regents of the University of
 # California, through Lawrence Berkeley National Laboratory (subject
 # to receipt of any required approvals from the U.S. Dept. of
 # Energy).  All rights reserved.
@@ -203,6 +203,18 @@ if test "x$iperf3_cv_header_tcp_user_timeout" = "xyes"; then
     AC_DEFINE([HAVE_TCP_USER_TIMEOUT], [1], [Have TCP_USER_TIMEOUT sockopt.])
 fi
 
+# Check for TCP_KEEPIDLE sockopt (not clear where supported)
+AC_CACHE_CHECK([TCP_KEEPIDLE socket option],
+[iperf3_cv_header_tcp_keepalive],
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([[#include <netinet/tcp.h>]],
+                   [[int foo = TCP_KEEPIDLE;]])],
+  iperf3_cv_header_tcp_keepalive=yes,
+  iperf3_cv_header_tcp_keepalive=no))
+if test "x$iperf3_cv_header_tcp_keepalive" = "xyes"; then
+    AC_DEFINE([HAVE_TCP_KEEPALIVE], [1], [Have TCP_KEEPIDLE sockopt.])
+fi
+
 # Check for IPv6 flowlabel support (believed to be Linux only)
 # We check for IPV6_FLOWLABEL_MGR in <linux/in6.h> even though we
 # don't use that file directly (we have our own stripped-down
@@ -334,6 +346,32 @@ AC_CHECK_MEMBER([struct tcp_info.tcpi_snd_wnd],
 
 if test "x$iperf3_cv_header_tcp_info_snd_wnd" = "xyes"; then
   AC_DEFINE([HAVE_TCP_INFO_SND_WND], [1], [Have tcpi_snd_wnd field in tcp_info.])
+fi
+
+
+# Check for MSG_TRUNC (mostly on Linux)
+AC_CACHE_CHECK([MSG_TRUNC recv option],
+[iperf3_cv_header_msg_trunc],
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([[#include <sys/types.h>
+                     #include <sys/socket.h>
+                     #include <netinet/in.h>]],
+                   [[int foo = MSG_TRUNC;]])],
+  iperf3_cv_header_msg_trunc=yes,
+  iperf3_cv_header_msg_trunc=no))
+if test "x$iperf3_cv_header_msg_trunc" = "xyes"; then
+    AC_DEFINE([HAVE_MSG_TRUNC], [1], [Have MSG_TRUNC recv option.])
+fi
+# Check for IPPROTO_MPTCP (Linux)
+AC_CACHE_CHECK([MPTCP protocol],
+[iperf3_cv_header_ipproto_mptcp],
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([[#include <netinet/in.h>]],
+		   [[int foo = IPPROTO_MPTCP;]])],
+  iperf3_cv_header_ipproto_mptcp=yes,
+  iperf3_cv_header_ipproto_mptcp=no))
+if test "x$iperf3_cv_header_ipproto_mptcp" = "xyes"; then
+    AC_DEFINE([HAVE_IPPROTO_MPTCP], [1], [Have MPTCP protocol.])
 fi
 
 # Check if we need -lrt for clock_gettime
