@@ -1110,8 +1110,7 @@ static void rtl931x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	rtl_table_release(r);
 }
 
-#if 0
-static void rtl931x_print_matrix(void)
+void rtl931x_print_matrix(void)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
@@ -1122,7 +1121,6 @@ static void rtl931x_print_matrix(void)
 	}
 	rtl_table_release(r);
 }
-#endif
 
 static void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
