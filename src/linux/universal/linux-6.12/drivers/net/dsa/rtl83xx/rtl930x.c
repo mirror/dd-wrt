@@ -339,6 +339,25 @@ static void rtl930x_l2_learning_setup(void)
 	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
 }
 
+static void rtl930x_enable_learning(int port, bool enable)
+{
+	/* Limit learning to maximum: 32k entries */
+
+	sw_w32_mask(0x7fff << 3, enable ? (0x7ffe << 3) : 0,
+		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + (port << 2));
+}
+
+static void rtl930x_enable_flood(int port, bool enable)
+{
+	/* 0: Forward
+	 * 1: Disable
+	 * 2: to CPU
+	 * 3: Copy to CPU
+	 */
+	sw_w32_mask(0x7, enable ? 0 : 1,
+		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + (port << 2));
+}
+
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 17 | /* Execute cmd */
@@ -4410,7 +4429,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
 	.route_read = rtl930x_route_read,
 	.route_write = rtl930x_route_write,
-	.host_route_write = rtl930x_host_route_write,
+//	.host_route_write = rtl930x_host_route_write,
 	.l3_setup = rtl930x_l3_setup,
 	.set_l3_nexthop = rtl930x_set_l3_nexthop,
 	.get_l3_nexthop = rtl930x_get_l3_nexthop,
@@ -4425,4 +4444,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_receive_management_action = rtl930x_set_receive_management_action,
 	.led_init = rtl930x_led_init,
 	.fast_age = rtl930x_fast_age,
+	.enable_learning = rtl930x_enable_learning,
+	.enable_flood = rtl930x_enable_flood,
 };
