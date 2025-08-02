@@ -877,7 +877,8 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 			int slot = priv->r->find_l3_slot(r, false);
 
 			pr_info("%s: Got slot for route: %d\n", __func__, slot);
-			priv->r->host_route_write(slot, r);
+			if (priv->r->host_route_write)
+				priv->r->host_route_write(slot, r);
 		} else {
 			priv->r->route_write(r->id, r);
 			r->pr.fwd_sel = true;
@@ -1073,7 +1074,8 @@ static void rtl83xx_route_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_ro
 		id = priv->r->find_l3_slot(r, false);
 		pr_debug("%s: Got id for host route: %d\n", __func__, id);
 		r->attr.valid = false;
-		priv->r->host_route_write(id, r);
+		if (priv->r->host_route_write)
+			priv->r->host_route_write(id, r);
 		clear_bit(r->id - MAX_ROUTES, priv->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
@@ -1290,7 +1292,8 @@ static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 
 			slot = priv->r->find_l3_slot(r, false);
 			pr_debug("%s: Got slot for route: %d\n", __func__, slot);
-			priv->r->host_route_write(slot, r);
+			if (priv->r->host_route_write)
+				priv->r->host_route_write(slot, r);
 		}
 	}
 
