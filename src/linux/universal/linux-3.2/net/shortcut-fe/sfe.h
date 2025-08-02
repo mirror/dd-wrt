@@ -31,8 +31,8 @@
 #define DEBUG_LEVEL 0
 
 #if (DEBUG_LEVEL < 1)
-#define DEBUG_ASSERT(s, ...)
-#define DEBUG_ERROR(s, ...)
+#define DEBUG_ASSERT(s, ...) do {} while(0)
+#define DEBUG_ERROR(s, ...) do {} while(0)
 #else
 #define DEBUG_ASSERT(c, s, ...) if (!(c)) { pr_emerg("ASSERT: %s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG(); }
 #define DEBUG_ERROR(s, ...) pr_err("%s:%d:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
@@ -51,19 +51,19 @@
  * Statically compile messages at different levels
  */
 #if (DEBUG_LEVEL < 2)
-#define DEBUG_WARN(s, ...)
+#define DEBUG_WARN(s, ...) do {} while(0)
 #else
 #define DEBUG_WARN(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (DEBUG_LEVEL < 3)
-#define DEBUG_INFO(s, ...)
+#define DEBUG_INFO(s, ...) do {} while(0)
 #else
 #define DEBUG_INFO(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (DEBUG_LEVEL < 4)
-#define DEBUG_TRACE(s, ...)
+#define DEBUG_TRACE(s, ...) do {} while(0)
 #else
 #define DEBUG_TRACE(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
