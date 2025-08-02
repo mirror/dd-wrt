@@ -73,7 +73,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp1: sfp-p10 {
+	sfp1: sfp-p50 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c1>;
 		los-gpio = <&gpio1 33 GPIO_ACTIVE_HIGH>;
@@ -220,8 +220,8 @@
 		EXTERNAL_PHY(47)
 
 		/* RTL8393 Internal SerDes */
-		INTERNAL_PHY(48)
-		INTERNAL_PHY(49)
+		INTERNAL_PHY_SDS(48, 12)
+		INTERNAL_PHY_SDS(49, 13)
 	};
 };
 
@@ -288,31 +288,19 @@
 		port@48 {
 			reg = <48>;
 			label = "lan49";
-			phy-mode = "sgmii";
+			phy-mode = "1000base-x";
 			phy-handle = <&phy48>;
 			sfp = <&sfp0>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
-
+			managed = "in-band-status";
 		};
 
 		port@49 {
 			reg = <49>;
 			label = "lan50";
-			phy-mode = "sgmii";
+			phy-mode = "1000base-x";
 			phy-handle = <&phy49>;
 			sfp = <&sfp1>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
-
+			managed = "in-band-status";
 		};
 
 		/* CPU-Port */

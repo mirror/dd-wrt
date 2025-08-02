@@ -877,7 +877,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 			int slot = priv->r->find_l3_slot(r, false);
 
 			pr_info("%s: Got slot for route: %d\n", __func__, slot);
-			//priv->r->host_route_write(slot, r);
+			priv->r->host_route_write(slot, r);
 		} else {
 			priv->r->route_write(r->id, r);
 			r->pr.fwd_sel = true;
@@ -1586,7 +1586,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
-		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
+		priv->irq_mask = GENMASK_ULL(priv->cpu_port - 1, 0);
 		priv->r = &rtl931x_reg;
 		priv->ds->num_ports = 57;
 		priv->fib_entries = 16384;

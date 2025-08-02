@@ -3007,9 +3007,11 @@ static int rtl930x_get_internal_mode(int sds)
 
 static void rtl930x_set_power(int sds, bool on)
 {
-	int power = on ? 0 : 3;
-
-	rtl930x_sds_field_w(sds, 0x20, 0x00, 7, 6, power);
+	int power_down = on ? 0x0 : 0x3;
+	int rx_enable = on ? 0x3 : 0x1;
+ 
+	rtl9300_sds_field_w(sds, 0x20, 0x00, 7, 6, power_down);
+	rtl9300_sds_field_w(sds, 0x20, 0x00, 5, 4, rx_enable);
 }
 
 static int rtl930x_config_pll(int sds, phy_interface_t interface)

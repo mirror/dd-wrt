@@ -1113,12 +1113,14 @@ static void rtl931x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 #if 0
 static void rtl931x_print_matrix(void)
 {
-	volatile u64 *ptr = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
-	for (int i = 0; i < 52; i += 4)
-		pr_debug("> %16llx %16llx %16llx %16llx\n",
-			ptr[i + 0], ptr[i + 1], ptr[i + 2], ptr[i + 3]);
-	pr_debug("CPU_PORT> %16llx\n", ptr[52]);
+	for (int i = 0; i < 64; i++) {
+		rtl_table_read(r, i);
+		pr_info("> %08x %08x\n", sw_r32(rtl_table_data(r, 0)),
+			sw_r32(rtl_table_data(r, 1)));
+	}
+	rtl_table_release(r);
 }
 #endif
 
@@ -1180,13 +1182,15 @@ static void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, act
 
 static u64 rtl931x_traffic_get(int source)
 {
-	u32 v;
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	u64 v;
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
 	rtl_table_read(r, source);
 	v = sw_r32(rtl_table_data(r, 0));
+	v <<= 32;
+	v |= sw_r32(rtl_table_data(r, 1));
+	v >>= 7;
 	rtl_table_release(r);
-	v = v >> 3;
 
 	return v;
 }
@@ -1194,27 +1198,28 @@ static u64 rtl931x_traffic_get(int source)
 /* Enable traffic between a source port and a destination port matrix */
 static void rtl931x_traffic_set(int source, u64 dest_matrix)
 {
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
-	sw_w32((dest_matrix << 3), rtl_table_data(r, 0));
+	sw_w32(dest_matrix >> (32 - 7), rtl_table_data(r, 0));
+	sw_w32(dest_matrix << 7, rtl_table_data(r, 1));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
 
 static void rtl931x_traffic_enable(int source, int dest)
 {
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 	rtl_table_read(r, source);
-	sw_w32_mask(0, BIT(dest + 3), rtl_table_data(r, 0));
+	sw_w32_mask(0, BIT((dest + 7) % 32), rtl_table_data(r, (dest + 7) / 32 ? 0 : 1));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
 
 static void rtl931x_traffic_disable(int source, int dest)
 {
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 	rtl_table_read(r, source);
-	sw_w32_mask(BIT(dest + 3), 0, rtl_table_data(r, 0));
+	sw_w32_mask(BIT((dest + 7) % 32), 0, rtl_table_data(r, (dest + 7) / 32 ? 0 : 1));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
@@ -3417,7 +3422,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.set_l3_egress_mac = rtl931x_set_l3_egress_mac,
 	.route_read = rtl931x_route_read,
 	.route_write = rtl931x_route_write,
-	.host_route_write = rtl931x_host_route_write,
+//	.host_route_write = rtl931x_host_route_write,
 	.find_l3_slot = rtl931x_find_l3_slot,
 	.route_lookup_hw = rtl931x_route_lookup_hw,
 	.get_l3_router_mac = rtl931x_get_l3_router_mac,
