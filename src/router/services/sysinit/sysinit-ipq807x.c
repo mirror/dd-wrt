@@ -1072,9 +1072,9 @@ void start_sysinit(void)
 		}
 		nvram_set("et0macaddr", ethaddr);
 		nvram_set("et0macaddr_safe", ethaddr);
+		set_hwaddr("eth0", ethaddr);
 		set_hwaddr("wan", ethaddr);
 		set_hwaddr("lan1", ethaddr);
-		set_hwaddr("eth0", ethaddr);
 		set_hwaddr("lan2", ethaddr);
 		set_hwaddr("lan3", ethaddr);
 		set_hwaddr("lan4", ethaddr);
