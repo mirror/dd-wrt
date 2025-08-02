@@ -11,6 +11,7 @@ SMARTDNS_WEBUI_URL="https://github.com/pymumu/smartdns-webui/archive/refs/heads/
 SMARTDNS_WEBUI_SOURCE="$WORKDIR/smartdns-webui"
 SMARTDNS_STATIC_DIR="$WORKDIR/smartdns-static"
 SMARTDNS_WITH_LIBS=0
+MAKE_NJOBS=1
 
 export CC
 export STRIP
@@ -52,9 +53,12 @@ showhelp()
 
 init_env()
 {
-    if [ -z "$CC" ]; then
-        CC=gcc
-    fi
+	if [ -z "$CC" ]; then
+		CC=gcc
+	fi
+
+	MAKE_NJOBS=$(grep processor /proc/cpuinfo  | wc -l 2>/dev/null || echo 1)
+	export MAKE_NJOBS
 
 	mkdir -p $WORKDIR
 	if [ $? -ne 0 ]; then
@@ -66,13 +70,13 @@ init_env()
 		SMARTDNS_WITH_LIBS=1
 	fi
 
-    check_cc="`echo "$CC" | grep -E "(\-gcc|\-cc)"`"
-    if [ ! -z "$check_cc" ]; then
-        TARGET_ARCH="`$CC -dumpmachine`"
-        echo "target arch: $TARGET_ARCH"
-    fi
+	check_cc="`echo "$CC" | grep -E "(\-gcc|\-cc)"`"
+	if [ ! -z "$check_cc" ]; then
+		TARGET_ARCH="`$CC -dumpmachine`"
+		echo "target arch: $TARGET_ARCH"
+	fi
 
-    if [ $SMARTDNS_WITH_LIBS -eq 1 ]; then
+	if [ $SMARTDNS_WITH_LIBS -eq 1 ]; then
 		case "$TARGET_ARCH" in
 			*arm*)
 				NEED_UPDATE_ARM_CP15=1
@@ -99,89 +103,89 @@ copy_smartdns_libs()
 {
 	SMARTDNS_BIN="$CODE_DIR/src/smartdns"
 
-    copy_libs_recursive $SMARTDNS_BIN
-    if [ $? -ne 0 ]; then
-        echo "copy libs failed"
-        return 1
-    fi
+	copy_libs_recursive $SMARTDNS_BIN
+	if [ $? -ne 0 ]; then
+		echo "copy libs failed"
+		return 1
+	fi
 
-    LIB_WEBUI_SO="$CODE_DIR/plugin/smartdns-ui/target/smartdns_ui.so"
-    copy_libs_recursive $LIB_WEBUI_SO
-    if [ $? -ne 0 ]; then
-        echo "copy libs failed"
-        return 1
-    fi
+	LIB_WEBUI_SO="$CODE_DIR/plugin/smartdns-ui/target/smartdns_ui.so"
+	copy_libs_recursive $LIB_WEBUI_SO
+	if [ $? -ne 0 ]; then
+		echo "copy libs failed"
+		return 1
+	fi
 }
 
 copy_libs_recursive()
 {
-    local lib=$1
-    local lib_path=`$CC -print-file-name=$lib`
-    if [ -z "$lib_path" ]; then
-        return 0
-    fi
+	local lib=$1
+	local lib_path=`$CC -print-file-name=$lib`
+	if [ -z "$lib_path" ]; then
+		return 0
+	fi
 
-    if [ -e $SMARTDNS_STATIC_DIR/lib/$lib ]; then
-        return 0
-    fi
+	if [ -e $SMARTDNS_STATIC_DIR/lib/$lib ]; then
+		return 0
+	fi
 
-    local tmp_path="`echo "$lib_path" | grep "libc.so"`"
-    if [ ! -z "$tmp_path" ]; then
-        LIBC_PATH="$tmp_path"
-    fi
+	local tmp_path="`echo "$lib_path" | grep "libc.so"`"
+	if [ ! -z "$tmp_path" ]; then
+		LIBC_PATH="$tmp_path"
+	fi
 
-    if [ "$lib" != "$SMARTDNS_BIN" ]; then
-        echo "copy $lib_path to $SMARTDNS_STATIC_DIR/lib"
-        cp $lib_path $SMARTDNS_STATIC_DIR/lib
-        if [ $? -ne 0 ]; then
-            echo "copy $lib failed"
-            return 1
-        fi
-    fi
+	if [ "$lib" != "$SMARTDNS_BIN" ]; then
+		echo "copy $lib_path to $SMARTDNS_STATIC_DIR/lib"
+		cp $lib_path $SMARTDNS_STATIC_DIR/lib
+		if [ $? -ne 0 ]; then
+			echo "copy $lib failed"
+			return 1
+		fi
+	fi
 
-    local shared_libs="`objdump -p $lib_path | grep NEEDED | awk '{print $2}'`"
-    for sub_lib in $shared_libs; do
-        copy_libs_recursive $sub_lib
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
-    done
+	local shared_libs="`objdump -p $lib_path | grep NEEDED | awk '{print $2}'`"
+	for sub_lib in $shared_libs; do
+		copy_libs_recursive $sub_lib
+		if [ $? -ne 0 ]; then
+			return 1
+		fi
+	done
 
-    return 0
+	return 0
 }
 
 copy_linker()
 {
-    LINK_PATH=`$CC -print-file-name=$LINKER_NAME`
-    SYM_LINKER_NAME=`readlink -f $LINK_PATH`
+	LINK_PATH=`$CC -print-file-name=$LINKER_NAME`
+	SYM_LINKER_NAME=`readlink -f $LINK_PATH`
 
-    echo "linker: $LINK_PATH"
-    echo "sym linker: $SYM_LINKER_NAME"
-    echo "libc: $LIBC_PATH"
+	echo "linker: $LINK_PATH"
+	echo "sym linker: $SYM_LINKER_NAME"
+	echo "libc: $LIBC_PATH"
 
-    if [ "$SYM_LINKER_NAME" = "$LIBC_PATH" ]; then
-        ln -f -s $(basename $LIBC_PATH) $SMARTDNS_STATIC_DIR/$(basename $LINKER_NAME)
-    else
-        cp $LINK_PATH $SMARTDNS_STATIC_DIR/lib -af
-        if [ $? -ne 0 ]; then
-            echo "copy $lib failed"
-            return 1
-        fi
+	if [ "$SYM_LINKER_NAME" = "$LIBC_PATH" ]; then
+		ln -f -s $(basename $LIBC_PATH) $SMARTDNS_STATIC_DIR/lib/$(basename $LINKER_NAME)
+	else
+		cp $LINK_PATH $SMARTDNS_STATIC_DIR/lib -af
+		if [ $? -ne 0 ]; then
+			echo "copy $lib failed"
+			return 1
+		fi
 
-        SYM_LINKER_NAME=`readlink $SMARTDNS_STATIC_DIR/$LINKER_NAME`
-        if [ ! -e $SMARTDNS_STATIC_DIR/$SYM_LINKER_NAME ]; then
-            SYM_LINKER_NAME=`basename $SYM_LINKER_NAME`
-            ln -f -s $SYM_LINKER_NAME $SMARTDNS_STATIC_DIR/lib/$LINKER_NAME
-        fi
-    fi
+		SYM_LINKER_NAME=`readlink $SMARTDNS_STATIC_DIR/lib/$LINKER_NAME`
+		if [ ! -e $SMARTDNS_STATIC_DIR/lib/$SYM_LINKER_NAME ]; then
+			SYM_LINKER_NAME=`basename $SYM_LINKER_NAME`
+			ln -f -s $SYM_LINKER_NAME $SMARTDNS_STATIC_DIR/lib/$LINKER_NAME
+		fi
+	fi
 
-    ln -f -s ${LINKER_NAME} ${SMARTDNS_STATIC_DIR}/lib/ld-linux.so
-    if [ $? -ne 0 ]; then
-        echo "copy $lib failed"
-        return 1
-    fi
+	ln -f -s ${LINKER_NAME} ${SMARTDNS_STATIC_DIR}/lib/ld-linux.so
+	if [ $? -ne 0 ]; then
+		echo "copy $lib failed"
+		return 1
+	fi
 
-    return 0
+	return 0
 }
 
 build_smartdns()
@@ -197,14 +201,15 @@ build_smartdns()
 
 	make -C $CODE_DIR clean $MAKE_ARGS
 	if [ $SMARTDNS_WITH_LIBS -eq 1 ]; then
-		export LDFLAGS='-Wl,-dynamic-linker,'lib/$(echo $LINKER_NAME)' -Wl,-rpath,\$$ORIGIN:\$$ORIGIN/lib'
+		LINK_LDFLAGS='-Wl,-dynamic-linker,'lib/$(echo $LINKER_NAME)' -Wl,-rpath,\$$ORIGIN:\$$ORIGIN/lib'
+		export LDFLAGS="$LDFLAGS $LINK_LDFLAGS"
 		echo "LDFLAGS: $LDFLAGS"
 		RUSTFLAGS='-C link-arg=-Wl,-rpath,$$ORIGIN'
 		echo "Building smartdns with specific linker..."
 		unset STATIC
 	fi
 
-	RUSTFLAGS="$RUSTFLAGS" make -C $CODE_DIR $MAKE_WITH_UI all -j8 VER=$VER $MAKE_ARGS
+	RUSTFLAGS="$RUSTFLAGS" make -C $CODE_DIR $MAKE_WITH_UI all -j$MAKE_NJOBS VER=$VER $MAKE_ARGS
 	if [ $? -ne 0 ]; then
 		echo "make smartdns failed"
 		exit 1
@@ -233,12 +238,12 @@ build_smartdns()
 	cp $CURR_DIR/run-smartdns $SMARTDNS_STATIC_DIR
 	chmod +x $SMARTDNS_STATIC_DIR/run-smartdns
 	if [ "$NEED_UPDATE_ARM_CP15" = "1" ]; then
-        sed -i 's/NEED_CHECK_ARM_CP15=0/NEED_CHECK_ARM_CP15=1/' $SMARTDNS_STATIC_DIR/run-smartdns
-        if [ $? -ne 0 ]; then
-            echo "sed run-smartdns failed"
-            return 1
-        fi
-    fi
+		sed -i 's/NEED_CHECK_ARM_CP15=0/NEED_CHECK_ARM_CP15=1/' $SMARTDNS_STATIC_DIR/run-smartdns
+		if [ $? -ne 0 ]; then
+			echo "sed run-smartdns failed"
+			return 1
+		fi
+	fi
 
 	copy_smartdns_libs
 	if [ $? -ne 0 ]; then
@@ -248,10 +253,10 @@ build_smartdns()
 	rm $SMARTDNS_STATIC_DIR/lib/smartdns_ui.so >/dev/null 2>&1
 
 	copy_linker
-    if [ $? -ne 0 ]; then
-        echo "copy linker failed"
-        return 1
-    fi
+	if [ $? -ne 0 ]; then
+		echo "copy linker failed"
+		return 1
+	fi
 
 	return 0
 }
@@ -325,14 +330,13 @@ build()
 		fi
 	fi
 
-	build_webpages
-	if [ $? -ne 0 ]; then
-		echo "build smartdns-ui failed"
-		return 1
-	fi
-
 	WITH_UI_ARGS=""
 	if [ $WITH_UI -eq 1 ] && [ "$PLATFORM" != "luci" ]; then
+		build_webpages
+		if [ $? -ne 0 ]; then
+			echo "build smartdns-ui failed"
+			return 1
+		fi
 		WITH_UI_ARGS="--with-ui"
 	fi
 
