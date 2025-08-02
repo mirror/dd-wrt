@@ -1076,7 +1076,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb,
 		 */
 		if (ntohs(sic.dest_port) == 4500 ||
 		    ntohs(sic.dest_port) == 500) {
-			if (likely(is_v4))
+			if (likely(is_v4)) {
 				DEBUG_TRACE(
 					"quarkysg:: IPsec bypass: %pI4:%d(%pI4:%d) to %pI4:%d(%pI4:%d)\n",
 					&sic.src_ip.ip, ntohs(sic.src_port),
@@ -1085,11 +1085,12 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb,
 					&sic.dest_ip.ip, ntohs(sic.dest_port),
 					&sic.dest_ip_xlate.ip,
 					ntohs(sic.dest_port_xlate));
-			else
+			} else {
 				DEBUG_TRACE(
 					"quarkysg:: IPsec bypass: %pI6:%d to %pI6:%d\n",
 					&sic.src_ip.ip6, ntohs(sic.src_port),
 					&sic.dest_ip.ip6, ntohs(sic.dest_port));
+			}
 			return NF_ACCEPT;
 		}
 		break;
