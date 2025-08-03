@@ -1438,7 +1438,7 @@ CONFIG_MTD_COMPLEX_MAPPINGS=y
 #
 # CONFIG_MTD_ONENAND is not set
 # CONFIG_MTD_RAW_NAND is not set
-# CONFIG_MTD_SPI_NAND is not set
+CONFIG_MTD_SPI_NAND=y
 
 #
 # ECC engine support
@@ -2030,6 +2030,7 @@ CONFIG_SPI=y
 # CONFIG_SPI_DEBUG is not set
 CONFIG_SPI_MASTER=y
 CONFIG_SPI_MEM=y
+CONFIG_SPI_REALTEK_SNAND=y
 
 #
 # SPI Master Controller Drivers
