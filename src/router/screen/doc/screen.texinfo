@@ -8,7 +8,7 @@
 @finalout
 @setchapternewpage odd
 @c %**end of header
-@set version 5.0.0
+@set version 5.0.1
 
 @direntry
 * Screen: (screen).             Full-screen window manager.
@@ -25,7 +25,7 @@
 @ifinfo
 This file documents the @code{Screen} virtual terminal manager.
 
-Copyright (c) 1993-2024 Free Software Foundation, Inc.
+Copyright (c) 1993-2025 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -53,11 +53,11 @@ by the Foundation.
 @title Screen
 @subtitle The virtual terminal manager
 @subtitle for Version @value{version}
-@subtitle Aug 2024
+@subtitle May 2025
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1993-2024 Free Software Foundation, Inc.
+Copyright @copyright{} 1993-2025 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -5742,8 +5742,8 @@ Window number of a window (at creation time).
 @cindex files
 
 @table @file
-@item .../screen-5.0.0/etc/screenrc
-@itemx .../screen-5.0.0/etc/etcscreenrc
+@item .../screen-5.0.1/etc/screenrc
+@itemx .../screen-5.0.1/etc/etcscreenrc
 Examples in the @code{screen} distribution package for private and
 global initialization files.
 
@@ -5806,6 +5806,7 @@ Contributors @*
 ============
 
 @verbatim
+     Matthias Gerstner <matthias.gerstner@suse.de>,
      Eric S. Raymond <esr@thyrsus.com>,
      Thomas Renninger <treen@suse.com>,
      Axel Beckert <abe@deuxchevaux.org>,
@@ -5938,7 +5939,8 @@ If you find a bug in @code{Screen}, please send electronic mail to
 of @code{Screen} which you are using.  Also include in your message the
 hardware and operating system, the compiler used to compile, a
 description of the bug behavior, and the conditions that triggered the
-bug.
+bug. In case of security issue please send an mail to
+@w{@samp{alexander_naumov@opensuse.org}}.
 
 @node Availability,  , Reporting Bugs, Bugs
 @section Availability

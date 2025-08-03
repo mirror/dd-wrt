@@ -312,7 +312,7 @@ int UserDel(char *name, struct acluser **up)
 	UserFreeCopyBuffer(u);
 	free((char *)u);
 	if (!users) {
-		Finit(0);	/* Destroying whole session. Noone could ever attach again. */
+		Finit(0);	/* Destroying whole session. No one could ever attach again. */
 	}
 	return 0;
 }
@@ -321,7 +321,7 @@ int UserDel(char *name, struct acluser **up)
  * =====================================================================
  * UserFreeCopyBuffer-
  *       frees user buffer
- *       Also removes any references into the users copybuffer
+ *       Also removes any references into the user's copybuffer
  * Returns:
  *       0 - if the copy buffer was really deleted.
  *      -1 - cannot remove something that does not exist
@@ -392,7 +392,7 @@ int AclLinkUser(char *from, char *to)
 /*
  * The user pointer stored at *up will be substituted by a pointer
  * to the named user's structure, if passwords match.
- * returns NULL if successfull, an static error string otherwise
+ * returns NULL if successful, an static error string otherwise
  */
 char *DoSu(struct acluser **up, char *name, char *pw1, char *pw2)
 {
@@ -440,14 +440,14 @@ char *DoSu(struct acluser **up, char *name, char *pw1, char *pw2)
 			if (!PasswordMatches(pw2, pass)) {
 				sorry++;
 			}
-		} else /* no pasword provided */ if (*pass)	/* but need one */
+		} else /* no password provided */ if (*pass)	/* but need one */
 			sorry++;
 #endif				/* CHECKLOGIN */
 		if (pw1 && *pw1 && *pw1 != '\377') {	/* provided a screen password */
 			if (!PasswordMatches(pw1, u->u_password)) {
 				sorry++;
 			}
-		} else /* no pasword provided */ if (*u->u_password)	/* but need one */
+		} else /* no password provided */ if (*u->u_password)	/* but need one */
 			sorry++;
 	}
 
@@ -497,7 +497,7 @@ void FreeWindowAcl(Window *w)
 	free((char *)w->w_lio_notify);
 }
 
-/* if mode starts with '-' we remove the users exec bit for cmd */
+/* if mode starts with '-' we remove the user's exec bit for cmd */
 /*
  * NOTE: before you make this function look the same as 
  * AclSetPermWin, try to merge both functions. 
@@ -601,7 +601,7 @@ static int AclSetPermWin(struct acluser *uu, struct acluser *u, char *mode, Wind
 		} else {
 			/*
 			 * Hack. I do not want to duplicate all the above code for
-			 * AclSetPermCmd. This asumes that there are not more bits 
+			 * AclSetPermCmd. This assumes that there are not more bits
 			 * per cmd than per win.
 			 */
 			for (bit = 0; bit < ACL_BITS_PER_CMD; bit++)
@@ -613,7 +613,7 @@ static int AclSetPermWin(struct acluser *uu, struct acluser *u, char *mode, Wind
 }
 
 /* 
- * String is broken down into comand and window names, mode applies
+ * String is broken down into command and window names, mode applies
  * A command name matches first, so do not use these as window names.
  * uu should be NULL, except if you want to change his umask.
  */
@@ -766,7 +766,7 @@ int UsersAcl(struct acluser *uu, int argc, char **argv)
 }
 
 /*
- * Preprocess argments, so that umask can be set with UsersAcl
+ * Preprocess arguments, so that umask can be set with UsersAcl
  * 
  * all current users		umask ±rwxn
  * one specific user		umask user1±rwxn

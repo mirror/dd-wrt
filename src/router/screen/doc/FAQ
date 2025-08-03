@@ -14,9 +14,9 @@ A:   Screen  always   interprets   control-sequences   sent   by   the
      escape  character  (CTRL-A).   Both are basic screen features and
      cannot be switched off.  Even  if  it  were  possible  to  switch
      screen into a completely transparent mode, you could never switch
-     between windows, while kermit/sz/rz is downloading  a  file.  You  
-     must  wait til  the end as  kermit/sz/rz will  not transmit  your 
-     input during  a file transfer and as kermit/sz/rz would  be  very  
+     between windows, while kermit/sz/rz is downloading  a  file.  You
+     must  wait till the end as  kermit/sz/rz will  not transmit  your
+     input during  a file transfer and as kermit/sz/rz would  be  very
      confused  if  screen switched  away  the  window  containing  the
      other  kermit/sz/rz.  Simply detach your screen session  for each 
      file transfer and start the  transfer program only from the shell 
@@ -62,7 +62,7 @@ Q:   When you start "screen" a page of text comes up to  start  you
   
 A:   Just  put  the following line in your ~/.screenrc:
          startup_message off
-     Many peole ask this, although  it  is  in the man page, too :-)
+     Many people ask this, although  it  is  in the man page, too :-)
 
 Q:   Start "screen emacs"  and  run   emacs   function   suspend-emacs
      (ctrl-z). The window containing emacs vanishes. 
@@ -120,7 +120,7 @@ A:   Probably you got the termcap/terminfo entries wrong. Fixing  this
      should check the terminfo/termcap  databases there. If you cannot
      tell if terminfo or termcap is used (or  you  just  want  to   be
      save),   the   do   all  steps  in  stage  3 in parallel for both
-     systems (on all envolved hosts).  Second:  Understand  the  basic
+     systems (on all involved hosts).  Second:  Understand  the  basic
      rules  how  screen  does its terminal  emulation.  When screen is
      started or reattached, it relies on the TERM environment variable
      to  correctly  reflect  the  terminal type  you  have  physically
@@ -156,7 +156,7 @@ A:   Probably you got the termcap/terminfo entries wrong. Fixing  this
 
 Q:   I cannot configure screen. Sed does not work.
  
-A:   The  regular expressions used  in  our  configure scrip  are  too
+A:   The  regular expressions used  in  our configure script  are  too
      complicated for GNU sed version 2.03.  In  this regard it is  bug
      compatible with  Ultrix 3.1 "sed":  GNU  sed  version 2.03  dumps
      core with our configure script.  Try an older release.  E.g. from

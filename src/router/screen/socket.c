@@ -92,8 +92,8 @@ static bool CheckPassword(const char *password);
 static void PasswordProcessInput(char *, size_t);
 
 static void KillUnpriv(pid_t pid, int sig) {
-	UserContext();
-	UserReturn(kill(pid, sig));
+       UserContext();
+       UserReturn(kill(pid, sig));
 }
 
 #define SOCKMODE (S_IWRITE | S_IREAD | (displays ? S_IEXEC : 0) | (multi ? 1 : 0))
@@ -889,7 +889,7 @@ void ReceiveMsg(void)
 				Msg(0, "Query attempt with bad pid(%d)!", m.m.command.apid);
 			}
 			else {
-				KillUnpriv(m.m.command.apid, (queryflag >= 0) ? SIGCONT : SIG_BYE);	/* Send SIG_BYE if an error happened */
+				KillUnpriv(m.m.command.apid, (queryflag >= 0) ? SIGCONT : SIG_BYE);     /* Send SIG_BYE if an error happened */
 				queryflag = -1;
 			}
 		}

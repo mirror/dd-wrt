@@ -124,7 +124,7 @@ void sched(void)
 {
 	Event *ev;
 	Event *timeoutev = NULL;
-	int timeout;
+	int timeout = 0;
 	int i, n;
 
 	for (;;) {

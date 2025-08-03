@@ -104,7 +104,7 @@ bool      attach_tty_is_in_new_ns = false;
 /* Content of the tty symlink when attach_tty_is_in_new_ns == true. */
 char      attach_tty_name_in_ns[MAXPATHLEN];
 
-char      SocketPath[MAXPATHLEN];
+char      SocketPath[MAXPATHLEN + 2];
 char     *SocketName;               /* SocketName is pointer in SocketPath */
 char     *SocketMatch = NULL;       /* session id command line argument */
 int       ServerSocket = -1;
@@ -209,7 +209,6 @@ static int lf_secreopen(char *name, int wantfd, struct Log *l)
 	l->st->st_ino = l->st->st_dev = 0;
 	return 0;
 }
-
 
 
 static struct passwd *getpwbyname(char *name, struct passwd *ppp)
@@ -362,7 +361,7 @@ int main(int argc, char **argv)
 #ifdef ENABLE_TELNET
 	af                = AF_UNSPEC;
 #endif
-	/* lf_secreopen() is vital for the secure operation in setuid-root context.
+        /* lf_secreopen() is vital for the secure operation in setuid-root context.
 	 * Do not remove it
 	 */
 	logreopen_register(lf_secreopen);

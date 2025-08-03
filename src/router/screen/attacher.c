@@ -89,7 +89,7 @@ static void QueryResultFail(int sigsig)
  *               MSG_CONT, MSG_WINCH and nothing else!
  *
  *  if type == MSG_ATTACH and sockets are used, attaches
- *  tty filedescriptor.
+ *  tty file descriptor.
  */
 
 static int WriteMessage(int sock, Message *msg)
@@ -446,13 +446,13 @@ void SendCmdMessage(char *sty, char *match, char **av, int query)
 	size_t space_left = ARRAY_SIZE(m.m.command.cmd);
 
 	for (; *av && n < MAXARGS - 1; ++av, ++n) {
-		int printed = snprintf(p, space_left, "%s", *av);
-		if (printed < 0 || (size_t)printed >= space_left)
-			Panic(0, "Total length of the command to send too large.\n");
+               int printed = snprintf(p, space_left, "%s", *av);
+               if (printed < 0 || (size_t)printed >= space_left)
+                       Panic(0, "Total length of the command to send too large.\n");
 
-		printed += 1; // add null terminator
-		p += printed;
-		space_left -= printed;
+               printed += 1; // add null terminator
+               p += printed;
+               space_left -= printed;
 	}
 	*p = 0;
 	m.m.command.nargs = n;

@@ -110,7 +110,6 @@ void logreopen_register(int (*fn) (char *, int, struct Log *))
 	lf_reopen_fn = fn ? fn : logfile_reopen;
 }
 
-
 /*
  * If the logfile has been removed, truncated, unlinked or the like,
  * return nonzero.

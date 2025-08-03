@@ -1337,7 +1337,7 @@ static void DoCommandAt(struct action *act)
 	default:
 		{
 			int ch;
-			int i;
+			int i = 0;
 
 			n++;
 			ch = args[0][n];

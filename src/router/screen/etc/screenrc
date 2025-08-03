@@ -24,7 +24,7 @@ pow_detach_msg "Screen session of $LOGNAME detached."
 # shellaka '> |tcsh'
 # shellaka '$ |sh'
 
-# set every new windows hardstatus line to somenthing descriptive
+# set every new windows hardstatus line to something descriptive
 # defhstatus "screen: ^En (^Et)"
 
 defscrollback 1000
@@ -96,7 +96,7 @@ termcapinfo wy* CS=\E[?1h:CE=\E[?1l:vi=\E[?25l:ve=\E[?25h:VR=\E[?5h:VN=\E[?5l:cb
 # make hp700 termcap/info better
 termcapinfo  hp700 'Z0=\E[?3h:Z1=\E[?3l:hs:ts=\E[62"p\E[0$~\E[2$~\E[1$}:fs=\E[0}\E[61"p:ds=\E[62"p\E[1$~\E[61"p:ic@'
 
-# Extend the vt100 desciption by some sequences.
+# Extend the vt100 description by some sequences.
 termcap  vt100* ms:AL=\E[%dL:DL=\E[%dM:UP=\E[%dA:DO=\E[%dB:LE=\E[%dD:RI=\E[%dC
 terminfo vt100* ms:AL=\E[%p1%dL:DL=\E[%p1%dM:UP=\E[%p1%dA:DO=\E[%p1%dB:LE=\E[%p1%dD:RI=\E[%p1%dC
 termcapinfo linux C8

@@ -497,8 +497,6 @@ void WriteString(Window *win, char *buf, size_t len)
 					}
 					win->w_rend.font = 0;
 				}
-				if (win->w_encoding == UTF8 && utf8_isdouble(c))
-					win->w_mbcs = 0xff;
 				if (win->w_encoding == UTF8 && c >= 0x0300 && utf8_iscomb(c)) {
 					int ox, oy;
 					struct mchar omc;
@@ -528,6 +526,8 @@ void WriteString(Window *win, char *buf, size_t len)
 					}
 					break;
 				}
+				if (win->w_encoding == UTF8 && utf8_isdouble(c))
+					win->w_mbcs = 0xff;
 				font = win->w_rend.font;
 				if (font == KANA && win->w_encoding == SJIS && win->w_mbcs == 0) {
 					/* Lets see if it is the first byte of a kanji */
@@ -1334,7 +1334,7 @@ static void PrintStart(Window *win)
 {
 	win->w_pdisplay = NULL;
 
-	/* find us a nice display to print on, fore prefered */
+	/* find us a nice display to print on, fore preferred */
 	display = win->w_lastdisp;
 	if (!(display && win== D_fore && (printcmd || D_PO)))
 		for (display = displays; display; display = display->d_next)
@@ -1876,7 +1876,7 @@ static void RestorePosRendition(Window *win)
 static void Report(Window *win, char *fmt, int n1, int n2)
 {
 	int len;
-	char rbuf[40];		/* enough room for all replys */
+	char rbuf[40];		/* enough room for all replies */
 
 	sprintf(rbuf, fmt, n1, n2);
 	len = strlen(rbuf);

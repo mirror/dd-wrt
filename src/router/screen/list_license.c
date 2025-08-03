@@ -46,6 +46,7 @@
 static char ListID[] = "license";
 
 static char license[] = {
+"Copyright (c) 2025 Alexander Naumov\n"
 "Copyright (c) 2018-2024 Alexander Naumov, Amadeusz Slawinski\n"
 "Copyright (c) 2015-2017 Juergen Weigert, Alexander Naumov, Amadeusz Slawinski\n"
 "Copyright (c) 2010-2014 Juergen Weigert, Sadrul Habib Chowdhury\n"
@@ -96,7 +97,7 @@ static int gl_License_row(ListData *ldata, ListRow *lrow)
 {
 	(void)ldata; /* unused */
 
-	char *line = calloc(sizeof(char), flayer->l_width + 1);
+	char *line = calloc(flayer->l_width + 1, sizeof(char));
 	char *start = (char *)lrow->data;
 	char *lastspace = start;
 	size_t linelen = 0;
