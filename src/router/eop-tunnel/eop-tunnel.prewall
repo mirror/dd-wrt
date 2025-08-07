@@ -210,7 +210,7 @@ for i in $(seq 1 $tunnels); do
 			done
 			# end peer section
 			ifconfig oet${i} promisc up >/dev/null 2>&1
-			$IP link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
+			$IP link set dev oet${i} mtu $($nv get oet${i}_mtu) up >/dev/null 2>&1
 			echo enable > ${i}.pid
 			# alternative input with ipaddrmask
 			if [[ ! -z "$($nv get oet${i}_ipaddrmask)" ]]
