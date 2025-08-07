@@ -13,7 +13,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "clock.h"
+#include "board.h"
 #include "printf.h"
+
+
+struct rtl83xx_soc_info soc_info;
+static char soc_name[16];
+static char rtl83xx_system_type[32];
 
 #define KSEG0 0x80000000
 #define KSEG1 0xa0000000
@@ -73,9 +79,13 @@ static inline void writel(unsigned int value, volatile void *addr)
 #define RTL9300_FAMILY_ID (0x9300)
 #define RTL9310_FAMILY_ID (0x9310)
 
-static int model;
-static int family;
-static char *name;
+#define RTL838X_MODEL_NAME_INFO		(0x00D4)
+#define RTL838X_CHIP_INFO		(0x00D8)
+#define RTL839X_MODEL_NAME_INFO		(0x0FF0)
+#define RTL839X_CHIP_INFO		(0x0FF4)
+#define RTL93XX_MODEL_NAME_INFO		(0x0004)
+#define RTL93XX_CHIP_INFO		(0x0008)
+
 
 unsigned int pll_reset_value;
 
@@ -104,7 +114,7 @@ unsigned int rtl931x_board_get_memory(void)
 
 unsigned int board_get_memory(void)
 {
-	switch (family) {
+	switch (soc_info.family) {
 	case RTL9310_FAMILY_ID:
 		return rtl931x_board_get_memory();
 	default:
@@ -183,7 +193,7 @@ static void rtl931x_restart(void)
 
 void board_reset(void)
 {
-	switch (family) {
+	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_restart();
 		break;
@@ -203,7 +213,7 @@ void board_reset(void)
 
 void trigger_watchdog(void)
 {
-	switch (family) {
+	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_watchdog();
 		break;
@@ -225,50 +235,6 @@ void board_watchdog(void)
 	trigger_watchdog();
 }
 
-static void identify_rtl9302(void)
-{
-	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
-	case 0x93020810:
-		name = "RTL9302A 12x2.5G";
-		break;
-	case 0x93021010:
-		name = "RTL9302B 8x2.5G";
-		break;
-	case 0x93021810:
-		name = "RTL9302C 16x2.5G";
-		break;
-	case 0x93022010:
-		name = "RTL9302D 24x2.5G";
-		break;
-	case 0x93014010:
-		name = "RTL9301H 4x2.5G";
-		break;
-	case 0x93016810:
-		name = "RTL9301H 15x1G";
-		break;
-	case 0x93020800:
-		name = "RTL9302A";
-		break;
-	case 0x93021000:
-		name = "RTL9302B";
-		break;
-	case 0x93021800:
-		name = "RTL9302C";
-		break;
-	case 0x93022000:
-		name = "RTL9302D";
-		break;
-	case 0x93023001:
-		name = "RTL9302F";
-		break;
-	case 0x93036810:
-		name = "RTL9303 8x10G";
-		break;
-	default:
-		name = "RTL9302";
-	}
-}
-
 void start_memtest(void)
 {
 	volatile unsigned long *addr, *start, *end;
@@ -279,7 +245,7 @@ void start_memtest(void)
 	unsigned long pattern;
 
 	start = (unsigned long *)(KSEG1ADDR(workspace));
-#define MEMEND (KSEG1 + (board_get_memory() <= (128 << 20) ? board_get_memory() : 128 << 20))
+#define MEMEND (KSEG1 + (board_get_memory() <= (256 << 20) ? board_get_memory() : 256 << 20))
 	end = (unsigned long *)(MEMEND - 0x200000);
 
 	pattern = 0xa0000000;
@@ -325,104 +291,136 @@ void start_memtest(void)
 	}
 }
 
+const char *get_system_type(void)
+{
+	return rtl83xx_system_type;
+}
+
+static uint32_t read_model_name(void)
+{
+	uint32_t model, id;
+
+	model = sw_r32(RTL838X_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if ((id >= 0x8380 && id <= 0x8382) || id == 0x8330 || id == 0x8332) {
+		soc_info.id = id;
+		soc_info.family = RTL8380_FAMILY_ID;
+		return model;
+	}
+
+	model = sw_r32(RTL839X_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if ((id >= 0x8391 && id <= 0x8396) || (id >= 0x8351 && id <= 0x8353)) {
+		soc_info.id = id;
+		soc_info.family = RTL8390_FAMILY_ID;
+		return model;
+	}
+
+	model = sw_r32(RTL93XX_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if (id >= 0x9301 && id <= 0x9303) {
+		soc_info.id = id;
+		soc_info.family = RTL9300_FAMILY_ID;
+		soc_info.revision = model & 0xf;
+		return model;
+	} else if (id >= 0x9311 && id <= 0x9313) {
+		soc_info.id = id;
+		soc_info.family = RTL9310_FAMILY_ID;
+		soc_info.revision = model & 0xf;
+		return model;
+	}
+
+	return 0;
+}
+
+static void parse_model_name(uint32_t model)
+{
+	int val, offset, num_chars, pos;
+	char suffix[5] = {};
+
+	if (soc_info.family == RTL9300_FAMILY_ID ||
+	    soc_info.family == RTL9310_FAMILY_ID) {
+		/*
+		 * RTL93xx seems to have a flag for engineering samples
+		 * instead of a third character.
+		 */
+		num_chars = 2;
+	} else {
+		num_chars = 3;
+	}
+
+	for (pos = 0; pos < num_chars; pos++) {
+		offset = 11 - pos * 5;
+		val = (model & (0x1f << offset)) >> offset;
+
+		if (val == 0 || val > 24)
+			break;
+
+		suffix[pos] = 'A' + (val - 1);
+	}
+
+	if (num_chars == 2 && (model & 0x30)) {
+		suffix[pos] = 'E';
+		suffix[pos+1] = 'S';
+		pos += 2;
+	}
+
+	if (pos >= 2 && suffix[pos-2] == 'E' && suffix[pos-1] == 'S') {
+		soc_info.testchip = true;
+	}
+
+	snprintf(soc_name, sizeof(soc_name), "RTL%04X%s",
+		 soc_info.id, suffix);
+
+	soc_info.name = soc_name;
+}
+
+static void read_chip_info(void)
+{
+	uint32_t val = 0;
+
+	switch (soc_info.family) {
+	case RTL8380_FAMILY_ID:
+		sw_w32(0x3, RTL838X_INT_RW_CTRL);
+		sw_w32(0xa << 28, RTL838X_CHIP_INFO);
+		val = sw_r32(RTL838X_CHIP_INFO);
+		soc_info.revision = (val >> 16) & 0x1f;
+		break;
+
+	case RTL8390_FAMILY_ID:
+		sw_w32(0xa << 28, RTL839X_CHIP_INFO);
+		val = sw_r32(RTL839X_CHIP_INFO);
+		soc_info.revision = (val >> 16) & 0x1f;
+		break;
+
+	case RTL9300_FAMILY_ID:
+	case RTL9310_FAMILY_ID:
+		sw_w32(0xa << 16, RTL93XX_CHIP_INFO);
+		val = sw_r32(RTL93XX_CHIP_INFO);
+		break;
+	}
+
+	soc_info.cpu = val & 0xffff;
+}
+
+static void rtl83xx_set_system_type(void) {
+	char revision = '?';
+
+	if (soc_info.revision > 0 && soc_info.revision <= 24)
+		revision = 'A' + (soc_info.revision - 1);
+
+	snprintf(rtl83xx_system_type, sizeof(rtl83xx_system_type),
+		 "Realtek %s rev %c (%04X)", soc_info.name, revision, soc_info.cpu);
+}
+
 static void detect(void)
 {
-	model = sw_r32(RTL838X_MODEL_NAME_INFO);
-	//	if (model)
-	//		printf("RTL838X model is %x\n", model);
-	model = model >> 16 & 0xFFFF;
-
-	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332) && (model != 0x8380) && (model != 0x8382) &&
-	    (model != 0x8381)) {
-		model = sw_r32(RTL839X_MODEL_NAME_INFO);
-		//		if (model)
-		//			printf("RTL839X model is %x\n", model);
-		model = model >> 16 & 0xFFFF;
-	}
-
-	if ((model & 0x8380) != 0x8380 && (model & 0x8390) != 0x8390) {
-		model = sw_r32(RTL93XX_MODEL_NAME_INFO);
-		//		if (model)
-		//			printf("RTL93XX model is %x\n", model);
-		model = model >> 16 & 0xFFFF;
-	}
-	switch (model) {
-	case 0x8328:
-		name = "RTL8328";
-		family = RTL8328_FAMILY_ID;
-		break;
-	case 0x8332:
-		name = "RTL8332";
-		family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8380:
-		name = "RTL8380";
-		family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8381:
-		name = "RTL8381";
-		family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8382:
-		name = "RTL8382";
-		family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8390:
-		name = "RTL8390";
-		family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8391:
-		name = "RTL8391";
-		family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8392:
-		name = "RTL8392";
-		family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8393:
-		name = "RTL8393";
-		family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8396:
-		name = "RTL8396";
-		family = RTL8390_FAMILY_ID;
-		break;
-	case 0x9301:
-		family = RTL9300_FAMILY_ID;
-		name = "RTL9301";
-		identify_rtl9302();
-		break;
-	case 0x9302:
-		name = "RTL9302";
-		identify_rtl9302();
-		family = RTL9300_FAMILY_ID;
-		break;
-	case 0x9303:
-		name = "RTL9303";
-		identify_rtl9302();
-		family = RTL9300_FAMILY_ID;
-		break;
-	case 0x9310:
-		name = "RTL9310";
-		family = RTL9310_FAMILY_ID;
-		break;
-	case 0x9311:
-		name = "RTL9311";
-		family = RTL9310_FAMILY_ID;
-		break;
-	case 0x9312:
-		name = "RTL9312";
-		family = RTL9310_FAMILY_ID;
-		break;
-	case 0x9313:
-		name = "RTL9313";
-		family = RTL9310_FAMILY_ID;
-		break;
-	default:
-		name = "DEFAULT";
-		family = 0;
-	}
-	printf("Running on %s with %dMB\n", name, board_get_memory() >> 20);
+	uint32_t model;
+	model = read_model_name();
+	parse_model_name(model);
+	read_chip_info();
+	rtl83xx_set_system_type();
+	printf("Running on %s with %dMB\n", get_system_type(), board_get_memory() >> 20);
 	printf("clock period is %d\n", get_clock_period());
 	board_watchdog(); // init watchdog and let it run for maximum time, of something hangs board will reset after 60 seconds or so
 	//	start_memtest();
