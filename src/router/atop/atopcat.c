@@ -28,9 +28,15 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <getopt.h>
 #include <fcntl.h>
 #include <time.h>
 #include <stdio.h>
@@ -53,7 +59,7 @@ main(int argc, char *argv[])
 	struct rawheader	rh;
 	struct rawrecord	rr;
 	char			*infile, *sstat, *pstat, *cstat, *istat;
-	unsigned short		aversion;
+	unsigned int		aversion, cgroupv2 = 0;
 
 	// verify the command line arguments: input filename(s)
 	//
@@ -85,7 +91,7 @@ main(int argc, char *argv[])
 	if ( isatty(fileno(stdout)) && !dryrun)
 	{
 		fprintf(stderr,
-			"this program produces binary output on stdout "
+			"This program produces binary output on stdout "
 			"that should be redirected\nto a file or pipe!\n");
 		exit(1);
 	}
@@ -133,6 +139,7 @@ main(int argc, char *argv[])
 		if (firstfile)
 		{
 			aversion = rh.aversion;
+			cgroupv2 = rh.supportflags & CGROUPV2;
 
 			if (!dryrun)
 			{
@@ -164,6 +171,15 @@ main(int argc, char *argv[])
 				fprintf(stderr,
 					"Version of file %s is unequal to "
 					"version of first file\n", infile);
+				close(fd);
+				exit(5);
+			}
+
+			if (cgroupv2 != (rh.supportflags & CGROUPV2))
+			{
+				fprintf(stderr,
+					"Cgroups support of file %s is unequal to "
+					"first file\n", infile);
 				close(fd);
 				exit(5);
 			}
@@ -365,7 +381,7 @@ convepoch(time_t utime)
 
 	tt = localtime(&utime);
 
-	sprintf(datetime, "%04d/%02d/%02d %02d:%02d:%02d",
+	snprintf(datetime, sizeof datetime, "%04d/%02d/%02d %02d:%02d:%02d",
                 tt->tm_year+1900, tt->tm_mon+1, tt->tm_mday,
 		tt->tm_hour, tt->tm_min, tt->tm_sec);
 

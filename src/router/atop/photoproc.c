@@ -30,6 +30,10 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -117,22 +121,23 @@ photoproc(struct tstat *tasklist, int maxtask)
 	regainrootprivs();
 
 	/*
-	** if kernel module is  not active on this system,
-	** netatop-bpf will try tp run;
+	** if netatop kernel module is not active on this system,
+	** try to connect to netatop-bpf 
 	*/
-	if (!(supportflags & NETATOPD)) {
+	if (connectnetatop && !(supportflags & NETATOP)) {
 		netatop_bpf_probe();
 	}
+
 	/*
-	** if netatop-bpf is  not active on this system,
-	** kernel module will try to run;
+	** if netatop-bpf is not active on this system,
+	** try to connect to kernel module
 	*/
-	if (!(supportflags & NETATOPBPF)) {
+	if (connectnetatop && !(supportflags & NETATOPBPF)) {
 		netatop_probe();
 	}
 
 	/*
-	** if netatop-bpf is active on this system, skip call
+	** if netatop-bpf is active on this system, fetch data
 	*/
 	if (supportflags & NETATOPBPF) {
 		netatop_bpf_gettask();
@@ -226,7 +231,7 @@ photoproc(struct tstat *tasklist, int maxtask)
 				curtask->net.udprsz = tc->udprcvbytes;
 			}
 		} else {
-			// read network stats from netatop
+			// read network stats from netatop (if active)
 			netatop_gettask(curtask->gen.tgid, 'g', curtask);
 		}
 
@@ -403,6 +408,8 @@ photoproc(struct tstat *tasklist, int maxtask)
 ** count number of tasks in the system, i.e.
 ** the number of processes plus the total number of threads
 */
+#define	TPTOLERANCE	2
+
 unsigned long
 counttasks(void)
 {
@@ -457,9 +464,28 @@ counttasks(void)
 	if ( chdir(origdir) == -1)
 		mcleanstop(53, "cannot change to %s\n", origdir);
 
+	/*
+	** In a normal situation the number of threads will be far more
+	** than the number of processes since every process consists of
+	** at least one thread (even zombie processes) while many processes
+	** consist of multiple threads. Some malicious kernel versions in
+	** the past did not provide correct information about the number of
+	** threads for which a sanity check was added at this point.
+	**
+	** However, in the early boot phase (when the atop daemon is started)
+	** only single-threaded processes might run. Since the gathering of
+	** the number of threads and the number of processes is not one atomic
+	** operation, the number of threads might be 1 or 2 less than the number
+	** of processes. This should not lead to a preliminary termination.
+	*/
 	if (nrthread < nrproc)
-		mcleanstop(53, "#threads (%ld) < #procs (%ld)\n",
+	{
+		if (nrproc - nrthread > TPTOLERANCE)
+			mcleanstop(53, "#threads (%ld) < #procs (%ld)\n",
 					nrthread, nrproc);
+
+		nrthread = nrproc;	// correct number of threads
+	}
 
 	return nrproc + nrthread;
 }
@@ -838,6 +864,7 @@ proccmd(struct tstat *curtask)
 				{
 				   case '\0':
 				   case '\n':
+				   case '\r':
 				   case '\t':
 					*pc = ' ';
 				}

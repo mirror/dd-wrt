@@ -12,7 +12,7 @@
 ** Date:        November 1996
 ** LINUX-port:  June 2000
 ** --------------------------------------------------------------------------
-** Copyright (C) 2000-2012 Gerlof Langeveld
+** Copyright (C) 2000-2024 Gerlof Langeveld
 **
 ** This program is free software; you can redistribute it and/or modify it
 ** under the terms of the GNU General Public License as published by the
@@ -29,6 +29,11 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -913,8 +918,11 @@ photosyst(struct sstat *si)
 				ptrverify(lhugepagetot,
 					"Malloc failed for huge page total");
 
-				sprintf(lhugepagetot, "%s/%s/nr_hugepages",
-							HUGEPAGEDIR, dentry->d_name);
+				snprintf(lhugepagetot,
+						sizeof HUGEPAGEDIR + 1 +
+				                strlen(dentry->d_name) + 1 +
+						sizeof "nr_hugepages" + 1,
+						"%s/%s/nr_hugepages", HUGEPAGEDIR, dentry->d_name);
 
 
 				lhugepagefree = malloc(sizeof HUGEPAGEDIR + 1 +
@@ -924,8 +932,10 @@ photosyst(struct sstat *si)
 				ptrverify(lhugepagefree,
 					"Malloc failed for huge page free");
 
-				sprintf(lhugepagefree, "%s/%s/free_hugepages",
-							HUGEPAGEDIR, dentry->d_name);
+				snprintf(lhugepagefree, sizeof HUGEPAGEDIR + 1 + 
+				                        strlen(dentry->d_name) + 1 +
+                                                        sizeof "free_hugepages" + 1,
+						"%s/%s/free_hugepages", HUGEPAGEDIR, dentry->d_name);
 
 				break;
 			}
@@ -1065,9 +1075,11 @@ photosyst(struct sstat *si)
 					else if ( strcmp("HugePages_Free:", nam) == EQ)
 						si->memnuma.numa[j].freehp = cnts[1];
 				}
+
 				fclose(fp);
 			}
 		}
+
 		closedir(dirp);
 	}
 
@@ -1790,6 +1802,7 @@ photosyst(struct sstat *si)
 	** pressure statistics in /proc/pressure (>= 4.20)
 	**
 	** cpu:      some avg10=0.00 avg60=1.37 avg300=3.73 total=30995960
+	** cpu:      full avg10=0.00 avg60=0.00 avg300=0.00 total=0
 	** io:       some avg10=0.00 avg60=8.83 avg300=22.86 total=141658568
 	** io:       full avg10=0.00 avg60=8.33 avg300=21.56 total=133129045
 	** memory:   some avg10=0.00 avg60=0.74 avg300=1.67 total=10663184
@@ -1808,7 +1821,7 @@ photosyst(struct sstat *si)
 
 		if ( (fp = fopen("cpu", "r")) != NULL)
 		{
-			if ( fgets(linebuf, sizeof(linebuf), fp) != NULL)
+			while ( fgets(linebuf, sizeof(linebuf), fp) != NULL)
 			{
 				nr = sscanf(linebuf, psiformat,
 			            	&psitype,
@@ -1816,8 +1829,12 @@ photosyst(struct sstat *si)
 					&psitemp.avg300, &psitemp.total);
 
 				if (nr == 5)	// complete line ?
-					memmove(&(si->psi.cpusome), &psitemp,
-								sizeof psitemp);
+				{
+					if (psitype == 's')
+						memmove(&(si->psi.cpusome),
+							&psitemp, sizeof psitemp);
+					// cpu full always seems to be zero
+				}
 			}
 			fclose(fp);
 		}
@@ -1835,12 +1852,10 @@ photosyst(struct sstat *si)
 				{
 					if (psitype == 's')
 						memmove(&(si->psi.memsome),
-							&psitemp,
-							sizeof psitemp);
+							&psitemp, sizeof psitemp);
 					else
 						memmove(&(si->psi.memfull),
-							&psitemp,
-							sizeof psitemp);
+							&psitemp, sizeof psitemp);
 				}
 			}
 			fclose(fp);
@@ -2094,8 +2109,7 @@ static void
 nullmodname(unsigned int major, unsigned int minor,
 		char *curname, struct perdsk *px, int maxlen)
 {
-	strncpy(px->name, curname, maxlen-1);
-	*(px->name+maxlen-1) = 0;
+	safe_strcpy(px->name, curname, maxlen);
 }
 
 static void
@@ -2170,8 +2184,7 @@ lvmmapname(unsigned int major, unsigned int minor,
 				/*
  				** store info in hash list
 				*/
-				strncpy(dmp->name, dentry->d_name, MAXDKNAM);
-				dmp->name[MAXDKNAM-1] = 0;
+				safe_strcpy(dmp->name, dentry->d_name, sizeof dmp->name);
 				dmp->major 	= major(statbuf.st_rdev);
 				dmp->minor 	= minor(statbuf.st_rdev);
 
@@ -2201,8 +2214,7 @@ lvmmapname(unsigned int major, unsigned int minor,
 			/*
 		 	** info found in hash list; fill proper name
 			*/
-			strncpy(px->name, dmp->name, maxlen-1);
-			*(px->name+maxlen-1) = 0;
+			safe_strcpy(px->name, dmp->name, maxlen);
 			return;
 		}
 
@@ -2212,8 +2224,7 @@ lvmmapname(unsigned int major, unsigned int minor,
 	/*
 	** info not found in hash list; fill original name
 	*/
-	strncpy(px->name, curname, maxlen-1);
-	*(px->name+maxlen-1) = 0;
+	safe_strcpy(px->name, curname, maxlen);
 }
 
 /*
@@ -2636,6 +2647,64 @@ get_ksm(struct sstat *si)
 	}
 
 	return 1;
+}
+
+
+/*
+** determine if this system uses *real* NUMA rather than *fake* NUMA
+** which is the case when not all node distances have the same value
+*/
+#define	NUMADISTANCE0	"/sys/devices/system/node/node0/distance"
+
+void
+realnuma_support(void)
+{
+	FILE		*fp;
+	int		i, total, nr=0, dist[10];
+	char		linebuf[1024];
+
+	if ( (fp = fopen(NUMADISTANCE0, "r")) == NULL)
+		return;		// open failed
+
+	if ( fgets(linebuf, sizeof(linebuf), fp) != NULL)
+	{
+		nr = sscanf(linebuf, "%d %d %d %d %d %d %d %d %d %d",
+			&dist[0], &dist[1], &dist[2], &dist[3],
+			&dist[4], &dist[5], &dist[6], &dist[7],
+			&dist[8], &dist[9]);
+	}
+
+	fclose(fp);
+
+	if (nr <= 0)	// any recognized numerical distances?
+		return;
+
+	// totalize all distances
+       	for (i=0, total=0; i < nr; i++)
+		total += dist[i];
+
+	// average distance not equal to the first distance?
+	if (total / i != dist[0])
+		supportflags |= REALNUMA;
+}
+
+
+/*
+** determine if this system uses zswap
+*/
+void
+zswap_support(void)
+{
+	FILE *fp;
+	char  state;
+
+	if ((fp=fopen("/sys/module/zswap/parameters/enabled", "r")) == NULL)
+		return;		// open failed
+
+	if (fscanf(fp, "%c", &state) == 1 && state == 'Y')
+		supportflags |= ZSWAP;
+
+	fclose(fp);
 }
 
 

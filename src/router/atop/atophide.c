@@ -31,6 +31,11 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mman.h>
@@ -287,15 +292,15 @@ main(int argc, char *argv[])
                 if ( !getrawtstat(ifd, tstatp, rr.pcomplen, rr.ndeviat) )
                         exit(7);
 
-                // get compressed cgroup-level statistics
+                // read compressed cgroup-level statistics (no need to decompress)
                 //
                 cstatp = malloc(rr.ccomplen);
 
-                ptrverify(cstatp, "Malloc failed for compressed pidlist\n");
+                ptrverify(cstatp, "Malloc failed for compressed cgroup stats\n");
 
 		readin(ifd, cstatp, rr.ccomplen);
 
-                // get compressed pidlist
+                // read compressed pidlist (no need to decompress)
                 //
                 istatp = malloc(rr.icomplen);
 
@@ -356,6 +361,10 @@ anonymize(struct sstat *ssp, struct tstat *tsp, int ntask)
 	char	*standin, *p;
 
 	// anonimize system-level stats
+	//
+	// be sure for that old value is fully wiped, especially
+	// when the original string is langer that the substitute
+	//
 	// - logical volume names
 	//
 	for (i=0; i < ssp->dsk.nlvm; i++)
@@ -363,8 +372,8 @@ anonymize(struct sstat *ssp, struct tstat *tsp, int ntask)
 		standin = findstandin(&lvmhead, &lvmsequence,
 		                      "logvol", ssp->dsk.lvm[i].name);
 
-		memset(ssp->dsk.lvm[i].name, '\0', MAXDKNAM); 
-		strncpy(ssp->dsk.lvm[i].name, standin, MAXDKNAM-1);
+		memset(ssp->dsk.lvm[i].name, '\0', sizeof ssp->dsk.lvm[i].name);
+		safe_strcpy(ssp->dsk.lvm[i].name, standin, sizeof ssp->dsk.lvm[i].name);
 	}
 	
 	// anonimize system-level stats
@@ -377,8 +386,8 @@ anonymize(struct sstat *ssp, struct tstat *tsp, int ntask)
 
 		memset(ssp->nfs.nfsmounts.nfsmnt[i].mountdev, '\0',
 					sizeof ssp->nfs.nfsmounts.nfsmnt[i].mountdev); 
-		strncpy(ssp->nfs.nfsmounts.nfsmnt[i].mountdev, standin,
-					sizeof ssp->nfs.nfsmounts.nfsmnt[i].mountdev - 1); 
+		safe_strcpy(ssp->nfs.nfsmounts.nfsmnt[i].mountdev, standin,
+					sizeof ssp->nfs.nfsmounts.nfsmnt[i].mountdev);
 	}
 	
 	// anonymize process-level stats
@@ -397,7 +406,7 @@ anonymize(struct sstat *ssp, struct tstat *tsp, int ntask)
 		// remove command line arguments
 		//
 		if ( (p = strchr(tsp->gen.cmdline, ' ')) )
-			memset(p, '\0', CMDLEN-(p-tsp->gen.cmdline));
+			memset(p, '\0', CMDLEN-(p - tsp->gen.cmdline));
 
 		// check all allowed names
 		//
@@ -417,11 +426,11 @@ anonymize(struct sstat *ssp, struct tstat *tsp, int ntask)
 			standin = findstandin(&cmdhead, &cmdsequence,
 		                      		"prog", tsp->gen.name);
 
-			memset(tsp->gen.name, '\0', PNAMLEN+1);
-			strncpy(tsp->gen.name, standin, PNAMLEN); 
+			memset(tsp->gen.name, '\0', sizeof tsp->gen.name);
+			safe_strcpy(tsp->gen.name, standin, sizeof tsp->gen.name);
 
-			memset(tsp->gen.cmdline, '\0', CMDLEN+1);
-			strncpy(tsp->gen.cmdline, standin, CMDLEN); 
+			memset(tsp->gen.cmdline, '\0', sizeof tsp->gen.cmdline);
+			safe_strcpy(tsp->gen.cmdline, standin, sizeof tsp->gen.cmdline);
 		}
 	}
 }
@@ -631,37 +640,6 @@ getrawtstat(int rawfd, struct tstat *pp, int complen, int ndeviat)
 }
 
 
-#if 0
-// Function to read the cgroup-level statistics
-// from the current offset
-//
-static struct cstat *
-getrawcstat(int rawfd, unsigned long ccomplen, unsigned long coriglen)
-{
-	Byte		*ccompbuf, *corigbuf;
-	int		rv;
-
-	/*
-	** read all cstat structs
-	*/
-	ccompbuf = malloc(ccomplen);
-	corigbuf = malloc(coriglen);
-
-	ptrverify(ccompbuf, "Malloc failed for reading compressed cgroups\n");
-	ptrverify(corigbuf, "Malloc failed for decompressing cgroups\n");
-
-	readin(rawfd, ccompbuf, ccomplen);
-
-	rv = uncompress((Byte *)corigbuf, &coriglen, ccompbuf, ccomplen);
-
-	testcompval(rv, "uncompress cgroups");
-
-	free(ccompbuf);
-
-	return (struct cstat *)corigbuf;
-}
-#endif
-
 // Function to write a new output sample from the current offset
 //
 static void
@@ -843,4 +821,17 @@ getbranchtime(char *itim, time_t *newtime)
 	// correct date-time format
 	*newtime = epoch;
 	return 1;
+}
+
+// copy a string to a destination buffer that will always
+// be null-terminated
+//
+void
+safe_strcpy(char *dst, const char *src, size_t dstsize)
+{
+	if (dstsize == 0)
+		return;
+
+	dst[0] = '\0';
+	strncat(dst, src, dstsize - 1);
 }

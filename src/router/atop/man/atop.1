@@ -89,8 +89,9 @@ one of these keys or by pressing key 'z' (pause) explicitly.
 
 After browsing through the earlier samples with the
 keys 't' (next sample), 'T' (previous sample), 'r' (reset to
-begin of measurement) and 'b' (branch to time tamp),
-the live measurement can be continued by pressing key 'z' (resume after pause).
+begin of measurement), 'Z' (fast-forward to end of measurement)
+and 'b' (branch to timestamp), the live measurement can be continued
+by pressing key 'z' (resume after pause).
 
 The temporary raw file will be written in the 
 .B /tmp
@@ -249,6 +250,18 @@ needed for the presentation in text mode. The next interval in bar graph
 mode shows the bars unsorted again unless the window width is unsufficient
 for all bars.
 .PP
+For the CPUs, disks and memory resources also a bar graph with two bars
+is shown reflecting the PSI values 'some' (S) and 'full' (F).
+The 'some' (S) percentage indicates the time in which at least some tasks
+were stalled on a given resource.
+The 'full' (F) percentage indicates the time in which all non-idle tasks were stalled
+on this resource simultaneously, which had severe impact on the performance.
+.br
+For some Linux distributions PSI support might be disabled by default.
+In that case you need to pass
+.B psi=1
+on the kernel command line during boot.
+.PP
 The remaining part of this manual page mainly describes the information
 shown in text mode.
 When certain descriptions also apply to bar graph mode it will be
@@ -308,6 +321,15 @@ mode (see section INTERACTIVE COMMANDS).
 .br
 Additional flags are available to support storage of atop-data in raw 
 format (see section RAW DATA STORAGE).
+
+By default,
+.I atop
+produces its output full-screen unless a flag is passed to direct
+the output to a raw log (-w) or direct the output in parseable (-P)
+or JSON output (-J). It is possible however to produce full-screen
+output while the output is also directed in another way. In that
+case a flag that relates to full-screen output (like -g) has to be
+passed on the command line explicitly.
 
 The status line in the initial screen shows if
 .I atop
@@ -543,13 +565,14 @@ BPF module that can be separately installed.
 .br
 When
 .I atop
-gathers counters for a new interval, it verifies if the
+has been started with the '-K' flag, it verifies if the
 .I netatop
 or 
 .I netatop-bpf
 module is currently active. If so,
 .I atop
-obtains the relevant network counters from this module and shows
+obtains the relevant network counters from this module for each interval
+and shows
 the number of sent and received packets per process/thread in the generic
 screen. Besides, detailed counters can be requested by
 pressing the 'n' key.
@@ -578,8 +601,9 @@ in the system, as well as utilization counters of every
 process that uses a GPU.
 When
 .I atop
-notices that the daemon is active, it reads these GPU utilization
-counters with every interval.
+has been started with the '-k' flag, it reads these
+GPU utilization counters with every interval when
+the daemon is active.
 
 The
 .I atopgpud
@@ -1029,10 +1053,17 @@ When viewing the contents of a raw file, this key can be used to rewind
 to the beginning of the file again (except when reading raw data from a pipe).
 .PP
 .TP 5
+.B Z
+When viewing the contents of a raw file this key can be used to fast-forward
+to the end of the file, however not when reading raw data from a pipe.
+.br
+This key can be used in text mode and bar graph mode.
+.PP
+.TP 5
 .B U
-Specify a search string for specific user names as a regular expression.
+Specify a regular expression string for specific user names or a numerical UID.
 From now on, only (active) processes will be shown from a user which matches
-the regular expression.
+the regular expression or numerical UID.
 The system statistics are still system wide.
 If the Enter-key is pressed without specifying a name, (active)
 processes of all users will be shown again.
@@ -1256,9 +1287,9 @@ is used, stdin will be read.
 .br
 The samples from the file can be viewed interactively by using the key 't'
 to show the next sample, the key 'T' to show the previous sample, the
-key 'b' to branch to a particular time or the key 'r' to rewind to
-the begin of the file. These keys can be used in text mode as well as
-in bar graph mode.
+key 'b' to branch to a particular time, the key 'r' to rewind to
+the begin of the file or the 'Z' key to fast-forward to the end of the file.
+These keys can be used in text mode as well as in bar graph mode.
 .br
 When output is redirected to a file or pipe,
 .B atop
@@ -1630,7 +1661,7 @@ the number of out-of-memory kills ('oomkill').
 Pressure Stall Information.
 .br
 This line contains percentages about resource pressure related to CPU,
-memory and I/O. Certain percentages refer to 'some' meaning that some
+memory and disk I/O. Certain percentages refer to 'some' meaning that some
 processes/threads were delayed due to resource overload. Other
 percentages refer to 'full' meaning a loss of overall throughput
 due to resource overload.
@@ -1642,6 +1673,11 @@ The values 'cs' (cpu some), 'ms' (memory some), 'mf' (memory full), 'is'
 (I/O some) and 'if' (I/O full) each show
 three percentages separated by slashes:
 pressure percentage over the last 10, 60 and 300 seconds.
+.br
+For some Linux distributions PSI support might be disabled by default.
+In that case you need to pass
+.B psi=1
+on the kernel command line during boot.
 .PP
 .TP 5
 .B LVM/MDD/DSK
@@ -1850,6 +1886,11 @@ Value -1 means maximum, while value -2 means undefined.
 .B CPUPS
 The CPU pressure percentage ('some') in this cgroup and
 cgroups underneath.
+.br
+For some Linux distributions PSI support might be disabled by default.
+In that case you need to pass
+.B psi=1
+on the kernel command line during boot.
 .PP
 .TP 9
 .B CPUWGT
@@ -1865,6 +1906,11 @@ in this cgroup and the cgroups underneath. Value -1 means undefined.
 .B DSKPS
 The disk pressure percentage ('full') in this cgroup and
 cgroups underneath.
+.br
+For some Linux distributions PSI support might be disabled by default.
+In that case you need to pass
+.B psi=1
+on the kernel command line during boot.
 .PP
 .TP 9
 .B IOWGT
@@ -1885,6 +1931,11 @@ Value -1 means undefined.
 .B MEMPS
 The memory pressure percentage ('full') in this cgroup and
 cgroups underneath.
+.br
+For some Linux distributions PSI support might be disabled by default.
+In that case you need to pass
+.B psi=1
+on the kernel command line during boot.
 .PP
 .TP 9
 .B NPROCS
@@ -1989,7 +2040,14 @@ line option can be used to prepend matching environment variables to the
 displayed command line. POSIX Extended Regular Expression syntax are used
 (see regex(3)). When a matching environment variable is too long (exceeding
 the buffer that should contain the command line), it will be truncated.
+Usually only the environment variables will be shown of the processes that
+are running under your own user ID, unless you are a privileged user.
 .br
+WARNING: Don't use this flag when 
+.I writing
+to a (publicly readable) raw file!
+You might expose sensitive environment variables to the readers of that raw file.
+
 Behind the verb 'COMMAND-LINE' in the header line, the current page number
 and the total number of pages of the process/thread list are shown.
 .PP
@@ -2022,6 +2080,9 @@ in the kernel.
 .TP 9
 .B EGID
 Effective group-id under which this process executes.
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B ENDATE
@@ -2040,6 +2101,9 @@ Virtual environment identified (OpenVZ only).
 .TP 9
 .B EUID
 Effective user-id under which this process executes.
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B EXC
@@ -2049,10 +2113,16 @@ or the fatal signal number (second position of column 'ST' is S or C).
 .TP 9
 .B FSGID
 Filesystem group-id under which this process executes.
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B FSUID
 Filesystem user-id under which this process executes.
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B GPU
@@ -2219,6 +2289,9 @@ Runqueue delay, i.e. time spent waiting on a runqueue.
 .TP 9
 .B RGID
 The real group-id under which the process executes. 
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B RGROW 
@@ -2268,6 +2341,9 @@ or ranges from 1 (lowest) till 99 (highest) for a realtime process
 .TP 9
 .B RUID
 The real user-id under which the process executes. 
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B S
@@ -2281,6 +2357,9 @@ processes which have finished during the last interval.
 .TP 9
 .B SGID
 The saved group-id of the process.
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B SNET 
@@ -2330,6 +2409,9 @@ The start time of the process.
 .TP 9
 .B SUID
 The saved user-id of the process.
+When the name is longer than 8 or when the
+.I -I
+flag is used, the number is shown instead of the name.
 .PP
 .TP 9
 .B SWAPSZ
@@ -2814,8 +2896,14 @@ number of packets received by the interface,
 number of bytes received by the interface,
 number of packets transmitted by the interface,
 number of bytes transmitted by the interface,
-interface speed, and
-duplex mode (0=half, 1=full).
+interface speed, duplex mode (0=half, 1=full),
+receive errors, transmit errors,
+receive drops, transmit drops,
+receive fifo, transmit fifo,
+receive compressed, transmit compressed,
+receive framing errors, receive multicast,
+transmit collisions, and transmit carrier.
+
 .TP 9
 .B IFB
 Subsequent fields:
@@ -3037,6 +3125,19 @@ Monitor the current system load as bar graphs with an interval of 5 seconds:
 .TP 12
 .B \  atop -B 5
 .PP
+Monitor the current system load in text mode with an interval of 4 seconds
+with the possibility to browse back and forth while measuring
+continues (twin mode):
+.PP
+.TP 12
+.B \  atop -t 4
+.PP
+Live monitoring of the current system load while writing the measurement
+to a raw log in parallel (to be viewed later on): 
+.PP
+.TP 12
+.B \  atop -g -w /tmp/sessionx
+.PP
 View the cgroups with the related processes (except kernel processes) with
 the possibility to review previous samples during the live measurement:
 .PP
@@ -3066,12 +3167,17 @@ interactively:
 .PP
 .B \  atop -r yy
 .PP
-View the contents of the standard logfile of 2024, April 5 from
+View the contents of the standard logfile of 2024, November 5 from
 02:00 PM onwards interactively:
 .PP
-.B \  atop -r 20240405 -b 1400
+.B \  atop -r 20241105 -b 1400
 .PP
-Concatenate all raw log files of March 2024 and generate parsable
+Read the contents of today's logfile and show the CPU utilization on
+system level as parseable output and JSON output:
+.PP
+.B \  atop -r -PCPU -JCPU
+.PP
+Concatenate all raw log files of November 2024 and generate parsable
 output about the CPU utilization:
 .PP
 .TP 12

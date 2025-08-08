@@ -29,6 +29,10 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -46,11 +50,11 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "atop.h"
 #include "acctproc.h"
-
-int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid);
 
 static unsigned long long getbootlinux(long);
 
@@ -822,8 +826,7 @@ ptrverify(const void *ptr, const char *errormsg, ...)
 		acctswoff();
 		netatop_signoff();
 
-		if (vis.show_end)
-			(vis.show_end)();
+		generic_end();
 
 		va_start(args, errormsg);
 		vfprintf(stderr, errormsg, args);
@@ -843,7 +846,7 @@ mcleanstop(int exitcode, const char *errormsg, ...)
 
 	acctswoff();
 	netatop_signoff();
-	(vis.show_end)();
+	generic_end();
 
 	va_start(args, errormsg);
 	vfprintf(stderr, errormsg, args);
@@ -860,7 +863,7 @@ cleanstop(int exitcode)
 {
 	acctswoff();
 	netatop_signoff();
-	(vis.show_end)();
+	generic_end();
 
 	exit(exitcode);
 }
@@ -1044,4 +1047,141 @@ getpidwidth(void)
         }
 
 	return numdigits;
+}
+
+
+/*
+** Convert UID number to user name by maintaining a hash list
+** instead of calling getpwuid() for each conversion.
+*/
+#define	UG2NHASH	1024
+
+struct u2n {
+	struct u2n	*next;
+
+	uid_t		uid;
+	char 		*uname;
+};
+
+char *
+uid2name(uid_t uid)
+{
+	static char		firstcall = 1;
+	static struct u2n	*u2n_hash[UG2NHASH];
+	int			hash;
+	struct u2n		*this;
+
+	if (firstcall)
+	{
+		struct passwd	*pwd;
+
+		// setup hash list for UIDs with user names
+		//
+		while ( (pwd = getpwent()))
+		{
+			hash = pwd->pw_uid & (UG2NHASH-1);
+
+			this = malloc(sizeof *this);
+			ptrverify(this, "Malloc failed for u2n\n");
+
+			this->next     = u2n_hash[hash];
+			u2n_hash[hash] = this;
+
+			this->uid      = pwd->pw_uid;
+			this->uname    = malloc( strlen(pwd->pw_name) + 1 );
+			ptrverify(this->uname, "Malloc failed for u2n name\n");
+
+			strcpy(this->uname, pwd->pw_name);
+		}
+
+		endpwent();
+
+		firstcall = 0;
+	}
+
+	// find UID in hash list and translate to name
+	//
+	for (hash = uid & (UG2NHASH-1), this = u2n_hash[hash]; this; this = this->next)
+	{
+		if (this->uid == uid)
+			return this->uname;
+	}
+
+	return NULL;
+}
+
+
+/*
+** Convert GID number to group name by maintaining a hash list
+** instead of calling getgruid() for each conversion.
+*/
+struct g2n {
+	struct g2n	*next;
+
+	gid_t		gid;
+	char 		*gname;
+};
+
+char *
+gid2name(gid_t gid)
+{
+	static char		firstcall = 1;
+	static struct g2n	*g2n_hash[UG2NHASH];
+	int			hash;
+	struct g2n		*this;
+
+	if (firstcall)
+	{
+		struct group	*group;
+
+		// setup hash list for UIDs with user names
+		//
+		while ( (group = getgrent()))
+		{
+			hash = group->gr_gid & (UG2NHASH-1);
+
+			this = malloc(sizeof *this);
+			ptrverify(this, "Malloc failed for g2n\n");
+
+			this->next     = g2n_hash[hash];
+			g2n_hash[hash] = this;
+
+			this->gid      = group->gr_gid;
+			this->gname    = malloc( strlen(group->gr_name) + 1 );
+			ptrverify(this->gname, "Malloc failed for g2n name\n");
+
+			strcpy(this->gname, group->gr_name);
+		}
+
+		endgrent();
+
+		firstcall = 0;
+	}
+
+	// find UID in hash list and translate to name
+	//
+	for (hash = gid & (UG2NHASH-1), this = g2n_hash[hash]; this; this = this->next)
+	{
+		if (this->gid == gid)
+			return this->gname;
+	}
+
+	return NULL;
+}
+
+
+/*
+** copy a string to a destination buffer that will always
+** be null-terminated 
+** 'dstsize' is supposed to be the total size of the
+** destination buffer including null-byte
+*/
+void
+safe_strcpy(char *dst, const char *src, size_t dstsize)
+{
+	if (dstsize == 0)
+		return;
+
+	dst[0] = '\0';
+	strncat(dst, src, dstsize - 1);
 }

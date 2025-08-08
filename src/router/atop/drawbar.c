@@ -10,9 +10,10 @@
 ** ==========================================================================
 ** Author:      Gerlof Langeveld
 ** E-mail:      gerlof.langeveld@atoptool.nl
-** Date:        March/April 2023 (initial)
+** Date:        March/April 2023        Initial
+**              November/December 2024  Add PSI bar graphs
 ** --------------------------------------------------------------------------
-** Copyright (C) 2023 Gerlof Langeveld
+** Copyright (C) 2023-2024 Gerlof Langeveld
 **
 ** This program is free software; you can redistribute it and/or modify it
 ** under the terms of the GNU General Public License as published by the
@@ -102,6 +103,10 @@
 // horizontally scaled by the user, atop might switch from one model to
 // the other.
 /////////////////////////////////////////////////////////////////////////////
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <curses.h>
@@ -220,7 +225,10 @@ static int	compnetval(const void *, const void *);
 static void	fillbarmaps(int, struct vertval *, float, int);
 
 static int	drawvertbars(struct perwindow *, float, float,
-			int, int, struct vertval *, int, char *,char *, int);
+			int, int, struct vertval *, int,
+			char *, char *, int, int, int);
+
+static void	drawpsibars(WINDOW *, int, int, int, int, int, int, int, int);
 
 static int	drawnetbars(struct perwindow *, int, struct netval *,
 						int, char *,char *);
@@ -429,6 +437,25 @@ draw_samp(time_t curtime, int nsecs, struct sstat *sstat,
 
 			return lastchar;
 
+		   case MEND:		// branch to end?
+			// only possible in twin mode or when viewing raw file
+			//
+			if (!rawreadflag)
+			{
+				beep();
+				break;
+			}
+
+			if (!paused && twinpid)
+			{
+				paused=1;       // implicit pause in twin mode
+				clrtoeol();
+				refresh();
+			}
+
+			begintime = 0x7fffffff;
+			return MSAMPBRANCH;
+
 		   case MSAMPBRANCH:	// branch to other time?
 			// only possible in twin mode or when viewing raw file
 			//
@@ -570,7 +597,7 @@ do_cpubars(struct sstat *sstat, int nsecs, char initlabels, char mono)
 	static struct vertval	*vertvals;
 
 	count_t			alltics;
-	int 			i;
+	int 			i, psisomeperc, psifullperc;
 	char			buf[16];
 
 	// check if the number of CPUs has been changed since
@@ -588,8 +615,8 @@ do_cpubars(struct sstat *sstat, int nsecs, char initlabels, char mono)
 		}
 
 		// create new label space
-		// - for one CPU, one label is enough ('Avg')
-		// - for more than one CPU, one label is added ('Avg')
+		// - for one CPU, one label is enough (only 'Avg')
+		// - for more than one CPU, one label is added (for 'Avg')
 		//
 		numcpus = sstat->cpu.nrcpu;
 
@@ -742,11 +769,29 @@ do_cpubars(struct sstat *sstat, int nsecs, char initlabels, char mono)
 		}
 	}
 
+	// calculate PSI percentages, if supported
+	//
+	if (sstat->psi.present)
+	{
+		psisomeperc = sstat->psi.cpusome.total / ((count_t)nsecs*10000);
+
+		if (psisomeperc > 100)
+			psisomeperc = 100;
+
+		psifullperc = -1;
+	}
+	else
+	{
+		psisomeperc = -1;
+		psifullperc = -1;
+	}
+
 	// draw bar graph showing busy percentages of CPUs
 	//
 	drawvertbars(&wincpu, 100.0, cpubadness, 
 			numlabs, numcpus == 1 ? 0 : 1, vertvals, 
-			labellen, "Busy%", "Processors", 0);
+			labellen, "Busy%", "Processors", 0,
+			psisomeperc, psifullperc);
 }
 
 
@@ -761,7 +806,7 @@ do_dskbars(struct sstat *sstat, int nsecs, char initlabels, char mono)
 	static struct vertval	*vertvals;
 
 	count_t			mstot;
-	int 			i, namlen;
+	int 			i, namlen, psisomeperc, psifullperc;
 
 	// check if the number of disks has been changed since
 	// previous sample and create X axis labels for all disks
@@ -855,8 +900,32 @@ do_dskbars(struct sstat *sstat, int nsecs, char initlabels, char mono)
 		}
 	}
 
+	// calculate PSI percentages, if supported
+	//
+	if (sstat->psi.present)
+	{
+		psisomeperc = sstat->psi.iosome.total / ((count_t)nsecs*10000);
+
+		if (psisomeperc > 100)
+			psisomeperc = 100;
+
+		psifullperc = sstat->psi.iofull.total / ((count_t)nsecs*10000);
+
+		if (psifullperc > 100)
+			psifullperc = 100;
+	}
+	else
+	{
+		psisomeperc = -1;
+		psifullperc = -1;
+	}
+
+	// draw bar graph showing busy percentages of disks
+	//
 	drawvertbars(&windsk, 100.0, dskbadness,
-		numdisks, 0, vertvals, labellen, "Busy%", "Disks", 3);
+		numdisks, 0, vertvals, labellen,
+		"Busy%", "Disks", 3,
+		psisomeperc, psifullperc);
 }
 
 /////////////////////////////////////////////////////
@@ -906,6 +975,11 @@ getwinratio(struct sstat *sstat, char *winmodel)
 	//
 	dskcols = 7 + nrdisk * (disklabellen+1);
 	intcols = 1 + nrintf * (intflabellen+5);
+
+	// when pressure values available, reserve space for disk PSI
+	//
+	if (sstat->psi.present)
+		dskcols += 4;
 
 	// determine the ratio between the size of the
 	// disk window and interface window
@@ -1165,14 +1239,17 @@ do_netbars(struct sstat *sstat, int nsecs, char initlabels, char lower)
 // 		 1 = single column bars with empty bar in between
 // 		 2 = double column bars with empty bar in between
 // 		 3 = triple column bars with empty bar in between
+// - psisomeperc percentage of PSI some (-1 if not supported)
+// - psifullperc percentage of PSI full (-1 if not supported)
 //
 // returns:	number of bars drawn
 //
 static int
-drawvertbars(struct perwindow *w,
+drawvertbars(   struct perwindow *w,
 		float barscale, float hthreshold,
 		int numbars, int avgbar, struct vertval *vvp,
-		int barlabsize, char *ytitle, char *xtitle, int barwidth)
+		int barlabsize, char *ytitle, char *xtitle, int barwidth,
+		int psisomeperc, int psifullperc)
 {
 	char	buf[16], *ychar, horizontalxlab=0, barch;
 	int 	i, j, curline, curcol, barlines, realbars,
@@ -1182,7 +1259,7 @@ drawvertbars(struct perwindow *w,
 	int	ytitlelen  = strlen(ytitle), xtitlelen  = strlen(xtitle);
 	int	ytitleline, xtitlespace;
 	int	scalelen = snprintf(buf, sizeof buf, "%d", (int)barscale),
-		xindent;
+		xindent, psicols = 0;
 	void	*vvporig = vvp;
 
 	struct vertval *vp;
@@ -1195,8 +1272,12 @@ drawvertbars(struct perwindow *w,
 	// - position 4..n:	number of positions taken for Y label (scalelen)
 	// - position n+1:	Y axis vertical line
 	//
-	xindent   = 3 + scalelen + 1;
-	availcols = w->ncols - xindent;		// number of columns for bars
+	xindent = 3 + scalelen + 1;
+
+	if (psisomeperc+psifullperc > -2)
+		psicols = 5;
+
+	availcols = w->ncols - xindent - psicols; // number of columns for bars
 
 	// verify if there is enough horizontal space in the
 	// window to show all per-bar X labels horizontally in one line
@@ -1457,12 +1538,24 @@ drawvertbars(struct perwindow *w,
 	else
 		xtitlespace = xindent + (xtitlelen + realcols)/2;
 
-	mvwprintw(w->win, curline++, 0, "%*s", xtitlespace, xtitle);
-
-        wrefresh(w->win);
+	mvwprintw(w->win, curline, 0, "%*s", xtitlespace, xtitle);
 
 	if (vvporig != vvp)		// reallocated by sortvertbars()?
 		free(vvp);
+
+	// draw PSI bars if supported
+	//
+	if (psisomeperc+psifullperc > -2)
+	{
+		int startcol = w->ncols - psicols + 1;
+
+		drawpsibars(w->win, barlines, 0, startcol, valperunit,
+					1, 0, psisomeperc, psifullperc);
+	}
+
+	// flush window content
+	//
+        wrefresh(w->win);
 
 	return realbars;
 }
@@ -1544,6 +1637,115 @@ fillbarmaps(int numbars, struct vertval *vvp, float valperunit, int barlines)
 
 		if (n < m && m < MAXHEIGHT)
 			memset(mp, vp->basecolor, m-n);
+	}
+}
+
+/////////////////////////////////////////////////////
+// draw two bars for the 'some' and 'full' PSI
+// percentages
+/////////////////////////////////////////////////////
+static void
+drawpsibars(WINDOW *win, int barlines, int startline, int startcol,
+	                 int valperunit, int barwidth, int boxed,
+			 int psisomeperc, int psifullperc)
+{
+	int	i, curline, visiblepressure;
+	int	somefromline = barlines - (psisomeperc + (valperunit/2)) / valperunit;
+	int	fullfromline = barlines - (psifullperc + (valperunit/2)) / valperunit;
+
+	// determine if there is any visible pressure
+	//
+	if (psisomeperc == -1)
+		somefromline = barlines;
+
+	if (psifullperc == -1)
+		fullfromline = barlines;
+
+	if (somefromline + fullfromline == 2 * barlines)
+		visiblepressure = 0;
+	else
+		visiblepressure = 1;
+
+	///////////////////////
+	// draw graph framework
+	///////////////////////
+	//
+	// draw Y axe
+	// (gray if no pressure now)
+	//
+	if (!visiblepressure)
+		colorswon(win, FGCOLORGREY);
+
+	for (curline=0; curline < barlines; curline++)
+	{
+		mvwaddch(win, curline+startline, startcol, ACS_VLINE);
+
+		if (boxed)
+			mvwaddch(win, curline+startline,
+			              startcol+2*barwidth+1, ACS_VLINE);
+	}
+
+	// draw X axe
+	//
+	mvwaddch(win, curline+startline, startcol, ACS_LLCORNER);
+
+	for (i=0; i < barwidth*2; i++)
+		waddch(win, ACS_HLINE);
+
+	if (boxed)
+		mvwaddch(win, curline+startline, startcol+2*barwidth+1, ACS_LRCORNER);
+
+	curline++;
+
+	// print X label
+	//
+	mvwprintw(win, curline+startline, startcol+barwidth/2+boxed, "PSI");
+
+	if (!visiblepressure)
+		colorswoff(win, FGCOLORGREY);
+
+	///////////////////////
+	// draw the PSI values
+	///////////////////////
+	for (curline=0; curline < barlines; curline++)
+	{
+		// address the cursor on the start position
+		//
+		wmove(win, curline+startline, startcol+1);
+
+		// draw the 'some' PSI value
+		//
+		if (curline >= somefromline)
+		{
+			colorswon(win, COLORWARN);
+
+			for (i=0; i < barwidth; i++)
+				waddch(win, curline == barlines-1 ? "Some"[i] : ' ');
+
+			colorswoff(win,  COLORWARN);
+		}
+		else
+		{
+			for (i=0; i < barwidth; i++)
+				waddch(win, ' ');
+		}
+
+		// draw the 'full' PSI value
+		//
+		if (curline >= fullfromline)
+		{
+			colorswon(win, COLORBAD);
+
+			for (i=0; i < barwidth; i++)
+				waddch(win, curline == barlines-1 ? "Full"[i] : ' ');
+
+			colorswoff(win, COLORBAD);
+		}
+		else
+		{
+			for (i=0; i < barwidth; i++)
+				waddch(win, ' ');
+		}
 	}
 }
 
@@ -1786,10 +1988,10 @@ drawmemory(struct perwindow *w, struct sstat *sstat, int nsecs,
 			slabmem, freemem, hugefree, hugeused, shmrssreal;
 	long long	totalswp, shmemswp, freeswp;
 	char		scanseverity, swapseverity, killseverity;
-	int 		curline=0, barlines, color;
+	int 		curline=0, barlines, eventlines, psilines, color;
 	int 		usedlines, freelines, cachelines, tmpfslines,
 			slablines, shmemlines, hugelines;
-	int		memorycol = 1,
+	int		memorycol = 1, psisomeperc, psifullperc,
 			swapcol   = memorycol + MEMORYBARSZ + 1,
 			eventcol  = swapcol   + SWAPBARSZ   + 2;
 	float		valperunit;
@@ -1949,8 +2151,6 @@ drawmemory(struct perwindow *w, struct sstat *sstat, int nsecs,
 	mvwprintw(w->win, curline, memorycol, "%*s",
 			MEMORYBARSZ-(MEMORYBARSZ-6)/2, "Memory");
 
-        wrefresh(w->win);
-
 	// show swap space (if used)
 	//
 	if (totalswp)
@@ -2004,45 +2204,86 @@ drawmemory(struct perwindow *w, struct sstat *sstat, int nsecs,
 		eventcol = swapcol+1;
 	}
 
-	// show events
+	// calculate PSI percentages, if supported
+	//
+	if (sstat->psi.present)
+	{
+		psisomeperc = sstat->psi.memsome.total / ((count_t)nsecs*10000);
+
+		if (psisomeperc > 100)
+			psisomeperc = 100;
+
+		psifullperc = sstat->psi.memfull.total / ((count_t)nsecs*10000);
+
+		if (psifullperc > 100)
+			psifullperc = 100;
+
+		// calculate how many free lines are available on top of
+		// the event counters to be used for drawing PSI bar graph,
+		// supposing that all event counters (19 lines) can be shown
+		//
+		psilines = barlines - 19 - 1;
+
+		if (psilines < 7)	// not enough lines?
+			psilines = 7;
+	}
+	else
+	{
+		psisomeperc = -1;
+		psifullperc = -1;
+
+		psilines    = 0;
+	}
+
+	eventlines = barlines - psilines - 3;
+
+	// show as many event counters as possible, starting with
+	// the most relevant counters first (bottom-up)
+	// also consider if PSI 
 	//
 	mvwprintw(w->win, curline, eventcol, "  Events ");
 
-	if (barlines > 1)	// show oomkilling?
+	if (eventlines > 1)	// show oomkilling?
 		curline = drawevent(w, curline, eventcol,
 				severitycolor(killseverity),
 				" oomkills ", " %8ld ",
 				sstat->mem.oomkills);	
 
-	if (barlines > 4)	// show swapouts?
+	if (eventlines > 4)	// show swapouts?
 		curline = drawevent(w, curline, eventcol,
 				severitycolor(swapseverity),
 				" swapouts ", "%7ld/s ",
 				sstat->mem.swouts/nsecs);	
 
-	if (barlines > 7)	// show pagescans?
+	if (eventlines > 7)	// show pagescans?
 		curline = drawevent(w, curline, eventcol,
 				severitycolor(scanseverity),
 				" pagscans ", "%7ld/s ",
 				sstat->mem.pgscans / nsecs);	
 
-	if (barlines > 10)	// show swapins?
+	if (eventlines > 10)	// show swapins?
 		curline = drawevent(w, curline, eventcol,
 				COLORMEMBAR,
 				"  swapins ", "%7ld/s ",
 				sstat->mem.swins / nsecs);	
 
-	if (barlines > 13)	// show pageouts?
+	if (eventlines > 13)	// show pageouts?
 		curline = drawevent(w, curline, eventcol,
 				COLORMEMBAR,
 				"  pagouts ", "%7ld/s ",
 				sstat->mem.pgouts / nsecs);	
 
-	if (barlines > 16)	// show pageins?
+	if (eventlines > 16)	// show pageins?
 		curline = drawevent(w, curline, eventcol,
 				COLORMEMBAR,
 				"  pageins ", "%7ld/s ",
 				sstat->mem.pgins / nsecs);	
+
+	// draw PSI bar graph
+	//
+	if (psilines)
+		drawpsibars(w->win, psilines, 0, eventcol, 100/psilines,
+					4, 1, psisomeperc, psifullperc);
 
         wrefresh(w->win);
 
@@ -2553,7 +2794,7 @@ getwininput(char *prompt, char *answer, int maxanswer, char numerical)
 // create a separate window with help text and
 // wait for any keyboard input 
 /////////////////////////////////////////////////////
-#define	HELPLINES	25
+#define	HELPLINES	27
 #define	HELPCOLS	70
 
 static void
@@ -2622,6 +2863,8 @@ showhelp(void)
 			" '%c'  - show previous sample", MSAMPPREV);
         	mvwprintw(helpwin, line++, 2,
 			" '%c'  - rewind to begin", MRESET);
+        	mvwprintw(helpwin, line++, 2,
+			" '%c'  - fast-forward to end", MEND);
         	mvwprintw(helpwin, line++, 2,
 			" '%c'  - branch to certain time", MSAMPBRANCH);
         	mvwprintw(helpwin, line++, 2,
@@ -2839,4 +3082,3 @@ getsigwinch(int signr)
 {
         winchange = 1;
 }
-

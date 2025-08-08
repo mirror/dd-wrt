@@ -26,6 +26,10 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -56,9 +60,8 @@
 #include "rawlog.h"
 
 #define	BASEPATH	"/var/log/atop"  
-#define	BINPATH		"/usr/bin/atop"
 
-static int	getrawrec  (int, struct rawrecord *, int);
+static int	getrawrec  (int, struct rawrecord *, int, int);
 static int	getrawsstat(int, struct sstat *, int);
 static int	getrawtstat(int, struct tstat *, int, int);
 static int	getrawcstat(int, struct cgchainer **,
@@ -69,7 +72,6 @@ static int	rawwopen(void);
 static int	readchunk(int, void *, int);
 static int	lookslikedatetome(char *);
 static void	testcompval(int, char *);
-static void	try_other_version(int, int);
 
 /*
 ** write a raw record to file
@@ -230,8 +232,11 @@ rawwrite(time_t curtime, int numsecs,
 		rr.flags |= RRGPUSTAT;
 
 	/*
-	** use writev to make record operation atomic
-	** to avoid write uncompleted record data.
+	** writev can be used to write different chunks of data to
+	** a regular (raw) file in one operation atomically (i.e. without
+	** intermingling with data written by other processes).
+	** however, this call does not avoid that only part of the
+	** data is written to the (raw) file!
 	*/
 	iov[0].iov_base = &rr;
 	iov[0].iov_len  = sizeof(rr);
@@ -248,17 +253,21 @@ rawwrite(time_t curtime, int numsecs,
 	iov[4].iov_base = icompbuf;
 	iov[4].iov_len  = icomplen;
 
-	if ( writev(rawfd, iov, nrvectors) == -1)
+	if ( writev(rawfd, iov, nrvectors) <
+			sizeof(rr) + scomplen + pcomplen + ccomplen + icomplen)
 	{
-		fprintf(stderr, "%s - ", rawname);
+		/*
+		** restore original file size from before partly write
+		** to keep file consistency
+		*/
 		if ( ftruncate(rawfd, filestat.st_size) == -1)
 			mcleanstop(8,
 			   "failed to write raw/status/process record to %s\n",
-			   rawname);
+			   orawname);
 
 		mcleanstop(7,
 		   "failed to write raw/status/process record to %s\n",
-		   rawname);
+		   orawname);
 	}
 
 	free(pcompbuf);
@@ -290,13 +299,15 @@ static int
 rawwopen()
 {
 	struct rawheader	rh;
-	int			fd;
+	struct rawrecord	rr;
+	int			fd, rv;
 	struct stat		filestats;
+	time_t			prevtime = 0;
 
 	/*
 	** check if the file exists already
 	*/
-	if ( (fd = open(rawname, O_RDWR)) >= 0 )
+	if ( (fd = open(orawname, O_RDWR)) >= 0 )
 	{
 		/*
 		** check if the file already contains a file header (and records)
@@ -307,11 +318,11 @@ rawwopen()
 			** read and verify raw file header
 			*/
 			if ( read(fd, &rh, sizeof rh) < sizeof rh)
-				mcleanstop(7, "%s - cannot read header\n", rawname);
+				mcleanstop(7, "%s - cannot read header\n", orawname);
 
 			if (rh.magic != MYMAGIC)
 				mcleanstop(7, "file %s exists but does not contain raw "
-					"atop output (wrong magic number)\n", rawname);
+					"atop output (wrong magic number)\n", orawname);
 
 			if ( rh.sstatlen	!= sizeof(struct sstat)		||
 			     rh.tstatlen	!= sizeof(struct tstat)		||
@@ -321,7 +332,7 @@ rawwopen()
 			{
 				fprintf(stderr,
 					"existing file %s has incompatible header\n",
-					rawname);
+					orawname);
 
 				if (rh.aversion & 0x8000 &&
 				   (rh.aversion & 0x7fff) != getnumvers())
@@ -338,10 +349,42 @@ rawwopen()
 				cleanstop(7);
 			}
 
+			if (rh.supportflags != (supportflags | RAWLOGNG))
+				mcleanstop(7, "%s - different features in existing raw log\n", orawname);
+
+			if (rh.hertz != hertz)
+				mcleanstop(7, "%s - different hertz in existing raw log\n", orawname);
+
+			if (rh.pagesize != pagesize)
+				mcleanstop(7, "%s - different page size in existing raw log\n", orawname);
+
 			/*
-			** jump to end of file, being prepared to extend with more records
+			** loop through the existing sample records in the file
+			** to do some sanity checking and to find out if the end
+			** of the file is consistent (the latter is already
+			** verified by the getrawrec() function)
 			*/
-			(void) lseek(fd, (off_t) 0, SEEK_END);
+			while ( (rv = getrawrec(fd, &rr, rh.rawreclen, 1)) == rh.rawreclen)
+			{
+				if (	rr.curtime <= prevtime			||
+					rr.ccomplen > rr.coriglen		||
+					rr.scomplen > sizeof(struct sstat)	||
+					rr.pcomplen > sizeof(struct tstat) * rr.ndeviat)
+				{
+					mcleanstop(7,
+						"Inconsistencies found in existing raw file\n");
+				}
+
+				prevtime = rr.curtime;
+
+				lseek(fd, rr.scomplen+rr.pcomplen+rr.ccomplen+rr.icomplen, SEEK_CUR);
+			}
+
+			if (rv != 0)
+			{
+				mcleanstop(7,
+					"Incomplete record header in existing raw file\n");
+			}
 
 			return fd;
 		}
@@ -351,9 +394,9 @@ rawwopen()
 		/*
 		** file does not exist (or can not be opened)
 		*/
-		if ( (fd = creat(rawname, 0666)) == -1)
+		if ( (fd = creat(orawname, 0666)) == -1)
 		{
-			fprintf(stderr, "%s - ", rawname);
+			fprintf(stderr, "%s - ", orawname);
 			perror("create raw file");
 			cleanstop(7);
 		}
@@ -384,7 +427,7 @@ rawwopen()
 
 	if ( write(fd, &rh, sizeof rh) == -1)
 	{
-		fprintf(stderr, "%s - ", rawname);
+		fprintf(stderr, "%s - ", orawname);
 		perror("write raw header");
 		cleanstop(7);
 	}
@@ -402,7 +445,7 @@ rawread(void)
 {
 	static struct devtstat	devtstat;
 
-	int			i, j, rawfd, len, isregular = 1;
+	int			i, j, v, rv, rawfd, len, isregular = 1;
 	char			*py;
 	struct rawheader	rh;
 	struct rawrecord	rr;
@@ -423,7 +466,7 @@ rawread(void)
 	time_t			timenow;
 	struct tm		*tp;
 
-	switch ( len = strlen(rawname) )
+	switch ( len = strlen(irawname) )
 	{
 	   /*
 	   ** if no filename is specified, assemble the name of the raw file
@@ -432,7 +475,7 @@ rawread(void)
 		timenow	= time(0);
 		tp	= localtime(&timenow);
 
-		snprintf(rawname, RAWNAMESZ, "%s/atop_%04d%02d%02d",
+		snprintf(irawname, RAWNAMESZ, "%s/atop_%04d%02d%02d",
 			BASEPATH, 
 			tp->tm_year+1900,
 			tp->tm_mon+1,
@@ -445,16 +488,16 @@ rawread(void)
 	   ** the full pathname of the raw file
 	   */
 	   case 8:
-		if ( access(rawname, F_OK) == 0) 
+		if ( access(irawname, F_OK) == 0) 
 			break;		/* existing file */
 
-		if (lookslikedatetome(rawname))
+		if (lookslikedatetome(irawname))
 		{
 			char	savedname[16];
 
-			strcpy(savedname, rawname); // no overflow (len=8)
+			strcpy(savedname, irawname); // no overflow (len=8)
 
-			snprintf(rawname, RAWNAMESZ, "%s/atop_%s",
+			snprintf(irawname, RAWNAMESZ, "%s/atop_%s",
 				BASEPATH, 
 				savedname);
 			break;
@@ -467,7 +510,7 @@ rawread(void)
 	   ** of y's).
 	   */
 	   default:
-		if ( access(rawname, F_OK) == 0) 
+		if ( access(irawname, F_OK) == 0) 
 			break;		/* existing file */
 
 		/*
@@ -480,13 +523,13 @@ rawread(void)
 		memset(py, 'y', len);
 		*(py+len) = '\0';
 
-		if ( strcmp(rawname, py) == 0 )
+		if ( strcmp(irawname, py) == 0 )
 		{
 			timenow	 = time(0);
 			timenow -= len*3600*24;
 			tp	 = localtime(&timenow);
 
-			snprintf(rawname, RAWNAMESZ, "%s/atop_%04d%02d%02d",
+			snprintf(irawname, RAWNAMESZ, "%s/atop_%04d%02d%02d",
 				BASEPATH, 
 				tp->tm_year+1900,
 				tp->tm_mon+1,
@@ -500,9 +543,9 @@ rawread(void)
 	** make sure the file is a regular file (seekable) or
 	** a pipe (not seekable)
 	*/
-	if (stat(rawname, &filestat) == -1)
+	if (stat(irawname, &filestat) == -1)
 	{
-		fprintf(stderr, "%s - ", rawname);
+		fprintf(stderr, "%s - ", irawname);
 		perror("stat raw file");
 		cleanstop(7);
 	}
@@ -516,50 +559,18 @@ rawread(void)
 	isregular = S_ISREG(filestat.st_mode);
 
 	/*
-	** open raw file
+	** open raw file for reading
 	*/
-	if ( (rawfd = open(rawname, O_RDONLY)) == -1)
+	if ( (rawfd = open(irawname, O_RDONLY)) == -1)
 	{
-		char	command[512], tmpname1[200], tmpname2[200];
-
-		/*
-		** check if a compressed raw file is present
-		*/
-		snprintf(tmpname1, sizeof tmpname1, "%s.gz", rawname);
-
-		if ( access(tmpname1, F_OK|R_OK) == -1)
-		{
-			fprintf(stderr, "%s - ", rawname);
-			perror("open raw file");
-			cleanstop(7);
-		}
-
-		/*
-		** compressed raw file to be decompressed via gunzip
-		*/
-		fprintf(stderr, "Decompressing logfile ....\n");
-		snprintf(tmpname2, sizeof tmpname2, "/tmp/atopwrkXXXXXX");
-		rawfd = mkstemp(tmpname2);
-		if (rawfd == -1)
-		{
-			fprintf(stderr, "%s - ", rawname);
-			perror("creating decompression temp file");
-			cleanstop(7);
-		}
-
-		snprintf(command,  sizeof command, "gunzip -c %s > %s",
-							tmpname1, tmpname2);
-		const int system_res = system (command);
-		unlink(tmpname2);
-
-		if (system_res)
-		{
-			fprintf(stderr, "%s - gunzip failed", rawname);
-			cleanstop(7);
-		}
+		fprintf(stderr, "%s - ", irawname);
+		perror("open raw file");
+		cleanstop(7);
 	}
 
-	/* make the kernel readahead more effective, */
+	/*
+	** make the kernel readahead more effective
+       	*/
 	if (isregular)
 		posix_fadvise(rawfd, 0, 0, POSIX_FADV_SEQUENTIAL);
 
@@ -575,7 +586,7 @@ rawread(void)
 	if (rh.magic != MYMAGIC)
 	{
 		fprintf(stderr, "file %s does not contain raw atop/atopsar "
-				"output (wrong magic number)\n", rawname);
+				"output (wrong magic number)\n", irawname);
 		cleanstop(7);
 	}
 
@@ -594,7 +605,7 @@ rawread(void)
 		fprintf(stderr, "headlen:  %d/%lu\n", rh.rawheadlen, sizeof(struct rawheader));
 		fprintf(stderr, "reclen:   %d/%lu\n", rh.rawreclen, sizeof(struct rawrecord));
 		fprintf(stderr,
-			"\nraw file %s has incompatible format\n", rawname);
+			"\nraw file %s has incompatible format\n", irawname);
 
 		if (rh.aversion & 0x8000 &&
        		   (rh.aversion & 0x7fff) != getnumvers())
@@ -615,13 +626,6 @@ rawread(void)
 		}
 
 		close(rawfd);
-
-		if (((rh.aversion >> 8) & 0x7f) != (getnumvers()   >> 8) ||
-		     (rh.aversion       & 0xff) != (getnumvers() & 0x7f)   )
-		{
-			try_other_version((rh.aversion >> 8) & 0x7f,
-			                   rh.aversion       & 0xff);
-		}
 
 		cleanstop(7);
 	}
@@ -668,7 +672,7 @@ rawread(void)
 
 	while (lastcmd && lastcmd != 'q')
 	{
-		while ( getrawrec(rawfd, &rr, rh.rawreclen) == rh.rawreclen)
+		while ( (rv = getrawrec(rawfd, &rr, rh.rawreclen, isregular)) == rh.rawreclen)
 		{
 			unsigned int	k, l;
 
@@ -909,14 +913,18 @@ rawread(void)
 
 			do
 			{
-				lastcmd = (vis.show_samp)(rr.curtime,
-				     rr.interval, &devtstat, &sstat,
-				     devchain, rr.ncgroups, rr.ncgpids,
-			             rr.nexit, rr.noverflow, flags);
+				for (v=0; handlers[v].handle_sample; v++)
+				{
+					lastcmd = (handlers[v].handle_sample)(rr.curtime,
+				     		rr.interval, &devtstat, &sstat,
+				     		devchain, rr.ncgroups, rr.ncgpids,
+			             		rr.nexit, rr.noverflow, flags);
+				}
 			}
 			while (!isregular &&
 				( lastcmd == MSAMPPREV		||
 				  lastcmd == MRESET     	||
+				  lastcmd == MEND	     	||
 				 (lastcmd == MSAMPBRANCH &&
 						begintime < cursortime) ));
 
@@ -947,6 +955,11 @@ rawread(void)
 				offcur = 1;
 				break;
 
+			   case MEND:
+				begintime = 0x7fffffff;
+				lastcmd = MSAMPBRANCH;
+				break;
+
 			   case MSAMPBRANCH:
 				if (begintime < cursortime && isregular)
 				{
@@ -960,6 +973,9 @@ rawread(void)
 
 		if (isregular)
 		{
+			if (rv != 0)	// inconsistent/incomplete raw file?
+				mcleanstop(7, "inconsistent raw file!\n");
+
 			if (offcur >= 1)
 				offcur--;
 
@@ -984,9 +1000,32 @@ rawread(void)
 ** read the next raw record from the raw logfile
 */
 static int
-getrawrec(int rawfd, struct rawrecord *prr, int rrlen)
+getrawrec(int rawfd, struct rawrecord *prr, int rrlen, int isregular)
 {
-	return readchunk(rawfd, prr, rrlen);
+	// read rawrecord itself
+	//
+	
+	struct stat	filestats;
+	int 		n = readchunk(rawfd, prr, rrlen);
+
+	// verify file consistency:
+	// 	are all expected compressed buffers written
+	//	behind the raw record header?
+	//
+	if (n == rrlen && isregular)
+	{
+		if ( fstat(rawfd, &filestats) == 0)
+		{
+			if (filestats.st_size - lseek(rawfd, 0, SEEK_CUR) <
+					prr->scomplen + prr->pcomplen +
+					prr->ccomplen + prr->icomplen)
+			{
+				mcleanstop(9, "raw file is incomplete!\n");
+			}
+		}
+	}
+
+	return n;
 }
 
 
@@ -1143,6 +1182,11 @@ lookslikedatetome(char *p)
 	return 1;	/* yes, looks like a date to me */
 }
 
+
+/*
+** test return code of (de)compression and
+** terminate when wrong
+*/
 static void
 testcompval(int rv, char *func)
 {
@@ -1171,6 +1215,13 @@ testcompval(int rv, char *func)
 	}
 }
 
+
+/*
+** read chunk of data with specified length
+** (specifically important when reading from pipe)
+**
+** returns: number of bytes read
+*/
 static int
 readchunk(int fd, void *buf, int len)
 {
@@ -1181,8 +1232,8 @@ readchunk(int fd, void *buf, int len)
 	{
  		switch (n = read(fd, p, len))
 		{
-		   case 0:
-			return 0;	// EOF
+		   case 0:	// EOF?
+			return (char *)p - (char *)buf;
 		   case -1:
 			perror("read raw file");
 			cleanstop(9);
@@ -1193,60 +1244,4 @@ readchunk(int fd, void *buf, int len)
 	}
 
 	return (char *)p - (char *)buf;
-}
-
-/*
-** try to activate another atop- or atopsar-version
-** to read this logfile
-*/
-static void
-try_other_version(int majorversion, int minorversion)
-{
-	char		tmpbuf[1024];
-	extern char	**argvp;
-	int		fds;
-	struct rlimit	rlimit;
-	int 		setresuid(uid_t, uid_t, uid_t);
-
-	/*
- 	** prepare name of executable file
-	** the current pathname (if any) is stripped off
-	*/
-	snprintf(tmpbuf, sizeof tmpbuf, "%s-%d.%d",
-		BINPATH, majorversion, minorversion);
-
-	fprintf(stderr, "trying to activate %s....\n", tmpbuf);
-
-	/*
-	** be sure no open file descriptors are passed
-	** except stdin, stdout en stderr
-	*/
-	(void) getrlimit(RLIMIT_NOFILE, &rlimit);
-
-	for (fds=3; fds < rlimit.rlim_cur; fds++)
-		close(fds);
-
-	/*
-	** be absolutely sure not to pass setuid-root privileges
-	** to the loaded program; errno EAGAIN and ENOMEM are not
-	** acceptable!
-	*/
-	if ( setresuid(getuid(), getuid(), getuid()) == -1 && errno != EPERM)
-	{
-		fprintf(stderr, "not possible to drop root-privileges!\n");
-		exit(1);
-	}
-
-	/*
- 	** load alternative executable image
-	** at this moment the saved-uid might still be set
-	** to 'root' but this is reset at the moment of exec
-	*/
-	(void) execvp(tmpbuf, argvp);
-
-	/*
-	** point of no return, except when exec failed
-	*/
-	fprintf(stderr, "activation of %s failed!\n\n", tmpbuf);
-	fprintf(stderr, "use 'atopconvert' to convert this raw log!\n");
 }

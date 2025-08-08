@@ -29,6 +29,10 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -859,8 +863,7 @@ text_samp(time_t curtime, int nsecs,
 				** selection specified for tasks:
 				** create new (worst case) pointer list if needed
 				*/
-				if (sellist)	// remove previous list if needed
-					free(sellist);
+				free(sellist); // remove previous list if needed
 	
 				sellist = malloc(sizeof(struct tstat *) * ncurlist);
 	
@@ -940,8 +943,7 @@ text_samp(time_t curtime, int nsecs,
 					if (!tsklist || ntsk != ntotal ||
 								tdeviate != deviatonly)
 					{
-						if (tsklist)
-							free(tsklist);	// remove current
+						free(tsklist);	// remove current
 	
 						tsklist = malloc(sizeof(struct tstat *)
 									    * ntotal);
@@ -1072,8 +1074,7 @@ text_samp(time_t curtime, int nsecs,
 				** when a list has been created already that is
 				** not suitable, first remove it
 				*/
-				if (cgroupsort)
-					free(cgroupsort);
+				free(cgroupsort);
 
 				cgroupsort = cgsort(cgchainers, ncgroups, curorder);
 
@@ -1096,8 +1097,7 @@ text_samp(time_t curtime, int nsecs,
 				** when a selection list has been created
 				** already that is not suitable, first remove it
 				*/
-				if (cgroupsel)
-					free(cgroupsel);
+				free(cgroupsel);
 
 				/*
 				** create new merged list of cgroups and processes
@@ -1397,8 +1397,8 @@ text_samp(time_t curtime, int nsecs,
 			   case MSORTNET:
 				if ( !(supportflags & NETATOP || supportflags & NETATOPBPF))
 				{
-					statmsg = "Module 'netatop' or 'netatop-bpf' not "
-					          "active or no root privs";
+					statmsg = "Ignored: 'netatop' or 'netatop-bpf' not "
+					          "active, no -K specified or no root privs";
 					break;
 				}
 				showorder = MSORTNET;
@@ -1411,8 +1411,8 @@ text_samp(time_t curtime, int nsecs,
 			   case MSORTGPU:
 				if ( !(supportflags & GPUSTAT) )
 				{
-					statmsg = "No GPU activity figures "
-					          "available; request ignored!";
+					statmsg = "Ignored: no GPU daemon running or "
+					          "no -k specified";
 					break;
 				}
 				showorder = MSORTGPU;
@@ -1461,9 +1461,8 @@ text_samp(time_t curtime, int nsecs,
 			   case MPROCNET:
 				if ( !(supportflags & NETATOP || supportflags & NETATOPBPF) )
 				{
-					statmsg = "Module 'netatop' or 'netatop-bpf' not "
-					          "active or no root privs; "
-					          "request ignored!";
+					statmsg = "Ignored: 'netatop' or 'netatop-bpf' not "
+					          "active, no -K specified or no root privs";
 					break;
 				}
 
@@ -1481,10 +1480,8 @@ text_samp(time_t curtime, int nsecs,
 			   case MPROCGPU:
 				if ( !(supportflags & GPUSTAT) )
 				{
-					statmsg = "No GPU activity figures "
-					          "available (atopgpud might "
-					          "not be running); "
-					          "request ignored!";
+					statmsg = "Ignored: no GPU daemon running or "
+					          "no -k specified";
 					break;
 				}
 
@@ -1740,8 +1737,8 @@ text_samp(time_t curtime, int nsecs,
 
 				move(statline, 0);
 				clrtoeol();
-				printw("Username as regular expression "
-				       "(enter=all users): ");
+				printw("Users as regular expression or "
+				       "one numerical UID (enter=all users): ");
 
 				procsel.username[0] = '\0';
 				scanw("%255s\n", procsel.username);
@@ -2562,6 +2559,27 @@ text_samp(time_t curtime, int nsecs,
 				goto free_and_return;	
 
 			   /*
+			   ** branch to end of log 
+			   */
+			   case MEND:
+                                if (!rawreadflag)
+                                {
+					statmsg = "Only allowed in twin mode or "
+						  "when viewing raw file!";
+                                        beep();
+                                        break;
+                                }
+
+				if (!paused && twinpid)
+				{
+					paused=1;	// implicit pause in twin mode
+					clrtoeol();
+					refresh();
+				}
+
+				goto free_and_return;	
+
+			   /*
 			   ** show version info
 			   */
 			   case MVERSION:
@@ -2655,16 +2673,16 @@ text_samp(time_t curtime, int nsecs,
 	}
 
     free_and_return:
-	if (tpcumlist)  free(tpcumlist);
-	if (pcumlist)   free(pcumlist);
-	if (tucumlist)  free(tucumlist);
-	if (ucumlist)   free(ucumlist);
-	if (tccumlist)  free(tccumlist);
-	if (ccumlist)   free(ccumlist);
-	if (tsklist)    free(tsklist);
-	if (sellist)    free(sellist);
-	if (cgroupsort) free(cgroupsort);
-	if (cgroupsel)  free(cgroupsel);
+	free(tpcumlist);
+	free(pcumlist);
+	free(tucumlist);
+	free(ucumlist);
+	free(tccumlist);
+	free(ccumlist);
+	free(tsklist);
+	free(sellist);
+	free(cgroupsort);
+	free(cgroupsel);
 
 	return lastchar;
 }
@@ -3183,8 +3201,8 @@ generic_init(void)
 		   case MPROCNET:
 			if ( !(supportflags & NETATOP || supportflags & NETATOPBPF) )
 			{
-				fprintf(stderr, "Module 'netatop' or 'netatop-bpf' not "
-					          "active; request ignored!");
+				fprintf(stderr, "Ignored: 'netatop' or 'netatop-bpf' not "
+					        "active, no -K specified or no root privs");
 				sleep(3);
 				break;
 			}
@@ -3405,6 +3423,7 @@ generic_init(void)
 			init_color(COLOR_MYORANGE, 675, 500,  50);
 			init_color(COLOR_MYGREEN,    0, 600, 100);
 			init_color(COLOR_MYGREY,   240, 240, 240);
+			init_color(COLOR_MYLGREY,  800, 800, 800);
 
 			init_color(COLOR_MYBROWN1, 420, 160, 160);
 			init_color(COLOR_MYBROWN2, 735, 280, 280);
@@ -3422,11 +3441,12 @@ generic_init(void)
 
 			// color pair definitions (foreground/background)
 			//
-			init_pair(FGCOLORINFO,     colorinfo,   -1);
-			init_pair(FGCOLORALMOST,   coloralmost, -1);
-			init_pair(FGCOLORCRIT,     colorcrit,   -1);
-			init_pair(FGCOLORTHR,      colorthread, -1);
-                	init_pair(FGCOLORBORDER,   COLOR_CYAN,  -1);
+			init_pair(FGCOLORINFO,     colorinfo,    -1);
+			init_pair(FGCOLORALMOST,   coloralmost,  -1);
+			init_pair(FGCOLORCRIT,     colorcrit,    -1);
+			init_pair(FGCOLORTHR,      colorthread,  -1);
+                	init_pair(FGCOLORBORDER,   COLOR_CYAN,   -1);
+                	init_pair(FGCOLORGREY,     COLOR_MYLGREY, -1);
 
 	                init_pair(WHITE_GREEN,     COLOR_WHITE, COLOR_MYGREEN);
 			init_pair(WHITE_ORANGE,    COLOR_WHITE, COLOR_MYORANGE);
@@ -3510,6 +3530,7 @@ static struct helptext {
 	{"\t'%c'  - show previous sample\n",			MSAMPPREV, 'r'},
 	{"\t'%c'  - branch to certain time\n",			MSAMPBRANCH, 'r'},
 	{"\t'%c'  - rewind to begin\n",				MRESET, 'r'},
+	{"\t'%c'  - fast-forward to end\n",			MEND, 'r'},
 	{"\t'%c'  - pause button to freeze or continue (twin mode)\n",
 								MPAUSE, 'r'},
 	{"\n",							' ', 'r'},
@@ -3766,8 +3787,7 @@ do_username(char *name, char *val)
 {
 	struct passwd	*pwd;
 
-	strncpy(procsel.username, val, sizeof procsel.username -1);
-	procsel.username[sizeof procsel.username -1] = 0;
+	safe_strcpy(procsel.username, val, sizeof procsel.username);
 
 	if (procsel.username[0])
 	{
@@ -3825,7 +3845,7 @@ do_username(char *name, char *val)
 void
 do_procname(char *name, char *val)
 {
-	strncpy(procsel.progname, val, sizeof procsel.progname -1);
+	safe_strcpy(procsel.progname, val, sizeof procsel.progname);
 	procsel.prognamesz = strlen(procsel.progname);
 
 	if (procsel.prognamesz)
@@ -3968,9 +3988,7 @@ do_colthread(char *name, char *val)
 void
 do_twindir(char *name, char *val)
 {
-	extern char	twindir[];
-
-	strncpy(twindir, val, RAWNAMESZ-1);
+	safe_strcpy(twindir, val, RAWNAMESZ);
 }
 
 void
@@ -4129,6 +4147,10 @@ do_flags(char *name, char *val)
 
 		   case 't':
 			twinmodeflag++;
+			break;
+
+		   case 'I':
+			idnamesuppress++;
 			break;
 		}
 	}

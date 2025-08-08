@@ -36,6 +36,11 @@
 ** it under the terms of the GNU General Public License version 2 as
 ** published by the Free Software Foundation.
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -107,7 +112,7 @@ static char		atopacctddate[]    = ATOPDATE;
 static unsigned long	maxshadowrec = MAXSHADOWREC;
 static char		*pacctdir    = PACCTDIR;
 
-static char		cleanup_and_go = 0;
+static int		cleanup_and_go = 0;
 
 /*
 ** function prototypes
@@ -889,7 +894,7 @@ pass2shadow(int sfd, char *sbuf, int ssz)
 	{
 		syslog(LOG_ERR, "Unexpected write error to shadow file: %s\n",
  		     					strerror(errno));
-		exit(7);
+		cleanup_and_go = 129;
 	}
 
 	return ssz;

@@ -27,6 +27,10 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ** --------------------------------------------------------------------------
 */
+#define _POSIX_C_SOURCE
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -849,8 +853,7 @@ cgwipe(struct cgchainer **first,  struct cgchainer **last,
 	{
 		cpn = cp->next;
 
-		if (cp->proclist)
-			free(cp->proclist);
+		free(cp->proclist);
 
 		free(cp->cstat);
 		free(cp);
@@ -1189,7 +1192,8 @@ mergecgrouplist(struct cglinesel **cgroupselp, int newdepth,
 	//
 	cgroupsel = malloc(sizeof(struct cglinesel) * (ncgroups+nprocs));
 
-	ptrverify(cgroupsel, "Malloc for cglinesel structs failed (%d)\n",
+	if (cgroupsel == NULL)
+		ptrverify(cgroupsel, "Malloc for cglinesel structs failed (%d)\n",
 					ncgroups + nprocs);
 
 	*cgroupselp = cgroupsel;
@@ -1238,7 +1242,7 @@ mergecgrouplist(struct cglinesel **cgroupselp, int newdepth,
 					else
 					{
 						if (depth < CGRMAXDEPTH)
-			     			   (cgroupsel+j)->cgp->vlinemask &= ~(1 << (depth-1));
+			     			   (cgroupsel+j)->cgp->vlinemask &= ~(1ULL << (depth-1));
 					}
 				}
 			}
@@ -1661,7 +1665,7 @@ mergelevel(struct cgsorter *cgparent, struct cgchainer **cgpp,
 		(*cgpp)->stub = 1;	// no more entries on this level
 
 		if (depth < CGRMAXDEPTH)
-			vlinemask &= ~(1 << depth);
+			vlinemask &= ~(1ULL << depth);
 
 		(*cgpp)->vlinemask = vlinemask;
 
@@ -1685,7 +1689,7 @@ mergelevel(struct cgsorter *cgparent, struct cgchainer **cgpp,
 				(*(cgpp+j))->stub = 1;	// no more entries on this level
 
 				if (depth < CGRMAXDEPTH)
-					vlinemask &= ~(1 << depth);
+					vlinemask &= ~(1ULL << depth);
 
 				(*(cgpp+j))->vlinemask = vlinemask;
 			}
@@ -1694,7 +1698,7 @@ mergelevel(struct cgsorter *cgparent, struct cgchainer **cgpp,
 				(*(cgpp+j))->stub = 0;	// more entries on this level
 
 				if (depth < CGRMAXDEPTH)
-					vlinemask |= 1 << depth;
+					vlinemask |= 1ULL << depth;
 
 				(*(cgpp+j))->vlinemask = vlinemask;
 			}

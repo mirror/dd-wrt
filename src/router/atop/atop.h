@@ -69,13 +69,13 @@ struct netpertask;
 #define RRGPUSTAT	0x0080
 #define RRCGRSTAT	0x0100
 
-struct visualize {
-	char	(*show_samp)  (time_t, int,
-	                struct devtstat *, struct sstat *, struct cgchainer *,
-			int, int, int, unsigned int, char);
-	void	(*show_error) (const char *, ...);
-	void	(*show_end)   (void);
-	void	(*show_usage) (void);
+#define MAXHANDLERS	10
+
+struct handler {
+	char	(*handle_sample)  (time_t, int,
+       			struct devtstat *, struct sstat *,
+			struct cgchainer *, int, int, int,
+			unsigned int, char);
 };
 
 /*
@@ -97,12 +97,16 @@ extern char		usecolors;
 extern char		threadview;
 extern char		calcpss;
 extern char		getwchan;
-extern char		rawname[];
+extern char		irawname[];
+extern char		orawname[];
+extern char		twindir[];
 extern char		rawreadflag;
+extern char		connectnetatop;
+extern char		idnamesuppress;
 extern char		rmspaces;
 extern time_t		begintime, endtime, cursortime;	// epoch or time in day
 extern char		flaglist[];
-extern struct visualize vis;
+extern struct handler	handlers[];
 
 extern char		displaymode;
 extern char		barmono;
@@ -137,6 +141,8 @@ extern int		almostcrit;
 #define	GPUSTAT		0x00000080
 #define	CGROUPV2	0x00000100
 #define	NETATOPBPF	0x00001000
+#define	REALNUMA	0x00002000
+#define	ZSWAP		0x00004000
 
 
 /*
@@ -147,7 +153,7 @@ extern int		almostcrit;
 #define	RAWLOGNG	(ACCTACTIVE|IOSTAT|NETATOP|NETATOPD)
 
 /*
-** structure containing the start-addresses of functions for visualization
+** structure containing the start addresses of functions for visualization
 */
 char		generic_samp (time_t, int,
 		            struct devtstat *, struct sstat *,
@@ -172,6 +178,11 @@ char   		*val2memstr(count_t, char *, int, int, int);
 char		*val2cpustr(count_t, char *);
 char            *val2Hzstr(count_t, char *);
 int             val2elapstr(int, char *);
+
+char 		*uid2name(uid_t);
+char		*gid2name(gid_t);
+
+void		safe_strcpy(char *, const char *, size_t);
 
 int		compcpu(const void *, const void *);
 int		compdsk(const void *, const void *);

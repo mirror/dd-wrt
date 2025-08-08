@@ -90,7 +90,7 @@
 **    -	deviatcgroup()
 **	Calculates the differences between the current cgroup-level
 ** 	counters and the corresponding counters of the previous cycle.
-
+**
 **    -	deviatsyst()
 **	Calculates the differences between the current system-level
 ** 	counters and the corresponding counters of the previous cycle.
@@ -118,6 +118,10 @@
 ** can be linked with 'atop'; the one to use can eventually be chosen
 ** at runtime. 
 */
+#define _POSIX_C_SOURCE	
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -128,6 +132,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/utsname.h>
@@ -169,8 +174,10 @@ pid_t		twinpid;	/* PID of lower half for twin mode	*/
 char		twindir[RAWNAMESZ] = "/tmp";
 int		linelen  = 80;
 char		acctreason;	/* accounting not active (return val) 	*/
-char		rawname[RAWNAMESZ];
+char		irawname[RAWNAMESZ];
+char		orawname[RAWNAMESZ];
 char		rawreadflag;
+char		idnamesuppress;	/* suppress UID/GID to name translation */
 time_t		begintime, endtime, cursortime;	// epoch or time in day
 char		flaglist[MAXFL];
 char		deviatonly = 1;
@@ -185,8 +192,12 @@ char            displaymode = 'T';      /* 'T' = text, 'D' = draw        */
 char            barmono     = 0; /* boolean: bar without categories?     */
 		                 /* name in case of parseable output     */
 
-char		prependenv = 0;  /* boolean: prepend selected            */
+char		prependenv  = 0; /* boolean: prepend selected            */
 				 /* environment variables to cmdline     */
+
+char		connectgpud    = 0; /* boolean: connect to atopgpud      */
+char		connectnetatop = 0; /* boolean: connect to netatop(bpf)  */
+
 regex_t		envregex;
 
 unsigned short	hertz;
@@ -202,9 +213,8 @@ extern GHashTable *ghash_net;
 int		supportflags;	/* supported features             	*/
 char		**argvp;
 
-
-struct visualize vis = {generic_samp, generic_error,
-			generic_end,  generic_usage};
+struct handler	handlers[MAXHANDLERS];
+int		numhandlers;
 
 /*
 ** argument values
@@ -213,6 +223,9 @@ static char		awaittrigger;	/* boolean: awaiting trigger */
 static unsigned int 	nsamples = 0xffffffff;
 static char		midnightflag;
 static char		rawwriteflag;
+static char		parseoutflag;
+static char		jsonoutflag;
+static char		screenoutflag;
 
 char			twinmodeflag;
 
@@ -334,7 +347,7 @@ main(int argc, char *argv[])
 	else
 		p = argv[0];
 
-	if ( memcmp(p, "atopsar", 7) == 0)
+	if ( strcmp(p, "atopsar") == 0)
 		return atopsar(argc, argv);
 
 	/* 
@@ -363,12 +376,17 @@ main(int argc, char *argv[])
 				exit(0);
 
 			   case 'w':		/* writing of raw data ?      */
-				rawwriteflag++;
 				if (optind >= argc)
 					prusage(argv[0]);
 
-				strncpy(rawname, argv[optind++], RAWNAMESZ-1);
-				vis.show_samp = rawwrite;
+				safe_strcpy(orawname, argv[optind++], sizeof orawname);
+
+				if (!rawwriteflag)
+				{	
+					rawwriteflag++;
+					handlers[numhandlers++].handle_sample = rawwrite;
+				}
+
 				break;
 
 			   case 'r':		/* reading of raw data ?      */
@@ -378,14 +396,13 @@ main(int argc, char *argv[])
 					{
 						if (strlen(argv[optind]) == 1)
 						{
-							strcpy(rawname, "/dev/stdin");
+							strcpy(irawname, "/dev/stdin");
 							optind++;
 						}
 					}
 					else
 					{
-						strncpy(rawname, argv[optind],
-								RAWNAMESZ-1);
+						safe_strcpy(irawname, argv[optind], sizeof irawname);
 						optind++;
 					}
 				}
@@ -399,8 +416,8 @@ main(int argc, char *argv[])
 				{
 					if (*(argv[optind]) == '/')
 					{
-						strncpy(twindir, argv[optind],
-								RAWNAMESZ-1);
+						safe_strcpy(twindir, argv[optind],
+								sizeof twindir);
 						optind++;
 					}
 				}
@@ -420,6 +437,10 @@ main(int argc, char *argv[])
 				midnightflag++;
 				break;
 
+			   case 'I':		/* suppress ID translation ?  */
+				idnamesuppress++;
+				break;
+
                            case 'b':		/* begin time ?               */
 				if ( !getbranchtime(optarg, &begintime) )
 					prusage(argv[0]);
@@ -434,14 +455,22 @@ main(int argc, char *argv[])
 				if ( !parsedef(optarg) )
 					prusage(argv[0]);
 
-				vis.show_samp = parseout;
+				if (!parseoutflag)
+				{
+					parseoutflag++;
+					handlers[numhandlers++].handle_sample = parseout;
+				}
 				break;
 
                            case 'J':		/* json output?          */
 				if ( !jsondef(optarg) )
 					prusage(argv[0]);
 
-				vis.show_samp = jsonout;
+				if (!jsonoutflag)
+				{
+					jsonoutflag++;
+					handlers[numhandlers++].handle_sample = jsonout;
+				}
 				break;
 
                            case 'L':		/* line length                */
@@ -493,9 +522,24 @@ main(int argc, char *argv[])
 				prependenv = 1;
 				break;
 
+                           case 'k':		/* try to open TCP connection to atopgpud */
+				connectgpud = 1;
+				break;
+
+                           case 'K':		/* try to open connection to netatop/netatop-bpf */
+				connectnetatop = 1;
+				break;
+
 			   default:		/* gather other flags */
 				flaglist[i++] = c;
 			}
+
+			/*
+			** check if this flag explicitly refers to
+			** generic (screen) output
+			*/
+			if (strchr("gmdnsevcoBGaCMDNEAupjSf", c))
+				screenoutflag++;
 		}
 
 		/*
@@ -520,6 +564,14 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+
+	/*
+	** verify if the generic handler has to be installed as default
+	** (no other handler choosen) or if the generic screen handler
+	** has to be added due to an explicit flag
+	*/
+	if (numhandlers == 0 || screenoutflag)
+		handlers[numhandlers++].handle_sample = generic_samp;
 
 	/*
 	** determine the name of this node (without domain-name)
@@ -621,7 +673,8 @@ main(int argc, char *argv[])
 	/*
 	** open socket to the IP layer to issue getsockopt() calls later on
 	*/
-	netatop_ipopen();
+	if (connectnetatop)
+		netatop_ipopen();
 
 	/*
 	** since privileged activities are finished now, there is no
@@ -635,6 +688,16 @@ main(int argc, char *argv[])
 	** determine if cgroups v2 is supported
 	*/
 	cgroupv2support();
+
+	/*
+	** determine if real NUMA is used
+	*/
+	realnuma_support();
+
+	/*
+	** determine if zswap is used
+	*/
+	zswap_support();
 
 	/*
 	** start the engine now .....
@@ -661,6 +724,7 @@ engine(void)
 	static struct cgchainer	*devcstat;
 	int			ncgroups = 0;
 	int			npids    = 0;
+	int			i;
 
 	/*
 	** reserve space for system-level statistics
@@ -735,11 +799,15 @@ engine(void)
 
 	/*
  	** open socket to the atopgpud daemon for GPU statistics
+	** if explicitly required
 	*/
-        nrgpus = gpud_init();
+	if (connectgpud)
+	{
+        	nrgpus = gpud_init();
 
-	if (nrgpus)
-		supportflags |= GPUSTAT;
+		if (nrgpus)
+			supportflags |= GPUSTAT;
+	}
 
 	/*
 	** MAIN-LOOP:
@@ -757,7 +825,7 @@ engine(void)
 	*/
 	for (sampcnt=0; sampcnt < nsamples; sampcnt++)
 	{
-		char	lastcmd;
+		char	lastcmd = ' ';
 
 		/*
 		** if the limit-flag is specified:
@@ -786,7 +854,10 @@ engine(void)
 		** send request for statistics to atopgpud 
 		*/
 		if (nrgpus)
-			gpupending = gpud_statrequest();
+		{
+			if ((gpupending = gpud_statrequest()) == 0)
+				nrgpus = 0;
+		}
 
 		/*
 		** take a snapshot of the current system-level metrics 
@@ -818,28 +889,8 @@ engine(void)
 			// connection lost or timeout on receive?
 			if (nrgpuproc == -1)
 			{
-				int ng;
-
-				// try to reconnect
-        			ng = gpud_init();
-
-				if (ng != nrgpus)	// no success
-					nrgpus = 0;
-
-				if (nrgpus)
-				{
-					// request for stats again
-					if (gpud_statrequest())
-					{
-						// receive stats response
-						nrgpuproc = gpud_statresponse(nrgpus,
-						     cursstat->gpu.gpu, &gp);
-
-						// persistent failure?
-						if (nrgpuproc == -1)
-							nrgpus = 0;
-					}
-				}
+				nrgpus = 0;
+				supportflags &= ~GPUSTAT;
 			}
 
 			cursstat->gpu.nrgpus = nrgpus;
@@ -929,7 +980,7 @@ engine(void)
 		/*
  		** merge GPU per-process stats with other per-process stats
 		*/
-		if (nrgpus && nrgpuproc)
+		if (nrgpus && nrgpuproc > 0)
 			gpumergeproc(curtpres, ntaskpres,
 		                     curpexit, nprocexit,
 		 	             gp,       nrgpuproc);
@@ -959,11 +1010,14 @@ engine(void)
 		** activate the installed print function to visualize
 		** the deviations
 		*/
-		lastcmd = (vis.show_samp)(curtime,
+		for (i=0; handlers[i].handle_sample; i++)
+		{
+			lastcmd = (handlers[i].handle_sample)(curtime,
 				     curtime-pretime > 0 ? curtime-pretime : 1,
 		           	     &devtstat, devsstat,
 				     devcstat, ncgroups, npids,
 		                     nprocexit, noverflow, sampcnt==0);
+		}
 
 		/*
 		** release dynamically allocated memory
@@ -976,8 +1030,8 @@ engine(void)
 		if ((supportflags & NETATOPD) && (nprocexitnet > 0))
 			netatop_exiterase();
 
-		if (gp)
-			free(gp);
+		free(gp);
+		gp = NULL;	// avoid double free
 
 		if (lastcmd == MRESET)	/* reset requested ? */
 		{
@@ -986,7 +1040,7 @@ engine(void)
 			curtime = getboot() / hertz;	// reset current time
 
 			/* set current (will be 'previous') counters to 0 */
-			memset(cursstat, 0,           sizeof(struct sstat));
+			memset(cursstat, 0, sizeof(struct sstat));
 
 			/* remove all tasks in database */
 			pdb_makeresidue();
@@ -1013,8 +1067,8 @@ prusage(char *myname)
 					myname);
 	printf("\n");
 	printf("\tgeneric flags:\n");
-	printf("\t  -t   twin mode: live measurement with possibility to review earlier samples\n");
-	printf("\t                  (raw file created in /tmp or in specific directory path)\n");
+	printf("\t  -t  twin mode: live measurement with possibility to review earlier samples\n");
+	printf("\t                 (raw file created in /tmp or in specific directory path)\n");
 	printf("\t  -%c  show bar graphs for system statistics\n", MBARGRAPH);
 	printf("\t  -%c  show bar graphs without categories\n", MBARMONO);
 	printf("\t  -%c  show cgroup v2 metrics\n", MCGROUPS);
@@ -1033,9 +1087,12 @@ prusage(char *myname)
 			"non-screen output\n");
 	printf("\t  -z  prepend regex matching environment variables to "
                         "command line\n");
+	printf("\t      WARNING: don't use this flag when writing (publicly readable) raw files!\n");
+	printf("\t  -I  suppress UID/GID to name translation (show numbers instead)\n");
+	printf("\t  -k  try to connect to external atopgpud daemon (default: do not connect)\n");
+	printf("\t  -K  try to connect to netatop/netatop-bpf interface (default: do not connect)\n");
 
-	if (vis.show_usage)
-		(*vis.show_usage)();
+	generic_usage();
 
 	printf("\n");
 	printf("\tspecific flags for raw logfiles:\n");
@@ -1220,7 +1277,6 @@ readrc(char *path, int syslevel)
 ** prepare twin mode
 */
 #define TWINNAME	"atoptwinXXXXXX"
-extern char		twindir[];
 static char		*tempname;
 
 static void
@@ -1244,6 +1300,18 @@ twinprepare(void)
         	exit(42);
 	}
 
+	if (parseoutflag)
+	{
+		fprintf(stderr, "twin mode can not be combined with -P\n");
+        	exit(42);
+	}
+
+	if (jsonoutflag)
+	{
+		fprintf(stderr, "twin mode can not be combined with -J\n");
+        	exit(42);
+	}
+
 	if (!isatty(fileno(stdout)) )	// output to pipe or file?
 	{
 		fprintf(stderr, "twin mode only for interactive use\n");
@@ -1251,11 +1319,11 @@ twinprepare(void)
 	}
 
 	/*
-	** created unique temporary file
+	** create unique temporary file
 	*/
 	if (strlen(twindir) + sizeof TWINNAME + 1 >= RAWNAMESZ)
 	{
-		fprintf(stderr, "twin mode directoy path too long\n");
+		fprintf(stderr, "twin mode directory path too long\n");
         	exit(42);
 	}
 
@@ -1263,7 +1331,7 @@ twinprepare(void)
 
 	ptrverify(tempname, "Malloc failed for temporary twin name\n");
 
-	sprintf(tempname, "%s/%s", twindir, TWINNAME);
+	snprintf(tempname, strlen(twindir) + sizeof TWINNAME + 1, "%s/%s", twindir, TWINNAME);
 
 	if ( (tempfd = mkstemp(tempname)) == -1)
 	{
@@ -1284,7 +1352,7 @@ twinprepare(void)
 	   case 0:	// lower half: gather data and write to rawfile
 		rawwriteflag++;
 
-		vis.show_samp = rawwrite;
+		handlers[0].handle_sample = rawwrite;
 		break;
 
 	   default:	// upper half: read from raw file and visualize
@@ -1317,7 +1385,8 @@ twinprepare(void)
 	/*
 	** define current raw file name for both parent and child
 	*/
-	strncpy(rawname, tempname, RAWNAMESZ-1);
+	safe_strcpy(irawname, tempname, sizeof irawname);
+	safe_strcpy(orawname, tempname, sizeof orawname);
 }
 
 /*

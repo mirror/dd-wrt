@@ -49,8 +49,8 @@ The length of a screen line when sending output to a file or pipe (default 80).
 .PP
 .TP 4
 .B username
-The default regular expression for the users for which active
-processes will be shown.
+Regular expression or one numerical UID to select the users for which
+(active) processes will be shown.
 .PP
 .TP 4
 .B procname
@@ -87,6 +87,19 @@ The maximum number of active network interfaces that will be shown.
 .TP 4
 .B maxlinecont
 The maximum number of active containers that will be shown.
+.PP
+.TP 4
+.B maxlineifb
+The maximum number of Infiniband ports that will be shown.
+.PP
+.TP 4
+.B maxlinenuma
+The maximum number of NUMA node metrics that will be shown.
+Notice that two lines are shown for each NUMA node.
+.PP
+.TP 4
+.B maxlinellc
+The maximum number of lines with LLC metrics that will be shown.
 .PP
 .TP 4
 .B cpucritperc

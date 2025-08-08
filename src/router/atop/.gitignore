@@ -1,0 +1,10 @@
+*.o
+atop
+atopsar
+atopacctd
+atopcat
+atopconvert
+atophide
+versdate.h
+mkdistr
+rpmbuilder
