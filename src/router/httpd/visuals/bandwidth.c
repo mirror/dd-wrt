@@ -118,7 +118,7 @@ void EJ_VISIBLE ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	show_bwif(wp, &ctx, nvram_safe_get("lan_ifname"), "LAN");
 	getIfLists(eths, sizeof(eths));
 	//add ppp interfacs
-	getIfList(eths2, sizeof(eths2), "ppp tun");
+	getIfList(eths2, sizeof(eths2), "ppp tun oet");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #ifndef HAVE_MADWIFI
