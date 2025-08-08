@@ -657,12 +657,13 @@ namespace Menu {
 				"Separate multiple values with",
 				"whitespace \" \".",
 				"",
-				"Begin line with \"exclude=\" to change to",
-				"exclude filter.",
-				"Otherwise defaults to \"most include\" filter.",
+				"Only disks matching the filter will be shown.",
+				"Prepend \033[3mexclude=\033[23m to only show disks ",
+				"not matching the filter.",
 				"",
-				"Example:",
-				"\"exclude=/boot /home/user\""},
+				"Examples:",
+				"/boot /home/user",
+				"exclude=/boot /home/user"},
 			{"zfs_arc_cached",
 				"(Linux) Count ZFS ARC as cached memory.",
 				"",
@@ -826,12 +827,12 @@ namespace Menu {
 	string msgBox::operator()() {
 		string out;
 		int pos = width / 2 - (boxtype == 0 ? 6 : 14);
-		auto& first_color = (selected == 0 ? Theme::c("hi_fg") : Theme::c("div_line"));
+		const auto first_color = (selected == 0 ? Theme::c("hi_fg") : Theme::c("div_line"));
 		out = Mv::d(1) + Mv::r(pos) + Fx::b + first_color + button_left + (selected == 0 ? Theme::c("title") : Theme::c("main_fg") + Fx::ub)
 			+ (boxtype == 0 ? "    Ok    " : "    Yes    ") + first_color + button_right;
 		mouse_mappings["button1"] = Input::Mouse_loc{y + height - 4, x + pos + 1, 3, 12 + (boxtype > 0 ? 1 : 0)};
 		if (boxtype > 0) {
-			auto& second_color = (selected == 1 ? Theme::c("hi_fg") : Theme::c("div_line"));
+			const auto second_color = (selected == 1 ? Theme::c("hi_fg") : Theme::c("div_line"));
 			out += Mv::r(2) + second_color + button_left + (selected == 1 ? Theme::c("title") : Theme::c("main_fg") + Fx::ub)
 				+ "    No    " + second_color + button_right;
 			mouse_mappings["button2"] = Input::Mouse_loc{y + height - 4, x + pos + 15 + (boxtype > 0 ? 1 : 0), 3, 12};
@@ -1003,7 +1004,7 @@ namespace Menu {
 		if (redraw) {
 			vector<string> cont_vec {
 				Fx::b + Theme::g("used")[100] + "Error:" + Theme::c("main_fg") + Fx::ub,
-				"Terminal size to small to" + Fx::reset,
+				"Terminal size too small to" + Fx::reset,
 				"display menu or box!" + Fx::reset };
 
 			messageBox = Menu::msgBox{45, 0, cont_vec, "error"};
