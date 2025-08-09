@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8478 | brainslayer | 2025-08-09 12:48:42 +0700 (Sat, 09 Aug 2025) | 1 line
+
+remove generated files
+------------------------------------------------------------------------
+r8477 | brainslayer | 2025-08-09 12:48:22 +0700 (Sat, 09 Aug 2025) | 1 line
+
+stimate expected throughput if not provided by driver/rc
+------------------------------------------------------------------------
+r8476 | brainslayer | 2025-08-09 12:48:18 +0700 (Sat, 09 Aug 2025) | 1 line
+
+stimate expected throughput if not provided by driver/rc
+------------------------------------------------------------------------
 r8475 | brainslayer | 2025-07-26 04:02:24 +0700 (Sat, 26 Jul 2025) | 1 line
 
 upstream fix
