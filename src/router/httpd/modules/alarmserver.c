@@ -72,50 +72,49 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 	int force = 0;
 	int keepip = 0;
 	int keepsettings = 0;
-	if (nvram_match("alarmserver","1")) {
-	/*
+	if (nvram_match("alarmserver", "1")) {
+		/*
 	 * Look for our part 
 	 */
-	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
-			return -1;
-		len -= strlen(buf);
-		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
-			break;
+		while (len > 0) {
+			if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
+				return -1;
+			len -= strlen(buf);
+			if (!strncasecmp(buf, "Content-Disposition:", 20)) {
+				break;
+			}
 		}
-	}
-	/*
+		/*
 	 * Skip boundary and headers 
 	 */
-	while (len > 0) {
-		if (!wfgets(buf, sizeof(buf), wp, NULL))
-			return -1;
-		len -= strlen(buf);
-		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
-			break;
-	}
+		while (len > 0) {
+			if (!wfgets(buf, sizeof(buf), wp, NULL))
+				return -1;
+			len -= strlen(buf);
+			if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
+				break;
+		}
 
-	unsigned short count;
-	char *mem = malloc(len);
-	if (!mem) {
-		return -1;
-	}
-	wfread(mem, len, 1, wp);
-	mem[len]=0;
-	char s_date[128];
-	char s_name[128];
-	char s_desc[128];
-	char *date = getXMLTag(mem, "dateTime", s_date);
-	char *name = getXMLTag(mem, "channelName", s_name);
-	char *desc = getXMLTag(mem, "eventDescription", s_desc);
-	fprintf(stderr, "event %s\n", mem);
-	fprintf(stderr, "date %s\n", date);
-	fprintf(stderr, "date %s\n", name);
-	fprintf(stderr, "desc %s\n", desc);
-	debug_free(mem);
-//		if (date && name && desc)
-//		sysprintf("%s \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
-	
+		unsigned short count;
+		char *mem = malloc(len);
+		if (!mem) {
+			return -1;
+		}
+		wfread(mem, len, 1, wp);
+		mem[len] = 0;
+		char s_date[128];
+		char s_name[128];
+		char s_desc[128];
+		char *date = getXMLTag(mem, "dateTime", s_date);
+		char *name = getXMLTag(mem, "channelName", s_name);
+		char *desc = getXMLTag(mem, "eventDescription", s_desc);
+		fprintf(stderr, "event %s\n", mem);
+		fprintf(stderr, "date %s\n", date);
+		fprintf(stderr, "date %s\n", name);
+		fprintf(stderr, "desc %s\n", desc);
+		debug_free(mem);
+		//		if (date && name && desc)
+		//		sysprintf("%s \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
 	}
 	return 0;
 }
