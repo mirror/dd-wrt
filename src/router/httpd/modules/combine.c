@@ -25,6 +25,7 @@
 
 #include "webs.h"
 #include "nvram_backup.c"
+#include "alarmserver.c"
 #ifdef HAVE_SSHD
 #include "ssh_exportkey.c"
 #endif
