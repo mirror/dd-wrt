@@ -175,7 +175,7 @@ static int generate_dropbear_ed25519_host_key(void)
 	FILE *fp = (void *)0;
 	char *buf = malloc(4096);
 	int ret = -1;
-	eval("dropbearkey", "-t", "ed25519", "-f", ED25519_HOST_KEY_FILE);	
+	eval("dropbearkey", "-t", "ed25519", "-f", ED25519_HOST_KEY_FILE);
 	eval("dropbearconvert", "dropbear", "openssh", ED25519_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
