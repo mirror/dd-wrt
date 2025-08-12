@@ -46,9 +46,11 @@
 #include <services.h>
 
 #define ED25519_HOST_KEY_FILE "/tmp/root/.ssh/ssh_host_ed25519_key"
+#define ED25519_PUB_KEY_FILE "/tmp/root/.ssh/ssh_host_ed25519_key.pub"
 #define TMP_HOST_KEY_FILE "/tmp/tmp_host_key"
 #define AUTHORIZED_KEYS_FILE "/tmp/root/.ssh/authorized_keys"
 #define NVRAM_ED25519_KEY_NAME "sshd_ed25519_host_key"
+#define NVRAM_ED25519_PUB_KEY_NAME "sshd_ed25519_pub_key"
 
 static void empty_dir_check(void);
 static int write_key_file(char *keyname, char *keyfile, int chmodval);
@@ -173,9 +175,7 @@ static int generate_dropbear_ed25519_host_key(void)
 	FILE *fp = (void *)0;
 	char *buf = malloc(4096);
 	int ret = -1;
-
-	eval("dropbearkey", "-t", "ed25519", "-f", ED25519_HOST_KEY_FILE);
-
+	eval("dropbearkey", "-t", "ed25519", "-f", ED25519_HOST_KEY_FILE);	
 	eval("dropbearconvert", "dropbear", "openssh", ED25519_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
@@ -195,6 +195,20 @@ static int generate_dropbear_ed25519_host_key(void)
 
 	buf[ret] = 0; // terminate by 0. buf isnt initialized
 	nvram_set(NVRAM_ED25519_KEY_NAME, buf);
+	fp = fopen(ED25519_PUB_KEY_FILE, "r");
+	if (fp == (void *)0) {
+		free(buf);
+		return -1;
+	}
+	ret = fread(buf, 1, 4095, fp);
+	if (ret <= 0) {
+		fclose(fp);
+		free(buf);
+		return -1;
+	}
+	buf[ret] = 0; // terminate by 0. buf isnt initialized
+	nvram_set(NVRAM_ED25519_PUB_KEY_NAME, buf);
+
 	free(buf);
 
 	fclose(fp);
