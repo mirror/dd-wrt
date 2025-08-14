@@ -474,13 +474,13 @@ static int rtldsa_vlan_table_show(struct seq_file *m, void *v)
 	for (int i = 0; i < MAX_VLANS; i++) {
 		priv->r->vlan_tables_read(i, &info);
 
-		if (!info.tagged_ports)
+		if (!info.member_ports)
 			continue;
 
 		seq_printf(m, "%i: %i 0x%016llx 0x%016llx\n", i,
 			   info.profile_id,
 			   info.untagged_ports,
-			   info.tagged_ports);
+			   info.member_ports);
 	}
 
 	mutex_unlock(&priv->reg_mutex);
