@@ -40,56 +40,10 @@
 		};
 	}; */
 
-	i2c0: i2c-rtl9310 {
-		compatible = "realtek,rtl9310-i2c";
-		reg = <0x1b001004 0x3c>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		sda-pin = <4>;
-		scl-pin = <13>;
-		clock-frequency = <100000>;
-	};
-
-	i2cmux {
-		compatible = "realtek,i2c-mux-rtl9310";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		i2c-parent = <&i2c0>;
-
-		i2c01: i2c-rtl9310-1 {
-			reg = <1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			sda-pin = <4>;
-			scl-pin = <13>;
-		};
-
-		i2c02: i2c-rtl9310-2 {
-			reg = <2>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			sda-pin = <5>;
-			scl-pin = <13>;
-		};
-
-		i2c03: i2c-rtl9310-3 {
-			reg = <3>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			sda-pin = <0>;
-			scl-pin = <14>;
-
-			lm75a@4f {
-				compatible = "national,lm75a";
-				reg = <0x4f>;
-			};
-
-		};
-	};
 
 	sfp0: sfp-p9 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c01>;
+		i2c-bus = <&i2c0>;
 		los-gpio = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 28 GPIO_ACTIVE_LOW>;
@@ -98,7 +52,7 @@
 
 	sfp1: sfp-p10 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c02>;
+		i2c-bus = <&i2c1>;
 		los-gpio = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 24 GPIO_ACTIVE_LOW>;
@@ -110,6 +64,20 @@
 	indirect-access-bus-id = <0>;
 	};
 */
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	/* i2c of the left SFP+ cage seen from the front; port 11 */
+	i2c0: i2c@0 {
+		reg = <0>;
+	};
+
+	/* i2c of the right SFP+ cage seen from the front; port 12 */
+	i2c1: i2c@1 {
+		reg = <1>;
+	};
 };
 
 &spi0 {

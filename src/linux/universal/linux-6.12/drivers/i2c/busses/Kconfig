@@ -1072,12 +1072,11 @@ config I2C_RK3X
 	  be called i2c-rk3x.
 
 config I2C_RTL9300
-	tristate "Realtek RTL9300 I2C adapter"
-	depends on MACH_REALTEK_RTL
-	depends on OF
+	tristate "Realtek RTL9300 I2C controller"
+	depends on MACH_REALTEK_RTL || COMPILE_TEST
 	help
-	  Say Y here to include support for the I2C adapter in Realtek RTL9300
-	  and RTL9310 SoCs.
+	  Say Y here to include support for the I2C controller in Realtek
+	  RTL9300 SoCs.
 
 	  This driver can also be built as a module. If so, the module will
 	  be called i2c-rtl9300.
