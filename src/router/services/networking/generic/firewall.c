@@ -3776,6 +3776,16 @@ void start_firewall(void)
 	int remotetelnet = 0;
 	int remotemanage = 0;
 	lock();
+
+	/*egc stop forwarding while the firewall reloads */
+	//IPv4
+	writeprocsysnet("ipv4/ip_forward", "0");
+	//IPv6
+	if (nvram_matchi("ipv6_enable", 1)) {
+		writeprocsysnet("ipv6/conf/all/forwarding", "0");
+	}
+	/* egc end stop forwarding */
+
 #ifdef HAVE_SFE
 	if (!nvram_match("sfe", "0"))
 		stop_sfe();
