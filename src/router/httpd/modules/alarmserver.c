@@ -47,10 +47,6 @@ static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 int wfflush(webs_t fp);
 
-/*
- * "w"); \ if (fp) { \ fprintf(fp, fmt, ## args); \ fclose(fp); \ } \ } while 
- * (0) 
- */
 static char *getXMLTag(const char *p, const char *tag, char *buf)
 {
 	char begin[64];
@@ -61,42 +57,81 @@ static char *getXMLTag(const char *p, const char *tag, char *buf)
 	char *e = strstr(p, end);
 	if (!s || !e)
 		return NULL;
-	strlcpy(buf, s, e - s + strlen(begin));
+	s += strlen(begin);
+	strlcpy(buf, s, e - s);
 	return buf;
 }
+
+struct hikvision_dispatch {
+	const char *filename;
+	int (*handler)(const char *filename, const char *buf, size_t len);
+};
+
+static int hik_generic(const char *filename, const char *mem, size_t len)
+{
+	char s_date[128];
+	char s_name[128];
+	char s_desc[128];
+	char *date = getXMLTag(mem, "dateTime", s_date);
+	char *name = getXMLTag(mem, "channelName", s_name);
+	char *desc = getXMLTag(mem, "eventDescription", s_desc);
+	dd_loginfo("alarmserver", "event %s:%s\n", filename, mem);
+	dd_loginfo("alarmserver", "date %s\n", date);
+	dd_loginfo("alarmserver", "name %s\n", name);
+	dd_loginfo("alarmserver", "desc %s\n", desc);
+	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
+	return 0;
+}
+
+static struct hikvision_dispatch dispatch[] = {
+	{ "MoveDetection.xml", hik_generic },
+	{ "AudioException.xml", hik_generic },
+	{ "hderror.xml", hik_generic },
+};
 
 static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 {
 	char buf[1024];
 	wp->restore_ret = EINVAL;
-	int force = 0;
-	int keepip = 0;
-	int keepsettings = 0;
-	dd_loginfo("alarmserver", "%s:%d len %d\n", __func__, __LINE__,len);
+	int i;
 	if (nvram_match("alarmserver", "1")) {
 		/*
 	 * Look for our part 
 	 */
+		int v2 = 0;
 		while (len > 0) {
 			if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
 				return -1;
-			fprintf(stderr, "slurp %s\n" buf);
 			len -= strlen(buf);
+			/* there are 2 different protocol versions out there */
 			if (!strncasecmp(buf, "Content-Disposition:", 20)) {
+				v2 = 1;
+				break;
+			}
+			if (!strncasecmp(buf, "<?xml version=\"1.0\"", 18)) {
 				break;
 			}
 		}
-	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
+/* extract filename */ #
+		char *filename = strstr(buf, "name=\"");
+		if (filename) {
+			filename += 6;
+			char *p = strchr(filename, '"');
+			if (p)
+				*p = 0;
+		}
+
 		/*
 	 * Skip boundary and headers 
 	 */
-		while (len > 0) {
-			if (!wfgets(buf, sizeof(buf), wp, NULL))
-				return -1;
-			fprintf(stderr, "slurp2 %s\n" buf);
-			len -= strlen(buf);
-			if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
-				break;
+		if (v2) {
+			while (len > 0) {
+				if (!wfgets(buf, sizeof(buf), wp, NULL))
+					return -1;
+				len -= strlen(buf);
+				if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
+					break;
+			}
 		}
 
 		unsigned short count;
@@ -104,20 +139,16 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		if (!mem) {
 			return -1;
 		}
-	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
+		dd_loginfo("alarmserver", "%s:%d %s\n filename %s\n", __func__, __LINE__, mem, filename);
 		wfread(mem, len, 1, wp);
 		mem[len] = 0;
-		char s_date[128];
-		char s_name[128];
-		char s_desc[128];
-		char *date = getXMLTag(mem, "dateTime", s_date);
-		char *name = getXMLTag(mem, "channelName", s_name);
-		char *desc = getXMLTag(mem, "eventDescription", s_desc);
-		fprintf(stderr, "event %s\n", mem);
-		fprintf(stderr, "date %s\n", date);
-		fprintf(stderr, "date %s\n", name);
-		fprintf(stderr, "desc %s\n", desc);
-	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
+		if (filename) {
+			for (i = 0; i < sizeof(dispatch) / sizeof(dispatch[0]); i++)
+				if (!strcmp(dispatch[i].filename, filename))
+					dispatch[i].handler(filename, mem, len);
+
+		} else
+			hik_generic(filename, mem, len);
 		debug_free(mem);
 		//		if (date && name && desc)
 		//		sysprintf("%s \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
