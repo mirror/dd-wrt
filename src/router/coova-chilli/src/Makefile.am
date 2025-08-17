@@ -123,7 +123,7 @@ chilliinclude_HEADERS += cmdsock.h
 endif
 
 if WITH_CHILLIPROXY
-chilli_multicall_SOURCES = main-proxy.c 
+chilli_multicall_SOURCES += main-proxy.c 
 chilli_multicall_LDADD += ${LDADD}
 if WITH_CURL
 chilli_multicall_LDADD += ${LIBCURL} 
@@ -131,19 +131,19 @@ endif
 endif
 
 if WITH_CHILLIRADSEC
-chilli_multicall_SOURCES = main-radsec.c 
-chilli_multicall_LDADD = ${LDADD}
+chilli_multicall_SOURCES += main-radsec.c 
+chilli_multicall_LDADD += ${LDADD}
 endif
 
 if WITH_CHILLISCRIPT
 suid_programs += chilli_script
-chilli_multicall_SOURCES = main-script.c 
-chilli_multicall_LDADD = ${LDADD}
+chilli_multicall_SOURCES += main-script.c 
+chilli_multicall_LDADD += ${LDADD}
 endif
 
 #if WITH_CHILLIREDIR
-chilli_multicall_SOURCES = main-redir.c 
-chilli_multicall_LDADD = ${LDADD}
+chilli_multicall_SOURCES += main-redir.c 
+chilli_multicall_LDADD += ${LDADD}
 if WITH_CURL
 chilli_multicall_LDADD += ${LIBCURL} 
 endif
