@@ -267,7 +267,7 @@ int cmdsock_init(void);
 
 int cmdsock_port_init(void);
 
-void cmdsock_shutdown();
+void cmdsock_shutdown(int s);
 
 time_t mainclock_tick(void);
 time_t mainclock_now(void);
