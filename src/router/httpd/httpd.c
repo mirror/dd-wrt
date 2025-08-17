@@ -1110,7 +1110,7 @@ static void *handle_request(void *arg)
 	}
 #endif
 
-	if (!referer && method_type == METHOD_POST && nodetect == 0) {
+	if (!referer && strncmp(file, "alarmserver.cgi", 15) && method_type == METHOD_POST && nodetect == 0) {
 		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL,
 			   live_translate(conn_fp, "share.cross_site"));
 		goto out;

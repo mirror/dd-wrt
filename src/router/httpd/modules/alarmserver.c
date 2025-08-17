@@ -72,6 +72,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 	int force = 0;
 	int keepip = 0;
 	int keepsettings = 0;
+	dd_loginfo("alarmserver", "%s:%d len %d\n", __func__, __LINE__,len);
 	if (nvram_match("alarmserver", "1")) {
 		/*
 	 * Look for our part 
@@ -79,17 +80,20 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		while (len > 0) {
 			if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
 				return -1;
+			fprintf(stderr, "slurp %s\n" buf);
 			len -= strlen(buf);
 			if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 				break;
 			}
 		}
+	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
 		/*
 	 * Skip boundary and headers 
 	 */
 		while (len > 0) {
 			if (!wfgets(buf, sizeof(buf), wp, NULL))
 				return -1;
+			fprintf(stderr, "slurp2 %s\n" buf);
 			len -= strlen(buf);
 			if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 				break;
@@ -100,6 +104,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		if (!mem) {
 			return -1;
 		}
+	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
 		wfread(mem, len, 1, wp);
 		mem[len] = 0;
 		char s_date[128];
@@ -112,6 +117,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		fprintf(stderr, "date %s\n", date);
 		fprintf(stderr, "date %s\n", name);
 		fprintf(stderr, "desc %s\n", desc);
+	dd_loginfo("alarmserver", "%s:%d\n", __func__, __LINE__);
 		debug_free(mem);
 		//		if (date && name && desc)
 		//		sysprintf("%s \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
