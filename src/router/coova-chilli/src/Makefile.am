@@ -141,13 +141,13 @@ chilli_multicall_SOURCES = main-script.c
 chilli_multicall_LDADD = ${LDADD}
 endif
 
-if WITH_CHILLIREDIR
+#if WITH_CHILLIREDIR
 chilli_multicall_SOURCES = main-redir.c 
 chilli_multicall_LDADD = ${LDADD}
 if WITH_CURL
 chilli_multicall_LDADD += ${LIBCURL} 
 endif
-endif
+#endif
 
 if WITH_NETFILTER_COOVA
 SUBDIRS += linux

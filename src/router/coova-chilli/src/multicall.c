@@ -11,6 +11,7 @@ extern int mquery_main(int argc, char **argv);
 extern int mradconfig_main(int argc, char **argv);
 extern int mresponse_main(int argc, char **argv);
 extern int mradsec_main(int argc, char **argv);
+extern int mredir_main(int argc, char **argv);
 
 int main(int argc, char **argv)
 {

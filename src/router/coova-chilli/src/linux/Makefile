@@ -1,38 +1,13 @@
-#check if this makefile is being processed from kbuild
-ifeq ($(KERNELRELEASE),)
+KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/
+KDIR := $(LINUXDIR)
+PWD := $(shell pwd)
 
-KERNEL_DIR ?= /lib/modules/$(shell uname -r)/build
+all:
+	@$(MAKE) -C $(KDIR) M=$(PWD) modules $(if $(VERSION),LDFLAGS_MODULE="--build-id=0x666" CFLAGS_MODULE="-DCAKE_VERSION=\\\"$(VERSION)\\\"")
 
-all: libxt_coova.so
-	make -C ${KERNEL_DIR} M=$$PWD;
-
-modules:
-	make -C ${KERNEL_DIR} M=$$PWD $@;
-
-modules_install:
-	make -C ${KERNEL_DIR} M=$$PWD $@;
-
-modules_clean:
-	make -C ${KERNEL_DIR} M=$$PWD $@;
+install:
+	install -v -m 644 -D xt_coova.so $(IDIR)/xt_coova.so
 
 clean:
-	rm -f *.o *~ *.ko *.mod.c Module.markers modules.order Module.symvers libxt_coova.so
-
-lib%.so: lib%.o
-	$(CC) $(CFLAGS) -shared -o $@ $^;
-
-lib%.o: lib%.c
-	$(CC) $(CFLAGS) -fPIC -O2 -Wall -D_INIT=lib$*_init -c -o $@ $<;
-
-install: modules_install libxt_coova.so
-	mkdir -p $(DESTDIR)/usr/lib/iptables/
-	cp libxt_coova.so $(DESTDIR)/usr/lib/iptables/
-
-distdir:
-
-distclean: clean
-
-else
-#kbuild variables for xtables coova module
-obj-m += xt_coova.o
-endif
+	@$(MAKE) -C $(KDIR) M=$(PWD) clean
