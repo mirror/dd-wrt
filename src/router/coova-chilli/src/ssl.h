@@ -49,13 +49,13 @@ typedef struct {
 #include <string.h>
 
 #define OPENSSL_NO_ENGINE
-#include <cyassl/options.h>
-#include <cyassl/ssl.h>
-#include <cyassl/openssl/bio.h>
-#include <cyassl/openssl/crypto.h>
-#include <cyassl/openssl/x509.h>
-#include <cyassl/openssl/ssl.h>
-#include <cyassl/openssl/pem.h>
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
+#include <wolfssl/openssl/bio.h>
+#include <wolfssl/openssl/crypto.h>
+#include <wolfssl/openssl/x509.h>
+#include <wolfssl/openssl/ssl.h>
+#include <wolfssl/openssl/pem.h>
 #endif
 
 #define OPENSSL_TMPKEY_MAX      4

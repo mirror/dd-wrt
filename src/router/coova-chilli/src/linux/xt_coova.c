@@ -91,7 +91,11 @@ static DEFINE_MUTEX(coova_mutex);
 
 #ifdef CONFIG_PROC_FS
 static struct proc_dir_entry *coova_proc_dir;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
+static const struct proc_ops coova_old_fops, coova_mt_fops;
+#else
 static const struct file_operations coova_old_fops, coova_mt_fops;
+#endif
 #endif
 
 static u_int32_t hash_rnd;
@@ -466,7 +470,9 @@ static int coova_seq_open(struct inode *inode, struct file *file)
 	if (st == NULL)
 		return -ENOMEM;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
+	st->table = pde_data(inode);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	st->table = PDE_DATA(inode);
 #else
 	st->table = pde->data;
@@ -478,7 +484,9 @@ static ssize_t
 coova_mt_proc_write(struct file *file, const char __user *input,
 		    size_t size, loff_t *loff)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
+	struct coova_table *t = pde_data(file_inode(file));
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	struct coova_table *t = PDE_DATA(file_inode(file));
 #else
 	const struct proc_dir_entry *pde = PDE(file->f_path.dentry->d_inode);
@@ -577,6 +585,14 @@ coova_mt_proc_write(struct file *file, const char __user *input,
 	return size + 1;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
+static const struct proc_ops coova_mt_fops = {
+	.proc_open    = coova_seq_open,
+	.proc_read    = seq_read,
+	.proc_write   = coova_mt_proc_write,
+	.proc_release = seq_release_private,
+};
+#else
 static const struct file_operations coova_mt_fops = {
 	.open    = coova_seq_open,
 	.read    = seq_read,
@@ -584,6 +600,7 @@ static const struct file_operations coova_mt_fops = {
 	.release = seq_release_private,
 	.owner   = THIS_MODULE,
 };
+#endif
 #endif /* CONFIG_PROC_FS */
 
 static struct xt_match coova_mt_reg[] __read_mostly = {

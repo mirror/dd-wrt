@@ -126,7 +126,7 @@ static struct xtables_match coova_mt6_reg = {
 	.extra_opts    = coova_opts,
 };
 
-void _init(void)
+void __attribute__ ((constructor)) libxt_coova_init(void)
 {
 	xtables_register_match(&coova_mt_reg);
 	xtables_register_match(&coova_mt6_reg);
