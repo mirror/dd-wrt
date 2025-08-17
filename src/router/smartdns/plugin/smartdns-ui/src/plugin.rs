@@ -130,7 +130,7 @@ impl SmartdnsPlugin {
         }
 
         if let Some(data_dir) = matches.opt_str("data-dir") {
-            data_conf.data_root = data_dir;
+            data_conf.data_path = data_dir;
         }
 
         Ok(())
@@ -151,9 +151,9 @@ impl SmartdnsPlugin {
 
     pub fn start(&self, args: &Vec<String>) -> Result<(), Box<dyn Error>> {
         self.parser_args(args)?;
-        self.load_config()?;
         self.data_server_ctl
             .init_db(&self.data_conf.lock().unwrap())?;
+        self.load_config()?;
         self.data_server_ctl.start_data_server()?;
         let http_conf = self.http_conf.lock().unwrap().clone();
         self.http_server_ctl.start_http_server(&http_conf)?;

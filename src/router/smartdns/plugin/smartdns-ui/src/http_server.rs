@@ -31,10 +31,10 @@ use bytes::Bytes;
 use http_body_util::Full;
 use hyper::body;
 use hyper::header::HeaderValue;
-use hyper::server::conn::http1;
 use hyper::StatusCode;
 use hyper::{service::service_fn, Request, Response};
 use hyper_util::rt::TokioIo;
+use hyper_util::server::conn::auto;
 use std::convert::Infallible;
 use std::error::Error;
 use std::fs::Metadata;
@@ -42,6 +42,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::path::{Component, Path};
 use std::sync::MutexGuard;
+use std::sync::Weak;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::time::Instant;
@@ -61,6 +62,7 @@ cfg_if::cfg_if! {
 const HTTP_SERVER_DEFAULT_PASSWORD: &str = "password";
 const HTTP_SERVER_DEFAULT_USERNAME: &str = "admin";
 const HTTP_SERVER_DEFAULT_WWW_ROOT: &str = "/usr/share/smartdns/wwwroot";
+const HTTP_SERVER_DEFAULT_IPV6: &str = "http://[::]:6080";
 const HTTP_SERVER_DEFAULT_IP: &str = "http://0.0.0.0:6080";
 
 #[derive(Clone)]
@@ -76,8 +78,15 @@ pub struct HttpServerConfig {
 
 impl HttpServerConfig {
     pub fn new() -> Self {
+
+        let host_ip = if utils::is_ipv6_supported() {
+            HTTP_SERVER_DEFAULT_IPV6.to_string()
+        } else {
+            HTTP_SERVER_DEFAULT_IP.to_string()
+        };
+
         HttpServerConfig {
-            http_ip: HTTP_SERVER_DEFAULT_IP.to_string(),
+            http_ip: host_ip,
             http_root: HTTP_SERVER_DEFAULT_WWW_ROOT.to_string(),
             username: HTTP_SERVER_DEFAULT_USERNAME.to_string(),
             password: utils::hash_password(HTTP_SERVER_DEFAULT_PASSWORD, Some(1000)).unwrap(),
@@ -91,9 +100,15 @@ impl HttpServerConfig {
         let mut map = std::collections::HashMap::new();
         map.insert("http_ip".to_string(), self.http_ip.clone());
         map.insert("username".to_string(), self.username.clone());
-        map.insert("token_expired_time".to_string(), self.token_expired_time.to_string());
+        map.insert(
+            "token_expired_time".to_string(),
+            self.token_expired_time.to_string(),
+        );
         map.insert("enable_cors".to_string(), self.enable_cors.to_string());
-        map.insert("enable_terminal".to_string(), self.enable_terminal.to_string());
+        map.insert(
+            "enable_terminal".to_string(),
+            self.enable_terminal.to_string(),
+        );
         map
     }
 
@@ -121,7 +136,8 @@ impl HttpServerConfig {
             }
         }
 
-        if let Some(enable_terminal) = data_server.get_server_config("smartdns-ui.enable-terminal") {
+        if let Some(enable_terminal) = data_server.get_server_config("smartdns-ui.enable-terminal")
+        {
             if enable_terminal.eq_ignore_ascii_case("yes")
                 || enable_terminal.eq_ignore_ascii_case("true")
             {
@@ -138,7 +154,7 @@ impl HttpServerConfig {
 pub struct HttpServerControl {
     http_server: Arc<HttpServer>,
     server_thread: Mutex<Option<JoinHandle<()>>>,
-    plugin: Mutex<Option<Arc<SmartdnsPlugin>>>,
+    plugin: Mutex<Weak<SmartdnsPlugin>>,
 }
 
 #[allow(dead_code)]
@@ -147,17 +163,24 @@ impl HttpServerControl {
         HttpServerControl {
             http_server: Arc::new(HttpServer::new()),
             server_thread: Mutex::new(None),
-            plugin: Mutex::new(None),
+            plugin: Mutex::new(Weak::new()),
         }
     }
 
     pub fn set_plugin(&self, plugin: Arc<SmartdnsPlugin>) {
-        *self.plugin.lock().unwrap() = Some(plugin);
+        *self.plugin.lock().unwrap() = Arc::downgrade(&plugin);
     }
 
-    pub fn get_plugin(&self) -> Arc<SmartdnsPlugin> {
-        let plugin = self.plugin.lock().unwrap();
-        Arc::clone(&plugin.as_ref().unwrap())
+    pub fn get_plugin(&self) -> Result<Arc<SmartdnsPlugin>, Box<dyn Error>> {
+        let plugin = match self.plugin.lock() {
+            Ok(plugin) => plugin,
+            Err(_) => return Err("Failed to lock plugin mutex".into()),
+        };
+
+        if let Some(plugin) = plugin.upgrade() {
+            return Ok(plugin);
+        }
+        Err("Plugin is not set".into())
     }
 
     pub fn get_http_server(&self) -> Arc<HttpServer> {
@@ -173,22 +196,24 @@ impl HttpServerControl {
             return Err(e);
         }
 
-        inner_clone.set_plugin(self.get_plugin());
+        let plugin = self.get_plugin()?;
+        inner_clone.set_plugin(plugin.clone());
 
-        let (tx, rx) = std::sync::mpsc::channel::<i32>();
-        let rt = self.get_plugin().get_runtime();
+        let (tx, rx) = tokio::sync::oneshot::channel::<i32>();
+        let rt = plugin.get_runtime();
 
         let server_thread = rt.spawn(async move {
-            let ret = HttpServer::http_server_loop(inner_clone, &tx).await;
+            let ret = HttpServer::http_server_loop(inner_clone, tx).await;
             if let Err(e) = ret {
-                _ = tx.send(0);
                 dns_log!(LogLevel::ERROR, "http server error: {}", e);
                 Plugin::smartdns_exit(1);
             }
             dns_log!(LogLevel::INFO, "http server exit.");
         });
 
-        rx.recv().unwrap();
+        tokio::task::block_in_place(|| {
+            let _ = rt.block_on(rx);
+        });
 
         *self.server_thread.lock().unwrap() = Some(server_thread);
 
@@ -206,21 +231,42 @@ impl HttpServerControl {
         self.http_server.stop_http_server();
 
         if let Some(server_thread) = server_thread.take() {
-            let rt = self.get_plugin().get_runtime();
+            let plugin = self.get_plugin();
+            if plugin.is_err() {
+                dns_log!(
+                    LogLevel::ERROR,
+                    "get plugin error: {}",
+                    plugin.err().unwrap()
+                );
+                return;
+            }
+            let plugin = plugin.unwrap();
+            let rt = plugin.get_runtime();
             tokio::task::block_in_place(|| {
                 if let Err(e) = rt.block_on(server_thread) {
                     dns_log!(LogLevel::ERROR, "http server stop error: {}", e);
                 }
             });
         }
-
-        *server_thread = None;
     }
 }
 
 impl Drop for HttpServerControl {
     fn drop(&mut self) {
         self.stop_http_server();
+    }
+}
+
+#[derive(Clone)]
+pub struct TokioExecutor;
+
+impl<F> hyper::rt::Executor<F> for TokioExecutor
+where
+    F: std::future::Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    fn execute(&self, fut: F) {
+        tokio::task::spawn(fut);
     }
 }
 
@@ -232,7 +278,7 @@ pub struct HttpServer {
     local_addr: Mutex<Option<SocketAddr>>,
     mime_map: std::collections::HashMap<&'static str, &'static str>,
     login_attempts: Mutex<(i32, Instant)>,
-    plugin: Mutex<Option<Arc<SmartdnsPlugin>>>,
+    plugin: Mutex<Weak<SmartdnsPlugin>>,
 }
 
 #[allow(dead_code)]
@@ -245,25 +291,45 @@ impl HttpServer {
             api: API::new(),
             local_addr: Mutex::new(None),
             login_attempts: Mutex::new((0, Instant::now())),
-            plugin: Mutex::new(None),
+            plugin: Mutex::new(Weak::new()),
             mime_map: std::collections::HashMap::from([
+                /* text */
                 ("htm", "text/html"),
                 ("html", "text/html"),
                 ("js", "text/javascript"),
                 ("css", "text/css"),
-                ("json", "application/json"),
+                ("txt", "text/plain"),
+                ("conf", "text/plain"),
+                ("xml", "text/xml"),
+                ("csv", "text/csv"),
+                ("md", "text/markdown"),
+                /* image */
                 ("png", "image/png"),
                 ("gif", "image/gif"),
                 ("jpeg", "image/jpeg"),
                 ("svg", "image/svg+xml"),
+                ("ico", "image/x-icon"),
+                ("bmp", "image/bmp"),
+                ("avif", "image/avif"),
+                /* video */
+                ("mpeg", "video/mpeg"),
+                ("mp4", "video/mp4"),
+                ("webm", "video/webm"),
+                /* audio */
+                ("mp3", "audio/mpeg"),
+                ("ogg", "audio/ogg"),
+                ("wav", "audio/wav"),
+                /* font */
+                ("woff", "font/woff"),
+                ("woff2", "font/woff2"),
+                ("ttf", "font/ttf"),
+                ("otf", "font/otf"),
+                /* application */
+                ("wasm", "application/wasm"),
+                ("pdf", "application/pdf"),
+                ("json", "application/json"),
                 ("tar", "application/x-tar"),
                 ("zip", "application/zip"),
-                ("txt", "text/plain"),
-                ("conf", "text/plain"),
-                ("ico", "application/octet-stream"),
-                ("xml", "text/xml"),
-                ("mpeg", "video/mpeg"),
-                ("mp3", "audio/mpeg"),
             ]),
         };
 
@@ -279,7 +345,7 @@ impl HttpServer {
         conf.clone()
     }
 
-    pub fn get_conf_mut(&self) -> MutexGuard<HttpServerConfig> {
+    pub fn get_conf_mut(&'_ self) -> MutexGuard<'_, HttpServerConfig> {
         self.conf.lock().unwrap()
     }
 
@@ -334,16 +400,23 @@ impl HttpServer {
 
     fn set_plugin(&self, plugin: Arc<SmartdnsPlugin>) {
         let mut _plugin = self.plugin.lock().unwrap();
-        *_plugin = Some(plugin)
+        *_plugin = Arc::downgrade(&plugin);
     }
 
-    fn get_plugin(&self) -> Arc<SmartdnsPlugin> {
-        let plugin = self.plugin.lock().unwrap();
-        Arc::clone(&plugin.as_ref().unwrap())
+    fn get_plugin(&self) -> Result<Arc<SmartdnsPlugin>, Box<dyn Error>> {
+        let plugin = match self.plugin.lock() {
+            Ok(plugin) => plugin,
+            Err(_) => return Err("Failed to lock plugin mutex".into()),
+        };
+
+        if let Some(plugin) = plugin.upgrade() {
+            return Ok(plugin);
+        }
+        Err("Plugin is not set".into())
     }
 
     pub fn get_data_server(&self) -> Arc<DataServer> {
-        self.get_plugin().get_data_server()
+        self.get_plugin().unwrap().get_data_server()
     }
 
     pub fn get_token_from_header(
@@ -648,6 +721,8 @@ impl HttpServer {
                 let header = response.headers_mut();
                 header.insert("Content-Length", bytes_len.to_string().parse().unwrap());
                 header.insert("Content-Type", this.get_mime_type(&path).parse().unwrap());
+                header.insert("Connection", "keep-alive".parse().unwrap());
+                header.insert("Keep-Alive", "timeout=60, max=1000".parse().unwrap());
 
                 if file_meta.as_ref().is_some() {
                     let etag = fn_get_etag(&file_meta.as_ref().unwrap());
@@ -663,7 +738,7 @@ impl HttpServer {
                 Ok(response)
             }
             Err(_) => {
-                let bytes = Bytes::from("Not Found");
+                let bytes = Bytes::from("Page Not Found");
                 let mut response = Response::new(Full::new(bytes));
                 *response.status_mut() = StatusCode::NOT_FOUND;
                 Ok(response)
@@ -677,9 +752,8 @@ impl HttpServer {
         let handle_func = move |req| HttpServer::server_handle_http_request(this.clone(), req);
 
         tokio::task::spawn(async move {
-            let conn = http1::Builder::new()
-                .serve_connection(io, service_fn(handle_func))
-                .with_upgrades()
+            let conn = auto::Builder::new(TokioExecutor)
+                .serve_connection_with_upgrades(io, service_fn(handle_func))
                 .await;
             if let Err(err) = conn {
                 dns_log!(LogLevel::DEBUG, "Error serving connection: {:?}", err);
@@ -698,9 +772,8 @@ impl HttpServer {
         let handle_func = move |req| HttpServer::server_handle_http_request(this.clone(), req);
 
         tokio::task::spawn(async move {
-            let conn = http1::Builder::new()
-                .serve_connection(io, service_fn(handle_func))
-                .with_upgrades()
+            let conn = auto::Builder::new(TokioExecutor)
+                .serve_connection_with_upgrades(io, service_fn(handle_func))
                 .await;
             if let Err(err) = conn {
                 dns_log!(LogLevel::DEBUG, "Error serving connection: {:?}", err);
@@ -733,7 +806,7 @@ impl HttpServer {
 
     async fn http_server_loop(
         this: Arc<HttpServer>,
-        kickoff_tx: &std::sync::mpsc::Sender<i32>,
+        kickoff_tx: tokio::sync::oneshot::Sender<i32>,
     ) -> Result<(), Box<dyn Error>> {
         let addr: String;
         let mut rx: mpsc::Receiver<()>;
@@ -772,9 +845,11 @@ impl HttpServer {
                     ))?
                     .unwrap();
 
-                    let config = rustls::ServerConfig::builder()
+                    let mut config = rustls::ServerConfig::builder()
                         .with_no_client_auth()
                         .with_single_cert(cert_chain, key_der)?;
+
+                    config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
                     acceptor = Some(TlsAcceptor::from(Arc::new(config)));
                 }
             } else {
@@ -794,7 +869,7 @@ impl HttpServer {
         *this.local_addr.lock().unwrap() = Some(addr);
         dns_log!(LogLevel::INFO, "http server listen at {}", url);
 
-        _ = kickoff_tx.send(0);
+        let _ = kickoff_tx.send(0);
         loop {
             tokio::select! {
                 _ = rx.recv() => {
@@ -806,10 +881,19 @@ impl HttpServer {
                             let sock_ref = socket2::SockRef::from(&stream);
 
                             let mut ka = socket2::TcpKeepalive::new();
-                            ka = ka.with_time(Duration::from_secs(30));
-                            ka = ka.with_interval(Duration::from_secs(10));
+                            ka = ka.with_time(Duration::from_secs(60));
+                            ka = ka.with_interval(Duration::from_secs(30));
                             sock_ref.set_tcp_keepalive(&ka)?;
                             sock_ref.set_nonblocking(true)?;
+                            sock_ref.tcp_nodelay()?;
+
+                            if let Err(_) = sock_ref.set_recv_buffer_size(262144) {
+                                dns_log!(LogLevel::DEBUG, "Failed to set recv buffer size");
+                            }
+
+                            if let Err(_) = sock_ref.set_send_buffer_size(262144) {
+                                dns_log!(LogLevel::DEBUG, "Failed to set send buffer size");
+                            }
                             cfg_if::cfg_if! {
                                 if #[cfg(feature = "https")]
                                 {
@@ -838,7 +922,14 @@ impl HttpServer {
 
     fn stop_http_server(&self) {
         if let Some(tx) = self.notify_tx.as_ref().cloned() {
-            let rt = self.get_plugin().get_runtime();
+            let plugin = match self.get_plugin() {
+                Ok(plugin) => plugin,
+                Err(e) => {
+                    dns_log!(LogLevel::ERROR, "get plugin error: {}", e);
+                    return;
+                }
+            };
+            let rt = plugin.get_runtime();
             tokio::task::block_in_place(|| {
                 let _ = rt.block_on(async {
                     let _ = tx.send(()).await;

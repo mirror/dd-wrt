@@ -92,3 +92,17 @@ pub fn get_page_size() -> usize {
     // Use libc to get the system page size
     unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize }
 }
+
+pub fn is_dir_writable(path: &str) -> bool {
+    let path = std::ffi::CString::new(path).unwrap();
+    unsafe { libc::access(path.as_ptr(), libc::W_OK) == 0 }
+}
+
+pub fn is_ipv6_supported() -> bool {
+    let sock = unsafe { libc::socket(libc::AF_INET6, libc::SOCK_STREAM, 0) };
+    if sock < 0 {
+        return false;
+    }
+    unsafe { libc::close(sock) };
+    true
+}
