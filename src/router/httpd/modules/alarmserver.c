@@ -84,12 +84,13 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 }
 
 static struct hikvision_dispatch dispatch[] = {
-/* v2, still need a nanddump of newer cams for getting all events */
+	/* v2, still need a nanddump of newer cams for getting all events */
 	{ "MoveDetection.xml", hik_generic },
 	{ "AudioException.xml", hik_generic },
 	{ "hderror.xml", hik_generic },
-/* v1 */
+	/* v1 */
 	{ "Motion alarm", hik_generic },
+	{ "disc error alarm", hik_generic },
 	{ "shelteralarm alarm", hik_generic },
 	{ "facedetection alarm", hik_generic },
 	{ "defocus alarm", hik_generic },
@@ -164,13 +165,26 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		dd_loginfo("alarmserver", "%s:%d %s\n filename %s\n", __func__, __LINE__, mem, filename);
 		wfread(mem, len, 1, wp);
 		mem[len] = 0;
+		dd_loginfo("alarmserver", "desc %s\n", desc);
+
 		if (filename) {
 			for (i = 0; i < sizeof(dispatch) / sizeof(dispatch[0]); i++)
-				if (!strcmp(dispatch[i].filename, filename))
+				if (!strcmp(dispatch[i].filename, filename)) {
 					dispatch[i].handler(filename, mem, len);
+					goto out;
+				}
 
-		} else
+		} else {
+			char *desc = getXMLTag(mem, "eventDescription", s_desc);
+			for (i = 0; i < sizeof(dispatch) / sizeof(dispatch[0]); i++)
+				if (!strcmp(dispatch[i].filename, desc)) {
+					dispatch[i].handler(desc, mem, len);
+					goto out;
+				}
 			hik_generic(filename, mem, len);
+		}
+		out:;
+
 		debug_free(mem);
 		//		if (date && name && desc)
 		//		sysprintf("%s \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
