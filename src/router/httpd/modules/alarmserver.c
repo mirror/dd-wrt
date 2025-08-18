@@ -58,7 +58,7 @@ static char *getXMLTag(const char *p, const char *tag, char *buf)
 	if (!s || !e)
 		return NULL;
 	s += strlen(begin);
-	strlcpy(buf, s, e - s);
+	strlcpy(buf, s, e - s + 1);
 	return buf;
 }
 
@@ -84,9 +84,31 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 }
 
 static struct hikvision_dispatch dispatch[] = {
+/* v2, still need a nanddump of newer cams for getting all events */
 	{ "MoveDetection.xml", hik_generic },
 	{ "AudioException.xml", hik_generic },
 	{ "hderror.xml", hik_generic },
+/* v1 */
+	{ "Motion alarm", hik_generic },
+	{ "shelteralarm alarm", hik_generic },
+	{ "facedetection alarm", hik_generic },
+	{ "defocus alarm", hik_generic },
+	{ "scenchangedetection alarm", hik_generic },
+	{ "fielddetection alarm", hik_generic },
+	{ "linedetection alarm", hik_generic },
+	{ "regionEntrance alarm", hik_generic },
+	{ "regionExit alarm", hik_generic },
+	{ "loitering alarm", hik_generic },
+	{ "group alarm", hik_generic },
+	{ "rapidMove alarm", hik_generic },
+	{ "parking alarm", hik_generic },
+	{ "unattendedBaggage alarm", hik_generic },
+	{ "videoloss alarm", hik_generic },
+	{ "vehicledetection alarm", hik_generic },
+	{ "audioexception alarm", hik_generic },
+	{ "nicBroken alarm", hik_generic },
+	{ "ipConflict alarm", hik_generic },
+	{ "illAccess alarm", hik_generic },
 };
 
 static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
