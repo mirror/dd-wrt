@@ -25,8 +25,8 @@ IMPORTANT: Some options will require "make clean" after changes */
  */
 #define DSS_PRIV_FILENAME "/tmp/root/.ssh/ssh_host_dss_key"
 #define RSA_PRIV_FILENAME "/tmp/root/.ssh/ssh_host_rsa_key"
-#define ECDSA_PRIV_FILENAME "/etc/dropbear/dropbear_ecdsa_host_key"
-#define ED25519_PRIV_FILENAME "/etc/dropbear/dropbear_ed25519_host_key"
+#define ECDSA_PRIV_FILENAME "/tmp/root/.ssh/ssh_host_ecdsa_key"
+#define ED25519_PRIV_FILENAME "/tmp/root/.ssh/ssh_host_ed25519_key"
 
 /* Set NON_INETD_MODE if you require daemon functionality (ie Dropbear listens
  * on chosen ports and keeps accepting connections. This is the default.
