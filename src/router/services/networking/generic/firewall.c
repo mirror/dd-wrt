@@ -3790,14 +3790,6 @@ void start_firewall(void)
 	if (!nvram_match("sfe", "0"))
 		stop_sfe();
 #endif
-#ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
-	if (isregistered_real())
-#endif
-#endif
-	{
-		runStartup(".prewall");
-	}
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
 	system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");

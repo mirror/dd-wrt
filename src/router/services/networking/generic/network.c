@@ -2921,6 +2921,14 @@ void run_wan(int status)
 			eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 		}
 	}
+#ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
+	if (isregistered_real())
+#endif
+#endif
+	{
+		runStartup(".prewall");
+	}
 	start_firewall(); // start firewall once, to fix problem with rules which should exist even before wan is up
 	// wan test mode
 	if (nvram_matchi("wan_testmode", 1)) {
