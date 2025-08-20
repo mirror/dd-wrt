@@ -76,9 +76,9 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char *name = getXMLTag(mem, "channelName", s_name);
 	char *desc = getXMLTag(mem, "eventDescription", s_desc);
 	if (filename && date && name && desc)
-		sysprintf("%s \"%s\" \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), filename, date, name, desc);
+		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename, date, name, desc);
 	else if (date && name && desc)
-		sysprintf("%s \"unspecified\" \"%s\" \"%s\" \"%s\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
+		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
 	return 0;
 }
 
