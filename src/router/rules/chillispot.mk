@@ -111,4 +111,5 @@ endif
 	cd $(INSTALLDIR)/chillispot/usr/sbin && ln -sf chilli_multicall chilli_script
 
 chillispot-clean:
-	$(MAKE) -C $(CHILLIDIR) clean
+	$(MAKE) -C $(CHILLIDIR)/nossl clean
+	$(MAKE) -C $(CHILLIDIR)/openssl clean
