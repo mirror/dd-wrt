@@ -2923,6 +2923,7 @@ void run_wan(int status)
 	}
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
+	int isregistered_real(void);
 	if (isregistered_real())
 #endif
 #endif
