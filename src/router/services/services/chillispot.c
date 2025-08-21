@@ -316,6 +316,7 @@ void chilli_config(void)
 	fprintf(fp, "radiusserver1 %s\n", nvram_safe_get("chilli_radius"));
 	fprintf(fp, "radiusserver2 %s\n", nvram_safe_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_safe_get("chilli_pass"));
+	fprintf(fp, "kname chilli\n");
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
 	fprintf(fp, "uamserver %s\n", nvram_safe_get("chilli_url"));
 	if (jffs == 1) {
@@ -463,6 +464,7 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
+	fprintf(fp, "kname chilli\n");
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
 	if (nvram_invmatch("hotss_net", ""))
 		fprintf(fp, "net %s\n", nvram_safe_get("hotss_net"));
