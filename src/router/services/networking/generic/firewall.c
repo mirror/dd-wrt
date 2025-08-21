@@ -2681,6 +2681,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	if (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1)) {
 		insmod("xt_coova");
 		if (nvram_matchi("hotss_enable", 1)) {
@@ -2691,6 +2692,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			save2file_A_forward("-o %s -m coova --name chilli --dest -j ACCEPT", nvram_safe_get("chilli_interface"));
 		}
 	}
+#endif
 	if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
 //		save2file_A_forward("-i %s -p tcp -m lscan --synscan --cnscan --mirai -j %s", wanface, log_drop);
