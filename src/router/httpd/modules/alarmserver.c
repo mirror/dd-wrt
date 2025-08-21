@@ -72,13 +72,15 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char s_date[128];
 	char s_name[128];
 	char s_desc[128];
+	char s_addr[128],
 	char *date = getXMLTag(mem, "dateTime", s_date);
 	char *name = getXMLTag(mem, "channelName", s_name);
 	char *desc = getXMLTag(mem, "eventDescription", s_desc);
-	if (filename && date && name && desc)
-		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename, date, name, desc);
-	else if (date && name && desc)
-		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date, name, desc);
+	char *addr = getXMLTag(mem, "ipAddress", s_addr);
+	if (filename && date && name && desc && addr)
+		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename, date, addr, name, desc);
+	else if (date && name && desc && addr)
+		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date, addr, name, desc);
 	return 0;
 }
 
@@ -179,7 +181,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 					dispatch[i].handler(desc, mem, len);
 					goto out;
 				}
-			hik_generic(filename, mem, len);
+			hik_generic(desc, mem, len);
 		}
 out:;
 
