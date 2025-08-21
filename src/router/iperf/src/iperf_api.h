@@ -32,6 +32,7 @@
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdarg.h>
 #ifdef __cplusplus
 extern "C" { /* open extern "C" */
 #endif
