@@ -316,7 +316,7 @@ void chilli_config(void)
 	fprintf(fp, "radiusserver1 %s\n", nvram_safe_get("chilli_radius"));
 	fprintf(fp, "radiusserver2 %s\n", nvram_safe_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_safe_get("chilli_pass"));
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
 	fprintf(fp, "kname chilli\n");
 #endif
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
@@ -466,7 +466,7 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
 	fprintf(fp, "kname chilli\n");
 #endif
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));

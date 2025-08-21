@@ -2681,7 +2681,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
 	if (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1)) {
 		insmod("xt_coova");
 		if (nvram_matchi("hotss_enable", 1)) {
