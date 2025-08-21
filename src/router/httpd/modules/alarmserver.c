@@ -72,7 +72,7 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char s_date[128];
 	char s_name[128];
 	char s_desc[128];
-	char s_addr[128],
+	char s_addr[128];
 	char *date = getXMLTag(mem, "dateTime", s_date);
 	char *name = getXMLTag(mem, "channelName", s_name);
 	char *desc = getXMLTag(mem, "eventDescription", s_desc);
