@@ -94,10 +94,10 @@ endif
 	mkdir -p $(INSTALLDIR)/chillispot/lib/modules/$(KERNEL_VERSION)/
 ifeq ($(CONFIG_OPENSSL),y)
 	install -D $(CHILLIDIR)/openssl/src/chilli_multicall $(INSTALLDIR)/chillispot/usr/sbin/chilli_multicall
-	install -D $(CHILLIDIR)/openssl/src/linux/xt_coova.ko $(INSTALLDIR)/chillispot/lib/modules/$(KERNEL_VERSION)/
+	-install -D $(CHILLIDIR)/openssl/src/linux/xt_coova.ko $(INSTALLDIR)/chillispot/lib/modules/$(KERNEL_VERSION)/
 else
 	install -D $(CHILLIDIR)/nossl/src/chilli_multicall $(INSTALLDIR)/chillispot/usr/sbin/chilli_multicall
-	install -D $(CHILLIDIR)/nossl/src/linux/xt_coova.ko $(INSTALLDIR)/chillispot/lib/modules/$(KERNEL_VERSION)/
+	-install -D $(CHILLIDIR)/nossl/src/linux/xt_coova.ko $(INSTALLDIR)/chillispot/lib/modules/$(KERNEL_VERSION)/
 endif
 	cd $(INSTALLDIR)/chillispot/usr/sbin && ln -sf chilli_multicall chilli
 	cd $(INSTALLDIR)/chillispot/usr/sbin && ln -sf chilli_multicall chilli_opt
