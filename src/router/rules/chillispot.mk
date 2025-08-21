@@ -14,8 +14,8 @@ CHILLICOOVAEXTRAFLAGS=--enable-uamdomainfile \
 	--disable-static \
 	--enable-miniconfig \
 	--disable-debug \
-	--with-nfcoova \
-	--disable-binstatusfile 
+	--disable-binstatusfile
+
 ifeq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_BCMMODERN),y)
 CHILLICOOVAEXTRAFLAGS+=--without-ipv6
@@ -29,6 +29,14 @@ CHILLICOOVAEXTRAFLAGS+=--without-ipv6
 endif
 ifeq ($(ARCHITECTURE),adm5120)
 CHILLICOOVAEXTRAFLAGS+=--without-ipv6
+endif
+ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_80211AC),y)
+else
+CHILLICOOVAEXTRAFLAGS+=--with-nfcoova
+endif
+else
+CHILLICOOVAEXTRAFLAGS+=--with-nfcoova
 endif
 CHILLIEXTRA_CFLAGS = $(MIPS16_OPT) $(THUMB) 
 CHILLIDIR=$(CHILLICOOVADIR)
