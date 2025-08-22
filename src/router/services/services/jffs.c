@@ -41,7 +41,7 @@ void stop_jffs2(void)
 #endif
 	if (mtd == -1)
 		return;
-	umount("/jffs2");
+	umount("/jffs");
 	rmmod("jffs2");
 	nvram_seti("jffs_mounted", 0);
 }
@@ -111,7 +111,7 @@ void start_jffs2(void)
 #endif
 	nvram_seti("jffs_mounted", 0);
 	if (!nvram_matchi("enable_jffs2", 1) || nvram_matchi("clean_jffs2", 1)) {
-		umount2("/jffs2", MNT_DETACH);
+		umount2("/jffs", MNT_DETACH);
 	}
 	char udev[32];
 	sprintf(udev, "/dev/ubi%d", ubidev);
