@@ -1,5 +1,5 @@
 #!/bin/sh
-[[ ! -z $(nvram get wg_debug) ]] && { DEBUG=1; set -x; }
+[[ -n "$(nvram get wg_debug_raip)" ]] && { DEBUG=1; set -x; }
 {
 
 nv=/usr/sbin/nvram
@@ -11,69 +11,19 @@ GATEWAY="$($nv get wan_gateway)"
 # Needs checking
 [[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 GATEWAY6="$(ip -6 route show table main | awk '/default via/ { print $3;exit; }')"
-MINTIME=$($nv get wg_mintime)
-[[ -z $MINTIME ]] && MINTIME=1
-MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
-[[ -z $MAXTIME ]] && MAXTIME=105
-LOCK="/tmp/oet-raip.lock"
-#acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for raip $$"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for raip $$"; }
-acquire_lock() { 
-	logger -p user.info "WireGuard acquiring $LOCK for raip $$ "
-	local SLEEPCT=0
-	local MAXTIME=60
-	while ! mkdir $LOCK >/dev/null 2>&1; do
-		sleep 2
-		SLEEPCT=$((SLEEPCT+2))
-		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
-			logger -p user.err "WireGuard ERROR max. waiting $SLEEPCT sec. for locking raip $$!"
-			break
-		fi
-	done 
-	logger -p user.info "WireGuard $LOCK acquired for raip $$ " 
-}
-release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for $$"; }
-trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
-waitfortime () {
-	#set lock to make sure earlier tunnels are finished
-	acquire_lock
-	#debug todo check if nvram get ntp_succes and/or ntp_done can be used to see if time is set
-	#logger -p user.info "WireGuard debug st start of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done)"
-	SLEEPCT=$MINTIME
-	#while [[ $($nv get ntp_done) -ne 1 ]]; do
-	while [[ $(date +%Y) -lt 2023 ]]; do
-		sleep 2
-		SLEEPCT=$((SLEEPCT+2))
-		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
-			break
-		fi
-	done
-	if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
-		logger -p user.err "WireGuard ERROR: stopped waiting after $SLEEPCT seconds, trying to set routes for oet${i} anyway, is there a connection or NTP problem?"
-		# set date in future to help WG connect anyway
-		date -s 2030-01-01
-	else
-		logger -p user.info "WireGuard waited $SLEEPCT seconds to set routes for oet${i}"
-	fi
-	#debug
-	#logger -p user.info "WireGuard debug at end of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done) "
-}
-waitfortime
 restartdns=$($nv get wg_restart_dnsmasq); [[ -z $restartdns ]] && restartdns=0
 for i in $(seq 1 $tunnels); do
 	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
 		if [[ $($nv get oet${i}_proto) -eq 2 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
-			TID=$((20+$i))
+			TID=$((20+i))
 			# Start with PBR to make sure killswitch is working
 			#if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
 			if [[ $($nv get oet${i}_spbr) -ne 0 ]]; then
 				logger -p user.info "WireGuard PBR via oet${i} table $TID"
 				echo $($nv get oet${i}_spbr_ip), | while read -d ',' line; do
+					[[ "${line:0:1}" = "#" ]] && continue
 					line=$(eval echo $line) #use eval to execute nvram parameters
-					#[ ${line:0:1} = "#" ] && continue
 					case $line in
-					 "#"*)
-						continue
-						;;
 					 *[0-9].*)
 						logger -p user.info "WireGuard PBR $line:IPv4 via oet${i} table $TID"
 						ip rule del table $TID from $line >/dev/null 2>&1
@@ -122,31 +72,10 @@ for i in $(seq 1 $tunnels); do
 				fi
 				ip route flush cache
 			fi
-			#add routes for allowed IP's
-			peers=$(($($nv get oet${i}_peers) - 1))
-			for p in $(seq 0 $peers); do
-					# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
-					if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]]; then
-						#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1 and ::/0 with ::/1, 8000::/1
-						#for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/::\\/0/::\\/1,8000::\\/1/g" | sed "s/,/ /g"); do
-						for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g;s/::\\/0/::\\/1,8000::\\/1/g;s/::0\\/0/::\\/1,8000::\\/1/g" | sed "s/,/ /g"); do
-							# check if PBR is set then skip default gateway, if default route without endpoint then warning
-							if [[ ! -z "$(echo $aip | sed -e 's/\/128//g' | grep -e '/0\|/1')" ]]; then
-								if [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
-									continue
-								elif [ $($nv get oet${i}_endpoint${p}) -eq 0 ]; then
-									logger -p user.err "WireGuard ERROR default route detected without endpoint for peer $($nv get oet${i}_namep${p}) in tunnel oet${i}, consult the manual!"
-								fi
-							fi
-							logger -p user.info "WireGuard route $aip added via oet${i}"
-							ip route add $aip dev oet${i} >/dev/null 2>&1
-						done
-					fi
-			done
 			# Destination based routing
 			if [[ $($nv get oet${i}_dpbr) -ne 0 ]]; then
 				#add IPSET
-				if [[ ! -z "$($nv get oet${i}_ipsetfile | sed '/^[[:blank:]]*#/d')" ]]; then
+				if [[ ! -z "$($nv get oet${i}_ipsetfile | sed '/^[[:blank:]]*#/d')" ]] && [[ "$($nv get oet${i}_dpbr)" != "0" ]]; then
 					restartdns=1
 					#ipset -! -N $(basename $($nv get oet${i}_ipsetfile)) hash:ip
 					IPSET_F=$($nv get oet${i}_ipsetfile)
@@ -212,6 +141,40 @@ for i in $(seq 1 $tunnels); do
 					done < $WGDPBRIP
 				fi
 			fi
+			#add routes for allowed IP's
+			peers=$(($($nv get oet${i}_peers) - 1))
+			for p in $(seq 0 $peers); do
+					# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
+					if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]]; then
+						#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1 and ::/0 with ::/1, 8000::/1
+						#for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/::\\/0/::\\/1,8000::\\/1/g" | sed "s/,/ /g"); do
+						for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g;s/::\\/0/::\\/1,8000::\\/1/g;s/::0\\/0/::\\/1,8000::\\/1/g" | sed "s/,/ /g"); do
+							# check if PBR is set then skip default gateway, if default route without endpoint then warning
+							if [[ ! -z "$(echo $aip | sed -e 's/\/128//g' | grep -e '/0\|/1')" ]]; then
+								if [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
+									continue
+								elif [ $($nv get oet${i}_endpoint${p}) -eq 0 ]; then
+									logger -p user.err "WireGuard ERROR default route detected without endpoint for peer $($nv get oet${i}_namep${p}) in tunnel oet${i}, consult the manual!"
+								fi
+							fi
+							case $aip in
+							 *[0-9].*) #IPv4
+								ip route add $aip dev oet${i}
+								logger -p user.info "WireGuard IPv4 route $aip added via oet${i}"
+								;;
+							 *[0-9a-fA-F:]:*) #IPv6
+								if [[ "$ipv6_en" = "1" ]]; then
+									ip -6 route add $aip dev oet${i}
+									logger -p user.info "WireGuard IPv6 route $aip added via oet${i}"
+								fi
+								;;
+							 *)
+								logger -p user.info "WireGuard wrong AllowedIPs $aip in tunnel oet${i}, peer $p "
+								;;
+							esac
+						done
+					fi
+			done
 			#add route to DNS server via tunnel
 			if [ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]; then
 				for wgdns in $($nv get oet${i}_dns | sed "s/,/ /g") ; do
@@ -220,11 +183,10 @@ for i in $(seq 1 $tunnels); do
 				done
 			fi
 			# add DNS server
-			DNSTIME=$($nv get wg_dnstime)
-			[[ -z $DNSTIME ]] && DNSTIME=1
-			sleep $DNSTIME
 			if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then
-				SLEEPDNSCT=0
+				DNSTIME=$($nv get wg_dnstime)
+				[[ -z $DNSTIME ]] && DNSTIME=0 || sleep $DNSTIME
+				SLEEPDNSCT=$DNSTIME
 				MAXDNSTIME=45
 				while [[ ! -f /tmp/resolv.dnsmasq ]]; do
 					SLEEPDNSCT=$((SLEEPDNSCT+2))
@@ -314,7 +276,8 @@ for i in $(seq 1 $tunnels); do
 							ip route add $route table $FTID >/dev/null 2>&1
 						done
 						if [[ $ipv6_en -eq 1 ]]; then
-							ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 ' | while read route; do
+							#ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 ' | while read route; do
+							ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 |^::/2 |^4000::/2 |^8000::/2 |^c000::/2 ' | while read route; do
 								ip -6 route add $route table $FTID >/dev/null 2>&1
 							done
 						fi
@@ -359,8 +322,9 @@ for i in $(seq 1 $tunnels); do
 		fi
 	fi
 done
-release_lock
-( /usr/bin/eop-tunnel-firewall.sh & ) >/dev/null 2>&1
+# LOCK released in eop-tunnel-firewall.sh
+#release_lock
+/usr/bin/eop-tunnel-firewall.sh &
+#( nohup /usr/bin/eop-tunnel-firewall.sh & ) >/dev/null
 } 2>&1 | logger $([ ${DEBUG+x} ] && echo '-p user.debug') \
     -t $(echo $(basename $0) | grep -Eo '^.{0,23}')[$$] &
-

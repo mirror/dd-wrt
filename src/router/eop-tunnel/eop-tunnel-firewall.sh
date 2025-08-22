@@ -1,9 +1,17 @@
 #!/bin/sh
-[[ ! -z $(nvram get wg_debug) ]] && { DEBUG=1; set -x; }
+[[ -n "$(nvram get wg_debug_firewall)" ]] && { DEBUG=1; set -x; }
+
 {
 nv=/usr/sbin/nvram
-ipt=/usr/sbin/iptables
-ip6t=/usr/sbin/ip6tables
+#Use iptables `-w` option to prevent "Another app is currently holding the xtables lock"
+ipt="$($nv get wg_fwipt)"
+: "${ipt:=/usr/sbin/iptables}"
+#ipt=/usr/sbin/iptables
+ip6t="$($nv get wg_fwip6t)"
+: "${ip6t:=/usr/sbin/ip6tables}"
+#ip6t=/usr/sbin/ip6tables
+FWWAIT=$($nv get wg_fwwait)
+: "${FWWAIT:=1}"
 ACCEPT="ACCEPT"
 DROP="DROP"
 REJECT="REJECT"
@@ -25,25 +33,11 @@ FW_STATE="-m state --state NEW"
 ipv6_en=$($nv get ipv6_enable)
 wan_ipaddr=$($nv get wan_ipaddr)
 [[ $($nv get wan_proto) = "disabled" ]] && { IN_IF="-i br0"; logger -p user.info "WireGuard Killswitch for WAP on br0 only!, oet${i}"; } || IN_IF=""
-LOCK="/tmp/oet-fw.lock"
-#acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for firewall $$ "; }
-acquire_lock() { 
-	logger -p user.info "WireGuard acquiring $LOCK for firewall $$ "
-	local SLEEPCT=0
-	local MAXTIME=30
-	while ! mkdir $LOCK >/dev/null 2>&1; do
-		sleep 2
-		SLEEPCT=$((SLEEPCT+2))
-		if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
-			logger -p user.err "WireGuard ERROR max. waiting $SLEEPCT sec. for locking firewall $$!"
-			break
-		fi
-	done 
-	logger -p user.info "WireGuard $LOCK acquired for $$ " 
-}
+LOCK="/tmp/oet-tunnels.lock"
 release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for firewall $$ "; }
 trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
-acquire_lock
+#experimental to stop eop-tunnel-firewall.sh[3904]: Another app is currently holding the xtables lock this is happening on slow routers when a wireguard restart is triggered by the firewall
+sleep $FWWAIT
 for i in $(seq 1 $tunnels); do
 	if [[ -e "/tmp/oet/pid/f${i}.pid" ]]; then
 		FW_CHAIN="pbr-oet${i}"
@@ -138,7 +132,7 @@ for i in $(seq 1 $tunnels); do
 					  *.*) #IPv4
 						ip=${ipt};;
 					  *:*) #IPv6
-						ip=${ip6t};;
+						[[ $ipv6_en -eq 1 ]] && ip=${ip6t};;
 					  *) #no match
 						logger -p user.err "WireGuard NAT ERROR invalid [$addr] for oet${i}"
 						;;
@@ -158,9 +152,11 @@ for i in $(seq 1 $tunnels); do
 						logger -p user.info "WireGuard IPv4 internet access for $addrmask enabled"
 						;;
 					  *:*) #IPv6
-						echo "$ip6t -D POSTROUTING -t nat -s $addrmask -o $WAN_IF -j MASQUERADE" >> $WGDELRT
-						$ip6t -t nat -I POSTROUTING -s $addrmask -o $WAN_IF -j MASQUERADE
-						logger -p user.info "WireGuard IPv6 internet access for $addrmask enabled"
+						if [[ $ipv6_en -eq 1 ]]; then
+							echo "$ip6t -D POSTROUTING -t nat -s $addrmask -o $WAN_IF -j MASQUERADE" >> $WGDELRT
+							$ip6t -t nat -I POSTROUTING -s $addrmask -o $WAN_IF -j MASQUERADE
+							logger -p user.info "WireGuard IPv6 internet access for $addrmask enabled"
+						fi
 						;;
 					esac
 				done
@@ -187,11 +183,9 @@ for i in $(seq 1 $tunnels); do
 				dns4=$($nv get oet${i}_dns4)
 				dns6=$($nv get oet${i}_dns6)
 				echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do
+					[[ "${pbrip:0:1}" = "#" ]] && continue
 					pbrip=$(eval echo $pbrip)
 						case $pbrip in
-						 "#"*)
-							continue
-							;;
 						 *[0-9].*)
 							sourcepbr="-s"
 							ipxt=ip4t
@@ -207,16 +201,17 @@ for i in $(seq 1 $tunnels); do
 							ipxt=ipxt
 							;;
 						 *)
-							logger -p user.err "WireGuard: ERROR invalid entry: $pbrip in Split DNS"
+							logger -p user.info "WireGuard: Invalid entry: $pbrip in Split DNS, will be skipped"
+							ipxt=
 							;;
 						esac
-					if [[ $dns4 != "0" ]] && [[ $ipxt = ip4t || $ipxt = ipxt ]]; then
+					if [[ "$dns4" != "0" ]] && [[ "$ipxt" = "ip4t" || "$ipxt" = "ipxt" ]]; then
 						echo "$ipt -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4" >> $WGDELRT
 						echo "$ipt -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4" >> $WGDELRT
 						$ipt -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4
 						$ipt -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4
 					fi
-					if [[ $ipv6_en -eq 1 && $dns6 != "0" ]] && [[ $ipxt = ip6t || $ipxt = ipxt ]]; then
+					if [[ "$ipv6_en" = "1" && "$dns6" != "0" ]] && [[ "$ipxt" = "ip6t" || "$ipxt" = "ipxt" ]]; then
 						echo "$ip6t -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6" >> $WGDELRT
 						echo "$ip6t -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6" >> $WGDELRT
 						$ip6t -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6
@@ -252,7 +247,7 @@ for i in $(seq 1 $tunnels); do
 					#cat /proc/net/ip_conntrack_flush 2>&1
 					#cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1
 					# Escape Destination routing via the WAN
-					if [[ $($nv get oet${i}_dpbr) -eq 2 &&  ! -z $($nv get oet${i}_dpbr_ip | sed '/^[[:blank:]]*#/d') ]]; then
+					if [[ $($nv get oet${i}_dpbr) -eq 2 &&  -n "$($nv get oet${i}_dpbr_ip | sed '/^[[:blank:]]*#/d')" ]]; then
 						makechain
 						WGDPBRIP="/tmp/wgdpbrip_oet${i}"
 						MAXTIME=10
@@ -284,11 +279,9 @@ for i in $(seq 1 $tunnels); do
 					logger -p user.info "WireGuard firewall on PBR activated for oet${i}"
 					makechain
 					echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do	# added "," so that last entry is read
+						[[ "${pbrip:0:1}" = "#" ]] && continue
 						pbrip=$(eval echo $pbrip)
 						case $pbrip in
-						 "#"*)
-							continue
-							;;
 						 *[0-9].*)
 							sourcepbr="-s"
 							ipxt=ip4t
@@ -309,7 +302,8 @@ for i in $(seq 1 $tunnels); do
 							ipxt=ipxt
 							;;
 						 *)
-							logger -p user.err "WireGuard: ERROR invalid entry: $pbrip in PBR Killswitch"
+							logger -p user.info "WireGuard: ERROR invalid entry: $pbrip in PBR Killswitch, will be skipped"
+							ipxt=
 							;;
 						esac
 						if [[ $ipxt = ip4t || $ipxt = ipxt ]]; then
@@ -367,6 +361,15 @@ for i in $(seq 1 $tunnels); do
 	fi
 done
 release_lock
+# remove temporary killswitch
+if [[ "$(nvram get wg_remove_temp_ks)" != "0" ]]; then
+	sysctl -w net.ipv4.ip_forward=1 >/dev/null
+	logger -p user.info "WireGuard firewall removing temporary killswitch for IPv4"
+	if [[ $ipv6_en -eq 1 ]]; then
+		sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null
+		logger -p user.info "WireGuard firewall removing temporary killswitch for IPv6"
+	fi
+fi
 # consider re-executing .rc_firewall so that those rules will be last
 # ( [[ -f /tmp/.rc_firewall ]] && sh /tmp/.rc-firewall & ) >/dev/null 2>&1
 } 2>&1 | logger $([ ${DEBUG+x} ] && echo '-p user.debug') \
