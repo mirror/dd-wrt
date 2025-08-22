@@ -58,7 +58,14 @@ static char *getXMLTag(const char *p, const char *tag, char *buf)
 	if (!s || !e)
 		return NULL;
 	s += strlen(begin);
-	strlcpy(buf, s, e - s + 1);
+	size_t len = e - s + 1;
+	int cnt = 0;
+	for (i = 0; i < len; i++) {
+		unsigned char c = s[i];
+		if (isalnum(c) || c == '.' || c == '-' || c == ':' || c == '_' || c == '+' || c == ' ')
+			buf[cnt++] = c;
+	}
+	buf[cnt++] = 0;
 	return buf;
 }
 
@@ -78,9 +85,11 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char *desc = getXMLTag(mem, "eventDescription", s_desc);
 	char *addr = getXMLTag(mem, "ipAddress", s_addr);
 	if (filename && date && name && desc && addr)
-		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename, date, addr, name, desc);
+		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename,
+			  date, addr, name, desc);
 	else if (date && name && desc && addr)
-		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date, addr, name, desc);
+		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"),
+			  date, addr, name, desc);
 	return 0;
 }
 
