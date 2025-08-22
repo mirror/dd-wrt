@@ -25,8 +25,11 @@
 #include <shutils.h>
 #include <utils.h>
 #include <sys/mount.h>
+#include <mntent.h>
 
 #define DEFAULT_UBIFS_COMPR "zstd"
+
+int is_mtd_mounted(const char *dev);
 
 void stop_jffs2(void)
 {
@@ -41,7 +44,7 @@ void stop_jffs2(void)
 #endif
 	if (mtd == -1)
 		return;
-	umount("/jffs");
+	umount2("/jffs", MNT_DETACH);
 	rmmod("jffs2");
 	nvram_seti("jffs_mounted", 0);
 }
@@ -190,9 +193,16 @@ void start_jffs2(void)
 				didntwork = mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, "compr=" DEFAULT_UBIFS_COMPR);
 			}
 #else
+			/*
 			eval("mtd", "unlock", rwpart);
 			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			didntwork = mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
+			*/
+			
+			// egc alternative way
+			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
+			mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
+			didntwork = is_mtd_mounted(dev);
 #endif
 			if (didntwork) {
 				nvram_seti("jffs_mounted", 0);
@@ -205,3 +215,21 @@ void start_jffs2(void)
 	}
 }
 #endif
+
+int is_mtd_mounted(const char *dev) {
+	FILE *fp;
+	struct mntent *mnt;
+	fp = setmntent("/proc/mounts", "r");
+	if (!fp) {
+		perror("setmntent");
+		return -1;
+	}
+	while ((mnt = getmntent(fp)) != NULL) {
+		if (strcmp(mnt->mnt_fsname, dev) == 0) {
+			endmntent(fp);
+			return 0; // found
+		}
+	}
+	endmntent(fp);
+	return 1; // not found
+}
