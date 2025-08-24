@@ -1,7 +1,19 @@
+== ChangeLog (CoovaChilli-v1.7) ==
+* Update xt_coova.c (#545) update position index earlier to fix #544
+* src/dns.c: fix misleading indentation warning (#569)
+* add func check chilli status (#581)
+* dns: recognize QTYPE 65 (HTTPS/SVCB) in dns_copy_res() (#592)
+* xt_coova: fix compile with kernel>=5.17 (#597)
+* properly shutdown cmdsock (#594)
+* This is the last release with support for RFC 7710, cut before RFC 8910 support is merged (#595)
+
 == ChangeLog (CoovaChilli-v1.6) ==
+* system.h: Fix compilation with kernel 4.19 + musl (#502)
+* docs: fix simple typo, tighest -> tightest (#523)
 * Fix build with musl libc. (#524)
 * Updated build to avoid making warnings fatal. (#524)
 * Updated debian and rpm packaging sources. (#524)
+* chilli: fix build with --enable-authedallowed (#525)
 * Fix compilation with newer wolfSSL. (#499)
 
 == ChangeLog (CoovaChilli-v1.5) ==

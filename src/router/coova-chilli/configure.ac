@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([coova-chilli],[1.6],[https://github.com/coova/coova-chilli/issues])
+AC_INIT([coova-chilli],[1.7],[https://github.com/coova/coova-chilli/issues])
 AC_CONFIG_SRCDIR([src/chilli.c])
 
 AM_INIT_AUTOMAKE

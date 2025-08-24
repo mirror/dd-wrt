@@ -1,0 +1,31 @@
+name: Github Actions Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install build deps
+      run: |
+        sudo apt update
+        sudo apt install gengetopt libjson-c-dev
+    - name: Bootstrap
+      run: ./bootstrap
+    - name: Configure
+      run: |
+        ./configure --enable-largelimits --enable-proxyvsa --enable-miniportal \
+        --enable-chilliredir --enable-chilliproxy --enable-binstatusfile \
+        --enable-chilliscript --enable-chilliradsec --with-avl --enable-layer3 \
+        --enable-eapol --enable-uamdomainfile --enable-redirdnsreq --enable-modules \
+        --enable-multiroute --enable-extadmvsa --with-openssl --with-poll \
+        --enable-json --enable-libjson --prefix=/var/tmp/coova
+    - name: Build
+      run: make
+    - name: Install
+      run: make install
