@@ -61,6 +61,7 @@ static char *getXMLTag(const char *p, const char *tag, char *buf)
 	s += strlen(begin);
 	size_t len = e - s + 1;
 	int cnt = 0;
+	int i;
 	for (i = 0; i < len; i++) {
 		unsigned char c = s[i];
 		if (isalnum(c) || c == '.' || c == '-' || c == ':' || c == '_' || c == '+' || c == ' ')
