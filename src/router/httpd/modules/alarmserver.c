@@ -38,6 +38,7 @@
 #include <utils.h>
 #include <broadcom.h>
 #include <dd_defs.h>
+#include <ctype.h>
 #include <revision.h>
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
