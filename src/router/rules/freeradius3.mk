@@ -65,6 +65,7 @@ freeradius3-configure: libtalloc openssl libpcap
 	--without-rlm_dbm \
 	--without-rlm_python3 \
 	--without-rlm_ldap \
+	--without-rlm_kafka \
 	--without-edir \
 	--without-snmp \
 	--with-rlm_expr \
