@@ -1,7 +1,7 @@
 /*
  * rlm_eap_teap.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: f2e2cc3d40612adcc9cc50fe3f6a49650f596b45 $
+ * Version:     $Id: fcf9717257a17b39495fe9a646d4d57724187adf $
  *
  * Copyright (C) 2022 Network RADIUS SARL <legal@networkradius.com>
  *
@@ -21,7 +21,7 @@
  * SUCH DAMAGE.
  */
 
-RCSID("$Id: f2e2cc3d40612adcc9cc50fe3f6a49650f596b45 $")
+RCSID("$Id: fcf9717257a17b39495fe9a646d4d57724187adf $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_teap.h"
@@ -220,6 +220,12 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 			} else {
 			invalid_identity:
 				cf_log_err_cs(cs, "Invalid value in identity_types = '%s' at %s",
+					      inst->identity_type_name, p);
+				return -1;
+			}
+
+			if ((i == 1) && (inst->identity_type[0] == inst->identity_type[1])) {
+				cf_log_err_cs(cs, "Duplicate value in identity_types = '%s' at %s",
 					      inst->identity_type_name, p);
 				return -1;
 			}

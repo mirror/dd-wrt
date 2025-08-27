@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9ba81b3bc1fb7f19a25bfbbd8007a6ea8239d561 $
+ * $Id: a07b2f6fe7c67ef52b1a5485fd2ca4f1981ac93e $
  *
  * @file modules.h
  * @brief Interface to the RADIUS module system.
@@ -26,7 +26,7 @@
 #ifndef RADIUS_MODULES_H
 #define RADIUS_MODULES_H
 
-RCSIDH(modules_h, "$Id: 9ba81b3bc1fb7f19a25bfbbd8007a6ea8239d561 $")
+RCSIDH(modules_h, "$Id: a07b2f6fe7c67ef52b1a5485fd2ca4f1981ac93e $")
 
 #include <freeradius-devel/conffile.h>
 #include <freeradius-devel/features.h>
@@ -167,6 +167,8 @@ rlm_rcode_t indexed_modcall(rlm_components_t comp, int idx, REQUEST *request);
  */
 int virtual_servers_load(CONF_SECTION *config);
 void virtual_servers_free(time_t when);
+
+int virtual_server_sanity_check(REQUEST *request);
 
 #ifdef __cplusplus
 }

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a2476e8f1fa858177a2952384dc19dd9d58081b6 $
+ * $Id: 3a785f9fd5b53a615d5db97d767825fa19fb7e16 $
  * @file rlm_json.c
  * @brief Parses JSON responses
  *
@@ -26,7 +26,7 @@
  * @copyright 2015,2021 Network RADIUS SARL (legal@networkradius.com)
  * @copyright 2015 The FreeRADIUS Server Project
  */
-RCSID("$Id: a2476e8f1fa858177a2952384dc19dd9d58081b6 $")
+RCSID("$Id: 3a785f9fd5b53a615d5db97d767825fa19fb7e16 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -48,6 +48,7 @@ static CONF_PARSER const json_format_attr_config[] = {
 static CONF_PARSER const json_format_value_config[] = {
 	{ "single_value_as_array", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_json_t, value_as_array), "no" },
 	{ "enum_as_integer", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_json_t, enum_as_int), "no" },
+	{ "dates_as_integer", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_json_t, dates_as_int), "no" },
 	{ "always_string", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_json_t, always_string), "no" },
 
 	CONF_PARSER_TERMINATOR

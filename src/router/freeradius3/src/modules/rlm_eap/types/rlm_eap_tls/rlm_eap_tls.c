@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 0eaf063421cc52f21103361973cf91f8cc1f18b5 $
+ * Version:     $Id: 6a0b46dc325025d0a36787a337c1e079d9967ea7 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  */
 
-RCSID("$Id: 0eaf063421cc52f21103361973cf91f8cc1f18b5 $")
+RCSID("$Id: 6a0b46dc325025d0a36787a337c1e079d9967ea7 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #ifdef HAVE_OPENSSL_RAND_H
@@ -184,7 +184,7 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 			}
 
 			RDEBUG2("Validating certificate");
-			rad_virtual_server(fake);
+			rad_virtual_server(fake, false);
 
 			/* copy the reply vps back to our reply */
 			fr_pair_list_mcopy_by_num(request->reply, &request->reply->vps,

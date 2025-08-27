@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: e7db410a8c3d300e9552731c037fa55186137290 $
+#  $Id: 6d424a8d53faefa42d605cde273eb8a0705a7f79 $
 
 #
 #  This module performs rate limiting on proxied packets.
@@ -57,6 +57,14 @@
 #		...
 #	}
 #
+#  The module can also be listed in the "authorize" section.  Listing
+#  it there as the first module allows the server to reject bad
+#  packets as quickly as possible, while doing zero additional work
+#  for policies, database lookups, etc.
+#
+#  If it is listed in the "authorize" section, then it should not be
+#  listed in the "pre-proxy" section.
+#
 
 #
 #  The module configuration.
@@ -82,4 +90,10 @@ proxy_rate_limit {
 	#  the entry is expired.
 	#
 	idle_timeout = 10
+
+	#
+	#  The suppression period.  If a client retransmits during this time,
+	#  the rate limiting will start, and the proxy will send a reject.
+	#
+	window = 1
 }

@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 0d0b6c970cee8806ac3480f02509c8bdfa291098 $
+ * Version:     $Id: 39c2725a352e8dd5c4df048967468ecd06f421bb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 0d0b6c970cee8806ac3480f02509c8bdfa291098 $")
+RCSID("$Id: 39c2725a352e8dd5c4df048967468ecd06f421bb $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -834,7 +834,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply( eap_handler_t *eap_session,
 					rad_assert(!reply->vps);
 				}
 				break;
-				
+
 			default:
 				break;
 			}
@@ -1014,7 +1014,7 @@ static PW_CODE eap_fast_eap_payload(REQUEST *request, eap_handler_t *eap_session
 	 * Call authentication recursively, which will
 	 * do PAP, CHAP, MS-CHAP, etc.
 	 */
-	rad_virtual_server(fake);
+	rad_virtual_server(fake, true);
 
 	/*
 	 * Decide what to do with the reply.

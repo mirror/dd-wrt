@@ -1,5 +1,5 @@
 #
-# Version:	$Id: e666f1403a068a348be17fad00aa7ff5b8fba3ad $
+# Version:	$Id: 1e789505ec2484ee78781038e35b38f36f49b33a $
 #
 
 #
@@ -96,6 +96,10 @@ src/include/features.h: src/include/features-h src/include/autoconf.h
 	@cp $< $@
 	@grep "^#define[ ]*WITH_" src/include/autoconf.h >> $@
 	@grep "^#define[ ]*RADIUSD_VERSION" src/include/autoconf.h >> $@
+	@echo '#define DOC_ROOT_URL "https://www.freeradius.org/documentation/freeradius-server/" RADIUSD_VERSION_STRING' >> $@
+	@echo '#define DOC_KEYWORD_URL(_x) DOC_ROOT_URL "/unlang/" STRINGIFY(_x) ".html"' >> $@
+	@echo '#define DOC_KEYWORD_REF(_x) "For more information, please see " DOC_KEYWORD_URL(_x)' >> $@
+
 
 #
 #  Use the SED script we built earlier to make permanent substitutions

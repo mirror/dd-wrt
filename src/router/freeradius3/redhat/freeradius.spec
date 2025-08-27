@@ -33,13 +33,13 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.2.7
+Version: 3.2.8
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
 URL: http://www.freeradius.org/
 
-Source0: ftp://ftp.freeradius.org/pub/radius/freeradius-server-%{version}.tar.bz2
+Source0: https://www.freeradius.org/ftp/pub/radius/freeradius-server-%{version}.tar.bz2
 %if %{?_unitdir:1}%{!?_unitdir:0}
 Source100: radiusd.service
 Source104: freeradius-tmpfiles-conf
@@ -63,7 +63,11 @@ BuildRequires: autoconf
 BuildRequires: gdbm-devel
 BuildRequires: openssl, openssl-devel
 BuildRequires: pam-devel
+%if 0%{rhel} >= 10
+BuildRequires: pcre2-devel
+%else
 BuildRequires: pcre-devel
+%endif
 BuildRequires: zlib-devel
 BuildRequires: net-snmp-devel
 BuildRequires: net-snmp-utils
@@ -235,10 +239,17 @@ Requires: %{name} = %{version}-%{release}
 %if 0%{?rhel} <= 7
 Requires: mysql
 %endif
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 && 0%{?rhel} <= 9
 Requires: mysql-libs
 %endif
+%if 0%{rhel} >= 10
+Requires: mariadb-connector-c
+%endif
+%if 0%{rhel} >= 10
+BuildRequires: mariadb-connector-c-devel
+%else
 BuildRequires: mysql-devel
+%endif
 
 %description mysql
 This plugin provides MySQL support for the FreeRADIUS server project.
@@ -360,6 +371,17 @@ BuildRequires: ykclient-devel >= 2.10
 This plugin provides YubiCloud support for the FreeRADIUS server project.
 %endif
 
+%if 0%{?rhel} >= 8
+%package kafka
+Summary: Kafka producer support for FreeRADIUS
+Group: System Environment/Daemons
+Requires: %{name} = %{version}-%{release}
+Requires: librdkafka
+BuildRequires: librdkafka-devel
+
+%description kafka
+This plugin provides Kafka producer support for the FreeRADIUS server project.
+%endif
 
 %prep
 %setup -q -n freeradius-server-%{version}
@@ -731,6 +753,8 @@ fi
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/preprocess/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/unbound
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/unbound/*
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/kafka
+%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/kafka/*
 %if %{?el6:0}%{!?el6:1}
 %if 0%{?rhel} <= 8
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/python
@@ -964,6 +988,12 @@ fi
 %files yubikey
 %defattr(-,root,root)
 %{_libdir}/freeradius/rlm_yubikey.so
+%endif
+
+%if 0%{?rhel} >= 8
+%files kafka
+%defattr(-,root,root)
+%{_libdir}/freeradius/rlm_kafka.so
 %endif
 
 %changelog

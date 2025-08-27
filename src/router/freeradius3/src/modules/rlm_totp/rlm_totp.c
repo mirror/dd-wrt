@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: d58e1ee56ffe08c6ec42d09e5210ea475877deb4 $
+ * $Id: 08929773430883e74b2986aaf228520248758665 $
  * @file rlm_totp.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2021  The FreeRADIUS server project
  * @copyright 2021  Network RADIUS SARL (legal@networkradius.com)
  */
-RCSID("$Id: d58e1ee56ffe08c6ec42d09e5210ea475877deb4 $")
+RCSID("$Id: 08929773430883e74b2986aaf228520248758665 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -475,7 +475,10 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 	uint64_t now = time(NULL);
 
 	password = fr_pair_find_by_num(request->packet->vps, PW_TOTP_PASSWORD, 0, TAG_ANY);
-	if (!password) return RLM_MODULE_NOOP;
+	if (!password) {
+		RDEBUG2("No User-Password attribute in the request.  Cannot do TOTP");
+		return RLM_MODULE_NOOP;
+	}
 
 	if ((password->vp_length != 6) && (password->vp_length != 8)) {
 		RDEBUG("TOTP-Password has incorrect length %d", (int) password->vp_length);

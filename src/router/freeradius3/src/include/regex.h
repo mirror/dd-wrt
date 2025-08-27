@@ -17,20 +17,43 @@
 #define REGEX_H
 #ifdef HAVE_REGEX
 /*
- * $Id: efb7b8615cbed32b893108defb0335ec3e5f8553 $
+ * $Id: c56a41c96af2ef1c736a62823fc39d50c2c2aabb $
  *
  * @file regex.h
  * @brief Wrappers around various regular expression libraries.
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSIDH(regex_h, "$Id: efb7b8615cbed32b893108defb0335ec3e5f8553 $")
+RCSIDH(regex_h, "$Id: c56a41c96af2ef1c736a62823fc39d50c2c2aabb $")
 
 #  ifdef __cplusplus
 extern "C" {
 #  endif
-#  ifdef HAVE_PCRE
-#    include <pcre.h>
+#  ifdef HAVE_PCRE2
+#    define PCRE2_CODE_UNIT_WIDTH 8
+#    include <pcre2.h>
+int fr_pcre2_gcontext_setup(void);
+void fr_pcre2_gcontext_free(void);
+
+typedef struct regmatch {
+	pcre2_match_data	*match_data;	//!< Match data containing the subject
+						///< and various match offsets.
+#ifndef NDEBUG
+	char const		*subject;	//!< Here for debugging purposes if we explicitly duped the string.
+#endif
+} regmatch_t;
+
+typedef struct regex {
+	pcre2_code_8	*compiled;	//!< Compiled regular expression.
+	uint32_t	subcaptures;	//!< Number of subcaptures contained within the expression.
+	bool		precompiled;	//!< Whether this regex was precompiled, or compiled for one of evaluation.
+	bool		jitd;		//!< Whether JIT data is available.
+} regex_t;
+
+regmatch_t *regex_match_data_alloc(TALLOC_CTX *ctx, uint32_t count);
+
+#  elif defined (HAVE_PCRE)
+#      include <pcre.h>
 /*
  *  Versions older then 8.20 didn't have the JIT functionality
  *  gracefully degrade.

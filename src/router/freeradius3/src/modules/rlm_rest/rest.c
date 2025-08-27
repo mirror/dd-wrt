@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: d18c0084575951f3d27b8aa287c17cedc83527bf $
+ * $Id: 34a2952129afbace2b01a4bac62666fa117d663f $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id: d18c0084575951f3d27b8aa287c17cedc83527bf $")
+RCSID("$Id: 34a2952129afbace2b01a4bac62666fa117d663f $")
 
 #include <ctype.h>
 #include <string.h>
@@ -1294,6 +1294,9 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 		return NULL;
 	}
 
+	vp->op = flags->op;
+	vp->tag = flags->tag;
+
 	ret = fr_pair_value_from_str(vp, to_parse, -1);
 	talloc_free(expanded);
 	if (ret < 0) {
@@ -1302,9 +1305,6 @@ static VALUE_PAIR *json_pair_make_leaf(UNUSED rlm_rest_t *instance, UNUSED rlm_r
 
 		return NULL;
 	}
-
-	vp->op = flags->op;
-	vp->tag = flags->tag;
 
 	return vp;
 }

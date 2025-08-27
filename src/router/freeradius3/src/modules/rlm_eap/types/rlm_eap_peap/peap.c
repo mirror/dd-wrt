@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: 24e7a664f5e871fb3d26c7b52f6603c3e048d7db $
+ * Version:     $Id: 3e745bfa21c1f944e5f7252d5f08bb7ebc9cbb65 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 24e7a664f5e871fb3d26c7b52f6603c3e048d7db $")
+RCSID("$Id: 3e745bfa21c1f944e5f7252d5f08bb7ebc9cbb65 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -621,7 +621,7 @@ static int CC_HINT(nonnull) eappeap_postproxy(eap_handler_t *handler, void *data
 		fake->reply = NULL;
 
 		request->proxy->dst_port = 0; /* hacks for state.c lookups */
-		
+
 		/*
 		 *	And we're done with this request.
 		 */
@@ -836,7 +836,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 			fake->server = t->soh_virtual_server;
 		}
 		RDEBUG("Sending SoH request to server %s", fake->server ? fake->server : "NULL");
-		rad_virtual_server(fake);
+		rad_virtual_server(fake, true);
 
 		if (fake->reply->code != PW_CODE_ACCESS_ACCEPT) {
 			RDEBUG2("SoH was rejected");
@@ -1029,7 +1029,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 	 *	Call authentication recursively, which will
 	 *	do PAP, CHAP, MS-CHAP, etc.
 	 */
-	rad_virtual_server(fake);
+	rad_virtual_server(fake, true);
 
 	/*
 	 *	Note that we don't do *anything* with the reply

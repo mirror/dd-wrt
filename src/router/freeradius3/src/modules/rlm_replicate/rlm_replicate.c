@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: cee26cc97ad4409f08874a557ba46fbe36495fd9 $
+ * $Id: df6579b0c45c2b6c8d8d5fad15e5719de3db1d8b $
  * @file rlm_replicate.c
  * @brief Duplicate RADIUS requests.
  *
  * @copyright 2011-2013  The FreeRADIUS server project
  */
-RCSID("$Id: cee26cc97ad4409f08874a557ba46fbe36495fd9 $")
+RCSID("$Id: df6579b0c45c2b6c8d8d5fad15e5719de3db1d8b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -197,7 +197,7 @@ static int replicate_packet(UNUSED void *instance, REQUEST *request, pair_lists_
 		 */
 		packet->dst_ipaddr = home->ipaddr;
 		packet->dst_port = home->port;
-		memset(&packet->src_ipaddr, 0, sizeof(packet->src_ipaddr));
+		packet->src_ipaddr = home->src_ipaddr;
 		packet->src_port = 0;
 
 		/*

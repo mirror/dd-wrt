@@ -23,7 +23,7 @@ dnl #############################################################
 AC_PREREQ([2.59])
 export CFLAGS LIBS LDFLAGS CPPFLAGS
 
-AC_INIT([freeradius],[$Id: 6f292066466458fda3ec898b16d2d44e324741fb $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
+AC_INIT([freeradius],[$Id: 73e40b84d5f698b459870271c11d9426dd1f1c42 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
@@ -1049,7 +1049,7 @@ else
 
   AC_SEARCH_LIBS(sem_init, pthread sem posix4 rt semaphore,
     [],
-    [AC_MSG_ERROR([[-lsem not found.  You may want to download it from ftp://ftp.to.gd-es.com/pub/BSDI/libsem.tar.bz2 or ftp://ftp.freeradius.org/pub/radius/contrib/libsem.tar.gz]])]
+    [AC_MSG_ERROR([[-lsem not found.  You may want to download it from ftp://ftp.to.gd-es.com/pub/BSDI/libsem.tar.bz2 or https://www.freeradius.org/ftp/pub/radius/contrib/libsem.tar.gz]])]
   )
 fi
 
@@ -1990,7 +1990,7 @@ if test "x$developer" = "xyes"; then
     dnl #
     dnl #  -fsanitize=fuzzer  - Build with fuzzer support
     dnl #
-    fsanitizeflags="$fsanitizeflags,fuzzer"
+    fsanitizeflags="$fsanitizeflags,fuzzer-no-link"
   fi
 
   dnl #
@@ -2277,9 +2277,26 @@ AC_ARG_WITH(regex,
 )
 
 dnl #
-dnl #  First look for PCRE
+dnl #  First look for PCRE2
 dnl #
 if test "x$REGEX" != "xno" && test "x$PCRE" != "xno"; then
+  smart_try_dir=$pcre_include_dir
+  FR_SMART_CHECK_INCLUDE(pcre2.h,[#define PCRE2_CODE_UNIT_WIDTH (8)])
+  if test "x$ac_cv_header_pcre2_h" = "xyes"; then
+    smart_try_dir=$pcre_lib_dir
+    FR_SMART_CHECK_LIB(pcre2-8, pcre2_compile_8)
+    if test "x$ac_cv_lib_pcre2_8_pcre2_compile_8" = "xyes"; then
+      REGEX=yes
+      AC_DEFINE(HAVE_PCRE2, [1], [define this if we have libpcre2])
+      AC_DEFINE(HAVE_BINSAFE_REGEX, 1, [Define if we have a binary safe regular expression library])
+    fi
+  fi
+fi
+
+dnl #
+dnl #  If no PCRE2, look for PCRE
+dnl #
+if test "x$REGEX" = "x" && test "x$PCRE" != "xno"; then
   smart_try_dir=$pcre_include_dir
   FR_SMART_CHECK_INCLUDE(pcre.h)
   if test "x$ac_cv_header_pcre_h" = "xyes"; then
@@ -2294,7 +2311,7 @@ if test "x$REGEX" != "xno" && test "x$PCRE" != "xno"; then
 fi
 
 dnl #
-dnl #  If no PCRE, fallback to POSIX regular expressions
+dnl #  If no PCRE2 or PCRE, fallback to POSIX regular expressions
 dnl #
 if test "x$REGEX" = "x"; then
   smart_try_dir=

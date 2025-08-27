@@ -1,7 +1,7 @@
 #  -*- text -*-
 #
 #
-#  $Id: 88f17c030bfed7e11f2144a6f74874e662d3e38c $
+#  $Id: bdf74d4240c78e73ea5acb405d73890f489f01a8 $
 
 #######################################################################
 #
@@ -78,6 +78,17 @@ json {
 			#  instead.
 			#
 #			enum_as_integer = no
+
+			#
+			#  dates_as_integer:: output dates as seconds since the
+			#  epoch
+			#
+			#  Where an attribute is a date, the textual
+			#  representation of the date will normally be output.
+			#  Enable this option to force the date to be rendered
+			#  as seconds since the epoch instead.
+			#
+#			dates_as_integer = no
 
 			#
 			#  always_string:: force all values to be strings

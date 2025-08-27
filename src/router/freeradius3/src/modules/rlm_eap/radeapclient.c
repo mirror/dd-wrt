@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: 66d9f040f924a56bd92169663dccf8cbdae3f7d2 $
+ * Version:	$Id: 82b17a0b48cdee3bb0fda1d8037e1c69681e0cae $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 66d9f040f924a56bd92169663dccf8cbdae3f7d2 $")
+RCSID("$Id: 82b17a0b48cdee3bb0fda1d8037e1c69681e0cae $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -246,7 +246,7 @@ static const FR_NAME_NUMBER rc_request_types[] = {
 	{ NULL, 0}
 };
 
-int rad_virtual_server(REQUEST UNUSED *request)
+int rad_virtual_server(REQUEST UNUSED *request, bool UNUSED check_username)
 {
   /*We're not the server so we cannot do this*/
   abort();
@@ -1996,7 +1996,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: 66d9f040f924a56bd92169663dccf8cbdae3f7d2 $"
+			printf("$Id: 82b17a0b48cdee3bb0fda1d8037e1c69681e0cae $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif

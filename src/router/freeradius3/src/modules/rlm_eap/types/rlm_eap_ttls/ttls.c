@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 4a27fcc63df8d0adb7278c7356d1bc7dc6ba2a52 $
+ * Version:     $Id: 5fe54d1c3f93352fc76262ea51c397b3a39bd8b5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 4a27fcc63df8d0adb7278c7356d1bc7dc6ba2a52 $")
+RCSID("$Id: 5fe54d1c3f93352fc76262ea51c397b3a39bd8b5 $")
 
 #include "eap_ttls.h"
 #include "eap_chbind.h"
@@ -1215,7 +1215,7 @@ int eapttls_process(eap_handler_t *handler, tls_session_t *tls_session)
 	 *	Call authentication recursively, which will
 	 *	do PAP, CHAP, MS-CHAP, etc.
 	 */
-	rad_virtual_server(fake);
+	rad_virtual_server(fake, true);
 
 	/*
 	 *	Decide what to do with the reply.

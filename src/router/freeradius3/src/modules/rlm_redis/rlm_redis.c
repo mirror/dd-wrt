@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 31bf5bd44f26933a2fa22e6a7baf701bc673dac8 $
+ * $Id: e7eb9f527c5b994fcd74e9d3d412ba625dc67d4f $
  * @file rlm_redis.c
  * @brief Driver for the REDIS noSQL key value stores.
  *
@@ -23,7 +23,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id: 31bf5bd44f26933a2fa22e6a7baf701bc673dac8 $")
+RCSID("$Id: e7eb9f527c5b994fcd74e9d3d412ba625dc67d4f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -186,13 +186,15 @@ static ssize_t redis_xlat(void *instance, REQUEST *request, char const *fmt, cha
 		break;
 
 	default:
-		buffer_ptr = NULL;
-		break;
+		RDEBUG("rlm_redis (%s): Unsupported result %d from redis",
+		       inst->xlat_name, dissocket->reply->type);
+		ret = -1;
+		goto release;
 	}
 
-	if ((ret >= freespace) || (!buffer_ptr)) {
-		RDEBUG("rlm_redis (%s): Can't write result, insufficient space or unsupported result\n",
-		       inst->xlat_name);
+	if (ret >= freespace) {
+		RDEBUG("rlm_redis (%s): Can't write result (%zd), insufficient space (%zd)",
+		       inst->xlat_name, ret, freespace);
 		ret = -1;
 		goto release;
 	}

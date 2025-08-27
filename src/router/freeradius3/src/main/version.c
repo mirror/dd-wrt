@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: 44a6edc699e8cad9eb54e54e673bf6fd316e8505 $
+ * Version:	$Id: 2334ac491982168ea47bdf6ca4a8cfec78a13c84 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: 44a6edc699e8cad9eb54e54e673bf6fd316e8505 $")
+RCSID("$Id: 2334ac491982168ea47bdf6ca4a8cfec78a13c84 $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -630,12 +630,16 @@ void version_print(void)
 		DEBUG2("  ");
 	}
 	INFO("FreeRADIUS Version " RADIUSD_VERSION_STRING);
-	INFO("Copyright (C) 1999-2023 The FreeRADIUS server project and contributors");
+	INFO("Copyright (C) 1999-2025 The FreeRADIUS server project and contributors");
 	INFO("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A");
 	INFO("PARTICULAR PURPOSE");
 	INFO("You may redistribute copies of FreeRADIUS under the terms of the");
 	INFO("GNU General Public License");
 	INFO("For more information about these matters, see the file named COPYRIGHT");
+	INFO("");
+	INFO("FreeRADIUS is developed, maintained, and supported by InkBridge Networks.");
+	INFO("For commercial support, please email sales@inkbridgenetworks.com");
+	INFO("https://inkbridgenetworks.com/");
 
 	fflush(NULL);
 }

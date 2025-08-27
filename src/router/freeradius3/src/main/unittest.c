@@ -1,7 +1,7 @@
 /*
  * unittest.c	Unit test wrapper for the RADIUS daemon.
  *
- * Version:	$Id: feb72d6598abb0f1aff5a0a1f37637051701aeca $
+ * Version:	$Id: 1abf1105ac962fa1c47ff54e9e77fb069ce8bc3b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2013  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: feb72d6598abb0f1aff5a0a1f37637051701aeca $")
+RCSID("$Id: 1abf1105ac962fa1c47ff54e9e77fb069ce8bc3b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -909,7 +909,7 @@ int main(int argc, char *argv[])
 		fclose(fp);
 	}
 
-	rad_virtual_server(request);
+	rad_virtual_server(request, true);
 
 	if (!output_file || (strcmp(output_file, "-") == 0)) {
 		fp = stdout;

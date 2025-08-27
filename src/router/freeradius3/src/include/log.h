@@ -16,7 +16,7 @@
 #ifndef FR_LOG_H
 #define FR_LOG_H
 /**
- * $Id: 2736591779e3c80137b1a753bf75e5d2182595c5 $
+ * $Id: f978496a0a32bcadd89f5465675a80058fb8f923 $
  *
  * @file log.h
  * @brief Macros and function definitions to write log messages, and control the logging system.
@@ -24,7 +24,7 @@
  * @copyright 2015 Arran Cudbard-Bell <a.cudbardb@freeradius.org>
  * @copyright 2013 Alan DeKok <aland@freeradius.org>
  */
-RCSIDH(log_h, "$Id: 2736591779e3c80137b1a753bf75e5d2182595c5 $")
+RCSIDH(log_h, "$Id: f978496a0a32bcadd89f5465675a80058fb8f923 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +70,7 @@ typedef struct fr_log_t {
 	log_dst_t	dst;		//!< Log destination.
 	char const	*file;		//!< Path to log file.
 	char const	*debug_file;	//!< Path to debug log file.
+	bool		timestamp;	//!< Should logs always have timestamps.
 } fr_log_t;
 
 typedef		void (*radlog_func_t)(log_type_t lvl, log_lvl_t priority, REQUEST *, char const *, va_list ap);

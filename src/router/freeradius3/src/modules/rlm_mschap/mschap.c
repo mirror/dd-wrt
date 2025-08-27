@@ -1,7 +1,7 @@
 /*
  * mschap.c
  *
- * Version:	$Id: 4e088ed962169313d0338ff59eb23e2b975129f4 $
+ * Version:	$Id: 759db2b69c6952b8ef99c824c233245bd9d15e00 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  *
  */
 
-RCSID("$Id: 4e088ed962169313d0338ff59eb23e2b975129f4 $")
+RCSID("$Id: 759db2b69c6952b8ef99c824c233245bd9d15e00 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -52,8 +52,14 @@ int mschap_ntpwdhash(uint8_t *out, char const *password)
 	ssize_t len;
 	uint8_t ucs2_password[512];
 
+	if (!password || !*password) {
+		fr_strerror_printf("Password is missing or is empty");
+		return -1;
+	}
+
 	len = fr_utf8_to_ucs2(ucs2_password, sizeof(ucs2_password), password, strlen(password));
 	if (len < 0) {
+		fr_strerror_printf("Password contains invalid UTF-8 characters, and cannot be converted to UCS2");
 		*out = '\0';
 		return -1;
 	}

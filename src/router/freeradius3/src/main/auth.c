@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: 5fa400b9968f5ca6f196aad2b9b4eb7e39213646 $
+ * Version:	$Id: 395680635498c92cdf29db1931f3d7f1093663b8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 5fa400b9968f5ca6f196aad2b9b4eb7e39213646 $")
+RCSID("$Id: 395680635498c92cdf29db1931f3d7f1093663b8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -732,7 +732,7 @@ authenticate:
  *	Run a virtual server auth and postauth
  *
  */
-int rad_virtual_server(REQUEST *request)
+int rad_virtual_server(REQUEST *request, bool check_username)
 {
 	VALUE_PAIR *vp;
 	int result;
@@ -747,7 +747,7 @@ int rad_virtual_server(REQUEST *request)
 	/*
 	 *	Complain about possible issues related to tunnels.
 	 */
-	if (request->parent && request->parent->username && request->username) {
+	if (request->parent && request->parent->username && request->username && check_username) {
 		/*
 		 *	Look at the full User-Name with realm.
 		 */

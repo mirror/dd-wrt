@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9753792f95f5f10f870ef03e03bbf51293a0a0a5 $
+ * $Id: df02f2ff3937c408e7e820b129c5c3727d2c8d80 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 9753792f95f5f10f870ef03e03bbf51293a0a0a5 $")
+RCSID("$Id: df02f2ff3937c408e7e820b129c5c3727d2c8d80 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -1495,7 +1495,7 @@ static void request_finish(REQUEST *request, int action)
 	else if (request->packet->code == PW_CODE_ACCESS_REQUEST) {
 		if (request->reply->code == 0) {
 			vp = fr_pair_find_by_num(request->config, PW_AUTH_TYPE, 0, TAG_ANY);
-			if (!vp || (vp->vp_integer != 5)) {
+			if (!vp) {
 				RDEBUG2("There was no response configured: "
 					"rejecting request");
 			}
@@ -1606,7 +1606,7 @@ static void request_finish(REQUEST *request, int action)
 	 */
 	if ((request->packet->code == PW_CODE_ACCESS_REQUEST) &&
 	    (request->reply->code == PW_CODE_ACCESS_REJECT) &&
-	    (request->root->reject_delay.tv_sec > 0)) {
+	    ((request->root->reject_delay.tv_sec > 0) || (request->root->reject_delay.tv_usec > 0))) {
 		request->response_delay = request->root->reject_delay;
 
 		vp = fr_pair_find_by_num(request->reply->vps, PW_FREERADIUS_RESPONSE_DELAY, 0, TAG_ANY);
@@ -1640,11 +1640,36 @@ static void request_finish(REQUEST *request, int action)
 		 *	adding their own reject delay, which would
 		 *	result in N*reject_delays being applied.
 		 */
-		if (request->proxy && (!request->proxy_reply || request->proxy->dst_port != 0)) {
+		if (request->proxy && !request->root->delay_proxy_rejects &&
+		    (!request->proxy_reply || request->proxy->dst_port != 0)) {
 			request->response_delay.tv_sec = 0;
 			request->response_delay.tv_usec = 0;
 		}
 #endif
+
+		/*
+		 *	We want to delay for AT LEAST the delay.  We
+		 *	don't want to ADD in the delay.
+		 */
+		if ((request->response_delay.tv_sec != 0) ||
+		    (request->response_delay.tv_usec != 0)) {
+			struct timeval when;
+
+			/*
+			 *	if ((received time + delay) < now) {
+			 *		send packet
+			 *	else
+			 *		delay = (received time + delay) - now
+			 */
+			timeradd(&request->packet->timestamp, &request->response_delay, &when);
+
+			if (timercmp(&when, &request->reply->timestamp, <=)) {
+				request->response_delay.tv_sec = 0;
+				request->response_delay.tv_usec = 0;
+			} else {
+				timersub(&when, &request->reply->timestamp, &request->response_delay);
+			}
+		}
 	}
 
 	/*
@@ -2119,6 +2144,13 @@ static REQUEST *request_setup(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PA
 		request->server = listener->server;
 	} else {
 		request->server = NULL;
+	}
+
+	if (fr_debug_lvl) {
+		if (virtual_server_sanity_check(request) < 0) {
+			talloc_free(request);
+			return NULL;
+		}
 	}
 
 	request->root = &main_config;
@@ -2774,6 +2806,24 @@ static int process_proxy_reply(REQUEST *request, RADIUS_PACKET *reply)
 		return 0;
 	}
 
+	/*
+	 *	If we have affinity, then maybe update State.  But
+	 *	only for Access-Request, and only if there's a State
+	 *	attribute in the reply.
+	 */
+	if (request->home_pool && request->home_pool->affinity_group &&
+	    (request->reply->code == PW_CODE_ACCESS_CHALLENGE) &&
+	    ((vp = fr_pair_find_by_num(request->reply->vps, PW_STATE, 0, TAG_ANY)) != NULL)) {
+		uint8_t *src;
+
+		src = talloc_array(vp, uint8_t, vp->vp_length + 1);
+		if (!src) return 0; 
+
+		src[0] = request->home_server->affinity;
+		memcpy(&src[1], vp->vp_octets, vp->vp_length);
+		fr_pair_value_memsteal(vp, src);
+	}
+
 	return 1;
 }
 
@@ -3322,7 +3372,7 @@ static int request_will_proxy(REQUEST *request)
 	} else if (((vp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IP_ADDRESS, 0, TAG_ANY)) != NULL) ||
 		   ((vp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IPV6_ADDRESS, 0, TAG_ANY)) != NULL)) {
 		uint16_t dst_port;
-		fr_ipaddr_t dst_ipaddr;
+		fr_ipaddr_t dst_ipaddr, src_ipaddr;
 
 		memset(&dst_ipaddr, 0, sizeof(dst_ipaddr));
 
@@ -3359,6 +3409,28 @@ static int request_will_proxy(REQUEST *request)
 			dst_port = vp->vp_integer;
 		}
 
+		if (((vp = fr_pair_find_by_num(request->config, PW_PACKET_SRC_IP_ADDRESS, 0, TAG_ANY)) != NULL) ||
+		    ((vp = fr_pair_find_by_num(request->config, PW_PACKET_SRC_IPV6_ADDRESS, 0, TAG_ANY)) != NULL)) {
+			if (((dst_ipaddr.af == AF_INET) && (vp->da->attr != PW_PACKET_SRC_IP_ADDRESS)) ||
+			    ((dst_ipaddr.af == AF_INET6) && (vp->da->attr != PW_PACKET_SRC_IPV6_ADDRESS))) {
+				REDEBUG("Cannot mix IPv4 and IPv6 source and destination addresses");
+				return 0;
+			}
+			if (vp->da->attr == PW_PACKET_SRC_IP_ADDRESS) {
+				src_ipaddr.af = AF_INET;
+				src_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
+				src_ipaddr.prefix = 32;
+			} else {
+				src_ipaddr.af = AF_INET6;
+				memcpy(&src_ipaddr.ipaddr.ip6addr, &vp->vp_ipv6addr, sizeof(vp->vp_ipv6addr));
+				src_ipaddr.prefix = 128;
+			}
+			home = home_server_find_bysrc(&dst_ipaddr, dst_port, IPPROTO_UDP, &src_ipaddr);
+			if (!home) home_server_find_bysrc(&dst_ipaddr, dst_port, IPPROTO_TCP, &src_ipaddr);
+			if (!home) goto no_home;
+			goto found_home;
+		}
+
 		/*
 		 *	Find the home server.
 		 */
@@ -3366,13 +3438,14 @@ static int request_will_proxy(REQUEST *request)
 		if (!home) home = home_server_find(&dst_ipaddr, dst_port, IPPROTO_TCP);
 		if (!home) {
 			char buffer[256];
-
+		no_home:
 			RWDEBUG("No such home server %s port %u",
 				inet_ntop(dst_ipaddr.af, &dst_ipaddr.ipaddr, buffer, sizeof(buffer)),
 				(unsigned int) dst_port);
 			return 0;
 		}
 
+	found_home:
 		/*
 		 *	The home server is alive (or may be alive).
 		 *	Send the packet to the IP.

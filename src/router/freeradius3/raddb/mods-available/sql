@@ -2,7 +2,7 @@
 ##
 ## mods-available/sql -- SQL modules
 ##
-##	$Id: 68ac4da753b5db0671e2cd1bd1589daec4bf1b1e $
+##	$Id: 38a8f76b64e88b1dd2f2b4288576825553fa675a $
 
 ######################################################################
 #
@@ -402,6 +402,19 @@ sql {
 	#  Set this option to yes to use the database driver provided escape
 	#  function.
 #	auto_escape = no
+
+	#  When the SQL module is called in accounting and post-auth one or
+	#  more queries may be run, until at least one record is updated.
+	#
+	#  It can be helpful to know which query was run.  E.g. the default
+	#  queries for Interim-Update handling, start with an UPDATE and
+	#  if that does not update any records, an INSERT is run.  Knowing
+	#  which query updated data indicates the state of the data prior
+	#  to the update.
+	#
+	#  Setting this to 'yes', will cause `&control:SQL-Query-Number` to be
+	#  populated with the number of the query which updated data.
+#	record_query_number = no
 
 	# Read database-specific queries
 	$INCLUDE ${modconfdir}/${.:name}/main/${dialect}/queries.conf

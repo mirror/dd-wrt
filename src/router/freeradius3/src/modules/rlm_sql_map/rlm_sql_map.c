@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 28e263424835d515ac98b9b5fac238b89999a527 $
+ * $Id: 9c3f47606d267e683b0a564fc07b36740e5e760b $
  * @file rlm_sql_map.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2021  The FreeRADIUS server project
  * @copyright 2021  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 28e263424835d515ac98b9b5fac238b89999a527 $")
+RCSID("$Id: 9c3f47606d267e683b0a564fc07b36740e5e760b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -181,6 +181,9 @@ static int sql_map_getvalue(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request,
 		vp = fr_pair_afrom_da(ctx, map->lhs->tmpl_da);
 		rad_assert(vp);
 
+		vp->op = map->op;
+		vp->tag = map->lhs->tmpl_tag;
+
 		if (fr_pair_value_from_str(vp, value, -1) < 0) {
 			char *escaped;
 
@@ -191,7 +194,6 @@ static int sql_map_getvalue(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request,
 			break;
 		}
 
-		vp->op = map->op;
 		fr_cursor_insert(&cursor, vp);
 		break;
 

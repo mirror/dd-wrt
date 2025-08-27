@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1ca2f914c258f3c199274421d7d2e2c96e747b18 $
+ * $Id: cc31fdd0361868c7afdef53f97125426e861b3e3 $
  *
  * @brief Logging functions used by the server core.
  * @file main/log.c
@@ -25,7 +25,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  * @copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
-RCSID("$Id: 1ca2f914c258f3c199274421d7d2e2c96e747b18 $")
+RCSID("$Id: cc31fdd0361868c7afdef53f97125426e861b3e3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -219,6 +219,7 @@ fr_log_t default_log = {
 	.dst = L_DST_STDOUT,
 	.file = NULL,
 	.debug_file = NULL,
+	.timestamp = false,
 };
 
 static int stderr_fd = -1;	//!< The original unmolested stderr file descriptor
@@ -401,7 +402,7 @@ int vradlog(log_type_t type, char const *msg, va_list ap)
 	 *	of debugging.
 	 */
 	if (default_log.dst != L_DST_SYSLOG) {
-		if ((rad_debug_lvl != 1) && (rad_debug_lvl != 2)) {
+		if (((rad_debug_lvl != 1) && (rad_debug_lvl != 2)) || default_log.timestamp) {
 			time_t timeval;
 
 			timeval = time(NULL);

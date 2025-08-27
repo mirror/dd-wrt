@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4742f9f9630936193c838790056c125fe681cf6d $
+ * $Id: 7ac5f6ac09bbf708bb884133f3369f65997dc1af $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -23,7 +23,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id: 4742f9f9630936193c838790056c125fe681cf6d $")
+RCSID("$Id: 7ac5f6ac09bbf708bb884133f3369f65997dc1af $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -1743,7 +1743,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 			nt_password->vp_octets = p = talloc_array(nt_password, uint8_t, nt_password->vp_length);
 
 			if (mschap_ntpwdhash(p, password->vp_strvalue) < 0) {
-				RERROR("Failed generating NT-Password");
+				RERROR("Failed generating NT-Password - %s", fr_strerror());
 				return RLM_MODULE_FAIL;
 			}
 		} else if (auth_method == AUTH_INTERNAL) {

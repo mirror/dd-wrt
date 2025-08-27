@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c381b72e94dcdb7ed5eb95737238e6eaa6bd46c3 $
+ * $Id: e795ca2b3df8886f9fb7786654aeba209b650139 $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: c381b72e94dcdb7ed5eb95737238e6eaa6bd46c3 $")
+RCSID("$Id: e795ca2b3df8886f9fb7786654aeba209b650139 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -325,7 +325,11 @@ static int rad_sendto(int sockfd, void *data, size_t data_len, int flags,
 done:
 #endif
 	if (rcode < 0) {
-		fr_strerror_printf("sendto failed: %s", fr_syserror(errno));
+		if (errno == EMSGSIZE) {
+			fr_strerror_printf("sendto failed - destination does not support UDP fragmentation: %s", fr_syserror(errno));
+		} else {
+			fr_strerror_printf("sendto failed: %s", fr_syserror(errno));
+		}
 	}
 
 	return rcode;

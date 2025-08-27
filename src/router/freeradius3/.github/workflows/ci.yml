@@ -152,9 +152,10 @@ jobs:
         libnl-genl-3-dev \
         libpam0g-dev \
         libpcap-dev \
-        libpcre3-dev \
+        libpcre2-dev \
         libperl-dev \
         libpq-dev \
+        librdkafka-dev \
         libreadline-dev \
         libruby \
         libsnmp-dev \
@@ -270,6 +271,8 @@ jobs:
             # memory leak in rlm_{ldap,rest} and problems in perl+llvm
             rm -rf src/tests/modules/ldap/
             rm -rf src/tests/modules/rest/
+            # Spurious leak that is not detected with "-m", i.e. not calling dlclose on the module
+            rm -rf src/tests/modules/kafka/
         else
             enable_sanitizers=""
             extra_cflags=""

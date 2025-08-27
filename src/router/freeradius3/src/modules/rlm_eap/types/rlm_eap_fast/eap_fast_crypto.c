@@ -1,7 +1,7 @@
 /*
  * fast-crypto.c  Cryptographic functions for EAP-FAST.
  *
- * Version:     $Id: e386e7041c4d1d88760c53de35831242093a29d5 $
+ * Version:     $Id: c517623cf22c7258aa1bc8b3b5e4b2e745ffdf26 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: e386e7041c4d1d88760c53de35831242093a29d5 $")
+RCSID("$Id: c517623cf22c7258aa1bc8b3b5e4b2e745ffdf26 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <stdio.h>
@@ -190,7 +190,7 @@ int eap_fast_decrypt(uint8_t const *ciphertext, size_t ciphertext_len,
 	/* Clean up */
 	EVP_CIPHER_CTX_free(ctx);
 
-	if (ret < 0) return -1;
+	if (ret == 0) return -1;
 
 	/* Success */
 	plaintext_len += len;

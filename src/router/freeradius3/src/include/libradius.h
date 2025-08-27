@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: d3a47815847652873076bc7e25f1e0e0fcc2371d $
+ * $Id: 9dd22b3361a48629bf5216d8b8246fc04f583d36 $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: d3a47815847652873076bc7e25f1e0e0fcc2371d $")
+RCSIDH(libradius_h, "$Id: 9dd22b3361a48629bf5216d8b8246fc04f583d36 $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -152,6 +152,7 @@ typedef void (*sig_t)(int);
 #define TAG_VALID(x)		((x) > 0 && (x) < 0x20)
 #define TAG_VALID_ZERO(x)	((x) < 0x20)
 #define TAG_ANY			INT8_MIN
+#define TAG_VALUE		(INT8_MIN + 1)
 #define TAG_NONE		0
 /** Check if tags are equal
  *

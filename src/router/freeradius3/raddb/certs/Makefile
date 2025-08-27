@@ -5,7 +5,7 @@
 #
 #	See the README file in this directory for more information.
 #	
-#	$Id: 6c3dccc174bf0f995bb7930711ee81d22088ca70 $
+#	$Id: 1b6b944ee3ad2512cba7803db7cb013706318bec $
 #
 ######################################################################
 
@@ -75,6 +75,9 @@ server.crt: server.csr ca.key ca.pem
 
 server.p12: server.crt
 	openssl pkcs12 -export -in server.crt -inkey server.key -out server.p12  -passin pass:$(PASSWORD_SERVER) -passout pass:$(PASSWORD_SERVER)
+
+server.der: server.pem
+	$(OPENSSL) x509 -inform PEM -outform DER -in server.pem -out server.der
 
 server.pem: server.p12
 	openssl pkcs12 -in server.p12 -out server.pem -passin pass:$(PASSWORD_SERVER) -passout pass:$(PASSWORD_SERVER)

@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 43561641920d14c46a55a87946aa1a7c6bd8ac3d $
+ * Version:     $Id: 6ecae94aa42108552f950ad177e003a6e23f51b9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 43561641920d14c46a55a87946aa1a7c6bd8ac3d $")
+RCSID("$Id: 6ecae94aa42108552f950ad177e003a6e23f51b9 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
@@ -296,13 +296,16 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 
 	eaptls_gen_keys_only(request, s, label, context, context_size, out, sizeof(out));
 
+	/*
+	 *	Add these before the MPPE keys for TEAP.
+	 */
+	eap_add_reply(request, "EAP-MSK", out, 64);
+	eap_add_reply(request, "EAP-EMSK", out + 64, 64);
+
 	p = out;
 	eap_add_reply(request, "MS-MPPE-Recv-Key", p, EAPTLS_MPPE_KEY_LEN);
 	p += EAPTLS_MPPE_KEY_LEN;
 	eap_add_reply(request, "MS-MPPE-Send-Key", p, EAPTLS_MPPE_KEY_LEN);
-
-	eap_add_reply(request, "EAP-MSK", out, 64);
-	eap_add_reply(request, "EAP-EMSK", out + 64, 64);
 }
 
 #define FR_TLS_PRF_CHALLENGE		"ttls challenge"

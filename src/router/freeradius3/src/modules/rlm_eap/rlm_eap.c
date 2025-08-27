@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f94c4928a1e172cec27f7770d58b1dca7904e938 $
+ * $Id: 3c1d2776ab02ebf8a3aa4c4970ad312b9997f82d $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: f94c4928a1e172cec27f7770d58b1dca7904e938 $")
+RCSID("$Id: 3c1d2776ab02ebf8a3aa4c4970ad312b9997f82d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -40,7 +40,7 @@ static const CONF_PARSER module_config[] = {
 	{ "cisco_accounting_username_bug", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_eap_t, mod_accounting_username_bug), "no" },
 	{ "allow_empty_identities", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_eap_t, allow_empty_identities), NULL },
 	{ "max_sessions", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_eap_t, max_sessions), "2048" },
-	{ "dedup_key", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_eap_t, dedup_key), "" },
+	{ "dedup_key", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_eap_t, dedup_key), "" },
 	CONF_PARSER_TERMINATOR
 };
 

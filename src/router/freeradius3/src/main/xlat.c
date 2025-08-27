@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4bd0a379cb418e78e148b1fb171fdc3035788e8c $
+ * $Id: 37cf6ebc8e64e58b5951f1f229c0003532920e94 $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 4bd0a379cb418e78e148b1fb171fdc3035788e8c $")
+RCSID("$Id: 37cf6ebc8e64e58b5951f1f229c0003532920e94 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1509,12 +1509,24 @@ static ssize_t xlat_tokenize_literal(TALLOC_CTX *ctx, char *fmt, xlat_exp_t **he
 
 		/*
 		 *	Check for valid single-character expansions.
+		 *
+		 *	Allow '%' at the end of a string as itself.
 		 */
-		if (p[0] == '%') {
+		if ((p[0] == '%') && p[1]) {
 			ssize_t slen;
 			xlat_exp_t *next;
 
-			if (!p[1] || !strchr("%}cdelmntCDGHIMSTYv", p[1])) {
+			/*
+			 *	%" is likely the end of a string inside of a string.
+			 *	We'll allow it.
+			 */
+			if ((p[1] == '"') || (p[1] == '\'') || (p[1] == '`') || (p[1] == '/')) {
+				p += 2;
+				node->len += 2;
+				continue;
+			}
+
+			if (!strchr("%}cdelmntCDGHIMSTYv", p[1])) {
 				talloc_free(node);
 				*error = "Invalid variable expansion";
 				p++;
@@ -1629,7 +1641,9 @@ static void xlat_tokenize_debug(xlat_exp_t const *node, int lvl)
 				DEBUG("%.*sref  %d", lvl + 1, xlat_tabs, node->attr.tmpl_request);
 				DEBUG("%.*slist %d", lvl + 1, xlat_tabs, node->attr.tmpl_list);
 
-				if (node->attr.tmpl_tag != TAG_ANY) {
+				if (node->attr.tmpl_tag == TAG_VALUE) {
+					DEBUG("%.*stag V", lvl + 1, xlat_tabs);
+				} else if (node->attr.tmpl_tag != TAG_ANY) {
 					DEBUG("%.*stag %d", lvl + 1, xlat_tabs, node->attr.tmpl_tag);
 				}
 				if (node->attr.tmpl_num != NUM_ANY) {

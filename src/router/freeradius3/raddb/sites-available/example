@@ -2,7 +2,7 @@
 #
 #	An example virtual server configuration.
 #
-#	$Id: 5f204aaa6fc87e487b8542e1e4781623ff7f4a73 $
+#	$Id: 1457d29c891806ca7ec22ce8bcc8af5afe0588d4 $
 #
 ######################################################################
 
@@ -61,7 +61,7 @@ server example {
 	#
 	listen {
 		ipaddr = 192.0.2.1
-		port = 1821
+		port = 1812
 		type = auth
 	}
 

@@ -1,7 +1,7 @@
 /*
  * eap_chbind.c
  *
- * Version:     $Id: 21b258410cf2b4293a37aebb49d2adeaeba74ca2 $
+ * Version:     $Id: 5237b2a8cea72f7970f59edc5e698553ca9c47c5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 
-RCSID("$Id: 21b258410cf2b4293a37aebb49d2adeaeba74ca2 $")
+RCSID("$Id: 5237b2a8cea72f7970f59edc5e698553ca9c47c5 $")
 
 #include "eap_chbind.h"
 
@@ -207,7 +207,7 @@ PW_CODE chbind_process(REQUEST *request, CHBIND_REQ *chbind)
 	fake->server = "channel_bindings";
 	fake->packet->code = PW_CODE_ACCESS_REQUEST;
 
-	switch (rad_virtual_server(fake)) {
+	switch (rad_virtual_server(fake, true)) {
 		/* If rad_authenticate succeeded, build a reply */
 	case RLM_MODULE_OK:
 	case RLM_MODULE_HANDLED:

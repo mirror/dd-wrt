@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4f0f68d7f3416ff362de68b87c09b05b5981826b $
+ * $Id: 6df12086a74ce57993ba62a682ec4a2a963f3098 $
  * @file rlm_python3.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 4f0f68d7f3416ff362de68b87c09b05b5981826b $")
+RCSID("$Id: 6df12086a74ce57993ba62a682ec4a2a963f3098 $")
 
 #define LOG_PREFIX "rlm_python3 - "
 
@@ -360,11 +360,7 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 		}
 
 		vp->op = op;
-
-		/*
-		 *	@todo - use tmpl_cast_to_vp() instead ???
-		 */
-		if (vp->da->flags.has_tag) vp->tag = dst.tmpl_tag;
+		vp->tag = dst.tmpl_tag;
 
 		if (fr_pair_value_from_str(vp, s2, -1) < 0) {
 			DEBUG("%s - Failed: '%s:%s' %s '%s'", funcname, list_name, s1,
@@ -705,7 +701,6 @@ static void python_interpreter_free(PyThreadState *interp)
 	PyEval_RestoreThread(interp);
 	PyThreadState_Swap(interp);
 	Py_EndInterpreter(interp);
-	PyEval_SaveThread();
 }
 
 /** Destroy a thread state
@@ -1125,7 +1120,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 	/*
 	 * prepare radiusd module to be loaded
 	 */
-	if (!inst->cext_compat || !main_module) {
+	if ((!inst->cext_compat || !main_module) && (python_instances == 0)) {
 		/*
 		 * This is ugly, but there is no other way to pass parameters to PyMODINIT_FUNC
 		 */
@@ -1188,7 +1183,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 
 #if PY_VERSION_HEX <= 0x030a0000
 		Py_InitializeEx(0);			/* Don't override signal handlers - noop on subs calls */
-#if PY_VERSION_HEX <= 0x03060000
+#if PY_VERSION_HEX < 0x03070000
 		PyEval_InitThreads(); 			/* This also grabs a lock (which we then need to release) */
 #endif
 #endif
@@ -1210,6 +1205,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 	 */
 	if (!inst->cext_compat) {
 		inst->sub_interpreter = Py_NewInterpreter();
+		locked = true;
 	} else {
 		inst->sub_interpreter = main_interpreter;
 	}

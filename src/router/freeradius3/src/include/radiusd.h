@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: da7a6b8421fbaed9baebcca46c6cdb114022e9b7 $
+ * $Id: 67ef17e17d6cfacc5dfdfe535078637951f0c372 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: da7a6b8421fbaed9baebcca46c6cdb114022e9b7 $")
+RCSIDH(radiusd_h, "$Id: 67ef17e17d6cfacc5dfdfe535078637951f0c372 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -133,6 +133,7 @@ typedef struct main_config {
 	bool		proxy_requests;			//!< Toggle to enable/disable proxying globally.
 #endif
 	struct timeval	reject_delay;			//!< How long to wait before sending an Access-Reject.
+	bool		delay_proxy_rejects;		//!< do we delay proxied rejects
 	bool		status_server;			//!< Whether to respond to status-server messages.
 
 
@@ -469,7 +470,7 @@ int	regex_request_to_sub(TALLOC_CTX *ctx, char **out, REQUEST *request, uint32_t
 /*
  *	Named capture groups only supported by PCRE.
  */
-#  ifdef HAVE_PCRE
+#  if defined(HAVE_PCRE) || defined(HAVE_PCRE2)
 int	regex_request_to_sub_named(TALLOC_CTX *ctx, char **out, REQUEST *request, char const *name);
 #  endif
 #endif
@@ -495,7 +496,7 @@ void		version_print(void);
 char	*auth_name(char *buf, size_t buflen, REQUEST *request, bool do_cli);
 int		rad_authenticate (REQUEST *);
 int		rad_postauth(REQUEST *);
-int		rad_virtual_server(REQUEST *);
+int		rad_virtual_server(REQUEST *, bool check_username);
 
 /* exec.c */
 pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,

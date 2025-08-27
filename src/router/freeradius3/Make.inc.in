@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # Make.inc.in
 #
-# Version:	$Id: 6d5cc1c343ce49e3bd2694a889ca238c0fdad1b7 $
+# Version:	$Id: eb15b4e554c3a63decca24cdc8d8f65a02d91e4f $
 #
 
 # Location of files.
@@ -53,6 +53,13 @@ INCLUDE		= -I. -Isrc \
 		  -include src/freeradius-devel/features.h \
 		  -include src/freeradius-devel/radpaths.h
 CFLAGS		= $(INCLUDE) -fno-strict-aliasing @CFLAGS@
+
+#
+#  To quiet modern compilers.  We're not going to fix warnings in the v3.2.x branch.
+#
+#CFLAGS		+= -Wno-unsafe-buffer-usage -Wno-extra-semi-stmt -Wno-format -Wno-reserved-macro-identifier \
+#		   -Wno-reserved-identifier -Wno-switch-default -Wno-implicit-fallthrough
+
 CPPFLAGS	= @CPPFLAGS@
 LIBPREFIX	= @LIBPREFIX@
 EXEEXT		= @EXEEXT@

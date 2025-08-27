@@ -16,7 +16,7 @@
  */
 
 /**
- * $Id: d05ae120af65d637a8205d5da71df5955e8e873a $
+ * $Id: 132db6f2fa50364ebb04c0f4122f1202a84464c6 $
  * @file lib/json/base.h
  * @brief Implements the evaluation and parsing functions for the FreeRADIUS version of jpath.
  *
@@ -27,7 +27,7 @@
  * @copyright 2015,2021 Network RADIUS SARL (legal@networkradius.com)
  * @copyright 2015 The FreeRADIUS Server Project
  */
-RCSIDH(json_h, "$Id: d05ae120af65d637a8205d5da71df5955e8e873a $")
+RCSIDH(json_h, "$Id: 132db6f2fa50364ebb04c0f4122f1202a84464c6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include "config.h"
@@ -78,6 +78,7 @@ typedef struct {
 	char const		*attr_prefix;	//!< Prefix to add to all attribute names
 	bool			value_as_array;	//!< Use JSON array for multiple attribute values.
 	bool			enum_as_int;	//!< Output enums as value, not their string representation.
+	bool			dates_as_int;	//!< Output dates as epoch seconds, not their string representation.
 	bool			always_string;	//!< Output all data types as strings.
 
 
@@ -90,7 +91,7 @@ typedef struct {
 } rlm_json_t;
 
 
-json_object	*json_object_from_attr_value(TALLOC_CTX *ctx, VALUE_PAIR const *vp, bool always_string, bool enum_as_int);
+json_object	*json_object_from_attr_value(TALLOC_CTX *ctx, VALUE_PAIR const *vp, bool always_string, bool enum_as_int, bool dates_as_int);
 void		fr_json_version_print(void);
 char		*fr_json_afrom_pair_list(TALLOC_CTX *ctx, VALUE_PAIR *vps,
 					 rlm_json_t const *format);

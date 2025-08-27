@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: 29fc2be1b9912c51affbe05ab1300630008c6dbd $
+ * Version:	$Id: 3ad581e8b160379d0f135ba17f94f4f850f41025 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 29fc2be1b9912c51affbe05ab1300630008c6dbd $")
+RCSID("$Id: 3ad581e8b160379d0f135ba17f94f4f850f41025 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1688,9 +1688,54 @@ int modcall_fixup_update(vp_map_t *map, UNUSED void *ctx)
 				}
 				talloc_free(vpt);
 
-			} else if (tmpl_cast_in_place(map->rhs, map->lhs->tmpl_da->type, map->lhs->tmpl_da) < 0) {
-				cf_log_err(map->ci, "%s", fr_strerror());
-				return -1;
+			} else if (map->lhs->tmpl_tag != TAG_VALUE) {
+			do_cast:
+				if (tmpl_cast_in_place(map->rhs, map->lhs->tmpl_da->type, map->lhs->tmpl_da) < 0) {
+					cf_log_err(map->ci, "%s", fr_strerror());
+					return -1;
+				}
+
+			} else if (map->rhs->name[0] != ':') {
+				map->lhs->tmpl_tag = TAG_NONE; /* no tag, just do the cast */
+				goto do_cast;
+
+			} else {
+				ssize_t ret;
+				long num;
+				char const *p = map->rhs->name;
+				char *end;
+				vp_tmpl_t *vpt;
+
+				num = strtol(p + 1, &end, 10);
+				if ((num > 0x1f) || (num < 0)) {
+					cf_log_err(map->ci, "Invalid tag value '%li' (should be between 0-31)", num);
+					return -1;
+				}
+
+				if (*end && (*end != ':')) {
+					cf_log_err(map->ci, "Invalid tag is missing trailing ':'");
+					return -1;
+				}
+
+				map->lhs->tmpl_tag = num;
+				vpt = map->rhs;
+				vpt->tmpl_data_type = map->lhs->tmpl_da->type;
+
+				/*
+				 *	Just to tmpl_cast_in_place()
+				 *	ourselves, rather than mucking
+				 *	with strings.
+				 */
+				ret = value_data_from_str(vpt, &vpt->tmpl_data_value,
+							  &vpt->tmpl_data_type, map->lhs->tmpl_da,
+							  end + 1, strlen(end + 1), '\0');
+				if (ret < 0) {
+					cf_log_err(map->ci, "%s", fr_strerror());
+					return -1;
+				}
+
+				vpt->type = TMPL_TYPE_DATA;
+				vpt->tmpl_data_length = (size_t) ret;
 			}
 
 			/*
@@ -1734,7 +1779,7 @@ static modcallable *do_compile_modupdate(modcallable *parent, rlm_components_t c
 	if (rcode < 0) return NULL; /* message already printed */
 	if (!head) {
 		cf_log_err_cs(cs, "'update' sections cannot be empty");
-		return NULL;
+		cf_log_err_cs(cs, DOC_KEYWORD_REF(update));
 	}
 
 	g = talloc_zero(parent, modgroup);
@@ -1777,12 +1822,14 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 	name2 = cf_section_name2(cs);
 	if (!name2) {
 		cf_log_err_cs(cs, "You must specify a variable to switch over for 'switch'");
+	print_url:
+		cf_log_err_cs(cs, DOC_KEYWORD_REF(switch));
 		return NULL;
 	}
 
 	if (!cf_item_find_next(cs, NULL)) {
 		cf_log_err_cs(cs, "'switch' statements cannot be empty");
-		return NULL;
+		goto print_url;
 	}
 
 	/*
@@ -1805,7 +1852,7 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 		talloc_free(spaces);
 		talloc_free(text);
 
-		return NULL;
+		goto print_url;
 	}
 
 	/*
@@ -1815,7 +1862,7 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 
 	if (vpt->type == TMPL_TYPE_LIST) {
 		cf_log_err_cs(cs, "Syntax error: Cannot switch over list '%s'", name2);
-		return NULL;
+		goto print_url;
 	}
 
 	/*
@@ -1842,7 +1889,7 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 
 			cf_log_err(ci, "\"switch\" sections can only have \"case\" subsections");
 			talloc_free(vpt);
-			return NULL;
+			goto print_url;
 		}
 
 		subcs = cf_item_to_section(ci);	/* can't return NULL */
@@ -1851,7 +1898,7 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 		if (strcmp(name1, "case") != 0) {
 			cf_log_err(ci, "\"switch\" sections can only have \"case\" subsections");
 			talloc_free(vpt);
-			return NULL;
+			goto print_url;
 		}
 
 		name2 = cf_section_name2(subcs);
@@ -1863,7 +1910,7 @@ static modcallable *do_compile_modswitch (modcallable *parent, rlm_components_t 
 
 			cf_log_err(ci, "Cannot have two 'default' case statements");
 			talloc_free(vpt);
-			return NULL;
+			goto print_url;
 		}
 	}
 
@@ -1919,6 +1966,7 @@ static modcallable *do_compile_modcase(modcallable *parent, rlm_components_t com
 			talloc_free(spaces);
 			talloc_free(text);
 
+			cf_log_err_cs(cs, DOC_KEYWORD_REF(case));
 			return NULL;
 		}
 
@@ -1986,6 +2034,8 @@ static modcallable *do_compile_modforeach(modcallable *parent,
 
 	if (!cf_item_find_next(cs, NULL)) {
 		cf_log_err_cs(cs, "'foreach' blocks cannot be empty");
+	print_url:
+		cf_log_err_cs(cs, DOC_KEYWORD_REF(forach));
 		return NULL;
 	}
 
@@ -2009,7 +2059,7 @@ static modcallable *do_compile_modforeach(modcallable *parent,
 		talloc_free(spaces);
 		talloc_free(text);
 
-		return NULL;
+		goto print_url;
 	}
 
 	/*
@@ -2020,7 +2070,7 @@ static modcallable *do_compile_modforeach(modcallable *parent,
 
 	if ((vpt->type != TMPL_TYPE_ATTR) && (vpt->type != TMPL_TYPE_LIST)) {
 		cf_log_err_cs(cs, "MUST use attribute or list reference in 'foreach'");
-		return NULL;
+		goto print_url;
 	}
 
 	/*
@@ -2060,6 +2110,7 @@ static modcallable *do_compile_modbreak(modcallable *parent,
 
 	if (!cs) {
 		cf_log_err(ci, "'break' can only be used in a 'foreach' section");
+		cf_log_err(ci, DOC_KEYWORD_REF(break));
 		return NULL;
 	}
 
@@ -2319,6 +2370,7 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 			*modname = name2;
 
 			if (!all_children_are_modules(cs, modrefname)) {
+				cf_log_err_cs(cs, DOC_KEYWORD_REF(redundant));
 				return NULL;
 			}
 
@@ -2330,6 +2382,7 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 			*modname = name2;
 
 			if (!all_children_are_modules(cs, modrefname)) {
+				cf_log_err_cs(cs, DOC_KEYWORD_REF(load-balance));
 				return NULL;
 			}
 
@@ -2341,6 +2394,7 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 			*modname = name2;
 
 			if (!all_children_are_modules(cs, modrefname)) {
+				cf_log_err_cs(cs, DOC_KEYWORD_REF(redundant-load-balance));
 				return NULL;
 			}
 
@@ -2352,6 +2406,7 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 		} else 	if (strcmp(modrefname, "if") == 0) {
 			if (!cf_section_name2(cs)) {
 				cf_log_err(ci, "'if' without condition");
+				cf_log_err(ci, DOC_KEYWORD_REF(if));
 				return NULL;
 			}
 
@@ -2369,11 +2424,13 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 			    ((parent->type == MOD_LOAD_BALANCE) ||
 			     (parent->type == MOD_REDUNDANT_LOAD_BALANCE))) {
 				cf_log_err(ci, "'elsif' cannot be used in this section");
+				cf_log_err(ci, DOC_KEYWORD_REF(elsif));
 				return NULL;
 			}
 
 			if (!cf_section_name2(cs)) {
 				cf_log_err(ci, "'elsif' without condition");
+				cf_log_err(ci, DOC_KEYWORD_REF(elsif));
 				return NULL;
 			}
 
@@ -2387,11 +2444,13 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 			    ((parent->type == MOD_LOAD_BALANCE) ||
 			     (parent->type == MOD_REDUNDANT_LOAD_BALANCE))) {
 				cf_log_err(ci, "'else' cannot be used in this section section");
+				cf_log_err_cs(cs, DOC_KEYWORD_REF(else));
 				return NULL;
 			}
 
 			if (cf_section_name2(cs)) {
 				cf_log_err(ci, "Cannot have conditions on 'else'");
+				cf_log_err(ci, DOC_KEYWORD_REF(else));
 				return NULL;
 			}
 
@@ -2472,6 +2531,7 @@ static modcallable *do_compile_modsingle(modcallable *parent,
 	if (strcmp(modrefname, "return") == 0) {
 		if (!cf_item_is_pair(ci)) {
 			cf_log_err(ci, "Invalid use of 'return' as section name.");
+			cf_log_err(ci, DOC_KEYWORD_REF(return));
 			return NULL;
 		}
 

@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id: 84660d7c1e84d9cdd144b2ceba08a44ebc44d7e1 $
+##	$Id: 97c7435a7c741138626a55153a322ca53fdc81f0 $
 
 #######################################################################
 #
@@ -1130,6 +1130,17 @@ eap {
 	#  EAP-TEAP
 	#
 	#  The TEAP module implements the EAP-TEAP protocol
+	#
+	#  Note that for Windows:
+	#
+	#  * "machine" authentication is ALWAYS EAP-TLS.
+	#  * "user" authentication is almost always EAP-MSCHAPv2,
+	#    except when Windows is configured for "smartcard"
+	#    authentication.
+	#
+	#  If you configure FreeRADIUS to do anything else, then
+	#  Windows will either fail, or will just return one of the
+	#  methods listed above.
 	#
 	#teap {
 		#  Point to the common TLS configuration

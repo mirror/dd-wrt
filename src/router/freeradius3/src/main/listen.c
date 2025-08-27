@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: b817248d71906f14efa7951157207268d268b104 $
+ * Version:	$Id: 6d578999ab15ed4be1a1c47e757f12bc15d37161 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: b817248d71906f14efa7951157207268d268b104 $")
+RCSID("$Id: 6d578999ab15ed4be1a1c47e757f12bc15d37161 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -279,13 +279,19 @@ RADCLIENT *client_listener_find(rad_listen_t *listener,
 
 	request->listener = listener;
 	request->client = client;
-	request->packet = rad_recv(NULL, listener->fd, 0x02); /* MSG_PEEK */
+
+	request->packet = rad_alloc(request, false);
 	if (!request->packet) {				/* badly formed, etc */
 		talloc_free(request);
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
 		goto unknown;
 	}
-	(void) talloc_steal(request, request->packet);
+	request->packet->src_ipaddr = *ipaddr;
+	request->packet->src_port = src_port;
+	request->packet->dst_ipaddr = sock->my_ipaddr;
+	request->packet->dst_port = sock->my_port;
+	request->packet->proto = sock->proto;
+
 	request->reply = rad_alloc_reply(request, request->packet);
 	if (!request->reply) {
 		talloc_free(request);
@@ -569,6 +575,8 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 			/*
 			 *	Don't change it from "auto" for wildcard clients.
 			 */
+			DEBUG("BlastRADIUS check: Received packet with Message-Authenticator.");
+			DEBUG("NOT changing \"require_message_authenticator\" flag for client %s with IP/mask", client->shortname);
 			return;
 
 		} else {
@@ -1151,7 +1159,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		switch (listener->tls->radiusv11) {
 		case FR_RADIUSV11_FORBID:
 			if (client->radiusv11 == FR_RADIUSV11_REQUIRE) {
-				INFO("Ignoring new connection as client is marked as 'radiusv11 = require', and this socket has 'radiusv11 = forbid'");
+				RATE_LIMIT(INFO("Ignoring new connection from client %s it is marked as 'radiusv11 = require', and this socket has 'radiusv11 = forbid'", client->shortname));
 				close(newfd);
 				return 0;
 			}
@@ -1165,7 +1173,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 
 		case FR_RADIUSV11_REQUIRE:
 			if (client->radiusv11 == FR_RADIUSV11_FORBID) {
-				INFO("Ignoring new connection as client is marked as 'radiusv11 = forbid', and this socket has 'radiusv11 = require'");
+				RATE_LIMIT(INFO("Ignoring new connection from client %s as it is marked as 'radiusv11 = forbid', and this socket has 'radiusv11 = require'", client->shortname));
 				close(newfd);
 				return 0;
 			}
@@ -1184,7 +1192,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		/*
 		 *	FIXME: Print client IP/port, and server IP/port.
 		 */
-		INFO("Ignoring new connection due to client max_connections (%d)", client->limit.max_connections);
+		RATE_LIMIT(INFO("Ignoring new connection from client %s due to client max_connections (%d)", client->shortname, client->limit.max_connections));
 		close(newfd);
 		return 0;
 	}
@@ -1195,7 +1203,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		/*
 		 *	FIXME: Print client IP/port, and server IP/port.
 		 */
-		INFO("Ignoring new connection due to socket max_connections");
+		RATE_LIMIT(INFO("Ignoring new connection from client %s due to socket max_connections (%d)", client->shortname, sock->limit.num_connections));
 		close(newfd);
 		return 0;
 	}
@@ -3661,18 +3669,6 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 #ifdef WITH_TLS
 	if ((home->proto == IPPROTO_TCP) && home->tls) {
 		DEBUG("(TLS) Trying new outgoing proxy connection to %s", buffer);
-
-		/*
-		 *	Set SNI, if configured.
-		 *
-		 *	The OpenSSL API says the filename is "char
-		 *	const *", but some versions have it as "void
-		 *	*", without the "const".  So we un-const it
-		 *	here through various C magic.
-		 */
-		if (home->tls->client_hostname) {
-			(void) SSL_set_tlsext_host_name(sock->ssn->ssl, (void *) (uintptr_t) home->tls->client_hostname);
-		}
 
 #ifdef WITH_RADIUSV11
 		this->radiusv11 = home->tls->radiusv11;

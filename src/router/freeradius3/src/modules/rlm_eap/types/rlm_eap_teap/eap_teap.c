@@ -1,7 +1,7 @@
 /*
  * eap_teap.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 8e372c69f311eb9e05015ff259bd0903d652d99e $
+ * Version:     $Id: 20646c5ba13d461f02f0f5a2afdfd13f2b0638c1 $
  *
  * Copyright (C) 2022 Network RADIUS SARL <legal@networkradius.com>
  *
@@ -21,7 +21,7 @@
  * SUCH DAMAGE.
  */
 
-RCSID("$Id: 8e372c69f311eb9e05015ff259bd0903d652d99e $")
+RCSID("$Id: 20646c5ba13d461f02f0f5a2afdfd13f2b0638c1 $")
 
 #include "eap_teap.h"
 #include "eap_teap_crypto.h"
@@ -168,26 +168,41 @@ static void eap_teap_derive_imck(REQUEST *request, tls_session_t *tls_session,
 	memcpy(&t->imck_msk, &imck_msk, sizeof(imck_msk));
 }
 
-static void eap_teap_tlv_append(tls_session_t *tls_session, int tlv, bool mandatory, int length, const void *data)
+static void eap_teap_tlv_append(REQUEST *request, tls_session_t *tls_session, int tlv, bool mandatory, int length, const void *data)
 {
 	uint16_t hdr[2];
 
 	hdr[0] = htons(tlv | (mandatory ? EAP_TEAP_TLV_MANDATORY : 0));
 	hdr[1] = htons(length);
 
+	if ((rad_debug_lvl > 1) && (length < 256)) {
+		DICT_ATTR const *da;
+
+		da = dict_attrbyvalue((tlv << 8) | PW_FREERADIUS_EAP_TEAP_TLV, VENDORPEC_FREERADIUS);
+		if (da) {
+			char buf[1024];
+
+			for (size_t i = 0; i < (size_t) length; i++) {
+				sprintf(&buf[2*i], "%02x", ((const uint8_t *)data)[i]);
+			}
+
+			RDEBUG("  %s = 0x%s", da->name, buf);
+		}
+	}
+
 	tls_session->record_plus(&tls_session->clean_in, &hdr, 4);
 	tls_session->record_plus(&tls_session->clean_in, data, length);
 }
 
-static void eap_teap_send_error(tls_session_t *tls_session, int error)
+static void eap_teap_send_error(REQUEST *request, tls_session_t *tls_session, int error)
 {
 	uint32_t value;
 	value = htonl(error);
 
-	eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_ERROR, true, sizeof(value), &value);
+	eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_ERROR, true, sizeof(value), &value);
 }
 
-static void eap_teap_append_identity_type(tls_session_t *tls_session, int value)
+static void eap_teap_append_identity_type(REQUEST *request, tls_session_t *tls_session, int value)
 {
 	uint16_t identity;
 	identity = htons(value);
@@ -202,7 +217,7 @@ static void eap_teap_append_identity_type(tls_session_t *tls_session, int value)
 	t->auths[value].required = true;
 	t->auths[value].sent = true;
 
-	eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_IDENTITY_TYPE, false, sizeof(identity), &identity);
+	eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_IDENTITY_TYPE, false, sizeof(identity), &identity);
 }
 
 static void eap_teap_append_result(REQUEST *request, tls_session_t *tls_session, PW_CODE code)
@@ -224,7 +239,7 @@ static void eap_teap_append_result(REQUEST *request, tls_session_t *tls_session,
 
 	RDEBUG("Phase 2: %s = %s", name, state_name);
 
-	eap_teap_tlv_append(tls_session, type, true, sizeof(state), &state);
+	eap_teap_tlv_append(request, tls_session, type, true, sizeof(state), &state);
 }
 
 static void eap_teap_append_eap_identity_request(REQUEST *request, tls_session_t *tls_session, eap_handler_t *eap_session)
@@ -239,7 +254,7 @@ static void eap_teap_append_eap_identity_request(REQUEST *request, tls_session_t
 	eap_packet.length[1] = EAP_HEADER_LEN + 1;
 	eap_packet.data[0] = PW_EAP_IDENTITY;
 
-	eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_EAP_PAYLOAD, true, sizeof(eap_packet), &eap_packet);
+	eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_EAP_PAYLOAD, true, sizeof(eap_packet), &eap_packet);
 }
 
 /*
@@ -258,8 +273,6 @@ static void eap_teap_append_crypto_binding(REQUEST *request, tls_session_t *tls_
 	size_t				olen, buflen;
 	struct crypto_binding_buffer	*cbb;
 	uint8_t				*outer_tlvs;
-
-	RDEBUG("Phase 2: Sending Cryptobinding");
 
 	eap_teap_derive_imck(request, tls_session, msk, msklen, emsk, emsklen);
 
@@ -281,9 +294,25 @@ static void eap_teap_append_crypto_binding(REQUEST *request, tls_session_t *tls_
 
 	cbb->binding.subtype = ((emsklen ? EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_BOTH : EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_MSK) << 4) | EAP_TEAP_TLV_CRYPTO_BINDING_SUBTYPE_REQUEST;
 
+	RDEBUG("Phase 2: Sending Crypto-Binding Flags=%d", emsklen ? EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_BOTH : EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_MSK);
+
 	rad_assert(sizeof(cbb->binding.nonce) % sizeof(uint32_t) == 0);
 	RANDFILL(cbb->binding.nonce);
 	cbb->binding.nonce[sizeof(cbb->binding.nonce) - 1] &= ~0x01; /* RFC 7170, Section 4.2.13 */
+
+	/*
+	 *	RFC7170bis:
+	 *
+	 *	> The Nonce field is 32 octets.  It contains a 256-bit nonce that is
+	 *	> temporally unique, used for Compound-MAC key derivation at each
+	 *	> end.  The nonce in a request MUST have its least significant bit
+	 *	> set to zero (0), and the nonce in a response MUST have the same
+	 *	> value as the request nonce except the least significant bit MUST
+	 *	> be set to one (1).
+	 *
+	 *	Uh.... it looks like we don't do this?  The Nonce
+	 *	field is actually not used for anything in RFC7170, either.
+	 */
 
 	outer_tlvs = &cbb->outer_tlvs[0];
 
@@ -312,7 +341,7 @@ static void eap_teap_append_crypto_binding(REQUEST *request, tls_session_t *tls_
 		memcpy(cbb->binding.emsk_compound_mac, &mac_emsk, sizeof(cbb->binding.emsk_compound_mac));
 	}
 
-	eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_CRYPTO_BINDING, true, sizeof(cbb->binding), (uint8_t *)&cbb->binding);
+	eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_CRYPTO_BINDING, true, sizeof(cbb->binding), (uint8_t *)&cbb->binding);
 }
 
 static int eap_teap_verify(REQUEST *request, tls_session_t *tls_session, uint8_t const *data, unsigned int data_len)
@@ -365,7 +394,7 @@ unexpected:
 						RDEBUG("Phase 2: - attribute %d is present", i);
 					}
 				}
-				eap_teap_send_error(tls_session, EAP_TEAP_ERR_UNEXPECTED_TLV);
+				eap_teap_send_error(request, tls_session, EAP_TEAP_ERR_UNEXPECTED_TLV);
 				return 0;
 			}
 
@@ -501,19 +530,31 @@ unexpected:
 	 */
 	if (status) {
 		if (status == EAP_TEAP_TLV_RESULT_FAILURE) {
-			if (!error) {
-				REDEBUG("Phase 2: Received Result from peer which indicates failure with error %u.  Rejecting request.", error);
+			if (error) {
+				REDEBUG("Phase 2: Received Result TLV from peer which indicates failure with error %u.  Rejecting request.", error);
 			} else {
-				REDEBUG("Phase 2: Received Result from peer which indicates failure.  Rejecting request.");
+				REDEBUG("Phase 2: Received Result TLV from peer which indicates failure.  Rejecting request.");
 			}
 			return 0;
 		}
 
 		if (status != EAP_TEAP_TLV_RESULT_SUCCESS) {
 		unknown_value:
-			REDEBUG("Phase 2: Received Result from peer with unknown value %u.  Rejecting request.", status);
+			REDEBUG("Phase 2: Received Result TLV from peer with unknown value %u.  Rejecting request.", status);
 			goto unexpected;
 		}
+	}
+
+	/*
+	 *	Success + fatal Error = Failure
+	 *
+	 *	A fatal error MUST be accompanied by a Result TLV indicating Failure.  But if the other end
+	 *	doesn't do that, we still tear down the session on Success + fatal error.
+	 */
+	if ((error >= 2000) && (error <= 2999)) {
+		REDEBUG("Phase 2: Received Error TLV from peer which indicates fatal error %u.  Rejecting request.",
+			error);
+		return 0;
 	}
 
 	/*
@@ -873,9 +914,9 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 	rlm_rcode_t			rcode = RLM_MODULE_REJECT;
 	VALUE_PAIR			*vp;
 	vp_cursor_t			cursor;
-	uint8_t				msk[2 * CHAP_VALUE_LENGTH] = {0}, emsk[2 * EAPTLS_MPPE_KEY_LEN] = {0};
+	uint8_t				msk[2 * EAPTLS_MPPE_KEY_LEN] = {0}, emsk[2 * EAPTLS_MPPE_KEY_LEN] = {0};
 	size_t				msklen = 0, emsklen = 0;
-	bool				doing_eap;
+	bool				doing_eap, msk1, msk2;
 
 	teap_tunnel_t	*t = tls_session->opaque;
 
@@ -893,27 +934,44 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 	switch (reply->code) {
 	case PW_CODE_ACCESS_ACCEPT:
 		RDEBUG("Phase 2: Got tunneled Access-Accept");
+		msk1 = msk2 = false;
 
 		for (vp = fr_cursor_init(&cursor, &reply->vps); vp; vp = fr_cursor_next(&cursor)) {
-			if (vp->da->attr == PW_EAP_EMSK) {
-				// FIXME check if we should be generating an emsk from MPPE keys below
-				emsklen = MIN(vp->vp_length, sizeof(emsk));
-				memcpy(emsk, vp->vp_octets, emsklen);
-				break;
+			debug_pair(vp);
+
+			if (vp->da->vendor == 0) {
+				if (vp->da->attr == PW_EAP_EMSK) {
+					emsklen = MIN(vp->vp_length, sizeof(emsk));
+					memcpy(emsk, vp->vp_octets, emsklen);
+					continue;
+				}
+
+				if (vp->da->attr == PW_EAP_MSK) {
+					msk1 = msk2 = true;
+					msklen = MIN(vp->vp_length, sizeof(msk));
+					memcpy(msk, vp->vp_octets, msklen);
+					continue;
+				}
 			}
+
+			if (msk1 && msk2 && emsklen) break;
 
 			if (vp->da->vendor != VENDORPEC_MICROSOFT) continue;
 
-			/* like for EAP-FAST, the keying material is used reversed */
 			switch (vp->da->attr) {
 			case PW_MSCHAP_MPPE_SEND_KEY:
 				if (vp->vp_length == EAPTLS_MPPE_KEY_LEN) {
-					/* do not set emsklen here so not to blat EAP-EMSK */
-					// emsklen = sizeof(emsk);
-					memcpy(emsk, vp->vp_octets, EAPTLS_MPPE_KEY_LEN);
-				} else if (vp->vp_length == CHAP_VALUE_LENGTH) {
-					msklen = sizeof(msk);
+					if (msk2) {
+						fr_assert(memcmp(&msk[EAPTLS_MPPE_KEY_LEN], vp->vp_octets, EAPTLS_MPPE_KEY_LEN) == 0);
+					} else {
+						memcpy(&msk[EAPTLS_MPPE_KEY_LEN], vp->vp_octets, EAPTLS_MPPE_KEY_LEN);
+						msk2 = true;
+					}
+
+				} else if (vp->vp_length == CHAP_VALUE_LENGTH) { /* reversed, like EAP-FAST */
+					msk2 = true;
 					memcpy(msk, vp->vp_octets, CHAP_VALUE_LENGTH);
+
 				} else {
 				wrong_length:
 					REDEBUG("Phase 2: Found %s with incorrect length.  Expected %u or %u, got %zu",
@@ -921,24 +979,28 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 					return RLM_MODULE_INVALID;
 				}
 
-				RDEBUGHEX("Phase 2: MSCHAP-MPPE-SEND-KEY [low MSK]", vp->vp_octets, vp->length);
+				RDEBUGHEX("Phase 2: MSCHAP-MPPE-Send-Key", vp->vp_octets, vp->length);
+				msklen += vp->length;
 				break;
 
 			case PW_MSCHAP_MPPE_RECV_KEY:
-				/* only do this if there is no EAP-EMSK */
-				if (vp->vp_length == EAPTLS_MPPE_KEY_LEN && emsklen == 0) {
-					msklen = sizeof(msk);
-					memcpy(msk, vp->vp_octets, EAPTLS_MPPE_KEY_LEN);
-					emsklen = sizeof(emsk);
-					memcpy(&emsk[EAPTLS_MPPE_KEY_LEN], vp->vp_octets, EAPTLS_MPPE_KEY_LEN);
+				if (vp->vp_length == EAPTLS_MPPE_KEY_LEN) {
+					if (msk1) {
+						fr_assert(memcmp(msk, vp->vp_octets, EAPTLS_MPPE_KEY_LEN) == 0);
+					} else {
+						memcpy(msk, vp->vp_octets, EAPTLS_MPPE_KEY_LEN);
+						msk1 = true;
+					}
+
 				} else if (vp->vp_length == CHAP_VALUE_LENGTH) {
-					msklen = sizeof(msk);
+					msk1 = true;
 					memcpy(&msk[CHAP_VALUE_LENGTH], vp->vp_octets, CHAP_VALUE_LENGTH);
 				} else {
 					goto wrong_length;
 				}
 
-				RDEBUGHEX("Phase 2: MSCHAP-MPPE-RECV-KEY [high MSK]", vp->vp_octets, vp->vp_length);
+				RDEBUGHEX("Phase 2: MSCHAP-MPPE-Recv-Key", vp->vp_octets, vp->vp_length);
+				msklen += vp->length;
 				break;
 
 			case PW_MSCHAP2_SUCCESS:
@@ -977,6 +1039,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 			 *	Clean up the tunneled reply.
 			 */
 			fr_pair_delete_by_num(&reply->vps, PW_EAP_EMSK, 0, TAG_ANY);
+			fr_pair_delete_by_num(&reply->vps, PW_EAP_MSK, 0, TAG_ANY);
 			fr_pair_delete_by_num(&reply->vps, PW_EAP_SESSION_ID, 0, TAG_ANY);
 		}
 
@@ -1003,7 +1066,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *eap_session,
 			t->identity_types[t->num_identities++] = vp->vp_short;
 
 			/* RFC7170, Appendix C.6 */
-			eap_teap_append_identity_type(tls_session, vp->vp_short);
+			eap_teap_append_identity_type(request, tls_session, vp->vp_short);
 
 			if (t->default_method || t->eap_method[vp->vp_short]) {
 				eap_teap_append_eap_identity_request(request, tls_session, eap_session);
@@ -1103,7 +1166,7 @@ challenge:
 		vp = fr_pair_find_by_num(reply->vps, PW_EAP_MESSAGE, 0, TAG_ANY);
 		if (vp) {
 			doing_eap = true;
-			eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_EAP_PAYLOAD, true, vp->vp_length, vp->vp_octets);
+			eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_EAP_PAYLOAD, true, vp->vp_length, vp->vp_octets);
 		}
 
 		/*
@@ -1124,7 +1187,7 @@ challenge:
 			t->sent_basic_password = true;
 
 			RDEBUG("Phase 2: Sending Basic-Password-Auth-Req");
-			eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_BASIC_PASSWORD_AUTH_REQ, true, vp->vp_length, vp->vp_strvalue);
+			eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_BASIC_PASSWORD_AUTH_REQ, true, vp->vp_length, vp->vp_strvalue);
 		}
 
 		break;
@@ -1329,7 +1392,7 @@ static PW_CODE eap_teap_phase2(REQUEST *request, eap_handler_t *eap_session,
 	 * Call authentication recursively, which will
 	 * do PAP, CHAP, MS-CHAP, etc.
 	 */
-	rad_virtual_server(fake);
+	rad_virtual_server(fake, true);
 
 	/*
 	 * Decide what to do with the reply.
@@ -1375,8 +1438,8 @@ static PW_CODE eap_teap_phase2(REQUEST *request, eap_handler_t *eap_session,
 	return code;
 }
 
-static PW_CODE eap_teap_crypto_binding(REQUEST *request, UNUSED eap_handler_t *eap_session,
-				       tls_session_t *tls_session, eap_tlv_crypto_binding_tlv_t const *binding)
+static PW_CODE eap_teap_validate_crypto_binding(REQUEST *request, UNUSED eap_handler_t *eap_session,
+						tls_session_t *tls_session, eap_tlv_crypto_binding_tlv_t const *binding)
 {
 	teap_tunnel_t			*t = tls_session->opaque;
 	uint8_t				*buf;
@@ -1406,17 +1469,32 @@ static PW_CODE eap_teap_crypto_binding(REQUEST *request, UNUSED eap_handler_t *e
 	 *	binding->received_version is what they got from us.
 	 */
 	if (binding->version != t->received_version || binding->received_version != EAP_TEAP_VERSION) {
-		RDEBUG2("Phase 2: Crypto-Binding TLV version mis-match (possible downgrade attack!)");
-		RDEBUG2("Phase 2: Expected client to send %d, got %d.  We sent %d, they echoed back %d",
+		RWDEBUG2("Phase 2: Crypto-Binding TLV version mis-match (possible downgrade attack!)");
+		RWDEBUG2("Phase 2: Expected client to send %d, got %d.  We sent %d, they echoed back %d",
 			t->received_version, binding->version,
 			EAP_TEAP_VERSION, binding->received_version);
 		return PW_CODE_ACCESS_REJECT;
 	}
 	if ((binding->subtype & 0xf) != EAP_TEAP_TLV_CRYPTO_BINDING_SUBTYPE_RESPONSE) {
-		RDEBUG2("Phase 2: Crypto-Binding TLV contains unexpected response");
+		RWDEBUG2("Phase 2: Crypto-Binding TLV contains unexpected response");
 		return PW_CODE_ACCESS_REJECT;
 	}
 	flags = binding->subtype >> 4;
+
+	/*
+	 *	The Flags field is 4 bits:
+	 *
+	 *		0 - EMSK (may or may not be set)
+	 *		1 - MSK (always set)
+	 *		2 - MUST be zero
+	 *		3 - MUST be zero
+	 */
+	if ((flags == 0) || (flags > 3)) {
+		RWDEBUG2("Phase 2: Invalid Crypto-Binding Flags=%d", flags);
+		return PW_CODE_ACCESS_REJECT;
+	}
+
+	RDEBUG("Phase 2: Received Crypto-Binding Flags=%d", flags);
 
 	CRYPTO_BINDING_BUFFER_INIT(cbb);
 	memcpy(&cbb->binding, binding, sizeof(cbb->binding) - sizeof(cbb->binding.emsk_compound_mac) - sizeof(cbb->binding.msk_compound_mac));
@@ -1453,16 +1531,20 @@ static PW_CODE eap_teap_crypto_binding(REQUEST *request, UNUSED eap_handler_t *e
 	if ((flags & EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_MSK) != 0) {
 		HMAC(md, &t->imck_msk.cmk, sizeof(t->imck_msk.cmk), buf, buflen, mac, &maclen);
 		if (memcmp(binding->msk_compound_mac, mac, sizeof(binding->msk_compound_mac))) {
-			RDEBUG2("Phase 2: Crypto-Binding TLV (MSK) mis-match");
+			RWDEBUG2("Phase 2: Crypto-Binding TLV (MSK) mis-match");
 			return PW_CODE_ACCESS_REJECT;
 		}
 		imck = &t->imck_msk;
 	}
 
+	if (((flags & EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_EMSK) != 0) && !t->imck_emsk_available) {
+		fr_assert(0);
+	}
+
 	if (((flags & EAP_TEAP_TLV_CRYPTO_BINDING_FLAGS_CMAC_EMSK) != 0) && t->imck_emsk_available) {
 		HMAC(md, &t->imck_emsk.cmk, sizeof(t->imck_emsk.cmk), buf, buflen, mac, &maclen);
 		if (memcmp(binding->emsk_compound_mac, mac, sizeof(binding->emsk_compound_mac))) {
-			RDEBUG2("Phase 2: Crypto-Binding TLV (EMSK) mis-match");
+			RWDEBUG2("Phase 2: Crypto-Binding TLV (EMSK) mis-match");
 			return PW_CODE_ACCESS_REJECT;
 		}
 
@@ -1607,8 +1689,8 @@ static PW_CODE eap_teap_process_tlvs(REQUEST *request, eap_handler_t *eap_sessio
 			case EAP_TEAP_TLV_CRYPTO_BINDING:
 				gotcryptobinding = true;
 
-				code = eap_teap_crypto_binding(request, eap_session, tls_session,
-							       (eap_tlv_crypto_binding_tlv_t const *)vp->vp_octets);
+				code = eap_teap_validate_crypto_binding(request, eap_session, tls_session,
+									(eap_tlv_crypto_binding_tlv_t const *)vp->vp_octets);
 				break;
 
 			default:
@@ -1714,9 +1796,11 @@ PW_CODE eap_teap_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 	if (!eap_teap_verify(request, tls_session, data, data_len)) return PW_CODE_ACCESS_REJECT;
 
 	if (t->stage == TLS_SESSION_HANDSHAKE) {
+		char buf[256];
+		int identity_type = 0;
+
 		rad_assert(t->mode == EAP_TEAP_UNKNOWN);
 
-		char buf[256];
 		if (strstr(SSL_CIPHER_description(SSL_get_current_cipher(tls_session->ssl),
 						  buf, sizeof(buf)), "Au=None")) {
 			/* FIXME enforce MSCHAPv2 - RFC 7170 */
@@ -1734,34 +1818,34 @@ PW_CODE eap_teap_process(eap_handler_t *eap_session, tls_session_t *tls_session)
 
 		eap_teap_init_keys(request, tls_session);
 
-
 		/* RFC7170, Appendix C.6 */
 		vp = fr_pair_find_by_num(request->state, PW_EAP_TEAP_TLV_IDENTITY_TYPE, VENDORPEC_FREERADIUS, TAG_ANY);
 		if (vp) {
 			RDEBUG("Phase 2: Sending Identity-Type = %s", (vp->vp_short == 1) ? "User" : "Machine");
-			eap_teap_append_identity_type(tls_session, vp->vp_short);
+			eap_teap_append_identity_type(request, tls_session, vp->vp_short);
 
 			if (t->num_identities == 2) {
 				RDEBUG("Phase 2: Configured to send too many identities, failing the session");
 				goto fail;
 			}
 
-			t->identity_types[t->num_identities++] = vp->vp_short;
+			identity_type = t->identity_types[t->num_identities++] = vp->vp_short;
 
 			RDEBUG("Phase 2: Deleting &session-state:FreeRADIUS-EAP-TEAP-Identity-Type += %s",
 			       (vp->vp_short == 1) ? "User" : "Machine");
 			fr_pair_delete(&request->state, vp);
+			vp = NULL;
 		}
 
 		/*
 		 *	We always start off with an EAP-Identity-Request.
 		 */
-		if (t->default_method || (vp && t->eap_method[vp->vp_short])) {
+		if (t->default_method || (identity_type && t->eap_method[identity_type])) {
 			eap_teap_append_eap_identity_request(request, tls_session, eap_session);
 		} else {
-			RDEBUG("Phase 2: No %s EAP method configured - sending Basic-Password-Auth-Req = \"\"",
-			       !vp ? "" : (vp->vp_short == 1) ? "User" : "Machine");
-			eap_teap_tlv_append(tls_session, EAP_TEAP_TLV_BASIC_PASSWORD_AUTH_REQ, true, 0, "");
+			RDEBUG("Phase 2: No %sEAP method configured - sending Basic-Password-Auth-Req = \"\"",
+			       !identity_type ? "" : (identity_type == 1) ? "User " : "Machine ");
+			eap_teap_tlv_append(request, tls_session, EAP_TEAP_TLV_BASIC_PASSWORD_AUTH_REQ, true, 0, "");
 		}
 
 		t->stage = AUTHENTICATION;

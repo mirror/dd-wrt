@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 78ab86b04112cdc1789828627b96612950547da6 $
+ * $Id: d5237a16055b47025b8ad9bd1cf2055a6510714b $
  * @file rlm_sql.h
  * @brief Prototypes and functions for the SQL module
  *
@@ -27,7 +27,7 @@
 #ifndef _RLM_SQL_H
 #define _RLM_SQL_H
 
-RCSIDH(rlm_sql_h, "$Id: 78ab86b04112cdc1789828627b96612950547da6 $")
+RCSIDH(rlm_sql_h, "$Id: d5237a16055b47025b8ad9bd1cf2055a6510714b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/connection.h>
@@ -124,6 +124,9 @@ typedef struct sql_config {
 	bool			delete_stale_sessions;		//!< Whether we should use session_zap to create
 								//!< a fake stop packet, to terminate any
 								//!< stale sessions.
+
+	bool			record_query_number;		//!< Whether we should populate SQL-Query-Number
+								///< when an "acct_redundant" query succeeds
 
 	char const		*allowed_chars;			//!< Chars which done need escaping..
 	bool			driver_specific_escape;		//!< Use the driver specific SQL escape method

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 412859c06bc33a7485a5c61bfe045f4beb25b5aa $
+ * $Id: 88634cd30fb834f32092844ddfaf7b85d4703bf6 $
  * @file rlm_python.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 412859c06bc33a7485a5c61bfe045f4beb25b5aa $")
+RCSID("$Id: 88634cd30fb834f32092844ddfaf7b85d4703bf6 $")
 
 #define LOG_PREFIX "rlm_python - "
 
@@ -347,11 +347,7 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 		}
 
 		vp->op = op;
-
-		/*
-		 *	@todo - use tmpl_cast_to_vp() instead ???
-		 */
-		if (vp->da->flags.has_tag) vp->tag = dst.tmpl_tag;
+		vp->tag = dst.tmpl_tag;
 
 		if (fr_pair_value_from_str(vp, s2, -1) < 0) {
 			DEBUG("%s - Failed: '%s:%s' %s '%s'", funcname, list_name, s1,

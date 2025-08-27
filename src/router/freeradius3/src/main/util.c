@@ -1,7 +1,7 @@
 /*
  * util.c	Various utility functions.
  *
- * Version:     $Id: 607bcaa92cd39c90380b81ec09cb0c67cc3bebf1 $
+ * Version:     $Id: e39921e3127d67367179b308a975fb763a7ed0cf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 607bcaa92cd39c90380b81ec09cb0c67cc3bebf1 $")
+RCSID("$Id: e39921e3127d67367179b308a975fb763a7ed0cf $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1533,6 +1533,8 @@ void rad_suid_up(void)
 		ERROR("Failed getting saved UID's");
 		fr_exit_now(1);
 	}
+
+	if (euid == suid) return;
 
 	if (setresuid(-1, suid, -1) < 0) {
 		ERROR("Failed switching to privileged user");

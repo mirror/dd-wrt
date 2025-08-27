@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: eb81b8a6721f5f35e636802f5c47584620a51444 $
+ * Version:     $Id: 522287bdd7a3d779cbdc722e892e1c0420252e7b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: eb81b8a6721f5f35e636802f5c47584620a51444 $")
+RCSID("$Id: 522287bdd7a3d779cbdc722e892e1c0420252e7b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -532,6 +532,8 @@ static CONF_PARSER home_server_config[] = {
 	{ "username", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_NOT_EMPTY, home_server_t, ping_user_name), NULL },
 	{ "password", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_NOT_EMPTY, home_server_t, ping_user_password), NULL },
 
+	{ "affinity_id", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, affinity), NULL},
+
 #ifdef WITH_STATS
 	{ "historic_average_window", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, ema.window), NULL },
 #endif
@@ -634,6 +636,8 @@ void realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs)
 	if (parent && strcmp(cf_section_name1(parent), "server") == 0) {
 		home->parent_server = cf_section_name2(parent);
 	}
+
+	FR_INTEGER_BOUND_CHECK("affinity_id", home->affinity, <=, 255);
 }
 
 /** Insert a new home server into the various internal lookup trees
@@ -1442,7 +1446,7 @@ int realm_pool_add(home_pool_t *pool, CONF_SECTION *cs)
 
 	old = rbtree_finddata(home_pools_byname, pool);
 	if (old) {
-		cf_log_err_cs(cs, "Cannot add duplicate home server %s, original is at %s[%d]", pool->name,
+		cf_log_err_cs(cs, "Cannot add duplicate home server pool %s, original is at %s[%d]", pool->name,
 			      cf_section_filename(old->cs), cf_section_lineno(old->cs));
 		return 0;
 	}
@@ -1462,6 +1466,18 @@ int realm_pool_add(home_pool_t *pool, CONF_SECTION *cs)
 	}
 
 	return 1;
+}
+
+static int server_id_cmp(void const *one, void const *two)
+{
+	home_server_t const *a = *(home_server_t const * const *) one;
+	home_server_t const *b = *(home_server_t const * const *) two;
+
+	if (a->id < b->id) return -1;
+	if (a->id > b->id) return +1;
+
+	if (a < b) return -1;
+	return +1;
 }
 
 static int server_pool_add(realm_config_t *rc,
@@ -1560,6 +1576,7 @@ static int server_pool_add(realm_config_t *rc,
 			{ "client-balance", HOME_POOL_CLIENT_BALANCE },
 			{ "client-port-balance", HOME_POOL_CLIENT_PORT_BALANCE },
 			{ "keyed-balance", HOME_POOL_KEYED_BALANCE },
+			{ "consistent-keyed-balance", HOME_POOL_CONSISTENT_KEYED_BALANCE },
 			{ NULL, 0 }
 		};
 
@@ -1641,12 +1658,107 @@ static int server_pool_add(realm_config_t *rc,
 			goto error;
 		}
 
+		/*
+		 *	We can only do consistent keyed balance to real home servers.
+		 */
+		if (pool->type == HOME_POOL_CONSISTENT_KEYED_BALANCE) {
+			if (home->virtual_server) {
+				ERROR("Home server %s is a virtual server, and cannot be used with home_server_pool of 'type = consistent-keyed-balance'", home->name);
+				goto error;
+			}
+		}
+
+		if (home->affinity) {
+			if (home->virtual_server) {
+				ERROR("Home server %s is a virtual server, and cannot be used with 'affinity'", home->name);
+				goto error;
+			}
+
+			if (!pool->affinity_group) {
+				pool->affinity_group = talloc_zero_array(pool, home_server_t *, pool->num_home_servers);
+				if (!pool->affinity_group) {
+					ERROR("Out of memory");
+					goto error;
+				}
+			}
+
+			if (home->affinity >= (uint32_t) pool->num_home_servers) {
+				ERROR("Home server %s has invalid 'affinity' value %u.  It must be less than %u",
+				      home->name, home->affinity, pool->num_home_servers);
+				goto error;
+			}
+
+			if (pool->affinity_group[home->affinity]) {
+				ERROR("Home server %s has invalid 'affinity' value %u.  That value is already used by home server %s",
+				      home->name, home->affinity, pool->affinity_group[home->affinity]->name);
+				goto error;
+			}
+
+			pool->affinity_group[home->affinity] = home;
+		}
+
 		if (do_print) cf_log_info(cs, "\thome_server = %s", home->name);
 		pool->servers[num_home_servers++] = home;
 	} /* loop over home_server's */
 
-	if (pool->fallback && do_print) {
-		cf_log_info(cs, "\tfallback = %s", pool->fallback->name);
+	if (pool->fallback) {
+		if (do_print) cf_log_info(cs, "\tfallback = %s", pool->fallback->name);
+
+		if (pool->affinity_group) {
+			ERROR("Cannot use home server pool 'fallback' when home server 'affinity' is set");
+			goto error;
+		}
+	}
+
+	/*
+	 *	Create the hash ID, and then sort the home servers by ID.
+	 */
+	if (pool->type == HOME_POOL_CONSISTENT_KEYED_BALANCE) {
+		int i;
+
+		/*
+		 *	Create an ID for the home server which is
+		 *	unique across restarts.  We use the
+		 *	destination IP, port, and protocol.  This
+		 *	should make the fields unique.
+		 */
+		for (i = 0; i < pool->num_home_servers; i++) {
+			uint32_t hash;
+
+			home = pool->servers[i];
+
+			switch (home->ipaddr.af) {
+			case AF_INET:
+				hash = fr_hash(&home->ipaddr.ipaddr.ip4addr,
+					       sizeof(home->ipaddr.ipaddr.ip4addr));
+				break;
+
+			case AF_INET6:
+				hash = fr_hash(&home->ipaddr.ipaddr.ip6addr,
+					       sizeof(home->ipaddr.ipaddr.ip6addr));
+				break;
+
+			default:
+				ERROR("Invalid address family");
+				goto error;
+			}
+
+			/*
+			 *	If we use a different source IP, then
+			 *	we're a different client to the home
+			 *	server.  So we might as well use this,
+			 *	too.
+			 */
+			if (home->src_ipaddr_str) {
+				hash = fr_hash_update(home->src_ipaddr_str, strlen(home->src_ipaddr_str), hash);
+			}
+
+			hash = fr_hash_update(&home->proto, sizeof(home->proto), hash);
+			home->id = fr_hash_update(&home->port, sizeof(home->port), hash);
+		}
+
+		qsort(&pool->servers[0], pool->num_home_servers, sizeof(pool->servers[0]),
+		      server_id_cmp);
 	}
 
 	if (!realm_pool_add(pool, cs)) goto error;
@@ -2769,8 +2881,167 @@ void home_server_update_request(home_server_t *home, REQUEST *request)
 	}
 }
 
+static bool home_server_active(REQUEST *request, home_server_t *home)
+{
+	/*
+	 *	Skip dead home servers.
+	 *
+	 *	Home servers that are unknown, alive, or zombie
+	 *	are used for proxying.
+	 */
+	if (HOME_SERVER_IS_DEAD(home)) {
+		return false;
+	}
+
+	/*
+	 *	This home server is too busy.  Choose another one.
+	 */
+	if (home->currently_outstanding >= home->max_outstanding) {
+		return false;
+	}
+
+#ifdef WITH_DETAIL
+	/*
+	 *	We read the packet from a detail file, AND it
+	 *	came from this server.  Don't re-proxy it
+	 *	there.
+	 */
+	if (request->listener &&
+	    (request->listener->type == RAD_LISTEN_DETAIL) &&
+	    (request->packet->code == PW_CODE_ACCOUNTING_REQUEST) &&
+	    (fr_ipaddr_cmp(&home->ipaddr, &request->packet->src_ipaddr) == 0)) {
+		return false;
+	}
+#endif
+
+	/*
+	 *	Default virtual: ignore homes tied to a
+	 *	virtual.
+	 */
+	if (!request->server && home->parent_server) {
+		return false;
+	}
+
+	/*
+	 *	A virtual AND home is tied to virtual,
+	 *	ignore ones which don't match.
+	 */
+	if (request->server && home->parent_server &&
+	    strcmp(request->server, home->parent_server) != 0) {
+		return false;
+	}
+
+	/*
+	 *	Allow request->server && !home->parent_server
+	 *
+	 *	i.e. virtuals can proxy to globally defined
+	 *	homes.
+	 */
+
+	return true;
+}
+
+/*
+ *	Return the nearest neighbour by consistent hash.
+ *
+ *	The home servers are ordered by ID (small to large).  We
+ *	choose the nearest one (wrapping around) which is higher than
+ *	the current hash.
+ *
+ *	An implementation of https://arxiv.org/pdf/1505.00062
+ *	"Multi-probe consistent hashing".
+ *
+ *	It hashes the nodes once, and then hashes the key K ways.  We
+ *	then choose the node which has a value _closest_ to one of the
+ *	K keys.  Using K=2 achieves O(1) lookup with high probability,
+ *	and a max to average ration of ~3.
+ *
+ *	@todo - if there's only one server alive, just pick that?
+ */
+static home_server_t *home_server_by_consistent_key(REQUEST *request, home_pool_t *pool, uint32_t hash)
+{
+	int i, j;
+	uint32_t key[8];
+	unsigned int mask;
+	uint32_t found_diff;
+	home_server_t *found;
+	home_server_t *home[8] = { NULL, NULL, NULL, NULL, 
+				   NULL, NULL, NULL, NULL };
+	static const uint32_t constants[8] = { 0xff51afd7, 0xed558ccd, 0xc4ceb9fe, 0x1a85ec53,
+					      ~0xff51afd7,~0xed558ccd,~0xc4ceb9fe,~0x1a85ec53 };
+
+	/*
+	 *	Get some hash keys.
+	 */
+	for (i = 0; i < 8; i++) {
+		key[i] = fr_hash_update(&constants[i], sizeof(constants[i]), hash);
+	}
+	mask = (1 << 8) - 1;
+
+	/*
+	 *	Loop over all home servers, picking one of them
+	 *	which corresponds to the hash key.
+	 *
+	 *	We pick the first home server which has a key greater
+	 *	than the current one.  Note that the home servers are
+	 *	sorted by ID, so as soon as we find a matching one, we
+	 *	can stop walking the list of home servers.
+	 */
+	for (i = 0; i < pool->num_home_servers; i++) {
+		for (j = 0; j < 8; j++) {
+			if (!home[j] && (pool->servers[i]->id > key[j])) {
+				home[j] = pool->servers[i];
+
+				/*
+				 *	Stop early if we fill up the array.
+				 */
+				mask &= ~(1 << j);
+				if (!mask) goto pick;
+			}
+		}
+	}
+
+	/*
+	 *	If we didn't find a matching home server because our
+	 *	key was too large, then wrap around to pick the first
+	 *	home server.
+	 */
+	if (mask) for (i = 0; i < 8; i++) {
+		if (!home[i]) home[i] = pool->servers[0];
+	}
+
+pick:
+	found = NULL;
+	found_diff = ~((uint32_t) 0);
+
+	/*
+	 *	Pick the _alive_ home server which has an ID which is
+	 *	_closest_ to the given key.
+	 */
+	for (i = 0; i < 8; i++) {
+		uint32_t diff;
+
+		if (!home_server_active(request, home[i])) continue;
+
+		if (found->id <= key[i]) {
+			diff = key[i] - found->id;
+
+		} else {
+			diff = key[i] + (~((uint32_t) 0) - found->id) + 1;
+		}
+
+		if (!found || (diff < found_diff)) {
+			found = home[i];
+			found_diff = diff;
+			continue;
+		}
+	}
+
+	return found;
+}
+
 home_server_t *home_server_ldb(char const *realmname,
-			     home_pool_t *pool, REQUEST *request)
+			       home_pool_t *pool, REQUEST *request)
 {
 	int		start;
 	int		count;
@@ -2780,11 +3051,29 @@ home_server_t *home_server_ldb(char const *realmname,
 	uint32_t	hash;
 
 	/*
+	 *	Over-ride the pool configuration if the pool is marked up as having affinity, AND the packet has a State attribute.
+	 */
+	if (pool->affinity_group &&
+	    (request->packet->code == PW_CODE_ACCESS_REQUEST) &&
+	    ((vp = fr_pair_find_by_num(request->packet->vps, PW_STATE, 0, TAG_ANY)) != NULL) &&
+	    (vp->vp_length > 1) &&
+	    (vp->vp_octets[0] < (uint32_t) pool->num_home_servers) &&
+	    (pool->affinity_group[vp->vp_octets[0]] != NULL)) {
+		    found = pool->affinity_group[vp->vp_octets[0]];
+
+		    if (HOME_SERVER_IS_DEAD(found)) return NULL;
+
+		    /*
+		     *	Get rid of the extra octet that we added on the outbound proxying.
+		     */
+		    fr_pair_value_memcpy(vp, vp->vp_octets + 1, vp->vp_length - 1);
+		    return found;
+	}
+
+	/*
 	 *	Determine how to pick choose the home server.
 	 */
 	switch (pool->type) {
-
-
 		/*
 		 *	For load-balancing by client IP address, we
 		 *	pick a home server by hashing the client IP.
@@ -2809,7 +3098,23 @@ home_server_t *home_server_ldb(char const *realmname,
 			hash = 0;
 			break;
 		}
+
+	pick_matching_server:
+		/*
+		 *	Try the matching server first.  If it's alive, we return it.
+		 *
+		 *	Otherwise we fall back to just picking a random one.
+		 */
 		start = hash % pool->num_home_servers;
+		found = pool->servers[start];
+		if (home_server_active(request, found)) return found;
+
+		/*
+		 *	The matching one is dead.  We then use the
+		 *	"load-balance" algorithm to pick the server.
+		 */
+		found = NULL;
+		start = 0;
 		break;
 
 	case HOME_POOL_CLIENT_PORT_BALANCE:
@@ -2830,26 +3135,43 @@ home_server_t *home_server_ldb(char const *realmname,
 		}
 		hash = fr_hash_update(&request->packet->src_port,
 				      sizeof(request->packet->src_port), hash);
-		start = hash % pool->num_home_servers;
-		break;
+		goto pick_matching_server;
 
 	case HOME_POOL_KEYED_BALANCE:
 		if ((vp = fr_pair_find_by_num(request->config, PW_LOAD_BALANCE_KEY, 0, TAG_ANY)) != NULL) {
 			hash = fr_hash(vp->vp_strvalue, vp->vp_length);
-			start = hash % pool->num_home_servers;
-			break;
+			goto pick_matching_server;
 		}
 		/* FALL-THROUGH */
 
-	case HOME_POOL_LOAD_BALANCE:
 	case HOME_POOL_FAIL_OVER:
+	case HOME_POOL_LOAD_BALANCE:
+		start = 0;
+		break;
+
+	case HOME_POOL_CONSISTENT_KEYED_BALANCE:
+		/*
+		 *	If there's no key, we just pick a random destination.
+		 */
+		vp = fr_pair_find_by_num(request->config, PW_LOAD_BALANCE_KEY, 0, TAG_ANY);
+		if (!vp) {
+			start = 0;
+			break;
+		}
+
+		hash = fr_hash(vp->vp_strvalue, vp->vp_length);
+		found = home_server_by_consistent_key(request, pool, hash);
+		if (found) return found;
+
+		/*
+		 *	Fall back to just load balancing from the start.
+		 */
 		start = 0;
 		break;
 
 	default:		/* this shouldn't happen... */
 		start = 0;
 		break;
-
 	}
 
 	/*
@@ -2858,66 +3180,17 @@ home_server_t *home_server_ldb(char const *realmname,
 	 *	it.  If it is too busy, skip it.
 	 *
 	 *	Otherwise, use it.
+	 *
+	 *	The difference between fail-over (i.e redundant) and
+	 *	load balance is that redundant always starts at the
+	 *	first one, and load balance starts at a random one.
 	 */
 	for (count = 0; count < pool->num_home_servers; count++) {
 		home_server_t *home = pool->servers[(start + count) % pool->num_home_servers];
 
 		if (!home) continue;
 
-		/*
-		 *	Skip dead home servers.
-		 *
-		 *	Home servers that are unknown, alive, or zombie
-		 *	are used for proxying.
-		 */
-		if (HOME_SERVER_IS_DEAD(home)) {
-			continue;
-		}
-
-		/*
-		 *	This home server is too busy.  Choose another one.
-		 */
-		if (home->currently_outstanding >= home->max_outstanding) {
-			continue;
-		}
-
-#ifdef WITH_DETAIL
-		/*
-		 *	We read the packet from a detail file, AND it
-		 *	came from this server.  Don't re-proxy it
-		 *	there.
-		 */
-		if (request->listener &&
-		    (request->listener->type == RAD_LISTEN_DETAIL) &&
-		    (request->packet->code == PW_CODE_ACCOUNTING_REQUEST) &&
-		    (fr_ipaddr_cmp(&home->ipaddr, &request->packet->src_ipaddr) == 0)) {
-			continue;
-		}
-#endif
-
-		/*
-		 *	Default virtual: ignore homes tied to a
-		 *	virtual.
-		 */
-		if (!request->server && home->parent_server) {
-			continue;
-		}
-
-		/*
-		 *	A virtual AND home is tied to virtual,
-		 *	ignore ones which don't match.
-		 */
-		if (request->server && home->parent_server &&
-		    strcmp(request->server, home->parent_server) != 0) {
-			continue;
-		}
-
-		/*
-		 *	Allow request->server && !home->parent_server
-		 *
-		 *	i.e. virtuals can proxy to globally defined
-		 *	homes.
-		 */
+		if (!home_server_active(request, home)) continue;
 
 		/*
 		 *	It's zombie, so we remember the first zombie
@@ -2930,9 +3203,14 @@ home_server_t *home_server_ldb(char const *realmname,
 		}
 
 		/*
-		 *	We've found the first "live" one.  Use that.
+		 *	For fail-over, we just pick the first one
+		 *	which is alive.
+		 *
+		 *	For all other methods, we load balance among
+		 *	all servers, picking the least busy home
+		 *	server.
 		 */
-		if (pool->type != HOME_POOL_LOAD_BALANCE) {
+		if (pool->type == HOME_POOL_FAIL_OVER) {
 			found = home;
 			break;
 		}

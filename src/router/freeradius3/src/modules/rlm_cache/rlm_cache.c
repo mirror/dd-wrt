@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 345bedd25dfe5645b66ca87f684f28c962de4286 $
+ * $Id: fd2d4112b0696c91a4fed8c0db20f8ff74c02db4 $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2014 The FreeRADIUS server project
  */
-RCSID("$Id: 345bedd25dfe5645b66ca87f684f28c962de4286 $")
+RCSID("$Id: fd2d4112b0696c91a4fed8c0db20f8ff74c02db4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -598,7 +598,7 @@ static ssize_t cache_xlat(void *instance, REQUEST *request,
 
 	if (cache_acquire(&handle, inst, request) < 0) return -1;
 
-	switch (cache_find(&c, inst, request, handle, fmt)) {
+	switch (cache_find(&c, inst, request, &handle, fmt)) {
 	case RLM_MODULE_OK:		/* found */
 		break;
 

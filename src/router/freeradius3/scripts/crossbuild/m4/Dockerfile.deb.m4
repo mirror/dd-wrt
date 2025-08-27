@@ -7,7 +7,11 @@ ARG DEBIAN_FRONTEND=noninteractive
 #  Install add-apt-repository
 #
 RUN apt-get update && \
+ifelse(D_NAME, `debian13', `dnl
+    apt-get install -y gnupg2 procps && \
+', `dnl
     apt-get install -y software-properties-common gnupg2 procps && \
+')dnl
     apt-get clean && \
     rm -r /var/lib/apt/lists/*
 
