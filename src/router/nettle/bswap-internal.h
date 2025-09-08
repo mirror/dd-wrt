@@ -62,16 +62,26 @@ nettle_bswap32 (uint32_t x)
 }
 #endif
 
-#if WORDS_BIGENDIAN
-#define bswap64_if_le(x) (x)
-#else
-#define bswap64_if_le nettle_bswap64
-#endif
+static inline void
+nettle_bswap32_n (unsigned n, uint32_t *x)
+{
+  unsigned i;
+  for (i = 0; i < n; i++)
+    x[i] = nettle_bswap32 (x[i]);
+}
 
 #if WORDS_BIGENDIAN
 #define bswap64_if_be nettle_bswap64
+#define bswap32_if_be nettle_bswap32
+#define bswap64_if_le(x) (x)
+#define bswap32_if_le(x) (x)
+#define bswap32_n_if_le(n, x)
 #else
 #define bswap64_if_be(x) (x)
+#define bswap32_if_be(x) (x)
+#define bswap64_if_le nettle_bswap64
+#define bswap32_if_le nettle_bswap32
+#define bswap32_n_if_le nettle_bswap32_n
 #endif
 
 #endif /* NETTLE_BSWAP_INTERNAL_H_INCLUDED */

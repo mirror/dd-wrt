@@ -43,13 +43,22 @@
 #if defined(__linux__) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
 # if __GLIBC_PREREQ(2, 16)
 #  define USE_GETAUXVAL 1
-#  include <asm/hwcap.h>
-#  include <sys/auxv.h>
 # endif
+#elif __ANDROID_API__ >= 18
+# define USE_GETAUXVAL 1
+#endif
+
+#if USE_GETAUXVAL
+# include <asm/hwcap.h>
+# include <sys/auxv.h>
+#elif defined(HAVE_ELF_AUX_INFO)
+# include <sys/auxv.h>
 #elif defined(__OpenBSD__)
 # include <sys/sysctl.h>
 # include <machine/cpu.h>
 # include <machine/armreg.h>
+#elif defined(__APPLE__)
+# include <sys/sysctl.h>
 #endif
 
 #include "nettle-types.h"
@@ -86,6 +95,16 @@ struct arm64_features
 #define MATCH(s, slen, literal, llen) \
   ((slen) == (llen) && memcmp ((s), (literal), llen) == 0)
 
+#if defined(__APPLE__)
+static int
+check_sysctlbyname(const char* name)
+{
+  int val;
+  size_t s = sizeof(val);
+  return sysctlbyname(name, &val, &s, NULL, 0) ? 0 : val;
+}
+#endif
+
 static void
 get_arm64_features (struct arm64_features *features)
 {
@@ -116,8 +135,15 @@ get_arm64_features (struct arm64_features *features)
       }
   else
     {
+#if USE_GETAUXVAL || defined(HAVE_ELF_AUX_INFO)
+      unsigned long hwcap = 0;
+
 #if USE_GETAUXVAL
-      unsigned long hwcap = getauxval(AT_HWCAP);
+      hwcap = getauxval(AT_HWCAP);
+#elif defined(HAVE_ELF_AUX_INFO)
+      elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+#endif
+
       features->have_aes
 	= ((hwcap & (HWCAP_ASIMD | HWCAP_AES)) == (HWCAP_ASIMD | HWCAP_AES));
       features->have_pmull
@@ -141,6 +167,12 @@ get_arm64_features (struct arm64_features *features)
         = (ID_AA64ISAR0_SHA1(isar0) >= ID_AA64ISAR0_SHA1_BASE);
       features->have_sha2
         = (ID_AA64ISAR0_SHA2(isar0) >= ID_AA64ISAR0_SHA2_BASE);
+#elif defined(__APPLE__)
+      /* See https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics */
+      features->have_aes = check_sysctlbyname("hw.optional.arm.FEAT_AES");
+      features->have_pmull = check_sysctlbyname("hw.optional.arm.FEAT_PMULL");
+      features->have_sha1 = check_sysctlbyname("hw.optional.arm.FEAT_SHA1");
+      features->have_sha2 = check_sysctlbyname("hw.optional.arm.FEAT_SHA256");
 #endif
     }
 }

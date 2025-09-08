@@ -56,6 +56,8 @@
 #define TMP_GMP_FREE(name) (gmp_free(name, tmp_##name##_size))
 
 #if NETTLE_USE_MINI_GMP
+#define GMP_LIMB_BITS GMP_NUMB_BITS
+
 mp_limb_t
 mpn_cnd_add_n (mp_limb_t cnd, mp_limb_t *rp,
 	       const mp_limb_t *ap, const mp_limb_t *bp, mp_size_t n);
@@ -72,12 +74,22 @@ mpn_sec_tabselect (volatile mp_limb_t *rp, volatile const mp_limb_t *table,
 		   mp_size_t rn, unsigned tn, unsigned k);
 #endif
 
+static inline int
+is_zero_limb (mp_limb_t x)
+{
+  x |= (x << 1);
+  return ((x >> 1) - 1) >> (GMP_LIMB_BITS - 1);
+}
+
 /* Side-channel silent variant of mpn_zero_p. */
 int
 sec_zero_p (const mp_limb_t *ap, mp_size_t n);
 
+#define NETTLE_BIT_SIZE_TO_LIMB_SIZE(n) \
+  (((n) + GMP_NUMB_BITS - 1) / GMP_NUMB_BITS)
+
 #define NETTLE_OCTET_SIZE_TO_LIMB_SIZE(n) \
-  (((n) * 8 + GMP_NUMB_BITS - 1) / GMP_NUMB_BITS)
+  (NETTLE_BIT_SIZE_TO_LIMB_SIZE((n) * 8))
 
 /* Convenience functions */
 

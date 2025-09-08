@@ -66,21 +66,18 @@ ecc_mul_a_eh (const struct ecc_curve *ecc,
   
   for (i = ecc->p.size; i-- > 0; )
     {
-      mp_limb_t w = np[i];
-      mp_limb_t bit;
+      mp_limb_t w = np[i] << (GMP_LIMB_BITS - GMP_NUMB_BITS);
+      unsigned j;
 
-      for (bit = (mp_limb_t) 1 << (GMP_NUMB_BITS - 1);
-	   bit > 0;
-	   bit >>= 1)
+      for (j = 0; j < GMP_NUMB_BITS; j++, w <<= 1)
 	{
-	  int digit;
-
+	  int bit;
 	  ecc->dup (ecc, r, r, scratch_out);
 	  ecc->add_hh (ecc, tp, r, pe, scratch_out);
 
-	  digit = (w & bit) > 0;
+	  bit = w >> (GMP_LIMB_BITS - 1);
 	  /* If we had a one-bit, use the sum. */
-	  cnd_copy (digit, r, tp, 3*ecc->p.size);
+	  cnd_copy (bit, r, tp, 3*ecc->p.size);
 	}
     }
 }

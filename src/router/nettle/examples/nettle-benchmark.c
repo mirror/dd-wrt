@@ -73,6 +73,7 @@
 
 #include "nettle-meta.h"
 #include "nettle-internal.h"
+#include "non-nettle.h"
 
 #include "getopt.h"
 
@@ -907,10 +908,6 @@ main(int argc, char **argv)
   int c;
   const char *alg;
 
-#if WITH_OPENSSL
-  nettle_openssl_init();
-#endif
-
   const struct nettle_hash *hashes[] =
     {
       &nettle_md2, &nettle_md4, &nettle_md5,
@@ -933,10 +930,10 @@ main(int argc, char **argv)
       OPENSSL(&nettle_openssl_aes128)
       OPENSSL(&nettle_openssl_aes192)
       OPENSSL(&nettle_openssl_aes256)
-      &nettle_blowfish128, OPENSSL(&nettle_openssl_blowfish128)
+      &nettle_blowfish128,
       &nettle_camellia128, &nettle_camellia192, &nettle_camellia256,
-      &nettle_cast128, OPENSSL(&nettle_openssl_cast128)
-      &nettle_des, OPENSSL(&nettle_openssl_des)
+      &nettle_cast128,
+      &nettle_des,
       &nettle_des3,
       &nettle_serpent256,
       &nettle_twofish128, &nettle_twofish192, &nettle_twofish256,

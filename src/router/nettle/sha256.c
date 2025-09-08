@@ -105,6 +105,9 @@ sha256_update(struct sha256_ctx *ctx,
 	      size_t length, const uint8_t *data)
 {
   size_t blocks;
+  if (!length)
+    return;
+
   if (ctx->index > 0)
     {
       /* Try to fill partial block */

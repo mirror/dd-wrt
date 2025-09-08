@@ -1,5 +1,5 @@
 #include "testutils.h"
-#include "nettle-internal.h"
+#include "non-nettle.h"
 
 struct ocb_aes128_message_key
 {
@@ -56,7 +56,7 @@ ocb_aes128_message = {
 static void
 set_nonce_tag96 (struct ocb_aes128_ctx *ctx, size_t length, const uint8_t *nonce)
 {
-  assert (length == OCB_NONCE_SIZE);
+  ASSERT (length == OCB_NONCE_SIZE);
   ocb_aes128_set_nonce (&ctx->ocb, &ctx->key,
 			12, OCB_NONCE_SIZE, nonce);
 }

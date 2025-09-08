@@ -40,6 +40,7 @@
 
 #include "ecdsa.h"
 #include "ecc-internal.h"
+#include "dsa-internal.h"
 
 /* Low-level ECDSA verify */
 
@@ -101,7 +102,7 @@ ecc_ecdsa_verify (const struct ecc_curve *ecc,
   ecc->q.invert (&ecc->q, sinv, sp, sinv + ecc->p.size);
 
   /* u1 = h / s, P1 = u1 * G */
-  ecc_hash (&ecc->q, hp, length, digest);
+  _nettle_dsa_hash (hp, ecc->q.bit_size, length, digest);
   ecc_mod_mul_canonical (&ecc->q, u1, hp, sinv, u1);
 
   /* u2 = r / s, P2 = u2 * Y */

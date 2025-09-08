@@ -57,6 +57,9 @@ _nettle_poly1305_update (struct poly1305_ctx *ctx,
 			 uint8_t *block, unsigned index,
 			 size_t length, const uint8_t *m)
 {
+  if (!length)
+    return index;
+
   if (index > 0)
     {
       /* Try to fill partial block */

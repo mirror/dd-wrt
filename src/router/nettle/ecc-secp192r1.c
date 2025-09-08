@@ -90,7 +90,7 @@ ecc_secp192r1_modp (const struct ecc_modulo *m UNUSED, mp_limb_t *rp, mp_limb_t 
   cy = mpn_add_n (xp + 1, xp + 1, xp + 4, 2);
   cy = sec_add_1 (xp + 3, xp + 3, 1, cy);
   cy += mpn_add_n (xp + 2, xp + 2, xp + 4, 2);
-  assert (cy <= 2);
+  assert_maybe (cy <= 2);
 
   xp[4] = cy;
 
@@ -99,9 +99,9 @@ ecc_secp192r1_modp (const struct ecc_modulo *m UNUSED, mp_limb_t *rp, mp_limb_t 
   cy = sec_add_1 (xp + 2, xp + 2, 1, cy);
   cy += mpn_add_n (xp + 1, xp + 1, xp + 3, 2);
 
-  assert (cy <= 1);
+  assert_maybe (cy <= 1);
   cy = mpn_cnd_add_n (cy, rp, xp, ecc_Bmodp, 3);
-  assert (cy == 0);  
+  assert_maybe (cy == 0);
 }
   
 #else

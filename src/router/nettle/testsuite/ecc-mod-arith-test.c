@@ -1,7 +1,7 @@
 #include "testutils.h"
 
 #define MAX_SIZE (1 + 521 / GMP_NUMB_BITS)
-#define COUNT 50000
+#define COUNT 10000
 
 static void
 test_add(const char *name,
@@ -143,18 +143,16 @@ void
 test_main (void)
 {
   gmp_randstate_t rands;
-  unsigned count = COUNT;
   unsigned i;
 
   gmp_randinit_default (rands);
 
-  if (test_randomize(rands))
-    count *= 20;
+  test_randomize(rands);
 
   for (i = 0; ecc_curves[i]; i++)
     {
-      test_modulo (rands, "p", &ecc_curves[i]->p, count);
-      test_modulo (rands, "q", &ecc_curves[i]->q, count);
+      test_modulo (rands, "p", &ecc_curves[i]->p, COUNT);
+      test_modulo (rands, "q", &ecc_curves[i]->q, COUNT);
     }
   gmp_randclear (rands);
 }

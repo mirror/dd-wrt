@@ -39,6 +39,7 @@
 
 #include "ecc.h"
 #include "ecc-internal.h"
+#include "nettle-internal.h"
 
 void
 ecc_mul_g (const struct ecc_curve *ecc, mp_limb_t *r,
@@ -71,7 +72,8 @@ ecc_mul_g (const struct ecc_curve *ecc, mp_limb_t *r,
 	  /* Avoid the mp_bitcnt_t type for compatibility with older GMP
 	     versions. */
 	  unsigned bit_index;
-	  
+	  int bits_is_zero;
+
 	  /* Extract c bits from n, stride k, starting at i + kcj,
 	     ending at i + k (cj + c - 1)*/
 	  for (bits = 0, bit_index = i + k*(c*j+c); bit_index > i + k*c*j; )
@@ -96,10 +98,12 @@ ecc_mul_g (const struct ecc_curve *ecc, mp_limb_t *r,
 	  cnd_copy (is_zero, r + 2*ecc->p.size, ecc->unit, ecc->p.size);
 	  
 	  ecc_add_jja (ecc, tp, r, tp, scratch_out);
+	  bits_is_zero = IS_ZERO_SMALL (bits);
+
 	  /* Use the sum when valid. ecc_add_jja produced garbage if
-	     is_zero != 0 or bits == 0, . */	  
-	  cnd_copy (bits & (is_zero - 1), r, tp, 3*ecc->p.size);
-	  is_zero &= (bits == 0);
+	     is_zero or bits_is_zero. */
+	  cnd_copy (1 - (bits_is_zero | is_zero), r, tp, 3*ecc->p.size);
+	  is_zero &= bits_is_zero;
 	}
     }
 #undef tp

@@ -40,6 +40,7 @@
 
 #include "ecdsa.h"
 #include "ecc-internal.h"
+#include "dsa-internal.h"
 
 /* Low-level ECDSA signing */
 
@@ -87,7 +88,7 @@ ecc_ecdsa_sign (const struct ecc_curve *ecc,
   ecc->q.invert (&ecc->q, kinv, kp, tp);
   
   /* Process hash digest */
-  ecc_hash (&ecc->q, hp, length, digest);
+  _nettle_dsa_hash (hp, ecc->q.bit_size, length, digest);
 
   ecc_mod_mul (&ecc->q, tp, zp, rp, tp);
   ecc_mod_add (&ecc->q, hp, hp, tp);

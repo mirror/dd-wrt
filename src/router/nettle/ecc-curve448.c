@@ -91,7 +91,7 @@ ecc_curve448_modp(const struct ecc_modulo *m, mp_limb_t *rp, mp_limb_t *xp)
   tp[5] = tp[6] = 0;
   c7 = mpn_add_n (rp, xp, tp, 7);
   c7 = mpn_cnd_add_n (c7, rp, rp, m->B, 7);
-  assert (c7 == 0);
+  assert_maybe (c7 == 0);
 }
 #else
 #define ecc_curve448_modp ecc_mod

@@ -58,8 +58,6 @@
 #define ecc_mod_random _nettle_ecc_mod_random
 #define ecc_mod _nettle_ecc_mod
 #define ecc_mod_inv _nettle_ecc_mod_inv
-#define ecc_hash _nettle_ecc_hash
-#define gost_hash _nettle_gost_hash
 #define ecc_a_to_j _nettle_ecc_a_to_j
 #define ecc_j_to_a _nettle_ecc_j_to_a
 #define ecc_eh_to_a _nettle_ecc_eh_to_a
@@ -84,6 +82,14 @@
 #define sec_modinv _nettle_sec_modinv
 #define curve25519_eh_to_x _nettle_curve25519_eh_to_x
 #define curve448_eh_to_x _nettle_curve448_eh_to_x
+
+/* For asserts that are incompatible with sc tests. Currently used
+   only by ECC code. */
+#if WITH_EXTRA_ASSERTS
+# define assert_maybe(x) assert(x)
+#else
+# define assert_maybe(x) ((void)(x))
+#endif
 
 extern const struct ecc_curve _nettle_secp_192r1;
 extern const struct ecc_curve _nettle_secp_224r1;
@@ -329,16 +335,6 @@ void
 ecc_mod_random (const struct ecc_modulo *m, mp_limb_t *xp,
 		void *ctx, nettle_random_func *random, mp_limb_t *scratch);
 
-void
-ecc_hash (const struct ecc_modulo *m,
-	  mp_limb_t *hp,
-	  size_t length, const uint8_t *digest);
-
-void
-gost_hash (const struct ecc_modulo *m,
-	  mp_limb_t *hp,
-	  size_t length, const uint8_t *digest);
-
 /* Converts a point P in affine coordinates into a point R in jacobian
    coordinates. */
 void
@@ -464,6 +460,7 @@ ecc_mul_m (const struct ecc_modulo *m,
 	   mp_limb_t *qx, const uint8_t *n, const mp_limb_t *px,
 	   mp_limb_t *scratch);
 
+/* The cnd argument must be 1 or 0. */
 void
 cnd_copy (int cnd, mp_limb_t *rp, const mp_limb_t *ap, mp_size_t n);
 

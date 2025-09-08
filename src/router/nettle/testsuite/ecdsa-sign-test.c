@@ -28,8 +28,14 @@ test_ecdsa (const struct ecc_curve *ecc,
   mpz_limbs_copy (zp, z, ecc->p.size);
   mpz_limbs_copy (kp, k, ecc->p.size);
 
+  mark_bytes_undefined (sizeof(mp_limb_t) * ecc->p.size, zp);
+  mark_bytes_undefined (sizeof(mp_limb_t) * ecc->p.size, kp);
+
   ecc_ecdsa_sign (ecc, zp, kp,
 		  h->length, h->data, rp, sp, scratch);
+
+  mark_bytes_defined (sizeof(mp_limb_t) * ecc->p.size, rp);
+  mark_bytes_defined (sizeof(mp_limb_t) * ecc->p.size, sp);
 
   mpz_set_str (ref.r, r, 16);
   mpz_set_str (ref.s, s, 16);
@@ -64,6 +70,10 @@ test_ecdsa (const struct ecc_curve *ecc,
 void
 test_main (void)
 {
+#if NETTLE_USE_MINI_GMP || WITH_EXTRA_ASSERTS
+  if (test_side_channel)
+    SKIP();
+#endif
   /* Producing the signature for corresponding test in
      ecdsa-verify-test.c, with special u1 and u2. */
   test_ecdsa (&_nettle_secp_224r1,

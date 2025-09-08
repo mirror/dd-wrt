@@ -755,26 +755,69 @@ octets of the digest are written.
 This function also resets the context.
 @end deftypefun
 
-@subsubsection @acronym{SHAKE-256}
+@subsubsection @acronym{SHAKE}
 @cindex SHAKE
 
-In addition to those SHA-3 hash functions, Nettle also provides a SHA-3
-extendable-output function (XOF), SHAKE-256. Unlike SHA-3 hash functions,
-SHAKE can produce an output digest of any desired length.
+In addition to those SHA-3 hash functions, Nettle also supports a
+SHA-3 extendable-output function (XOF) called SHAKE. Unlike hash
+functions, SHAKE can produce an output digest of any desired
+length. There are two variants, SHAKE-128 and SHAKE-256, with
+different security strengths in terms of collision or preimage
+resistance: SHAKE-128 internally uses a SHA-3 hash function with
+128-bit security, while SHAKE-256 corresponds to SHA3-256 which
+provides 256-bit security.
 
-To use SHAKE256, the context struct, init and update functions are the
-same as for SHA3-256. To get a SHAKE256 digest, the following function
-is used instead of @code{sha3_256_digest}. For an output size of
-@code{SHA3_256_DIGEST_SIZE}, security is equivalent to SHA3-256 (but the
-digest is different). Increasing output size further does not increase
-security in terms of collision or preimage resistance. It can be seen as
-a built in pseudorandomness generator.
+To use SHAKE, the context struct needs to be initialized with the
+@code{init} function and data is hashed using the @code{update}
+function. Afterwards, a digest can be generated using either the
+@code{shake} or @code{shake_ouput} function, where the former
+generates the digest at once and resets the context, while the latter
+can be called multiple times to generate the digest in an incremental
+manner.
 
-@deftypefun void sha3_256_shake (struct shake256_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest})
-Performs final processing and produces a SHAKE256 digest, writing it
+For SHAKE-128 they are defined as follows.
+
+@deftp {Context struct} {struct sha3_128_ctx}
+@end deftp
+
+@deftypefun void sha3_128_init (struct sha3_128_ctx *@var{ctx})
+Initialize the SHA3-256 state.
+@end deftypefun
+
+@deftypefun void sha3_128_update (struct sha3_128_ctx *@var{ctx}, size_t @var{length}, const uint8_t *@var{data})
+Hash some more data.
+@end deftypefun
+
+@deftypefun void sha3_128_shake (struct sha3_128_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest})
+Performs final processing and produces a SHAKE-128 digest, writing it
 to @var{digest}. @var{length} can be of arbitrary size.
 
 This function also resets the context.
+@end deftypefun
+
+@deftypefun void sha3_128_shake_output (struct sha3_128_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest})
+Performs final processing and produces a SHAKE-128 digest, writing it
+to @var{digest}. @var{length} can be of arbitrary size.
+
+This function does not reset the context.
+@end deftypefun
+
+For SHAKE-256, the corresponding context struct and the @code{init}
+and @code{update} functions are the same as SHA3-256. To generate a
+digest, use either the @code{shake} or @code{shake_output} function.
+
+@deftypefun void sha3_256_shake (struct sha3_256_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest})
+Performs final processing and produces a SHAKE-256 digest, writing it
+to @var{digest}. @var{length} can be of arbitrary size.
+
+This function also resets the context.
+@end deftypefun
+
+@deftypefun void sha3_256_shake_output (struct sha3_256_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest})
+Performs final processing and produces a SHAKE-256 digest, writing it
+to @var{digest}. @var{length} can be of arbitrary size.
+
+This function does not reset the context.
 @end deftypefun
 
 @node Miscellaneous hash functions
@@ -1939,7 +1982,7 @@ in any other way.
 Analogous to @code{des_encrypt}
 @end deftypefun
 
-@deftypefun int des_check_parity (size_t @var{length}, const uint8_t *@var{key});
+@deftypefun int des_check_parity (size_t @var{length}, const uint8_t *@var{key})
 Checks that the given key has correct, odd, parity. Returns 1 for
 correct parity, and 0 for bad parity.
 @end deftypefun
@@ -2799,10 +2842,10 @@ cipher (256 bits for AES-128 and 512 bits for AES-256). One of
 these functions must be called before any of the other functions.
 @end deftypefun
 
-@deftypefun void xts_aes128_encrypt_message(struct xts_aes128_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
-@deftypefunx void xts_aes256_encrypt_message(struct xts_aes256_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
-@deftypefunx void xts_aes128_decrypt_message(struct xts_aes128_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
-@deftypefunx void xts_aes256_decrypt_message(struct xts_aes256_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
+@deftypefun void xts_aes128_encrypt_message (struct xts_aes128_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
+@deftypefunx void xts_aes256_encrypt_message (struct xts_aes256_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
+@deftypefunx void xts_aes128_decrypt_message (struct xts_aes128_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
+@deftypefunx void xts_aes256_decrypt_message (struct xts_aes256_key *@var{ctx}, uint8_t *@var{tweak}, size_t @var{length}, uint8_t *@var{dst}, const uint8_t *@var{src})
 These are identical to @code{xts_encrypt_message} and
 @code{xts_decrypt_message}, except that @var{enc_ctx}, @var{dec_ctx},
 @var{twk_ctx}, @var{encf} and @var{decf} are replaced by the @var{ctx} context
@@ -2960,7 +3003,7 @@ All but the last call for each message @emph{must} use a length that is
 a multiple of the block size.
 @end deftypefun
 
-@deftypefun void eax_digest (struct eax_ctx *@var{eax}, const struct eax_key *@var{key}, const void *@var{cipher}, nettle_cipher_func *@var{f}, size_t @var{length}, uint8_t *@var{digest});
+@deftypefun void eax_digest (struct eax_ctx *@var{eax}, const struct eax_key *@var{key}, const void *@var{cipher}, nettle_cipher_func *@var{f}, size_t @var{length}, uint8_t *@var{digest})
 Extracts the message digest (also known ``authentication tag''). This is
 the final operation when processing a message. If @var{length} is
 smaller than @code{EAX_DIGEST_SIZE}, only the first @var{length} octets
@@ -3042,7 +3085,7 @@ each message @emph{must} use a length that is a multiple of the block
 size.
 @end deftypefun
 
-@deftypefun void eax_aes128_digest (struct eax_aes128_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest});
+@deftypefun void eax_aes128_digest (struct eax_aes128_ctx *@var{ctx}, size_t @var{length}, uint8_t *@var{digest})
 Extracts the message digest (also known ``authentication tag''). This is
 the final operation when processing a message. If @var{length} is
 smaller than @code{EAX_DIGEST_SIZE}, only the first @var{length} octets
@@ -3569,7 +3612,7 @@ These are identical to @code{ccm_set_digest}, except that @var{cipher},
 @deftypefunx void ccm_aes256_encrypt_message (struct ccm_aes256_ctx *@var{ctx}, size_t @var{nlength}, const uint8_t *@var{nonce}, size_t @var{alength}, const uint8_t *@var{adata}, size_t @var{tlength}, size_t @var{clength}, uint8_t *@var{dst}, const uint8_t *@var{src})
 @deftypefunx int ccm_aes128_decrypt_message (struct ccm_aes128_ctx *@var{ctx}, size_t @var{nlength}, const uint8_t *@var{nonce}, size_t @var{alength}, const uint8_t *@var{adata}, size_t @var{tlength}, size_t @var{mlength}, uint8_t *@var{dst}, const uint8_t *@var{src})
 @deftypefunx int ccm_aes192_decrypt_message (struct ccm_aes192_ctx *@var{ctx}, size_t @var{nlength}, const uint8_t *@var{nonce}, size_t @var{alength}, const uint8_t *@var{adata}, size_t @var{tlength}, size_t @var{mlength}, uint8_t *@var{dst}, const uint8_t *@var{src})
-@deftypefunx int ccm_aes192_decrypt_message (struct ccm_aes256_ctx *@var{ctx}, size_t @var{nlength}, const uint8_t *@var{nonce}, size_t @var{alength}, const uint8_t *@var{adata}, size_t @var{tlength}, size_t @var{mlength}, uint8_t *@var{dst}, const uint8_t *@var{src})
+@deftypefunx int ccm_aes256_decrypt_message (struct ccm_aes256_ctx *@var{ctx}, size_t @var{nlength}, const uint8_t *@var{nonce}, size_t @var{alength}, const uint8_t *@var{adata}, size_t @var{tlength}, size_t @var{mlength}, uint8_t *@var{dst}, const uint8_t *@var{src})
 These are identical to @code{ccm_encrypt_message} and @code{ccm_decrypt_message}
 except that @var{cipher} and @var{f} are replaced with a context structure.
 @end deftypefun
@@ -5041,10 +5084,10 @@ time nor message size compared to using SHA256 and SHA512, respectively.
 Creating an @acronym{RSA} signature is done with one of the following
 functions:
 
-@deftypefun int rsa_md5_sign_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct md5_ctx *@var{hash}, mpz_t @var{signature})
-@deftypefunx int rsa_sha1_sign_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct sha1_ctx *@var{hash}, mpz_t @var{signature})
-@deftypefunx int rsa_sha256_sign_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct sha256_ctx *@var{hash}, mpz_t @var{signature})
-@deftypefunx int rsa_sha512_sign_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct sha512_ctx *@var{hash}, mpz_t @var{signature})
+@deftypefun int rsa_md5_sign_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct md5_ctx *@var{hash}, mpz_t @var{signature})
+@deftypefunx int rsa_sha1_sign_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct sha1_ctx *@var{hash}, mpz_t @var{signature})
+@deftypefunx int rsa_sha256_sign_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct sha256_ctx *@var{hash}, mpz_t @var{signature})
+@deftypefunx int rsa_sha512_sign_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, struct sha512_ctx *@var{hash}, mpz_t @var{signature})
 The signature is stored in @var{signature} (which must have been
 @code{mpz_init}'ed earlier). The hash context is reset so that it can be
 used for new messages. The @var{random_ctx} and @var{random} pointers
@@ -5055,10 +5098,10 @@ not possible to create a signature using SHA512 and a 512-bit
 @acronym{RSA} key.
 @end deftypefun
 
-@deftypefun int rsa_md5_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
-@deftypefunx int rsa_sha1_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
-@deftypefunx int rsa_sha256_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
-@deftypefunx int rsa_sha512_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefun int rsa_md5_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_sha1_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_sha256_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_sha512_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, const uint8_t *@var{digest}, mpz_t @var{signature})
 Creates a signature from the given hash digest. @var{digest} should
 point to a digest of size @code{MD5_DIGEST_SIZE},
 @code{SHA1_DIGEST_SIZE}, @code{SHA256_DIGEST_SIZE}, or
@@ -5067,7 +5110,7 @@ point to a digest of size @code{MD5_DIGEST_SIZE},
 Returns one on success, or zero on failure.
 @end deftypefun
 
-@deftypefun int rsa_pkcs1_sign_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{length}, const uint8_t *@var{digest_info}, mpz_t @var{signature})
+@deftypefun int rsa_pkcs1_sign_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{length}, const uint8_t *@var{digest_info}, mpz_t @var{signature})
 Similar to the above @code{_sign_digest_tr} functions, but the input is not the
 plain hash digest, but a PKCS#1 ``DigestInfo'', an ASN.1 DER-encoding
 of the digest together with an object identifier for the used hash
@@ -5087,9 +5130,9 @@ it's not possible to create a signature using SHA512 and a 512-bit
 @end deftypefun
 
 @deftypefun int rsa_md5_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature})
-@deftypefunx int rsa_sha1_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature});
-@deftypefunx int rsa_sha256_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature});
-@deftypefunx int rsa_sha512_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature});
+@deftypefunx int rsa_sha1_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_sha256_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_sha512_sign_digest (const struct rsa_private_key *@var{key}, const uint8_t *@var{digest}, mpz_t @var{signature})
 Creates a signature from the given hash digest; otherwise analoguous to
 the above signing functions. @var{digest} should point to a digest of
 size @code{MD5_DIGEST_SIZE}, @code{SHA1_DIGEST_SIZE},
@@ -5098,7 +5141,7 @@ The signature is stored in @var{signature} (which must have been
 @code{mpz_init}:ed earlier). Returns one on success, or zero on failure.
 @end deftypefun
 
-@deftypefun int rsa_pkcs1_sign(const struct rsa_private_key *@var{key}, size_t @var{length}, const uint8_t *@var{digest_info}, mpz_t @var{s})
+@deftypefun int rsa_pkcs1_sign (const struct rsa_private_key *@var{key}, size_t @var{length}, const uint8_t *@var{digest_info}, mpz_t @var{s})
 Similar to the above _sign_digest functions, but the input is not the
 plain hash digest, but a PKCS#1 ``DigestInfo'', an ASN.1 DER-encoding
 of the digest together with an object identifier for the used hash
@@ -5125,7 +5168,7 @@ should point to a digest of size @code{MD5_DIGEST_SIZE},
 @code{SHA512_DIGEST_SIZE} respectively.
 @end deftypefun
 
-@deftypefun int rsa_pkcs1_verify(const struct rsa_public_key *@var{key}, size_t @var{length}, const uint8_t *@var{digest_info}, const mpz_t @var{signature})
+@deftypefun int rsa_pkcs1_verify (const struct rsa_public_key *@var{key}, size_t @var{length}, const uint8_t *@var{digest_info}, const mpz_t @var{signature})
 Similar to the above _verify_digest functions, but the input is not the
 plain hash digest, but a PKCS#1 ``DigestInfo'', and ASN.1 DER-encoding
 of the digest together with an object identifier for the used hash
@@ -5134,7 +5177,7 @@ algorithm.
 
 While the above functions for the RSA signature operations use the
 @cite{PKCS#1} padding scheme, Nettle also provides the variants based on
-the PSS padding scheme, specified in @cite{RFC 3447}.  These variants
+the PSS padding scheme, specified in @cite{RFC 8017}.  These variants
 take advantage of a randomly choosen salt value, which could enhance the
 security by causing output to be different for equivalent inputs.
 However, assuming the same security level as inverting the @acronym{RSA}
@@ -5146,9 +5189,9 @@ the underlying hash function.
 Creating an RSA signature with the PSS padding scheme is done with one
 of the following functions:
 
-@deftypefun int rsa_pss_sha256_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{salt_length}, const uint8_t *@var{salt}, const uint8_t *@var{digest}, mpz_t @var{signature})
-@deftypefunx int rsa_pss_sha384_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{salt_length}, const uint8_t *@var{salt}, const uint8_t *@var{digest}, mpz_t @var{signature})
-@deftypefunx int rsa_pss_sha512_sign_digest_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{salt_length}, const uint8_t *@var{salt}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefun int rsa_pss_sha256_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{salt_length}, const uint8_t *@var{salt}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_pss_sha384_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{salt_length}, const uint8_t *@var{salt}, const uint8_t *@var{digest}, mpz_t @var{signature})
+@deftypefunx int rsa_pss_sha512_sign_digest_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{salt_length}, const uint8_t *@var{salt}, const uint8_t *@var{digest}, mpz_t @var{signature})
 Creates a signature using the PSS padding scheme. @var{salt} should
 point to a salt string of size @var{salt_length}. @var{digest} should
 point to a digest of size @code{SHA256_DIGEST_SIZE},
@@ -5188,12 +5231,48 @@ randomized RSA blinding.
 Returns 1 on success, 0 on failure.
 @end deftypefun
 
+While the above functions for the RSA encryption operations use the
+@cite{PKCS#1} padding scheme, Nettle also provides the variants based
+on the OAEP padding scheme, specified in @cite{RFC 8017}.  These
+variants take advantage of a randomly choosen seed value, which could
+enhance the security by causing output to be different for equivalent
+inputs.
+
+Encrypting a clear text message using RSA with the OAEP padding scheme
+is done with one of the following functions:
+
+@deftypefun int rsa_oaep_sha256_encrypt (const struct rsa_public_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{label_length}, const uint8_t *@var{label}, size_t @var{length}, const uint8_t *@var{message}, uint8_t *@var{ciphertext})
+@deftypefunx int rsa_oaep_sha384_encrypt (const struct rsa_public_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{label_length}, const uint8_t *@var{label}, size_t @var{length}, const uint8_t *@var{message}, uint8_t *@var{ciphertext})
+@deftypefunx int rsa_oaep_sha512_encrypt (const struct rsa_public_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{label_length}, const uint8_t *@var{label}, size_t @var{length}, const uint8_t *@var{message}, uint8_t *@var{ciphertext})
+Returns 1 on success, 0 on failure. The label is optional and if
+omitted, @var{label_length} and @var{label} is set to 0 and
+@code{NULL} respectively. The maximum size of @var{message} can be
+calculated with @code{k - 2 * hLen - 2}, where @code{k} is the key
+size in octets obtained with @var{key}->size, and @code{hLen} is the
+output size of the underlying hash function (e.g.,
+@code{SHA256_DIGEST_SIZE} for @code{rsa_oaep_sha256_encrypt}).
+@end deftypefun
+
+Decrypting a cipher text message using RSA with the OAEP padding
+scheme is done with one of the following functions:
+
+@deftypefun int rsa_oaep_sha256_decrypt (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{label_length}, const uint8_t *@var{label}, size_t *@var{length}, uint8_t *@var{message}, const uint8_t *@var{ciphertext})
+@deftypefunx int rsa_oaep_sha384_decrypt (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{label_length}, const uint8_t *@var{label}, size_t *@var{length}, uint8_t *@var{message}, const uint8_t *@var{ciphertext})
+@deftypefunx int rsa_oaep_sha512_decrypt (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, size_t @var{label_length}, const uint8_t *@var{label}, size_t *@var{length}, uint8_t *@var{message}, const uint8_t *@var{ciphertext})
+Returns 1 on success, 0 on failure. These function utilize randomized
+RSA blinding similarly to @code{rsa_decrypt_tr}. The message buffer
+pointed to by @var{cleartext} must be of size *@var{length}. After
+decryption, *@var{length} will be updated with the size of the
+message.
+@end deftypefun
+
+
 If you need to use the @acronym{RSA} trapdoor, the private key, in a way
 that isn't supported by the above functions Nettle also includes a
 function that computes @code{x^d mod n} and nothing more, using the
 @acronym{CRT} optimization.
 
-@deftypefun int rsa_compute_root_tr(const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, mpz_t @var{x}, const mpz_t @var{m})
+@deftypefun int rsa_compute_root_tr (const struct rsa_public_key *@var{pub}, const struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random}, mpz_t @var{x}, const mpz_t @var{m})
 Computes @code{x = m^d}. Returns one on success, or zero if a failure in
 the computation was detected.
 @end deftypefun
@@ -5204,7 +5283,7 @@ Computes @code{x = m^d}.
 
 At last, how do you create new keys?
 
-@deftypefun int rsa_generate_keypair (struct rsa_public_key *@var{pub}, struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func @var{random}, void *@var{progress_ctx}, nettle_progress_func @var{progress}, unsigned @var{n_size}, unsigned @var{e_size});
+@deftypefun int rsa_generate_keypair (struct rsa_public_key *@var{pub}, struct rsa_private_key *@var{key}, void *@var{random_ctx}, nettle_random_func @var{random}, void *@var{progress_ctx}, nettle_progress_func @var{progress}, unsigned @var{n_size}, unsigned @var{e_size})
 There are lots of parameters. @var{pub} and @var{key} is where the
 resulting key pair is stored. The structs should be initialized, but you
 don't need to call @code{rsa_public_key_prepare} or
@@ -5708,7 +5787,7 @@ Returns 1 if the signature is valid, otherwise 0.
 
 Finally, generating a new ECDSA key pair:
 
-@deftypefun void ecdsa_generate_keypair (struct ecc_point *@var{pub}, struct ecc_scalar *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random});
+@deftypefun void ecdsa_generate_keypair (struct ecc_point *@var{pub}, struct ecc_scalar *@var{key}, void *@var{random_ctx}, nettle_random_func *@var{random})
 @var{pub} and @var{key} is where the resulting key pair is stored. The
 structs should be initialized, for the desired ECC curve, before you call this function.
 
@@ -5763,7 +5842,7 @@ curve/generator combination. Following list defines correspondence
 between nettle's view on curves and actual identifiers defined in @cite{RFC
 4357} and @cite{RFC 7836}.
 
-@deftypefun {const struct ecc_curve} nettle_get_gost_gc256b(void)
+@deftypefun {const struct ecc_curve} nettle_get_gost_gc256b (void)
 Returns curve corresponding to following identifiers:
 @itemize
 @item id-GostR3410-2001-CryptoPro-A-ParamSet (@cite{RFC 4357})
@@ -5772,7 +5851,7 @@ Returns curve corresponding to following identifiers:
 @end itemize
 @end deftypefun
 
-@deftypefun {const struct ecc_curve} nettle_get_gost_gc512a(void)
+@deftypefun {const struct ecc_curve} nettle_get_gost_gc512a (void)
 Returns curve corresponding to following identifiers:
 @itemize
 @item id-tc26-gost-3410-12-512-paramSetA (@cite{RFC 7836})
@@ -6296,6 +6375,45 @@ units of 10 microseconds.
 
 Returns an entropy estimate, in bits, suitable for calling
 @code{yarrow256_update}. Usually, 0, 1 or 2 bits.
+@end deftypefun
+
+@subsection DRBG-CTR
+
+The Deterministic Random Bit Generator (DRBG) family is a complex family
+of deterministic randomness generators published by NIST in SP 800-90A.
+
+We support what we believe is the reasonable parts of the CTR_DRBG
+algorithm for AES256.  Re-seeding, personalization strings, derivation
+functions and support for non-AES256 is not implemented.
+Personalization strings can be implemented by the caller, if desired,
+with xor.  If you need re-seeding or entropy derivation, we suggest that
+you use Yarrow instead.
+
+The security bounds of DRBG-CTR are not intuitive, see ``Security Bounds
+for the NIST Codebook-based Deterministic Random Bit Generator'' by
+Matthew J. Campagna, from @url{https://eprint.iacr.org/2006/379.pdf}.
+
+Our suggested use-case for DRBG-CTR is to deterministically generate
+known values from a seed when comparing against expected values for some
+other algorithm.
+
+Nettle defines DRBG-CTR in @file{<nettle/drbg-ctr.h>}.
+
+@deftp {Context struct} {struct drbg_ctr_aes256_ctx}
+@end deftp
+
+@defvr Constant DRBG_CTR_AES256_SEED_SIZE
+The size of the seeding material.
+@end defvr
+
+@deftypefun void drbg_ctr_aes256_init (struct drbg_ctr_aes256_ctx *@var{ctx}, uint8_t *@var{seed_material})
+Initialize the DRBG-CTR-AES256 context using
+@code{DRBG_CTR_AES256_SEED_SIZE} bytes of @var{seed_material}.
+@end deftypefun
+
+@deftypefun void drbg_ctr_aes256_random (struct drbg_ctr_aes256_ctx *@var{ctx}, size_t n, uint8_t *@var{dst})
+Generates @var{n} octets of output into @var{dst}.  The generator must
+be initialized before you call this function.
 @end deftypefun
 
 @node ASCII encoding

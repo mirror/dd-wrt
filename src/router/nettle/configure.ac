@@ -2,19 +2,19 @@ dnl -*- mode: shell-script; sh-indentation: 2; -*-
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([nettle], [3.9.1], [nettle-bugs@lists.lysator.liu.se])
-AC_PREREQ(2.61)
+AC_INIT([nettle], [3.10.2], [nettle-bugs@lists.lysator.liu.se])
+AC_PREREQ([2.69])
 AC_CONFIG_SRCDIR([nettle-types.h])
 # Needed to stop autoconf from looking for files in parent directories.
 AC_CONFIG_AUX_DIR([.])
 
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 LIBNETTLE_MAJOR=8
-LIBNETTLE_MINOR=8
+LIBNETTLE_MINOR=11
 
 LIBHOGWEED_MAJOR=6
-LIBHOGWEED_MINOR=8
+LIBHOGWEED_MINOR=11
 
 dnl Note double square brackets, for extra m4 quoting.
 MAJOR_VERSION=`echo $PACKAGE_VERSION | sed 's/^\([[^.]]*\)\..*/\1/'`
@@ -26,7 +26,7 @@ AC_CANONICAL_HOST
 
 # Command line options
 AC_ARG_WITH(include-path,
-  AC_HELP_STRING([--with-include-path], [A colon-separated list of directories to search for include files]),,
+  AS_HELP_STRING([--with-include-path], [A colon-separated list of directories to search for include files]),,
   [with_include_path=''])
 
 if test x$with_include_path != x ; then
@@ -34,7 +34,7 @@ if test x$with_include_path != x ; then
 fi
 
 AC_ARG_WITH(lib-path,
-  AC_HELP_STRING([--with-lib-path], [A colon-separated list of directories to search for libraries]),,
+  AS_HELP_STRING([--with-lib-path], [A colon-separated list of directories to search for libraries]),,
   [with_lib_path=''])
 
 if test x$with_lib_path != x ; then
@@ -42,83 +42,86 @@ if test x$with_lib_path != x ; then
 fi
 
 AC_ARG_ENABLE(public-key,
-  AC_HELP_STRING([--disable-public-key], [Disable public key algorithms]),,
+  AS_HELP_STRING([--disable-public-key], [Disable public key algorithms]),,
   [enable_public_key=yes])
 
 AC_ARG_ENABLE(assembler,
-  AC_HELP_STRING([--disable-assembler],[Disable assembler code]),,
+  AS_HELP_STRING([--disable-assembler], [Disable assembler code]),,
   [enable_assembler=yes])
 
 AC_ARG_ENABLE(static,
-  AC_HELP_STRING([--disable-static], [Do not build any static library]),,
+  AS_HELP_STRING([--disable-static], [Do not build any static library]),,
   [enable_static=yes])
 
 AC_ARG_ENABLE(shared,
-  AC_HELP_STRING([--disable-shared], [Do not build any shared library]),,
+  AS_HELP_STRING([--disable-shared], [Do not build any shared library]),,
   [enable_shared=yes])
 
 AC_ARG_ENABLE(pic,
-  AC_HELP_STRING([--disable-pic],
-  [Do not try to compile library files as position independent code]),,
+  AS_HELP_STRING([--disable-pic], [Do not try to compile library files as position independent code]),,
   [enable_pic=yes])
 
 AC_ARG_ENABLE(openssl,
-  AC_HELP_STRING([--disable-openssl], [Do not include openssl glue in the benchmark program]),,
+  AS_HELP_STRING([--disable-openssl], [Do not include openssl glue in the benchmark program]),,
   [enable_openssl=yes])
 
 AC_ARG_ENABLE(gcov,
-  AC_HELP_STRING([--enable-gcov], [Instrument for gcov (requires a modern gcc)]),,
+  AS_HELP_STRING([--enable-gcov], [Instrument for gcov (requires a modern gcc)]),,
   [enable_gcov=no])
 
 AC_ARG_ENABLE(documentation,
-  AC_HELP_STRING([--disable-documentation], [Omit building and installing the documentation. (default=auto)]),,
+  AS_HELP_STRING([--disable-documentation], [Omit building and installing the documentation. (default=auto)]),,
   [enable_documentation=auto])
 
-AC_ARG_ENABLE(fat, AC_HELP_STRING([--disable-fat], [Disable fat library build]),,
+AC_ARG_ENABLE(fat, AS_HELP_STRING([--disable-fat], [Disable fat library build]),,
   [enable_fat=yes])
 
 AC_ARG_ENABLE(arm-neon,
-  AC_HELP_STRING([--enable-arm-neon], [Enable ARM Neon assembly. (default=auto)]),,
+  AS_HELP_STRING([--enable-arm-neon], [Enable ARM Neon assembly. (default=auto)]),,
   [enable_arm_neon=auto])
 
 AC_ARG_ENABLE(arm64-crypto,
-  AC_HELP_STRING([--enable-arm64-crypto], [Enable Arm64 crypto extension. (default=no)]),,
+  AS_HELP_STRING([--enable-arm64-crypto], [Enable Arm64 crypto extension. (default=no)]),,
   [enable_arm64_crypto=no])
 
 AC_ARG_ENABLE(x86-aesni,
-  AC_HELP_STRING([--enable-x86-aesni], [Enable x86_64 aes instructions. (default=no)]),,
+  AS_HELP_STRING([--enable-x86-aesni], [Enable x86_64 aes instructions. (default=no)]),,
   [enable_x86_aesni=no])
 
 AC_ARG_ENABLE(x86-sha-ni,
-  AC_HELP_STRING([--enable-x86-sha-ni], [Enable x86_64 sha_ni instructions. (default=no)]),,
+  AS_HELP_STRING([--enable-x86-sha-ni], [Enable x86_64 sha_ni instructions. (default=no)]),,
   [enable_x86_sha_ni=no])
 
 AC_ARG_ENABLE(x86-pclmul,
-  AC_HELP_STRING([--enable-x86-pclmul], [Enable x86_64 pclmulqdq instructions. (default=no)]),,
+  AS_HELP_STRING([--enable-x86-pclmul], [Enable x86_64 pclmulqdq instructions. (default=no)]),,
   [enable_x86_pclmul=no])
 
 AC_ARG_ENABLE(power-crypto-ext,
-  AC_HELP_STRING([--enable-power-crypto-ext], [Enable POWER crypto extensions. (default=no)]),,
+  AS_HELP_STRING([--enable-power-crypto-ext], [Enable POWER crypto extensions. (default=no)]),,
   [enable_power_crypto_ext=no])
 
 AC_ARG_ENABLE(power-altivec,
-  AC_HELP_STRING([--enable-power-altivec], [Enable POWER altivec and vsx extensions. (default=no)]),,
+  AS_HELP_STRING([--enable-power-altivec], [Enable POWER altivec and vsx extensions. (default=no)]),,
   [enable_altivec=no])
 
 AC_ARG_ENABLE(power9,
-  AC_HELP_STRING([--enable-power9], [Enable POWER ISA v3.0. (default=no)]),,
+  AS_HELP_STRING([--enable-power9], [Enable POWER ISA v3.0. (default=no)]),,
   [enable_power9=no])
 
 AC_ARG_ENABLE(s390x-vf,
-  AC_HELP_STRING([--enable-s390x-vf], [Enable vector facility on z/Architecture. (default=no)]),,
+  AS_HELP_STRING([--enable-s390x-vf], [Enable vector facility on z/Architecture. (default=no)]),,
   [enable_s390x_vf=no])
 
 AC_ARG_ENABLE(s390x-msa,
-  AC_HELP_STRING([--enable-s390x-msa], [Enable message-security assist extensions on z/Architecture. (default=no)]),,
+  AS_HELP_STRING([--enable-s390x-msa], [Enable message-security assist extensions on z/Architecture. (default=no)]),,
   [enable_s390x_msa=no])
 
+AC_ARG_ENABLE(extra-asserts,
+  AS_HELP_STRING([--enable-extra-asserts], [Enable additional asserts in ECC code (incompatible side-channel tests)]),,
+  [enable_extra_asserts=no])
+
 AC_ARG_ENABLE(mini-gmp,
-  AC_HELP_STRING([--enable-mini-gmp], [Enable mini-gmp, used instead of libgmp.]),,
+  AS_HELP_STRING([--enable-mini-gmp], [Enable mini-gmp, used instead of libgmp.]),,
   [enable_mini_gmp=no])
 
 AC_ARG_VAR(ASM_FLAGS, [Extra flags for processing assembly source files])
@@ -133,6 +136,11 @@ fi
 AC_SUBST([NETTLE_USE_MINI_GMP])
 AC_SUBST([HOGWEED_EXTRA_SYMBOLS])
 
+AH_TEMPLATE([WITH_EXTRA_ASSERTS], [Defined to enable additional asserts])
+if test "$enable_extra_asserts" = yes ; then
+  AC_DEFINE(WITH_EXTRA_ASSERTS)
+fi
+
 LSH_RPATH_INIT([`echo $with_lib_path | sed 's/:/ /g'` \
     `echo $exec_prefix | sed "s@^NONE@$prefix/lib@g" | sed "s@^NONE@$ac_default_prefix/lib@g"` \
     /usr/local/lib /sw/local/lib /sw/lib \
@@ -143,26 +151,11 @@ AC_PROG_CC
 
 NETTLE_CHECK_IFUNC
 
-# When $CC foo.c -o foo creates both foo and foo.exe, autoconf picks
-# up the foo.exe and sets exeext to .exe. That is correct for cygwin,
-# which has some kind of magic link from foo to foo.exe, but not for
-# rntcl. A better check for the cygwin case would check if the
-# contents of foo and foo.exe are equal; in the rntcl case, foo is a
-# sh script, and foo.exe is a windows executable.
-
-if test "x$CC" = xrntcl ; then
-    AC_MSG_NOTICE([Compiling with rntcl; clearing EXEEXT and disabling assembler])
-    ac_exeext=''
-    ac_cv_exeext=''
-    EXEEXT=''
-    enable_assembler=no
-fi
-
 # Used by the testsuite only
 AC_PROG_CXX
 
 AC_LANG_PUSH(C++)
-AC_TRY_COMPILE([],[return 0;],[IF_CXX=''], [IF_CXX='#'])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])], [IF_CXX=''], [IF_CXX='#'])
 AC_SUBST([IF_CXX])
 AC_LANG_POP
 
@@ -174,10 +167,6 @@ AC_CHECK_TOOL(NM, nm, strings)
 # Used only for the GNU-stack configure test.
 AC_CHECK_TOOL(OBJDUMP, objdump, false)
 AC_CHECK_TOOL(AR, ar, false)
-
-if test "x$ac_cv_prog_cc_stdc" = xno ; then
-  AC_ERROR([the C compiler doesn't handle ANSI-C]) #'
-fi
 
 AC_PROG_INSTALL
 
@@ -191,6 +180,9 @@ AC_PROG_LN_S
 GMP_PROG_CC_FOR_BUILD
 GMP_PROG_EXEEXT_FOR_BUILD
 
+# Check if valgrind is working; expected to fail in cross builds.
+NETTLE_PROG_VALGRIND
+
 LSH_DEPENDENCY_TRACKING
 
 if test "x$enable_gcov" = "xyes"; then
@@ -202,11 +194,10 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_UID_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
 
-AC_CHECK_HEADERS([openssl/evp.h openssl/ecdsa.h],,
+AC_CHECK_HEADERS([openssl/evp.h openssl/ec.h openssl/rsa.h],,
 [enable_openssl=no
  break])
 
@@ -218,10 +209,10 @@ AC_CHECK_LIB([dl], [dlopen],
 			[Define to 1 if you have dlopen (with -ldl).])])
 
 LSH_FUNC_ALLOCA
-LSH_FUNC_STRERROR
+
 # getenv_secure is used for fat overrides,
 # getline is used in the testsuite
-AC_CHECK_FUNCS(secure_getenv getline)
+AC_CHECK_FUNCS(secure_getenv getline elf_aux_info)
 
 ASM_WORDS_BIGENDIAN=unknown
 AC_C_BIGENDIAN([AC_DEFINE([WORDS_BIGENDIAN], 1)
@@ -230,14 +221,14 @@ AC_C_BIGENDIAN([AC_DEFINE([WORDS_BIGENDIAN], 1)
 
 AC_CACHE_CHECK([for __builtin_bswap64],
 		nettle_cv_c_builtin_bswap64,
-[AC_TRY_LINK([
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <stdint.h>
-],[
+]], [[
 uint64_t x = 17;
 uint64_t y = __builtin_bswap64(x);
-],
-nettle_cv_c_builtin_bswap64=yes,
-nettle_cv_c_builtin_bswap64=no)])
+]])],
+  [nettle_cv_c_builtin_bswap64=yes],
+  [nettle_cv_c_builtin_bswap64=no])])
 
 AH_TEMPLATE([HAVE_BUILTIN_BSWAP64], [Define if __builtin_bswap64 is available])
 if test "x$nettle_cv_c_builtin_bswap64" = "xyes" ; then
@@ -250,7 +241,7 @@ LSH_GCC_ATTRIBUTES
 # sys/types.h and unistd.h.
 AC_CACHE_CHECK([for fcntl file locking],
 		nettle_cv_fcntl_locking,
-[AC_TRY_COMPILE([
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
@@ -258,12 +249,12 @@ AC_CACHE_CHECK([for fcntl file locking],
 # include <unistd.h>
 #endif
 #include <fcntl.h>
-],[
+]], [[
 int op = F_SETLKW;
 struct flock fl;
-],
-nettle_cv_fcntl_locking=yes,
-nettle_cv_fcntl_locking=no)])
+]])],
+  [nettle_cv_fcntl_locking=yes],
+  [nettle_cv_fcntl_locking=no])])
 
 AH_TEMPLATE([HAVE_FCNTL_LOCKING], [Define if fcntl file locking is available])
 if test "x$nettle_cv_fcntl_locking" = "xyes" ; then
@@ -326,75 +317,85 @@ W64_ABI=no   # For x86_64 windows
 
 case "$host_cpu" in
   [x86_64 | amd64])
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__x86_64__) || defined(__arch64__)
 #error 64-bit x86
 #endif
-    ], [], [
+    ]], [[]])], [
       ABI=32
     ], [
       ABI=64
     ])
     ;;
   *sparc*)
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__sparcv9) || defined(__arch64__)
 #error 64-bit sparc
 #endif
-    ], [], [
+    ]], [[]])], [
       ABI=32
     ], [
       ABI=64
     ])
     ;;
   *mips64*)
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__mips64) || defined(__mips64__) || (defined(__sgi) && defined(__LP64__))
 #error 64-bit mips
 #endif
-    ], [], [
+    ]], [[]])], [
       ABI=32
     ], [
       ABI=64
     ])
     ;;
   *powerpc64*)
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__PPC64__)
 #error 64-bit powerpc
 #endif
-    ], [], [
+    ]], [[]])], [
       ABI=32
     ], [
       ABI=64
     ])
     if test "$ABI" = 64 ; then
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if _CALL_ELF == 2
 #error ELFv2 ABI
 #endif
-      ], [], [], [
+      ]], [[]])], [], [
 	ELFV2_ABI=yes
       ])
+      if test "$enable_assembler" = yes ; then
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__VSX__)
+#error VSX available
+#endif
+      ]], [[]])], [
+	  AC_MSG_WARN([VSX instructions (Power7 or later) not available, disabling use of assembly.])
+	  enable_assembler=no
+      ], [])
+      fi
     fi
     ;;
   aarch64*)
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__aarch64__)
 #error 64-bit arm
 #endif
-    ], [], [
+    ]], [[]])], [
       ABI=32
     ], [
       ABI=64
     ])
     ;;
   *s390x*)
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__s390x__)
 #error 64-bit s390x
 #endif
-    ], [], [
+    ]], [[]])], [
       ABI=32
     ], [
       ABI=64
@@ -495,8 +496,6 @@ if test "x$enable_assembler" = xyes ; then
     *sparc*)
       if test "$ABI" = 64 ; then
 	asm_path=sparc64
-      else
-	asm_path=sparc32
       fi
       ;;
     arm*)
@@ -585,6 +584,7 @@ fi
 # Files which replace a C source file (or otherwise don't correspond
 # to a new object file).
 asm_replace_list="aes-encrypt-internal.asm aes-decrypt-internal.asm \
+		aes-invert-internal.asm \
 		aes128-set-encrypt-key.asm aes128-set-decrypt-key.asm \
 		aes128-encrypt.asm aes128-decrypt.asm \
 		aes192-set-encrypt-key.asm aes192-set-decrypt-key.asm \
@@ -594,7 +594,7 @@ asm_replace_list="aes-encrypt-internal.asm aes-decrypt-internal.asm \
 		cbc-aes128-encrypt.asm cbc-aes192-encrypt.asm \
 		cbc-aes256-encrypt.asm \
 		camellia-crypt-internal.asm \
-		md5-compress.asm memxor.asm memxor3.asm \
+		memxor.asm memxor3.asm \
 		ghash-set-key.asm ghash-update.asm \
 		poly1305-internal.asm \
 		chacha-core-internal.asm \
@@ -605,7 +605,8 @@ asm_replace_list="aes-encrypt-internal.asm aes-decrypt-internal.asm \
 
 # Assembler files which generate additional object files if they are used.
 asm_nettle_optional_list="cpuid.asm cpu-facility.asm \
-  aes-encrypt-internal-2.asm aes-decrypt-internal-2.asm memxor-2.asm memxor3-2.asm \
+  memxor-2.asm memxor3-2.asm \
+  aes-encrypt-internal-2.asm aes-decrypt-internal-2.asm aes-invert-internal-2.asm \
   aes128-set-encrypt-key-2.asm aes128-set-decrypt-key-2.asm \
   aes128-encrypt-2.asm aes128-decrypt-2.asm \
   aes192-set-encrypt-key-2.asm aes192-set-decrypt-key-2.asm \
@@ -616,6 +617,8 @@ asm_nettle_optional_list="cpuid.asm cpu-facility.asm \
   chacha-2core.asm chacha-3core.asm chacha-4core.asm chacha-core-internal-2.asm \
   poly1305-blocks.asm poly1305-internal-2.asm \
   ghash-set-key-2.asm ghash-update-2.asm \
+  gcm-aes-encrypt.asm gcm-aes-encrypt-2.asm \
+  gcm-aes-decrypt.asm gcm-aes-decrypt-2.asm\
   salsa20-2core.asm salsa20-core-internal-2.asm \
   sha1-compress-2.asm sha256-compress-n-2.asm \
   sha3-permute-2.asm sha512-compress-2.asm \
@@ -724,6 +727,7 @@ AH_VERBATIM([HAVE_NATIVE],
 #undef HAVE_NATIVE_memxor3
 #undef HAVE_NATIVE_aes_decrypt
 #undef HAVE_NATIVE_aes_encrypt
+#undef HAVE_NATIVE_aes_invert
 #undef HAVE_NATIVE_aes128_decrypt
 #undef HAVE_NATIVE_aes128_encrypt
 #undef HAVE_NATIVE_aes128_invert_key
@@ -768,6 +772,8 @@ AH_VERBATIM([HAVE_NATIVE],
 #undef HAVE_NATIVE_fat_poly1305_blocks
 #undef HAVE_NATIVE_ghash_set_key
 #undef HAVE_NATIVE_ghash_update
+#undef HAVE_NATIVE_gcm_aes_encrypt
+#undef HAVE_NATIVE_gcm_aes_decrypt
 #undef HAVE_NATIVE_salsa20_core
 #undef HAVE_NATIVE_salsa20_2core
 #undef HAVE_NATIVE_fat_salsa20_2core
@@ -807,14 +813,7 @@ case "$host_os" in
         ;;
     esac
     if test "x$cross_compiling" = xyes ; then
-	case "$ABI" in
-	    64)
-		EMULATOR=wine64
-		;;
-	    *)
-		EMULATOR=wine
-		;;
-	esac
+      EMULATOR=wine
     fi
     if test "x$ABI" = x64 ; then
         W64_ABI=yes
@@ -993,13 +992,13 @@ int foo() { return 0; }
 EOF
     nettle_compile="$CC $CFLAGS $CPPFLAGS -c conftest.c >conftest.out 2>&1"
     if AC_TRY_EVAL(nettle_compile); then
-      cat conftest.out >&AC_FD_CC
+      cat conftest.out >&AS_MESSAGE_LOG_FD
       $OBJDUMP -x conftest.o | grep '\.note\.GNU-stack' > /dev/null \
       && nettle_cv_asm_gnu_stack=yes
     else
-      cat conftest.out >&AC_FD_CC
-      echo "configure: failed program was:" >&AC_FD_CC
-      cat conftest.s >&AC_FD_CC
+      cat conftest.out >&AS_MESSAGE_LOG_FD
+      echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
+      cat conftest.s >&AS_MESSAGE_LOG_FD
     fi
     rm -f conftest.*])
   if test x$nettle_cv_asm_gnu_stack = xyes ; then
@@ -1023,11 +1022,11 @@ dnl  Intel CET support if needed.
 dnl  3. ASM_X86_MARK_CET_ALIGN to align ASM_X86_MARK_CET.
 AC_CACHE_CHECK([if Intel CET is enabled],
   [nettle_cv_asm_x86_intel_cet],
-  [AC_TRY_COMPILE([
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifndef __CET__
 #error Intel CET is not enabled
 #endif
-  ], [],
+  ]], [[]])],
   [nettle_cv_asm_x86_intel_cet=yes],
   [nettle_cv_asm_x86_intel_cet=no])])
 if test "$nettle_cv_asm_x86_intel_cet" = yes; then
@@ -1047,13 +1046,13 @@ if test "$nettle_cv_asm_x86_intel_cet" = yes; then
   esac
   AC_CACHE_CHECK([if .note.gnu.property section is needed],
     [nettle_cv_asm_x86_gnu_property],
-    [AC_TRY_COMPILE([
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if !defined __ELF__ || !defined __CET__
 #error GNU property is not needed
 #endif
-    ], [],
-    [nettle_cv_asm_x86_gnu_property=yes],
-    [nettle_cv_asm_x86_gnu_property=no])])
+    ]], [[]])],
+  [nettle_cv_asm_x86_gnu_property=yes],
+  [nettle_cv_asm_x86_gnu_property=no])])
 else
   nettle_cv_asm_x86_gnu_property=no
 fi
@@ -1185,12 +1184,29 @@ if test x$enable_openssl = xyes ; then
     [OPENSSL_LIBFLAGS='-lcrypto'],
     [enable_openssl=no])
 fi
-
-AH_TEMPLATE([WITH_OPENSSL],
-	    [Define if you have openssl's libcrypto (used for benchmarking)]) dnl'
-
 if test x$enable_openssl = xyes ; then
-  AC_DEFINE(WITH_OPENSSL)
+  AC_MSG_CHECKING([if openssl supports the functions used by nettle benchmark programs])
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $OPENSSL_LIBFLAGS"
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([
+#include <openssl/evp.h>
+#include <openssl/ec.h>
+#include <openssl/rsa.h>
+], [
+EVP_MD_CTX *cipher_ctx = EVP_CIPHER_CTX_new();
+EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
+EVP_PKEY *rsa_key = EVP_RSA_gen(2048);
+EVP_PKEY *ec_key = EVP_EC_gen("P-256");
+int res = EVP_DigestSignFinal (md_ctx, NULL, NULL);
+])], [
+  AC_MSG_RESULT([yes])
+  AC_DEFINE([WITH_OPENSSL], 1,
+	    [Define if you have openssl libcrypto (used for benchmarking)])
+], [
+  AC_MSG_RESULT([no])
+  enable_openssl=no
+])
+  LIBS=$save_LIBS
 fi
 
 AC_SUBST(OPENSSL_LIBFLAGS)

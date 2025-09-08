@@ -130,7 +130,7 @@ sec_zero_p (const mp_limb_t *ap, mp_size_t n)
   for (i = 0, w = 0; i < n; i++)
     w |= ap[i];
 
-  return w == 0;
+  return is_zero_limb (w);
 }
 
 /* Additional convenience functions. */

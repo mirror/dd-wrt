@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "gostdsa.h"
+#include "dsa-internal.h"
 #include "ecc-internal.h"
 
 /* Low-level GOST DSA verify */
@@ -93,7 +94,7 @@ ecc_gostdsa_verify (const struct ecc_curve *ecc,
 	 && ecdsa_in_range (ecc, sp)))
     return 0;
 
-  gost_hash (&ecc->q, hp, length, digest);
+  _nettle_gostdsa_hash (hp, ecc->q.bit_size, length, digest);
 
   if (mpn_zero_p (hp, ecc->p.size))
     mpn_add_1 (hp, hp, ecc->p.size, 1);

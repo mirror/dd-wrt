@@ -162,12 +162,17 @@ typedef void aes_crypt_internal_func (unsigned rounds, const uint32_t *keys,
 				      const struct aes_table *T,
 				      size_t length, uint8_t *dst,
 				      const uint8_t *src);
+typedef void aes_invert_internal_func (unsigned rounds, uint32_t *dst, const uint32_t *src);
 
 struct gcm_key;
 typedef void ghash_set_key_func (struct gcm_key *ctx, const union nettle_block16 *key);
 typedef const uint8_t *
 ghash_update_func (const struct gcm_key *ctx, union nettle_block16 *state,
 		   size_t blocks, const uint8_t *data);
+
+typedef size_t
+gcm_aes_crypt_func (struct gcm_key *key, unsigned rounds,
+		    size_t len, uint8_t *dst, const uint8_t *src);
 
 typedef void *(memxor_func)(void *dst, const void *src, size_t n);
 typedef void *(memxor3_func)(void *dst_in, const void *a_in, const void *b_in, size_t n);

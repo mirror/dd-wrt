@@ -32,7 +32,7 @@ SHLIBTARGETS = @IF_SHARED@ $(LIBNETTLE_FORLINK) @IF_HOGWEED@ $(LIBHOGWEED_FORLIN
 getopt_SOURCES = getopt.c getopt1.c
 getopt_TARGETS = $(getopt_SOURCES:.c=.$(OBJEXT))
 
-internal_SOURCES = nettle-internal.c
+internal_SOURCES = non-nettle.c
 internal_TARGETS = $(internal_SOURCES:.c=.$(OBJEXT))
 
 TARGETS = $(getopt_TARGETS) $(internal_TARGETS) \
@@ -63,7 +63,7 @@ check-fat:
 	[ -z "$(FAT_TEST_LIST)" ] || \
 	  set -e; cd testsuite && for f in $(FAT_TEST_LIST) ; do \
 	    echo NETTLE_FAT_OVERRIDE=$$f ; \
-	    NETTLE_FAT_OVERRIDE=$$f $(MAKE) check ; \
+	    NETTLE_FAT_OVERRIDE=$$f $(MAKE) check TS_ALL='$$(TS_FAT)' ; \
 	  done
 
 all-here: $(TARGETS) $(DOCTARGETS)
@@ -126,10 +126,11 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt.c aes-decrypt-table.c \
 		 hmac-sha512.c hmac-streebog.c hmac-sm3.c \
 		 hmac-md5-meta.c hmac-ripemd160-meta.c hmac-sha1-meta.c \
 		 hmac-sha224-meta.c hmac-sha256-meta.c hmac-sha384-meta.c \
-		 hmac-sha512-meta.c hmac-streebog-meta.c hmac-sm3-meta.c \
+		 hmac-sha512-meta.c hmac-gosthash94-meta.c \
+		 hmac-streebog-meta.c hmac-sm3-meta.c \
 		 knuth-lfib.c hkdf.c \
 		 md2.c md2-meta.c md4.c md4-meta.c \
-		 md5.c md5-compress.c md5-compat.c md5-meta.c \
+		 md5.c md5-compat.c md5-meta.c \
 		 memeql-sec.c memxor.c memxor3.c \
 		 nettle-lookup-hash.c \
 		 nettle-meta-aeads.c nettle-meta-armors.c \
@@ -151,7 +152,7 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt.c aes-decrypt-table.c \
 		 sha3.c sha3-permute.c \
 		 sha3-224.c sha3-224-meta.c sha3-256.c sha3-256-meta.c \
 		 sha3-384.c sha3-384-meta.c sha3-512.c sha3-512-meta.c \
-		 shake256.c \
+		 sha3-shake.c shake128.c shake256.c \
 		 sm3.c sm3-meta.c \
 		 serpent-set-key.c serpent-encrypt.c serpent-decrypt.c \
 		 serpent-meta.c \
@@ -164,13 +165,15 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt.c aes-decrypt-table.c \
 		 version.c \
 		 write-be32.c write-le32.c write-le64.c \
 		 yarrow256.c yarrow_key_event.c \
-		 xts.c xts-aes128.c xts-aes256.c
+		 xts.c xts-aes128.c xts-aes256.c \
+		 drbg-ctr-aes256.c
 
 hogweed_SOURCES = sexp.c sexp-format.c \
 		  sexp-transport.c sexp-transport-format.c \
 		  bignum.c bignum-random.c bignum-random-prime.c \
 		  sexp2bignum.c \
 		  pkcs1.c pkcs1-encrypt.c pkcs1-decrypt.c \
+		  oaep.c \
 		  pkcs1-sec-decrypt.c \
 		  pkcs1-rsa-digest.c pkcs1-rsa-md5.c pkcs1-rsa-sha1.c \
 		  pkcs1-rsa-sha256.c pkcs1-rsa-sha512.c \
@@ -185,6 +188,7 @@ hogweed_SOURCES = sexp.c sexp-format.c \
 		  rsa-pss-sha256-sign-tr.c rsa-pss-sha256-verify.c \
 		  rsa-pss-sha512-sign-tr.c rsa-pss-sha512-verify.c \
 		  rsa-encrypt.c rsa-decrypt.c \
+		  rsa-oaep-encrypt.c rsa-oaep-decrypt.c \
 		  rsa-sec-decrypt.c rsa-decrypt-tr.c \
 		  rsa-keygen.c rsa-blind.c \
 		  rsa2sexp.c sexp2rsa.c \
@@ -209,7 +213,7 @@ hogweed_SOURCES = sexp.c sexp-format.c \
 		  ecc-dup-eh.c ecc-add-eh.c ecc-add-ehh.c \
 		  ecc-dup-th.c ecc-add-th.c ecc-add-thh.c \
 		  ecc-mul-g-eh.c ecc-mul-a-eh.c ecc-mul-m.c \
-		  ecc-mul-g.c ecc-mul-a.c ecc-hash.c ecc-random.c \
+		  ecc-mul-g.c ecc-mul-a.c ecc-random.c \
 		  ecc-point.c ecc-scalar.c ecc-point-mul.c ecc-point-mul-g.c \
 		  ecc-ecdsa-sign.c ecdsa-sign.c \
 		  ecc-ecdsa-verify.c ecdsa-verify.c ecdsa-keygen.c \
@@ -243,7 +247,8 @@ HEADERS = aes.h arcfour.h arctwo.h asn1.h blowfish.h balloon.h \
 	  pgp.h pkcs1.h pss.h pss-mgf1.h realloc.h ripemd160.h rsa.h \
 	  salsa20.h sexp.h serpent.h \
 	  sha.h sha1.h sha2.h sha3.h sm3.h sm4.h streebog.h twofish.h \
-	  umac.h yarrow.h xts.h poly1305.h nist-keywrap.h
+	  umac.h yarrow.h xts.h poly1305.h nist-keywrap.h \
+	  drbg-ctr.h
 
 INSTALL_HEADERS = $(HEADERS) version.h @IF_MINI_GMP@ mini-gmp.h
 
@@ -266,15 +271,15 @@ DISTFILES = $(SOURCES) $(HEADERS) getopt.h getopt_int.h \
 	nettle.pc.in hogweed.pc.in \
 	desdata.stamp $(des_headers) descore.README \
 	aes-internal.h block-internal.h blowfish-internal.h bswap-internal.h \
-	camellia-internal.h \
+	camellia-internal.h gcm-internal.h \
 	ghash-internal.h gost28147-internal.h poly1305-internal.h \
 	serpent-internal.h cast128_sboxes.h desinfo.h desCode.h \
 	ripemd160-internal.h md-internal.h sha2-internal.h \
-	memxor-internal.h nettle-internal.h nettle-write.h \
+	memxor-internal.h nettle-internal.h non-nettle.h nettle-write.h \
 	ctr-internal.h chacha-internal.h sha3-internal.h \
 	salsa20-internal.h umac-internal.h hogweed-internal.h \
 	rsa-internal.h pkcs1-internal.h dsa-internal.h eddsa-internal.h \
-	gmp-glue.h ecc-internal.h fat-setup.h \
+	gmp-glue.h ecc-internal.h fat-setup.h oaep.h \
 	mini-gmp.h asm.m4 m4-utils.m4 \
 	nettle.texinfo nettle.info nettle.html nettle.pdf sha-example.c
 
@@ -612,7 +617,7 @@ distdir: $(DISTFILES)
 	  else cp "$(srcdir)/$$f" "$(distdir)" ; \
 	  fi ; \
 	done
-	set -e; for d in sparc32 sparc64 x86 \
+	set -e; for d in sparc64 x86 \
 		x86_64 x86_64/aesni x86_64/sha_ni x86_64/pclmul x86_64/fat \
 		arm arm/neon arm/v6 arm/fat \
 		arm64 arm64/crypto arm64/fat \
