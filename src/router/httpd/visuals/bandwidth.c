@@ -154,16 +154,17 @@ void EJ_VISIBLE ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 skip:;
 	}
 	if (!nvram_match("wan_proto", "disabled")) {
+		const char *wanport = safe_get_wan_face(wan_if_buffer);
 		if (getSTA()) {
 			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"),
-				 getNetworkLabel(wp, safe_get_wan_face(wan_if_buffer)));
+				 getNetworkLabel(wp, wanport));
 		} else
-			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, safe_get_wan_face(wan_if_buffer)));
+			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, wanport));
 
 		struct portstatus status;
 		int r = getLanPortStatus(var, &status);
 		if (!r && status.link) {
-			show_bwif(wp, &ctx, safe_get_wan_face(wan_if_buffer), name);
+			show_bwif(wp, &ctx, wanport, name);
 
 			if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
 				if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
