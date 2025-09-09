@@ -129,8 +129,9 @@ echo "/opt/usr/lib" >> etc/ld.so.conf
 echo "/opt/usr/local/lib" >> etc/ld.so.conf
 echo "/lib" >> etc/ld.so.conf
 echo "/usr/lib" >> etc/ld.so.conf
-/sbin/ldconfig -r $ROOTDIR
-
+gcc -o ldconfig ../../misc/ldconfig/ldconfig.c  ../../misc/ldconfig/chroot_realpath.c -I../../misc/ldconfig/include -DBUILDING_LINKAGE -D__LDSO_CACHE_SUPPORT__
+./ldconfig -r $ROOTDIR
+rm ldconfig
 # miscellaneous
 ln -s /tmp/mnt /mnt
 mkdir -p proc
