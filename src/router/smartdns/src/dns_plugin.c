@@ -28,10 +28,10 @@
 #include "smartdns/util.h"
 #include <dlfcn.h>
 #include <limits.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 struct dns_plugin_ops {
 	struct list_head list;
@@ -132,6 +132,28 @@ void smartdns_plugin_func_server_log_callback(smartdns_log_level level, const ch
 	return;
 }
 
+void smartdns_plugin_func_server_audit_log_callback(const char *msg, int msg_len)
+{
+	struct dns_plugin_ops *chain = NULL;
+
+	if (unlikely(is_plugin_init == 0)) {
+		return;
+	}
+
+	pthread_rwlock_rdlock(&plugins.lock);
+	list_for_each_entry(chain, &plugins.list, list)
+	{
+		if (!chain->ops.server_audit_log) {
+			continue;
+		}
+
+		chain->ops.server_audit_log(msg, msg_len);
+	}
+	pthread_rwlock_unlock(&plugins.lock);
+
+	return;
+}
+
 int smartdns_operations_register(const struct smartdns_operations *operations)
 {
 	struct dns_plugin_ops *chain = NULL;
@@ -191,8 +213,10 @@ static struct dns_plugin *_dns_plugin_get(const char *plugin_file)
 static int _dns_plugin_load_library(struct dns_plugin *plugin)
 {
 	void *handle = NULL;
+	dns_plugin_api_version_func version_func = NULL;
 	dns_plugin_init_func init_func = NULL;
 	dns_plugin_exit_func exit_func = NULL;
+	unsigned int api_version = 0;
 
 	tlog(TLOG_DEBUG, "load plugin %s", plugin->file);
 
@@ -200,6 +224,14 @@ static int _dns_plugin_load_library(struct dns_plugin *plugin)
 	if (!handle) {
 		tlog(TLOG_ERROR, "load plugin %s failed: %s", plugin->file, dlerror());
 		return -1;
+	}
+
+	version_func = (dns_plugin_api_version_func)dlsym(handle, DNS_PLUGIN_API_VERSION_FUNC);
+	if (!version_func) {
+		tlog(TLOG_ERROR,
+			 "plugin %s has no api version function, maybe an old version plugin, please download latest version.",
+			 plugin->file);
+		goto errout;
 	}
 
 	init_func = (dns_plugin_init_func)dlsym(handle, DNS_PLUGIN_INIT_FUNC);
@@ -213,6 +245,28 @@ static int _dns_plugin_load_library(struct dns_plugin *plugin)
 	if (!exit_func) {
 		tlog(TLOG_ERROR, "load plugin failed: %s", dlerror());
 		tlog(TLOG_ERROR, "%s not a valid smartdns plugin, please check 'plugin' option.", plugin->file);
+		goto errout;
+	}
+
+	api_version = version_func();
+	if (SMARTDNS_PLUGIN_API_VERSION_MAJOR(api_version) !=
+		SMARTDNS_PLUGIN_API_VERSION_MAJOR(SMARTDNS_PLUGIN_API_VERSION)) {
+		tlog(TLOG_ERROR,
+			 "plugin %s api version %u.%u not compatible with smartdns api version %u.%u, please download matching "
+			 "version.",
+			 plugin->file, SMARTDNS_PLUGIN_API_VERSION_MAJOR(api_version),
+			 SMARTDNS_PLUGIN_API_VERSION_MINOR(api_version),
+			 SMARTDNS_PLUGIN_API_VERSION_MAJOR(SMARTDNS_PLUGIN_API_VERSION),
+			 SMARTDNS_PLUGIN_API_VERSION_MINOR(SMARTDNS_PLUGIN_API_VERSION));
+		goto errout;
+	} else if (SMARTDNS_PLUGIN_API_VERSION_MINOR(api_version) >
+			   SMARTDNS_PLUGIN_API_VERSION_MINOR(SMARTDNS_PLUGIN_API_VERSION)) {
+		tlog(TLOG_ERROR,
+			 "plugin %s api version %u.%u is newer than smartdns api version %u.%u, please download matching version.",
+			 plugin->file, SMARTDNS_PLUGIN_API_VERSION_MAJOR(api_version),
+			 SMARTDNS_PLUGIN_API_VERSION_MINOR(api_version),
+			 SMARTDNS_PLUGIN_API_VERSION_MAJOR(SMARTDNS_PLUGIN_API_VERSION),
+			 SMARTDNS_PLUGIN_API_VERSION_MINOR(SMARTDNS_PLUGIN_API_VERSION));
 		goto errout;
 	}
 

@@ -381,9 +381,58 @@ impl DB {
         conn.as_ref()
             .unwrap()
             .execute("PRAGMA temp_store = MEMORY", [])?;
+
+        let current_auto_vacuum: i32 =
+            conn.as_ref()
+                .unwrap()
+                .query_row("PRAGMA auto_vacuum", [], |row| row.get(0))?;
+        dns_log!(
+            LogLevel::DEBUG,
+            "Current auto_vacuum: {}",
+            current_auto_vacuum
+        );
+        if current_auto_vacuum != 2 {
+            dns_log!(LogLevel::INFO, "Set auto_vacuum to INCREMENTAL");
+            conn.as_ref()
+                .unwrap()
+                .execute("PRAGMA auto_vacuum = INCREMENTAL", [])?;
+            conn.as_ref().unwrap().execute("VACUUM", [])?;
+        }
+
         conn.as_ref()
             .unwrap()
             .query_row("PRAGMA journal_mode = WAL", [], |_| Ok(()))?;
+        conn.as_ref()
+            .unwrap()
+            .query_row("PRAGMA wal_autocheckpoint = 1000", [], |_| Ok(()))?;
+        Ok(())
+    }
+
+    pub fn run_vacuum(&self, pages: Option<u32>) -> Result<(), Box<dyn Error>> {
+        let conn = self.conn.lock().unwrap();
+        if conn.as_ref().is_none() {
+            return Err("db is not open".into());
+        }
+
+        let conn = conn.as_ref().unwrap();
+        dns_log!(LogLevel::DEBUG, "Start incremental vacuum");
+
+        conn.query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |_| Ok(()))?;
+        let vacuum_sql = if let Some(pages) = pages {
+            format!("PRAGMA incremental_vacuum({})", pages)
+        } else {
+            "PRAGMA incremental_vacuum".to_string()
+        };
+
+        let mut stmt = conn.prepare(vacuum_sql.as_str())?;
+        let mut _reclaimed_pages = 0;
+
+        let rows = stmt.query_map([], |_row| Ok(()));
+        if let Ok(rows) = rows {
+            for _row in rows {
+                _reclaimed_pages += 1;
+            }
+        }
         Ok(())
     }
 
@@ -714,7 +763,7 @@ impl DB {
             if v.direction.eq_ignore_ascii_case("prev") {
                 is_desc_order = !is_desc_order;
             } else if v.direction.eq_ignore_ascii_case("next") {
-                is_desc_order = is_desc_order;
+                // do nothing
             } else {
                 return Err("cursor direction param error".into());
             }
@@ -931,20 +980,26 @@ impl DB {
     }
 
     pub fn delete_domain_before_timestamp(&self, timestamp: u64) -> Result<u64, Box<dyn Error>> {
-        let conn = self.conn.lock().unwrap();
-        if conn.as_ref().is_none() {
-            return Err("db is not open".into());
-        }
+        let ret = {
+            let conn = self.conn.lock().unwrap();
+            if conn.as_ref().is_none() {
+                return Err("db is not open".into());
+            }
 
-        let conn = conn.as_ref().unwrap();
+            let conn = conn.as_ref().unwrap();
 
-        let ret = conn.execute("DELETE FROM domain WHERE timestamp <= ?", &[&timestamp]);
+            let ret = conn.execute("DELETE FROM domain WHERE timestamp <= ?", &[&timestamp]);
 
-        if let Err(e) = ret {
-            return Err(Box::new(e));
-        }
+            if let Err(e) = ret {
+                return Err(Box::new(e));
+            }
 
-        Ok(ret.unwrap() as u64)
+            Ok(ret.unwrap() as u64)
+        };
+
+        self.run_vacuum(Some(50000))?;
+
+        ret
     }
 
     pub fn refresh_client_top_list(&self, timestamp: u64) -> Result<(), Box<dyn Error>> {
@@ -1477,7 +1532,7 @@ impl DB {
             if v.direction.eq_ignore_ascii_case("prev") {
                 is_desc_order = !is_desc_order;
             } else if v.direction.eq_ignore_ascii_case("next") {
-                is_desc_order = is_desc_order;
+                // do nothing
             } else {
                 return Err("cursor direction param error".into());
             }

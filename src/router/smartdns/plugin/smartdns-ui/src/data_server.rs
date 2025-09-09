@@ -23,6 +23,8 @@ use crate::dns_log;
 use crate::plugin::SmartdnsPlugin;
 use crate::server_log::ServerLog;
 use crate::server_log::ServerLogMsg;
+use crate::server_log::ServerAuditLog;
+use crate::server_log::ServerAuditLogMsg;
 use crate::smartdns;
 use crate::smartdns::*;
 use crate::utils;
@@ -238,6 +240,10 @@ impl DataServerControl {
     pub fn server_log(&self, level: LogLevel, msg: &str, msg_len: i32) {
         self.data_server.server_log(level, msg, msg_len);
     }
+
+    pub fn server_audit_log(&self, msg: &str, msg_len: i32) {
+        self.data_server.server_audit_log(msg, msg_len);
+    }
 }
 
 impl Drop for DataServerControl {
@@ -256,6 +262,7 @@ pub struct DataServer {
     disable_handle_request: AtomicBool,
     stat: Arc<DataStats>,
     server_log: ServerLog,
+    server_audit_log: ServerAuditLog,
     plugin: Mutex<Weak<SmartdnsPlugin>>,
     whois: whois::WhoIs,
     startup_timestamp: u64,
@@ -275,6 +282,7 @@ impl DataServer {
             db: db.clone(),
             stat: DataStats::new(db, conf.clone()),
             server_log: ServerLog::new(),
+            server_audit_log: ServerAuditLog::new(),
             plugin: Mutex::new(Weak::new()),
             whois: whois::WhoIs::new(),
             startup_timestamp: get_utc_time_ms(),
@@ -286,7 +294,7 @@ impl DataServer {
         plugin.notify_tx = Some(tx);
         plugin.notify_rx = Mutex::new(Some(rx));
 
-        let (tx, rx) = mpsc::channel(1024 * 32);
+        let (tx, rx) = mpsc::channel(1024 * 256);
         plugin.data_tx = Some(tx);
         plugin.data_rx = Mutex::new(Some(rx));
 
@@ -622,6 +630,15 @@ impl DataServer {
     pub fn server_log(&self, level: LogLevel, msg: &str, msg_len: i32) {
         self.server_log.dispatch_log(level, msg, msg_len);
     }
+    
+    pub async fn get_audit_log_stream(&self) -> mpsc::Receiver<ServerAuditLogMsg> {
+        return self.server_audit_log.get_audit_log_stream().await;
+    }
+
+    pub fn server_audit_log(&self, msg: &str, msg_len: i32) {
+        self.server_audit_log
+            .dispatch_audit_log(msg, msg_len);
+    }
 
     fn server_check(&self) {
         let free_disk_space = self.get_free_disk_space();
@@ -670,7 +687,10 @@ impl DataServer {
 
         this.stat.clone().start_worker()?;
 
-        let mut req_list: Vec<Box<dyn DnsRequest>> = Vec::new();
+        let req_list_size = if batch_mode { 1024 * 16 } else { 1 };
+        let mut req_list: Vec<Box<dyn DnsRequest>> = Vec::with_capacity(req_list_size);
+        let recv_buffer_size = if batch_mode { 4096 } else { 1 };
+        let mut recv_buffer  = Vec::with_capacity(recv_buffer_size);
         let mut batch_timer: Option<tokio::time::Interval> = None;
         let mut check_timer = tokio::time::interval(Duration::from_secs(60));
         let is_check_timer_running = Arc::new(AtomicBool::new(false));
@@ -707,32 +727,29 @@ impl DataServer {
                     req_list.clear();
                     batch_timer = None;
                 }
-                res = data_rx.recv() => {
-                    match res {
-                        Some(req) => {
-                            req_list.push(req);
+                count = data_rx.recv_many(&mut recv_buffer, recv_buffer_size) => {
+                    if count <= 0 {
+                        continue;
+                    }
+                    
+                    req_list.extend(recv_buffer.drain(0..count));
 
-                            if batch_mode {
-                                if req_list.len() == 1 {
-                                    batch_timer = Some(tokio::time::interval_at(
-                                        Instant::now() + Duration::from_millis(500),
-                                        Duration::from_secs(1),
-                                    ));
-                                }
-
-                                if req_list.len() <= 65535 {
-                                    continue;
-                                }
-                            }
-
-                            DataServer::data_server_handle_dns_request(this.clone(), &req_list).await;
-                            req_list.clear();
-                            batch_timer = None;
+                    if batch_mode {
+                        if req_list.len() >= 1 && batch_timer.is_none() {
+                            batch_timer = Some(tokio::time::interval_at(
+                                Instant::now() + Duration::from_millis(500),
+                                Duration::from_secs(1),
+                            ));
                         }
-                        None => {
+
+                        if req_list.len() < req_list_size - recv_buffer_size {
                             continue;
                         }
                     }
+
+                    DataServer::data_server_handle_dns_request(this.clone(), &req_list).await;
+                    req_list.clear();
+                    batch_timer = None;
                 }
             }
         }

@@ -151,6 +151,7 @@ impl SmartdnsPlugin {
 
     pub fn start(&self, args: &Vec<String>) -> Result<(), Box<dyn Error>> {
         self.parser_args(args)?;
+        self.load_config()?;
         self.data_server_ctl
             .init_db(&self.data_conf.lock().unwrap())?;
         self.load_config()?;
@@ -178,6 +179,10 @@ impl SmartdnsPlugin {
 
     pub fn server_log(&self, level: LogLevel, msg: &str, msg_len: i32) {
         self.data_server_ctl.server_log(level, msg, msg_len);
+    }
+
+    pub fn server_audit_log(&self, msg: &str, msg_len: i32) {
+        self.data_server_ctl.server_audit_log(msg, msg_len);
     }
 }
 
@@ -212,6 +217,10 @@ impl SmartdnsOperations for SmartdnsPluginImpl {
 
     fn server_log(&self, level: LogLevel, msg: &str, msg_len: i32) {
         self.plugin.server_log(level, msg, msg_len);
+    }
+
+    fn server_audit_log(&self, msg: &str, msg_len: i32) {
+        self.plugin.server_audit_log(msg, msg_len);
     }
 
     fn server_init(&mut self, args: &Vec<String>) -> Result<(), Box<dyn Error>> {

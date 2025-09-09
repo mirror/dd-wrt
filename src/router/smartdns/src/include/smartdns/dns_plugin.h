@@ -28,6 +28,10 @@ extern "C" {
 
 #define DNS_PLUGIN_INIT_FUNC "dns_plugin_init"
 #define DNS_PLUGIN_EXIT_FUNC "dns_plugin_exit"
+#define DNS_PLUGIN_API_VERSION_FUNC "dns_plugin_api_version"
+#define SMARTDNS_PLUGIN_API_VERSION 0x00000101
+#define SMARTDNS_PLUGIN_API_VERSION_MAJOR(v) ((v >> 8) & 0xFFFFFF)
+#define SMARTDNS_PLUGIN_API_VERSION_MINOR(v) (v & 0xFF)
 
 struct dns_plugin;
 struct dns_plugin_ops;
@@ -35,6 +39,7 @@ struct dns_request;
 
 typedef int (*dns_plugin_init_func)(struct dns_plugin *plugin);
 typedef int (*dns_plugin_exit_func)(struct dns_plugin *plugin);
+typedef unsigned int (*dns_plugin_api_version_func)(void);
 
 struct dns_plugin;
 int dns_plugin_init(struct dns_plugin *plugin);
@@ -83,6 +88,8 @@ void smartdns_plugin_func_server_complete_request(struct dns_request *request);
 
 void smartdns_plugin_func_server_log_callback(smartdns_log_level level, const char *msg, int msg_len);
 
+void smartdns_plugin_func_server_audit_log_callback(const char *msg, int msg_len);
+
 struct smartdns_operations {
 	int (*server_recv)(struct dns_packet *packet, unsigned char *inpacket, int inpacket_len,
 					   struct sockaddr_storage *local, socklen_t local_len, struct sockaddr_storage *from,
@@ -90,6 +97,8 @@ struct smartdns_operations {
 	void (*server_query_complete)(struct dns_request *request);
 
 	void (*server_log)(smartdns_log_level level, const char *msg, int msg_len);
+
+	void (*server_audit_log)(const char *msg, int msg_len);
 };
 
 int smartdns_operations_register(const struct smartdns_operations *operations);

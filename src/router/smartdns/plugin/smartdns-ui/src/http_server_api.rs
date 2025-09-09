@@ -92,6 +92,7 @@ impl API {
         api.register(Method::GET, "/api/log/stream", true, APIRoute!(API::api_log_stream));
         api.register(Method::PUT, "/api/log/level", true, APIRoute!(API::api_log_set_level));
         api.register(Method::GET, "/api/log/level", true, APIRoute!(API::api_log_get_level));
+        api.register(Method::GET, "/api/log/audit/stream", true, APIRoute!(API::api_audit_log_stream));
         api.register(Method::GET, "/api/server/version", false, APIRoute!(API::api_server_version));
         api.register(Method::GET, "/api/upstream-server", true, APIRoute!(API::api_upstream_server_get_list));
         api.register(Method::GET, "/api/config/settings", true, APIRoute!(API::api_config_get_settings));
@@ -233,6 +234,7 @@ impl API {
         _param: APIRouteParam,
         req: Request<body::Incoming>,
     ) -> Result<Response<Full<Bytes>>, HttpError> {
+        let is_https = this.is_https_server();
         let token = HttpServer::get_token_from_header(&req)?;
         let unauth_response =
             || API::response_error(StatusCode::UNAUTHORIZED, "Incorrect username or password.");
@@ -268,10 +270,14 @@ impl API {
 
         let cookie_token = format!("Bearer {}", token_new.token);
         let token_urlencode = urlencoding::encode(cookie_token.as_str());
-        let cookie = format!(
+        let mut cookie = format!(
             "token={}; HttpOnly; Max-Age={}; Path={}",
             token_urlencode, token_new.expire, REST_API_PATH
         );
+
+        if is_https && conf.enable_cors {
+            cookie.push_str("; SameSite=None; Secure");
+        }
 
         resp.as_mut()
             .unwrap()
@@ -293,6 +299,7 @@ impl API {
         _param: APIRouteParam,
         req: Request<body::Incoming>,
     ) -> Result<Response<Full<Bytes>>, HttpError> {
+        let is_https = this.is_https_server();
         let whole_body = String::from_utf8(req.into_body().collect().await?.to_bytes().into())?;
         let userinfo = api_msg_parse_auth(whole_body.as_str());
         if let Err(e) = userinfo {
@@ -334,10 +341,14 @@ impl API {
 
         let cookie_token = format!("Bearer {}", token.token);
         let token_urlencode = urlencoding::encode(cookie_token.as_str());
-        let cookie = format!(
+        let mut cookie = format!(
             "token={}; HttpOnly; Max-Age={}; Path={}",
             token_urlencode, token.expire, REST_API_PATH
         );
+
+        if is_https && conf.enable_cors {
+            cookie.push_str("; SameSite=None; Secure");
+        }
 
         resp.as_mut()
             .unwrap()
@@ -823,6 +834,27 @@ impl API {
 
             tokio::spawn(async move {
                 if let Err(e) = http_server_stream::serve_log_stream(this, websocket).await {
+                    dns_log!(LogLevel::DEBUG, "Error in websocket connection: {e}");
+                }
+            });
+
+            Ok(response)
+        } else {
+            return API::response_error(StatusCode::BAD_REQUEST, "Need websocket upgrade.");
+        }
+    }
+
+    async fn api_audit_log_stream(
+        this: Arc<HttpServer>,
+        _param: APIRouteParam,
+        mut req: Request<body::Incoming>,
+    ) -> Result<Response<Full<Bytes>>, HttpError> {
+        if hyper_tungstenite::is_upgrade_request(&req) {
+            let (response, websocket) = hyper_tungstenite::upgrade(&mut req, None)
+                .map_err(|e| HttpError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            tokio::spawn(async move {
+                if let Err(e) = http_server_stream::serve_audit_log_stream(this, websocket).await {
                     dns_log!(LogLevel::DEBUG, "Error in websocket connection: {e}");
                 }
             });

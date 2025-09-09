@@ -563,7 +563,8 @@ sanitise_mask(unsigned char *addr, unsigned int masklen, unsigned int maskbits)
 prefix_t
 *prefix_pton(const char *string, long len, prefix_t *prefix, const char **errmsg)
 {
-	char save[256], *cp, *ep;
+	static char save[256];
+	char *cp, *ep;
 	struct addrinfo hints, *ai;
 	void *addr;
 	prefix_t *ret;
