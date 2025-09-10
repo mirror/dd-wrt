@@ -34,7 +34,7 @@ ipv6_en=$($nv get ipv6_enable)
 wan_ipaddr=$($nv get wan_ipaddr)
 [[ $($nv get wan_proto) = "disabled" ]] && { IN_IF="-i br0"; logger -p user.info "WireGuard Killswitch for WAP on br0 only!, oet${i}"; } || IN_IF=""
 LOCK="/tmp/oet-tunnels.lock"
-release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for firewall $$ "; }
+release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for prewall "; }
 trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
 #experimental to stop eop-tunnel-firewall.sh[3904]: Another app is currently holding the xtables lock this is happening on slow routers when a wireguard restart is triggered by the firewall
 sleep $FWWAIT
@@ -362,12 +362,14 @@ for i in $(seq 1 $tunnels); do
 done
 release_lock
 # remove temporary killswitch
-if [[ "$(nvram get wg_remove_temp_ks)" != "0" ]]; then
-	sysctl -w net.ipv4.ip_forward=1 >/dev/null
-	logger -p user.info "WireGuard firewall removing temporary killswitch for IPv4"
-	if [[ $ipv6_en -eq 1 ]]; then
-		sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null
-		logger -p user.info "WireGuard firewall removing temporary killswitch for IPv6"
+if [[ "$(nvram get wg_remove_temp_ks)" != "0" ]]; then     # for debuggin remove later
+	if command -v sysctl >/dev/null 2>&1; then
+		sysctl -w net.ipv4.ip_forward=1 >/dev/null
+		logger -p user.info "WireGuard firewall removing temporary killswitch for IPv4"
+		if [[ $ipv6_en -eq 1 ]]; then
+			sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null
+			logger -p user.info "WireGuard firewall removing temporary killswitch for IPv6"
+		fi
 	fi
 fi
 # consider re-executing .rc_firewall so that those rules will be last

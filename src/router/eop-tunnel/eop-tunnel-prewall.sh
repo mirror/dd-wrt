@@ -19,11 +19,6 @@ MINTIME=$($nv get wg_mintime)
 [[ -z $MINTIME ]] && MINTIME=0
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
 [[ -z $MAXTIME ]] && MAXTIME=105
-# Needs checking
-[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
-GATEWAY6="$($IP6 route show table main | awk '/default via/ { print $3;exit; }')"
-[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
-# set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
 LOCK="/tmp/oet-tunnels.lock"
 is_eop_active() {
 	for i in $(seq 1 $tunnels); do
@@ -35,24 +30,26 @@ is_eop_active() {
 	return 1
 }
 temp-killswitch() {
-	KS=0
-	KS6=0
-	for i in $(seq 1 $tunnels); do
-		if [[ $($nv get oet${i}_killswitch) -eq 1 ]]; then
-			KS=1
-			if [[ "$ipv6_en" = "1" ]]; then
-				KS6=1
+	if command -v sysctl >/dev/null 2>&1; then
+		KS=0
+		KS6=0
+		for i in $(seq 1 $tunnels); do
+			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]; then
+				KS=1
+				if [[ "$ipv6_en" = "1" ]]; then
+					KS6=1
+				fi
+				break
 			fi
-			break
+		done
+		if [[ "$KS" = "1" ]]; then
+			sysctl -w net.ipv4.ip_forward=0 >/dev/null
+			logger -p user.info "WireGuard setting temporary killswitch for IPv4"
 		fi
-	done
-	if [[ "$KS" = "1" ]]; then
-		sysctl -w net.ipv4.ip_forward=0 >/dev/null
-		logger -p user.info "WireGuard setting temporary killswitch for IPv4"
-	fi
-	if [[ "$KS6" = "1" ]]; then
-		sysctl -w net.ipv6.conf.all.forwarding=0 >/dev/null
-		logger -p user.info "WireGuard setting temporary killswitch for IPv6"
+		if [[ "$KS6" = "1" ]]; then
+			sysctl -w net.ipv6.conf.all.forwarding=0 >/dev/null
+			logger -p user.info "WireGuard setting temporary killswitch for IPv6"
+		fi
 	fi
 }
 waitfortime () {
@@ -102,6 +99,9 @@ if is_eop_active; then
 	acquire_lock
 	temp-killswitch
 	waitfortime
+	[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
+	GATEWAY6="$($IP6 route show table main | awk '/default via/ { print $3;exit; }')"
+	# set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
 	if [[ $tunnels -gt 0 ]]; then
 		fset=0
 		for i in $(seq 1 $tunnels); do
