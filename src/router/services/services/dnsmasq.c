@@ -642,7 +642,7 @@ void start_dnsmasq(void)
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var) && strncmp(var, "oet", 3)) 	/* egc oet interfaces are added below */
 					fprintf(fp, ",%s", ipaddr);
 			}
 		}
@@ -662,7 +662,7 @@ void start_dnsmasq(void)
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var) && strncmp(var, "oet", 3))		/* egc oet interfaces are added below */
 					fprintf(fp, ",%s", var);
 			}
 		}
@@ -1007,7 +1007,7 @@ void start_dnsmasq(void)
 		fprintf(fp, "address=/use-application-dns.net/mask.icloud.com/mask-h2.icloud.com/\n");
 	}
 
-#ifdef HAVE_IPSET
+#ifdef HAVE_EOP
 	//egc use ipset from WireGuard
 	char *ipsetfile = 0;
 	char *ipsetbasename = 0;
@@ -1026,29 +1026,34 @@ void start_dnsmasq(void)
 		snprintf(oet_dpbr, sizeof(oet_dpbr), "oet%d_dpbr", i);
 		dpbr = nvram_geti(oet_dpbr);
 		//syslog(LOG_INFO, "dnsmasq: ipset tunnel started, i:[%d]\n", i);
-		if (en && dpbr) {
-			char dnsm_ipset[512] = { 0 };
-			snprintf(oet_ipsetfile, sizeof(oet_ipsetfile), "oet%d_ipsetfile", i);
-			ipsetfile = nvram_safe_get(oet_ipsetfile);
-			snprintf(oet_ipsetdomains, sizeof(oet_ipsetdomains), "oet%d_ipsetdomains", i);
-			strlcpy(str_ipsetdomains, nvram_safe_get(oet_ipsetdomains), sizeof(str_ipsetdomains));
-			if (str_ipsetdomains[0] != '\0') {
-				char delim[] = " ,/";
-				char *ptr = strtok(str_ipsetdomains, delim);
-				char dnsm_ipset_t[64] = { 0 };
-				while (ptr != NULL) {
-					snprintf(dnsm_ipset_t, sizeof(dnsm_ipset_t), "%s/", ptr);
-					strlcat(dnsm_ipset, dnsm_ipset_t, sizeof(dnsm_ipset));
-					ptr = strtok(NULL, delim);
+		if (en) {
+			fprintf(fp, "interface=oet%d\n", i);  // add interface to DNSMasq even if it is not up yet
+#ifdef HAVE_IPSET
+			if (dpbr) {
+				char dnsm_ipset[512] = { 0 };
+				snprintf(oet_ipsetfile, sizeof(oet_ipsetfile), "oet%d_ipsetfile", i);
+				ipsetfile = nvram_safe_get(oet_ipsetfile);
+				snprintf(oet_ipsetdomains, sizeof(oet_ipsetdomains), "oet%d_ipsetdomains", i);
+				strlcpy(str_ipsetdomains, nvram_safe_get(oet_ipsetdomains), sizeof(str_ipsetdomains));
+				if (str_ipsetdomains[0] != '\0') {
+					char delim[] = " ,/";
+					char *ptr = strtok(str_ipsetdomains, delim);
+					char dnsm_ipset_t[64] = { 0 };
+					while (ptr != NULL) {
+						snprintf(dnsm_ipset_t, sizeof(dnsm_ipset_t), "%s/", ptr);
+						strlcat(dnsm_ipset, dnsm_ipset_t, sizeof(dnsm_ipset));
+						ptr = strtok(NULL, delim);
+					}
+				}
+				if (ipsetfile[0] != '\0') {
+					ipsetbasename = basename(ipsetfile);
+					if (ipsetbasename[0] != '\0' && dnsm_ipset[0] != '\0') {
+						fprintf(fp, "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
+						dd_loginfo("dnsmasq", "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
+					}
 				}
 			}
-			if (ipsetfile[0] != '\0') {
-				ipsetbasename = basename(ipsetfile);
-				if (ipsetbasename[0] != '\0' && dnsm_ipset[0] != '\0') {
-					fprintf(fp, "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
-					dd_loginfo("dnsmasq", "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
-				}
-			}
+#endif
 		}
 	}
 #endif
