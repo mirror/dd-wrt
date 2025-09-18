@@ -38,6 +38,44 @@
 #include <services.h>
 #include <libgen.h>
 
+char *getoet_ifnames(char *buffer, size_t len)
+{
+	*buffer = 0;
+#ifdef HAVE_EOP
+	int maxitunnels = nvram_geti("oet_tunnels");
+	char oet_en[16] = { 0 };
+	int en = 0;
+	int i;
+	for (i = 1; i <= maxitunnels; ++i) {
+		snprintf(oet_en, sizeof(oet_en), "oet%d_en", i);
+		en = nvram_geti(oet_en);
+		if (en) {
+			snprintf(buffer, len - 1, "%s,oet%d", buffer, i);
+		}
+	}
+#endif
+}
+
+char *getoet_addresses(char *buffer, size_t len)
+{
+	*buffer = 0;
+#ifdef HAVE_EOP
+	int maxitunnels = nvram_geti("oet_tunnels");
+	char oet_en[16] = { 0 };
+	int en = 0;
+	int i;
+	for (i = 1; i <= maxitunnels; ++i) {
+		snprintf(oet_en, sizeof(oet_en), "oet%d_en", i);
+		en = nvram_geti(oet_en);
+		if (en) {
+			char *ip = nvram_nget("oet%d_ipaddr", i);
+			if (*ip && strcmp(ip, "0.0.0.0"))
+				snprintf(buffer, len - 1, "%s,%s", ip);
+		}
+	}
+#endif
+}
+
 extern int usejffs;
 
 extern void addHost(char *host, char *ip, int withdomain);
@@ -642,10 +680,13 @@ void start_dnsmasq(void)
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var) && strncmp(var, "oet", 3)) 	/* egc oet interfaces are added below */
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var) &&
+				    strncmp(var, "oet", 3)) /* egc oet interfaces are added below */
 					fprintf(fp, ",%s", ipaddr);
 			}
 		}
+		char oetbuf[512];
+		fprintf(fp, "%s", getoet_addresses(oetbuf, sizeof(oetbuf)));
 
 		if (nvram_exists("dnsmasq_addlisten")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addlisten"));
@@ -662,10 +703,13 @@ void start_dnsmasq(void)
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var) && strncmp(var, "oet", 3))		/* egc oet interfaces are added below */
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var) &&
+				    strncmp(var, "oet", 3)) /* egc oet interfaces are added below */
 					fprintf(fp, ",%s", var);
 			}
 		}
+		char oetbuf[512];
+		fprintf(fp, "%s", getoet_ifnames(oetbuf, sizeof(oetbuf)));
 		if (nvram_exists("dnsmasq_addif")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
 		}
@@ -1027,7 +1071,6 @@ void start_dnsmasq(void)
 		dpbr = nvram_geti(oet_dpbr);
 		//syslog(LOG_INFO, "dnsmasq: ipset tunnel started, i:[%d]\n", i);
 		if (en) {
-			fprintf(fp, "interface=oet%d\n", i);  // add interface to DNSMasq even if it is not up yet
 #ifdef HAVE_IPSET
 			if (dpbr) {
 				char dnsm_ipset[512] = { 0 };

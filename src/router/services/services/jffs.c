@@ -198,7 +198,7 @@ void start_jffs2(void)
 			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			didntwork = mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			*/
-			
+
 			// egc alternative way
 			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
@@ -216,7 +216,8 @@ void start_jffs2(void)
 }
 #endif
 
-int is_mtd_mounted(const char *dev) {
+int is_mtd_mounted(const char *dev)
+{
 	FILE *fp;
 	struct mntent *mnt;
 	fp = setmntent("/proc/mounts", "r");
