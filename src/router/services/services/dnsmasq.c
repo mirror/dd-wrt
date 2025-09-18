@@ -70,7 +70,7 @@ char *getoet_addresses(char *buffer, size_t len)
 		if (en) {
 			char *ip = nvram_nget("oet%d_ipaddr", i);
 			if (*ip && strcmp(ip, "0.0.0.0"))
-				snprintf(buffer, len - 1, "%s,%s", ip);
+				snprintf(buffer, len - 1, "%s,%s", buffer, ip);
 		}
 	}
 #endif
