@@ -593,7 +593,10 @@ int nvram_nexists(const char *fmt, ...)
 
 int nvram_geti(const char *name)
 {
-	return atoi(nvram_safe_get(name));
+	char *nv = nvram_safe_get(name);
+	if (!*nv)
+		return 0;
+	return atoi(nv);
 }
 
 void nvram_seti(const char *name, const int value)
