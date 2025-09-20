@@ -38,7 +38,7 @@
 #include <services.h>
 #include <libgen.h>
 
-char *getoet_ifnames(char *buffer, size_t len)
+static char *getoet_ifnames(char *buffer, size_t len)
 {
 	*buffer = 0;
 #ifdef HAVE_EOP
@@ -57,7 +57,7 @@ char *getoet_ifnames(char *buffer, size_t len)
 	return buffer;
 }
 
-char *getoet_addresses(char *buffer, size_t len)
+static char *getoet_addresses(char *buffer, size_t len)
 {
 	*buffer = 0;
 #ifdef HAVE_EOP
