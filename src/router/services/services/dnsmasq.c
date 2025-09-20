@@ -54,6 +54,7 @@ char *getoet_ifnames(char *buffer, size_t len)
 		}
 	}
 #endif
+	return buffer;
 }
 
 char *getoet_addresses(char *buffer, size_t len)
@@ -74,6 +75,7 @@ char *getoet_addresses(char *buffer, size_t len)
 		}
 	}
 #endif
+	return buffer;
 }
 
 extern int usejffs;
