@@ -48,8 +48,9 @@ DECLARE_HOOK(bgp_packet_send,
 	} while (0)
 
 /* Packet send and receive function prototypes. */
-extern void bgp_keepalive_send(struct peer *peer);
-extern struct stream *bgp_open_make(struct peer *peer, uint16_t send_holdtime, as_t local_as);
+extern void bgp_keepalive_send(struct peer_connection *connection);
+extern struct stream *bgp_open_make(struct peer *peer, uint16_t send_holdtime, as_t local_as,
+				    struct in_addr *id);
 extern void bgp_open_send(struct peer_connection *connection);
 extern void bgp_notify_send(struct peer_connection *connection, uint8_t code,
 			    uint8_t sub_code);
@@ -81,8 +82,6 @@ extern void bgp_process_packet(struct event *event);
 
 extern void bgp_send_delayed_eor(struct bgp *bgp);
 
-/* Task callback to handle socket error encountered in the io pthread */
-void bgp_packet_process_error(struct event *thread);
 extern struct bgp_notify
 bgp_notify_decapsulate_hard_reset(struct bgp_notify *notify);
 extern bool bgp_has_graceful_restart_notification(struct peer *peer);

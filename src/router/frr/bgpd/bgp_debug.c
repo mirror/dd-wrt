@@ -35,6 +35,7 @@
 #include "bgpd/bgp_vty.h"
 #include "bgpd/bgp_flowspec.h"
 #include "bgpd/bgp_packet.h"
+#include "bgpd/bgp_nhc.h"
 
 #include "bgpd/bgp_debug_clippy.c"
 
@@ -149,6 +150,7 @@ static const struct message bgp_notify_update_msg[] = {
 	{BGP_NOTIFY_UPDATE_OPT_ATTR_ERR, "/Optional Attribute Error"},
 	{BGP_NOTIFY_UPDATE_INVAL_NETWORK, "/Invalid Network Field"},
 	{BGP_NOTIFY_UPDATE_MAL_AS_PATH, "/Malformed AS_PATH"},
+	{BGP_NOTIFY_UPDATE_UNREACH_NEXT_HOP, "/Unreachable Link-Local Address"},
 	{0}};
 
 static const struct message bgp_notify_cease_msg[] = {
@@ -494,6 +496,16 @@ bool bgp_dump_attr(struct attr *attr, char *buf, size_t size)
 		if (attr->label_index != BGP_INVALID_LABEL_INDEX)
 			snprintf(buf + strlen(buf), size - strlen(buf),
 				 ", label-index %u", attr->label_index);
+	}
+
+	if (CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NHC))) {
+		struct bgp_nhc_tlv *tlv;
+		struct bgp_nhc *nhc = bgp_attr_get_nhc(attr);
+
+		for (tlv = nhc->tlvs; tlv; tlv = tlv->next)
+			snprintf(buf + strlen(buf), size - strlen(buf),
+				 ", NHC TLV code %d length %d value %p", tlv->code, tlv->length,
+				 tlv->value);
 	}
 
 	if (strlen(buf) > 1)

@@ -57,7 +57,7 @@
 char *zserv_path;
 
 /* process id. */
-pid_t pid;
+pid_t zebra_pid;
 
 /* Pacify zclient.o in libfrr, which expects this variable. */
 struct event_loop *master;
@@ -134,7 +134,6 @@ static void sigint(void)
 {
 	struct vrf *vrf;
 	struct zebra_vrf *zvrf;
-	struct listnode *ln, *nn;
 	struct zserv *client;
 	static bool sigint_done;
 
@@ -163,15 +162,13 @@ static void sigint(void)
 	zebra_dplane_pre_finish();
 
 	/* Clean up GR related info. */
-	zebra_gr_stale_client_cleanup(zrouter.stale_client_list);
-	list_delete_all_node(zrouter.stale_client_list);
+	zebra_gr_stale_client_cleanup();
 
 	/* Clean up zapi clients and server module */
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, ln, nn, client))
+	frr_each_safe (zserv_client_list, &zrouter.client_list, client)
 		zserv_close_client(client);
 
 	zserv_close();
-	list_delete_all_node(zrouter.client_list);
 
 	/* Once all the zclients are cleaned up, clean up the opaque module */
 	zebra_opaque_finish();
@@ -202,9 +199,6 @@ static void sigint(void)
 
 	rib_update_finish();
 
-	list_delete(&zrouter.client_list);
-	list_delete(&zrouter.stale_client_list);
-
 	/*
 	 * Besides other clean-ups zebra's vrf_disable() also enqueues installed
 	 * routes for removal from the kernel, unless ZEBRA_VRF_RETAIN is set.
@@ -216,6 +210,9 @@ static void sigint(void)
 	 * with the 'finalize' function.
 	 */
 	zebra_dplane_finish();
+
+	/* Clean up if any stale NHGs present */
+	zebra_nhg_sweep_table(zrouter.nhgs_id, true);
 }
 
 /*
@@ -253,9 +250,15 @@ void zebra_finalize(struct event *dummy)
 
 	label_manager_terminate();
 
+	affinity_map_terminate();
+
 	ns_walk_func(zebra_ns_final_shutdown, NULL, NULL);
 
 	ns_terminate();
+
+	zserv_client_list_fini(&zrouter.client_list);
+	zserv_stale_client_list_fini(&zrouter.stale_client_list);
+
 	frr_fini();
 	exit(0);
 }
@@ -305,7 +308,7 @@ FRR_DAEMON_INFO(zebra, ZEBRA,
 	.proghelp =
 		"Daemon which manages kernel routing table management and\nredistribution between different routing protocols.",
 
-	.flags = FRR_NO_ZCLIENT,
+	.flags = FRR_NO_ZCLIENT | FRR_MGMTD_BACKEND,
 
 	.signals = zebra_signals,
 	.n_signals = array_size(zebra_signals),
@@ -332,7 +335,7 @@ void zebra_main_router_started(void)
 	zrouter.rib_sweep_time = 0;
 	zrouter.graceful_restart = zebra_di.graceful_restart;
 	if (!zrouter.graceful_restart)
-		event_add_timer(zrouter.master, rib_sweep_route, NULL, 0, NULL);
+		event_add_timer(zrouter.master, rib_sweep_route, NULL, 0, &zrouter.t_rib_sweep);
 	else {
 		int gr_cleanup_time;
 
@@ -520,7 +523,7 @@ int main(int argc, char **argv)
 	 */
 
 	/* Needed for BSD routing socket. */
-	pid = getpid();
+	zebra_pid = getpid();
 
 	/* Start dataplane system */
 	zebra_dplane_start();

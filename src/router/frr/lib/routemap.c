@@ -1019,7 +1019,7 @@ static void vty_show_route_map_entry(struct vty *vty, struct route_map *map,
 				char buf[BUFSIZ];
 
 				snprintf(buf, sizeof(buf), "%s %s",
-					 rule->cmd->str, rule->rule_str);
+					 rule->cmd->str, rule->rule_str ? rule->rule_str : "");
 				json_array_string_add(json_sets, buf);
 			}
 
@@ -1064,7 +1064,7 @@ static void vty_show_route_map_entry(struct vty *vty, struct route_map *map,
 			for (rule = index->set_list.head; rule;
 			     rule = rule->next)
 				vty_out(vty, "    %s %s\n", rule->cmd->str,
-					rule->rule_str);
+					rule->rule_str ? rule->rule_str : "");
 
 			/* Call clause */
 			vty_out(vty, "  Call clause:\n");
@@ -2463,8 +2463,7 @@ static void route_map_pentry_process_dependency(struct hash_bucket *bucket,
 			continue;
 
 		for (match = match_list->head; match; match = match->next) {
-			if (strcmp(match->rule_str, pentry_dep->plist_name)
-			    == 0) {
+			if (rulecmp(match->rule_str, pentry_dep->plist_name) == 0) {
 				if (IS_RULE_IPv4_PREFIX_LIST(match->cmd->str)
 				    && family == AF_INET) {
 					route_map_pentry_update(

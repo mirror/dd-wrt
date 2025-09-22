@@ -242,6 +242,7 @@ struct interface {
 #define ZEBRA_INTERFACE_SUB        (1 << 1)
 #define ZEBRA_INTERFACE_LINKDETECTION (1 << 2)
 #define ZEBRA_INTERFACE_VRF_LOOPBACK (1 << 3)
+#define ZEBRA_INTERFACE_DUMMY (1 << 4)
 
 	/* Interface flags. */
 	uint64_t flags;
@@ -307,6 +308,8 @@ struct interface {
 
 	QOBJ_FIELDS;
 };
+
+extern int if_cmp_func(const struct interface *a, const struct interface *b);
 
 RB_HEAD(if_name_head, interface);
 RB_PROTOTYPE(if_name_head, interface, name_entry, if_cmp_func)

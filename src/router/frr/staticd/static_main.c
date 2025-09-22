@@ -65,7 +65,7 @@ static void sighup(void)
 }
 
 /* SIGINT / SIGTERM handler. */
-static void sigint(void)
+static FRR_NORETURN void sigint(void)
 {
 	zlog_notice("Terminating on signal");
 
@@ -111,13 +111,16 @@ struct frr_signal_t static_signals[] = {
 	},
 };
 
+/* clang-format off */
 static const struct frr_yang_module_info *const staticd_yang_modules[] = {
 	&frr_backend_info,
 	&frr_interface_info,
 	&frr_vrf_info,
 	&frr_routing_info,
 	&frr_staticd_info,
+	&ietf_srv6_types_info,
 };
+/* clang-format on */
 
 /*
  * NOTE: .flags == FRR_NO_SPLIT_CONFIG to avoid reading split config, mgmtd will
@@ -136,7 +139,7 @@ FRR_DAEMON_INFO(staticd, STATIC,
 	.yang_modules = staticd_yang_modules,
 	.n_yang_modules = array_size(staticd_yang_modules),
 
-	.flags = FRR_NO_SPLIT_CONFIG,
+	.flags = FRR_NO_SPLIT_CONFIG | FRR_MGMTD_BACKEND,
 );
 /* clang-format on */
 

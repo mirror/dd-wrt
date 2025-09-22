@@ -26,14 +26,6 @@
 #include "ripngd/ripngd.h"
 #include "ripngd/ripng_debug.h"
 
-/* If RFC2133 definition is used. */
-#ifndef IPV6_JOIN_GROUP
-#define IPV6_JOIN_GROUP  IPV6_ADD_MEMBERSHIP
-#endif
-#ifndef IPV6_LEAVE_GROUP
-#define IPV6_LEAVE_GROUP IPV6_DROP_MEMBERSHIP
-#endif
-
 DEFINE_MTYPE_STATIC(RIPNGD, RIPNG_IF, "ripng interface");
 
 /* Static utility function. */
@@ -154,7 +146,7 @@ static int ripng_if_down(struct interface *ifp)
 
 	ri = ifp->info;
 
-	EVENT_OFF(ri->t_wakeup);
+	event_cancel(&ri->t_wakeup);
 
 	ripng = ri->ripng;
 
@@ -275,7 +267,7 @@ void ripng_interface_clean(struct ripng *ripng)
 		ri->enable_interface = 0;
 		ri->running = 0;
 
-		EVENT_OFF(ri->t_wakeup);
+		event_cancel(&ri->t_wakeup);
 	}
 }
 

@@ -128,6 +128,8 @@ struct pim_interface *pim_if_new(struct interface *ifp, bool gm, bool pim,
 	pim_ifp->gm_specific_query_max_response_time_dsec =
 		GM_SPECIFIC_QUERY_MAX_RESPONSE_TIME_DSEC;
 	pim_ifp->gm_last_member_query_count = GM_DEFAULT_ROBUSTNESS_VARIABLE;
+	pim_ifp->gm_group_limit = UINT32_MAX;
+	pim_ifp->gm_source_limit = UINT32_MAX;
 
 	/* BSM config on interface: true by default */
 	pim_ifp->bsm_enable = true;
@@ -143,7 +145,7 @@ struct pim_interface *pim_if_new(struct interface *ifp, bool gm, bool pim,
 	       pim_ifp->gm_default_query_interval);
 
 	pim_ifp->pim_enable = pim;
-	pim_ifp->pim_passive_enable = false;
+	pim_ifp->pim_mode = PIM_MODE_SPARSE;
 	pim_ifp->gm_enable = gm;
 	pim_ifp->gm_proxy = false;
 
@@ -226,6 +228,7 @@ void pim_if_delete(struct interface *ifp)
 	if (pim_ifp->bfd_config.profile)
 		XFREE(MTYPE_TMP, pim_ifp->bfd_config.profile);
 
+	XFREE(MTYPE_PIM_PLIST_NAME, pim_ifp->nbr_plist);
 	XFREE(MTYPE_PIM_INTERFACE, pim_ifp);
 
 	ifp->info = NULL;
@@ -2022,11 +2025,11 @@ void pim_pim_interface_delete(struct interface *ifp)
 	if (!pim_ifp)
 		return;
 
+	pim_ifp->pim_enable = false;
+
 #if PIM_IPV == 4
 	pim_autorp_rm_ifp(ifp);
 #endif
-
-	pim_ifp->pim_enable = false;
 
 	pim_if_membership_clear(ifp);
 
@@ -2062,4 +2065,21 @@ void pim_gm_interface_delete(struct interface *ifp)
 
 	if (!pim_ifp->pim_enable)
 		pim_if_delete(ifp);
+}
+
+
+const char *pim_mod_str(enum pim_iface_mode mode)
+{
+	switch (mode) {
+	case PIM_MODE_SPARSE:
+		return "SPARSE";
+	case PIM_MODE_DENSE:
+		return "DENSE";
+	case PIM_MODE_SPARSE_DENSE:
+		return "SPARSE_DENSE";
+	case PIM_MODE_SSM:
+		return "SSM";
+	}
+
+	return "";
 }

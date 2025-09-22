@@ -33,8 +33,6 @@
 #include "ospfd/ospf_zebra.h"
 #include "ospfd/ospf_dump.h"
 
-extern struct zclient *zclient;
-
 /** @brief Function to refresh type-5 and type-7 DNA
  *	   LSAs when we receive an indication LSA.
  *  @param Ospf instance.
@@ -172,11 +170,11 @@ struct external_info *ospf_external_info_check(struct ospf *ospf,
 		redist_on =
 			is_default_prefix4(&p)
 				? vrf_bitmap_check(
-					  &zclient->default_information[AFI_IP],
+					  &ospf_zclient->default_information[AFI_IP],
 					  ospf->vrf_id)
-				: (zclient->mi_redist[AFI_IP][type].enabled ||
+				: (ospf_zclient->mi_redist[AFI_IP][type].enabled ||
 				   vrf_bitmap_check(
-					   &zclient->redist[AFI_IP][type],
+					   &ospf_zclient->redist[AFI_IP][type],
 					   ospf->vrf_id));
 		// Pending: check for MI above.
 		if (redist_on) {
@@ -500,6 +498,13 @@ int ospf_flood(struct ospf *ospf, struct ospf_neighbor *nbr,
 	if (!(new = ospf_lsa_install(ospf, oi, new)))
 		return -1; /* unknown LSA type or any other error condition */
 
+	/*
+	 * It is possible that the new lsa is freed before we get to the
+	 * lock from the need to send a receipt.  So let's lock the lsa
+	 * here for the duration of the function.
+	 */
+	ospf_lsa_lock(new);
+
 	/* check if the installed LSA is an indication LSA */
 	if (ospf_check_indication_lsa(new) && !IS_LSA_SELF(new) &&
 	    !IS_LSA_MAXAGE(new)) {
@@ -564,6 +569,7 @@ int ospf_flood(struct ospf *ospf, struct ospf_neighbor *nbr,
 		/* Update statistics value for OSPF-MIB. */
 		ospf->rx_lsa_count++;
 
+	ospf_lsa_unlock(&new);
 	return 0;
 }
 
@@ -1239,7 +1245,7 @@ void ospf_ls_retransmit_set_timer(struct ospf_neighbor *nbr)
 	struct ospf_lsa_list_entry *ls_rxmt_list_entry;
 
 	if (nbr->t_ls_rxmt)
-		EVENT_OFF(nbr->t_ls_rxmt);
+		event_cancel(&nbr->t_ls_rxmt);
 
 	ls_rxmt_list_entry = ospf_lsa_list_first(&nbr->ls_rxmt_list);
 	if (ls_rxmt_list_entry) {

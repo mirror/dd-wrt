@@ -447,6 +447,8 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 		int gnh_modified, lnh_modified;
 		size_t offset_nhglobal = vec->offset + 1;
 		size_t offset_nhlocal = vec->offset + 1;
+		bool ll_nexthop_only = (nhlen == BGP_ATTR_NHLEN_IPV6_GLOBAL &&
+					PEER_HAS_LINK_LOCAL_CAPABILITY(peer));
 
 		gnh_modified = lnh_modified = 0;
 		mod_v6nhg = &v6nhglobal;
@@ -535,8 +537,8 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 			gnh_modified = 1;
 		}
 
-		if (nhlen == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL
-		    || nhlen == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL) {
+		if (nhlen == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL ||
+		    nhlen == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL) {
 			stream_get_from(&v6nhlocal, s, offset_nhlocal,
 					IPV6_MAX_BYTELEN);
 			if (IN6_IS_ADDR_UNSPECIFIED(&v6nhlocal)) {
@@ -545,14 +547,24 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 			}
 		}
 
-		if (gnh_modified)
-			stream_put_in6_addr_at(s, offset_nhglobal, mod_v6nhg);
-		if (lnh_modified)
+		/* If link-local next-hop capability is negotiated, then
+		 * we have to ensure that the link-local next-hop is set
+		 * to the peer's link-local address, and not the `::`.
+		 * Here it comes as nhlen == 16 (not 32).
+		 */
+		if (ll_nexthop_only) {
+			mod_v6nhl = &peer->nexthop.v6_local;
 			stream_put_in6_addr_at(s, offset_nhlocal, mod_v6nhl);
+		} else {
+			if (gnh_modified)
+				stream_put_in6_addr_at(s, offset_nhglobal, mod_v6nhg);
+			if (lnh_modified)
+				stream_put_in6_addr_at(s, offset_nhlocal, mod_v6nhl);
+		}
 
 		if (bgp_debug_update(peer, NULL, NULL, 0)) {
-			if (nhlen == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL
-			    || nhlen == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL)
+			if (nhlen == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL ||
+			    nhlen == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL)
 				zlog_debug(
 					"u%" PRIu64 ":s%" PRIu64
 					" %s send UPDATE w/ mp_nexthops %pI6, %pI6%s",
@@ -562,6 +574,11 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 					(nhlen == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL
 						 ? " and RD"
 						 : ""));
+			else if (ll_nexthop_only)
+				zlog_debug("u%" PRIu64 ":s%" PRIu64
+					   " %s send UPDATE w/ mp_nexthop (link-local only) %pI6",
+					   PAF_SUBGRP(paf)->update_group->id, PAF_SUBGRP(paf)->id,
+					   peer->host, mod_v6nhl);
 			else
 				zlog_debug(
 					"u%" PRIu64 ":s%" PRIu64
@@ -740,7 +757,7 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 			 * attr. */
 			total_attr_len = bgp_packet_attribute(NULL, peer, s, adv->baa->attr,
 							      &vecarr, NULL, afi, safi, from, NULL,
-							      NULL, 0, 0, 0);
+							      NULL, 0, 0, 0, path);
 
 			space_remaining =
 				STREAM_CONCAT_REMAIN(s, snlri, STREAM_SIZE(s))
@@ -759,9 +776,11 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 					subgrp->update_group->id, subgrp->id);
 
 				/* Flush the FIFO update queue */
-				while (adv)
-					adv = bgp_advertise_clean_subgroup(
-						subgrp, adj);
+				while (adv) {
+					struct bgp_adj_out *curr_adj = adv->adj;
+
+					adv = bgp_advertise_clean_subgroup(subgrp, curr_adj);
+				}
 				return NULL;
 			}
 
@@ -1151,7 +1170,7 @@ void subgroup_default_update_packet(struct update_subgroup *subgrp,
 	stream_putw(s, 0);
 	total_attr_len = bgp_packet_attribute(NULL, peer, s, attr, &vecarr, &p, afi, safi, from,
 					      NULL, &label, num_labels, addpath_capable,
-					      BGP_ADDPATH_TX_ID_FOR_DEFAULT_ORIGINATE);
+					      BGP_ADDPATH_TX_ID_FOR_DEFAULT_ORIGINATE, NULL);
 
 	/* Set Total Path Attribute Length. */
 	stream_putw_at(s, pos, total_attr_len);

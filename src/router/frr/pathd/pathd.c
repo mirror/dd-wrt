@@ -59,7 +59,11 @@ static void srte_unset_metric(struct srte_metric *metric);
 static inline int srte_segment_entry_compare(const struct srte_segment_entry *a,
 					     const struct srte_segment_entry *b)
 {
-	return a->index - b->index;
+	if (a->index > b->index)
+		return 1;
+	if (a->index < b->index)
+		return -1;
+	return 0;
 }
 RB_GENERATE(srte_segment_entry_head, srte_segment_entry, entry,
 	    srte_segment_entry_compare)
@@ -80,7 +84,11 @@ struct srte_segment_list_head srte_segment_lists =
 static inline int srte_candidate_compare(const struct srte_candidate *a,
 					 const struct srte_candidate *b)
 {
-	return a->preference - b->preference;
+	if (a->preference > b->preference)
+		return 1;
+	if (a->preference < b->preference)
+		return -1;
+	return 0;
 }
 RB_GENERATE(srte_candidate_head, srte_candidate, entry, srte_candidate_compare)
 
@@ -1030,6 +1038,7 @@ static uint32_t filter_type_to_flag(enum affinity_filter_type type)
 	}
 
 	assert(!"Reached end of function we should never hit");
+	return 0;
 }
 
 static const char *filter_type_name(enum affinity_filter_type type)
@@ -1046,6 +1055,7 @@ static const char *filter_type_name(enum affinity_filter_type type)
 	}
 
 	assert(!"Reached end of function we should never hit");
+	return "DEV ESCAPE";
 }
 
 /**
@@ -1277,6 +1287,7 @@ const char *srte_origin2str(enum srte_protocol_origin origin)
 	}
 
 	assert(!"Reached end of function we should never hit");
+	return "DEV ESCAPE";
 }
 
 void pathd_shutdown(void)

@@ -140,7 +140,6 @@ enum node_type {
 	PBRMAP_NODE,		 /* PBR map node. */
 	SMUX_NODE,		 /* SNMP configuration node. */
 	DUMP_NODE,		 /* Packet dump node. */
-	FORWARDING_NODE,	 /* IP forwarding node. */
 	PROTOCOL_NODE,		 /* protocol filtering node */
 	MPLS_NODE,		 /* MPLS config node */
 	PW_NODE,		 /* Pseudowire config node */
@@ -437,7 +436,7 @@ struct cmd_node {
 #define AREA_TAG_STR "[area tag]\n"
 #define COMMUNITY_AANN_STR "Community number where AA and NN are (0-65535)\n"
 #define COMMUNITY_VAL_STR                                                      \
-	"Community number in AA:NN format (where AA and NN are (0-65535)) or local-AS|no-advertise|no-export|internet|graceful-shutdown|accept-own-nexthop|accept-own|route-filter-translated-v4|route-filter-v4|route-filter-translated-v6|route-filter-v6|llgr-stale|no-llgr|blackhole|no-peer or additive\n"
+	"Community number in AA:NN format (where AA and NN are (0-65535)) or local-AS|no-advertise|no-export|graceful-shutdown|accept-own-nexthop|accept-own|route-filter-translated-v4|route-filter-v4|route-filter-translated-v6|route-filter-v6|llgr-stale|no-llgr|blackhole|no-peer or additive\n"
 #define EXTCOMM_LIST_CMD_STR "<(1-99)|(100-500)|EXTCOMMUNITY_LIST_NAME>"
 #define EXTCOMM_STD_LIST_NUM_STR "Extended community-list number (standard)\n"
 #define EXTCOMM_EXP_LIST_NUM_STR "Extended community-list number (expanded)\n"
@@ -485,7 +484,6 @@ struct cmd_node {
 /* Graceful Restart cli help strings */
 #define GR_CMD "Global Graceful Restart command\n"
 #define NO_GR_CMD "Undo Global Graceful Restart command\n"
-#define GR "Global Graceful Restart - GR Mode\n"
 #define GR_DISABLE "Global Graceful Restart - Disable Mode\n"
 #define NO_GR_DISABLE "Undo Global Graceful Restart - Disable Mode\n"
 #define GR_DEBUG "Graceful Restart - Enable Debug Logs\n"
@@ -662,6 +660,9 @@ extern void command_setup_early_logging(const char *dest, const char *level);
  * under the lib directory to output their debug status
  */
 extern void cmd_show_lib_debugs(struct vty *vty);
+
+extern const struct frr_yang_module_info frr_host_cli_info;
+extern void host_cli_init(void);
 
 #ifdef __cplusplus
 }

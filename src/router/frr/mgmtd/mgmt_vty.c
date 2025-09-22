@@ -147,7 +147,7 @@ DEFPY(mgmt_commit,
 	bool validate_only = type[0] == 'c';
 	bool abort = type[1] == 'b';
 
-	if (vty_mgmt_send_commit_config(vty, validate_only, abort) != 0)
+	if (vty_mgmt_send_commit_config(vty, validate_only, abort, false) != 0)
 		return CMD_WARNING_CONFIG_FAILED;
 	return CMD_SUCCESS;
 }
@@ -165,8 +165,7 @@ DEFPY(mgmt_create_config_data, mgmt_create_config_data_cmd,
 	vty->cfg_changes[0].operation = NB_OP_CREATE_EXCL;
 	vty->num_cfg_changes = 1;
 
-	vty_mgmt_send_config_data(vty, NULL, false);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_config_data(vty, NULL, false);
 }
 
 DEFPY(mgmt_set_config_data, mgmt_set_config_data_cmd,
@@ -182,8 +181,7 @@ DEFPY(mgmt_set_config_data, mgmt_set_config_data_cmd,
 	vty->cfg_changes[0].operation = NB_OP_MODIFY;
 	vty->num_cfg_changes = 1;
 
-	vty_mgmt_send_config_data(vty, NULL, false);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_config_data(vty, NULL, false);
 }
 
 DEFPY(mgmt_delete_config_data, mgmt_delete_config_data_cmd,
@@ -199,8 +197,7 @@ DEFPY(mgmt_delete_config_data, mgmt_delete_config_data_cmd,
 	vty->cfg_changes[0].operation = NB_OP_DELETE;
 	vty->num_cfg_changes = 1;
 
-	vty_mgmt_send_config_data(vty, NULL, false);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_config_data(vty, NULL, false);
 }
 
 DEFPY(mgmt_remove_config_data, mgmt_remove_config_data_cmd,
@@ -216,8 +213,7 @@ DEFPY(mgmt_remove_config_data, mgmt_remove_config_data_cmd,
 	vty->cfg_changes[0].operation = NB_OP_DESTROY;
 	vty->num_cfg_changes = 1;
 
-	vty_mgmt_send_config_data(vty, NULL, false);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_config_data(vty, NULL, false);
 }
 
 DEFPY(mgmt_replace_config_data, mgmt_replace_config_data_cmd,
@@ -234,8 +230,7 @@ DEFPY(mgmt_replace_config_data, mgmt_replace_config_data_cmd,
 	vty->cfg_changes[0].operation = NB_OP_REPLACE;
 	vty->num_cfg_changes = 1;
 
-	vty_mgmt_send_config_data(vty, NULL, false);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_config_data(vty, NULL, false);
 }
 
 DEFPY(mgmt_edit, mgmt_edit_cmd,
@@ -291,9 +286,8 @@ DEFPY(mgmt_edit, mgmt_edit_cmd,
 	if (commit)
 		flags |= EDIT_FLAG_IMPLICIT_COMMIT;
 
-	vty_mgmt_send_edit_req(vty, MGMT_MSG_DATASTORE_CANDIDATE, format, flags,
-			       operation, xpath, data);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_edit_req(vty, MGMT_MSG_DATASTORE_CANDIDATE, format, flags, operation,
+				      xpath, data);
 }
 
 DEFPY(mgmt_rpc, mgmt_rpc_cmd,
@@ -307,28 +301,7 @@ DEFPY(mgmt_rpc, mgmt_rpc_cmd,
 {
 	LYD_FORMAT format = (fmt && fmt[0] == 'x') ? LYD_XML : LYD_JSON;
 
-	vty_mgmt_send_rpc_req(vty, format, xpath, data);
-	return CMD_SUCCESS;
-}
-
-DEFPY(show_mgmt_get_config, show_mgmt_get_config_cmd,
-      "show mgmt get-config [candidate|operational|running]$dsname WORD$path",
-      SHOW_STR MGMTD_STR
-      "Get configuration data from a specific configuration datastore\n"
-      "Candidate datastore (default)\n"
-      "Operational datastore\n"
-      "Running datastore\n"
-      "XPath expression specifying the YANG data path\n")
-{
-	const char *xpath_list[VTY_MAXCFGCHANGES] = {0};
-	Mgmtd__DatastoreId datastore = MGMTD_DS_CANDIDATE;
-
-	if (dsname)
-		datastore = mgmt_ds_name2id(dsname);
-
-	xpath_list[0] = path;
-	vty_mgmt_send_get_req(vty, true, datastore, xpath_list, 1);
-	return CMD_SUCCESS;
+	return vty_mgmt_send_rpc_req(vty, format, xpath, data);
 }
 
 DEFPY(show_mgmt_get_data, show_mgmt_get_data_cmd,
@@ -415,7 +388,7 @@ DEFPY(show_mgmt_dump_data,
       "xml output\n")
 {
 	struct mgmt_ds_ctx *ds_ctx;
-	Mgmtd__DatastoreId datastore = MGMTD_DS_CANDIDATE;
+	enum mgmt_ds_id datastore = MGMTD_DS_CANDIDATE;
 	LYD_FORMAT format = fmt[0] == 'j' ? LYD_JSON : LYD_XML;
 	FILE *f = NULL;
 
@@ -498,7 +471,7 @@ DEFPY(mgmt_save_config,
       "Running datastore\n"
       "Full path of the file\n")
 {
-	Mgmtd__DatastoreId datastore = mgmt_ds_name2id(dsname);
+	enum mgmt_ds_id datastore = mgmt_ds_name2id(dsname);
 	struct mgmt_ds_ctx *ds_ctx;
 	FILE *f;
 
@@ -662,7 +635,6 @@ void mgmt_vty_init(void)
 	install_element(VIEW_NODE, &show_mgmt_fe_adapter_cmd);
 	install_element(VIEW_NODE, &show_mgmt_txn_cmd);
 	install_element(VIEW_NODE, &show_mgmt_ds_cmd);
-	install_element(VIEW_NODE, &show_mgmt_get_config_cmd);
 	install_element(VIEW_NODE, &show_mgmt_get_data_cmd);
 	install_element(VIEW_NODE, &show_mgmt_dump_data_cmd);
 	install_element(VIEW_NODE, &show_mgmt_map_xpath_cmd);

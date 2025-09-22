@@ -27,7 +27,6 @@
 %{!?with_pimd:          %global  with_pimd          1 }
 %{!?with_pim6d:         %global  with_pim6d         1 }
 %{!?with_vrrpd:         %global  with_vrrpd         1 }
-%{!?with_rtadv:         %global  with_rtadv         1 }
 %{!?with_watchfrr:      %global  with_watchfrr      1 }
 %{!?with_pathd:         %global  with_pathd         1 }
 %{!?with_grpc:          %global  with_grpc          0 }
@@ -54,7 +53,7 @@
 
 #### Version String tweak
 # Remove invalid characters form version string and replace with _
-%{expand: %%global rpmversion %(echo '@VERSION@' | tr [:blank:]- _ )}
+%{expand: %%global frrmajorversion %(echo '@VERSION@' | tr [:blank:]- _ )}
 %define         frrversion   @VERSION@
 
 #### Check for systemd or init.d (upstart)
@@ -170,7 +169,7 @@
 
 Summary: Routing daemon
 Name:           frr
-Version:        %{rpmversion}
+Version:        %{frrmajorversion}
 Release:        %{release_rev}%{?dist}
 License:        GPLv2+
 Group:          System Environment/Daemons
@@ -374,11 +373,6 @@ CFLAGS="%{optflags} -DINET_NTOP_NO_OVERRIDE"
 %else
     --disable-ospfapi \
 %endif
-%if %{with_rtadv}
-    --enable-rtadv \
-%else
-    --disable-rtadv \
-%endif
 %if %{with_ldpd}
     --enable-ldpd \
 %else
@@ -531,7 +525,11 @@ install -d -m750 %{buildroot}%{_runstatedir}/frr
 
 %if 0%{?rhel} > 7 || 0%{?fedora} > 29
 # avoid `ERROR: ambiguous python shebang in` errors
+%if 0%{?rhel} < 10
 pathfix.py -pni "%{__python3} %{py3_shbang_opts}" %{buildroot}/usr/lib/frr/*.py
+%else
+%py3_shebang_fix %{buildroot}/usr/lib/frr/*.py
+%endif
 %py_byte_compile %{__python3} %{buildroot}/usr/lib/frr/*.py
 %else
 # remove ospfclient.py (if present) as it requires > python36
@@ -786,6 +784,7 @@ fi
 %{_libdir}/libfrr_pb.so*
 %{_libdir}/libfrrfpm_pb.so*
 %{_libdir}/libmgmt_be_nb.so*
+%{_libdir}/libmlag_pb.so*
 %{_bindir}/*
 %config(noreplace) %{configdir}/[!v]*.conf*
 %config(noreplace) %attr(750,%{frr_user},%{frr_user}) %{configdir}/daemons
@@ -876,13 +875,23 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 
 %changelog
 
-* Fri May 30 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> - %{version}
+* Sat Aug 02 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> - %{version}
 
-* Fri May 30 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> - 10.3.1
-- New upstream release 10.3.1
+* Sat Aug 02 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> - 10.4.1
+- New upstream release FRR 10.4.1
 
-* Tue Mar 18 2025 Martin Winter <mwinter@opensourcerouting.org> 10.3.0-1
-- Change docs and rpki to conditional package builds
+* Sun Jul 20 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> - 10.4
+- Major highlights:
+-   BGP BFD Strict-Mode
+-   BGP Link-Local Next Hop Capability [draft-ietf-idr-linklocal-capability]
+-   BGP Transparent mode
+-   BGP Next Hop Dependent Characteristics Attribute [draft-ietf-idr-entropy-label]
+-   IGMP and MLD group/source limits
+-   PIM dense and sparse-dense mode support [RFC3973]
+-   IGMPv2/MLDv1 immediate leave
+-   v4-via-v6 nexthop support for static routes
+-   Timeout for vtysh
+-   Discover PREF64 in Router Advertisements [RFC8781]
 
 * Mon Mar 10 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> - 10.3
 - Major highlights:

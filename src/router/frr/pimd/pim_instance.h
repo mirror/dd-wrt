@@ -71,6 +71,7 @@ struct pim_router {
 	uint32_t debugs;
 
 	int t_periodic;
+	int t_prune_limit;
 	struct pim_assert_metric infinite_assert_metric;
 	long rpf_cache_refresh_delay_msec;
 	uint32_t register_suppress_time;
@@ -119,7 +120,8 @@ struct pim_instance {
 	struct hash *nht_hash;
 	struct pim_lookup_mode_head rpf_mode;
 
-	void *ssm_info; /* per-vrf SSM configuration */
+	struct pim_ssm *ssm_info; /* per-vrf SSM configuration */
+	struct pim_dm *dm_info;	  /* per-vrf DM configuration */
 
 	int send_v6_secondary;
 
@@ -170,6 +172,10 @@ struct pim_instance {
 	unsigned int gm_watermark_limit;
 	unsigned int keep_alive_time;
 	unsigned int rp_keep_alive_time;
+	unsigned int staterefresh_time;
+
+	uint8_t staterefresh_counter;
+
 
 	bool ecmp_enable;
 	bool ecmp_rebalance_enable;

@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+struct route_node;
+
 FRR_CFG_DEFAULT_BOOL(ZEBRA_IP_NHT_RESOLVE_VIA_DEFAULT,
 	{ .val_bool = true, .match_profile = "traditional", },
 	{ .val_bool = false },
@@ -263,6 +265,8 @@ extern void zebra_vrf_init(void);
 
 extern void zebra_rtable_node_cleanup(struct route_table *table,
 				      struct route_node *node);
+extern void zebra_node_info_cleanup(struct route_node *node);
+
 
 #ifdef __cplusplus
 }

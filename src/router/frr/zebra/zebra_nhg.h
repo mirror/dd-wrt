@@ -390,7 +390,7 @@ extern void zebra_nhg_dplane_result(struct zebra_dplane_ctx *ctx);
 
 
 /* Sweep the nhg hash tables for old entries on restart */
-extern void zebra_nhg_sweep_table(struct hash *hash);
+extern void zebra_nhg_sweep_table(struct hash *hash, bool stale_sweep);
 
 /*
  * We are shutting down but the nexthops should be kept
@@ -401,8 +401,11 @@ extern void zebra_nhg_mark_keep(void);
 
 /* Nexthop resolution processing */
 struct route_entry; /* Forward ref to avoid circular includes */
+extern void nexthop_vrf_update(struct route_node *rn, struct route_entry *re, vrf_id_t vrf_id);
 extern int nexthop_active_update(struct route_node *rn, struct route_entry *re,
 				 struct route_entry *old_re);
+
+extern const char *zebra_nhg_afi2str(struct nhg_hash_entry *nhe);
 
 #ifdef _FRR_ATTRIBUTE_PRINTFRR
 #pragma FRR printfrr_ext "%pNG" (const struct nhg_hash_entry *)

@@ -444,6 +444,14 @@ static unsigned int updgrp_hash_key_make(const void *p)
 	 */
 	key = jhash_1word(peer->local_role, key);
 
+	/* If the peer has disabled Link-Local Next Hop capability, but we
+	 * send it, it's not taken into consideration and we always merge both
+	 * peers into a single update-group. Make sure peer has its own update-group
+	 * if it has disabled (received) Link-Local Next Hop capability.
+	 */
+	key = jhash_2words(!!CHECK_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_RCV),
+			   !!CHECK_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_ADV), key);
+
 	/* Neighbors configured with the AIGP attribute are put in a separate
 	 * update group from other neighbors.
 	 */
@@ -480,6 +488,9 @@ static unsigned int updgrp_hash_key_make(const void *p)
 		zlog_debug("%pBP Update Group Hash: addpath paths-limit: (send %u, receive %u)",
 			   peer, peer->addpath_paths_limit[afi][safi].send,
 			   peer->addpath_paths_limit[afi][safi].receive);
+		zlog_debug("%pBP Update Group Hash: Link-Local Next Hop capability:%s%s", peer,
+			   CHECK_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_RCV) ? " received" : "",
+			   CHECK_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_ADV) ? " advertised" : "");
 		zlog_debug(
 			"%pBP Update Group Hash: max packet size: %u pmax_out: %u Peer Group: %s rmap out: %s",
 			peer, peer->max_packet_size, peer->pmax_out[afi][safi],
@@ -956,10 +967,10 @@ static int update_group_show_walkcb(struct update_group *updgrp, void *arg)
 			if (ctx->uj) {
 				json_peers = json_object_new_array();
 				SUBGRP_FOREACH_PEER (subgrp, paf) {
-					json_object *peer =
+					json_object *jpeer =
 						json_object_new_string(
 							paf->peer->host);
-					json_object_array_add(json_peers, peer);
+					json_object_array_add(json_peers, jpeer);
 				}
 				json_object_object_add(json_subgrp, "peers",
 						       json_peers);
@@ -1147,8 +1158,8 @@ static void update_subgroup_delete(struct update_subgroup *subgrp)
 	if (subgrp->update_group)
 		UPDGRP_INCR_STAT(subgrp->update_group, subgrps_deleted);
 
-	EVENT_OFF(subgrp->t_merge_check);
-	EVENT_OFF(subgrp->t_coalesce);
+	event_cancel(&subgrp->t_merge_check);
+	event_cancel(&subgrp->t_coalesce);
 
 	bpacket_queue_cleanup(SUBGRP_PKTQ(subgrp));
 	subgroup_clear_table(subgrp);
@@ -2138,7 +2149,7 @@ void update_group_refresh_default_originate_route_map(struct event *thread)
 	bgp = EVENT_ARG(thread);
 	update_group_walk(bgp, update_group_default_originate_route_map_walkcb,
 			  reason);
-	EVENT_OFF(bgp->t_rmap_def_originate_eval);
+	event_cancel(&bgp->t_rmap_def_originate_eval);
 }
 
 /*

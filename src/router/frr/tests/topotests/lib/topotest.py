@@ -619,13 +619,13 @@ def iproute2_is_json_capable():
     """
     if is_linux():
         try:
-            subp = subprocess.Popen(
+            with subprocess.Popen(
                 ["ip", "-json", "route", "show"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-            )
-            iproute2_err = subp.communicate()[1].splitlines()[0].split()[0]
+            ) as subp:
+                iproute2_err = subp.communicate()[1].splitlines()[0].split()[0]
 
             if iproute2_err != "Error:":
                 return True
@@ -644,13 +644,13 @@ def iproute2_is_vrf_capable():
 
     if is_linux():
         try:
-            subp = subprocess.Popen(
+            with subprocess.Popen(
                 ["ip", "route", "show", "vrf"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-            )
-            iproute2_err = subp.communicate()[1].splitlines()[0].split()[0]
+            ) as subp:
+                iproute2_err = subp.communicate()[1].splitlines()[0].split()[0]
 
             if iproute2_err != "Error:":
                 return True
@@ -669,13 +669,13 @@ def iproute2_is_fdb_get_capable():
 
     if is_linux():
         try:
-            subp = subprocess.Popen(
+            with subprocess.Popen(
                 ["bridge", "fdb", "get", "help"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-            )
-            iproute2_out = subp.communicate()[1].splitlines()[0].split()[0]
+            ) as subp:
+                iproute2_out = subp.communicate()[1].splitlines()[0].split()[0]
 
             if "Usage" in str(iproute2_out):
                 return True
@@ -1472,7 +1472,8 @@ class Router(Node):
         self.ns_cmd = "sudo nsenter -a -t {} ".format(self.pid)
         try:
             # Allow escaping from running inside docker
-            cgroup = open("/proc/1/cgroup").read()
+            with open("/proc/1/cgroup") as file:
+                cgroup = file.read()
             m = re.search("[0-9]+:cpuset:/docker/([a-f0-9]+)", cgroup)
             if m:
                 self.ns_cmd = "docker exec -it {} ".format(m.group(1)) + self.ns_cmd
@@ -2076,7 +2077,8 @@ class Router(Node):
                         try:
                             fname = f"{valgrind_logbase}.{p.pid}"
                             logging.info("Checking %s for valgrind launch info", fname)
-                            o = open(fname, encoding="ascii").read()
+                            with open(fname, encoding="ascii") as file:
+                                o = file.read()
                         except FileNotFoundError:
                             logging.info("%s not present yet", fname)
                         else:
@@ -2266,6 +2268,19 @@ class Router(Node):
                 )
                 time.sleep(0.5)
 
+        def _check_connected_to_zebra(self, daemon):
+            # Drop the last 'd' from daemon name for checking connection
+            if daemon == "pathd":
+                daemon = "srte"
+            elif daemon == "pim6d":
+                daemon = "pim"
+            elif daemon == "snmptrapd":
+                return True
+            else:
+                daemon = daemon[:-1]
+            output = self.cmd("vtysh -c 'show zebra client summary'")
+            return daemon in output
+
         # Start mgmtd first
         if "mgmtd" in daemons_list:
             start_daemon("mgmtd")
@@ -2276,7 +2291,9 @@ class Router(Node):
             _check_daemons_running(check_daemon_files)
 
         # Start Zebra after mgmtd
+        zebra_started = False
         if "zebra" in daemons_list:
+            zebra_started = True
             start_daemon("zebra")
             while "zebra" in daemons_list:
                 daemons_list.remove("zebra")
@@ -2289,6 +2306,16 @@ class Router(Node):
             start_daemon("staticd")
             while "staticd" in daemons_list:
                 daemons_list.remove("staticd")
+
+            if zebra_started:
+                ok, _ = run_and_expect(
+                    lambda: _check_connected_to_zebra(self, daemon="staticd"),
+                    True,
+                    count=30,
+                    wait=1,
+                )
+                if not ok:
+                    assert False, "staticd failed to connect to zebra"
 
         if "snmpd" in daemons_list:
             # Give zerbra a chance to configure interface addresses that snmpd daemon
@@ -2317,12 +2344,22 @@ class Router(Node):
             else:
                 start_daemon(daemon)
 
+            if zebra_started:
+                ok, _ = run_and_expect(
+                    lambda: _check_connected_to_zebra(self, daemon=daemon),
+                    True,
+                    count=30,
+                    wait=1,
+                )
+                if not ok:
+                    assert False, f"{daemon} failed to connect to zebra"
+
         # Check if daemons are running.
         _check_daemons_running(check_daemon_files)
 
         if check_daemon_files:
-            assert False, "Timeout({}) waiting for {} to appear on {}".format(
-                wait_time, check_daemon_files[0], self.name
+            assert False, "Timeout waiting for {} to appear on {}".format(
+                check_daemon_files[0], self.name
             )
 
         # Update the permissions on the log files

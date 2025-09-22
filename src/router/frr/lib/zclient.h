@@ -470,6 +470,7 @@ struct zapi_nexthop {
 	/* SRv6 Headend-behaviour */
 	int seg_num;
 	struct in6_addr seg6_segs[SRV6_MAX_SEGS];
+	enum srv6_headend_behavior srv6_encap_behavior;
 };
 
 /*
@@ -578,6 +579,12 @@ struct zapi_route {
  * kernel (NLM_F_APPEND at the very least )
  */
 #define ZEBRA_FLAG_OUTOFSYNC          0x400
+/*
+ * This flag lets us know that the route entry is
+ * associated to the table ID and must remain when the
+ * table ID is de-associated from a VRF.
+ */
+#define ZEBRA_FLAG_TABLEID 0x800
 
 	/* The older XXX_MESSAGE flags live here */
 	uint32_t message;

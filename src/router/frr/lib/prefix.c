@@ -138,6 +138,7 @@ const char *afi2str_lower(afi_t afi)
 	}
 
 	assert(!"Reached end of function we should never reach");
+	return "DEV ESCAPE";
 }
 
 const char *afi2str(afi_t afi)
@@ -155,6 +156,7 @@ const char *afi2str(afi_t afi)
 	}
 
 	assert(!"Reached end of function we should never reach");
+	return "DEV ESCAPE";
 }
 
 const char *safi2str(safi_t safi)
@@ -180,6 +182,7 @@ const char *safi2str(safi_t safi)
 	}
 
 	assert(!"Reached end of function we should never reach");
+	return "DEV ESCAPE";
 }
 
 /* If n includes p prefix then return 1 else return 0. */
@@ -1439,10 +1442,13 @@ bool ipv4_unicast_valid(const struct in_addr *addr)
 {
 	in_addr_t ip = ntohl(addr->s_addr);
 
+	if (IPV4_CLASS_E(ip))
+		return true;
+
 	if (IPV4_CLASS_D(ip))
 		return false;
 
-	if (IPV4_NET0(ip) || IPV4_NET127(ip) || IPV4_CLASS_E(ip)) {
+	if (IPV4_NET0(ip) || IPV4_NET127(ip)) {
 		if (cmd_allow_reserved_ranges_get())
 			return true;
 		else

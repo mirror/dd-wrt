@@ -79,6 +79,7 @@ static void bfd_profile_set_default(struct bfd_profile *bp)
 	bp->detection_multiplier = BFD_DEFDETECTMULT;
 	bp->echo_mode = false;
 	bp->passive = false;
+	bp->log_session_changes = false;
 	bp->minimum_ttl = BFD_DEF_MHOP_TTL;
 	bp->min_echo_rx = BFD_DEF_REQ_MIN_ECHO_RX;
 	bp->min_echo_tx = BFD_DEF_DES_MIN_ECHO_TX;
@@ -209,6 +210,12 @@ void bfd_session_apply(struct bfd_session *bs)
 		bfd_set_shutdown(bs, bp->admin_shutdown);
 	else
 		bfd_set_shutdown(bs, bs->peer_profile.admin_shutdown);
+
+	/* Toggle 'no log-session-changes' if default value. */
+	if (bs->peer_profile.log_session_changes == false)
+		bfd_set_log_session_changes(bs, bp->log_session_changes);
+	else
+		bfd_set_log_session_changes(bs, bs->peer_profile.log_session_changes);
 
 	/* If session interval changed negotiate new timers. */
 	if (bs->ses_state == PTM_BFD_UP
@@ -353,7 +360,7 @@ int bfd_session_enable(struct bfd_session *bs)
 	 */
 	if (bs->bfd_mode == BFD_MODE_TYPE_SBFD_ECHO || bs->bfd_mode == BFD_MODE_TYPE_SBFD_INIT) {
 		psock = bp_peer_srh_socketv6(bs);
-		if (psock <= 0) {
+		if (psock < 0) {
 			zlog_err("bp_peer_srh_socketv6 error");
 			return 0;
 		}
@@ -574,6 +581,9 @@ void ptm_bfd_sess_up(struct bfd_session *bfd)
 			zlog_debug("state-change: [%s] %s -> %s",
 				   bs_to_string(bfd), state_list[old_state].str,
 				   state_list[bfd->ses_state].str);
+		if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES))
+			zlog_notice("Session-Change: [%s] %s -> %s", bs_to_string(bfd),
+				    state_list[old_state].str, state_list[bfd->ses_state].str);
 	}
 }
 
@@ -621,6 +631,11 @@ void ptm_bfd_sess_dn(struct bfd_session *bfd, uint8_t diag)
 				   bs_to_string(bfd), state_list[old_state].str,
 				   state_list[bfd->ses_state].str,
 				   get_diag_str(bfd->local_diag));
+		if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES) &&
+		    old_state == PTM_BFD_UP)
+			zlog_notice("Session-Change: [%s] %s -> %s reason:%s", bs_to_string(bfd),
+				    state_list[old_state].str, state_list[bfd->ses_state].str,
+				    get_diag_str(bfd->local_diag));
 	}
 
 	/* clear peer's mac address */
@@ -651,6 +666,9 @@ void ptm_sbfd_sess_up(struct bfd_session *bfd)
 		if (bglobal.debug_peer_event)
 			zlog_info("state-change: [%s] %s -> %s", bs_to_string(bfd),
 				  state_list[old_state].str, state_list[bfd->ses_state].str);
+		if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES))
+			zlog_notice("Session-Change: [%s] %s -> %s", bs_to_string(bfd),
+				    state_list[old_state].str, state_list[bfd->ses_state].str);
 	}
 }
 
@@ -693,6 +711,11 @@ void ptm_sbfd_init_sess_dn(struct bfd_session *bfd, uint8_t diag)
 			zlog_debug("state-change: [%s] %s -> %s reason:%s", bs_to_string(bfd),
 				   state_list[old_state].str, state_list[bfd->ses_state].str,
 				   get_diag_str(bfd->local_diag));
+		if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES) &&
+		    old_state == PTM_BFD_UP)
+			zlog_notice("Session-Change: [%s] %s -> %s reason:%s", bs_to_string(bfd),
+				    state_list[old_state].str, state_list[bfd->ses_state].str,
+				    get_diag_str(bfd->local_diag));
 	}
 	/* reset local address ,it might has been be changed after bfd is up*/
 	//memset(&bfd->local_address, 0, sizeof(bfd->local_address));
@@ -721,32 +744,18 @@ void ptm_sbfd_echo_sess_dn(struct bfd_session *bfd, uint8_t diag)
 			zlog_warn("state-change: [%s] %s -> %s reason:%s", bs_to_string(bfd),
 				  state_list[old_state].str, state_list[bfd->ses_state].str,
 				  get_diag_str(bfd->local_diag));
+		if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES) &&
+		    old_state == PTM_BFD_UP)
+			zlog_notice("Session-Change: [%s] %s -> %s reason:%s", bs_to_string(bfd),
+				    state_list[old_state].str, state_list[bfd->ses_state].str,
+				    get_diag_str(bfd->local_diag));
 	}
 }
 
 static struct bfd_session *bfd_find_disc(struct sockaddr_any *sa,
 					 uint32_t ldisc)
 {
-	struct bfd_session *bs;
-
-	bs = bfd_id_lookup(ldisc);
-	if (bs == NULL)
-		return NULL;
-
-	switch (bs->key.family) {
-	case AF_INET:
-		if (memcmp(&sa->sa_sin.sin_addr, &bs->key.peer,
-			   sizeof(sa->sa_sin.sin_addr)))
-			return NULL;
-		break;
-	case AF_INET6:
-		if (memcmp(&sa->sa_sin6.sin6_addr, &bs->key.peer,
-			   sizeof(sa->sa_sin6.sin6_addr)))
-			return NULL;
-		break;
-	}
-
-	return bs;
+	return bfd_id_lookup(ldisc);
 }
 
 struct bfd_session *ptm_bfd_sess_find(struct bfd_pkt *cp,
@@ -943,6 +952,11 @@ static void _bfd_session_update(struct bfd_session *bs,
 
 	bs->peer_profile.echo_mode = bpc->bpc_echo;
 	bfd_set_echo(bs, bpc->bpc_echo);
+
+	if (bpc->bpc_log_session_changes)
+		SET_FLAG(bs->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES);
+	else
+		UNSET_FLAG(bs->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES);
 
 	/*
 	 * Shutdown needs to be the last in order to avoid timers enable when
@@ -1425,6 +1439,8 @@ void bs_echo_timer_handler(struct bfd_session *bs)
  */
 void bs_final_handler(struct bfd_session *bs)
 {
+	uint64_t old_xmt_TO = bs->xmt_TO;
+
 	/* Start using our new timers. */
 	bs->cur_timers.desired_min_tx = bs->timers.desired_min_tx;
 	bs->cur_timers.required_min_rx = bs->timers.required_min_rx;
@@ -1452,6 +1468,12 @@ void bs_final_handler(struct bfd_session *bs)
 		bs->xmt_TO = bs->timers.desired_min_tx;
 	else
 		bs->xmt_TO = bs->remote_timers.required_min_rx;
+	
+	/* Only apply increased transmission interval after Poll Sequence */
+	if (bs->ses_state == PTM_BFD_UP && bs->xmt_TO > old_xmt_TO) {
+		bs->xmt_TO = old_xmt_TO;  /* Keep old timing until Poll Sequence done */
+		return;
+	}
 
 	/* Apply new transmission timer immediately. */
 	ptm_bfd_start_xmt_timer(bs, false);
@@ -1531,6 +1553,7 @@ void bfd_set_shutdown(struct bfd_session *bs, bool shutdown)
 			return;
 
 		SET_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN);
+		bs->local_diag = BD_ADMIN_DOWN;
 
 		/* Handle data plane shutdown case. */
 		if (bs->bdc) {
@@ -1606,6 +1629,14 @@ void bfd_set_passive_mode(struct bfd_session *bs, bool passive)
 		bfd_xmttimer_update(bs, bs->xmt_TO);
 		bfd_recvtimer_update(bs);
 	}
+}
+
+void bfd_set_log_session_changes(struct bfd_session *bs, bool log_session_changes)
+{
+	if (log_session_changes)
+		SET_FLAG(bs->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES);
+	else
+		UNSET_FLAG(bs->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES);
 }
 
 /*
@@ -2411,13 +2442,13 @@ static int bfd_vrf_disable(struct vrf *vrf)
 		zlog_debug("VRF disable %s id %d", vrf->name, vrf->vrf_id);
 
 	/* Disable read/write poll triggering. */
-	EVENT_OFF(bvrf->bg_ev[0]);
-	EVENT_OFF(bvrf->bg_ev[1]);
-	EVENT_OFF(bvrf->bg_ev[2]);
-	EVENT_OFF(bvrf->bg_ev[3]);
-	EVENT_OFF(bvrf->bg_ev[4]);
-	EVENT_OFF(bvrf->bg_ev[5]);
-	EVENT_OFF(bvrf->bg_ev[6]);
+	event_cancel(&bvrf->bg_ev[0]);
+	event_cancel(&bvrf->bg_ev[1]);
+	event_cancel(&bvrf->bg_ev[2]);
+	event_cancel(&bvrf->bg_ev[3]);
+	event_cancel(&bvrf->bg_ev[4]);
+	event_cancel(&bvrf->bg_ev[5]);
+	event_cancel(&bvrf->bg_ev[6]);
 
 	/* Close all descriptors. */
 	socket_close(&bvrf->bg_echo);
@@ -2495,7 +2526,7 @@ void sbfd_reflector_free(const uint32_t discr)
 	return;
 }
 
-void sbfd_reflector_flush()
+void sbfd_reflector_flush(void)
 {
 	sbfd_discr_iterate(_sbfd_reflector_free, NULL);
 	return;

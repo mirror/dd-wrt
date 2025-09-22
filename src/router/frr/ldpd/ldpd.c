@@ -75,7 +75,7 @@ DEFINE_QOBJ_TYPE(ldpd_conf);
 const char		*log_procname;
 
 struct ldpd_global	 global;
-struct ldpd_init	 init;
+struct ldpd_init ldp_init;
 struct ldpd_conf	*ldpd_conf, *vty_conf;
 
 static struct imsgev	*iev_ldpe, *iev_ldpe_sync;
@@ -273,8 +273,8 @@ main(int argc, char *argv[])
 				 "%s/" LDPD_SOCK_NAME, optarg);
 			break;
 		case 'n':
-			init.instance = atoi(optarg);
-			if (init.instance < 1)
+			ldp_init.instance = atoi(optarg);
+			if (ldp_init.instance < 1)
 				exit(0);
 			break;
 		case 'L':
@@ -292,11 +292,11 @@ main(int argc, char *argv[])
 		snprintf(ctl_sock_path, sizeof(ctl_sock_path),
 			 "%s/" LDPD_SOCK_NAME, frr_runstatedir);
 
-	strlcpy(init.user, ldpd_privs.user, sizeof(init.user));
-	strlcpy(init.group, ldpd_privs.group, sizeof(init.group));
-	strlcpy(init.ctl_sock_path, ctl_sock_path, sizeof(init.ctl_sock_path));
-	strlcpy(init.zclient_serv_path, frr_zclientpath,
-	    sizeof(init.zclient_serv_path));
+	strlcpy(ldp_init.user, ldpd_privs.user, sizeof(ldp_init.user));
+	strlcpy(ldp_init.group, ldpd_privs.group, sizeof(ldp_init.group));
+	strlcpy(ldp_init.ctl_sock_path, ctl_sock_path, sizeof(ldp_init.ctl_sock_path));
+	strlcpy(ldp_init.zclient_serv_path, frr_zclientpath,
+		sizeof(ldp_init.zclient_serv_path));
 
 	argc -= optind;
 	if (argc > 0 || (lflag && eflag))
@@ -430,7 +430,7 @@ main(int argc, char *argv[])
 		fatal("could not establish imsg links");
 
 	main_imsg_compose_both(IMSG_DEBUG_UPDATE, &ldp_debug, sizeof(ldp_debug));
-	main_imsg_compose_both(IMSG_INIT, &init, sizeof(init));
+	main_imsg_compose_both(IMSG_INIT, &ldp_init, sizeof(ldp_init));
 	main_imsg_send_config(ldpd_conf);
 
 	if (CHECK_FLAG(ldpd_conf->ipv4.flags, F_LDPD_AF_ENABLED))
@@ -445,8 +445,7 @@ main(int argc, char *argv[])
 	return (0);
 }
 
-static void
-ldpd_shutdown(void)
+static FRR_NORETURN void ldpd_shutdown(void)
 {
 	pid_t		 pid;
 	int		 status;
@@ -626,8 +625,8 @@ static void main_dispatch_ldpe(struct event *thread)
 		imsg_event_add(iev);
 	else {
 		/* this pipe is dead, so remove the event handlers and exit */
-		EVENT_OFF(iev->ev_read);
-		EVENT_OFF(iev->ev_write);
+		event_cancel(&iev->ev_read);
+		event_cancel(&iev->ev_write);
 		ldpe_pid = 0;
 
 		if (lde_pid == 0)
@@ -732,8 +731,8 @@ static void main_dispatch_lde(struct event *thread)
 		imsg_event_add(iev);
 	else {
 		/* this pipe is dead, so remove the event handlers and exit */
-		EVENT_OFF(iev->ev_read);
-		EVENT_OFF(iev->ev_write);
+		event_cancel(&iev->ev_read);
+		event_cancel(&iev->ev_write);
 		lde_pid = 0;
 		if (ldpe_pid == 0)
 			ldpd_shutdown();
@@ -755,8 +754,8 @@ void ldp_write_handler(struct event *thread)
 		fatal("msgbuf_write");
 	if (n == 0) {
 		/* this pipe is dead, so remove the event handlers */
-		EVENT_OFF(iev->ev_read);
-		EVENT_OFF(iev->ev_write);
+		event_cancel(&iev->ev_read);
+		event_cancel(&iev->ev_write);
 		return;
 	}
 
@@ -845,7 +844,7 @@ void evbuf_init(struct evbuf *eb, int fd, void (*handler)(struct event *),
 void
 evbuf_clear(struct evbuf *eb)
 {
-	EVENT_OFF(eb->ev);
+	event_cancel(&eb->ev);
 	msgbuf_clear(&eb->wbuf);
 	eb->wbuf.fd = -1;
 }
@@ -1607,6 +1606,7 @@ merge_iface_af(struct iface_af *ia, struct iface_af *xi)
 	}
 	ia->hello_holdtime = xi->hello_holdtime;
 	ia->hello_interval = xi->hello_interval;
+	ia->disable_establish_hello = xi->disable_establish_hello;
 }
 
 static void

@@ -570,7 +570,7 @@ static void zebra_evpn_dup_addr_detect_for_mac(struct zebra_vrf *zvrf,
 		}
 
 		/* Start auto recovery timer for this MAC */
-		EVENT_OFF(mac->dad_mac_auto_recovery_timer);
+		event_cancel(&mac->dad_mac_auto_recovery_timer);
 		if (zvrf->dad_freeze && zvrf->dad_freeze_time) {
 			if (IS_ZEBRA_DEBUG_VXLAN) {
 				char mac_buf[MAC_BUF_SIZE];
@@ -846,15 +846,15 @@ void zebra_evpn_print_mac_hash(struct hash_bucket *bucket, void *ctxt)
 
 	prefix_mac2str(&mac->macaddr, buf1, sizeof(buf1));
 
-	if (json_mac_hdr)
-		json_mac = json_object_new_object();
-
 	if (CHECK_FLAG(mac->flags, ZEBRA_MAC_LOCAL)) {
 		struct interface *ifp;
 		vlanid_t vid;
 
 		if (wctx->flags & SHOW_REMOTE_MAC_FROM_VTEP)
 			return;
+
+		if (json_mac_hdr)
+			json_mac = json_object_new_object();
 
 		zebra_evpn_mac_get_access_info(mac, &ifp, &vid);
 		if (json_mac_hdr == NULL) {
@@ -922,6 +922,8 @@ void zebra_evpn_print_mac_hash(struct hash_bucket *bucket, void *ctxt)
 				mac->es ? mac->es->esi_str : addr_buf, "",
 				mac->loc_seq, mac->rem_seq);
 		} else {
+			json_mac = json_object_new_object();
+
 			json_object_string_add(json_mac, "type", "remote");
 			if (mac->es)
 				json_object_string_add(json_mac, "remoteEs",
@@ -1134,7 +1136,7 @@ int zebra_evpn_mac_del(struct zebra_evpn *zevpn, struct zebra_mac *mac)
 	zebra_evpn_mac_stop_hold_timer(mac);
 
 	/* Cancel auto recovery */
-	EVENT_OFF(mac->dad_mac_auto_recovery_timer);
+	event_cancel(&mac->dad_mac_auto_recovery_timer);
 
 	/* If the MAC is freed before the neigh we will end up
 	 * with a stale pointer against the neigh.
@@ -1562,7 +1564,7 @@ void zebra_evpn_mac_stop_hold_timer(struct zebra_mac *mac)
 							  sizeof(mac_buf)));
 	}
 
-	EVENT_OFF(mac->hold_timer);
+	event_cancel(&mac->hold_timer);
 }
 
 void zebra_evpn_sync_mac_del(struct zebra_mac *mac)

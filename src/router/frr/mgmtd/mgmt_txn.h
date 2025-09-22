@@ -140,47 +140,6 @@ extern uint64_t mgmt_create_txn(uint64_t session_id, enum mgmt_txn_type type);
 extern void mgmt_destroy_txn(uint64_t *txn_id);
 
 /*
- * Send set-config request to be processed later in transaction.
- *
- * txn_id
- *    Unique transaction identifier.
- *
- * req_id
- *    Unique transaction request identifier.
- *
- * ds_id
- *    Datastore ID.
- *
- * ds_hndl
- *    Datastore handle.
- *
- * cfg_req
- *    Config requests.
- *
- * num_req
- *    Number of config requests.
- *
- * implicit_commit
- *    TRUE if the commit is implicit, FALSE otherwise.
- *
- * dst_ds_id
- *    Destination datastore ID.
- *
- * dst_ds_handle
- *    Destination datastore handle.
- *
- * Returns:
- *    0 on success, -1 on failures.
- */
-extern int mgmt_txn_send_set_config_req(uint64_t txn_id, uint64_t req_id,
-					 Mgmtd__DatastoreId ds_id,
-					 struct mgmt_ds_ctx *ds_ctx,
-					 Mgmtd__YangCfgDataReq **cfg_req,
-					 size_t num_req, bool implicit_commit,
-					 Mgmtd__DatastoreId dst_ds_id,
-					 struct mgmt_ds_ctx *dst_ds_ctx);
-
-/*
  * Send commit-config request to be processed later in transaction.
  *
  * txn_id
@@ -204,30 +163,20 @@ extern int mgmt_txn_send_set_config_req(uint64_t txn_id, uint64_t req_id,
  * implicit
  *    TRUE if the commit is implicit, FALSE otherwise.
  *
+ * unlock
+ *    pass back in the commit config reply
+ *
  * edit
  *    Additional info when triggered from native edit request.
  *
  * Returns:
  *    0 on success, -1 on failures.
  */
-extern int mgmt_txn_send_commit_config_req(
-	uint64_t txn_id, uint64_t req_id, Mgmtd__DatastoreId src_ds_id,
-	struct mgmt_ds_ctx *dst_ds_ctx, Mgmtd__DatastoreId dst_ds_id,
-	struct mgmt_ds_ctx *src_ds_ctx, bool validate_only, bool abort,
-	bool implicit, struct mgmt_edit_req *edit);
-
-/*
- * Send get-{cfg,data} request to be processed later in transaction.
- *
- * Is get-config if cfg_root is provided and the config is gathered locally,
- * otherwise it's get-data and data is fetched from backedn clients.
- */
-extern int mgmt_txn_send_get_req(uint64_t txn_id, uint64_t req_id,
-				 Mgmtd__DatastoreId ds_id,
-				 struct nb_config *cfg_root,
-				 Mgmtd__YangGetDataReq **data_req,
-				 size_t num_reqs);
-
+extern int
+mgmt_txn_send_commit_config_req(uint64_t txn_id, uint64_t req_id, enum mgmt_ds_id src_ds_id,
+				struct mgmt_ds_ctx *dst_ds_ctx, enum mgmt_ds_id dst_ds_id,
+				struct mgmt_ds_ctx *src_ds_ctx, bool validate_only, bool abort,
+				bool implicit, bool unlock, struct mgmt_edit_req *edit);
 
 /**
  * Send get-tree to the backend `clients`.
@@ -241,17 +190,16 @@ extern int mgmt_txn_send_get_req(uint64_t txn_id, uint64_t req_id,
  *	flags: option flags for the request.
  *	wd_options: LYD_PRINT_WD_* flags for the result.
  *	simple_xpath: true if xpath is simple (only key predicates).
+ *	ylib: libyang tree for yang-library module to be merged.
  *	xpath: The xpath to get the tree from.
  *
  * Return:
  *	0 on success.
  */
-extern int mgmt_txn_send_get_tree_oper(uint64_t txn_id, uint64_t req_id,
-				       uint64_t clients,
-				       Mgmtd__DatastoreId ds_id,
-				       LYD_FORMAT result_type, uint8_t flags,
-				       uint32_t wd_options, bool simple_xpath,
-				       const char *xpath);
+extern int mgmt_txn_send_get_tree(uint64_t txn_id, uint64_t req_id, uint64_t clients,
+				  enum mgmt_ds_id ds_id, LYD_FORMAT result_type, uint8_t flags,
+				  uint32_t wd_options, bool simple_xpath, struct lyd_node **ylib,
+				  const char *xpath);
 
 /**
  * Send edit request.
@@ -271,12 +219,11 @@ extern int mgmt_txn_send_get_tree_oper(uint64_t txn_id, uint64_t req_id,
  *	xpath: The xpath of data node to edit.
  *	data: The data tree.
  */
-extern int
-mgmt_txn_send_edit(uint64_t txn_id, uint64_t req_id, Mgmtd__DatastoreId ds_id,
-		   struct mgmt_ds_ctx *ds_ctx, Mgmtd__DatastoreId commit_ds_id,
-		   struct mgmt_ds_ctx *commit_ds_ctx, bool unlock, bool commit,
-		   LYD_FORMAT request_type, uint8_t flags, uint8_t operation,
-		   const char *xpath, const char *data);
+extern int mgmt_txn_send_edit(uint64_t txn_id, uint64_t req_id, enum mgmt_ds_id ds_id,
+			      struct mgmt_ds_ctx *ds_ctx, enum mgmt_ds_id commit_ds_id,
+			      struct mgmt_ds_ctx *commit_ds_ctx, bool unlock, bool commit,
+			      LYD_FORMAT request_type, uint8_t flags, uint8_t operation,
+			      const char *xpath, const char *data);
 
 /**
  * Send RPC request.
@@ -300,12 +247,16 @@ extern int mgmt_txn_send_rpc(uint64_t txn_id, uint64_t req_id, uint64_t clients,
 /**
  * mgmt_txn_send_notify_selectors() - Send NOTIFY SELECT request.
  * @req_id: FE client request identifier.
- * @clients: Bitmask of clients to send RPC to.
+ * @session_id: If non-zero the message will get sent as a `get_only` vs modifing
+ *	        the selectors in the backend, and the get result will be sent
+ *              back to the given session.
+ * @clients: Bitmask of backend clients to send message to.
  * @selectors: Array of selectors or NULL to resend all selectors to BE clients.
  *
  * Returns 0 on success.
  */
-extern int mgmt_txn_send_notify_selectors(uint64_t req_id, uint64_t clients, const char **selectors);
+extern int mgmt_txn_send_notify_selectors(uint64_t req_id, uint64_t session_id, uint64_t clients,
+					  const char **selectors);
 
 /*
  * Notifiy backend adapter on connection.
@@ -324,10 +275,8 @@ mgmt_txn_notify_be_txn_reply(uint64_t txn_id, bool create, bool success,
 /*
  * Reply to backend adapater with config data create request.
  */
-extern int
-mgmt_txn_notify_be_cfgdata_reply(uint64_t txn_id, bool success,
-				     char *error_if_any,
-				     struct mgmt_be_client_adapter *adapter);
+extern int mgmt_txn_notify_be_cfg_reply(uint64_t txn_id, bool success, const char *error_if_any,
+					struct mgmt_be_client_adapter *adapter);
 
 /*
  * Reply to backend adapater with config data validate request.

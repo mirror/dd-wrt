@@ -224,7 +224,6 @@ enum lsid_status { LSID_AVAILABLE = 0, LSID_CHANGE, LSID_NOT_AVAILABLE };
 
 /* Prototypes. */
 /* XXX: Eek, time functions, similar are in lib/thread.c */
-extern struct timeval int2tv(int);
 
 extern struct timeval msec2tv(int a);
 extern int tv2msec(struct timeval tv);
@@ -363,4 +362,10 @@ static inline bool ospf_check_indication_lsa(struct ospf_lsa *lsa)
 
 	return false;
 }
+
+/*
+ * LSA Update and Delete Hook LSAs.
+ */
+DECLARE_HOOK(ospf_lsa_update, (struct ospf_lsa *lsa), (lsa));
+DECLARE_HOOK(ospf_lsa_delete, (struct ospf_lsa *lsa), (lsa));
 #endif /* _ZEBRA_OSPF_LSA_H */

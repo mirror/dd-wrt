@@ -353,7 +353,6 @@ static int zsend_interface_nbr_address(int cmd, struct zserv *client,
 static void zebra_interface_nbr_address_add_update(struct interface *ifp,
 						   struct nbr_connected *ifc)
 {
-	struct listnode *node, *nnode;
 	struct zserv *client;
 	struct prefix *p;
 
@@ -368,7 +367,7 @@ static void zebra_interface_nbr_address_add_update(struct interface *ifp,
 			p->prefixlen, ifc->ifp->name);
 	}
 
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		/* Do not send unsolicited messages to synchronous clients. */
 		if (client->synchronous)
 			continue;
@@ -382,7 +381,6 @@ static void zebra_interface_nbr_address_add_update(struct interface *ifp,
 static void zebra_interface_nbr_address_delete_update(struct interface *ifp,
 						      struct nbr_connected *ifc)
 {
-	struct listnode *node, *nnode;
 	struct zserv *client;
 	struct prefix *p;
 
@@ -397,7 +395,7 @@ static void zebra_interface_nbr_address_delete_update(struct interface *ifp,
 			p->prefixlen, ifc->ifp->name);
 	}
 
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		/* Do not send unsolicited messages to synchronous clients. */
 		if (client->synchronous)
 			continue;
@@ -518,8 +516,6 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 	const struct prefix *p, *src_p;
 	uint16_t count = 0;
 	afi_t afi;
-	size_t stream_size =
-		MAX(ZEBRA_MAX_PACKET_SIZ, sizeof(struct zapi_route));
 
 	srcdest_rnode_prefixes(rn, &p, &src_p);
 	memset(&api, 0, sizeof(api));
@@ -611,7 +607,7 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 	SET_FLAG(api.message, ZAPI_MESSAGE_MTU);
 	api.mtu = re->mtu;
 
-	struct stream *s = stream_new(stream_size);
+	struct stream *s = stream_new_expandable(ZEBRA_MAX_PACKET_SIZ);
 
 	/* Encode route and send. */
 	if (zapi_route_encode(cmd, s, &api) < 0) {
@@ -620,11 +616,9 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 	}
 
 	if (IS_ZEBRA_DEBUG_SEND)
-		zlog_debug("%s: %s to client %s: type %s, vrf_id %d, p %pFX",
-			   __func__, zserv_command_string(cmd),
-			   zebra_route_string(client->proto),
-			   zebra_route_string(api.type), api.vrf_id,
-			   &api.prefix);
+		zlog_debug("%s: %s to client %s: type %s, vrf_id %d, table %u, p %pFX", __func__,
+			   zserv_command_string(cmd), zebra_route_string(client->proto),
+			   zebra_route_string(api.type), api.vrf_id, api.tableid, &api.prefix);
 	return zserv_send_message(client, s);
 }
 
@@ -758,9 +752,8 @@ static int route_notify_internal(const struct route_node *rn, int type,
 	}
 
 	if (IS_ZEBRA_DEBUG_PACKET)
-		zlog_debug(
-			"Notifying Owner: %s about prefix %pRN(%u) %d vrf: %u",
-			zebra_route_string(type), rn, table_id, note, vrf_id);
+		zlog_debug("Notifying Owner: %s about prefix %pRN(%u) %d vrf: %u Table: %u",
+			   zebra_route_string(type), rn, table_id, note, vrf_id, table_id);
 
 	/* We're just allocating a small-ish buffer here, since we only
 	 * encode a small amount of data.
@@ -839,7 +832,6 @@ stream_failure:
 void zsend_rule_notify_owner(const struct zebra_dplane_ctx *ctx,
 			     enum zapi_rule_notify_owner note)
 {
-	struct listnode *node;
 	struct zserv *client;
 	struct stream *s;
 
@@ -847,7 +839,7 @@ void zsend_rule_notify_owner(const struct zebra_dplane_ctx *ctx,
 		zlog_debug("%s: Notifying %u", __func__,
 			   dplane_ctx_rule_get_unique(ctx));
 
-	for (ALL_LIST_ELEMENTS_RO(zrouter.client_list, node, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		if (dplane_ctx_rule_get_sock(ctx) == client->sock)
 			break;
 	}
@@ -874,7 +866,6 @@ void zsend_rule_notify_owner(const struct zebra_dplane_ctx *ctx,
 void zsend_iptable_notify_owner(const struct zebra_dplane_ctx *ctx,
 				enum zapi_iptable_notify_owner note)
 {
-	struct listnode *node;
 	struct zserv *client;
 	struct stream *s;
 	struct zebra_pbr_iptable ipt;
@@ -901,7 +892,7 @@ void zsend_iptable_notify_owner(const struct zebra_dplane_ctx *ctx,
 		zlog_debug("%s: Notifying %s id %u note %u", __func__,
 			   zserv_command_string(cmd), ipt.unique, note);
 
-	for (ALL_LIST_ELEMENTS_RO(zrouter.client_list, node, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		if (ipt.sock == client->sock)
 			break;
 	}
@@ -923,7 +914,6 @@ void zsend_iptable_notify_owner(const struct zebra_dplane_ctx *ctx,
 void zsend_ipset_notify_owner(const struct zebra_dplane_ctx *ctx,
 			      enum zapi_ipset_notify_owner note)
 {
-	struct listnode *node;
 	struct zserv *client;
 	struct stream *s;
 	struct zebra_pbr_ipset ipset;
@@ -935,7 +925,7 @@ void zsend_ipset_notify_owner(const struct zebra_dplane_ctx *ctx,
 		zlog_debug("%s: Notifying %s id %u note %u", __func__,
 			   zserv_command_string(cmd), ipset.unique, note);
 
-	for (ALL_LIST_ELEMENTS_RO(zrouter.client_list, node, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		if (ipset.sock == client->sock)
 			break;
 	}
@@ -957,7 +947,6 @@ void zsend_ipset_notify_owner(const struct zebra_dplane_ctx *ctx,
 void zsend_ipset_entry_notify_owner(const struct zebra_dplane_ctx *ctx,
 				    enum zapi_ipset_entry_notify_owner note)
 {
-	struct listnode *node;
 	struct zserv *client;
 	struct stream *s;
 	struct zebra_pbr_ipset_entry ipent;
@@ -971,7 +960,7 @@ void zsend_ipset_entry_notify_owner(const struct zebra_dplane_ctx *ctx,
 		zlog_debug("%s: Notifying %s id %u note %u", __func__,
 			   zserv_command_string(cmd), ipent.unique, note);
 
-	for (ALL_LIST_ELEMENTS_RO(zrouter.client_list, node, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		if (ipent.sock == client->sock)
 			break;
 	}
@@ -995,7 +984,6 @@ void zsend_neighbor_notify(int cmd, struct interface *ifp,
 			   union sockunion *link_layer_ipv4, int ip_len)
 {
 	struct stream *s;
-	struct listnode *node, *nnode;
 	struct zserv *client;
 	afi_t afi;
 	union sockunion ip;
@@ -1008,7 +996,7 @@ void zsend_neighbor_notify(int cmd, struct interface *ifp,
 	memcpy((char *)sockunion_get_addr(&ip), &ipaddr->ip.addr,
 	       family2addrsize(sockunion_family(&ip)));
 
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		if (!vrf_bitmap_check(&client->neighinfo[afi],
 				      ifp->vrf->vrf_id))
 			continue;
@@ -1900,8 +1888,8 @@ static bool zapi_read_nexthops(struct zserv *client, struct prefix *p,
 			if (IS_ZEBRA_DEBUG_RECV)
 				zlog_debug("%s: adding seg6", __func__);
 
-			nexthop_add_srv6_seg6(nexthop, &api_nh->seg6_segs[0],
-					      api_nh->seg_num);
+			nexthop_add_srv6_seg6(nexthop, &api_nh->seg6_segs[0], api_nh->seg_num,
+					      api_nh->srv6_encap_behavior);
 		}
 
 		if (IS_ZEBRA_DEBUG_RECV) {
@@ -2163,11 +2151,10 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 	if (!CHECK_FLAG(api.message, ZAPI_MESSAGE_NHG)
 	    && (!CHECK_FLAG(api.message, ZAPI_MESSAGE_NEXTHOP)
 		|| api.nexthop_num == 0)) {
-		flog_warn(
-			EC_ZEBRA_RX_ROUTE_NO_NEXTHOPS,
-			"%s: received a route without nexthops for prefix %pFX from client %s",
-			__func__, &api.prefix,
-			zebra_route_string(client->proto));
+		flog_warn(EC_ZEBRA_RX_ROUTE_NO_NEXTHOPS,
+			  "%s: received a route without nexthops for prefix (%s:%u)%pFX from client %s",
+			  __func__, zvrf_name(zvrf), api.tableid, &api.prefix,
+			  zebra_route_string(client->proto));
 
 		zebra_rib_route_entry_free(re);
 		return;
@@ -2177,10 +2164,9 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_BACKUP_NEXTHOPS)
 	    && api.backup_nexthop_num == 0) {
 		if (IS_ZEBRA_DEBUG_RECV || IS_ZEBRA_DEBUG_EVENT)
-			zlog_debug(
-				"%s: client %s: BACKUP flag set but no backup nexthops, prefix %pFX",
-				__func__, zebra_route_string(client->proto),
-				&api.prefix);
+			zlog_debug("%s: client %s: BACKUP flag set but no backup nexthops, prefix %pFX(%s:%u)",
+				   __func__, zebra_route_string(client->proto), &api.prefix,
+				   zvrf_name(zvrf), api.tableid);
 	}
 
 	if (!re->nhe_id
@@ -2444,12 +2430,11 @@ static void zsend_capabilities(struct zserv *client, struct zebra_vrf *zvrf)
 
 void zsend_capabilities_all_clients(void)
 {
-	struct listnode *node, *nnode;
 	struct zebra_vrf *zvrf;
 	struct zserv *client;
 
 	zvrf = zebra_vrf_lookup_by_id(VRF_DEFAULT);
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		/* Do not send unsolicited messages to synchronous clients. */
 		if (client->synchronous)
 			continue;
@@ -3027,6 +3012,11 @@ static void zread_srv6_manager_get_locator_chunk(struct zserv *client,
 
 	/* Get data. */
 	STREAM_GETW(s, len);
+	if (len > SRV6_LOCNAME_SIZE) {
+		zlog_warn("%s: SRv6 locator name length %u exceeds maximum %d", __func__, len,
+			  SRV6_LOCNAME_SIZE);
+		goto stream_failure;
+	}
 	STREAM_GET(locator_name, s, len);
 
 	/* call hook to get a chunk using wrapper */
@@ -3047,6 +3037,11 @@ static void zread_srv6_manager_release_locator_chunk(struct zserv *client,
 
 	/* Get data. */
 	STREAM_GETW(s, len);
+	if (len > SRV6_LOCNAME_SIZE) {
+		zlog_warn("%s: SRv6 locator name length %u exceeds maximum %d", __func__, len,
+			  SRV6_LOCNAME_SIZE);
+		goto stream_failure;
+	}
 	STREAM_GET(locator_name, s, len);
 
 	/* call hook to release a chunk using wrapper */
@@ -3887,12 +3882,13 @@ static inline void zebra_neigh_ip_del(ZAPI_HANDLER_ARGS)
 static inline void zread_iptable(ZAPI_HANDLER_ARGS)
 {
 	struct zebra_pbr_iptable *zpi =
-		XCALLOC(MTYPE_PBR_OBJ, sizeof(struct zebra_pbr_iptable));
+		XCALLOC(MTYPE_PBR_IPTABLE, sizeof(struct zebra_pbr_iptable));
 	struct stream *s;
 
 	s = msg;
 
 	zpi->interface_name_list = list_new();
+	zpi->interface_name_list->del = zebra_pbr_iptable_interface_name_list_free;
 	zpi->sock = client->sock;
 	zpi->vrf_id = zvrf->vrf->vrf_id;
 	STREAM_GETL(s, zpi->unique);

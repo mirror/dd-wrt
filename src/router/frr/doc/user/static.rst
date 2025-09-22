@@ -46,8 +46,8 @@ a static prefix and gateway, with several possible forms.
    NETWORK is destination prefix with a valid v4 or v6 network based upon
    initial form of the command.
    
-   GATEWAY is the IP address to use as next-hop for the prefix. Currently, it must match
-   the v4 or v6 route type specified at the start of the command.
+   GATEWAY is the IP address to use as next-hop for the prefix. Routes of type v4 can use v4 and v6 next-hops,
+   v6 routes only support v6 next-hops.
 
    IFNAME is the name of the interface to use as next-hop. If only IFNAME is specified
    (without GATEWAY), a connected route will be created.
@@ -177,6 +177,48 @@ multiple segments instructions.
   [..]
   S>* 2005::/64 [1/0] is directly connected, ens3, seg6 2001:db8:aaaa::7,2002::4,2002::3,2002::2, weight 1, 00:00:06
 
+STATIC also supports steering of IPv4 traffic over an SRv6 SID list, as shown in the example below.
+
+.. code-block:: frr
+
+  ip route A.B.C.D <A.B.C.D|nexthop> segments U:U::U:U/Y:Y::Y:Y/Z:Z::Z:Z
+
+::
+
+  router(config)# ip route 10.0.0.0/24 sr0 segments fcbb:bbbb:1:2:3:fe00::
+
+  router# show ip route
+  [..]
+  S>* 10.0.0.0/24 [1/0] is directly connected, sr0, seg6 fcbb:bbbb:1:2:3:fe00::, weight 1, 00:00:06
+
+  Optionally, the user can specify the SRv6 Headend Behavior to be used for encapsulation. Currently, STATIC supports the following behaviors:
+
+  * H.Encaps
+  * H.Encaps.Red
+
+  When the behavior is not specified, STATIC defaults to using H.Encaps.
+
+.. clicmd:: ipv6 route X:X::X:X <X:X::X:X|nexthop> segments U:U::U:U/Y:Y::Y:Y/Z:Z::Z:Z [encap-behavior BEHAVIOR]
+.. clicmd:: ip route A.B.C.D <A.B.C.D|nexthop> segments U:U::U:U/Y:Y::Y:Y/Z:Z::Z:Z [encap-behavior BEHAVIOR]
+
+::
+
+  router(config)# ipv6 route 2001:db8:1:1::1/128 sr0 segments fcbb:bbbb:1:2:3:fe00:: encap-behavior H.Encaps
+  router(config)# ipv6 route 2001:db8:1:1::2/128 sr0 segments fcbb:bbbb:1:2:3:fe00:: encap-behavior H.Encaps.Red
+
+  router# show ipv6 route
+  [..]
+  S>* 2001:db8:1:1::1/128 [1/0] is directly connected, ens3, seg6 fcbb:bbbb:1:2:3:fe00:: encap behavior H.Encaps, weight 1, 00:00:06
+  S>* 2001:db8:1:1::2/128 [1/0] is directly connected, ens3, seg6 fcbb:bbbb:1:2:3:fe00:: encap behavior H.Encaps.Red, weight 1, 00:00:06
+
+  router(config)# ip route 10.0.0.1/32 sr0 segments fcbb:bbbb:1:2:3:fe00:: encap-behavior H.Encaps
+  router(config)# ip route 10.0.0.2/32 sr0 segments fcbb:bbbb:1:2:3:fe00:: encap-behavior H.Encaps.Red
+
+  router# show ip route
+  [..]
+  S>* 10.0.0.1/32 [1/0] is directly connected, sr0, seg6 fcbb:bbbb:1:2:3:fe00:: encap behavior H.Encaps, weight 1, 00:00:06
+  S>* 10.0.0.2/32 [1/0] is directly connected, sr0, seg6 fcbb:bbbb:1:2:3:fe00:: encap behavior H.Encaps.Red, weight 1, 00:00:06
+
 SRv6 Static SIDs Commands
 =========================
 
@@ -193,17 +235,18 @@ SRv6 Static SIDs Commands
    Move from srv6 node to static-sids node. In this static-sids node, user can
    configure static SRv6 SIDs.
 
-.. clicmd:: sid X:X::X:X/M locator NAME behavior <uN|uDT4|uDT6|uDT46> [vrf VRF]
+.. clicmd:: sid X:X::X:X/M locator NAME behavior <uN|uA|uDT4|uDT6|uDT46> [vrf VRF] [interface IFNAME [nexthop X:X::X:X]]
 
    Specify the locator sid manually. Configuring a local sid in a purely static mode
    by specifying the sid value would generate a unique SID.
    This feature will support the configuration of static SRv6 decapsulation on the system.
 
-   It supports four parameter options, corresponding to the following functions:
-   uN, uDT4, uDT6, uDT46
+   It supports the following behaviors: uN, uA, uDT4, uDT6, uDT46.
 
    When configuring the local sid, if the action is set to 'uN', no vrf should be set.
-   While for any other action, it is necessary to specify a specific vrf.
+   For uDT4, uDT6 and uDT46, it is necessary to specify a specific vrf.
+   The uA behavior requires the outgoing interface and optionally the IPv6 address of the Layer 3 adjacency
+   to which the packet should be forwarded.
 
 ::
 
@@ -214,6 +257,7 @@ SRv6 Static SIDs Commands
    router(config-srv6-sids)# sid fcbb:bbbb:1:fe01::/64 locator LOC1 behavior uDT6 vrf Vrf1
    router(config-srv6-sids)# sid fcbb:bbbb:1:fe02::/64 locator LOC1 behavior uDT4 vrf Vrf1
    router(config-srv6-sids)# sid fcbb:bbbb:1:fe03::/64 locator LOC1 behavior uDT46 vrf Vrf2
+   router(config-srv6-sids)# sid fcbb:bbbb:1:fe04::/64 locator LOC1 behavior uA interface eth0 nexthop 2001::2
 
    router(config-srv6-locator)# show run
    ...
@@ -223,5 +267,6 @@ SRv6 Static SIDs Commands
       sid    fcbb:bbbb:1:fe01::/64 locator LOC1 behavior uDT6 vrf Vrf1
       sid    fcbb:bbbb:1:fe02::/64 locator LOC1 behavior uDT4 vrf Vrf1
       sid    fcbb:bbbb:1:fe03::/64 locator LOC1 behavior uDT46 vrf Vrf2
+      sid    fcbb:bbbb:1:fe04::/64 locator LOC1 behavior uA interface eth0 nexthop 2001::2
        !
    ...

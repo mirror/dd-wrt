@@ -491,16 +491,17 @@ void isis_circuit_if_add(struct isis_circuit *circuit, struct interface *ifp)
 {
 	struct connected *conn;
 
-	if (if_is_broadcast(ifp)) {
+	if (if_is_loopback(ifp) || (isis_option_check(ISIS_OPT_DUMMY_AS_LOOPBACK) &&
+				    CHECK_FLAG(ifp->status, ZEBRA_INTERFACE_DUMMY))) {
+		circuit->circ_type = CIRCUIT_T_LOOPBACK;
+		circuit->is_passive = 1;
+	} else if (if_is_broadcast(ifp)) {
 		if (fabricd || circuit->circ_type_config == CIRCUIT_T_P2P)
 			circuit->circ_type = CIRCUIT_T_P2P;
 		else
 			circuit->circ_type = CIRCUIT_T_BROADCAST;
 	} else if (if_is_pointopoint(ifp)) {
 		circuit->circ_type = CIRCUIT_T_P2P;
-	} else if (if_is_loopback(ifp)) {
-		circuit->circ_type = CIRCUIT_T_LOOPBACK;
-		circuit->is_passive = 1;
 	} else {
 		/* It's normal in case of loopback etc. */
 		if (IS_DEBUG_EVENTS)
@@ -840,12 +841,10 @@ void isis_circuit_down(struct isis_circuit *circuit)
 		if (circuit->u.bc.adjdb[0]) {
 			circuit->u.bc.adjdb[0]->del = isis_delete_adj;
 			list_delete(&circuit->u.bc.adjdb[0]);
-			circuit->u.bc.adjdb[0] = NULL;
 		}
 		if (circuit->u.bc.adjdb[1]) {
 			circuit->u.bc.adjdb[1]->del = isis_delete_adj;
 			list_delete(&circuit->u.bc.adjdb[1]);
-			circuit->u.bc.adjdb[1] = NULL;
 		}
 		if (circuit->u.bc.is_dr[0]) {
 			isis_dr_resign(circuit, 1);
@@ -861,12 +860,12 @@ void isis_circuit_down(struct isis_circuit *circuit)
 		memset(circuit->u.bc.l2_desig_is, 0, ISIS_SYS_ID_LEN + 1);
 		memset(circuit->u.bc.snpa, 0, ETH_ALEN);
 
-		EVENT_OFF(circuit->u.bc.t_send_lan_hello[0]);
-		EVENT_OFF(circuit->u.bc.t_send_lan_hello[1]);
-		EVENT_OFF(circuit->u.bc.t_run_dr[0]);
-		EVENT_OFF(circuit->u.bc.t_run_dr[1]);
-		EVENT_OFF(circuit->u.bc.t_refresh_pseudo_lsp[0]);
-		EVENT_OFF(circuit->u.bc.t_refresh_pseudo_lsp[1]);
+		event_cancel(&circuit->u.bc.t_send_lan_hello[0]);
+		event_cancel(&circuit->u.bc.t_send_lan_hello[1]);
+		event_cancel(&circuit->u.bc.t_run_dr[0]);
+		event_cancel(&circuit->u.bc.t_run_dr[1]);
+		event_cancel(&circuit->u.bc.t_refresh_pseudo_lsp[0]);
+		event_cancel(&circuit->u.bc.t_refresh_pseudo_lsp[1]);
 		circuit->lsp_regenerate_pending[0] = 0;
 		circuit->lsp_regenerate_pending[1] = 0;
 
@@ -876,7 +875,7 @@ void isis_circuit_down(struct isis_circuit *circuit)
 	} else if (circuit->circ_type == CIRCUIT_T_P2P) {
 		isis_delete_adj(circuit->u.p2p.neighbor);
 		circuit->u.p2p.neighbor = NULL;
-		EVENT_OFF(circuit->u.p2p.t_send_p2p_hello);
+		event_cancel(&circuit->u.p2p.t_send_p2p_hello);
 	}
 
 	/*
@@ -889,11 +888,11 @@ void isis_circuit_down(struct isis_circuit *circuit)
 	circuit->snmp_adj_idx_gen = 0;
 
 	/* Cancel all active threads */
-	EVENT_OFF(circuit->t_send_csnp[0]);
-	EVENT_OFF(circuit->t_send_csnp[1]);
-	EVENT_OFF(circuit->t_send_psnp[0]);
-	EVENT_OFF(circuit->t_send_psnp[1]);
-	EVENT_OFF(circuit->t_read);
+	event_cancel(&circuit->t_send_csnp[0]);
+	event_cancel(&circuit->t_send_csnp[1]);
+	event_cancel(&circuit->t_send_psnp[0]);
+	event_cancel(&circuit->t_send_psnp[1]);
+	event_cancel(&circuit->t_read);
 
 	if (circuit->tx_queue) {
 		isis_tx_queue_free(circuit->tx_queue);
@@ -1660,6 +1659,47 @@ static int isis_ifp_destroy(struct interface *ifp)
 		isis_circuit_disable(circuit);
 
 	return 0;
+}
+
+/* Reset IS hello timer after interval change */
+void isis_reset_hello_timer(struct isis_circuit *circuit)
+{
+	/* First send an immediate hello to prevent adjacency loss 
+     * during longer hello interval transitions 
+     */
+	if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
+		/* For broadcast circuits - need to handle both levels */
+		if (circuit->is_type & IS_LEVEL_1) {
+			/* send hello immediately */
+			send_hello(circuit, IS_LEVEL_1);
+
+			/* reset level-1 hello timer */
+			event_cancel(&circuit->u.bc.t_send_lan_hello[0]);
+			if (circuit->area && (circuit->area->is_type & IS_LEVEL_1))
+				send_hello_sched(circuit, IS_LEVEL_1,
+						 isis_jitter(circuit->hello_interval[0],
+							     IIH_JITTER));
+		}
+
+		if (circuit->is_type & IS_LEVEL_2) {
+			/* send hello immediately */
+			send_hello(circuit, IS_LEVEL_2);
+
+			/* reset level-2 hello timer */
+			event_cancel(&circuit->u.bc.t_send_lan_hello[1]);
+			if (circuit->area && (circuit->area->is_type & IS_LEVEL_2))
+				send_hello_sched(circuit, IS_LEVEL_2,
+						 isis_jitter(circuit->hello_interval[1],
+							     IIH_JITTER));
+		}
+	} else if (circuit->circ_type == CIRCUIT_T_P2P) {
+		/* For point-to-point circuits */
+		send_hello(circuit, IS_LEVEL_1);
+
+		/* reset hello timer */
+		event_cancel(&circuit->u.p2p.t_send_p2p_hello);
+		send_hello_sched(circuit, 0, isis_jitter(circuit->hello_interval[0], IIH_JITTER));
+	}
 }
 
 void isis_circuit_init(void)

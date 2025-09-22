@@ -722,7 +722,7 @@ void ospf6_spf_schedule(struct ospf6 *ospf6, unsigned int reason)
 	if (IS_OSPF6_DEBUG_SPF(PROCESS) || IS_OSPF6_DEBUG_SPF(TIME))
 		zlog_debug("SPF: Rescheduling in %ld msec", delay);
 
-	EVENT_OFF(ospf6->t_spf_calc);
+	event_cancel(&ospf6->t_spf_calc);
 	event_add_timer_msec(master, ospf6_spf_calculation_thread, ospf6, delay,
 			     &ospf6->t_spf_calc);
 }
@@ -748,11 +748,7 @@ void ospf6_spf_display_subtree(struct vty *vty, const char *prefix, int rest,
 	}
 
 	len = strlen(prefix) + 4;
-	next_prefix = (char *)malloc(len);
-	if (next_prefix == NULL) {
-		vty_out(vty, "malloc failed\n");
-		return;
-	}
+	next_prefix = XMALLOC(MTYPE_TMP, len);
 	snprintf(next_prefix, len, "%s%s", prefix, (rest ? "|  " : "   "));
 
 	restnum = listcount(v->child_list);
@@ -778,7 +774,7 @@ void ospf6_spf_display_subtree(struct vty *vty, const char *prefix, int rest,
 		else
 			json_object_free(json_childs);
 	}
-	free(next_prefix);
+	XFREE(MTYPE_TMP, next_prefix);
 }
 
 DEFUN (debug_ospf6_spf_process,

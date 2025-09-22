@@ -215,6 +215,11 @@ BFD peers and profiles share the same BFD session configuration commands.
    The default value is 254 (which means we only expect one hop between
    this system and the peer).
 
+.. clicmd:: log-session-changes
+
+   Enables or disables logging of session state transitions into Up
+   state or when the session transitions from Up state to Down state.
+
 
 BFD Peer Specific Commands
 --------------------------
@@ -247,6 +252,20 @@ The following commands are available inside the BGP configuration node.
    the connection with its neighbor and, when it goes back up, notify
    BGP to try to connect to it.
 
+.. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> bfd strict [hold-time <seconds>]
+
+   Strict mode is similar to the default mode, but it will not allow BGP to
+   establish a connection with the peer until the BFD session is up. This
+   mode is useful when you want to avoid having BGP sessions up when the
+   underlying link is down. And if the BFD session goes down, the BGP session will
+   be closed immediately. The same is if BFD is administratively down.
+
+   When the BGP hold-time is turned off (zero/0), BGP will not send a notifications
+   immediately when the BFD session goes down, but it will wait for the hold-time
+   to expire before sending the notification. This is useful when you want to
+   avoid BGP session flapping when the BFD session goes down, but you still want
+   to have the BGP session down when the BFD session is down for a longer period
+   of time.
 
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> bfd check-control-plane-failure
 

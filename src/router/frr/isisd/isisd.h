@@ -56,6 +56,7 @@ static const bool fabricd = false;
 extern void isis_cli_init(void);
 #endif
 
+
 #define ISIS_FIND_VRF_ARGS(argv, argc, idx_vrf, vrf_name, all_vrf)             \
 	if (argv_find(argv, argc, "vrf", &idx_vrf)) {                          \
 		vrf_name = argv[idx_vrf + 1]->arg;                             \
@@ -74,9 +75,11 @@ struct isis_master {
 	struct list *isis;
 	/* ISIS thread master. */
 	struct event_loop *master;
+	/* Various global options */
 	uint8_t options;
+#define F_ISIS_UNIT_TEST	   (1 << 0)
+#define ISIS_OPT_DUMMY_AS_LOOPBACK (1 << 1)
 };
-#define F_ISIS_UNIT_TEST 0x01
 
 #define ISIS_DEFAULT_MAX_AREA_ADDRESSES 3
 
@@ -269,6 +272,8 @@ DECLARE_HOOK(isis_area_overload_bit_update, (struct isis_area * area), (area));
 void isis_terminate(void);
 void isis_master_init(struct event_loop *master);
 void isis_master_terminate(void);
+int isis_option_set(int flag);
+int isis_option_check(int flag);
 void isis_vrf_link(struct isis *isis, struct vrf *vrf);
 void isis_vrf_unlink(struct isis *isis, struct vrf *vrf);
 struct isis *isis_lookup_by_vrfid(vrf_id_t vrf_id);

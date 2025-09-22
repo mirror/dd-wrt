@@ -40,8 +40,8 @@ DEFINE_MTYPE_STATIC(ZEBRA, ZINFO, "Zebra Interface Information");
 
 #define ZEBRA_PTM_SUPPORT
 
-DEFINE_HOOK(zebra_if_extra_info, (struct vty * vty, struct interface *ifp),
-	    (vty, ifp));
+DEFINE_HOOK(zebra_if_extra_info, (struct vty * vty, json_object *json_if, struct interface *ifp),
+	    (vty, json_if, ifp));
 
 DEFINE_MTYPE_STATIC(ZEBRA, ZIF_DESC, "Intf desc");
 
@@ -233,7 +233,7 @@ static int if_zebra_delete_hook(struct interface *ifp)
 
 		XFREE(MTYPE_ZIF_DESC, zebra_if->desc);
 
-		EVENT_OFF(zebra_if->speed_update);
+		event_cancel(&zebra_if->speed_update);
 
 		XFREE(MTYPE_ZINFO, zebra_if);
 	}
@@ -547,6 +547,9 @@ void if_add_update(struct interface *ifp)
 	zebra_ptm_if_set_ptm_state(ifp, if_data);
 
 	zebra_interface_add_update(ifp);
+
+	if (IS_ZEBRA_IF_DUMMY(ifp))
+		SET_FLAG(ifp->status, ZEBRA_INTERFACE_DUMMY);
 
 	if (!CHECK_FLAG(ifp->status, ZEBRA_INTERFACE_ACTIVE)) {
 		SET_FLAG(ifp->status, ZEBRA_INTERFACE_ACTIVE);
@@ -987,6 +990,7 @@ void if_down(struct interface *ifp)
 	zif->down_count++;
 	frr_timestamp(2, zif->down_last, sizeof(zif->down_last));
 
+	rtadv_stop_ra(ifp, true);
 	if_down_nhg_dependents(ifp);
 
 	/* Handle interface down for specific types for EVPN. Non-VxLAN
@@ -1616,6 +1620,7 @@ static void interface_update_l2info(struct zebra_dplane_ctx *ctx,
 	case ZEBRA_IF_MACVLAN:
 	case ZEBRA_IF_VETH:
 	case ZEBRA_IF_BOND:
+	case ZEBRA_IF_DUMMY:
 		break;
 	}
 }
@@ -1724,7 +1729,7 @@ interface_bridge_vxlan_vlan_vni_map_update(struct zebra_dplane_ctx *ctx,
 		dplane_ctx_get_ifp_vxlan_vni_array(ctx);
 	struct zebra_vxlan_vni vni_start, vni_end;
 	struct hash *vni_table = NULL;
-	struct zebra_vxlan_vni vni, *vnip;
+	struct zebra_vxlan_vni vni;
 	vni_t vni_id;
 	vlanid_t vid;
 	int i;
@@ -1758,11 +1763,8 @@ interface_bridge_vxlan_vlan_vni_map_update(struct zebra_dplane_ctx *ctx,
 				vni_start.vni, vni_end.vni, ifp->name,
 				ifp->ifindex);
 
-		if (!vni_table) {
+		if (!vni_table)
 			vni_table = zebra_vxlan_vni_table_create();
-			if (!vni_table)
-				return;
-		}
 
 		for (vid = vni_start.access_vlan, vni_id = vni_start.vni;
 		     vid <= vni_end.access_vlan; vid++, vni_id++) {
@@ -1770,9 +1772,7 @@ interface_bridge_vxlan_vlan_vni_map_update(struct zebra_dplane_ctx *ctx,
 			memset(&vni, 0, sizeof(vni));
 			vni.vni = vni_id;
 			vni.access_vlan = vid;
-			vnip = hash_get(vni_table, &vni, zebra_vxlan_vni_alloc);
-			if (!vnip)
-				return;
+			(void)hash_get(vni_table, &vni, zebra_vxlan_vni_alloc);
 		}
 
 		memset(&vni_start, 0, sizeof(vni_start));
@@ -1920,8 +1920,7 @@ static void zebra_if_dplane_ifp_handling(struct zebra_dplane_ctx *ctx)
 		if (zif_type == ZEBRA_IF_VRF && !vrf_is_backend_netns())
 			interface_vrf_change(op, ifindex, name, tableid, ns_id);
 	} else {
-		ifindex_t master_ifindex, bridge_ifindex, bond_ifindex,
-			link_ifindex;
+		ifindex_t master_ifindex, bridge_ifindex, link_ifindex;
 		enum zebra_slave_iftype zif_slave_type;
 		uint8_t bypass;
 		uint64_t flags;
@@ -2369,6 +2368,9 @@ static const char *zebra_ziftype_2str(enum zebra_iftype zif_type)
 	case ZEBRA_IF_GRE:
 		return "GRE";
 
+	case ZEBRA_IF_DUMMY:
+		return "dummy";
+
 	default:
 		return "Unknown";
 	}
@@ -2728,14 +2730,14 @@ static void if_dump_vty(struct vty *vty, struct interface *ifp)
 		}
 		if (gre_info->ifindex_link &&
 		    (gre_info->link_nsid != NS_UNKNOWN)) {
-			struct interface *ifp;
+			struct interface *nifp;
 
-			ifp = if_lookup_by_index_per_ns(
-					zebra_ns_lookup(gre_info->link_nsid),
-					gre_info->ifindex_link);
+			nifp = if_lookup_by_index_per_ns(
+				zebra_ns_lookup(gre_info->link_nsid),
+				gre_info->ifindex_link);
 			vty_out(vty, "  Link Interface %s\n",
-				ifp == NULL ? "Unknown" :
-				ifp->name);
+				nifp == NULL ? "Unknown" :
+				nifp->name);
 		}
 	}
 
@@ -2844,7 +2846,7 @@ static void if_dump_vty(struct vty *vty, struct interface *ifp)
 				&iflp->rmt_ip, iflp->rmt_as);
 	}
 
-	hook_call(zebra_if_extra_info, vty, ifp);
+	hook_call(zebra_if_extra_info, vty, NULL, ifp);
 
 	if (listhead(ifp->nbr_connected))
 		vty_out(vty, "  Neighbor address(s):\n");
@@ -3114,14 +3116,13 @@ static void if_dump_vty_json(struct vty *vty, struct interface *ifp,
 		}
 		if (gre_info->ifindex_link
 		    && (gre_info->link_nsid != NS_UNKNOWN)) {
-			struct interface *ifp;
+			struct interface *nifp;
 
-			ifp = if_lookup_by_index_per_ns(
+			nifp = if_lookup_by_index_per_ns(
 				zebra_ns_lookup(gre_info->link_nsid),
 				gre_info->ifindex_link);
 			json_object_string_add(json_if, "linkInterface",
-					       ifp == NULL ? "Unknown"
-							   : ifp->name);
+					       nifp == NULL ? "Unknown" : nifp->name);
 		}
 	}
 
@@ -3249,6 +3250,8 @@ static void if_dump_vty_json(struct vty *vty, struct interface *ifp,
 						"%pI4", &iflp->rmt_ip);
 		json_object_int_add(json_te, "neighborAsbrAs", iflp->rmt_as);
 	}
+
+	hook_call(zebra_if_extra_info, vty, json_if, ifp);
 
 	if (listhead(ifp->nbr_connected)) {
 		json_object *json_nbr_addrs;
@@ -3704,7 +3707,7 @@ int if_shutdown(struct interface *ifp)
 
 	if (ifp->ifindex != IFINDEX_INTERNAL) {
 		/* send RA lifetime of 0 before stopping. rfc4861/6.2.5 */
-		rtadv_stop_ra(ifp);
+		rtadv_stop_ra(ifp, false);
 		if (if_unset_flags(ifp, IFF_UP) < 0) {
 			zlog_debug("Can't shutdown interface %s", ifp->name);
 			return -1;

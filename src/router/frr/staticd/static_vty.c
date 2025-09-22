@@ -62,6 +62,8 @@ struct static_route_args {
 	bool bfd_multi_hop;
 	const char *bfd_source;
 	const char *bfd_profile;
+
+	const char *srv6_encap_behavior;
 };
 
 static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
@@ -77,6 +79,7 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 	char xpath_label[XPATH_MAXLEN];
 	char xpath_segs[XPATH_MAXLEN];
 	char xpath_seg[XPATH_MAXLEN];
+	char xpath_srv6_encap_behavior[XPATH_MAXLEN];
 	char ab_xpath[XPATH_MAXLEN];
 	char buf_prefix[PREFIX_STRLEN];
 	char buf_src_prefix[PREFIX_STRLEN] = "::/0";
@@ -86,11 +89,13 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 	uint8_t segs_stack_id = 0;
 	char *orig_label = NULL, *orig_seg = NULL;
 	const char *buf_gate_str;
+	struct ipaddr gate_ip;
 	uint8_t distance = ZEBRA_STATIC_DISTANCE_DEFAULT;
 	route_tag_t tag = 0;
 	uint32_t table_id = 0;
 	const struct lyd_node *dnode;
 	const struct lyd_node *vrf_dnode;
+	const char *srv6_encap_behavior = "ietf-srv6-types:H.Encaps";
 
 	if (args->xpath_vrf) {
 		vrf_dnode = yang_dnode_get(vty->candidate_config->dnode,
@@ -149,22 +154,27 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 
 	if (src.prefixlen)
 		prefix2str(&src, buf_src_prefix, sizeof(buf_src_prefix));
-	if (args->gateway)
+
+	if (args->gateway) {
 		buf_gate_str = args->gateway;
-	else
+		if (str2ipaddr(args->gateway, &gate_ip) != 0) {
+			vty_out(vty, "%% Invalid gateway address %s\n", args->gateway);
+			return CMD_WARNING_CONFIG_FAILED;
+		}
+	} else
 		buf_gate_str = "";
 
 	if (args->gateway == NULL && args->interface_name == NULL)
 		type = STATIC_BLACKHOLE;
 	else if (args->gateway && args->interface_name) {
-		if (args->afi == AFI_IP)
+		if (gate_ip.ipa_type == IPADDR_V4)
 			type = STATIC_IPV4_GATEWAY_IFNAME;
 		else
 			type = STATIC_IPV6_GATEWAY_IFNAME;
 	} else if (args->interface_name)
 		type = STATIC_IFNAME;
 	else {
-		if (args->afi == AFI_IP)
+		if (gate_ip.ipa_type == IPADDR_V4)
 			type = STATIC_IPV4_GATEWAY;
 		else
 			type = STATIC_IPV6_GATEWAY;
@@ -337,6 +347,27 @@ static int static_route_nb_run(struct vty *vty, struct static_route_args *args)
 						      NB_OP_MODIFY, nump);
 				segs_stack_id++;
 			}
+
+			strlcpy(xpath_srv6_encap_behavior, xpath_segs,
+				sizeof(xpath_srv6_encap_behavior));
+			strlcat(xpath_srv6_encap_behavior,
+				FRR_STATIC_ROUTE_NH_SRV6_ENCAP_BEHAVIOR_XPATH,
+				sizeof(xpath_srv6_encap_behavior));
+
+			if (args->srv6_encap_behavior) {
+				if (strmatch(args->srv6_encap_behavior, "H_Encaps")) {
+					srv6_encap_behavior = "ietf-srv6-types:H.Encaps";
+				} else if (strmatch(args->srv6_encap_behavior, "H_Encaps_Red")) {
+					srv6_encap_behavior = "ietf-srv6-types:H.Encaps.Red";
+				} else {
+					vty_out(vty, "%% Unsupported encap behavior: %s\n",
+						args->srv6_encap_behavior);
+					return CMD_WARNING_CONFIG_FAILED;
+				}
+			}
+
+			nb_cli_enqueue_change(vty, xpath_srv6_encap_behavior, NB_OP_MODIFY,
+					      srv6_encap_behavior);
 		} else {
 			strlcpy(xpath_segs, xpath_nexthop, sizeof(xpath_segs));
 			strlcat(xpath_segs, FRR_STATIC_ROUTE_NH_SRV6_SEGS_XPATH,
@@ -552,7 +583,7 @@ DEFPY_YANG(ip_route_address_interface,
       ip_route_address_interface_cmd,
       "[no] ip route\
 	<A.B.C.D/M$prefix|A.B.C.D$prefix A.B.C.D$mask> \
-	A.B.C.D$gate                                   \
+	<A.B.C.D|X:X::X:X>$gate                        \
 	<INTERFACE|Null0>$ifname                       \
 	[{                                             \
 	  tag (1-4294967295)                           \
@@ -564,13 +595,15 @@ DEFPY_YANG(ip_route_address_interface,
 	  |onlink$onlink                               \
 	  |color (1-4294967295)                        \
 	  |bfd$bfd [{multi-hop$bfd_multi_hop|source A.B.C.D$bfd_source|profile BFDPROF$bfd_profile}] \
+	  |segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
       NO_STR IP_STR
       "Establish static routes\n"
       "IP destination prefix (e.g. 10.0.0.0/8)\n"
       "IP destination prefix\n"
       "IP destination prefix mask\n"
-      "IP gateway address\n"
+      "IPv4 gateway address\n"
+      "IPv6 gateway address\n"
       "IP gateway interface name\n"
       "Null interface\n"
       "Set tag for this route\n"
@@ -589,7 +622,12 @@ DEFPY_YANG(ip_route_address_interface,
       BFD_INTEGRATION_SOURCE_STR
       BFD_INTEGRATION_SOURCEV4_STR
       BFD_PROFILE_STR
-      BFD_PROFILE_NAME_STR)
+      BFD_PROFILE_NAME_STR
+      "Steer this route over an SRv6 SID list\n"
+      "SRv6 SID list\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -611,6 +649,8 @@ DEFPY_YANG(ip_route_address_interface,
 		.bfd_multi_hop = !!bfd_multi_hop,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
+		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -620,7 +660,7 @@ DEFPY_YANG(ip_route_address_interface_vrf,
       ip_route_address_interface_vrf_cmd,
       "[no] ip route\
 	<A.B.C.D/M$prefix|A.B.C.D$prefix A.B.C.D$mask> \
-	A.B.C.D$gate                                   \
+	<A.B.C.D|X:X::X:X>$gate                        \
 	<INTERFACE|Null0>$ifname                       \
 	[{                                             \
 	  tag (1-4294967295)                           \
@@ -631,13 +671,15 @@ DEFPY_YANG(ip_route_address_interface_vrf,
 	  |onlink$onlink                               \
 	  |color (1-4294967295)                        \
 	  |bfd$bfd [{multi-hop$bfd_multi_hop|source A.B.C.D$bfd_source|profile BFDPROF$bfd_profile}] \
+	  |segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
 	  }]",
       NO_STR IP_STR
       "Establish static routes\n"
       "IP destination prefix (e.g. 10.0.0.0/8)\n"
       "IP destination prefix\n"
       "IP destination prefix mask\n"
-      "IP gateway address\n"
+      "IPv4 gateway address\n"
+      "IPv6 gateway address\n"
       "IP gateway interface name\n"
       "Null interface\n"
       "Set tag for this route\n"
@@ -655,7 +697,12 @@ DEFPY_YANG(ip_route_address_interface_vrf,
       BFD_INTEGRATION_SOURCE_STR
       BFD_INTEGRATION_SOURCEV4_STR
       BFD_PROFILE_STR
-      BFD_PROFILE_NAME_STR)
+      BFD_PROFILE_NAME_STR
+      "Steer this route over an SRv6 SID list\n"
+      "SRv6 SID list\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -677,6 +724,8 @@ DEFPY_YANG(ip_route_address_interface_vrf,
 		.bfd_multi_hop = !!bfd_multi_hop,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
+		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -685,24 +734,26 @@ DEFPY_YANG(ip_route_address_interface_vrf,
 DEFPY_YANG(ip_route,
       ip_route_cmd,
       "[no] ip route\
-	<A.B.C.D/M$prefix|A.B.C.D$prefix A.B.C.D$mask> \
-	<A.B.C.D$gate|<INTERFACE|Null0>$ifname>        \
-	[{                                             \
-	  tag (1-4294967295)                           \
-	  |(1-255)$distance                            \
-	  |vrf NAME                                    \
-	  |label WORD                                  \
-	  |table (1-4294967295)                        \
-	  |nexthop-vrf NAME                            \
-	  |color (1-4294967295)                        \
+	<A.B.C.D/M$prefix|A.B.C.D$prefix A.B.C.D$mask>     \
+	<<A.B.C.D|X:X::X:X>$gate|<INTERFACE|Null0>$ifname> \
+	[{                                             	   \
+	  tag (1-4294967295)                               \
+	  |(1-255)$distance                                \
+	  |vrf NAME                                        \
+	  |label WORD                                      \
+	  |table (1-4294967295)                            \
+	  |nexthop-vrf NAME                                \
+	  |color (1-4294967295)                            \
 	  |bfd$bfd [{multi-hop$bfd_multi_hop|source A.B.C.D$bfd_source|profile BFDPROF$bfd_profile}] \
+	  |segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
       NO_STR IP_STR
       "Establish static routes\n"
       "IP destination prefix (e.g. 10.0.0.0/8)\n"
       "IP destination prefix\n"
       "IP destination prefix mask\n"
-      "IP gateway address\n"
+      "IPv4 gateway address\n"
+      "IPv6 gateway address\n"
       "IP gateway interface name\n"
       "Null interface\n"
       "Set tag for this route\n"
@@ -720,7 +771,12 @@ DEFPY_YANG(ip_route,
       BFD_INTEGRATION_SOURCE_STR
       BFD_INTEGRATION_SOURCEV4_STR
       BFD_PROFILE_STR
-      BFD_PROFILE_NAME_STR)
+      BFD_PROFILE_NAME_STR
+      "Steer this route over an SRv6 SID list\n"
+      "SRv6 SID list\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -741,6 +797,8 @@ DEFPY_YANG(ip_route,
 		.bfd_multi_hop = !!bfd_multi_hop,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
+		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -749,23 +807,25 @@ DEFPY_YANG(ip_route,
 DEFPY_YANG(ip_route_vrf,
       ip_route_vrf_cmd,
       "[no] ip route\
-	<A.B.C.D/M$prefix|A.B.C.D$prefix A.B.C.D$mask> \
-	<A.B.C.D$gate|<INTERFACE|Null0>$ifname>        \
-	[{                                             \
-	  tag (1-4294967295)                           \
-	  |(1-255)$distance                            \
-	  |label WORD                                  \
-	  |table (1-4294967295)                        \
-	  |nexthop-vrf NAME                            \
-	  |color (1-4294967295)                        \
+	<A.B.C.D/M$prefix|A.B.C.D$prefix A.B.C.D$mask>     \
+	<<A.B.C.D|X:X::X:X>$gate|<INTERFACE|Null0>$ifname> \
+	[{                                                 \
+	  tag (1-4294967295)                               \
+	  |(1-255)$distance                                \
+	  |label WORD                                      \
+	  |table (1-4294967295)                            \
+	  |nexthop-vrf NAME                                \
+	  |color (1-4294967295)                            \
 	  |bfd$bfd [{multi-hop$bfd_multi_hop|source A.B.C.D$bfd_source|profile BFDPROF$bfd_profile}] \
+	  |segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
       NO_STR IP_STR
       "Establish static routes\n"
       "IP destination prefix (e.g. 10.0.0.0/8)\n"
       "IP destination prefix\n"
       "IP destination prefix mask\n"
-      "IP gateway address\n"
+      "IPv4 gateway address\n"
+      "IPv6 gateway address\n"
       "IP gateway interface name\n"
       "Null interface\n"
       "Set tag for this route\n"
@@ -782,7 +842,12 @@ DEFPY_YANG(ip_route_vrf,
       BFD_INTEGRATION_SOURCE_STR
       BFD_INTEGRATION_SOURCEV4_STR
       BFD_PROFILE_STR
-      BFD_PROFILE_NAME_STR)
+      BFD_PROFILE_NAME_STR
+      "Steer this route over an SRv6 SID list\n"
+      "SRv6 SID list\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -803,6 +868,8 @@ DEFPY_YANG(ip_route_vrf,
 		.bfd_multi_hop = !!bfd_multi_hop,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
+		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -915,7 +982,7 @@ DEFPY_YANG(ipv6_route_address_interface, ipv6_route_address_interface_cmd,
 	    |onlink$onlink                                 \
 	    |color (1-4294967295)                          \
 	    |bfd$bfd [{multi-hop$bfd_multi_hop|source X:X::X:X$bfd_source|profile BFDPROF$bfd_profile}] \
-		|segments WORD 								   \
+		|segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
 	   NO_STR IPV6_STR
 	   "Establish static routes\n"
@@ -936,7 +1003,10 @@ DEFPY_YANG(ipv6_route_address_interface, ipv6_route_address_interface_cmd,
 		   BFD_INTEGRATION_MULTI_HOP_STR BFD_INTEGRATION_SOURCE_STR
 			   BFD_INTEGRATION_SOURCEV4_STR BFD_PROFILE_STR
 				   BFD_PROFILE_NAME_STR "Value of segs\n"
-	   "Segs (SIDs)\n")
+	   "Segs (SIDs)\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -959,6 +1029,7 @@ DEFPY_YANG(ipv6_route_address_interface, ipv6_route_address_interface_cmd,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
 		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -978,7 +1049,7 @@ DEFPY_YANG(ipv6_route_address_interface_vrf,
 	    |onlink$onlink                                 \
 	    |color (1-4294967295)                          \
 	    |bfd$bfd [{multi-hop$bfd_multi_hop|source X:X::X:X$bfd_source|profile BFDPROF$bfd_profile}] \
-		|segments WORD 								   \
+		|segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
 	   NO_STR IPV6_STR
 	   "Establish static routes\n"
@@ -999,7 +1070,10 @@ DEFPY_YANG(ipv6_route_address_interface_vrf,
 		   BFD_INTEGRATION_MULTI_HOP_STR BFD_INTEGRATION_SOURCE_STR
 			   BFD_INTEGRATION_SOURCEV4_STR BFD_PROFILE_STR
 				   BFD_PROFILE_NAME_STR "Value of segs\n"
-	   "Segs (SIDs)\n")
+	   "Segs (SIDs)\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -1022,6 +1096,7 @@ DEFPY_YANG(ipv6_route_address_interface_vrf,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
 		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -1039,7 +1114,7 @@ DEFPY_YANG(ipv6_route, ipv6_route_cmd,
             |nexthop-vrf NAME                              \
             |color (1-4294967295)                          \
 	    |bfd$bfd [{multi-hop$bfd_multi_hop|source X:X::X:X$bfd_source|profile BFDPROF$bfd_profile}] \
-			|segments WORD 								   \
+			|segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
 	   NO_STR IPV6_STR
 	   "Establish static routes\n"
@@ -1058,7 +1133,10 @@ DEFPY_YANG(ipv6_route, ipv6_route_cmd,
 		   BFD_INTEGRATION_MULTI_HOP_STR BFD_INTEGRATION_SOURCE_STR
 			   BFD_INTEGRATION_SOURCEV4_STR BFD_PROFILE_STR
 				   BFD_PROFILE_NAME_STR "Value of segs\n"
-	   "Segs (SIDs)\n")
+	   "Segs (SIDs)\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -1080,6 +1158,7 @@ DEFPY_YANG(ipv6_route, ipv6_route_cmd,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
 		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 
 	};
 
@@ -1097,7 +1176,7 @@ DEFPY_YANG(ipv6_route_vrf, ipv6_route_vrf_cmd,
             |nexthop-vrf NAME                              \
 	    |color (1-4294967295)                          \
 	    |bfd$bfd [{multi-hop$bfd_multi_hop|source X:X::X:X$bfd_source|profile BFDPROF$bfd_profile}] \
-		|segments WORD 								   \
+		|segments WORD [encap-behavior <H_Encaps|H_Encaps_Red>$encap_behavior] \
           }]",
 	   NO_STR IPV6_STR
 	   "Establish static routes\n"
@@ -1116,7 +1195,10 @@ DEFPY_YANG(ipv6_route_vrf, ipv6_route_vrf_cmd,
 		   BFD_INTEGRATION_MULTI_HOP_STR BFD_INTEGRATION_SOURCE_STR
 			   BFD_INTEGRATION_SOURCEV4_STR BFD_PROFILE_STR
 				   BFD_PROFILE_NAME_STR "Value of segs\n"
-	   "Segs (SIDs)\n")
+	   "Segs (SIDs)\n"
+	  "Configure SRv6 encap mode\n"
+	  "H.Encaps\n"
+	  "H.Encaps.Red\n")
 {
 	struct static_route_args args = {
 		.delete = !!no,
@@ -1138,6 +1220,7 @@ DEFPY_YANG(ipv6_route_vrf, ipv6_route_vrf_cmd,
 		.bfd_source = bfd_source_str,
 		.bfd_profile = bfd_profile,
 		.segs = segments,
+		.srv6_encap_behavior = encap_behavior,
 	};
 
 	return static_route_nb_run(vty, &args);
@@ -1195,13 +1278,18 @@ DEFPY_YANG_NOSH (static_srv6_sids, static_srv6_sids_cmd,
 }
 
 DEFPY_YANG(srv6_sid, srv6_sid_cmd,
-      "sid X:X::X:X/M locator NAME$locator_name behavior <uN | uDT6 vrf VIEWVRFNAME | uDT4 vrf VIEWVRFNAME | uDT46 vrf VIEWVRFNAME>",
+      "sid X:X::X:X/M locator NAME$locator_name behavior <uN | uA interface INTERFACE$interface [nexthop X:X::X:X$nh6] | uDT6 vrf VIEWVRFNAME | uDT4 vrf VIEWVRFNAME | uDT46 vrf VIEWVRFNAME>",
 	  "Configure SRv6 SID\n"
       "Specify SRv6 SID\n"
 	  "Locator name\n"
       "Specify Locator name\n"
       "Specify SRv6 SID behavior\n"
       "Apply the code to a uN SID\n"
+      "Behavior uA\n"
+      "Configure the interface\n"
+      "Interface name\n"
+      "Configure the nexthop\n"
+      "IPv6 address of the nexthop\n"
       "Apply the code to an uDT6 SID\n"
       "Configure VRF name\n"
       "Specify VRF name\n"
@@ -1219,7 +1307,10 @@ DEFPY_YANG(srv6_sid, srv6_sid_cmd,
 	char xpath_sid[XPATH_MAXLEN];
 	char xpath_behavior[XPATH_MAXLEN];
 	char xpath_vrf_name[XPATH_MAXLEN];
+	char xpath_ifname[XPATH_MAXLEN];
+	char xpath_nexthop[XPATH_MAXLEN];
 	char xpath_locator_name[XPATH_MAXLEN];
+	char ab_xpath[XPATH_MAXLEN];
 
 	if (argv_find(argv, argc, "uN", &idx)) {
 		behavior = SRV6_ENDPOINT_BEHAVIOR_END_NEXT_CSID;
@@ -1232,6 +1323,8 @@ DEFPY_YANG(srv6_sid, srv6_sid_cmd,
 	} else if (argv_find(argv, argc, "uDT46", &idx)) {
 		behavior = SRV6_ENDPOINT_BEHAVIOR_END_DT46_USID;
 		vrf_name = argv[idx + 2]->arg;
+	} else if (argv_find(argv, argc, "uA", &idx)) {
+		behavior = SRV6_ENDPOINT_BEHAVIOR_END_X_NEXT_CSID;
 	}
 
 	snprintf(xpath_srv6, sizeof(xpath_srv6), FRR_STATIC_SRV6_INFO_KEY_XPATH,
@@ -1255,6 +1348,22 @@ DEFPY_YANG(srv6_sid, srv6_sid_cmd,
 		nb_cli_enqueue_change(vty, xpath_vrf_name, NB_OP_MODIFY, vrf_name);
 	}
 
+	if (interface) {
+		snprintf(ab_xpath, sizeof(ab_xpath), FRR_STATIC_SRV6_SID_INTERFACE_XPATH, 0);
+		strlcpy(xpath_ifname, xpath_sid, sizeof(xpath_ifname));
+		strlcat(xpath_ifname, ab_xpath, sizeof(xpath_ifname));
+
+		nb_cli_enqueue_change(vty, xpath_ifname, NB_OP_MODIFY, interface);
+	}
+
+	if (nh6_str) {
+		snprintf(ab_xpath, sizeof(ab_xpath), FRR_STATIC_SRV6_SID_NEXTHOP_XPATH, 0);
+		strlcpy(xpath_nexthop, xpath_sid, sizeof(xpath_nexthop));
+		strlcat(xpath_nexthop, ab_xpath, sizeof(xpath_nexthop));
+
+		nb_cli_enqueue_change(vty, xpath_nexthop, NB_OP_MODIFY, nh6_str);
+	}
+
 	strlcpy(xpath_locator_name, xpath_sid, sizeof(xpath_locator_name));
 	strlcat(xpath_locator_name, FRR_STATIC_SRV6_SID_LOCATOR_NAME_XPATH,
 		sizeof(xpath_locator_name));
@@ -1265,7 +1374,7 @@ DEFPY_YANG(srv6_sid, srv6_sid_cmd,
 }
 
 DEFPY_YANG(no_srv6_sid, no_srv6_sid_cmd,
-      "no sid X:X::X:X/M [locator NAME$locator_name] [behavior <uN | uDT6 vrf VIEWVRFNAME | uDT4 vrf VIEWVRFNAME | uDT46 vrf VIEWVRFNAME>]",
+      "no sid X:X::X:X/M [locator NAME$locator_name] [behavior <uN | uA interface INTERFACE$interface [nexthop X:X::X:X$nh6] | uDT6 vrf VIEWVRFNAME | uDT4 vrf VIEWVRFNAME | uDT46 vrf VIEWVRFNAME>]",
       NO_STR
 	  "Configure SRv6 SID\n"
       "Specify SRv6 SID\n"
@@ -1273,6 +1382,11 @@ DEFPY_YANG(no_srv6_sid, no_srv6_sid_cmd,
       "Specify Locator name\n"
       "Specify SRv6 SID behavior\n"
       "Apply the code to a uN SID\n"
+      "Behavior uA\n"
+      "Configure the interface\n"
+      "Interface name\n"
+      "Configure the nexthop\n"
+      "IPv6 address of the nexthop\n"
       "Apply the code to an uDT6 SID\n"
       "Configure VRF name\n"
       "Specify VRF name\n"
@@ -1404,6 +1518,8 @@ static void nexthop_cli_show(struct vty *vty, const struct lyd_node *route,
 	uint8_t distance;
 	struct mpls_label_iter iter;
 	struct srv6_seg_iter seg_iter;
+	enum srv6_headend_behavior srv6_encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS;
+	const char *srv6_encap_behavior_str;
 	const char *nexthop_vrf;
 	uint32_t table_id;
 	struct prefix src_prefix;
@@ -1485,6 +1601,19 @@ static void nexthop_cli_show(struct vty *vty, const struct lyd_node *route,
 	seg_iter.first = true;
 	yang_dnode_iterate(srv6_seg_iter_cb, &seg_iter, nexthop,
 			   "./srv6-segs-stack/entry");
+
+	if (yang_dnode_exists(nexthop, "./srv6-segs-stack/encap-behavior")) {
+		srv6_encap_behavior_str = yang_dnode_get_string(nexthop,
+								"./srv6-segs-stack/encap-behavior");
+		if (strmatch(srv6_encap_behavior_str, "ietf-srv6-types:H.Encaps"))
+			srv6_encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS;
+		else if (strmatch(srv6_encap_behavior_str, "ietf-srv6-types:H.Encaps.Red"))
+			srv6_encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS_RED;
+
+		if (srv6_encap_behavior != SRV6_HEADEND_BEHAVIOR_H_ENCAPS || show_defaults)
+			vty_out(vty, " encap-behavior %s",
+				srv6_headend_behavior2str(srv6_encap_behavior, true));
+	}
 
 	nexthop_vrf = yang_dnode_get_string(nexthop, "vrf");
 	if (strcmp(vrf, nexthop_vrf))
@@ -1681,6 +1810,7 @@ static void srv6_sid_cli_show(struct vty *vty, const struct lyd_node *sid, bool 
 {
 	enum srv6_endpoint_behavior_codepoint srv6_behavior;
 	struct prefix_ipv6 sid_value;
+	struct ipaddr nexthop;
 
 	yang_dnode_get_ipv6p(&sid_value, sid, "sid");
 
@@ -1692,8 +1822,23 @@ static void srv6_sid_cli_show(struct vty *vty, const struct lyd_node *sid, bool 
 	case SRV6_ENDPOINT_BEHAVIOR_END:
 		vty_out(vty, " behavior End");
 		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_PSP:
+		vty_out(vty, " behavior End PSP");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_PSP_USD:
+		vty_out(vty, " behavior End PSP/USD");
+		break;
 	case SRV6_ENDPOINT_BEHAVIOR_END_X:
 		vty_out(vty, " behavior End.X");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_X_PSP:
+		vty_out(vty, " behavior End.X PSP");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_B6_ENCAPS:
+		vty_out(vty, " behavior End.B6.Encaps");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_X_PSP_USD:
+		vty_out(vty, " behavior End.X PSP/USD");
 		break;
 	case SRV6_ENDPOINT_BEHAVIOR_END_DT6:
 		vty_out(vty, " behavior End.DT6");
@@ -1704,11 +1849,26 @@ static void srv6_sid_cli_show(struct vty *vty, const struct lyd_node *sid, bool 
 	case SRV6_ENDPOINT_BEHAVIOR_END_DT46:
 		vty_out(vty, " behavior End.DT46");
 		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_B6_ENCAPS_RED:
+		vty_out(vty, " behavior End.B6.Encaps.Red");
+		break;
 	case SRV6_ENDPOINT_BEHAVIOR_END_NEXT_CSID:
 		vty_out(vty, " behavior uN");
 		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_NEXT_CSID_PSP:
+		vty_out(vty, " behavior uN PSP");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_NEXT_CSID_PSP_USD:
+		vty_out(vty, " behavior uN PSP/USD");
+		break;
 	case SRV6_ENDPOINT_BEHAVIOR_END_X_NEXT_CSID:
 		vty_out(vty, " behavior uA");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_X_NEXT_CSID_PSP:
+		vty_out(vty, " behavior uA PSP");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_X_NEXT_CSID_PSP_USD:
+		vty_out(vty, " behavior uA PSP/USD");
 		break;
 	case SRV6_ENDPOINT_BEHAVIOR_END_DT6_USID:
 		vty_out(vty, " behavior uDT6");
@@ -1719,6 +1879,12 @@ static void srv6_sid_cli_show(struct vty *vty, const struct lyd_node *sid, bool 
 	case SRV6_ENDPOINT_BEHAVIOR_END_DT46_USID:
 		vty_out(vty, " behavior uDT46");
 		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_B6_ENCAPS_NEXT_CSID:
+		vty_out(vty, " behavior uB6.Encaps");
+		break;
+	case SRV6_ENDPOINT_BEHAVIOR_END_B6_ENCAPS_RED_NEXT_CSID:
+		vty_out(vty, " behavior uB6.Encaps.Red");
+		break;
 	case SRV6_ENDPOINT_BEHAVIOR_RESERVED:
 	case SRV6_ENDPOINT_BEHAVIOR_OPAQUE:
 		vty_out(vty, " behavior unknown");
@@ -1727,6 +1893,16 @@ static void srv6_sid_cli_show(struct vty *vty, const struct lyd_node *sid, bool 
 
 	if (yang_dnode_exists(sid, "vrf-name"))
 		vty_out(vty, " vrf %s", yang_dnode_get_string(sid, "vrf-name"));
+
+	if (yang_dnode_exists(sid, "paths[path-index=0]/interface")) {
+		vty_out(vty, " interface %s",
+			yang_dnode_get_string(sid, "paths[path-index=0]/interface"));
+
+		if (yang_dnode_exists(sid, "paths[path-index=0]/next-hop")) {
+			yang_dnode_get_ip(&nexthop, sid, "paths[path-index=0]/next-hop");
+			vty_out(vty, " nexthop %pI6", &nexthop.ipaddr_v6);
+		}
+	}
 
 	vty_out(vty, "\n");
 }

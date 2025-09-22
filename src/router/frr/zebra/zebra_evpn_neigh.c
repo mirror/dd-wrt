@@ -387,7 +387,7 @@ void zebra_evpn_sync_neigh_static_chg(struct zebra_neigh *n, bool old_n_static,
 	if (IS_ZEBRA_DEBUG_EVPN_MH_NEIGH)
 		zlog_debug(
 			"sync-neigh ref-chg vni %u ip %pIA mac %pEA f 0x%x %d%s%s%s%s by %s",
-			n->zevpn->vni, &n->ip, &n->emac, n->flags,
+			n->zevpn ? n->zevpn->vni : 0, &n->ip, &n->emac, n->flags,
 			mac->sync_neigh_cnt,
 			old_n_static ? " old_n_static" : "",
 			new_n_static ? " new_n_static" : "",
@@ -424,7 +424,7 @@ static void zebra_evpn_neigh_hold_exp_cb(struct event *t)
 
 	if (IS_ZEBRA_DEBUG_EVPN_MH_NEIGH)
 		zlog_debug("sync-neigh vni %u ip %pIA mac %pEA 0x%x hold expired",
-			   n->zevpn->vni, &n->ip, &n->emac, n->flags);
+			   n->zevpn ? n->zevpn->vni : 0, &n->ip, &n->emac, n->flags);
 
 	/* re-program the local neigh in the dataplane if the neigh is no
 	 * longer static
@@ -580,7 +580,7 @@ int zebra_evpn_neigh_del(struct zebra_evpn *zevpn, struct zebra_neigh *n)
 		listnode_delete(n->mac->neigh_list, n);
 
 	/* Cancel auto recovery */
-	EVENT_OFF(n->dad_ip_auto_recovery_timer);
+	event_cancel(&n->dad_ip_auto_recovery_timer);
 
 	/* Cancel proxy hold timer */
 	zebra_evpn_neigh_stop_hold_timer(n);
@@ -607,7 +607,7 @@ void zebra_evpn_sync_neigh_del(struct zebra_neigh *n)
 		zebra_evpn_neigh_start_hold_timer(n);
 	new_n_static = zebra_evpn_neigh_is_static(n);
 
-	if (old_n_static != new_n_static)
+	if (old_n_static != new_n_static && n->zevpn)
 		zebra_evpn_sync_neigh_static_chg(
 			n, old_n_static, new_n_static, false /*defer-dp*/,
 			false /*defer_mac_dp*/, __func__);
@@ -1223,7 +1223,7 @@ static void zebra_evpn_dup_addr_detect_for_neigh(
 		nbr->dad_dup_detect_time = monotime(NULL);
 
 		/* Start auto recovery timer for this IP */
-		EVENT_OFF(nbr->dad_ip_auto_recovery_timer);
+		event_cancel(&nbr->dad_ip_auto_recovery_timer);
 		if (zvrf->dad_freeze && zvrf->dad_freeze_time) {
 			if (IS_ZEBRA_DEBUG_VXLAN)
 				zlog_debug(
@@ -1683,7 +1683,7 @@ void zebra_evpn_clear_dup_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 	nbr->detect_start_time.tv_sec = 0;
 	nbr->detect_start_time.tv_usec = 0;
 	nbr->dad_dup_detect_time = 0;
-	EVENT_OFF(nbr->dad_ip_auto_recovery_timer);
+	event_cancel(&nbr->dad_ip_auto_recovery_timer);
 
 	if (CHECK_FLAG(nbr->flags, ZEBRA_NEIGH_LOCAL)) {
 		zebra_evpn_neigh_send_add_to_client(zevpn->vni, &nbr->ip,
@@ -1881,9 +1881,6 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 	json_evpn = wctx->json;
 	n = (struct zebra_neigh *)bucket->data;
 
-	if (json_evpn)
-		json_row = json_object_new_object();
-
 	prefix_mac2str(&n->emac, buf1, sizeof(buf1));
 	ipaddr2str(&n->ip, buf2, sizeof(buf2));
 	state_str = IS_ZEBRA_NEIGH_ACTIVE(n) ? "active" : "inactive";
@@ -1898,6 +1895,8 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
                     sizeof(flags_buf)), state_str, buf1,
                     "", n->loc_seq, n->rem_seq);
 		} else {
+			json_row = json_object_new_object();
+
 			json_object_string_add(json_row, "type", "local");
 			json_object_string_add(json_row, "state", state_str);
 			json_object_string_add(json_row, "mac", buf1);
@@ -1939,6 +1938,8 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 				n->mac->es ? n->mac->es->esi_str : addr_buf,
 				n->loc_seq, n->rem_seq);
 		} else {
+			json_row = json_object_new_object();
+
 			json_object_string_add(json_row, "type", "remote");
 			json_object_string_add(json_row, "state", state_str);
 			json_object_string_add(json_row, "mac", buf1);

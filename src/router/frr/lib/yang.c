@@ -95,18 +95,19 @@ static LY_ERR yang_module_imp_clb(const char *mod_name, const char *mod_rev,
 
 /* clang-format off */
 static const char *const frr_native_modules[] = {
-	"frr-interface",
-	"frr-vrf",
-	"frr-routing",
 	"frr-affinity-map",
-	"frr-route-map",
+	"frr-host",
+	"frr-interface",
+	"frr-isisd",
 	"frr-nexthop",
+	"frr-pathd",
 	"frr-ripd",
 	"frr-ripngd",
-	"frr-isisd",
+	"frr-route-map",
+	"frr-routing",
+	"frr-vrf",
 	"frr-vrrpd",
 	"frr-zebra",
-	"frr-pathd",
 };
 /* clang-format on */
 
@@ -251,17 +252,25 @@ int yang_snodes_iterate(const struct lys_module *module, yang_iterate_cb cb,
 			if (ret == YANG_ITER_STOP)
 				return ret;
 		}
-		LY_LIST_FOR (&module_iter->compiled->rpcs->node, snode) {
-			ret = yang_snodes_iterate_subtree(snode, module, cb,
-							  flags, arg);
-			if (ret == YANG_ITER_STOP)
-				return ret;
+		if (module_iter->compiled->rpcs) {
+			LY_LIST_FOR (&module_iter->compiled->rpcs->node, snode) {
+				ret = yang_snodes_iterate_subtree(snode, module,
+								  cb, flags,
+								  arg);
+				if (ret == YANG_ITER_STOP)
+					return ret;
+			}
 		}
-		LY_LIST_FOR (&module_iter->compiled->notifs->node, snode) {
-			ret = yang_snodes_iterate_subtree(snode, module, cb,
-							  flags, arg);
-			if (ret == YANG_ITER_STOP)
-				return ret;
+
+		if (module_iter->compiled->notifs) {
+			LY_LIST_FOR (&module_iter->compiled->notifs->node,
+				     snode) {
+				ret = yang_snodes_iterate_subtree(snode, module,
+								  cb, flags,
+								  arg);
+				if (ret == YANG_ITER_STOP)
+					return ret;
+			}
 		}
 	}
 
@@ -1371,8 +1380,7 @@ int yang_get_key_pred_strlen(const struct lysc_node *snode, const struct yang_li
 	return len;
 }
 
-int yang_get_key_preds(char *s, const struct lysc_node *snode, const struct yang_list_keys *keys,
-		       ssize_t space)
+int yang_get_key_preds(char *s, const struct lysc_node *snode, const struct yang_list_keys *keys, ssize_t space)
 {
 	const struct lysc_node_leaf *skey;
 	ssize_t len2, len = 0;

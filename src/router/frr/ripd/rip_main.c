@@ -69,7 +69,7 @@ static void sighup(void)
 }
 
 /* SIGINT handler. */
-static void sigint(void)
+static FRR_NORETURN void sigint(void)
 {
 	struct vrf *vrf;
 
@@ -94,6 +94,7 @@ static void sigint(void)
 	rip_zclient_stop();
 
 	route_map_finish();
+	prefix_list_reset();
 
 	keychain_terminate();
 	frr_fini();
@@ -151,7 +152,7 @@ FRR_DAEMON_INFO(ripd, RIP,
 	.n_yang_modules = array_size(ripd_yang_modules),
 
 	/* mgmtd will load the per-daemon config file now */
-	.flags = FRR_NO_SPLIT_CONFIG,
+	.flags = FRR_NO_SPLIT_CONFIG | FRR_MGMTD_BACKEND,
 );
 /* clang-format on */
 
@@ -181,8 +182,6 @@ int main(int argc, char **argv)
 			break;
 
 		switch (opt) {
-		case 0:
-			break;
 		default:
 			frr_help_exit(1);
 		}

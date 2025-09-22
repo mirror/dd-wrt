@@ -56,6 +56,7 @@ static int bmp_route_update_bgpbmp(struct bmp_targets *bt, afi_t afi, safi_t saf
 static void bmp_send_all_bgp(struct peer *peer, bool down);
 static struct bmp_imported_bgp *bmp_imported_bgp_find(struct bmp_targets *bt, char *name);
 static void bmp_stats_per_instance(struct bgp *bgp, struct bmp_targets *bt);
+static void bmp_bgp_peer_vrf(struct bmp_bgp_peer *bbpeer, struct bgp *bgp);
 
 DEFINE_MGROUP(BMP, "BMP (BGP Monitoring Protocol)");
 
@@ -551,9 +552,12 @@ static struct stream *bmp_peerstate(struct peer *peer, bool down)
 
 		bbpeer = bmp_bgp_peer_find(peer->qobj_node.nid);
 
-		if (bbpeer && bbpeer->open_tx)
+		if (bbpeer && bbpeer->open_tx) {
+			if (is_locrib)
+				/* update bgp id each time peer up LOC-RIB message is to be sent */
+				bmp_bgp_peer_vrf(bbpeer, peer->bgp);
 			stream_put(s, bbpeer->open_tx, bbpeer->open_tx_len);
-		else {
+		} else {
 			stream_put(s, dummy_open, sizeof(dummy_open));
 			zlog_warn("bmp: missing TX OPEN message for peer %s",
 				  peer->host);
@@ -1135,7 +1139,7 @@ static struct stream *bmp_update(const struct prefix *p, struct prefix_rd *prd,
 
 	/* 5: Encode all the attributes, except MP_REACH_NLRI attr. */
 	total_attr_len = bgp_packet_attribute(NULL, peer, s, attr, &vecarr, NULL, afi, safi, peer,
-					      NULL, NULL, 0, 0, 0);
+					      NULL, NULL, 0, 0, 0, NULL);
 
 	/* space check? */
 
@@ -2134,7 +2138,7 @@ static void bmp_close(struct bmp *bmp)
 	struct bmp_queue_entry *bqe;
 	struct bmp_mirrorq *bmq;
 
-	EVENT_OFF(bmp->t_read);
+	event_cancel(&bmp->t_read);
 
 	if (bmp->active)
 		bmp_active_disconnected(bmp->active);
@@ -2149,7 +2153,7 @@ static void bmp_close(struct bmp *bmp)
 		if (!bqe->refcount)
 			XFREE(MTYPE_BMP_QUEUE, bqe);
 
-	EVENT_OFF(bmp->t_read);
+	event_cancel(&bmp->t_read);
 	pullwr_del(bmp->pullwr);
 	close(bmp->socket);
 }
@@ -2211,6 +2215,8 @@ static void bmp_bgp_peer_vrf(struct bmp_bgp_peer *bbpeer, struct bgp *bgp)
 	struct peer *peer = bgp->peer_self;
 	uint16_t send_holdtime;
 	as_t local_as;
+	struct stream *s;
+	size_t open_len;
 
 	if (CHECK_FLAG(peer->flags, PEER_FLAG_TIMER))
 		send_holdtime = peer->holdtime;
@@ -2223,8 +2229,8 @@ static void bmp_bgp_peer_vrf(struct bmp_bgp_peer *bbpeer, struct bgp *bgp)
 	else
 		local_as = peer->local_as;
 
-	struct stream *s = bgp_open_make(peer, send_holdtime, local_as);
-	size_t open_len = stream_get_endp(s);
+	s = bgp_open_make(peer, send_holdtime, local_as, &peer->local_id);
+	open_len = stream_get_endp(s);
 
 	bbpeer->open_rx_len = open_len;
 	if (bbpeer->open_rx)
@@ -2232,6 +2238,11 @@ static void bmp_bgp_peer_vrf(struct bmp_bgp_peer *bbpeer, struct bgp *bgp)
 	bbpeer->open_rx = XMALLOC(MTYPE_BMP_OPEN, open_len);
 	memcpy(bbpeer->open_rx, s->data, open_len);
 
+	stream_free(s);
+
+	/* rfc9069#section-5.2 : Received OPEN Message: Repeat of the same sent OPEN message */
+	s = bgp_open_make(peer, send_holdtime, local_as, &peer->local_id);
+	open_len = stream_get_endp(s);
 	bbpeer->open_tx_len = open_len;
 	if (bbpeer->open_tx)
 		XFREE(MTYPE_BMP_OPEN, bbpeer->open_tx);
@@ -2363,7 +2374,7 @@ static void bmp_targets_put(struct bmp_targets *bt)
 	struct bmp_active *ba;
 	struct bmp_imported_bgp *bib;
 
-	EVENT_OFF(bt->t_stats);
+	event_cancel(&bt->t_stats);
 
 	frr_each_safe (bmp_actives, &bt->actives, ba)
 		bmp_active_put(ba);
@@ -2519,7 +2530,7 @@ out_sock:
 
 static void bmp_listener_stop(struct bmp_listener *bl)
 {
-	EVENT_OFF(bl->t_accept);
+	event_cancel(&bl->t_accept);
 
 	if (bl->sock != -1)
 		close(bl->sock);
@@ -2558,9 +2569,9 @@ static struct bmp_active *bmp_active_get(struct bmp_targets *bt,
 
 static void bmp_active_put(struct bmp_active *ba)
 {
-	EVENT_OFF(ba->t_timer);
-	EVENT_OFF(ba->t_read);
-	EVENT_OFF(ba->t_write);
+	event_cancel(&ba->t_timer);
+	event_cancel(&ba->t_read);
+	event_cancel(&ba->t_write);
 
 	bmp_actives_del(&ba->targets->actives, ba);
 
@@ -2634,8 +2645,7 @@ static void bmp_active_connect(struct bmp_active *ba)
 		}
 
 
-		res = sockunion_connect(ba->socket, &ba->addrs[ba->addrpos],
-				      htons(ba->port), 0);
+		res = sockunion_connect(ba->socket, &ba->addrs[ba->addrpos], htons(ba->port));
 		switch (res) {
 		case connect_error:
 			zlog_warn("bmp[%s]: failed to connect to %pSU:%d",
@@ -2701,9 +2711,9 @@ static void bmp_active_thread(struct event *t)
 
 	/* all 3 end up here, though only timer or read+write are active
 	 * at a time */
-	EVENT_OFF(ba->t_timer);
-	EVENT_OFF(ba->t_read);
-	EVENT_OFF(ba->t_write);
+	event_cancel(&ba->t_timer);
+	event_cancel(&ba->t_read);
+	event_cancel(&ba->t_write);
 
 	ba->last_err = NULL;
 
@@ -2757,9 +2767,9 @@ static void bmp_active_disconnected(struct bmp_active *ba)
 
 static void bmp_active_setup(struct bmp_active *ba)
 {
-	EVENT_OFF(ba->t_timer);
-	EVENT_OFF(ba->t_read);
-	EVENT_OFF(ba->t_write);
+	event_cancel(&ba->t_timer);
+	event_cancel(&ba->t_read);
+	event_cancel(&ba->t_write);
 
 	if (ba->bmp)
 		return;
@@ -3040,7 +3050,7 @@ DEFPY(bmp_stats_cfg,
 {
 	VTY_DECLVAR_CONTEXT_SUB(bmp_targets, bt);
 
-	EVENT_OFF(bt->t_stats);
+	event_cancel(&bt->t_stats);
 	if (no)
 		bt->stat_msec = 0;
 	else if (interval_str)
@@ -3534,7 +3544,6 @@ static int bmp_bgp_attribute_updated(struct bgp *bgp, bool withdraw)
 	struct bmp_targets *bt;
 	struct listnode *node;
 	struct bmp_imported_bgp *bib;
-	int ret = 0;
 	struct stream *s = bmp_peerstate(bgp->peer_self, withdraw);
 	struct bmp *bmp;
 	afi_t afi;
@@ -3545,8 +3554,8 @@ static int bmp_bgp_attribute_updated(struct bgp *bgp, bool withdraw)
 
 	if (bmpbgp) {
 		frr_each (bmp_targets, &bmpbgp->targets, bt) {
-			ret = bmp_bgp_attribute_updated_instance(bt, &bmpbgp->vrf_state, bgp,
-								 withdraw, s);
+			bmp_bgp_attribute_updated_instance(bt, &bmpbgp->vrf_state, bgp,
+							   withdraw, s);
 			if (withdraw)
 				continue;
 			frr_each (bmp_session, &bt->sessions, bmp) {
@@ -3567,8 +3576,8 @@ static int bmp_bgp_attribute_updated(struct bgp *bgp, bool withdraw)
 			frr_each (bmp_imported_bgps, &bt->imported_bgps, bib) {
 				if (bgp_lookup_by_name(bib->name) != bgp)
 					continue;
-				ret += bmp_bgp_attribute_updated_instance(bt, &bib->vrf_state, bgp,
-									  withdraw, s);
+				bmp_bgp_attribute_updated_instance(bt, &bib->vrf_state, bgp,
+								   withdraw, s);
 				if (withdraw)
 					continue;
 				frr_each (bmp_session, &bt->sessions, bmp) {

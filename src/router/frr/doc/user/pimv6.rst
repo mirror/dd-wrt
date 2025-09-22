@@ -175,6 +175,12 @@ PIMv6 Router
    notifications to the kernel. This command is vrf aware, to configure for a
    vrf, specify the vrf in the router pim6 block.
 
+.. clicmd:: ssm prefix-list WORD
+
+   Specify a range of group addresses via a prefix-list that forces pim to
+   never do SM over. This command is vrf aware, to configure for a vrf, specify
+   the vrf in the router pim block.
+
 .. clicmd:: ssmpingd [X:X::X:X]
 
    Enable ipv6 ssmpingd configuration. A network level management tool
@@ -214,6 +220,10 @@ is in a vrf, enter the interface command with the vrf keyword at the end.
    reports on the interface. Refer to the next ``ipv6 mld`` command for MLD
    management.
 
+.. clicmd:: ipv6 pim allowed-neighbors prefix-list PREFIX_LIST
+
+   Only establish sessions with PIM neighbors allowed by the prefix-list.
+
 .. clicmd:: ipv6 pim use-source X:X::X:X
 
    If you have multiple addresses configured on a particular interface
@@ -241,9 +251,17 @@ is in a vrf, enter the interface command with the vrf keyword at the end.
    Tell pim to receive MLD reports and Query on this interface. The default
    version is v2. This command is useful on a LHR.
 
+.. clicmd:: ipv6 mld require-router-alert
+
+   Only accept MLD reports with the router-alert IPv6 hop option.
+
 .. clicmd:: ipv6 mld join X:X::X:X [Y:Y::Y:Y]
 
    Join multicast group or source-group on an interface.
+
+.. clicmd:: ipv6 mld immediate-leave
+
+   Immediately leaves a MLD group when receiving a MLDv1 Done packet.
 
 .. clicmd:: ipv6 mld query-interval (1-65535)
 
@@ -257,6 +275,14 @@ is in a vrf, enter the interface command with the vrf keyword at the end.
 .. clicmd:: ipv6 mld version (1-2)
 
    Set the MLD version used on this interface. The default value is 2.
+
+.. clicmd:: ipv6 mld max-groups (0-4294967295)
+
+   Set the maximum number of MLD groups that the can be joined on an interface.
+
+.. clicmd:: ipv6 mld max-sources (0-4294967295)
+
+   Set the maximum number of MLD sources to learn per group.
 
 .. clicmd:: ipv6 multicast boundary oil WORD
 
@@ -480,6 +506,10 @@ PIMv6 Clear Commands
 ====================
 
 Clear commands reset various variables.
+
+.. clicmd:: clear ipv6 mld [vrf NAME] interfaces
+
+   Reset learned multicast groups / sources.
 
 .. clicmd:: clear ipv6 mroute
 

@@ -50,6 +50,9 @@ void static_ifp_srv6_sids_update(struct interface *ifp, bool is_up)
 	 */
 	for (ALL_LIST_ELEMENTS_RO(srv6_sids, node, sid)) {
 		if ((strcmp(sid->attributes.vrf_name, ifp->name) == 0) ||
+		    ((sid->behavior == SRV6_ENDPOINT_BEHAVIOR_END_X ||
+		      sid->behavior == SRV6_ENDPOINT_BEHAVIOR_END_X_NEXT_CSID) &&
+		     strcmp(sid->attributes.ifname, ifp->name) == 0) ||
 		    (strncmp(ifp->name, DEFAULT_SRV6_IFNAME, sizeof(ifp->name)) == 0 &&
 		     (sid->behavior == SRV6_ENDPOINT_BEHAVIOR_END ||
 		      sid->behavior == SRV6_ENDPOINT_BEHAVIOR_END_NEXT_CSID))) {
@@ -151,6 +154,15 @@ void static_srv6_sid_del(struct static_srv6_sid *sid)
 void delete_static_srv6_sid(void *val)
 {
 	static_srv6_sid_free((struct static_srv6_sid *)val);
+}
+
+void static_zebra_request_srv6_sids(void)
+{
+	struct static_srv6_sid *sid;
+	struct listnode *node;
+
+	for (ALL_LIST_ELEMENTS_RO(srv6_sids, node, sid))
+		static_zebra_request_srv6_sid(sid);
 }
 
 /*

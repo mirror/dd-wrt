@@ -33,6 +33,7 @@ RUN apt update && apt upgrade -y && \
             screen \
             texinfo \
             tmux \
+            iptables \
     && \
     # Protobuf build requirements
     apt-get install -y \
@@ -66,6 +67,7 @@ RUN apt update && apt upgrade -y && \
         snmp \
         snmp-mibs-downloader \
         snmpd \
+        ssmping \
         sudo \
         time \
         tshark \
@@ -73,14 +75,15 @@ RUN apt update && apt upgrade -y && \
         yodl \
       && \
     download-mibs && \
-    wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/iana/IANA-IPPM-METRICS-REGISTRY-MIB -O /usr/share/snmp/mibs/iana/IANA-IPPM-METRICS-REGISTRY-MIB && \
-    wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/SNMPv2-PDU -O /usr/share/snmp/mibs/ietf/SNMPv2-PDU && \
-    wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/IPATM-IPMC-MIB -O /usr/share/snmp/mibs/ietf/IPATM-IPMC-MIB && \
+    wget --tries=5 --waitretry=10 --retry-connrefused https://raw.githubusercontent.com/FRRouting/frr-mibs/main/iana/IANA-IPPM-METRICS-REGISTRY-MIB -O /usr/share/snmp/mibs/iana/IANA-IPPM-METRICS-REGISTRY-MIB && \
+    wget --tries=5 --waitretry=10 --retry-connrefused https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/SNMPv2-PDU -O /usr/share/snmp/mibs/ietf/SNMPv2-PDU && \
+    wget --tries=5 --waitretry=10 --retry-connrefused https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/IPATM-IPMC-MIB -O /usr/share/snmp/mibs/ietf/IPATM-IPMC-MIB && \
     rm -f /usr/lib/python3.*/EXTERNALLY-MANAGED && \
     python3 -m pip install wheel && \
-    python3 -m pip install protobuf grpcio grpcio-tools && \
-    python3 -m pip install 'pytest>=6.2.4' 'pytest-xdist>=2.3.0' && \
+    bash -c "PV=($(pkg-config --modversion protobuf | tr '.' ' ')); if (( PV[0] == 3 && PV[1] < 19 )); then python3 -m pip install 'protobuf<4' grpcio grpcio-tools; else python3 -m pip install 'protobuf>=4' grpcio grpcio-tools; fi" && \
+    python3 -m pip install 'pytest>=6.2.4' 'pytest-xdist>=3.6.1' 'pytest-asyncio>=0.25.3' && \
     python3 -m pip install 'scapy>=2.4.5' && \
+    python3 -m pip install pyyaml && \
     python3 -m pip install xmltodict && \
     python3 -m pip install git+https://github.com/Exa-Networks/exabgp@0659057837cd6c6351579e9f0fa47e9fb7de7311
 
@@ -117,13 +120,14 @@ RUN cd ~/frr && \
        --enable-mgmtd-test-be-client \
        --enable-rpki \
        --enable-sharpd \
-       --enable-multipath=64 \
+       --enable-multipath=256 \
        --enable-user=frr \
        --enable-group=frr \
        --enable-config-rollbacks \
        --enable-grpc \
+       --enable-protobuf \
        --enable-vty-group=frrvty \
-       --enable-snmp=agentx \
+       --enable-snmp \
        --enable-scripting \
        --with-pkg-extra-version=-my-manual-build && \
     make -j $(nproc) && \

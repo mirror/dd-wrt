@@ -35,11 +35,12 @@ Installing Topotest Requirements
        iputils-ping \
        iptables \
        tshark \
-       valgrind
+       valgrind \
+       ssmping
    python3 -m pip install wheel
    python3 -m pip install 'pytest>=8.3.2' 'pytest-asyncio>=0.24.0' 'pytest-xdist>=3.6.1'
    python3 -m pip install 'scapy>=2.4.5'
-   python3 -m pip install xmltodict
+   python3 -m pip install pyyaml xmltodict
    python3 -m pip install git+https://github.com/Exa-Networks/exabgp@0659057837cd6c6351579e9f0fa47e9fb7de7311
    useradd -d /var/run/exabgp/ -s /bin/false exabgp
 
@@ -95,6 +96,7 @@ following steps will get you there on Ubuntu 20.04.
    wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/iana/IANA-IPPM-METRICS-REGISTRY-MIB -O /usr/share/snmp/mibs/iana/IANA-IPPM-METRICS-REGISTRY-MIB
    wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/SNMPv2-PDU -O /usr/share/snmp/mibs/ietf/SNMPv2-PDU
    wget https://raw.githubusercontent.com/FRRouting/frr-mibs/main/ietf/IPATM-IPMC-MIB -O /usr/share/snmp/mibs/ietf/IPATM-IPMC-MIB
+   wget https://www.iana.org/assignments/ianastoragemediatype-mib/ianastoragemediatype-mib -O /usr/share/snmp/mibs/iana/IANA-STORAGE-MEDIA-TYPE-MIB
    edit /etc/snmp/snmp.conf to look like this
    # As the snmp packages come without MIB files due to license reasons, loading
    # of MIBs is disabled by default. If you added the MIBs you can reenable
@@ -138,7 +140,7 @@ If you prefer to manually build FRR, then use the following suggested config:
        --enable-user=frr \
        --enable-group=frr \
        --enable-vty-group=frrvty \
-       --enable-snmp=agentx \
+       --enable-snmp \
        --with-pkg-extra-version=-my-manual-build
 
 And create ``frr`` user and ``frrvty`` group as follows:
@@ -402,7 +404,7 @@ for ``master`` branch:
        --localstatedir=/var \
        --sbindir=/usr/lib/frr --bindir=/usr/lib/frr \
        --with-moduledir=/usr/lib/frr/modules \
-       --enable-multipath=0 --enable-rtadv \
+       --enable-multipath=0 \
        --enable-tcp-zebra --enable-fpm --enable-pimd \
        --enable-sharpd
    make

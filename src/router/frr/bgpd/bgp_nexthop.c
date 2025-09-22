@@ -444,7 +444,7 @@ void bgp_connected_add(struct bgp *bgp, struct connected *ifc)
 		    !peer_established(peer->connection) &&
 		    !CHECK_FLAG(peer->flags, PEER_FLAG_IFPEER_V6ONLY)) {
 			connection = peer->connection;
-			if (peer_active(connection))
+			if (peer_active(connection) == BGP_PEER_ACTIVE)
 				BGP_EVENT_ADD(connection, BGP_Stop);
 			BGP_EVENT_ADD(connection, BGP_Start);
 		}
@@ -582,6 +582,14 @@ bool bgp_nexthop_self(struct bgp *bgp, afi_t afi, uint8_t type,
 	}
 
 	return false;
+}
+
+bool bgp_hostroute_self(struct bgp *bgp, const struct prefix *p)
+{
+	struct bgp_addr tmp;
+
+	tmp.p = *p;
+	return hash_lookup(bgp->address_hash, &tmp) ? true : false;
 }
 
 bool bgp_multiaccess_check_v4(struct in_addr nexthop, struct peer *peer)

@@ -307,7 +307,7 @@ static ssize_t bfd_dplane_flush(struct bfd_dplane_ctx *bdc)
 	stream_pulldown(bdc->outbuf);
 
 	/* Disable write ready events. */
-	EVENT_OFF(bdc->outbufev);
+	event_cancel(&bdc->outbufev);
 
 	return total;
 }
@@ -384,10 +384,15 @@ bfd_dplane_session_state_change(struct bfd_dplane_ctx *bdc,
 		break;
 	}
 
-	if (bglobal.debug_peer_event)
+	if (bglobal.debug_peer_event) {
 		zlog_debug("state-change: [data plane: %s] %s -> %s",
 			   bs_to_string(bs), state_list[old_state].str,
 			   state_list[bs->ses_state].str);
+		if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_LOG_SESSION_CHANGES) &&
+		    old_state != bs->ses_state)
+			zlog_notice("Session-Change: [data plane: %s] %s -> %s", bs_to_string(bs),
+				    state_list[old_state].str, state_list[bs->ses_state].str);
+	}
 }
 
 /**
@@ -672,7 +677,7 @@ static void bfd_dplane_ctx_free(struct bfd_dplane_ctx *bdc)
 	/* Client mode has special treatment. */
 	if (bdc->client) {
 		/* Disable connection event if any. */
-		EVENT_OFF(bdc->connectev);
+		event_cancel(&bdc->connectev);
 
 		/* Normal treatment on shutdown. */
 		if (bglobal.bg_shutdown)
@@ -680,8 +685,8 @@ static void bfd_dplane_ctx_free(struct bfd_dplane_ctx *bdc)
 
 		/* Attempt reconnection. */
 		socket_close(&bdc->sock);
-		EVENT_OFF(bdc->inbufev);
-		EVENT_OFF(bdc->outbufev);
+		event_cancel(&bdc->inbufev);
+		event_cancel(&bdc->outbufev);
 		event_add_timer(master, bfd_dplane_client_connect, bdc, 3,
 				&bdc->connectev);
 		return;
@@ -699,8 +704,8 @@ free_resources:
 	socket_close(&bdc->sock);
 	stream_free(bdc->inbuf);
 	stream_free(bdc->outbuf);
-	EVENT_OFF(bdc->inbufev);
-	EVENT_OFF(bdc->outbufev);
+	event_cancel(&bdc->inbufev);
+	event_cancel(&bdc->outbufev);
 	XFREE(MTYPE_BFDD_DPLANE_CTX, bdc);
 }
 
@@ -952,8 +957,8 @@ static void bfd_dplane_client_connect(struct event *t)
 	return;
 
 reschedule_connect:
-	EVENT_OFF(bdc->inbufev);
-	EVENT_OFF(bdc->outbufev);
+	event_cancel(&bdc->inbufev);
+	event_cancel(&bdc->outbufev);
 	socket_close(&sock);
 	event_add_timer(master, bfd_dplane_client_connect, bdc, 3,
 			&bdc->connectev);
@@ -1000,7 +1005,7 @@ static int bfd_dplane_finish_late(void)
 		bfd_dplane_ctx_free(bdc);
 
 	/* Cancel accept thread and close socket. */
-	EVENT_OFF(bglobal.bg_dplane_sockev);
+	event_cancel(&bglobal.bg_dplane_sockev);
 	close(bglobal.bg_dplane_sock);
 
 	return 0;

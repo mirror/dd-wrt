@@ -108,8 +108,8 @@ babel_config_write (struct vty *vty)
     /* list redistributed protocols */
     for (afi = AFI_IP; afi <= AFI_IP6; afi++) {
         for (i = 0; i < ZEBRA_ROUTE_MAX; i++) {
-		if (i != zclient->redist_default &&
-		    vrf_bitmap_check(&zclient->redist[afi][i], VRF_DEFAULT)) {
+		if (i != babel_zclient->redist_default &&
+		    vrf_bitmap_check(&babel_zclient->redist[afi][i], VRF_DEFAULT)) {
 			vty_out(vty, " redistribute %s %s\n",
 				(afi == AFI_IP) ? "ipv4" : "ipv6",
 				zebra_route_string(i));
@@ -216,7 +216,8 @@ static void babel_init_routing_process(struct event *thread)
     babel_main_loop(thread);/* this function self-add to the t_update thread */
 }
 
-/* fill "myid" with an unique id (only if myid != {0}). */
+/* fill "myid" with an unique id (only if myid != {0} and myid != {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}). */
 static void
 babel_get_myid(void)
 {
@@ -226,7 +227,7 @@ babel_get_myid(void)
     int i;
 
     /* if we already have an id (from state file), we return. */
-    if (memcmp(myid, zeroes, 8) != 0) {
+    if (memcmp(myid, zeroes, 8) != 0 && memcmp(myid, ones, 8) != 0) {
         return;
     }
 
@@ -542,7 +543,7 @@ resize_receive_buffer(int size)
 }
 
 static void
-babel_distribute_update (struct distribute_ctx *ctx, struct distribute *dist)
+babel_distribute_update (struct distribute_ctx *ctx __attribute__((__unused__)), struct distribute *dist)
 {
     struct interface *ifp;
     babel_interface_nfo *babel_ifp;
@@ -597,7 +598,7 @@ babel_distribute_update_all (struct prefix_list *notused)
 }
 
 static void
-babel_distribute_update_all_wrapper (struct access_list *notused)
+babel_distribute_update_all_wrapper (struct access_list *notused __attribute__((__unused__)))
 {
     babel_distribute_update_all(NULL);
 }
@@ -876,16 +877,18 @@ babeld_quagga_init(void)
 /* Stubs to adapt Babel's filtering calls to Quagga's infrastructure. */
 
 int
-input_filter(const unsigned char *id,
+input_filter(const unsigned char *id __attribute__((__unused__)),
              const unsigned char *prefix, unsigned short plen,
-             const unsigned char *neigh, unsigned int ifindex)
+             const unsigned char *neigh __attribute__((__unused__)),
+	     unsigned int ifindex)
 {
     return babel_filter(0, prefix, plen, ifindex);
 }
 
 int
-output_filter(const unsigned char *id, const unsigned char *prefix,
-              unsigned short plen, unsigned int ifindex)
+output_filter(const unsigned char *id __attribute__((__unused__)),
+	      const unsigned char *prefix, unsigned short plen,
+	      unsigned int ifindex)
 {
     return babel_filter(1, prefix, plen, ifindex);
 }

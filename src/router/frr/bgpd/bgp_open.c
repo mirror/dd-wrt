@@ -43,6 +43,7 @@ const struct message capcode_str[] = {
 	{ CAPABILITY_CODE_ROLE, "Role" },
 	{ CAPABILITY_CODE_SOFT_VERSION, "Software Version" },
 	{ CAPABILITY_CODE_PATHS_LIMIT, "Paths-Limit" },
+	{ CAPABILITY_CODE_LINK_LOCAL, "Link-Local Next Hop" },
 	{ 0 }
 };
 
@@ -63,6 +64,7 @@ const size_t cap_minsizes[] = {
 	[CAPABILITY_CODE_ROLE] = CAPABILITY_CODE_ROLE_LEN,
 	[CAPABILITY_CODE_SOFT_VERSION] = CAPABILITY_CODE_SOFT_VERSION_LEN,
 	[CAPABILITY_CODE_PATHS_LIMIT] = CAPABILITY_CODE_PATHS_LIMIT_LEN,
+	[CAPABILITY_CODE_LINK_LOCAL] = CAPABILITY_CODE_LINK_LOCAL_LEN,
 };
 
 /* value the capability must be a multiple of.
@@ -106,6 +108,7 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 	struct capability_mp_data mpc;
 	struct capability_header *hdr;
 	json_object *json_cap = NULL;
+	bool status_ok = true;
 
 	if (use_json)
 		json_cap = json_object_new_object();
@@ -114,12 +117,16 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 	end = pnt + peer->notify.length;
 
 	while (pnt < end) {
-		if (pnt + sizeof(struct capability_mp_data) + 2 > end)
-			return;
+		if (pnt + sizeof(struct capability_mp_data) + 2 > end) {
+			status_ok = false;
+			break;
+		}
 
 		hdr = (struct capability_header *)pnt;
-		if (pnt + hdr->length + 2 > end)
-			return;
+		if (pnt + hdr->length + 2 > end) {
+			status_ok = false;
+			break;
+		}
 
 		memcpy(&mpc, pnt + 2, sizeof(struct capability_mp_data));
 
@@ -281,9 +288,14 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 		}
 		pnt += hdr->length + 2;
 	}
-	if (use_json)
-		json_object_object_add(json_neigh, "capabilityErrors",
-				       json_cap);
+
+	if (status_ok) {
+		if (use_json)
+			json_object_object_add(json_neigh, "capabilityErrors",
+					       json_cap);
+	} else if (json_cap) {
+		json_object_free(json_cap);
+	}
 }
 
 static void bgp_capability_mp_data(struct stream *s,
@@ -1168,6 +1180,9 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 		case CAPABILITY_CODE_SOFT_VERSION:
 			ret = bgp_capability_software_version(peer, &caphdr);
 			break;
+		case CAPABILITY_CODE_LINK_LOCAL:
+			SET_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_RCV);
+			break;
 		case CAPABILITY_CODE_PATHS_LIMIT:
 			ret = bgp_capability_paths_limit(peer, &caphdr);
 			break;
@@ -1966,6 +1981,16 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 			: stream_putc(s, CAPABILITY_CODE_DYNAMIC_LEN + 2);
 		stream_putc(s, CAPABILITY_CODE_DYNAMIC);
 		stream_putc(s, CAPABILITY_CODE_DYNAMIC_LEN);
+	}
+
+	/* Link-Local Next Hop capability. */
+	if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_LINK_LOCAL)) {
+		SET_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_ADV);
+		stream_putc(s, BGP_OPEN_OPT_CAP);
+		ext_opt_params ? stream_putw(s, CAPABILITY_CODE_LINK_LOCAL_LEN + 2)
+			       : stream_putc(s, CAPABILITY_CODE_LINK_LOCAL_LEN + 2);
+		stream_putc(s, CAPABILITY_CODE_LINK_LOCAL);
+		stream_putc(s, CAPABILITY_CODE_LINK_LOCAL_LEN);
 	}
 
 	/* FQDN capability */

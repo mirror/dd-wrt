@@ -29,11 +29,7 @@ extern unsigned long cputime_threshold;
 extern unsigned long walltime_threshold;
 
 struct rusage_t {
-#ifdef HAVE_CLOCK_THREAD_CPUTIME_ID
 	struct timespec cpu;
-#else
-	struct rusage cpu;
-#endif
 	struct timeval real;
 };
 #define RUSAGE_T struct rusage_t
@@ -95,6 +91,7 @@ struct event_loop {
 
 	bool ready_run_loop;
 	RUSAGE_T last_getrusage;
+	struct timeval last_tardy_warning;
 };
 
 /* Event types. */
@@ -126,10 +123,16 @@ struct event {
 	struct timeval real;
 	struct cpu_event_history *hist;	    /* cache pointer to cpu_history */
 	unsigned long yield;		    /* yield time in microseconds */
+	/* lateness warning threshold, usec.  0 if it's not a timer. */
+	unsigned long tardy_threshold;
 	const struct xref_eventsched *xref; /* origin location */
 	pthread_mutex_t mtx;		    /* mutex for thread.c functions */
-	bool ignore_timer_late;
 };
+
+/* rate limit late timer warnings */
+#define TARDY_WARNING_INTERVAL 10 * TIMER_SECOND_MICRO
+/* default threshold for late timer warning */
+#define TARDY_DEFAULT_THRESHOLD 4 * TIMER_SECOND_MICRO
 
 #ifdef _FRR_ATTRIBUTE_PRINTFRR
 #pragma FRR printfrr_ext "%pTH"(struct event *)
@@ -178,15 +181,6 @@ static inline unsigned long timeval_elapsed(struct timeval a, struct timeval b)
 #define EVENT_ARG(X) ((X)->arg)
 #define EVENT_FD(X) ((X)->u.fd)
 #define EVENT_VAL(X) ((X)->u.val)
-
-/*
- * Please consider this macro deprecated, and do not use it in new code.
- */
-#define EVENT_OFF(thread)                                                      \
-	do {                                                                   \
-		if ((thread))                                                  \
-			event_cancel(&(thread));                               \
-	} while (0)
 
 /*
  * Macro wrappers to generate xrefs for all thread add calls.  Includes
@@ -305,9 +299,17 @@ static inline bool event_is_scheduled(struct event *thread)
 /* Debug signal mask */
 void debug_signals(const sigset_t *sigs);
 
+/* getting called more than given microseconds late will print a warning.
+ * Default if not called: 4s.  Don't call this on non-timers.
+ */
+static inline void event_set_tardy_threshold(struct event *event, unsigned long thres)
+{
+	event->tardy_threshold = thres;
+}
+
 static inline void event_ignore_late_timer(struct event *event)
 {
-	event->ignore_timer_late = true;
+	event->tardy_threshold = 0;
 }
 
 #ifdef __cplusplus

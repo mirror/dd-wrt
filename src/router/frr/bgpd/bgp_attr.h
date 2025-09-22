@@ -318,6 +318,9 @@ struct attr {
 
 	/* AIGP Metric */
 	uint64_t aigp_metric;
+
+	/* Next-hop characteristics */
+	struct bgp_nhc *nhc;
 };
 
 /* rmap_change_flags definition */
@@ -391,12 +394,12 @@ extern bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer, struc
 				       struct prefix *p, afi_t afi, safi_t safi, struct peer *from,
 				       struct prefix_rd *prd, mpls_label_t *label,
 				       uint8_t num_labels, bool addpath_capable,
-				       uint32_t addpath_tx_id);
+				       uint32_t addpath_tx_id, struct bgp_path_info *bpi);
 extern void bgp_dump_routes_attr(struct stream *s, struct bgp_path_info *bpi,
 				 const struct prefix *p);
 extern bool attrhash_cmp(const void *arg1, const void *arg2);
 extern unsigned int attrhash_key_make(const void *p);
-extern void attr_show_all(struct vty *vty);
+extern void attr_show_all(struct vty *vty, bool summary);
 extern unsigned long int attr_count(void);
 extern unsigned long int attr_unknown_count(void);
 extern void bgp_path_attribute_discard_vty(struct vty *vty, struct peer *peer,
@@ -582,6 +585,21 @@ static inline void bgp_attr_set_transit(struct attr *attr,
 					struct transit *transit)
 {
 	attr->transit = transit;
+}
+
+static inline struct bgp_nhc *bgp_attr_get_nhc(const struct attr *attr)
+{
+	return attr->nhc;
+}
+
+static inline void bgp_attr_set_nhc(struct attr *attr, struct bgp_nhc *bnc)
+{
+	attr->nhc = bnc;
+
+	if (bnc)
+		SET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NHC));
+	else
+		UNSET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NHC));
 }
 
 #define AIGP_TRANSMIT_ALLOWED(peer)                                                                \

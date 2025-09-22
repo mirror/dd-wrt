@@ -307,6 +307,62 @@ static int static_nexthop_srv6_segs_modify(struct nb_cb_modify_args *args)
 	return NB_OK;
 }
 
+static int static_nexthop_srv6_encap_behavior_modify(struct nb_cb_modify_args *args)
+{
+	struct static_nexthop *nh;
+	enum srv6_headend_behavior old_encap_behavior;
+	const char *encap_behavior_str;
+
+	switch (args->event) {
+	case NB_EV_VALIDATE:
+		encap_behavior_str = yang_dnode_get_string(args->dnode, NULL);
+		if (!strmatch(encap_behavior_str, "ietf-srv6-types:H.Encaps") &&
+		    !strmatch(encap_behavior_str, "ietf-srv6-types:H.Encaps.Red")) {
+			snprintf(args->errmsg, args->errmsg_len,
+				 "%% Unsupported encap behavior: %s", encap_behavior_str);
+			return NB_ERR_VALIDATION;
+		}
+		break;
+	case NB_EV_PREPARE:
+	case NB_EV_ABORT:
+		break;
+	case NB_EV_APPLY:
+		nh = nb_running_get_entry(args->dnode, NULL, true);
+		old_encap_behavior = nh->snh_seg.encap_behavior;
+		encap_behavior_str = yang_dnode_get_string(args->dnode, NULL);
+		if (strmatch(encap_behavior_str, "ietf-srv6-types:H.Encaps"))
+			nh->snh_seg.encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS;
+		else if (strmatch(encap_behavior_str, "ietf-srv6-types:H.Encaps.Red"))
+			nh->snh_seg.encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS_RED;
+		else {
+			snprintf(args->errmsg, args->errmsg_len,
+				 "%% Unsupported encap behavior: %s", encap_behavior_str);
+			return NB_ERR;
+		}
+
+		if (old_encap_behavior != nh->snh_seg.encap_behavior)
+			nh->state = STATIC_START;
+		break;
+	}
+
+	return NB_OK;
+}
+
+static int static_nexthop_srv6_encap_behavior_destroy(struct nb_cb_destroy_args *args)
+{
+	struct static_nexthop *nh;
+	enum srv6_headend_behavior old_encap_behavior;
+
+	nh = nb_running_get_entry(args->dnode, NULL, true);
+	old_encap_behavior = nh->snh_seg.encap_behavior;
+	nh->snh_seg.encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS;
+
+	if (old_encap_behavior != nh->snh_seg.encap_behavior)
+		nh->state = STATIC_START;
+
+	return NB_OK;
+}
+
 static int nexthop_mpls_label_stack_entry_create(struct nb_cb_create_args *args)
 {
 	struct static_nexthop *nh;
@@ -814,6 +870,42 @@ int routing_control_plane_protocols_control_plane_protocol_staticd_route_list_pa
 
 /*
  * XPath:
+ * /frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-staticd:staticd/route-list/path-list/frr-nexthops/nexthop/srv6-segs-stack/encap-behavior
+ */
+int routing_control_plane_protocols_control_plane_protocol_staticd_route_list_path_list_frr_nexthops_nexthop_srv6_segs_stack_encap_behavior_modify(
+	struct nb_cb_modify_args *args)
+{
+	switch (args->event) {
+	case NB_EV_VALIDATE:
+	case NB_EV_PREPARE:
+	case NB_EV_ABORT:
+		break;
+	case NB_EV_APPLY:
+		if (static_nexthop_srv6_encap_behavior_modify(args) != NB_OK)
+			return NB_ERR;
+		break;
+	}
+	return NB_OK;
+}
+
+int routing_control_plane_protocols_control_plane_protocol_staticd_route_list_path_list_frr_nexthops_nexthop_srv6_segs_stack_encap_behavior_destroy(
+	struct nb_cb_destroy_args *args)
+{
+	switch (args->event) {
+	case NB_EV_VALIDATE:
+	case NB_EV_PREPARE:
+	case NB_EV_ABORT:
+		break;
+	case NB_EV_APPLY:
+		if (static_nexthop_srv6_encap_behavior_destroy(args) != NB_OK)
+			return NB_ERR;
+		break;
+	}
+	return NB_OK;
+}
+
+/*
+ * XPath:
  * /frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-staticd:staticd/route-list/path-list/frr-nexthops/nexthop/mpls-label-stack/entry
  */
 int routing_control_plane_protocols_control_plane_protocol_staticd_route_list_path_list_frr_nexthops_nexthop_mpls_label_stack_entry_create(
@@ -1112,6 +1204,7 @@ int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routi
 	yang_dnode_get_ipv6p(&sid_value, args->dnode, "sid");
 	sid = static_srv6_sid_alloc(&sid_value);
 	nb_running_set_entry(args->dnode, sid);
+	listnode_add(srv6_sids, sid);
 
 	return NB_OK;
 }
@@ -1145,13 +1238,11 @@ void routing_control_plane_protocols_control_plane_protocol_staticd_segment_rout
 		       "%s: Locator %s not found, trying to get locator information from zebra",
 		       __func__, sid->locator_name);
 		static_zebra_srv6_manager_get_locator(sid->locator_name);
-		listnode_add(srv6_sids, sid);
 		return;
 	}
 
 	sid->locator = locator;
 
-	listnode_add(srv6_sids, sid);
 	static_zebra_request_srv6_sid(sid);
 }
 
@@ -1224,6 +1315,112 @@ int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routi
 }
 
 int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_vrf_name_destroy(
+	struct nb_cb_destroy_args *args)
+{
+	return NB_OK;
+}
+
+/*
+ * XPath:
+ * /frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-staticd:staticd/segment-routing/srv6/locators/locator/static-sids/sid/paths
+ */
+int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_paths_create(
+	struct nb_cb_create_args *args)
+{
+	/* Actual setting is done in apply_finish */
+	return NB_OK;
+}
+
+int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_paths_destroy(
+	struct nb_cb_destroy_args *args)
+{
+	return NB_OK;
+}
+
+/*
+ * XPath:
+ * /frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-staticd:staticd/segment-routing/srv6/locators/locator/static-sids/sid/paths/interface
+ */
+int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_paths_interface_modify(
+	struct nb_cb_modify_args *args)
+{
+	struct static_srv6_sid *sid;
+	const char *ifname;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	sid = nb_running_get_entry(args->dnode, NULL, true);
+
+	/* Release and uninstall existing SID, if any, before requesting the new one */
+	if (CHECK_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_VALID)) {
+		static_zebra_release_srv6_sid(sid);
+		UNSET_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_VALID);
+	}
+
+	if (CHECK_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_SENT_TO_ZEBRA)) {
+		static_zebra_srv6_sid_uninstall(sid);
+		UNSET_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_SENT_TO_ZEBRA);
+	}
+
+	ifname = yang_dnode_get_string(args->dnode, "../interface");
+	snprintf(sid->attributes.ifname, sizeof(sid->attributes.ifname), "%s", ifname);
+
+	return NB_OK;
+}
+
+int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_paths_interface_destroy(
+	struct nb_cb_destroy_args *args)
+{
+	return NB_OK;
+}
+
+/*
+ * XPath:
+ * /frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-staticd:staticd/segment-routing/srv6/locators/locator/static-sids/sid/paths/next-hop
+ */
+int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_paths_next_hop_modify(
+	struct nb_cb_modify_args *args)
+{
+	struct static_srv6_sid *sid;
+	struct ipaddr nexthop;
+
+	switch (args->event) {
+	case NB_EV_VALIDATE:
+		yang_dnode_get_ip(&nexthop, args->dnode, "../next-hop");
+		if (!IS_IPADDR_V6(&nexthop)) {
+			snprintf(args->errmsg, args->errmsg_len,
+				 "%% Nexthop must be an IPv6 address");
+			return NB_ERR_VALIDATION;
+		}
+		break;
+	case NB_EV_ABORT:
+	case NB_EV_PREPARE:
+		break;
+	case NB_EV_APPLY:
+		sid = nb_running_get_entry(args->dnode, NULL, true);
+
+		/* Release and uninstall existing SID, if any, before requesting the new one */
+		if (CHECK_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_VALID)) {
+			static_zebra_release_srv6_sid(sid);
+			UNSET_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_VALID);
+		}
+
+		if (CHECK_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_SENT_TO_ZEBRA)) {
+			static_zebra_srv6_sid_uninstall(sid);
+			UNSET_FLAG(sid->flags, STATIC_FLAG_SRV6_SID_SENT_TO_ZEBRA);
+		}
+
+		yang_dnode_get_ip(&nexthop, args->dnode, "../next-hop");
+		sid->attributes.nh6 = nexthop.ipaddr_v6;
+
+		break;
+	}
+
+	return NB_OK;
+}
+
+int routing_control_plane_protocols_control_plane_protocol_staticd_segment_routing_srv6_local_sids_sid_paths_next_hop_destroy(
 	struct nb_cb_destroy_args *args)
 {
 	return NB_OK;

@@ -23,7 +23,6 @@
 #include "lib/buffer.h"           /* for BUFFER_EMPTY, BUFFER_ERROR, BUFFE... */
 #include "lib/command.h"          /* for vty, install_element, CMD_SUCCESS... */
 #include "lib/hook.h"             /* for DEFINE_HOOK, DEFINE_KOOH, hook_call */
-#include "lib/linklist.h"         /* for ALL_LIST_ELEMENTS_RO, ALL_LIST_EL... */
 #include "lib/libfrr.h"           /* for frr_zclient_addr */
 #include "lib/log.h"              /* for zlog_warn, zlog_debug, safe_strerror */
 #include "lib/memory.h"           /* for MTYPE_TMP, XCALLOC, XFREE */
@@ -191,8 +190,8 @@ static void zserv_client_fail(struct zserv *client)
 	atomic_store_explicit(&client->pthread->running, false,
 			      memory_order_relaxed);
 
-	EVENT_OFF(client->t_read);
-	EVENT_OFF(client->t_write);
+	event_cancel(&client->t_read);
+	event_cancel(&client->t_write);
 	zserv_event(client, ZSERV_HANDLE_CLIENT_FAIL);
 }
 
@@ -487,6 +486,10 @@ zread_fail:
 static void zserv_client_event(struct zserv *client,
 			       enum zserv_client_event event)
 {
+	/* Don't continue if client is being shut/freed */
+	if (client->pthread == NULL)
+		return;
+
 	switch (event) {
 	case ZSERV_CLIENT_READ:
 		event_add_read(client->pthread->master, zserv_read, client,
@@ -531,6 +534,12 @@ static void zserv_process_messages(struct event *thread)
 	struct stream_fifo *cache = stream_fifo_new();
 	uint32_t p2p = zrouter.packets_to_process;
 	bool need_resched = false;
+	uint32_t meta_queue_size = zebra_rib_meta_queue_size();
+
+	if (meta_queue_size < p2p)
+		p2p = p2p - meta_queue_size;
+	else
+		p2p = 0;
 
 	frr_with_mutex (&client->ibuf_mtx) {
 		uint32_t i;
@@ -563,12 +572,17 @@ static void zserv_process_messages(struct event *thread)
 
 int zserv_send_message(struct zserv *client, struct stream *msg)
 {
+	/* Don't continue if zclient is being freed/shut */
+	if (client->pthread == NULL)
+		goto done;
+
 	frr_with_mutex (&client->obuf_mtx) {
 		stream_fifo_push(client->obuf_fifo, msg);
 	}
 
 	zserv_client_event(client, ZSERV_CLIENT_WRITE);
 
+done:
 	return 0;
 }
 
@@ -578,6 +592,10 @@ int zserv_send_message(struct zserv *client, struct stream *msg)
 int zserv_send_batch(struct zserv *client, struct stream_fifo *fifo)
 {
 	struct stream *msg;
+
+	/* Don't continue if zclient is being freed/shut */
+	if (client->pthread == NULL)
+		goto done;
 
 	frr_with_mutex (&client->obuf_mtx) {
 		msg = stream_fifo_pop(fifo);
@@ -589,6 +607,7 @@ int zserv_send_batch(struct zserv *client, struct stream_fifo *fifo)
 
 	zserv_client_event(client, ZSERV_CLIENT_WRITE);
 
+done:
 	return 0;
 }
 
@@ -713,8 +732,8 @@ void zserv_close_client(struct zserv *client)
 				   zebra_route_string(client->proto));
 
 		event_cancel_event(zrouter.master, client);
-		EVENT_OFF(client->t_cleanup);
-		EVENT_OFF(client->t_process);
+		event_cancel(&client->t_cleanup);
+		event_cancel(&client->t_process);
 
 		/* destroy pthread */
 		frr_pthread_destroy(client->pthread);
@@ -728,7 +747,7 @@ void zserv_close_client(struct zserv *client)
 	frr_with_mutex (&client_mutex) {
 		if (client->busy_count <= 0) {
 			/* remove from client list */
-			listnode_delete(zrouter.client_list, client);
+			zserv_client_list_del(&zrouter.client_list, client);
 		} else {
 			/*
 			 * The client session object may be in use, although
@@ -802,7 +821,7 @@ static struct zserv *zserv_client_create(int sock)
 
 	/* Add this client to linked list. */
 	frr_with_mutex (&client_mutex) {
-		listnode_add(zrouter.client_list, client);
+		zserv_client_list_add_tail(&zrouter.client_list, client);
 	}
 
 	struct frr_pthread_attr zclient_pthr_attrs = {
@@ -890,19 +909,20 @@ void zserv_release_client(struct zserv *client)
  */
 static void zserv_accept(struct event *thread)
 {
-	int accept_sock;
 	int client_sock;
 	struct sockaddr_in client;
 	socklen_t len;
 
-	accept_sock = EVENT_FD(thread);
+	if (zsock < 0) {
+		/* Return if this event pops after zsock is closed. */
+		return;
+	}
 
 	/* Reregister myself. */
 	zserv_event(NULL, ZSERV_ACCEPT);
 
 	len = sizeof(struct sockaddr_in);
-	client_sock = accept(accept_sock, (struct sockaddr *)&client, &len);
-
+	client_sock = accept(zsock, (struct sockaddr *)&client, &len);
 	if (client_sock < 0) {
 		flog_err_sys(EC_LIB_SOCKET, "Can't accept zebra socket: %s",
 			     safe_strerror(errno));
@@ -1311,10 +1331,9 @@ static struct zserv *find_client_internal(uint8_t proto,
 					  unsigned short instance,
 					  uint32_t session_id)
 {
-	struct listnode *node, *nnode;
 	struct zserv *client = NULL;
 
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		if (client->proto == proto && client->instance == instance &&
 		    client->session_id == session_id)
 			break;
@@ -1362,10 +1381,9 @@ DEFUN (show_zebra_client,
        ZEBRA_STR
        "Client information\n")
 {
-	struct listnode *node;
 	struct zserv *client;
 
-	for (ALL_LIST_ELEMENTS_RO(zrouter.client_list, node, client)) {
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
 		zebra_show_client_detail(vty, client);
 		/* Show GR info if present */
 		zebra_show_stale_client_detail(vty, client);
@@ -1383,7 +1401,6 @@ DEFUN (show_zebra_client_summary,
        "Client information brief\n"
        "Brief Summary\n")
 {
-	struct listnode *node;
 	struct zserv *client;
 
 	vty_out(vty,
@@ -1391,7 +1408,7 @@ DEFUN (show_zebra_client_summary,
 	vty_out(vty,
 		"------------------------------------------------------------------------------------------\n");
 
-	for (ALL_LIST_ELEMENTS_RO(zrouter.client_list, node, client))
+	frr_each (zserv_client_list, &zrouter.client_list, client)
 		zebra_show_client_brief(vty, client);
 
 	vty_out(vty, "Routes column shows (added+updated)/deleted\n");
@@ -1400,11 +1417,11 @@ DEFUN (show_zebra_client_summary,
 
 static int zserv_client_close_cb(struct zserv *closed_client)
 {
-	struct listnode *node, *nnode;
 	struct zserv *client = NULL;
 
-	for (ALL_LIST_ELEMENTS(zrouter.client_list, node, nnode, client)) {
-		if (client->proto == closed_client->proto)
+	frr_each (zserv_client_list, &zrouter.client_list, client) {
+		if (client->proto == closed_client->proto ||
+		    client->pthread == NULL)
 			continue;
 
 		zsend_client_close_notify(client, closed_client);
@@ -1416,8 +1433,8 @@ static int zserv_client_close_cb(struct zserv *closed_client)
 void zserv_init(void)
 {
 	/* Client list init. */
-	zrouter.client_list = list_new();
-	zrouter.stale_client_list = list_new();
+	zserv_client_list_init(&zrouter.client_list);
+	zserv_stale_client_list_init(&zrouter.stale_client_list);
 
 	/* Misc init. */
 	zsock = -1;

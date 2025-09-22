@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #include <zebra.h>
 
 #include "isisd/isis_lsp.c"
@@ -16,7 +17,7 @@ static void test_lsp_build_list_nonzero_ht(void)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00
 	};
 
-	struct isis_area *area = calloc(sizeof(*area), 1);
+	struct isis_area *area = calloc(1, sizeof(*area));
 
 	area->lsp_mtu = 1500;
 
@@ -75,7 +76,7 @@ static void test_lsp_build_list_nonzero_ht(void)
 int main(int argc, char **argv)
 {
 	struct isis *isis = NULL;
-	isis = calloc(sizeof(*isis), 1);
+	isis = calloc(1, sizeof(*isis));
 	test_lsp_build_list_nonzero_ht();
 	return 0;
 }

@@ -8,6 +8,9 @@
 
 #include "vxlan.h"
 
+/* The global zapi session handle */
+extern struct zclient *bgp_zclient;
+
 /* Macro to update bgp_original based on bpg_path_info */
 #define BGP_ORIGINAL_UPDATE(_bgp_orig, _mpinfo, _bgp)                          \
 	((_mpinfo->extra && _mpinfo->extra->vrfleak &&                        \
@@ -18,6 +21,16 @@
 
 /* Default weight for next hop, if doing weighted ECMP. */
 #define BGP_ZEBRA_DEFAULT_NHOP_WEIGHT 1
+
+/*
+ * Check if the path is eligible for annoucing to zebra.
+ */
+static inline bool bgp_zebra_announce_eligible(struct bgp_path_info *pi)
+{
+	return (pi->type == ZEBRA_ROUTE_BGP) &&
+	       ((pi->sub_type == BGP_ROUTE_NORMAL) || (pi->sub_type == BGP_ROUTE_AGGREGATE) ||
+		(pi->sub_type == BGP_ROUTE_IMPORTED));
+}
 
 extern void bgp_zebra_init(struct event_loop *master, unsigned short instance);
 extern void bgp_if_init(void);
@@ -41,6 +54,10 @@ extern void bgp_zebra_announce_table_all_subtypes(struct bgp *bgp, afi_t afi,
 /* Withdraw all entries of any subtype in a BGP instances RIB table from Zebra */
 extern void bgp_zebra_withdraw_table_all_subtypes(struct bgp *bgp, afi_t afi,
 						  safi_t safi);
+
+/* withdraw or add srv6 encapsulated routes */
+extern void bgp_zebra_update_srv6_encap_routes(struct bgp *bgp, afi_t afi, struct bgp *from_bgp,
+					       bool add);
 
 extern void bgp_zebra_initiate_radv(struct bgp *bgp, struct peer *peer);
 extern void bgp_zebra_terminate_radv(struct bgp *bgp, struct peer *peer);

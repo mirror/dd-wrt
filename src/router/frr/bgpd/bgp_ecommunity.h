@@ -68,11 +68,17 @@
 #define ECOMMUNITY_EVPN_SUBTYPE_ESI_LABEL    0x01
 #define ECOMMUNITY_EVPN_SUBTYPE_ES_IMPORT_RT 0x02
 #define ECOMMUNITY_EVPN_SUBTYPE_ROUTERMAC    0x03
+#define ECOMMUNITY_EVPN_SUBTYPE_LAYER2_ATTR  0x04
 #define ECOMMUNITY_EVPN_SUBTYPE_DF_ELECTION 0x06
 #define ECOMMUNITY_EVPN_SUBTYPE_DEF_GW       0x0d
 #define ECOMMUNITY_EVPN_SUBTYPE_ND           0x08
 
 #define ECOMMUNITY_EVPN_SUBTYPE_MACMOBILITY_FLAG_STICKY 0x01
+
+/* Layer2 Attributes: RFC8214 */
+#define ECOMMUNITY_EVPN_SUBTYPE_LAYER2_ATTR_PRIMARY_PE_FLAG   0x01
+#define ECOMMUNITY_EVPN_SUBTYPE_LAYER2_ATTR_BACKUP_PE_FLAG    0x02
+#define ECOMMUNITY_EVPN_SUBTYPE_LAYER2_ATTR_CONTROL_WORD_FLAG 0x04
 
 /* DF alg bits - only lower 5 bits are applicable */
 #define ECOMMUNITY_EVPN_SUBTYPE_DF_ALG_BITS 0x1f
@@ -318,9 +324,7 @@ static inline void encode_node_target(struct in_addr *node_id,
 	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 */
 	memset(eval, 0, sizeof(*eval));
-	eval->val[0] = ECOMMUNITY_ENCODE_IP;
-	if (!trans)
-		eval->val[0] |= ECOMMUNITY_ENCODE_IP_NON_TRANS;
+	eval->val[0] = trans ? ECOMMUNITY_ENCODE_IP : ECOMMUNITY_ENCODE_IP_NON_TRANS;
 	eval->val[1] = ECOMMUNITY_NODE_TARGET;
 	memcpy(&eval->val[2], node_id, sizeof(*node_id));
 	eval->val[6] = ECOMMUNITY_NODE_TARGET_RESERVED;
@@ -373,9 +377,11 @@ extern unsigned int ecommunity_hash_make(const void *);
 extern struct ecommunity *ecommunity_str2com(const char *, int, int);
 extern struct ecommunity *ecommunity_str2com_ipv6(const char *str, int type,
 						  int keyword_included);
-extern char *ecommunity_ecom2str(struct ecommunity *, int, int);
+extern char *ecommunity_ecom2str(struct ecommunity *ecom, int format, int filter);
+extern char *ecommunity_ecom2str_one(struct ecommunity *ecom, int format, int number);
 extern bool ecommunity_has_route_target(struct ecommunity *ecom);
 extern void ecommunity_strfree(char **s);
+extern bool ecommunity_include_one(struct ecommunity *ecom, uint8_t *ptr);
 extern bool ecommunity_include(struct ecommunity *e1, struct ecommunity *e2);
 extern bool ecommunity_match(const struct ecommunity *,
 			     const struct ecommunity *);
@@ -397,6 +403,9 @@ extern bool ecommunity_strip(struct ecommunity *ecom, uint8_t type,
 			     uint8_t subtype);
 extern struct ecommunity *ecommunity_new(void);
 extern bool ecommunity_strip_non_transitive(struct ecommunity *ecom);
+extern struct ecommunity *ecommunity_filter(struct ecommunity *ecom,
+					    bool (*filter)(uint8_t *val, uint8_t usize, void *arg),
+					    void *arg);
 extern bool ecommunity_del_val(struct ecommunity *ecom,
 			       struct ecommunity_val *eval);
 struct bgp_pbr_entry_action;

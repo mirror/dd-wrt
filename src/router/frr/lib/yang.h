@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+struct frr_yang_module_info;
+
 /* Maximum XPath length. */
 #define XPATH_MAXLEN 1024
 
@@ -45,6 +47,7 @@ struct yang_module {
 	RB_ENTRY(yang_module) entry;
 	const char *name;
 	const struct lys_module *info;
+	const struct frr_yang_module_info *frr_info;
 #ifdef HAVE_SYSREPO
 	sr_subscription_ctx_t *sr_subscription;
 	struct event *sr_thread;

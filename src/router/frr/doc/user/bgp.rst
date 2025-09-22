@@ -537,6 +537,13 @@ Reject routes with AS_SET or AS_CONFED_SET types
 
    This command enables rejection of incoming and outgoing routes having AS_SET or AS_CONFED_SET type.
 
+   The aggregated routes are not sent to the contributing neighbors.
+
+.. seealso::
+   https://datatracker.ietf.org/doc/html/draft-ietf-idr-deprecate-as-set-confed-set
+
+   Default: disabled.
+
 Enforce first AS
 ----------------
 
@@ -687,7 +694,7 @@ and sometimes not, depending on the properties of those other routes, means MED
 can cause the order of preference over all the routes to be undefined. That is,
 given routes A, B, and C, if A is preferred to B, and B is preferred to C, then
 a well-defined order should mean the preference is transitive (in the sense of
-orders [#med-transitivity-rant]_) and that A would be preferred to C.
+orders and that A would be preferred to C.
 
 However, when MED is involved this need not be the case. With MED it is
 possible that C is actually preferred over A. So A is preferred to B, B is
@@ -1759,6 +1766,15 @@ Configuring Peers
        neighbor foo update-source 192.168.0.1
        neighbor bar update-source lo0
 
+.. clicmd:: neighbor PEER ip-transparent
+
+   Use this command when you need to establish a BGP session with a
+   neighbor using an IP address that you do *not* own. Some typical use
+   cases include running BGP in a container without configuring the
+   address on a loopback interface, peering over a virtual (floating)
+   IP (VIP), or operating as a transparent IP firewall.
+   The BGP TCP session shall have a TCP source address that you set with
+   `neighbor PEER update-source A.B.C.D`.
 
 .. clicmd:: neighbor PEER default-originate [route-map WORD]
 
@@ -1793,6 +1809,12 @@ Configuring Peers
    command with a large number of peers on linux you should consider
    modifying the `net.core.optmem_max` sysctl to a larger value to
    avoid out of memory errors from the linux kernel.
+
+.. clicmd:: neighbor PEER send-nexthop-characteristics
+
+   Send the BGP Next Hop Dependent Characteristics Attribute (NHC) to the peer.
+
+   Default: disabled.
 
 .. clicmd:: neighbor PEER send-community <both|all|extended|standard|large>
 
@@ -1952,6 +1974,16 @@ Configuring Peers
    fqdn`` avoid negotiation of that capability. This is useful for peers who
    are not supporting this capability or supporting BGP Capabilities
    Negotiation RFC 2842.
+
+.. clicmd:: neighbor PEER capability link-local
+
+   Send the Link-Local Next Hop capability in the BGP OPEN message to the neighbor.
+   This is useful in data center environments where point-to-point (unnumbered) links
+   are utilized. This capability standardizes the operation of BGP over a
+   point-to-point links using link-local IPv6 addressing only.
+
+   Enabled by default for the ``datacenter`` profile. Also implicitly enabled
+   for unnumbered peers.
 
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> accept-own
 
@@ -2908,7 +2940,22 @@ Extended Community Lists
 BGP Extended Communities in Route Map
 """""""""""""""""""""""""""""""""""""
 
-.. clicmd:: match extcommunity WORD
+.. clicmd:: match extcommunity WORD [exact-match|any]
+
+   This command perform match to BGP updates using extended community list WORD.
+   When the one of BGP extended communities value match to the one of the extended
+   communities value in community list, it is match. When ``exact-match`` keyword
+   is specified, match happens only when BGP updates have completely same extended
+   communities value specified in the extended community list. When ``any`` keyword
+   is set, match happens when any of the extended communities of the BGP updates
+   matches an extended community of the specified list.
+
+ .. clicmd:: match extcommunity-limit (0-65535)
+
+   This command matches BGP updates that use extended community list and IPv6
+   extended community list, and with an extended community list count less or
+   equal than the defined limit. Setting extended community-limit to 0 will
+   only match BGP updates with no extended community.
 
 .. clicmd:: set extcommunity none
 
@@ -3364,6 +3411,14 @@ L3VPN SRv6
    Specify the SRv6 locator to be used for SRv6 L3VPN. The Locator name must
    be set in zebra, but user can set it in any order.
 
+.. clicmd:: encap-behavior <H_Encaps|H_Encaps_Red>
+
+   Specify the encapsulation instruction to use for incoming BGP L3VPN SRv6 routes
+   to install to RIB. By default, a segment-routing-header is added, in addition to
+   the IPv6 header. With `H_Encaps_Red`, if the number of segments is only 1, and
+   there are no other specific options, then the segment-routing-header is removed,
+   and only the IPv6 header is appended to the original packet.
+
 L3VPN SRv6 SID reachability
 ---------------------------
 
@@ -3395,16 +3450,19 @@ General configuration
 Configuration of the SRv6 SID used to advertise a L3VPN for both IPv4 and IPv6
 is accomplished via the following command in the context of a VRF:
 
-.. clicmd:: sid vpn per-vrf export (1..1048575)|auto
+.. clicmd:: sid vpn per-vrf export <(1..1048575)|auto|explicit X:X::X:X>
 
    Enables a SRv6 SID to be attached to a route exported from the current
    unicast VRF to VPN. A single SID is used for both IPv4 and IPv6 address
    families. If you want to set a SID for only IPv4 address family or IPv6
-   address family, you need to use the command ``sid vpn export (1..1048575)|auto``
+   address family, you need to use the command ``sid vpn export <(1..1048575)|auto|explicit X:X::X:X>``
    in the context of an address-family. If the value specified is ``auto``,
    the SID value is automatically assigned from a pool maintained by the Zebra
-   daemon. If Zebra is not running, or if this command is not configured, automatic
-   SID assignment will not complete, which will block corresponding route export.
+   daemon. If the value specified is ``explicit X:X::X:X``, SID allocation
+   with the explicit value is requested from the Zebra daemon.
+   If Zebra is not running, or if this command is not configured, or if SID
+   allocation is failed, automatic or explicit SID assignment will not complete,
+   which will block corresponding route export.
 
 .. _bgp-evpn:
 
@@ -4558,6 +4616,13 @@ incoming/outgoing directions.
 
    Display statistics of routes of all the afi and safi.
 
+.. clicmd:: show bgp attribute-info [summary]
+
+   This command displays information about the attributes. If ``summary`` is
+   specified, it will display a summary of the attributes, including the
+   attribute type, the number of occurrences, and the total size of the
+   attributes in the BGP table.
+
 .. clicmd:: show [ip] bgp [afi] [safi] [all] cidr-only [wide|json]
 
    Display routes with non-natural netmasks.
@@ -4638,13 +4703,16 @@ incoming/outgoing directions.
 
    If ``json`` option is specified, output is displayed in JSON format.
 
-.. clicmd:: show [ip] bgp [afi] [safi] [all] detail-routes
+.. clicmd:: show [ip] bgp [afi] [safi] [all] detail-routes [internal]
 
    Display the detailed version of all routes. The same format as using
    ``show [ip] bgp [afi] [safi] PREFIX``, but for the whole BGP table.
 
    If ``all`` option is specified, ``ip`` keyword is ignored and,
    routes displayed for all AFIs and SAFIs.
+
+   ``internal`` option is used to display internal data additionally. JSON
+   output is not supported with this option.
 
    If ``afi`` is specified, with ``all`` option, routes will be displayed for
    each SAFI in the selected AFI.
@@ -5585,7 +5653,6 @@ Show command json output:
 
 .. include:: flowspec.rst
 
-.. [#med-transitivity-rant] For some set of objects to have an order, there *must* be some binary ordering relation that is defined for *every* combination of those objects, and that relation *must* be transitive. I.e.:, if the relation operator is <, and if a < b and b < c then that relation must carry over and it *must* be that a < c for the objects to have an order. The ordering relation may allow for equality, i.e. a < b and b < a may both be true and imply that a and b are equal in the order and not distinguished by it, in which case the set has a partial order. Otherwise, if there is an order, all the objects have a distinct place in the order and the set has a total order)
 .. [bgp-route-osci-cond] McPherson, D. and Gill, V. and Walton, D., "Border Gateway Protocol (BGP) Persistent Route Oscillation Condition", IETF RFC3345
 .. [stable-flexible-ibgp] Flavel, A. and M. Roughan, "Stable and flexible iBGP", ACM SIGCOMM 2009
 .. [ibgp-correctness] Griffin, T. and G. Wilfong, "On the correctness of IBGP configuration", ACM SIGCOMM 2002

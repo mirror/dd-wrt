@@ -8,6 +8,7 @@
 #
 # noqa: E501
 #
+"""A MGMTD front-end client."""
 import argparse
 import logging
 import os
@@ -17,32 +18,20 @@ import sys
 import time
 from pathlib import Path
 
+CWD = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.dirname(CWD))
+
 from munet.base import Timeout
 
-CWD = os.path.dirname(os.path.realpath(__file__))
+RUNNING_DS = 1
+CANDIDATE_DS = 2
+OPERATIONAL_DS = 3
 
-# This is painful but works if you have installed protobuf would be better if we
-# actually built and installed these but ... python packaging.
-try:
-    sys.path.append(os.path.dirname(CWD))
-    from munet.base import commander
-
-    commander.cmd_raises(f"protoc --python_out={CWD} -I {CWD}/../../../lib mgmt.proto")
-except Exception as error:
-    logging.error("can't create protobuf definition modules %s", error)
-    raise
-
-try:
-    sys.path[0:0] = "."
-    import mgmt_pb2
-except Exception as error:
-    logging.error("can't import proto definition modules %s", error)
-    raise
-
-CANDIDATE_DS = mgmt_pb2.DatastoreId.CANDIDATE_DS
-OPERATIONAL_DS = mgmt_pb2.DatastoreId.OPERATIONAL_DS
-RUNNING_DS = mgmt_pb2.DatastoreId.RUNNING_DS
-STARTUP_DS = mgmt_pb2.DatastoreId.STARTUP_DS
+datastore_name = {
+    RUNNING_DS: "running",
+    CANDIDATE_DS: "candidate",
+    OPERATIONAL_DS: "operational",
+}
 
 # =====================
 # Native message values
@@ -85,13 +74,40 @@ NOTIFY_OP_NOTIFICATION = 0
 NOTIFY_OP_REPLACE = 1
 NOTIFY_OP_DELETE = 2
 NOTIFY_OP_PATCH = 3
+NOTIFY_OP_GET_SYNC = 4
 
 MSG_NOTIFY_SELECT_FMT = "=B7x"
 
-MSG_SESSION_REQ_FMT = "=8x"
+MSG_SESSION_REQ_FMT = "=B7x"
 
 MSG_SESSION_REPLY_FMT = "=B7x"
 SESSION_REPLY_FIELD_CREATED = 0
+
+MSG_LOCK_FMT = "=BB6x"
+LOCK_FIELD_DATASTORE = 0
+LOCK_FIELD_LOCK = 1
+
+MSG_LOCK_REPLY_FMT = "=BB6x"
+LOCK_REPLY_FIELD_DATASTORE = 0
+LOCK_REPLY_FIELD_LOCK = 1
+
+MSG_COMMIT_FMT = "=BBBB4x"
+COMMIT_FIELD_SOURCE = 0
+COMMIT_FIELD_TARGET = 1
+COMMIT_FIELD_ACTION = 2
+COMMIT_ACTION_APPLY = 0
+COMMIT_ACTION_ABORT = 1
+COMMIT_ACTION_VALIDATE = 2
+COMMIT_FIELD_UNLOCK = 3
+
+MSG_COMMIT_REPLY_FMT = "=BBBB4x"
+COMMIT_REPLY_FIELD_SOURCE = 0
+COMMIT_REPLY_FIELD_TARGET = 1
+COMMIT_REPLY_FIELD_ACTION = 2
+COMMIT_REPLY_ACTION_APPLY = COMMIT_ACTION_APPLY
+COMMIT_REPLY_ACTION_ABORT = COMMIT_ACTION_ABORT
+COMMIT_REPLY_ACTION_VALIDATE = COMMIT_ACTION_VALIDATE
+COMMIT_REPLY_FIELD_UNLOCK = 3
 
 #
 # Native message codes
@@ -104,6 +120,10 @@ MSG_CODE_NOTIFY = 4
 MSG_CODE_NOTIFY_SELECT = 9
 MSG_CODE_SESSION_REQ = 10
 MSG_CODE_SESSION_REPLY = 11
+MSG_CODE_LOCK = 19
+MSG_CODE_LOCK_REPLY = 20
+MSG_CODE_COMMIT = 21
+MSG_CODE_COMMIT_REPLY = 22
 
 msg_native_formats = {
     MSG_CODE_ERROR: MSG_ERROR_FMT,
@@ -114,6 +134,10 @@ msg_native_formats = {
     MSG_CODE_NOTIFY_SELECT: MSG_NOTIFY_SELECT_FMT,
     MSG_CODE_SESSION_REQ: MSG_SESSION_REQ_FMT,
     MSG_CODE_SESSION_REPLY: MSG_SESSION_REPLY_FMT,
+    MSG_CODE_LOCK: MSG_LOCK_FMT,
+    MSG_CODE_LOCK_REPLY: MSG_LOCK_REPLY_FMT,
+    MSG_CODE_COMMIT: MSG_COMMIT_FMT,
+    MSG_CODE_COMMIT_REPLY: MSG_COMMIT_REPLY_FMT,
 }
 
 
@@ -124,16 +148,22 @@ MSG_FORMAT_LYB = 3
 
 
 def cstr(mdata):
+    """Convert a null-term byte array into a string, excluding the null terminator."""
     assert mdata[-1] == 0
     return mdata[:-1]
 
 
 class FEClientError(Exception):
+    """Base class for frontend client errors."""
+
     pass
 
 
 class PBMessageError(FEClientError):
+    """Exception for errors related to protobuf messages."""
+
     def __init__(self, msg, errstr):
+        """Initialize PBMessageError with message and error string."""
         self.msg = msg
         # self.sess_id = mhdr[HDR_FIELD_SESS_ID]
         # self.req_id = mhdr[HDR_FIELD_REQ_ID]
@@ -143,7 +173,10 @@ class PBMessageError(FEClientError):
 
 
 class NativeMessageError(FEClientError):
+    """Exception for errors related to native messages."""
+
     def __init__(self, mhdr, mfixed, mdata):
+        """Initialize NativeMessageError with message header, fixed fields, and data."""
         self.mhdr = mhdr
         self.sess_id = mhdr[HDR_FIELD_SESS_ID]
         self.req_id = mhdr[HDR_FIELD_REQ_ID]
@@ -173,6 +206,7 @@ def recv_wait(sock, size):
 
 
 def recv_msg(sock):
+    """Receive a message from the socket, ensuring it has a valid marker."""
     marker = recv_wait(sock, 4)
     assert marker in (MGMT_MSG_MARKER_PROTOBUF, MGMT_MSG_MARKER_NATIVE)
 
@@ -196,81 +230,48 @@ class Session:
 
     client_id = 1
 
-    def __init__(self, sock, use_protobuf):
+    def __init__(self, sock):
+        """Initialize a session with the mgmtd server."""
         self.sock = sock
         self.next_req_id = 1
 
-        if use_protobuf:
-            req = mgmt_pb2.FeMessage()
-            req.register_req.client_name = "test-client"
-            self.send_pb_msg(req)
-            logging.debug("Sent FeRegisterReq: %s", req)
+        # Establish a native session
+        self.sess_id = 0
+        mdata, _ = self.get_native_msg_header(MSG_CODE_SESSION_REQ)
+        mdata += struct.pack(MSG_SESSION_REQ_FMT, MSG_FORMAT_JSON)
+        mdata += "test-client".encode("utf-8") + b"\x00"
+        self.send_native_msg(mdata)
+        logging.debug("Sent native SESSION-REQ")
 
-            req = mgmt_pb2.FeMessage()
-            req.session_req.create = 1
-            req.session_req.client_conn_id = Session.client_id
-            Session.client_id += 1
-            self.send_pb_msg(req)
-            logging.debug("Sent FeSessionReq: %s", req)
-
-            reply = self.recv_pb_msg(mgmt_pb2.FeMessage())
-            logging.debug("Received FeSessionReply: %s", repr(reply))
-
-            assert reply.session_reply.success
-            self.sess_id = reply.session_reply.session_id
+        mhdr, mfixed, mdata = self.recv_native_msg()
+        if mhdr[HDR_FIELD_CODE] == MSG_CODE_SESSION_REPLY:
+            logging.debug(
+                "Recv native SESSION-REPLY Message: sess-id %u: fixed: %s: %s",
+                mhdr[HDR_FIELD_SESS_ID],
+                mfixed,
+                mdata,
+            )
         else:
-            self.sess_id = 0
-            mdata, _ = self.get_native_msg_header(MSG_CODE_SESSION_REQ)
-            mdata += struct.pack(MSG_SESSION_REQ_FMT)
-            mdata += "test-client".encode("utf-8") + b"\x00"
-
-            self.send_native_msg(mdata)
-            logging.debug("Sent native SESSION-REQ")
-
-            mhdr, mfixed, mdata = self.recv_native_msg()
-            if mhdr[HDR_FIELD_CODE] == MSG_CODE_SESSION_REPLY:
-                logging.debug("Recv native SESSION-REQ Message: %s: %s", mfixed, mdata)
-            else:
-                raise Exception(f"Recv NON-SESSION-REPLY Message: {mfixed}: {mdata}")
-            assert mfixed[0]
-            self.sess_id = mhdr[HDR_FIELD_SESS_ID]
+            raise Exception(f"Recv NON-SESSION-REPLY Message: {mfixed}: {mdata}")
+        assert mfixed[0]
+        self.sess_id = mhdr[HDR_FIELD_SESS_ID]
 
     def close(self, clean=True):
+        """Close the session."""
         if clean:
-            req = mgmt_pb2.FeMessage()
-            req.session_req.create = 0
-            req.session_req.sess_id = self.sess_id
-            self.send_pb_msg(req)
+            # sending session_req with a non-zero session ID destroys the session.
+            mdata, _ = self.get_native_msg_header(MSG_CODE_SESSION_REQ)
+            mdata += struct.pack(MSG_SESSION_REQ_FMT, MSG_FORMAT_JSON)
+            self.send_native_msg(mdata)
+            logging.debug("Sent native SESSION-REQ (destroy)")
         self.sock.close()
         self.sock = None
 
     def get_next_req_id(self):
+        """Generate the next request ID for a new session."""
         req_id = self.next_req_id
         self.next_req_id += 1
         return req_id
-
-    # --------------------------
-    # Protobuf message functions
-    # --------------------------
-
-    def recv_pb_msg(self, msg):
-        """Receive a protobuf message."""
-        mdata, native = recv_msg(self.sock)
-        assert not native
-
-        msg.ParseFromString(mdata)
-
-        req = getattr(msg, msg.WhichOneof("message"))
-        if req.HasField("success"):
-            if not req.success:
-                raise PBMessageError(msg, req.error_if_any)
-
-        return msg
-
-    def send_pb_msg(self, msg):
-        """Send a protobuf message."""
-        mdata = msg.SerializeToString()
-        return send_msg(self.sock, MGMT_MSG_MARKER_PROTOBUF, mdata)
 
     # ------------------------
     # Native message functions
@@ -301,10 +302,11 @@ class Session:
         return mhdr, mfixed, mdata
 
     def send_native_msg(self, mdata):
-        """Send a native message."""
+        """Send a native message to the mgmtd server."""
         return send_msg(self.sock, MGMT_MSG_MARKER_NATIVE, mdata)
 
     def get_native_msg_header(self, msg_code):
+        """Generate a native message header for a given message code."""
         req_id = self.get_next_req_id()
         hdata = struct.pack(MSG_HDR_FMT, msg_code, 0, self.sess_id, req_id)
         return hdata, req_id
@@ -313,21 +315,54 @@ class Session:
     # Front-end API Fountains
     # -----------------------
 
-    def lock(self, lock=True, ds_id=mgmt_pb2.CANDIDATE_DS):
-        req = mgmt_pb2.FeMessage()
-        req.lockds_req.session_id = self.sess_id
-        req.lockds_req.req_id = self.get_next_req_id()
-        req.lockds_req.ds_id = ds_id
-        req.lockds_req.lock = lock
-        self.send_pb_msg(req)
-        logging.debug("Sent LockDsReq: %s", req)
+    def lock(self, lock=True, ds_id=CANDIDATE_DS):
+        """Lock or unlock a datastore.
 
-        reply = self.recv_pb_msg(mgmt_pb2.FeMessage())
-        logging.debug("Received Reply: %s", repr(reply))
-        assert reply.lockds_reply.success
+        Args:
+            lock (bool, optional): Whether to lock (True) or unlock (False) the
+                                   datastore. Defaults to True.
+            ds_id (int, optional): The datastore ID. Defaults to CANDIDATE_DS.
+
+        Returns:
+            None
+
+        Raises:
+            AssertionError: If the lock request fails.
+        """
+        mdata, _ = self.get_native_msg_header(MSG_CODE_LOCK)
+        mdata += struct.pack(MSG_LOCK_FMT, ds_id, lock)
+        self.send_native_msg(mdata)
+        if lock:
+            logging.debug("Sent LOCK %s message", datastore_name[ds_id])
+        else:
+            logging.debug("Sent UNLOCK %s message", datastore_name[ds_id])
+
+        mhdr, mfixed, _ = self.recv_native_msg()
+        assert mhdr[HDR_FIELD_REQ_ID] == mdata[HDR_FIELD_REQ_ID]
+        assert mhdr[HDR_FIELD_CODE] == MSG_CODE_LOCK_REPLY
+        assert mfixed[LOCK_FIELD_DATASTORE] == ds_id
+        assert mfixed[LOCK_FIELD_LOCK] == lock
+        logging.debug(
+            "Received LOCK reply, %s is %s",
+            datastore_name[ds_id],
+            "locked" if lock else "unlocked",
+        )
 
     def get_data(self, query, data=True, config=False):
-        # Create the message
+        """Retrieve data from the mgmtd server based on an XPath query.
+
+        Args:
+            query (str): The XPath query string.
+            data (bool, optional): Whether to retrieve state data. Defaults to True.
+            config (bool, optional): Whether to retrieve configuration data.
+                                     Defaults to False.
+
+        Returns:
+            str: The retrieved data in JSON format.
+
+        Raises:
+            AssertionError: If the response data is not properly formatted.
+        """
         mdata, _ = self.get_native_msg_header(MSG_CODE_GET_DATA)
         flags = GET_DATA_FLAG_STATE if data else 0
         flags |= GET_DATA_FLAG_CONFIG if config else 0
@@ -345,7 +380,12 @@ class Session:
         return result
 
     def add_notify_select(self, replace, notif_xpaths):
-        # Create the message
+        """Send a request to add notification subscriptions to the given XPaths.
+
+        Args:
+            replace (bool): Whether to replace existing notification subscriptions.
+            notif_xpaths (list of str): List of XPaths to subscribe to notifications on.
+        """
         mdata, _ = self.get_native_msg_header(MSG_CODE_NOTIFY_SELECT)
         mdata += struct.pack(MSG_NOTIFY_SELECT_FMT, replace)
 
@@ -356,6 +396,18 @@ class Session:
         logging.debug("Sent NOTIFY_SELECT")
 
     def recv_notify(self, xpaths=None):
+        """Receive a notification message, optionally setting up XPath filters first.
+
+        Args:
+            xpaths (list of str, optional): List of XPaths to filter notifications.
+
+        Returns:
+            tuple: (result_type, operation, xpath, message data)
+
+        Raises:
+            TimeoutError: If no notification is received within the timeout period.
+            Exception: If a non-notification message is received.
+        """
         if xpaths:
             self.add_notify_select(True, xpaths)
 
@@ -379,6 +431,7 @@ class Session:
 
 
 def __parse_args():
+    """Parse command-line arguments for the mgmtd client."""
     MPATH = "/var/run/frr/mgmtd_fe.sock"
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -403,9 +456,6 @@ def __parse_args():
         "-q", "--query", nargs="+", metavar="XPATH", help="xpath[s] to query"
     )
     parser.add_argument("-s", "--server", default=MPATH, help="path to server socket")
-    parser.add_argument(
-        "--use-protobuf", action="store_true", help="Use protobuf when there's a choice"
-    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose")
     args = parser.parse_args()
 
@@ -416,6 +466,14 @@ def __parse_args():
 
 
 def __server_connect(spath):
+    """Establish a connection to the mgmtd server over a Unix socket.
+
+    Args:
+        spath (str): Path to the Unix domain socket.
+
+    Returns:
+        socket: A connected Unix socket.
+    """
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     logging.debug("Connecting to server on %s", spath)
     while ec := sock.connect_ex(str(spath)):
@@ -428,9 +486,10 @@ def __server_connect(spath):
 
 
 def __main():
+    """Process client commands and handle queries or notifications."""
     args = __parse_args()
     sock = __server_connect(Path(args.server))
-    sess = Session(sock, use_protobuf=args.use_protobuf)
+    sess = Session(sock)
 
     if args.query:
         # Performa an xpath query
@@ -469,10 +528,17 @@ def __main():
             elif op == NOTIFY_OP_DELETE:
                 print(f"#OP=DELETE: {xpath}")
                 assert len(notif) == 0
+            elif op == NOTIFY_OP_GET_SYNC:
+                print(f"#OP=SYNC: {xpath}")
+                print(notif)
+            else:
+                logging.error("Unknown notification OP: %s", op)
+                sys.exit(1)
             i -= 1
 
 
 def main():
+    """Entry point for the mgmtd client application."""
     try:
         __main()
     except KeyboardInterrupt:
