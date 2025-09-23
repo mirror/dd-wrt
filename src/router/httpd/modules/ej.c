@@ -45,7 +45,8 @@
 static char *get_arg(char *args, char **next);
 static void call(char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
-
+#define ISSPACE(p) p == 0x20
+ 
 static char *uqstrchr(char *buf, char find)
 {
 	int q = 0;
@@ -87,9 +88,9 @@ static char *get_arg(char *args, char **next)
 		*next = end + 1;
 
 	/* Skip whitespace and quotation marks on either end of arg */
-	for (arg = args; isspace((int)*arg) || *arg == '"'; arg++)
+	for (arg = args; ISSPACE(*arg) || *arg == '"'; arg++)
 		;
-	for (*end-- = '\0'; isspace((int)*end) || *end == '"'; end--)
+	for (*end-- = '\0'; ISSPACE(*end) || *end == '"'; end--)
 		*end = '\0';
 
 	return arg;
@@ -246,7 +247,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len]; func = end) {
 					/* Skip initial whitespace */
-					for (; isspace((int)*func); func++)
+					for (; ISSPACE(*func); func++)
 						;
 					if (!(end = uqstrchr(func, ';')))
 						break;
@@ -323,7 +324,7 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len]; func = end) {
 					/* Skip initial whitespace */
-					for (; isspace((int)*func); func++)
+					for (; ISSPACE(*func); func++)
 						;
 					if (!(end = uqstrchr(func, ';')))
 						break;
