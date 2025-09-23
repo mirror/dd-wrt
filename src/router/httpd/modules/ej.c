@@ -43,7 +43,7 @@
 #define cdebug(a)
 #endif
 static char *get_arg(char *args, char **next);
-static void *call(void *handle, char *func, webs_t stream);
+static void call(char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
 static char *uqstrchr(char *buf, char find)
@@ -95,10 +95,10 @@ static char *get_arg(char *args, char **next)
 	return arg;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **argv);
+static void call_ej(char *name, webs_t wp, int argc, char_t **argv);
 
-static void *call(void *handle, char *func,
-		  webs_t stream) //jimmy, https, 8/4/2003
+static void call(char *func,
+		 webs_t stream) //jimmy, https, 8/4/2003
 {
 	char *args, *end, *next;
 	int argc;
@@ -106,7 +106,7 @@ static void *call(void *handle, char *func,
 
 	/* Parse out ( args ) */
 	if (!(args = strchr(func, '(')) || !(end = uqstrchr(func, ')')))
-		return handle;
+		return;
 	*args++ = *end = '\0';
 
 	/* Set up argv list */
@@ -116,7 +116,7 @@ static void *call(void *handle, char *func,
 	}
 
 	/* Call handler */
-	return call_ej(func, handle, stream, argc, argv);
+	call_ej(func, stream, argc, argv);
 }
 
 size_t websWrite(webs_t wp, char *fmt, ...);
@@ -198,15 +198,14 @@ static int file_get(webs_t wp)
 #endif
 int wfputs(char *buf, webs_t fp);
 
-static void *global_handle = NULL;
 static void do_ej_s(int (*get)(webs_t wp),
 		    webs_t stream) // jimmy, https, 8/4/2003
 {
 	int c = 0, ret = 0;
-	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
+	char *asp = NULL, *func = NULL, *end = NULL;
+	char pattern[PATTERN_BUFFER + 1];
 	int len = 0;
 	memdebug_enter();
-	pattern = (char *)safe_malloc(PATTERN_BUFFER + 1);
 	while ((c = get(stream)) != EOF) {
 		/* Add to pattern space */
 		pattern[len++] = c;
@@ -255,7 +254,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 					/* Call function */
 					webs clone;
 					memcpy(&clone, stream, sizeof(webs));
-					global_handle = call(global_handle, func, &clone);
+					call(func, &clone);
 					// restore pointers
 				}
 				asp = NULL;
@@ -272,12 +271,83 @@ release:
 	if (len)
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 
-#ifndef MEMLEAK_OVERRIDE
-	if (global_handle)
-		dlclose(global_handle);
-	global_handle = NULL;
-#endif
-	debug_free(pattern);
+	memdebug_leave();
+}
+
+static void do_ej_s_buffer(char *src, size_t srclen,
+			   webs_t stream) // jimmy, https, 8/4/2003
+{
+	int c = 0, ret = 0;
+	char *asp = NULL, *func = NULL, *end = NULL;
+	char pattern[PATTERN_BUFFER + 1];
+	int len = 0;
+	size_t cnt = 0;
+	memdebug_enter();
+	while (cnt < srclen) {
+		/* Add to pattern space */
+		pattern[len++] = src[cnt++];
+		pattern[len] = '\0';
+		if (len == (PATTERN_BUFFER - 1))
+			goto release;
+
+		if (!asp) {
+			char pat = pattern[0];
+			if (pat == '{') {
+				ret = decompress(stream, pattern, len, ret);
+				if (ret) {
+					if (len == 3) {
+						len = 0;
+					}
+					continue;
+				}
+			}
+			/* Look for <% ... */
+			if (pat == 0x3c) {
+				if (len == 1)
+					continue;
+				if (pattern[1] == 0x25) {
+					asp = pattern + 2;
+					continue;
+				}
+			}
+			pat = pattern[len - 1];
+			if (pat == '{' || pat == 0x3c) {
+				pattern[len - 1] = '\0';
+				wfputs(pattern,
+				       stream); //jimmy, https, 8/4/2003
+				pattern[0] = pat;
+				len = 1;
+			}
+			continue;
+		} else {
+			if (unqstrstr(asp, "%>")) {
+				for (func = asp; func < &pattern[len]; func = end) {
+					/* Skip initial whitespace */
+					for (; isspace((int)*func); func++)
+						;
+					if (!(end = uqstrchr(func, ';')))
+						break;
+					*end++ = '\0';
+					/* Call function */
+					webs clone;
+					memcpy(&clone, stream, sizeof(webs));
+					call(func, &clone);
+					// restore pointers
+				}
+				asp = NULL;
+				len = 0;
+			}
+			continue;
+		}
+
+release:
+		/* Release pattern space */
+		wfputs(pattern, stream); //jimmy, https, 8/4/2003
+		len = 0;
+	}
+	if (len)
+		wfputs(pattern, stream); //jimmy, https, 8/4/2003
+
 	memdebug_leave();
 }
 
@@ -286,7 +356,7 @@ static void do_ej_buffer(char *buffer, webs_t stream)
 	stream->s_filecount = 0;
 	stream->s_filelen = strlen(buffer);
 	stream->s_filebuffer = (unsigned char *)buffer;
-	do_ej_s(&buffer_get, stream);
+	do_ej_s_buffer(buffer, stream->s_filelen, stream);
 }
 
 static void do_ej_file(FILE *fp, int len, webs_t stream)
@@ -302,7 +372,14 @@ static void do_ej_file(FILE *fp, int len, webs_t stream)
 	stream->s_fp = fp;
 	stream->s_filecount = 0;
 	stream->s_filelen = len;
+#ifdef HAVE_OPENSSL
+	char *p = malloc(len);
+	fread(p, 1, len, fp);
+	do_ej_s_buffer(p, len, stream);
+	free(p);
+#else
 	do_ej_s(&file_get, stream);
+#endif
 #endif
 }
 
@@ -327,9 +404,11 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	size_t insensitive_len;
 	int found = 0;
 	int found2 = 0;
-	while (websRomPageIndex[i].path != NULL) {
+	while (websRomPageIndex[i].path != NULL && (!found || !found2)) {
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
-		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
+		int l = strlen(path);
+#define end(ending) (!strcmp(path + l - (sizeof(ending) - 1), ending))
+		if (!found && (end(".asp") || end(".htm") || end(".html"))) {
 			found = !strcasecmp(websRomPageIndex[i].path, path);
 			if (found) {
 				insensitive_len = *len;

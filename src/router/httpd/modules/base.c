@@ -719,7 +719,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 	    *(db->users[radiusindex].user) == 0 || *(db->users[radiusindex].passwd) == 0) {
 		//define username fail
 		char *argv[] = { "freeradius.clientcert" };
-		call_ej("do_pagehead", NULL, wp, 1, argv); // thats dirty
+		call_ej("do_pagehead", wp, 1, argv); // thats dirty
 		websWrite(wp,
 			  "</head>\n"
 			  "<body>\n"
@@ -832,7 +832,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 		     nvram_safe_get("radius_passphrase"));
 	}
 	char *argv[] = { "freeradius.clientcert" };
-	call_ej("do_pagehead", NULL, wp, 1, argv); // thats dirty
+	call_ej("do_pagehead", wp, 1, argv); // thats dirty
 	websWrite(wp,
 		  "</head>\n"
 		  "<body>\n"

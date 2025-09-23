@@ -525,7 +525,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	return handle;
 }
 
-static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **argv)
+static void call_ej(char *name, webs_t wp, int argc, char_t **argv)
 {
 	struct timeval before, after, r;
 
@@ -557,5 +557,4 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **arg
 			dd_logdebug("httpd", " function %s not found (%s)", name, "unknown");
 		}
 	}
-	return handle;
 }
