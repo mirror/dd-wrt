@@ -1,5 +1,5 @@
 /*
- * DD-WRT callvalidate_static.c
+ * DD-WRT callvalidate.c
  *
  * Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
