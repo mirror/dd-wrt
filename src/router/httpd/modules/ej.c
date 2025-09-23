@@ -46,7 +46,7 @@ static char *get_arg(char *args, char **next);
 static void call(char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 #define ISSPACE(p) p == 0x20
- 
+
 static char *uqstrchr(char *buf, char find)
 {
 	int q = 0;
@@ -210,9 +210,12 @@ static void do_ej_s(int (*get)(webs_t wp),
 	while ((c = get(stream)) != EOF) {
 		/* Add to pattern space */
 		pattern[len++] = c;
-		pattern[len] = '\0';
-		if (len == (PATTERN_BUFFER - 1))
-			goto release;
+		if (len == (PATTERN_BUFFER - 1)) {
+			/* Release pattern space */
+			pattern[len] = '\0';
+			wfputs(pattern, stream); //jimmy, https, 8/4/2003
+			len = 0;
+		}
 
 		if (!asp) {
 			char pat = pattern[0];
@@ -242,7 +245,6 @@ static void do_ej_s(int (*get)(webs_t wp),
 				pattern[0] = pat;
 				len = 1;
 			}
-			continue;
 		} else {
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len]; func = end) {
@@ -261,13 +263,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 				asp = NULL;
 				len = 0;
 			}
-			continue;
 		}
-
-release:
-		/* Release pattern space */
-		wfputs(pattern, stream); //jimmy, https, 8/4/2003
-		len = 0;
 	}
 	if (len)
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
@@ -287,9 +283,12 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 	while (cnt < srclen) {
 		/* Add to pattern space */
 		pattern[len++] = src[cnt++];
-		pattern[len] = '\0';
-		if (len == (PATTERN_BUFFER - 1))
-			goto release;
+		if (len == (PATTERN_BUFFER - 1)) {
+			/* Release pattern space */
+			pattern[len] = '\0';
+			wfputs(pattern, stream); //jimmy, https, 8/4/2003
+			len = 0;
+		}
 
 		if (!asp) {
 			char pat = pattern[0];
@@ -319,7 +318,6 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 				pattern[0] = pat;
 				len = 1;
 			}
-			continue;
 		} else {
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len]; func = end) {
@@ -338,13 +336,7 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 				asp = NULL;
 				len = 0;
 			}
-			continue;
 		}
-
-release:
-		/* Release pattern space */
-		wfputs(pattern, stream); //jimmy, https, 8/4/2003
-		len = 0;
 	}
 	if (len)
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
