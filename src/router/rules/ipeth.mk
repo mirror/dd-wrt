@@ -142,5 +142,5 @@ else
 	install -D $(TOP)/ipeth/ipheth-pair/ipheth-pair $(INSTALLDIR)/ipeth/usr/sbin/ipheth-pair
 	install -D $(TOP)/ipeth/ipheth-pair/ipheth-loop $(INSTALLDIR)/ipeth/usr/sbin/ipheth-loop
 
-endif	@true
-	
+endif	
+	@true
