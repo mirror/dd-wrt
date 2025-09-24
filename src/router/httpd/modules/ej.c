@@ -499,3 +499,4 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path,
 
 	memdebug_leave_info(path);
 }
+#pragma GCC reset_options
