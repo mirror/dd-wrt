@@ -269,9 +269,10 @@ release:
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
-	if (len)
+	if (len) {
+		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
-
+	}
 	memdebug_leave();
 }
 
@@ -346,9 +347,10 @@ release:
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
-	if (len)
+	if (len) {
+		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
-
+	}
 	memdebug_leave();
 }
 
