@@ -69,7 +69,7 @@ static inline char *unqstrasp(char *haystack)
 	int q = 0;
 	int haylen = strlen(haystack);
 	char *target = haystack + haylen;
-	for (cur = haystack, q = 0; cur < target && !(!q && cur[0] == '<' && cur[1] == '%'); cur++) {
+	for (cur = haystack, q = 0; cur < target && !(!q && cur[0] == '%' && cur[1] == '>'); cur++) {
 		if (*cur == '"')
 			q ^= 1;
 	}
