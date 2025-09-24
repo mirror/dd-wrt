@@ -48,7 +48,7 @@ static void call(char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 #define ISSPACE(p) p == 0x20
  
-static char *uqstrchr(char *buf, char find)
+static inline char *uqstrchr(char *buf, char find)
 {
 	int q = 0;
 	char val;
@@ -63,16 +63,15 @@ static char *uqstrchr(char *buf, char find)
 }
 
 /* Look for unquoted character within a string */
-static char *unqstrstr(char *haystack, char *needle)
+static inline char *unqstrasp(char *haystack)
 {
 	char *cur;
-	int q;
-	int needlelen = strlen(needle);
+	int q = 0;
 	int haylen = strlen(haystack);
-	char *target = &haystack[haylen];
-	for (cur = haystack, q = 0; cur < target && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
+	char *target = haystack + haylen;
+	for (cur = haystack, q = 0; cur < target && !(!q && cur[0] == '<' && cur[1] == '%'); cur++) {
 		if (*cur == '"')
-			q ? q-- : q++;
+			q ^= 1;
 	}
 	return (cur < target) ? cur : NULL;
 }
@@ -211,7 +210,6 @@ static void do_ej_s(int (*get)(webs_t wp),
 	while ((c = get(stream)) != EOF) {
 		/* Add to pattern space */
 		pattern[len++] = c;
-		pattern[len] = '\0';
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
 
@@ -245,7 +243,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 			}
 			continue;
 		} else {
-			if (unqstrstr(asp, "%>")) {
+			if (unqstrasp(asp)) {
 				for (func = asp; func < &pattern[len]; func = end) {
 					/* Skip initial whitespace */
 					for (; ISSPACE(*func); func++)
@@ -267,6 +265,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 
 release:
 		/* Release pattern space */
+		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
@@ -288,7 +287,6 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 	while (cnt < srclen) {
 		/* Add to pattern space */
 		pattern[len++] = src[cnt++];
-		pattern[len] = '\0';
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
 
@@ -322,7 +320,7 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 			}
 			continue;
 		} else {
-			if (unqstrstr(asp, "%>")) {
+			if (unqstrasp(asp)) {
 				for (func = asp; func < &pattern[len]; func = end) {
 					/* Skip initial whitespace */
 					for (; ISSPACE(*func); func++)
@@ -344,6 +342,7 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 
 release:
 		/* Release pattern space */
+		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
