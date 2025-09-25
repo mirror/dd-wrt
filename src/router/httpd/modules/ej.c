@@ -210,6 +210,7 @@ static void do_ej_s(int (*get)(webs_t wp),
 	while ((c = get(stream)) != EOF) {
 		/* Add to pattern space */
 		pattern[len++] = c;
+		pattern[len] = '\0';
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
 
@@ -265,12 +266,10 @@ static void do_ej_s(int (*get)(webs_t wp),
 
 release:
 		/* Release pattern space */
-		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
 	if (len) {
-		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 	}
 	memdebug_leave();
@@ -288,6 +287,7 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 	while (cnt < srclen) {
 		/* Add to pattern space */
 		pattern[len++] = src[cnt++];
+		pattern[len] = '\0';
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
 
@@ -343,12 +343,10 @@ static void do_ej_s_buffer(char *src, size_t srclen,
 
 release:
 		/* Release pattern space */
-		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 		len = 0;
 	}
 	if (len) {
-		pattern[len] = '\0';
 		wfputs(pattern, stream); //jimmy, https, 8/4/2003
 	}
 	memdebug_leave();
