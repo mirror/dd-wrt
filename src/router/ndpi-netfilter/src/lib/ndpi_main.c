@@ -398,6 +398,8 @@ static void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *
 
   NDPI_LOG_DBG2(ndpi_str, "*** %u (>= %u)-> %u\n",
 		ndpi_proto_id, ndpi_str->num_internal_protocols,
+		user_proto_id);
+
   if(ndpi_proto_id < ndpi_str->num_internal_protocols){
     NDPI_LOG_ERR(ndpi_str, "Something is seriously wrong with new custom protocol %d/%d/%d\n",
                  ndpi_proto_id, user_proto_id, ndpi_str->num_internal_protocols);
@@ -427,6 +429,7 @@ static void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *
 
   ndpi_str->ndpi_to_user_proto_id[idx] = user_proto_id;
 }
+
 
 /* ************************************************************************************* */
 

@@ -1063,12 +1063,6 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ************************************************************ */
 
-int ndpi_stun_cache_enable=
-#ifndef __KERNEL__
-	1;
-#else
-	0;
-#endif
 static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_struct,
                                       struct ndpi_flow_struct *flow)
 {

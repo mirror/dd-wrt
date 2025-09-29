@@ -619,6 +619,14 @@ struct ndpi_detection_module_struct {
 #endif
 # else
 # define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
+# ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#  define NDPI_LOG_ERR(mod, args...)  { (void)mod; printf(args); }
+# else
+#  define NDPI_LOG_ERR(mod, args...)  { (void)mod; /* printf(args); */ }
+# endif
+# define NDPI_LOG_INFO(mod, args...) { (void)mod; /* printf(args); */ }
+# define NDPI_LOG_DBG(mod,  args...) { (void)mod; /* printf(args); */ }
+# define NDPI_LOG_DBG2(mod, args...) { (void)mod; /* printf(args); */ }
 # endif
 #endif /* NDPI_ENABLE_DEBUG_MESSAGES */
 

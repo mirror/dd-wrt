@@ -231,7 +231,7 @@ MODULE_ALIAS("ipt_NDPI");
 #define NDPI_ID 0x44504900ul
 
 /* Start copy from mdpi_main */
-static int dissector_bitmask_is_set(const struct ndpi_dissector_bitmask *b,u_int16_t bit){
+static int ndpi_dissector_bitmask_is_set(const struct ndpi_dissector_bitmask *b,u_int16_t bit){
   u_int16_t i = bit;
   if(bit >= NDPI_MAX_NUM_DISSECTORS) return 0;
   i = bit/(8*sizeof(b->fds[0]));
@@ -239,7 +239,7 @@ static int dissector_bitmask_is_set(const struct ndpi_dissector_bitmask *b,u_int
   return (b->fds[i] & (1ul << bit)) ? 1:0;
 }
 
-static void dissector_bitmask_set(struct ndpi_dissector_bitmask *b, u_int16_t bit)
+static void ndpi_dissector_bitmask_set(struct ndpi_dissector_bitmask *b, u_int16_t bit)
 {
   u_int16_t i = bit;
   if(bit < NDPI_MAX_NUM_DISSECTORS) {
@@ -1030,7 +1030,7 @@ ndpi_enable_protocols (struct ndpi_net *n)
 			if(idx == 0)
 			    pr_err("Cant disable proto %d\n",i);
 			else {
-			    dissector_bitmask_set(&n->dissector_exclude_bitmask,idx);
+			    ndpi_dissector_bitmask_set(&n->dissector_exclude_bitmask,idx);
 			    pr_err("Disable proto %d idx %d\n",i,idx);
 			}
 		    }
@@ -1514,7 +1514,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 				flow->confidence,
 				flow->guessed_protocol_id_by_ip,
 				flow->guessed_protocol_id,
-				dissector_bitmask_is_set(&flow->excluded_dissectors_bitmask,
+				ndpi_dissector_bitmask_is_set(&flow->excluded_dissectors_bitmask,
 					flow->guessed_protocol_id) != 0 ? "excluded":""
 				);
 	if(ct_ndpi->confidence >= NDPI_CONFIDENCE_DPI_CACHE) return 0;
@@ -1522,7 +1522,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 	if(proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) return 0;
 
 	if(flow->guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN &&
-	   dissector_bitmask_is_set(&flow->excluded_dissectors_bitmask,
+	   ndpi_dissector_bitmask_is_set(&flow->excluded_dissectors_bitmask,
 						flow->guessed_protocol_id) == 0) {
 		proto->proto.app_protocol = flow->guessed_protocol_id;
 		if(_DBG_TRACE_GUESSED)
@@ -2116,6 +2116,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 		struct ndpi_dissector_bitmask *ed;
 		struct ndpi_net *n = ndpi_pernet(par->net);
 		struct ndpi_detection_module_struct *ndpi_struct = n->ndpi_struct;
+		int proto;
 		if(info->empty) {
 		    pr_info("Missing protocols.\n");
 		    return -EINVAL;
@@ -2126,7 +2127,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 		    return -EINVAL;
 		}
 		// convert proto_id to dissector_idx
-		for(int proto=1; proto < NDPI_MAX_NUM_STATIC_BITMAP; proto++) {
+		for(proto=1; proto < NDPI_MAX_NUM_STATIC_BITMAP; proto++) {
 		    if(!ndpi_is_valid_protoId(n->ndpi_struct,proto)) {
 			//pr_info("Invalid protocol_id %d\n",proto);
 			//ndpi_free(ed);
@@ -2136,7 +2137,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 		    if(NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags,proto)) {
 			int idx = ndpi_struct->proto_defaults[proto].dissector_idx;
 			if(ndpi_struct->proto_defaults[proto].haveDissector)
-				dissector_bitmask_set(ed,idx);
+				ndpi_dissector_bitmask_set(ed,idx);
 			   else {
 				pr_info("Non-dpi protocol_id %d\n",proto);
 				ndpi_free(ed);
@@ -3279,7 +3280,7 @@ static int __net_init ndpi_net_init(struct net *net)
 	for (i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 		if(ndpi_is_valid_protoId(n->ndpi_struct,i) &&
 		   n->ndpi_struct->proto_defaults[i].haveDissector)
-		      dissector_bitmask_set(&n->protocols_dissector_all,i);
+		      ndpi_dissector_bitmask_set(&n->protocols_dissector_all,i);
         }
 
 
@@ -3738,5 +3739,6 @@ MODULE_INFO(livepatch, "Y");
 #include "ndpi_proc_hostdef.c"
 #include "ndpi_proc_ipdef.c"
 #include "ndpi_proc_magic_ct.c"
+#include "ndpi_static_bitmap.c"
 #include "../libre/regexp.c"
 #include "../../src/lib/ndpi_main.c"

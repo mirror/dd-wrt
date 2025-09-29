@@ -200,13 +200,13 @@ ssize_t nann_proc_read(struct file *file, char __user *buf,
  *
  */
 
-static int dissector_bitmask_is_set(struct ndpi_dissector_bitmask *b, u_int16_t bit)
+static int proc_dissector_bitmask_is_set(struct ndpi_dissector_bitmask *b, u_int16_t bit)
 {
   return bit < NDPI_MAX_NUM_DISSECTORS ?  (b->fds[bit / 32]) & (1ul << (bit % 32)) : 0;
 }
 
 static char *protocol_have_dissector(struct ndpi_net *n,int proto) {
-	return dissector_bitmask_is_set(&n->protocols_dissector_all,proto) ? " dpi":"";
+	return proc_dissector_bitmask_is_set(&n->protocols_dissector_all,proto) ? " dpi":"";
 }
 
 ssize_t nproto_proc_read(struct file *file, char __user *buf,
