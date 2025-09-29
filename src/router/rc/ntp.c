@@ -55,42 +55,50 @@ extern void dd_timer_cancel(timer_t timerid);
 struct syncservice {
 	char *nvram;
 	char *service;
+	int restarted;
 };
 
 static struct syncservice service[] = {
-	{ "cron_enable", "cron" },
+	{ "cron_enable", "cron", 0 },
 #ifdef HAVE_SNMP
-	{ "snmpd_enable", "snmp" },
+	{ "snmpd_enable", "snmp", 0 },
 #endif
 #ifdef HAVE_CHILLI
-	{ "chilli_enable", "chilli" },
-	{ "hotss_enable", "chilli" },
+	{ "chilli_enable", "chilli", 0 },
+	{ "hotss_enable", "chilli", 0 },
 #endif
 #ifdef HAVE_WIFIDOG
-	{ "wd_enable", "wifidog" },
+	{ "wd_enable", "wifidog", 0 },
 #endif
 #ifdef HAVE_UNBOUND
-	{ "recursive_dns", "unbound" },
+	{ "recursive_dns", "unbound", 0 },
 #endif
 #ifdef HAVE_DNSCRYPT
-	{ "dns_crypt", "dnsmasq" },
+	{ "dns_crypt", "dnsmasq", 0 },
+#endif
+#ifdef HAVE_DNSSEC
+	{ "dnssec_cu", "dnsmasq", 0 },
 #endif
 #ifdef HAVE_TOR
-	{ "tor_enable", "tor" },
+	{ "tor_enable", "tor", 0 },
 #endif
 #ifdef HAVE_IPTOOLS
-	{ NULL, "arpd" },
+	{ NULL, "arpd", 0 },
 #endif
-	{ NULL, "process_monitor" },
+	{ NULL, "process_monitor", 0 },
 };
 
 static void sync_daemons(void)
 {
 	int i;
 	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
-		if (service[i].nvram == NULL || nvram_matchi(service[i].nvram, 1)) {
+		service[i].restarted = 0;
+	}
+	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
+		if (!service[i].restarted && service[i].nvram == NULL || nvram_matchi(service[i].nvram, 1)) {
+			service[i].restarted = 1;
 			dd_logdebug("ntp", "Restarting %s (time sync change)\n", service[i].service);
-			eval("service", service[i].service, "restart");
+			eval("service", service[i].service, "restart", "cold");
 		}
 	}
 }
