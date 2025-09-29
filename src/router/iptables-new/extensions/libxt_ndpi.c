@@ -167,8 +167,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"armagetron",
 	"crossfire",
 	"dofus",
-	"ads_analytics_track",
-	"adult_content",
+	"blacknut",
+	"boosteroid",
 	"guildwars2",
 	"amazonalexa",
 	"kerberos",
@@ -506,12 +506,18 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"rutube",
 	"lagofast",
 	"gearup_booster",
-	"llm",
+	"rumble",
 	"ubiquiti",
 	"msdo",
 	"rockstar_games",
 	"kick",
 	"hamachi",
+	"glbp",
+	"easyweather",
+	"mudfish",
+	"tristation",
+	"samsung_sdp",
+	"matter",
 	NULL,
 };
 
@@ -532,8 +538,7 @@ enum ndpi_opt_index {
 	NDPI_OPT_HMASTER,
 	NDPI_OPT_HOST,
 	NDPI_OPT_INPROGRESS,
-	NDPI_OPT_JA3S,
-	NDPI_OPT_JA3C,
+	NDPI_OPT_JA4C,
 	NDPI_OPT_TLSFP,
 	NDPI_OPT_TLSV,
 	NDPI_OPT_UNTRACKED,
@@ -550,8 +555,7 @@ enum ndpi_opt_index {
 #define FLAGS_HOST 0x20
 #define FLAGS_INPROGRESS 0x40
 #define FLAGS_PROTO 0x80
-#define FLAGS_JA3S 0x100
-#define FLAGS_JA3C 0x200
+#define FLAGS_JA4C 0x100
 #define FLAGS_TLSFP 0x400
 #define FLAGS_TLSV 0x800
 #define FLAGS_UNTRACKED 0x1000
@@ -724,10 +728,8 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 	printf(" %s",csave);
 	if(info->inprogress) {
 	  printf("inprogress");
-	} else if(info->ja3s) {
-	  printf("ja3s");
-	} else if(info->ja3c) {
-	  printf("ja3c");
+	} else if(info->ja4c) {
+	  printf("ja4c");
 	} else if(info->tlsfp) {
 	  printf("tlsfp");
 	} else if(info->tlsv) {
@@ -927,7 +929,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_PROTO || c == NDPI_OPT_INPROGRESS ||
-	   c == NDPI_OPT_JA3S  || c == NDPI_OPT_JA3C ||
+	   c == NDPI_OPT_JA4C ||
 	   c == NDPI_OPT_TLSFP || c == NDPI_OPT_TLSV) {
 		char *np = optarg,*n;
 		int num;
@@ -971,8 +973,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			np = NULL;
 		}
 		if(c == NDPI_OPT_PROTO) { *flags |= FLAGS_PROTO; info->proto = 1; }
-		if(c == NDPI_OPT_JA3S)  { *flags |= FLAGS_JA3S;  info->ja3s = 1; }
-		if(c == NDPI_OPT_JA3C)  { *flags |= FLAGS_JA3C;  info->ja3c = 1; }
+		if(c == NDPI_OPT_JA4C)  { *flags |= FLAGS_JA4C;  info->ja4c = 1; }
 		if(c == NDPI_OPT_TLSFP) { *flags |= FLAGS_TLSFP; info->tlsfp = 1; }
 		if(c == NDPI_OPT_TLSV)  { *flags |= FLAGS_TLSV;  info->tlsv = 1; }
 		if(c == NDPI_OPT_INPROGRESS ) { *flags |= FLAGS_INPROGRESS;
@@ -1038,19 +1039,18 @@ ndpi_mt_check (unsigned int flags)
 		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to specify at least one protocol");
 	}
 
-	if (flags & (FLAGS_PROTO|FLAGS_JA3S|FLAGS_JA3C|FLAGS_TLSFP|FLAGS_TLSV|FLAGS_INPROGRESS)) {
+	if (flags & (FLAGS_PROTO|FLAGS_JA4C|FLAGS_TLSFP|FLAGS_TLSV|FLAGS_INPROGRESS)) {
 	    if(!(flags & FLAGS_HPROTO))
 		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to specify at least one protocol");
 	}
 	if(flags & FLAGS_PROTO) nopt++;
-	if(flags & FLAGS_JA3S)  nopt++;
-	if(flags & FLAGS_JA3C)  nopt++;
+	if(flags & FLAGS_JA4C)  nopt++;
 	if(flags & FLAGS_TLSFP) nopt++;
 	if(flags & FLAGS_TLSV)  nopt++;
 	if(flags & FLAGS_RISK)  nopt++;
 	if(flags & FLAGS_INPROGRESS) nopt++;
 	if(nopt != 1)
-		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja3s|--ja3c|--tlsfp|--risk|--tlsv|--inprogress %x %d",flags,nopt);
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja4c|--tlsfp|--risk|--tlsv|--inprogress %x %d",flags,nopt);
 }
 
 static int cmp_pname(const void *p1, const void *p2) {
@@ -1123,8 +1123,7 @@ ndpi_mt_help(void)
 		"  --proto protocols      Match if protocols detected\n"
 		"                         (list of protocols comma separated)\n"
 		"  --inprogress protocols Match if protocols detection is not finished yet\n"
-		"  --ja3s protocols       Match ja3 server hash (user defined protocols)\n"
-		"  --ja3c protocols       Match ja3 client hash (user defined protocols)\n"
+		"  --ja4c protocols       Match ja4 client hash (user defined protocols)\n"
 		"  --tlsfp protocols      Match tls fingerprint (user defined protocols)\n"
 		"  --tlsv  protocols      Match tls version (user defined protocols)\n"
 		"Special protocol names:\n"
@@ -1394,8 +1393,7 @@ void _init(void)
 	MT_OPT(NDPI_OPT_HMASTER,"have-master",0)
 	MT_OPT(NDPI_OPT_HOST,"host",1)
 	MT_OPT(NDPI_OPT_INPROGRESS,"inprogress",1)
-	MT_OPT(NDPI_OPT_JA3S,"ja3s",1)
-	MT_OPT(NDPI_OPT_JA3C,"ja3c",1)
+	MT_OPT(NDPI_OPT_JA4C,"ja4c",1)
 	MT_OPT(NDPI_OPT_TLSFP,"tlsfp",1)
 	MT_OPT(NDPI_OPT_TLSV,"tlsv",1)
 	MT_OPT(NDPI_OPT_UNTRACKED,"untracked",0)
