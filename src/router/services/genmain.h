@@ -131,10 +131,10 @@ static int service_main(int argc, char *argv[])
 	if (argc < 2 || (strcmp(argv[1], "shutdown") && argc < 3)) {
 		fprintf(stdout, "%s servicename start|stop|restart|shutdown|main args... [-f]\n", argv[0]);
 		fprintf(stdout, "commands:\n");
-		fprintf(stdout, "start    : starts a registered service\n");
-		fprintf(stdout, "stop     : stops a registered service\n");
-		fprintf(stdout, "restart  : stops a registered service\n");
-		fprintf(stdout, "shutdown : shutdown all service\n\n");
+		fprintf(stdout, "start          : starts a registered service\n");
+		fprintf(stdout, "stop           : stops a registered service\n");
+		fprintf(stdout, "restart [cold] : stops a registered service\n");
+		fprintf(stdout, "shutdown       : shutdown all service\n\n");
 		fprintf(stdout, "options:\n");
 		fprintf(stdout, "-f : force start of service, no matter if neccessary\n");
 		fprintf(stdout, "List of services:\n");
@@ -224,6 +224,8 @@ static int service_main(int argc, char *argv[])
 					return 0;
 				}
 				if (!strcmp(argv[2], "restart") && ((stop && start) || restart)) {
+					if (argc > 3 && !strcmp(argv[3], "cold"))
+						restart = 0;
 					dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[1]);
 					if (restart)
 						restart();
