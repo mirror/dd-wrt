@@ -12,9 +12,9 @@ struct ndpi_static_bitmask {
   u_int32_t fds[NDPI_NUM_FDS_STATIC];
 };
 
-int NDPI_BITMASK_IS_EMPTY(const struct ndpi_static_bitmask *a);
-int NDPI_COMPARE_PROTOCOL_TO_BITMASK(const struct ndpi_static_bitmask *a,u_int16_t val);
-void NDPI_ADD_PROTOCOL_TO_BITMASK(struct ndpi_static_bitmask *a,u_int16_t val);
-void NDPI_DEL_PROTOCOL_FROM_BITMASK(struct ndpi_static_bitmask *a,u_int16_t val);
+static int NDPI_BITMASK_IS_EMPTY(const struct ndpi_static_bitmask *a);
+static int NDPI_COMPARE_PROTOCOL_TO_BITMASK(const struct ndpi_static_bitmask *a,u_int16_t val);
+static void NDPI_ADD_PROTOCOL_TO_BITMASK(struct ndpi_static_bitmask *a,u_int16_t val);
+static void NDPI_DEL_PROTOCOL_FROM_BITMASK(struct ndpi_static_bitmask *a,u_int16_t val);
 
 #endif

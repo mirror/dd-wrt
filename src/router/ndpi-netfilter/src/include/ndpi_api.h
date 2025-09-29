@@ -1014,7 +1014,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC bool ndpi_stack_is_tls_like(struct ndpi_proto_stack *s);
   NDPI_STATIC bool ndpi_stack_is_http_like(struct ndpi_proto_stack *s);
 
-  char *ndpi_stack2str(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC char *ndpi_stack2str(struct ndpi_detection_module_struct *ndpi_str,
                        struct ndpi_proto_stack *stack, char *buf, u_int buf_len);
 
   NDPI_STATIC ndpi_proto_defaults_t* ndpi_get_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod);
@@ -2017,6 +2017,8 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 
   NDPI_STATIC char* ndpi_get_flow_name(struct ndpi_flow_struct *flow);
 
+  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int32_t value);
+
   /* ******************************* */
 
 #ifndef __KERNEL__
@@ -2441,7 +2443,7 @@ NDPI_STATIC u_char* ndpi_str_to_utf8(u_char *in, u_int in_len, u_char *out, u_in
    */
 NDPI_STATIC int ndpi_memcasecmp(const void *s1, const void *s2, size_t n);
 
-extern ndpi_protocol_match *host_all_match_str[8];
+//extern ndpi_protocol_match *host_all_match_str[8];
 
 NDPI_STATIC  int ndpi_bitmask_alloc(struct ndpi_bitmask *b, u_int16_t max_bits);
 NDPI_STATIC  void ndpi_bitmask_free(struct ndpi_bitmask *b);

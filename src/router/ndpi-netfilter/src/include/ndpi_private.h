@@ -857,7 +857,7 @@ NDPI_STATIC int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
 NDPI_STATIC u_int64_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
 
 /* nDPI fingerprint */
-char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
+NDPI_STATIC char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
 
 /* Protocols init */
 NDPI_STATIC void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct);

@@ -1050,7 +1050,7 @@ static void init_app_protocol(struct ndpi_detection_module_struct *ndpi_str,
 
 /* ******************************************************************** */
 
-void load_protocol_match(struct ndpi_detection_module_struct *ndpi_str,
+static void load_protocol_match(struct ndpi_detection_module_struct *ndpi_str,
                          ndpi_protocol_match const * const match) {
 
   if(!is_proto_enabled(ndpi_str, match->protocol_id)) {
@@ -1132,7 +1132,7 @@ unsigned int i,j,c;
 
 /* ******************************************************************** */
 
-ndpi_protocol_match *host_all_match_str[8] = {
+static ndpi_protocol_match *host_all_match_str[8] = {
 	&host_match[0],
 	&teams_host_match[0],
 	&outlook_host_match[0],

@@ -982,39 +982,8 @@ static int ndpi_init_host_ac_str(struct ndpi_net *n,ndpi_protocol_match *hm) {
 	return 0;
 }
 
-static int ndpi_init_host_ac(struct ndpi_net *n) {
-	ndpi_protocol_match *hm;
-        int err,nh;
+static int ndpi_init_host_ac(struct ndpi_net *n);
 
-	AC_AUTOMATA_t *automa  = n->ndpi_struct->host_automa.ac_automa;
-	if(automa->automata_open)
-		ac_automata_finalize(automa);
-
-	n->host_ac = ndpi_init_automa_domain();
-	if(!n->host_ac) {
-		pr_err("xt_ndpi: cant alloc host_ac\n");
-		return 0;
-	}
-	ac_automata_feature(n->host_ac,AC_FEATURE_LC);
-	ac_automata_name(n->host_ac,"host",AC_FEATURE_DEBUG);
-	err = 0;
-	for(nh=0; host_all_match_str[nh]; nh++) {
-	    for(hm = host_all_match_str[nh]; hm->string_to_match ; hm++) {
-		err |= ndpi_init_host_ac_str(n,hm);
-		if(err) break;
-	    }
-	}
-	
-	if(!err && str_coll_to_automata(n->ndpi_struct,n->host_ac,n->hosts)) err = 1;
-	if(err) {
-		pr_err("str_coll_to_automata failed\n");
-		return 0;
-	}
-	ac_automata_release(n->ndpi_struct->host_automa.ac_automa,1);
-	n->ndpi_struct->host_automa.ac_automa = n->host_ac;
-	n->host_ac = NULL;
-	return 1;
-}
 static int
 ndpi_enable_protocols (struct ndpi_net *n)
 {
@@ -3742,3 +3711,39 @@ MODULE_INFO(livepatch, "Y");
 #include "ndpi_static_bitmap.c"
 #include "../libre/regexp.c"
 #include "../../src/lib/ndpi_main.c"
+
+
+static int ndpi_init_host_ac(struct ndpi_net *n)
+ {
+	ndpi_protocol_match *hm;
+        int err,nh;
+
+	AC_AUTOMATA_t *automa  = n->ndpi_struct->host_automa.ac_automa;
+	if(automa->automata_open)
+		ac_automata_finalize(automa);
+
+	n->host_ac = ndpi_init_automa_domain();
+	if(!n->host_ac) {
+		pr_err("xt_ndpi: cant alloc host_ac\n");
+		return 0;
+	}
+	ac_automata_feature(n->host_ac,AC_FEATURE_LC);
+	ac_automata_name(n->host_ac,"host",AC_FEATURE_DEBUG);
+	err = 0;
+	for(nh=0; host_all_match_str[nh]; nh++) {
+	    for(hm = host_all_match_str[nh]; hm->string_to_match ; hm++) {
+		err |= ndpi_init_host_ac_str(n,hm);
+		if(err) break;
+	    }
+	}
+	
+	if(!err && str_coll_to_automata(n->ndpi_struct,n->host_ac,n->hosts)) err = 1;
+	if(err) {
+		pr_err("str_coll_to_automata failed\n");
+		return 0;
+	}
+	ac_automata_release(n->ndpi_struct->host_automa.ac_automa,1);
+	n->ndpi_struct->host_automa.ac_automa = n->host_ac;
+	n->host_ac = NULL;
+	return 1;
+}
