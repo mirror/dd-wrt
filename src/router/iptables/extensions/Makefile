@@ -13,10 +13,10 @@ ifneq ($(CONFIG_DIST),"micro-special")
 PF_EXT_SLIB:= CLASSIFY ah connlimit dscp ecn esp iprange length limit multiport physdev realm standard tos  unclean DSCP NOTRACK SAME TARPIT TOS ROUTE connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p ipp2pv2 autofw mac NETMAP recent  connbytes
 endif
 endif
-ifeq ($(CONFIG_OPENDPI),y)
-PF_EXT_SLIB += ndpi
-CFLAGS += -DOPENDPI_NETFILTER_MODULE -I$(TOP)/ndpi-netfilter -I$(TOP)/ndpi-netfilter/src/include -I$(TOP)/ndpi-netfilter/src/lib -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/ndpi-netfilter/libre
-endif
+#ifeq ($(CONFIG_OPENDPI),y)
+#PF_EXT_SLIB += ndpi
+#CFLAGS += -DOPENDPI_NETFILTER_MODULE -I$(TOP)/ndpi-netfilter -I$(TOP)/ndpi-netfilter/src/include -I$(TOP)/ndpi-netfilter/src/lib -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/ndpi-netfilter/libre
+#endif
 ifeq ($(CONFIG_WIREGUARD),y)
 PF_EXT_SLIB += addrtype
 endif
