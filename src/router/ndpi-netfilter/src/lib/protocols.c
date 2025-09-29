@@ -515,3 +515,15 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/hamachi.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/easyweather.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/glbp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/matter.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/mudfish.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/samsung_sdp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/tristation.c"
+#undef NDPI_CURRENT_PROTO
