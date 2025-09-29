@@ -31,9 +31,7 @@ static l7filters filters_list[] = {
 #endif
 	{ "ad-telemetry", FILTER_CUSTOM, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
 	{ "adobe_connect", NDPI_ONLY, 0, NULL },
-	{ "adult_content", NDPI_ONLY, 0, NULL },
 	{ "afp", NDPI_ONLY, 0, NULL },
 #endif
 	{ "aim", L7_ONLY, 0, NULL },
@@ -93,9 +91,11 @@ static l7filters filters_list[] = {
 	{ "bittorrent", PDPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "bjnp", NDPI_ONLY, 0, NULL },
+	{ "blacknut", NDPI_ONLY, 0, NULL },
 	{ "blizzard", NDPI_ONLY, 0, NULL },
 	{ "bloomberg", NDPI_ONLY, 0, NULL },
 	{ "bluesky", NDPI_ONLY, 0, NULL },
+	{ "boosteroid", NDPI_ONLY, 0, NULL },
 	{ "c1222", NDPI_ONLY, 0, NULL },
 	{ "cachefly", NDPI_ONLY, 0, NULL },
 	{ "cactusvpn", NDPI_ONLY, 0, NULL },
@@ -186,6 +186,7 @@ static l7filters filters_list[] = {
 	{ "dropbox", NDPI_ONLY, 0, NULL },
 	{ "dtls", NDPI_ONLY, 0, NULL },
 	{ "eaq", NDPI_ONLY, 0, NULL },
+	{ "easyweather", NDPI_ONLY, 0, NULL },
 	{ "ebay", NDPI_ONLY, 0, NULL },
 	{ "edgecast", NDPI_ONLY, 0, NULL },
 #endif
@@ -248,6 +249,7 @@ static l7filters filters_list[] = {
 #endif
 	{ "gkrellm", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "glbp", NDPI_ONLY, 0, NULL },
 	{ "gmail", NDPI_ONLY, 0, NULL },
 #endif
 	{ "gnucleuslan", L7_ONLY, 0, NULL },
@@ -413,7 +415,6 @@ static l7filters filters_list[] = {
 	{ "liveforspeed", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "livestream", NDPI_ONLY, 0, NULL },
-	{ "llm", NDPI_ONLY, 0, NULL },
 	{ "llmnr", NDPI_ONLY, 0, NULL },
 	{ "lol_wild_rift", NDPI_ONLY, 0, NULL },
 #endif
@@ -424,6 +425,7 @@ static l7filters filters_list[] = {
 	{ "malicious ja3 fingerp.", NDPI_RISK, 28, "tls" },
 	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, "tls" },
 	{ "mastodon", NDPI_ONLY, 0, NULL },
+	{ "matter", NDPI_ONLY, 0, NULL },
 	{ "mdns", NDPI_ONLY, 0, NULL },
 	{ "megaco", NDPI_ONLY, 0, NULL },
 	{ "melsec", NDPI_ONLY, 0, NULL },
@@ -444,6 +446,7 @@ static l7filters filters_list[] = {
 	{ "mongodb", NDPI_ONLY, 0, NULL },
 	{ "mozilla", NDPI_ONLY, 0, NULL },
 	{ "ms_teams_call", NDPI_ONLY, 0, NULL },
+	{ "mudfish", NDPI_ONLY, 0, NULL },
 	{ "mullvad", NDPI_ONLY, 0, NULL },
 	{ "mumble", NDPI_ONLY, 0, NULL },
 	{ "munin", NDPI_ONLY, 0, NULL },
@@ -627,10 +630,14 @@ static l7filters filters_list[] = {
 	{ "rtps", NDPI_ONLY, 0, NULL },
 #endif
 	{ "rtsp", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "rumble", NDPI_ONLY, 0, NULL },
+#endif
 	{ "runesofmagic", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "rutube", L7_ONLY, 0, NULL },
 	{ "rx", NDPI_ONLY, 0, NULL },
+	{ "samsung_sdp", NDPI_ONLY, 0, NULL },
 	{ "s7comm", NDPI_ONLY, 0, NULL },
 	{ "s7comm_plus", NDPI_ONLY, 0, NULL },
 	{ "salesforce", NDPI_ONLY, 0, NULL },
@@ -777,6 +784,7 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "tplink_shp", NDPI_ONLY, 0, NULL },
 	{ "trdp", NDPI_ONLY, 0, NULL },
+	{ "tristation", NDPI_ONLY, 0, NULL },
 	{ "truphone", NDPI_ONLY, 0, NULL },
 #endif
 	{ "tsp", L7_ONLY, 0, NULL },
