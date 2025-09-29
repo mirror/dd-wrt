@@ -1052,6 +1052,12 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dns_redirectdot", 1)) {
 		fprintf(fp, "address=/use-application-dns.net/mask.icloud.com/mask-h2.icloud.com/\n");
 	}
+	add_server(fp, "bind");
+	add_server(fp, "invalid");
+	add_server(fp, "local");
+	add_server(fp, "localhost");
+	add_server(fp, "onion");
+	add_server(fp, "test");
 
 #ifdef HAVE_EOP
 	//egc use ipset from WireGuard
