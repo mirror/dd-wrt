@@ -36,20 +36,12 @@
 #define NDPI_IPTABLES_EXT
 #include "xt_ndpi.h"
 #include "ndpi_config.h"
+#include "ndpi_main.h"
+#include "ndpi_static_bitmap.h"
 
 #include "regexp.c"
+#include "ndpi_static_bitmap.c"
 
-/* copy from ndpi_main.c */
-
-int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
-  int i;
-
-  for(i=0; i<NDPI_NUM_FDS_BITS; i++)
-    if(a.fds_bits[i] != 0)
-      return(0);
-
-  return(1);
-}
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
@@ -59,7 +51,7 @@ int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
 //#error LAST_IMPLEMENTED_PROTOCOL != PROTOCOL_MAXNUM
 //#endif
 
-static char *prot_short_str[NDPI_NUM_BITS] = {
+static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"unknown",
 	"ftp_control",
 	"pop3",
@@ -521,7 +513,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	NULL,
 };
 
-static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
+static char  prot_disabled[NDPI_MAX_NUM_STATIC_BITMAP+1] = { 0, };
 static int risk_index_max = 0;
 static uint64_t risk_map = 0;
 static int risk_init=0;
@@ -567,7 +559,7 @@ enum ndpi_opt_index {
 static void ndpi_mt_init(struct xt_entry_match *match)
 {
 	struct xt_ndpi_mtinfo *info = (void *)match->data;
-	NDPI_BITMASK_RESET(info->flags);
+	memset((char *)info,0,sizeof(struct xt_ndpi_mtinfo));
 }
 static char *_clevel2str[] = {
 	"unknown", "port", "ip", "user",
@@ -684,11 +676,11 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 	const char *csave = save ? "--":"";
         int i,c,l,t;
 
-        for (t = l = c = i = 0; i < NDPI_NUM_BITS; i++) {
+        for (t = l = c = i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 		if (!prot_short_str[i] || prot_disabled[i] || 
 				!strncmp(prot_short_str[i],"badproto_",9)) continue;
 		t++;
-		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
+		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags, i) != 0) {
 			l = i; c++;
 		}
 	}
@@ -742,22 +734,22 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 		return;
 	}
 	if( c == t-1 && 
-	    !NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN) ) { 
+	    !NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags,NDPI_PROTOCOL_UNKNOWN) ) { 
 		printf(" all");
 		return;
 	}
 
 	if(c > t/2 + 1) {
 	    printf(" all");
-	    for (i = 1; i < NDPI_NUM_BITS; i++) {
-                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) == 0)
+	    for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
+                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags, i) == 0)
 			printf(",-%s", prot_short_str[i]);
 	    }
 	    return;
 	}
 	printf(" ");
-        for (l = i = 0; i < NDPI_NUM_BITS; i++) {
-                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0)
+        for (l = i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
+                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags, i) != 0)
 			printf("%s%s",l++ ? ",":"", prot_short_str[i]);
         }
 }
@@ -941,7 +933,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 				op = 0;
 				n++;
 			}
-			for (i = 0; i < NDPI_NUM_BITS; i++) {
+			for (i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 			    if(prot_short_str[i] && !strcasecmp(prot_short_str[i],n)) {
 				    num = i;
 				    break; 
@@ -952,12 +944,12 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 				printf("Unknown proto '%s'\n",n);
 				return false;
 			    }
-			    for (i = 1; i < NDPI_NUM_BITS; i++) {
+			    for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 				if(prot_short_str[i] && strncmp(prot_short_str[i],"badproto_",9) && !prot_disabled[i]) {
 				    if(op)
-					NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
+					NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,i);
 				     else
-					NDPI_DEL_PROTOCOL_FROM_BITMASK(info->flags,i);
+					NDPI_DEL_PROTOCOL_FROM_BITMASK(&info->flags,i);
 				}
 			    }
 			} else {
@@ -966,9 +958,9 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 				return false;
 			    }
 			    if(op)
-				NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,num);
+				NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,num);
 			     else
-				NDPI_DEL_PROTOCOL_FROM_BITMASK(info->flags,num);
+				NDPI_DEL_PROTOCOL_FROM_BITMASK(&info->flags,num);
 			}
 			np = NULL;
 		}
@@ -976,9 +968,11 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		if(c == NDPI_OPT_JA4C)  { *flags |= FLAGS_JA4C;  info->ja4c = 1; }
 		if(c == NDPI_OPT_TLSFP) { *flags |= FLAGS_TLSFP; info->tlsfp = 1; }
 		if(c == NDPI_OPT_TLSV)  { *flags |= FLAGS_TLSV;  info->tlsv = 1; }
-		if(c == NDPI_OPT_INPROGRESS ) { *flags |= FLAGS_INPROGRESS;
-						info->inprogress = 1; }
-		if(NDPI_BITMASK_IS_EMPTY(info->flags)) {
+		if(c == NDPI_OPT_INPROGRESS ) { 
+			*flags |= FLAGS_INPROGRESS;
+			info->inprogress = 1; 
+		}
+		if(NDPI_BITMASK_IS_EMPTY(&info->flags)) {
 			info->empty = 1;
 			*flags &= ~FLAGS_PROTO;
 		} else
@@ -987,15 +981,15 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_UNKNOWN) {
-		NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN);
+		NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,NDPI_PROTOCOL_UNKNOWN);
 		info->proto = 1;
         	*flags |= FLAGS_PROTO | FLAGS_HPROTO;
 		return true;
 	}
 	if(c == NDPI_OPT_ALL) {
-		for (i = 1; i < NDPI_NUM_BITS; i++) {
+		for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 	    	    if(prot_short_str[i] && strncmp(prot_short_str[i],"badproto_",9) && !prot_disabled[i])
-			NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
+			NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,i);
 		}
 		info->proto = 1;
         	*flags |= FLAGS_PROTO | FLAGS_HPROTO | FLAGS_ALL;
@@ -1068,11 +1062,11 @@ static int cmp_pname(const void *p1, const void *p2) {
 static int ndpi_print_prot_list(int cond, char *msg) {
         int i,c,d,l,cp;
 	char line[128];
-	char *pn[NDPI_NUM_BITS+1];
+	char *pn[NDPI_MAX_NUM_STATIC_BITMAP+1];
 
 	bzero((char *)&pn[0],sizeof(pn));
 
-        for (i = 1,d = 0,cp = 0; i < NDPI_NUM_BITS; i++) {
+        for (i = 1,d = 0,cp = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 	    if(!prot_short_str[i] ||
 			  !strncmp(prot_short_str[i],"badproto_",9) ||
 			  !strncmp(prot_short_str[i],"free",4)) continue;
@@ -1087,9 +1081,9 @@ static int ndpi_print_prot_list(int cond, char *msg) {
 	if(!cp) return d;
 	if(msg)
 		puts(msg);
-	qsort(&pn[0],NDPI_NUM_BITS,sizeof(pn[0]),cmp_pname);
+	qsort(&pn[0],NDPI_MAX_NUM_STATIC_BITMAP,sizeof(pn[0]),cmp_pname);
 
-        for (i = 0,c = 0,l=0; i < NDPI_NUM_BITS; i++) {
+        for (i = 0,c = 0,l=0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 	    if(!pn[i]) break;
 	    l += snprintf(&line[l],sizeof(line)-1-l,"%-20s ", pn[i]);
 	    if(!c) printf("  ");

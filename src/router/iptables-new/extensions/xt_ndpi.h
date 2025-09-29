@@ -24,20 +24,17 @@
 #define _LINUX_NETFILTER_XT_NDPI_H 1
 
 #include <linux/netfilter.h>
-#include "ndpi_main.h"
-
-#ifndef NDPI_BITMASK_IS_ZERO
-#define NDPI_BITMASK_IS_ZERO(a) NDPI_BITMASK_IS_EMPTY(a)
-#endif
+#include "ndpi_static_bitmap.h"
 
 struct xt_ndpi_mtinfo {
-        NDPI_PROTOCOL_BITMASK flags;
+        struct ndpi_static_bitmask flags;
+	char	hostname[128];
 	uint64_t    risk;
-	uint32_t    invert:1,error:1,m_proto:1,p_proto:1,have_master:1,
-		    host:1,re:1,empty:1,proto:1,inprogress:1,ja3s:1,ja3c:1,tlsfp:1,tlsv:1,
-		    untracked:1,clevel:4,clevel_op:2;
-	char	hostname[256 - sizeof(NDPI_PROTOCOL_BITMASK) - sizeof(uint32_t)-sizeof(void *)];
+	uint32_t    invert:1,error:1,m_proto:1,p_proto:1,have_master:1,host:1,re:1,empty:1,
+		    proto:1,inprogress:1,tlsfp:1,tlsv:1,ja4c:1,untracked:1,clevel_op:2,
+		    clevel:4;
 	void	*reg_data; // kernel only
+	void	*excluded_dissectors; // kernel only
 };
 
 struct xt_ndpi_tginfo {
