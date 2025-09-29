@@ -45,6 +45,7 @@ typedef struct node_t {
 typedef struct {
   char *string_to_match;
   ndpi_protocol_category_t protocol_category;
+  ndpi_protocol_breed_t protocol_breed;
 } ndpi_category_match;
 
 typedef struct {
@@ -63,12 +64,8 @@ struct call_function_struct {
                                    is (still) for protocol, not for dissector */
 };
 
-struct subprotocol_conf_struct {
-  void (*func) (struct ndpi_detection_module_struct *, char *attr, char *value, int protocol_id);
-};
-
 typedef struct default_ports_tree_node {
-  ndpi_proto_defaults_t *proto;
+  u_int16_t proto_idx;
   u_int8_t customUserProto;
   u_int16_t default_port;
 } default_ports_tree_node_t;
@@ -185,7 +182,7 @@ struct ndpi_global_context {
 
   /* NDPI_PROTOCOL_MSTEAMS */
   struct ndpi_lru_cache *msteams_global_cache;
-  
+
   /* FPC DNS cache */
   struct ndpi_lru_cache *fpc_dns_global_cache;
 
@@ -204,7 +201,16 @@ struct ndpi_global_context {
     NDPI_NATIVE_TCP_FINGERPRINT = 0,
     NDPI_MUONFP_TCP_FINGERPRINT /* https://github.com/sundruid/muonfp */
   } ndpi_tcp_fingerprint_format;
-  
+
+  /*
+    NOTE: keep it in sync with "metadata.ndpi_fingerprint_format"
+    in ndpi_main.c
+   */
+  typedef enum  {
+    NDPI_CLIENT_ONLY_NDPI_FINGERPRINT = 0, /* Default */
+    NDPI_CLIENT_SERVER_NDPI_FINGERPRINT
+  } ndpi_fingerprint_format;
+
 struct ndpi_detection_module_config_struct {
   int max_packets_to_process;
   int direction_detect_enabled;
@@ -230,13 +236,16 @@ struct ndpi_detection_module_config_struct {
   int compute_entropy;
   int address_cache_size;
   int fpc_enabled;
+  int hostname_dns_check_enabled;
   int guess_ip_before_port;
   int use_client_ip_in_guess;
   int use_client_port_in_guess;
   ndpi_tcp_fingerprint_format tcp_fingerprint_format;
   int tcp_fingerprint_enabled;
   int tcp_fingerprint_raw_enabled;
-  
+  int ndpi_fingerprint_enabled;
+  ndpi_fingerprint_format ndpi_fingerprint_format;
+
   char filename_config[CFG_MAX_LEN];
 
   int log_level;
@@ -275,6 +284,8 @@ struct ndpi_detection_module_config_struct {
   int http_host_enabled;
   int http_username_enabled;
   int http_password_enabled;
+  int http_resp_content_type_enabled;
+  int http_resp_server_enabled;
 
   int tls_certificate_expire_in_x_days;
   int tls_app_blocks_tracking_enabled;
@@ -343,12 +354,14 @@ struct ndpi_detection_module_config_struct {
 
   int wireguard_subclassification_by_ip;
 
-  NDPI_PROTOCOL_BITMASK debug_bitmask;
-  NDPI_PROTOCOL_BITMASK ip_list_bitmask;
-  NDPI_PROTOCOL_BITMASK monitoring;
+  struct ndpi_bitmask detection_bitmask;
 
-  NDPI_PROTOCOL_BITMASK flowrisk_bitmask;
-  NDPI_PROTOCOL_BITMASK flowrisk_info_bitmask;
+  struct ndpi_bitmask debug_bitmask;
+  struct ndpi_bitmask ip_list_bitmask;
+  struct ndpi_bitmask monitoring;
+
+  struct ndpi_bitmask flowrisk_bitmask;
+  struct ndpi_bitmask flowrisk_info_bitmask;
 
   int flow_risk_lists_enabled;
   int risk_anonymous_subscriber_list_icloudprivaterelay_enabled;
@@ -357,8 +370,7 @@ struct ndpi_detection_module_config_struct {
 };
 
 struct ndpi_detection_module_struct {
-  NDPI_PROTOCOL_BITMASK detection_bitmask;
-
+//  struct ndpi_bitmask *detection_bitmask;
   u_int32_t ticks_per_second;
   u_int64_t current_ts;
   u_int16_t num_tls_blocks_to_follow;
@@ -394,11 +406,9 @@ struct ndpi_detection_module_struct {
   /* misc parameters */
   u_int32_t tcp_max_retransmission_window_size;
 
-  /* subprotocol registration handler */
-  struct subprotocol_conf_struct subprotocol_conf[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
-
-  u_int ndpi_num_supported_protocols;
-  u_int ndpi_num_custom_protocols;
+  u_int num_supported_protocols;
+  u_int num_custom_protocols;
+  u_int num_internal_protocols;
 
   /* HTTP/DNS/HTTPS/QUIC host matching */
   ndpi_automa host_automa,                     /* Used for DNS/HTTPS */
@@ -468,14 +478,17 @@ struct ndpi_detection_module_struct {
 
   /* NDPI_PROTOCOL_MSTEAMS */
   struct ndpi_lru_cache *msteams_cache;
-  
+
   /* FPC DNS cache */
   struct ndpi_lru_cache *fpc_dns_cache;
 
   /* *** If you add a new LRU cache, please update lru_cache_type above! *** */
 
-  u_int16_t ndpi_to_user_proto_id[NDPI_MAX_NUM_CUSTOM_PROTOCOLS]; /* custom protocolId mapping */
-  ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
+  u_int16_t *ndpi_to_user_proto_id; /* custom protocolId mapping */
+  u_int16_t ndpi_to_user_proto_id_num_allocated;
+
+  ndpi_proto_defaults_t *proto_defaults;
+  u_int16_t proto_defaults_num_allocated;
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
   #include "../../../nDPI-custom/custom_ndpi_typedefs.h"
@@ -504,8 +517,13 @@ struct ndpi_detection_module_struct {
 
   u_int16_t max_payload_track_len;
 
-  ndpi_str_hash *public_domain_suffixes;
+  ndpi_str_hash *public_domain_suffixes, *ja4_custom_protos, *ndpifp_custom_protos;
   struct ndpi_address_cache *address_cache;
+#ifndef __KERNEL__
+  struct {    
+    ndpi_filter *cache, *cache_shadow;
+  } dns_hostname;
+#endif
 };
 
 #ifndef __KERNEL__
@@ -525,6 +543,7 @@ struct ndpi_detection_module_struct {
 #define NDPI_HOSTNAME_NORM_LC 1
 #define NDPI_HOSTNAME_NORM_REPLACE_IC 2
 #define NDPI_HOSTNAME_NORM_STRIP_EOLSP 4
+#define NDPI_HOSTNAME_NORM_STRIP_PORT 8 /* Used only by SSDP, for the time being */
 #define NDPI_HOSTNAME_NORM_ALL (NDPI_HOSTNAME_NORM_LC | NDPI_HOSTNAME_NORM_REPLACE_IC | NDPI_HOSTNAME_NORM_STRIP_EOLSP)
 
 
@@ -588,7 +607,7 @@ struct ndpi_detection_module_struct {
 
 #else /* not defined NDPI_ENABLE_DEBUG_MESSAGES */
 # ifdef WIN32
-/* 
+/*
 *  Already defined in ndpi_define.h
 */
 #ifndef NDPI_LOG_DBG
@@ -653,6 +672,8 @@ struct ndpi_detection_module_struct {
 #define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 #define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 
+NDPI_STATIC int is_proto_enabled(struct ndpi_detection_module_struct *ndpi_str, int protoId);
+NDPI_STATIC int is_flowrisk_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id);
 NDPI_STATIC void register_dissector(char *dissector_name, struct ndpi_detection_module_struct *ndpi_str,
                         void (*func)(struct ndpi_detection_module_struct *,
                                      struct ndpi_flow_struct *flow),
@@ -743,6 +764,18 @@ NDPI_STATIC bool ndpi_cache_address(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC int is_monitoring_enabled(struct ndpi_detection_module_struct *ndpi_str, int protoId);
 NDPI_STATIC int is_flowrisk_info_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id);
 
+NDPI_STATIC void proto_stack_reset(struct ndpi_proto_stack *s);
+
+NDPI_STATIC u_int8_t ndpi_is_valid_protoId(const struct ndpi_detection_module_struct *ndpi_str, u_int16_t protoId);
+
+NDPI_STATIC void ndpi_fill_protocol_category_and_breed(struct ndpi_detection_module_struct *ndpi_struct,
+                                           struct ndpi_flow_struct *flow,
+                                           ndpi_protocol *ret);
+NDPI_STATIC ndpi_protocol_breed_t get_proto_breed(struct ndpi_detection_module_struct *ndpi_str,
+                                      ndpi_master_app_protocol proto);
+NDPI_STATIC ndpi_protocol_category_t get_proto_category(struct ndpi_detection_module_struct *ndpi_str,
+                                            ndpi_master_app_protocol proto);
+
 /* TLS */
 NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow, uint32_t quic_version);
@@ -806,7 +839,7 @@ NDPI_STATIC int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now
 
 NDPI_STATIC int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
             struct ndpi_flow_struct *flow,
-            u_int16_t *app_proto);
+            u_int16_t *app_proto, ndpi_protocol_category_t *category);
 NDPI_STATIC void switch_extra_dissection_to_stun(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, int std_callback);
 
 /* TPKT */
@@ -815,6 +848,8 @@ NDPI_STATIC int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
 /* Mining Protocols (Ethereum, Monero, ...) */
 NDPI_STATIC u_int64_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
 
+/* nDPI fingerprint */
+char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
 
 /* Protocols init */
 NDPI_STATIC void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct);
@@ -1075,6 +1110,12 @@ NDPI_STATIC void init_gearup_booster_dissector(struct ndpi_detection_module_stru
 NDPI_STATIC void init_msdo_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_melsec_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_hamachi_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_glbp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_easyweather_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_mudfish_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_tristation_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_samsung_sdp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_matter_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 
 
 #ifdef CUSTOM_NDPI_PROTOCOLS

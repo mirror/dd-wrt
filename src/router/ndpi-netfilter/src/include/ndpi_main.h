@@ -52,9 +52,6 @@ extern "C" {
   NDPI_STATIC void ndpi_twalk(const void *, void (*)(const void *, ndpi_VISIT, int, void*), void *user_data);
   NDPI_STATIC void ndpi_tdestroy(void *vrootp, void (*freefct)(void *));
 
-  NDPI_STATIC int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b);
-
-
 
 
   NDPI_STATIC u_int16_t ntohs_ndpi_bytestream_to_number(const u_int8_t * str,
@@ -96,22 +93,13 @@ extern "C" {
 					 const u_int8_t ** l4ptr, u_int16_t * l4len,
 					 u_int8_t * nxt_hdr);
   
-  NDPI_STATIC void ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_str,
-			     u_int8_t is_cleartext, u_int8_t is_app_protocol,
-			     ndpi_protocol_breed_t breed,
-			     u_int16_t protoId, char *protoName,
-			     ndpi_protocol_category_t protoCategory,
-			     ndpi_protocol_qoe_category_t qoeCategory,
-			     ndpi_port_range *tcpDefPorts,
-			     ndpi_port_range *udpDefPorts);
-
   NDPI_STATIC void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
                      ndpi_risk_enum r, char *risk_message);
   NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow, ndpi_risk_enum r);
   NDPI_STATIC int ndpi_isset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r);
   NDPI_STATIC int ndpi_is_printable_buffer(u_int8_t const * const buf, size_t len);
   NDPI_STATIC int ndpi_normalize_printable_string(char * const str, size_t len);
-  NDPI_STATIC int ndpi_is_valid_hostname(char * const str, size_t len);
+  NDPI_STATIC bool ndpi_is_valid_hostname(char * const str, size_t len);
 #define NDPI_ENTROPY_PLAINTEXT(entropy) (entropy < 4.941f)
 #define NDPI_ENTROPY_EXECUTABLE(entropy) (entropy >= 4.941f)
 #define NDPI_ENTROPY_EXECUTABLE_PACKED(entropy) (entropy >= 6.677f)

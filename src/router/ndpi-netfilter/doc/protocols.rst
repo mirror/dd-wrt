@@ -924,6 +924,24 @@ Dofus is a tactical MMORPG with turn-based combat.
 References: `Dofus official site: <https://www.dofus.com/>`_
 
 
+.. _Proto_107:
+
+`NDPI_PROTOCOL_BLACKNUT`
+========================
+Blacknut is a cloud gaming platform offering access to a catalog of games streamed over the internet.
+
+References: `Blacknut official site <https://www.blacknut.com/>`_
+
+
+.. _Proto_108:
+
+`NDPI_PROTOCOL_BOOSTEROID`
+==========================
+Boosteroid is a cloud gaming service that enables users to play PC games on various devices via game streaming technology.
+
+References: `Boosteroid official site <https://boosteroid.com/>`_
+
+
 .. _Proto_109:
 
 `NDPI_PROTOCOL_GUILDWARS2`
@@ -3679,11 +3697,11 @@ References: `GearUp Booster official site: <https://www.gearupbooster.com/>`_
 
 .. _Proto_446:
 
-`NDPI_PROTOCOL_LLM`
-===================
-Traffic related to various Large Language Models (ChatGPT, DeepSeek, Gemini, etc.)
+`NDPI_PROTOCOL_RUMBLE`
+======================
+Rumble is a video sharing and streaming platform known for hosting live streams and video content.
 
-References: `OpenAI: <https://openai.com/>`_, `DeepSeek: <https://www.deepseek.com/>`_
+References: `Rumble official site <https://rumble.com/>`_
 
 
 .. _Proto_447:
@@ -3729,3 +3747,54 @@ References: `Kick official site: <https://kick.com/>`_
 LogMeIn Hamachi VPN service (primarily used for gaming and remote access). Unlike anonymity VPNs, Hamachi creates virtual LAN networks between devices.
 
 References: `LogMeIn Hamachi official site: <https://vpn.net/>`_
+
+
+.. _Proto_452:
+
+`NDPI_PROTOCOL_GLBP`
+=====================
+Gateway Load Balancing Protocol (GLBP) - Cisco proprietary protocol that provides first-hop redundancy and load balancing for IPv4 and IPv6 networks.
+
+References: `Cisco GLBP Configuration Guide <https://www.cisco.com/en/US/docs/ios/12_2t/12_2t15/feature/guide/ft_glbp.html>`_
+
+
+.. _Proto_453:
+
+`NDPI_PROTOCOL_EASYWEATHER`
+===========================
+The EasyWeather protocol is a proprietary UDP based protocool used by some weather stations to announce and export weather data over a network.
+
+
+.. _Proto_454:
+
+`NDPI_PROTOCOL_MUDFISH`
+=======================
+Mudfish is a VPN dedicated for games to reduce lag and improve connection quality.
+
+References: `Mudfish official site: <https://mudfish.net/>`_
+
+
+.. _Proto_455:
+
+`NDPI_PROTOCOL_TRISTATION`
+==========================
+Proprietary, industrial grade, Safety Instrumented Systems (SIS) protocol for safety-shutdown technologies.
+
+References: `Triconex Honeypot: https://github.com/NozomiNetworks/tricotools`_
+
+
+.. _Proto_456:
+
+`NDPI_PROTOCOL_SAMSUNG_SDP`
+===========================
+Proprietary service discovery protocol used by Samsung devices i.e. TVs, Soundbars or Smartphones.
+
+
+.. _Proto_457:
+
+`NDPI_PROTOCOL_MATTER`
+======================
+Matter is an open-source, royalty-free connectivity standard for smart home devices.  
+It is designed to improve interoperability between IoT ecosystems, enabling secure and reliable communication primarily over IPv6 using UDP.
+
+References: `Matter official site <https://csa-iot.org/all-solutions/matter/>`_

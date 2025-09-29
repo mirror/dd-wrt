@@ -3,13 +3,15 @@
 
 /* simple strings collestion */
 
+#include "ndpi_static_bitmap.h"
+
 typedef struct str_collect {
 	size_t	 max,last;
 	char	 s[0];
 } str_collect_t;
 
 typedef struct hosts_str {
-        str_collect_t *p[NDPI_NUM_BITS+1];
+        str_collect_t *p[NDPI_MAX_NUM_STATIC_BITMAP+1];
 } hosts_str_t;
 
 static inline hosts_str_t *str_hosts_alloc(void) {

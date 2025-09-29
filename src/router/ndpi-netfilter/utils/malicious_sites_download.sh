@@ -8,7 +8,7 @@ cd "$(dirname "${0}")" || exit 1
 LIST=../lists/100_malware.list
 
 TMP=/tmp/mal.json
-ORIGIN="https://hole.cert.pl/domains/domains.json"
+ORIGIN="https://hole.cert.pl/domains/v2/domains.json"
 
 
 printf '(1) Downloading file... %s\n' "${ORIGIN}"

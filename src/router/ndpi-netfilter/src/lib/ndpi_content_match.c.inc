@@ -709,14 +709,14 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    */
 
    /* Google Advertisements */
-   { "googlesyndication.com",   "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "googleads.",                           "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "doubleclick.net",               "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "googleadservices.",             "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "2mdn.net",                             "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "dmtry.com",                           "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "google-analytics.",             "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "adservice.google.com",         "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "googlesyndication.com",   "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "googleads.",                           "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "doubleclick.net",               "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "googleadservices.",             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "2mdn.net",                             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "dmtry.com",                           "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "google-analytics.",             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "adservice.google.com",         "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "gvt1.com",                                 "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "gvt2.com",                                 "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "telephony.goog",                           "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -748,12 +748,12 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "inbox.google.com",                     "GMail",            NDPI_PROTOCOL_GMAIL, NDPI_PROTOCOL_CATEGORY_MAIL, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "mail.google.",                    "GMail",            NDPI_PROTOCOL_GMAIL, NDPI_PROTOCOL_CATEGORY_MAIL, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   { "google.com",                             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "google.",                                       "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "gstatic.com",                        "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ggpht.com",                               "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "google.com",                             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "google.",                                       "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "gstatic.com",                        "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "ggpht.com",                               "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   { "goog",                               "Google",        NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "goog",                               "Google",        NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "last.fm",                            "LastFM",           NDPI_PROTOCOL_LASTFM, NDPI_PROTOCOL_CATEGORY_MUSIC, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
@@ -795,9 +795,9 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "yimg.com",                                 "Yahoo",            NDPI_PROTOCOL_YAHOO, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "yimg.jp",                                  "Yahoo",            NDPI_PROTOCOL_YAHOO, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "yahooapis.",                               "Yahoo",            NDPI_PROTOCOL_YAHOO, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ads.yahoo.com",                            "Yahoo",            NDPI_PROTOCOL_YAHOO, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "yads.yahoo.com",                           "Yahoo",            NDPI_PROTOCOL_YAHOO, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "yads.yjtag.yahoo.co.jp",                   "Yahoo",            NDPI_PROTOCOL_YAHOO, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "ads.yahoo.com",                            "Yahoo",            NDPI_PROTOCOL_YAHOO, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "yads.yahoo.com",                           "Yahoo",            NDPI_PROTOCOL_YAHOO, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "yads.yjtag.yahoo.co.jp",                   "Yahoo",            NDPI_PROTOCOL_YAHOO, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "upload.youtube.com",                "YouTubeUpload",    NDPI_PROTOCOL_YOUTUBE_UPLOAD, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "upload.video.google.com",           "YouTubeUpload",    NDPI_PROTOCOL_YOUTUBE_UPLOAD, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -962,14 +962,14 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
 
    { "dnscrypt.org",                           "DNScrypt",         NDPI_PROTOCOL_DNSCRYPT, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   { "torrent.",                                   "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "utorrent.",                                  "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "torrents.",                                 "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "torrentz.",                                 "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "bt.co",                                     "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "open.stealth.si",                           "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "1337x.to",                                  "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "openbittorrent.com",                        "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "torrent.",                                  "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "utorrent.",                                 "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "torrents.",                                 "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "torrentz.",                                 "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "bt.co",                                     "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "open.stealth.si",                           "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "1337x.to",                                  "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "openbittorrent.com",                        "BitTorrent",       NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "nintendo.net",                          "Nintendo",         NDPI_PROTOCOL_NINTENDO, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "nintendo.com",                                       "Nintendo",         NDPI_PROTOCOL_NINTENDO, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1169,7 +1169,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "zattoo.com",                       "Zattoo", NDPI_PROTOCOL_ZATTOO, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "zattosecurehd2-f.akamaihd.net",    "Zattoo", NDPI_PROTOCOL_ZATTOO, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   { "classroom.google.com",             "GoogleClassroom", NDPI_PROTOCOL_GOOGLE_CLASSROOM, NDPI_PROTOCOL_CATEGORY_COLLABORATIVE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "classroom.google.com",             "GoogleClassroom", NDPI_PROTOCOL_GOOGLE_CLASSROOM, NDPI_PROTOCOL_CATEGORY_COLLABORATIVE, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "backup.googleapis.com",            "GoogleCloud", NDPI_PROTOCOL_GOOGLE_CLOUD, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "fortinet.com",                     "Cybersec", NDPI_PROTOCOL_CYBERSECURITY, NDPI_PROTOCOL_CATEGORY_CYBERSECURITY, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1379,7 +1379,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "cloud.yandex.",                    "YandexCloud", NDPI_PROTOCOL_YANDEX_CLOUD, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "metrika.yandex.",                  "YandexMetrika", NDPI_PROTOCOL_YANDEX_METRIKA, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "appmetrika.yandex.",               "YandexMetrika", NDPI_PROTOCOL_YANDEX_METRIKA, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "direct.yandex.",                   "YandexDirect", NDPI_PROTOCOL_YANDEX_DIRECT, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL }, 
+   { "direct.yandex.",                   "YandexDirect", NDPI_PROTOCOL_YANDEX_DIRECT, NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
    
    { "quasar.yandex.",                 "YandexAlice", NDPI_PROTOCOL_YANDEX_ALICE, NDPI_PROTOCOL_CATEGORY_VIRTUAL_ASSISTANT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "scbh.yandex.",                   "YandexAlice", NDPI_PROTOCOL_YANDEX_ALICE, NDPI_PROTOCOL_CATEGORY_VIRTUAL_ASSISTANT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1423,211 +1423,6 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "rbxcdn.com",                       "Roblox", NDPI_PROTOCOL_ROBLOX, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "mullvad.net",                      "Mullvad", NDPI_PROTOCOL_MULLVAD, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-
-   /*
-      ADS/tracking/analytic
-    */
-   /* Chartbeat is a technology company that provides data and analytics to global publishers */
-   { "chartbeat.com",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "chartbeat.net",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Httppool is a global cross-channel advertising network */
-   { "httpool.",                         "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Simplifi Holdings is a company that provides online advertising services */
-   { "simpli.fi",                        "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Admixer Technologies is a company that develops and maintains products in the field of digital advertising management */
-   { "admixer.",                         "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* AppDynamics by Cisco */
-   { "appdynamics.",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "eum-appdynamics.com",              "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Smaato is a digital ad tech platform and ad server */
-   { "smaato.net",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "smaato.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* MoPub, a Twitter company, provides monetization solutions */
-   { "mopub.com",                        "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* AppsFlyer is a SaaS mobile marketing analytics and attribution platform */
-   { "appsflyer.com",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "appsflyersdk.com",                 "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Adjust is the mobile marketing platform for marketers around the world */
-   { "adjust.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "adjust.net.in",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "adjust.world",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Helpshift enables brands to deliver superior digital customer service digital channels*/
-   { "helpshift.com",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* AppLovin is a mobile marketing platform */
-   { "applovin.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* AdRight is an innovative online advertising network */
-   { "adright.com",                      "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* MGID: Native Visitors Acquisition for Advertisers */
-   { "mgid.com",                         "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* InMobi is the world's leading mobile marketing and advertising platform provider */
-   { "inmobi.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* AdColony - Elevating mobile advertising */
-   { "adcolony.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Supersonicads: App monetization done right */
-   { "supersonicads.com",                "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Criteo is an advertising company that provides online display advertisements */
-   { "criteo.net",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "criteo.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Flurry is an American mobile analytics, monetization, and advertising company */
-   { "flurry.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Taboola is the world's leading discovery & native advertising platform */
-   { "taboola.com",                      "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Market research community, a leading global market research effort that studies and reports on Internet trends and behavior. */
-   { "scorecardresearch.com",            "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Magnite Inc. (formerly Rubicon Project) is an American online advertising technology firm */
-   { "rubiconproject.com",               "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Adnxs.com is run by AppNexus, a company that provides technology, data and analytics to help companies buy and sell online display advertising  */
-   { "adnxs.com",                        "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* PubMatic, Inc. is a company that develops and implements online advertising software */
-   { "pubmatic.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "pubmatic.co.jp",                   "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* “OpenX’s unified monetization platform */
-   { "openx.net",                        "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "openx.com",                        "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "servedbyopenx.com",                "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* AddThis share buttons, targeting tools and content recommendations help you get more likes, shares and followers */
-   { "addthis.com",                      "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "addthisedge.com",                  "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* NEXAGE offers a mobile advertising platform that provides private and public exchanges */
-   { "nexage.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* RadiumOne (formerly GWallet) is a digital advertising company */
-   { "gwallet.com",                      "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Kochava is the industry leader for mobile app attribution and mobile app analytics */
-   { "kochava.com",                      "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Adobe analytics */
-   { "assets.adobedtm.com",              "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "commerce.adobedtm.com",            "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Chartboost is a San Francisco-based mobile game in-app programmatic advertising and monetization platform */
-   { "chartboost.com",                   "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Vungle is an ad network */
-   { "vungle.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Adkernel offers technological solutions catering to digital advertising publishers, advertisers, exchanges, and networks */
-   { "adkernel.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Adform serves as a unified advertising platform that integrates various aspects of digital advertising */
-   { "adform.net",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Lemma develops integrated platforms and solutions for efficient campaign management and high-performance advertising */
-   { "lemmatechnologies.com",            "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Vidoomy is a company that focuses on Digital Video Advertising expertise. */
-   { "vidoomy.com",                      "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* StackAdapt is a self-serve programmatic advertising platform preferred by top-tier digital marketers */
-   { "stackadapt.com",                   "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Hotjar stands as an all-in-one platform that combines digital experience insights and behavior analytics */
-   { "hotjar.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* New Relic is a company headquartered in the United States that specializes in web tracking and analytics. */
-   { "newrelic.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Unruly is a London-based ad tech company that maximizes video viewership and sharing across the Open Web. */
-   { "unrulymedia.com",                  "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* TV Squared Inc. offers a TV attribution modeling platform, providing a cloud-based software platform for measuring, optimizing, and enhancing television advertising campaigns. */
-   { "tvsquared.com",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Mixpanel facilitates global data analysis by offering event analytics, enabling valuable insights to be derived from data. */
-   { "mixpanel.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Equativ (formerly known as Smart AdServer) is a French advertising technology company */
-   { "smartadserver.com",                "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Twitter ADS */
-   { "ads-twitter.com",                  "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* TANX (Taobao Ad Network and Exchange) is an advertising and marketing platform based in China */
-   { "tanx.com",                         "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Optimove is a marketing and customer relationship management (CRM) platform that specializes in customer retention and marketing automation. The company acquired Kumulos in 2022. */
-   { "optimove.com",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "optimove.net",                     "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /*  Moloco offers programmatic advertising solutions to help optimize the client's acquisition, retention, and monetization campaigns */
-   { "adsmoloco.com",                    "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "moloco.com",                       "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* The Unity Ads SDK provides a comprehensive monetization framework for your game, whether you develop in Unity, Xcode, or Android Studio */
-   { "unityads.unity3d.com",             "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "iads.unity3d.com",                 "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   /* Amazon Ads helps you reach customers at scale through full-funnel advertising across streaming, shopping, and everything in-between */
-   { "amazon-adsystem.com",              "ADS_Analytic_Track", NDPI_PROTOCOL_ADS_ANALYTICS_TRACK, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
-
-   { "xvideos.",                         "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xvideos-games.com",                "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xvideoslive.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "pornhub.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "pornhubselect.com",                "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "pornhubpremium.com",               "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "pornhublive.",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "transpornhublive.com",             "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "gaypornhublive.com",               "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xnxx.com",                         "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhamster.",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "realsrv.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "stripchat.com",                    "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "spankbang.com",                    "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "chaturbate.com",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhamster18.desi",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "zooxhamster.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhwebsite4.com",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhamstercreators.com",             "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhamstershop.com",                 "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "pornmate.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "thebestfetishsites.com",           "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "thepornmap.com",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "mrstiff.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "porngeek.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "mrporngeek.",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "kink.com",                         "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xxxi.porn",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "mrpornlive.com",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xnxx-games.com",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "onlyfans.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "twinrdsrv.com",                    "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "livejasmin.",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "livejasminacademy.",               "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "livejasmincdn.com",                "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "mylivejasmin.org",                 "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "dmm.co.jp",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "youporn.",                         "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhamsterlive.com",                 "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "bongacams.com",                    "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "eporner.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xvideos2.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "nhentai.net",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ixxx.com",                         "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "redtube.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "gayredtubelive.com",               "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "redtubelive.net",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "redtubeplatinum.com",              "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "cityheaven.net",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "missav.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "rule34.xxx",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xnxx.tv",                          "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "crjpgate.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "tnaflix.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xlivrdr.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "dlsite.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "hqporner.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "youjizz.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "txxx.com",                         "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xvideos3.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xxxnewvideos.com",                 "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ok.xxx",                           "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xnxx115.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "nutaku.net",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "sxyprn.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "brazzersnetwork.com",              "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "superchatlive.com",                "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "theporndude.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "fapello.com",                      "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "hitomi.la",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "erome.com",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "kiynew.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "jerkmate.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xnxx-cdn.com",                     "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xvideos-cdn.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "porndudecdn.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xhcdn.com",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "phncdn.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ypncdn.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "strpst.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "trafficjunky.net",                 "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "afcdn.net",                        "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ktkjmp.com",                       "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "xxxyouporn.me",                    "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "youporngay.com",                   "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "freeyoupornxnxx.com",              "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "youpornshop.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "youpornmate.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "youporninhd.com",                  "AdultContent", NDPI_PROTOCOL_ADULT_CONTENT, NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "tesla.services",                   "TeslaServices", NDPI_PROTOCOL_TESLA_SERVICES, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "digitalassets.tesla.com",          "TeslaServices", NDPI_PROTOCOL_TESLA_SERVICES, NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1739,17 +1534,6 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "gearupportal.com.cdn.cloudflare.net", "GearUP_Booster", NDPI_PROTOCOL_GEARUP_BOOSTER, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "gearupportal.com",                 "GearUP_Booster", NDPI_PROTOCOL_GEARUP_BOOSTER, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
-   /* Artificial Intelligence / LLM */
-   { "deepseek.com",                     "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "openapi.com",                      "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "chatgpt.com",                      "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "gemini.google.com",                "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "notebooklm.google.com",            "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "claude.ai",                        "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "perplexity.ai",                    "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "ollama.com",                       "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "huggingface.com",                  "LLM", NDPI_PROTOCOL_LLM, NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-
    { "rsg.sc",                                         "RockstarGames", NDPI_PROTOCOL_ROCKSTAR_GAMES, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "rockstargames.com",                              "RockstarGames", NDPI_PROTOCOL_ROCKSTAR_GAMES, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "gamedownloads-rockstargames-com.akamaized.net",  "RockstarGames", NDPI_PROTOCOL_ROCKSTAR_GAMES, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1761,6 +1545,15 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "dofus-touch.com",                                "Dofus", NDPI_PROTOCOL_DOFUS, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL},
 
    { "secure.logmein.com",                             "Hamachi", NDPI_PROTOCOL_HAMACHI, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
+   /* Blacknut */
+   { "blacknut.com",                                   "Blacknut", NDPI_PROTOCOL_BLACKNUT, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
+   /* Boosteroid */
+   { "boosteroid.com",                                 "Boosteroid", NDPI_PROTOCOL_BOOSTEROID, NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
+   /* Rumble */
+   { "rumble.com",                                     "Rumble", NDPI_PROTOCOL_RUMBLE, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_content_match_host_match.c.inc"
@@ -1810,36 +1603,256 @@ static ndpi_tls_cert_name_match tls_certificate_match [] = {
 
 #ifndef __KERNEL__
 static ndpi_category_match category_match[] = {
-   { "edgecastcdn.net",                 NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "hwcdn.net",                       NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "llnwd.net",                       NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "llns.net",                        NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "fastly.net",                      NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "jsdelivr.net",                    NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "bootstrapcdn.com",                NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "cdn.optimizely.com",              NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "mncdn.com",                       NDPI_PROTOCOL_CATEGORY_MEDIA },
-   { "vultr.com",                       NDPI_PROTOCOL_CATEGORY_CLOUD },
-   { "baidu.com",                       NDPI_PROTOCOL_CATEGORY_WEB },
-   { "icq.com",                         NDPI_PROTOCOL_CATEGORY_CHAT },
-   { "quickplay.com",                   NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "71.am",                           NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "tcad.wedolook.com",               NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "rapidvideo.com",                  NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "playercdn.net",                   NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "showmax.com",                     NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "showmax.akamaized.net",           NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "skyq.sky.com",                    NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "iptv.sky.",                       NDPI_PROTOCOL_CATEGORY_STREAMING },
-   { "pcdn.skycdn.",                    NDPI_PROTOCOL_CATEGORY_STREAMING },
+   { "edgecastcdn.net",                 NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "hwcdn.net",                       NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "llnwd.net",                       NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "llns.net",                        NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "fastly.net",                      NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "jsdelivr.net",                    NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "bootstrapcdn.com",                NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "cdn.optimizely.com",              NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "mncdn.com",                       NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
+   { "vultr.com",                       NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_FUN },
+   { "baidu.com",                       NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_FUN },
+   { "icq.com",                         NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_FUN },
+   { "quickplay.com",                   NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "71.am",                           NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "tcad.wedolook.com",               NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "rapidvideo.com",                  NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "playercdn.net",                   NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "showmax.com",                     NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "showmax.akamaized.net",           NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "skyq.sky.com",                    NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "iptv.sky.",                       NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
+   { "pcdn.skycdn.",                    NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
 
    /* https://success.tanaza.com/s/article/How-Automatic-Detection-of-Captive-Portal-works */
-   { "thinkdifferent.us",                      NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK },
-   { "airport.us",                             NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK },
-   { "detectportal.firefox.com",               NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK },
-   { "connectivitycheck.platform.hicloud.com", NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK },
-   { "nmcheck.gnome.org",                      NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK },
-   
-   { NULL, 0 }
+   { "thinkdifferent.us",                      NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_SAFE },
+   { "airport.us",                             NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_SAFE },
+   { "detectportal.firefox.com",               NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_SAFE },
+   { "connectivitycheck.platform.hicloud.com", NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_SAFE },
+   { "nmcheck.gnome.org",                      NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_SAFE },
+
+   { "xvideos.",                         NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xvideos-games.com",                NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xvideoslive.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "pornhub.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "pornhubselect.com",                NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "pornhubpremium.com",               NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "pornhublive.",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "transpornhublive.com",             NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "gaypornhublive.com",               NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xnxx.com",                         NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhamster.",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "realsrv.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "stripchat.com",                    NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "stripcdn.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "spankbang.com",                    NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "chaturbate.com",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhamster18.desi",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "zooxhamster.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhwebsite4.com",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhamstercreators.com",             NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhamstershop.com",                 NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "pornmate.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "thebestfetishsites.com",           NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "thepornmap.com",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "mrstiff.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "porngeek.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "mrporngeek.",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "kink.com",                         NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xxxi.porn",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "mrpornlive.com",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xnxx-games.com",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "onlyfans.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "twinrdsrv.com",                    NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "livejasmin.",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "livejasminacademy.",               NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "livejasmincdn.com",                NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "mylivejasmin.org",                 NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "dmm.co.jp",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "youporn.",                         NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhamsterlive.com",                 NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "bongacams.com",                    NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "eporner.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xvideos2.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "nhentai.net",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ixxx.com",                         NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "redtube.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "gayredtubelive.com",               NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "redtubelive.net",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "redtubeplatinum.com",              NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "cityheaven.net",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "missav.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "rule34.xxx",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xnxx.tv",                          NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "crjpgate.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "tnaflix.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xlivrdr.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "dlsite.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "hqporner.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "youjizz.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "txxx.com",                         NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xvideos3.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xxxnewvideos.com",                 NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ok.xxx",                           NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xnxx115.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "nutaku.net",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "sxyprn.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "brazzersnetwork.com",              NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "superchatlive.com",                NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "theporndude.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "fapello.com",                      NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "hitomi.la",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "erome.com",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "kiynew.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "jerkmate.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xnxx-cdn.com",                     NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xvideos-cdn.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "porndudecdn.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xhcdn.com",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "phncdn.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ypncdn.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "strpst.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "trafficjunky.net",                 NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "afcdn.net",                        NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ktkjmp.com",                       NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "xxxyouporn.me",                    NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "youporngay.com",                   NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "freeyoupornxnxx.com",              NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "youpornshop.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "youpornmate.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+   { "youporninhd.com",                  NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT, NDPI_PROTOCOL_ACCEPTABLE },
+
+   /* Artificial Intelligence / LLM */
+   { "deepseek.com",                     NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "openai.com",                       NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "chatgpt.com",                      NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "gemini.google.com",                NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "notebooklm.google.com",            NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "claude.ai",                        NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "perplexity.ai",                    NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ollama.com",                       NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+   { "huggingface.com",                  NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE, NDPI_PROTOCOL_ACCEPTABLE },
+
+   /* Same games. We don't have yet (or we don't want...) specific ID for this stuff */
+   { "callofduty.com",                   NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN },
+   { "king.com",                         NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN },
+   { "supercell.com",                    NDPI_PROTOCOL_CATEGORY_GAME, NDPI_PROTOCOL_FUN },
+
+   /* ADS & Tracking & Analytics */
+   /* Chartbeat is a technology company that provides data and analytics to global publishers */
+   { "chartbeat.com",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "chartbeat.net",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Httppool is a global cross-channel advertising network */
+   { "httpool.",                         NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Simplifi Holdings is a company that provides online advertising services */
+   { "simpli.fi",                        NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Admixer Technologies is a company that develops and maintains products in the field of digital advertising management */
+   { "admixer.",                         NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* AppDynamics by Cisco */
+   { "appdynamics.",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "eum-appdynamics.com",              NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Smaato is a digital ad tech platform and ad server */
+   { "smaato.net",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "smaato.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* MoPub, a Twitter company, provides monetization solutions */
+   { "mopub.com",                        NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* AppsFlyer is a SaaS mobile marketing analytics and attribution platform */
+   { "appsflyer.com",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "appsflyersdk.com",                 NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Adjust is the mobile marketing platform for marketers around the world */
+   { "adjust.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "adjust.net.in",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "adjust.world",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Helpshift enables brands to deliver superior digital customer service digital channels*/
+   { "helpshift.com",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* AppLovin is a mobile marketing platform */
+   { "applovin.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* AdRight is an innovative online advertising network */
+   { "adright.com",                      NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* MGID: Native Visitors Acquisition for Advertisers */
+   { "mgid.com",                         NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* InMobi is the world's leading mobile marketing and advertising platform provider */
+   { "inmobi.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* AdColony - Elevating mobile advertising */
+   { "adcolony.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Supersonicads: App monetization done right */
+   { "supersonicads.com",                NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Criteo is an advertising company that provides online display advertisements */
+   { "criteo.net",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "criteo.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Flurry is an American mobile analytics, monetization, and advertising company */
+   { "flurry.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Taboola is the world's leading discovery & native advertising platform */
+   { "taboola.com",                      NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Market research community, a leading global market research effort that studies and reports on Internet trends and behavior. */
+   { "scorecardresearch.com",            NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Magnite Inc. (formerly Rubicon Project) is an American online advertising technology firm */
+   { "rubiconproject.com",               NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Adnxs.com is run by AppNexus, a company that provides technology, data and analytics to help companies buy and sell online display advertising  */
+   { "adnxs.com",                        NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* PubMatic, Inc. is a company that develops and implements online advertising software */
+   { "pubmatic.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "pubmatic.co.jp",                   NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* “OpenX’s unified monetization platform */
+   { "openx.net",                        NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "openx.com",                        NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "servedbyopenx.com",                NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* AddThis share buttons, targeting tools and content recommendations help you get more likes, shares and followers */
+   { "addthis.com",                      NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "addthisedge.com",                  NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* NEXAGE offers a mobile advertising platform that provides private and public exchanges */
+   { "nexage.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* RadiumOne (formerly GWallet) is a digital advertising company */
+   { "gwallet.com",                      NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Kochava is the industry leader for mobile app attribution and mobile app analytics */
+   { "kochava.com",                      NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Adobe analytics */
+   { "assets.adobedtm.com",              NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "commerce.adobedtm.com",            NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Chartboost is a San Francisco-based mobile game in-app programmatic advertising and monetization platform */
+   { "chartboost.com",                   NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Vungle is an ad network */
+   { "vungle.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Adkernel offers technological solutions catering to digital advertising publishers, advertisers, exchanges, and networks */
+   { "adkernel.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Adform serves as a unified advertising platform that integrates various aspects of digital advertising */
+   { "adform.net",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Lemma develops integrated platforms and solutions for efficient campaign management and high-performance advertising */
+   { "lemmatechnologies.com",            NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Vidoomy is a company that focuses on Digital Video Advertising expertise. */
+   { "vidoomy.com",                      NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* StackAdapt is a self-serve programmatic advertising platform preferred by top-tier digital marketers */
+   { "stackadapt.com",                   NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Hotjar stands as an all-in-one platform that combines digital experience insights and behavior analytics */
+   { "hotjar.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* New Relic is a company headquartered in the United States that specializes in web tracking and analytics. */
+   { "newrelic.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Unruly is a London-based ad tech company that maximizes video viewership and sharing across the Open Web. */
+   { "unrulymedia.com",                  NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* TV Squared Inc. offers a TV attribution modeling platform, providing a cloud-based software platform for measuring, optimizing, and enhancing television advertising campaigns. */
+   { "tvsquared.com",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Mixpanel facilitates global data analysis by offering event analytics, enabling valuable insights to be derived from data. */
+   { "mixpanel.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Equativ (formerly known as Smart AdServer) is a French advertising technology company */
+   { "smartadserver.com",                NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Twitter ADS */
+   { "ads-twitter.com",                  NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* TANX (Taobao Ad Network and Exchange) is an advertising and marketing platform based in China */
+   { "tanx.com",                         NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Optimove is a marketing and customer relationship management (CRM) platform that specializes in customer retention and marketing automation. The company acquired Kumulos in 2022. */
+   { "optimove.com",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "optimove.net",                     NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /*  Moloco offers programmatic advertising solutions to help optimize the client's acquisition, retention, and monetization campaigns */
+   { "adsmoloco.com",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "moloco.com",                       NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* The Unity Ads SDK provides a comprehensive monetization framework for your game, whether you develop in Unity, Xcode, or Android Studio */
+   { "unityads.unity3d.com",             NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   { "iads.unity3d.com",                 NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT,  NDPI_PROTOCOL_TRACKER_ADS },
+   /* Amazon Ads helps you reach customers at scale through full-funnel advertising across streaming, shopping, and everything in-between */
+   { "amazon-adsystem.com",              NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS },
+
+   { NULL, 0, NDPI_PROTOCOL_SAFE }
 };
 #endif

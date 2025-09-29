@@ -29,14 +29,6 @@
 #include "ndpi_api.h"
 #include "ndpi_private.h"
 
-static void ndpi_int_ethersio_add_connection(struct ndpi_detection_module_struct *ndpi_struct, 
-                                             struct ndpi_flow_struct *flow)
-{
-  NDPI_LOG_INFO(ndpi_struct, "found EtherSIO\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ETHERSIO,
-                             NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
-}
-
 static void ndpi_search_ethersio(struct ndpi_detection_module_struct *ndpi_struct,
                                  struct ndpi_flow_struct *flow)
 {
@@ -47,15 +39,18 @@ static void ndpi_search_ethersio(struct ndpi_detection_module_struct *ndpi_struc
   if (packet->payload_packet_len >= 20) {
     if ((memcmp(packet->payload, "ESIO", 4) == 0) &&
         (packet->payload[4] == 0) && (packet->payload[5] <= 0x2) &&
-        (packet->payload[6] == 0))
-    {
-      ndpi_int_ethersio_add_connection(ndpi_struct, flow);
+        (packet->payload[6] == 0)) {
+      NDPI_LOG_INFO(ndpi_struct, "found EtherSIO\n");
+      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ETHERSIO,
+				 NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+      
       return;
-    }
+    }     
   }
 
   NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 }
+
 void init_ethersio_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
   register_dissector("EtherSIO", ndpi_struct,

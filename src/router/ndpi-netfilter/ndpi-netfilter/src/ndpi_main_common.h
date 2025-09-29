@@ -45,8 +45,8 @@ enum dbg_trace {
 	DBG_TRACE_HOSTNM,
 	DBG_TRACE_EXCLUDE,
 	DBG_TRACE_TLS,
-	DBG_TRACE_JA3,
-	DBG_TRACE_JA3MATCH,
+	DBG_TRACE_JA4,
+	DBG_TRACE_JA4MATCH,
 	DBG_TRACE_CACHE,
 	DBG_TRACE_MATCH,
 	DBG_TRACE_MATCH2,
@@ -76,8 +76,8 @@ enum dbg_trace {
 #define _DBG_TRACE_HOSTNM (ndpi_log_debug & (1 << DBG_TRACE_HOSTNM))
 #define _DBG_TRACE_EXCLUDE (ndpi_log_debug & (1 << DBG_TRACE_EXCLUDE))
 #define _DBG_TRACE_TLS (ndpi_log_debug & (1 << DBG_TRACE_TLS))
-#define _DBG_TRACE_JA3 (ndpi_log_debug & (1 << DBG_TRACE_JA3))
-#define _DBG_TRACE_JA3MATCH (ndpi_log_debug & (1 << DBG_TRACE_JA3MATCH))
+#define _DBG_TRACE_JA4 (ndpi_log_debug & (1 << DBG_TRACE_JA4))
+#define _DBG_TRACE_JA4MATCH (ndpi_log_debug & (1 << DBG_TRACE_JA4MATCH))
 #define _DBG_TRACE_CACHE (ndpi_log_debug & (1 << DBG_TRACE_CACHE))
 #define _DBG_TRACE_MATCH (ndpi_log_debug & (1 << DBG_TRACE_MATCH))
 #define _DBG_TRACE_MATCH2 (ndpi_log_debug & (1 << DBG_TRACE_MATCH2))
@@ -154,5 +154,9 @@ static inline time64_t ktime_get_real_seconds(void)
 #define unsafe_memcpy(dest,src,length,justification) memcpy(dest,src,length)
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,84)
+#define timer_delete del_timer
+#define timer_delete_sync del_timer_sync
+#endif
 
 #endif

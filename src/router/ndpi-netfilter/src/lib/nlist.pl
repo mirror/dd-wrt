@@ -14,6 +14,11 @@ foreach my $f (glob('inc_generated/*.c.inc')) {
 	next if $f eq 'inc_generated/ndpi_crawlers_match.c.inc';
 	next if $f eq 'inc_generated/ndpi_gambling_match.c.inc';
 	next if $f eq 'inc_generated/ndpi_protonvpn_out_match.c.inc';
+	next if $f =~ /inc_generated\/ndpi_domains_/;
+	if($f eq 'inc_generated/ndpi_tor_exit_nodes_match.c.inc') {
+		match_inc($f,"ndpi_.*_protocol_list");
+		next;
+	}
 	match_inc($f,"ndpi_protocol_.*_protocol_list");
 }
 if(0) {
@@ -191,8 +196,8 @@ sub add_net {
 	my @s = split /,/,$str;
 	return 1 if $str eq '0x0,0,0';
 	die "Bad string $str" if $#s != 2 || $s[0] !~ /^0x/i;
-	die "Bad proto $s[2]" if $s[2] !~ /NDPI_(PROTOCOL|CONTENT|SERVICE)_(.*)$/;
-	$s[2] = $2;
+	die "Bad proto $s[2]" if $s[2] !~ /NDPI_(PROTOCOL|CONTENT|SERVICE|ANONYMOUS)_(.*)$/;
+	$s[2] = $1 eq 'ANONYMOUS' ? 'TOR' : $2;
 	$s[0] =~ s/0x//i;
 	if(length($s[0]) > 8) {
 		$s[0] = substr($s[0],-8);

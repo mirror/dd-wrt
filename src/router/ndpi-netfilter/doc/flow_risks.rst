@@ -74,7 +74,7 @@ HTTP only: this risk is triggered whenever the user agent contains suspicious ch
 .. _Risk 012:
 
 NDPI_NUMERIC_IP_HOST
-=========================
+====================
 This risk is triggered whenever a HTTP/TLS/QUIC connection is using a literal IPv4 or IPv6 address as ServerName (TLS/QUIC; example: SNI=1.2.3.4) or as Hostname (HTTP; example: http://1.2.3.4.).
 
 .. _Risk 013:
@@ -252,7 +252,7 @@ The risk is set whenever a possible exploit attempt (e.g. `Log4J/Log4Shell <http
 .. _Risk 041:
 
 NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE
-===================================
+====================================
 The risk is set whenever a TLS certificate is close to the expiration date.
 
 .. _Risk 042:
@@ -311,19 +311,19 @@ NDPI_TCP_ISSUES
 ===============
 Relevant TCP connection issues such as connection refused, scan, or probe attempt.
 
-.. _Risk 051
+.. _Risk 051:
 
-NDPI_FREE_51
+NDPI_UNRESOLVED_HOSTNAME
 ============
-Placeholder; not really used.
+Risk set when talking (TLS, QUIC, HTTP) with a symbolic hostname not previously observed on a DNS resolution. Unless the resolution was not observed as it was performed before nDPI started, it can indicate fake hosts contacted.
 
-.. _Risk 052
+.. _Risk 052:
 
 NDPI_TLS_ALPN_SNI_MISMATCH
-=========================
+==========================
 Invalid TLS ALPN/SNI mismatch. For instance ALPN advertises the flow as h2 (HTTP/2.0) and no SNI is reported.
 
-.. _Risk 053
+.. _Risk 053:
 
 NDPI_MALWARE_CONTACTED
 ======================

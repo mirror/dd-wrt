@@ -196,7 +196,7 @@ typedef struct ndpi_flow_info {
   u_int32_t nf_mark;
   ndpi_packet_tunnel tunnel_type;
   struct ndpi_flow_struct *ndpi_flow;
-  char src_name[INET6_ADDRSTRLEN], dst_name[INET6_ADDRSTRLEN];
+  char *src_name, *dst_name;
   u_int8_t ip_version;
   u_int32_t cwr_count, src2dst_cwr_count, dst2src_cwr_count;
   u_int32_t ece_count, src2dst_ece_count, dst2src_ece_count;
@@ -320,7 +320,6 @@ typedef struct ndpi_flow_info {
     ndpi_cipher_weakness client_unsafe_cipher, server_unsafe_cipher;
 
     u_int32_t quic_version;
-
   } ssh_tls;
 
   struct {
@@ -350,7 +349,7 @@ typedef struct ndpi_flow_info {
   u_int8_t multimedia_flow_types;
   
   void *src_id, *dst_id;
-  char *tcp_fingerprint;
+  char *tcp_fingerprint, *ndpi_fingerprint;
   struct ndpi_entropy *entropy;
   struct ndpi_entropy *last_entropy;
 
@@ -373,12 +372,19 @@ typedef struct ndpi_stats {
   u_int64_t raw_packet_count;
   u_int64_t ip_packet_count;
   u_int64_t total_wire_bytes, total_ip_bytes, total_discarded_bytes;
-  u_int64_t protocol_counter[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS + 1];
-  u_int64_t protocol_counter_bytes[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS + 1];
-  u_int32_t protocol_flows[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS + 1];
-  u_int64_t fpc_protocol_counter[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS + 1];
-  u_int64_t fpc_protocol_counter_bytes[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS + 1];
-  u_int32_t fpc_protocol_flows[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS + 1];
+  u_int32_t num_protocols;
+  u_int64_t *protocol_counter;
+  u_int64_t *protocol_counter_bytes;
+  u_int32_t *protocol_flows;
+  u_int64_t *fpc_protocol_counter;
+  u_int64_t *fpc_protocol_counter_bytes;
+  u_int32_t *fpc_protocol_flows;
+  u_int64_t category_counter[NDPI_PROTOCOL_NUM_CATEGORIES];
+  u_int64_t category_counter_bytes[NDPI_PROTOCOL_NUM_CATEGORIES];
+  u_int32_t category_flows[NDPI_PROTOCOL_NUM_CATEGORIES];
+  u_int64_t breed_counter[NDPI_NUM_BREEDS];
+  u_int64_t breed_counter_bytes[NDPI_NUM_BREEDS];
+  u_int32_t breed_flows[NDPI_NUM_BREEDS];
   u_int32_t ndpi_flow_count;
   u_int32_t flow_count[3];
   u_int64_t tcp_count, udp_count;
@@ -434,6 +440,9 @@ typedef struct ndpi_workflow {
   ndpi_serialization_format ndpi_serialization_format;
 } ndpi_workflow_t;
 
+void ndpi_stats_free(ndpi_stats_t *s);
+int ndpi_stats_init(ndpi_stats_t *s, uint32_t num_protocols);
+void ndpi_stats_reset(ndpi_stats_t *s);
 
 /* TODO: remove wrappers parameters and use ndpi global, when their initialization will be fixed... */
 struct ndpi_workflow * ndpi_workflow_init(const struct ndpi_workflow_prefs * prefs, pcap_t * pcap_handle, int do_init_flows_root, ndpi_serialization_format serialization_format, struct ndpi_global_context *g_ctx);
@@ -472,7 +481,6 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 void ndpi_flow_info_free_data(struct ndpi_flow_info *flow);
 void ndpi_flow_info_freer(void *node);
 const char* print_cipher_id(u_int32_t cipher);
-int parse_proto_name_list(char *str, NDPI_PROTOCOL_BITMASK *bitmask, int inverted_logic);
 
 extern int reader_log_level;
 

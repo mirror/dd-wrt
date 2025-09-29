@@ -72,8 +72,6 @@ Each line of connection information has 14 required fields and 5 additional fiel
 17. NDPI protocol. Format: "P=xxx"
 18. NDPI hostname info. Optional. Only for DNS,HTTP. Format: "H=hostname"
 19*. NDPI SSL info. Optional. Only for SSL/TLS. See "ndpi_flow_opt" option.
-    "S=<JA3 server hash>"
-    "C=<JA3 client hash>"
     "c=<JA4 client hash>"
     "F=<TLS finger print>"
     "V=<TLS version>"
@@ -111,9 +109,7 @@ Changing the read mode can be done only if the current position is 0 or when
 the EOF is reached.
 
 Option ndpi_flow_opt (string)
-Allows you to specify which of the JA3 parameters are added to "flow".
-S - server JA3 hash
-C - client JA3 hash
+Allows you to specify which of the JA4 parameters are added to "flow".
 c - client JA4 hash
 F - TLS fingerprint
 V - version of TLS

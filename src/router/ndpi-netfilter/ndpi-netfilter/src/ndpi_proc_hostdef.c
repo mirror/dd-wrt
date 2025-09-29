@@ -83,7 +83,7 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 
 	l = snprintf(lbuf,sizeof(lbuf),"#Proto:host\n");
 
-	while(hdp < NDPI_NUM_BITS ) {
+	while(hdp < NDPI_MAX_NUM_STATIC_BITMAP ) {
 		ph = n->hosts_tmp ? n->hosts_tmp->p[hdp]:
 				    n->hosts->p[hdp];
 		host = NULL;

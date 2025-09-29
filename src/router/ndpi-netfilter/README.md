@@ -7,13 +7,18 @@
 
 nDPI® is an open source LGPLv3 library for deep-packet inspection.
 
-A generic FAQ about nDPI® is available [here](https://github.com/ntop/nDPI/blob/dev/doc/FAQ.md)
+A generic FAQ about nDPI is available [here](https://github.com/ntop/nDPI/blob/dev/doc/FAQ.rst)
 
 ### How To Compile nDPI
 
 In order to compile this project do
 
 - ./autogen.sh
+- make
+
+If you get some errors while compiling `croaring.c`, try:
+
+- ./autogen.sh --enable-old-croaring
 - make
 
 To compile the library w/o any tools or tests:
@@ -96,12 +101,17 @@ You can use nDPI to selectively block selected Internet traffic by embedding it 
 
 ### Videos and Presentations
 
-- [Knowing the Unknown: How to Monitor and Troubleshoot an Unfamiliar Network](https://www.ntop.org/wp-content/uploads/2017/06/nDPI_Sharkfest_2017.pdf) [SharkFest, 2017]
-- [Using nDPI for Monitoring and Security](https://archive.fosdem.org/2021/schedule/event/nemondpi/) [FOSDEM, 2021]
-- [Network Traffic Classification for Cybersecurity and Monitoring](https://fosdem.org/2022/schedule/event/using_ndpi_to_efficiently_classify_network_traffic/) [FOSDEM, 2022]
-- [A Deep Dive Into Traffic Fingerprints using Wireshark](https://www.dropbox.com/scl/fo/zm5amy8fkwz2pj3ojz12a/AMKbeuIToNPH9wCAqB1OWdQ?rlkey=ihnva3yz5heonw59m8br3lxvj&e=2&dl=0) [SharkFest, 2024]
-- [Passive Network Traffic Fingerprinting](https://fosdem.org/2025/schedule/event/fosdem-2025-5461-passive-network-traffic-fingerprinting/) [FOSDEM, 2025]
+- [The Ultimate Guide to nDPI](https://www.youtube.com/watch?v=NndEp7__Y1A) [2025]
 - [Using nDPI to solve real life problems: from First Packet Classification to Obfuscated Traffic detection](https://packetfest.ntop.org/slides/Nardi.pdf) [PacketFest, 2025]
+- [Passive Network Traffic Fingerprinting](https://fosdem.org/2025/schedule/event/fosdem-2025-5461-passive-network-traffic-fingerprinting/) [FOSDEM, 2025]
+- [A Deep Dive Into Traffic Fingerprints using Wireshark](https://www.dropbox.com/scl/fo/zm5amy8fkwz2pj3ojz12a/AMKbeuIToNPH9wCAqB1OWdQ?rlkey=ihnva3yz5heonw59m8br3lxvj&e=2&dl=0) [SharkFest, 2024]
+- [Network Traffic Classification for Cybersecurity and Monitoring](https://fosdem.org/2022/schedule/event/using_ndpi_to_efficiently_classify_network_traffic/) [FOSDEM, 2022]
+- [Using nDPI for Monitoring and Security](https://archive.fosdem.org/2021/schedule/event/nemondpi/) [FOSDEM, 2021]
+- [Knowing the Unknown: How to Monitor and Troubleshoot an Unfamiliar Network](https://www.ntop.org/wp-content/uploads/2017/06/nDPI_Sharkfest_2017.pdf) [SharkFest, 2017]
+
+
+
+
 
 ### nDPI-Related Projects
 

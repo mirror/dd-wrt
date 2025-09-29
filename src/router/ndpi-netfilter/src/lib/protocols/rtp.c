@@ -467,9 +467,10 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
     if(flow->rtp_stage || flow->rtcp_stage) {
       u_int32_t unused;
       u_int16_t app_proto = NDPI_PROTOCOL_UNKNOWN;
-
+      ndpi_protocol_category_t category;
+      
       /* TODO: we should switch to the demultiplexing-code in stun dissector */
-      if(is_stun(ndpi_struct, flow, &app_proto) != 0 &&
+      if(is_stun(ndpi_struct, flow, &app_proto, &category) != 0 &&
          !is_dtls(packet->payload, packet->payload_packet_len, &unused)) {
         flow->rtp_stage = 0;
         flow->rtcp_stage = 0;

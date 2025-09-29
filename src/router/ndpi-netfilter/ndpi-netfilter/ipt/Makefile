@@ -18,7 +18,7 @@ endif
 
 lib%.so: lib%.o
 	$(CC) -shared -o $@ $^;
-lib%.o: lib%.c ../src/xt_ndpi.h ${NDPI_SRC}/include/ndpi_config.h ../libre/regexp.h ../libre/regexp.c
+lib%.o: lib%.c ../src/xt_ndpi.h ${NDPI_SRC}/include/ndpi_config.h ../libre/regexp.h ../libre/regexp.c ../src/ndpi_static_bitmap.h ../src/ndpi_static_bitmap.c
 	$(CC) ${CFLAGS} -D_INIT=lib$*_init -c -o $@ $<;
 clean:
 	rm -rf libxt_ndpi.so

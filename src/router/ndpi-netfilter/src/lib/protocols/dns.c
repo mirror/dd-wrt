@@ -174,7 +174,7 @@ static u_int getNameLength(u_int i, const u_int8_t *payload, u_int payloadLen) {
   See
   - RFC 1035
   - https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/naming-conventions-for-computer-domain-site-ou
-  
+
   Allowed chars for dns names A-Z 0-9 _ -
   Perl script for generation map:
   my @M;
@@ -269,16 +269,16 @@ static u_int8_t ndpi_grab_dns_name(struct ndpi_packet_struct *packet,
 	_hostname[j++] = tolower(c);
       else {
 	u_int32_t shift;
-      
+
 	shift = ((u_int32_t) 1) << (c & 0x1f);
 
 	if((dns_validchar[c >> 5] & shift)) {
 	  _hostname[j++] = tolower(c);
 	} else {
 	  /* printf("---?? '%c'\n", c); */
-	  
+
 	  hostname_is_valid = 0;
-	  
+
 	  if (ndpi_isprint(c) == 0) {
 	    _hostname[j++] = '?';
 	  } else {
@@ -286,7 +286,7 @@ static u_int8_t ndpi_grab_dns_name(struct ndpi_packet_struct *packet,
 	  }
 	}
       }
-      
+
       cl--;
     }
   }
@@ -444,7 +444,12 @@ static int process_answers(struct ndpi_detection_module_struct *ndpi_struct,
 				         time,
 				         flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);
 		      }
-
+#ifndef __KERNEL__
+	      if(ndpi_struct->cfg.hostname_dns_check_enabled)
+		ndpi_cache_hostname_ip(ndpi_struct,
+				       &flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
+				       flow->host_server_name);
+#endif
               ++flow->protos.dns.num_rsp_addr;
             }
 
@@ -721,7 +726,7 @@ static int process_hostname(struct ndpi_detection_module_struct *ndpi_struct,
   u_int8_t hostname_is_valid;
 
   proto->master_protocol = checkDNSSubprotocol(ntohs(flow->c_port), ntohs(flow->s_port));
-  proto->app_protocol = NDPI_PROTOCOL_UNKNOWN;
+  proto->app_protocol = flow->detected_protocol_stack[1] != NDPI_PROTOCOL_UNKNOWN ? flow->detected_protocol_stack[0] : NDPI_PROTOCOL_UNKNOWN;
 
   /* We try to get hostname only from "standard" query/answer */
   if(dns_header->num_queries == 0 && dns_header->num_answers == 0)
@@ -773,13 +778,15 @@ static int process_hostname(struct ndpi_detection_module_struct *ndpi_struct,
   if(strlen(flow->host_server_name) > 0) {
     ndpi_protocol_match_result ret_match;
 
-    /* Avoid updating classification if subclassification is disabled */
-    proto->app_protocol = ndpi_match_host_subprotocol(ndpi_struct, flow,
-                                                      flow->host_server_name,
-                                                      strlen(flow->host_server_name),
-                                                      &ret_match,
-                                                      proto->master_protocol,
-                                                      ndpi_struct->cfg.dns_subclassification_enabled ? 1 : 0);
+    if(flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN) {
+      proto->app_protocol = ndpi_match_host_subprotocol(ndpi_struct, flow,
+                                                        flow->host_server_name,
+                                                        strlen(flow->host_server_name),
+                                                        &ret_match,
+                                                        proto->master_protocol,
+                                                        /* Avoid updating classification if subclassification is disabled */
+                                                        ndpi_struct->cfg.dns_subclassification_enabled ? 1 : 0);
+    }
 
     ndpi_check_dga_name(ndpi_struct, flow, flow->host_server_name, 1, 0, proto->app_protocol != NDPI_PROTOCOL_UNKNOWN);
   }
@@ -898,8 +905,9 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
     else
       ndpi_set_detected_protocol(ndpi_struct, flow, proto.master_protocol, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   }
-  /* Category is always NDPI_PROTOCOL_CATEGORY_NETWORK, regardless of the subprotocol */
+  /* Category is always NDPI_PROTOCOL_CATEGORY_NETWORK, regardless of the subprotocol. Same for the breed */
   flow->category = NDPI_PROTOCOL_CATEGORY_NETWORK;
+  flow->breed = NDPI_PROTOCOL_ACCEPTABLE;
 
   if(!flow->extra_packets_func &&
      ndpi_struct->cfg.dns_parse_response_enabled &&

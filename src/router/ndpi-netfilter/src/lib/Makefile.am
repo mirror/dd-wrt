@@ -38,6 +38,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_hash.c \
 		     ndpi_cache.c \
 		     ndpi_fingerprint.c \
+		     ndpi_filter.c \
+		     ndpi_bitmap.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
 		     protocols/alicloud.c \
@@ -92,6 +94,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/drda.c \
 		     protocols/dropbox.c \
 		     protocols/eaq.c \
+		     protocols/easyweather.c \
 		     protocols/edonkey.c \
 		     protocols/egd.c \
 		     protocols/elastic_search.c \
@@ -110,6 +113,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/gearup_booster.c \
 		     protocols/genshin_impact.c \
 		     protocols/git.c \
+		     protocols/glbp.c \
 		     protocols/gnutella.c \
 		     protocols/gtp.c \
 		     protocols/guildwars2.c \
@@ -157,6 +161,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mail_imap.c \
 		     protocols/mail_pop.c \
 		     protocols/mail_smtp.c \
+		     protocols/matter.c \
 		     protocols/megaco.c \
 		     protocols/melsec.c \
 		     protocols/memcached.c \
@@ -172,6 +177,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mqtt.c \
 		     protocols/msdo.c \
 		     protocols/mssql_tds.c \
+		     protocols/mudfish.c \
 		     protocols/mumble.c \
 		     protocols/munin.c \
 		     protocols/mysql.c \
@@ -223,6 +229,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/rtsp.c \
 		     protocols/rx.c \
 		     protocols/s7comm.c \
+		     protocols/samsung_sdp.c \
 		     protocols/sd_rtn.c \
 		     protocols/sflow.c \
 		     protocols/sip.c \
@@ -254,6 +261,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/tencent_games.c \
 		     protocols/tftp.c \
 		     protocols/thrift.c \
+		     protocols/tristation.c \
 		     protocols/tls.c \
 		     protocols/threema.c \
 		     protocols/tplink_shp.c \
@@ -309,7 +317,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     third_party/src/ball.c \
 		     third_party/src/kdtree.c \
 		     third_party/src/shoco.c \
-		     third_party/src/aes.c
+		     third_party/src/aes.c \
+		     third_party/src/roaring.c
 
 lib_LIBRARIES = libndpi.a
 

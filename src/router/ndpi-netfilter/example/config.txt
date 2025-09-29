@@ -8,6 +8,6 @@ packets_limit_per_flow,32
 ookla,dpi.aggressiveness,0x1
 tls,metadata.sha1_fingerprint,1
 
-lru.bittorrent.ttl,0
+lru.bittorrent.ttl,300
 
 

@@ -9,6 +9,8 @@
 // #include <linux/in6.h>
 
 #include "ndpi_strcol.h"
+#include "ndpi_static_bitmap.h"
+
 #include <linux/string.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,19,0)
@@ -20,7 +22,7 @@ void str_hosts_done(hosts_str_t *h) {
 int i;
 
     if(!h) return;
-    for(i=0; i < NDPI_NUM_BITS+1; i++) {
+    for(i=0; i < NDPI_MAX_NUM_STATIC_BITMAP+1; i++) {
 	if(h->p[i]) kfree(h->p[i]);
     }
     kfree(h);
@@ -65,7 +67,7 @@ str_collect_t *t,*n;
     if(!r) return r;
 
     s0 = s1 = 0;
-    for(i=0; i < NDPI_NUM_BITS+1; i++) {
+    for(i=0; i < NDPI_MAX_NUM_STATIC_BITMAP+1; i++) {
 	t = h->p[i];
 	if(!t) continue;
 	if(!t->last) continue;

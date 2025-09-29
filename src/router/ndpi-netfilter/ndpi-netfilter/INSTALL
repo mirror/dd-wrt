@@ -158,17 +158,17 @@ Protocols defined in /proc/net/xt_ndpi/ip_proto by ip address and port have "use
 
 ------------------------------------------------------------------
 
-Using ja3s/ja3c/tlsfp/tlsv matches.
+Using ja4c/tlsfp/tlsv matches.
 
 These options can use only user-defined protocols.
 You need to create such a protocol and add hashes with additional prefixes to it.
-To check the ja3s hash, add the string JA3S_<hash>. Similar to other options.
+To check the ja4c hash, add the string JA4C_<hash>. Similar to other options.
 
 Example: 
   echo "add_custom bad_ctcl" >/proc/net/xt_ndpi/proto
-  echo "bad_ctls:JA3C_63c4972da11f7a873178a9ee53acfd9e" >/proc/net/xt_ndpi/host_proto
+  echo "bad_ctls:JA4C_t163c4972d_a11f7a873178_a9ee53acfd9e" >/proc/net/xt_ndpi/host_proto
 
-  iptables -A ... -m ndpi --ja3c bad_ctcl -j DROP
+  iptables -A ... -m ndpi --ja4c bad_ctcl -j DROP
 
 
 Using NDPI target. To see available options type:
@@ -409,7 +409,7 @@ set_magic_ct: Set new MAGIC_CT value. Default: 0xa55a. Set 0 for random MAGIC_CT
   Use "echo 'X d' >/proc/net/xt_ndpi/risks" for disable risk with number X.
   Use "echo 'X a' >/proc/net/xt_ndpi/risks" for enable risk with number X.
 
-  Loading custom data for RISKY_DOMAIN, MALICIOUS_JA3, MALICIOUS_SHA1_CERTIFICATE
+  Loading custom data for RISKY_DOMAIN, MALICIOUS_JA4, MALICIOUS_SHA1_CERTIFICATE
 
   We need to create our own protocol with any name (for example "RISKS" ).
   "echo 'add_custom RISKS' >/proc/net/xt_ndpi/proto"
@@ -421,8 +421,8 @@ set_magic_ct: Set new MAGIC_CT value. Default: 0xa55a. Set 0 for random MAGIC_CT
 	      If the hostname ends with a "|" character, a match is made to the end of the string.
               "|name|" this is an exact string match.
 
-  For MALICIOUS_JA3 we need add to host_proto
-  "echo 'RISKS:RISK_JA3_xxxxxxxxxxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"
+  For MALICIOUS_JA4 we need add to host_proto
+  "echo 'RISKS:RISK_JA4_xxxxxxxxxx_xxxxxxxxxxxx_xxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"
 
   For MALICIOUS_SHA1_CERTIFICATE we need add to host_proto
   "echo 'RISKS:RISK_SHA1CERT_xxxxxxxxxxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"

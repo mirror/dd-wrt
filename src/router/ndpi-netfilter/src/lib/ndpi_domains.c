@@ -24,6 +24,7 @@
 #include "ndpi_private.h"
 
 /* ******************************* */
+#ifndef __KERNEL__
 
 int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
 			      char *public_suffix_list_path) {
@@ -39,7 +40,6 @@ int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
 
   if(ndpi_str->public_domain_suffixes != NULL) {
     /* An existing license was already loaded: free it and start over */
-    fclose(fd);
     ndpi_hash_free(&ndpi_str->public_domain_suffixes);
   }
 
@@ -83,7 +83,7 @@ int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
 
   return(0);
 }
-
+#endif // __KERNEL__
 /* ******************************* */
 
 /*
@@ -94,7 +94,7 @@ int ndpi_load_domain_suffixes(struct ndpi_detection_module_struct *ndpi_str,
 
 const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndpi_str,
 					const char *hostname,
-					u_int16_t *domain_id /* out */) {
+					u_int32_t *domain_id /* out */) {
   char *dot, *prev_dot;
 
   if(!ndpi_str || !hostname || !domain_id)
@@ -136,7 +136,7 @@ const char* ndpi_get_host_domain(struct ndpi_detection_module_struct *ndpi_str,
 				 const char *hostname) {
   const char *ret;
   char *dot, *first_dc;
-  u_int16_t domain_id, len;
+  u_int32_t domain_id, len;
   
   if(!ndpi_str || !hostname)
     return NULL;

@@ -424,6 +424,26 @@ int main(int argc,char **argv) {
   list_ptree(ptree);
   list_ptree(ptree6);
 
+  for(i=optind; i < argc; i++) {
+	if(!inet_pton(AF_INET,argv[i],&pin.v4)) {
+		if(!inet_pton(AF_INET6,argv[i],&pin.v6)) {
+			printf("Skip unknown %s\n",argv[i]);
+			continue;
+		}
+		fill_prefix(AF_INET6,&prefix,&pin,128);
+		node = ndpi_patricia_search_best(ptree6, &prefix);
+		if(node) {
+			printf("%s = %d\n",argv[i],node->value.u.uv32.user_value);
+		}
+		continue;
+	}
+	fill_prefix(AF_INET,&prefix,&pin,32);
+	node = ndpi_patricia_search_best(ptree, &prefix);
+	if(node) {
+		printf("%s = %d\n",argv[i],node->value.u.uv32.user_value);
+	}
+  }
+  if(optind < argc) exit(0);
   ndpi_patricia_destroy(ptree,  free_ptree_data);
   ndpi_patricia_destroy(ptree6, free_ptree_data);
   if(outfile) {

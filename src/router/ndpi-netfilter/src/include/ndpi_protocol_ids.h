@@ -26,6 +26,7 @@
 #define __NDPI_PROTOCOL_IDS_H__
 
 #define NDPI_PROTOCOL_SIZE                  2
+#define NDPI_PROTOCOL_STACK_SIZE            8
 
 typedef enum {
   NDPI_PROTOCOL_UNKNOWN               = 0,
@@ -135,8 +136,8 @@ typedef enum {
   NDPI_PROTOCOL_ARMAGETRON            = 104,
   NDPI_PROTOCOL_CROSSFIRE             = 105,
   NDPI_PROTOCOL_DOFUS                 = 106,
-  NDPI_PROTOCOL_ADS_ANALYTICS_TRACK   = 107, /* Generic id for advertisement/analytics/tracking stuff */
-  NDPI_PROTOCOL_ADULT_CONTENT         = 108,
+  NDPI_PROTOCOL_BLACKNUT              = 107, 
+  NDPI_PROTOCOL_BOOSTEROID            = 108,
   NDPI_PROTOCOL_GUILDWARS2            = 109,
   NDPI_PROTOCOL_AMAZON_ALEXA          = 110,
   NDPI_PROTOCOL_KERBEROS              = 111,
@@ -474,12 +475,18 @@ typedef enum {
   NDPI_PROTOCOL_RUTUBE                = 443,
   NDPI_PROTOCOL_LAGOFAST              = 444,
   NDPI_PROTOCOL_GEARUP_BOOSTER        = 445,
-  NDPI_PROTOCOL_LLM                   = 446, /* Large Language Models */
+  NDPI_PROTOCOL_RUMBLE                = 446,
   NDPI_PROTOCOL_UBIQUITI              = 447,
   NDPI_PROTOCOL_MSDO                  = 448,
   NDPI_PROTOCOL_ROCKSTAR_GAMES        = 449,
   NDPI_PROTOCOL_KICK                  = 450,
   NDPI_PROTOCOL_HAMACHI               = 451,
+  NDPI_PROTOCOL_GLBP                  = 452,
+  NDPI_PROTOCOL_EASYWEATHER           = 453,
+  NDPI_PROTOCOL_MUDFISH               = 454,
+  NDPI_PROTOCOL_TRISTATION            = 455,
+  NDPI_PROTOCOL_SAMSUNG_SDP           = 456,
+  NDPI_PROTOCOL_MATTER                = 457,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"
@@ -492,12 +499,9 @@ typedef enum {
     (placeholders to avoid protocol renumbering)
   */
 
-  /* IMPORTANT:NDPI_LAST_IMPLEMENTED_PROTOCOL MUST BE THE LAST ELEMENT */
-  NDPI_LAST_IMPLEMENTED_PROTOCOL
+  /* IMPORTANT: DO NOT ADD A "_LAST" or "_MAX" ENTRY HERE!!!
+     The number of protocols is calculated at runtime!
+   */
 } ndpi_protocol_id_t;
-
-#define NDPI_PROTOCOL_NO_MASTER_PROTO    NDPI_PROTOCOL_UNKNOWN
-#define NDPI_MAX_SUPPORTED_PROTOCOLS     NDPI_LAST_IMPLEMENTED_PROTOCOL
-#define NDPI_MAX_NUM_CUSTOM_PROTOCOLS    (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)
 
 #endif /* __NDPI_PROTOCOL_IDS_H__ */

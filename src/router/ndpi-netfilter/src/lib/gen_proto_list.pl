@@ -56,6 +56,7 @@ foreach my $ips (glob('inc_generated/*.c.inc')) {
 }
 
 if(open(F,'>ndpi_network_list_compile.h')) {
+	print F "#define NDPI_LAST_IMPLEMENTED_PROTOCOL $m\n\n";
 	print F "const char *proto_def[NDPI_LAST_IMPLEMENTED_PROTOCOL+1] = {\n\n";
 
 	for(my $i=0; $i <= $m; $i++) {

@@ -34,38 +34,27 @@
 #define NDPI_IPTABLES_EXT
 #include "xt_ndpi.h"
 #include "ndpi_config.h"
+#include "ndpi_main.h"
+#include "ndpi_static_bitmap.h"
 
 #include "regexp.c"
+#include "ndpi_static_bitmap.c"
 
-/* copy from ndpi_main.c */
-
-int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
-  int i;
-
-  for(i=0; i<NDPI_NUM_FDS_BITS; i++)
-    if(a.fds_bits[i] != 0)
-      return(0);
-
-  return(1);
-}
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 #endif
 
-//#if NDPI_LAST_IMPLEMENTED_PROTOCOL != NDPI_PROTOCOL_MAXNUM
-//#error LAST_IMPLEMENTED_PROTOCOL != PROTOCOL_MAXNUM
-//#endif
-
-static char *prot_short_str[NDPI_NUM_BITS] = { /*NDPI_PROTOCOL_SHORT_STRING,*/ NULL, };
-static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
+static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = { /*NDPI_PROTOCOL_SHORT_STRING,*/ NULL, };
+static char  prot_disabled[NDPI_MAX_NUM_STATIC_BITMAP+1] = { 0, };
+static char  prot_dpi[NDPI_MAX_NUM_STATIC_BITMAP+1] = { 0, };
 static int risk_index_max = 0;
 static uint64_t risk_map = 0;
 static int proto_init=0;
 static int risk_init=0;
 
 #define EXT_OPT_BASE 0
-// #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
+
 enum ndpi_opt_index {
 	NDPI_OPT_UNKNOWN=0,
 	NDPI_OPT_ALL,
@@ -76,8 +65,6 @@ enum ndpi_opt_index {
 	NDPI_OPT_HMASTER,
 	NDPI_OPT_HOST,
 	NDPI_OPT_INPROGRESS,
-	NDPI_OPT_JA3S,
-	NDPI_OPT_JA3C,
 	NDPI_OPT_JA4C,
 	NDPI_OPT_TLSFP,
 	NDPI_OPT_TLSV,
@@ -95,20 +82,19 @@ enum ndpi_opt_index {
 #define FLAGS_HOST 0x20
 #define FLAGS_INPROGRESS 0x40
 #define FLAGS_PROTO 0x80
-#define FLAGS_JA3S 0x100
-#define FLAGS_JA3C 0x200
+#define FLAGS_JA4C 0x100
 #define FLAGS_TLSFP 0x400
 #define FLAGS_TLSV 0x800
 #define FLAGS_UNTRACKED 0x1000
 #define FLAGS_CLEVEL 0x2000
 #define FLAGS_HPROTO 0x4000
 #define FLAGS_RISK 0x8000
-#define FLAGS_JA4C 0x10000
 
 static void load_kernel_proto (void) {
 	char buf[128],*c,pname[32],mark[32];
 	uint32_t index;
 	FILE *f_proto;
+	size_t ll;
 
 	if(proto_init) return;
 
@@ -138,12 +124,14 @@ static void load_kernel_proto (void) {
 		}
 		if(!pname[0]) continue;
 		if(sscanf(buf,"%x %s %s",&index,mark,pname) != 3) continue;
-		if(index >= NDPI_NUM_BITS) continue;
+		if(index >= NDPI_MAX_NUM_STATIC_BITMAP) continue;
+		ll = strlen(buf);
+		prot_dpi[index] = ll > 10 && !strncmp(&buf[ll-6]," dpi",4) ? 1:0;
 		prot_disabled[index] = strncmp(mark,"disable",7) == 0;
 		prot_short_str[index] = strdup(pname);	
 	}
 	fclose(f_proto);
-	if(index >= NDPI_NUM_BITS)
+	if(index >= NDPI_MAX_NUM_STATIC_BITMAP)
 	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module version missmatch.");
 	proto_init = 1;
 }
@@ -177,7 +165,7 @@ static void load_kernel_risk (void) {
 static void ndpi_mt_init(struct xt_entry_match *match)
 {
 	struct xt_ndpi_mtinfo *info = (void *)match->data;
-	NDPI_BITMASK_RESET(info->flags);
+	memset((char *)info,0,sizeof(struct xt_ndpi_mtinfo));
 }
 static char *_clevel2str[] = {
 	"unknown", "port", "ip", "nbpf",
@@ -296,11 +284,11 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
         int i,c,l,t;
 
 	load_kernel_proto();
-        for (t = l = c = i = 0; i < NDPI_NUM_BITS; i++) {
+        for (t = l = c = i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 		if (!prot_short_str[i] || prot_disabled[i] || 
 				!strncmp(prot_short_str[i],"badproto_",9)) continue;
 		t++;
-		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
+		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags, i) != 0) {
 			l = i; c++;
 		}
 	}
@@ -342,10 +330,6 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 	printf(" %s",csave);
 	if(info->inprogress) {
 	  printf("inprogress");
-	} else if(info->ja3s) {
-	  printf("ja3s");
-	} else if(info->ja3c) {
-	  printf("ja3c");
 	} else if(info->ja4c) {
 	  printf("ja4c");
 	} else if(info->tlsfp) {
@@ -360,22 +344,22 @@ _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 		return;
 	}
 	if( c == t-1 && 
-	    !NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN) ) { 
+	    !NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags,NDPI_PROTOCOL_UNKNOWN) ) { 
 		printf(" all");
 		return;
 	}
 
 	if(c > t/2 + 1) {
 	    printf(" all");
-	    for (i = 1; i < NDPI_NUM_BITS; i++) {
-                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) == 0)
+	    for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
+                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags, i) == 0)
 			printf(",-%s", prot_short_str[i]);
 	    }
 	    return;
 	}
 	printf(" ");
-        for (l = i = 0; i < NDPI_NUM_BITS; i++) {
-                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0)
+        for (l = i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
+                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags, i) != 0)
 			printf("%s%s",l++ ? ",":"", prot_short_str[i]);
         }
 }
@@ -513,8 +497,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_PROTO || c == NDPI_OPT_INPROGRESS ||
-	   c == NDPI_OPT_JA3S  || c == NDPI_OPT_JA3C || c == NDPI_OPT_JA4C ||
-	   c == NDPI_OPT_TLSFP || c == NDPI_OPT_TLSV) {
+	   c == NDPI_OPT_JA4C || c == NDPI_OPT_TLSFP || c == NDPI_OPT_TLSV) {
 		char *np = optarg,*n;
 		int num;
 		int op;
@@ -526,7 +509,7 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 				op = 0;
 				n++;
 			}
-			for (i = 0; i < NDPI_NUM_BITS; i++) {
+			for (i = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 			    if(prot_short_str[i] && !strcasecmp(prot_short_str[i],n)) {
 				    num = i;
 				    break; 
@@ -537,12 +520,12 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 				printf("Unknown proto '%s'\n",n);
 				return false;
 			    }
-			    for (i = 1; i < NDPI_NUM_BITS; i++) {
+			    for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 				if(prot_short_str[i] && strncmp(prot_short_str[i],"badproto_",9) && !prot_disabled[i]) {
 				    if(op)
-					NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
+					NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,i);
 				     else
-					NDPI_DEL_PROTOCOL_FROM_BITMASK(info->flags,i);
+					NDPI_DEL_PROTOCOL_FROM_BITMASK(&info->flags,i);
 				}
 			    }
 			} else {
@@ -551,21 +534,26 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 				return false;
 			    }
 			    if(op)
-				NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,num);
+				NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,num);
 			     else
-				NDPI_DEL_PROTOCOL_FROM_BITMASK(info->flags,num);
+				NDPI_DEL_PROTOCOL_FROM_BITMASK(&info->flags,num);
 			}
 			np = NULL;
 		}
 		if(c == NDPI_OPT_PROTO) { *flags |= FLAGS_PROTO; info->proto = 1; }
-		if(c == NDPI_OPT_JA3S)  { *flags |= FLAGS_JA3S;  info->ja3s = 1; }
-		if(c == NDPI_OPT_JA3C)  { *flags |= FLAGS_JA3C;  info->ja3c = 1; }
 		if(c == NDPI_OPT_JA4C)  { *flags |= FLAGS_JA4C;  info->ja4c = 1; }
 		if(c == NDPI_OPT_TLSFP) { *flags |= FLAGS_TLSFP; info->tlsfp = 1; }
 		if(c == NDPI_OPT_TLSV)  { *flags |= FLAGS_TLSV;  info->tlsv = 1; }
-		if(c == NDPI_OPT_INPROGRESS ) { *flags |= FLAGS_INPROGRESS;
-						info->inprogress = 1; }
-		if(NDPI_BITMASK_IS_EMPTY(info->flags)) {
+		if(c == NDPI_OPT_INPROGRESS ) {
+			for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
+			    if(!NDPI_COMPARE_PROTOCOL_TO_BITMASK(&info->flags,i)) continue;
+			    if(!prot_dpi[i])
+				xtables_error(PARAMETER_PROBLEM,"Protocol '%s' is not dpi. See in file /proc/net/xt_ndpi/proto\n",prot_short_str[i]);
+			}
+			*flags |= FLAGS_INPROGRESS;
+			info->inprogress = 1; 
+		}
+		if(NDPI_BITMASK_IS_EMPTY(&info->flags)) {
 			info->empty = 1;
 			*flags &= ~FLAGS_PROTO;
 		} else
@@ -574,16 +562,16 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 		return true;
 	}
 	if(c == NDPI_OPT_UNKNOWN) {
-		NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN);
+		NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,NDPI_PROTOCOL_UNKNOWN);
 		info->proto = 1;
         	*flags |= FLAGS_PROTO | FLAGS_HPROTO;
 		return true;
 	}
 	if(c == NDPI_OPT_ALL) {
 		load_kernel_proto();
-		for (i = 1; i < NDPI_NUM_BITS; i++) {
+		for (i = 1; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 	    	    if(prot_short_str[i] && strncmp(prot_short_str[i],"badproto_",9) && !prot_disabled[i])
-			NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
+			NDPI_ADD_PROTOCOL_TO_BITMASK(&info->flags,i);
 		}
 		info->proto = 1;
         	*flags |= FLAGS_PROTO | FLAGS_HPROTO | FLAGS_ALL;
@@ -627,20 +615,17 @@ ndpi_mt_check (unsigned int flags)
 		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to specify at least one protocol");
 	}
 
-	if (flags & (FLAGS_PROTO|FLAGS_JA3S|FLAGS_JA3C|FLAGS_JA4C|FLAGS_TLSFP|FLAGS_TLSV|FLAGS_INPROGRESS)) {
+	if (flags & (FLAGS_PROTO|FLAGS_JA4C|FLAGS_TLSFP|FLAGS_TLSV|FLAGS_INPROGRESS)) {
 	    if(!(flags & FLAGS_HPROTO))
 		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to specify at least one protocol");
 	}
 	if(flags & FLAGS_PROTO) nopt++;
-	if(flags & FLAGS_JA3S)  nopt++;
-	if(flags & FLAGS_JA3C)  nopt++;
 	if(flags & FLAGS_JA4C)  nopt++;
 	if(flags & FLAGS_TLSFP) nopt++;
 	if(flags & FLAGS_TLSV)  nopt++;
-	if(flags & FLAGS_RISK)  nopt++;
 	if(flags & FLAGS_INPROGRESS) nopt++;
 	if(nopt != 1)
-		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja3s|--ja3c|--tlsfp|--tlsv|--inprogress %x %d",flags,nopt);
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--tlsfp|--tlsv|--inprogress %x %d",flags,nopt);
 }
 
 static int cmp_pname(const void *p1, const void *p2) {
@@ -658,12 +643,12 @@ static int cmp_pname(const void *p1, const void *p2) {
 static int ndpi_print_prot_list(int cond, char *msg) {
         int i,c,d,l,cp;
 	char line[128];
-	char *pn[NDPI_NUM_BITS+1];
+	char *pn[NDPI_MAX_NUM_STATIC_BITMAP+1];
 
 	load_kernel_proto();
 	bzero((char *)&pn[0],sizeof(pn));
 
-        for (i = 1,d = 0,cp = 0; i < NDPI_NUM_BITS; i++) {
+        for (i = 1,d = 0,cp = 0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 	    if(!prot_short_str[i] ||
 			  !strncmp(prot_short_str[i],"badproto_",9) ||
 			  !strncmp(prot_short_str[i],"free",4)) continue;
@@ -678,9 +663,9 @@ static int ndpi_print_prot_list(int cond, char *msg) {
 	if(!cp) return d;
 	if(msg)
 		puts(msg);
-	qsort(&pn[0],NDPI_NUM_BITS,sizeof(pn[0]),cmp_pname);
+	qsort(&pn[0],NDPI_MAX_NUM_STATIC_BITMAP,sizeof(pn[0]),cmp_pname);
 
-        for (i = 0,c = 0,l=0; i < NDPI_NUM_BITS; i++) {
+        for (i = 0,c = 0,l=0; i < NDPI_MAX_NUM_STATIC_BITMAP; i++) {
 	    if(!pn[i]) break;
 	    l += snprintf(&line[l],sizeof(line)-1-l,"%-20s ", pn[i]);
 	    if(!c) printf("  ");
@@ -714,8 +699,6 @@ ndpi_mt_help(void)
 		"  --proto protocols      Match if protocols detected\n"
 		"                         (list of protocols comma separated)\n"
 		"  --inprogress protocols Match if protocols detection is not finished yet\n"
-		"  --ja3s protocols       Match ja3 server hash (user defined protocols)\n"
-		"  --ja3c protocols       Match ja3 client hash (user defined protocols)\n"
 		"  --ja4c protocols       Match ja4 client hash (user defined protocols)\n"
 		"  --tlsfp protocols      Match tls fingerprint (user defined protocols)\n"
 		"  --tlsv  protocols      Match tls version (user defined protocols)\n"
@@ -980,8 +963,6 @@ void _init(void)
 	MT_OPT(NDPI_OPT_HMASTER,"have-master",0)
 	MT_OPT(NDPI_OPT_HOST,"host",1)
 	MT_OPT(NDPI_OPT_INPROGRESS,"inprogress",1)
-	MT_OPT(NDPI_OPT_JA3S,"ja3s",1)
-	MT_OPT(NDPI_OPT_JA3C,"ja3c",1)
 	MT_OPT(NDPI_OPT_JA4C,"ja4c",1)
 	MT_OPT(NDPI_OPT_TLSFP,"tlsfp",1)
 	MT_OPT(NDPI_OPT_TLSV,"tlsv",1)

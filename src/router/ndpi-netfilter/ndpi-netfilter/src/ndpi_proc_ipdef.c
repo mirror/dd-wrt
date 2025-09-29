@@ -93,7 +93,7 @@ static ssize_t _n_ipdef_proc_read(struct file *file, char __user *buf,
 		no_dpi = node->value.u.uv32.user_value & 0xff0000 ? 1:0;
 		if(n_proto != NDPI_PROTOCOL_UNKNOWN)
 		    l += snprintf(&lbuf[l],sizeof(lbuf)-l,"%-16s %s%s\n",ibuf,
-			n_proto >= NDPI_NUM_BITS ?
+			n_proto >= NDPI_MAX_NUM_STATIC_BITMAP ?
 				"unknown":ndpi_get_proto_by_id(n->ndpi_struct,n_proto),
 				no_dpi ? "!":"");
 		}
