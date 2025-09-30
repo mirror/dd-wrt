@@ -192,6 +192,14 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ventana zfs
 	-$(MAKE) -f Makefile.ventana zfs-install
 endif
+ifeq ($(CONFIG_IPV6),y)
+	-$(MAKE) -f Makefile.ventana nat46
+	-$(MAKE) -f Makefile.ventana nat46-install
+endif
+ifeq ($(CONFIG_OPENVPN),y)
+	-$(MAKE) -f Makefile.ventana openvpn-dco
+	-$(MAKE) -f Makefile.ventana openvpn-dco-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.ventana smbd
 	-$(MAKE) -f Makefile.ventana smbd-install
