@@ -267,6 +267,14 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.mt7621 batman-adv
 	-$(MAKE) -f Makefile.mt7621 batman-adv-install
 endif
+ifeq ($(CONFIG_IPV6),y)
+	-$(MAKE) -f Makefile.mt7621 nat46
+	-$(MAKE) -f Makefile.mt7621 nat46-install
+endif
+ifeq ($(CONFIG_OPENVPN),y)
+	-$(MAKE) -f Makefile.mt7621 openvpn-dco
+	-$(MAKE) -f Makefile.mt7621 openvpn-dco-install
+endif
 ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter
 	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter-install
