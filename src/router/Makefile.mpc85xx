@@ -196,6 +196,14 @@ ifeq ($(CONFIG_NTFS3G),y)
 	-$(MAKE) -f Makefile.mpc85xx antfs
 	-$(MAKE) -f Makefile.mpc85xx antfs-install
 endif
+ifeq ($(CONFIG_IPV6),y)
+	-$(MAKE) -f Makefile.mcp85xx nat46
+	-$(MAKE) -f Makefile.mcp85xx nat46-install
+endif
+ifeq ($(CONFIG_OPENVPN),y)
+	-$(MAKE) -f Makefile.mcp85xx openvpn-dco
+	-$(MAKE) -f Makefile.mcp85xx openvpn-dco-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.mpc85xx smbd
 	-$(MAKE) -f Makefile.mpc85xx smbd-install
