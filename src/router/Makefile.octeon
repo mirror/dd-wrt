@@ -229,6 +229,14 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.octeon zfs
 	-$(MAKE) -f Makefile.octeon zfs-install
 endif
+ifeq ($(CONFIG_IPV6),y)
+	-$(MAKE) -f Makefile.octeon nat46
+	-$(MAKE) -f Makefile.octeon nat46-install
+endif
+ifeq ($(CONFIG_OPENVPN),y)
+	-$(MAKE) -f Makefile.octeon openvpn-dco
+	-$(MAKE) -f Makefile.octeon openvpn-dco-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.octeon smbd
 	-$(MAKE) -f Makefile.octeon smbd-install
