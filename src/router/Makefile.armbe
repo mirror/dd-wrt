@@ -217,6 +217,14 @@ ifeq ($(CONFIG_NTFS3G),y)
 	-$(MAKE) -f Makefile.armbe ntfs3
 	-$(MAKE) -f Makefile.armbe ntfs3-install
 endif
+ifeq ($(CONFIG_IPV6),y)
+	-$(MAKE) -f Makefile.armbe nat46
+	-$(MAKE) -f Makefile.armbe nat46-install
+endif
+ifeq ($(CONFIG_OPENVPN),y)
+	-$(MAKE) -f Makefile.armbe openvpn-dco
+	-$(MAKE) -f Makefile.armbe openvpn-dco-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.armbe smbd
 	-$(MAKE) -f Makefile.armbe smbd-install
