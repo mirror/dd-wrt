@@ -130,7 +130,7 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	int ret;
 
 	if (!bss)
-		return;
+		return -1;
 
 	if (bss->freq < 4000)
 		hw_mode = HOSTAPD_MODE_IEEE80211G;
