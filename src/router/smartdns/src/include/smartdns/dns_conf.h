@@ -313,6 +313,7 @@ struct dns_https_record {
 struct dns_https_filter {
 	int no_ipv4hint;
 	int no_ipv6hint;
+	int no_ech;
 };
 
 struct dns_https_record_rule {
@@ -701,6 +702,7 @@ struct dns_config {
 	char log_file[DNS_MAX_PATH];
 	size_t log_size;
 	int log_num;
+	int log_color_mode;
 	int log_file_mode;
 	int log_console;
 	int log_syslog;

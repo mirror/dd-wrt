@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,6 +76,8 @@ int smartdns_plugin_can_log(smartdns_log_level level);
 void smartdns_plugin_log_setlevel(smartdns_log_level level);
 
 int smartdns_plugin_log_getlevel(void);
+
+int smartdns_plugin_is_audit_enabled(void);
 
 const char *smartdns_plugin_get_config(const char *key);
 
