@@ -147,17 +147,16 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	write_argv_buf[4] = "noreboot";
 	write_argv_buf[5] = "usedd";
 	write_argv_buf[6] = NULL;
+	
+	eval("mkdir", "-p", "/tmp/new_root");
+	eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
+	eval("mkdir", "-p", "/tmp/new_root/tmp");
+
 	if (getfreespace("/usr/local") >= 512 * 1024 * 1024) {
-		eval("mkdir", "-p", "/tmp/new_root");
 		eval("mkdir", "-p", "/usr/local/tmp");
-		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
-		eval("mkdir", "-p", "/tmp/new_root/tmp");
 		eval("mount", "--bind", "/usr/local/tmp", "/tmp/new_root/tmp");
-	} else {
-		eval("mkdir", "-p", "/tmp/new_root");
-		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
-		eval("mkdir", "-p", "/tmp/new_root/tmp");
 	}
+
 	if (!drv || !(fifo = fopen("/tmp/new_root/tmp/uploadfile.bin", "wb"))) {
 #else
 	if (!drv || !(fifo = fopen(drive, "wb"))) {
