@@ -224,7 +224,7 @@ int main_mbr(int argc, char *argv[])
 				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
 			}
 		} else {
-			fprintf(stderr, "read nvram from old offset %d with len %d and write to offset %d\n",
+			fprintf(stderr, "read nvram from old offset %lld with len %lld and write to offset %lld\n",
 				le32_to_cpu(nvram->start) * 512, nvlen, le32_to_cpu(newlayout[2].start) * 512);
 			copy(out, le32_to_cpu(nvram->start) * 512, le32_to_cpu(newlayout[2].start) * 512, nvlen);
 		}
