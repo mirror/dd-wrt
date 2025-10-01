@@ -57,6 +57,7 @@
 #include <bcmdevs.h>
 #include <linux/if_ether.h>
 #include <linux/sockios.h>
+#include <sys/statvfs.h>
 
 #define _LINUX_IF_H
 #include <linux/types.h>
@@ -805,7 +806,7 @@ again:;
 char *get_lan_ipaddr(void)
 {
 	char *lan_ip = nvram_safe_get("lan_ipaddr");
-	if (*nvram_safe_get("lan_dhcpaddr") && nvram_match("lan_dhcp","1")) {
+	if (*nvram_safe_get("lan_dhcpaddr") && nvram_match("lan_dhcp", "1")) {
 		lan_ip = nvram_safe_get("lan_dhcpaddr");
 	}
 	return lan_ip;
@@ -814,7 +815,7 @@ char *get_lan_ipaddr(void)
 char *get_lan_dns(void)
 {
 	char *lan_dns = nvram_safe_get("lan_dns");
-	if (*nvram_safe_get("lan_dhcpdns") && strcmp(nvram_safe_get("lan_dhcpdns"), "0.0.0.0") && nvram_match("lan_dhcp","1")) {
+	if (*nvram_safe_get("lan_dhcpdns") && strcmp(nvram_safe_get("lan_dhcpdns"), "0.0.0.0") && nvram_match("lan_dhcp", "1")) {
 		lan_dns = nvram_safe_get("lan_dhcpdns");
 	}
 	return lan_dns;
@@ -823,7 +824,7 @@ char *get_lan_dns(void)
 char *get_lan_gateway(void)
 {
 	char *lan_gw = nvram_safe_get("lan_dns");
-	if (*nvram_safe_get("lan_dhcpgw") && strcmp(nvram_safe_get("lan_dhcpgw"), "0.0.0.0") && nvram_match("lan_dhcp","1")) {
+	if (*nvram_safe_get("lan_dhcpgw") && strcmp(nvram_safe_get("lan_dhcpgw"), "0.0.0.0") && nvram_match("lan_dhcp", "1")) {
 		lan_gw = nvram_safe_get("lan_dhcpgw");
 	}
 	return lan_gw;
@@ -832,7 +833,7 @@ char *get_lan_gateway(void)
 char *get_lan_netmask(void)
 {
 	char *lan_mask = nvram_safe_get("lan_netmask");
-	if (*nvram_safe_get("lan_dhcpmask") && nvram_match("lan_dhcp","1")) {
+	if (*nvram_safe_get("lan_dhcpmask") && nvram_match("lan_dhcp", "1")) {
 		lan_mask = nvram_safe_get("lan_dhcpmask");
 	}
 	return lan_mask;
@@ -2588,12 +2589,11 @@ static int mdio_read(int skfd, struct ifreq *ifr, int location)
 	return mii->val_out;
 }
 
-
 #ifndef MII_CTRL1000
-#define MII_CTRL1000        0x09        /* 1000BASE-T control          */
-#define MII_STAT1000        0x0a        /* 1000BASE-T status           */
-#define ADVERTISE_1000FULL      0x0200  /* Advertise 1000BASE-T full duplex */
-#define ADVERTISE_1000HALF      0x0100  /* Advertise 1000BASE-T half duplex */
+#define MII_CTRL1000 0x09 /* 1000BASE-T control          */
+#define MII_STAT1000 0x0a /* 1000BASE-T status           */
+#define ADVERTISE_1000FULL 0x0200 /* Advertise 1000BASE-T full duplex */
+#define ADVERTISE_1000HALF 0x0100 /* Advertise 1000BASE-T half duplex */
 #endif
 
 static int getLanPortStatus_fallback(const char *ifname, struct portstatus *status)
@@ -2645,3 +2645,17 @@ int getLanPortStatus(const char *ifname, struct portstatus *status)
 }
 
 #endif
+long long getfreespace(const char *path)
+{
+	struct statvfs s;
+	if (statvfs(path, &s) != 0) {
+		return -1;
+	}
+	if (s.f_frsize == 0)
+		s.f_frsize = s.f_bsize;
+
+	fsblkcnt_t val = s.f_bavail;
+	if (s.f_frsize > 1)
+		val *= s.f_frsize;
+	return val;
+}
