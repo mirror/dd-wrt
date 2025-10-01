@@ -87,8 +87,8 @@ cp /usr/sbin/update-after-pivot.sh $R/bin
 cat /etc/passwd >$R/etc/passwd
 mount -t proc proc ${R}proc 
 mount -t sysfs sys ${R}sys 
-mount -o remount,ro /usr/local
-umount /usr/local
+#mount -o remount,ro /usr/local
+#umount /usr/local
 cp -av /dev ${R}/
 service samba3 stop
 service nfs stop
