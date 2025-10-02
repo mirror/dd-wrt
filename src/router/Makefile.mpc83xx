@@ -193,9 +193,15 @@ endif
 	-$(MAKE) -f Makefile.mpc83xx batman-adv-install
 	-$(MAKE) -f Makefile.mpc83xx ndpi-netfilter
 	-$(MAKE) -f Makefile.mpc83xx ndpi-netfilter-install
+	-$(MAKE) -f Makefile.mpc83xx portscan
+	-$(MAKE) -f Makefile.mpc83xx portscan-install
 ifeq ($(CONFIG_NTFS3G),y)
 	-$(MAKE) -f Makefile.mpc83xx antfs
 	-$(MAKE) -f Makefile.mpc83xx antfs-install
+endif
+ifeq ($(CONFIG_UNIWIP),y)
+	-$(MAKE) -f Makefile.mpc83xx uniwip_gpio
+	-$(MAKE) -f Makefile.mpc83xx uniwip_gpio-install
 endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.mpc83xx smbd
@@ -422,7 +428,7 @@ endif
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	#cd $(TARGETDIR)
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
