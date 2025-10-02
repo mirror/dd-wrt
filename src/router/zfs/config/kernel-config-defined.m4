@@ -7,7 +7,6 @@ AC_DEFUN([ZFS_AC_KERNEL_CONFIG_DEFINED], [
 	ZFS_AC_KERNEL_SRC_CONFIG_MODULES
 	ZFS_AC_KERNEL_SRC_CONFIG_BLOCK
 	ZFS_AC_KERNEL_SRC_CONFIG_DEBUG_LOCK_ALLOC
-	ZFS_AC_KERNEL_SRC_CONFIG_TRIM_UNUSED_KSYMS
 	ZFS_AC_KERNEL_SRC_CONFIG_ZLIB_DEFLATE
 	ZFS_AC_KERNEL_SRC_CONFIG_ZLIB_INFLATE
 
@@ -18,7 +17,6 @@ AC_DEFUN([ZFS_AC_KERNEL_CONFIG_DEFINED], [
 	ZFS_AC_KERNEL_CONFIG_MODULES
 	ZFS_AC_KERNEL_CONFIG_BLOCK
 	ZFS_AC_KERNEL_CONFIG_DEBUG_LOCK_ALLOC
-	ZFS_AC_KERNEL_CONFIG_TRIM_UNUSED_KSYMS
 	ZFS_AC_KERNEL_CONFIG_ZLIB_DEFLATE
 	ZFS_AC_KERNEL_CONFIG_ZLIB_INFLATE
 ])
@@ -137,33 +135,6 @@ AC_DEFUN([ZFS_AC_KERNEL_CONFIG_MODULES], [
 		*** Please make sure you prepared the Linux source tree
 		*** by running `make prepare` there.
 			])
-		])
-	])
-])
-
-dnl #
-dnl # Check CONFIG_TRIM_UNUSED_KSYMS
-dnl #
-dnl # Verify the kernel has CONFIG_TRIM_UNUSED_KSYMS disabled.
-dnl #
-AC_DEFUN([ZFS_AC_KERNEL_SRC_CONFIG_TRIM_UNUSED_KSYMS], [
-	ZFS_LINUX_TEST_SRC([config_trim_unusued_ksyms], [
-		#if defined(CONFIG_TRIM_UNUSED_KSYMS)
-		#error CONFIG_TRIM_UNUSED_KSYMS not defined
-		#endif
-	],[])
-])
-
-AC_DEFUN([ZFS_AC_KERNEL_CONFIG_TRIM_UNUSED_KSYMS], [
-	AC_MSG_CHECKING([whether CONFIG_TRIM_UNUSED_KSYM is disabled])
-	ZFS_LINUX_TEST_RESULT([config_trim_unusued_ksyms], [
-		AC_MSG_RESULT([yes])
-	],[
-		AC_MSG_RESULT([no])
-		AS_IF([test "x$enable_linux_builtin" != xyes], [
-			AC_MSG_ERROR([
-	*** This kernel has unused symbols trimming enabled, please disable.
-	*** Rebuild the kernel with CONFIG_TRIM_UNUSED_KSYMS=n set.])
 		])
 	])
 ])
