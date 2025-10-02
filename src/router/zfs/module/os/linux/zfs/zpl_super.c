@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2011, Lawrence Livermore National Security, LLC.
  * Copyright (c) 2023, Datto Inc. All rights reserved.
+ * Copyright (c) 2025, Klara, Inc.
  */
 
 
@@ -31,7 +32,22 @@
 #include <sys/zfs_ctldir.h>
 #include <sys/zpl.h>
 #include <linux/iversion.h>
+#include <linux/version.h>
 
+/*
+ * What to do when the last reference to an inode is released. If 0, the kernel
+ * will cache it on the superblock. If 1, the inode will be freed immediately.
+ * See zpl_drop_inode().
+ */
+int zfs_delete_inode = 0;
+
+/*
+ * What to do when the last reference to a dentry is released. If 0, the kernel
+ * will cache it until the entry (file) is destroyed. If 1, the dentry will be
+ * marked for cleanup, at which time its inode reference will be released. See
+ * zpl_dentry_delete().
+ */
+int zfs_delete_dentry = 0;
 
 static struct inode *
 zpl_inode_alloc(struct super_block *sb)
@@ -44,10 +60,19 @@ zpl_inode_alloc(struct super_block *sb)
 	return (ip);
 }
 
+#ifdef HAVE_SOPS_FREE_INODE
+static void
+zpl_inode_free(struct inode *ip)
+{
+	ASSERT0(atomic_read(&ip->i_count));
+	zfs_inode_free(ip);
+}
+#endif
+
 static void
 zpl_inode_destroy(struct inode *ip)
 {
-	ASSERT(atomic_read(&ip->i_count) == 0);
+	ASSERT0(atomic_read(&ip->i_count));
 	zfs_inode_destroy(ip);
 }
 
@@ -67,11 +92,36 @@ zpl_dirty_inode(struct inode *ip, int flags)
 }
 
 /*
- * When ->drop_inode() is called its return value indicates if the
- * inode should be evicted from the inode cache.  If the inode is
- * unhashed and has no links the default policy is to evict it
- * immediately.
+ * ->drop_inode() is called when the last reference to an inode is released.
+ * Its return value indicates if the inode should be destroyed immediately, or
+ * cached on the superblock structure.
  *
+ * By default (zfs_delete_inode=0), we call generic_drop_inode(), which returns
+ * "destroy immediately" if the inode is unhashed and has no links (roughly: no
+ * longer exists on disk). On datasets with millions of rarely-accessed files,
+ * this can cause a large amount of memory to be "pinned" by cached inodes,
+ * which in turn pin their associated dnodes and dbufs, until the kernel starts
+ * reporting memory pressure and requests OpenZFS release some memory (see
+ * zfs_prune()).
+ *
+ * When set to 1, we call generic_delete_node(), which always returns "destroy
+ * immediately", resulting in inodes being destroyed immediately, releasing
+ * their associated dnodes and dbufs to the dbuf cached and the ARC to be
+ * evicted as normal.
+ *
+ * Note that the "last reference" doesn't always mean the last _userspace_
+ * reference; the dentry cache also holds a reference, so "busy" inodes will
+ * still be kept alive that way (subject to dcache tuning).
+ */
+static int
+zpl_drop_inode(struct inode *ip)
+{
+	if (zfs_delete_inode)
+		return (generic_delete_inode(ip));
+	return (generic_drop_inode(ip));
+}
+
+/*
  * The ->evict_inode() callback must minimally truncate the inode pages,
  * and call clear_inode().  For 2.6.35 and later kernels this will
  * simply update the inode state, with the sync occurring before the
@@ -105,6 +155,42 @@ zpl_put_super(struct super_block *sb)
 	ASSERT3S(error, <=, 0);
 }
 
+/*
+ * zfs_sync() is the underlying implementation for the sync(2) and syncfs(2)
+ * syscalls, via sb->s_op->sync_fs().
+ *
+ * Before kernel 5.17 (torvalds/linux@5679897eb104), syncfs() ->
+ * sync_filesystem() would ignore the return from sync_fs(), instead only
+ * considing the error from syncing the underlying block device (sb->s_dev).
+ * Since OpenZFS doesn't _have_ an underlying block device, there's no way for
+ * us to report a sync directly.
+ *
+ * However, in 5.8 (torvalds/linux@735e4ae5ba28) the superblock gained an extra
+ * error store `s_wb_err`, to carry errors seen on page writeback since the
+ * last call to syncfs(). If sync_filesystem() does not return an error, any
+ * existing writeback error on the superblock will be used instead (and cleared
+ * either way). We don't use this (page writeback is a different thing for us),
+ * so for 5.8-5.17 we can use that instead to get syncfs() to return the error.
+ *
+ * Before 5.8, we have no other good options - no matter what happens, the
+ * userspace program will be told the call has succeeded, and so we must make
+ * it so, Therefore, when we are asked to wait for sync to complete (wait ==
+ * 1), if zfs_sync() has returned an error we have no choice but to block,
+ * regardless of the reason.
+ *
+ * The 5.17 change was backported to the 5.10, 5.15 and 5.16 series, and likely
+ * to some vendor kernels. Meanwhile, s_wb_err is still in use in 6.15 (the
+ * mainline Linux series at time of writing), and has likely been backported to
+ * vendor kernels before 5.8. We don't really want to use a workaround when we
+ * don't have to, but we can't really detect whether or not sync_filesystem()
+ * will return our errors (without a difficult runtime test anyway). So, we use
+ * a static version check: any kernel reporting its version as 5.17+ will use a
+ * direct error return, otherwise, we'll either use s_wb_err if it was detected
+ * at configure (5.8-5.16 + vendor backports). If it's unavailable, we will
+ * block to ensure the correct semantics.
+ *
+ * See https://github.com/openzfs/zfs/issues/17416 for further discussion.
+ */
 static int
 zpl_sync_fs(struct super_block *sb, int wait)
 {
@@ -115,10 +201,28 @@ zpl_sync_fs(struct super_block *sb, int wait)
 	crhold(cr);
 	cookie = spl_fstrans_mark();
 	error = -zfs_sync(sb, wait, cr);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
+#ifdef HAVE_SUPER_BLOCK_S_WB_ERR
+	if (error && wait)
+		errseq_set(&sb->s_wb_err, error);
+#else
+	if (error && wait) {
+		zfsvfs_t *zfsvfs = sb->s_fs_info;
+		ASSERT3P(zfsvfs, !=, NULL);
+		if (zfs_enter(zfsvfs, FTAG) == 0) {
+			txg_wait_synced(dmu_objset_pool(zfsvfs->z_os), 0);
+			zfs_exit(zfsvfs, FTAG);
+			error = 0;
+		}
+	}
+#endif
+#endif /* < 5.17.0 */
+
 	spl_fstrans_unmark(cookie);
 	crfree(cr);
-	ASSERT3S(error, <=, 0);
 
+	ASSERT3S(error, <=, 0);
 	return (error);
 }
 
@@ -400,9 +504,13 @@ zpl_prune_sb(uint64_t nr_to_scan, void *arg)
 
 const struct super_operations zpl_super_operations = {
 	.alloc_inode		= zpl_inode_alloc,
+#ifdef HAVE_SOPS_FREE_INODE
+	.free_inode		= zpl_inode_free,
+#endif
 	.destroy_inode		= zpl_inode_destroy,
 	.dirty_inode		= zpl_dirty_inode,
 	.write_inode		= NULL,
+	.drop_inode		= zpl_drop_inode,
 	.evict_inode		= zpl_evict_inode,
 	.put_super		= zpl_put_super,
 	.sync_fs		= zpl_sync_fs,
@@ -411,6 +519,35 @@ const struct super_operations zpl_super_operations = {
 	.show_devname		= zpl_show_devname,
 	.show_options		= zpl_show_options,
 	.show_stats		= NULL,
+};
+
+/*
+ * ->d_delete() is called when the last reference to a dentry is released. Its
+ *  return value indicates if the dentry should be destroyed immediately, or
+ *  retained in the dentry cache.
+ *
+ * By default (zfs_delete_dentry=0) the kernel will always cache unused
+ * entries.  Each dentry holds an inode reference, so cached dentries can hold
+ * the final inode reference indefinitely, leading to the inode and its related
+ * data being pinned (see zpl_drop_inode()).
+ *
+ * When set to 1, we signal that the dentry should be destroyed immediately and
+ * never cached. This reduces memory usage, at the cost of higher overheads to
+ * lookup a file, as the inode and its underlying data (dnode/dbuf) need to be
+ * reloaded and reinflated.
+ *
+ * Note that userspace does not have direct control over dentry references and
+ * reclaim; rather, this is part of the kernel's caching and reclaim subsystems
+ * (eg vm.vfs_cache_pressure).
+ */
+static int
+zpl_dentry_delete(const struct dentry *dentry)
+{
+	return (zfs_delete_dentry ? 1 : 0);
+}
+
+const struct dentry_operations zpl_dentry_operations = {
+	.d_delete = zpl_dentry_delete,
 };
 
 struct file_system_type zpl_fs_type = {
@@ -424,3 +561,10 @@ struct file_system_type zpl_fs_type = {
 	.mount			= zpl_mount,
 	.kill_sb		= zpl_kill_sb,
 };
+
+ZFS_MODULE_PARAM(zfs, zfs_, delete_inode, INT, ZMOD_RW,
+	"Delete inodes as soon as the last reference is released.");
+
+ZFS_MODULE_PARAM(zfs, zfs_, delete_dentry, INT, ZMOD_RW,
+	"Delete dentries from dentry cache as soon as the last reference is "
+	"released.");

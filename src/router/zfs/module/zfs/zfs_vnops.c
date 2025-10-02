@@ -27,6 +27,7 @@
  * Copyright 2017 Nexenta Systems, Inc.
  * Copyright (c) 2021, 2022 by Pawel Jakub Dawidek
  * Copyright (c) 2025, Rob Norris <robn@despairlabs.com>
+ * Copyright (c) 2025, Klara, Inc.
  */
 
 /* Portions Copyright 2007 Jeremy Teo */
@@ -49,6 +50,7 @@
 #include <sys/dmu.h>
 #include <sys/dmu_objset.h>
 #include <sys/dsl_crypt.h>
+#include <sys/dsl_dataset.h>
 #include <sys/spa.h>
 #include <sys/txg.h>
 #include <sys/dbuf.h>
@@ -67,13 +69,14 @@
 int zfs_bclone_enabled = 1;
 
 /*
- * When set zfs_clone_range() waits for dirty data to be written to disk.
- * This allows the clone operation to reliably succeed when a file is modified
- * and then immediately cloned. For small files this may be slower than making
- * a copy of the file and is therefore not the default.  However, in certain
- * scenarios this behavior may be desirable so a tunable is provided.
+ * When set to 1 the FICLONE and FICLONERANGE ioctls will wait for any dirty
+ * data to be written to disk before proceeding. This ensures that the clone
+ * operation reliably succeeds, even if a file is modified and then immediately
+ * cloned. Note that for small files this may be slower than simply copying
+ * the file. When set to 0 the clone operation will immediately fail if it
+ * encounters any dirty blocks. By default waiting is enabled.
  */
-int zfs_bclone_wait_dirty = 0;
+int zfs_bclone_wait_dirty = 1;
 
 /*
  * Enable Direct I/O. If this setting is 0, then all I/O requests will be
@@ -114,9 +117,7 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 	if (zfsvfs->z_os->os_sync != ZFS_SYNC_DISABLED) {
 		if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 			return (error);
-		atomic_inc_32(&zp->z_sync_writes_cnt);
-		zil_commit(zfsvfs->z_log, zp->z_id);
-		atomic_dec_32(&zp->z_sync_writes_cnt);
+		error = zil_commit(zfsvfs->z_log, zp->z_id);
 		zfs_exit(zfsvfs, FTAG);
 	}
 	return (error);
@@ -379,8 +380,13 @@ zfs_read(struct znode *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 	frsync = !!(ioflag & FRSYNC);
 #endif
 	if (zfsvfs->z_log &&
-	    (frsync || zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS))
-		zil_commit(zfsvfs->z_log, zp->z_id);
+	    (frsync || zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)) {
+		error = zil_commit(zfsvfs->z_log, zp->z_id);
+		if (error != 0) {
+			zfs_exit(zfsvfs, FTAG);
+			return (error);
+		}
+	}
 
 	/*
 	 * Lock the range against changes.
@@ -1078,8 +1084,13 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 		return (error);
 	}
 
-	if (commit)
-		zil_commit(zilog, zp->z_id);
+	if (commit) {
+		error = zil_commit(zilog, zp->z_id);
+		if (error != 0) {
+			zfs_exit(zfsvfs, FTAG);
+			return (error);
+		}
+	}
 
 	int64_t nwritten = start_resid - zfs_uio_resid(uio);
 	dataset_kstats_update_write_kstats(&zfsvfs->z_kstat, nwritten);
@@ -1106,12 +1117,20 @@ zfs_rewrite(znode_t *zp, uint64_t off, uint64_t len, uint64_t flags,
 {
 	int error;
 
-	if (flags != 0 || arg != 0)
+	if ((flags & ~ZFS_REWRITE_PHYSICAL) != 0 || arg != 0)
 		return (SET_ERROR(EINVAL));
 
 	zfsvfs_t *zfsvfs = ZTOZSB(zp);
 	if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 		return (error);
+
+	/* Check if physical rewrite is allowed */
+	spa_t *spa = zfsvfs->z_os->os_spa;
+	if ((flags & ZFS_REWRITE_PHYSICAL) &&
+	    !spa_feature_is_enabled(spa, SPA_FEATURE_PHYSICAL_REWRITE)) {
+		zfs_exit(zfsvfs, FTAG);
+		return (SET_ERROR(ENOTSUP));
+	}
 
 	if (zfs_is_readonly(zfsvfs)) {
 		zfs_exit(zfsvfs, FTAG);
@@ -1192,7 +1211,7 @@ zfs_rewrite(znode_t *zp, uint64_t off, uint64_t len, uint64_t flags,
 		error = dmu_buf_hold_array_by_dnode(dn, off, n, TRUE, FTAG,
 		    &numbufs, &dbp, DMU_READ_PREFETCH | DMU_UNCACHEDIO);
 		if (error) {
-			dmu_tx_abort(tx);
+			dmu_tx_commit(tx);
 			break;
 		}
 		for (int i = 0; i < numbufs; i++) {
@@ -1200,7 +1219,10 @@ zfs_rewrite(znode_t *zp, uint64_t off, uint64_t len, uint64_t flags,
 			if (dmu_buf_is_dirty(dbp[i], tx))
 				continue;
 			nw += dbp[i]->db_size;
-			dmu_buf_will_dirty(dbp[i], tx);
+			if (flags & ZFS_REWRITE_PHYSICAL)
+				dmu_buf_will_rewrite(dbp[i], tx);
+			else
+				dmu_buf_will_dirty(dbp[i], tx);
 		}
 		dmu_buf_rele_array(dbp, numbufs, FTAG);
 
@@ -1253,8 +1275,8 @@ zfs_setsecattr(znode_t *zp, vsecattr_t *vsecp, int flag, cred_t *cr)
 	zilog = zfsvfs->z_log;
 	error = zfs_setacl(zp, vsecp, skipaclchk, cr);
 
-	if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
-		zil_commit(zilog, 0);
+	if (error == 0 && zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
+		error = zil_commit(zilog, 0);
 
 	zfs_exit(zfsvfs, FTAG);
 	return (error);
@@ -1817,9 +1839,17 @@ zfs_clone_range(znode_t *inzp, uint64_t *inoffp, znode_t *outzp,
 			 * fallback, or wait for the next TXG and check again.
 			 */
 			if (error == EAGAIN && zfs_bclone_wait_dirty) {
-				txg_wait_synced(dmu_objset_pool(inos),
-				    last_synced_txg + 1);
-				continue;
+				txg_wait_flag_t wait_flags =
+				    spa_get_failmode(dmu_objset_spa(inos)) ==
+				    ZIO_FAILURE_MODE_CONTINUE ?
+				    TXG_WAIT_SUSPEND : 0;
+				error = txg_wait_synced_flags(
+				    dmu_objset_pool(inos), last_synced_txg + 1,
+				    wait_flags);
+				if (error == 0)
+					continue;
+				ASSERT3U(error, ==, ESHUTDOWN);
+				error = SET_ERROR(EIO);
 			}
 
 			break;
@@ -1832,7 +1862,8 @@ zfs_clone_range(znode_t *inzp, uint64_t *inoffp, znode_t *outzp,
 		dmu_tx_hold_sa(tx, outzp->z_sa_hdl, B_FALSE);
 		db = (dmu_buf_impl_t *)sa_get_db(outzp->z_sa_hdl);
 		DB_DNODE_ENTER(db);
-		dmu_tx_hold_clone_by_dnode(tx, DB_DNODE(db), outoff, size);
+		dmu_tx_hold_clone_by_dnode(tx, DB_DNODE(db), outoff, size,
+		    inblksz);
 		DB_DNODE_EXIT(db);
 		zfs_sa_upgrade_txholds(tx, outzp);
 		error = dmu_tx_assign(tx, DMU_TX_WAIT);
@@ -1856,7 +1887,7 @@ zfs_clone_range(znode_t *inzp, uint64_t *inoffp, znode_t *outzp,
 			 */
 			if (inblksz != outzp->z_blksz) {
 				error = SET_ERROR(EINVAL);
-				dmu_tx_abort(tx);
+				dmu_tx_commit(tx);
 				break;
 			}
 
@@ -1930,7 +1961,7 @@ unlock:
 		ZFS_ACCESSTIME_STAMP(inzfsvfs, inzp);
 
 		if (outos->os_sync == ZFS_SYNC_ALWAYS) {
-			zil_commit(zilog, outzp->z_id);
+			error = zil_commit(zilog, outzp->z_id);
 		}
 
 		*inoffp += done;
@@ -1999,7 +2030,7 @@ zfs_clone_range_replay(znode_t *zp, uint64_t off, uint64_t len, uint64_t blksz,
 	dmu_tx_hold_sa(tx, zp->z_sa_hdl, B_FALSE);
 	db = (dmu_buf_impl_t *)sa_get_db(zp->z_sa_hdl);
 	DB_DNODE_ENTER(db);
-	dmu_tx_hold_clone_by_dnode(tx, DB_DNODE(db), off, len);
+	dmu_tx_hold_clone_by_dnode(tx, DB_DNODE(db), off, len, blksz);
 	DB_DNODE_EXIT(db);
 	zfs_sa_upgrade_txholds(tx, zp);
 	error = dmu_tx_assign(tx, DMU_TX_WAIT);

@@ -151,8 +151,8 @@ dsl_dir_evict_async(void *dbu)
 
 	for (t = 0; t < TXG_SIZE; t++) {
 		ASSERT(!txg_list_member(&dp->dp_dirty_dirs, dd, t));
-		ASSERT(dd->dd_tempreserved[t] == 0);
-		ASSERT(dd->dd_space_towrite[t] == 0);
+		ASSERT0(dd->dd_tempreserved[t]);
+		ASSERT0(dd->dd_space_towrite[t]);
 	}
 
 	if (dd->dd_parent)
@@ -1450,6 +1450,8 @@ dsl_dir_tempreserve_space(dsl_dir_t *dd, uint64_t lsize, uint64_t asize,
 			    MSEC2NSEC(10), MSEC2NSEC(10));
 			err = SET_ERROR(ERESTART);
 		}
+
+		ASSERT3U(err, ==, ERESTART);
 	}
 
 	if (err == 0) {

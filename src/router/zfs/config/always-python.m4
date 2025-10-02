@@ -27,7 +27,7 @@ AC_DEFUN([ZFS_AC_CONFIG_ALWAYS_PYTHON], [
 		PYTHON_VERSION=$(echo ${PYTHON##*/} | tr -cd 0-9.)
 	])
 	PYTHON_MINOR=11
-
+	
 	AS_CASE([$PYTHON_VERSION],
 		[3.*], [
 			AS_IF([test $PYTHON_MINOR -lt 6],

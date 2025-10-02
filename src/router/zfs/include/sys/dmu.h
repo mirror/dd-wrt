@@ -360,7 +360,6 @@ void dmu_objset_evict_dbufs(objset_t *os);
 int dmu_objset_create(const char *name, dmu_objset_type_t type, uint64_t flags,
     struct dsl_crypto_params *dcp, dmu_objset_create_sync_func_t func,
     void *arg);
-int dmu_objset_clone(const char *name, const char *origin);
 int dsl_destroy_snapshots_nvl(struct nvlist *snaps, boolean_t defer,
     struct nvlist *errlist);
 int dmu_objset_snapshot_one(const char *fsname, const char *snapname);
@@ -415,6 +414,9 @@ typedef struct dmu_buf {
 #define	DMU_POOL_ZPOOL_CHECKPOINT	"com.delphix:zpool_checkpoint"
 #define	DMU_POOL_LOG_SPACEMAP_ZAP	"com.delphix:log_spacemap_zap"
 #define	DMU_POOL_DELETED_CLONES		"com.delphix:deleted_clones"
+#define	DMU_POOL_TXG_LOG_TIME_MINUTES	"com.klarasystems:txg_log_time:minutes"
+#define	DMU_POOL_TXG_LOG_TIME_DAYS	"com.klarasystems:txg_log_time:days"
+#define	DMU_POOL_TXG_LOG_TIME_MONTHS	"com.klarasystems:txg_log_time:months"
 
 /*
  * Allocate an object from this objset.  The range of object numbers
@@ -740,8 +742,8 @@ dmu_buf_init_user(dmu_buf_user_t *dbu, dmu_buf_evict_func_t *evict_func_sync,
     dmu_buf_evict_func_t *evict_func_async,
     dmu_buf_t **clear_on_evict_dbufp __maybe_unused)
 {
-	ASSERT(dbu->dbu_evict_func_sync == NULL);
-	ASSERT(dbu->dbu_evict_func_async == NULL);
+	ASSERT0P(dbu->dbu_evict_func_sync);
+	ASSERT0P(dbu->dbu_evict_func_async);
 
 	/* must have at least one evict func */
 	IMPLY(evict_func_sync == NULL, evict_func_async != NULL);
@@ -823,6 +825,7 @@ struct blkptr *dmu_buf_get_blkptr(dmu_buf_t *db);
  */
 void dmu_buf_will_dirty(dmu_buf_t *db, dmu_tx_t *tx);
 void dmu_buf_will_dirty_flags(dmu_buf_t *db, dmu_tx_t *tx, dmu_flags_t flags);
+void dmu_buf_will_rewrite(dmu_buf_t *db, dmu_tx_t *tx);
 boolean_t dmu_buf_is_dirty(dmu_buf_t *db, dmu_tx_t *tx);
 void dmu_buf_set_crypt_params(dmu_buf_t *db_fake, boolean_t byteorder,
     const uint8_t *salt, const uint8_t *iv, const uint8_t *mac, dmu_tx_t *tx);
@@ -856,7 +859,7 @@ void dmu_tx_hold_append(dmu_tx_t *tx, uint64_t object, uint64_t off, int len);
 void dmu_tx_hold_append_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off,
     int len);
 void dmu_tx_hold_clone_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off,
-    int len);
+    uint64_t len, uint_t blksz);
 void dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off,
     uint64_t len);
 void dmu_tx_hold_free_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off,

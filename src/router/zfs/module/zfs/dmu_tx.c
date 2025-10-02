@@ -36,6 +36,7 @@
 #include <sys/dsl_pool.h>
 #include <sys/zap_impl.h>
 #include <sys/spa.h>
+#include <sys/brt_impl.h>
 #include <sys/sa.h>
 #include <sys/sa_impl.h>
 #include <sys/zfs_context.h>
@@ -125,7 +126,7 @@ dmu_tx_hold_dnode_impl(dmu_tx_t *tx, dnode_t *dn, enum dmu_tx_hold_type type,
 			 * problem, but there's no way for it to happen (for
 			 * now, at least).
 			 */
-			ASSERT(dn->dn_assigned_txg == 0);
+			ASSERT0(dn->dn_assigned_txg);
 			dn->dn_assigned_txg = tx->tx_txg;
 			(void) zfs_refcount_add(&dn->dn_tx_holds, tx);
 			mutex_exit(&dn->dn_mtx);
@@ -442,7 +443,7 @@ dmu_tx_count_free(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
 	dnode_t *dn = txh->txh_dnode;
 	int err;
 
-	ASSERT(tx->tx_txg == 0);
+	ASSERT0(tx->tx_txg);
 
 	if (off >= (dn->dn_maxblkid + 1) * dn->dn_datablksz)
 		return;
@@ -547,17 +548,45 @@ dmu_tx_hold_free_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off, uint64_t len)
 }
 
 static void
-dmu_tx_count_clone(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
+dmu_tx_count_clone(dmu_tx_hold_t *txh, uint64_t off, uint64_t len,
+    uint_t blksz)
 {
+	dmu_tx_t *tx = txh->txh_tx;
+	dnode_t *dn = txh->txh_dnode;
+	int err;
 
-	/*
-	 * Reuse dmu_tx_count_free(), it does exactly what we need for clone.
-	 */
-	dmu_tx_count_free(txh, off, len);
+	ASSERT0(tx->tx_txg);
+	ASSERT(dn->dn_indblkshift != 0);
+	ASSERT(blksz != 0);
+	ASSERT0(off % blksz);
+
+	(void) zfs_refcount_add_many(&txh->txh_memory_tohold,
+	    len / blksz * sizeof (brt_entry_t), FTAG);
+
+	int shift = dn->dn_indblkshift - SPA_BLKPTRSHIFT;
+	uint64_t start = off / blksz >> shift;
+	uint64_t end = (off + len) / blksz >> shift;
+
+	(void) zfs_refcount_add_many(&txh->txh_space_towrite,
+	    (end - start + 1) << dn->dn_indblkshift, FTAG);
+
+	zio_t *zio = zio_root(tx->tx_pool->dp_spa,
+	    NULL, NULL, ZIO_FLAG_CANFAIL);
+	for (uint64_t i = start; i <= end; i++) {
+		err = dmu_tx_check_ioerr(zio, dn, 1, i);
+		if (err != 0) {
+			tx->tx_err = err;
+			break;
+		}
+	}
+	err = zio_wait(zio);
+	if (err != 0)
+		tx->tx_err = err;
 }
 
 void
-dmu_tx_hold_clone_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off, int len)
+dmu_tx_hold_clone_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off,
+    uint64_t len, uint_t blksz)
 {
 	dmu_tx_hold_t *txh;
 
@@ -567,7 +596,7 @@ dmu_tx_hold_clone_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off, int len)
 	txh = dmu_tx_hold_dnode_impl(tx, dn, THT_CLONE, off, len);
 	if (txh != NULL) {
 		dmu_tx_count_dnode(txh);
-		dmu_tx_count_clone(txh, off, len);
+		dmu_tx_count_clone(txh, off, len, blksz);
 	}
 }
 
@@ -578,7 +607,7 @@ dmu_tx_hold_zap_impl(dmu_tx_hold_t *txh, const char *name)
 	dnode_t *dn = txh->txh_dnode;
 	int err;
 
-	ASSERT(tx->tx_txg == 0);
+	ASSERT0(tx->tx_txg);
 
 	dmu_tx_count_dnode(txh);
 
@@ -652,7 +681,7 @@ dmu_tx_hold_bonus(dmu_tx_t *tx, uint64_t object)
 {
 	dmu_tx_hold_t *txh;
 
-	ASSERT(tx->tx_txg == 0);
+	ASSERT0(tx->tx_txg);
 
 	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
 	    object, THT_BONUS, 0, 0);
@@ -677,7 +706,7 @@ dmu_tx_hold_space(dmu_tx_t *tx, uint64_t space)
 {
 	dmu_tx_hold_t *txh;
 
-	ASSERT(tx->tx_txg == 0);
+	ASSERT0(tx->tx_txg);
 
 	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
 	    DMU_NEW_OBJECT, THT_SPACE, space, 0);
@@ -1025,7 +1054,7 @@ dmu_tx_try_assign(dmu_tx_t *tx)
 
 	if (tx->tx_err) {
 		DMU_TX_STAT_BUMP(dmu_tx_error);
-		return (tx->tx_err);
+		return (SET_ERROR(EIO));
 	}
 
 	if (spa_suspended(spa)) {
@@ -1161,7 +1190,8 @@ dmu_tx_unassign(dmu_tx_t *tx)
  * If DMU_TX_WAIT is set and the currently open txg is full, this function
  * will wait until there's a new txg. This should be used when no locks
  * are being held. With this bit set, this function will only fail if
- * we're truly out of space (or over quota).
+ * we're truly out of space (ENOSPC), over quota (EDQUOT), or required
+ * data for the transaction could not be read from disk (EIO).
  *
  * If DMU_TX_WAIT is *not* set and we can't assign into the currently open
  * txg without blocking, this function will return immediately with
@@ -1202,7 +1232,7 @@ dmu_tx_assign(dmu_tx_t *tx, dmu_tx_flag_t flags)
 {
 	int err;
 
-	ASSERT(tx->tx_txg == 0);
+	ASSERT0(tx->tx_txg);
 	ASSERT0(flags & ~(DMU_TX_WAIT | DMU_TX_NOTHROTTLE | DMU_TX_SUSPEND));
 	IMPLY(flags & DMU_TX_SUSPEND, flags & DMU_TX_WAIT);
 	ASSERT(!dsl_pool_sync_context(tx->tx_pool));
@@ -1250,8 +1280,11 @@ dmu_tx_assign(dmu_tx_t *tx, dmu_tx_flag_t flags)
 		 * Return unless we decided to retry, or the caller does not
 		 * want to block.
 		 */
-		if (err != ERESTART || !(flags & DMU_TX_WAIT))
+		if (err != ERESTART || !(flags & DMU_TX_WAIT)) {
+			ASSERT(err == EDQUOT || err == ENOSPC ||
+			    err == ERESTART || err == EIO);
 			return (err);
+		}
 
 		/*
 		 * Wait until there's room in this txg, or until it's been
@@ -1295,7 +1328,7 @@ dmu_tx_wait(dmu_tx_t *tx)
 	dsl_pool_t *dp = tx->tx_pool;
 	hrtime_t before;
 
-	ASSERT(tx->tx_txg == 0);
+	ASSERT0(tx->tx_txg);
 	ASSERT(!dsl_pool_config_held(tx->tx_pool));
 
 	/*
@@ -1392,6 +1425,7 @@ dmu_tx_destroy(dmu_tx_t *tx)
 void
 dmu_tx_commit(dmu_tx_t *tx)
 {
+	/* This function should only be used on assigned transactions. */
 	ASSERT(tx->tx_txg != 0);
 
 	/*
@@ -1430,13 +1464,21 @@ dmu_tx_commit(dmu_tx_t *tx)
 void
 dmu_tx_abort(dmu_tx_t *tx)
 {
-	ASSERT(tx->tx_txg == 0);
+	/* This function should not be used on assigned transactions. */
+	ASSERT0(tx->tx_txg);
+
+	/* Should not be needed, but better be safe than sorry. */
+	if (tx->tx_tempreserve_cookie)
+		dsl_dir_tempreserve_clear(tx->tx_tempreserve_cookie, tx);
 
 	/*
 	 * Call any registered callbacks with an error code.
 	 */
 	if (!list_is_empty(&tx->tx_callbacks))
 		dmu_tx_do_callbacks(&tx->tx_callbacks, SET_ERROR(ECANCELED));
+
+	/* Should not be needed, but better be safe than sorry. */
+	dmu_tx_unassign(tx);
 
 	dmu_tx_destroy(tx);
 }
@@ -1602,12 +1644,12 @@ dmu_tx_hold_sa(dmu_tx_t *tx, sa_handle_t *hdl, boolean_t may_grow)
 		dmu_tx_hold_zap(tx, sa->sa_layout_attr_obj, B_TRUE, NULL);
 
 	if (sa->sa_force_spill || may_grow || hdl->sa_spill) {
-		ASSERT(tx->tx_txg == 0);
+		ASSERT0(tx->tx_txg);
 		dmu_tx_hold_spill(tx, object);
 	} else {
 		DB_DNODE_ENTER(db);
 		if (DB_DNODE(db)->dn_have_spill) {
-			ASSERT(tx->tx_txg == 0);
+			ASSERT0(tx->tx_txg);
 			dmu_tx_hold_spill(tx, object);
 		}
 		DB_DNODE_EXIT(db);
