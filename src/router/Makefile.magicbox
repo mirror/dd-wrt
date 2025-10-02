@@ -378,7 +378,7 @@ endif
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	
 #	-./strip_libs.sh $(ARCH)

@@ -280,7 +280,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 #	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh

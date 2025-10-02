@@ -612,7 +612,7 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	
 	#cd $(TARGETDIR)

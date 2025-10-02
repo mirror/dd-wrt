@@ -406,7 +406,7 @@ endif
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	@true
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config

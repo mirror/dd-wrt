@@ -805,7 +805,7 @@ endif
 
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export NO_RENAME=1 && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 
 #	export STRIP_KMOD="echo" && \

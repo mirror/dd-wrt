@@ -429,7 +429,7 @@ endif
 	mkdir $(TARGETDIR)/usr/local
 #ifneq ($(CONFIG_NOOPT),y)
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 #endif
 ifeq ($(CONFIG_WRK54G),y)

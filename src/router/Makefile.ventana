@@ -317,7 +317,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 #	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
+	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
