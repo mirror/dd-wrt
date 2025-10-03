@@ -1,3 +1,45 @@
+Changes in version 0.4.8.18 - 2025-09-16
+  This is a minor release with a major onion service directory cache (HSDir)
+  bug fix. A series of minor bugfixes as well. As always, we strongly recommend
+  to upgrade as soon as possible.
+
+  o Major bugfixes (onion service directory cache):
+    - Preserve the download counter of an onion service descriptor
+      across descriptor uploads, so that recently updated descriptors
+      don't get pruned if there is memory pressure soon after update.
+      Additionally, create a separate torrc option MaxHSDirCacheBytes
+      that defaults to the former 20% of MaxMemInQueues threshold, but
+      can be controlled by relay operators under DoS. Also enforce this
+      theshold during HSDir uploads. Fixes bug 41006; bugfix
+      on 0.4.8.14.
+
+  o Minor feature (padding, logging):
+    - Reduce the amount of messages being logged related to channel
+      padding timeout when log level is "notice".
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on September 16, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/09/16.
+
+  o Minor bugfix (conflux):
+    - Remove the pending nonce if we realize that the nonce of the
+      unlinked circuit is not tracked anymore. Should avoid the non
+      fatal assert triggered with a control port circuit event. Fixes
+      bug 41037; bugfix on 0.4.8.15.
+
+  o Minor bugfixes (circuit handling):
+    - Prevent circuit_mark_for_close() from being called twice on the
+      same circuit. Second fix attempt Fixes bug 41106; bugfix
+      on 0.4.8.17
+
+  o Minor bugfixes (threads):
+    - Make thread control POSIX compliant. Fixes bug 41109; bugfix
+      on 0.4.8.17-dev.
+
+
 Changes in version 0.4.8.17 - 2025-06-30
   This is a minor providing a series of minor features especially in the realm
   of TLS. It also brings a new set of recommended and required sub protocols.

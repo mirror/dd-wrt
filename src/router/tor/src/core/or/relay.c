@@ -227,9 +227,6 @@ circuit_update_channel_usage(circuit_t *circ, cell_t *cell)
  *  - If not recognized, then we need to relay it: append it to the appropriate
  *    cell_queue on <b>circ</b>.
  *
- * If a reason exists to close <b>circ</b>, circuit_mark_for_close()
- * is called in this function, so the caller doesn't have to do it.
- *
  * Return -<b>reason</b> on failure, else 0.
  */
 int
@@ -252,8 +249,7 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
       < 0) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
            "relay crypt failed. Dropping connection.");
-    reason = -END_CIRC_REASON_INTERNAL;
-    goto error;
+    return -END_CIRC_REASON_INTERNAL;
   }
 
   circuit_update_channel_usage(circ, cell);
@@ -284,7 +280,7 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
         log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
                "connection_edge_process_relay_cell (away from origin) "
                "failed.");
-        goto error;
+        return reason;
       }
     } else if (cell_direction == CELL_DIRECTION_IN) {
       ++stats_n_relay_cells_delivered;
@@ -299,7 +295,7 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
           log_warn(LD_OR,
                    "connection_edge_process_relay_cell (at origin) failed.");
         }
-        goto error;
+        return reason;
       }
     }
     return 0;
@@ -322,8 +318,7 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
      * XXX: Shouldn't they always die? */
     if (circ->purpose == CIRCUIT_PURPOSE_PATH_BIAS_TESTING) {
       TO_ORIGIN_CIRCUIT(circ)->path_state = PATH_STATE_USE_FAILED;
-      reason = -END_CIRC_REASON_TORPROTOCOL;
-      goto error;
+      return -END_CIRC_REASON_TORPROTOCOL;
     } else {
       return 0;
     }
@@ -343,14 +338,13 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
                                                CELL_DIRECTION_IN)) < 0) {
         log_warn(LD_REND, "Error relaying cell across rendezvous; closing "
                  "circuits");
-        goto error;
+        return reason;
       }
       return 0;
     }
     if (BUG(CIRCUIT_IS_ORIGIN(circ))) {
       /* Should be impossible at this point. */
-      reason = -END_CIRC_REASON_TORPROTOCOL;
-      goto error;
+      return -END_CIRC_REASON_TORPROTOCOL;
     }
     or_circuit_t *or_circ = TO_OR_CIRCUIT(circ);
     if (++or_circ->n_cells_discarded_at_end == 1) {
@@ -359,8 +353,7 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
              "Didn't recognize a cell, but circ stops here! Closing circuit. "
              "It was created %ld seconds ago.", (long)seconds_open);
     }
-    reason = -END_CIRC_REASON_TORPROTOCOL;
-    goto error;
+    return -END_CIRC_REASON_TORPROTOCOL;
   }
 
   log_debug(LD_OR,"Passing on unrecognized cell.");
@@ -370,14 +363,9 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
                                   * the cells. */
 
   if (append_cell_to_circuit_queue(circ, chan, cell, cell_direction, 0) < 0) {
-    reason = -END_CIRC_REASON_RESOURCELIMIT;
-    goto error;
+    return -END_CIRC_REASON_RESOURCELIMIT;
   }
   return 0;
-
-error:
-  circuit_mark_for_close(circ, -reason);
-  return reason;
 }
 
 /** Package a relay cell from an edge:
@@ -2944,15 +2932,19 @@ cell_queues_check_size(void)
       /* Note this overload down */
       rep_hist_note_overload(OVERLOAD_GENERAL);
 
-      /* If we're spending over 20% of the memory limit on hidden service
-       * descriptors, free them until we're down to 10%. Do the same for geoip
-       * client cache. */
-      if (hs_cache_total > get_options()->MaxMemInQueues / 5) {
+      /* If we're spending over the configured limit on hidden service
+       * descriptors, free them until we're down to 50% of the limit. */
+      if (hs_cache_total > hs_cache_get_max_bytes()) {
         const size_t bytes_to_remove =
-          hs_cache_total - (size_t)(get_options()->MaxMemInQueues / 10);
+          hs_cache_total - (size_t)(hs_cache_get_max_bytes() / 2);
         removed = hs_cache_handle_oom(bytes_to_remove);
         oom_stats_n_bytes_removed_hsdir += removed;
         alloc -= removed;
+        static ratelim_t hs_cache_oom_ratelim = RATELIM_INIT(600);
+        log_fn_ratelim(&hs_cache_oom_ratelim, LOG_NOTICE, LD_REND,
+               "HSDir cache exceeded limit (%zu > %"PRIu64" bytes). "
+               "Pruned %zu bytes during cell_queues_check_size.",
+               hs_cache_total, hs_cache_get_max_bytes(), removed);
       }
       if (geoip_client_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =

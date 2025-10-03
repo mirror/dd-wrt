@@ -4503,6 +4503,20 @@ accept *:*</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="MaxHSDirCacheBytes"></a> <strong>MaxHSDirCacheBytes</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
+</dt>
+<dd>
+<p>
+    This option configures a threshold of Hidden Service Directory memory
+    consumption above which your Tor relay will begin to prune the least-frequently
+    accessed hidden service descriptors from the relay&#8217;s HSDir cache. This pruning used
+    to be done as part of MaxMemInQueues, but it has been decoupled to allow more
+    fine-grained control of descriptor cache size under DDoS conditions. This
+    option defaults to 20% of the MaxMemInQueues size, which itself defaults to
+    an automatically determined value based on system memory. (Default: 20% MaxMemInQueues)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="MaxMemInQueues"></a> <strong>MaxMemInQueues</strong>  <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>

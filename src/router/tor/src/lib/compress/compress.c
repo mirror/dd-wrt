@@ -66,11 +66,13 @@ tor_compress_is_compression_bomb,(size_t size_in, size_t size_out))
   if (size_in == 0 || size_out < CHECK_FOR_COMPRESSION_BOMB_AFTER)
     return 0;
 
-  if (size_out / size_in > MAX_UNCOMPRESSION_FACTOR) {
+  double compression_factor = (double)size_out / size_in;
+  if (compression_factor > MAX_UNCOMPRESSION_FACTOR) {
     log_warn(LD_GENERAL,
              "Detected possible compression bomb with "
-             "input size = %"TOR_PRIuSZ " and output size = %"TOR_PRIuSZ,
-             size_in, size_out);
+             "input size = %"TOR_PRIuSZ" and output size = %"TOR_PRIuSZ" "
+             "(compression factor = %.2f)",
+             size_in, size_out, compression_factor);
     return 1;
   }
 

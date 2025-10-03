@@ -26,6 +26,11 @@
 
 #include "feature/nodelist/networkstatus_st.h"
 
+/**
+ * Spare room for 1000 descriptors when pruning cache to avoid thrashing
+ * and memory fragmentation. */
+#define HSCACHE_PRUNE_SPARE_ROOM (1000 * HS_DESC_MAX_LEN)
+
 /* Total counter of the cache size. */
 static size_t hs_cache_total_allocation = 0;
 
@@ -148,6 +153,28 @@ cache_store_v3_as_dir(hs_cache_dir_descriptor_t *desc)
 
   tor_assert(desc);
 
+  /* Check if we've exceeded the MaxHSDirCacheBytes limit after adding
+   * this descriptor. If so, prune excess bytes leaving room for more. */
+  const size_t max_cache_bytes = hs_cache_get_max_bytes();
+  const size_t current_cache_bytes = hs_cache_get_total_allocation();
+  if (max_cache_bytes > 0 && current_cache_bytes > max_cache_bytes) {
+    /* We prune only 1000 descriptors worth of memory here because
+     * pruning is an expensive O(n^2) option to keep finding lowest
+     * download count descs. */
+    size_t bytes_to_remove = current_cache_bytes/2;
+    /* Ensure user didn't set a really low max hsdir cache vlue */
+    if (HSCACHE_PRUNE_SPARE_ROOM < max_cache_bytes) {
+      bytes_to_remove = current_cache_bytes -
+                         (max_cache_bytes - HSCACHE_PRUNE_SPARE_ROOM);
+    }
+    size_t removed = hs_cache_handle_oom(bytes_to_remove);
+    static ratelim_t hs_cache_oom_ratelim = RATELIM_INIT(600);
+    log_fn_ratelim(&hs_cache_oom_ratelim, LOG_NOTICE, LD_REND,
+               "HSDir cache exceeded limit (%zu > %zu bytes). "
+               "Pruned %zu bytes during an HS descriptor upload.",
+               current_cache_bytes, max_cache_bytes, removed);
+  }
+
   /* Verify if we have an entry in the cache for that key and if yes, check
    * if we should replace it? */
   cache_entry = lookup_v3_desc_as_dir(desc->key);
@@ -164,15 +191,21 @@ cache_store_v3_as_dir(hs_cache_dir_descriptor_t *desc)
       goto err;
     }
     /* We now know that the descriptor we just received is a new one so
+     * preserve the downloaded counter from the old entry and then
      * remove the entry we currently have from our cache so we can then
      * store the new one. */
+    desc->n_downloaded = cache_entry->n_downloaded;
     remove_v3_desc_as_dir(cache_entry);
     hs_cache_decrement_allocation(cache_get_dir_entry_size(cache_entry));
     cache_dir_desc_free(cache_entry);
   }
+
   /* Store the descriptor we just got. We are sure here that either we
    * don't have the entry or we have a newer descriptor and the old one
-   * has been removed from the cache. */
+   * has been removed from the cache. We do this *after* pruning
+   * other descriptors so that this descriptor is not immediately pruned,
+   * if new. This prevents probing to detect OOM threshholds via its
+   * absence. */
   store_v3_desc_as_dir(desc);
 
   /* Update our total cache size with this entry for the OOM. This uses the
@@ -1219,6 +1252,14 @@ hs_cache_free_all(void)
                     cache_client_intro_state_free_void);
   hs_cache_client_intro_state = NULL;
   hs_cache_total_allocation = 0;
+}
+
+/** Get the configured maximum cache size. */
+uint64_t
+hs_cache_get_max_bytes(void)
+{
+  uint64_t opt = get_options()->MaxHSDirCacheBytes;
+  return opt != 0 ? opt : get_options()->MaxMemInQueues / 5;
 }
 
 /* Return total size of the cache. */

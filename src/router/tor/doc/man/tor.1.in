@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 06/30/2025
+.\"      Date: 09/16/2025
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "06/30/2025" "Tor" "Tor Manual"
+.TH "TOR" "1" "09/16/2025" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2339,6 +2339,11 @@ Log main loop statistics every
 seconds\&. This is a log level
 \fInotice\fR
 message designed to help developers instrumenting Tor\(cqs main event loop\&. (Default: 0)
+.RE
+.PP
+\fBMaxHSDirCacheBytes\fR \fIN\fR \fBbytes\fR|\fBKBytes\fR|\fBMBytes\fR|\fBGBytes\fR
+.RS 4
+This option configures a threshold of Hidden Service Directory memory consumption above which your Tor relay will begin to prune the least\-frequently accessed hidden service descriptors from the relay\(cqs HSDir cache\&. This pruning used to be done as part of MaxMemInQueues, but it has been decoupled to allow more fine\-grained control of descriptor cache size under DDoS conditions\&. This option defaults to 20% of the MaxMemInQueues size, which itself defaults to an automatically determined value based on system memory\&. (Default: 20% MaxMemInQueues)
 .RE
 .PP
 \fBMaxMemInQueues\fR \fIN\fR \fBbytes\fR|\fBKBytes\fR|\fBMBytes\fR|\fBGBytes\fR
