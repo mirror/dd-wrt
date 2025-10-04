@@ -67,9 +67,11 @@ The OpenSSL FIPS provider supports these operations and algorithms:
 
 =item SHA3, see L<EVP_MD-SHA3(7)>
 
+=item SHAKE, see L<EVP_MD-SHAKE(7)>
+
 =item KECCAK-KMAC, see L<EVP_MD-KECCAK-KMAC(7)>
 
-=item SHAKE, see L<EVP_MD-SHAKE(7)>
+KECCAK-KMAC is only used internally as a sub algorithm of KMAC.
 
 =back
 
@@ -102,6 +104,12 @@ The OpenSSL FIPS provider supports these operations and algorithms:
 =over 4
 
 =item HKDF, see L<EVP_KDF-HKDF(7)>
+
+=item HKDF-SHA256, see L<EVP_KDF-HKDF(7)>
+
+=item HKDF-SHA384, see L<EVP_KDF-HKDF(7)>
+
+=item HKDF-SHA512, see L<EVP_KDF-HKDF(7)>
 
 =item TLS13-KDF, see L<EVP_KDF-TLS13_KDF(7)>
 
@@ -172,6 +180,8 @@ for signature generation, but may be used for verification for legacy use cases.
 =item HMAC, see L<EVP_SIGNATURE-HMAC(7)>
 
 =item CMAC, see L<EVP_SIGNATURE-CMAC(7)>
+
+=item LMS, see L<EVP_SIGNATURE-LMS(7)>
 
 =back
 
@@ -441,7 +451,11 @@ Digest tests used with the "KAT_Digest" type.
 
 =item "ECDSA" (B<OSSL_SELF_TEST_DESC_SIGN_ECDSA>)
 
+=item "DetECDSA" (B<OSSL_SELF_TEST_DESC_SIGN_DetECDSA>)
+
 =item "EDDSA" (B<OSSL_SELF_TEST_DESC_SIGN_EDDSA>)
+
+=item "LMS" (B<OSSL_SELF_TEST_DESC_SIGN_LMS>)
 
 =item "ML-DSA" (B<OSSL_SELF_TEST_DESC_SIGN_ML_DSA>)
 
@@ -586,7 +600,9 @@ L<https://www.openssl.org/source/>
 
 =head1 HISTORY
 
-This functionality was added in OpenSSL 3.0.
+The HKDF-SHA256, HKDF-SHA384 and HKDF-SHA512 algorithms were added in OpenSSL 3.6.
+
+All other functionality was added in OpenSSL 3.0.
 
 =head1 COPYRIGHT
 

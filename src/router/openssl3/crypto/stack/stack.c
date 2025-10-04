@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -30,6 +30,7 @@ struct stack_st {
     int sorted;
     int num_alloc;
     OPENSSL_sk_compfunc comp;
+    OPENSSL_sk_freefunc_thunk free_thunk;
 };
 
 OPENSSL_sk_compfunc OPENSSL_sk_set_cmp_func(OPENSSL_STACK *sk,
@@ -68,7 +69,7 @@ OPENSSL_STACK *OPENSSL_sk_dup(const OPENSSL_STACK *sk)
     }
 
     /* duplicate |sk->data| content */
-    ret->data = OPENSSL_malloc(sizeof(*ret->data) * sk->num_alloc);
+    ret->data = OPENSSL_malloc_array(sk->num_alloc, sizeof(*ret->data));
     if (ret->data == NULL)
         goto err;
     memcpy(ret->data, sk->data, sizeof(void *) * sk->num);
@@ -106,7 +107,7 @@ OPENSSL_STACK *OPENSSL_sk_deep_copy(const OPENSSL_STACK *sk,
     }
 
     ret->num_alloc = sk->num > min_nodes ? sk->num : min_nodes;
-    ret->data = OPENSSL_zalloc(sizeof(*ret->data) * ret->num_alloc);
+    ret->data = OPENSSL_calloc(ret->num_alloc, sizeof(*ret->data));
     if (ret->data == NULL)
         goto err;
 
@@ -196,7 +197,7 @@ static int sk_reserve(OPENSSL_STACK *st, int n, int exact)
          * At this point, |st->num_alloc| and |st->num| are 0;
          * so |num_alloc| value is |n| or |min_nodes| if greater than |n|.
          */
-        if ((st->data = OPENSSL_zalloc(sizeof(void *) * num_alloc)) == NULL)
+        if ((st->data = OPENSSL_calloc(num_alloc, sizeof(void *))) == NULL)
             return 0;
         st->num_alloc = num_alloc;
         return 1;
@@ -214,7 +215,7 @@ static int sk_reserve(OPENSSL_STACK *st, int n, int exact)
         return 1;
     }
 
-    tmpdata = OPENSSL_realloc((void *)st->data, sizeof(void *) * num_alloc);
+    tmpdata = OPENSSL_realloc_array((void *)st->data, num_alloc, sizeof(void *));
     if (tmpdata == NULL)
         return 0;
 
@@ -253,6 +254,14 @@ int OPENSSL_sk_reserve(OPENSSL_STACK *st, int n)
     if (n < 0)
         return 1;
     return sk_reserve(st, n, 1);
+}
+
+OPENSSL_STACK *OPENSSL_sk_set_thunks(OPENSSL_STACK *st, OPENSSL_sk_freefunc_thunk f_thunk)
+{
+    if (st != NULL)
+        st->free_thunk = f_thunk;
+
+    return st;
 }
 
 int OPENSSL_sk_insert(OPENSSL_STACK *st, const void *data, int loc)
@@ -434,9 +443,15 @@ void OPENSSL_sk_pop_free(OPENSSL_STACK *st, OPENSSL_sk_freefunc func)
 
     if (st == NULL)
         return;
-    for (i = 0; i < st->num; i++)
-        if (st->data[i] != NULL)
-            func((char *)st->data[i]);
+
+    for (i = 0; i < st->num; i++) {
+        if (st->data[i] != NULL) {
+            if (st->free_thunk != NULL)
+                st->free_thunk(func, (void *)st->data[i]);
+            else
+                func((void *)st->data[i]);
+        }
+    }
     OPENSSL_sk_free(st);
 }
 

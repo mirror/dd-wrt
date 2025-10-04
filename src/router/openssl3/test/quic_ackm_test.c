@@ -112,7 +112,7 @@ static int helper_init(struct helper *h, size_t num_pkts)
     /* Allocate our array of packet information. */
     h->num_pkts = num_pkts;
     if (num_pkts > 0) {
-        h->pkts = OPENSSL_zalloc(sizeof(struct pkt_info) * num_pkts);
+        h->pkts = OPENSSL_calloc(num_pkts, sizeof(struct pkt_info));
         if (!TEST_ptr(h->pkts))
             goto err;
     } else {
@@ -914,6 +914,7 @@ static int test_rx_ack_actual(int tidx, int space)
     OSSL_ACKM_TX_PKT *txs = NULL, *tx;
     OSSL_TIME ack_deadline[QUIC_PN_SPACE_NUM];
     size_t opn = 0;
+    int j;
 
     for (i = 0; i < QUIC_PN_SPACE_NUM; ++i)
         ack_deadline[i] = ossl_time_infinite();
@@ -935,11 +936,11 @@ static int test_rx_ack_actual(int tidx, int space)
             num_tx += s->num_pn;
 
     /* Allocate packet information structures. */
-    txs = OPENSSL_zalloc(sizeof(*txs) * num_tx);
+    txs = OPENSSL_calloc(num_tx, sizeof(*txs));
     if (!TEST_ptr(txs))
         goto err;
 
-    pkts = OPENSSL_zalloc(sizeof(*pkts) * num_tx);
+    pkts = OPENSSL_calloc(num_tx, sizeof(*pkts));
     if (!TEST_ptr(pkts))
         goto err;
 
@@ -989,13 +990,13 @@ static int test_rx_ack_actual(int tidx, int space)
                              s->expect_deadline))
                 goto err;
 
-            for (i = 0; i < QUIC_PN_SPACE_NUM; ++i) {
-                if (i != (size_t)space
-                        && !TEST_true(ossl_time_is_infinite(ossl_ackm_get_ack_deadline(h.ackm, i))))
+            for (j = 0; j < QUIC_PN_SPACE_NUM; ++j) {
+                if (j != space
+                        && !TEST_true(ossl_time_is_infinite(ossl_ackm_get_ack_deadline(h.ackm, j))))
                     goto err;
 
-                if (!TEST_int_eq(ossl_time_compare(ossl_ackm_get_ack_deadline(h.ackm, i),
-                                                   ack_deadline[i]), 0))
+                if (!TEST_int_eq(ossl_time_compare(ossl_ackm_get_ack_deadline(h.ackm, j),
+                                                   ack_deadline[j]), 0))
                     goto err;
             }
 

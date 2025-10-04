@@ -1,5 +1,5 @@
 #
-# Copyright 2001-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2001-2025 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -272,6 +272,15 @@ KDF = PBKDF2
 Ctrl.pass = pass:password
 Ctrl.salt = salt:saltydaysarethebest
 Ctrl.iter = iter:10
+Ctrl.digest = digest:sha1
+Result = KDF_CTRL_ERROR
+Reason = invalid iteration count
+
+Availablein = default
+KDF = PBKDF2
+Ctrl.pass = pass:password
+Ctrl.salt = salt:salt
+Ctrl.iter = iter:0
 Ctrl.digest = digest:sha1
 Result = KDF_CTRL_ERROR
 Reason = invalid iteration count

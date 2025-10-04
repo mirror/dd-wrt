@@ -103,6 +103,7 @@ int wrap_password_callback(char *buf, int bufsiz, int verify, void *cb_data);
 /* progress callback for dsaparam, dhparam, req, genpkey, etc. */
 int progress_cb(EVP_PKEY_CTX *ctx);
 
+int chopup_args(ARGS *arg, char *buf);
 void dump_cert_text(BIO *out, X509 *x);
 void print_name(BIO *out, const char *title, const X509_NAME *nm);
 void print_bignum_var(BIO *, const BIGNUM *, const char *,
@@ -183,7 +184,9 @@ int init_engine(ENGINE *e);
 int finish_engine(ENGINE *e);
 char *make_engine_uri(ENGINE *e, const char *key_id, const char *desc);
 
+# ifndef OPENSSL_NO_DEPRECATED_3_6
 int get_legacy_pkey_id(OSSL_LIB_CTX *libctx, const char *algname, ENGINE *e);
+# endif
 const EVP_MD *get_digest_from_engine(const char *name);
 const EVP_CIPHER *get_cipher_from_engine(const char *name);
 

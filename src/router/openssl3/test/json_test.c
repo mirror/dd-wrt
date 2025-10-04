@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "testutil.h"
@@ -172,11 +173,11 @@ BEGIN_SCRIPT(array_empty, "serialize an empty array", 0)
 END_SCRIPT_EXPECTING_Q([])
 
 BEGIN_SCRIPT(bool_false, "serialize false", 0)
-    OPJ_BOOL(0)
+    OPJ_BOOL(false)
 END_SCRIPT_EXPECTING_Q(false)
 
 BEGIN_SCRIPT(bool_true, "serialize true", 0)
-    OPJ_BOOL(1)
+    OPJ_BOOL(true)
 END_SCRIPT_EXPECTING_Q(true)
 
 BEGIN_SCRIPT(u64_0, "serialize u64(0)", 0)

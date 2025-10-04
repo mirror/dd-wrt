@@ -43,6 +43,7 @@ my @config = ( );
 my $provname = 'default';
 my $dsaallow = '1';
 my $no_pqc = 0;
+my $no_hkdf_fixed = 0;
 
 my $datadir = srctop_dir("test", "recipes", "80-test_cms_data");
 my $smdir    = srctop_dir("test", "smime-certs");
@@ -53,7 +54,7 @@ my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_rc2, $no_zlib)
 
 $no_rc2 = 1 if disabled("legacy");
 
-plan tests => 30;
+plan tests => 32;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -68,6 +69,8 @@ unless ($no_fips) {
     $old_fips = 1 if $dsaallow != '0';
     run(test(["fips_version_test", "-config", $provconf, "<3.5.0"]),
         capture => 1, statusvar => \$no_pqc);
+    run(test(["fips_version_test", "-config", $provconf, "<3.6.0"]),
+        capture => 1, statusvar => \$no_hkdf_fixed);
 }
 
 $ENV{OPENSSL_TEST_LIBCTX} = "1";
@@ -360,6 +363,17 @@ my @smime_cms_tests = (
         "-inform", "PEM",
         "-secretkey", "000102030405060708090A0B0C0D0E0F",
         "-secretkeyid", "C0FEE0" ],
+      \&final_compare
+    ],
+
+    [ "enveloped content test streaming PEM format, AES-128-GCM cipher and AES-128-CBC KEK cipher, password",
+      [ "{cmd1}", @prov, "-encrypt", "-in", $smcont, "-outform", "PEM", "-aes-128-gcm",
+        "-kekcipher", "aes-128-cbc",
+        "-stream", "-out", "{output}.cms",
+        "-pwri_password", "test" ],
+      [ "{cmd2}", "-decrypt", "-in", "{output}.cms", "-out", "{output}.txt",
+        "-inform", "PEM",
+        "-pwri_password", "test" ],
       \&final_compare
     ],
 
@@ -1478,5 +1492,100 @@ subtest "SLH-DSA tests for CMS" => sub {
         ok(run(app(["openssl", "cms", @prov, "-verify", "-in", $sig1,
                     "-CAfile", $smroot, "-content", $smcont])),
            "accept CMS verify with SLH-DSA-SHAKE-256s");
+    }
+};
+
+subtest "sign and verify with multiple keys" => sub {
+    plan tests => 7;
+
+    my $smrsa2 = catfile($smdir, "smrsa2.pem");
+    my $sig1 = "sig1.cms";
+    my $out1 = "out1.txt";
+    my $sig2 = "sig2.cms";
+    my $out2 = "out2.txt";
+
+    ok(run(app(['openssl', 'cms',
+                @defaultprov,
+                '-sign', '-in', $smcont,
+                '-nodetach',
+                '-signer', $smrsa1,
+                '-out', $sig1, '-outform', 'DER',
+               ])),
+       "sign with first key");
+    ok(run(app(['openssl', 'cms',
+                @defaultprov,
+                '-verify', '-in', $sig1, '-inform', 'DER',
+                '-CAfile', $smrsa1, '-partial_chain',
+                '-out', $out1,
+               ])),
+       "verify single signature");
+    is(compare($smcont, $out1), 0, "compare original message with verified message");
+
+    ok(run(app(['openssl', 'cms',
+                @defaultprov,
+                '-resign', '-in', $sig1, '-inform', 'DER',
+                '-signer', $smrsa2,
+                '-out', $sig2, '-outform', 'DER',
+               ])),
+       "resign with second key");
+
+    # because the smrsa2 signature cannot be verified, overall verification fails
+    ok(!run(app(['openssl', 'cms',
+                 @defaultprov,
+                 '-verify', '-in', $sig2, '-inform', 'DER',
+                 '-CAfile', $smrsa1, '-partial_chain',
+                 '-out', $out2,
+                ])),
+       "try to verify two signatures with only rsa1");
+
+    # because both signatures can be verified, overall verification succeeds
+    ok(run(app(['openssl', 'cms',
+                @defaultprov,
+                '-verify', '-in', $sig2, '-inform', 'DER',
+                '-CAfile', $smroot,
+                '-out', $out2,
+               ])),
+       "verify both signature signatures with root");
+    is(compare($smcont, $out2), 0, "compare original message with verified message");
+};
+
+subtest "ML-KEM KEMRecipientInfo tests for CMS" => sub {
+    plan tests => 5;
+
+    SKIP: {
+        skip "ML-KEM is not supported in this build", 5
+            if disabled("ml-kem") || $no_hkdf_fixed;
+
+        ok(run(app(["openssl", "cms", @prov, "-encrypt", "-in", $smcont,
+                    "-out", "mlkem512.cms",
+                    "-recip", catfile($smdir, "sm_mlkem512.pem"),
+                    "-aes-256-gcm", "-keyid" ])),
+           "CMS encrypt with ML-KEM-512 and default KDF");
+
+        ok(run(app(["openssl", "cms", @prov, "-decrypt", "-in", "mlkem512.cms",
+                    "-out", "mlkem512.txt", "-recip", catfile($smdir, "sm_mlkem512.pem")]))
+           && compare_text($smcont, "mlkem512.txt") == 0,
+           "CMS decrypt with ML-KEM-512 and default KDF");
+
+        ok(run(app(["openssl", "cms", @prov, "-encrypt", "-in", $smcont,
+                    "-out", "mlkem512_mlkem768.cms",
+                    "-recip", catfile($smdir, "sm_mlkem512.pem"),
+                    "-recip_kdf", "HKDF-SHA512",
+                    "-recip", catfile($smdir, "sm_mlkem768.pem"),
+                    "-recip_ukm", "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                    "-aes-256-gcm", "-keyid" ])),
+           "CMS encrypt to multiple with ML-KEM and explicit KDF and UKM");
+
+        ok(run(app(["openssl", "cms", @prov, "-decrypt", "-in", "mlkem512_mlkem768.cms",
+                    "-out", "mlkem512-2.txt",
+                    "-recip", catfile($smdir, "sm_mlkem512.pem")]))
+           && compare_text($smcont, "mlkem512-2.txt") == 0,
+           "CMS decrypt with ML-KEM-512 and explicit KDF");
+
+        ok(run(app(["openssl", "cms", @prov, "-decrypt", "-in", "mlkem512_mlkem768.cms",
+                    "-out", "mlkem768-2.txt",
+                    "-recip", catfile($smdir, "sm_mlkem768.pem")]))
+           && compare_text($smcont, "mlkem768-2.txt") == 0,
+           "CMS decrypt with ML-KEM-768 and using UKM");
     }
 };

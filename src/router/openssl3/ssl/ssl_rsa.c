@@ -903,7 +903,7 @@ int SSL_CTX_use_serverinfo_file(SSL_CTX *ctx, const char *file)
                 break;
         }
         /* Check that PEM name starts with "BEGIN SERVERINFO FOR " */
-        name_len = strlen(name);
+        name_len = (unsigned int)strlen(name);
         if (name_len < sizeof(NAME_PREFIX1) - 1) {
             ERR_raise(ERR_LIB_SSL, SSL_R_PEM_NAME_TOO_SHORT);
             goto end;
@@ -1056,10 +1056,13 @@ static int ssl_set_cert_and_key(SSL *ssl, SSL_CTX *ctx, X509 *x509, EVP_PKEY *pr
         }
     }
 
-    if (!X509_up_ref(x509))
+    if (!X509_up_ref(x509)) {
+        OSSL_STACK_OF_X509_free(dup_chain);
         goto out;
+    }
 
     if (!EVP_PKEY_up_ref(privatekey)) {
+        OSSL_STACK_OF_X509_free(dup_chain);
         X509_free(x509);
         goto out;
     }

@@ -7,6 +7,7 @@ release. For more details please read the CHANGES file.
 OpenSSL Releases
 ----------------
 
+ - [OpenSSL 3.6](#openssl-36)
  - [OpenSSL 3.5](#openssl-35)
  - [OpenSSL 3.4](#openssl-34)
  - [OpenSSL 3.3](#openssl-33)
@@ -20,22 +21,79 @@ OpenSSL Releases
  - [OpenSSL 1.0.0](#openssl-100)
  - [OpenSSL 0.9.x](#openssl-09x)
 
+OpenSSL 3.6
+-----------
+
+### Major changes between OpenSSL 3.5 and OpenSSL 3.6.0 [1 Oct 2025]
+
+This release incorporates the following potentially significant or incompatible
+changes:
+
+  * Added NIST security categories for PKEY objects.
+
+  * Added support for `EVP_SKEY` opaque symmetric key objects to the key
+    derivation and key exchange provider methods. Added `EVP_KDF_CTX_set_SKEY()`,
+    `EVP_KDF_derive_SKEY()`, and `EVP_PKEY_derive_SKEY()` functions.
+
+  * Added LMS signature verification support as per [SP 800-208].
+    This support is present in both the FIPS and default providers.
+
+  * An ANSI-C toolchain is no longer sufficient for building OpenSSL.
+    The code should be built using compilers supporting C-99 features.
+
+  * Support for the VxWorks platforms has been removed.
+
+  * Added an `openssl configutl` utility for processing the OpenSSL
+    configuration file and dumping the equal configuration file.
+
+  * Added support for FIPS 186-5 deterministic ECDSA signature
+    generation to the FIPS provider.
+
+  * Deprecated `EVP_PKEY_ASN1_METHOD`-related functions.
+
 OpenSSL 3.5
 -----------
 
+### Major changes between OpenSSL 3.5.3 and OpenSSL 3.5.4 [30 Sep 2025]
+
+OpenSSL 3.5.4 is a security patch release. The most severe CVE fixed in this
+release is Moderate.
+
+This release incorporates the following bug fixes and mitigations:
+
+  * Fix Out-of-bounds read & write in RFC 3211 KEK Unwrap.
+    ([CVE-2025-9230])
+
+  * Fix Timing side-channel in SM2 algorithm on 64 bit ARM.
+    ([CVE-2025-9231])
+
+  * Fix Out-of-bounds read in HTTP client no_proxy handling.
+    ([CVE-2025-9232])
+
+  * Reverted the synthesised `OPENSSL_VERSION_NUMBER` change for the release
+    builds, as it broke some exiting applications that relied on the previous
+    3.x semantics, as documented in `OpenSSL_version(3)`.
+
 ### Major changes between OpenSSL 3.5.2 and OpenSSL 3.5.3 [16 Sep 2025]
+
+OpenSSL 3.5.3 is a bug fix release.
+
+This release incorporates the following bug fixes and mitigations:
 
   * Added FIPS 140-3 PCT on DH key generation.
 
-    *Nikola Pajkovsky*
-
   * Fixed the synthesised `OPENSSL_VERSION_NUMBER`.
 
-    *Richard Levitte*
+  * Removed PCT on key import in the FIPS provider as it is not required by
+    the standard.
 
 ### Major changes between OpenSSL 3.5.1 and OpenSSL 3.5.2 [5 Aug 2025]
 
-  * none
+OpenSSL 3.5.2 is a bug fix release.
+
+This release incorporates the following bug fixes and mitigations:
+
+  * The FIPS provider now performs a PCT on key import for RSA, EC and ECX.
 
 ### Major changes between OpenSSL 3.5.0 and OpenSSL 3.5.1 [1 Jul 2025]
 
@@ -45,7 +103,7 @@ release is Low.
 This release incorporates the following bug fixes and mitigations:
 
   * Fix x509 application adds trusted use instead of rejected use.
-   ([CVE-2025-4575])
+    ([CVE-2025-4575])
 
 ### Major changes between OpenSSL 3.4 and OpenSSL 3.5.0 [8 Apr 2025]
 
@@ -1913,6 +1971,9 @@ OpenSSL 0.9.x
   * Support for various new platforms
 
 <!-- Links -->
+[CVE-2025-9232]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-9232
+[CVE-2025-9231]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-9231
+[CVE-2025-9230]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-9230
 [CVE-2025-4575]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-4575
 [CVE-2024-13176]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-13176
 [CVE-2024-9143]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-9143
@@ -2089,7 +2150,7 @@ OpenSSL 0.9.x
 [CVE-2006-2940]: https://www.openssl.org/news/vulnerabilities.html#CVE-2006-2940
 [CVE-2006-2937]: https://www.openssl.org/news/vulnerabilities.html#CVE-2006-2937
 [CVE-2005-2969]: https://www.openssl.org/news/vulnerabilities.html#CVE-2005-2969
-[OpenSSL Guide]: https://www.openssl.org/docs/manmaster/man7/ossl-guide-introduction.html
+[OpenSSL Guide]: https://docs.openssl.org/master/man7/ossl-guide-introduction
 [CHANGES.md]: ./CHANGES.md
 [README-QUIC.md]: ./README-QUIC.md
 [issue tracker]: https://github.com/openssl/openssl/issues

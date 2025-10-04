@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2022-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -403,7 +403,7 @@ int tls_default_read_n(OSSL_RECORD_LAYER *rl, size_t n, size_t max, int extend,
 
         clear_sys_error();
         if (bio != NULL) {
-            ret = BIO_read(bio, pkt + len + left, max - left);
+            ret = BIO_read(bio, pkt + len + left, (int)(max - left));
             if (ret > 0) {
                 bioread = ret;
                 ret = OSSL_RECORD_RETURN_SUCCESS;
@@ -506,7 +506,7 @@ static int rlayer_early_data_count_ok(OSSL_RECORD_LAYER *rl, size_t length,
     }
 
     /* If we are dealing with ciphertext we need to allow for the overhead */
-    max_early_data += overhead;
+    max_early_data += (uint32_t)overhead;
 
     if (rl->early_data_count + length > max_early_data) {
         RLAYERfatal(rl, send ? SSL_AD_INTERNAL_ERROR : SSL_AD_UNEXPECTED_MESSAGE,
@@ -812,7 +812,7 @@ int tls_get_more_records(OSSL_RECORD_LAYER *rl)
     }
 
     if (mac_size > 0) {
-        macbufs = OPENSSL_zalloc(sizeof(*macbufs) * num_recs);
+        macbufs = OPENSSL_calloc(num_recs, sizeof(*macbufs));
         if (macbufs == NULL) {
             RLAYERfatal(rl, SSL_AD_INTERNAL_ERROR, ERR_R_CRYPTO_LIB);
             return OSSL_RECORD_RETURN_FATAL;
@@ -874,7 +874,7 @@ int tls_get_more_records(OSSL_RECORD_LAYER *rl)
     }
     OSSL_TRACE_BEGIN(TLS) {
         BIO_printf(trc_out, "dec %lu\n", (unsigned long)rr[0].length);
-        BIO_dump_indent(trc_out, rr[0].data, rr[0].length, 4);
+        BIO_dump_indent(trc_out, rr[0].data, (int)rr[0].length, 4);
     } OSSL_TRACE_END(TLS);
 
     /* r->length is now the compressed data plus mac */
@@ -1093,9 +1093,12 @@ int tls13_common_post_process_record(OSSL_RECORD_LAYER *rl, TLS_RL_RECORD *rec)
         return 0;
     }
 
-    if (rl->msg_callback != NULL)
-        rl->msg_callback(0, rl->version, SSL3_RT_INNER_CONTENT_TYPE, &rec->type,
-                        1, rl->cbarg);
+    if (rl->msg_callback != NULL) {
+        unsigned char ctype = (unsigned char)rec->type;
+
+        rl->msg_callback(0, rl->version, SSL3_RT_INNER_CONTENT_TYPE, &ctype,
+                         1, rl->cbarg);
+    }
 
     /*
      * TLSv1.3 alert and handshake records are required to be non-zero in
@@ -2064,7 +2067,7 @@ const COMP_METHOD *tls_get_compression(OSSL_RECORD_LAYER *rl)
 
 void tls_set_max_frag_len(OSSL_RECORD_LAYER *rl, size_t max_frag_len)
 {
-    rl->max_frag_len = max_frag_len;
+    rl->max_frag_len = (unsigned int)max_frag_len;
     /*
      * We don't need to adjust buffer sizes. Write buffer sizes are
      * automatically checked anyway. We should only be changing the read buffer

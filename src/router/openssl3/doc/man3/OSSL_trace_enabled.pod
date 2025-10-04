@@ -312,14 +312,14 @@ L<OSSL_trace_set_channel(3)>, L<OSSL_trace_set_callback(3)>
 
 =head1 HISTORY
 
-The OpenSSL Tracing API was added in OpenSSL 3.0.
+The OpenSSL Tracing functions were added in OpenSSL 3.0.
 
 OSSL_TRACE_STRING(), OSSL_TRACE_STRING_MAX, and OSSL_trace_string
 were added in OpenSSL 3.2.
 
 =head1 COPYRIGHT
 
-Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

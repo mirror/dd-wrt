@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2024-2025 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -44,6 +44,7 @@ echo "   OPENSSL_ROOT_DIR:   $OPENSSL_ROOT_DIR"
 echo "   OpenSSL version:    $OPENSSL_VERSION"
 echo "------------------------------------------------------------------"
 
+PKCS11_PROVIDER_SRCDIR=$OPENSSL_ROOT_DIR/pkcs11-provider/
 PKCS11_PROVIDER_BUILDDIR=$OPENSSL_ROOT_DIR/pkcs11-provider/builddir
 
 echo "------------------------------------------------------------------"
@@ -53,12 +54,17 @@ echo "------------------------------------------------------------------"
 PKG_CONFIG_PATH="$BLDTOP" meson setup $PKCS11_PROVIDER_BUILDDIR $OPENSSL_ROOT_DIR/pkcs11-provider/ || exit 1
 meson compile -C $PKCS11_PROVIDER_BUILDDIR pkcs11 || exit 1
 
+# Remove pkcs11-provider tlsfuzzer submodule tlsfuzzer directory to skip tlsfuzzer tests
+if [ -d "${PKCS11_PROVIDER_SRCDIR}/tlsfuzzer/tlsfuzzer" ]; then
+    rm -rf "${PKCS11_PROVIDER_SRCDIR}/tlsfuzzer/tlsfuzzer"
+fi
+
 echo "------------------------------------------------------------------"
 echo "Running tests"
 echo "------------------------------------------------------------------"
 
-# The OpenSSL app uses ${HARNESS_OSSL_PREFIX} as a prefix for its standard output
-HARNESS_OSSL_PREFIX= meson test -C $PKCS11_PROVIDER_BUILDDIR
+# For maintenance reasons and simplicity we only run test with kryoptic token
+meson test -C $PKCS11_PROVIDER_BUILDDIR --suite=kryoptic
 
 if [ $? -ne 0 ]; then
     cat $PKCS11_PROVIDER_BUILDDIR/meson-logs/testlog.txt

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -184,7 +184,7 @@ static int ok_read(BIO *b, char *out, int outl)
 
         /* copy clean bytes to output buffer */
         if (ctx->blockout) {
-            i = ctx->buf_len - ctx->buf_off;
+            i = (int)(ctx->buf_len - ctx->buf_off);
             if (i > outl)
                 i = outl;
             memcpy(out, &(ctx->buf[ctx->buf_off]), i);
@@ -216,7 +216,7 @@ static int ok_read(BIO *b, char *out, int outl)
             break;
 
         /* no clean bytes in buffer -- fill it */
-        n = IOBS - ctx->buf_len;
+        n = (int)(IOBS - ctx->buf_len);
         i = BIO_read(next, &(ctx->buf[ctx->buf_len]), n);
 
         if (i <= 0)
@@ -272,7 +272,7 @@ static int ok_write(BIO *b, const char *in, int inl)
 
     do {
         BIO_clear_retry_flags(b);
-        n = ctx->buf_len - ctx->buf_off;
+        n = (int)(ctx->buf_len - ctx->buf_off);
         while (ctx->blockout && n > 0) {
             i = BIO_write(next, &(ctx->buf[ctx->buf_off]), n);
             if (i <= 0) {
@@ -348,7 +348,7 @@ static long ok_ctrl(BIO *b, int cmd, long num, void *ptr)
         break;
     case BIO_CTRL_PENDING:     /* More to read in buffer */
     case BIO_CTRL_WPENDING:    /* More to read in buffer */
-        ret = ctx->blockout ? ctx->buf_len - ctx->buf_off : 0;
+        ret = ctx->blockout ? (long)(ctx->buf_len - ctx->buf_off) : 0;
         if (ret <= 0)
             ret = BIO_ctrl(next, cmd, num, ptr);
         break;
@@ -538,7 +538,7 @@ static int block_out(BIO *b)
     if (md_size <= 0)
         goto berr;
 
-    tl = ctx->buf_len - OK_BLOCK_BLOCK;
+    tl = (unsigned long)(ctx->buf_len - OK_BLOCK_BLOCK);
     ctx->buf[0] = (unsigned char)(tl >> 24);
     ctx->buf[1] = (unsigned char)(tl >> 16);
     ctx->buf[2] = (unsigned char)(tl >> 8);
@@ -560,7 +560,7 @@ static int block_in(BIO *b)
 {
     BIO_OK_CTX *ctx;
     EVP_MD_CTX *md;
-    unsigned long tl = 0;
+    size_t tl = 0;
     unsigned char tmp[EVP_MAX_MD_SIZE];
     int md_size;
 
@@ -571,15 +571,18 @@ static int block_in(BIO *b)
         goto berr;
 
     assert(sizeof(tl) >= OK_BLOCK_BLOCK); /* always true */
-    tl = ctx->buf[0];
-    tl <<= 8;
-    tl |= ctx->buf[1];
-    tl <<= 8;
-    tl |= ctx->buf[2];
-    tl <<= 8;
-    tl |= ctx->buf[3];
+    tl = ((size_t)ctx->buf[0] << 24)
+           | ((size_t)ctx->buf[1] << 16)
+           | ((size_t)ctx->buf[2] << 8)
+           | ((size_t)ctx->buf[3]);
 
-    if (ctx->buf_len < tl + OK_BLOCK_BLOCK + md_size)
+    if (tl > OK_BLOCK_SIZE)
+        goto berr;
+
+    if (tl > SIZE_MAX - OK_BLOCK_BLOCK - (size_t)md_size)
+        goto berr;
+
+    if (ctx->buf_len < tl + OK_BLOCK_BLOCK + (size_t)md_size)
         return 1;
 
     if (!EVP_DigestUpdate(md,
@@ -587,7 +590,7 @@ static int block_in(BIO *b)
         goto berr;
     if (!EVP_DigestFinal_ex(md, tmp, NULL))
         goto berr;
-    if (memcmp(&(ctx->buf[tl + OK_BLOCK_BLOCK]), tmp, md_size) == 0) {
+    if (memcmp(&(ctx->buf[tl + OK_BLOCK_BLOCK]), tmp, (size_t)md_size) == 0) {
         /* there might be parts from next block lurking around ! */
         ctx->buf_off_save = tl + OK_BLOCK_BLOCK + md_size;
         ctx->buf_len_save = ctx->buf_len;

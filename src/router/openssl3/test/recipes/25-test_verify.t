@@ -30,7 +30,7 @@ sub verify {
     run(app([@args]));
 }
 
-plan tests => 203;
+plan tests => 205;
 
 # Canonical success
 ok(verify("ee-cert", "sslserver", ["root-cert"], ["ca-cert"]),
@@ -602,16 +602,19 @@ ok(vfy_root("-CAfile", $rootcert), "CAfile");
 ok(vfy_root("-CAstore", $rootcert), "CAstore");
 ok(vfy_root("-CAstore", $rootcert, "-CAfile", $rootcert), "CAfile and existing CAstore");
 ok(!vfy_root("-CAstore", "non-existing", "-CAfile", $rootcert), "CAfile and non-existing CAstore");
+
 SKIP: {
     skip "file names with colons aren't supported on Windows and VMS", 2
-        if $^O =~ /^(MsWin32|VMS)$/;
+        if $^O =~ /^(MSWin32|VMS)$/;
     my $foo_file = "foo:cert.pem";
     copy($rootcert, $foo_file);
     ok(vfy_root("-CAstore", $foo_file), "CAstore foo:file");
+    ok(vfy_root("-CAstore", "file:".$foo_file), "CAstore file:foo:file");
 }
 my $foo_file = "cert.pem";
 copy($rootcert, $foo_file);
 ok(vfy_root("-CAstore", $foo_file), "CAstore foo:file");
+ok(vfy_root("-CAstore", "file:".$foo_file), "CAstore file:foo:file");
 my $abs_cert = abs_path($rootcert);
 # Windows file: URIs should have a path part starting with a slash, i.e.
 # file://authority/C:/what/ever/foo.pem and file:///C:/what/ever/foo.pem

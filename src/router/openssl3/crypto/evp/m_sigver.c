@@ -436,6 +436,10 @@ int EVP_DigestSignUpdate(EVP_MD_CTX *ctx, const void *data, size_t dsize)
 
  legacy:
     if (pctx != NULL) {
+        if (pctx->pmeth == NULL) {
+            ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
+            return 0;
+        }
         /* do_sigver_init() checked that |digest_custom| is non-NULL */
         if (pctx->flag_call_digest_custom
             && !ctx->pctx->pmeth->digest_custom(ctx->pctx, ctx))
@@ -727,7 +731,7 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sig,
         vctx = 0;
     if (ctx->flags & EVP_MD_CTX_FLAG_FINALISE) {
         if (vctx) {
-            r = pctx->pmeth->verifyctx(pctx, sig, siglen, ctx);
+            r = pctx->pmeth->verifyctx(pctx, sig, (int)siglen, ctx);
             ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
         } else
             r = EVP_DigestFinal_ex(ctx, md, &mdlen);
@@ -741,7 +745,7 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sig,
         }
         if (vctx)
             r = tmp_ctx->pctx->pmeth->verifyctx(tmp_ctx->pctx,
-                                                sig, siglen, tmp_ctx);
+                                                sig, (int)siglen, tmp_ctx);
         else
             r = EVP_DigestFinal_ex(tmp_ctx, md, &mdlen);
         EVP_MD_CTX_free(tmp_ctx);

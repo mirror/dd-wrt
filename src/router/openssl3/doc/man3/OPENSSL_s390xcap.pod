@@ -35,7 +35,7 @@ The name of a processor generation. A bit in the environment variable's
 mask is set to one if and only if the specified processor generation
 implements the corresponding instruction set extension. Possible values
 are B<z900>, B<z990>, B<z9>, B<z10>, B<z196>, B<zEC12>, B<z13>, B<z14>,
-B<z15>, and B<z16>.
+B<z15>, B<z16>, and B<z17>.
 
 =item <string>:<mask>:<mask>
 
@@ -201,7 +201,7 @@ Disables the KM-XTS-AES and the KIMD-SHAKE function codes:
 
 =head1 COPYRIGHT
 
-Copyright 2018-2024 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2018-2025 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

@@ -35,6 +35,8 @@ static int exptypes_selection;
 static int query_id;
 static int key_deleted;
 
+unsigned fake_rsa_query_operation_name = 0;
+
 typedef struct {
     OSSL_LIB_CTX *libctx;
 } PROV_FAKE_RSA_CTX;
@@ -90,7 +92,7 @@ static const char *fake_rsa_keymgmt_query(int id)
     /* record global for checking */
     query_id = id;
 
-    return "RSA";
+    return fake_rsa_query_operation_name ? NULL: "RSA";
 }
 
 static int fake_rsa_keymgmt_import(void *keydata, int selection,
@@ -355,7 +357,7 @@ static int fake_rsa_sig_sign(void *ctx, unsigned char *sig,
     *siglen = 256;
     /* record that the real sign operation was called */
     if (sig != NULL) {
-        if (!TEST_int_ge(sigsize, *siglen))
+        if (!TEST_size_t_ge(sigsize, *siglen))
             return 0;
         *sigctx = 2;
         /* produce a fake signature */
@@ -468,7 +470,7 @@ static int fake_rsa_dgstsgnvfy_final(void *ctx, unsigned char *sig,
         *siglen = 256;
         /* record that the real sign operation was called */
         if (sig != NULL) {
-            if (!TEST_int_ge(sigsize, *siglen))
+            if (!TEST_size_t_ge(sigsize, *siglen))
                 return 0;
             /* produce a fake signature */
             memset(sig, 'a', *siglen);
@@ -636,7 +638,7 @@ static int fake_rsa_st_load(void *loaderctx,
         if (key_deleted == 1) {
             *storectx = 1;
             break;
-	}
+        }
 
         /* Construct a new key using our keymgmt functions */
         if (!TEST_ptr(key = fake_rsa_keymgmt_new(NULL)))
