@@ -1732,13 +1732,9 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	src_dent_parent = dget_parent(fp->filp->f_path.dentry);
 	src_dent = fp->filp->f_path.dentry;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, newname, LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY, &parent_path, &dst_path, 0);
-#else
 	err = ksmbd_vfs_kern_path(work, newname,
 				  LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
 				  &dst_path, false);
-#endif
 	if (err) {
 		ksmbd_debug(VFS, "Cannot get path for %s [%d]\n", newname, err);
 		goto out;

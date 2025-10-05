@@ -46,10 +46,10 @@ PWD	:= $(shell pwd)
 export CONFIG_SMB_SERVER := m
 export CONFIG_SMB_INSECURE_SERVER := y
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	$(MAKE) -C $(KDIR) M=$(PWD) modules  MODPROBE=true KBUILD_MODPOST_WARN=1
 
 clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
+	$(MAKE) -C $(KDIR) M=$(PWD) clean MODPROBE=true KBUILD_MODPOST_WARN=1
 
 install: ksmbd.ko
 	rm -f $(INSTALLDIR)/smbd/lib/modules/$(KERNELRELEASE)/ksmbd.ko

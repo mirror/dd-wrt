@@ -864,11 +864,7 @@ int smb_rename(struct ksmbd_work *work)
 		goto out;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, newname, LOOKUP_NO_SYMLINKS, &parent_path, &path, 1);
-#else
 	rc = ksmbd_vfs_kern_path(work, newname, LOOKUP_NO_SYMLINKS, &path, 1);
-#endif
 	if (rc)
 		file_present = false;
 	else
@@ -882,11 +878,7 @@ int smb_rename(struct ksmbd_work *work)
 	}
 
 	ksmbd_debug(SMB, "rename %s -> %s\n", oldname, newname);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, oldname, LOOKUP_NO_SYMLINKS, &parent_path, &path, 1);
-#else
 	rc = ksmbd_vfs_kern_path(work, oldname, LOOKUP_NO_SYMLINKS, &path, 1);
-#endif
 	if (rc)
 		goto out;
 
