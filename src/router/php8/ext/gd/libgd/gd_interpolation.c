@@ -62,11 +62,6 @@ TODO:
 #include "gdhelpers.h"
 #include "gd_intern.h"
 
-#ifdef _MSC_VER
-# pragma optimize("t", on)
-# include <emmintrin.h>
-#endif
-
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif

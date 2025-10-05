@@ -911,7 +911,7 @@ ZEND_API void zend_multibyte_yyinput_again(zend_encoding_filter old_input_filter
 		ZVAL_STRINGL(zendlval, yytext, yyleng); \
 	}
 
-static zend_result zend_scan_escape_string(zval *zendlval, char *str, int len, char quote_type)
+static zend_result zend_scan_escape_string(zval *zendlval, char *str, size_t len, char quote_type)
 {
 	char *s, *t;
 	char *end;
@@ -1813,11 +1813,11 @@ OPTIONAL_WHITESPACE_OR_COMMENTS ({WHITESPACE}|{MULTI_LINE_COMMENT}|{SINGLE_LINE_
 	RETURN_TOKEN(T_MUL_EQUAL);
 }
 
-<ST_IN_SCRIPTING>"*\*" {
+<ST_IN_SCRIPTING>"**" {
 	RETURN_TOKEN(T_POW);
 }
 
-<ST_IN_SCRIPTING>"*\*=" {
+<ST_IN_SCRIPTING>"**=" {
 	RETURN_TOKEN(T_POW_EQUAL);
 }
 

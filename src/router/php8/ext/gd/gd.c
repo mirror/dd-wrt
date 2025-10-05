@@ -837,6 +837,11 @@ PHP_FUNCTION(imagefilledellipse)
 		Z_PARAM_LONG(color)
 	ZEND_PARSE_PARAMETERS_END();
 
+    if (w < 0 || ZEND_LONG_INT_OVFL(w)) {
+        zend_argument_value_error(4, "must be between 0 and %d", INT_MAX);
+        RETURN_THROWS();
+    }
+
 	im = php_gd_libgdimageptr_from_zval_p(IM);
 
 	gdImageFilledEllipse(im, cx, cy, w, h, color);
@@ -1610,7 +1615,7 @@ static void _php_image_create_from(INTERNAL_FUNCTION_PARAMETERS, int image_type,
 		pefree(pstr, 1);
 		zend_string_release_ex(buff, 0);
 	}
-	else if (php_stream_can_cast(stream, PHP_STREAM_AS_STDIO)) {
+	else if (php_stream_can_cast(stream, PHP_STREAM_AS_STDIO) == SUCCESS) {
 		/* try and force the stream to be FILE* */
 		if (FAILURE == php_stream_cast(stream, PHP_STREAM_AS_STDIO | PHP_STREAM_CAST_TRY_HARD, (void **) &fp, REPORT_ERRORS)) {
 			goto out_err;

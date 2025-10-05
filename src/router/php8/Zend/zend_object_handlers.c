@@ -282,7 +282,7 @@ static zend_always_inline bool is_derived_class(const zend_class_entry *child_cl
 static zend_never_inline int is_protected_compatible_scope(const zend_class_entry *ce, const zend_class_entry *scope) /* {{{ */
 {
 	return scope &&
-		(is_derived_class(ce, scope) || is_derived_class(scope, ce));
+		(ce == scope || is_derived_class(ce, scope) || is_derived_class(scope, ce));
 }
 /* }}} */
 
@@ -419,7 +419,7 @@ wrong:
 				}
 			} else {
 				ZEND_ASSERT(flags & ZEND_ACC_PROTECTED);
-				if (UNEXPECTED(!is_protected_compatible_scope(property_info->ce, scope))) {
+				if (UNEXPECTED(!is_protected_compatible_scope(property_info->prototype->ce, scope))) {
 					goto wrong;
 				}
 			}
@@ -514,7 +514,7 @@ wrong:
 				}
 			} else {
 				ZEND_ASSERT(flags & ZEND_ACC_PROTECTED);
-				if (UNEXPECTED(!is_protected_compatible_scope(property_info->ce, scope))) {
+				if (UNEXPECTED(!is_protected_compatible_scope(property_info->prototype->ce, scope))) {
 					goto wrong;
 				}
 			}
@@ -585,7 +585,7 @@ ZEND_API bool ZEND_FASTCALL zend_asymmetric_property_has_set_access(const zend_p
 		return true;
 	}
 	return EXPECTED((prop_info->flags & ZEND_ACC_PROTECTED_SET)
-		&& is_protected_compatible_scope(prop_info->ce, scope));
+		&& is_protected_compatible_scope(prop_info->prototype->ce, scope));
 }
 
 static void zend_property_guard_dtor(zval *el) /* {{{ */ {
@@ -719,7 +719,9 @@ static bool zend_call_get_hook(
 		return false;
 	}
 
+	GC_ADDREF(zobj);
 	zend_call_known_instance_method_with_0_params(get, zobj, rv);
+	OBJ_RELEASE(zobj);
 
 	return true;
 }
@@ -2028,7 +2030,7 @@ ZEND_API zval *zend_std_get_static_property_with_info(zend_class_entry *ce, zend
 		zend_class_entry *scope = get_fake_or_executed_scope();
 		if (property_info->ce != scope) {
 			if (UNEXPECTED(property_info->flags & ZEND_ACC_PRIVATE)
-			 || UNEXPECTED(!is_protected_compatible_scope(property_info->ce, scope))) {
+			 || UNEXPECTED(!is_protected_compatible_scope(property_info->prototype->ce, scope))) {
 				if (type != BP_VAR_IS) {
 					zend_bad_property_access(property_info, ce, property_name);
 				}
@@ -2200,6 +2202,10 @@ ZEND_API int zend_std_compare_objects(zval *o1, zval *o2) /* {{{ */
 		}
 		Z_PROTECT_RECURSION_P(o1);
 
+		GC_ADDREF(zobj1);
+		GC_ADDREF(zobj2);
+		int ret;
+
 		for (i = 0; i < zobj1->ce->default_properties_count; i++) {
 			zval *p1, *p2;
 
@@ -2214,31 +2220,45 @@ ZEND_API int zend_std_compare_objects(zval *o1, zval *o2) /* {{{ */
 
 			if (Z_TYPE_P(p1) != IS_UNDEF) {
 				if (Z_TYPE_P(p2) != IS_UNDEF) {
-					int ret;
-
 					ret = zend_compare(p1, p2);
 					if (ret != 0) {
 						Z_UNPROTECT_RECURSION_P(o1);
-						return ret;
+						goto done;
 					}
 				} else {
 					Z_UNPROTECT_RECURSION_P(o1);
-					return 1;
+					ret = 1;
+					goto done;
 				}
 			} else {
 				if (Z_TYPE_P(p2) != IS_UNDEF) {
 					Z_UNPROTECT_RECURSION_P(o1);
-					return 1;
+					ret = 1;
+					goto done;
 				}
 			}
 		}
 
 		Z_UNPROTECT_RECURSION_P(o1);
-		return 0;
+		ret = 0;
+
+done:
+		OBJ_RELEASE(zobj1);
+		OBJ_RELEASE(zobj2);
+
+		return ret;
 	} else {
-		return zend_compare_symbol_tables(
+		GC_ADDREF(zobj1);
+		GC_ADDREF(zobj2);
+
+		int ret = zend_compare_symbol_tables(
 				zend_std_get_properties_ex(zobj1),
 				zend_std_get_properties_ex(zobj2));
+
+		OBJ_RELEASE(zobj1);
+		OBJ_RELEASE(zobj2);
+
+		return ret;
 	}
 }
 /* }}} */

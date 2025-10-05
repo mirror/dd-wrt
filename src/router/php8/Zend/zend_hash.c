@@ -635,8 +635,15 @@ ZEND_API HashPosition ZEND_FASTCALL zend_hash_iterator_pos_ex(uint32_t idx, zval
 				&& EXPECTED(!HT_ITERATORS_OVERFLOW(ht))) {
 			HT_DEC_ITERATORS_COUNT(iter->ht);
 		}
-		SEPARATE_ARRAY(array);
-		ht = Z_ARRVAL_P(array);
+
+		/* Inlined SEPARATE_ARRAY() with updating of iterator when EG(ht_iterators) grows. */
+		if (UNEXPECTED(GC_REFCOUNT(ht) > 1)) {
+			ZVAL_ARR(array, zend_array_dup(ht));
+			GC_TRY_DELREF(ht);
+			iter = EG(ht_iterators) + idx;
+			ht = Z_ARRVAL_P(array);
+		}
+
 		if (EXPECTED(!HT_ITERATORS_OVERFLOW(ht))) {
 			HT_INC_ITERATORS_COUNT(ht);
 		}
@@ -1379,7 +1386,7 @@ ZEND_API void ZEND_FASTCALL zend_hash_rehash(HashTable *ht)
 							q->key = p->key;
 							Z_NEXT(q->val) = HT_HASH(ht, nIndex);
 							HT_HASH(ht, nIndex) = HT_IDX_TO_HASH(j);
-							if (UNEXPECTED(ht->nInternalPointer == i)) {
+							if (UNEXPECTED(ht->nInternalPointer > j && ht->nInternalPointer <= i)) {
 								ht->nInternalPointer = j;
 							}
 							q++;
@@ -1398,7 +1405,7 @@ ZEND_API void ZEND_FASTCALL zend_hash_rehash(HashTable *ht)
 							q->key = p->key;
 							Z_NEXT(q->val) = HT_HASH(ht, nIndex);
 							HT_HASH(ht, nIndex) = HT_IDX_TO_HASH(j);
-							if (UNEXPECTED(ht->nInternalPointer == i)) {
+							if (UNEXPECTED(ht->nInternalPointer > j && ht->nInternalPointer <= i)) {
 								ht->nInternalPointer = j;
 							}
 							if (UNEXPECTED(i >= iter_pos)) {

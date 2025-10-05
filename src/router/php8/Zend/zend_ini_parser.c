@@ -1586,6 +1586,10 @@ yydestruct (const char *yymsg,
             { zval_ini_dtor(&(*yyvaluep)); }
         break;
 
+    case YYSYMBOL_fallback: /* fallback  */
+            { zval_ini_dtor(&(*yyvaluep)); }
+        break;
+
     case YYSYMBOL_constant_literal: /* constant_literal  */
             { zval_ini_dtor(&(*yyvaluep)); }
         break;

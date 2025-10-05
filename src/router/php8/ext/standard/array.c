@@ -3326,6 +3326,9 @@ static void php_splice(HashTable *in_hash, zend_long offset, zend_long length, H
 	zval		*entry;				/* Hash entry */
 	uint32_t    iter_pos = zend_hash_iterators_lower_pos(in_hash, 0);
 
+	GC_ADDREF(in_hash);
+	HT_ALLOW_COW_VIOLATION(in_hash); /* Will be reset when setting the flags for in_hash */
+
 	/* Get number of entries in the input hash */
 	num_in = zend_hash_num_elements(in_hash);
 
@@ -3493,6 +3496,15 @@ static void php_splice(HashTable *in_hash, zend_long offset, zend_long length, H
 	HT_SET_ITERATORS_COUNT(&out_hash, HT_ITERATORS_COUNT(in_hash));
 	HT_SET_ITERATORS_COUNT(in_hash, 0);
 	in_hash->pDestructor = NULL;
+
+	if (UNEXPECTED(GC_DELREF(in_hash) == 0)) {
+		/* Array was completely deallocated during the operation */
+		zend_array_destroy(in_hash);
+		zend_hash_destroy(&out_hash);
+		zend_throw_error(NULL, "Array was modified during array_splice operation");
+		return;
+	}
+
 	zend_hash_destroy(in_hash);
 
 	HT_FLAGS(in_hash)          = HT_FLAGS(&out_hash);
@@ -6038,7 +6050,7 @@ PHP_FUNCTION(array_multisort)
 	for (i = 0; i < MULTISORT_LAST; i++) {
 		parse_state[i] = 0;
 	}
-	func = ARRAYG(multisort_func) = ecalloc(argc, sizeof(bucket_compare_func_t));
+	func = ecalloc(argc, sizeof(bucket_compare_func_t));
 
 	/* Here we go through the input arguments and parse them. Each one can
 	 * be either an array or a sort flag which follows an array. If not
@@ -6054,7 +6066,7 @@ PHP_FUNCTION(array_multisort)
 			/* We see the next array, so we update the sort flags of
 			 * the previous array and reset the sort flags. */
 			if (i > 0) {
-				ARRAYG(multisort_func)[num_arrays - 1] = php_get_data_compare_func_unstable(sort_type, sort_order != PHP_SORT_ASC);
+				func[num_arrays - 1] = php_get_data_compare_func_unstable(sort_type, sort_order != PHP_SORT_ASC);
 				sort_order = PHP_SORT_ASC;
 				sort_type = PHP_SORT_REGULAR;
 			}
@@ -6106,8 +6118,6 @@ PHP_FUNCTION(array_multisort)
 			MULTISORT_ABORT;
 		}
 	}
-	/* Take care of the last array sort flags. */
-	ARRAYG(multisort_func)[num_arrays - 1] = php_get_data_compare_func_unstable(sort_type, sort_order != PHP_SORT_ASC);
 
 	/* Make sure the arrays are of the same size. */
 	array_size = zend_hash_num_elements(Z_ARRVAL_P(arrays[0]));
@@ -6124,6 +6134,11 @@ PHP_FUNCTION(array_multisort)
 		efree(arrays);
 		RETURN_TRUE;
 	}
+
+	/* Take care of the last array sort flags. */
+	func[num_arrays - 1] = php_get_data_compare_func_unstable(sort_type, sort_order != PHP_SORT_ASC);
+	bucket_compare_func_t *old_multisort_func = ARRAYG(multisort_func);
+	ARRAYG(multisort_func) = func;
 
 	/* Create the indirection array. This array is of size MxN, where
 	 * M is the number of entries in each input array and N is the number
@@ -6201,6 +6216,7 @@ clean_up:
 	efree(indirect);
 	efree(func);
 	efree(arrays);
+	ARRAYG(multisort_func) = old_multisort_func;
 }
 /* }}} */
 

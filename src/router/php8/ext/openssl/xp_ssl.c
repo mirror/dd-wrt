@@ -1439,7 +1439,8 @@ static SSL_CTX *php_openssl_create_sni_server_ctx(char *cert_path, char *key_pat
 }
 /* }}} */
 
-static zend_result php_openssl_enable_server_sni(php_stream *stream, php_openssl_netstream_data_t *sslsock)  /* {{{ */
+static zend_result php_openssl_enable_server_sni(
+		php_stream *stream, php_openssl_netstream_data_t *sslsock, bool verify_peer)
 {
 	zval *val;
 	zval *current;
@@ -1560,6 +1561,12 @@ static zend_result php_openssl_enable_server_sni(php_stream *stream, php_openssl
 			return FAILURE;
 		}
 
+		if (!verify_peer) {
+			php_openssl_disable_peer_verification(ctx, stream);
+		} else if (FAILURE == php_openssl_enable_peer_verification(ctx, stream)) {
+			return FAILURE;
+		}
+
 		sslsock->sni_certs[i].name = pestrdup(ZSTR_VAL(key), php_stream_is_persistent(stream));
 		sslsock->sni_certs[i].ctx = ctx;
 		++i;
@@ -1570,7 +1577,6 @@ static zend_result php_openssl_enable_server_sni(php_stream *stream, php_openssl
 
 	return SUCCESS;
 }
-/* }}} */
 
 static void php_openssl_enable_client_sni(php_stream *stream, php_openssl_netstream_data_t *sslsock) /* {{{ */
 {
@@ -1662,6 +1668,7 @@ static zend_result php_openssl_setup_crypto(php_stream *stream,
 	char *cipherlist = NULL;
 	char *alpn_protocols = NULL;
 	zval *val;
+	bool verify_peer = false;
 
 	if (sslsock->ssl_handle) {
 		if (sslsock->s.is_blocked) {
@@ -1713,8 +1720,11 @@ static zend_result php_openssl_setup_crypto(php_stream *stream,
 
 	if (GET_VER_OPT("verify_peer") && !zend_is_true(val)) {
 		php_openssl_disable_peer_verification(sslsock->ctx, stream);
-	} else if (FAILURE == php_openssl_enable_peer_verification(sslsock->ctx, stream)) {
-		return FAILURE;
+	} else {
+		verify_peer = true;
+		if (FAILURE == php_openssl_enable_peer_verification(sslsock->ctx, stream)) {
+			return FAILURE;
+		}
 	}
 
 	/* callback for the passphrase (for localcert) */
@@ -1815,7 +1825,7 @@ static zend_result php_openssl_setup_crypto(php_stream *stream,
 
 #ifdef HAVE_TLS_SNI
 	/* Enable server-side SNI */
-	if (!sslsock->is_client && php_openssl_enable_server_sni(stream, sslsock) == FAILURE) {
+	if (!sslsock->is_client && php_openssl_enable_server_sni(stream, sslsock, verify_peer) == FAILURE) {
 		return FAILURE;
 	}
 #endif
@@ -2384,6 +2394,12 @@ static inline int php_openssl_tcp_sockop_accept(php_stream *stream, php_openssl_
 				php_stream_close(xparam->outputs.client);
 				xparam->outputs.client = NULL;
 				xparam->outputs.returncode = -1;
+				if (xparam->want_errortext) {
+					if (xparam->outputs.error_text) {
+						zend_string_free(xparam->outputs.error_text);
+					}
+					xparam->outputs.error_text = ZSTR_INIT_LITERAL("Cannot enable crypto", 0);
+				}
 			}
 		}
 	}
