@@ -1,13 +1,52 @@
 
-Changes with nginx 1.28.0                                        23 Apr 2025
+Changes with nginx 1.29.1                                        13 Aug 2025
 
-    *) 1.28.x stable branch.
+    *) Change: now TLSv1.3 certificate compression is disabled by default.
+
+    *) Feature: the "ssl_certificate_compression" directive.
+
+    *) Feature: support for 0-RTT in QUIC when using OpenSSL 3.5.1 or newer.
+
+    *) Bugfix: the 103 response might be buffered when using HTTP/2 and the
+       "early_hints" directive.
+
+    *) Bugfix: in handling "Host" and ":authority" header lines with equal
+       values when using HTTP/2; the bug had appeared in 1.17.9.
+
+    *) Bugfix: in handling "Host" header lines with a port when using
+       HTTP/3.
+
+    *) Bugfix: nginx could not be built on NetBSD 10.0.
+
+    *) Bugfix: in the "none" parameter of the "smtp_auth" directive.
+
+
+Changes with nginx 1.29.0                                        24 Jun 2025
+
+    *) Feature: support for response code 103 from proxy and gRPC backends;
+       the "early_hints" directive.
+
+    *) Feature: loading of secret keys from hardware tokens with OpenSSL
+       provider.
+
+    *) Feature: support for the "so_keepalive" parameter of the "listen"
+       directive on macOS.
+
+    *) Change: the logging level of SSL errors in a QUIC handshake has been
+       changed from "error" to "crit" for critical errors, and to "info" for
+       the rest; the logging level of unsupported QUIC transport parameters
+       has been lowered from "info" to "debug".
+
+    *) Change: the native nginx/Windows binary release is now built using
+       Windows SDK 10.
 
     *) Bugfix: nginx could not be built by gcc 15 if ngx_http_v2_module or
        ngx_http_v3_module modules were used.
 
     *) Bugfix: nginx might not be built by gcc 14 or newer with -O3 -flto
        optimization if ngx_http_v3_module was used.
+
+    *) Bugfixes and improvements in HTTP/3.
 
 
 Changes with nginx 1.27.5                                        16 Apr 2025

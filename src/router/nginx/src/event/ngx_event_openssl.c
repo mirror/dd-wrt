@@ -45,8 +45,6 @@ static ssize_t ngx_ssl_sendfile(ngx_connection_t *c, ngx_buf_t *file,
     size_t size);
 static void ngx_ssl_read_handler(ngx_event_t *rev);
 static void ngx_ssl_shutdown_handler(ngx_event_t *ev);
-static void ngx_ssl_connection_error(ngx_connection_t *c, int sslerr,
-    ngx_err_t err, char *text);
 static void ngx_ssl_clear_error(ngx_log_t *log);
 
 static ngx_int_t ngx_ssl_session_id_context(ngx_ssl_t *ssl,
@@ -389,6 +387,11 @@ ngx_ssl_create(ngx_ssl_t *ssl, ngx_uint_t protocols, void *data)
     SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_COMPRESSION);
 #endif
 
+#ifdef SSL_OP_NO_TX_CERTIFICATE_COMPRESSION
+    SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_TX_CERTIFICATE_COMPRESSION);
+    SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_RX_CERTIFICATE_COMPRESSION);
+#endif
+
 #ifdef SSL_OP_NO_ANTI_REPLAY
     SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_ANTI_REPLAY);
 #endif
@@ -656,6 +659,36 @@ retry:
     }
 
     EVP_PKEY_free(pkey);
+
+    return NGX_OK;
+}
+
+
+ngx_int_t
+ngx_ssl_certificate_compression(ngx_conf_t *cf, ngx_ssl_t *ssl,
+    ngx_uint_t enable)
+{
+    if (!enable) {
+        return NGX_OK;
+    }
+
+#ifdef SSL_OP_NO_TX_CERTIFICATE_COMPRESSION
+
+    if (SSL_CTX_compress_certs(ssl->ctx, 0) == 0) {
+        ngx_ssl_error(NGX_LOG_WARN, ssl->log, 0,
+                      "SSL_CTX_compress_certs() failed, ignored");
+        return NGX_OK;
+    }
+
+    SSL_CTX_clear_options(ssl->ctx, SSL_OP_NO_TX_CERTIFICATE_COMPRESSION);
+
+#else
+
+    ngx_log_error(NGX_LOG_WARN, ssl->log, 0,
+                  "\"ssl_certificate_compression\" is not supported "
+                  "on this platform, ignored");
+
+#endif
 
     return NGX_OK;
 }
@@ -1315,6 +1348,8 @@ ngx_ssl_passwords_cleanup(void *data)
 ngx_int_t
 ngx_ssl_dhparam(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *file)
 {
+#ifndef OPENSSL_NO_DH
+
     BIO  *bio;
 
     if (file->len == 0) {
@@ -1374,7 +1409,7 @@ ngx_ssl_dhparam(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *file)
     if (SSL_CTX_set0_tmp_dh_pkey(ssl->ctx, dh) != 1) {
         ngx_ssl_error(NGX_LOG_EMERG, ssl->log, 0,
                       "SSL_CTX_set0_tmp_dh_pkey(\"%s\") failed", file->data);
-#if (OPENSSL_VERSION_NUMBER >= 0x3000001fL)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000010L)
         EVP_PKEY_free(dh);
 #endif
         BIO_free(bio);
@@ -1384,6 +1419,8 @@ ngx_ssl_dhparam(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *file)
 #endif
 
     BIO_free(bio);
+
+#endif
 
     return NGX_OK;
 }
@@ -3297,7 +3334,7 @@ ngx_ssl_shutdown_handler(ngx_event_t *ev)
 }
 
 
-static void
+void
 ngx_ssl_connection_error(ngx_connection_t *c, int sslerr, ngx_err_t err,
     char *text)
 {
@@ -5053,11 +5090,7 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
             return NGX_OK;
         }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x3000000fL)
         name = SSL_group_to_name(c->ssl->connection, nid);
-#else
-        name = NULL;
-#endif
 
         s->len = name ? ngx_strlen(name) : sizeof("0x0000") - 1;
         s->data = ngx_pnalloc(pool, s->len);
@@ -5111,11 +5144,7 @@ ngx_ssl_get_curves(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
         nid = curves[i];
 
         if (nid & TLSEXT_nid_unknown) {
-#if (OPENSSL_VERSION_NUMBER >= 0x3000000fL)
             name = SSL_group_to_name(c->ssl->connection, nid);
-#else
-            name = NULL;
-#endif
 
             len += name ? ngx_strlen(name) : sizeof("0x0000") - 1;
 
@@ -5137,11 +5166,7 @@ ngx_ssl_get_curves(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
         nid = curves[i];
 
         if (nid & TLSEXT_nid_unknown) {
-#if (OPENSSL_VERSION_NUMBER >= 0x3000000fL)
             name = SSL_group_to_name(c->ssl->connection, nid);
-#else
-            name = NULL;
-#endif
 
             p = name ? ngx_cpymem(p, name, ngx_strlen(name))
                      : ngx_sprintf(p, "0x%04xd", nid & 0xffff);
