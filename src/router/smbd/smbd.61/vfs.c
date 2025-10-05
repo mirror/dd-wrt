@@ -25,6 +25,7 @@
 #include <linux/namei.h>
 #endif
 #include <linux/mount.h>
+#include <linux/splice.h>
 
 #include "glob.h"
 #include "oplock.h"
@@ -92,13 +93,16 @@ int ksmbd_vfs_lock_parent(struct dentry *parent, struct dentry *child)
 	return 0;
 }
 
-static int ksmbd_vfs_path_lookup_locked(struct ksmbd_share_config *share_conf,
-					char *pathname, unsigned int flags,
-					struct path *parent_path,
-					struct path *path)
+static int ksmbd_vfs_path_lookup(struct ksmbd_share_config *share_conf,
+				 char *pathname, unsigned int flags,
+				 struct path *path, bool do_lock)
 {
 	struct qstr last;
-	struct filename *filename;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	struct filename *filename __free(putname) = NULL;
+#else
+	struct filename *filename = NULL;
+#endif
 	struct path *root_share_path = &share_conf->vfs_path;
 	int err, type;
 	struct dentry *d;
@@ -115,58 +119,98 @@ static int ksmbd_vfs_path_lookup_locked(struct ksmbd_share_config *share_conf,
 		return PTR_ERR(filename);
 
 	err = vfs_path_parent_lookup(filename, flags,
-				     parent_path, &last, &type,
+				     path, &last, &type,
 				     root_share_path);
 	if (err) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
 		putname(filename);
+#endif
 		return err;
 	}
 
 	if (unlikely(type != LAST_NORM)) {
-		path_put(parent_path);
+		path_put(path);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
 		putname(filename);
-		return -ENOENT;
-	}
-
-	err = mnt_want_write(parent_path->mnt);
-	if (err) {
-		path_put(parent_path);
-		putname(filename);
-		return -ENOENT;
-	}
-
-	inode_lock_nested(parent_path->dentry->d_inode, I_MUTEX_PARENT);
-	d = lookup_one_qstr_excl(&last, parent_path->dentry, 0);
-	if (IS_ERR(d))
-		goto err_out;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)
-	if (d_is_negative(d)) {
-		dput(d);
-		goto err_out;
-	}
 #endif
+		return -ENOENT;
+	}
 
+	if (do_lock) {
+		err = mnt_want_write(path->mnt);
+		if (err) {
+			path_put(path);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
+			putname(filename);
+#endif
+			return -ENOENT;
+		}
+
+		inode_lock_nested(path->dentry->d_inode, I_MUTEX_PARENT);
+		d = lookup_one_qstr_excl(&last, path->dentry, 0);
+
+		if (!IS_ERR(d)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)
+			if (d_is_negative(d)) {
+				dput(d);
+				inode_unlock(path->dentry->d_inode);
+				mnt_drop_write(path->mnt);
+				path_put(path);
+				putname(filename);
+				return -ENOENT;
+			}
+#endif
+			dput(path->dentry);
+			path->dentry = d;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
+			putname(filename);
+#endif
+			return 0;
+		}
+		inode_unlock(path->dentry->d_inode);
+		mnt_drop_write(path->mnt);
+		path_put(path);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
+		putname(filename);
+#endif
+		return -ENOENT;
+	}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	d = lookup_noperm_unlocked(&last, path->dentry);
+#else
+	inode_lock_nested(path->dentry->d_inode, I_MUTEX_PARENT);
+	d = lookup_one_qstr_excl(&last, path->dentry, 0);
+	inode_unlock(path->dentry->d_inode);
+#endif
+	if (!IS_ERR(d) && d_is_negative(d)) {
+		dput(d);
+		d = ERR_PTR(-ENOENT);
+	}
+	if (IS_ERR(d)) {
+		path_put(path);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
+		putname(filename);
+#endif
+		return -ENOENT;
+	}
+	dput(path->dentry);
 	path->dentry = d;
-	path->mnt = mntget(parent_path->mnt);
 
 	if (test_share_config_flag(share_conf, KSMBD_SHARE_FLAG_CROSSMNT)) {
 		err = follow_down(path, 0);
 		if (err < 0) {
 			path_put(path);
-			goto err_out;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
+			putname(filename);
+#endif
+			return -ENOENT;
 		}
 	}
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
 	putname(filename);
+#endif
 	return 0;
-
-err_out:
-	inode_unlock(d_inode(parent_path->dentry));
-	mnt_drop_write(parent_path->mnt);
-	path_put(parent_path);
-	putname(filename);
-	return -ENOENT;
 }
 #else
 /**
@@ -853,7 +897,8 @@ int ksmbd_vfs_getattr(const struct path *path, struct kstat *stat)
 {
 	int err;
 
-	err = vfs_getattr(path, stat, STATX_BTIME, AT_STATX_SYNC_AS_STAT);
+	err = vfs_getattr(path, stat, STATX_BASIC_STATS | STATX_BTIME,
+			AT_STATX_SYNC_AS_STAT);
 	if (err)
 		pr_err("getattr failed, err %d\n", err);
 	return err;
@@ -1126,11 +1171,7 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 			   const char *dir_path)
 #endif
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
-#else
 	struct path path;
-#endif
 	int rc, file_pathlen, dir_pathlen;
 	char *name;
 
@@ -1146,12 +1187,7 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 	memcpy(name + dir_pathlen + 1, de_name, de_name_len);
 	name[file_pathlen] = '\0';
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					&parent_path, &path, true);
-#else
 	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 1);
-#endif
 	if (rc) {
 		pr_err("lookup failed: %s [%d]\n", name, rc);
 		kfree(name);
@@ -1166,11 +1202,7 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 #endif
 				    path.dentry,
 				    ksmbd_kstat);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 	kfree(name);
 	return 0;
 }
@@ -1507,10 +1539,18 @@ retry:
 	}
 
 	rd.old_mnt_idmap	= mnt_idmap(old_path->mnt),
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+	rd.old_parent		= old_parent,
+#else
 	rd.old_dir		= d_inode(old_parent),
+#endif
 	rd.old_dentry		= old_child,
 	rd.new_mnt_idmap	= mnt_idmap(new_path.mnt),
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+	rd.new_parent		= new_path.dentry,
+#else
 	rd.new_dir		= new_path.dentry->d_inode,
+#endif
 	rd.new_dentry		= new_dentry,
 	rd.flags		= flags,
 	rd.delegated_inode	= NULL,
@@ -2845,106 +2885,115 @@ static int ksmbd_vfs_lookup_in_dir(const struct path *dir, char *name,
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-/**
- * ksmbd_vfs_kern_path_locked() - lookup a file and get path info
- * @work:	work
- * @name:		file path that is relative to share
- * @flags:		lookup flags
- * @parent_path:	if lookup succeed, return parent_path info
- * @path:		if lookup succeed, return path info
- * @caseless:	caseless filename lookup
- *
- * Return:	0 on success, otherwise error
- */
-int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
-			       unsigned int flags, struct path *parent_path,
-			       struct path *path, bool caseless)
+static
+int __ksmbd_vfs_kern_path(struct ksmbd_work *work, char *filepath,
+			  unsigned int flags,
+			  struct path *path, bool caseless, bool do_lock)
 {
 	struct ksmbd_share_config *share_conf = work->tcon->share_conf;
+	struct path parent_path;
+	size_t path_len, remain_len;
 	int err;
 
-	err = ksmbd_vfs_path_lookup_locked(share_conf, name, flags, parent_path,
-					   path);
-	if (!err)
-		return 0;
+retry:
+	err = ksmbd_vfs_path_lookup(share_conf, filepath, flags, path, do_lock);
+	if (!err || !caseless)
+		return err;
 
-	if (caseless) {
-		char *filepath;
-		size_t path_len, remain_len;
+	path_len = strlen(filepath);
+	remain_len = path_len;
 
-		filepath = name;
-		path_len = strlen(filepath);
-		remain_len = path_len;
+	parent_path = share_conf->vfs_path;
+	path_get(&parent_path);
 
-		*parent_path = share_conf->vfs_path;
-		path_get(parent_path);
+	while (d_can_lookup(parent_path.dentry)) {
+		char *filename = filepath + path_len - remain_len;
+		char *next = strchrnul(filename, '/');
+		size_t filename_len = next - filename;
+		bool is_last = !next[0];
 
-		while (d_can_lookup(parent_path->dentry)) {
-			char *filename = filepath + path_len - remain_len;
-			char *next = strchrnul(filename, '/');
-			size_t filename_len = next - filename;
-			bool is_last = !next[0];
+		if (filename_len == 0)
+			break;
 
-			if (filename_len == 0)
-				break;
-
-			err = ksmbd_vfs_lookup_in_dir(parent_path, filename,
-						      filename_len,
-						      work->conn->um);
-			if (err)
-				goto out2;
-
-			next[0] = '\0';
-
-			err = vfs_path_lookup(share_conf->vfs_path.dentry,
-					      share_conf->vfs_path.mnt,
-					      filepath,
-					      flags,
-					      path);
-			if (!is_last)
-				next[0] = '/';
-			if (err)
-				goto out2;
-			else if (is_last)
-				goto out1;
-			path_put(parent_path);
-			*parent_path = *path;
-
-			remain_len -= filename_len + 1;
+		err = ksmbd_vfs_lookup_in_dir(&parent_path, filename,
+					      filename_len,
+					      work->conn->um);
+		path_put(&parent_path);
+		if (err)
+			goto out;
+		if (is_last) {
+			caseless = false;
+			goto retry;
 		}
+		next[0] = '\0';
 
-		err = -EINVAL;
-out2:
-		path_put(parent_path);
+		err = vfs_path_lookup(share_conf->vfs_path.dentry,
+				      share_conf->vfs_path.mnt,
+				      filepath,
+				      flags,
+				      &parent_path);
+		next[0] = '/';
+		if (err)
+			goto out;
+
+		remain_len -= filename_len + 1;
 	}
 
-out1:
-	if (!err) {
-		err = mnt_want_write(parent_path->mnt);
-		if (err) {
-			path_put(path);
-			path_put(parent_path);
-			return err;
-		}
-
-		err = ksmbd_vfs_lock_parent(parent_path->dentry, path->dentry);
-		if (err) {
-			mnt_drop_write(parent_path->mnt);
-			path_put(parent_path);
-			path_put(path);
-		}
-	}
+	err = -EINVAL;
+	path_put(&parent_path);
+out:
 	return err;
 }
 
-void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path)
+/**
+ * ksmbd_vfs_kern_path() - lookup a file and get path info
+ * @work:		work
+ * @filepath:		file path that is relative to share
+ * @flags:		lookup flags
+ * @path:		if lookup succeed, return path info
+ * @caseless:	caseless filename lookup
+ *
+ * Perform the lookup, possibly crossing over any mount point.
+ * On return no locks will be held and write-access to filesystem
+ * won't have been checked.
+ * Return:	0 if file was found, otherwise error
+ */
+int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *filepath,
+			unsigned int flags,
+			struct path *path, bool caseless)
 {
-	inode_unlock(d_inode(parent_path->dentry));
-	mnt_drop_write(parent_path->mnt);
-	path_put(path);
-	path_put(parent_path);
+	return __ksmbd_vfs_kern_path(work, filepath, flags, path,
+				     caseless, false);
 }
 
+/**
+ * ksmbd_vfs_kern_path_locked() - lookup a file and get path info
+ * @work:		work
+ * @filepath:		file path that is relative to share
+ * @flags:		lookup flags
+ * @path:		if lookup succeed, return path info
+ * @caseless:	caseless filename lookup
+ *
+ * Perform the lookup, but don't cross over any mount point.
+ * On return the parent of path->dentry will be locked and write-access to
+ * filesystem will have been gained.
+ * Return:	0 on if file was found, otherwise error
+ */
+int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *filepath,
+			       unsigned int flags,
+			       struct path *path, bool caseless)
+{
+	return __ksmbd_vfs_kern_path(work, filepath, flags, path,
+				     caseless, true);
+}
+
+void ksmbd_vfs_kern_path_unlock(struct path *path)
+{
+	/* While lock is still held, ->d_parent is safe */
+	inode_unlock(d_inode(path->dentry->d_parent));
+	mnt_drop_write(path->mnt);
+	path_put(path);
+}
 #else
 /**
  * ksmbd_vfs_kern_path() - lookup a file and get path info
@@ -3313,7 +3362,18 @@ int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
 		if (src_off + len > src_file_size)
 			return -E2BIG;
 
-		ret = vfs_copy_file_range(src_fp->filp, src_off,
+		/*
+		 * vfs_copy_file_range does not allow overlapped copying
+		 * within the same file.
+		 */
+		if (file_inode(src_fp->filp) == file_inode(dst_fp->filp) &&
+				dst_off + len > src_off &&
+				dst_off < src_off + len)
+			ret = do_splice_direct(src_fp->filp, &src_off,
+					dst_fp->filp, &dst_off,
+					min_t(size_t, len, MAX_RW_COUNT), 0);
+		else
+			ret = vfs_copy_file_range(src_fp->filp, src_off,
 					  dst_fp->filp, dst_off, len, 0);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		if (ret == -EOPNOTSUPP || ret == -EXDEV)

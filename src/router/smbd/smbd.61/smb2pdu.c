@@ -1609,7 +1609,7 @@ static int krb5_authenticate(struct ksmbd_work *work,
 	struct ksmbd_conn *conn = work->conn;
 	struct ksmbd_session *sess = work->sess;
 	char *in_blob, *out_blob;
-	struct channel *chann = NULL;
+	struct channel *chann = NULL, *old;
 	u64 prev_sess_id;
 	int in_len, out_len;
 	int retval;
@@ -1636,11 +1636,24 @@ static int krb5_authenticate(struct ksmbd_work *work,
 
 	rsp->SecurityBufferLength = cpu_to_le16(out_len);
 
-	if ((conn->sign || server_conf.enforced_signing) ||
+	/*
+	 * If session state is SMB2_SESSION_VALID, We can assume
+	 * that it is reauthentication. And the user/password
+	 * has been verified, so return it here.
+	 */
+	if (sess->state == SMB2_SESSION_VALID) {
+		if (conn->binding)
+			goto binding_session;
+		return 0;
+	}
+
+	if ((rsp->SessionFlags != SMB2_SESSION_FLAG_IS_GUEST_LE &&
+	    (conn->sign || server_conf.enforced_signing)) ||
 	    (req->SecurityMode & SMB2_NEGOTIATE_SIGNING_REQUIRED))
 		sess->sign = true;
 
-	if (smb3_encryption_negotiated(conn)) {
+	if (smb3_encryption_negotiated(conn) &&
+	    !(req->Flags & SMB2_SESSION_REQ_FLAG_BINDING)) {
 		retval = conn->ops->generate_encryptionkey(conn, sess);
 		if (retval) {
 			ksmbd_debug(SMB,
@@ -1653,6 +1666,7 @@ static int krb5_authenticate(struct ksmbd_work *work,
 		sess->sign = false;
 	}
 
+binding_session:
 	if (conn->dialect >= SMB30_PROT_ID) {
 		chann = lookup_chann_list(sess, conn);
 		if (!chann) {
@@ -1661,7 +1675,12 @@ static int krb5_authenticate(struct ksmbd_work *work,
 				return -ENOMEM;
 
 			chann->conn = conn;
-			xa_store(&sess->ksmbd_chann_list, (long)conn, chann, KSMBD_DEFAULT_GFP);
+			old = xa_store(&sess->ksmbd_chann_list, (long)conn,
+					chann, KSMBD_DEFAULT_GFP);
+			if (xa_is_err(old)) {
+				kfree(chann);
+				return xa_err(old);
+			}
 		}
 	}
 
@@ -1842,8 +1861,6 @@ int smb2_sess_setup(struct ksmbd_work *work)
 				ksmbd_conn_set_good(conn);
 				sess->state = SMB2_SESSION_VALID;
 			}
-			kfree(sess->Preauth_HashValue);
-			sess->Preauth_HashValue = NULL;
 		} else if (conn->preferred_auth_mech == KSMBD_AUTH_NTLMSSP) {
 			if (negblob->MessageType == NtLmNegotiate) {
 				rc = ntlm_negotiate(work, negblob, negblob_len, rsp);
@@ -1870,8 +1887,6 @@ int smb2_sess_setup(struct ksmbd_work *work)
 						kfree(preauth_sess);
 					}
 				}
-				kfree(sess->Preauth_HashValue);
-				sess->Preauth_HashValue = NULL;
 			} else {
 				pr_info_ratelimited("Unknown NTLMSSP message type : 0x%x\n",
 						le32_to_cpu(negblob->MessageType));
@@ -2626,7 +2641,7 @@ static void smb2_update_xattrs(struct ksmbd_tree_connect *tcon,
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-static int smb2_creat(struct ksmbd_work *work, struct path *parent_path,
+static int smb2_creat(struct ksmbd_work *work,
 		      struct path *path, char *name, int open_flags,
 		      umode_t posix_mode, bool is_dir)
 #else
@@ -2659,11 +2674,7 @@ static int smb2_creat(struct ksmbd_work *work, struct path *path, char *name,
 			return rc;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, name, 0, parent_path, path, 0);
-#else
 	rc = ksmbd_vfs_kern_path(work, name, 0, path, 0);
-#endif
 	if (rc) {
 		pr_err("cannot get linux path (%s), err = %d\n",
 		       name, rc);
@@ -2941,9 +2952,6 @@ int smb2_open(struct ksmbd_work *work)
 	struct smb2_create_req *req;
 	struct smb2_create_rsp *rsp;
 	struct path path;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path parent_path;
-#endif
 	struct ksmbd_share_config *share = tcon->share_conf;
 	struct ksmbd_file *fp = NULL;
 	struct file *filp = NULL;
@@ -3203,12 +3211,8 @@ int smb2_open(struct ksmbd_work *work)
 		goto err_out2;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					&parent_path, &path, 1);
-#else
-	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 1);
-#endif
+	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS,
+				 &path, 1);
 	if (!rc) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 		file_present = true;
@@ -3357,11 +3361,7 @@ int smb2_open(struct ksmbd_work *work)
 
 	/*create file if not present */
 	if (!file_present) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-		rc = smb2_creat(work, &parent_path, &path, name, open_flags,
-#else
 		rc = smb2_creat(work, &path, name, open_flags,
-#endif
 				posix_mode,
 				req->CreateOptions & FILE_DIRECTORY_FILE_LE);
 		if (rc) {
@@ -3609,13 +3609,8 @@ int smb2_open(struct ksmbd_work *work)
 		goto err_out;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	if (file_present || created)
-		ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	if (file_present || created)
 		path_put(&path);
-#endif
 
 	if (!S_ISDIR(file_inode(filp)->i_mode) && open_flags & O_TRUNC &&
 	    !fp->attrib_only && !stream_name) {
@@ -3899,13 +3894,8 @@ reconnected_fp:
 	}
 
 err_out:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	if (rc && (file_present || created))
-		ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	if (rc && (file_present || created))
 		path_put(&path);
-#endif
 err_out1:
 	ksmbd_revert_fsids(work);
 err_out2:
@@ -4286,6 +4276,7 @@ struct smb2_query_dir_private {
 	int			info_level;
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
 static void lock_dir(struct ksmbd_file *dir_fp)
 {
 	struct dentry *dir = dir_fp->filp->f_path.dentry;
@@ -4299,6 +4290,7 @@ static void unlock_dir(struct ksmbd_file *dir_fp)
 
 	inode_unlock(d_inode(dir));
 }
+#endif
 
 static int process_query_dir_entries(struct smb2_query_dir_private *priv)
 {
@@ -4318,6 +4310,12 @@ static int process_query_dir_entries(struct smb2_query_dir_private *priv)
 		if (dentry_name(priv->d_info, priv->info_level))
 			return -EINVAL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+		dent = lookup_one_unlocked(idmap,
+					   &QSTR_LEN(priv->d_info->name,
+					   priv->d_info->name_len),
+					   priv->dir_fp->filp->f_path.dentry);
+#else
 		lock_dir(priv->dir_fp);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -4333,6 +4331,7 @@ static int process_query_dir_entries(struct smb2_query_dir_private *priv)
 				  priv->d_info->name_len);
 #endif
 		unlock_dir(priv->dir_fp);
+#endif
 
 		if (IS_ERR(dent)) {
 			ksmbd_debug(SMB, "Cannot lookup `%s' [%ld]\n",
@@ -6479,10 +6478,6 @@ static int smb2_create_link(struct ksmbd_work *work,
 {
 	char *link_name = NULL, *target_name = NULL, *pathname = NULL;
 	struct path path;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path parent_path;
-#endif
-	bool file_present = false;
 	int rc;
 
 	if (buf_len < (u64)sizeof(struct smb2_file_link_info) +
@@ -6512,7 +6507,7 @@ static int smb2_create_link(struct ksmbd_work *work,
 	ksmbd_debug(SMB, "target name is %s\n", target_name);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 	rc = ksmbd_vfs_kern_path_locked(work, link_name, LOOKUP_NO_SYMLINKS,
-					&parent_path, &path, 0);
+					&path, 0);
 #else
 	rc = ksmbd_vfs_kern_path(work, link_name, LOOKUP_NO_SYMLINKS, &path, 0);
 #endif
@@ -6520,14 +6515,10 @@ static int smb2_create_link(struct ksmbd_work *work,
 		if (rc != -ENOENT)
 			goto out;
 	} else {
-		file_present = true;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 		path_put(&path);
 #endif
-	}
-
-	if (file_info->ReplaceIfExists) {
-		if (file_present) {
+		if (file_info->ReplaceIfExists) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 			rc = ksmbd_vfs_remove_file(work, &path);
 #else
@@ -6539,23 +6530,20 @@ static int smb2_create_link(struct ksmbd_work *work,
 					    link_name);
 				goto out;
 			}
-		}
-	} else {
-		if (file_present) {
+		} else {
 			rc = -EEXIST;
 			ksmbd_debug(SMB, "link already exists\n");
 			goto out;
 		}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+		ksmbd_vfs_kern_path_unlock(&path);
+#endif
 	}
-
 	rc = ksmbd_vfs_link(work, target_name, link_name);
 	if (rc)
 		rc = -EINVAL;
 out:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	if (file_present)
-		ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#endif
+
 	if (!IS_ERR(link_name))
 		kfree(link_name);
 	kfree(pathname);
@@ -7923,7 +7911,7 @@ int smb2_lock(struct ksmbd_work *work)
 	int nolock = 0;
 	LIST_HEAD(lock_list);
 	LIST_HEAD(rollback_list);
-	int prior_lock = 0;
+	int prior_lock = 0, bkt;
 
 	WORK_BUFFERS(work, req, rsp);
 
@@ -8038,7 +8026,7 @@ int smb2_lock(struct ksmbd_work *work)
 		nolock = 1;
 		/* check locks in connection list */
 		down_read(&conn_list_lock);
-		list_for_each_entry(conn, &conn_list, conns_list) {
+		hash_for_each(conn_list, bkt, conn, hlist) {
 			spin_lock(&conn->llist_lock);
 			list_for_each_entry_safe(cmp_lock, tmp2, &conn->lock_list, clist) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
@@ -8443,7 +8431,11 @@ static int fsctl_query_iface_info_ioctl(struct ksmbd_conn *conn,
 		if (!ksmbd_find_netdev_name_iface_list(netdev->name))
 			continue;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+		flags = netif_get_flags(netdev);
+#else
 		flags = dev_get_flags(netdev);
+#endif
 		if (!(flags & IFF_RUNNING))
 			continue;
 ipv6_retry:
@@ -9168,11 +9160,6 @@ static void smb20_oplock_break_ack(struct ksmbd_work *work)
 		goto err_out;
 	}
 
-	opinfo->op_state = OPLOCK_STATE_NONE;
-	wake_up_interruptible_all(&opinfo->oplock_q);
-	opinfo_put(opinfo);
-	ksmbd_fd_put(work, fp);
-
 	rsp->StructureSize = cpu_to_le16(24);
 	rsp->OplockLevel = rsp_oplevel;
 	rsp->Reserved = 0;
@@ -9180,16 +9167,15 @@ static void smb20_oplock_break_ack(struct ksmbd_work *work)
 	rsp->VolatileFid = volatile_id;
 	rsp->PersistentFid = persistent_id;
 	ret = ksmbd_iov_pin_rsp(work, rsp, sizeof(struct smb2_oplock_break));
-	if (!ret)
-		return;
-
+	if (ret) {
 err_out:
+		smb2_set_err_rsp(work);
+	}
+
 	opinfo->op_state = OPLOCK_STATE_NONE;
 	wake_up_interruptible_all(&opinfo->oplock_q);
-
 	opinfo_put(opinfo);
 	ksmbd_fd_put(work, fp);
-	smb2_set_err_rsp(work);
 }
 
 static int check_lease_state(struct lease *lease, __le32 req_state)
@@ -9319,11 +9305,6 @@ static void smb21_lease_break_ack(struct ksmbd_work *work)
 	}
 
 	lease_state = lease->state;
-	opinfo->op_state = OPLOCK_STATE_NONE;
-	wake_up_interruptible_all(&opinfo->oplock_q);
-	atomic_dec(&opinfo->breaking_cnt);
-	wake_up_interruptible_all(&opinfo->oplock_brk);
-	opinfo_put(opinfo);
 
 	rsp->StructureSize = cpu_to_le16(36);
 	rsp->Reserved = 0;
@@ -9332,16 +9313,16 @@ static void smb21_lease_break_ack(struct ksmbd_work *work)
 	rsp->LeaseState = lease_state;
 	rsp->LeaseDuration = 0;
 	ret = ksmbd_iov_pin_rsp(work, rsp, sizeof(struct smb2_lease_ack));
-	if (!ret)
-		return;
-
+	if (ret) {
 err_out:
+		smb2_set_err_rsp(work);
+	}
+
+	opinfo->op_state = OPLOCK_STATE_NONE;
 	wake_up_interruptible_all(&opinfo->oplock_q);
 	atomic_dec(&opinfo->breaking_cnt);
 	wake_up_interruptible_all(&opinfo->oplock_brk);
-
 	opinfo_put(opinfo);
-	smb2_set_err_rsp(work);
 }
 
 /**

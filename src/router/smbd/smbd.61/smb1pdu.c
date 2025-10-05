@@ -1666,7 +1666,7 @@ int smb_locking_andx(struct ksmbd_work *work)
 	unsigned int cmd = 0;
 	LIST_HEAD(lock_list);
 	LIST_HEAD(rollback_list);
-	int locked, timeout;
+	int locked, timeout, bkt;
 	const unsigned long long loff_max = ~0;
 	struct ksmbd_conn *conn;
 
@@ -1802,7 +1802,7 @@ int smb_locking_andx(struct ksmbd_work *work)
 		list_del(&smb_lock->llist);
 		/* check locks in connections */
 		down_read(&conn_list_lock);
-		list_for_each_entry(conn, &conn_list, conns_list) {
+		hash_for_each(conn_list, bkt, conn, hlist) {
 			spin_lock(&conn->llist_lock);
 			list_for_each_entry_safe(cmp_lock, tmp2, &conn->lock_list, clist) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
@@ -1976,8 +1976,8 @@ skip:
 			flock->fl_end = offset + length;
 
 		locked = 0;
-		up_read(&conn_list_lock);
-		list_for_each_entry(conn, &conn_list, conns_list) {
+		down_read(&conn_list_lock);
+		hash_for_each(conn_list, bkt, conn, hlist) {
 			spin_lock(&conn->llist_lock);
 			list_for_each_entry(cmp_lock, &conn->lock_list, clist) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
@@ -2322,9 +2322,9 @@ out:
 /*
  * helper to create a file/directory with a given mode
  */
-static int smb_common_create(struct ksmbd_work *work, struct path *parent_path,
-			     struct path *path, char *name, int open_flags,
-			     umode_t posix_mode, bool is_dir)
+static int smb_common_create(struct ksmbd_work *work, struct path *path,
+			     char *name, int open_flags, umode_t posix_mode,
+			     bool is_dir)
 {
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	umode_t mode;
@@ -2347,20 +2347,11 @@ static int smb_common_create(struct ksmbd_work *work, struct path *parent_path,
 			return err;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, name, 0, parent_path, path, 0);
-	if (err) {
-		pr_err("cannot get linux path (%s), err = %d\n", name, err);
-		return err;
-	}
-
-#else
 	err = ksmbd_vfs_kern_path(work, name, 0, path, 0);
 	if (err) {
 		pr_err("cannot get linux path (%s), err = %d\n", name, err);
 		return err;
 	}
-#endif
 
 	return 0;
 }
@@ -2379,7 +2370,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	struct ksmbd_conn *conn = work->conn;
 	struct ksmbd_tree_connect *tcon = work->tcon;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
-	struct path path, parent_path;
+	struct path path;
 	struct kstat stat;
 	int oplock_flags, file_info, open_flags, may_flags, access_flags;
 	char *name;
@@ -2516,16 +2507,9 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 		goto out1;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, conv_name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path,
-					 (req->hdr.Flags & SMBFLG_CASELESS) &&
-						!create_directory);
-#else
 	err = ksmbd_vfs_kern_path(work, conv_name, LOOKUP_NO_SYMLINKS, &path,
 			(req->hdr.Flags & SMBFLG_CASELESS) &&
 			!create_directory);
-#endif
 	if (err) {
 		if (err == -EACCES || err == -EXDEV)
 			goto out;
@@ -2651,7 +2635,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 		if (!create_directory)
 			mode |= S_IFREG;
 
-		err = smb_common_create(work, &parent_path, &path, conv_name,
+		err = smb_common_create(work, &path, conv_name,
 					open_flags, mode, create_directory);
 		if (err) {
 			ksmbd_debug(SMB, "smb_common_create err: %d\n", err);
@@ -2839,11 +2823,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	inc_rfc1001_len(&rsp->hdr, (rsp->hdr.WordCount * 2 + 0));
 
 free_path:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 out:
 	ksmbd_revert_fsids(work);
 out1:
@@ -4172,11 +4152,7 @@ static int query_path_info(struct ksmbd_work *work)
 	struct smb_com_trans2_rsp *rsp = work->response_buf;
 	struct trans2_qpi_req_params *req_params;
 	char *name = NULL;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
-#else
 	struct path path;
-#endif
 	struct kstat st;
 	int rc;
 	char *ptr;
@@ -4202,12 +4178,7 @@ static int query_path_info(struct ksmbd_work *work)
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		return -ENOMEM;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					&parent_path, &path, 0);
-#else
 	rc = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 0);
-#endif
 	if (rc) {
 		if (rc == -EACCES || rc == -EXDEV)
 			rsp_hdr->Status.CifsError = STATUS_ACCESS_DENIED;
@@ -4635,11 +4606,7 @@ static int query_path_info(struct ksmbd_work *work)
 	}
 
 err_out:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 out:
 	ksmbd_revert_fsids(work);
 	kfree(name);
@@ -5055,12 +5022,7 @@ static int smb_posix_open(struct ksmbd_work *work)
 		kfree(name);
 		return -ENOMEM;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path, 0);
-#else
 	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 0);
-#endif
 	if (err) {
 		file_present = false;
 		ksmbd_debug(SMB, "cannot get linux path for %s, err = %d\n",
@@ -5123,7 +5085,7 @@ static int smb_posix_open(struct ksmbd_work *work)
 	}
 
 	if (!file_present && (posix_open_flags & O_CREAT)) {
-		err = smb_common_create(work, &parent_path, &path, name,
+		err = smb_common_create(work, &path, name,
 					posix_open_flags, mode,
 					create_directory);
 		if (err) {
@@ -5224,11 +5186,7 @@ prepare_rsp:
 	inc_rfc1001_len(&pSMB_rsp->hdr, (pSMB_rsp->hdr.WordCount * 2 + 117));
 
 free_path:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 out:
 	switch (err) {
 	case 0:
@@ -5276,7 +5234,7 @@ static int smb_posix_unlink(struct ksmbd_work *work)
 	struct unlink_psx_rsp *psx_rsp = NULL;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
+	struct path path;
 #endif
 	char *name;
 	int rc = 0;
@@ -5295,13 +5253,13 @@ static int smb_posix_unlink(struct ksmbd_work *work)
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 	rc = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					&parent_path, &path, 0);
+					&path, 0);
 	if (rc < 0)
 		goto out;
 
 	rc = ksmbd_vfs_remove_file(work, &path);
 
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
+	ksmbd_vfs_kern_path_unlock(&path);
 #else
 	rc = ksmbd_vfs_remove_file(work, name);
 #endif
@@ -6135,11 +6093,7 @@ static int find_first(struct ksmbd_work *work)
 	struct smb_com_trans2_rsp *rsp = work->response_buf;
 	struct smb_com_trans2_ffirst_req_params *req_params;
 	struct smb_com_trans2_ffirst_rsp_parms *params = NULL;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
-#else
 	struct path path;
-#endif
 	struct ksmbd_dirent *de;
 	struct ksmbd_file *dir_fp = NULL;
 	struct kstat kstat;
@@ -6175,17 +6129,11 @@ static int find_first(struct ksmbd_work *work)
 	/* convert '/' to null character to avoid lookup failing */
 	if (strlen(dirpath) == 1 && dirpath[0] == '/')
 		dirpath[0] = '\0';
-
-	ksmbd_debug(SMB, "complete dir path = %s\n", dirpath);
-	rc = ksmbd_vfs_kern_path_locked(work, dirpath,
-					LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
-					&parent_path, &path, 0);
-#else
+#endif
 	ksmbd_debug(SMB, "complete dir path = %s\n",  dirpath);
 	rc = ksmbd_vfs_kern_path(work, dirpath,
 				 LOOKUP_NO_SYMLINKS | LOOKUP_DIRECTORY,
 				 &path, 0);
-#endif
 	if (rc < 0) {
 		ksmbd_debug(SMB, "cannot create vfs root path <%s> %d\n",
 			    dirpath, rc);
@@ -6210,10 +6158,6 @@ static int find_first(struct ksmbd_work *work)
 		dir_fp = NULL;
 		goto err_free_kernpath;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	inode_unlock(d_inode(parent_path.dentry));
-	path_put(&parent_path);
-#endif
 
 	down_write(&dir_fp->f_ci->m_lock);
 	list_add(&dir_fp->node, &dir_fp->f_ci->m_fp_list);
@@ -6412,11 +6356,7 @@ static int find_first(struct ksmbd_work *work)
 	return 0;
 
 err_free_kernpath:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 err_free_dirpath:
 	kfree(dirpath);
 err_out:
@@ -7569,19 +7509,10 @@ static int smb_common_mkdir(struct ksmbd_work *work, char *name, mode_t mode)
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 		__u64 ctime;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-		struct path path, parent_path;
-#else
 		struct path path;
-#endif
 		struct xattr_dos_attrib da = {0};
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-		err = ksmbd_vfs_kern_path_locked(work, name, 0,
-						 &parent_path, &path, 1);
-#else
 		err = ksmbd_vfs_kern_path(work, name, 0, &path, 1);
-#endif
 		if (!err) {
 			ctime = ksmbd_UnixTimeToNT(current_time(d_inode(path.dentry)));
 
@@ -7595,11 +7526,7 @@ static int smb_common_mkdir(struct ksmbd_work *work, char *name, mode_t mode)
 			err = compat_ksmbd_vfs_set_dos_attrib_xattr(&path, &da, false);
 			if (err)
 				ksmbd_debug(SMB, "failed to store creation time in xattr\n");
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-			ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 			path_put(&path);
-#endif
 		}
 		err = 0;
 	}
@@ -7783,11 +7710,7 @@ int smb_checkdir(struct ksmbd_work *work)
 	struct smb_com_check_directory_req *req = work->request_buf;
 	struct smb_com_check_directory_rsp *rsp = work->response_buf;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
-#else
 	struct path path;
-#endif
 	struct kstat stat;
 	char *name, *last;
 	int err;
@@ -7798,13 +7721,8 @@ int smb_checkdir(struct ksmbd_work *work)
 		rsp->hdr.Status.CifsError = STATUS_OBJECT_NAME_INVALID;
 		return PTR_ERR(name);
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path, caseless_lookup);
-#else
 	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path,
 				  caseless_lookup);
-#endif
 	if (err) {
 		if (err == -ENOENT) {
 			/*
@@ -7818,16 +7736,9 @@ int smb_checkdir(struct ksmbd_work *work)
 			if (last && last[1] != '\0') {
 				*last = '\0';
 				last++;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-				err = ksmbd_vfs_kern_path_locked(work, name,
-						LOOKUP_FOLLOW | LOOKUP_DIRECTORY,
-						&parent_path, &path,
-						caseless_lookup);
-#else
 				err = ksmbd_vfs_kern_path(work, name, LOOKUP_FOLLOW |
 						LOOKUP_DIRECTORY, &path,
 						caseless_lookup);
-#endif
 			} else {
 				ksmbd_debug(SMB, "can't lookup parent %s\n",
 					name);
@@ -7877,11 +7788,7 @@ int smb_checkdir(struct ksmbd_work *work)
 	}
 
 out:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 	kfree(name);
 	return err;
 }
@@ -7920,7 +7827,7 @@ int smb_rmdir(struct ksmbd_work *work)
 	struct smb_com_delete_directory_rsp *rsp = work->response_buf;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
+	struct path path;
 #endif
 	char *name;
 	int err;
@@ -7939,7 +7846,7 @@ int smb_rmdir(struct ksmbd_work *work)
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 	err = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path, 0);
+					 &path, 0);
 	if (err < 0) {
 		kfree(name);
 		return err;
@@ -7947,7 +7854,7 @@ int smb_rmdir(struct ksmbd_work *work)
 
 	err = ksmbd_vfs_remove_file(work, &path);
 
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
+	ksmbd_vfs_kern_path_unlock(&path);
 #else
 	err = ksmbd_vfs_remove_file(work, name);
 #endif
@@ -8003,14 +7910,14 @@ int smb_unlink(struct ksmbd_work *work)
 		err = -ESHARE;
 	else {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-		struct path path, parent_path;
+		struct path path;
 
 		err = ksmbd_vfs_kern_path_locked(work, name,
 						 LOOKUP_NO_SYMLINKS,
-						 &parent_path, &path, 0);
+						 &path, 0);
 		if (!err) {
 			err = ksmbd_vfs_remove_file(work, &path);
-			ksmbd_vfs_kern_path_unlock(&parent_path, &path);
+			ksmbd_vfs_kern_path_unlock(&path);
 		}
 #else
 		err = ksmbd_vfs_remove_file(work, name);
@@ -8145,11 +8052,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 {
 	struct smb_com_query_information_req *req = work->request_buf;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
-#else
 	struct path path;
-#endif
 	char *name;
 	__le32 err = 0;
 	int ret;
@@ -8162,12 +8065,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 		kfree(name);
 		return STATUS_NO_MEMORY;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ret = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path, 0);
-#else
 	ret = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path, 0);
-#endif
 	if (ret) {
 		pr_err("look up failed err %d\n", ret);
 
@@ -8181,11 +8079,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 
 	err = vfs_getattr(&path, st, STATX_BASIC_STATS,
 			  AT_STATX_SYNC_AS_STAT);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 out:
 	ksmbd_revert_fsids(work);
 	kfree(name);
@@ -8339,7 +8233,7 @@ int smb_open_andx(struct ksmbd_work *work)
 	struct smb_com_openx_req *req = work->request_buf;
 	struct smb_com_openx_rsp *rsp = work->response_buf;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
-	struct path path, parent_path;
+	struct path path;
 	struct kstat stat;
 	int oplock_flags, file_info, open_flags, may_flags;
 	char *name;
@@ -8380,14 +8274,8 @@ int smb_open_andx(struct ksmbd_work *work)
 		return -ENOMEM;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path,
-					 req->hdr.Flags & SMBFLG_CASELESS);
-#else
 	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path,
 				  req->hdr.Flags & SMBFLG_CASELESS);
-#endif
 	if (err) {
 		if (err == -EACCES || err == -EXDEV)
 			goto out;
@@ -8432,7 +8320,7 @@ int smb_open_andx(struct ksmbd_work *work)
 			mode &= ~0222;
 
 		mode |= S_IFREG;
-		err = smb_common_create(work, &parent_path, &path, name,
+		err = smb_common_create(work, &path, name,
 					open_flags, mode, false);
 		if (err) {
 			ksmbd_debug(SMB, "smb_common_create err: %d\n", err);
@@ -8576,11 +8464,7 @@ int smb_open_andx(struct ksmbd_work *work)
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2);
 
 free_path:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 out:
 	ksmbd_revert_fsids(work);
 	if (err) {
@@ -8631,11 +8515,7 @@ int smb_setattr(struct ksmbd_work *work)
 	struct smb_com_setattr_req *req = work->request_buf;
 	struct smb_com_setattr_rsp *rsp = work->response_buf;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	struct path path, parent_path;
-#else
 	struct path path;
-#endif
 	struct kstat stat;
 	struct iattr attrs;
 	int err = 0;
@@ -8647,14 +8527,8 @@ int smb_setattr(struct ksmbd_work *work)
 		rsp->hdr.Status.CifsError = STATUS_OBJECT_NAME_INVALID;
 		return PTR_ERR(name);
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	err = ksmbd_vfs_kern_path_locked(work, name, LOOKUP_NO_SYMLINKS,
-					 &parent_path, &path,
-					 req->hdr.Flags & SMBFLG_CASELESS);
-#else
 	err = ksmbd_vfs_kern_path(work, name, LOOKUP_NO_SYMLINKS, &path,
 				  req->hdr.Flags & SMBFLG_CASELESS);
-#endif
 	if (err) {
 		ksmbd_debug(SMB, "look up failed err %d\n", err);
 		rsp->hdr.Status.CifsError = STATUS_OBJECT_NAME_NOT_FOUND;
@@ -8670,11 +8544,7 @@ int smb_setattr(struct ksmbd_work *work)
 	attrs.ia_valid = 0;
 	attrs.ia_mode = 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
-	ksmbd_vfs_kern_path_unlock(&parent_path, &path);
-#else
 	path_put(&path);
-#endif
 
 	dos_attr = le16_to_cpu(req->attr);
 	if (!dos_attr)

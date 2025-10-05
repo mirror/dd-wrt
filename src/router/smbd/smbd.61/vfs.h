@@ -237,10 +237,13 @@ int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 			   const struct path *path, char *attr_name,
 			   bool get_write);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *name,
+			unsigned int flags,
+			struct path *path, bool caseless);
 int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
-			       unsigned int flags, struct path *parent_path,
+			       unsigned int flags,
 			       struct path *path, bool caseless);
-void ksmbd_vfs_kern_path_unlock(struct path *parent_path, struct path *path);
+void ksmbd_vfs_kern_path_unlock(struct path *path);
 #else
 int ksmbd_vfs_kern_path(struct ksmbd_work *work,
 			char *name, unsigned int flags, struct path *path,
