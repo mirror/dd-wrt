@@ -907,21 +907,11 @@ mod_nss_load_config_pkey (const char *fn, CERTCertificate *cert, log_error_st *e
     do {
         /*(expecting single private key in file, so first match)*/
         char *b, *e;
-        if ((b = strstr((char *)f.data, PEM_BEGIN_PKEY))
-            && (e = strstr(b, PEM_END_PKEY)))
-            b += sizeof(PEM_BEGIN_PKEY)-1;
-        else if ((b = strstr((char *)f.data, PEM_BEGIN_EC_PKEY))
-                 && (e = strstr(b, PEM_END_EC_PKEY)))
-            b += sizeof(PEM_BEGIN_EC_PKEY)-1;
-        else if ((b = strstr((char *)f.data, PEM_BEGIN_RSA_PKEY))
-                 && (e = strstr(b, PEM_END_RSA_PKEY)))
-            b += sizeof(PEM_BEGIN_RSA_PKEY)-1;
-        else if ((b = strstr((char *)f.data, PEM_BEGIN_DSA_PKEY))
-                 && (e = strstr(b, PEM_END_DSA_PKEY)))
-            b += sizeof(PEM_BEGIN_DSA_PKEY)-1;
-        else if ((b = strstr((char *)f.data, PEM_BEGIN_ANY_PKEY))
-                 && (e = strstr(b, PEM_END_ANY_PKEY)))
-            b += sizeof(PEM_BEGIN_ANY_PKEY)-1;
+        if ((e = strstr((char *)f.data, PEM_BEGIN))
+                 && (b = strstr(e, "PRIVATE KEY-----"))
+                 && NULL == memchr(e, '\n', (size_t)(b - e))
+                 && (e = strstr(b, PEM_END)))
+            b += sizeof("PRIVATE KEY-----")-1;
         else if (NULL == strstr((char *)f.data, "-----")) {
             der = f; /*(copy struct)*/
             f.type = 0;
@@ -1470,7 +1460,8 @@ mod_nss_alpn_h2_policy (handler_ctx * const hctx)
   #if 0 /* SNI omitted by client when connecting to IP instead of to name */
     if (buffer_is_blank(&hctx->r->uri.authority)) {
         log_error(hctx->errh, __FILE__, __LINE__,
-          "SSL: error ALPN h2 without SNI");
+          "NSS: addr:%s error ALPN h2 without SNI",
+          hctx->con->dst_addr_buf.ptr);
         return -1;
     }
   #endif
@@ -1483,7 +1474,8 @@ mod_nss_alpn_h2_policy (handler_ctx * const hctx)
     if (SSL_GetChannelInfo(ssl, &inf, sizeof(inf)) < 0
         || inf.protocolVersion < SSL_LIBRARY_VERSION_TLS_1_2) {
         log_error(hctx->errh, __FILE__, __LINE__,
-          "SSL: error ALPN h2 requires TLSv1.2 or later");
+          "NSS: addr:%s error ALPN h2 requires TLSv1.2 or later",
+          hctx->con->dst_addr_buf.ptr);
         return -1;
     }
   #endif
@@ -1574,7 +1566,8 @@ mod_nss_SNI (PRFileDesc *ssl, const SECItem *srvNameArr, PRUint32 srvNameArrSize
 
     if (sn->len >= 1024) { /*(expecting < 256; TLSEXT_MAXLEN_host_name is 255)*/
         log_error(r->conf.errh, __FILE__, __LINE__,
-                  "NSS: SNI name too long %.*s", (int)sn->len,(char *)sn->data);
+          "NSS: addr:%s SNI name too long (%u) %.*s...",
+          hctx->con->dst_addr_buf.ptr, sn->len, 1024, (char *)sn->data);
         return SSL_SNI_SEND_ALERT;
     }
 
@@ -2045,7 +2038,7 @@ mod_nss_set_defaults_sockets(server *srv, plugin_data *p)
         /*conf.ssl_ctx = NULL;*//*(filled by network_init_ssl() even on error)*/
         if (0 == network_init_ssl(srv, &conf, p)) {
             plugin_ssl_ctx * const s = p->ssl_ctxs[sidx] =
-              ck_malloc(sizeof(plugin_ssl_ctx));
+              ck_calloc(1, sizeof(plugin_ssl_ctx));
             s->model              = conf.model;
             s->pc                 = conf.pc;
             s->kp                 = mod_nss_kp_acq(s->pc);
@@ -2298,7 +2291,9 @@ mod_nss_write_err(connection *con, handler_ctx *hctx, size_t wr_len)
         if (!hctx->conf.ssl_log_noise) return -1;
         __attribute_fallthrough__
       default:
-        elog(hctx->r->conf.errh, __FILE__, __LINE__, __func__);
+        elogf(hctx->r->conf.errh, __FILE__, __LINE__,
+          "addr:%s %s()",
+          con->dst_addr_buf.ptr, __func__);
         return -1;
     }
 
@@ -2326,7 +2321,9 @@ mod_nss_read_err(connection *con, handler_ctx *hctx)
         if (!hctx->conf.ssl_log_noise) return -1;
         __attribute_fallthrough__
       default:
-        elog(hctx->errh, __FILE__, __LINE__, __func__);
+        elogf(hctx->r->conf.errh, __FILE__, __LINE__,
+          "addr:%s %s()",
+          con->dst_addr_buf.ptr, __func__);
         return -1;
     }
 }
@@ -2578,7 +2575,7 @@ CONNECTION_FUNC(mod_nss_handle_con_shut_wr)
 {
     plugin_data *p = p_d;
     handler_ctx *hctx = con->plugin_ctx[p->id];
-    if (NULL == hctx) return HANDLER_GO_ON;
+    if (NULL == hctx || 1 == hctx->close_notify) return HANDLER_GO_ON;
 
     hctx->close_notify = -2;
     if (hctx->handshake) {
@@ -2605,7 +2602,9 @@ mod_nss_close_notify (handler_ctx *hctx)
       case PR_FAILURE:
       default:
         if (PR_GetError() != PR_NOT_CONNECTED_ERROR)
-            elog(hctx->r->conf.errh, __FILE__, __LINE__, "PR_Shutdown()");
+            elogf(hctx->r->conf.errh, __FILE__, __LINE__,
+              "addr:%s PR_Shutdown()",
+              hctx->con->dst_addr_buf.ptr);
         mod_nss_detach(hctx);
         return -1;
     }

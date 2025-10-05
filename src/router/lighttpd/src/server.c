@@ -1007,7 +1007,7 @@ static void show_help (void) {
 #endif
 " - a light and fast webserver\n" \
 "usage:\n" \
-" -f <name>  filename of the config-file\n" \
+" -f <name>  filename of the config-file ('-' for stdin)\n" \
 " -m <name>  module directory (default: "LIBRARY_DIR")\n" \
 " -i <secs>  graceful shutdown after <secs> of inactivity\n" \
 " -1         process single (one) request on stdin socket, then exit\n" \
@@ -1563,11 +1563,6 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 		return 0;
 	}
 
-  #if defined(HAVE_MALLOC_TRIM)
-	if (srv->srvconf.max_conns <= 16 && malloc_top_pad == 524288)
-		malloc_top_pad = 131072; /*(reduce memory use on small systems)*/
-  #endif
-
 	if (oneshot_fd) {
 		if (oneshot_fd <= STDERR_FILENO) {
 			log_error(srv->errh, __FILE__, __LINE__,
@@ -1906,7 +1901,9 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 #if defined(HAVE_SYS_PRCTL_H) && defined(PR_CAP_AMBIENT)
 	/* clear Linux ambient capabilities, if any had been granted
 	 * (avoid leaking privileges to CGI or other subprocesses) */
-	if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0L, 0L, 0L) < 0) {
+	if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0L, 0L, 0L) < 0
+           /* not supported before linux 4.3 / on some emulators (e.g. Cloud Run 1st gen) */
+           && errno != EINVAL) {
 		log_perror(srv->errh, __FILE__, __LINE__,
 		  "prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL)");
 		return -1;
@@ -2039,6 +2036,11 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 		/* or use the default: we really don't want to hit max-fds */
 		srv->lim_conns = srv->srvconf.max_conns = srv->max_fds/3;
 	}
+
+  #if defined(HAVE_MALLOC_TRIM)
+	if (srv->srvconf.max_conns <= 16 && malloc_top_pad == 524288)
+		malloc_top_pad = 131072; /*(reduce memory use on small systems)*/
+  #endif
 
 	/*
 	 * kqueue() is called here, select resets its internals,

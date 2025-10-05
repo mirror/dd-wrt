@@ -18,6 +18,7 @@
 #include "configfile.h"
 #include "plugin.h"
 #include "reqpool.h"
+#include "request.h"
 #include "sock_addr.h"
 #include "stat_cache.h"
 #include "sys-crypto.h"
@@ -413,6 +414,8 @@ static void config_compat_module_load (server *srv) {
             append_mod_staticfile = 0;
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_dirlisting")))
             append_mod_dirlisting = 0;
+        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_boringssl")))
+            append_mod_openssl = 0;
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_gnutls")))
             append_mod_openssl = 0;
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_mbedtls")))
@@ -915,6 +918,15 @@ static int config_insert_srvconf(server *srv) {
                   config_plugin_value_to_bool(
                     array_get_element_klen(cpv->v.a,
                       CONST_STR_LEN("server.absolute-dir-redirect")), 0);
+                {
+                    const data_unset *du =
+                      array_get_element_klen(cpv->v.a,
+                        CONST_STR_LEN("request.trailer-whitelist"));
+                    if (du && du->type == TYPE_STRING) {
+                        buffer *trailer_whitelist = &((data_string *)du)->value;
+                        http_request_trailer_set_whitelist(trailer_whitelist);
+                    }
+                }
                 break;
               default:/* should not happen */
                 break;

@@ -81,7 +81,7 @@
 #cmakedefine  HAVE_NSS_NSS_H
 #cmakedefine  HAVE_NSS3_NSS_H
 
-/* OpenSSL */
+/* OpenSSL or BoringSSL or AWS-LC */
 #cmakedefine  HAVE_OPENSSL_SSL_H
 #cmakedefine  HAVE_LIBSSL
 
@@ -200,6 +200,7 @@
 #cmakedefine  HAVE_MEMSET_S
 #cmakedefine  HAVE_EXPLICIT_BZERO
 #cmakedefine  HAVE_EXPLICIT_MEMSET
+#cmakedefine  HAVE_MEMSET_EXPLICIT
 #cmakedefine  HAVE_COPY_FILE_RANGE
 
 /* libcrypt */

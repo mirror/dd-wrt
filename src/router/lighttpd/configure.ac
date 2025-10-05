@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ([2.60])
-AC_INIT([lighttpd],[1.4.79],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
+AC_INIT([lighttpd],[1.4.82],[https://redmine.lighttpd.net/projects/lighttpd/boards/2],[lighttpd],[https://www.lighttpd.net/])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -81,6 +81,9 @@ esac
 AM_CONDITIONAL([NO_RDYNAMIC], [test "$NO_RDYNAMIC" = yes])
 
 AM_CONDITIONAL([LIGHTTPD_STATIC], [test "$LIGHTTPD_STATIC" = yes])
+if test "$LIGHTTPD_STATIC" = yes; then
+  AC_DEFINE([LIGHTTPD_STATIC], [1], [lighttpd static build])
+fi
 
 AC_EXEEXT
 
@@ -184,19 +187,6 @@ AC_SUBST([DL_LIB])
 
 dnl prepare pkg-config usage below
 PKG_PROG_PKG_CONFIG
-
-dnl checking for libev
-AC_MSG_NOTICE([----------------------------------------])
-AC_MSG_CHECKING([for libev support])
-AC_ARG_WITH([libev],
-  [AS_HELP_STRING([--with-libev@<:@=PATH@:>@],
-    [Include libev support for fdevent handlers in PATH/include and PATH/lib]
-  )],
-  [WITH_LIBEV=$withval],
-  [WITH_LIBEV=no]
-)
-AC_MSG_RESULT([$WITH_LIBEV])
-dnl ignore WITH_LIBEV
 
 dnl Checks for mysql
 AC_MSG_NOTICE([----------------------------------------])
@@ -752,17 +742,29 @@ AM_CONDITIONAL(BUILD_WITH_MBEDTLS, test ! $WITH_MBEDTLS = no)
 if test "x$use_mbedtls" = "xyes"; then
   AC_CHECK_HEADERS([mbedtls/ssl.h])
   OLDLIBS="$LIBS"
-  AC_CHECK_LIB(mbedcrypto, mbedtls_base64_encode,
+  AC_CHECK_LIB(tfpsacrypto, mbedtls_base64_encode,
     [AC_CHECK_LIB(mbedx509, mbedtls_x509_get_name,
       [AC_CHECK_LIB(mbedtls, mbedtls_ssl_init,
-        [MTLS_LIBS="-lmbedtls -lmbedx509 -lmbedcrypto"
-         CRYPTO_LIB="-lmbedcrypto"
+        [MTLS_LIBS="-lmbedtls -lmbedx509 -ltfpsacrypto"
+         CRYPTO_LIB="-ltfpsacrypto"
          AC_DEFINE(HAVE_LIBMBEDTLS, [1], [Have libmbedtls library])
          AC_DEFINE(HAVE_LIBMBEDX509, [1], [Have libmbedx509 library])
          AC_DEFINE(HAVE_LIBMBEDCRYPTO, [1], [Have libmbedcrypto library]) ],
-        [],[-lmbedx509 -lmbedcrypto "$DL_LIB"])
-      ],[],[-lmbedcrypto "$DL_LIB"])
-    ],[],[])
+        [],[-lmbedx509 -ltfpsacrypto "$DL_LIB"])
+      ],[],[-ltfpsacrypto "$DL_LIB"])
+    ],
+    [AC_CHECK_LIB(mbedcrypto, mbedtls_base64_encode,
+      [AC_CHECK_LIB(mbedx509, mbedtls_x509_get_name,
+        [AC_CHECK_LIB(mbedtls, mbedtls_ssl_init,
+          [MTLS_LIBS="-lmbedtls -lmbedx509 -lmbedcrypto"
+           CRYPTO_LIB="-lmbedcrypto"
+           AC_DEFINE(HAVE_LIBMBEDTLS, [1], [Have libmbedtls library])
+           AC_DEFINE(HAVE_LIBMBEDX509, [1], [Have libmbedx509 library])
+           AC_DEFINE(HAVE_LIBMBEDCRYPTO, [1], [Have libmbedcrypto library]) ],
+          [],[-lmbedx509 -lmbedcrypto "$DL_LIB"])
+        ],[],[-lmbedcrypto "$DL_LIB"])
+      ],[],[])
+    ],[])
   LIBS="$OLDLIBS"
   AC_SUBST(MTLS_LIBS)
   AC_SUBST(CRYPTO_LIB)
@@ -831,6 +833,84 @@ if test "x$use_gnutls" = "xyes"; then
   if test "$WITH_OPENSSL" = no && test "$WITH_WOLFSSL" = no && \
      test "$WITH_MBEDTLS" = no && test "$WITH_NETTLE" = no; then
       AC_SUBST([CRYPTO_LIB],[$GNUTLS_LIBS])
+  fi
+fi
+
+dnl Check for boringssl
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for BoringSSL])
+AC_ARG_WITH([boringssl],
+  [AS_HELP_STRING([--with-boringssl@<:@=DIR@:>@],
+    [Include boringssl support (default no)]
+  )],
+  [WITH_BORINGSSL=$withval],
+  [WITH_BORINGSSL=no]
+)
+AC_MSG_RESULT([$WITH_BORINGSSL])
+AM_CONDITIONAL([BUILD_WITH_BORINGSSL], test ! "$WITH_BORINGSSL" = no)
+
+if test "$WITH_BORINGSSL" != no; then
+  if test "$WITH_BORINGSSL" != yes; then
+    boringssl_append_CPPFLAGS=" -I$WITH_BORINGSSL/include"
+    boringssl_append_LDFLAGS=" -L$WITH_BORINGSSL/lib"
+  fi
+fi
+
+AC_MSG_CHECKING([custom include directory for boringssl])
+AC_ARG_WITH([boringssl-includes],
+  [AS_HELP_STRING([--with-boringssl-includes=DIR], [OpenSSL includes])],
+  [
+    if test "$WITH_BORINGSSL" = no; then
+      AC_MSG_ERROR([build --with-boringssl to use --with-boringssl-includes])
+    fi
+    boringssl_append_CPPFLAGS=" -I$withval"
+    AC_MSG_RESULT([$withval])
+  ],
+  [AC_MSG_RESULT([no])]
+)
+
+AC_MSG_CHECKING([custom lib directory for boringssl])
+AC_ARG_WITH([boringssl-libs],
+  [AS_HELP_STRING([--with-boringssl-libs=DIR], [OpenSSL libraries])],
+  [
+    if test "$WITH_BORINGSSL" = no; then
+      AC_MSG_ERROR([build --with-boringssl to use --with-boringssl-libs])
+    fi
+    boringssl_append_LDFLAGS=" -L$withval"
+    AC_MSG_RESULT([$withval])
+  ],
+  [AC_MSG_RESULT([no])]
+)
+
+if test "$WITH_BORINGSSL" != no; then
+  CPPFLAGS_SAVE="${CPPFLAGS}"
+  LDFLAGS_SAVE="${LDFLAGS}"
+  CPPFLAGS="${CPPFLAGS}${boringssl_append_CPPFLAGS}"
+  LDFLAGS="${LDFLAGS}${boringssl_append_LDFLAGS}"
+
+  AC_CHECK_HEADERS([openssl/ssl.h], [], [
+    AC_MSG_ERROR([boringssl headers not found. install them or build without --with-boringssl])
+  ])
+  AC_CHECK_LIB([crypto], [RAND_bytes],
+    [BORINGSSL_CRYPTO_LIB="-lcrypto"],
+    [AC_MSG_ERROR([boringssl crypto library not found. install it or build without --with-boringssl])]
+  )
+  AC_CHECK_LIB([ssl], [SSL_CREDENTIAL_new_x509],
+    [BORINGSSL_LIBS="${boringssl_append_LDFLAGS} -lssl -lcrypto -lstdc++"],
+    [AC_MSG_ERROR([boringssl ssl library not found. install it or build without --with-boringssl])],
+    [ -lssl -lcrypto -lstdc++ "$DL_LIB" ]
+  )
+
+  AC_DEFINE([HAVE_LIBSSL], [1], [Have libssl])
+  BORINGSSL_CFLAGS="${boringssl_append_CPPFLAGS}"
+  AC_SUBST([BORINGSSL_CFLAGS])
+  AC_SUBST([BORINGSSL_LIBS])
+  if test "x$CRYPTO_LIB" = "x"; then
+    CRYPTO_LIB="$BORINGSSL_CRYPTO_LIB"
+    AC_SUBST([CRYPTO_LIB])
+  else
+    CPPFLAGS="${CPPFLAGS_SAVE}"
+    LDFLAGS="${LDFLAGS_SAVE}"
   fi
 fi
 
@@ -1431,6 +1511,7 @@ AC_CHECK_FUNCS([\
   lstat \
   madvise \
   mempcpy \
+  memset_explicit \
   memset_s \
   mkostemp \
   pipe2 \
@@ -1743,6 +1824,9 @@ lighty_track_feature "pam" "mod_authn_pam" \
 
 lighty_track_feature "network-openssl" "mod_openssl" \
   'test "$WITH_OPENSSL" != no'
+
+lighty_track_feature "network-boringssl" "mod_boringssl" \
+  'test "$WITH_BORINGSSL" != no'
 
 lighty_track_feature "network-mbedtls" "mod_mbedtls" \
   'test "$WITH_MBEDTLS" != no'

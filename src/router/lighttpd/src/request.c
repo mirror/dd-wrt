@@ -9,6 +9,7 @@
 
 #include "request.h"
 #include "burl.h"
+#include "fdevent.h"  /* FDEVENT_STREAM_REQUEST FDEVENT_STREAM_REQUEST_BUFMIN */
 #include "http_header.h"
 #include "http_kv.h"
 #include "log.h"
@@ -91,6 +92,14 @@ static const char * http_request_check_line_minimal (const char * const restrict
         if (__builtin_expect( (s[i] == '\n'), 0)) return s+i;
     }
     return NULL;
+}
+
+__attribute_nonnull__()
+__attribute_pure__
+const char * http_request_field_check_value (const char * const restrict v, const uint32_t vlen, const unsigned int http_header_strict) {
+    return (http_header_strict)
+      ? http_request_check_line_strict(v, vlen)
+      : http_request_check_line_minimal(v, vlen);
 }
 
 static int request_check_hostname(buffer * const host) {
@@ -510,6 +519,64 @@ static int http_request_parse_single_header(request_st * const restrict r, const
     return 0;
 }
 
+
+__attribute_cold__
+__attribute_noinline__
+static int http_request_parse_single_trailer(request_st * const restrict r, const enum http_header_e id, const char * const restrict k, const size_t klen, const char * const restrict v, const size_t vlen) {
+    /* (for HTTP/2) */
+
+    if (0 == (r->conf.stream_request_body
+              & (FDEVENT_STREAM_REQUEST | FDEVENT_STREAM_REQUEST_BUFMIN))) {
+        /* (HTTP/2 version of src/h1.c:h1_chunked_trailers()) */
+        /* RFC9110 https://www.rfc-editor.org/rfc/rfc9110.html
+         * Section B.2. "Changes from RFC 7230" encourages implementations
+         * to avoid merging trailers into headers if the implementation
+         * does not have full knowledge of each field permitting merge and
+         * defining how to merge.  ... In other words, merging to headers is
+         * discouraged.  This code might move in that direction in the future,
+         * though de-chunking (and either merging or dropping trailers) is
+         * necessary for non-HTTP backends (e.g. FastCGI, SCGI, AJP13, etc which
+         * do not support trailers in their protocols).
+         * RFC9110 mentions only a few fields explicitly allowed in trailers:
+         * ETag, Authentication-Info, Proxy-Authentication-Info, Accept-Ranges
+         */
+        http_trailer_parse_ctx tpctx;
+        tpctx.k    = k;
+        tpctx.v    = v;
+        tpctx.klen = klen;
+        tpctx.vlen = vlen;
+        tpctx.max_request_field_size = r->conf.max_request_field_size;
+        tpctx.hlen = 0;
+        tpctx.http_header_strict =
+          (r->conf.http_parseopts & HTTP_PARSEOPT_HEADER_STRICT);
+        tpctx.id = id;
+        tpctx.trailer = http_header_request_get(r, HTTP_HEADER_OTHER,
+                                                CONST_STR_LEN("Trailer"));
+        int rc = http_request_trailer_check(r, &tpctx);
+        if (0 != rc)
+            return rc;
+        /* note: Trailer header (if set) is left set as info for backends.
+         * To remove Trailer, would have to check for trailer merging into
+         * headers after all trailers processed */
+        if (http_request_trailer_check_whitelist(k, klen))
+            http_header_request_append(r, id, k, klen, v, vlen);
+    }
+    else {
+        /* trailers currently ignored if streaming request,
+         * but (future) could be set aside here if handler is mod_proxy
+         * and mod_proxy is sending chunked request to backend */
+      #if 0 /*(similar to http_header_env_append() but adds lines, not tokens)*/
+        buffer * const vb =
+          array_get_buf_ptr(&r->env, CONST_STR_LEN("_L_TRAILERS"));
+        buffer_append_str2(vb, k, klen, CONST_STR_LEN(": "));
+        buffer_append_str2(vb, v, vlen, CONST_STR_LEN("\r\n"));
+      #endif
+    }
+
+    return 0;
+}
+
+
 __attribute_cold__
 __attribute_noinline__
 static const char * http_request_parse_reqline_uri(request_st * const restrict r, const char * const restrict uri, const size_t len, const unsigned int http_parseopts) {
@@ -541,8 +608,9 @@ static const char * http_request_parse_reqline_uri(request_st * const restrict r
 
 
 __attribute_cold__
-__attribute_noinline__
-static int http_request_parse_header_other(request_st * const restrict r, const char * const restrict k, const int klen, const unsigned int http_header_strict);
+__attribute_nonnull__()
+__attribute_pure__
+static const char * http_request_field_check_name_h2(const char * const restrict k, const int_fast32_t klen, const unsigned int http_header_strict);
 
 
 int
@@ -641,7 +709,7 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
       #endif
     }
 
-    if (!hpctx->trailers) {
+    {
         if (*k == ':') {
             /* HTTP/2 request pseudo-header fields */
             if (!hpctx->pseudo) /*(pseudo header after non-pseudo header)*/
@@ -758,9 +826,8 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
             const unsigned int http_header_strict =
               (hpctx->http_parseopts & HTTP_PARSEOPT_HEADER_STRICT);
 
-            const char * const x = (http_header_strict)
-              ? http_request_check_line_strict(v, vlen)
-              : http_request_check_line_minimal(v, vlen);
+            const char * const x =
+              http_request_field_check_value(v, vlen, http_header_strict);
             if (x)
                 return http_request_header_char_invalid(r, *x,
                   "invalid character in header -> 400");
@@ -776,18 +843,16 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
             }
 
             if (__builtin_expect( (hpctx->id == HTTP_HEADER_H2_UNKNOWN), 0)) {
-                uint32_t j = 0;
-                while ((light_islower(k[j]) || k[j] == '-') && ++j < klen) ;
-                if (__builtin_expect( (j != klen), 0)) {
-                    if (0 != http_request_parse_header_other(r, k+j, klen-j,
-                                                            http_header_strict))
-                        return 400;
-                    do {
-                        if (light_isupper(k[j])) return 400;
-                    } while (++j < klen);
-                }
-
                 hpctx->id = http_header_hkey_get_lc(k, klen);
+            }
+
+            if (hpctx->id == HTTP_HEADER_OTHER) {
+                const char * const xx =
+                  http_request_field_check_name_h2(k, (int)klen,
+                                                   http_header_strict);
+                if (xx)
+                    return http_request_header_char_invalid(r, *xx,
+                      "invalid character in header key -> 400");
             }
 
             const enum http_header_e id = (enum http_header_e)hpctx->id;
@@ -797,9 +862,13 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
                 return http_request_header_line_invalid(r, 400,
                   "invalid TE header value with HTTP/2 -> 400");
 
-            return http_request_parse_single_header(r, id, k, klen, v, vlen);
+            return !hpctx->trailers
+              ? http_request_parse_single_header(r, id, k, klen, v, vlen)
+              : http_request_parse_single_trailer(r, id, k, klen, v, vlen);
         }
     }
+
+  #if 0 /* (old comments from when this block handled 'if (hpctx->trailers)') */
     else { /*(trailers)*/
         if (*k == ':')
             return http_request_header_line_invalid(r, 400,
@@ -835,6 +904,7 @@ http_request_parse_header (request_st * const restrict r, http_header_parse_ctx 
 
         return 0;
     }
+  #endif
 }
 
 
@@ -1036,8 +1106,8 @@ int http_request_parse_target(request_st * const r, int scheme_port) {
 }
 
 __attribute_cold__
-__attribute_noinline__
-static int http_request_parse_header_other(request_st * const restrict r, const char * const restrict k, const int klen, const unsigned int http_header_strict) {
+__attribute_pure__
+static const char * http_request_parse_header_other(const char * const restrict k, const int klen, const unsigned int http_header_strict) {
     for (int i = 0; i < klen; ++i) {
         if (light_isalpha(k[i]) || k[i] == '-') continue; /*(common cases)*/
         /**
@@ -1048,7 +1118,6 @@ static int http_request_parse_header_other(request_st * const restrict r, const 
         switch(k[i]) {
         case ' ':
         case '\t':
-            return http_request_header_line_invalid(r, 400, "WS character in key -> 400");
         case '\r':
         case '\n':
         case '(':
@@ -1068,26 +1137,46 @@ static int http_request_parse_header_other(request_st * const restrict r, const 
         case '=':
         case '{':
         case '}':
-            return http_request_header_char_invalid(r, k[i], "invalid character in header key -> 400");
+            return k+i;
         default:
             if (http_header_strict ? (k[i] < 32 || ((unsigned char *)k)[i] >= 127) : k[i] == '\0')
-                return http_request_header_char_invalid(r, k[i], "invalid character in header key -> 400");
+                return k+i;
             break; /* ok */
         }
     }
-    return 0;
+    return NULL;
+}
+
+__attribute_nonnull__()
+__attribute_pure__
+const char * http_request_field_check_name(const char * const restrict k, const int klen, const unsigned int http_header_strict) {
+    for (int i = 0; i < klen; ++i) {
+        if (light_isalpha(k[i]) || k[i] == '-') continue; /*(common cases)*/
+        return http_request_parse_header_other(k+i, klen-i, http_header_strict);
+    }
+    return NULL;
+}
+
+__attribute_cold__
+__attribute_nonnull__()
+__attribute_pure__
+static const char * http_request_field_check_name_h2(const char * const restrict k, const int_fast32_t klen, const unsigned int http_header_strict) {
+    int_fast32_t i = 0;
+    while ((light_islower(k[i]) || k[i] == '-') && ++i < klen) ;/*common cases*/
+    if (__builtin_expect( (i != klen), 0)) {
+        const char * const x =
+          http_request_parse_header_other(k+i, klen-i, http_header_strict);
+        if (x)
+            return x;
+        do {
+            if (light_isupper(k[i])) return k+i;
+        } while (++i < klen);
+    }
+    return NULL;
 }
 
 static int http_request_parse_headers(request_st * const restrict r, char * const restrict ptr, const unsigned short * const restrict hoff, const unsigned int http_parseopts) {
     const unsigned int http_header_strict = (http_parseopts & HTTP_PARSEOPT_HEADER_STRICT);
-
-  #if 0 /*(not checked here; will later result in invalid label for HTTP header)*/
-    int i = hoff[2];
-
-    if (ptr[i] == ' ' || ptr[i] == '\t') {
-        return http_request_header_line_invalid(r, 400, "WS at the start of first line -> 400");
-    }
-  #endif
 
     for (int i = 2; i < hoff[0]; ++i) {
         const char *k = ptr + hoff[i];
@@ -1130,31 +1219,16 @@ static int http_request_parse_headers(request_st * const restrict r, char * cons
         const enum http_header_e id = http_header_hkey_get(k, klen);
 
         if (id == HTTP_HEADER_OTHER) {
-            for (int j = 0; j < klen; ++j) {
-                if (light_isalpha(k[j]) || k[j] == '-') continue; /*(common cases)*/
-                if (0 != http_request_parse_header_other(r, k+j, klen-j, http_header_strict))
-                    return 400;
-                break;
-            }
+            const char * const x =
+              http_request_field_check_name(k, klen, http_header_strict);
+            if (x)
+                return http_request_header_char_invalid(r, *x,
+                  "invalid character in header key -> 400");
         }
 
         /* remove leading whitespace from value */
         while (*v == ' ' || *v == '\t') ++v;
 
-        for (; i+1 <= hoff[0]; ++i) {
-            end = ptr + hoff[i+1];
-            if (end[0] != ' ' && end[0] != '\t') break;
-
-            /* line folding */
-          #ifdef __COVERITY__
-            force_assert(end - k >= 2);
-          #endif
-            if (end[-2] == '\r')
-                end[-2] = ' ';
-            else if (http_header_strict)
-                return http_request_header_line_invalid(r, 400, "missing CR before LF in header -> 400");
-            end[-1] = ' ';
-        }
       #ifdef __COVERITY__
         /*(buf holding k has non-zero request-line, so end[-2] valid)*/
         force_assert(end >= k + 2);
@@ -1186,6 +1260,10 @@ static int http_request_parse_headers(request_st * const restrict r, char * cons
         int status = http_request_parse_single_header(r, id, k, (size_t)klen, v, (size_t)vlen);
         if (0 != status) return status;
     }
+
+    /* check that headers end with CRLF blank line ("\r\n" is 2 chars) */
+    if (http_header_strict && hoff[hoff[0]+1] - hoff[hoff[0]] != 2)
+        return http_request_header_line_invalid(r, 400, "missing CR before LF to end header block -> 400");
 
     return 0;
 }
@@ -1365,4 +1443,202 @@ http_request_headers_process_h2 (request_st * const restrict r, const int scheme
                                   CONST_STR_LEN("upgrade"));
   #endif
     /* XXX: should filter out other hop-by-hop connection headers, too */
+}
+
+
+static buffer *trailer_whitelist;
+
+
+__attribute_cold__
+void
+http_request_trailer_set_whitelist (buffer *b)
+{
+    if (buffer_string_is_empty(b))
+        b = NULL;
+    else if (b->ptr[buffer_clen(b)-1] != ',')
+        buffer_append_char(b, ','); /*see http_request_trailer_check_whitelist*/
+    trailer_whitelist = b;
+}
+
+
+__attribute_cold__
+__attribute_pure__
+int
+http_request_trailer_check_whitelist (const char *k, const uint32_t klen)
+{
+    if (!trailer_whitelist) return 0;
+    const char *s = trailer_whitelist->ptr;
+    for (const char *comma; (comma = strchr(s, ',')); s = comma+1) {
+        uint32_t n = (uint32_t)(comma - s);
+        if (n == klen && buffer_eq_icase_ssn(k, s, n))
+            return 1;
+    }
+    return 0;
+}
+
+
+__attribute_cold__
+int
+http_request_trailer_check (request_st * const restrict r, http_trailer_parse_ctx * const restrict tpctx)
+{
+    if (tpctx->trailer  /*(?should strict policy require "Trailer" header?)*/
+        && !http_header_str_contains_token(BUF_PTR_LEN(tpctx->trailer),
+                                           tpctx->k, tpctx->klen))
+        return http_request_header_line_invalid(r, 400,
+          "trailer not listed in Trailer header");
+
+    tpctx->hlen += tpctx->klen + tpctx->vlen + 4;
+    if (tpctx->hlen > tpctx->max_request_field_size) {
+        /* 431 Request Header Fields Too Large */
+        return http_request_header_line_invalid(r, 431,
+          "oversized trailers -> 431");
+    }
+
+    const enum http_header_e id = tpctx->id =
+      http_header_hkey_get(tpctx->k, tpctx->klen);
+    if (__builtin_expect( (id != HTTP_HEADER_OTHER), 1)) {
+        /*(recognizing label name establishes label name
+         * does not contain bad whitespace or CTL chars)*/
+        /* explicitly reject certain field names disallowed in trailers
+         * (XXX: list can be expanded further)
+         * https://datatracker.ietf.org/doc/html/rfc7230#section-4.1.2
+         * https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Trailer
+         * ? Are Connection or Proxy-Connection permitted in trailers?
+         *   Choosing to reject Connection,Proxy-Connection in trailers.
+         * Choosing to reject Forwarded,Upgrade,WWW-Authenticate in trailers
+         */
+        if (light_bshift(id)
+            & (light_bshift(HTTP_HEADER_AUTHORIZATION)
+              |light_bshift(HTTP_HEADER_AGE)
+              |light_bshift(HTTP_HEADER_CACHE_CONTROL)
+              |light_bshift(HTTP_HEADER_CONNECTION)
+              |light_bshift(HTTP_HEADER_CONTENT_ENCODING)
+              |light_bshift(HTTP_HEADER_CONTENT_LENGTH)
+              |light_bshift(HTTP_HEADER_CONTENT_RANGE)
+              |light_bshift(HTTP_HEADER_CONTENT_TYPE)
+              |light_bshift(HTTP_HEADER_DATE)
+              |light_bshift(HTTP_HEADER_EXPECT)
+              |light_bshift(HTTP_HEADER_EXPIRES)
+              |light_bshift(HTTP_HEADER_FORWARDED)
+              |light_bshift(HTTP_HEADER_HOST)
+              |light_bshift(HTTP_HEADER_IF_MATCH)
+              |light_bshift(HTTP_HEADER_IF_MODIFIED_SINCE)
+              |light_bshift(HTTP_HEADER_IF_NONE_MATCH)
+              |light_bshift(HTTP_HEADER_IF_RANGE)
+              |light_bshift(HTTP_HEADER_IF_UNMODIFIED_SINCE)
+              |light_bshift(HTTP_HEADER_LOCATION)
+              |light_bshift(HTTP_HEADER_PRAGMA)
+              |light_bshift(HTTP_HEADER_RANGE)
+              |light_bshift(HTTP_HEADER_SET_COOKIE)
+              |light_bshift(HTTP_HEADER_TE)
+              |light_bshift(HTTP_HEADER_TRANSFER_ENCODING)
+              |light_bshift(HTTP_HEADER_UPGRADE)
+              |light_bshift(HTTP_HEADER_USER_AGENT)
+              |light_bshift(HTTP_HEADER_VARY)
+              |light_bshift(HTTP_HEADER_WWW_AUTHENTICATE)))
+            return http_request_header_line_invalid(r, 400,
+              "forbidden trailer");
+    }
+    else { /* (id == HTTP_HEADER_OTHER) */
+        const char * const x =
+          http_request_field_check_name(tpctx->k, (int)tpctx->klen,
+                                        tpctx->http_header_strict);
+        if (x)
+            return http_request_header_char_invalid(r, *x,
+              "invalid character in header key -> 400");
+        /* explicitly reject certain field names disallows in trailers
+         * (XXX: list can be expanded further)
+         * (If list gets too long, consider whitelisting common trailers,
+         *  e.g. "Server-Timing")
+         * https://datatracker.ietf.org/doc/html/rfc7230#section-4.1.2
+         * https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Trailer
+         */
+        if ((tpctx->klen == 16
+             && buffer_eq_icase_ssn(tpctx->k,CONST_STR_LEN("Proxy-Connection")))
+            || (tpctx->klen == 12
+                && buffer_eq_icase_ssn(tpctx->k, CONST_STR_LEN("Max-Forwards")))
+            || (tpctx->klen == 7
+                && buffer_eq_icase_ssn(tpctx->k, CONST_STR_LEN("Trailer"))))
+            return http_request_header_line_invalid(r, 400,
+              "forbidden trailer");
+    }
+
+    const char * const x =
+      http_request_field_check_value(tpctx->v, tpctx->vlen,
+                                     tpctx->http_header_strict);
+    if (x)
+        return http_request_header_char_invalid(r, *x,
+          "invalid character in trailer");
+
+    return 0;
+}
+
+
+__attribute_cold__
+__attribute_noinline__
+int
+http_request_trailers_check (request_st * const restrict r, char *t, uint32_t tlen, const buffer * const trailer)
+{
+    /* (This function can be used on request trailers and response trailers) */
+    /* future: might move this function to h1.c */
+    /* Note: this function operates on (const char *) and either validates
+     * or rejects the input; the input is not modified.  Any policy failure
+     * results in rejection.  Policy is strict; trailers are less-frequently
+     * used, and so potential impact of strictness should be more limited. */
+    unsigned short hoff[8192]; /* max num header lines + 3; 16k on stack */
+    hoff[0] = 1;                         /* number of lines */
+    hoff[1] = 0;                         /* base offset for all lines */
+    /*hoff[2] = ...;*/                   /* offset from base for 2nd line */
+    uint32_t rc = http_header_parse_hoff(t, tlen, hoff);
+    if (rc != tlen || hoff[0] >= sizeof(hoff)/sizeof(hoff[0])-1)
+        return http_request_header_line_invalid(r, 400,
+          "invalid trailers; incomplete or too many fields -> 400");
+    if (1 == hoff[0]) /*(initial blank line (no trailers))*/
+        return 0;
+
+    http_trailer_parse_ctx tpctx;
+    tpctx.hlen = 0;
+    tpctx.id = HTTP_HEADER_OTHER;
+    tpctx.trailer = trailer;
+    tpctx.http_header_strict =
+      (r->conf.http_parseopts & HTTP_PARSEOPT_HEADER_STRICT);
+    tpctx.max_request_field_size = r->conf.max_request_field_size;
+
+    for (int i = 1; i < hoff[0]; ++i) {
+        const char *k = t + hoff[i]; /*t + ((i > 1) ? hoff[i] : 0);*/
+        const char *end = t + hoff[i+1];
+        const char *v = memchr(k, ':', end-k);
+        if (NULL == v)
+            return http_request_header_line_invalid(r, 400,
+              "invalid trailer missing ':'");
+        uint32_t klen = (uint32_t)(v - k);
+        if (0 == klen)
+            return http_request_header_line_invalid(r, 400,
+              "invalid trailer key");
+        do { ++v; } while (*v == ' ' || *v == '\t'); /*(expect single ' ')*/
+      #ifdef __COVERITY__
+        /*(k has at least .:\n by now, so end[-2] valid)*/
+        force_assert(end >= k + 2);
+      #endif
+        end -= 2;
+        if (end[0] != '\r') /*(header line must end "\r\n")*/
+            return http_request_header_line_invalid(r, 400,
+              "missing CR before LF in trailer");
+        uint32_t vlen = (uint32_t)(end - v);
+        /* A blank value is technically allowed by RFCs, but I choose to reject;
+         * omit from sending trailer field with blank value; the omission could
+         * be treated as such by the recipient.  If this is removed, then
+         * merging into headers should check for blank value and avoid adding
+         * comma separator followed by a blank field */
+        if (0 == vlen) return 400;
+
+        tpctx.k    = k;
+        tpctx.v    = v;
+        tpctx.klen = klen;
+        tpctx.vlen = vlen;
+        if (0 != http_request_trailer_check(r, &tpctx))
+            return 400;
+    }
+
+    return 0;
 }

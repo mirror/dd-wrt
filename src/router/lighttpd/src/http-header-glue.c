@@ -5,6 +5,7 @@
 #include "base.h"
 #include "array.h"
 #include "buffer.h"
+#include "burl.h"       /* HTTP_PARSEOPT_HEADER_STRICT */
 #include "chunk.h"
 #include "fdevent.h"
 #include "log.h"
@@ -864,7 +865,7 @@ static int http_response_append_splice(request_st * const r, http_response_opts 
 #endif
 
 
-static int http_response_append_mem(request_st * const r, const char * const mem, size_t len) {
+static int http_response_append_mem(request_st * const r, const char * const mem, uint32_t len) {
     if (r->resp_decode_chunked)
         return http_chunk_decode_append_mem(r, mem, len);
 
@@ -958,10 +959,27 @@ static int http_response_process_headers(request_st * const restrict r, http_res
         }
     }
     else if (__builtin_expect( (opts->backend == BACKEND_PROXY), 0)) {
-        /* invalid response Status-Line from HTTP proxy */
+        /* invalid response Status-Line from HTTP backend */
         r->http_status = 502; /* Bad Gateway */
         r->handler_module = NULL;
         return 0;
+    }
+
+    const unsigned int http_header_strict =
+      (r->conf.http_parseopts & HTTP_PARSEOPT_HEADER_STRICT);
+
+    /* strictly validate all lines end "\r\n" for BACKEND_PROXY */
+    if (opts->backend == BACKEND_PROXY && http_header_strict) {
+        for (int j = 1; j <= hoff[0]; ++j) {
+            /*(nph check above ensures at least 2 chars on first line)*/
+            if (s[hoff[i+1]-2] != '\r') {
+                log_error(r->conf.errh, __FILE__, __LINE__,
+                  "HTTP backend response missing CR before LF");
+                r->http_status = 502; /* Bad Gateway */
+                r->handler_module = NULL;
+                return 0;
+            }
+        }
     }
 
     for (; i < hoff[0]; ++i) {
@@ -1001,10 +1019,15 @@ static int http_response_process_headers(request_st * const restrict r, http_res
             }
             else if (id == HTTP_HEADER_OTHER && klen > 9 && (k[0] & 0xdf) == 'V'
                      && buffer_eq_icase_ssn(k, CONST_STR_LEN("Variable-"))) {
+                /* trust response from configured authorizer; skip validating */
                 http_header_env_append(r, k + 9, klen - 9, value, end - value);
             }
             continue;
         }
+
+        if (NULL != http_request_field_check_value(value, end - value,
+                                                   http_header_strict))
+            continue; /* invalid char in field value; skip */
 
         switch (id) {
           case HTTP_HEADER_STATUS:
@@ -1015,7 +1038,8 @@ static int http_response_process_headers(request_st * const restrict r, http_res
                   #ifdef __COVERITY__ /* Coverity false positive for tainted */
                     status = 200;/* http_header_str_to_code() validates */
                   #endif
-                    r->http_status = status;
+                    if (0 == r->http_status || 200 == r->http_status)
+                        r->http_status = status;
                     opts->local_redir = 0; /*(disable; status was set)*/
                 }
                 else {
@@ -1076,6 +1100,14 @@ static int http_response_process_headers(request_st * const restrict r, http_res
             }
             break;
           case HTTP_HEADER_TRANSFER_ENCODING:
+            /* strictly accept only Transfer-Encoding: chunked
+             * Technically, could allow "identity, chunked" and related,
+             * but still should reject unrecognized encodings */
+            if (!buffer_eq_icase_ss(value,end-value,CONST_STR_LEN("chunked"))) {
+                r->http_status = 502; /* Bad Gateway */
+                r->handler_module = NULL;
+                continue;
+            }
             if (light_btst(r->resp_htags, HTTP_HEADER_CONTENT_LENGTH)) {
                 /* ignore Content-Length if Transfer-Encoding: chunked
                  * (might choose to treat this as 502 Bad Gateway) */
@@ -1083,7 +1115,6 @@ static int http_response_process_headers(request_st * const restrict r, http_res
                 http_header_response_unset(r, HTTP_HEADER_CONTENT_LENGTH,
                                            CONST_STR_LEN("Content-Length"));
             }
-            /*(assumes "Transfer-Encoding: chunked"; does not verify)*/
             r->resp_decode_chunked = 1;
             r->gw_dechunk = ck_calloc(1, sizeof(response_dechunk));
             continue;
@@ -1093,11 +1124,9 @@ static int http_response_process_headers(request_st * const restrict r, http_res
             /* (not bothering to remove HTTP2-Settings from Connection) */
             continue;
           case HTTP_HEADER_OTHER:
-            /* ignore invalid headers with whitespace between label and ':'
-             * (if less strict behavior is desired, check and correct above
-             *  this switch() statement, but not for BACKEND_PROXY) */
-            if (k[klen-1] == ' ' || k[klen-1] == '\t')
-                continue;
+            if (NULL != http_request_field_check_name(k, klen,
+                                                      http_header_strict))
+                continue; /* invalid char in field name; skip */
             break;
           default:
             break;

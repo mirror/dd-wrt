@@ -29,8 +29,8 @@ typedef struct keyvlenvalue {
 /* Note: must be kept in sync h2.c:lshpack_idx_http_header[] */
 /* http_headers_off lists first offset at which string of specific len occur */
 static const int8_t http_headers_off[] = {
-  -1, -1,  0,  1,  4,  9, 11, 17, 21, 26, 28, -1, 31, 32,
-  38, 41, 46, 50, -1, 53, -1, -1, 54, 55, -1, 56, -1, 58
+  -1, -1,  0,  1,  4,  9, 11, 17, 21, 26, 27, -1, 30, 31,
+  37, 40, 45, 49, -1, 52, -1, -1, 53, 54, -1, 55, -1, 57
 };
 static const keyvlenvalue http_headers[] = {
   { HTTP_HEADER_TE,                          CONST_LEN_STR("te") }
@@ -60,7 +60,6 @@ static const keyvlenvalue http_headers[] = {
  ,{ HTTP_HEADER_IF_RANGE,                    CONST_LEN_STR("if-range") }
  ,{ HTTP_HEADER_ALT_USED,                    CONST_LEN_STR("alt-used") }
  ,{ HTTP_HEADER_FORWARDED,                   CONST_LEN_STR("forwarded") }
- ,{ HTTP_HEADER_EXPECT_CT,                   CONST_LEN_STR("expect-ct") }
  ,{ HTTP_HEADER_CONNECTION,                  CONST_LEN_STR("connection") }
  ,{ HTTP_HEADER_SET_COOKIE,                  CONST_LEN_STR("set-cookie") }
  ,{ HTTP_HEADER_USER_AGENT,                  CONST_LEN_STR("user-agent") }
@@ -118,6 +117,7 @@ enum http_header_e http_header_hkey_get_lc(const char * const s, const size_t sl
     /* XXX: might not provide much real performance over http_header_hkey_get()
      *      (since the first-char comparison optimization was added)
      *      (and since well-known h2 headers are already mapped to hkey) */
+    /* (note: result indicates string is lowercase, if not HTTP_HEADER_OTHER */
     if (__builtin_expect( (slen < sizeof(http_headers_off)), 1)) {
         const int i = http_headers_off[slen];
         const int c = s[0];
@@ -156,7 +156,14 @@ int http_header_str_contains_token (const char * const s, const uint32_t slen, c
         if (slen - i < mlen) return 0;
         if (buffer_eq_icase_ssn(s+i, m, mlen)) {
             i += mlen;
+          #if 0
+            /* XXX: could do even stricter parse to validate optional ";q=x.x"
+             * and parse to next ',' or end of string; not done here */
+            while (i<slen &&(s[i]==' ' || s[i]=='\t')) ++i;
+            if (i == slen || s[i]==',' || s[i]==';')
+          #else
             if (i == slen || s[i]==' ' || s[i]=='\t' || s[i]==',' || s[i]==';')
+          #endif
                 return 1;
         }
         while (i < slen &&   s[i]!=',') ++i;
@@ -360,18 +367,54 @@ void http_header_env_append(request_st * const r, const char *k, uint32_t klen, 
 }
 
 
-uint32_t
-http_header_parse_hoff (const char *n, const uint32_t clen, unsigned short hoff[8192])
+/*(independent func to further isolate cold path)*/
+__attribute_cold__
+static void
+http_header_parse_unfold_impl (char * const restrict b)
 {
+    if (b[-2] == '\r') b[-2] = ' ';
+    b[-1] = ' ';
+}
+
+
+uint32_t
+http_header_parse_hoff (char *n, const uint32_t clen, unsigned short hoff[8192])
+{
+    /* note: callers must check for field block ending line "\r\n" if required
+     * or else a smuggled "\n" might prematurely truncate the field block */
+
+    /* note: removal of line folding occurs for any line (after first line)
+     * which begins ' ' or '\t', including for lines ending "\n" (rather than
+     * "\r\n"); in prior code, lines ending "\n" would be rejected if policy
+     * http_header_strict was in effect. */
+
+    /* note: in the code below, HTTP/1.x reqline followed by first line starting
+     * ' ' or '\t' will be folded into reqline, resulting in at least two spaces
+     * consecutively, which http_request_parse_reqline() will reject due to
+     * multiple spaces between URI and protocol, or URI starting with space. */
+
     uint32_t hlen = 0;
-    for (const char *b; (n = memchr((b = n),'\n',clen-hlen)); ++n) {
+    for (char *b; (n = memchr((b = n),'\n',clen-hlen)); ++n) {
         uint32_t x = (uint32_t)(n - b + 1);
         hlen += x;
-        if (x <= 2 && (x == 1 || n[-1] == '\r')) {
+        if (__builtin_expect( (x <= 2), 0) && (x == 1 || n[-1] == '\r')) {
+            /* "\r\n" (or "\n") ends headers (expect false except last line) */
             hoff[hoff[0]+1] = hlen;
             return hlen;
         }
-        if (++hoff[0] >= /*sizeof(hoff)/sizeof(hoff[0])-1*/ 8192-1) break;
+        else if ((   __builtin_expect( (b[0] == ' '), 0)
+                  || __builtin_expect( (b[0] == '\t'), 0))
+                 && hlen != x) { /*(true except first line)*/
+            /* line folding; unfold (cold code path) */
+            http_header_parse_unfold_impl(b);
+            /* update hoff[] offset for current line (further below) */
+        }
+        else {
+            ++hoff[0];
+            /* update hoff[] offset for next line (further below) */
+            if (__builtin_expect( (hoff[0] >= 8192-1), 0))
+                break;                        /*sizeof(hoff)/sizeof(hoff[0])-1*/
+        }
         hoff[hoff[0]] = hlen;
     }
     return 0;

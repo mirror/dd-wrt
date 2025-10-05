@@ -58,7 +58,6 @@ enum http_header_e {
  ,HTTP_HEADER_DNT
  ,HTTP_HEADER_ETAG
  ,HTTP_HEADER_EXPECT
- ,HTTP_HEADER_EXPECT_CT
  ,HTTP_HEADER_EXPIRES
  ,HTTP_HEADER_FORWARDED
  ,HTTP_HEADER_HOST
@@ -134,6 +133,6 @@ void http_header_env_set(request_st *r, const char *k, uint32_t klen, const char
 void http_header_env_append(request_st *r, const char *k, uint32_t klen, const char *v, uint32_t vlen);
 
 __attribute_hot__
-uint32_t http_header_parse_hoff (const char *n, const uint32_t clen, unsigned short hoff[8192]);
+uint32_t http_header_parse_hoff (char *n, const uint32_t clen, unsigned short hoff[8192]);
 
 #endif

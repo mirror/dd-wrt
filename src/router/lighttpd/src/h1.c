@@ -590,7 +590,84 @@ h1_chunked_crlf (chunkqueue * const cq)
 }
 
 
-static handler_t
+__attribute_cold__
+__attribute_noinline__
+static int
+h1_chunked_400_bad_request (request_st * const r, const char *errstr)
+{
+    log_error(r->conf.errh, __FILE__, __LINE__, "%s", errstr);
+    return 400; /* Bad Request */
+}
+
+
+__attribute_cold__
+__attribute_noinline__
+static int
+h1_chunked_trailers (request_st * const restrict r, char * restrict t, uint32_t tlen)
+{
+    buffer * const trailer = http_header_request_get(r, HTTP_HEADER_OTHER,
+                                                     CONST_STR_LEN("Trailer"));
+    /*(skip final chunk "0\r\n")*/
+    ++t;
+    while (*++t != '\n') --tlen;
+    ++t;
+    tlen -= 3;
+    int rc = http_request_trailers_check(r, t, tlen, trailer);
+    if (0 != rc)
+        return rc;
+
+    if (0 == (r->conf.stream_request_body
+              & (FDEVENT_STREAM_REQUEST | FDEVENT_STREAM_REQUEST_BUFMIN))) {
+        /* similarities to src/response.c:http_response_merge_trailers() */
+        /* RFC9110 https://www.rfc-editor.org/rfc/rfc9110.html
+         * Section B.2. "Changes from RFC 7230" encourages implementations
+         * to avoid merging trailers into headers if the implementation
+         * does not have full knowledge of each field permitting merge and
+         * defining how to merge.  ... In other words, merging to headers is
+         * discouraged.  This code might move in that direction in the future,
+         * though de-chunking (and either merging or dropping trailers) is
+         * necessary for non-HTTP backends (e.g. FastCGI, SCGI, AJP13, etc which
+         * do not support trailers in their protocols).
+         * RFC9110 mentions only a few fields explicitly allowed in trailers:
+         * ETag, Authentication-Info, Proxy-Authentication-Info, Accept-Ranges
+         */
+      #if 0 /* should we leave Trailer for backends to find merged headers? */
+        if (trailer)
+            http_header_request_unset(r, HTTP_HEADER_OTHER,
+                                      CONST_STR_LEN("Trailer"));
+      #endif
+        for (const char *k = t, *v, *e; (e = strchr(k, '\n')); k = e+1) {
+            v = memchr(k, ':', (size_t)(e - k));
+            /*(checked in http_request_trailers_check())*/
+            /*if (NULL == v || v == k || *k == ' ' || *k == '\t') continue;*/
+            if (NULL == v) break; /*(final blank line; v already validated)*/
+            uint32_t klen = (uint32_t)(v - k);
+            do { ++v; } while (*v == ' ' || *v == '\t');
+            if (!http_request_trailer_check_whitelist(k, klen))
+                continue;
+            /*(checked in http_request_trailers_check())*/
+            /*if (*v == '\r' || *v == '\n') continue;*/
+            enum http_header_e id = http_header_hkey_get(k, klen);
+            uint32_t vlen = (uint32_t)(e - v);
+            if (e[-1] == '\r') --vlen;
+            http_header_request_append(r, id, k, klen, v, vlen);
+        }
+    }
+    else {
+        /* trailers currently ignored if streaming request,
+         * but (future) could be set aside here if handler is mod_proxy
+         * and mod_proxy is sending chunked request to backend */
+      #if 0
+        /* omit final "\r\n" for simplicity for HTTP/2 trailer accumulation */
+        http_header_env_set(r, CONST_STR_LEN("_L_TRAILERS"), t, tlen-2);
+      #endif
+    }
+
+    return 0;
+}
+
+
+static int
 h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_cq)
 {
     /* r->conf.max_request_size is in kBytes */
@@ -600,8 +677,8 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
         off_t len = chunkqueue_length(cq);
 
         while (0 == te_chunked) {
-            char *p;
-            chunk *c = cq->first;
+            const char *p;
+            const chunk *c = cq->first;
             if (NULL == c) break;
             force_assert(c->type == MEM_CHUNK);
             p = strchr(c->mem->ptr+c->offset, '\n');
@@ -610,37 +687,32 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
                 unsigned char *s = (unsigned char *)c->mem->ptr+c->offset;
                 for (unsigned char u;(u=(unsigned char)hex2int(*s))!=0xFF;++s) {
                     if (te_chunked > (off_t)(1uLL<<(8*sizeof(off_t)-5))-1-2) {
-                        log_error(r->conf.errh, __FILE__, __LINE__,
+                        return h1_chunked_400_bad_request(r,
                           "chunked data size too large -> 400");
-                        /* 400 Bad Request */
-                        return http_response_reqbody_read_error(r, 400);
                     }
                     te_chunked <<= 4;
                     te_chunked |= u;
                 }
-                if (__builtin_expect( (p == (char *)s + hsz), 0) /*(no hex)*/
+                if (__builtin_expect( ((char *)s == c->mem->ptr+c->offset), 0)
                     || __builtin_expect( (p[-2] != '\r'), 0)) {  /*(no '\r')*/
-                    p = NULL;
+                    p = NULL; /*(no hex or not '\r')*/
                 }
                 else if (__builtin_expect( (p-2 != (char *)s), 0)) {
                     while (*s == ' ' || *s == '\t') ++s;
-                    if (*s != '\r' && *s != ';')
+                    if (p-2 != (char *)s
+                        && (*s != ';' || p-2 != strchr((char *)s+1, '\r')))
                         p = NULL;
                 }
                 if (NULL == p) {
-                    log_error(r->conf.errh, __FILE__, __LINE__,
+                    return h1_chunked_400_bad_request(r,
                       "chunked header invalid chars -> 400");
-                    /* 400 Bad Request */
-                    return http_response_reqbody_read_error(r, 400);
                 }
 
                 if (hsz >= 1024) {
                     /* prevent theoretical integer overflow
                      * casting to (size_t) and adding 2 (for "\r\n") */
-                    log_error(r->conf.errh, __FILE__, __LINE__,
+                    return h1_chunked_400_bad_request(r,
                       "chunked header line too long -> 400");
-                    /* 400 Bad Request */
-                    return http_response_reqbody_read_error(r, 400);
                 }
 
                 if (0 == te_chunked) {
@@ -675,12 +747,10 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
                             }
                         }
                         hsz = p + 4 - (c->mem->ptr+c->offset);
-                        /* trailers currently ignored, but could be processed
-                         * here if 0 == (r->conf.stream_request_body &
-                         *               & (FDEVENT_STREAM_REQUEST
-                         *                 |FDEVENT_STREAM_REQUEST_BUFMIN))
-                         * taking care to reject fields forbidden in trailers,
-                         * making trailers available to CGI and other backends*/
+                        int rc = h1_chunked_trailers(r, c->mem->ptr+c->offset,
+                                                     (uint32_t)hsz);
+                        if (0 != rc)
+                            return rc;
                     }
                     chunkqueue_mark_written(cq, (size_t)hsz);
                     r->reqbody_length = dst_cq->bytes_in;
@@ -697,8 +767,7 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
                     log_error(r->conf.errh, __FILE__, __LINE__,
                       "request-size too long: %lld -> 413",
                       (long long)(dst_cq->bytes_in + te_chunked));
-                    /* 413 Payload Too Large */
-                    return http_response_reqbody_read_error(r, 413);
+                    return 413; /* 413 Payload Too Large */
                 }
 
                 te_chunked += 2; /*(for trailing "\r\n" after chunked data)*/
@@ -709,10 +778,8 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
             /*(likely better ways to handle chunked header crossing chunkqueue
              * chunks, but this situation is not expected to occur frequently)*/
             if ((off_t)buffer_clen(c->mem) - c->offset >= 1024) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
+                return h1_chunked_400_bad_request(r,
                   "chunked header line too long -> 400");
-                /* 400 Bad Request */
-                return http_response_reqbody_read_error(r, 400);
             }
             else if (!h1_cq_compact(cq)) {
                 break;
@@ -728,8 +795,7 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
             }
             else if (0 != chunkqueue_steal_with_tempfiles(dst_cq, cq, len,
                                                           r->conf.errh)) {
-                /* 500 Internal Server Error */
-                return http_response_reqbody_read_error(r, 500);
+                return 500; /* 500 Internal Server Error */
             }
             te_chunked -= len;
             len = chunkqueue_length(cq);
@@ -739,10 +805,8 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
 
         if (2 == te_chunked) {
             if (-1 == h1_chunked_crlf(cq)) {
-                log_error(r->conf.errh, __FILE__, __LINE__,
+                return h1_chunked_400_bad_request(r,
                   "chunked data missing end CRLF -> 400");
-                /* 400 Bad Request */
-                return http_response_reqbody_read_error(r, 400);
             }
             chunkqueue_mark_written(cq, 2);/*consume \r\n at end of chunk data*/
             te_chunked -= 2;
@@ -751,11 +815,11 @@ h1_chunked (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_
     } while (!chunkqueue_is_empty(cq));
 
     r->x.h1.te_chunked = te_chunked;
-    return HANDLER_GO_ON;
+    return 0;
 }
 
 
-static handler_t
+static int
 h1_read_body_unknown (request_st * const r, chunkqueue * const cq, chunkqueue * const dst_cq)
 {
     /* r->conf.max_request_size is in kBytes */
@@ -764,10 +828,9 @@ h1_read_body_unknown (request_st * const r, chunkqueue * const cq, chunkqueue * 
     if (0 != max_request_size && dst_cq->bytes_in > max_request_size) {
         log_error(r->conf.errh, __FILE__, __LINE__,
           "request-size too long: %lld -> 413", (long long)dst_cq->bytes_in);
-        /* 413 Payload Too Large */
-        return http_response_reqbody_read_error(r, 413);
+        return 413; /* 413 Payload Too Large */
     }
-    return HANDLER_GO_ON;
+    return 0;
 }
 
 
@@ -810,10 +873,11 @@ h1_reqbody_read (request_st * const r)
 
     if (r->reqbody_length < 0) {
         /*(-1: Transfer-Encoding: chunked, -2: unspecified length)*/
-        handler_t rc = (-1 == r->reqbody_length)
+        int status = (-1 == r->reqbody_length)
                      ? h1_chunked(r, cq, dst_cq)
                      : h1_read_body_unknown(r, cq, dst_cq);
-        if (HANDLER_GO_ON != rc) return rc;
+        if (status)
+            return http_response_reqbody_read_error(r, status);
         chunkqueue_remove_finished_chunks(cq);
     }
     else {
