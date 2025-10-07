@@ -24,26 +24,28 @@ cd /tmp
 if [ x$4 = x1 ]
 then
 	echo "write first time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
+	busybox dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
-	sync
+	busybox sync
 	echo "write second time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
+	busybox dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
-	sync
+	busybox sync
 	echo "write third time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
+	busybox dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
-	sync
+	busybox sync
 else
 	write ${FIFO} ${MTDPART}
 fi
-sync
-sync
-sync
+busybox sync
+busybox sync
+busybox sync
+busybox killall -9 watchdog
 if [ x$3 = x1 ]
 then
-	reboot
-	sleep 20
-	echo b > /proc/sysrq-trigger
+	busybox sleep 10
+	busybox reboot
+	busybox sleep 20
+	busybox echo b > /proc/sysrq-trigger
 fi
