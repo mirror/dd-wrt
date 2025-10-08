@@ -315,6 +315,7 @@ int main_gpt(int argc, char *argv[])
 	int count = len / 65536;
 	fprintf(stderr, "write image len = %d\n", len);
 	for (i = 0; i < count; i++) {
+		fprintf(stderr, "write %d\n", i * 65536);
 		fread(sbuf, 65536, 1, in);
 		fwrite(sbuf, 65536, 1, out);
 	}
