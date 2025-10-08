@@ -155,12 +155,16 @@ static void copy(FILE *out, size_t inoff, size_t outoff, int len)
 			fread(mem, 65536, 1, out);
 			fseek(out, outoff + (i * 65536), SEEK_SET);
 			fwrite(mem, 65536, 1, out);
+			fflush(out);
+			fsync(fileno(out));
 		}
 		if (len % 65536) {
 			fseek(out, inoff + (i * 65536), SEEK_SET);
 			fread(mem, len % 65536, 1, out);
 			fseek(out, outoff + (i * 65536), SEEK_SET);
 			fwrite(mem, len % 65536, 1, out);
+			fflush(out);
+			fsync(fileno(out));
 		}
 	} else {
 		long o = len - 65536;
@@ -170,6 +174,8 @@ static void copy(FILE *out, size_t inoff, size_t outoff, int len)
 			fread(mem, 65536, 1, out);
 			fseek(out, outoff + o, SEEK_SET);
 			fwrite(mem, 65536, 1, out);
+			fflush(out);
+			fsync(fileno(out));
 			o -= 65536;
 			if (o < 0)
 				break;
@@ -179,6 +185,8 @@ static void copy(FILE *out, size_t inoff, size_t outoff, int len)
 			fread(mem, len % 65536, 1, out);
 			fseek(out, outoff, SEEK_SET);
 			fwrite(mem, len % 65536, 1, out);
+			fflush(out);
+			fsync(fileno(out));
 		}
 	}
 	fprintf(stderr, "\n");
@@ -222,6 +230,10 @@ int main_mbr(int argc, char *argv[])
 				fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, in);
 				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
+				fflush(in);
+				fsync(fileno(in));
+				fflush(out);
+				fsync(fileno(out));
 			}
 		} else {
 			fprintf(stderr, "read nvram from old offset %lld with len %lld and write to offset %lld\n",
@@ -235,10 +247,15 @@ int main_mbr(int argc, char *argv[])
 	fseek(out, 0, SEEK_SET);
 	char *buf = malloc(65536);
 	int count = len / 65536;
-	fprintf(stderr, "write image len = %d\n", len);
+	fprintf(stderr, "write image len = %d, count %d\n", len, count);
 	for (i = 0; i < count; i++) {
+		fprintf(stderr, "write %d\n", i * 65536);
 		fread(buf, 65536, 1, in);
 		fwrite(buf, 65536, 1, out);
+		fflush(in);
+		fflush(out);
+		fsync(fileno(in));
+		fsync(fileno(out));
 	}
 	fread(buf, len % 65536, 1, in);
 	fwrite(buf, len % 65536, 1, out);
@@ -300,6 +317,8 @@ int main_gpt(int argc, char *argv[])
 				memcpy(newnvram, nvram, le32_to_cpu(header.part_entry_len));
 				fseek(out, le32_to_cpu(header.part_entry_len) * 2, SEEK_SET);
 				fwrite(newnvram, le32_to_cpu(header.part_entry_len), 1, out);
+				fflush(out);
+				fsync(fileno(out));
 			}
 		} else {
 			fprintf(stderr, "read nvram from old offset %lld with len %lld and write to offset %lld\n",
@@ -313,11 +332,15 @@ int main_gpt(int argc, char *argv[])
 	fseek(out, 0, SEEK_SET);
 	char *sbuf = malloc(65536);
 	int count = len / 65536;
-	fprintf(stderr, "write image len = %d\n", len);
+	fprintf(stderr, "write image len = %d, count %d\n", len, count);
 	for (i = 0; i < count; i++) {
 		fprintf(stderr, "write %d\n", i * 65536);
 		fread(sbuf, 65536, 1, in);
 		fwrite(sbuf, 65536, 1, out);
+		fflush(in);
+		fflush(out);
+		fsync(fileno(in));
+		fsync(fileno(out));
 	}
 	fread(sbuf, len % 65536, 1, in);
 	fwrite(sbuf, len % 65536, 1, out);
