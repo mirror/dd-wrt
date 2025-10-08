@@ -1208,7 +1208,7 @@ ifeq ($(CONFIG_VENTANA),y)
 endif
 ifeq ($(CONFIG_NEWPORT),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
-	install update-after-pivot.sh.newport $(INSTALLDIR)/usr/sbin/update-after-pivot.sh
+	install -D update-after-pivot.sh.newport $(INSTALLDIR)/usr/sbin/update-after-pivot.sh
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install writetool $(INSTALLDIR)/usr/sbin
 endif
