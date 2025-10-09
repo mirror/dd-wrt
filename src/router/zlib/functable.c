@@ -14,7 +14,7 @@
 #endif
 
 /* Platform has pointer size atomic store */
-#if defined(__GNUC__) || defined(__clang__)
+#if !defined(__UCLIBC__) && (defined(__GNUC__) || defined(__clang__))
 #  define FUNCTABLE_ASSIGN(VAR, FUNC_NAME) \
     __atomic_store(&(functable.FUNC_NAME), &(VAR.FUNC_NAME), __ATOMIC_SEQ_CST)
 #  define FUNCTABLE_BARRIER() __atomic_thread_fence(__ATOMIC_SEQ_CST)
