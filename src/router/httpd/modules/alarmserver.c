@@ -64,7 +64,7 @@ static char *getXMLTag(const char *p, const char *tag, char *buf, size_t buflen)
 	int i;
 	for (i = 0; i < len; i++) {
 		unsigned char c = s[i];
-		if ((isalnum(c) || c == '.' || c == '-' || c == ':' || c == '_' || c == '+' || c == ' ') && cnt < buflen - 1)
+		if ((isalnum(c) || c == '.' || c == '-' || c == ':' || c == '_' || c == '+' || c == ' ') && cnt < buflen - 2)
 			buf[cnt++] = c;
 	}
 	buf[cnt++] = 0;
