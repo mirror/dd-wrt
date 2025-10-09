@@ -48,7 +48,7 @@ static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 int wfflush(webs_t fp);
 
-static char *getXMLTag(const char *p, const char *tag, char *buf)
+static char *getXMLTag(const char *p, const char *tag, char *buf, size_t buflen)
 {
 	char begin[64];
 	char end[64];
@@ -64,7 +64,7 @@ static char *getXMLTag(const char *p, const char *tag, char *buf)
 	int i;
 	for (i = 0; i < len; i++) {
 		unsigned char c = s[i];
-		if (isalnum(c) || c == '.' || c == '-' || c == ':' || c == '_' || c == '+' || c == ' ')
+		if ((isalnum(c) || c == '.' || c == '-' || c == ':' || c == '_' || c == '+' || c == ' ') && cnt < buflen - 1)
 			buf[cnt++] = c;
 	}
 	buf[cnt++] = 0;
@@ -82,10 +82,10 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char s_name[128];
 	char s_desc[128];
 	char s_addr[128];
-	char *date = getXMLTag(mem, "dateTime", s_date);
-	char *name = getXMLTag(mem, "channelName", s_name);
-	char *desc = getXMLTag(mem, "eventDescription", s_desc);
-	char *addr = getXMLTag(mem, "ipAddress", s_addr);
+	char *date = getXMLTag(mem, "dateTime", s_date, sizeof(s_date));
+	char *name = getXMLTag(mem, "channelName", s_name, sizeof(s_name));
+	char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
+	char *addr = getXMLTag(mem, "ipAddress", s_addr, sizeof(s_addr));
 	if (filename && date && name && desc && addr)
 		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename,
 			  date, addr, name, desc);
@@ -177,7 +177,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		wfread(mem, len, 1, wp);
 		mem[len] = 0;
 		char s_desc[128];
-		char *desc = getXMLTag(mem, "eventDescription", s_desc);
+		char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
 
 		if (filename) {
 			for (i = 0; i < sizeof(dispatch) / sizeof(dispatch[0]); i++)
