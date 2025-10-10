@@ -349,6 +349,13 @@ static int getscale(const char *path)
 	return 0;
 }
 
+float get_scaling(int type, int sensor, int scale)
+{
+	if (type == CELSIUS)
+		return get_temperature((float)sensor / (float)scale);
+	return (float)sensor / (float)scale;
+}
+
 EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 {
 	int cnt = 0;
@@ -374,7 +381,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 			if (sensors[cnt].method)
 				sensor = sensors[cnt].method();
 			if (wp && scale != -1 && sensor != -1) {
-				char *unit = "&#176;C";
+				char *unit = get_temperature_unit();
 				if (sensors[cnt].type == VOLT)
 					unit = "Volt";
 				if (sensors[cnt].type == RPM)
@@ -382,26 +389,29 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 
 				if (scale > 1) {
 					if (sensor2 != -1)
-						websWrite(wp, "{cpu_temp%d::%d.%d %s / %d.%d %s}", cnt, sensor / scale,
-							  (sensor % scale) / (scale / 10), unit, sensor2 / scale,
-							  (sensor2 % scale) / (scale / 10), unit);
+						websWrite(wp, "{cpu_temp%d::%.1f %s / %.1f %s}", cnt,
+							  get_scaling(sensors[cnt].type, sensor, scale), unit,
+							  get_scaling(sensors[cnt].type, sensor2, scale), unit);
 					else
-						websWrite(wp, "{cpu_temp%d::%d.%d %s}", cnt, sensor / scale,
-							  (sensor % scale) / (scale / 10), unit);
+						websWrite(wp, "{cpu_temp%d::%.1f %s}", cnt,
+							  get_scaling(sensors[cnt].type, sensor, scale), unit);
+
 				} else {
 					if (sensor2 != -1) {
 						if (sensors[cnt].type == RPM)
 							websWrite(wp, "{cpu_temp%d::%d %s / %d %s}", cnt, sensor, unit, sensor2,
 								  unit);
 						else
-							websWrite(wp, "{cpu_temp%d::%d.0 %s / %d.0 %s}", cnt, sensor, unit, sensor2,
-								  unit);
+							websWrite(wp, "{cpu_temp%d::%.1f %s / %.1f %s}", cnt,
+								  get_scaling(sensors[cnt].type, sensor, 1), unit,
+								  get_scaling(sensors[cnt].type, sensor, 1), unit);
 
 					} else {
 						if (sensors[cnt].type == RPM)
 							websWrite(wp, "{cpu_temp%d::%d %s}", cnt, sensor, unit);
 						else
-							websWrite(wp, "{cpu_temp%d::%d.0 %s}", cnt, sensor, unit);
+							websWrite(wp, "{cpu_temp%d::%.1f %s}", cnt,
+								  get_scaling(sensors[cnt].type, sensor, 1), unit);
 					}
 				}
 			}
@@ -450,7 +460,7 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 		if (wp && sensor != -1) {
 			int scount;
 			int count = addsensor(path, method, scale, type, second);
-			char *unit = "&#176;C";
+			char *unit = get_temperature_unit();
 			if (type == VOLT)
 				unit = "Volt";
 			if (type == RPM)
@@ -462,23 +472,23 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 				websWrite(wp, "<span id=\"cpu_temp%d\">", count);
 				if (scale > 1) {
 					if (sensor2 != -1)
-						websWrite(wp, "%d.%d %s / %d.%d %s\n", sensor / scale,
-							  (sensor % scale) / (scale / 10), unit, sensor2 / scale,
-							  (sensor2 % scale) / (scale / 10), unit);
+						websWrite(wp, "%.1f %s / %.1f %s\n", get_scaling(type, sensor, scale), unit,
+							  get_scaling(type, sensor2, scale), unit);
 					else
-						websWrite(wp, "%d.%d %s\n", sensor / scale, (sensor % scale) / (scale / 10), unit);
+						websWrite(wp, "%.1f %s\n", get_scaling(type, sensor, scale), unit);
 				} else {
 					if (sensor2 != -1) {
 						if (type == RPM)
 							websWrite(wp, "%d %s / %d %s\n", sensor, unit, sensor2, unit);
 						else
-							websWrite(wp, "%d.0 %s / %d.0 %s\n", sensor, unit, sensor2, unit);
+							websWrite(wp, "%.1f %s / %d.0 %s\n", get_scaling(type, sensor, 1), unit,
+								  get_scaling(type, sensor2, 1), unit);
 
 					} else {
 						if (type == RPM)
 							websWrite(wp, "%d %s\n", sensor, unit);
 						else
-							websWrite(wp, "%d.0 %s\n", sensor, unit);
+							websWrite(wp, "%.1f %s\n", get_scaling(type, sensor, scale), unit);
 					}
 				}
 				websWrite(wp, "</span>&nbsp;\n");
