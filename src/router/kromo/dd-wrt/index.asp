@@ -516,9 +516,9 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("idx.lengths"); %></div>
-									<select name="yards">
-										<option value="0" <% nvs("yards", "0"); %>>Meter</option>
-										<option value="1" <% nvs("yards", "1"); %>>Yards</option>
+									<select name="feet">
+										<option value="0" <% nvs("feet", "0"); %>>Meter</option>
+										<option value="1" <% nvs("feet", "1"); %>>Feed</option>
 									</select>
 								</div>
 							</fieldset><br />
