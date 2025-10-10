@@ -2660,6 +2660,7 @@ long long getfreespace(const char *path)
 	return val;
 }
 
+/* todo: use integer math instead of float by extending values, since webgui should always use fast integer math */
 float celsius_to_fahrenheit(float celsius)
 {
 	return (celsius * 9.0 / 5.0) + 32;
