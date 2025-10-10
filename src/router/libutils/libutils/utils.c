@@ -2659,3 +2659,18 @@ long long getfreespace(const char *path)
 		val *= s.f_frsize;
 	return val;
 }
+
+float celsius_to_fahrenheit(float celsius)
+{
+	return (celsius * 9.0 / 5.0) + 32;
+}
+
+float get_temperature(float celsius)
+{
+	return nvram_match("imperial", "1") ? celsius_to_fahrenheit(celsius) : celsius;
+}
+
+char *get_temperature_unit(void)
+{
+	return nvram_match("imperial", "1") ? "&#176;F" : "&#176;C";
+}

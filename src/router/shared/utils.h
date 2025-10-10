@@ -1738,6 +1738,10 @@ char *getMountedDrives(void);
 char *getAllDrives(void);
 char *strstrtok(char *str, char del);
 struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr);
+float celsius_to_fahrenheit(float celsius);
+float get_temperature(float celsius);
+char *get_temperature_unit(void);
+
 long long getfreespace(const char *path);
 #define ETHER_ADDR_STR_LEN 18 /* 18-bytes of Ethernet address buffer length */
 #ifndef ETHER_ADDR_LEN
