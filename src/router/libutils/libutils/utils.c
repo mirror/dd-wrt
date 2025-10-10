@@ -2668,7 +2668,7 @@ float celsius_to_fahrenheit(float celsius)
 
 float meter_to_feet(float meter)
 {
-	return (celsius * 3.28084);
+	return (meter * 3.28084);
 }
 
 float get_temperature(float celsius)
