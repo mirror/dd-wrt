@@ -506,11 +506,19 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<% ifndef("UNITS", "<!--"); %>
 							<fieldset>
+								<legend><% tran("idx.units"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("idx.units"); %></div>
+									<div class="label"><% tran("idx.temperature"); %></div>
 									<select name="fahrenheit">
 										<option value="0" <% nvs("fahrenheit", "0"); %>>Celsius</option>
 										<option value="1" <% nvs("fahrenheit", "1"); %>>Fahrenheit</option>
+									</select>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("idx.lengths"); %></div>
+									<select name="yards">
+										<option value="0" <% nvs("yards", "0"); %>>Meter</option>
+										<option value="1" <% nvs("yards", "1"); %>>Yards</option>
 									</select>
 								</div>
 							</fieldset><br />
