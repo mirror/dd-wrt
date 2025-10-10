@@ -2681,7 +2681,7 @@ float get_length(float meter)
 	return nvram_match("feet", "1") ? meter_to_feet(meter) : meter;
 }
 
-float get_length_unit(float meter)
+char *get_length_unit(float meter)
 {
 	return nvram_match("fahrenheit", "1") ? "ft" : "m";
 }
