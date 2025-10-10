@@ -2667,10 +2667,10 @@ float celsius_to_fahrenheit(float celsius)
 
 float get_temperature(float celsius)
 {
-	return nvram_match("imperial", "1") ? celsius_to_fahrenheit(celsius) : celsius;
+	return nvram_match("fahrenheit", "1") ? celsius_to_fahrenheit(celsius) : celsius;
 }
 
 char *get_temperature_unit(void)
 {
-	return nvram_match("imperial", "1") ? "&#176;F" : "&#176;C";
+	return nvram_match("fahrenheit", "1") ? "&#176;F" : "&#176;C";
 }
