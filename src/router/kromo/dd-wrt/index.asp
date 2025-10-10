@@ -504,6 +504,7 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
+							<% ifndef("UNITS", "<!--"); %>
 							<fieldset>
 								<div class="setting">
 									<div class="label"><% tran("idx.units"); %></div>
@@ -513,6 +514,7 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 							</fieldset><br />
+							<% ifndef("UNITS", "-->"); %>
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
