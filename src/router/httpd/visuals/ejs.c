@@ -817,6 +817,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_GEOIP
 	{ "GEOIP", NULL },
 #endif
+#ifdef HAVE_CPUTEMP
+	{ "UNITS", NULL },
+#endif
 	{ NULL, NULL }
 };
 
