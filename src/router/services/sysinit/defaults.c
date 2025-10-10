@@ -3754,6 +3754,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_CPUTEMP
 	{ "fahrenheit", "0" },
 #endif
+	{ "feet", "0" },
 	{ 0, 0 }
 };
 #else
