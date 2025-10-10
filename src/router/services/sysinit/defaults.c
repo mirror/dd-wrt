@@ -3751,6 +3751,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "smcrouted_flushrtsec", "0" },
 	{ "smcrouted_loglevel", "info" },
 #endif
+#ifdef HAVE_CPUTEMP
+	{ "fahrenheit", "0" },
+#endif
 	{ 0, 0 }
 };
 #else
