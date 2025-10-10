@@ -1321,6 +1321,8 @@ idx.ntp_input_placeholder="2.pool.ntp.org 212.18.3.19 88.99.174.22";
 idx.ntp_client="Enable Client";
 idx.ntp_timer="Update Interval";
 idx.units="Units";
+idx.temperature="Temperature";
+idx.lengths="Lengths";
 
 //help container
 var hidx=new Object();

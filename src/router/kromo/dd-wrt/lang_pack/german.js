@@ -1236,6 +1236,8 @@ idx.ntp_client="NTP-Client";
 idx.ntp_timer="Updateintervall";
 idx.ignore_wan_dns="Ignoriere WAN DNS";
 idx.units="Einheiten";
+idx.temperature="Temperaturen";
+idx.lengths="Längen";
 
 //help container
 
