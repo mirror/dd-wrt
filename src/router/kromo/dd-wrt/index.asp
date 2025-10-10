@@ -508,7 +508,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<div class="setting">
 									<div class="label"><% tran("idx.units"); %></div>
-									<select name="sfe">
+									<select name="fahrenheit">
 										<option value="0" <% nvs("fahrenheit", "0"); %>>Celsius</option>
 										<option value="1" <% nvs("fahrenheit", "1"); %>>Fahrenheit</option>
 									</select>
