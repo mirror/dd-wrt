@@ -2666,7 +2666,22 @@ float celsius_to_fahrenheit(float celsius)
 	return (celsius * 9.0 / 5.0) + 32;
 }
 
+float meter_to_feet(float meter)
+{
+	return (celsius * 3.28084);
+}
+
 float get_temperature(float celsius)
+{
+	return nvram_match("fahrenheit", "1") ? celsius_to_fahrenheit(celsius) : celsius;
+}
+
+float get_lengths(float meter)
+{
+	return nvram_match("feet", "1") ? meter_to_feet(meter) : meter;
+}
+
+float get_leng(float celsius)
 {
 	return nvram_match("fahrenheit", "1") ? celsius_to_fahrenheit(celsius) : celsius;
 }
