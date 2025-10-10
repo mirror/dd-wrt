@@ -2676,9 +2676,14 @@ float get_temperature(float celsius)
 	return nvram_match("fahrenheit", "1") ? celsius_to_fahrenheit(celsius) : celsius;
 }
 
-float get_lengths(float meter)
+float get_length(float meter)
 {
 	return nvram_match("feet", "1") ? meter_to_feet(meter) : meter;
+}
+
+float get_length_unit(float meter)
+{
+	return nvram_match("fahrenheit", "1") ? "ft" : "m";
 }
 
 char *get_temperature_unit(void)
