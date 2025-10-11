@@ -3971,7 +3971,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
-			nvram_match("feet", "1") ? "feet" : "meter");
+			nvram_match("feet", "1") ? "feet" : "meters");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
@@ -5213,7 +5213,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
-			nvram_match("feet", "1") ? "feet" : "meter");
+			nvram_match("feet", "1") ? "feet" : "meters");
 
 		websWrite(wp, "</div>\n");
 	}
