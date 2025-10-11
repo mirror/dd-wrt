@@ -320,7 +320,6 @@ rept:;
 	goto rept;
 }
 
-
 #define ASSOCLIST_TMP "/tmp/.wl_assoclist"
 #define RSSI_TMP "/tmp/.rssi"
 #define ASSOCLIST_CMD "wl assoclist"
@@ -2973,8 +2972,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\ onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"" /> dBm (Max %d)\n",
-		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\ onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"" /
+			> dBm(Max % d)\n ",
+			power,
+		txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
 #else
 	websWrite(
 		wp,
@@ -3966,10 +3967,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-			power, nvram_default_get(power, "2000"));
+			power, (int)get_length(nvram_default_get(power, "2000")));
 		websWrite(
 			wp,
-			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
+			nvram_match("feet", "1") ? "feet" : "meter");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
@@ -5207,10 +5209,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-			power, nvram_default_get(power, "2000"));
+			power, (int)get_length(nvram_default_get(power, "2000")));
 		websWrite(
 			wp,
-			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
+			nvram_match("feet", "1") ? "feet" : "meter");
+
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
