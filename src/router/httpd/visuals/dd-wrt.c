@@ -3966,8 +3966,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		show_caption(wp, "label", "wl_basic.label6", NULL);
 		websWrite(
 			wp,
-			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-			power, (int)get_length(nvram_default_get(power, "2000")));
+			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%d\" />\n",
+			power, (int)get_length((float)nvram_default_geti(power, "2000")));
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
@@ -5208,8 +5208,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		show_caption(wp, "label", "wl_basic.label6", NULL);
 		websWrite(
 			wp,
-			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-			power, (int)get_length(nvram_default_get(power, "2000")));
+			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%d\" />\n",
+			power, (int)get_length((float)nvram_default_geti(power, "2000")));
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
