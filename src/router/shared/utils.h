@@ -1744,7 +1744,7 @@ float feet_to_meter(float meter);
 float get_temperature(float celsius);
 float get_length(float meter);
 float set_length(float feet);
-char * get_length_unit(float meter);
+char *get_length_unit(void);
 char *get_temperature_unit(void);
 
 long long getfreespace(const char *path);
