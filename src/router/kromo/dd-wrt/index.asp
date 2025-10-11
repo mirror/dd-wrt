@@ -504,25 +504,6 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
-							<% ifndef("UNITS", "<!--"); %>
-							<fieldset>
-								<legend><% tran("idx.units"); %></legend>
-								<div class="setting">
-									<div class="label"><% tran("idx.temperature"); %></div>
-									<select name="fahrenheit">
-										<option value="0" <% nvs("fahrenheit", "0"); %>>Celsius</option>
-										<option value="1" <% nvs("fahrenheit", "1"); %>>Fahrenheit</option>
-									</select>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("idx.lengths"); %></div>
-									<select name="feet">
-										<option value="0" <% nvs("feet", "0"); %>><% tran("share.meter"); %></option>
-										<option value="1" <% nvs("feet", "1"); %>><% tran("share.Feet"); %></option>
-									</select>
-								</div>
-							</fieldset><br />
-							<% ifndef("UNITS", "-->"); %>
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
