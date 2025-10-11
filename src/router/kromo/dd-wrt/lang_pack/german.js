@@ -207,6 +207,7 @@ share.styl_dark="Dunkles Farbschema";
 share.err="Fehler";
 share.errs="Fehler";
 share.meters="Meter";
+share.meter="Meter";
 share.feet="Fuß";
 share.vht80plus80="80+80 MHz";
 share.vht160="160 MHz";

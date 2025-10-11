@@ -208,6 +208,7 @@ share.styl_opt="Enable Sticky Footer";
 share.err="error";
 share.errs="errors";
 share.meters="meters";
+share.meter="meter";
 share.feet="feet";
 share.vht80plus80="80+80 MHz";
 share.vht160="160 MHz";
