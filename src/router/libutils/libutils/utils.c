@@ -2671,6 +2671,11 @@ float meter_to_feet(float meter)
 	return (meter * 3.28084);
 }
 
+float feet_to_meter(float feet)
+{
+	return (feet / 3.28084);
+}
+
 float get_temperature(float celsius)
 {
 	return nvram_match("fahrenheit", "1") ? celsius_to_fahrenheit(celsius) : celsius;
@@ -2679,6 +2684,11 @@ float get_temperature(float celsius)
 float get_length(float meter)
 {
 	return nvram_match("feet", "1") ? meter_to_feet(meter) : meter;
+}
+
+float set_length(float feet)
+{
+	return nvram_match("feet", "1") ? feet_to_meter(feet) : feet;
 }
 
 char *get_length_unit(float meter)
