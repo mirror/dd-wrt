@@ -1740,8 +1740,10 @@ char *strstrtok(char *str, char del);
 struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr);
 float celsius_to_fahrenheit(float celsius);
 float meter_to_feet(float meter);
+float feet_to_meter(float meter);
 float get_temperature(float celsius);
 float get_length(float meter);
+float set_length(float feet);
 char * get_length_unit(float meter);
 char *get_temperature_unit(void);
 
