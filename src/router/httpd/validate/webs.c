@@ -5589,7 +5589,12 @@ static void save_prefix(webs_t wp, char *prefix)
 				nvram_set("wl2_ssid", wl);
 		}
 	}
-	copytonv_prefix(wp, "distance", prefix);
+	snprintf(n, sizeof(n), "%s_distance", prefix);
+	char *distance = websGetVar(wp, n, NULL);
+	if (distance) {
+		nvram_nseti((int)get_length(atoi(distance)), "%s_distance", prefix);
+	}
+
 #ifdef HAVE_MADWIFI
 	{
 		snprintf(n, sizeof(n), "%s_txpwrdbm", prefix);
