@@ -421,7 +421,7 @@ EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t **argv)
 	if (ack <= 0 || distance <= 0)
 		websWrite(wp, "N/A");
 	else
-		websWrite(wp, "%d&#181;s (%d%s)", ack, (int)meter_to_feet(distance), get_length_unit());
+		websWrite(wp, "%d&#181;s (%d%s)", ack, (int)get_length(distance), get_length_unit());
 }
 
 EJ_VISIBLE void ej_show_acktiming(webs_t wp, int argc, char_t **argv)

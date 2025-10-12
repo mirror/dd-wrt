@@ -3970,8 +3970,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			power, (int)get_length((float)nvram_default_geti(power, 2000)));
 		websWrite(
 			wp,
-			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
-			nvram_match("feet", "1") ? "feet" : "meters");
+			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": %d \" + share.%s + \")\");\n//]]>\n</script></span>\n",
+			get_length(500), nvram_match("feet", "1") ? "feet" : "meters");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
@@ -5212,8 +5212,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			power, (int)get_length((float)nvram_default_geti(power, 2000)));
 		websWrite(
 			wp,
-			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.%s + \")\");\n//]]>\n</script></span>\n",
-			nvram_match("feet", "1") ? "feet" : "meters");
+			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": %d \" + share.%s + \")\");\n//]]>\n</script></span>\n",
+			get_length(500), nvram_match("feet", "1") ? "feet" : "meters");
 
 		websWrite(wp, "</div>\n");
 	}
