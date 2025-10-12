@@ -130,7 +130,7 @@ export RANLIB := $(CROSS_COMPILE)gcc-ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 export CFLAGS := $(COPTS)
-export MIPS16_OPT:= -minterlink-mips16 -mips16
+#export MIPS16_OPT:= -minterlink-mips16 -mips16
 
 #
 # Install and target directories
@@ -258,7 +258,7 @@ compress_lzma:
 #	cp $(TOP)/lzma-loader/realtek_rtl931x/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
 #else
 	lzma e -pb2 -lc1 -lp2 $(ARCH)-uclibc/vmlinux.bin lzma-loader/realtek/vmlinux.lzma
-	xz -z -9 -e -F lzma -c $(ARCH)-uclibc/vmlinux.bin > lzma-loader/realtek.xz/vmlinux.xz
+#	xz -z -9 -e -F lzma -c $(ARCH)-uclibc/vmlinux.bin > lzma-loader/realtek.xz/vmlinux.xz
 	make -C lzma-loader/realtek clean LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 	make -C lzma-loader/realtek LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate.webflash
