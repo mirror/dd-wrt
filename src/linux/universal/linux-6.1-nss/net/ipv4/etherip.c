@@ -544,12 +544,13 @@ static int __init etherip_init(void)
 	strcpy(p->parms.name, "etherip0");
 	p->parms.iph.protocol = IPPROTO_ETHERIP;
 
-	if ((err = register_netdev(etherip_tunnel_dev)))
-		goto err1;
-
 	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
 	if (!etherip_tunnel_dev->tstats)
 		return -ENOMEM;
+
+	if ((err = register_netdev(etherip_tunnel_dev)))
+		goto err1;
+
 
 out:
 	return err;
