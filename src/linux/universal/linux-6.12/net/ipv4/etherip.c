@@ -66,8 +66,7 @@ struct etherip_tunnel {
 
 static void etherip_dev_free(struct net_device *dev)
 {
-	if (dev->tstats)
-		free_percpu(dev->tstats);
+	free_percpu(dev->tstats);
 	free_netdev(dev);
 }
 
@@ -464,7 +463,6 @@ static int etherip_rcv(struct sk_buff *skb)
 	tunnel = etherip_tunnel_locate(iph->saddr);
 	if (tunnel == NULL)
 		goto drop;
-//	struct pcpu_tstats *tstats;
 
 	dev = tunnel->dev;
 	secpath_reset(skb);
@@ -496,7 +494,6 @@ drop:
 accept:
 	dev_sw_netstats_rx_add(tunnel->dev, skb->len);
 	
-//	tunnel->dev->last_rx = jiffies;
 	tunnel->dev->stats.rx_packets++;
 	tunnel->dev->stats.rx_bytes += skb->len;
 	nf_reset_ct(skb);
@@ -545,12 +542,14 @@ static int __init etherip_init(void)
 	strcpy(p->parms.name, "etherip0");
 	p->parms.iph.protocol = IPPROTO_ETHERIP;
 
-//	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
-//	if (!etherip_tunnel_dev->tstats)
-//		return -ENOMEM;
+	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
+	if (!etherip_tunnel_dev->tstats)
+		return -ENOMEM;
 
-	if ((err = register_netdev(etherip_tunnel_dev)))
+	if ((err = register_netdev(etherip_tunnel_dev))) {
+		free_percpu(etherip_tunnel_dev->tstats);
 		goto err1;
+	}
 
 
 out:
