@@ -235,6 +235,7 @@ int p54_download_eeprom(struct p54_common *priv, void *buf,
 
 	mutex_lock(&priv->eeprom_mutex);
 	priv->eeprom = buf;
+	priv->eeprom_slice_size = len;
 	eeprom_hdr = (struct p54_eeprom_lm86 *) skb_put(skb,
 		eeprom_hdr_size + len);
 
@@ -258,6 +259,7 @@ int p54_download_eeprom(struct p54_common *priv, void *buf,
 		ret = -EBUSY;
 	}
 	priv->eeprom = NULL;
+	priv->eeprom_slice_size = 0;
 	mutex_unlock(&priv->eeprom_mutex);
 	return ret;
 }

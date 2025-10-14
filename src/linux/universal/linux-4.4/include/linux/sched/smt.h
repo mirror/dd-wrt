@@ -12,7 +12,7 @@ static __always_inline bool sched_smt_active(void)
 	return atomic_read(&sched_smt_present);
 }
 #else
-static inline bool sched_smt_active(void) { return false; }
+static __always_inline bool sched_smt_active(void) { return false; }
 #endif
 
 void arch_smt_update(void);

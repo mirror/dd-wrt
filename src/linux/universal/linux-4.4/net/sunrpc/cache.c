@@ -110,6 +110,8 @@ struct cache_head *sunrpc_cache_lookup(struct cache_detail *detail,
 
 	hlist_add_head(&new->cache_list, head);
 	detail->entries++;
+	if (detail->nextcheck > new->expiry_time)
+		detail->nextcheck = new->expiry_time + 1;
 	cache_get(new);
 	write_unlock(&detail->hash_lock);
 

@@ -1300,6 +1300,7 @@ static int wacom_initialize_remote(struct wacom *wacom)
 	if (error) {
 		hid_err(wacom->hdev,
 			"cannot create sysfs group err: %d\n", error);
+		kobject_put(wacom->remote_dir);
 		return error;
 	}
 

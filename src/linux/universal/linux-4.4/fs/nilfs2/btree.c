@@ -2090,9 +2090,11 @@ static int nilfs_btree_propagate(struct nilfs_bmap *btree,
 
 	ret = nilfs_btree_do_lookup(btree, path, key, NULL, level + 1, 0);
 	if (ret < 0) {
-		if (unlikely(ret == -ENOENT))
+		if (unlikely(ret == -ENOENT)) {
 			printk(KERN_CRIT "%s: key = %llu, level == %d\n",
 			       __func__, (unsigned long long)key, level);
+			ret = -EINVAL;
+		}
 		goto out;
 	}
 

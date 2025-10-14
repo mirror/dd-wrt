@@ -2453,6 +2453,7 @@ u16 __skb_tx_hash(const struct net_device *dev, struct sk_buff *skb,
 	u16 qcount = num_tx_queues;
 
 	if (skb_rx_queue_recorded(skb)) {
+		BUILD_BUG_ON_INVALID(qcount == 0);
 		hash = skb_get_rx_queue(skb);
 		while (unlikely(hash >= num_tx_queues))
 			hash -= num_tx_queues;

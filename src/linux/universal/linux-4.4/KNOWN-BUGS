@@ -19,6 +19,10 @@ architectures.
 Random rewrite from 4.9.320 was not backported. We have seen no good
 explanation why it is needed, and it is rather intrusive.
 
+Workarounds for Intel Indirect Target Selection (CVE-2024-28956) bugs
+were not backported to 5.10-stable and older, and thus are not present
+in here either.
+
 These commits were not backported and may need more investigation:
 
 be8173bc1 | mm: fix race between MADV_FREE reclaim and blkdev direct IO read

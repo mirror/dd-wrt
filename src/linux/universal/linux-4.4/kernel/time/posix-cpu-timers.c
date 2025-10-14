@@ -1193,6 +1193,15 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
 	WARN_ON_ONCE_NONRT(!irqs_disabled());
 
 	/*
+	 * Ensure that release_task(tsk) can't happen while
+	 * handle_posix_cpu_timers() is running. Otherwise, a concurrent
+	 * posix_cpu_timer_del() may fail to lock_task_sighand(tsk) and
+	 * miss timer->it.cpu.firing != 0.
+	 */
+	if (tsk->exit_state)
+		return;
+
+	/*
 	 * The fast path checks that there are no expired thread or thread
 	 * group timers.  If that's so, just return.
 	 */

@@ -696,6 +696,8 @@ static int usbhs_remove(struct platform_device *pdev)
 
 	dev_dbg(&pdev->dev, "usb remove\n");
 
+	flush_delayed_work(&priv->notify_hotplug_work);
+
 	dfunc->notify_hotplug = NULL;
 
 	/* power off */

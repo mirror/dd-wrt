@@ -349,6 +349,7 @@ static int rose_del_node(struct rose_route_struct *rose_route,
 				case 1:
 					rose_node->neighbour[1] =
 						rose_node->neighbour[2];
+					break;
 				case 2:
 					break;
 				}
@@ -509,6 +510,7 @@ void rose_rt_device_down(struct net_device *dev)
 					t->neighbour[0] = t->neighbour[1];
 				case 1:
 					t->neighbour[1] = t->neighbour[2];
+					break;
 				case 2:
 					break;
 				}
