@@ -1,6 +1,6 @@
 #!/bin/sh
 [[ ! -z $(nvram get wg_debug) ]] && { DEBUG=1; set -x; }
-SLEEPTIME=$($nv get oet_sleeptime)
+SLEEPTIME=$($nvram get oet_sleeptime)
 : "${SLEEPTIME:=0}"
 sleep $SLEEPTIME
 # run asynchrounous of firewall
