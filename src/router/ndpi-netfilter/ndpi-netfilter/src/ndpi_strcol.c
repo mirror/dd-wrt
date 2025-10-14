@@ -35,9 +35,10 @@ str_collect_t *c;
     if(!num_start)
 	    num_start =  128;
 
-    c = (str_collect_t *)kmalloc(sizeof(str_collect_t)-sizeof(c->s) + num_start + 1, GFP_KERNEL);
-    if(!c) 
-	return c;
+    /* allocate struct header + room for num_start chars + terminating NUL */
+    c = (str_collect_t *)kmalloc(sizeof(*c) + num_start + 1, GFP_KERNEL);
+    if (!c)
+        return NULL;
 
     c->max  = num_start;
     c->last = 0;

@@ -2506,7 +2506,10 @@ static struct xt_target ndpi_tg_reg __read_mostly = {
         .me             = THIS_MODULE,
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+static void bt_port_gc(struct timer_list *t) {
+	struct ndpi_net *n = timer_container_of(n, t, gc);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 static void bt_port_gc(struct timer_list *t) {
 	struct ndpi_net *n = from_timer(n, t, gc);
 #else

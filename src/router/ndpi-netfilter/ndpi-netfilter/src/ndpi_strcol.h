@@ -7,7 +7,7 @@
 
 typedef struct str_collect {
 	size_t	 max,last;
-	char	 s[0];
+	char	 s[];
 } str_collect_t;
 
 typedef struct hosts_str {
