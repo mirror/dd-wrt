@@ -2982,6 +2982,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		}
 #endif
 	}
+#endif
 	for (i = 0; i < c; i++) {
 		adjust_regulatory(i);
 	}
