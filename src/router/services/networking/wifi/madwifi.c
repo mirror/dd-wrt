@@ -2970,14 +2970,16 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
-		sleep(2);
-		eval("iw", "reg", "set", iso);
+
+		if (strcmp(iso, "PA")) {
+			sleep(3);
+			eval("iw", "reg", "set", iso);
+		}
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 			eval("reboot");
 		}
-#endif
 	}
 #endif
 	for (i = 0; i < c; i++) {
@@ -3007,8 +3009,11 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
-		sleep(2);
-		eval("iw", "reg", "set", iso);
+
+		if (strcmp(iso, "PA")) {
+			sleep(3);
+			eval("iw", "reg", "set", iso);
+		}
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
