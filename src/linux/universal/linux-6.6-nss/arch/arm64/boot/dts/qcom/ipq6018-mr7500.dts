@@ -590,8 +590,13 @@
 			};
 
 			partition@b380000 {
+				label = "oops";
+				reg = <0x00b380000 0x00400000>;
+				
+			};
+			partition@b780000 {
 				label = "ddwrt";
-				reg = <0x00b380000 0x013d00000>;
+				reg = <0x00b780000 0x013900000>;
 				
 			};
 		};
