@@ -2980,8 +2980,8 @@ void configure_wifi(void) // madwifi implementation for atheros based
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 			eval("reboot");
 		}
-	}
 #endif
+	}
 	for (i = 0; i < c; i++) {
 		adjust_regulatory(i);
 	}
