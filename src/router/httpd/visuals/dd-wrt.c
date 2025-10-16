@@ -3971,7 +3971,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": %d \" + share.%s + \")\");\n//]]>\n</script></span>\n",
-			(int)get_length((float)(500), nvram_match("feet", "1") ? "feet" : "meters");
+			(int)get_length((float)500), nvram_match("feet", "1") ? "feet" : "meters");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
