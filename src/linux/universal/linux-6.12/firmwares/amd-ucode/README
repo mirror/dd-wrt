@@ -30,7 +30,6 @@ Microcode patches in microcode_amd_fam15h.bin:
 Microcode patches in microcode_amd_fam16h.bin:
   Family=0x16 Model=0x00 Stepping=0x01: Patch=0x0700010f Length=3458 bytes
 
-
 Microcode patches in microcode_amd_fam17h.bin:
   Family=0x17 Model=0x71 Stepping=0x00: Patch=0x08701034 Length=3200 bytes
   Family=0x17 Model=0x01 Stepping=0x02: Patch=0x0800126f Length=3200 bytes
@@ -42,11 +41,15 @@ Microcode patches in microcode_amd_fam17h.bin:
 
 Microcode patches in microcode_amd_fam19h.bin:
   Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a00107a Length=5568 bytes
-  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d5 Length=5568 bytes
-  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001238 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011de Length=5568 bytes
+    Minimum base ucode version for loading: 0x0a0011d9
+  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001247 Length=5568 bytes
+    Minimum base ucode version for loading: 0x0a001242
   Family=0x19 Model=0x08 Stepping=0x02: Patch=0x0a00820d Length=5568 bytes
-  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101148 Length=5568 bytes
-  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101248 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101158 Length=5568 bytes
+    Minimum base ucode version for loading: 0x0a101153
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101253 Length=5568 bytes
+    Minimum base ucode version for loading: 0x0a10124e
   Family=0x19 Model=0x18 Stepping=0x01: Patch=0x0a108109 Length=5568 bytes
   Family=0x19 Model=0x21 Stepping=0x00: Patch=0x0a20102e Length=5568 bytes
   Family=0x19 Model=0x21 Stepping=0x02: Patch=0x0a201211 Length=5568 bytes
@@ -58,7 +61,14 @@ Microcode patches in microcode_amd_fam19h.bin:
   Family=0x19 Model=0x78 Stepping=0x00: Patch=0x0a708008 Length=5568 bytes
   Family=0x19 Model=0x7c Stepping=0x00: Patch=0x0a70c008 Length=5568 bytes
   Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116 Length=5568 bytes
-  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00215 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa0021c Length=5568 bytes
+    Minimum base ucode version for loading: 0x0aa00219
+
+Microcode patches in microcode_amd_fam1ah.bin:
+  Family=0x1a Model=0x02 Stepping=0x01: Patch=0x0b002151 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b002140
+  Family=0x1a Model=0x11 Stepping=0x00: Patch=0x0b10104e Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b001040
 
 NOTE: For Genoa (Family=0x19 Model=0x11) and Bergamo (Family=0x19 Model=0xa0),
 either AGESA version >= 1.0.0.8 OR a kernel with the following commit is
