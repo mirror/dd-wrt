@@ -146,6 +146,32 @@ static void check_fan(int brand)
 	}
 #endif
 }
+
+static void check_wifi(void)
+{
+	int ifcount = getdevicecount();
+	int c = 0;
+	for (c = 0; c < ifcount; c++) {
+		char interface[32];
+		sprintf(interface, "wlan%d", c);
+		if (is_mac80211(interface)) {
+			struct mac80211_info *mac80211_info;
+			struct wifi_client_info *wc;
+			mac80211_info = mac80211_assoclist(interface);
+			for (wc = mac80211_info->wci; wc; wc = wc->next) {
+				if (is_ath11k(wc->ifname)) {
+					if (!(wc->signal - wc->noise)) {
+						dd_logerror("ath11k_watchdog", "zero signal issue detected om interface %s\n",
+							    wc->ifname)
+					}
+				}
+			}
+			free_wifi_clients(mac80211_info->wci);
+			free(mac80211_info);
+		}
+	}
+}
+
 static void watchdog(void)
 {
 	int brand = getRouterBrand();
@@ -250,7 +276,7 @@ static void watchdog(void)
 		//#endif
 		//#endif
 		check_fan(brand);
-
+		check_wifi();
 		sleep(5);
 	}
 }
