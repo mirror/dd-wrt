@@ -161,8 +161,8 @@ static void check_wifi(void)
 			for (wc = mac80211_info->wci; wc; wc = wc->next) {
 				if (is_ath11k(wc->ifname)) {
 					if (!(wc->signal - wc->noise)) {
-						dd_logerror("ath11k_watchdog", "zero signal issue detected om interface %s\n",
-							    wc->ifname)
+						dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n",
+							    wc->ifname);
 					}
 				}
 			}
