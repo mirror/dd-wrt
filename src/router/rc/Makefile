@@ -1119,6 +1119,12 @@ endif
 ifeq ($(CONFIG_ATH10K),y)
 CFLAGS += -DHAVE_ATH10K
 endif
+ifeq ($(CONFIG_ATH11K),y)
+CFLAGS += -DHAVE_ATH11K
+endif
+ifeq ($(CONFIG_IPQ6018),y)
+CFLAGS += -DHAVE_ATH11K
+endif
 
 ifeq ($(CONFIG_CHRONY),y)
 CFLAGS += -DHAVE_CHRONY

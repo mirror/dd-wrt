@@ -149,6 +149,7 @@ static void check_fan(int brand)
 
 static void check_wifi(void)
 {
+#ifdef HAVE_ATH11K
 	int ifcount = getdevicecount();
 	int c = 0;
 	for (c = 0; c < ifcount; c++) {
@@ -170,6 +171,7 @@ static void check_wifi(void)
 			free(mac80211_info);
 		}
 	}
+#endif
 }
 
 static void watchdog(void)
