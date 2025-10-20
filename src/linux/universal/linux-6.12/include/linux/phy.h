@@ -152,7 +152,6 @@ typedef enum {
 	PHY_INTERFACE_MODE_XGMII,
 	PHY_INTERFACE_MODE_XLGMII,
 	PHY_INTERFACE_MODE_MOCA,
-	PHY_INTERFACE_MODE_HSGMII,
 	PHY_INTERFACE_MODE_PSGMII,
 	PHY_INTERFACE_MODE_QSGMII,
 	PHY_INTERFACE_MODE_TRGMII,
@@ -262,8 +261,6 @@ static inline const char *phy_modes(phy_interface_t interface)
 		return "xlgmii";
 	case PHY_INTERFACE_MODE_MOCA:
 		return "moca";
-	case PHY_INTERFACE_MODE_HSGMII:
-		return "hsgmii";
 	case PHY_INTERFACE_MODE_PSGMII:
 		return "psgmii";
 	case PHY_INTERFACE_MODE_QSGMII:
@@ -819,24 +816,6 @@ struct phy_tdr_config {
 #define PHY_PAIR_ALL -1
 
 /**
- * enum link_inband_signalling - in-band signalling modes that are supported
- *
- * @LINK_INBAND_DISABLE: in-band signalling can be disabled
- * @LINK_INBAND_ENABLE: in-band signalling can be enabled without bypass
- * @LINK_INBAND_BYPASS: in-band signalling can be enabled with bypass
- *
- * The possible and required bits can only be used if the valid bit is set.
- * If possible is clear, that means inband signalling can not be used.
- * Required is only valid when possible is set, and means that inband
- * signalling must be used.
- */
-enum link_inband_signalling {
-	LINK_INBAND_DISABLE		= BIT(0),
-	LINK_INBAND_ENABLE		= BIT(1),
-	LINK_INBAND_BYPASS		= BIT(2),
-};
-
-/**
  * struct phy_plca_cfg - Configuration of the PLCA (Physical Layer Collision
  * Avoidance) Reconciliation Sublayer.
  *
@@ -976,19 +955,6 @@ struct phy_driver {
 	int (*get_features)(struct phy_device *phydev);
 
 	/**
-	 * @inband_caps: query whether in-band is supported for the given PHY
-	 * interface mode. Returns a bitmask of bits defined by enum
-	 * link_inband_signalling.
-	 */
-	unsigned int (*inband_caps)(struct phy_device *phydev,
-				    phy_interface_t interface);
-
-	/**
-	 * @config_inband: configure in-band mode for the PHY
-	 */
-	int (*config_inband)(struct phy_device *phydev, unsigned int modes);
-
-	/**
 	 * @get_rate_matching: Get the supported type of rate matching for a
 	 * particular phy interface. This is used by phy consumers to determine
 	 * whether to advertise lower-speed modes for that interface. It is
@@ -1044,7 +1010,8 @@ struct phy_driver {
 	 * driver for the given phydev.	 If NULL, matching is based on
 	 * phy_id and phy_id_mask.
 	 */
-	int (*match_phy_device)(struct phy_device *phydev);
+	int (*match_phy_device)(struct phy_device *phydev,
+				const struct phy_driver *phydrv);
 
 	/**
 	 * @set_wol: Some devices (e.g. qnap TS-119P II) require PHY
@@ -1257,8 +1224,6 @@ struct phy_driver {
 	 */
 	int (*led_polarity_set)(struct phy_device *dev, int index,
 				unsigned long modes);
-	int (*get_eee)(struct phy_device *dev, struct ethtool_keee *e);
-	int (*set_eee)(struct phy_device *dev, struct ethtool_keee *e);
 };
 #define to_phy_driver(d) container_of_const(to_mdio_common_driver(d),		\
 				      struct phy_driver, mdiodrv)
@@ -1875,9 +1840,6 @@ int phy_config_aneg(struct phy_device *phydev);
 int _phy_start_aneg(struct phy_device *phydev);
 int phy_start_aneg(struct phy_device *phydev);
 int phy_aneg_done(struct phy_device *phydev);
-unsigned int phy_inband_caps(struct phy_device *phydev,
-			     phy_interface_t interface);
-int phy_config_inband(struct phy_device *phydev, unsigned int modes);
 int phy_speed_down(struct phy_device *phydev, bool sync);
 int phy_speed_up(struct phy_device *phydev);
 bool phy_check_valid(int speed, int duplex, unsigned long *features);
@@ -1949,6 +1911,9 @@ void phy_attached_print(struct phy_device *phydev, const char *fmt, ...)
 char *phy_attached_info_irq(struct phy_device *phydev)
 	__malloc;
 void phy_attached_info(struct phy_device *phydev);
+
+int genphy_match_phy_device(struct phy_device *phydev,
+			    const struct phy_driver *phydrv);
 
 /* Clause 22 PHY */
 int genphy_read_abilities(struct phy_device *phydev);

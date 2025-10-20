@@ -144,7 +144,15 @@ static int gpio_regmap_get_direction(struct gpio_chip *chip,
 	if (ret)
 		return ret;
 
-	ret = regmap_read(gpio->regmap, reg, &val);
+	/*
+	 * Ensure we don't spoil the register cache with pin input values and
+	 * perform a bypassed read. This way the cache (if any) is only used and
+	 * updated on register writes.
+	 */
+	if (gpio->reg_dat_base == gpio->reg_set_base)
+		ret = regmap_read_bypassed(gpio->regmap, reg, &val);
+	else
+		ret = regmap_read(gpio->regmap, reg, &val);
 	if (ret)
 		return ret;
 

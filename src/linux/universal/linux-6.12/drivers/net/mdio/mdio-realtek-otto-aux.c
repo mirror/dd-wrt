@@ -13,6 +13,7 @@
 #define RTL8380_EXT_GPIO_INDIRECT_ACCESS	0xA09C
 #define RTL8390_EXT_GPIO_INDIRECT_ACCESS	0x0224
 #define RTL9300_EXT_GPIO_INDIRECT_ACCESS	0xC620
+#define RTL9310_EXT_GPIO_INDIRECT_ACCESS	0x07F4
 
 #define RTL83XX_AUX_MDIO_DATA_OFFSET		16
 #define RTL83XX_AUX_MDIO_RCMD_FAIL		0
@@ -49,6 +50,13 @@ static const struct realtek_aux_mdio_info info_rtl839x = {
 
 static const struct realtek_aux_mdio_info info_rtl930x = {
 	.cmd_reg = RTL9300_EXT_GPIO_INDIRECT_ACCESS,
+	.data_offset = RTL93XX_AUX_MDIO_DATA_OFFSET,
+	.rcmd_fail_mask = RTL93XX_AUX_MDIO_RCMD_FAIL,
+	.timeout_us = 19000,
+};
+
+static const struct realtek_aux_mdio_info info_rtl931x = {
+	.cmd_reg = RTL9310_EXT_GPIO_INDIRECT_ACCESS,
 	.data_offset = RTL93XX_AUX_MDIO_DATA_OFFSET,
 	.rcmd_fail_mask = RTL93XX_AUX_MDIO_RCMD_FAIL,
 	.timeout_us = 19000,
@@ -156,6 +164,10 @@ static const struct of_device_id realtek_aux_mdio_of_match[] = {
 	{
 		.compatible = "realtek,rtl9300-aux-mdio",
 		.data = &info_rtl930x,
+	},
+	{
+		.compatible = "realtek,rtl9310-aux-mdio",
+		.data = &info_rtl931x,
 	},
 	{ /* sentinel */ }
 };

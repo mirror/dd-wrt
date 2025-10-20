@@ -79,8 +79,7 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 /* Set the rate limit for a particular queue in Bits/s
  * units of the rate is 16Kbps
  */
-#if 0
-static void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
+void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
 					    int queue, u32 rate)
 {
 	if (port > priv->cpu_port)
@@ -91,7 +90,6 @@ static void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, in
 
 	sw_w32(rate, RTL838X_SCHED_Q_EGR_RATE_CTRL(port, queue));
 }
-#endif
 
 static void rtl838x_rate_control_init(struct rtl838x_switch_priv *priv)
 {
@@ -333,13 +331,11 @@ static void rtl83xx_setup_default_prio2queue(void)
 	rtl83xx_setup_prio2queue_cpu_matrix(max_available_queue);
 }
 
-#if 0
 /* Sets the output queue assigned to a port, the port can be the CPU-port */
-static void rtl839x_set_egress_queue(int port, int queue)
+void rtl839x_set_egress_queue(int port, int queue)
 {
 	sw_w32(queue << ((port % 10) *3), RTL839X_QM_PORT_QNUM(port));
 }
-#endif
 
 /* Sets the priority assigned of an ingress port, the port can be the CPU-port */
 static void rtl83xx_set_ingress_priority(int port, int priority)

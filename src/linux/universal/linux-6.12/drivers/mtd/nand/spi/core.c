@@ -19,7 +19,6 @@
 #include <linux/string.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi-mem.h>
-#include <linux/mtd/mtk_bmt.h>
 
 static int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
 {
@@ -428,8 +427,16 @@ static int spinand_read_from_cache_op(struct spinand_device *spinand,
 		 * Dirmap accesses are allowed to toggle the CS.
 		 * Toggling the CS during a continuous read is forbidden.
 		 */
-		if (nbytes && req->continuous)
-			return -EIO;
+		if (nbytes && req->continuous) {
+			/*
+			 * Spi controller with broken support of continuous
+			 * reading was detected. Disable future use of
+			 * continuous reading and return -EAGAIN to retry
+			 * reading within regular mode.
+			 */
+			spinand->cont_read_possible = false;
+			return -EAGAIN;
+		}
 	}
 
 	if (req->datalen)
@@ -842,10 +849,19 @@ static int spinand_mtd_read(struct mtd_info *mtd, loff_t from,
 
 	old_stats = mtd->ecc_stats;
 
-	if (spinand_use_cont_read(mtd, from, ops))
+	if (spinand_use_cont_read(mtd, from, ops)) {
 		ret = spinand_mtd_continuous_page_read(mtd, from, ops, &max_bitflips);
-	else
+		if (ret == -EAGAIN && !spinand->cont_read_possible) {
+			/*
+			 * Spi controller with broken support of continuous
+			 * reading was detected (see spinand_read_from_cache_op()),
+			 * repeat reading in regular mode.
+			 */
+			ret = spinand_mtd_regular_page_read(mtd, from, ops, &max_bitflips);
+		}
+	} else {
 		ret = spinand_mtd_regular_page_read(mtd, from, ops, &max_bitflips);
+	}
 
 	if (ops->stats) {
 		ops->stats->uncorrectable_errors +=
@@ -897,7 +913,7 @@ static int spinand_mtd_write(struct mtd_info *mtd, loff_t to,
 static bool spinand_isbad(struct nand_device *nand, const struct nand_pos *pos)
 {
 	struct spinand_device *spinand = nand_to_spinand(nand);
-	u8 marker[1] = { };
+	u8 marker[2] = { };
 	struct nand_page_io_req req = {
 		.pos = *pos,
 		.ooblen = sizeof(marker),
@@ -908,7 +924,7 @@ static bool spinand_isbad(struct nand_device *nand, const struct nand_pos *pos)
 
 	spinand_select_target(spinand, pos->target);
 	spinand_read_page(spinand, &req);
-	if (marker[0] != 0xff)
+	if (marker[0] != 0xff || marker[1] != 0xff)
 		return true;
 
 	return false;
@@ -1025,22 +1041,50 @@ static int spinand_mtd_block_isreserved(struct mtd_info *mtd, loff_t offs)
 	return ret;
 }
 
+static struct spi_mem_dirmap_desc *spinand_create_rdesc(
+					struct spinand_device *spinand,
+					struct spi_mem_dirmap_info *info)
+{
+	struct nand_device *nand = spinand_to_nand(spinand);
+	struct spi_mem_dirmap_desc *desc = NULL;
+
+	if (spinand->cont_read_possible) {
+		/*
+		 * spi controller may return an error if info->length is
+		 * too large
+		 */
+		info->length = nanddev_eraseblock_size(nand);
+		desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
+						  spinand->spimem, info);
+	}
+
+	if (IS_ERR_OR_NULL(desc)) {
+		/*
+		 * continuous reading is not supported by flash or
+		 * its spi controller, use regular reading
+		 */
+		spinand->cont_read_possible = false;
+
+		info->length = nanddev_page_size(nand) +
+			       nanddev_per_page_oobsize(nand);
+		desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
+						  spinand->spimem, info);
+	}
+
+	return desc;
+}
+
 static int spinand_create_dirmap(struct spinand_device *spinand,
 				 unsigned int plane)
 {
 	struct nand_device *nand = spinand_to_nand(spinand);
-	struct spi_mem_dirmap_info info = {
-		.length = nanddev_page_size(nand) +
-			  nanddev_per_page_oobsize(nand),
-	};
+	struct spi_mem_dirmap_info info = { 0 };
 	struct spi_mem_dirmap_desc *desc;
-
-	if (spinand->cont_read_possible)
-		info.length = nanddev_eraseblock_size(nand);
 
 	/* The plane number is passed in MSB just above the column address */
 	info.offset = plane << fls(nand->memorg.pagesize);
 
+	info.length = nanddev_page_size(nand) + nanddev_per_page_oobsize(nand);
 	info.op_tmpl = *spinand->op_templates.update_cache;
 	desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
 					  spinand->spimem, &info);
@@ -1050,8 +1094,7 @@ static int spinand_create_dirmap(struct spinand_device *spinand,
 	spinand->dirmaps[plane].wdesc = desc;
 
 	info.op_tmpl = *spinand->op_templates.read_cache;
-	desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
-					  spinand->spimem, &info);
+	desc = spinand_create_rdesc(spinand, &info);
 	if (IS_ERR(desc))
 		return PTR_ERR(desc);
 
@@ -1064,6 +1107,7 @@ static int spinand_create_dirmap(struct spinand_device *spinand,
 		return 0;
 	}
 
+	info.length = nanddev_page_size(nand) + nanddev_per_page_oobsize(nand);
 	info.op_tmpl = *spinand->op_templates.update_cache;
 	info.op_tmpl.data.ecc = true;
 	desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
@@ -1075,8 +1119,7 @@ static int spinand_create_dirmap(struct spinand_device *spinand,
 
 	info.op_tmpl = *spinand->op_templates.read_cache;
 	info.op_tmpl.data.ecc = true;
-	desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
-					  spinand->spimem, &info);
+	desc = spinand_create_rdesc(spinand, &info);
 	if (IS_ERR(desc))
 		return PTR_ERR(desc);
 
@@ -1117,7 +1160,7 @@ static const struct spinand_manufacturer *spinand_manufacturers[] = {
 	&ato_spinand_manufacturer,
 	&esmt_c8_spinand_manufacturer,
 	&etron_spinand_manufacturer,
-	&fidelix_spinand_manufacturer,
+	&fmsh_spinand_manufacturer,
 	&foresee_spinand_manufacturer,
 	&gigadevice_spinand_manufacturer,
 	&macronix_spinand_manufacturer,
@@ -1153,59 +1196,6 @@ static int spinand_manufacturer_match(struct spinand_device *spinand,
 		return 0;
 	}
 	return -EOPNOTSUPP;
-}
-
-static int spinand_cal_read(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen) {
-	struct spinand_device *spinand = (struct spinand_device *)priv;
-	struct device *dev = &spinand->spimem->spi->dev;
-	struct spi_mem_op op = SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, buf, readlen);
-	struct nand_pos pos;
-	struct nand_page_io_req req;
-	u8 status;
-	int ret;
-
-	if(addrlen != sizeof(struct nand_addr)/sizeof(unsigned int)) {
-		dev_err(dev, "Must provide correct addr(length) for spinand calibration\n");
-		return -EINVAL;
-	}
-
-	ret = spinand_reset_op(spinand);
-	if (ret)
-		return ret;
-
-	/* We should store our golden data in first target because
-	 * we can't switch target at this moment.
-	 */
-	pos = (struct nand_pos){
-		.target = 0,
-		.lun = *addr,
-		.plane = *(addr+1),
-		.eraseblock = *(addr+2),
-		.page = *(addr+3),
-	};
-
-	req = (struct nand_page_io_req){
-		.pos = pos,
-		.dataoffs = *(addr+4),
-		.datalen = readlen,
-		.databuf.in = buf,
-		.mode = MTD_OPS_AUTO_OOB,
-	};
-
-	ret = spinand_load_page_op(spinand, &req);
-	if (ret)
-		return ret;
-
-	ret = spinand_wait(spinand,
-			   SPINAND_READ_INITIAL_DELAY_US,
-			   SPINAND_READ_POLL_DELAY_US,
-			   &status);
-	if (ret < 0)
-		return ret;
-
-	ret = spi_mem_exec_op(spinand->spimem, &op);
-
-	return 0;
 }
 
 static int spinand_id_detect(struct spinand_device *spinand)
@@ -1459,10 +1449,6 @@ static int spinand_init(struct spinand_device *spinand)
 	if (!spinand->scratchbuf)
 		return -ENOMEM;
 
-	ret = spi_mem_do_calibration(spinand->spimem, spinand_cal_read, spinand);
-	if (ret)
-		dev_err(dev, "Failed to calibrate SPI-NAND (err = %d)\n", ret);
-
 	ret = spinand_detect(spinand);
 	if (ret)
 		goto err_free_bufs;
@@ -1588,7 +1574,6 @@ static int spinand_probe(struct spi_mem *mem)
 	if (ret)
 		return ret;
 
-	mtk_bmt_attach(mtd);
 	ret = mtd_device_register(mtd, NULL, 0);
 	if (ret)
 		goto err_spinand_cleanup;
@@ -1596,7 +1581,6 @@ static int spinand_probe(struct spi_mem *mem)
 	return 0;
 
 err_spinand_cleanup:
-	mtk_bmt_detach(mtd);
 	spinand_cleanup(spinand);
 
 	return ret;
@@ -1615,7 +1599,6 @@ static int spinand_remove(struct spi_mem *mem)
 	if (ret)
 		return ret;
 
-	mtk_bmt_detach(mtd);
 	spinand_cleanup(spinand);
 
 	return 0;
@@ -1623,7 +1606,6 @@ static int spinand_remove(struct spi_mem *mem)
 
 static const struct spi_device_id spinand_ids[] = {
 	{ .name = "spi-nand" },
-	{ .name = "u-boot-dont-touch-spi-nand" },
 	{ /* sentinel */ },
 };
 MODULE_DEVICE_TABLE(spi, spinand_ids);
@@ -1631,7 +1613,6 @@ MODULE_DEVICE_TABLE(spi, spinand_ids);
 #ifdef CONFIG_OF
 static const struct of_device_id spinand_of_ids[] = {
 	{ .compatible = "spi-nand" },
-	{ .compatible = "u-boot-dont-touch-spi-nand" },
 	{ /* sentinel */ },
 };
 MODULE_DEVICE_TABLE(of, spinand_of_ids);

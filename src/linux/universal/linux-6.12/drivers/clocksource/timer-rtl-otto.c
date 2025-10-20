@@ -25,11 +25,12 @@
 
 /*
  * The Otto platform provides multiple 28 bit timers/counters with the following
- * operating logic. If enabled the timer counts up. Per timer a counter target
- * value can be set with the minimum being 0x2 and the maximumu being 0xfffffff.
- * If the the target value is reached the timer is reset to 0. Depending on its
- * configuration the timer will then fire an interrupt. In case the timer is in
- * operating mode COUNTER it stops. In mode TIMER it will continue to count up.
+ * operating logic. If enabled the timer counts up. Per timer one can set a
+ * maximum counter value as an end marker. If end marker is reached the timer
+ * fires an interrupt. If the timer "overflows" by reaching the end marker or
+ * by adding 1 to 0x0fffffff the counter is reset to 0. When this happens and
+ * the timer is in operating mode COUNTER it stops. In mode TIMER it will
+ * continue to count up.
  */
 #define RTTM_CTRL_COUNTER	0
 #define RTTM_CTRL_TIMER		BIT(24)
@@ -40,12 +41,14 @@
 #define RTTM_MAX_DIVISOR	GENMASK(15, 0)
 
 /*
- * Timers are derived from the lexra bus (LXB) clock frequency. This is 175 MHz
- * on RTL930x and 200 MHz on the other platforms. With 6.25 MHz choose a common
- * divisor to have enough range and detail. This even allows to compare the
- * different platforms more easily.
+ * Timers are derived from the LXB clock frequency. Usually this is a fixed
+ * multiple of the 25 MHz oscillator. The 930X SOC is an exception from that.
+ * Its LXB clock has only dividers and uses the switch PLL of 2.45 GHz as its
+ * base. The only meaningful frequencies we can achieve from that are 175.000
+ * MHz and 153.125 MHz. The greatest common divisor of all explained possible
+ * speeds is 3125000. Pin the timers to this 3.125 MHz reference frequency.
  */
-#define RTTM_TICKS_PER_SEC	6250000
+#define RTTM_TICKS_PER_SEC	3125000
 
 struct rttm_cs {
 	struct timer_of		to;
@@ -109,11 +112,11 @@ static void rttm_bounce_timer(void __iomem *base, u32 mode)
 {
 	/*
 	 * When a running timer has less than ~5us left, a stop/start sequence
-	 * might fail. While the details are unknown the most evident effect is 
+	 * might fail. While the details are unknown the most evident effect is
 	 * that the subsequent interrupt will not be fired.
 	 *
 	 * As a workaround issue an intermediate restart with a very slow
-	 * frequency of ~3kHz keeping the target value. So the actual follow
+	 * frequency of ~3kHz keeping the target counter (>=8). So the follow
 	 * up restart will always be issued outside the critical window.
 	 */
 

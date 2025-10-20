@@ -36,6 +36,14 @@ config PCS_MTK_USXGMII
 	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
 	  differential pairs via an embedded LynxI PHY.
 
+config PCS_RTL_OTTO
+	tristate "Realtek Otto SerDes PCS"
+	depends on MACH_REALTEK_RTL || COMPILE_TEST
+	select PHYLINK
+	select REGMAP
+	help
+	  This module provides a driver for the Realtek SerDes PCS
+
 config PCS_RZN1_MIIC
 	tristate "Renesas RZ/N1 MII converter"
 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)

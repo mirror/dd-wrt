@@ -74,6 +74,8 @@ struct rtl9300_i2c {
 	struct mutex lock;
 };
 
+DEFINE_GUARD(rtl9300_i2c, struct rtl9300_i2c *, mutex_lock(&_T->lock), mutex_unlock(&_T->lock))
+
 enum rtl9300_i2c_xfer_type {
 	RTL9300_I2C_XFER_BYTE,
 	RTL9300_I2C_XFER_WORD,
@@ -99,9 +101,9 @@ struct rtl9300_i2c_xfer {
 #define RTL9300_I2C_MST_GLB_CTRL			0x384
 
 #define RTL9310_I2C_MST_IF_CTRL				0x1004
-#define	RTL9310_I2C_MST_IF_SEL				0x1008
-#define	RTL9310_I2C_MST_CTRL				0x0
-#define	RTL9310_I2C_MST_MEMADDR_CTRL			0x4
+#define RTL9310_I2C_MST_IF_SEL				0x1008
+#define RTL9310_I2C_MST_CTRL				0x0
+#define RTL9310_I2C_MST_MEMADDR_CTRL			0x4
 #define RTL9310_I2C_MST_DATA_CTRL			0x8
 
 static int rtl9300_i2c_reg_addr_set(struct rtl9300_i2c *i2c, u32 reg, u16 len)
@@ -296,11 +298,11 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
 	if (addr > 0x7f)
 		return -EINVAL;
 
-	mutex_lock(&i2c->lock);
+	guard(rtl9300_i2c)(i2c);
 
 	ret = rtl9300_i2c_config_chan(i2c, chan);
 	if (ret)
-		goto out_unlock;
+		return ret;
 
 	xfer.dev_addr = addr & 0x7f;
 	xfer.write = (read_write == I2C_SMBUS_WRITE);
@@ -337,27 +339,21 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
 		break;
 	default:
 		dev_err(&adap->dev, "Unsupported transaction %d\n", size);
-		ret = -EOPNOTSUPP;
-		goto out_unlock;
+		return -EOPNOTSUPP;
 	}
 
 	ret = rtl9300_i2c_prepare_xfer(i2c, &xfer);
 	if (ret)
-		goto out_unlock;
+		return ret;
 
-	ret = rtl9300_i2c_do_xfer(i2c, &xfer);
-
-out_unlock:
-	mutex_unlock(&i2c->lock);
-
-	return ret;
+	return rtl9300_i2c_do_xfer(i2c, &xfer);
 }
 
 static u32 rtl9300_i2c_func(struct i2c_adapter *a)
 {
 	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA |
-	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_READ_I2C_BLOCK |
-	       I2C_FUNC_SMBUS_WRITE_I2C_BLOCK | I2C_FUNC_SMBUS_BLOCK_DATA;
+	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_BLOCK_DATA |
+	       I2C_FUNC_SMBUS_I2C_BLOCK;
 }
 
 static const struct i2c_algorithm rtl9300_i2c_algo = {
@@ -366,7 +362,7 @@ static const struct i2c_algorithm rtl9300_i2c_algo = {
 };
 
 static struct i2c_adapter_quirks rtl9300_i2c_quirks = {
-	.flags		= I2C_AQ_NO_CLK_STRETCH,
+	.flags		= I2C_AQ_NO_CLK_STRETCH | I2C_AQ_NO_ZERO_LEN,
 	.max_read_len	= 16,
 	.max_write_len	= 16,
 };
@@ -378,7 +374,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 	struct fwnode_handle *child;
 	struct rtl9300_i2c_drv_data *drv_data;
 	struct reg_field fields[F_NUM_FIELDS];
-	u32 clock_freq, sda_num;
+	u32 clock_freq, scl_num, sda_num;
 	int ret, i = 0;
 
 	i2c = devm_kzalloc(dev, sizeof(*i2c), GFP_KERNEL);
@@ -396,9 +392,10 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	ret = device_property_read_u8(dev, "realtek,scl", &i2c->scl_num);
-	if (ret || i2c->scl_num != 1)
-		i2c->scl_num = 0;
+	ret = device_property_read_u32(dev, "realtek,scl", &scl_num);
+	if (ret || scl_num != 1)
+		scl_num = 0;
+	i2c->scl_num = (u8)scl_num;
 
 	platform_set_drvdata(pdev, i2c);
 

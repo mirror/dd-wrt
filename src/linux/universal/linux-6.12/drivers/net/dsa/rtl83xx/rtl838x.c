@@ -23,8 +23,6 @@
 #define RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(3,2)
 #define RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(1,0)
 
-extern struct mutex smi_lock;
-
 /* see_dal_maple_acl_log2PhyTmplteField and src/app/diag_v2/src/diag_acl.c */
 /* Definition of the RTL838X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -195,7 +193,7 @@ static void rtl838x_vlan_set_untagged(u32 vlan, u64 portmask)
 	/* Access UNTAG table (0) via register 1 */
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 0);
 
-	sw_w32(portmask & RTL838X_MC_PMASK_ALL_PORTS, rtl_table_data(r, 0));
+	sw_w32(portmask & 0x1fffffff, rtl_table_data(r, 0));
 	rtl_table_write(r, vlan);
 	rtl_table_release(r);
 }
@@ -263,9 +261,21 @@ static inline int rtl838x_l2_port_new_sa_fwd(int p)
 	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
 
-static inline int rtl838x_mac_link_spd_sts(int p)
+static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
 {
-	return RTL838X_MAC_LINK_SPD_STS(p);
+	config->ctrl = RTL838X_MIR_CTRL + group * 4;
+	config->spm = RTL838X_MIR_SPM_CTRL + group * 4;
+	config->dpm = RTL838X_MIR_DPM_CTRL + group * 4;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 4;
+
+	/* Enable mirroring to port across VLANs */
+	config->val |= BIT(11);
+
+	return 0;
 }
 
 inline static int rtl838x_trk_mbr_ctr(int group)
@@ -476,51 +486,25 @@ static void rtl838x_write_mcast_pmask(int idx, u64 portmask)
 	/* Access MC_PMSK (2) via register RTL8380_TBL_L2 */
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 2);
 
-	sw_w32(((u32)portmask) & RTL838X_MC_PMASK_ALL_PORTS, rtl_table_data(q, 0));
+	sw_w32(((u32)portmask) & 0x1fffffff, rtl_table_data(q, 0));
 	rtl_table_write(q, idx);
 	rtl_table_release(q);
 }
 
-static int
-rtl838x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
+static void rtl838x_vlan_profile_setup(int profile)
 {
-	u32 p;
-
-	if (idx < 0 || idx > RTL838X_VLAN_PROFILE_MAX)
-		return -EINVAL;
-
-	p = sw_r32(RTL838X_VLAN_PROFILE(idx));
-
-	*profile = (struct rtl83xx_vlan_profile) {
-		.l2_learn = RTL838X_VLAN_L2_LEARN_EN_R(p),
-		.unkn_mc_fld.pmsks_idx = {
-			.l2 = RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-			.ip = RTL838X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-			.ip6 = RTL838X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
-		},
-		.pmsk_is_idx = 1,
-	};
-
-	return 0;
-}
-
-static void
-rtl838x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
-{
-	u32 p = RTL838X_VLAN_L2_LEARN_EN(1) |
-		RTL838X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
-
-	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4)
-		p |= RTL838X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_MIN_PORTS_IDX);
-	else
-		p |= RTL838X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
-
-	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6)
-		p |= RTL838X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_MIN_PORTS_IDX);
-	else
-		p |= RTL838X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+	u32 pmask_id = UNKNOWN_MC_PMASK;
+	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for unknown MC traffic flooding */
+	u32 p = 1 | pmask_id << 1 | pmask_id << 10 | pmask_id << 19;
 
 	sw_w32(p, RTL838X_VLAN_PROFILE(profile));
+
+	/* RTL8380 and RTL8390 use an index into the portmask table to set the
+	 * unknown multicast portmask, setup a default at a safe location
+	 * On RTL93XX, the portmask is directly set in the profile,
+	 * see e.g. rtl9300_vlan_profile_setup
+	 */
+	rtl838x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x1fffffff);
 }
 
 static void rtl838x_l2_learning_setup(void)
@@ -528,9 +512,7 @@ static void rtl838x_l2_learning_setup(void)
 	/* Set portmask for broadcast traffic and unknown unicast address flooding
 	 * to the reserved entry in the portmask table used also for
 	 * multicast flooding */
-	sw_w32(RTL838X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-	       RTL838X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
-	       RTL838X_L2_FLD_PMSK);
+	sw_w32(UNKNOWN_MC_PMASK << 9 | UNKNOWN_MC_PMASK, RTL838X_L2_FLD_PMSK);
 
 	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
 	 * and per vlan (bit 2) */
@@ -605,11 +587,6 @@ static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 	priv->r->exec_tbl0_cmd(cmd);
 }
 
-static u64 rtl838x_traffic_get(int source)
-{
-	return rtl838x_get_port_reg(rtl838x_port_iso_ctrl(source));
-}
-
 static void rtl838x_traffic_set(int source, u64 dest_matrix)
 {
 	rtl838x_set_port_reg(dest_matrix, rtl838x_port_iso_ctrl(source));
@@ -626,7 +603,7 @@ static void rtl838x_traffic_disable(int source, int dest)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_838x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -638,7 +615,7 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 	v = enable ? 0x3 : 0x0;
 
 	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
-	sw_w32_mask(0x3 << 9, v << 9, rtl838x_mac_force_mode_ctrl(port));
+	sw_w32_mask(0x3 << 9, v << 9, priv->r->mac_force_mode_ctrl(port));
 
 	/* Set TX/RX EEE state */
 	if (enable) {
@@ -650,38 +627,6 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 	}
 	priv->ports[port].eee_enabled = enable;
 }
-
-#if 0
-/* Get EEE own capabilities and negotiation result */
-static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
-				    struct ethtool_eee *e, int port)
-{
-	u64 link;
-
-	if (port >= 24)
-		return -ENOTSUPP;
-
-	e->supported = SUPPORTED_100baseT_Full |
-	               SUPPORTED_1000baseT_Full;
-
-	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
-	if (!(link & BIT(port)))
-		return 0;
-
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(9))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-	}
-
-	return 0;
-}
-#endif
 
 static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
@@ -695,7 +640,7 @@ static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	/* Enable EEE MAC support on ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			rtl838x_port_eee_set(priv, i, enable);
+			priv->r->set_mac_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -1718,176 +1663,7 @@ static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
-static void rtl838x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
-{
-	struct rtl83xx_vlan_profile p;
-
-	if (rtl838x_vlan_profile_get(idx, &p) < 0)
-		return;
-
-	dev_dbg(priv->dev,
-		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
-		 UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d", idx,
-		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
-		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6);
-}
-
-void rtl83xx_fast_age(struct dsa_switch *ds, int port)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int s = priv->family_id == RTL8390_FAMILY_ID ? 2 : 0;
-
-	pr_debug("FAST AGE port %d\n", port);
-	mutex_lock(&priv->reg_mutex);
-	/* RTL838X_L2_TBL_FLUSH_CTRL register bits, 839x has 1 bit larger
-	 * port fields:
-	 * 0-4: Replacing port
-	 * 5-9: Flushed/replaced port
-	 * 10-21: FVID
-	 * 22: Entry types: 1: dynamic, 0: also static
-	 * 23: Match flush port
-	 * 24: Match FVID
-	 * 25: Flush (0) or replace (1) L2 entries
-	 * 26: Status of action (1: Start, 0: Done)
-	 */
-	sw_w32(1 << (26 + s) | 1 << (23 + s) | port << (5 + (s / 2)), priv->r->l2_tbl_flush_ctrl);
-
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26 + s));
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
-static void rtl838x_phylink_mac_link_up(struct dsa_switch *ds, int port,
-				   unsigned int mode,
-				   phy_interface_t interface,
-				   struct phy_device *phydev,
-				   int speed, int duplex,
-				   bool tx_pause, bool rx_pause)
-{
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 mcr, spdsel;
-
-	if (speed == SPEED_1000)
-		spdsel = RTL_SPEED_1000;
-	else if (speed == SPEED_100)
-		spdsel = RTL_SPEED_100;
-	else
-		spdsel = RTL_SPEED_10;
-
-	mcr = sw_r32(rtl838x_mac_force_mode_ctrl(port));
-
-	pr_debug("%s portread %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	mcr &= ~RTL838X_RX_PAUSE_EN;
-	mcr &= ~RTL838X_TX_PAUSE_EN;
-	mcr &= ~RTL838X_DUPLEX_MODE;
-	mcr &= ~RTL838X_SPEED_MASK;
-	mcr |= RTL83XX_FORCE_LINK_EN;
-	mcr |= spdsel << RTL838X_SPEED_SHIFT;
-
-	if (tx_pause)
-		mcr |= RTL838X_TX_PAUSE_EN;
-	if (rx_pause)
-		mcr |= RTL838X_RX_PAUSE_EN;
-	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-		mcr |= RTL838X_DUPLEX_MODE;
-	if (dsa_port_is_cpu(dp))
-		mcr |= RTL83XX_FORCE_EN;
-
-
-	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	sw_w32(mcr, rtl838x_mac_force_mode_ctrl(port));
-
-
-	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x3, rtl838x_mac_port_ctrl(port));
-}
-
-static void rtl838x_phylink_mac_link_down(struct dsa_switch *ds, int port,
-				     unsigned int mode,
-				     phy_interface_t interface)
-{
-	int mask = 0;
-
-	/* Stop TX/RX to port */
-	sw_w32_mask(0x3, 0, rtl838x_mac_port_ctrl(port));
-
-	/* No longer force link */
-	mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN;
-	sw_w32_mask(mask, 0, rtl838x_mac_force_mode_ctrl(port));
-}
-
-static void rtl83xx_config_interface(int port, phy_interface_t interface)
-{
-	u32 old, int_shift, sds_shift;
-
-	switch (port) {
-	case 24:
-		int_shift = 0;
-		sds_shift = 5;
-		break;
-	case 26:
-		int_shift = 3;
-		sds_shift = 0;
-		break;
-	default:
-		return;
-	}
-
-	old = sw_r32(RTL838X_SDS_MODE_SEL);
-	switch (interface) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-		if ((old >> sds_shift & 0x1f) == 4)
-			return;
-		sw_w32_mask(0x7 << int_shift, 1 << int_shift, RTL838X_INT_MODE_CTRL);
-		sw_w32_mask(0x1f << sds_shift, 4 << sds_shift, RTL838X_SDS_MODE_SEL);
-		break;
-	case PHY_INTERFACE_MODE_SGMII:
-		if ((old >> sds_shift & 0x1f) == 2)
-			return;
-		sw_w32_mask(0x7 << int_shift, 2 << int_shift, RTL838X_INT_MODE_CTRL);
-		sw_w32_mask(0x1f << sds_shift, 2 << sds_shift, RTL838X_SDS_MODE_SEL);
-		break;
-	default:
-		return;
-	}
-	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
-}
-
-static void rtl838x_phylink_mac_config(struct dsa_switch *ds, int port,
-					unsigned int mode,
-					const struct phylink_link_state *state)
-{
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	u32 mcr;
-	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
-
-	if (dsa_port_is_cpu(dp)) {
-		/* allow CRC errors on CPU-port */
-		sw_w32_mask(0, 0x8, rtl838x_mac_port_ctrl(port));
-		return;
-	}
-
-	mcr = sw_r32(rtl838x_mac_force_mode_ctrl(port));
-	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
-		pr_debug("port %d PHY autonegotiates\n", port);
-		rtl83xx_config_interface(port, state->interface);
-		mcr |= RTL838X_NWAY_EN;
-	} else {
-		mcr &= ~RTL838X_NWAY_EN;
-	}
-
-	sw_w32(mcr, rtl838x_mac_force_mode_ctrl(port));
-
-}
-
 const struct rtl838x_reg rtl838x_reg = {
-	.phylink_mac_config = rtl838x_phylink_mac_config,
-	.phylink_mac_link_down = rtl838x_phylink_mac_link_down,
-	.phylink_mac_link_up = rtl838x_phylink_mac_link_up,
-	.fast_age = rtl83xx_fast_age,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,
@@ -1900,7 +1676,6 @@ const struct rtl838x_reg rtl838x_reg = {
 	.port_iso_ctrl = rtl838x_port_iso_ctrl,
 	.traffic_enable = rtl838x_traffic_enable,
 	.traffic_disable = rtl838x_traffic_disable,
-	.traffic_get = rtl838x_traffic_get,
 	.traffic_set = rtl838x_traffic_set,
 	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
@@ -1918,7 +1693,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_tables_read = rtl838x_vlan_tables_read,
 	.vlan_set_tagged = rtl838x_vlan_set_tagged,
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
-	.vlan_profile_get = rtl838x_vlan_profile_get,
+	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
 	.vlan_profile_dump = rtl838x_vlan_profile_dump,
 	.vlan_profile_setup = rtl838x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl838x_vlan_fwd_on_inner,
@@ -1931,16 +1706,10 @@ const struct rtl838x_reg rtl838x_reg = {
 	.set_static_move_action = rtl838x_set_static_move_action,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
+	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
-	.mir_ctrl = RTL838X_MIR_CTRL,
-	.mir_dpm = RTL838X_MIR_DPM_CTRL,
-	.mir_spm = RTL838X_MIR_SPM_CTRL,
-	.mac_link_sts = RTL838X_MAC_LINK_STS,
-	.mac_link_dup_sts = RTL838X_MAC_LINK_DUP_STS,
-	.mac_link_spd_sts = rtl838x_mac_link_spd_sts,
-	.mac_rx_pause_sts = RTL838X_MAC_RX_PAUSE_STS,
-	.mac_tx_pause_sts = RTL838X_MAC_TX_PAUSE_STS,
+	.get_mirror_config = rtldsa_838x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl838x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,
@@ -1952,10 +1721,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl838x_init_eee,
-	.set_mac_eee = rtl838x_port_eee_set,
-#if 0
-	.eee_port_ability = rtl838x_eee_port_ability,
-#endif
+	.set_mac_eee = rtldsa_838x_set_mac_eee,
 	.l2_hash_seed = rtl838x_l2_hash_seed,
 	.l2_hash_key = rtl838x_l2_hash_key,
 	.read_mcast_pmask = rtl838x_read_mcast_pmask,
@@ -1999,173 +1765,6 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-int rtl838x_smi_wait_op(int timeout)
-{
-	int ret = 0;
-	u32 val;
-
-	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
-				 val, !(val & 0x1), 20, timeout);
-	if (ret)
-		pr_err("%s: timeout\n", __func__);
-
-	return ret;
-}
-
-/* Reads a register in a page from the PHY */
-int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
-{
-	int err;
-	u32 v;
-	u32 park_page;
-
-	if (port > 31) {
-		*val = 0xffff;
-		return 0;
-	}
-
-	if (page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
-	v = reg << 20 | page << 3;
-	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to a register in a page of the PHY */
-int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
-{
-	int err;
-	u32 v;
-	u32 park_page;
-
-	val &= 0xffff;
-	if (port > 31 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
-	v = reg << 20 | page << 3 | 0x4;
-	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Read an mmd register of a PHY */
-int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
-{
-	int err;
-	u32 v;
-
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = addr << 16 | reg;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to an mmd register of a PHY */
-int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
-{
-	int err;
-	u32 v;
-
-	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
-	val &= 0xffff;
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-	return err;
-}
-
 void rtl8380_get_version(struct rtl838x_switch_priv *priv)
 {
 	u32 rw_save, info_save;
@@ -2193,7 +1792,21 @@ void rtl8380_get_version(struct rtl838x_switch_priv *priv)
 	}
 }
 
-static void rtl8380_sds_rst(int mac)
+void rtl838x_vlan_profile_dump(int profile)
+{
+	u32 p;
+
+	if (profile < 0 || profile > 7)
+		return;
+
+	p = sw_r32(RTL838X_VLAN_PROFILE(profile));
+
+	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
+		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
+		profile, p & 1, (p >> 1) & 0x1ff, (p >> 10) & 0x1ff, (p >> 19) & 0x1ff);
+}
+
+void rtl8380_sds_rst(int mac)
 {
 	u32 offset = (mac == 24) ? 0 : 0x100;
 
