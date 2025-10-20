@@ -4,7 +4,7 @@
 #include "rtl8380_zyxel_gs1900_gpio.dtsi"
 
 / {
-	compatible = "zyxel,gs1900-24-v1", "realtek,rtl838x-soc";
+	compatible = "zyxel,gs1900-24-a1", "realtek,rtl838x-soc";
 	model = "Zyxel GS1900-24 v1";
 
 	memory@0 {
@@ -54,7 +54,7 @@
 	status = "okay";
 };
 
-&mdio {
+&mdio_bus0 {
 	EXTERNAL_PHY(0)
 	EXTERNAL_PHY(1)
 	EXTERNAL_PHY(2)
@@ -73,8 +73,8 @@
 	EXTERNAL_PHY(22)
 	EXTERNAL_PHY(23)
 
-	INTERNAL_PHY_SDS(24, 4)
-	INTERNAL_PHY_SDS(26, 5)
+	INTERNAL_PHY(24)
+	INTERNAL_PHY(26)
 };
 
 &switch0 {
@@ -109,6 +109,7 @@
 		port@24 {
 			reg = <24>;
 			label = "lan25";
+			pcs-handle = <&serdes4>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
@@ -117,6 +118,7 @@
 		port@26 {
 			reg = <26>;
 			label = "lan26";
+			pcs-handle = <&serdes5>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;

@@ -6,7 +6,7 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	compatible = "zyxel,gs1900-48", "realtek,rtl8393-soc";
+	compatible = "zyxel,gs1900-48-a1", "realtek,rtl8393-soc";
 	model = "Zyxel GS1900-48HP v2";
 
 /*	aliases {
@@ -42,8 +42,8 @@
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <100>;
 		};
-	};*/
-
+	};
+*/
 	/* i2c of the left SFP cage: port 49 */
 	i2c0: i2c-gpio-0 {
 		compatible = "i2c-gpio";
@@ -54,7 +54,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp0: sfp-p9 {
+	sfp0: sfp-p49 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
 		los-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
@@ -73,7 +73,7 @@
 		#size-cells = <0>;
 	};
 
-	sfp1: sfp-p10 {
+	sfp1: sfp-p50 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c1>;
 		los-gpio = <&gpio1 33 GPIO_ACTIVE_HIGH>;
@@ -94,15 +94,15 @@
 		#gpio-cells = <2>;
 		gpio-ranges = <&gpio1 0 0 37>;
 
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
+
 		poe_enable {
 			gpio-hog;
 			gpios = <13 GPIO_ACTIVE_HIGH>;
 			output-high;
-		};
-
-		led-controller {
-			compatible = "realtek,rtl8231-leds";
-			status = "disabled";
 		};
 	};
 };
@@ -158,77 +158,70 @@
 	};
 };
 
-&ethernet0 {
-	mdio: mdio-bus {
-		compatible = "realtek,rtl838x-mdio";
-		regmap = <&ethernet0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
+&mdio_bus0 {
+	/* External phy RTL8218B #1 */
+	EXTERNAL_PHY(0)
+	EXTERNAL_PHY(1)
+	EXTERNAL_PHY(2)
+	EXTERNAL_PHY(3)
+	EXTERNAL_PHY(4)
+	EXTERNAL_PHY(5)
+	EXTERNAL_PHY(6)
+	EXTERNAL_PHY(7)
 
-		/* External phy RTL8218B #1 */
-		EXTERNAL_PHY(0)
-		EXTERNAL_PHY(1)
-		EXTERNAL_PHY(2)
-		EXTERNAL_PHY(3)
-		EXTERNAL_PHY(4)
-		EXTERNAL_PHY(5)
-		EXTERNAL_PHY(6)
-		EXTERNAL_PHY(7)
+	/* External phy RTL8218B #2 */
+	EXTERNAL_PHY(8)
+	EXTERNAL_PHY(9)
+	EXTERNAL_PHY(10)
+	EXTERNAL_PHY(11)
+	EXTERNAL_PHY(12)
+	EXTERNAL_PHY(13)
+	EXTERNAL_PHY(14)
+	EXTERNAL_PHY(15)
 
-		/* External phy RTL8218B #2 */
-		EXTERNAL_PHY(8)
-		EXTERNAL_PHY(9)
-		EXTERNAL_PHY(10)
-		EXTERNAL_PHY(11)
-		EXTERNAL_PHY(12)
-		EXTERNAL_PHY(13)
-		EXTERNAL_PHY(14)
-		EXTERNAL_PHY(15)
+	/* External phy RTL8218B #3 */
+	EXTERNAL_PHY(16)
+	EXTERNAL_PHY(17)
+	EXTERNAL_PHY(18)
+	EXTERNAL_PHY(19)
+	EXTERNAL_PHY(20)
+	EXTERNAL_PHY(21)
+	EXTERNAL_PHY(22)
+	EXTERNAL_PHY(23)
 
-		/* External phy RTL8218B #3 */
-		EXTERNAL_PHY(16)
-		EXTERNAL_PHY(17)
-		EXTERNAL_PHY(18)
-		EXTERNAL_PHY(19)
-		EXTERNAL_PHY(20)
-		EXTERNAL_PHY(21)
-		EXTERNAL_PHY(22)
-		EXTERNAL_PHY(23)
+	/* External phy RTL8218B #4 */
+	EXTERNAL_PHY(24)
+	EXTERNAL_PHY(25)
+	EXTERNAL_PHY(26)
+	EXTERNAL_PHY(27)
+	EXTERNAL_PHY(28)
+	EXTERNAL_PHY(29)
+	EXTERNAL_PHY(30)
+	EXTERNAL_PHY(31)
 
-		/* External phy RTL8218B #4 */
-		EXTERNAL_PHY(24)
-		EXTERNAL_PHY(25)
-		EXTERNAL_PHY(26)
-		EXTERNAL_PHY(27)
-		EXTERNAL_PHY(28)
-		EXTERNAL_PHY(29)
-		EXTERNAL_PHY(30)
-		EXTERNAL_PHY(31)
+	/* External phy RTL8218B #5 */
+	EXTERNAL_PHY(32)
+	EXTERNAL_PHY(33)
+	EXTERNAL_PHY(34)
+	EXTERNAL_PHY(35)
+	EXTERNAL_PHY(36)
+	EXTERNAL_PHY(37)
+	EXTERNAL_PHY(38)
+	EXTERNAL_PHY(39)
 
-		/* External phy RTL8218B #5 */
-		EXTERNAL_PHY(32)
-		EXTERNAL_PHY(33)
-		EXTERNAL_PHY(34)
-		EXTERNAL_PHY(35)
-		EXTERNAL_PHY(36)
-		EXTERNAL_PHY(37)
-		EXTERNAL_PHY(38)
-		EXTERNAL_PHY(39)
+	/* External phy RTL8218B #6 */
+	EXTERNAL_PHY(40)
+	EXTERNAL_PHY(41)
+	EXTERNAL_PHY(42)
+	EXTERNAL_PHY(43)
+	EXTERNAL_PHY(44)
+	EXTERNAL_PHY(45)
+	EXTERNAL_PHY(46)
+	EXTERNAL_PHY(47)
 
-		/* External phy RTL8218B #6 */
-		EXTERNAL_PHY(40)
-		EXTERNAL_PHY(41)
-		EXTERNAL_PHY(42)
-		EXTERNAL_PHY(43)
-		EXTERNAL_PHY(44)
-		EXTERNAL_PHY(45)
-		EXTERNAL_PHY(46)
-		EXTERNAL_PHY(47)
-
-		/* RTL8393 Internal SerDes */
-		INTERNAL_PHY(48)
-		INTERNAL_PHY(49)
-	};
+	/* RTL8393 Internal SerDes */
+	INTERNAL_PHY(48)
+	INTERNAL_PHY(49)
 };
 
 &switch0 {
@@ -294,38 +287,28 @@
 		port@48 {
 			reg = <48>;
 			label = "lan49";
-			phy-mode = "sgmii";
+			pcs-handle = <&serdes12>;
+			phy-mode = "1000base-x";
 			phy-handle = <&phy48>;
+			managed = "in-band-status";
 			sfp = <&sfp0>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
-
 		};
 
 		port@49 {
 			reg = <49>;
 			label = "lan50";
-			phy-mode = "sgmii";
+			pcs-handle = <&serdes13>;
+			phy-mode = "1000base-x";
 			phy-handle = <&phy49>;
+			managed = "in-band-status";
 			sfp = <&sfp1>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
-
 		};
 
 		/* CPU-Port */
 		port@52 {
 			ethernet = <&ethernet0>;
 			reg = <52>;
-			phy-mode = "qsgmii";
+			phy-mode = "internal";
 			fixed-link {
 				speed = <1000>;
 				full-duplex;

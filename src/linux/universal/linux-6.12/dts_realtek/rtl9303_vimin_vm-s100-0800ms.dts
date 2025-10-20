@@ -7,8 +7,8 @@
 #include <dt-bindings/leds/common.h>
 
 / {
-	compatible = "tplink,tl-st1008f-v2", "realtek,rtl930x-soc";
-	model = "TP-Link TL-ST1008F v2.0";
+	compatible = "vimin,vm-s100-0800ms", "realtek,rtl930x-soc";
+	model = "Vimin VM-S100-0800MS";
 
 	memory@0 {
 		device_type = "memory";
@@ -23,59 +23,31 @@
 	keys {
 		compatible = "gpio-keys";
 
-		m1 {
-			label = "M1";
-			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
-			debounce-interval = <50>;
-			linux,code = <BTN_0>;
-			linux,input-type = <EV_SW>;
-		};
-
-		m2 {
-			label = "M2";
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
-			debounce-interval = <50>;
-			linux,code = <BTN_1>;
-			linux,input-type = <EV_SW>;
-		};
-
-		m3 {
-			label = "M3";
-			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
-			debounce-interval = <50>;
-			linux,code = <BTN_2>;
-			linux,input-type = <EV_SW>;
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
 	led_set {
 		compatible = "realtek,rtl9300-leds";
-		active-high;
+		active-low;
 
-		led_set0 = <0x0ba0 0x0a08 0x0a01>;
-	};
-
-	i2c_gpio {
-		compatible = "i2c-gpio";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		i2c-gpio,delay-us = <2>;
-		scl-gpios = <&gpio0 22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-		sda-gpios = <&gpio0 23 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-
-		gpioexp0: i2c@38 {
-			reg = <0x38>;
-			compatible = "nxp,pca9534";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+		/*
+		 * LED set 0
+		 *
+		 * - LED[0](Green): 10M/100M/1G/2.5G/5G/10G/LINK/ACT
+		 */
+		led_set0 = <0x0bab>;
 	};
 
 	sfp0: sfp-p1 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
-		mod-def0-gpio = <&gpio0 0 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 0 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -83,8 +55,9 @@
 	sfp1: sfp-p2 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c1>;
-		mod-def0-gpio = <&gpio0 1 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 1 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 4 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -92,8 +65,9 @@
 	sfp2: sfp-p3 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c2>;
-		mod-def0-gpio = <&gpio0 2 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 2 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -101,8 +75,9 @@
 	sfp3: sfp-p4 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c3>;
-		mod-def0-gpio = <&gpio0 3 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 3 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -110,8 +85,9 @@
 	sfp4: sfp-p5 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c4>;
-		mod-def0-gpio = <&gpio0 4 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 4 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -119,8 +95,9 @@
 	sfp5: sfp-p6 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c5>;
-		mod-def0-gpio = <&gpio0 5 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 5 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -128,8 +105,9 @@
 	sfp6: sfp-p7 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c6>;
-		mod-def0-gpio = <&gpio0 6 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 6 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 25 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 26 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -137,18 +115,11 @@
 	sfp7: sfp-p8 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c7>;
-		mod-def0-gpio = <&gpio0 7 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpioexp0 7 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 28 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
-	};
-
-	watchdog {
-		compatible = "linux,wdt-gpio";
-		gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
-		hw_algo = "toggle";
-		hw_margin_ms = <1200>;
-		always-running;
 	};
 };
 
@@ -182,13 +153,31 @@
 	};
 };
 
+&mdio_aux {
+	status = "okay";
+
+	gpio1: gpio@0 {
+		compatible = "realtek,rtl8231";
+		reg = <0>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio1 0 0 37>;
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
+	};
+};
+
 &spi0 {
 	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <100000000>;
+		spi-max-frequency = <10000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -213,20 +202,20 @@
 			};
 
 			partition@100000 {
-				label = "jffs2-cfg";
+				label = "jffs";
 				reg = <0x100000 0x100000>;
 			};
 
 			partition@200000 {
-				label = "jffs2-log";
+				label = "jffs2";
 				reg = <0x200000 0x100000>;
 			};
 
 			partition@300000 {
-				compatible = "openwrt,uimage", "denx,uimage";
-				reg = <0x300000 0x1d00000>;
 				label = "firmware";
-				openwrt,ih-magic = <0x93030000>;
+				reg = <0x300000 0xd00000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x93000000>;
 			};
 		};
 	};

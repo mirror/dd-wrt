@@ -4,7 +4,7 @@
 #include "rtl8380_zyxel_gs1900_gpio.dtsi"
 
 / {
-	compatible = "zyxel,gs1900-8hp-v2", "realtek,rtl838x-soc";
+	compatible = "zyxel,gs1900-8hp-b1", "realtek,rtl838x-soc";
 	model = "Zyxel GS1900-8HP v2 Switch";
 };
 

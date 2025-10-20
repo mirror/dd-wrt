@@ -4,11 +4,11 @@
 #include "rtl8380_zyxel_gs1900_gpio.dtsi"
 
 / {
-	compatible = "zyxel,gs1900-16", "realtek,rtl838x-soc";
+	compatible = "zyxel,gs1900-16-a1", "realtek,rtl838x-soc";
 	model = "Zyxel GS1900-16";
 };
 
-&mdio {
+&mdio_bus0 {
 	EXTERNAL_PHY(16)
 	EXTERNAL_PHY(17)
 	EXTERNAL_PHY(18)

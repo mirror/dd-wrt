@@ -13,12 +13,8 @@
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x00000000 0x10000000>; /* 256 MiB Lowmem */
-	};
-
-	memory@20000000 {
-		device_type = "memory";
-		reg = <0x20000000 0x10000000>; /* 256 MiB  Highmem */
+		reg = <0x00000000 0x10000000>, /* 256 MiB lowmem */
+		      <0x20000000 0x10000000>; /* 256 MiB highmem */
 	};
 
 	aliases {
@@ -49,7 +45,6 @@
 			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			label = "green:system";
 		};
 	};
 
@@ -132,68 +127,53 @@
 	};
 };
 
-&ethernet0 {
-	mdio: mdio-bus {
-		compatible = "realtek,rtl838x-mdio";
-		regmap = <&ethernet0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
+&mdio_bus0 {
+	phy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <0 0>;
+		reg = <0>;
+	};
 
-		phy0: ethernet-phy@0 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 0>;
-			reg = <0>;
-			sds = <2>;
-		};
+	phy8: ethernet-phy@8 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <0 1>;
+		reg = <8>;
+	};
 
-		phy8: ethernet-phy@8 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 1>;
-			reg = <8>;
-			sds = <3>;
-		};
+	phy16: ethernet-phy@16 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <0 2>;
+		reg = <16>;
+	};
 
-		phy16: ethernet-phy@16 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 2>;
-			reg = <16>;
-			sds = <4>;
-		};
+	phy20: ethernet-phy@20 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <0 3>;
+		reg = <20>;
+	};
 
-		phy20: ethernet-phy@20 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 3>;
-			reg = <20>;
-			sds = <5>;
-		};
+	phy24: ethernet-phy@24 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 16>;
+		reg = <24>;
+	};
 
-		phy24: ethernet-phy@24 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 16>;
-			reg = <24>;
-			sds = <6>;
-		};
+	phy25: ethernet-phy@25 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 17>;
+		reg = <25>;
+	};
 
-		phy25: ethernet-phy@25 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 17>;
-			reg = <25>;
-			sds = <7>;
-		};
+	phy26: ethernet-phy@26 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 18>;
+		reg = <26>;
+	};
 
-		phy26: ethernet-phy@26 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 18>;
-			reg = <26>;
-			sds = <8>;
-		};
-
-		phy27: ethernet-phy@27 {
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 19>;
-			reg = <27>;
-			sds = <9>;
-		};
+	phy27: ethernet-phy@27 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 19>;
+		reg = <27>;
 	};
 };
 
@@ -205,64 +185,72 @@
 		port@0 {
 			reg = <0>;
 			label = "lan01";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy0>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@8 {
 			reg = <8>;
 			label = "lan02";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes3>;
 			phy-handle = <&phy8>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@16 {
 			reg = <16>;
 			label = "lan03";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes4>;
 			phy-handle = <&phy16>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@20 {
 			reg = <20>;
 			label = "lan04";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes5>;
 			phy-handle = <&phy20>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@24 {
 			reg = <24>;
 			label = "lan05";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes6>;
 			phy-handle = <&phy24>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@25 {
 			reg = <25>;
 			label = "lan06";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes7>;
 			phy-handle = <&phy25>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@26 {
 			reg = <26>;
 			label = "lan07";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes8>;
 			phy-handle = <&phy26>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
 		port@27 {
 			reg = <27>;
 			label = "lan08";
-			phy-mode = "usxgmii";
+			pcs-handle = <&serdes9>;
 			phy-handle = <&phy27>;
+			phy-mode = "usxgmii";
 			led-set = <0>;
 		};
 
