@@ -314,6 +314,16 @@ ifeq ($(CONFIG_IPV6),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) nat46
 	-$(MAKE) -f Makefile.$(MAKEEXT) nat46-install
 endif
+ifeq ($(CONFIG_RTL8125),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8125
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8125-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8126
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8126-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8127
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8127-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8168
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8168-install
+endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) zfs
 	-$(MAKE) -f Makefile.$(MAKEEXT) zfs-install
