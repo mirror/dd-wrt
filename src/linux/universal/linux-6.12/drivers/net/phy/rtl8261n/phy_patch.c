@@ -186,7 +186,3 @@ int32 phy_patch(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode
 
     return (chk_ret == RT_ERR_CHECK_FAILED) ? chk_ret : RT_ERR_OK;
 }
-
-
-
-
