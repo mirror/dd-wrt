@@ -226,15 +226,15 @@ int internal_getRouterBrand()
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-48HP") && !strcmp(version,"v2")) {
-		setRouter("Zyxel GS1900HP-48 v2");
+		setRouter("Zyxel GS1900HP-48 B1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v1")) {
-		setRouter("Zyxel GS1900-24HP v1");
+		setRouter("Zyxel GS1900-24HP A1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v2")) {
-		setRouter("Zyxel GS1900-24HP v2");
+		setRouter("Zyxel GS1900-24HP B1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24EP")) {
@@ -246,7 +246,7 @@ int internal_getRouterBrand()
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24") && !strcmp(version,"v1")) {
-		setRouter("Zyxel GS1900-24 v1");
+		setRouter("Zyxel GS1900-24 A1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-16")) {
@@ -258,31 +258,35 @@ int internal_getRouterBrand()
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v1")) {
-		setRouter("Zyxel GS1900-8 v1");
+		setRouter("Zyxel GS1900-8 A1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v2")) {
-		setRouter("Zyxel GS1900-8 v2");
+		setRouter("Zyxel GS1900-8 B1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v1")) {
-		setRouter("Zyxel GS1900-8HP v1");
+		setRouter("Zyxel GS1900-8HP A1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v2")) {
-		setRouter("Zyxel GS1900-8HP v2");
+		setRouter("Zyxel GS1900-8HP B1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "XGS1250-12") && !strcmp(version,"V2")) {
-		setRouter("Zyxel XGS1250-12 v2");
+		setRouter("Zyxel XGS1250-12 B1");
 		return ROUTER_ZYXEL_XGS1250;
 	}
 	if (!strcmp(modelstr, "XGS1250-12")) {
-		setRouter("Zyxel XGS1250-12");
+		setRouter("Zyxel XGS1250-12 A1");
 		return ROUTER_ZYXEL_XGS1250;
 	}
-	if (!strcmp(modelstr, "XGS1210-12")) {
-		setRouter("Zyxel XGS1210-12");
+	if (!strcmp(modelstr, "XGS1210-12") && !strcmp(version,"A1")) {
+		setRouter("Zyxel XGS1210-12 A1");
+		return ROUTER_ZYXEL_XGS1250;
+	}
+	if (!strcmp(modelstr, "XGS1210-12") && !strcmp(version,"B1")) {
+		setRouter("Zyxel XGS1210-12 B1");
 		return ROUTER_ZYXEL_XGS1250;
 	}
 	if (!strcmp(modelstr, "HPE 1920-8G") && !strcmp(version,"(JG920A)")) {
