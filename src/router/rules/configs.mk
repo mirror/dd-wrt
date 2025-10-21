@@ -595,7 +595,7 @@ obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
 obj-$(CONFIG_SMCROUTE) += smcroute
-obj-$(CONFIG_RTL8125) += rtl8125
+obj-$(CONFIG_RTL8125) += rtl8125 rtl8126 rtl8127 rtl8168
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
 obj-$(CONFIG_WPS) += brcmwps
