@@ -595,17 +595,7 @@ obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
 obj-$(CONFIG_SMCROUTE) += smcroute
-ifneq ($(KERNELVERSION),6.6-nss)
-ifneq ($(KERNELVERSION),6.1-nss)
-ifneq ($(KERNELVERSION),6.1)
-ifneq ($(KERNELVERSION),6.6)
-ifneq ($(KERNELVERSION),6.12)
 obj-$(CONFIG_RTL8125) += rtl8125
-endif
-endif
-endif
-endif
-endif
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
 obj-$(CONFIG_WPS) += brcmwps
