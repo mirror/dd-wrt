@@ -2,10 +2,10 @@
 /*
 ################################################################################
 #
-# r8125 is the Linux device driver released for Realtek 2.5Gigabit Ethernet
+# r8125 is the Linux device driver released for Realtek 2.5 Gigabit Ethernet
 # controllers with PCI-Express interface.
 #
-# Copyright(c) 2022 Realtek Semiconductor Corp. All rights reserved.
+# Copyright(c) 2025 Realtek Semiconductor Corp. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -62,6 +62,9 @@ enum rtl_cmd {
 
         RTL_DIRECT_READ_PHY_OCP,
         RTL_DIRECT_WRITE_PHY_OCP,
+
+        RTL_READ_FIBER_PHY,
+        RTL_WRITE_FIBER_PHY,
 
         RTLTOOL_INVALID
 };

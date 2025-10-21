@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
 ################################################################################
 #
-# r8125 is the Linux device driver released for Realtek 2.5Gigabit Ethernet
+# r8125 is the Linux device driver released for Realtek 2.5 Gigabit Ethernet
 # controllers with PCI-Express interface.
 #
-# Copyright(c) 2022 Realtek Semiconductor Corp. All rights reserved.
+# Copyright(c) 2025 Realtek Semiconductor Corp. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -34,10 +34,10 @@ IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
 KDIR := $(LINUXDIR)
 PWD := $(shell pwd)
 
-CONFIG_SOC_LAN = n
+CONFIG_SOC_LAN = y
+ENABLE_FIBER_SUPPORT = n
 ENABLE_REALWOW_SUPPORT = n
 ENABLE_DASH_SUPPORT = n
-ENABLE_DASH_PRINTER_SUPPORT = n
 CONFIG_DOWN_SPEED_100 = n
 CONFIG_ASPM = y
 ENABLE_S5WOL = y
@@ -51,8 +51,12 @@ ENABLE_PTP_MASTER_MODE = n
 ENABLE_RSS_SUPPORT = n
 ENABLE_LIB_SUPPORT = n
 ENABLE_USE_FIRMWARE_FILE = n
-DISABLE_PM_SUPPORT = n
+DISABLE_WOL_SUPPORT = n
 DISABLE_MULTI_MSIX_VECTOR = n
+ENABLE_DOUBLE_VLAN = n
+ENABLE_PAGE_REUSE = n
+ENABLE_RX_PACKET_FRAGMENT = n
+ENABLE_GIGA_LITE = y
 
 	BASEDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
 	KERNELDIR := $(LINUXDIR)
@@ -101,7 +105,7 @@ print_vars:
 .PHONY:modules
 modules:
 #ifeq ($(call kver_ge,5,0,0),1)
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules MODPROBE=true KBUILD_MODPOST_WARN=1
 #else
 #	$(MAKE) -C $(KERNELDIR) SUBDIRS=$(PWD) modules
 #endif
@@ -117,3 +121,4 @@ clean:
 .PHONY:install
 install:
 	install -v -m 644 -D r8125.ko $(IDIR)/r8125.ko
+
