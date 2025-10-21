@@ -9188,6 +9188,9 @@ static int wpa_driver_nl80211_if_remove(struct i802_bss *bss,
 			wpa_printf(MSG_INFO, "nl80211: %s - could not find "
 				   "BSS %p in the list", __func__, bss);
 	} else {
+		if (eloop_cancel_timeout(wpa_driver_nl80211_scan_timeout, drv, bss->ctx))
+			wpa_driver_nl80211_scan_timeout(drv, bss->ctx);
+
 		wpa_printf(MSG_DEBUG, "nl80211: First BSS - reassign context");
 		nl80211_teardown_ap(bss);
 		nl80211_remove_links(bss);
