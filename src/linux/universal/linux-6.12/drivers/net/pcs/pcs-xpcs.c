@@ -608,33 +608,6 @@ static int xpcs_validate(struct phylink_pcs *pcs, unsigned long *supported,
 	return 0;
 }
 
-static unsigned int xpcs_inband_caps(struct phylink_pcs *pcs,
-				     phy_interface_t interface)
-{
-	const struct dw_xpcs *xpcs = phylink_pcs_to_xpcs(pcs);
-	const struct dw_xpcs_compat *compat;
-
-	compat = xpcs_find_compat(xpcs->desc, interface);
-	if (!compat)
-		return 0;
-
-	switch (compat->an_mode) {
-	case DW_AN_C73:
-		return LINK_INBAND_ENABLE;
-
-	case DW_AN_C37_SGMII:
-	case DW_AN_C37_1000BASEX:
-		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
-
-	case DW_10GBASER:
-	case DW_2500BASEX:
-		return LINK_INBAND_DISABLE;
-
-	default:
-		return 0;
-	}
-}
-
 void xpcs_get_interfaces(struct dw_xpcs *xpcs, unsigned long *interfaces)
 {
 	int i, j;
@@ -1392,7 +1365,6 @@ static const struct dw_xpcs_desc xpcs_desc_list[] = {
 
 static const struct phylink_pcs_ops xpcs_phylink_ops = {
 	.pcs_validate = xpcs_validate,
-	.pcs_inband_caps = xpcs_inband_caps,
 	.pcs_config = xpcs_config,
 	.pcs_get_state = xpcs_get_state,
 	.pcs_an_restart = xpcs_an_restart,
