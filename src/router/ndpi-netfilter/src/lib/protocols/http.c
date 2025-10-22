@@ -21,6 +21,11 @@
  *
  */
 
+#ifndef __KERNEL__
+#include <assert.h>
+#include <errno.h>
+#endif
+
 #include "ndpi_protocol_ids.h"
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_HTTP
@@ -300,7 +305,7 @@ static ndpi_protocol_category_t ndpi_http_check_content(struct ndpi_detection_mo
       if(strncasecmp(app, "mpeg", app_len_avail) == 0) {
 	flow->category = NDPI_PROTOCOL_CATEGORY_STREAMING;
 	return(flow->category);
-      } else {
+      } else if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_WINDOWS_UPDATE) {
 	if(app_len_avail > 3) {
 	  const char** cmp_mimes = NULL;
 	  bool found = false;
@@ -319,7 +324,7 @@ static ndpi_protocol_category_t ndpi_http_check_content(struct ndpi_detection_mo
 		char str[64];
 
 		flow->category = NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT;
-		NDPI_LOG_INFO(ndpi_struct, "found HTTP file transfer");
+		NDPI_LOG_INFO(ndpi_struct, "found HTTP file transfer\n");
 
 		snprintf(str, sizeof(str), "Found binary mime %s", cmp_mimes[i]);
 		ndpi_set_binary_data_transfer(ndpi_struct, flow, str);
@@ -1248,16 +1253,48 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 		  packet->host_line.len, packet->host_line.ptr);
 
     /* Copy result for nDPI apps */
-    ndpi_hostname_sni_set(flow, packet->host_line.ptr, packet->host_line.len, NDPI_HOSTNAME_NORM_ALL);
+    ndpi_hostname_sni_set(flow, packet->host_line.ptr, packet->host_line.len, NDPI_HOSTNAME_NORM_ALL | NDPI_HOSTNAME_NORM_STRIP_PORT);
 
     if(strlen(flow->host_server_name) > 0) {
       char *double_col;
       int a, b, c, d;
+      u_int16_t host_line_length;
 
       hostname_just_set = 1;
+      host_line_length = packet->host_line.len;
+
+      /* If hostname is $hostame:$port, ignore the trailing port. Check
+         that it is a valid port */
+      double_col = ndpi_memrchr(packet->host_line.ptr, ':', packet->host_line.len);
+      if(double_col) {
+        char *endptr, port_str[6]; /* 65535 + \0 */
+        int port_str_len;
+        long port;
+
+        port_str_len = (char *)packet->host_line.ptr +  packet->host_line.len - double_col - 1;
+
+        if(port_str_len > 0 && port_str_len < 6) {
+          memcpy(port_str, double_col + 1, port_str_len);
+          port_str[port_str_len] = '\0';
+
+          /* We can't easily use ndpi_strtonum because we want to be sure that there are no
+             others characters after the number */
+#ifndef __KERNEL__
+          errno = 0;    /* To distinguish success/failure after call */
+          port = strtol(port_str, &endptr, 10);
+          if(errno == 0 && *endptr == '\0' &&
+             (port >= 0 && port <= 65535)) {
+#else
+	  if(!kstrtol(port_str,10,&port) &&
+             (port >= 0 && port <= 65535)) {
+#endif
+            host_line_length = double_col - (char *)packet->host_line.ptr;
+          }
+        }
+      }
 
       if(ndpi_is_valid_hostname((char *)packet->host_line.ptr,
-				packet->host_line.len) == 0) {
+                                host_line_length) == 0) {
 	char str[128];
 	
         if(is_flowrisk_info_enabled(ndpi_struct, NDPI_INVALID_CHARACTERS)) {
@@ -1273,8 +1310,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 	ndpi_set_risk(ndpi_struct, flow, NDPI_POSSIBLE_EXPLOIT, str);
       }
 
-      double_col = strchr((char*)flow->host_server_name, ':');
-      if(double_col) double_col[0] = '\0';
+      // FIXME sscanf
       if(packet->iph
          && (sscanf(flow->host_server_name, "%d.%d.%d.%d", &a, &b, &c, &d) == 4)) {
         /* IPv4 */

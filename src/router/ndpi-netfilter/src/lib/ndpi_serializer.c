@@ -2462,6 +2462,9 @@ int ndpi_init_deserializer_buf(ndpi_deserializer *_deserializer,
 			       u_int32_t serialized_buffer_len) {
   ndpi_private_deserializer *deserializer = (ndpi_private_deserializer*)_deserializer;
 
+  if(serialized_buffer == NULL)
+    return(-3);
+
   if(serialized_buffer_len < (2 * sizeof(u_int8_t)))
     return(-1);
 

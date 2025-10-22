@@ -21,11 +21,8 @@
 *.trs
 *.user
 *o.cmd
-<<<<<<< HEAD
 *.so
 *.so.*
-=======
->>>>>>> 2a3f4dc8b400e078b7fd2ec0f802200dfece8c94
 *~
 .autotools
 .cproject
@@ -33,14 +30,11 @@
 .libs
 .project
 .settings
-<<<<<<< HEAD
 .deps
 .Module.symvers.cmd
 .modules.order.cmd
-=======
 /.idea/
 /.vscode/
->>>>>>> 2a3f4dc8b400e078b7fd2ec0f802200dfece8c94
 /Makefile
 /aclocal.m4
 /autom4te.cache/
@@ -64,6 +58,9 @@
 /example/ndpiReader.exe
 /example/ndpiSimpleIntegration
 /install-sh
+/utils/Makefile
+/utils/hosts2domains
+/utils/print_rank
 /fuzz/.deps/
 /fuzz/Makefile
 /fuzz/fuzz_ndpi_reader
@@ -124,7 +121,6 @@
 /fuzz/fuzz_filecfg_risk_domains
 /fuzz/fuzz_filecfg_config
 /fuzz/fuzz_readerutils_workflow
-/fuzz/fuzz_readerutils_parseprotolist
 /fuzz/fuzz_ndpi_reader_alloc_fail_seed_corpus.zip
 /fuzz/fuzz_ndpi_reader_seed_corpus.zip
 /fuzz/fuzz_ndpi_reader_pl7m_seed_corpus.zip

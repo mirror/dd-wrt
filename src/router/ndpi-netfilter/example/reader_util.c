@@ -84,11 +84,9 @@ extern u_int8_t max_num_udp_dissected_pkts /* 24 */, max_num_tcp_dissected_pkts 
 static u_int32_t flow_id = 0;
 extern FILE *fingerprint_fp;
 extern char *addr_dump_path;
-u_int8_t enable_doh_dot_detection = 0;
-extern bool do_load_lists;
+extern u_int8_t enable_doh_dot_detection;
 extern int malloc_size_stats;
 extern int monitoring_enabled;
-extern char *protocolsDirPath;
 
 /* ****************************************************** */
 
@@ -118,6 +116,7 @@ u_int32_t max_packet_payload_dissection = 128;
 u_int32_t max_num_reported_top_payloads = 25;
 u_int16_t min_pattern_len               = 4;
 u_int16_t max_pattern_len               = 8;
+
 
 /* *********************************************************** */
 
@@ -340,27 +339,6 @@ void ndpi_free_flow_info_half(struct ndpi_flow_info *flow) {
 
 /* ***************************************************** */
 
-bool load_public_lists(struct ndpi_detection_module_struct *ndpi_str) {
-#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-  char *lists_path = "../lists/public_suffix_list.dat";
-#else
-  char *lists_path = "public_suffix_list.dat";
-#endif
-  struct stat st;
-
-  if(stat(lists_path, &st) != 0)
-    lists_path = &lists_path[1]; /* use local file */
-
-  if(stat(lists_path, &st) == 0) {
-    if(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0)
-      return(true);
-  }
-
-  return(false);
-}
-
-/* ***************************************************** */
-
 void ndpi_stats_free(ndpi_stats_t *s) {
   if (s->protocol_counter)           ndpi_free(s->protocol_counter);
   if (s->protocol_counter_bytes)     ndpi_free(s->protocol_counter_bytes);
@@ -444,9 +422,6 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
     LOG(NDPI_LOG_ERROR, "global structure initialization failed\n");
     return NULL;
   }
-
-  if(protocolsDirPath != NULL)
-    ndpi_load_protocols_dir(module, protocolsDirPath);
   
   workflow = ndpi_calloc(1, sizeof(struct ndpi_workflow));
   if(workflow == NULL) {
@@ -472,9 +447,6 @@ struct ndpi_workflow* ndpi_workflow_init(const struct ndpi_workflow_prefs * pref
   }
 
   workflow->ndpi_serialization_format = serialization_format;
-
-  if(do_load_lists)
-    load_public_lists(module);
 
   return workflow;
 }
@@ -1991,7 +1963,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
       }
 
       if((!skip) && ((flow->src2dst_packets+flow->dst2src_packets) < 100)) {
-	if(ndpi_has_human_readeable_string((char*)packet, header->caplen,
+	if(ndpi_has_human_readable_string((char*)packet, header->caplen,
 					   human_readeable_string_len,
 					   flow->human_readeable_string_buffer,
 					   sizeof(flow->human_readeable_string_buffer)) == 1)

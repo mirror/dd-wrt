@@ -51,10 +51,10 @@ PATH=/usr/bin:/bin:/usr/sbin:/sbin
 %define includedir    /usr/include/ndpi
 
 # Default and fallback
-%define libdir /usr/lib
+%define libdir /usr/lib64
 
-%{?el8:%define libdir /usr/lib64}
-%{?el9:%define libdir /usr/lib64}
+#%{?el8:%define libdir /usr/lib64}
+#%{?el9:%define libdir /usr/lib64}
 %define bindir        /usr/bin
 
 %install
@@ -94,7 +94,7 @@ rm -fr $RPM_BUILD_ROOT
 /usr/share/ndpi/ndpiProtos.txt
 /usr/share/ndpi/public_suffix_list.dat
 /etc/ld.so.conf.d/ndpi.conf
-#%{libdir}/pkgconfig/libndpi.pc
+/usr/include/ndpi*
 
 %preun
 

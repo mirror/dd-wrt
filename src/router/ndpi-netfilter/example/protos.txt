@@ -3,7 +3,7 @@
 
 tcp:81,tcp:8181@HTTP
 udp:5062@SIP
-tcp:860,udp:860,tcp:3260,udp:3260@iSCSI
+tcp:860,udp:860,tcp:3260,udp:3260@iSCSI=65531
 tcp:9200@Elasticsearch
 tcp:5601@Kibana
 tcp:65535@TestProto
@@ -13,7 +13,7 @@ tcp:65535@TestProto
 #
 # NOTE: they are evaluated in the same order they are defined !
 #
-nbpf:"host 192.168.1.1 and port 80"@HomeRouter
+nbpf:"host 192.168.1.1 and port 80"@HomeRouter=65530
 
 
 #  Subprotocols
@@ -63,8 +63,8 @@ ipv6:[fe80::76ac:b9ff:fe6c:c124]:12717@CustomProtocolG=2050
 ipv6:[fe80::76ac:b9ff:fe6c:c124]:12718@CustomProtocolH=65535
 ipv6:[fe80::76ac:b9ff:fe6c:c124]:12719@CustomProtocolI=65534
 
-ipv6:[2001:db8::c2fd:b817:5ca8:82dd]:16690@CustomProtocolJ,breed=1
-ipv6:[2001:db8::cba5:51b2:8733:6d9e]:38542@CustomProtocolK,cat=3
+ipv6:[2001:db8::c2fd:b817:5ca8:82dd]:16690@CustomProtocolJ=65533,breed=1
+ipv6:[2001:db8::cba5:51b2:8733:6d9e]:38542@CustomProtocolK=65532,cat=3
 ipv6:[2001:db8::cc14:67e6:fcd:b96d]:37464@CustomProtocolL=3002,cat=5,breed=3
 ipv6:[2003:db8::4]@CustomProtocolM=3003,cat=106,breed=5
 

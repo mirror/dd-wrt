@@ -24,6 +24,7 @@ EXTRA_DIST = README.md README.fuzzer.md CHANGELOG.md CONTRIBUTING.md \
 		python/requirements.txt python/setup.py python/tests.py \
 	lists/100_malware.list \
 		lists/42_mining_domain.list \
+		lists/101_ads_tracking.list \
 		lists/107_gambling.list \
 		lists/107_gambling_custom.list \
 		lists/124_bots.list \

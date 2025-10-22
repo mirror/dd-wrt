@@ -21,33 +21,6 @@
 /* ****************************************************** */
 
 
-static ndpi_network ndpi_http_crawler_bot_hardcoded_protocol_list[] = {
-
- /* GPTBot: https://openai.com/gptbot-ranges.txt */
- /* TODO:  are we able to autogenerate this list? */
- { 0x34E69800 /* 52.230.152.0/24 */, 24, NDPI_HTTP_CRAWLER_BOT },
- { 0x34E96A00 /* 52.233.106.0/24 */, 24, NDPI_HTTP_CRAWLER_BOT },
-
- /* ChatGPT-User bot: https://platform.openai.com/docs/plugins/bot */
- /* TODO:  are we able to autogenerate this list? */
- { 0x17628EB0 /* 23.98.142.176/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x2854B4E0 /* 40.84.180.224/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x0D41F0F0 /* 13.65.240.240/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x1461BD60 /* 20.97.189.96/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x14A14BD0 /* 20.161.75.208/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x34E14BD0 /* 52.225.75.208/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x349C4D90 /* 52.156.77.144/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
- { 0x2854B440 /* 40.84.180.64/28 */, 28, NDPI_HTTP_CRAWLER_BOT },
-
- /* End */
- { 0x0, 0, 0 }
-};
-
-static ndpi_network6 ndpi_http_crawler_bot_hardcoded_protocol_list_6[] = {
- /* End */
- { NULL, 0, 0 },
-};
-
 static ndpi_network host_protocol_list[] = {
   /*
     OCS GO (Orange Cinéma Séries)
@@ -430,8 +403,6 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "amazonaws.com",                                     "AmazonAWS",        NDPI_PROTOCOL_AMAZON_AWS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "aws.a2z.com",                                       "AmazonAWS",        NDPI_PROTOCOL_AMAZON_AWS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "a2z.com",                                           "Amazon",           NDPI_PROTOCOL_AMAZON, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "cloudfront.net",                                   "AmazonAWS",        NDPI_PROTOCOL_AMAZON_AWS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "us-west-2.compute.amazonaws.com",                  "AmazonAWS",        NDPI_PROTOCOL_AMAZON_AWS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "teamviewer.com",                                   "Teamviewer",       NDPI_PROTOCOL_TEAMVIEWER, NDPI_PROTOCOL_CATEGORY_REMOTE_ACCESS, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "bloombergvault.com",                               "Bloomberg",        NDPI_PROTOCOL_BLOOMBERG, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "bloomberg.com",                                    "Bloomberg",        NDPI_PROTOCOL_BLOOMBERG, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1114,7 +1085,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "dssott.com",                             "DisneyPlus",        NDPI_PROTOCOL_DISNEYPLUS, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "disneyplus.com.ssl.sc.omtrdc.net",       "DisneyPlus",        NDPI_PROTOCOL_DISNEYPLUS, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "bamgrid.com",                            "DisneyPlus",        NDPI_PROTOCOL_DISNEYPLUS, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "registerdisney.go.com",                  "DisneyPlus",        NDPI_PROTOCOL_DISNEYPLUS, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "go.com",                                 "DisneyPlus",        NDPI_PROTOCOL_DISNEYPLUS, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    /*
      Likee app
@@ -1554,6 +1525,21 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
 
    /* Rumble */
    { "rumble.com",                                     "Rumble", NDPI_PROTOCOL_RUMBLE, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
+   /* From real traffic. TODO: extend (other regions) */
+   { "kinesis.ap-southeast-1.amazonaws.com",           "AWS_Kinesis", NDPI_PROTOCOL_AWS_KINESIS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "kinesis.eu-west-1.amazonaws.com",                "AWS_Kinesis", NDPI_PROTOCOL_AWS_KINESIS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "kinesis.us-east-1.amazonaws.com",                "AWS_Kinesis", NDPI_PROTOCOL_AWS_KINESIS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "kinesis.us-west-2.amazonaws.com",                "AWS_Kinesis", NDPI_PROTOCOL_AWS_KINESIS, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
+   { "espn.com",                                "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "espncdn.com",                             "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "fn-pz.com",                               "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "espn.connections.edge.bamgrid.com",       "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "espn.api.edge.bamgrid.com",               "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "espn.net",                                "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "espn.playback.edge.bamgrid.com",          "Espn", NDPI_PROTOCOL_ESPN, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_content_match_host_match.c.inc"

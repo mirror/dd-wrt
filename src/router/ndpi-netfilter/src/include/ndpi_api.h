@@ -38,7 +38,7 @@ extern "C" {
 
 //  extern int ndpi_debug_print_level;
   /*
-    In case a custom DGA function is used, the fucntion
+    In case a custom DGA function is used, the function
     below must be overwritten,
   */
 //  extern ndpi_custom_dga_predict_fctn ndpi_dga_function;
@@ -49,7 +49,7 @@ extern "C" {
    * Check if a string is encoded with punycode
    * ( https://tools.ietf.org/html/rfc3492 )
    *
-   * @par    buff = pointer to the string to ckeck
+   * @par    buff = pointer to the string to check
    * @par    len  = len of the string
    * @return 1 if the string is punycoded;
    *         else 0
@@ -481,7 +481,7 @@ extern "C" {
    * Find the QoE category for the specified protocol
    *
    * @par     ndpi_mod      = the detection module
-   * @par     protoId       = the protocol identifier we're searhing
+   * @par     protoId       = the protocol identifier we're searching
    *
    */
   NDPI_STATIC ndpi_protocol_qoe_category_t ndpi_find_protocol_qoe(struct ndpi_detection_module_struct *ndpi_str,
@@ -560,7 +560,7 @@ extern "C" {
    *
    * @par     mod           = the detection module
    * @par     category      = the category associated to the protocol
-   * @paw     name          = the string name of the category
+   * @par     name          = the string name of the category
    *
    */
   NDPI_STATIC void ndpi_category_set_name(struct ndpi_detection_module_struct *ndpi_mod,
@@ -897,7 +897,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    * @par     The automata initialized with ndpi_init_automa();
    * @par     The (sub)string to search (malloc'ed memory)
    * @par     The number associated with this string
-   * @return  0 in case of no error, or -2 if the string has been already addeed, or -1 if an error occurred.
+   * @return  0 in case of no error, or -2 if the string has been already added, or -1 if an error occurred.
    *
    */
   NDPI_STATIC int ndpi_add_string_value_to_automa(void *_automa, char *str, u_int32_t num);
@@ -1071,6 +1071,9 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
   NDPI_STATIC u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow);
+  int ndpi_has_human_readable_string(char *buffer, u_int buffer_size,
+				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
+				      char *outbuf, u_int outbuf_len);
   /* Return a flow info string (summarized). Does only work for DNS/HTTP/TLS/QUIC. */
   NDPI_STATIC const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
                                  ndpi_protocol const * const l7_protocol);
@@ -1201,7 +1204,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC void ndpi_reset_serializer(ndpi_serializer *serializer);
 
   /**
-   * Hint to not create the header (used to avoid creaign the header when not used)
+   * Hint to not create the header (used to avoid creating the header when not used)
    * @param serializer The serializer handle
    */
   NDPI_STATIC void ndpi_serializer_skip_header(ndpi_serializer *serializer);
@@ -1895,7 +1898,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    *
    * @par    values      = pointer to the individual values to be analyzed [in]
    * @par    outliers    = pointer to a list of outliers identified        [out]
-   * @par    num_values  = lenght of values and outliers that MUST have the same lenght [in]
+   * @par    num_values  = length of values and outliers that MUST have the same length [in]
    *
    * @return The number of outliers found
   */
@@ -2234,7 +2237,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    * @par ndpi_str = the struct created for the protocol detection
    * @par hostname = the hostname from which the domain name has to be extracted
    *
-   * @return The host domain name or the hosti tself if not found.
+   * @return The host domain name or the host itself if not found.
    *
    */
   NDPI_STATIC const char* ndpi_get_host_domain(struct ndpi_detection_module_struct *ndpi_str,
@@ -2275,6 +2278,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC int ndpi_snprintf(char * str, size_t size, char const * format, ...);
   NDPI_STATIC struct tm *ndpi_gmtime_r(const time_t *timep, struct tm *result);
   NDPI_STATIC char* ndpi_strrstr(const char *haystack, const char *needle);
+  NDPI_STATIC void *ndpi_memrchr(const void *m, int c, size_t n);
   NDPI_STATIC int ndpi_str_endswith(const char *s, const char *suffix);
 
   /* ******************************* */
@@ -2416,7 +2420,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    * @brief Converts a string from ISO 8859 to UTF-8
    *
    * @param in String to convert
-   * @param in_len Source string lenght
+   * @param in_len Source string length
    * @param out Destination string buffer (UTF-8)
    * @param out_len Length of destination string buffer. It must be at least (2*in_len)+1
    *
@@ -2468,7 +2472,8 @@ NDPI_STATIC  u_int16_t ndpi_ranking_add_epoch(ndpi_ranking *rank, u_int32_t epoc
 				   ndpi_ranking_epoch_entry *entries,
 				   u_int16_t num_epoch_entries,
 				   ndpi_ranking_change *curr_ranking,/* Out */
-				   ndpi_ranking_change *prev_ranking /* Out */);
+				   ndpi_ranking_change *prev_ranking /* Out */,
+				   u_int32_t *prev_ranking_epoch /* Out */);
 #ifdef __cplusplus
 }
 #endif

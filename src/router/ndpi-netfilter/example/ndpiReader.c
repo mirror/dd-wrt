@@ -94,9 +94,9 @@ static FILE *csv_fp                 = NULL; /**< for CSV export */
 static FILE *serialization_fp       = NULL; /**< for TLV,CSV,JSON export */
 static ndpi_serialization_format serialization_format = ndpi_serialization_format_unknown;
 static char* domain_to_check = NULL;
+static char* domains_file_to_check = NULL;
 static char* ip_port_to_check = NULL;
 static u_int8_t ignore_vlanid = 0;
-extern char *protocolsDirPath; /**< Directory containing protocol files */
 FILE *fingerprint_fp         = NULL; /**< for flow fingerprint export */
 #ifdef __linux__
 static char *bind_mask = NULL;
@@ -114,7 +114,7 @@ static int dump_fpc_stats = 0;
 char *addr_dump_path = NULL;
 u_int8_t enable_realtime_output = 0, enable_payload_analyzer = 0, num_bin_clusters = 0, extcap_exit = 0;
 u_int8_t verbose = 0, enable_flow_stats = 0;
-bool do_load_lists = false;
+static bool do_load_lists = false;
 
 struct cfg {
   char *proto;
@@ -152,7 +152,6 @@ static time_t capture_for = 0;
 static time_t capture_until = 0;
 static u_int32_t num_flows;
 
-extern u_int8_t enable_doh_dot_detection;
 extern u_int32_t max_num_packets_per_flow, max_packet_payload_dissection, max_num_reported_top_payloads;
 extern u_int16_t min_pattern_len, max_pattern_len;
 u_int8_t dump_internal_stats;
@@ -164,7 +163,8 @@ int malloc_size_stats = 0;
 
 int monitoring_enabled;
 
-char *protocolsDirPath;
+static char *protocolsDirPath;
+u_int8_t enable_doh_dot_detection = 0;
 
 struct flow_info {
   struct ndpi_flow_info *flow;
@@ -297,8 +297,8 @@ typedef struct ndpi_id {
   struct ndpi_id_struct *ndpi_id;  // nDpi worker structure
 } ndpi_id_t;
 
-// used memory counters
-static u_int32_t current_ndpi_memory = 0, max_ndpi_memory = 0;
+
+static u_int32_t tot_ndpi_memory = 0;
 #ifdef USE_DPDK
 static int dpdk_port_id = 0, dpdk_run_capture = 1;
 #endif
@@ -334,10 +334,7 @@ static u_int32_t reader_slot_malloc_bins(u_int64_t v)
  * @brief ndpi_malloc wrapper function
  */
 static void *ndpi_malloc_wrapper(size_t size) {
-  current_ndpi_memory += size;
-
-  if(current_ndpi_memory > max_ndpi_memory)
-    max_ndpi_memory = current_ndpi_memory;
+  tot_ndpi_memory += size;
 
   if(enable_malloc_bins && malloc_size_stats)
     ndpi_inc_bin(&malloc_bins, reader_slot_malloc_bins(size), 1);
@@ -437,6 +434,97 @@ static int enable_disable_protocols_list(struct ndpi_detection_module_struct *nd
 
 /* *********************************************** */
 
+static bool load_public_lists(struct ndpi_detection_module_struct *ndpi_str) {
+  char *lists_path = "../lists/public_suffix_list.dat";
+  struct stat st;
+
+  if(stat(lists_path, &st) != 0)
+    lists_path = &lists_path[1]; /* use local file */
+
+  if(stat(lists_path, &st) == 0) {
+    if(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0)
+      return(true);
+  }
+
+  return(false);
+}
+
+/* *********************************************** */
+
+static void configure_ndpi(struct ndpi_detection_module_struct *ndpi_struct) {
+  int i;
+  ndpi_cfg_error rc;
+
+  /* Protocols to enable/disable. Default: everything is enabled */
+  if(_disabled_protocols != NULL) {
+    enable_disable_protocols_list(ndpi_struct, _disabled_protocols, 1);
+  }
+
+  if(protocolsDirPath != NULL)
+    ndpi_load_protocols_dir(ndpi_struct, protocolsDirPath);
+
+  if(do_load_lists)
+    load_public_lists(ndpi_struct);
+
+  if(_categoriesDirPath) {
+    int failed_files = ndpi_load_categories_dir(ndpi_struct, _categoriesDirPath);
+    if (failed_files < 0) {
+      fprintf(stderr, "Failed to parse all *.list files in: %s\n", _categoriesDirPath);
+      exit(-1);
+    }
+  }
+
+  if(_domain_suffixes)
+    ndpi_load_domain_suffixes(ndpi_struct, _domain_suffixes);
+
+  if(_riskyDomainFilePath)
+    ndpi_load_risk_domain_file(ndpi_struct, _riskyDomainFilePath);
+
+  if(_maliciousJA4Path)
+    ndpi_load_malicious_ja4_file(ndpi_struct, _maliciousJA4Path);
+
+  if(_maliciousSHA1Path)
+    ndpi_load_malicious_sha1_file(ndpi_struct, _maliciousSHA1Path);
+
+  if(_customCategoryFilePath) {
+    char *label = strrchr(_customCategoryFilePath, '/');
+
+    if(label != NULL)
+      label = &label[1];
+    else
+      label = _customCategoryFilePath;
+
+    int failed_lines = ndpi_load_categories_file(ndpi_struct, _customCategoryFilePath, label);
+    if (failed_lines < 0) {
+      fprintf(stderr, "Failed to parse custom categories file: %s\n", _customCategoryFilePath);
+      exit(-1);
+    }
+  }
+
+  if(_protoFilePath != NULL)
+    ndpi_load_protocols_file(ndpi_struct, _protoFilePath);
+
+  ndpi_set_config(ndpi_struct, NULL, "tcp_ack_payload_heuristic", "enable");
+
+  for(i = 0; i < num_cfgs; i++) {
+    rc = ndpi_set_config(ndpi_struct,
+                         cfgs[i].proto, cfgs[i].param, cfgs[i].value);
+    if (rc != NDPI_CFG_OK) {
+      fprintf(stderr, "Error setting config [%s][%s][%s]: %s (%d)\n",
+              (cfgs[i].proto != NULL ? cfgs[i].proto : ""),
+              cfgs[i].param, cfgs[i].value, ndpi_cfg_error2string(rc), rc);
+    }
+  }
+
+  if(enable_doh_dot_detection)
+    ndpi_set_config(ndpi_struct, "tls", "application_blocks_tracking", "enable");
+
+  if(addr_dump_path != NULL)
+    ndpi_cache_address_restore(ndpi_struct, addr_dump_path, 0);
+}
+
+/* *********************************************** */
+
 void ndpiCheckHostStringMatch(char *testChar) {
   ndpi_protocol_match_result match = { NDPI_PROTOCOL_UNKNOWN,
 				       NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NDPI_PROTOCOL_UNRATED };
@@ -449,44 +537,138 @@ void ndpiCheckHostStringMatch(char *testChar) {
     return;
 
   ndpi_str = ndpi_init_detection_module(NULL);
+  configure_ndpi(ndpi_str);
   ndpi_finalize_initialization(ndpi_str);
 
-  testRes =  ndpi_match_string_subprotocol(ndpi_str,
-                                           testChar, strlen(testChar), &match);
+  memset(&detected_protocol, 0, sizeof(ndpi_protocol) );
+
+  testRes = ndpi_match_string_subprotocol(ndpi_str,
+                                          testChar, strlen(testChar), &match);
 
   if(testRes) {
-    memset(&detected_protocol, 0, sizeof(ndpi_protocol) );
-
     detected_protocol.proto.app_protocol    = match.protocol_id;
     detected_protocol.proto.master_protocol = 0;
     detected_protocol.category              = match.protocol_category;
+    detected_protocol.breed                 = match.protocol_breed;
+  }
 
-    ndpi_protocol2name(ndpi_str, detected_protocol, appBufStr,
-		       sizeof(appBufStr));
+  ndpi_match_custom_category(ndpi_str, testChar, strlen(testChar),
+                             &detected_protocol.category,
+                             &detected_protocol.breed);
+
+  if(detected_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN ||
+     detected_protocol.category != NDPI_PROTOCOL_CATEGORY_UNSPECIFIED) {
 
     printf("Match Found for string [%s] -> P(%d) B(%d) C(%d) => %s %s %s\n",
-	   testChar, match.protocol_id, match.protocol_breed,
-	   match.protocol_category, appBufStr,
-	   ndpi_get_proto_breed_name(match.protocol_breed ),
-	   ndpi_category_get_name(ndpi_str, match.protocol_category));
+           testChar,
+           detected_protocol.proto.app_protocol,
+           detected_protocol.breed,
+           detected_protocol.category,
+           ndpi_protocol2name(ndpi_str, detected_protocol, appBufStr,
+                              sizeof(appBufStr)),
+           ndpi_get_proto_breed_name(detected_protocol.breed),
+           ndpi_category_get_name(ndpi_str, detected_protocol.category));
   } else {
-    ndpi_protocol_category_t category;
-    ndpi_protocol_breed_t breed;
+    printf("Match NOT Found for string: %s\n\n", testChar );
+  }
 
-    /* No protocol match (on the ahocorasick); let's find out if we have
-     * at least the category */
+  ndpi_exit_detection_module(ndpi_str);
+}
 
-    if(ndpi_match_custom_category(ndpi_str, testChar, strlen(testChar), &category, &breed) == 0) {
-      printf("Match Found for string [%s] (no protocol) -> B(%d) C(%d) => %s %s\n",
-             testChar, breed, category,
-             ndpi_get_proto_breed_name(breed),
-             ndpi_category_get_name(ndpi_str, category));
+/* *********************************************** */
 
-    } else {
-      printf("Match NOT Found for string: %s\n\n", testChar );
+void ndpiCheckHostsFileStringMatch(const char *domains_file) {
+  struct ndpi_detection_module_struct *ndpi_str;
+  FILE *fd;
+  char buffer[512], *line;
+  char **not_matches = NULL;
+  int len, i, not_maches_num = 0;
+
+  if(!domains_file)
+    return;
+
+  if(strcmp(domains_file, "-") == 0) {
+    fd = stdin;
+  } else {
+    fd = fopen(domains_file, "r");
+    if(!fd) {
+      printf("Error opening [%s]\n", domains_file);
+      return;
     }
   }
 
+  ndpi_str = ndpi_init_detection_module(NULL);
+  configure_ndpi(ndpi_str);
+  ndpi_finalize_initialization(ndpi_str);
+
+  while(1) {
+    ndpi_protocol_match_result match = { NDPI_PROTOCOL_UNKNOWN,
+                                         NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NDPI_PROTOCOL_UNRATED };
+    char appBufStr[64];
+    int testRes;
+    ndpi_protocol detected_protocol;
+
+    line = fgets(buffer, sizeof(buffer), fd);
+
+    if(line == NULL)
+      break;
+
+    len = strlen(line);
+
+    if((len <= 1) || (line[0] == '#'))
+      continue;
+
+    line[len - 1] = '\0';
+    /* printf("[%s]\n", line); */
+
+    memset(&detected_protocol, 0, sizeof(ndpi_protocol) );
+
+    testRes = ndpi_match_string_subprotocol(ndpi_str,
+                                            line, strlen(line), &match);
+    if(testRes) {
+      detected_protocol.proto.app_protocol    = match.protocol_id;
+      detected_protocol.proto.master_protocol = 0;
+      detected_protocol.category              = match.protocol_category;
+      detected_protocol.breed                 = match.protocol_breed;
+    }
+
+    ndpi_match_custom_category(ndpi_str, line, strlen(line),
+                               &detected_protocol.category,
+                               &detected_protocol.breed);
+
+    if(detected_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN ||
+       detected_protocol.category != NDPI_PROTOCOL_CATEGORY_UNSPECIFIED) {
+
+      printf("Domain [%s] -> %s %s %s\n",
+             line,
+             ndpi_protocol2name(ndpi_str, detected_protocol, appBufStr,
+                                sizeof(appBufStr)),
+             ndpi_get_proto_breed_name(detected_protocol.breed),
+             ndpi_category_get_name(ndpi_str, detected_protocol.category));
+    } else {
+      printf("Domain [%s] NOT Found!!\n", line);
+
+      /* Not very efficient but it should be ok */
+      not_matches = ndpi_realloc(not_matches, not_maches_num * sizeof(char *),
+                                 (not_maches_num + 1) * sizeof(char *));
+      not_matches[not_maches_num] = ndpi_strdup(line);
+      not_maches_num += 1;
+    }
+
+  }
+
+  if(not_maches_num > 0) {
+    printf("\nDomains without any matches:\n");
+    for(i = 0; i < not_maches_num; i++) {
+      printf("%s\n", not_matches[i]);
+    }
+  }
+
+  for(i = 0; i < not_maches_num; i++)
+    ndpi_free(not_matches[i]);
+  ndpi_free(not_matches);
+  if(strcmp(domains_file, "-") != 0)
+    fclose(fd);
   ndpi_exit_detection_module(ndpi_str);
 }
 
@@ -522,28 +704,12 @@ static void ndpiCheckIPMatch(char *testChar) {
   struct in_addr addr;
   char appBufStr[64];
   ndpi_protocol detected_protocol;
-  int i;
-  ndpi_cfg_error rc;
 
   if(!testChar)
     return;
 
   ndpi_str = ndpi_init_detection_module(NULL);
-
-  if(_protoFilePath != NULL)
-    ndpi_load_protocols_file(ndpi_str, _protoFilePath);
-
-  for(i = 0; i < num_cfgs; i++) {
-    rc = ndpi_set_config(ndpi_str, cfgs[i].proto, cfgs[i].param, cfgs[i].value);
-
-    if (rc != NDPI_CFG_OK) {
-      fprintf(stderr, "Error setting config [%s][%s][%s]: %s (%d)\n",
-	      (cfgs[i].proto != NULL ? cfgs[i].proto : ""),
-	      cfgs[i].param, cfgs[i].value, ndpi_cfg_error2string(rc), rc);
-      exit(-1);
-    }
-  }
-
+  configure_ndpi(ndpi_str);
   ndpi_finalize_initialization(ndpi_str);
 
   ip_str = strtok_r(testChar, ":", &saveptr);
@@ -757,6 +923,7 @@ static void help(u_int long_help) {
          "  -U <num>                   | Max number of UDP processed packets before giving up [default: %u]\n"
          "  -D                         | Enable DoH traffic analysis based on content (no DPI)\n"
          "  -x <domain>                | Check domain name [Test only]\n"
+         "  --x-file <filename>        | Similar to '-x` but it process a list of domains, provided via file\n"
          "  -I                         | Ignore VLAN id for flow hash calculation\n"
          "  -A                         | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
          "  -M                         | Memory allocation stats on data-path (only by the library).\n"
@@ -773,10 +940,7 @@ static void help(u_int long_help) {
          max_num_reported_top_payloads, max_num_tcp_dissected_pkts, max_num_udp_dissected_pkts);
 
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
-
-  if(_protoFilePath != NULL)
-    ndpi_load_protocols_file(ndpi_str, _protoFilePath);
-
+  configure_ndpi(ndpi_str);
   ndpi_finalize_initialization(ndpi_str);
 
   printf("\nProtocols configuration parameters:\n");
@@ -825,6 +989,7 @@ static void help(u_int long_help) {
 #define OPTLONG_VALUE_TLS_HEURISTICS		3002
 #define OPTLONG_VALUE_CONF                      3003
 #define OPTLONG_VALUE_FPC_STATS                 3004
+#define OPTLONG_VALUE_DOMAINS_FILE              3005
 
 static struct option longopts[] = {
   /* mandatory extcap options */
@@ -875,6 +1040,8 @@ static struct option longopts[] = {
   { "tls_heuristics", no_argument, NULL, OPTLONG_VALUE_TLS_HEURISTICS},
   { "conf", required_argument, NULL, OPTLONG_VALUE_CONF},
   { "dump-fpc-stats", no_argument, NULL, OPTLONG_VALUE_FPC_STATS},
+
+  { "x-file", required_argument, NULL, OPTLONG_VALUE_DOMAINS_FILE},
 
   {0, 0, 0, 0}
 };
@@ -1552,6 +1719,10 @@ static void parse_parameters(int argc, char **argv)
       domain_to_check = optarg;
       break;
 
+    case OPTLONG_VALUE_DOMAINS_FILE:
+      domains_file_to_check = optarg;
+      break;
+
     case 'X':
       ip_port_to_check = optarg;
       break;
@@ -1628,7 +1799,7 @@ static void parseOptions(int argc, char **argv) {
     quiet_mode = 1;
   }
 
-  if(!domain_to_check && !ip_port_to_check) {
+  if(!domain_to_check && !ip_port_to_check && !domains_file_to_check) {
     if(_pcap_file[0] == NULL)
       help(0);
 
@@ -1671,7 +1842,7 @@ static void parseOptions(int argc, char **argv) {
 #endif
 }
 
-/* ********************************** */
+/* ***************************************************** */
 
 static char* print_cipher(ndpi_cipher_weakness c) {
   switch(c) {
@@ -3153,8 +3324,7 @@ static void on_protocol_discovered(struct ndpi_workflow * workflow,
 static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle,
                            struct ndpi_global_context *g_ctx) {
   struct ndpi_workflow_prefs prefs;
-  int i,ret;
-  ndpi_cfg_error rc;
+  int ret;
 
   memset(&prefs, 0, sizeof(prefs));
   prefs.decode_tunnels = decode_tunnels;
@@ -3167,45 +3337,7 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle,
   ndpi_thread_info[thread_id].workflow = ndpi_workflow_init(&prefs, pcap_handle, 1,
                                                             serialization_format, g_ctx);
 
-  /* Protocols to enable/disable. Default: everything is enabled */
-  if(_disabled_protocols != NULL) {
-    enable_disable_protocols_list(ndpi_thread_info[thread_id].workflow->ndpi_struct, _disabled_protocols, 1);
-  }
-
-  if(_categoriesDirPath) {
-    int failed_files = ndpi_load_categories_dir(ndpi_thread_info[thread_id].workflow->ndpi_struct, _categoriesDirPath);
-    if (failed_files < 0) {
-      fprintf(stderr, "Failed to parse all *.list files in: %s\n", _categoriesDirPath);
-      exit(-1);
-    }
-  }
-
-  if(_domain_suffixes)
-    ndpi_load_domain_suffixes(ndpi_thread_info[thread_id].workflow->ndpi_struct, _domain_suffixes);
-
-  if(_riskyDomainFilePath)
-    ndpi_load_risk_domain_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _riskyDomainFilePath);
-
-  if(_maliciousJA4Path)
-    ndpi_load_malicious_ja4_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _maliciousJA4Path);
-
-  if(_maliciousSHA1Path)
-    ndpi_load_malicious_sha1_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _maliciousSHA1Path);
-
-  if(_customCategoryFilePath) {
-    char *label = strrchr(_customCategoryFilePath, '/');
-
-    if(label != NULL)
-      label = &label[1];
-    else
-      label = _customCategoryFilePath;
-
-    int failed_lines = ndpi_load_categories_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _customCategoryFilePath, label);
-    if (failed_lines < 0) {
-      fprintf(stderr, "Failed to parse custom categories file: %s\n", _customCategoryFilePath);
-      exit(-1);
-    }
-  }
+  configure_ndpi(ndpi_thread_info[thread_id].workflow->ndpi_struct);
 
   if(ndpi_thread_info[thread_id].workflow == NULL)
     exit(-1); /* Some initialiation functions failed */
@@ -3219,28 +3351,6 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle,
 #ifdef NDPI_PROTOCOL_BITTORRENT
   ndpi_bittorrent_init(ndpi_thread_info[thread_id].workflow->ndpi_struct,9*1024,2100,0);
 #endif
-
-  if(_protoFilePath != NULL)
-    ndpi_load_protocols_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _protoFilePath);
-
-  ndpi_set_config(ndpi_thread_info[thread_id].workflow->ndpi_struct, NULL, "tcp_ack_payload_heuristic", "enable");
-
-  for(i = 0; i < num_cfgs; i++) {
-    rc = ndpi_set_config(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                         cfgs[i].proto, cfgs[i].param, cfgs[i].value);
-    if (rc != NDPI_CFG_OK) {
-      fprintf(stderr, "Error setting config [%s][%s][%s]: %s (%d)\n",
-	      (cfgs[i].proto != NULL ? cfgs[i].proto : ""),
-	      cfgs[i].param, cfgs[i].value, ndpi_cfg_error2string(rc), rc);
-      exit(-1);
-    }
-  }
-
-  if(enable_doh_dot_detection)
-    ndpi_set_config(ndpi_thread_info[thread_id].workflow->ndpi_struct, "tls", "application_blocks_tracking", "enable");
-
-  if(addr_dump_path != NULL)
-    ndpi_cache_address_restore(ndpi_thread_info[thread_id].workflow->ndpi_struct, addr_dump_path, 0);
 
   ret = ndpi_finalize_initialization(ndpi_thread_info[thread_id].workflow->ndpi_struct);
   if(ret != 0) {
@@ -4285,8 +4395,7 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
     printf("\nnDPI Memory statistics:\n");
     printf("\tnDPI Memory (once):      %-13s\n", formatBytes(ndpi_get_ndpi_detection_module_size(), buf, sizeof(buf)));
     printf("\tFlow Memory (per flow):  %-13s\n", formatBytes(ndpi_detection_get_sizeof_ndpi_flow_struct(), buf, sizeof(buf)));
-    printf("\tActual Memory:           %-13s\n", formatBytes(current_ndpi_memory, buf, sizeof(buf)));
-    printf("\tPeak Memory:             %-13s\n", formatBytes(max_ndpi_memory, buf, sizeof(buf)));
+    printf("\tTotal memory allocated:  %-13s\n", formatBytes(tot_ndpi_memory, buf, sizeof(buf)));
     printf("\tSetup Time:              %lu msec\n", (unsigned long)(setup_time_usec/1000));
     printf("\tPacket Processing Time:  %lu msec\n", (unsigned long)(processing_time_usec/1000));
 
@@ -6934,21 +7043,35 @@ void domainCacheTestUnit() {
 
 /* *********************************************** */
 
-void checkRankingUnitTest() {
+void checkmemrchrUnitTest() {
+  char a[] = "string";
+
+
+  assert(ndpi_memrchr(a, 's', sizeof(a) -1) == a);
+  assert(ndpi_memrchr(a, 'b', sizeof(a) - 1) == NULL);
+  assert(ndpi_memrchr(a, 't', sizeof(a) - 1) == a + 1);
+  assert(ndpi_memrchr(a, 'g', sizeof(a) - 1) == a + 5);
+  assert(ndpi_memrchr(a, '\0', sizeof(a) - 1) == NULL);
+}
+
+/* *********************************************** */
+
+void checkRankingUnitTest(bool do_trace) {
   ndpi_ranking rank;
   char path[64] = {0};
   const u_int num = 3;
   ndpi_ranking_epoch_entry entries[4];
   u_int i, j;
   ndpi_ranking_change curr_ranking[4], prev_ranking[4];
-  u_int32_t now = (u_int32_t)time(NULL);
-  bool do_trace = false;
+  u_int32_t now = (u_int32_t)time(NULL), prev_epoch;
   u_int16_t num_changes;
-    
+
   srand(now);
 
-  /* On GitHub Actions, ndpiReader might be called multiple times in parallel, so
-     every instance must use its own file */
+  /*
+    On GitHub Actions, ndpiReader might be called multiple times in parallel,
+    so every instance must use its own file
+  */
   snprintf(path, sizeof(path), "/tmp/ranking.%u.test", (unsigned int)getpid());
 
   ndpi_init_ranking(&rank, num+1 /* max_num_items */, 8 /* num_epochs */);
@@ -6959,10 +7082,12 @@ void checkRankingUnitTest() {
   assert(ndpi_deserialize_ranking(&rank, path) == true);
 
   for(j=0; j<num+1; j++) {
-    for(i=0; i<num+1; i++) entries[i].item_unique_id = i+1, entries[i].value = rand();
+    for(i=0; i<num+1; i++) entries[i].item_unique_id = i+1,
+			     entries[i].value = rand();
 
     /* num_changes = */ ndpi_ranking_add_epoch(&rank, now, entries, num+1,
-					 curr_ranking, prev_ranking);
+					       curr_ranking, prev_ranking,
+					       &prev_epoch);
     now++;
   }
 
@@ -6974,21 +7099,24 @@ void checkRankingUnitTest() {
   ndpi_init_ranking(&rank, num+1 /* max_num_items */, 8 /* num_epochs */);
 
   for(j=0; j<num+1; j++) {
-    for(i=0; i<num+1; i++) entries[i].item_unique_id = i+1, entries[i].value = i*(1+j)*10;
-    
+    for(i=0; i<num+1; i++) entries[i].item_unique_id = i+1,
+			     entries[i].value = i*(1+j)*10;
+
     num_changes = ndpi_ranking_add_epoch(&rank, now, entries, num+1,
-					 curr_ranking, prev_ranking);
+					 curr_ranking, prev_ranking,
+					 &prev_epoch);
 
     if(do_trace) {
       if(num_changes > 0) {
-	printf("[loop %u] %u ranking changes at epoch %u\n", j+1, num_changes, now);
+	printf("[loop %u] %u ranking changes at epoch %u\n",
+	       j+1, num_changes, now);
       } else
 	printf("[loop %u] No ranking changes at epoch %u\n", j+1, now);
     }
 
     if(do_trace)
       ndpi_print_ranking(&rank);
-    
+
     assert(num_changes == 0);
     now++;
   }
@@ -6997,21 +7125,52 @@ void checkRankingUnitTest() {
 
   entries[num].value = 999;
   num_changes = ndpi_ranking_add_epoch(&rank, now, entries, num+1,
-				       curr_ranking, prev_ranking);
-  
+				       curr_ranking, prev_ranking,
+				       &prev_epoch);
+
   if(do_trace) {
     if(num_changes > 0) {
-      printf("[loop %u] %u ranking changes at epoch %u\n", j+1, num_changes, now);
+      printf("[loop %u] %u ranking changes at epoch %u\n", j+1,
+	     num_changes, now);
     } else
       printf("[loop %u] No ranking changes at epoch %u\n", j+1, now);
   }
 
   if(do_trace)
     ndpi_print_ranking(&rank);
-  
+
   assert(num_changes > 0);
   now++;
-  
+
+  /* *** */
+
+  if(do_trace) {
+    printf("***** loop *****\n");
+  }
+
+  for(j=0; j<5; j++) {
+    for(i=0; i<num+1; i++)
+      entries[i].value++;;
+
+    num_changes = ndpi_ranking_add_epoch(&rank, now, entries, num+1,
+					 curr_ranking, prev_ranking,
+					 &prev_epoch);
+
+    if(do_trace) {
+      if(num_changes > 0) {
+	printf("[loop %u] %u ranking changes at epoch %u\n",
+	       j+1, num_changes, now);
+      } else
+	printf("[loop %u] No ranking changes at epoch %u\n", j+1, now);
+    }
+
+    if(do_trace)
+      ndpi_print_ranking(&rank);
+
+    assert(num_changes == 0);
+    now++;
+  }
+
   ndpi_term_ranking(&rank);
 }
 
@@ -7029,10 +7188,10 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef FORCE_RANKING_CHECK
-  checkRankingUnitTest();
+  checkRankingUnitTest(true);
   exit(0);
 #endif
-  
+
 #ifdef DEBUG_TRACE
   trace = fopen("/tmp/ndpiReader.log", "a");
 
@@ -7056,7 +7215,7 @@ int main(int argc, char **argv) {
 #ifndef DEBUG_TRACE
     /* Skip tests when debugging */
 
-    checkRankingUnitTest();
+    checkRankingUnitTest(false);
 
 #ifdef HW_TEST
     hwUnitTest2();
@@ -7107,6 +7266,7 @@ int main(int argc, char **argv) {
     memcasecmpUnitTest();
     mahalanobisUnitTest();
     bitmaskUnitTest();
+    checkmemrchrUnitTest();
 #endif
   }
 
@@ -7120,6 +7280,11 @@ int main(int argc, char **argv) {
 
   if(domain_to_check) {
     ndpiCheckHostStringMatch(domain_to_check);
+    exit(0);
+  }
+
+  if(domains_file_to_check) {
+    ndpiCheckHostsFileStringMatch(domains_file_to_check);
     exit(0);
   }
 

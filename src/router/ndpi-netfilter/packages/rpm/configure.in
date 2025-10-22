@@ -6,6 +6,11 @@ PLATFORM=`uname -p`
 MACHINE=`uname -m`
 SHORT_MACHINE=`uname -m | cut -b1-3`
 
+
+if test $PLATFORM = "unknown"; then
+ PLATFORM="x86_64"
+fi
+
 EXTN=""
 if test $MACHINE = "x86_64"; then
   EXTN="amd64"

@@ -487,6 +487,15 @@ typedef enum {
   NDPI_PROTOCOL_TRISTATION            = 455,
   NDPI_PROTOCOL_SAMSUNG_SDP           = 456,
   NDPI_PROTOCOL_MATTER                = 457,
+  NDPI_PROTOCOL_AWS_COGNITO           = 458,
+  NDPI_PROTOCOL_AWS_API_GATEWAY       = 459,
+  NDPI_PROTOCOL_AWS_KINESIS           = 460,
+  NDPI_PROTOCOL_AWS_EC2               = 461,
+  NDPI_PROTOCOL_AWS_EMR               = 462,
+  NDPI_PROTOCOL_AWS_S3                = 463,
+  NDPI_PROTOCOL_AWS_CLOUDFRONT        = 464,
+  NDPI_PROTOCOL_AWS_DYNAMODB          = 465,
+  NDPI_PROTOCOL_ESPN                  = 466,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

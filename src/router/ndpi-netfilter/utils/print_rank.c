@@ -24,16 +24,12 @@
 /* *********************************************** */
 
 int main(int argc, char *argv[]) {
-  struct ndpi_detection_module_struct *ndpi_str;
   ndpi_ranking rank;
   
   if(argc != 2) {
     printf("Usage: print_rank <filename>\n");
     return(0);
   }
-
-  
-  assert(ndpi_str = ndpi_init_detection_module(NULL));
 
   if(!ndpi_deserialize_ranking(&rank, argv[1])) {
     printf("Unable to read file %s\n", argv[1]);
@@ -42,7 +38,5 @@ int main(int argc, char *argv[]) {
     ndpi_term_ranking(&rank);
   }
     
-  ndpi_exit_detection_module(ndpi_str);
-
   return(0);
 }

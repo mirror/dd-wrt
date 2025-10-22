@@ -735,7 +735,7 @@ static int ndpi_find_non_eng_bigrams(char *str) {
 
 /* #define PRINT_STRINGS 1 */
 
-static int ndpi_has_human_readeable_string(char *buffer, u_int buffer_size,
+static int ndpi_has_human_readable_string(char *buffer, u_int buffer_size,
 				    u_int8_t min_string_match_len,
 				    char *outbuf, u_int outbuf_len) {
   u_int ret = 0, i, do_cr = 0, len = 0, o_idx = 0, being_o_idx = 0;
@@ -1122,7 +1122,7 @@ u_char* ndpi_hex_decode(const u_char *src, size_t len, size_t *out_len) {
     u_int i, ret_idx = 0;
 
     for(i=0; i<*out_len; i++) {
-      sscanf((const char*)&src[ret_idx], "%02X", (unsigned int*)&ret[i]);
+      sscanf((const char*)&src[ret_idx], "%02hhX", &ret[i]);
       ret_idx += 2;
     }
 
@@ -3319,7 +3319,7 @@ bool ndpi_is_valid_hostname(char * const hostname, size_t len) {
   /* Check each label (part between dots) */
   p = hostname;
 
-  while ((idx < len) && p[idx]) {
+  while ((idx < len) && *p) {
     if(*p == '.') {
       /* Check previous label */
       if(label_len == 0 || (label_len > 63))
@@ -3327,6 +3327,7 @@ bool ndpi_is_valid_hostname(char * const hostname, size_t len) {
 
       label_len = 0;
       idx++;
+      p++;
       has_valid_label = true;
       continue;
     }
@@ -3345,13 +3346,14 @@ bool ndpi_is_valid_hostname(char * const hostname, size_t len) {
       return(false); /* Label too long */
 
     idx++;
+    p++;
   }
 
   /* Check last label */
   if(label_len == 0)
     return(false); /* Ends with a dot */
 
-  if(!isalnum(p[idx-1]))
+  if(!isalnum(hostname[idx-1]))
     return(false); /* Label must end with letter or digit */
 
   return(has_valid_label || len > 0); /* At least one label exists */
@@ -3982,6 +3984,20 @@ char* ndpi_strrstr(const char *haystack, const char *needle) {
 
   return (char*) last_occurrence;
 }
+
+/* ************************************************************** */
+
+void *ndpi_memrchr(const void *m, int c, size_t n) {
+  const unsigned char *s = m;
+
+  c = (unsigned char)c;
+  while(n--)
+    if(s[n]==c)
+      return (void *)(s+n);
+
+  return 0;
+}
+
 
 /* ************************************************************** */
 
