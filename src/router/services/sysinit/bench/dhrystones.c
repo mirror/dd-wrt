@@ -465,6 +465,7 @@ typedef enum { Ident_1, Ident_2, Ident_3, Ident_4, Ident_5 } Enumeration;
 #define true 1
 #define false 0
 
+#include <utils.h>
 typedef int     One_Thirty;
 typedef int     One_Fifty;
 typedef char    Capital_Letter;
@@ -685,6 +686,7 @@ void start_benchmark(void)
     char rating[64];
     sprintf(rating, "%.1f", Dhrystones_Per_Second);
     nvram_set("cpu_rating", rating);
+    nvram_seti("cpu_speed", calc_cpuspeed());
 }
 
 
