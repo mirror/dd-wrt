@@ -510,6 +510,15 @@ static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"tristation",
 	"samsung_sdp",
 	"matter",
+	"aws_cognito",
+	"aws_api_gateway",
+	"aws_kinesis",
+	"aws_ec2",
+	"aws_emr",
+	"aws_s3",
+	"aws_cloudfront",
+	"aws_dynamodb",
+	"espn",
 	NULL,
 };
 
