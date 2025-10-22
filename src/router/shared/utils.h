@@ -1746,6 +1746,7 @@ float get_length(float meter);
 float set_length(float feet);
 char *get_length_unit(void);
 char *get_temperature_unit(void);
+int calc_cpuspeed(void);
 
 long long getfreespace(const char *path);
 #define ETHER_ADDR_STR_LEN 18 /* 18-bytes of Ethernet address buffer length */
