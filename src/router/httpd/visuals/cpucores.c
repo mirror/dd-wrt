@@ -84,6 +84,7 @@
 #elif defined(HAVE_PB42) || defined(HAVE_LSX)
 #define FREQLINE 5
 #elif HAVE_IPQ6018
+
 EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
@@ -91,9 +92,15 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000, nvram_geti("cpu_speed"));
 	} else {
-		websWrite(wp, "1200");
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "1200");
+		else
+			websWrite(wp, "1200&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
 		return;
 	}
 }
@@ -105,9 +112,15 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000, nvram_geti("cpu_speed"));
 	} else {
-		websWrite(wp, "800");
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "800");
+		else
+			websWrite(wp, "800 (%d)", nvram_geti("cpu_speed"));
 		return;
 	}
 }
@@ -119,7 +132,10 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000, nvram_geti("cpu_speed"));
 		return;
 	}
 	fp = fopen("/sys/kernel/debug/clk/cpuclk/clk_rate", "rb");
@@ -127,7 +143,10 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000000, nvram_geti("cpu_speed"));
 		return;
 	}
 
@@ -143,10 +162,16 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000, nvram_geti("cpu_speed"));
 		return;
 	} else {
-		websWrite(wp, "1700");
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000);
+		else
+			websWrite(wp, "1700&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
 	}
 	return;
 }
@@ -168,9 +193,16 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 	} else if (fp3) {
 		int freq;
 		fscanf(fp3, "%d", &freq);
-		websWrite(wp, "%d", freq / 1000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000, nvram_geti("cpu_speed"));
+
 	} else {
-		websWrite(wp, "1400");
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "1400");
+		else
+			websWrite(wp, "1400&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
 	}
 	if (fp)
 		fclose(fp);
@@ -208,14 +240,20 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 				b = getc(fp);
 			}
 			cpuclk[i++] = 0;
-			websWrite(wp, cpuclk);
+			if (argc && !strcmp(argv[0], "1"))
+				websWrite(wp, cpuclk);
+			else
+				websWrite(wp, "%s&nbsp;MHz (%d)", cpuclk, nvram_geti("cpu_speed"));
 			fclose(fp);
 			return;
 		}
 	}
 
 	fclose(fp);
-	websWrite(wp, "unknown");
+	if (argc && !strcmp(argv[0], "1"))
+		websWrite(wp, "%d", nvram_geti("cpu_speed"));
+	else
+		websWrite(wp, "%d&nbsp;MHz", nvram_geti("cpu_speed"));
 	return;
 }
 #elif HAVE_REALTEK
@@ -226,20 +264,16 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000000);
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", freq / 1000000);
+		else
+			websWrite(wp, "%d&nbsp;MHz (%d)", freq / 1000000, nvram_geti("cpu_speed"));
 		return;
 	} else {
-		char *str = cpustring();
-		if (!strncmp(str, "RTL839", 6))
-			websWrite(wp, "750");
-		else if (!strncmp(str, "RTL838", 6))
-			websWrite(wp, "500");
-		else if (!strncmp(str, "RTL930", 6))
-			websWrite(wp, "800");
-		else if (!strncmp(str, "RTL931", 6))
-			websWrite(wp, "1000");
+		if (argc && !strcmp(argv[0], "1"))
+			websWrite(wp, "%d", nvram_geti("cpu_speed"));
 		else
-			websWrite(wp, "unknown");
+			websWrite(wp, "%d&nbsp;MHz", nvram_geti("cpu_speed"));
 	}
 	return;
 }
@@ -249,12 +283,21 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 	char *clk = nvram_safe_get("clkfreq");
 
 	if (!*clk) {
-		if (getcpurev() == 0) //BCM4710
-			websWrite(wp, "125");
-		else if (getcpurev() == 29) //BCM5354
-			websWrite(wp, "240");
-		else
-			websWrite(wp, "unknown");
+		if (argc && !strcmp(argv[0], "1")) {
+			if (getcpurev() == 0) //BCM4710
+				websWrite(wp, "125&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
+			else if (getcpurev() == 29) //BCM5354
+				websWrite(wp, "240&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
+			else
+				websWrite(wp, "%d", nvram_geti("cpu_speed"));
+		} else {
+			if (getcpurev() == 0) //BCM4710
+				websWrite(wp, "125&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
+			else if (getcpurev() == 29) //BCM5354
+				websWrite(wp, "240&nbsp;MHz (%d)", nvram_geti("cpu_speed"));
+			else
+				websWrite(wp, "%d&nbsp;MHz", nvram_geti("cpu_speed"));
+		}
 		return;
 	}
 	char buf[64];
@@ -266,7 +309,10 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 		if (buf[i] == ',')
 			buf[i] = 0;
 	}
-	websWrite(wp, buf);
+	if (argc && !strcmp(argv[0], "1"))
+		websWrite(wp, buf);
+	else
+		websWrite(wp, "%s&nbsp;MHz (%d)", buf, nvram_geti("cpu_speed"));
 	return;
 }
 #endif
@@ -299,14 +345,22 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 				cpuclk[i] = c;
 			}
 			cpuclk[i] = 0;
-			websWrite(wp, cpuclk);
+			if (argc && !strcmp(argv[0], "1"))
+				websWrite(wp, cpuclk);
+			else
+				websWrite(wp, "%s&nbsp;MHz (%d)", cpuclk, nvram_geti("cpu_speed"));
+
 			fclose(fp);
 			return;
 		}
 	}
 
 	fclose(fp);
-	websWrite(wp, "unknown");
+	if (argc && !strcmp(argv[0], "1"))
+		websWrite(wp, "%d", nvram_geti("cpu_speed"));
+	else
+		websWrite(wp, "%d&nbsp;MHz", nvram_geti("cpu_speed"));
+
 	return;
 }
 
@@ -314,10 +368,13 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 #elif defined(HARDFREQ)
 EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
-	websWrite(wp, HARDFREQ);
+	if (argc && !strcmp(argv[0], "1"))
+		websWrite(wp, "%d", nvram_geti("cpu_speed"));
+	else
+		websWrite(wp, "%d&nbsp;MHz", nvram_geti("cpu_speed"));
+
 	return;
 }
-
 #undef HARDFREQ
 #endif
 
