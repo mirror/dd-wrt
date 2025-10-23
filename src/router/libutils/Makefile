@@ -1947,6 +1947,10 @@ libwireless/mac80211autochannel.o:
 	@echo "[CC] $@"
 	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -o libwireless/mac80211autochannel.o libwireless/mac80211autochannel.c
 
+libutils/mhz.o:
+	@echo "[CC] $@"
+	@$(CC) -shared -c -fomit-frame-pointer $(CFLAGS) -O3 -o libutils/mhz.o libutils/mhz.c
+
 %.o : %.c
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) -DUSE_IOCTL_LINUX -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -c -o $@ $<
