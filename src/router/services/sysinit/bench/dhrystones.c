@@ -561,7 +561,7 @@ void start_benchmark(void)
         Str_30          Str_2_Loc;
   REG   int             Run_Index;
   REG   int             Number_Of_Runs;
-  if (*nvram_safe_get("cpu_rating"))
+  if (*nvram_safe_get("cpu_rating") && *nvram_safe_get("cpu_speed"))
 	return;
   
   {
