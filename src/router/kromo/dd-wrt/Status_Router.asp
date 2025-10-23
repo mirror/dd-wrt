@@ -136,7 +136,7 @@ addEvent(window, "unload", function() {
 								<% show_cpufeatures(); %>
 								<div class="setting">
 									<div class="label"><% tran("status_router.clock"); %></div>
-									<span id="clkfreq"><% get_clkfreq(); %></span>&nbsp;MHz
+									<span id="clkfreq"><% get_clkfreq(); %></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.dhrystones"); %></div>
