@@ -85,7 +85,7 @@
 #define FREQLINE 5
 #elif HAVE_IPQ6018
 
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
@@ -99,7 +99,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	}
 }
 #elif HAVE_VENTANA
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
@@ -114,7 +114,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	}
 }
 #elif HAVE_MVEBU
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
@@ -140,7 +140,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	return;
 }
 #elif HAVE_ALPINE
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
@@ -156,7 +156,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	return;
 }
 #elif HAVE_IPQ806X
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp2 = fopen("/sys/kernel/debug/clk/krait1_pri_mux/clk_rate", "rb");
 	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
@@ -188,7 +188,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	return;
 }
 #elif HAVE_X86
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
@@ -226,7 +226,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	return;
 }
 #elif HAVE_REALTEK
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/sys/kernel/debug/clk/cpu_clk/clk_rate", "rb");
 	if (fp) {
@@ -242,7 +242,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 	return;
 }
 #else
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	char *clk = nvram_safe_get("clkfreq");
 
@@ -274,7 +274,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 #endif
 
 #if defined(FREQLINE)
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
@@ -317,7 +317,7 @@ static void get_clkfreq(int *clk1, *clk2, int *calculated)
 
 #undef FREQLINE
 #elif defined(HARDFREQ)
-static void get_clkfreq(int *clk1, *clk2, int *calculated)
+static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	*clk1 = nvram_geti("cpu_speed");
 	return;
