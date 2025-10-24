@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.plexapp.agents.lastfm</string>
+	<key>PlexAgentAttributionText</key>
+	<string>
+		Concert information provided by &lt;a href=&quot;http://www.songkick.com/&quot;&gt;songkick&lt;/a&gt;
+	</string>
+	<key>PlexFrameworkVersion</key>
+	<string>2</string>
+	<key>PlexPluginClass</key>
+	<string>Agent</string>
+	<key>PlexPluginCodePolicy</key>
+	<string>Elevated</string>
+</dict>
+</plist>

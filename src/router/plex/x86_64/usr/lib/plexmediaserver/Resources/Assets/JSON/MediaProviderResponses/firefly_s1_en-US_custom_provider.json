@@ -1,0 +1,1586 @@
+{
+  "MediaContainer": {
+    "librarySectionID": "home",
+    "librarySectionTitle": "Metadata",
+    "Metadata": [
+      {
+        "type": "season",
+        "ratingKey": "tmdb-season-1437-1",
+        "guid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+        "key": "/library/metadata/tmdb-season-1437-1/children",
+        "thumb": "https://image.tmdb.org/t/p/original/qpjgUjjj3gQTzkQgcHXVBaP51Qf.jpg",
+        "title": "Season 1",
+        "originallyAvailableAt": "2002-09-20",
+        "addedAt": 1758545492,
+        "leafCount": 11,
+        "year": 2002,
+        "index": 1,
+        "parentRatingKey": "tmdb-show-1437",
+        "parentGuid": "tv.plex.agents.custom.tmdb://show/1437",
+        "parentTitle": "Firefly",
+        "parentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+        "parentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+        "Image": [
+          {
+            "alt": "Season 1",
+            "type": "coverPoster",
+            "url": "https://image.tmdb.org/t/p/original/qpjgUjjj3gQTzkQgcHXVBaP51Qf.jpg"
+          }
+        ],
+        "Guid": [
+          {
+            "id": "tmdb://1437/1"
+          }
+        ],
+        "Children": {
+          "size": 11,
+          "Metadata": [
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-1",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-1",
+              "key": "/library/metadata/tmdb-episode-1437-1-1",
+              "summary": "The crew of Serenity take on a train heist commissioned by a crime lord. They steal the goods, only to find it is medicine that's desperately needed by the town.",
+              "thumb": "https://image.tmdb.org/t/p/original/w4yFzJkAiGjuDQuFKLOocjrH1eH.jpg",
+              "title": "The Train Job",
+              "originallyAvailableAt": "2002-09-20",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 7.7,
+              "index": 1,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "The Train Job",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg"
+                },
+                {
+                  "alt": "The Train Job",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/w4yFzJkAiGjuDQuFKLOocjrH1eH.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048594"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-84707",
+                  "order": 1,
+                  "tag": "Michael Fairman",
+                  "role": "Adelai Niska",
+                  "thumb": "https://image.tmdb.org/t/p/original/zFLOZiKJJxhSTwgKgAGZyexOyUm.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-27736",
+                  "order": 2,
+                  "tag": "Tom Towles",
+                  "role": "Lund",
+                  "thumb": "https://image.tmdb.org/t/p/original/ekBEknY5CAjX8zXkSjGVkS3WcAN.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-52366",
+                  "order": 3,
+                  "tag": "Andrew Bryniarski",
+                  "role": "Crow",
+                  "thumb": "https://image.tmdb.org/t/p/original/7WecTlVEkck19VMXTcBfSkmshYL.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2518",
+                  "order": 4,
+                  "tag": "Gregg Henry",
+                  "role": "Sheriff Bourne",
+                  "thumb": "https://image.tmdb.org/t/p/original/j17nuAFulrbYP34g4Qw8SZRDNUo.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-131455",
+                  "order": 5,
+                  "tag": "Valerie Red-Horse",
+                  "role": "Deputy",
+                  "thumb": "https://image.tmdb.org/t/p/original/v0oo1SKp4erO85jB46nZU9gNYhp.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-154599",
+                  "order": 6,
+                  "tag": "Lina Patel",
+                  "role": "Ensign",
+                  "thumb": "https://image.tmdb.org/t/p/original/nocneBfZHR0Z8SJORvEdYVJVTew.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1219579",
+                  "order": 7,
+                  "tag": "Kevin Will",
+                  "role": "Officer",
+                  "thumb": "https://image.tmdb.org/t/p/original/skLUZhtN2aUsBusSWAGjd5ThY1t.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-116514",
+                  "order": 8,
+                  "tag": "Eric Lange",
+                  "role": "Fed",
+                  "thumb": "https://image.tmdb.org/t/p/original/ziOcfPKJ5jjyUikOOoCfjusy0Ut.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-44825",
+                  "order": 9,
+                  "tag": "David Reynolds",
+                  "role": "Henchman",
+                  "thumb": "https://image.tmdb.org/t/p/original/6HKWm7shK5BrLlI91JV6KAIzK2H.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149640",
+                  "order": 10,
+                  "tag": "Jeff Ricketts",
+                  "role": "Man",
+                  "thumb": "https://image.tmdb.org/t/p/original/khiwfKygqFILzpvUNlu55EqQjFm.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-155825",
+                  "order": 11,
+                  "tag": "Dennis Cockrum",
+                  "role": "Other Man",
+                  "thumb": "https://image.tmdb.org/t/p/original/A3Or26SK7GFf9nv9OVd2X5DpLuO.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-205374",
+                  "order": 12,
+                  "tag": "Rene Hamilton",
+                  "role": "Immigrant Woman",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149628",
+                  "order": 13,
+                  "tag": "Michelle Ferrara",
+                  "role": "Immigrant Woman #2",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1287070",
+                  "order": 14,
+                  "tag": "Melody White",
+                  "role": "Bellydancer (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1286738",
+                  "order": 15,
+                  "tag": "Rick Williamson",
+                  "role": "Bar Guy, Henchman (uncredited)",
+                  "thumb": "https://image.tmdb.org/t/p/original/byOjQKOeC6c8eLxQZWnhmtnIU4A.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202100",
+                  "tag": "Tim Minear",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/zOnOJmM0sShVbLgW2jB0j0r6D6U.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-2",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-2",
+              "key": "/library/metadata/tmdb-episode-1437-1-2",
+              "summary": "Serenity is pulled in by a Tohoku-class cruiser while investigating a spaceship that was attacked by Reavers. Simon and River must hide to prevent capture, while something is wrong with the lone survivor of the attacked spaceship.",
+              "thumb": "https://image.tmdb.org/t/p/original/ngAXwtCEiyFUYZlIJOMk9g6q7Ep.jpg",
+              "title": "Bushwhacked",
+              "originallyAvailableAt": "2002-09-27",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 7.8,
+              "index": 2,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Bushwhacked",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg"
+                },
+                {
+                  "alt": "Bushwhacked",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/ngAXwtCEiyFUYZlIJOMk9g6q7Ep.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048595"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-14737",
+                  "order": 1,
+                  "tag": "Doug Savant",
+                  "role": "Commander Harken",
+                  "thumb": "https://image.tmdb.org/t/p/original/yJ9UjfZ3PcULd0OPZhZ4vv23KMG.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-56165",
+                  "order": 2,
+                  "tag": "Branden Morgan",
+                  "role": "Survivor",
+                  "thumb": "https://image.tmdb.org/t/p/original/25OUQsBPNGxRMDKkf9jtcgYgGoY.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-200096",
+                  "order": 3,
+                  "tag": "Lancer Dean Shull",
+                  "role": "Radio Operator",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-179877",
+                  "order": 4,
+                  "tag": "Jared Poe",
+                  "role": "Ensign",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-182168",
+                  "order": 5,
+                  "tag": "Gary J. Wayton",
+                  "role": "Rebel Soldier (uncredited)",
+                  "thumb": "https://image.tmdb.org/t/p/original/2xskyQVl79d9sfL9IIA7ebTJIp0.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-202100",
+                  "tag": "Tim Minear",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/zOnOJmM0sShVbLgW2jB0j0r6D6U.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202100",
+                  "tag": "Tim Minear",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/zOnOJmM0sShVbLgW2jB0j0r6D6U.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-3",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-3",
+              "key": "/library/metadata/tmdb-episode-1437-1-3",
+              "summary": "As an unexpected reward for an unpaid job, Mal finds himself married to a naïve, subservient young woman named Saffron. The crew are amused at his discomfort and Book lectures him on propriety, but things aren't as smoothly straightforward as they thought them to be.",
+              "thumb": "https://image.tmdb.org/t/p/original/fxsOgCUZmyeVBAenE9aH97PhZL7.jpg",
+              "title": "Our Mrs. Reynolds",
+              "originallyAvailableAt": "2002-10-04",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 8.4,
+              "index": 3,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Our Mrs. Reynolds",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg"
+                },
+                {
+                  "alt": "Our Mrs. Reynolds",
+                  "type": "snapshot",
+                  "url": "https://image.tmdb.org/t/p/original/fxsOgCUZmyeVBAenE9aH97PhZL7.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048598"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-2137",
+                  "order": 1,
+                  "tag": "Benito Martinez",
+                  "role": "Boss",
+                  "thumb": "https://image.tmdb.org/t/p/original/3lPxnrPCs31lnliBNEssgxw7Qxg.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1224332",
+                  "order": 2,
+                  "tag": "Erik Passoja",
+                  "role": "Bree",
+                  "thumb": "https://image.tmdb.org/t/p/original/kqFtyRJaEnaGA4mh0ntiJtmzc1C.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149651",
+                  "order": 3,
+                  "tag": "Bob Fimiani",
+                  "role": "Elder Gommen",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-181848",
+                  "order": 4,
+                  "tag": "Alex Stemkovsky",
+                  "role": "Bandit",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-29222",
+                  "order": 5,
+                  "tag": "Zac Efron",
+                  "role": "Young Simon",
+                  "thumb": "https://image.tmdb.org/t/p/original/pdWXP7XG6qqOoxoLid1DWYwmaMY.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1287075",
+                  "order": 6,
+                  "tag": "Heath Russell",
+                  "role": "Background (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-110014",
+                  "order": 7,
+                  "tag": "Christina Hendricks",
+                  "role": "Saffron",
+                  "thumb": "https://image.tmdb.org/t/p/original/fqQWrKDhOTAPjjNTHSU4tBfq5NJ.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-6198",
+                  "tag": "Vondie Curtis-Hall",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/eJbwjnUB3VGGioAtQTmiYI4k7lH.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-4",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-4",
+              "key": "/library/metadata/tmdb-episode-1437-1-4",
+              "summary": "Returning to a planet where he ran into some serious trouble years ago, Jayne discovers that he's become a local folk legend. Mal decides to use this entertaining distraction to complete a job, but some unfinished business may derail his plans.",
+              "thumb": "https://image.tmdb.org/t/p/original/gKvmsSeXlbA3J5iFp0Yk4hqmrbz.jpg",
+              "title": "Jaynestown",
+              "originallyAvailableAt": "2002-10-18",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 8,
+              "index": 4,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Jaynestown",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/gKvmsSeXlbA3J5iFp0Yk4hqmrbz.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048599"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-21142",
+                  "order": 1,
+                  "tag": "Gregory Itzin",
+                  "role": "Magistrate Higgins",
+                  "thumb": "https://image.tmdb.org/t/p/original/lUACgFTvuhRhAC3GwnpcWMGLxo4.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1212244",
+                  "order": 2,
+                  "tag": "Daniel Bess",
+                  "role": "Mudder",
+                  "thumb": "https://image.tmdb.org/t/p/original/fc7Uedk7ct2CnP6J6Ky9gRsL83x.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-34839",
+                  "order": 3,
+                  "tag": "Kevin Gage",
+                  "role": "Stitch Hessian",
+                  "thumb": "https://image.tmdb.org/t/p/original/nTaDLkN1RAhPGaM0AO1CFysnwUl.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-169607",
+                  "order": 4,
+                  "tag": "Zachary Kranzler",
+                  "role": "Fess Higgins",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-54694",
+                  "order": 5,
+                  "tag": "Clement Blake",
+                  "role": "Mudder Elder",
+                  "thumb": "https://image.tmdb.org/t/p/original/ueUSkeygA6qmgfwQRSsPc2yNDZg.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1431569",
+                  "order": 6,
+                  "tag": "John Jabaley",
+                  "role": "Bartender",
+                  "thumb": "https://image.tmdb.org/t/p/original/pVjUv11SKJrF2ttkhF7FiwOsh65.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-33713",
+                  "order": 7,
+                  "tag": "Jordan Lund",
+                  "role": "Foreman",
+                  "thumb": "https://image.tmdb.org/t/p/original/hrq0Mlj9Z42m9SpiOk5jXJNIrF6.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2023794",
+                  "order": 8,
+                  "tag": "Ronald Craig Williams",
+                  "role": "Busker",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-115316",
+                  "order": 9,
+                  "tag": "Bob McCracken",
+                  "role": "Well-Dressed Man",
+                  "thumb": "https://image.tmdb.org/t/p/original/s9Ge32oeNrix0pdygXgIBPcLgoS.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202660",
+                  "order": 10,
+                  "tag": "Laura Niemi",
+                  "role": "Woman",
+                  "thumb": "https://image.tmdb.org/t/p/original/cQPfzY6b7yiO5LBt2awI8Gt2YCd.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-154830",
+                  "order": 11,
+                  "tag": "Simon Brooke",
+                  "role": "Prod",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2033027",
+                  "order": 12,
+                  "tag": "Heather Crawford",
+                  "role": "Mud Man (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2959084",
+                  "order": 13,
+                  "tag": "Tiffany Michelle",
+                  "role": "Mudwoman (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2959085",
+                  "order": 14,
+                  "tag": "Lon Moriarty",
+                  "role": "Mudder (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2796175",
+                  "order": 15,
+                  "tag": "Stephen Silberkraus",
+                  "role": "Mud Farmer (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-1215026",
+                  "tag": "Marita Grabiak",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/5GAgOPD6aIA7BS35Xq3mLkc6VkM.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1215761",
+                  "tag": "Ben Edlund",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/89MeUEwwssEMp0FmGf64539FNB8.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-5",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-5",
+              "key": "/library/metadata/tmdb-episode-1437-1-5",
+              "summary": "After Serenity suffers a catastrophe that leaves her crew with only hours of oxygen, flashbacks show how Mal and Zoë acquired Serenity and assembled their motley band.",
+              "thumb": "https://image.tmdb.org/t/p/original/eOP0DNWzFHR7nPhf1SbK2XZOiXJ.jpg",
+              "title": "Out of Gas",
+              "originallyAvailableAt": "2002-10-25",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 8.3,
+              "index": 5,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Out of Gas",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/eOP0DNWzFHR7nPhf1SbK2XZOiXJ.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048600"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-155949",
+                  "order": 1,
+                  "tag": "Steven Flynn",
+                  "role": "Captain Sash",
+                  "thumb": "https://image.tmdb.org/t/p/original/dKFZqL96esi5mYmgusQoySErup3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-109667",
+                  "order": 2,
+                  "tag": "Ilia Volok",
+                  "role": "Marco",
+                  "thumb": "https://image.tmdb.org/t/p/original/vkzEmYELgEsmbSJmh2RALnBYCR7.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-84421",
+                  "order": 3,
+                  "tag": "Lyle Kanouse",
+                  "role": "Salesman",
+                  "thumb": "https://image.tmdb.org/t/p/original/2yuFNiVDTcB7F9CPLwedKVi9WFk.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1224311",
+                  "order": 4,
+                  "tag": "Dax Griffin",
+                  "role": "Bester",
+                  "thumb": "https://image.tmdb.org/t/p/original/1cm9sZ7nkFGOJfeiRBPySK22lka.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-203822",
+                  "order": 5,
+                  "tag": "Roderick McCarthy",
+                  "role": "Lacey #1",
+                  "thumb": "https://image.tmdb.org/t/p/original/rcz9eCbGEWNeP0AusiEGBSCHMOi.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-1222761",
+                  "tag": "David Solomon",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/xoiTCDv44cDMmUfkPlbuTPx2Rsr.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202100",
+                  "tag": "Tim Minear",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/zOnOJmM0sShVbLgW2jB0j0r6D6U.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-6",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-6",
+              "key": "/library/metadata/tmdb-episode-1437-1-6",
+              "summary": "Inara attends a formal society dance, only to find Malcolm there as well, attempting to set up a smuggling job. Mal comes to blows with Inara's conceited date and finds himself facing a duel with a renowned swordsman, and only one night to learn how to fence.",
+              "thumb": "https://image.tmdb.org/t/p/original/kHZWQszqkSrDWyFTj08Koh0Ng4I.jpg",
+              "title": "Shindig",
+              "originallyAvailableAt": "2002-11-01",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 7.7,
+              "index": 6,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Shindig",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/kHZWQszqkSrDWyFTj08Koh0Ng4I.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048596"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-38331",
+                  "order": 1,
+                  "tag": "Edward Atterton",
+                  "role": "Atherton Wing",
+                  "thumb": "https://image.tmdb.org/t/p/original/jzGLz10ij0g7u84caAfyqXMqOeD.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-16476",
+                  "order": 2,
+                  "tag": "Larry Drake",
+                  "role": "Sir Warwick Harrow",
+                  "thumb": "https://image.tmdb.org/t/p/original/vPI6gPoWskUMWla92MOiSD1OuBt.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-180249",
+                  "order": 3,
+                  "tag": "Carl Bresk",
+                  "role": "Wright",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-58214",
+                  "order": 4,
+                  "tag": "Larry Pennell",
+                  "role": "Murphy",
+                  "thumb": "https://image.tmdb.org/t/p/original/bNTGFjUvhxPPrxlxWiccnvG8cbF.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-101416",
+                  "order": 5,
+                  "tag": "Michael McMillian",
+                  "role": "Younger Hopeful",
+                  "thumb": "https://image.tmdb.org/t/p/original/tHCAeqKvDk2KCJKbkzklWcjNUzy.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202661",
+                  "order": 6,
+                  "tag": "Kim Onasch",
+                  "role": "Banning",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-124503",
+                  "order": 7,
+                  "tag": "Janora McDuffie",
+                  "role": "Cabott",
+                  "thumb": "https://image.tmdb.org/t/p/original/okGqvhKCXaE6keAbexLm87WtK1t.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-197497",
+                  "order": 8,
+                  "tag": "Casey Piotrowski",
+                  "role": "Older Farmer",
+                  "thumb": "https://image.tmdb.org/t/p/original/q2SJyZJVPngncndc6REHT9Umts3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202663",
+                  "order": 9,
+                  "tag": "Hunter Cochran",
+                  "role": "Younger Farmer",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-159480",
+                  "order": 10,
+                  "tag": "Roy Werner",
+                  "role": "Gentleman",
+                  "thumb": "https://image.tmdb.org/t/p/original/9UjUsjMzDbzHVOyfPtnPvXCBFdP.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1823446",
+                  "order": 11,
+                  "tag": "Joshua Grenrock",
+                  "role": "Porter",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-53516",
+                  "order": 12,
+                  "tag": "Mark Sheppard",
+                  "role": "Badger",
+                  "thumb": "https://image.tmdb.org/t/p/original/aTlqvlKgfyUAZT48AvEytqkMBC6.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-1174226",
+                  "tag": "Vern Gillum",
+                  "role": "Director",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-77213",
+                  "tag": "Jane Espenson",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/lOLMAy3Ur9pSzF59J9Gsx05zJzK.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-7",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-7",
+              "key": "/library/metadata/tmdb-episode-1437-1-7",
+              "summary": "Mal must choose which crew members to save when one is gravely wounded and two others are kidnapped. Simon finds an uneasy haven in a remote village, but River's uncanny perceptions jeopardize the Tams' temporary safety.",
+              "thumb": "https://image.tmdb.org/t/p/original/qXzz9JGzmsb7pExom73OXfaOlbF.jpg",
+              "title": "Safe",
+              "originallyAvailableAt": "2002-11-08",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 7.4,
+              "index": 7,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Safe",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/qXzz9JGzmsb7pExom73OXfaOlbF.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048597"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-108213",
+                  "order": 1,
+                  "tag": "Isabella Hofmann",
+                  "role": "Regan Tam",
+                  "thumb": "https://image.tmdb.org/t/p/original/vPRXu2u0vewF6dRJLZ2p8rhrIou.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-31712",
+                  "order": 2,
+                  "tag": "William Converse-Roberts",
+                  "role": "Gabriel Tam",
+                  "thumb": "https://image.tmdb.org/t/p/original/43x7iaAJic1adcmpZcX0oZqpQz2.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-127541",
+                  "order": 3,
+                  "tag": "John Thaddeus",
+                  "role": "Stark",
+                  "thumb": "https://image.tmdb.org/t/p/original/eaGxAxBZtWYZXGZ39iLDmiOXnce.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-81830",
+                  "order": 4,
+                  "tag": "Gary Werntz",
+                  "role": "Patron",
+                  "thumb": "https://image.tmdb.org/t/p/original/a6cAg5Hu9vE1Nnza6cq5xZuGEoX.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-204993",
+                  "order": 5,
+                  "tag": "Andy Rolfes",
+                  "role": "Marcus Grange / Older Grange",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1287072",
+                  "order": 6,
+                  "tag": "Matthew Ferreira",
+                  "role": "Nathaniel Grange / Younger Grange",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1224565",
+                  "order": 7,
+                  "tag": "Erica Tazel",
+                  "role": "Doralee",
+                  "thumb": "https://image.tmdb.org/t/p/original/4rYudd0BJiAE4msLhl5IcYvIyLU.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202664",
+                  "order": 8,
+                  "tag": "Skylar Roberge",
+                  "role": "Young River",
+                  "thumb": "https://image.tmdb.org/t/p/original/3lVYU7yoWyDr0ENWWWCXoGygrr1.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-29222",
+                  "order": 9,
+                  "tag": "Zac Efron",
+                  "role": "Young Simon",
+                  "thumb": "https://image.tmdb.org/t/p/original/pdWXP7XG6qqOoxoLid1DWYwmaMY.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-98418",
+                  "order": 10,
+                  "tag": "Joel Steingold",
+                  "role": "Head Cop",
+                  "thumb": "https://image.tmdb.org/t/p/original/tESl7jKTF6oFwurkvnvDWrvkL24.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-168400",
+                  "order": 11,
+                  "tag": "Ron Ostrow",
+                  "role": "Commander",
+                  "thumb": "https://image.tmdb.org/t/p/original/cNm2iTJisH7tZwazclvQz7MdNyB.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-156759",
+                  "order": 12,
+                  "tag": "Morina Pierce",
+                  "role": "Ruby",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-43222",
+                  "tag": "Michael Grossman",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/fjH2OGTim2LseLtxBanDq4Sp24G.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1379807",
+                  "tag": "Drew Z. Greenberg",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/qwh02xbCj8j8vcvl0AFCBDP4bdO.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-8",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-8",
+              "key": "/library/metadata/tmdb-episode-1437-1-8",
+              "summary": "Hard up for cash, Serenity takes on a job from Simon: help him get a thorough diagnostic of River in return for the opportunity to loot the vast medical stores of an Alliance hospital on central world Ariel. But River's pursuers are hot on their trail, and they receive some unexpected inside help.",
+              "thumb": "https://image.tmdb.org/t/p/original/gSlW5xoTEAizKMZL5w8jhSnBJUV.jpg",
+              "title": "Ariel",
+              "originallyAvailableAt": "2002-11-15",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 8.1,
+              "index": 8,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Ariel",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/gSlW5xoTEAizKMZL5w8jhSnBJUV.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048601"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-154888",
+                  "order": 1,
+                  "tag": "Blake Robbins",
+                  "role": "Agent McGuinness",
+                  "thumb": "https://image.tmdb.org/t/p/original/w3AcjUHwmHba1ZMvtbpeEazg79.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149640",
+                  "order": 2,
+                  "tag": "Jeff Ricketts",
+                  "role": "Blue Glove Man #1",
+                  "thumb": "https://image.tmdb.org/t/p/original/khiwfKygqFILzpvUNlu55EqQjFm.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-155825",
+                  "order": 3,
+                  "tag": "Dennis Cockrum",
+                  "role": "Blue Glove Man #2",
+                  "thumb": "https://image.tmdb.org/t/p/original/A3Or26SK7GFf9nv9OVd2X5DpLuO.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-38709",
+                  "order": 4,
+                  "tag": "Tom Virtue",
+                  "role": "Pompous Doctor",
+                  "thumb": "https://image.tmdb.org/t/p/original/etCc7aFC9gOzOctFERT7e6qC83C.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-198793",
+                  "order": 5,
+                  "tag": "Roma Chugani",
+                  "role": "Receiving Doctor",
+                  "thumb": "https://image.tmdb.org/t/p/original/mBOjncJxRpsnC1DuH22HS3RSFeO.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149560",
+                  "order": 6,
+                  "tag": "Michael Nagy",
+                  "role": "Particularly Dressed Man",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-154858",
+                  "order": 7,
+                  "tag": "Cate Cohen",
+                  "role": "Crash Team Nurse",
+                  "thumb": "https://image.tmdb.org/t/p/original/6wvo6NJ5F8bAiPsWiRRd524gv9h.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149849",
+                  "order": 8,
+                  "tag": "Ira Steck",
+                  "role": "Young Intern",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202665",
+                  "order": 9,
+                  "tag": "Alex Connie",
+                  "role": "Patient",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-217593",
+                  "order": 10,
+                  "tag": "Kelli Wheeler",
+                  "role": "Blue Sun Spokesmodel (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-1215364",
+                  "tag": "Allan Kroeker",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/klpbIPLDxNIdIIFPLVddeueSBM1.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-187863",
+                  "tag": "Jose Molina",
+                  "role": "Writer",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-9",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-9",
+              "key": "/library/metadata/tmdb-episode-1437-1-9",
+              "summary": "Angered at Zoë's unshakable war connection to Mal, Wash demands a shot at a field assignment. Unfortunately, crime lord Niska chooses this moment to exact a brutal vengeance for Mal's failure to complete an earlier job.",
+              "thumb": "https://image.tmdb.org/t/p/original/kIxWpnDsWwTOR3dAFnTAAzNsys.jpg",
+              "title": "War Stories",
+              "originallyAvailableAt": "2002-12-06",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 7.8,
+              "index": 9,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "War Stories",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/kIxWpnDsWwTOR3dAFnTAAzNsys.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048602"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-84707",
+                  "order": 1,
+                  "tag": "Michael Fairman",
+                  "role": "Adelai Niska",
+                  "thumb": "https://image.tmdb.org/t/p/original/zFLOZiKJJxhSTwgKgAGZyexOyUm.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-150194",
+                  "order": 2,
+                  "tag": "Damion Poitier",
+                  "role": "Henchman",
+                  "thumb": "https://image.tmdb.org/t/p/original/pt7I3aZpZfP8E5vKEM4KNtNEjb6.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-177114",
+                  "order": 3,
+                  "tag": "Katherine Kendall",
+                  "role": "The Councillor",
+                  "thumb": "https://image.tmdb.org/t/p/original/kbySBoXcZMr3b07Wj6WNsrCgzAB.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-90448",
+                  "order": 4,
+                  "tag": "Rolando Molina",
+                  "role": "Bolles",
+                  "thumb": "https://image.tmdb.org/t/p/original/1UqlDf8nS1oYUMivshbtbAWQIyn.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-90449",
+                  "order": 5,
+                  "tag": "Michael Bentt",
+                  "role": "Viktor",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1859443",
+                  "order": 6,
+                  "tag": "John Dunn",
+                  "role": "The Torturer",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-198766",
+                  "order": 7,
+                  "tag": "Adam Pilver",
+                  "role": "Vanilla Husband (scenes deleted)",
+                  "thumb": "https://image.tmdb.org/t/p/original/vtqIjeGJFWXnEda7v043p4kw2RQ.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202668",
+                  "order": 8,
+                  "tag": "Johnny Shakespeare",
+                  "role": "Torture Victim",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202667",
+                  "order": 9,
+                  "tag": "Jason Van",
+                  "role": "Man",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-104876",
+                  "tag": "James A. Contner",
+                  "role": "Director",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1219927",
+                  "tag": "Cheryl Cain",
+                  "role": "Writer",
+                  "thumb": "",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-10",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-10",
+              "key": "/library/metadata/tmdb-episode-1437-1-10",
+              "summary": "Serenity encounters a ruthlessly professional bounty hunter, Jubal Early, who will stop at nothing to retrieve River. But River, feeling unwelcome on the ship, takes a novel approach to escaping from the long arm of the Alliance.",
+              "thumb": "https://image.tmdb.org/t/p/original/iMlHLWkWaceaOfNVlgZl2ELppBW.jpg",
+              "title": "Objects in Space",
+              "originallyAvailableAt": "2002-12-13",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 8.6,
+              "index": 10,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Objects in Space",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/iMlHLWkWaceaOfNVlgZl2ELppBW.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048606"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-106753",
+                  "order": 1,
+                  "tag": "Richard Brooks",
+                  "role": "Jubal Early",
+                  "thumb": "https://image.tmdb.org/t/p/original/eL51q3GpEtkdXWE6nE56PQ9kOkK.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ]
+            },
+            {
+              "type": "episode",
+              "ratingKey": "tmdb-episode-1437-1-11",
+              "guid": "tv.plex.agents.custom.tmdb://episode/tmdb-episode-1437-1-11",
+              "key": "/library/metadata/tmdb-episode-1437-1-11",
+              "summary": "Malcolm Reynolds is a veteran and the captain of Serenity. He and his crew are smuggling goods, but they need to pick up some passengers for extra money. However, not all the passengers are what they seem.",
+              "thumb": "https://image.tmdb.org/t/p/original/uNpt7V0a94xlgp7sdgUJK9GOOSe.jpg",
+              "title": "Serenity",
+              "originallyAvailableAt": "2002-12-20",
+              "addedAt": 1758545492,
+              "year": 2002,
+              "audienceRating": 7.9,
+              "index": 11,
+              "parentRatingKey": "tmdb-season-1437-1",
+              "parentGuid": "tv.plex.agents.custom.tmdb://season/tmdb-season-1437-1",
+              "parentTitle": "Season 1",
+              "parentIndex": 1,
+              "grandparentRatingKey": "tmdb-show-1437",
+              "grandparentGuid": "tv.plex.agents.custom.tmdb://show/tmdb-show-1437",
+              "grandparentTitle": "Firefly",
+              "grandparentThumb": "https://image.tmdb.org/t/p/original/vZcKsy4sGAvWMVqLluwYuoi11Kj.jpg",
+              "grandparentArt": "https://image.tmdb.org/t/p/original/te4VJNMipsFQofCkiytuyswGDlV.jpg",
+              "Image": [
+                {
+                  "alt": "Serenity",
+                  "type": "coverPoster",
+                  "url": "https://image.tmdb.org/t/p/original/uNpt7V0a94xlgp7sdgUJK9GOOSe.jpg"
+                }
+              ],
+              "Guid": [
+                {
+                  "id": "tmdb://1048593"
+                }
+              ],
+              "Role": [
+                {
+                  "id": "tmdb-person-52930",
+                  "order": 1,
+                  "tag": "Carlos Jacott",
+                  "role": "Lawrence Dobson",
+                  "thumb": "https://image.tmdb.org/t/p/original/jtZ0Eh0nS0qHUEP20iT02LTYoX2.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-142204",
+                  "order": 2,
+                  "tag": "Andy Umberger",
+                  "role": "Dortmunder Captain",
+                  "thumb": "https://image.tmdb.org/t/p/original/sqRx07opgNp2NTLsWHmWdXyhdwg.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-944561",
+                  "order": 3,
+                  "tag": "Philip Sternberg",
+                  "role": "Inara's Client",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-56459",
+                  "order": 4,
+                  "tag": "Colin Patrick Lynch",
+                  "role": "Radio Operator",
+                  "thumb": "https://image.tmdb.org/t/p/original/77ZFsyIdXT7qJ5KTxIuf44EGLPT.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-32479",
+                  "order": 5,
+                  "tag": "Bonnie Bartlett",
+                  "role": "Patience",
+                  "thumb": "https://image.tmdb.org/t/p/original/yz1MdbrxCAs5N1o0FouhnDWDAA7.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202670",
+                  "order": 6,
+                  "tag": "Domingo Vara",
+                  "role": "Ensign",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-98623",
+                  "order": 7,
+                  "tag": "Stephen O'Mahoney",
+                  "role": "Dortmunder Man",
+                  "thumb": "https://image.tmdb.org/t/p/original/k6ZbIskzaN9AO9eMVEPsnaSsp5n.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-149767",
+                  "order": 8,
+                  "tag": "John F. Kearney",
+                  "role": "Old Man",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-202671",
+                  "order": 9,
+                  "tag": "Gabrielle Wagner",
+                  "role": "Slave",
+                  "thumb": "https://image.tmdb.org/t/p/original/gauWWWxbBx6HmOkwdGriPUkWuhp.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-2134737",
+                  "order": 10,
+                  "tag": "Eddie Adams",
+                  "role": "Bendis",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-79079",
+                  "order": 11,
+                  "tag": "Jamie McShane",
+                  "role": "Man",
+                  "thumb": "https://image.tmdb.org/t/p/original/wojvRZMpAwytyoFTMFOpvZ26qJq.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1219715",
+                  "order": 12,
+                  "tag": "Michael Keyes",
+                  "role": "Sleeping Soldier (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-177743",
+                  "order": 13,
+                  "tag": "Greg Wendell Reid",
+                  "role": "Crying Soldier (uncredited)",
+                  "thumb": "https://image.tmdb.org/t/p/original/5pMb0cE0PRvhVg9vG9zJ38rVPVX.jpg",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1287069",
+                  "order": 14,
+                  "tag": "Rabatan Salem",
+                  "role": "Hoodlum (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-203950",
+                  "order": 15,
+                  "tag": "Brian J. Williams",
+                  "role": "Two Fry (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-1269559",
+                  "order": 16,
+                  "tag": "Gerard J. Reyes",
+                  "role": "Bodyguard / Shopper (uncredited)",
+                  "thumb": "",
+                  "type": "person"
+                },
+                {
+                  "id": "tmdb-person-53516",
+                  "order": 17,
+                  "tag": "Mark Sheppard",
+                  "role": "Badger",
+                  "thumb": "https://image.tmdb.org/t/p/original/aTlqvlKgfyUAZT48AvEytqkMBC6.jpg",
+                  "type": "person"
+                }
+              ],
+              "Director": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Director",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ],
+              "Writer": [
+                {
+                  "id": "tmdb-person-12891",
+                  "tag": "Joss Whedon",
+                  "role": "Writer",
+                  "thumb": "https://image.tmdb.org/t/p/original/mVvpZnKYKSCtkOQixQnOonV5kv3.jpg",
+                  "type": "person"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "size": 1,
+    "totalSize": 1,
+    "identifier": "tv.plex.agents.custom.tmdb"
+  }
+}
