@@ -279,7 +279,6 @@ static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
 	if (fp == NULL) {
-		websWrite(wp, "unknown");
 		return;
 	}
 	int cnt = 0;
