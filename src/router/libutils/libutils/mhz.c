@@ -57,7 +57,7 @@ static inline unsigned long long microseconds(void)
 static inline unsigned long long rdtsc(void)
 {
 	unsigned int a, d;
-	asm volatile("rdtsc" : "=a" (a), "=d" (d));
+	asm volatile("rdtsc" : "=a"(a), "=d"(d));
 	return a + ((unsigned long long)d << 32);
 }
 #else
@@ -68,50 +68,76 @@ static inline unsigned long long rdtsc(void)
  * to parallelize. The "asm" statements are here to prevent the compiler from
  * reordering this code.
  */
-#define dont_move(var) do { asm volatile("" : "=r"(var) : "0" (var)); } while (0)
-
-#define run1cycle_ae()   do { a ^= e; dont_move(a); } while (0)
-#define run1cycle_ba()   do { b ^= a; dont_move(b); } while (0)
-#define run1cycle_cb()   do { c ^= b; dont_move(c); } while (0)
-#define run1cycle_dc()   do { d ^= c; dont_move(d); } while (0)
-#define run1cycle_ed()   do { e ^= d; dont_move(e); } while (0)
-#define run1cycle_eb()   do { e ^= b; dont_move(e); } while (0)
-
-#define run5cycles()                                    \
-	do {                                            \
-		run1cycle_ae();				\
-		run1cycle_ba();				\
-		run1cycle_cb();				\
-		run1cycle_dc();				\
-		run1cycle_ed();				\
+#define dont_move(var)                                   \
+	do {                                             \
+		asm volatile("" : "=r"(var) : "0"(var)); \
 	} while (0)
 
-#define run10cycles()          \
-	do {                   \
-		run5cycles();  \
-		run5cycles();  \
+#define run1cycle_ae()        \
+	do {                  \
+		a ^= e;       \
+		dont_move(a); \
+	} while (0)
+#define run1cycle_ba()        \
+	do {                  \
+		b ^= a;       \
+		dont_move(b); \
+	} while (0)
+#define run1cycle_cb()        \
+	do {                  \
+		c ^= b;       \
+		dont_move(c); \
+	} while (0)
+#define run1cycle_dc()        \
+	do {                  \
+		d ^= c;       \
+		dont_move(d); \
+	} while (0)
+#define run1cycle_ed()        \
+	do {                  \
+		e ^= d;       \
+		dont_move(e); \
+	} while (0)
+#define run1cycle_eb()        \
+	do {                  \
+		e ^= b;       \
+		dont_move(e); \
 	} while (0)
 
-#define run100cycles()          \
+#define run5cycles()            \
 	do {                    \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
-		run10cycles();  \
+		run1cycle_ae(); \
+		run1cycle_ba(); \
+		run1cycle_cb(); \
+		run1cycle_dc(); \
+		run1cycle_ed(); \
 	} while (0)
 
+#define run10cycles()         \
+	do {                  \
+		run5cycles(); \
+		run5cycles(); \
+	} while (0)
+
+#define run100cycles()         \
+	do {                   \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+		run10cycles(); \
+	} while (0)
 
 /* performs 50 operations in a loop, all dependant on each other, so that the
  * CPU cannot parallelize them, hoping to take 50 cycles per loop, plus the
  * loop counter overhead.
  */
-static __attribute__((noinline,aligned(64))) void loop50(unsigned int n)
+static __attribute__((noinline, aligned(64))) void loop50(unsigned int n)
 {
 	unsigned int a = 0, b = 0, c = 0, d = 0, e = 0;
 
@@ -129,7 +155,7 @@ static __attribute__((noinline,aligned(64))) void loop50(unsigned int n)
  * loop counter overhead. Do not increase this loop so that it fits in a small
  * 1 kB L1 cache on 32-bit instruction sets.
  */
-static __attribute__((noinline,aligned(64))) void loop250(unsigned int n)
+static __attribute__((noinline, aligned(64))) void loop250(unsigned int n)
 {
 	unsigned int a = 0, b = 0, c = 0, d = 0, e = 0;
 
@@ -162,11 +188,11 @@ int calc_cpuspeed(void)
 		 */
 		us_duration50 = LLONG_MAX;
 		for (i = 0; i < 5; i++) {
-			us_begin   = microseconds();
-			tsc_begin  = rdtsc();
+			us_begin = microseconds();
+			tsc_begin = rdtsc();
 			loop50(count);
 			tsc_duration50 = rdtsc() - tsc_begin;
-			us_duration    = microseconds() - us_begin;
+			us_duration = microseconds() - us_begin;
 			if (us_duration < us_duration50)
 				us_duration50 = us_duration;
 		}
@@ -186,11 +212,11 @@ int calc_cpuspeed(void)
 		 */
 		us_duration250 = LLONG_MAX;
 		for (i = 0; i < 5; i++) {
-			us_begin   = microseconds();
-			tsc_begin  = rdtsc();
+			us_begin = microseconds();
+			tsc_begin = rdtsc();
 			loop250(count);
 			tsc_duration250 = rdtsc() - tsc_begin;
-			us_duration     = microseconds() - us_begin;
+			us_duration = microseconds() - us_begin;
 			if (us_duration < us_duration250)
 				us_duration250 = us_duration;
 		}
@@ -204,6 +230,6 @@ int calc_cpuspeed(void)
 			break;
 		count *= 2;
 	}
-	int speed = (count * 2000 / ((us_duration250 - us_duration50)*10)) + 5;
+	int speed = (count * 2000 / ((us_duration250 - us_duration50) * 10)) + 5;
 	return speed / 10;
 }
