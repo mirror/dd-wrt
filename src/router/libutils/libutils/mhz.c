@@ -204,6 +204,6 @@ int calc_cpuspeed(void)
 			break;
 		count *= 2;
 	}
-	float speed = (count * 200.0 / (us_duration250 - us_duration50) + 0.5);
-	return (int)speed;
+	int speed = (count * 2000 / ((us_duration250 - us_duration50)*10)) + 5;
+	return speed / 10;
 }
