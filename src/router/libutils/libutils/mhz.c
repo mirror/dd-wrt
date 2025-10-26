@@ -230,6 +230,6 @@ int calc_cpuspeed(void)
 			break;
 		count *= 2;
 	}
-	int speed = (count * 2000 / ((us_duration250 - us_duration50) * 10)) + 5;
-	return speed / 10;
+	int speed = ((count * 2000 / ((us_duration250 - us_duration50))) + 5) / 10;
+	return speed;
 }
