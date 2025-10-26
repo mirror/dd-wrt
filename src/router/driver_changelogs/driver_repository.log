@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8518 | brainslayer | 2025-10-26 18:05:44 +0700 (Sun, 26 Oct 2025) | 1 line
+
+reset pin state
+------------------------------------------------------------------------
 r8517 | brainslayer | 2025-10-26 17:44:00 +0700 (Sun, 26 Oct 2025) | 1 line
 
 zero memory after allocation using dma_alloc_noncoherent
