@@ -76,6 +76,9 @@ static struct syncservice service[] = {
 #ifdef HAVE_DNSCRYPT
 	{ "dns_crypt", "dnsmasq", 0 },
 #endif
+#ifdef HAVE_DNSMASQ
+	{ "dnsmasq_enable", "dnsmasq", 0 },
+#endif
 #ifdef HAVE_DNSSEC
 	{ "dnssec_cu", "dnsmasq", 0 },
 #endif
