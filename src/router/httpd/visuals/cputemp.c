@@ -53,6 +53,7 @@
 #define CELSIUS 0
 #define VOLT 1
 #define RPM 2
+#define AMPERE 3
 
 typedef struct sensormaps {
 	char *name;
@@ -386,6 +387,8 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 				char *unit = get_temperature_unit();
 				if (sensors[cnt].type == VOLT)
 					unit = "Volt";
+				if (sensors[cnt].type == AMPERE)
+					unit = "A";
 				if (sensors[cnt].type == RPM)
 					unit = "rpm";
 
@@ -465,6 +468,8 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			char *unit = get_temperature_unit();
 			if (type == VOLT)
 				unit = "Volt";
+			if (type == AMPERE)
+				unit = "A";
 			if (type == RPM)
 				unit = "rpm";
 			name = getmappedname(name);
@@ -1015,6 +1020,37 @@ exit_error:;
 				else
 					sprintf(sname, "%s", driver);
 				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL); // rpm
+			}
+		}
+
+		for (b = 0; b < 16; b++) {
+			char n[64] = { 0 };
+			char p[64] = { 0 };
+			char driver[64] = { 0 };
+			sprintf(n, "%sname", sysfs);
+			fp = my_fopen(n, "rb");
+			if (fp) {
+				fscanf(fp, "%s", driver);
+				my_fclose(fp);
+			} else
+				break;
+			sprintf(p, "%scurr%d_input", sysfs, b);
+			sprintf(n, "%scurr%d_label", sysfs, b);
+			fp = my_fopen(n, "rb");
+			if (fp) {
+				char sname[64];
+				fscanf(fp, "%s", sname);
+				my_fclose(fp);
+				sprintf(sname, "%s %s", driver, sname);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, AMPERE, NULL); // rpm
+			} else {
+				char sname[64];
+				int single = singlesensor(sysfs);
+				if (!single)
+					sprintf(sname, "%s current%d", driver, b);
+				else
+					sprintf(sname, "%s", driver);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, AMPERE, NULL); // rpm
 			}
 		}
 	}
