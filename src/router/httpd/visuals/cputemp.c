@@ -153,12 +153,14 @@ static int singlesensor(const char *sysfs)
 {
 	char p[64];
 	char p2[64];
+	char p3[64];
 	int cnt = 0;
 	int i;
 	for (i = 0; i < 16; i++) {
 		snprintf(p, sizeof(p) - 1, "%stemp%d_input", sysfs, i);
 		snprintf(p2, sizeof(p) - 1, "%sfan%d_input", sysfs, i);
-		if (f_exists(p) || f_exists(p2)) {
+		snprintf(p3, sizeof(p) - 1, "%spower%d_input", sysfs, i);
+		if (f_exists(p) || f_exists(p2) || f_exists(p3)) {
 			cnt++;
 		} else
 			return 1;
@@ -982,6 +984,37 @@ exit_error:;
 				else
 					sprintf(sname, "%s", driver);
 				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM, NULL); // rpm
+			}
+		}
+
+		for (b = 0; b < 16; b++) {
+			char n[64] = { 0 };
+			char p[64] = { 0 };
+			char driver[64] = { 0 };
+			sprintf(n, "%sname", sysfs);
+			fp = my_fopen(n, "rb");
+			if (fp) {
+				fscanf(fp, "%s", driver);
+				my_fclose(fp);
+			} else
+				break;
+			sprintf(p, "%spower%d_input", sysfs, b);
+			sprintf(n, "%spower%d_label", sysfs, b);
+			fp = my_fopen(n, "rb");
+			if (fp) {
+				char sname[64];
+				fscanf(fp, "%s", sname);
+				my_fclose(fp);
+				sprintf(sname, "%s %s", driver, sname);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL); // rpm
+			} else {
+				char sname[64];
+				int single = singlesensor(sysfs);
+				if (!single)
+					sprintf(sname, "%s power%d", driver, b);
+				else
+					sprintf(sname, "%s", driver);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL); // rpm
 			}
 		}
 	}
