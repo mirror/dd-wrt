@@ -1019,7 +1019,7 @@ exit_error:;
 				fscanf(fp, "%s", sname);
 				my_fclose(fp);
 				sprintf(sname, "%s %s", driver, sname);
-				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL); // rpm
+				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL);
 			} else {
 				char sname[64];
 				int single = singlesensor(sysfs);
@@ -1027,7 +1027,7 @@ exit_error:;
 					sprintf(sname, "%s power%d", driver, b);
 				else
 					sprintf(sname, "%s", driver);
-				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL); // rpm
+				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL);
 			}
 		}
 
@@ -1050,7 +1050,7 @@ exit_error:;
 				fscanf(fp, "%s", sname);
 				my_fclose(fp);
 				sprintf(sname, "%s %s", driver, sname);
-				cpufound |= showsensor(wp, p, NULL, sname, 1, AMPERE, NULL); // rpm
+				cpufound |= showsensor(wp, p, NULL, sname, 1, AMPERE, NULL);
 			} else {
 				char sname[64];
 				int single = singlesensor(sysfs);
@@ -1058,7 +1058,7 @@ exit_error:;
 					sprintf(sname, "%s current%d", driver, b);
 				else
 					sprintf(sname, "%s", driver);
-				cpufound |= showsensor(wp, p, NULL, sname, 1, AMPERE, NULL); // rpm
+				cpufound |= showsensor(wp, p, NULL, sname, 1, AMPERE, NULL);
 			}
 		}
 	}
