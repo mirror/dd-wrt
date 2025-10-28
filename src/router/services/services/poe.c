@@ -29,7 +29,8 @@
 
 void start_poe(void)
 {
-	//	log_eval("realtek-poe");
+	if (nvram_match("poe","1"))
+		log_eval("realtek-poe");
 	return;
 }
 
