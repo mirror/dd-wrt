@@ -227,14 +227,17 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS1900-48HP") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900HP-48 B1");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-24HP A1");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900-24HP B1");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24EP")) {
@@ -255,6 +258,7 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS1900-10HP")) {
 		setRouter("Zyxel GS1900-10HP");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v1")) {
@@ -267,10 +271,12 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-8HP A1");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900-8HP B1");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "XGS1250-12") && !strcmp(version,"V2")) {
