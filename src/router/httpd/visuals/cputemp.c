@@ -911,9 +911,19 @@ exit_error:;
 
 		for (b = 0; b < 16; b++) {
 			char n[64];
-			sprintf(n, "%stemp%d_label", sysfs, b);
 			char p[64];
+			char driver[64] = { 0 };
+			sprintf(n, "%sname", sysfs);
+			fp = my_fopen(n, "rb");
+			if (fp) {
+				fscanf(fp, "%s", driver);
+				my_fclose(fp);
+			} else
+				break;
+
+			sprintf(n, "%stemp%d_label", sysfs, b);
 			sprintf(p, "%stemp%d_input", sysfs, b);
+
 			fp = my_fopen(n, "rb");
 			if (fp) {
 				char sname[64];
