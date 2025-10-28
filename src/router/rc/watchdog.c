@@ -56,7 +56,7 @@ static void check_fan(int brand)
 	}
 #endif
 #ifdef HAVE_REALTEK
-	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 v2")) {
+	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
 		int psu = 0;
 		FILE *tempfp;
 		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
