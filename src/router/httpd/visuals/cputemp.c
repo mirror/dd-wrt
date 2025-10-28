@@ -54,6 +54,7 @@
 #define VOLT 1
 #define RPM 2
 #define AMPERE 3
+#define WATT 4
 
 typedef struct sensormaps {
 	char *name;
@@ -390,10 +391,13 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 				char *unit = get_temperature_unit();
 				if (sensors[cnt].type == VOLT) {
 					unit = "Volt";
-					scale = 1000;
 				}
 				if (sensors[cnt].type == AMPERE) {
 					unit = "ma";
+					scale = 1;
+				}
+				if (sensors[cnt].type == WATT) {
+					unit = "mw";
 					scale = 1;
 				}
 				if (sensors[cnt].type == RPM)
@@ -475,10 +479,13 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			char *unit = get_temperature_unit();
 			if (type == VOLT) {
 				unit = "Volt";
-				scale = 1000;
 			}
 			if (type == AMPERE) {
 				unit = "ma";
+				scale = 1;
+			}
+			if (type == WATT) {
+				unit = "mw";
 				scale = 1;
 			}
 			if (type == RPM)
@@ -1022,7 +1029,7 @@ exit_error:;
 				fscanf(fp, "%s", sname);
 				my_fclose(fp);
 				sprintf(sname, "%s %s", driver, sname);
-				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, WATT, NULL);
 			} else {
 				char sname[64];
 				int single = singlesensor(sysfs);
@@ -1030,7 +1037,7 @@ exit_error:;
 					sprintf(sname, "%s power%d", driver, b);
 				else
 					sprintf(sname, "%s", driver);
-				cpufound |= showsensor(wp, p, NULL, sname, 1, VOLT, NULL);
+				cpufound |= showsensor(wp, p, NULL, sname, 1, WATT, NULL);
 			}
 		}
 
