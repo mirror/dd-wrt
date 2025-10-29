@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <shutils.h>
-#include <utils.h>
 #include <ddnvram.h>
 
 #include <libubox/ustream.h>
@@ -57,6 +56,8 @@ static struct poe_ctx *ubus_to_poe_ctx(struct ubus_context *u)
 	struct ubus_auto_conn *c = container_of(u, struct ubus_auto_conn, ctx);
 	return container_of(c, struct poe_ctx, conn);
 }
+
+extern int ifexists(const char *ifname);
 
 static void load_port_config(struct config *cfg, int id)
 {
