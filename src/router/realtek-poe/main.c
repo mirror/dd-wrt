@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <shutils.h>
+#include <utils.h>
 #include <ddnvram.h>
 
 #include <libubox/ustream.h>
@@ -63,6 +64,8 @@ static void load_port_config(struct config *cfg, int id)
 	char name[32];
 
 	sprintf(name, "lan%02d",id);
+	if (!ifexists(name))
+	    return;
 	enable = nvram_default_nget("1", "%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
 	poe_plus = nvram_default_nget("1", "%s_poe_plus", name); // 802.3at
