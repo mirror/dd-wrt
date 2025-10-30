@@ -79,7 +79,7 @@ static int rtl_reply_port_group_status(struct mcu_state *state, uint8_t *reply)
 		if (port == 0xff) {
 			continue;
 		} else if (port >= MAX_PORT) {
-			ULOG_WARN("Invalid port status packet (port=%d)\n", port);
+			ULOG_DBG("Invalid port status packet (port=%d)\n", port);
 			return -1;
 		}
 
