@@ -173,8 +173,10 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 			}
 			websWrite(wp, "</td>\n");
 			if (nvram_match("poe", "1")) {
-				char poe_mode[32] sprintf(poe_mode, "%s_poe_mode", ifname[i][0]);
+				char poe_mode[32];
+				sprintf(poe_mode, "%s_poe_mode", ifname[i][0]);
 				websWrite(wp, "<td style=\"vertical-align:top\">");
+				nvram_default_get(poe_mode, "802.11at");
 				showOptions_ext(wp, poe_mode, "Off 802.11af 802.11at", "min-width=\"0\"");
 				websWrite(wp, "</td>\n");
 			}
