@@ -63,7 +63,6 @@ static void load_port_config(struct config *cfg, int id)
 {
 	const char *id_str, *enable, *priority, *poe_plus;
 	char name[32];
-
 	sprintf(name, "lan%02d",id);
 	if (!ifexists(name))
 	    return;
@@ -174,6 +173,7 @@ static int mcu_queue_cmd(struct mcu *mcu, uint8_t *cmd_buf, size_t len)
 {
 	int i, empty = list_empty(&mcu->pending_cmds);
 	struct cmd *cmd = malloc(sizeof(*cmd));
+	int ret = 0;
 
 	memset(cmd, 0, sizeof(*cmd));
 	memset(cmd->cmd, 0xff, CMD_SIZE);
@@ -189,9 +189,9 @@ static int mcu_queue_cmd(struct mcu *mcu, uint8_t *cmd_buf, size_t len)
 	list_add_tail(&cmd->list, &mcu->pending_cmds);
 
 	if (empty)
-		return mcu_cmd_send(mcu, cmd);
+	    ret = mcu_cmd_send(mcu, cmd);
 
-	return 0;
+	return ret;
 }
 
 static int poet_cmd_4_port(struct mcu *mcu, uint8_t cmd_id, uint8_t port[4],
