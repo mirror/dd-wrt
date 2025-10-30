@@ -471,7 +471,7 @@ static int poe_reply_port_status(struct mcu_state *state, uint8_t *reply)
 	struct port_state *port = &state->ports[idx];
 
 	if (idx > state->num_detected_ports) {
-		ULOG_WARN("Invalid port in status reply (port=%d)\n", idx);
+		ULOG_DBG("Invalid port in status reply (port=%d)\n", idx);
 		return -EPROTO;
 	}
 
@@ -513,7 +513,7 @@ static int poe_reply_port_config(struct mcu_state *state, uint8_t *reply)
 	struct port_state *port = &state->ports[idx];
 
 	if (idx > state->num_detected_ports) {
-		ULOG_WARN("Invalid port in config reply (port=%d)\n", idx);
+		ULOG_DBG("Invalid port in config reply (port=%d)\n", idx);
 		return -EPROTO;
 	}
 
@@ -549,7 +549,7 @@ static int poe_reply_port_ext_config(struct mcu_state *state, uint8_t *reply)
 	};
 
 	if (idx > state->num_detected_ports) {
-		ULOG_WARN("Invalid port in ext config reply (port=%d)\n", idx);
+		ULOG_DBG("Invalid port in ext config reply (port=%d)\n", idx);
 		return -EPROTO;
 	}
 
@@ -602,7 +602,7 @@ static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
 		if (port == 0xff) {
 			continue;
 		} else if (port >= MAX_PORT) {
-			ULOG_WARN("Invalid port status packet (port=%d)\n", port);
+			ULOG_DBG("Invalid port status packet (port=%d)\n", port);
 			return -1;
 		}
 
@@ -647,7 +647,7 @@ static int poe_reply_port_power_stats(struct mcu_state *state, uint8_t *reply)
 	unsigned int port_idx = reply[2];
 
 	if (port_idx > state->num_detected_ports) {
-		ULOG_WARN("Invalid port in power stat (port=%d)\n", port_idx);
+		ULOG_DBG("Invalid port in power stat (port=%d)\n", port_idx);
 		return -EPROTO;
 	}
 
