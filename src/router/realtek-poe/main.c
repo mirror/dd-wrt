@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "tek-poe.h"
 
@@ -19,6 +19,7 @@
 #include <libubox/ulog.h>
 #include <libubus.h>
 
+
 typedef int (*poe_reply_handler)(struct mcu_state *mcu, uint8_t *reply);
 
 /* Careful with this; Only works for set_detection/disconnect_type commands. */
@@ -29,6 +30,8 @@ typedef int (*poe_reply_handler)(struct mcu_state *mcu, uint8_t *reply);
 #define OFFSET_CHECKSUM	(CMD_SIZE - 1)
 
 struct mcu {
+	struct poe_dialect dialect;
+	struct uloop_timeout response_timeout;
 	struct uloop_timeout error_timeout;
 	struct list_head pending_cmds;
 	struct ustream_fd stream;
@@ -57,6 +60,7 @@ static struct poe_ctx *ubus_to_poe_ctx(struct ubus_context *u)
 	return container_of(c, struct poe_ctx, conn);
 }
 
+
 extern int ifexists(const char *ifname);
 
 static void load_port_config(struct config *cfg, int id)
@@ -84,18 +88,43 @@ static void load_port_config(struct config *cfg, int id)
 		cfg->ports[id].power_up_mode = 3;
 }
 
+static void warn_unsupported_config(const char *cfg_name)
+{
+	ULOG_WARN("Option '%s' found in config file.\n"
+		"Support for this option will be removed in the future\n."
+		"You have been warned\n",
+		cfg_name);
+}
+
 static void load_global_config(struct config *cfg)
 
 {
-	const char *budget, *guardband;
+	const char *budget, *guardband, *baudrate_hack, *dialect_hack;
 
 	budget = nvram_default_get("poe_budget", "170");
 	guardband = nvram_safe_get("poe_guard");
+	baudrate_hack = nvram_safe_get("force_baudrate");
+	dialect_hack = nvram_safe_get("force_dialect");
 
 	cfg->budget = budget ? strtof(budget, NULL) : 31.0;
 	cfg->budget_guard = cfg->budget / 10;
 	if (guardband && *guardband)
 		cfg->budget_guard = strtof(guardband, NULL);
+
+	if (baudrate_hack && *baudrate_hack) {
+		warn_unsupported_config("force_baudrate");
+		cfg->forced_baudrate = strtoul(baudrate_hack, NULL, 10);
+	}
+
+	if (dialect_hack && *dialect_hack) {
+		warn_unsupported_config("force_dialect");
+		if (!strcmp(dialect_hack, "broadcom"))
+			cfg->forced_dialect = &broadcom_dialect;
+		else if (!strcmp(dialect_hack, "realtek"))
+			cfg->forced_dialect = &realtek_dialect;
+		else
+			ULOG_ERR("Unkown dialect '%s'\n", dialect_hack);
+	}
 }
 
 static char *get_board_compatible(void)
@@ -140,6 +169,22 @@ static void config_load(struct config *cfg, int init)
 
 }
 
+static void mcu_no_response(struct uloop_timeout *t)
+{
+	struct mcu *mcu = container_of(t, struct mcu, response_timeout);
+	struct cmd *cmd;
+
+	while (!list_empty(&mcu->pending_cmds)) {
+		cmd = list_first_entry(&mcu->pending_cmds, struct cmd, list);
+		list_del(&cmd->list);
+	}
+
+	ULOG_ERR("No response from PoE controller. Trying a reset\n");
+
+	if (mcu->dialect.desc->ops->reset)
+		mcu->dialect.desc->ops->reset(mcu);
+}
+
 static void log_packet(int log_level, const char *prefix, const uint8_t d[12])
 {
 	ulog(log_level,
@@ -154,6 +199,8 @@ static int mcu_cmd_send(struct mcu *mcu, struct cmd *cmd)
 		return -EBUSY;
 
 	log_packet(LOG_DEBUG, "TX ->", cmd->cmd);
+	mcu->response_timeout.cb = mcu_no_response;
+	uloop_timeout_set(&mcu->response_timeout, 2000);
 	return ustream_write(&mcu->stream.stream, (void *)cmd->cmd, 12, false);
 }
 
@@ -169,11 +216,10 @@ static int mcu_cmd_next(struct mcu *mcu)
 	return mcu_cmd_send(mcu, cmd);
 }
 
-static int mcu_queue_cmd(struct mcu *mcu, uint8_t *cmd_buf, size_t len)
+int mcu_queue_buf(struct mcu *mcu, uint8_t *cmd_buf, size_t len)
 {
 	int i, empty = list_empty(&mcu->pending_cmds);
 	struct cmd *cmd = malloc(sizeof(*cmd));
-	int ret = 0;
 
 	memset(cmd, 0, sizeof(*cmd));
 	memset(cmd->cmd, 0xff, CMD_SIZE);
@@ -189,9 +235,26 @@ static int mcu_queue_cmd(struct mcu *mcu, uint8_t *cmd_buf, size_t len)
 	list_add_tail(&cmd->list, &mcu->pending_cmds);
 
 	if (empty)
-	    ret = mcu_cmd_send(mcu, cmd);
+		return mcu_cmd_send(mcu, cmd);
 
-	return ret;
+	return 0;
+}
+
+/* The difference between mcu_queue_cmd() and mcu_queue_buf() is that the
+ * latter will send a command buffer unmodified. mcu_queue_cmd(), on the other
+ * hand, maps the command ID byte from enum poe_cmd to the wire ID, based on
+ * the active dialect.
+ */
+static int mcu_queue_cmd(struct mcu *mcu, uint8_t *cmd_buf, size_t len)
+{
+	int cmd_id;
+
+	cmd_id = dialect_lookup_cmd(&mcu->dialect, cmd_buf[0]);
+	if (cmd_id < 0)
+		return -EINVAL;
+
+	cmd_buf[0] = cmd_id;
+	return mcu_queue_buf(mcu, cmd_buf, len);
 }
 
 static int poet_cmd_4_port(struct mcu *mcu, uint8_t cmd_id, uint8_t port[4],
@@ -209,14 +272,14 @@ static int poet_cmd_4_port(struct mcu *mcu, uint8_t cmd_id, uint8_t port[4],
  */
 static int poe_cmd_port_enable(struct mcu *mcu, uint8_t port, uint8_t enable)
 {
-	uint8_t cmd[] = { 0x00, 0x00, port, enable };
+	uint8_t cmd[] = { PORT_ENABLE, 0x00, port, enable };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
 
 static int poe_cmd_port_mapping_enable(struct mcu *mcu, bool enable)
 {
-	uint8_t cmd[] = { 0x02, 0x00, enable };
+	uint8_t cmd[] = { MCU_ENABLE_PORT_MAPPING, 0x00, enable };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -231,7 +294,7 @@ static int poe_cmd_port_mapping_enable(struct mcu *mcu, bool enable)
 static int poe_cmd_port_detection_type(struct mcu *mcu, uint8_t port,
 				       uint8_t type)
 {
-	uint8_t cmd[] = { 0x10, 0x00, port, type };
+	uint8_t cmd[] = { PORT_SET_DETECTION_TYPE, 0x00, port, type };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -243,7 +306,7 @@ static int poe_cmd_port_detection_type(struct mcu *mcu, uint8_t port,
 static int poe_cmd_port_classification(struct mcu *mcu, uint8_t port[4],
 				       uint8_t enable[4])
 {
-	return poet_cmd_4_port(mcu, 0x11, port, enable);
+	return poet_cmd_4_port(mcu, PORT_ENABLE_CLASSIFICATION, port, enable);
 }
 
 /* 0x13 - Set port disconnect type
@@ -255,9 +318,20 @@ static int poe_cmd_port_classification(struct mcu *mcu, uint8_t port[4],
 static int poe_cmd_port_disconnect_type(struct mcu *mcu, uint8_t port,
 					uint8_t type)
 {
-	uint8_t cmd[] = { 0x13, 0x00, port, type };
+	uint8_t cmd[] = { PORT_SET_DISCONNECT_TYPE, 0x00, port, type };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
+}
+
+/* no BCM equivalent - Set "auto_powerup" parameter
+ *	Has no BCM, ID, but needs to be set correctly. This is one of the main
+ *	reasons RTL8238B ports get stuck on "Requesting power" status, and
+ *	never transition to "Delivering power".
+ */
+static int poe_cmd_mystery_parameter(struct mcu *mcu, uint8_t ports[4],
+				     uint8_t enables[4])
+{
+	return poet_cmd_4_port(mcu, PORT_SET_AUTO_POWERUP, ports, enables);
 }
 
 /* 0x15 - Set port power limit type
@@ -269,7 +343,7 @@ static int poe_cmd_port_disconnect_type(struct mcu *mcu, uint8_t port,
 static int poe_cmd_port_power_limit_type(struct mcu *mcu, uint8_t port[4],
 					 uint8_t limit[4])
 {
-	return poet_cmd_4_port(mcu, 0x15, port, limit);
+	return poet_cmd_4_port(mcu, PORT_SET_POWER_LIMIT_TYPE, port, limit);
 }
 
 /* 0x16 - Set port power budget
@@ -278,7 +352,7 @@ static int poe_cmd_port_power_limit_type(struct mcu *mcu, uint8_t port[4],
 static int poe_cmd_port_power_budget(struct mcu *mcu, uint8_t port,
 				     uint8_t budget)
 {
-	uint8_t cmd[] = { 0x16, 0x00, port, budget };
+	uint8_t cmd[] = { PORT_SET_POWER_LIMIT, 0x00, port, budget };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -292,7 +366,7 @@ static int poe_cmd_port_power_budget(struct mcu *mcu, uint8_t port,
  */
 static int poe_cmd_power_mgmt_mode(struct mcu *mcu, uint8_t mode)
 {
-	uint8_t cmd[] = { 0x17, 0x00, mode };
+	uint8_t cmd[] = { MCU_SET_POWER_MGMT_MODE, 0x00, mode };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -301,7 +375,8 @@ static int poe_cmd_power_mgmt_mode(struct mcu *mcu, uint8_t mode)
 static int poe_cmd_global_power_budget(struct mcu *mcu, uint8_t pse,
 				       float budget, float guard)
 {
-	uint8_t cmd[] = { 0x18, 0x00, pse, 0x00, 0x00, 0x00, 0x00 };
+	uint8_t cmd[] = { MCU_SET_POWER_BUDGET, 0x00, pse,
+			  0x00, 0x00, 0x00, 0x00 };
 
 	write16_be(cmd + 3, budget * 10);
 	write16_be(cmd + 5, guard * 10);
@@ -318,7 +393,7 @@ static int poe_cmd_global_power_budget(struct mcu *mcu, uint8_t pse,
 static int poe_set_port_priority(struct mcu *mcu, uint8_t port[4],
 				 uint8_t priority[4])
 {
-	return poet_cmd_4_port(mcu, 0x1a, port, priority);
+	return poet_cmd_4_port(mcu, PORT_SET_PRIORITY, port, priority);
 }
 
 /* 0x1c - Set port power-up mode
@@ -330,13 +405,13 @@ static int poe_set_port_priority(struct mcu *mcu, uint8_t port[4],
 static int poe_set_port_power_up_mode(struct mcu *mcu, uint8_t port[4],
 				      uint8_t mode[4])
 {
-	return poet_cmd_4_port(mcu, 0x1c, port, mode);
+	return poet_cmd_4_port(mcu, PORT_SET_POE_MODE, port, mode);
 }
 
 /* 0x20 - Get system info */
 static int poe_cmd_status(struct mcu *mcu)
 {
-	uint8_t cmd[] = { 0x20 };
+	uint8_t cmd[] = { MCU_GET_SYSTEM_INFO };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -368,7 +443,10 @@ static int poe_reply_status(struct mcu_state *state, uint8_t *reply)
 	};
 
 	state->sys_mode = GET_STR(reply[2], mode);
-	state->num_detected_ports = reply[3];
+	if (!reply[3] || reply[3] > MAX_PORT)
+		ULOG_ERR("num_detected_ports=%d is invalid\n", reply[3]);
+	else
+		state->num_detected_ports = reply[3];
 	state->port_map_en = reply[4];
 	state->device_id =  read16_be(reply + 5);
 	state->sys_version = reply[7];
@@ -382,7 +460,7 @@ static int poe_reply_status(struct mcu_state *state, uint8_t *reply)
 /* 0x21 - Get port status */
 static int poe_cmd_port_status(struct mcu *mcu, uint8_t port)
 {
-	uint8_t cmd[] = { 0x21, 0x00, port };
+	uint8_t cmd[] = { PORT_GET_STATUS, 0x00, port };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -408,7 +486,7 @@ static int poe_reply_port_status(struct mcu_state *state, uint8_t *reply)
 /* 0x23 - Get power statistics */
 static int poe_cmd_power_stats(struct mcu *mcu)
 {
-	uint8_t cmd[] = { 0x23 };
+	uint8_t cmd[] = { MCU_GET_POWER_STATS };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -424,7 +502,7 @@ static int poe_reply_power_stats(struct mcu_state *state, uint8_t *reply)
 /* 0x25 - Get port config */
 static int poe_cmd_port_config(struct mcu *mcu, uint8_t port)
 {
-	uint8_t cmd[] = { 0x25, 0x00, port };
+	uint8_t cmd[] = { PORT_GET_CONFIG, 0x00, port };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -453,7 +531,7 @@ static int poe_reply_port_config(struct mcu_state *state, uint8_t *reply)
 /* 0x26 - Get extended port config */
 static int poe_cmd_port_ext_config(struct mcu *mcu, uint8_t port)
 {
-	uint8_t cmd[] = { 0x26, 0x00, port };
+	uint8_t cmd[] = { PORT_GET_EXT_CONFIG, 0x00, port };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -482,6 +560,9 @@ static int poe_reply_port_ext_config(struct mcu_state *state, uint8_t *reply)
 	port->primary_pse_output = reply[7];
 	/* In the broadcom dialect, pse output and mapping are synonymous. */
 	port->mapping = port->primary_pse_output;
+	/* In the realtek dialect, mapping comes from a different byte. */
+	if (reply[8] != 0xff)
+		port->mapping = reply[8];
 
 	return 0;
 }
@@ -490,15 +571,14 @@ static int poe_reply_port_ext_config(struct mcu_state *state, uint8_t *reply)
 static int poe_cmd_4_port_status(struct mcu *mcu, uint8_t p1, uint8_t p2,
 				 uint8_t p3, uint8_t p4)
 {
-	uint8_t cmd[] = { 0x28, 0x00, p1, 1, p2, 1, p3, 1, p4, 1 };
+	uint8_t cmd[] = { PORT_GET_SHORT_STATUS, 0x00,
+			  p1, 1, p2, 1, p3, 1, p4, 1 };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
 
-static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
+const char *port_short_status_to_str(uint8_t short_status)
 {
-	int i, port, pstate;
-
 	const char *status[] = {
 		[0] = "Disabled",
 		[1] = "Searching",
@@ -507,6 +587,13 @@ static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
 		[5] = "Other fault",
 		[6] = "Requesting power",
 	};
+
+	return GET_STR(short_status & 0xf, status);
+}
+
+static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
+{
+	int i, port, pstate;
 
 	for (i = 2; i < OFFSET_CHECKSUM; i+=2) {
 		port = reply[i];
@@ -519,7 +606,7 @@ static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
 			return -1;
 		}
 
-		state->ports[port].status = GET_STR(pstate & 0xf, status);
+		state->ports[port].status = port_short_status_to_str(pstate);
 	}
 
 	return 0;
@@ -528,7 +615,7 @@ static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
 /* 0x2b - Get extended device config */
 static int poe_cmd_get_extended_config(struct mcu *mcu)
 {
-	uint8_t cmd[] = { 0x2b };
+	uint8_t cmd[] = { MCU_GET_EXT_CONFIG };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
@@ -550,28 +637,58 @@ static int poe_reply_extended_config(struct mcu_state *state, uint8_t *reply)
 /* 0x30 - Get port power statistics */
 static int poe_cmd_port_power_stats(struct mcu *mcu, uint8_t port)
 {
-	uint8_t cmd[] = { 0x30, 0x00, port };
+	uint8_t cmd[] = { PORT_GET_POWER_STATS, 0x00, port };
 
 	return mcu_queue_cmd(mcu, cmd, sizeof(cmd));
 }
 
 static int poe_reply_port_power_stats(struct mcu_state *state, uint8_t *reply)
 {
-	int port_idx = reply[2];
+	unsigned int port_idx = reply[2];
+
+	if (port_idx > state->num_detected_ports) {
+		ULOG_WARN("Invalid port in power stat (port=%d)\n", port_idx);
+		return -EPROTO;
+	}
 
 	state->ports[port_idx].watt = read16_be(reply + 9) * 0.1;
 	return 0;
 }
 
+static int poe_reply_4_port(struct mcu_state *mcu, uint8_t *reply)
+{
+	uint8_t port, ret;
+	int i;
+
+	for (i = 2; i < 10; i += 2) {
+		port = reply[i];
+		ret = reply[i + 1];
+		if (port == 0xff)
+			continue;
+
+		if (ret)
+			ULOG_WARN("Command %02x failed for port %d with code %d\n",
+				  reply[0], port, ret);
+	}
+
+	return 0;
+}
+
 static poe_reply_handler reply_handler[] = {
-	[0x20] = poe_reply_status,
-	[0x21] = poe_reply_port_status,
-	[0x23] = poe_reply_power_stats,
-	[0x26] = poe_reply_port_ext_config,
-	[0x25] = poe_reply_port_config,
-	[0x28] = poe_reply_4_port_status,
-	[0x2b] = poe_reply_extended_config,
-	[0x30] = poe_reply_port_power_stats,
+	[PORT_ENABLE]                   = poe_reply_4_port,
+	[PORT_SET_AUTO_POWERUP]         = poe_reply_4_port,
+	[PORT_SET_POE_MODE]             = poe_reply_4_port,
+	[PORT_SET_POWER_LIMIT_TYPE]     = poe_reply_4_port,
+	[PORT_SET_POWER_LIMIT]          = poe_reply_4_port,
+	[PORT_SET_PRIORITY]             = poe_reply_4_port,
+	[MCU_GET_SYSTEM_INFO]		= poe_reply_status,
+	[MCU_GET_POWER_STATS]		= poe_reply_power_stats,
+	[PORT_GET_STATUS]		= poe_reply_port_status,
+	[PORT_GET_SHORT_STATUS]		= poe_reply_4_port_status,
+	[PORT_GET_POWER_STATS]		= poe_reply_port_power_stats,
+	[PORT_GET_CONFIG]		= poe_reply_port_config,
+	[PORT_GET_EXT_CONFIG]		= poe_reply_port_ext_config,
+	[MCU_GET_EXT_CONFIG]		= poe_reply_extended_config,
 };
 
 static void mcu_clear_timeout(struct uloop_timeout *t)
@@ -619,9 +736,12 @@ static void handle_f0_reply(struct mcu *mcu, struct cmd *cmd, uint8_t *reply)
 
 static int mcu_handle_reply(struct mcu *mcu, uint8_t *reply)
 {
+	const struct dialect_ops *ops = mcu->dialect.desc->ops;
 	struct cmd *cmd = NULL;
 	uint8_t sum = 0, i, cmd_id, cmd_seq;
+	enum poe_cmd command;
 
+	uloop_timeout_cancel(&mcu->response_timeout);
 	log_packet(LOG_DEBUG, "RX <-", reply);
 
 	if (list_empty(&mcu->pending_cmds)) {
@@ -638,7 +758,7 @@ static int mcu_handle_reply(struct mcu *mcu, uint8_t *reply)
 		sum += reply[i];
 
 	if (reply[OFFSET_CHECKSUM] != sum) {
-		ULOG_DBG("received reply with bad checksum\n");
+		ULOG_DBG("received reply with bad checksum got %X, expected %X\n", reply[OFFSET_CHECKSUM], sum);
 		free(cmd);
 		return -1;
 	}
@@ -650,7 +770,8 @@ static int mcu_handle_reply(struct mcu *mcu, uint8_t *reply)
 
 	free(cmd);
 
-	if ((reply[0] != cmd_id) || (reply[0] > ARRAY_SIZE(reply_handler))) {
+	command = dialect_rev_lookup(&mcu->dialect, reply[0]);
+	if ((reply[0] != cmd_id) || (command < 0)) {
 		ULOG_DBG("received reply with bad command id\n");
 		return -1;
 	}
@@ -660,8 +781,10 @@ static int mcu_handle_reply(struct mcu *mcu, uint8_t *reply)
 		return -1;
 	}
 
-	if (reply_handler[reply[0]]) {
-		return reply_handler[reply[0]](&mcu->state, reply);
+	if (reply_handler[command]) {
+		return reply_handler[command](&mcu->state, reply);
+	} else if (ops->handle_reply) {
+		return ops->handle_reply(&mcu->state, reply, 12);
 	}
 
 	return 0;
@@ -730,6 +853,7 @@ static int poet_setup(struct mcu* mcu, const struct port_config *ports,
 		      size_t num_ports)
 {
 	uint8_t port_ids[4], priorities[4], powerup_mode[4], limit_type[4];
+	uint8_t disable_all[4] = {0, 0, 0, 0};
 	uint8_t enable_all[4] = {1, 1, 1, 1};
 	size_t i = 0, num_okay = 0;
 
@@ -747,6 +871,7 @@ static int poet_setup(struct mcu* mcu, const struct port_config *ports,
 				break;
 		};
 
+		memset(disable_all + num_okay, 0xff, 4 - num_okay);
 		memset(enable_all + num_okay, 0xff, 4 - num_okay);
 		memset(port_ids + num_okay, 0xff, 4 - num_okay);
 		memset(priorities + num_okay, 0xff, 4 - num_okay);
@@ -757,6 +882,7 @@ static int poet_setup(struct mcu* mcu, const struct port_config *ports,
 		poe_set_port_power_up_mode(mcu, port_ids, powerup_mode);
 		poe_cmd_port_classification(mcu, port_ids, enable_all);
 		poe_cmd_port_power_limit_type(mcu, port_ids, limit_type);
+		poe_cmd_mystery_parameter(mcu, port_ids, disable_all);
 
 		num_okay = 0;
 	} while (++i < num_ports);
@@ -780,8 +906,10 @@ static int poe_port_setup(struct mcu* mcu, const struct config *cfg)
 
 	poet_setup(mcu, cfg->ports, cfg->port_count);
 
-	for (i = 0; i < cfg->port_count; i++)
+	for (i = 0; i < cfg->port_count; i++) {
 		poe_cmd_port_enable(mcu, i, !!cfg->ports[i].enable);
+		poe_cmd_port_ext_config(mcu, i);
+	}
 
 	return 0;
 }
@@ -818,12 +946,22 @@ static void state_timeout_cb(struct uloop_timeout *t)
 	struct mcu *mcu = &poe->mcu;
 	size_t i;
 
+	/* skip this iteration if we're still busy processing the queue */
+	if (!list_empty(&mcu->pending_cmds)) {
+		uloop_timeout_set(t, 1 * 1000);
+		return;
+	}
+
 	poe_cmd_power_stats(mcu);
 	if (poe->hardcore_hacking_mode_en)
 		poe_cmd_get_extended_config(mcu);
 
-	for (i = 0; i < cfg->port_count; i += 4)
-		poe_cmd_4_port_status(mcu, i, i + 1, i + 2, i + 3);
+	if (mcu->dialect.desc->ops->poll_async) {
+		mcu->dialect.desc->ops->poll_async(mcu, cfg);
+	} else {
+		for (i = 0; i < cfg->port_count; i += 4)
+			poe_cmd_4_port_status(mcu, i, i + 1, i + 2, i + 3);
+	}
 
 	for (i = 0; i < cfg->port_count; i++) {
 		if (poe->hardcore_hacking_mode_en) {
@@ -831,7 +969,6 @@ static void state_timeout_cb(struct uloop_timeout *t)
 			poe_cmd_port_config(mcu, i);
 		}
 
-		poe_cmd_port_ext_config(mcu, i);
 		poe_cmd_port_power_stats(mcu, i);
 	}
 
@@ -1085,6 +1222,8 @@ static void ubus_connect_handler(struct ubus_context *ctx)
 
 int main(int argc, char **argv)
 {
+	unsigned int baudrate = 0;
+	speed_t dino_baud;
 	int ch;
 
 	struct poe_ctx poe = {
@@ -1095,18 +1234,21 @@ int main(int argc, char **argv)
 			.budget_guard = 7,
 			.pse_id_set_budget_mask = 0x01,
 		},
+		.mcu.dialect.desc = &broadcom_dialect,
 	};
 
 	INIT_LIST_HEAD(&poe.mcu.pending_cmds);
 	ulog_open(ULOG_STDIO | ULOG_SYSLOG, LOG_DAEMON, "realtek-poe");
 	ulog_threshold(LOG_INFO);
 
-	while ((ch = getopt(argc, argv, "d")) != -1) {
+	while ((ch = getopt(argc, argv, "ds")) != -1) {
 		switch (ch) {
 		case 'd':
 			ulog_threshold(LOG_DEBUG);
 			poe.hardcore_hacking_mode_en = 1;
 			break;
+		case 'f':
+			baudrate = 115200;
 		}
 	}
 
@@ -1118,8 +1260,34 @@ int main(int argc, char **argv)
 	uloop_init();
 	ubus_auto_connect(&poe.conn);
 
-	if (poe_stream_open("/dev/ttyS1", &poe.mcu.stream, B19200) < 0)
+	if (poe.config.forced_dialect)
+		poe.mcu.dialect.desc = poe.config.forced_dialect;
+
+	/* Users of poe_dialect assume the reverse mapping is computed. */
+	dialect_reverse_map(&poe.mcu.dialect);
+
+	/* Prefer '-s' argument over any config file option */
+	if (baudrate) {
+		/* Keep existing baudrate */
+	} else if (poe.config.forced_baudrate) {
+		baudrate = poe.config.forced_baudrate;
+	} else {
+		baudrate = 19200;
+	}
+
+	switch (baudrate) {
+	case 115200:
+		dino_baud = B115200;
+		break;
+	case 19200: /* Fall through */
+	default:
+		dino_baud = B19200;
+		break;
+	}
+	if (poe_stream_open("/dev/ttyS1", &poe.mcu.stream, dino_baud) < 0)
 		return -1;
+
+
 	poe_initial_setup(&poe.mcu, &poe.config);
 	uloop_timeout_set(&poe.state_timeout, 1000);
 	uloop_run();
