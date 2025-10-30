@@ -260,6 +260,7 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-10HP B1");
 		nvram_set("poe","1");
 		nvram_set("force_baudrate", "115200");
+		nvram_set("poe_maxports", "8");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-10HP")) {
