@@ -256,8 +256,14 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-16");
 		return ROUTER_ZYXEL_GS1900;
 	}
+	if (!strcmp(modelstr, "GS1900-10HP") && !strcmp(version,"B1")) {
+		setRouter("Zyxel GS1900-10HP B1");
+		nvram_set("poe","1");
+		nvram_set("force_baudrate", "115200");
+		return ROUTER_ZYXEL_GS1900;
+	}
 	if (!strcmp(modelstr, "GS1900-10HP")) {
-		setRouter("Zyxel GS1900-10HP");
+		setRouter("Zyxel GS1900-10HP A1");
 		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
