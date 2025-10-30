@@ -68,7 +68,7 @@ static void load_port_config(struct config *cfg, int id)
 	const char *id_str, *enable, *priority, *poe_plus;
 	char name[32];
 	sprintf(name, "lan%02d",id);
-	if (!ifexists(name))
+	if (!ifexists(name) || id >= nvram_default_geti("poe_maxports", 48))
 	    return;
 	enable = nvram_default_nget("1", "%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
