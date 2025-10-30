@@ -73,6 +73,18 @@ static void load_port_config(struct config *cfg, int id)
 	enable = nvram_default_nget("1", "%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
 	poe_plus = nvram_default_nget("1", "%s_poe_plus", name); // 802.3at
+	if (nvram_default_nmatch("Off", "802.11at", "%s_poe_mode", name)) {
+	    enable = "0";
+	    poe_plus = "0";
+	}
+	if (nvram_default_nmatch("802.11af", "802.11at", "%s_poe_mode", name)) {
+	    enable = "1";
+	    poe_plus = "0";
+	}
+	if (nvram_default_nmatch("802.11at", "802.11at", "%s_poe_mode", name)) {
+	    enable = "1";
+	    poe_plus = "1";
+	}
 
 	cfg->port_count = MAX(cfg->port_count, id);
 	id--;
