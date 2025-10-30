@@ -242,6 +242,7 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS1900-24EP")) {
 		setRouter("Zyxel GS1900-24EP");
+		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24E")) {
@@ -308,10 +309,12 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "HPE 1920-8G-PoE+") && !strcmp(version,"65W")) {
 		setRouter("HPE 1920-8G-PoE+ 65W (JG921A)");
+		nvram_set("poe","1");
 		return ROUTER_HP_1920;
 	}
 	if (!strcmp(modelstr, "HPE 1920-8G-PoE+") && !strcmp(version,"180W")) {
 		setRouter("HPE 1920-8G-PoE+ 180W (JG922A)");
+		nvram_set("poe","1");
 		return ROUTER_HP_1920;
 	}
 	if (!strcmp(modelstr, "HPE 1920-16G") && !strcmp(version,"(JG923A)")) {
@@ -324,11 +327,13 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "HPE 1920-24G-PoE+") && !strcmp(version,"180W")) {
 		setRouter("HPE 1920-24G-PoE+ 180W (JG925A)");
+		nvram_set("poe","1");
 		return ROUTER_HP_1920;
 	}
 
 	if (!strcmp(modelstr, "HPE 1920-24G-PoE+") && !strcmp(version,"370W")) {
 		setRouter("HPE 1920-24G-PoE+ 370W (JG926A)");
+		nvram_set("poe","1");
 		return ROUTER_HP_1920;
 	}
 	if (!strcmp(modelstr, "HPE 1920-48G") && !strcmp(version,"(JG927A)")) {
@@ -337,14 +342,17 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "HPE 1920-48G-PoE") && !strcmp(version,"(JG928A)")) {
 		setRouter("HPE 1920-48G-PoE+ 370W (JG928A)");
+		nvram_set("poe","1");
 		return ROUTER_HP_1920;
 	}
 	if (!strcmp(modelstr, "DGS-1210-10MP")) {
 		setRouter("D-Link DGS-1210-10MP F");
+		nvram_set("poe","1");
 		return ROUTER_DGS_1210;
 	}
 	if (!strcmp(modelstr, "DGS-1210-10P")) {
 		setRouter("D-Link DGS-1210-10P");
+		nvram_set("poe","1");
 		return ROUTER_DGS_1210;
 	}
 
@@ -370,11 +378,13 @@ int internal_getRouterBrand()
 
 	if (!strcmp(modelstr, "DGS-1210-28MP")) {
 		setRouter("D-Link DGS-1210-28MP F");
+		nvram_set("poe","1");
 		return ROUTER_DGS_1210;
 	}
 
 	if (!strcmp(modelstr, "DGS-1210-28P")) {
 		setRouter("D-Link DGS-1210-28P F");
+		nvram_set("poe","1");
 		return ROUTER_DGS_1210;
 	}
 	if (!strcmp(modelstr, "GS750E")) {
@@ -387,10 +397,12 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS110TPP")) {
 		setRouter("Netgear GS110TPP v1");
+		nvram_set("poe","1");
 		return ROUTER_NETGEAR_GS;
 	}
 	if (!strcmp(modelstr, "GS110TUP")) {
 		setRouter("Netgear GS110TUP v1");
+		nvram_set("poe","1");
 		return ROUTER_NETGEAR_GS;
 	}
 	if (!strcmp(modelstr, "GS308T")) {
@@ -399,6 +411,7 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS310TP")) {
 		setRouter("Netgear GS310TP v1");
+		nvram_set("poe","1");
 		return ROUTER_NETGEAR_GS;
 	}
 	if (!strcmp(modelstr, "LGS310C")) {
@@ -411,10 +424,12 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "EWS2910P") && !strcmp(version,"v1")) {
 		setRouter("EnGenius EWS2910P v1");
+		nvram_set("poe","1");
 		return ROUTER_EWS2910P;
 	}
 	if (!strcmp(modelstr, "EWS2910P") && !strcmp(version,"v3")) {
 		setRouter("EnGenius EWS2910P v3");
+		nvram_set("poe","1");
 		return ROUTER_EWS2910P;
 	}
 
