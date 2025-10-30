@@ -147,7 +147,7 @@ static char *get_board_compatible(void)
 
 static void config_apply_quirks(struct config *config)
 {
-	if (nvram_match("DD_BOARD","Zyxel GS1900-24HP v1")) {
+	if (nvram_match("DD_BOARD","Zyxel GS1900-24HP A1")) {
 		/* Send budget command to first 8 PSE IDs */
 		config->pse_id_set_budget_mask = 0xff;
 	}
