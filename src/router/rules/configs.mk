@@ -475,24 +475,24 @@ endif
 obj-$(CONFIG_WOLFSSL) += wolfssl
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 ifeq ($(KERNELVERSION),6.1)
-obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+obj-$(CONFIG_HOSTAPD2) += json-c libubox json-c ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
-obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+obj-$(CONFIG_HOSTAPD2) += json-c libubox json-c ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.6-nss)
-obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+obj-$(CONFIG_HOSTAPD2) += json-c libubox json-c ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.6)
-obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+obj-$(CONFIG_HOSTAPD2) += json-c libubox json-c ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.12)
-obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+obj-$(CONFIG_HOSTAPD2) += json-c libubox json-c ubus libnltiny usteer
 endif
 
-obj-$(CONFIG_USTEER) += json-c libubox ubus libnltiny usteer
-obj-$(CONFIG_DAWN) += json-c libubox ubus libnltiny dawn
-obj-$(CONFIG_WPA3) += json-c libubox ubus libnltiny usteer
+obj-$(CONFIG_USTEER) += json-c libubox json-c ubus libnltiny usteer
+obj-$(CONFIG_DAWN) += json-c libubox json-c ubus libnltiny dawn
+obj-$(CONFIG_WPA3) += json-c libubox json-c ubus libnltiny usteer
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
 obj-$(CONFIG_TOR) += xz zstd zlib libucontext openssl libevent tor
@@ -520,7 +520,7 @@ obj-$(CONFIG_NPROBE) += nprobe
 obj-$(CONFIG_MTR) += mtr
 obj-$(CONFIG_SNOOP) += snoop
 obj-$(CONFIG_AOSS) += aoss
-obj-$(CONFIG_AOSS2) += aoss2 json-c libubox ubus
+obj-$(CONFIG_AOSS2) += aoss2 json-c libubox json-c ubus
 obj-$(CONFIG_AP_SERV) += ap-serv
 obj-$(CONFIG_TOLAPAI) += tolapai
 obj-$(CONFIG_BUFFALO) += buffalo_flash
@@ -705,7 +705,7 @@ obj-$(CONFIG_NUT) += nut
 obj-$(CONFIG_PROCPS) += ncurses procps
 obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 readline dbus bluez bluez-tools pcre2
 obj-$(CONFIG_IPTOOLS) += libmnl iptools
-obj-$(CONFIG_REALTEK) += libubox ubus realtek-poe
+obj-$(CONFIG_REALTEK) += libubox json-c ubus realtek-poe
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
