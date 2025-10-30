@@ -653,11 +653,11 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 					fclose(in);
 				} else {
 					websWrite(wp, "&nbsp;\n");
-//					websWrite(wp, "%s not found\n", statepath);
+					//					websWrite(wp, "%s not found\n", statepath);
 				}
 			} else {
 				websWrite(wp, "&nbsp;\n");
-//				websWrite(wp, "%s not found\n", devname);
+				//				websWrite(wp, "%s not found\n", devname);
 			}
 			websWrite(wp, "</td>\n");
 			websWrite(

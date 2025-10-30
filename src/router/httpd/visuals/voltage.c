@@ -48,7 +48,6 @@
 #include <revision.h>
 #include <shutils.h>
 
-
 #ifdef HAVE_VOLT
 EJ_VISIBLE void ej_get_voltage(webs_t wp, int argc, char_t **argv)
 {

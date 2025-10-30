@@ -49,7 +49,6 @@
 #include <wlutils.h>
 #include <ddnvram.h>
 
-
 static void show_macfilter_if(webs_t wp, char *ifname)
 {
 	websWrite(wp, "<fieldset>\n");

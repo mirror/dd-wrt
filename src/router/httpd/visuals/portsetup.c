@@ -49,7 +49,6 @@
 #include <wlutils.h>
 #include <ddnvram.h>
 
-
 void show_ipnetmask(webs_t wp, char *var);
 int registered_has_cap(int cap);
 

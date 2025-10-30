@@ -112,8 +112,13 @@ static void get_ifstat(char *ifname, char *buffer, size_t len)
 		 info.rx_bytes >> 20, info.rx_errs, info.rx_drops, info.tx_bytes >> 20, info.tx_errs, info.tx_drops, info.tx_colls);
 	return;
 }
+struct portcontext {
+	char ifname[MAXCOL][32];
+	int count;
+	int total;
+};
 
-static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
+static void show_portif_row(webs_t wp, struct portcontext *ctx, char ifname[MAXCOL][32])
 {
 	int i;
 	int max = 0;
@@ -172,25 +177,35 @@ static void show_portif_row(webs_t wp, char ifname[MAXCOL][32])
 				}
 			}
 			websWrite(wp, "</td>\n");
-			if (nvram_match("poe", "1")) {
-				char poe_mode[32];
-				sprintf(poe_mode, "%s_poe_mode", ifname[i][0]);
-				websWrite(wp, "<td style=\"vertical-align:top\">");
-				nvram_default_get(poe_mode, "802.11at");
-				showOptions_ext(wp, poe_mode, "Off 802.11af 802.11at", "802.11at", "min-width=\"0\"");
-				websWrite(wp, "</td>\n");
-			}
 		} else {
 			websWrite(wp, "<td>&nbsp;</td>\n");
 		}
 	}
+	websWrite(wp, "</tr>\n");
+	if (nvram_match("poe", "1")) {
+		char *cnt = nvram_safe_get("poe_maxports");
+		int c = 255;
+		if (*cnt)
+			c = atoi(cnt);
+		websWrite(wp, "<tr>\n");
+		for (i = 0; i < MAXCOL; i++) {
+			if (ifname[i][0] && ctx->total < c) {
+				ctx->total++;
+				char poe_mode[64];
+				sprintf(poe_mode, "%s_poe_mode", ifname[i]);
+				websWrite(wp, "<td style=\"vertical-align:top\">");
+				char *mode = nvram_default_get(poe_mode, "802.11at");
+				showOptions_ext(wp, poe_mode, "Off 802.11af 802.11at", mode, "min-width=\"0\"");
+				websWrite(wp, "</td>\n");
+			} else {
+				websWrite(wp, "<td>&nbsp;</td>\n");
+			}
+		}
+		websWrite(wp, "</tr>\n");
+	}
 	websWrite(wp, "</tbody>\n");
 	websWrite(wp, "</table>\n");
 }
-struct portcontext {
-	char ifname[MAXCOL][32];
-	int count;
-};
 
 static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname)
 {
@@ -201,7 +216,7 @@ static void show_portif(webs_t wp, struct portcontext *ctx, char *ifname)
 	ctx->count++;
 	if (ctx->count == MAXCOL) {
 		ctx->count = 0;
-		show_portif_row(wp, ctx->ifname);
+		show_portif_row(wp, ctx, ctx->ifname);
 	}
 }
 
@@ -252,7 +267,7 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 			show_portif(wp, &ctx, var);
 	}
 	if (ctx.count > 0) {
-		show_portif_row(wp, ctx.ifname);
+		show_portif_row(wp, &ctx, ctx.ifname);
 	}
 	websWrite(wp, "</fieldset>\n");
 }

@@ -49,7 +49,6 @@
 #include <wlutils.h>
 #include <ddnvram.h>
 
-
 EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 {
 	char buffer[512];
