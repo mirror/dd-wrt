@@ -822,6 +822,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv_prefix(wp, "multicast", var);
 		copytonv_prefix(wp, "m2u", var);
 		copytonv_prefix(wp, "nat", var);
+		copytonv_prefix(wp, "poe_mode", var);
 #ifdef HAVE_IPTOOLS
 		copytonv_prefix(wp, "arpd", var);
 #endif
