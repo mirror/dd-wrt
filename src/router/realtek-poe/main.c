@@ -1234,7 +1234,7 @@ int main(int argc, char **argv)
 			.budget_guard = 7,
 			.pse_id_set_budget_mask = 0x01,
 		},
-		.mcu.dialect.desc = &broadcom_dialect,
+		.mcu.dialect.desc = &realtek_dialect,
 	};
 
 	INIT_LIST_HEAD(&poe.mcu.pending_cmds);
