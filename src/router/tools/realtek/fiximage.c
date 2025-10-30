@@ -6,6 +6,8 @@
 
 /* Reused from common.h */
 #define ROUND(a, b)		(((a) + (b) - 1) & ~((b) - 1))
+#define IH_MAGIC	0x27051956	/* Image Magic Number		*/
+
 
 /*
  * Legacy format image header,
@@ -34,15 +36,21 @@ size_t len = ftell(in);
 rewind(in);
 
 struct legacy_img_hdr *hdr = malloc(len);
-unsigned char *buf = (unsigned char*)hdr;
-fread(hdr, len, 1, in);
+unsigned const char *buf = (unsigned char*)hdr;
+fread(hdr, 1, len, in);
 fprintf(stderr, "old size %d\n", ntohl(hdr->ih_size));
-hdr->ih_size = ntohl(len - sizeof(*hdr));
+hdr->ih_size = htonl(len - sizeof(*hdr));
 fprintf(stderr, "new size %d\n", ntohl(hdr->ih_size));
-hdr->ih_dcrc = ntohl(crc32(buf + sizeof(*hdr), len - sizeof(*hdr), 0));
-hdr->ih_hcrc = 0;
-hdr->ih_hcrc = ntohl(crc32(hdr, sizeof(*hdr), 0));
+fprintf(stderr, "old CRC %08X data\n", hdr->ih_dcrc);
+hdr->ih_dcrc = ntohl(crc32(0, buf + sizeof(*hdr), len - sizeof(*hdr)));
+fprintf(stderr, "new CRC %08X data\n", hdr->ih_dcrc);
+fprintf(stderr, "old CRC %08X header size %d\n", hdr->ih_hcrc, sizeof(struct legacy_img_hdr));
+//hdr->ih_magic = htonl(IH_MAGIC);
+hdr->ih_hcrc = htonl(0);
+unsigned int crc = crc32(0, buf, sizeof(struct legacy_img_hdr));
+hdr->ih_hcrc = htonl(crc);
+fprintf(stderr, "new CRC %08X\n", hdr->ih_hcrc);
 rewind(in);
-fwrite(hdr, len, 1, in);
+fwrite(hdr, 1, len, in);
 fclose(in);
 }
