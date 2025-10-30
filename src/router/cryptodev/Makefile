@@ -4,7 +4,7 @@ KDIR := $(LINUXDIR)
 PWD := $(shell pwd)
 
 all:
-	@$(MAKE) -C $(KDIR) M=$(PWD) modules
+	@$(MAKE) -C $(KDIR) M=$(PWD) modules  MODPROBE=true KBUILD_MODPOST_WARN=1
 
 install:
 	install -v -m 644 -D cryptodev.ko $(IDIR)/cryptodev.ko
