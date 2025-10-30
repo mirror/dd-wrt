@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "crc.c"
 
 #define IH_NMLEN		32	/* Image Name Length		*/
 
@@ -33,10 +34,14 @@ size_t len = ftell(in);
 rewind(in);
 
 struct legacy_img_hdr *hdr = malloc(len);
+unsigned char *buf = (unsigned char*)hdr;
 fread(hdr, len, 1, in);
 fprintf(stderr, "old size %d\n", ntohl(hdr->ih_size));
 hdr->ih_size = ntohl(len - sizeof(*hdr));
 fprintf(stderr, "new size %d\n", ntohl(hdr->ih_size));
+hdr->ih_dcrc = ntohl(crc32(buf + sizeof(*hdr), len - sizeof(*hdr), 0));
+hdr->ih_hcrc = 0;
+hdr->ih_hcrc = ntohl(crc32(hdr, sizeof(*hdr), 0));
 rewind(in);
 fwrite(hdr, len, 1, in);
 fclose(in);
