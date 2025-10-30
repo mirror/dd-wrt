@@ -651,6 +651,9 @@ static int poe_reply_port_power_stats(struct mcu_state *state, uint8_t *reply)
 		return -EPROTO;
 	}
 
+	state->ports[port_idx].mvolt = read16_be(reply + 3) * 64.45;
+	state->ports[port_idx].mampere = read16_be(reply + 5);
+	state->ports[port_idx].tempc = (220 - read16_be(reply + 7)) * 1.25;
 	state->ports[port_idx].watt = read16_be(reply + 9) * 0.1;
 	return 0;
 }
@@ -1014,6 +1017,12 @@ static int ubus_poe_info_cb(struct ubus_context *ctx, struct ubus_object *obj,
 			blobmsg_add_string(b, "status", state->ports[i].status);
 		else
 			blobmsg_add_string(b, "status", "unknown");
+		if (state->ports[i].mvolt)
+			blobmsg_add_double(b, "voltage", state->ports[i].mvolt / 1000.0);
+		if (state->ports[i].mampere)
+			blobmsg_add_double(b, "current", state->ports[i].mampere / 1000.0);
+		if (state->ports[i].tempc)
+			blobmsg_add_double(b, "temperature", state->ports[i].tempc);
 		if (state->ports[i].watt)
 			blobmsg_add_double(b, "consumption", state->ports[i].watt);
 

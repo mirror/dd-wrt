@@ -58,6 +58,9 @@ struct mcu;
 struct port_state {
 	const char *status;
 	const char *poe_mode;
+	float mvolt;
+	float mampere;
+	float tempc;
 	float power_budget;
 	float watt;
 
