@@ -29,13 +29,20 @@
 
 void start_poe(void)
 {
-	if (nvram_match("poe","1"))
+	if (nvram_match("poe", "1") && !pidof("realtek-poe"))
 		log_eval("realtek-poe");
+	else
+		eval("ubus", "call", "poe", "reload");
 	return;
 }
 
 void stop_poe(void)
 {
-	stop_process("realtek-poe", "realtek poe daemon");
+	//stop_process("realtek-poe", "realtek poe daemon");
 	return;
+}
+
+void restart_poe(void)
+{
+	eval("ubus", "call", "poe", "reload");
 }
