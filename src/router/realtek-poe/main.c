@@ -441,7 +441,18 @@ static int poe_reply_status(struct mcu_state *state, uint8_t *reply)
 		"Nuvoton M05xx LAN Microcontroller",
 		"ST Micro STF030C8 Microcontroller",
 		"Nuvoton M058SAN Microcontroller",
-		"Nuvoton NUC122 Microcontroller"
+		"Nuvoton NUC122 Microcontroller",
+		"0x5",
+		"0x6",
+		"0x7",
+		"0x8",
+		"0x9",
+		"0x10",
+		"0x11",
+		"0x12",
+		"0x13",
+		"0x14",
+		"0x15"
 	};
 	const char *status[] = {
 		"Global Disable pin is de-asserted:No system reset from the previous query cmd:Configuration saved",
