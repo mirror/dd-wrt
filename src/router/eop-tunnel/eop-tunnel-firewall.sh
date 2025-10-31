@@ -58,8 +58,12 @@ for i in $(seq 1 $tunnels); do
 		fi
 		$ipt -t mangle -D INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs
 		$ipt -t mangle -D OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs
+		$ip6t -t mangle -D INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs
+		$ip6t -t mangle -D OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs
 		peers=$(($($nv get oet${i}_peers) - 1))
 		for p in $(seq 0 $peers); do
+			$ip6t -t mangle -D INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
+			$ip6t -t mangle -D OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
 			$ipt -t mangle -D INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
 			$ipt -t mangle -D OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
 		done
@@ -104,6 +108,10 @@ for i in $(seq 1 $tunnels); do
 			insmod xt_WGOBFS
 			$ipt -t mangle -I INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs >/dev/null 2>&1
 			$ipt -t mangle -I OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs >/dev/null 2>&1
+			if [[ $ipv6_en -eq 1 ]]; then
+				$ip6t -t mangle -I INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs >/dev/null 2>&1
+				$ip6t -t mangle -I OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs >/dev/null 2>&1
+			fi
 		fi
 		if [ $($nv get oet${i}_proto) -eq 2 ]; then
 			peers=$(($($nv get oet${i}_peers) - 1))
@@ -112,6 +120,10 @@ for i in $(seq 1 $tunnels); do
 					insmod xt_WGOBFS
 					$ipt -t mangle -I INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
 					$ipt -t mangle -I OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
+					if [[ $ipv6_en -eq 1 ]]; then
+						$ip6t -t mangle -I INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
+						$ip6t -t mangle -I OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
+					fi
 				fi
 			done
 		fi

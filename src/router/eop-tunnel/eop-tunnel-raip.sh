@@ -276,8 +276,11 @@ for i in $(seq 1 $tunnels); do
 							ip route add $route table $FTID >/dev/null 2>&1
 						done
 						if [[ $ipv6_en -eq 1 ]]; then
-							#ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 ' | while read route; do
+							#ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 |^::/2 |^4000::/2 |^8000::/2 |^c000::/2 ' | sed -E 's/ proto kernel//; s/ expires -?[0-9]+sec//; s/  +/ /g' while read route; do
+							# remove only sec but leave expire: ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 |^::/2 |^4000::/2 |^8000::/2 |^c000::/2 ' | sed -E 's/ proto kernel//; s/( expires -?[0-9]+)sec/\1/;'
 							ip -6 route show | grep -Ev '^default |^::/1 |^8000::/1 |^::/2 |^4000::/2 |^8000::/2 |^c000::/2 ' | while read route; do
+								# remove proto kernel and expires sec value, sec is not allowed
+								route="$(echo "$route" | sed -E 's/ proto kernel//; s/ expires -?[0-9]+sec//')"
 								ip -6 route add $route table $FTID >/dev/null 2>&1
 							done
 						fi
