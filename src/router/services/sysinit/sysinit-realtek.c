@@ -192,6 +192,7 @@ void start_sysinit(void)
 	}
 
 	nvram_set("dsa", "1"); // flag to hide eth0
+	insmod("rtl_crypto");
 	insmod("cryptodev");
 	/*
 	 * network drivers 
