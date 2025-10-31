@@ -232,11 +232,14 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-24HP A1");
+		nvram_set("poe_maxports", "24");
 		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900-24HP B1");
+		nvram_set("force_baudrate", "115200");
+		nvram_set("poe_maxports", "24");
 		nvram_set("poe","1");
 		return ROUTER_ZYXEL_GS1900;
 	}
