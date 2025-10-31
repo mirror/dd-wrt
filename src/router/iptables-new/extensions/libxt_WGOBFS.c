@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <xtables.h>
 #include "xt_WGOBFS.h"
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 enum {
         FLAGS_KEY    = 1 << 0,
@@ -26,10 +27,10 @@ enum {
 };
 
 static const struct option wg_obfs_opts[] = {
-        {.name = "key",.has_arg = true,.val = OPT_KEY },
-        {.name = "obfs",.has_arg = false,.val = OPT_OBFS },
-        {.name = "unobfs",.has_arg = false,.val = OPT_UNOBFS },
-        { },
+        { .name = "key", .has_arg = true, .val = OPT_KEY },
+        { .name = "obfs", .has_arg = false, .val = OPT_OBFS },
+        { .name = "unobfs", .has_arg = false, .val = OPT_UNOBFS },
+        {},
 };
 
 static void wg_obfs_help(void)
@@ -58,7 +59,7 @@ static void expand_string(const char *s, int len, char *outbuf, int outlen)
 static int wg_obfs_parse(int c, char **argv, int z1, unsigned int *flags,
                          const void *z2, struct xt_entry_target **tgt)
 {
-        struct xt_wg_obfs_info *info = (void *) (*tgt)->data;
+        struct xt_wg_obfs_info *info = (void *)(*tgt)->data;
         unsigned long len;
         const char *s = optarg;
         char chacha_key[XT_CHACHA_KEY_SIZE];
@@ -92,8 +93,7 @@ static int wg_obfs_parse(int c, char **argv, int z1, unsigned int *flags,
 static void wg_obfs_check(unsigned int flags)
 {
         if (!(flags & FLAGS_KEY))
-                xtables_error(PARAMETER_PROBLEM,
-                              "WGOBFS: --key is required.");
+                xtables_error(PARAMETER_PROBLEM, "WGOBFS: --key is required.");
 
         if (!((flags & FLAGS_OBFS) || (flags & FLAGS_UNOBFS)))
                 xtables_error(PARAMETER_PROBLEM,
@@ -104,18 +104,17 @@ static void wg_obfs_check(unsigned int flags)
 static void wg_obfs_print(const void *z1, const struct xt_entry_target *tgt,
                           int z2)
 {
-        const struct xt_wg_obfs_info *info = (const void *) tgt->data;
+        const struct xt_wg_obfs_info *info = (const void *)tgt->data;
         if (info->mode == XT_MODE_OBFS)
                 printf(" --key %s --obfs", info->key);
         else if (info->mode == XT_MODE_UNOBFS)
                 printf(" --key %s --unobfs", info->key);
-
 }
 
 /* for iptables-save to dump rules */
 static void wg_obfs_save(const void *u, const struct xt_entry_target *tgt)
 {
-        const struct xt_wg_obfs_info *info = (const void *) tgt->data;
+        const struct xt_wg_obfs_info *info = (const void *)tgt->data;
         if (info->mode == XT_MODE_OBFS)
                 printf(" --key %s --obfs", info->key);
         else if (info->mode == XT_MODE_UNOBFS)
@@ -124,23 +123,36 @@ static void wg_obfs_save(const void *u, const struct xt_entry_target *tgt)
 
 static struct xtables_target wg_obfs_reg[] = {
         {
-         .version = XTABLES_VERSION,
-         .name = "WGOBFS",
-         .revision = 0,
-         .family = NFPROTO_IPV4,
-         .size =          XT_ALIGN(sizeof(struct xt_wg_obfs_info)),
-         .userspacesize = XT_ALIGN(sizeof(struct xt_wg_obfs_info)),
-//         .help = wg_obfs_help,
-         .parse = wg_obfs_parse,
-         .final_check = wg_obfs_check,
-         .print = wg_obfs_print,
-         .save = wg_obfs_save,
-         .extra_opts = wg_obfs_opts,
-          },
+                .version        = XTABLES_VERSION,
+                .name           = "WGOBFS",
+                .revision       = 0,
+                .family         = NFPROTO_IPV4,
+                .size           = XT_ALIGN(sizeof(struct xt_wg_obfs_info)),
+                .userspacesize  = XT_ALIGN(sizeof(struct xt_wg_obfs_info)),
+//                .help           = wg_obfs_help,
+                .parse          = wg_obfs_parse,
+                .final_check    = wg_obfs_check,
+                .print          = wg_obfs_print,
+                .save           = wg_obfs_save,
+                .extra_opts     = wg_obfs_opts,
+        },
+        {
+                .version        = XTABLES_VERSION,
+                .name           = "WGOBFS",
+                .revision       = 0,
+                .family         = NFPROTO_IPV6,
+                .size           = XT_ALIGN(sizeof(struct xt_wg_obfs_info)),
+                .userspacesize  = XT_ALIGN(sizeof(struct xt_wg_obfs_info)),
+//                .help           = wg_obfs_help,
+                .parse          = wg_obfs_parse,
+                .final_check    = wg_obfs_check,
+                .print          = wg_obfs_print,
+                .save           = wg_obfs_save,
+                .extra_opts     = wg_obfs_opts,
+        },
 };
 
 void _init(void)
 {
-        xtables_register_targets(wg_obfs_reg,
-                                 sizeof(wg_obfs_reg) / sizeof(*wg_obfs_reg));
+        xtables_register_targets(wg_obfs_reg, ARRAY_SIZE(wg_obfs_reg));
 }
