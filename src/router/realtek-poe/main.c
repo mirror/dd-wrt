@@ -70,9 +70,9 @@ static void load_port_config(struct config *cfg, int id)
 	sprintf(name, "lan%02d",id);
 	if (!ifexists(name) || id > nvram_default_geti("poe_maxports", 48))
 	    return;
-	enable = nvram_default_nget("1", "%s_poe_enable", name);
+	enable = nvram_nget("%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
-	poe_plus = nvram_default_nget("1", "%s_poe_plus", name); // 802.3at
+	poe_plus = nvram_nget("1", "%s_poe_plus", name); // 802.3at
 	if (nvram_default_nmatch("Off", "802.11at", "%s_poe_mode", name)) {
 	    enable = "0";
 	    poe_plus = "0";
