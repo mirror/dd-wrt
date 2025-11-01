@@ -29,7 +29,7 @@
 
 void start_poe(void)
 {
-	if (nvram_match("poe", "1") && !pidof("realtek-poe"))
+	if (nvram_match("poe", "1") && pidof("realtek-poe") == -1)
 		log_eval("realtek-poe");
 	else
 		eval("ubus", "call", "poe", "reload");
