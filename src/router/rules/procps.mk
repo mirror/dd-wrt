@@ -19,6 +19,7 @@ procps-clean:
 procps-install:
 	$(MAKE) -C procps install DESTDIR=$(INSTALLDIR)/procps
 	rm -rf $(INSTALLDIR)/procps/usr/share
+	rm -f $(INSTALLDIR)/procps/usr/bin/ps
 	rm -rf $(INSTALLDIR)/procps/usr/include
 	rm -rf $(INSTALLDIR)/procps/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/procps/usr/lib/*.la
