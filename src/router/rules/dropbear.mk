@@ -20,7 +20,7 @@ dropbear-configure: nvram libutils-configure libutils zlib-configure zlib
 				AR_FLAGS="cru $(LTOPLUGIN)" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-dropbear: zlib
+dropbear: dropbear-clean zlib
 	install -D dropbear/config/sshd.webservices httpd/ej_temp/sshd.webservices
 ifeq ($(CONFIG_OPENSSL),y)
 	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1 EXTRA_CFLAGS="-DPQC=1"
