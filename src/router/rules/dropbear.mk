@@ -22,7 +22,11 @@ dropbear-configure: nvram libutils-configure libutils zlib-configure zlib
 
 dropbear: zlib
 	install -D dropbear/config/sshd.webservices httpd/ej_temp/sshd.webservices
+ifeq ($(CONFIG_OPENSSL),y)
+	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1 EXTRA_CFLAGS="-DPQC=1"
+else
 	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
+endif
 
 dropbear-install:
 	install -D dropbear/dropbearmulti $(INSTALLDIR)/dropbear/usr/sbin/dropbearmulti
