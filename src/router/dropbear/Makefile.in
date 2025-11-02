@@ -137,6 +137,7 @@ endif
 ifneq (,$(strip $(foreach prog, $(PROGRAMS), $(findstring ZdbclientZ, Z$(prog)Z))))
 	CPPFLAGS+= -DDROPBEAR_CLIENT
 endif
+CPPFLAGS+= $(EXTRA_CFLAGS)
 
 # these are exported so that libtomcrypt's makefile will use them
 export CC
@@ -168,7 +169,7 @@ $(OBJ_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/%.o: $(srcdir)/%.c $(HEADERS) | $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $< -o $@ -c
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(EXTRA_CFLAGS) $< -o $@ -c
 
 fuzz/%.o: $(srcdir)/../fuzz/%.c $(HEADERS)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $< -o $@ -c

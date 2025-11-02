@@ -201,8 +201,13 @@ IMPORTANT: Some options will require "make clean" after changes */
 #define DROPBEAR_DH_GROUP14_SHA256 1
 #define DROPBEAR_DH_GROUP16 0
 #define DROPBEAR_CURVE25519 1
+#if defined(PQC)
 #define DROPBEAR_SNTRUP761 1
+#define DROPBEAR_MLKEM768 1
+#else
+#define DROPBEAR_SNTRUP761 0
 #define DROPBEAR_MLKEM768 0
+#endif
 #define DROPBEAR_ECDH 0
 #define DROPBEAR_DH_GROUP1 0
 
