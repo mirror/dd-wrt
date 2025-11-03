@@ -18,7 +18,7 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "firmware";
+				label = "linux";
 				reg = <0x0 0x0>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x93001010>;
@@ -86,7 +86,7 @@
 
 			fwconcat2: partition@820000 {
 				label = "fwconcat2";
-				reg = <0x820000 0xd0000>;
+				reg = <0x820000 0xb0000>;
 			};
 
 			partition@8f0000 {
@@ -98,6 +98,11 @@
 			fwconcat0: partition@900000 {
 				label = "fwconcat0";
 				reg = <0x900000 0x700000>;
+			};
+
+			nvram: partition@8D0000 {
+				label = "nvram";
+				reg = <0x8D0000 0x20000>;
 			};
 		};
 	};
