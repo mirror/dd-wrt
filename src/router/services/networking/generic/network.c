@@ -5161,7 +5161,7 @@ void start_hotplug_net(void)
 			writenet("queues/rx-5/rps_flow_cnt", 256, interface);
 			writenet("queues/rx-6/rps_flow_cnt", 256, interface);
 			writenet("queues/rx-7/rps_flow_cnt", 256, interface);
-			sysprintf("echo 1024 > /proc/sys/net/core/rps_sock_flow_entries");
+			sysprintf("echo 1024 > /proc/sys/net/core/rps_sock_flow_entries >/dev/null 2>&1");
 		}
 	}
 #ifdef HAVE_MADWIFI
