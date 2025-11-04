@@ -408,3 +408,4 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 	return 0;
 }
+EXPORT_SYMBOL(rtl83xx_setup_tc);
