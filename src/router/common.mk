@@ -487,7 +487,7 @@ endif
 
 kernel-initramfs:
 	sed -i 's/\# CONFIG_BLK_DEV_INITRD is not set/CONFIG_BLK_DEV_INITRD=y/g' $(LINUXDIR)/.config
-	echo "CONFIG_INITRAMFS_SOURCE=\"$(TOP)/$(ARCH)-uclibc/target\"" >> $(LINUXDIR)/.config
+	echo "CONFIG_INITRAMFS_SOURCE=\"$(TOP)/$(ARCH)-uclibc/target $(TOP)/tools/initramfs/initramfs-base-files.txt\""  >> $(LINUXDIR)/.config
 	echo "CONFIG_INITRAMFS_ROOT_UID=0" >> $(LINUXDIR)/.config
 	echo "CONFIG_INITRAMFS_ROOT_GID=0" >> $(LINUXDIR)/.config
 	echo "# CONFIG_RD_GZIP is not set" >> $(LINUXDIR)/.config
@@ -505,6 +505,7 @@ endif
 	echo "# CONFIG_RD_ZSTD is not set" >> $(LINUXDIR)/.config
 	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUXDIR)/.config
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-noinitramfs
+	rm -f $(ARCH)-uclibc/target/init && cd $(ARCH)-uclibc/target && ln -s sbin/init init
 	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-initramfs
 	cp $(LINUXDIR)/vmlinux-noinitramfs $(LINUXDIR)/vmlinux
