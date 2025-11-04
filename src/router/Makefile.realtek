@@ -454,6 +454,7 @@ endif
 	
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 
+	$(MAKE) -f Makefile.realtek kernel-initramfs MAKEEXT=realtek KBUILD_TARGETS="vmlinux dtbs" ARCH=mips
 
 
 ifeq ($(CONFIG_RTL931X),y)
