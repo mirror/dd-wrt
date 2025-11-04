@@ -506,6 +506,7 @@ endif
 	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUXDIR)/.config
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-noinitramfs
 	rm -f $(ARCH)-uclibc/target/init && cd $(ARCH)-uclibc/target && ln -s sbin/init init
+#	cp -f $(TOP)/tools/initramfs/init $(ARCH)-uclibc/target
 	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-initramfs
 	cp $(LINUXDIR)/vmlinux-noinitramfs $(LINUXDIR)/vmlinux
