@@ -131,6 +131,37 @@ void start_sysinit(void)
 			}
 		}
 		break;
+	case ROUTER_ZYXEL_XGS1010:
+		mtd = getMTD("u-boot-env");
+		if (mtd != -1)
+			set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
+		bootcmd = getUEnv("bootcmd");
+		mac = getUEnv("ethaddr");
+		if (!bootcmd || !strstr(bootcmd, "rtk network on")) {
+			fprintf(stderr, "change bootcmd to fix networking\n");
+			eval("fw_setenv", "netretry", "no");
+			eval("fw_setenv", "bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1010.bin;bootm");
+			eval("fw_setenv", "bootcmd", "rtk network on;run bootnet; bootm 0xb4900000");
+		}
+		if (!mac) {
+			fprintf(stderr, "fixup mac address which is not preconfigured by manufacturer\n");
+			char macaddr[32];
+			sprintf(macaddr, "D8:EC:E5:%02X:%02X:%02X", random() & 255, random() & 255, random() & 255);
+			eval("fw_setenv", "ethaddr", macaddr);
+		}
+
+		mac = getUEnv("ethaddr");
+		if (mac) {
+			char name[32];
+			int i;
+			set_hwaddr("eth0", mac);
+			for (i = 1; i < 13; i++) {
+				sprintf(name, "lan%02d", i);
+				set_hwaddr(name, mac);
+				MAC_ADD(mac);
+			}
+		}
+		break;
 	case ROUTER_EDGECORE_ECS4125:
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
