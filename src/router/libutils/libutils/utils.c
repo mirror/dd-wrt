@@ -724,6 +724,7 @@ void *getUEnv(char *name)
 	FILE *fp;
 	switch (brand) {
 	case ROUTER_ZYXEL_XGS1250:
+	case ROUTER_ZYXEL_XGS1010:
 		fp = fopen("/dev/mtdblock/1", "rb");
 		break;
 	case ROUTER_EDGECORE_ECS4125:
