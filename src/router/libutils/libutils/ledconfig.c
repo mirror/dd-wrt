@@ -69,6 +69,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = GPIO_LOW | 26;
 		break;
 	case ROUTER_ZYXEL_XGS1250:
+	case ROUTER_ZYXEL_XGS1010:
 		cfg->power_gpio = 0;
 		cfg->diag_gpio = GPIO_LOW | 0;
 		break;
