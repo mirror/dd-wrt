@@ -479,11 +479,9 @@ int main(int argc, char **argv)
 	start_service("devinit"); //init /dev /proc etc.
 	writeproc("/proc/sys/kernel/sysrq", "1");
 	start_service("check_bootfails");
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 	FILE *out = fopen("/tmp/.nvram_done", "wb");
 	putc(1, out);
 	fclose(out);
-#endif
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "");
 	start_service("sysinit");
 #ifndef HAVE_MICRO

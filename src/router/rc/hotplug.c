@@ -48,6 +48,8 @@
 
 int main(int argc, char **argv)
 {
+	if (!f_exists("/tmp/.nvram_done"))
+		return 0;
 	if (argc >= 2) {
 		char *action = getenv("ACTION");
 		char *devpath = getenv("BUTTON");
