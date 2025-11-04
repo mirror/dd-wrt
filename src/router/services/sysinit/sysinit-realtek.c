@@ -83,7 +83,7 @@ void start_sysinit(void)
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	int mtd;
 	char *mac;
-
+	insmod("rtl838x_eth");
 	switch (getRouterBrand()) {
 	case ROUTER_HP_1920:
 		FILE *fp = openMTD("factory");
