@@ -143,7 +143,7 @@ void start_sysinit(void)
 			eval("fw_setenv", "bootnet", "tftpboot 0x84f00000 192.168.1.254:xgs1010.bin;bootm");
 			eval("fw_setenv", "bootcmd", "rtk network on;run bootnet; bootm 0xb4900000");
 		}
-		if (!mac) {
+		if (!mac || !strcmp(mac, "00:e0:4c:00:00:00")) {
 			fprintf(stderr, "fixup mac address which is not preconfigured by manufacturer\n");
 			char macaddr[32];
 			sprintf(macaddr, "D8:EC:E5:%02X:%02X:%02X", random() & 255, random() & 255, random() & 255);
