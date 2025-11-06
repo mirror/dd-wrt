@@ -39,7 +39,6 @@
 			partition@f0000 {
 				label = "u-boot-env2";
 				reg = <0xf0000 0x10000>;
-				read-only;
 			};
 			partition@100000 {
 				label = "jffs2-cfg";
