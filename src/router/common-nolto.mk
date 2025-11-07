@@ -216,7 +216,9 @@ endif
 
 
 
+ifeq ($(CONFIG_MUSL),y)
 	cp musl$(MUSLVARIANT)/lib/*.so $(TARGETDIR)/lib
+endif
 ifneq ($(CONFIG_NOOPT),y)
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
