@@ -47,6 +47,7 @@ extern int nvram2file(char *varname, char *filename);
 //#define restart_service(a) eval("service",a, "restart");
 
 #define start_service(a)                 \
+	dd_loginfo("init","start " #a); \
 	airbag_setpostinfo("start_" #a); \
 	start_##a()
 #define stop_service(a)                 \
