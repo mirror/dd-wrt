@@ -818,10 +818,10 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	}
 	if (has_ax(prefix)) {
 		if (strcmp(netmode, "xacn-mixed") && //
-		    strcmp(netmode, "ax6-only ") && //
-		    strcmp(netmode, "ax-only ") && //
-		    strcmp(netmode, "ax5-only ") && //
-		    strcmp(netmode, "axg-only ") && //
+		    strcmp(netmode, "ax6-only") && //
+		    strcmp(netmode, "ax-only") && //
+		    strcmp(netmode, "ax5-only") && //
+		    strcmp(netmode, "axg-only") && //
 		    strcmp(netmode, "mixed")) {
 			fprintf(fp, "ieee80211ax=0\n");
 		}
