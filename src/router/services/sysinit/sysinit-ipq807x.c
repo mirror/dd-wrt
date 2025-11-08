@@ -1420,32 +1420,34 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 	char driver_frame_mode[32];
 	char driver_regionvariant[32];
 
-	int od = nvram_default_geti("power_overdrive", 0);
-	char overdrive[32];
-	sprintf(overdrive, "poweroffset=%d", od);
-	if (!nss) {
-		profile = 1024;
-		nvram_set("mem_profile", "1024");
+	if (!nvram_match("noath11k", "1")) {
+		int od = nvram_default_geti("power_overdrive", 0);
+		char overdrive[32];
+		sprintf(overdrive, "poweroffset=%d", od);
+		if (!nss) {
+			profile = 1024;
+			nvram_set("mem_profile", "1024");
+		}
+		//	if (profile == 512)
+		//		strcpy(postfix, "-512");
+		sprintf(driver_ath11k, "ath11k%s", postfix);
+		sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
+		sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
+		sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
+		sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
+		insmod("qmi_helpers");
+		if (nss) {
+			insmod("mac80211");
+			eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant);
+		} else {
+			eval("insmod", "mac80211", "nss_redirect=0");
+			eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant);
+			sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
+		}
+		insmod(driver_ath11k_ahb);
+		if (pci)
+			insmod(driver_ath11k_pci);
 	}
-//	if (profile == 512)
-//		strcpy(postfix, "-512");
-	sprintf(driver_ath11k, "ath11k%s", postfix);
-	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
-	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
-	sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
-	sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
-	insmod("qmi_helpers");
-	if (nss) {
-		insmod("mac80211");
-		eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant);
-	} else {
-		eval("insmod", "mac80211", "nss_redirect=0");
-		eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant);
-		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
-	}
-	insmod(driver_ath11k_ahb);
-	if (pci)
-		insmod(driver_ath11k_pci);
 }
 
 void start_wifi_drivers(void)
