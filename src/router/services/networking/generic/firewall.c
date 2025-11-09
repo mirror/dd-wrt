@@ -356,7 +356,6 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 	const char *next;
 	char buff[256], buff2[256], ip2[16];
 	int flag_dis = 0;
-	char *wan_proto = nvram_safe_get("wan_proto");
 
 	/*
 	 * name:enable:proto:port>ip name:enable:proto:port>ip 
@@ -398,9 +397,9 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 			if (flag_dis == 0) {
 				save2file_A_prerouting("-p tcp -d %s --dport %s:%s -j DNAT --to-destination %s", wanaddr, from, to,
 						       ip);
-				if (!strcmp(wan_proto, "pppoe_dual") ||
-				    (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
-				    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1)))
+				if (nvram_match("wan_proto", "pppoe_dual") ||
+				    (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+				    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 					save2file_A_prerouting("-i %s -p tcp --dport %s:%s -j DNAT --to-destination %s", wan_iface,
 							       from, to, ip);
 				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p tcp -m tcp -d %s --dport %s:%s -j %s\n",
@@ -419,9 +418,9 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 			if (flag_dis == 0) {
 				save2file_A_prerouting("-p udp -d %s --dport %s:%s -j DNAT --to-destination %s", wanaddr, from, to,
 						       ip);
-				if (!strcmp(wan_proto, "pppoe_dual") ||
-				    (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
-				    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1)))
+				if (nvram_match("wan_proto", "pppoe_dual") ||
+				    (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+				    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 					save2file_A_prerouting("-i %s -p udp -m udp --dport %s:%s -j DNAT --to-destination %s",
 							       wan_iface, from, to, ip);
 				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p udp -m udp -d %s --dport %s:%s -j %s\n",
@@ -562,13 +561,12 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 				int disabled)
 {
 	char buff[256], buff2[256];
-	char *wan_proto = nvram_safe_get("wan_proto");
 	if (src && *src) {
 		if (disabled == 0) {
 			save2file_A_prerouting("-p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto,
 					       src, wanaddr, from, ip, to);
-			if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
-			    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1)))
+			if (nvram_match("wan_proto", "pppoe_dual") || (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+			    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface,
 						       proto, proto, from, ip, to);
 		}
@@ -585,8 +583,8 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		if (disabled == 0) {
 			save2file_A_prerouting("-p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr,
 					       from, ip, to);
-			if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
-			    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1)))
+			if (nvram_match("wan_proto", "pppoe_dual") || (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+			    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface,
 						       proto, proto, from, ip, to);
 		}
@@ -1006,9 +1004,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			wan_ifname_tun = getSTA();
 		}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_PPPOEDUAL)
-		char *wan_proto = nvram_safe_get("wan_proto");
-		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
-		    (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))) {
+		if (nvram_match("wan_proto", "pppoe_dual") || (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+		    (nvram_match("wan_proto","l2tp") && nvram_matchi("wan_dualaccess", 1))) {
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file_A_postrouting("-o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
