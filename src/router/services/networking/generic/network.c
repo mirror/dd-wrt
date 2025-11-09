@@ -2900,9 +2900,9 @@ void run_wan(int status)
 	char mac[32];
 	char wan_if_buffer[33];
 	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
-	char *wan_proto = nvram_safe_get("wan_proto");
 	int s;
 	struct ifreq ifr;
+	dd_loginfo("wan_boot", "%s:%d\n", __func__, __LINE__);
 	if (isClient()) {
 		char *ifn = getSTA();
 		int count = 10;
@@ -2921,7 +2921,8 @@ void run_wan(int status)
 			eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 		}
 	}
-	start_firewall(); // start firewall once, to fix problem with rules which should exist even before wan is up
+	start_firewall();
+	eval("service", "firewall", "start");
 	// wan test mode
 	if (nvram_matchi("wan_testmode", 1)) {
 		status = 0; // avoid redialing
@@ -3057,7 +3058,7 @@ void run_wan(int status)
 		/*
 	 * Set MTU 
 	 */
-		init_mtu(wan_proto); // add by honor 2002/12/27
+		init_mtu(); // add by honor 2002/12/27
 		// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
 		// Set our Interface to the right MTU
@@ -3093,9 +3094,10 @@ void run_wan(int status)
 	}
 
 	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
-	if (strcmp(wan_proto, "disabled") == 0 || nvram_match("lan_ifname", wan_ifname) || nvram_match("lan_dhcp","1")) {
+	if (nvram_match("wan_proto", "disabled") || nvram_match("lan_ifname", wan_ifname) || nvram_match("lan_dhcp", "1")) {
 		close(s);
-		if ((nvram_match("lan_ifname", wan_ifname) && nvram_match("lan_ifname", nvram_safe_get("wan_ifname2"))) || nvram_match("lan_dhcp","1")) {
+		if ((nvram_match("lan_ifname", wan_ifname) && nvram_match("lan_ifname", nvram_safe_get("wan_ifname2"))) ||
+		    nvram_match("lan_dhcp", "1")) {
 			run_dhcpc(nvram_safe_get("lan_ifname"), NULL, NULL, 1, 0, 0);
 		} else {
 			char eabuf[32];
@@ -3128,7 +3130,7 @@ void run_wan(int status)
 	 * Configure WAN interface 
 	 */
 #ifdef HAVE_3G
-	if ((strcmp(wan_proto, "3g") == 0)) {
+	if ((nvram_match("wan_proto", "3g"))) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable",
 				   1); //  simply enable it, otherwise 3g might not work
@@ -3555,7 +3557,7 @@ void run_wan(int status)
 	} else
 #endif
 #ifdef HAVE_PPPOE
-		if ((strcmp(wan_proto, "pppoe") == 0)) {
+		if ((nvram_match("wan_proto", "pppoe"))) {
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
 
@@ -3850,7 +3852,7 @@ void run_wan(int status)
 	} else
 #endif
 #ifdef HAVE_PPPOEDUAL
-		if (strcmp(wan_proto, "pppoe_dual") == 0) {
+		if (nvram_match("wan_proto", "pppoe_dual")) {
 		if (nvram_matchi("pptp_iptv", 1))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
@@ -3892,7 +3894,7 @@ void run_wan(int status)
 	} else
 #endif
 #ifdef HAVE_MODEMBRIDGE
-		if ((strcmp(wan_proto, "bridge") == 0)) {
+		if ((nvram_match("wan_proto", "bridge"))) {
 		stop_atm();
 		start_atm();
 		br_add_interface("br0", "nas0");
@@ -3900,7 +3902,7 @@ void run_wan(int status)
 	} else
 #endif
 #ifdef HAVE_PPPOATM
-		if ((strcmp(wan_proto, "pppoa") == 0)) {
+		if ((nvram_match("wan_proto", "pppoa"))) {
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
 		stop_atm();
@@ -4066,11 +4068,11 @@ void run_wan(int status)
 		}
 	} else
 #endif
-		if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "dhcp_auth") == 0) {
+		if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "dhcp_auth")) {
 		run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #ifdef HAVE_IPETH
-	else if (strcmp(wan_proto, "iphone") == 0) {
+	else if (nvram_match("wan_proto", "iphone")) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable",
 				   1); //  simply enable it, otherwise 3g might not work
@@ -4088,7 +4090,7 @@ void run_wan(int status)
 		if (status != REDIAL) {
 			start_redial();
 		}
-	} else if (strcmp(wan_proto, "android") == 0) {
+	} else if (nvram_match("wan_proto", "android")) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable",
 				   1); //  simply enable it, otherwise 3g might not work
@@ -4118,7 +4120,7 @@ void run_wan(int status)
 	}
 #endif
 #ifdef HAVE_PPTP
-	else if (strcmp(wan_proto, "pptp") == 0) {
+	else if (nvram_match("wan_proto", "pptp")) {
 		if (nvram_matchi("pptp_iptv", 1))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
@@ -4128,7 +4130,7 @@ void run_wan(int status)
 	}
 #endif
 #ifdef HAVE_L2TP
-	else if (strcmp(wan_proto, "l2tp") == 0) {
+	else if (nvram_match("wan_proto", "l2tp")) {
 		if (nvram_matchi("pptp_iptv", 1))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
@@ -4148,7 +4150,7 @@ void run_wan(int status)
 	}
 #endif
 #ifdef HAVE_HEARTBEAT
-	else if (strcmp(wan_proto, "heartbeat") == 0) {
+	else if (nvram_match("wan_proto", "heartbeat")) {
 		run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #endif
@@ -5266,11 +5268,11 @@ void start_hotplug_net(void)
 #define DEFAULT_MTU 1492
 #endif
 
-int init_mtu(char *wan_proto)
+int init_mtu(void)
 {
 	int mtu = nvram_geti("wan_mtu");
 
-	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {
+	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoe_dual")) {
 		if (nvram_matchi("mtu_enable", 0)) { // Auto
 			nvram_seti("mtu_enable", 1);
 			nvram_seti("wan_mtu", DEFAULT_MTU); // set max value
@@ -5281,7 +5283,7 @@ int init_mtu(char *wan_proto)
 			if (mtu < 576)
 				nvram_seti("wan_mtu", 576);
 		}
-	} else if (strcmp(wan_proto, "pptp") == 0 || strcmp(wan_proto, "l2tp") == 0) { // 1200 < mtu < 1400 (1460)
+	} else if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp")) { // 1200 < mtu < 1400 (1460)
 		if (mtu > 1460)
 			nvram_seti("wan_mtu", 1460);
 
