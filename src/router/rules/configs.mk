@@ -626,7 +626,7 @@ endif
 endif
 endif
 endif
-obj-$(CONFIG_NFS) += util-linux sqlite lvm2 keyutils libtirpc rpcbind krb5 libevent nfs-utils
+obj-$(CONFIG_NFS) += util-linux sqlite libxml2 lvm2 keyutils libtirpc rpcbind krb5 libevent nfs-utils
 obj-$(CONFIG_SCREEN) += ncurses screen
 obj-$(CONFIG_DDRESCUE) += ddrescue
 obj-$(CONFIG_I2CTOOLS) += i2ctools
