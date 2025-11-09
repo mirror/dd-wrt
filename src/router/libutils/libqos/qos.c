@@ -1147,40 +1147,40 @@ void init_ackprio(const char *dev)
 		if (sscanf(qos_pkts, "%4s ", pkt_filter) < 1)
 			break;
 		if (!strcmp(pkt_filter, "ACK")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "4", "protocol", "ip", "u32",	//
-			     "match", "ip", "protocol", "6", "0xff",	//
-			     "match", "u8", "0x05", "0x0f", "at", "0",	//
-			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
-			     "match", "u8", "0x10", "0xff", "at", "33",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "4", "protocol", "ip", "u32", //
+			     "match", "ip", "protocol", "6", "0xff", //
+			     "match", "u8", "0x05", "0x0f", "at", "0", //
+			     "match", "u16", "0x0000", "0xffc0", "at", "2", //
+			     "match", "u8", "0x10", "0xff", "at", "33", //
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "SYN")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "5", "protocol", "ip", "u32",	//
-			     "match", "ip", "protocol", "6", "0xff",	//
-			     "match", "u8", "0x05", "0x0f", "at", "0",	//
-			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
-			     "match", "u8", "0x02", "0x02", "at", "33",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "5", "protocol", "ip", "u32", //
+			     "match", "ip", "protocol", "6", "0xff", //
+			     "match", "u8", "0x05", "0x0f", "at", "0", //
+			     "match", "u16", "0x0000", "0xffc0", "at", "2", //
+			     "match", "u8", "0x02", "0x02", "at", "33", //
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "FIN")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "6", "protocol", "ip", "u32",	//
-			     "match", "ip", "protocol", "6", "0xff",	//
-			     "match", "u8", "0x05", "0x0f", "at", "0",	//
-			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
-			     "match", "u8", "0x01", "0x01", "at", "33",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "6", "protocol", "ip", "u32", //
+			     "match", "ip", "protocol", "6", "0xff", //
+			     "match", "u8", "0x05", "0x0f", "at", "0", //
+			     "match", "u16", "0x0000", "0xffc0", "at", "2", //
+			     "match", "u8", "0x01", "0x01", "at", "33", //
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "RST")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "7", "protocol", "ip", "u32",	//
-			     "match", "ip", "protocol", "6", "0xff",	//
-			     "match", "u8", "0x05", "0x0f", "at", "0",	//
-			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
-			     "match", "u8", "0x04", "0x04", "at", "33",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "7", "protocol", "ip", "u32", //
+			     "match", "ip", "protocol", "6", "0xff", //
+			     "match", "u8", "0x05", "0x0f", "at", "0", //
+			     "match", "u16", "0x0000", "0xffc0", "at", "2", //
+			     "match", "u8", "0x04", "0x04", "at", "33", //
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "ICMP")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "8", "protocol", "ip", "u32",	//
-			     "match", "ip", "protocol", "1", "0xff",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "8", "protocol", "ip", "u32", //
+			     "match", "ip", "protocol", "1", "0xff", //
 			     "flowid", "1:100");
 		}
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
@@ -1277,4 +1277,17 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 	}
 }
 
+void rtl93xx_set_port_speed(const char *ifname, int downmbit, int upmbit)
+{
+	char up[32];
+	char down[32];
+	sprintf(up, "%dmbit", upmbit);
+	sprintf(down, "%dmbit", downmbit);
+	eval("tc", "qdisc", "del", "dev", ifname, "clsact");
+	eval("tc", "qdisc", "add", "dev", ifname, "clsact");
+	eval("tc", "filter", "add", "dev", ifname, "ingress", "flower", "skip_sw", "action", "police", "rate", down, "burst", "64k",
+	     "conform-exceed", "drop");
+	eval("tc", "filter", "add", "dev", ifname, "egress", "flower", "skip_sw", "action", "police", "rate", up, "burst", "64k",
+	     "conform-exceed", "drop");
+}
 #endif //","HAVE_SVQOS
