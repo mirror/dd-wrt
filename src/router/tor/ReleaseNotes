@@ -2,6 +2,36 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.8.19 - 2025-10-06
+  This release fixes two major bugfixes for a LibreSSL issue and a flow control
+  C-tor specific problem (not protocol). We strongly recommend you upgrade as
+  soon as possible.
+
+  o Major bugfixes (client, TLS):
+    - Fix some clients not being able to connect to LibreSSL relays.
+      Fixes bug 41134; bugfix on 0.4.8.17
+
+  o Minor bugfixes (stream flow control performance):
+    - Use a 5 ms grace period to allow an edge connection to flush its
+      stream data to the socket before sending an XOFF. This
+      significantly reduces the number of XON/XOFF messages sent when
+      (1) the application is reading stream data at a fast rate, and (2)
+      when conflux is enabled. Fixes part of bug 41130; bugfix
+      on 0.4.7.2-alpha
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on October 06, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/10/06.
+
+  o Minor bugfix (process):
+    - Avoid closing all possible FDs when spawning a process (PT). On
+      some systems, this could lead to 3+ minutes hang. Fixes bug 40990;
+      bugfix on 0.3.5.1-alpha.
+
+
 Changes in version 0.4.8.18 - 2025-09-16
   This is a minor release with a major onion service directory cache (HSDir)
   bug fix. A series of minor bugfixes as well. As always, we strongly recommend

@@ -696,14 +696,17 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
       // that supports ML-KEM also supports the ? syntax.
       // We also use the * and / syntaxes:
       //   '*' indicates that the client should send these keyshares.
-      //   "/" means that we should consider a set of of groups
-      //   as equivalently secure.
+      //   "/" separates tuples of groups that are "comparably secure".
       //
       // Note that we tell the client to send a P-256 keyshare, since until
       // this commit, our servers didn't accept X25519.
+      //
+      // Also note that until the upstream LibreSSL bug from tor#41134 gets
+      // fixed, the order of groups common between each preference list must
+      // be the same. We can't prefer P-256 in one, and X25519 in another.
       {
         OPENSSL_V_SERIES(3,5,0),
-        "?*X25519MLKEM768 / ?SecP256r1MLKEM768:?X25519 / *P-256:P-224"
+        "?*X25519MLKEM768 / ?SecP256r1MLKEM768 / *P-256:?X25519:P-224"
       },
       { 0, "P-256:X25519:P-224" },
       { 0, "P-256:P-224" },
