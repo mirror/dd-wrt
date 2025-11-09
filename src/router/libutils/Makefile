@@ -1905,7 +1905,7 @@ endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
 
-A_LIBS :=libshutils.a libutils.a libwireless.a
+A_LIBS :=libshutils.a libutils.a libwireless.a libqos.a
 C_LIBS :=libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 ifeq ($(CONFIG_USB),y)
 ifneq ($(CONFIG_3G_ONLY),y)
@@ -1985,6 +1985,10 @@ libdisc.so: $(DISCOBJS)
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	@echo "[CC] $@"
 	@$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -c -o $@ $^
+
+
+libqos.a: libqos/qos.o
+	$(AR) cr $@ $^
 
 libshutils.a: $(SHOBJS)
 	$(AR) cr $@ $^
