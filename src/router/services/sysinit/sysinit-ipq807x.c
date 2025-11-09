@@ -1408,6 +1408,16 @@ void start_sysinit(void)
 
 	detect_usbdrivers();
 
+	if (nvram_match("testing","1")) {
+	char *part = getUEnv("boot_part");
+		if (part) {
+			if (!strcmp(part, "2")) {
+				eval("fw_setenv","boot_part","1");
+			} else {
+				eval("fw_setenv","boot_part","2");
+			}
+		} 
+	}
 	return;
 }
 

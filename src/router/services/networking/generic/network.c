@@ -2902,7 +2902,6 @@ void run_wan(int status)
 	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 	int s;
 	struct ifreq ifr;
-	dd_loginfo("wan_boot", "%s:%d\n", __func__, __LINE__);
 	if (isClient()) {
 		char *ifn = getSTA();
 		int count = 10;
