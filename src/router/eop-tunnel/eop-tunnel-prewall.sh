@@ -164,6 +164,7 @@ for i in $(seq 1 $tunnels); do
 		rm -f ${i}.pid
 		} >/dev/null 2>&1
 		TID=$((20+i))
+		FWMARK="${i}/0xff"
 		while $IP rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
 		$IP route flush table $TID
 		if [[ $ipv6_en -eq 1 ]]; then 
@@ -188,11 +189,11 @@ for i in $(seq 1 $tunnels); do
 		fi
 		#IPSET flush table delete rule
 		for z in $(seq 1 2); do
-			$IP route flush table $z$TID >/dev/null 2>&1
-			$IP rule del table $z$TID fwmark $TID >/dev/null 2>&1
+			$IP route flush table ${z}${TID} >/dev/null 2>&1
+			$IP rule del prio $TID table ${z}${TID} fwmark $FWMARK >/dev/null 2>&1
 			if [[ "$ipv6_en" = "1" ]]; then
-				$IP6 route flush table $z$TID >/dev/null 2>&1
-				$IP6 rule del table $z$TID fwmark $TID >/dev/null 2>&1
+				$IP6 route flush table ${z}${TID} >/dev/null 2>&1
+				$IP6 rule del prio $TID table ${z}${TID} fwmark $FWMARK >/dev/null 2>&1
 			fi
 		done
 		# remove MAC in PBR

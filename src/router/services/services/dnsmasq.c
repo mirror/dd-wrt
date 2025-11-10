@@ -1057,7 +1057,7 @@ void start_dnsmasq(void)
 	//egc use ipset from WireGuard
 	char *ipsetfile = 0;
 	char *ipsetbasename = 0;
-	char oet_ipsetfile[32] = { 0 };
+	char oet_ipsetfile[64] = { 0 };
 	char str_ipsetdomains[512] = { 0 };
 	char oet_ipsetdomains[32] = { 0 };
 	int maxitunnels = nvram_geti("oet_tunnels");
@@ -1076,6 +1076,7 @@ void start_dnsmasq(void)
 #ifdef HAVE_IPSET
 			if (dpbr) {
 				char dnsm_ipset[512] = { 0 };
+				char ipsetbasename6[34] = { 0 };
 				snprintf(oet_ipsetfile, sizeof(oet_ipsetfile), "oet%d_ipsetfile", i);
 				ipsetfile = nvram_safe_get(oet_ipsetfile);
 				snprintf(oet_ipsetdomains, sizeof(oet_ipsetdomains), "oet%d_ipsetdomains", i);
@@ -1093,8 +1094,15 @@ void start_dnsmasq(void)
 				if (ipsetfile[0] != '\0') {
 					ipsetbasename = basename(ipsetfile);
 					if (ipsetbasename[0] != '\0' && dnsm_ipset[0] != '\0') {
-						fprintf(fp, "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
-						dd_loginfo("dnsmasq", "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
+#ifdef HAVE_IPV6
+						if (nvram_matchi("ipv6_enable", 1)) {
+							strlcpy (ipsetbasename6, ", ", sizeof(ipsetbasename6));
+							strlcat (ipsetbasename6, ipsetbasename, sizeof(ipsetbasename6));
+							strlcat (ipsetbasename6, "6", sizeof(ipsetbasename6));
+						}
+#endif
+						fprintf(fp, "ipset=/%s%s%s\n", dnsm_ipset, ipsetbasename, ipsetbasename6);
+						dd_loginfo("dnsmasq", "ipset=/%s%s%s\n", dnsm_ipset, ipsetbasename, ipsetbasename6);
 					}
 				}
 			}

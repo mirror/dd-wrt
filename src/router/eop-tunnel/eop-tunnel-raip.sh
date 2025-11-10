@@ -1,21 +1,26 @@
 #!/bin/sh
 [[ -n "$(nvram get wg_debug_raip)" ]] && { DEBUG=1; set -x; }
 {
-
+str_contains() { [ "${1//$2}" != "$1" ]; }
+is_mac_address() { echo "$1" | grep -qE '^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$'; }
+is_ipv4() { echo "$1" | grep -qE '^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(/(3[0-2]|[12]?[0-9]))?$'; }
+is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ':'; }
 nv=/usr/sbin/nvram
+ipsetcmd="/usr/sbin/ipset"
 tunnels=$($nv get oet_tunnels)
 fset=$1
 ipv6_en=$($nv get ipv6_enable)
 WAN_IF=$(get_wanface)
-GATEWAY="$($nv get wan_gateway)"
-# Needs checking
-[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
+[[ "$($nv get wan_proto)" != "disabled" ]] && GATEWAY="$($nv get wan_gateway)" || GATEWAY="$($nv get lan_gateway)"
 GATEWAY6="$(ip -6 route show table main | awk '/default via/ { print $3;exit; }')"
 restartdns=$($nv get wg_restart_dnsmasq); [[ -z $restartdns ]] && restartdns=0
 for i in $(seq 1 $tunnels); do
 	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
 		if [[ $($nv get oet${i}_proto) -eq 2 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
 			TID=$((20+i))
+			FWMARKM="$((100*i))/0xffffff00"
+			WGMACRT="/tmp/wg_mac_oet${i}"
+			rm -f "$WGMACRT"
 			# Start with PBR to make sure killswitch is working
 			#if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
 			if [[ $($nv get oet${i}_spbr) -ne 0 ]]; then
@@ -23,29 +28,39 @@ for i in $(seq 1 $tunnels); do
 				echo $($nv get oet${i}_spbr_ip), | while read -d ',' line; do
 					[[ "${line:0:1}" = "#" ]] && continue
 					line=$(eval echo $line) #use eval to execute nvram parameters
-					case $line in
-					 *[0-9].*)
+					if is_ipv4 "$line"; then
+						#echo " [$line] = IPv4"
 						logger -p user.info "WireGuard PBR $line:IPv4 via oet${i} table $TID"
-						ip rule del table $TID from $line >/dev/null 2>&1
-						ip rule add table $TID from $line
-						;;
-					 *[0-9a-fA-F]:*)
+						ip rule del prio 4${TID} from $line table $TID >/dev/null 2>&1
+						ip rule add prio 4${TID} from $line table $TID
+					elif is_ipv6 "$line"; then
+						#echo " [$line] = IPv6"
 						logger -p user.info "WireGuard PBR $line:IPv6 via oet${i} table $TID"
 						if [[ $ipv6_en -eq 1 ]]; then
-							ip -6 rule del table $TID from $line >/dev/null 2>&1
-							ip -6 rule add table $TID from $line
+							ip -6 rule del prio 4${TID} table $TID from $line >/dev/null 2>&1
+							ip -6 rule add prio 4${TID} table $TID from $line
 						fi
-						;;
-					 *)
-						logger -p user.info "WireGuard PBR $line:text via oet${i} table $TID"
-						ip rule del table $TID $line >/dev/null 2>&1
-						ip rule add table $TID $line
+					elif is_mac_address "$line"; then
+						logger -p user.info "WireGuard PBR $line:MAC via oet${i} table $TID"
+						#echo " [$line] = MAC"
+						#iptables -t mangle -A PREROUTING -m mac --mac-source "$line" -j MARK --set-mark $TID
+						echo "$line" >> "$WGMACRT"
+						ip rule del prio 4${TID} fwmark $FWMARKM table $TID >/dev/null 2>&1
+						ip rule add prio 4${TID} fwmark $FWMARKM table $TID
 						if [[ $ipv6_en -eq 1 ]]; then
-							ip -6 rule del table $TID $line >/dev/null 2>&1
-							ip -6 rule add table $TID $line
+							ip -6 rule del prio 4${TID} fwmark $FWMARKM table $TID >/dev/null 2>&1
+							ip -6 rule add prio 4${TID} fwmark $FWMARKM table $TID
 						fi
-						;;
-					esac
+					else
+						#echo " [$line] = OTHER"
+						logger -p user.info "WireGuard PBR $line:text via oet${i} table $TID"
+						ip rule del prio 4${TID} $line table $TID >/dev/null 2>&1
+						ip rule add prio 4${TID} $line table $TID
+						if [[ $ipv6_en -eq 1 ]]; then
+							ip -6 rule del prio 4${TID} $line table $TID >/dev/null 2>&1
+							ip -6 rule add prio 4${TID} $line table $TID
+						fi
+					fi
 				done
 				# due to a bug in 'ip rule' command rogue 'from all' can be added for non valid ip addresses so remove that:
 				for z in $(ip rule | grep "from all lookup $TID" | cut -d: -f1); do 
@@ -78,32 +93,43 @@ for i in $(seq 1 $tunnels); do
 				if [[ ! -z "$($nv get oet${i}_ipsetfile | sed '/^[[:blank:]]*#/d')" ]] && [[ "$($nv get oet${i}_dpbr)" != "0" ]]; then
 					restartdns=1
 					#ipset -! -N $(basename $($nv get oet${i}_ipsetfile)) hash:ip
-					IPSET_F=$($nv get oet${i}_ipsetfile)
+					IPSET_F="$($nv get oet${i}_ipsetfile)"
+					IPSET_F6="${IPSET_F}6"
 					#IPSET="$(basename $IPSET_F)"
-					IPSET=${IPSET_F##*/}
+					IPSET="${IPSET_F##*/}"
+					IPSET6="${IPSET}6"
+					FWMARK="${i}/0xff"
 					if [[ $($nv get oet${i}_ipsetsave) -eq 1 ]]; then
 						if is-mounted $(dirname $IPSET_F) 25 && [[ -s $IPSET_F ]]; then
-							ipset restore -! < $IPSET_F
+							$ipsetcmd restore -! < "${IPSET_F}"
 							logger -p user.info "WireGuard IPSET: $IPSET restored from $IPSET_F for oet${i}"
 						else
 							logger -p user.err "WireGuard IPSET: oet${i} $IPSET_F is missing or empty, creating new $IPSET"
-							ipset -N $IPSET hash:ip >/dev/null 2>&1
+							$ipsetcmd -N "${IPSET}" hash:net family inet >/dev/null 2>&1
+							[[ $ipv6_en -eq 1 ]] && $ipsetcmd -N "${IPSET6}" hash:net family inet6 >/dev/null 2>&1
 						fi
 					else
-						ipset -N $IPSET hash:ip >/dev/null 2>&1
+						$ipsetcmd -N "$IPSET" hash:net family inet >/dev/null 2>&1
+						[[ $ipv6_en -eq 1 ]] && $ipsetcmd -N "${IPSET6}" hash:net family inet6
 						logger -p user.info "WireGuard IPSET: $IPSET created for oet${i}"
 					fi
 					#make tables and rule
 					if [[ $($nv get oet${i}_dpbr) -eq 2 ]];then 
 						TABLE=2$TID
-						ip route add default via $($nv get wan_gateway) table $TABLE >/dev/null 2>&1
+						ip route add default via "${GATEWAY}" dev $WAN_IF table $TABLE >/dev/null 2>&1
+						[[ $ipv6_en -eq 1 ]] && ip -6 route add default via "${GATEWAY6}" dev $WAN_IF table $TABLE >/dev/null 2>&1
 					else 
 						TABLE=1$TID
 						ip route add default dev oet${i} table $TABLE >/dev/null 2>&1
+						[[ $ipv6_en -eq 1 ]] && ip -6 route add default dev oet${i} table $TABLE >/dev/null 2>&1
 					fi
-					ip rule del table $TABLE fwmark $TID >/dev/null 2>&1
-					ip rule add table $TABLE fwmark $TID
-					logger -p user.info "WireGuard IPSET: $IPSET fwmark:$TID set to table:$TABLE"
+					#ip rule del prio $TID table $TABLE fwmark $FWMARK >/dev/null 2>&1
+					ip rule add prio $TID table $TABLE fwmark $FWMARK
+					if [[ $ipv6_en -eq 1 ]] ; then
+						#ip -6 rule del prio $TID table $TABLE fwmark $FWMARK >/dev/null 2>&1
+						ip -6 rule add prio $TID table $TABLE fwmark $FWMARK
+					fi
+					logger -p user.info "WireGuard IPSET: $IPSET fwmark:$FWMARK set to table:$TABLE"
 				fi
 				#WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
 				WGDPBRIP="/tmp/wgdpbrip_oet${i}"

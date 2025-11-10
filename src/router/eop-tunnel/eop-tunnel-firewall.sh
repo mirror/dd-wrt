@@ -2,6 +2,10 @@
 [[ -n "$(nvram get wg_debug_firewall)" ]] && { DEBUG=1; set -x; }
 
 {
+str_contains() { [ "${1//$2}" != "$1" ]; }
+is_mac_address() { echo "$1" | grep -qE '^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$'; }
+is_ipv4() { echo "$1" | grep -qE '^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(/(3[0-2]|[12]?[0-9]))?$'; }
+is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ':'; }
 nv=/usr/sbin/nvram
 #Use iptables `-w` option to prevent "Another app is currently holding the xtables lock"
 ipt="$($nv get wg_fwipt)"
@@ -41,7 +45,7 @@ sleep $FWWAIT
 for i in $(seq 1 $tunnels); do
 	if [[ -e "/tmp/oet/pid/f${i}.pid" ]]; then
 		FW_CHAIN="pbr-oet${i}"
-		WGDELRT="/tmp/wgdelrt_oet${i}"
+		WGDELRT="/tmp/wgdelfw_oet${i}"
 		{
 		$ipt -D FORWARD -i oet${i} -j $ACCEPT
 		$ipt -D INPUT -i oet${i} -j $ACCEPT
@@ -68,16 +72,11 @@ for i in $(seq 1 $tunnels); do
 			$ipt -t mangle -D OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
 		done
 		if [[ -f "$WGDELRT" ]]; then
-			(while read route; do $route; done < $WGDELRT)
-			rm $WGDELRT
+			#(while read route; do $route; done < $WGDELRT)
+			#(while read route; do eval "$route"; done < $WGDELRT)
+			sh "$WGDELRT"
+			rm "$WGDELRT"
 		fi
-		#delete IPSET
-		FWMARK=$((20+$i))
-		#IPSET=$(basename $($nv get oet${i}_ipsetfile))
-		#does not work if IPSET name is deleted from conf, alternative parse iptables for fwmark
-		FWMARKH="set $(printf "%#04x" $FWMARK)"
-		IPSET=$(iptables -L PREROUTING -t mangle | grep -E "$FWMARKH" | awk '{print $7}')
-		iptables -t mangle -D PREROUTING -m set --match-set $IPSET dst -j MARK --set-mark $FWMARK
 		# remove because FW sets it by default
 		$ipt -D FORWARD -i oet${i} $FW_STATE -j $ACCEPT
 		$ip6t -D FORWARD -i oet${i} -m conntrack --ctstate NEW -j $ACCEPT
@@ -86,6 +85,8 @@ for i in $(seq 1 $tunnels); do
 	fi
 done
 for i in $(seq 1 $tunnels); do
+	TID=$((20+i))
+	FWMARKM="$((100*i))/0xffffff00"
 	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
 		if [ $($nv get oet${i}_proto) -eq 1 ]; then
 			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j $ACCEPT >/dev/null 2>&1
@@ -128,10 +129,22 @@ for i in $(seq 1 $tunnels); do
 			done
 		fi
 		if [ $($nv get oet${i}_proto) -eq 2 ] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
-			WGDELRT="/tmp/wgdelrt_oet${i}"
+			WGDELRT="/tmp/wgdelfw_oet${i}"
+			WGMACRT="/tmp/wg_mac_oet${i}"
+			IPSET_F="$($nv get oet${i}_ipsetfile)"
+			IPSET_F="${IPSET_F#"${IPSET_F%%[! ]*}"}"
+			#is_active_ipset() { [ -n "$IPSET_F" ] && [ "${IPSET_F#\#}" = "$IPSET_F" ] && return 0; }
+			#if is_active_ipset; then
+			if [[ -n "$IPSET_F"  && "${IPSET_F#\#}" = "$IPSET_F" ]]; then
+				#FWMARK=$((320+i))
+				FWMARK="${i}/0xff"
+				#IPSET="$(basename $($nv get oet${i}_ipsetfile))"
+				IPSET="${IPSET_F##*/}"
+				IPSET6="${IPSET}6"
+			fi
 			if [ $($nv get oet${i}_mit) -eq 1 ]; then
 				insmod xt_addrtype >/dev/null 2>&1
-				echo "$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP" >> $WGDELRT
+				echo "$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP" >> "$WGDELRT"
 				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
 				#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
 			fi
@@ -149,7 +162,7 @@ for i in $(seq 1 $tunnels); do
 						logger -p user.err "WireGuard NAT ERROR invalid [$addr] for oet${i}"
 						;;
 					esac
-					echo "$ip -t nat -D POSTROUTING -o oet${i} -j SNAT --to $addr" >> $WGDELRT
+					echo "$ip -t nat -D POSTROUTING -o oet${i} -j SNAT --to $addr" >> "$WGDELRT"
 					$ip -t nat -I POSTROUTING -o oet${i} -j SNAT --to $addr >/dev/null 2>&1
 					logger -p user.info "WireGuard NAT via oet${i} for $addr enabled"
 				done
@@ -173,16 +186,29 @@ for i in $(seq 1 $tunnels); do
 					esac
 				done
 			fi
+			#Add MAC for PBR
+			if [[ -f "$WGMACRT" ]]; then
+				while read mac; do
+					echo "$ipt -t mangle -D PREROUTING -m mac --mac-source $mac -j MARK --set-xmark $FWMARKM" >> $WGDELRT
+					#$ipt -t mangle -D PREROUTING -m mac --mac-source "$mac" -j MARK --set-xmark $FWMARKM >/dev/null 2>&1
+					$ipt -t mangle -A PREROUTING -m mac --mac-source "$mac" -j MARK --set-xmark $FWMARKM
+					if [[ $ipv6_en -eq 1 ]]; then
+						echo "$ip6t -t mangle -D PREROUTING -m mac --mac-source $mac -j MARK --set-xmark $FWMARKM" >> $WGDELRT
+						#$ip6t -t mangle -D PREROUTING -m mac --mac-source "$mac" -j MARK --set-xmark $FWMARKM >/dev/null 2>&1
+						$ip6t -t mangle -A PREROUTING -m mac --mac-source "$mac" -j MARK --set-xmark $FWMARKM
+					fi
+				done < "$WGMACRT"
+			fi
 			#add NAT via br0 to allow seamless LAN access
 			if [[ $($nv get oet${i}_lanac) -eq 1 ]]; then
 				for addrmask in $($nv get oet${i}_ipaddrmask | sed "s/,/ /g") ; do
 					case $addrmask in
 					  *.*) #IPv4
-						echo "$ipt -t nat -D POSTROUTING -o br+ -s $addrmask -j MASQUERADE" >> $WGDELRT
+						echo "$ipt -t nat -D POSTROUTING -o br+ -s $addrmask -j MASQUERADE" >> "$WGDELRT"
 						$ipt -t nat -I POSTROUTING -o br+ -s $addrmask -j MASQUERADE
 						;;
 					 # *:*) #IPv6 Not sure if we need this
-						#echo "$ip6t -t nat -D POSTROUTING -o br+ -s $addrmask -j MASQUERADE" >> $WGDELRT
+						#echo "$ip6t -t nat -D POSTROUTING -o br+ -s $addrmask -j MASQUERADE" >> "$WGDELRT"
 						#$ip6t -t nat -I POSTROUTING -o br+ -s $addrmask -j MASQUERADE
 						#;;
 					esac
@@ -218,14 +244,14 @@ for i in $(seq 1 $tunnels); do
 							;;
 						esac
 					if [[ "$dns4" != "0" ]] && [[ "$ipxt" = "ip4t" || "$ipxt" = "ipxt" ]]; then
-						echo "$ipt -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4" >> $WGDELRT
-						echo "$ipt -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4" >> $WGDELRT
+						echo "$ipt -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4" >> "$WGDELRT"
+						echo "$ipt -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4" >> "$WGDELRT"
 						$ipt -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4
 						$ipt -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns4
 					fi
 					if [[ "$ipv6_en" = "1" && "$dns6" != "0" ]] && [[ "$ipxt" = "ip6t" || "$ipxt" = "ipxt" ]]; then
-						echo "$ip6t -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6" >> $WGDELRT
-						echo "$ip6t -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6" >> $WGDELRT
+						echo "$ip6t -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6" >> "$WGDELRT"
+						echo "$ip6t -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6" >> "$WGDELRT"
 						$ip6t -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6
 						$ip6t -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns6
 					fi
@@ -249,10 +275,10 @@ for i in $(seq 1 $tunnels); do
 				}
 				if [[ $($nv get oet${i}_spbr) -ne 1 ]]; then
 					logger -p user.info "WireGuard Killswitch activated for all clients!"
-					echo "$ipt -D FORWARD $IN_IF -o $WAN_IF -j $REJECT" >> $WGDELRT
+					echo "$ipt -D FORWARD $IN_IF -o $WAN_IF -j $REJECT" >> "$WGDELRT"
 					$ipt -I FORWARD $IN_IF -o $WAN_IF -j $REJECT
 					if [[ $ipv6_en -eq 1 ]]; then
-						echo "$ip6t -D FORWARD $IN_IF -o $WAN_IF -j $REJECT" >> $WGDELRT
+						echo "$ip6t -D FORWARD $IN_IF -o $WAN_IF -j $REJECT" >> "$WGDELRT"
 						$ip6t -I FORWARD $IN_IF -o $WAN_IF -j $REJECT
 					fi
 					#todo restart SFE/CTF to cut existing connections
@@ -284,57 +310,82 @@ for i in $(seq 1 $tunnels); do
 									$ip6t -A $FW_CHAIN -d $dpbrip -j ACCEPT >/dev/null 2>&1
 								fi
 						done < $WGDPBRIP
+						#For IPSET
+						if [[ $($nv get oet${i}_dpbr) -ne 0 && -n "$IPSET" ]]; then
+							echo "$ipt -D FORWARD -m mark --mark $FWMARK -o $WAN_IF -j ACCEPT" >> $WGDELRT
+							$ipt -I FORWARD -m mark --mark "$FWMARK" -o "$WAN_IF" -j ACCEPT >/dev/null 2>&1
+							if [[ $ipv6_en -eq 1 ]]; then
+								echo "$ip6t -D FORWARD -m mark --mark $FWMARK -o $WAN_IF -j ACCEPT" >> $WGDELRT
+								$ip6t -I FORWARD -m mark --mark "$FWMARK" -o "$WAN_IF" -j ACCEPT >/dev/null 2>&1
+							fi
+						fi
 					fi
 				fi
 				if [[ $($nv get oet${i}_spbr) -eq 2 ]]; then  # alternatively use -ne 0 so that block is alos set but should not be necessary as PBR table with prohibited default takes care of this
 					#PBR killswitch
 					logger -p user.info "WireGuard firewall on PBR activated for oet${i}"
 					makechain
-					echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do	# added "," so that last entry is read
+					MACKS=0
+					sourcepbr=
+					ipxt=
+					pbrip=
+					while read -d ',' pbrip; do	# added "," so that last entry is read
+					#echo $($nv get oet${i}_spbr_ip), | while read -d ',' pbrip; do	# added "," so that last entry is read
 						[[ "${pbrip:0:1}" = "#" ]] && continue
 						pbrip=$(eval echo $pbrip)
-						case $pbrip in
-						 *[0-9].*)
+						if is_ipv4 "$pbrip"; then
 							sourcepbr="-s"
 							ipxt=ip4t
-							;;
-						 *[0-9a-fA-F]:*)
+						elif is_ipv6 "$pbrip"; then
 							sourcepbr="-s"
 							ipxt=ip6t
-							;;
-						 iif*)
+						elif is_mac_address "$pbrip"; then
+							#Set MACKS to 1 so that fwmark is set to escape the killswitch
+							MACKS=1
+							sourcepbr=
+							ipxt=
+						elif str_contains "$pbrip" "iif"; then
 							sourcepbr="-i"
 							#pbrip=${pbrip#* }
 							pbrip="${pbrip#iif }"
 							ipxt=ipxt
-							;;
-						 *port*)
+						elif str_contains "$pbrip" "port"; then
 							sourcepbr="port"
 							pbrip="--$pbrip"
 							ipxt=ipxt
-							;;
-						 *)
+						else
 							logger -p user.info "WireGuard: ERROR invalid entry: $pbrip in PBR Killswitch, will be skipped"
+							sourcepbr=
 							ipxt=
-							;;
-						esac
-						if [[ $ipxt = ip4t || $ipxt = ipxt ]]; then
-							if [[ $sourcepbr = "port" ]];then
-								$ipt -A $FW_CHAIN -p tcp $pbrip -j ACCEPT >/dev/null 2>&1
-								$ipt -A $FW_CHAIN -p udp $pbrip -j ACCEPT >/dev/null 2>&1
+							pbrip=
+						fi
+						if [[ "$ipxt" = "ip4t" || "$ipxt" = "ipxt" ]]; then
+							if [[ "$sourcepbr" = "port" ]];then
+								$ipt -A "$FW_CHAIN" -p tcp "$pbrip" -j ACCEPT >/dev/null 2>&1
+								$ipt -A "$FW_CHAIN" -p udp "$pbrip" -j ACCEPT >/dev/null 2>&1
 							else
-								$ipt -A $FW_CHAIN $sourcepbr $pbrip -j ACCEPT >/dev/null 2>&1
+								$ipt -A "$FW_CHAIN" "$sourcepbr" "$pbrip" -j ACCEPT >/dev/null 2>&1
 							fi
 						fi
-						if [[ $ipv6_en -eq 1 ]] && [[ $ipxt = ip6t || $ipxt = ipxt ]]; then
-							if [[ $sourcepbr = "port" ]];then
-								$ip6t -A $FW_CHAIN -p tcp $pbrip -j ACCEPT >/dev/null 2>&1
-								$ip6t -A $FW_CHAIN -p udp $pbrip -j ACCEPT >/dev/null 2>&1
+						if [[ "$ipv6_en" = "1" ]] && [[ "$ipxt" = "ip6t" || "$ipxt" = "ipxt" ]]; then
+							if [[ "$sourcepbr" = "port" ]];then
+								$ip6t -A "$FW_CHAIN" -p tcp "$pbrip" -j ACCEPT >/dev/null 2>&1
+								$ip6t -A "$FW_CHAIN" -p udp "$pbrip" -j ACCEPT >/dev/null 2>&1
 							else
-								$ip6t -A $FW_CHAIN $sourcepbr $pbrip -j ACCEPT >/dev/null 2>&1
+								$ip6t -A "$FW_CHAIN" "$sourcepbr" "$pbrip" -j ACCEPT >/dev/null 2>&1
 							fi
 						fi
-					done
+					done <<-EOT
+					$($nv get oet${i}_spbr_ip) ,
+					EOT
+					# for MAC address with fwmark $TID
+					if [[ "$MACKS" = "1" ]]; then
+						$ipt -A "$FW_CHAIN" -m mark --mark "$FWMARKM" -j ACCEPT
+						if [[ $ipv6_en -eq 1 ]]; then
+							$ip6t -A "$FW_CHAIN" -m mark --mark "$FWMARKM" -j ACCEPT
+						fi
+					fi
+					
 				fi
 			fi
 			#end kill switch
@@ -358,13 +409,19 @@ for i in $(seq 1 $tunnels); do
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
 			#end inbound firewall
-			#IPSET
-			if [[ $($nv get oet${i}_dpbr) -ne 0 && ! -z "$($nv get oet${i}_ipsetfile | sed '/^[[:blank:]]*#/d')" ]]; then
-				FWMARK=$((20+$i))
-				IPSET=$(basename $($nv get oet${i}_ipsetfile))
-				iptables -t mangle -A PREROUTING -m set --match-set $IPSET dst -j MARK --set-mark $FWMARK
+			#IPSET IPSET has priority over MAC FWMARk so must come after MAC FWMARK as it must replace MAC FWMARK
+			if [[ $($nv get oet${i}_dpbr) -ne 0 && -n "$IPSET" ]]; then
+				echo "$ipt -t mangle -D PREROUTING -m set --match-set ${IPSET} dst -j MARK --set-xmark $FWMARK" >> $WGDELRT
+				echo "$ipt -t mangle -D OUTPUT -m set --match-set ${IPSET} dst -j MARK --set-xmark $FWMARK" >> $WGDELRT
+				$ipt -t mangle -A PREROUTING -m set --match-set "${IPSET}" dst -j MARK --set-xmark $FWMARK
 				# packets from router are not marked for this set OUTPUT
-				iptables -t mangle -A OUTPUT -m set --match-set $IPSET dst -j MARK --set-mark $FWMARK
+				$ipt -t mangle -A OUTPUT -m set --match-set "${IPSET}" dst -j MARK --set-xmark $FWMARK
+				if [[ $ipv6_en -eq 1 ]]; then
+					echo "$ip6t -t mangle -D PREROUTING -m set --match-set ${IPSET6} dst -j MARK --set-xmark $FWMARK" >> $WGDELRT
+					echo "$ip6t -t mangle -D OUTPUT -m set --match-set ${IPSET6} dst -j MARK --set-xmark $FWMARK" >> $WGDELRT
+					$ip6t -t mangle -A PREROUTING -m set --match-set "${IPSET6}" dst -j MARK --set-xmark $FWMARK
+					$ip6t -t mangle -A OUTPUT -m set --match-set "${IPSET6}" dst -j MARK --set-xmark $FWMARK
+				fi
 			fi
 			# todo make escape rules for destination based routing on by default
 			# use wgdpbrip_oetx but wait till file is made
