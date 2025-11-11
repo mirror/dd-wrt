@@ -102,7 +102,7 @@ void start_hotplug_usb(void)
 	char *action;
 	int class, subclass, protocol;
 
-	if (!(nvram_matchi("usb_automnt", 1)))
+	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1))
 		return;
 
 	if (!(action = getenv("ACTION")) || !(device = getenv("TYPE")))
@@ -338,24 +338,22 @@ static int usb_process_path(char *path, char *fs, char *target)
 #endif
 			ret = eval("/bin/mount", path, mount_point); //guess fs
 	}
-	if (nvram_match("usb_enable", "1") && nvram_match("usb_storage", "1")) {
 #ifdef HAVE_80211AC
-		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "16384"));
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "16384"));
 #elif HAVE_IPQ6018
-		if (getmemtotal() > 512 * 1024 * 1024)
-			writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
-		else
-			writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
-#elif HAVE_IPQ806X
+	if (getmemtotal() > 512 * 1024 * 1024)
 		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
-#elif HAVE_X86
-		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
-#else
+	else
 		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
+#elif HAVE_IPQ806X
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+#elif HAVE_X86
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+#else
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
 #endif
-		writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
-		writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
-	}
+	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
+	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
 	//      writeprocsys("vm/pagecache_ratio","90");
 	//      writeprocsys("vm/swappiness","90");
 	//      writeprocsys("vm/overcommit_memory","2");

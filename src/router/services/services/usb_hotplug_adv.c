@@ -159,7 +159,7 @@ void start_hotplug_usb(void)
 	if (!(action = getenv("ACTION")) || !(device = getenv("TYPE")))
 		return;
 
-	if (!(nvram_matchi("usb_automnt", 1)))
+	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1))
 		return;
 
 	sscanf(device, "%d/%d/%d", &class, &subclass, &protocol);
@@ -251,7 +251,7 @@ void start_hotplug_block(void)
 		return;
 	if (!(action = getenv("ACTION")))
 		return;
-	if (!(nvram_matchi("usb_automnt", 1)))
+	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1))
 		return;
 
 	// e.g. /devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1.2/1-1.2:1.0/host1/target1:0:0/1:0:0:0/block/sda/sda1
