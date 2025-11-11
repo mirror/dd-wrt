@@ -570,12 +570,12 @@
 
 			partition@5d80000 {
 				label = "linux2";
-				reg = <0x005d80000 0x05200000>;
+				reg = <0x005d80000 0x05100000>;
 			};
 
 			partition@6580000 {
 				label = "alt_rootfs";
-				reg = <0x006580000 0x04900000>;
+				reg = <0x006580000 0x04800000>;
 			};
 
 			partition@ae80000 {
