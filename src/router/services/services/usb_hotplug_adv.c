@@ -159,8 +159,15 @@ void start_hotplug_usb(void)
 	if (!(action = getenv("ACTION")) || !(device = getenv("TYPE")))
 		return;
 
-	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1))
+	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1)) {
+		nvram_set("vm.min_free_kbytes", "2464");
+		nvram_set("vm.vfs_cache_pressure", "100");
+		nvram_set("vm.dirty_expire_centisecs", "3000");
+		nvram_set("vm.dirty_writeback_centisecs", "1500");
+		nvram_set("vm.overcommit_memory", "0");
+		nvram_set("vm.overcommit_ratio", "50");
 		return;
+	}
 
 	sscanf(device, "%d/%d/%d", &class, &subclass, &protocol);
 
@@ -251,9 +258,15 @@ void start_hotplug_block(void)
 		return;
 	if (!(action = getenv("ACTION")))
 		return;
-	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1))
+	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1)) {
+		nvram_set("vm.min_free_kbytes", "2464");
+		nvram_set("vm.vfs_cache_pressure", "100");
+		nvram_set("vm.dirty_expire_centisecs", "3000");
+		nvram_set("vm.dirty_writeback_centisecs", "1500");
+		nvram_set("vm.overcommit_memory", "0");
+		nvram_set("vm.overcommit_ratio", "50");
 		return;
-
+	}
 	// e.g. /devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1.2/1-1.2:1.0/host1/target1:0:0/1:0:0:0/block/sda/sda1
 	//sysprintf("echo hotplug_block_block action %s devpath %s >> /tmp/hotplugs", action, devpath);
 	int len;
