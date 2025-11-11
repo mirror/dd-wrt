@@ -814,7 +814,7 @@ void start_sysinit(void)
 		nvram_default_get("sfe", "3");
 		break;
 	case ROUTER_GLINET_AX1800:
-		load_nss_ipq60xx(1024);
+		load_nss_ipq60xx(512);
 		insmod("leds-gpio");
 		nvram_default_get("sfe", "3");
 		break;
@@ -1505,7 +1505,7 @@ void start_wifi_drivers(void)
 		case ROUTER_DYNALINK_DLWRX36:
 		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_ASUS_AX89X:
-		case ROUTER_GLINET_AX1800:
+//		case ROUTER_GLINET_AX1800:
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 			break;
