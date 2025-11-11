@@ -440,6 +440,29 @@ static void init_skb(int profile, int maple)
 		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
 }
 
+static int use_mesh(void)
+{
+	int count;
+	const char *next;
+	char var[80];
+	char *vifs;
+	for (count = 0; count < 3; count++) {
+		char wifivifs[32];
+		char base[32];
+		sprintf(base, "wlan%d", count);
+		sprintf(wifivifs, "wlan%d_vifs", count);
+		if (nvram_nmatch("mesh", "wlan%d_mode", count) && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+			return 1;
+		vifs = nvram_safe_get(wifivifs);
+		if (vifs != NULL && *vifs) {
+			foreach(var, vifs, next) {
+				if (nvram_nmatch("mesh", "%s_mode", var) && !nvram_nmatch("disabled", "%s_net_mode", var))
+					return 1;
+			}
+		}
+	}
+}
+
 static int use_nss_11_4(int setcur)
 {
 	int count;
@@ -1408,20 +1431,20 @@ void start_sysinit(void)
 
 	detect_usbdrivers();
 
-	if (nvram_match("testing","1")) {
-	char *part = getUEnv("boot_part");
+	if (nvram_match("testing", "1")) {
+		char *part = getUEnv("boot_part");
 		if (part) {
 			if (!strcmp(part, "2")) {
-				eval("fw_setenv","boot_part","1");
+				eval("fw_setenv", "boot_part", "1");
 			} else {
-				eval("fw_setenv","boot_part","2");
+				eval("fw_setenv", "boot_part", "2");
 			}
-		} 
+		}
 	}
 	return;
 }
 
-static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region,int coldboot)
+static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region, int coldboot)
 {
 	char postfix[32] = { 0 };
 	char driver_ath11k[32];
@@ -1435,7 +1458,7 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 		int od = nvram_default_geti("power_overdrive", 0);
 		char overdrive[32];
 		sprintf(overdrive, "poweroffset=%d", od);
-		if (!nss) {
+		if (!nss || use_mesh()) {
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 		}
@@ -1446,14 +1469,15 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 		sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
 		sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
 		sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
-		sprintf(driver_coldboot,"cold_boot_cal=%d", coldboot);
+		sprintf(driver_coldboot, "cold_boot_cal=%d", coldboot);
 		insmod("qmi_helpers");
 		if (nss) {
 			insmod("mac80211");
 			eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant, driver_coldboot);
 		} else {
 			eval("insmod", "mac80211", "nss_redirect=0");
-			eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant, driver_coldboot);
+			eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant,
+			     driver_coldboot);
 			sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 		}
 		insmod(driver_ath11k_ahb);
@@ -1505,7 +1529,7 @@ void start_wifi_drivers(void)
 		case ROUTER_DYNALINK_DLWRX36:
 		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_ASUS_AX89X:
-//		case ROUTER_GLINET_AX1800:
+			//		case ROUTER_GLINET_AX1800:
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 			break;
