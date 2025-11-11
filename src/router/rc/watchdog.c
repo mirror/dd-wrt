@@ -159,16 +159,22 @@ static void check_wifi(void)
 			struct mac80211_info *mac80211_info;
 			struct wifi_client_info *wc;
 			mac80211_info = mac80211_assoclist(interface);
-			for (wc = mac80211_info->wci; wc; wc = wc->next) {
-				if (is_ath11k(wc->ifname)) {
-					if (!(wc->signal - wc->noise)) {
-						dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n",
-							    wc->ifname);
+			if (mac80211_info && mac80211_info->wci) {
+				for (wc = mac80211_info->wci; wc; wc = wc->next) {
+					if (wc) {
+						if (is_ath11k(wc->ifname)) {
+							if (!(wc->signal - wc->noise)) {
+								dd_logerror("ath11k_watchdog",
+									    "zero signal issue detected on interface %s\n",
+									    wc->ifname);
+							}
+						}
 					}
 				}
+				free_wifi_clients(mac80211_info->wci);
 			}
-			free_wifi_clients(mac80211_info->wci);
-			free(mac80211_info);
+			if (mac80211_info)
+				free(mac80211_info);
 		}
 	}
 #endif
@@ -278,7 +284,7 @@ static void watchdog(void)
 		//#endif
 		//#endif
 		check_fan(brand);
-		check_wifi();
+		//check_wifi();
 		sleep(5);
 	}
 }
