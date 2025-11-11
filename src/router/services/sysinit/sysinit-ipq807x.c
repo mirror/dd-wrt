@@ -1421,7 +1421,7 @@ void start_sysinit(void)
 	return;
 }
 
-static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region)
+static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region,int coldboot)
 {
 	char postfix[32] = { 0 };
 	char driver_ath11k[32];
@@ -1429,6 +1429,7 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 	char driver_ath11k_pci[32];
 	char driver_frame_mode[32];
 	char driver_regionvariant[32];
+	char driver_coldboot[32];
 
 	if (!nvram_match("noath11k", "1")) {
 		int od = nvram_default_geti("power_overdrive", 0);
@@ -1445,13 +1446,14 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 		sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
 		sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
 		sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
+		sprintf(driver_coldboot,"cold_boot_cal=%d", coldboot);
 		insmod("qmi_helpers");
 		if (nss) {
 			insmod("mac80211");
-			eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant);
+			eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant, driver_coldboot);
 		} else {
 			eval("insmod", "mac80211", "nss_redirect=0");
-			eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant);
+			eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant, driver_coldboot);
 			sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 		}
 		insmod(driver_ath11k_ahb);
@@ -1515,10 +1517,10 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX5500:
 			if (frame_mode == 2)
 				frame_mode = 1;
-			load_ath11k_internal(profile, 1, 0, frame_mode, "");
+			load_ath11k_internal(profile, 1, 0, frame_mode, "", 1);
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "", 1);
 			wait_for_wifi(2);
 			load_ath10k();
 			minif = 3;
@@ -1538,14 +1540,14 @@ void start_wifi_drivers(void)
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     cert_region);
+					     cert_region, 0);
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MX8500:
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     cert_region);
+					     cert_region, 1);
 			minif = 3;
 			break;
 
@@ -1553,14 +1555,14 @@ void start_wifi_drivers(void)
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
 			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     cert_region);
+					     cert_region, 1);
 			wait_for_wifi(2);
 			load_ath10k();
 			minif = 3;
 			break;
 
 		default:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "", 1);
 			break;
 		}
 		wait_for_wifi(minif);
