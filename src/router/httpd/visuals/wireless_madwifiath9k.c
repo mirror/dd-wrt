@@ -173,8 +173,9 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 			//              }
 		}
 		free_wifi_clients(mac80211_info->wci);
-		debug_free(mac80211_info);
 	}
+	if (mac80211_info)
+		debug_free(mac80211_info);
 	return globalcnt;
 }
 
