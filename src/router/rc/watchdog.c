@@ -284,7 +284,7 @@ static void watchdog(void)
 		//#endif
 		//#endif
 		check_fan(brand);
-		//check_wifi();
+		check_wifi();
 		sleep(5);
 	}
 }
