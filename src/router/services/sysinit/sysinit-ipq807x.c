@@ -593,18 +593,24 @@ static void load_nss(int profile, int maple, int cores, char *type)
 static void load_nss_ipq60xx(int profile)
 {
 	nvram_default_get("nss", "1");
+	if (use_mesh())
+		profile = 1024;
 	load_nss(profile, 0, 4, "ipq60xx");
 }
 
 static void load_nss_ipq50xx(int profile)
 {
 	nvram_default_get("nss", "0");
+	if (use_mesh())
+		profile = 1024;
 	load_nss(profile, 1, 2, "ipq50xx");
 }
 
 static void load_nss_ipq807x(int profile)
 {
 	nvram_default_get("nss", "1");
+	if (use_mesh())
+		profile = 1024;
 	load_nss(profile, 0, 4, "ipq807x");
 }
 
