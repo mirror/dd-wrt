@@ -610,7 +610,6 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	sysprintf("cat /tmp/disk/sd* > %s", DUMPFILE);
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
-	if (nvram_match("usb_enable", "1") && nvram_match("usb_storage", "1")) {
 #ifdef HAVE_80211AC
 		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "20480"));
 #elif HAVE_MVEBU
@@ -632,7 +631,6 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "100"));
 		writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
 		writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
-	}
 	//      writeprocsys("vm/pagecache_ratio","90");
 	//      writeprocsys("vm/swappiness","90");
 	//      writeprocsys("vm/overcommit_memory","2");
