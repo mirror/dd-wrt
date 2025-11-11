@@ -77,102 +77,104 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 	//      it = nvram_default_geti("inacttime", 300000);
 
 	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		char tmp[64];
-		snprintf(tmp, sizeof(tmp), "%s.sta", ifname);
-		if (strcmp(wc->ifname, ifname) && strncmp(wc->ifname, tmp, strlen(tmp)))
-			continue;
-		ether_etoa(wc->etheraddr, mac);
-		if (nvram_matchi("maskmac", 1) && macmask) {
-			mac[0] = 'x';
-			mac[1] = 'x';
-			mac[3] = 'x';
-			mac[4] = 'x';
-			mac[6] = 'x';
-			mac[7] = 'x';
-			mac[9] = 'x';
-			mac[10] = 'x';
-		}
-		int signal = wc->signal;
-		if (signal >= -50)
-			qual = 1000;
-		else if (signal <= -100)
-			qual = 0;
-		else
-			qual = (signal + 100) * 20;
-		if (globalcnt)
-			websWrite(wp, ",");
-		int ht = 0;
-		int sgi = 0;
-		int vht = 0;
-		int he = 0;
-		char info[32];
-		if (!wc->rx_is_ht && !wc->is_ht)
-			ht = 8;
-		if (wc->rx_is_40mhz || wc->is_40mhz)
-			ht = 1;
-		if (wc->rx_is_80mhz || wc->is_80mhz)
-			ht = 2;
-		if (wc->rx_is_160mhz || wc->is_160mhz)
-			ht = 3;
-		if (wc->rx_is_80p80mhz || wc->is_80p80mhz)
-			ht = 4;
-		if (wc->rx_is_vht || wc->is_vht)
-			vht = 1;
-		if (wc->rx_is_he || wc->is_he)
-			he = 1;
-		if (wc->rx_is_short_gi || wc->is_short_gi)
-			sgi = 1;
-		if (ht == 8 && sgi)
-			ht = 0;
-		if (ht == 8 && (vht || he))
-			ht = 0;
-		if (ht == 8)
-			strcpy(info, "LEGACY");
-		else
-			strcpy(info, he ? "HE" : vht ? "VHT" : "HT");
-		if (div == 2)
-			ht = 7;
-		if (div == 4)
-			ht = 6;
-		if (div == 8)
-			ht = 5;
-		char *bwinfo[] = { "20", "40", "80", "160", "80+80", "2.5", "5", "10" };
-		if (ht < 8 && ht >= 0)
-			snprintf(info, sizeof(info), "%s%s", info, bwinfo[ht]);
-		if (sgi)
-			snprintf(info, sizeof(info), "%s%s", info, "SGI");
-		if (wc->islzo)
-			snprintf(info, sizeof(info), "%s %s", info, "LZ");
-		if (wc->ht40intol)
-			snprintf(info, sizeof(info), "%s[ht40i]", info);
-		if (wc->ps)
-			snprintf(info, sizeof(info), "%s[PS]", info);
-		char str[64] = { 0 };
-		char *radioname = wc->radioname;
-		int i;
-		int len = strlen(radioname);
-		for (i = 0; i < len; i++)
-			if (!isalnum(radioname[i])) {
-				*radioname = 0;
-				break;
+	if (mac80211_info && mac80211_info->wci) {
+		for (wc = mac80211_info->wci; wc; wc = wc->next) {
+			char tmp[64];
+			snprintf(tmp, sizeof(tmp), "%s.sta", ifname);
+			if (strcmp(wc->ifname, ifname) && strncmp(wc->ifname, tmp, strlen(tmp)))
+				continue;
+			ether_etoa(wc->etheraddr, mac);
+			if (nvram_matchi("maskmac", 1) && macmask) {
+				mac[0] = 'x';
+				mac[1] = 'x';
+				mac[3] = 'x';
+				mac[4] = 'x';
+				mac[6] = 'x';
+				mac[7] = 'x';
+				mac[9] = 'x';
+				mac[10] = 'x';
 			}
+			int signal = wc->signal;
+			if (signal >= -50)
+				qual = 1000;
+			else if (signal <= -100)
+				qual = 0;
+			else
+				qual = (signal + 100) * 20;
+			if (globalcnt)
+				websWrite(wp, ",");
+			int ht = 0;
+			int sgi = 0;
+			int vht = 0;
+			int he = 0;
+			char info[32];
+			if (!wc->rx_is_ht && !wc->is_ht)
+				ht = 8;
+			if (wc->rx_is_40mhz || wc->is_40mhz)
+				ht = 1;
+			if (wc->rx_is_80mhz || wc->is_80mhz)
+				ht = 2;
+			if (wc->rx_is_160mhz || wc->is_160mhz)
+				ht = 3;
+			if (wc->rx_is_80p80mhz || wc->is_80p80mhz)
+				ht = 4;
+			if (wc->rx_is_vht || wc->is_vht)
+				vht = 1;
+			if (wc->rx_is_he || wc->is_he)
+				he = 1;
+			if (wc->rx_is_short_gi || wc->is_short_gi)
+				sgi = 1;
+			if (ht == 8 && sgi)
+				ht = 0;
+			if (ht == 8 && (vht || he))
+				ht = 0;
+			if (ht == 8)
+				strcpy(info, "LEGACY");
+			else
+				strcpy(info, he ? "HE" : vht ? "VHT" : "HT");
+			if (div == 2)
+				ht = 7;
+			if (div == 4)
+				ht = 6;
+			if (div == 8)
+				ht = 5;
+			char *bwinfo[] = { "20", "40", "80", "160", "80+80", "2.5", "5", "10" };
+			if (ht < 8 && ht >= 0)
+				snprintf(info, sizeof(info), "%s%s", info, bwinfo[ht]);
+			if (sgi)
+				snprintf(info, sizeof(info), "%s%s", info, "SGI");
+			if (wc->islzo)
+				snprintf(info, sizeof(info), "%s %s", info, "LZ");
+			if (wc->ht40intol)
+				snprintf(info, sizeof(info), "%s[ht40i]", info);
+			if (wc->ps)
+				snprintf(info, sizeof(info), "%s[PS]", info);
+			char str[64] = { 0 };
+			char *radioname = wc->radioname;
+			int i;
+			int len = strlen(radioname);
+			for (i = 0; i < len; i++)
+				if (!isalnum(radioname[i])) {
+					*radioname = 0;
+					break;
+				}
 #define TXRATE(wc) (wc->txrate * mul / div)
 #define RXRATE(wc) (wc->rxrate * mul / div)
-		websWrite(
-			wp,
-			"'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
-			mac, radioname, wc->ifname, UPTIME(wc->uptime, str, sizeof(str)), TXRATE(wc) / 10, TXRATE(wc) % 10,
-			RXRATE(wc) / 10, RXRATE(wc) % 10, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual,
-			wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],
-			wc->chaininfo_avg[4], wc->chaininfo_avg[5], wc->chaininfo_avg[6], wc->chaininfo_avg[7],
-			nvram_nget("%s_label", wc->ifname), wc->ifname);
-		*cnt = (*cnt) + 1;
-		globalcnt++;
-		//              }
+			websWrite(
+				wp,
+				"'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
+				mac, radioname, wc->ifname, UPTIME(wc->uptime, str, sizeof(str)), TXRATE(wc) / 10, TXRATE(wc) % 10,
+				RXRATE(wc) / 10, RXRATE(wc) % 10, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise,
+				qual, wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],
+				wc->chaininfo_avg[4], wc->chaininfo_avg[5], wc->chaininfo_avg[6], wc->chaininfo_avg[7],
+				nvram_nget("%s_label", wc->ifname), wc->ifname);
+			*cnt = (*cnt) + 1;
+			globalcnt++;
+			//              }
+		}
+		free_wifi_clients(mac80211_info->wci);
+		debug_free(mac80211_info);
 	}
-	free_wifi_clients(mac80211_info->wci);
-	debug_free(mac80211_info);
 	return globalcnt;
 }
 
