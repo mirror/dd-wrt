@@ -593,24 +593,24 @@ static void load_nss(int profile, int maple, int cores, char *type)
 static void load_nss_ipq60xx(int profile)
 {
 	nvram_default_get("nss", "1");
-	if (use_mesh())
-		profile = 1024;
+//	if (use_mesh())
+//		profile = 1024;
 	load_nss(profile, 0, 4, "ipq60xx");
 }
 
 static void load_nss_ipq50xx(int profile)
 {
 	nvram_default_get("nss", "0");
-	if (use_mesh())
-		profile = 1024;
+//	if (use_mesh())
+//		profile = 1024;
 	load_nss(profile, 1, 2, "ipq50xx");
 }
 
 static void load_nss_ipq807x(int profile)
 {
 	nvram_default_get("nss", "1");
-	if (use_mesh())
-		profile = 1024;
+//	if (use_mesh())
+//		profile = 1024;
 	load_nss(profile, 0, 4, "ipq807x");
 }
 
@@ -1464,12 +1464,12 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 		int od = nvram_default_geti("power_overdrive", 0);
 		char overdrive[32];
 		sprintf(overdrive, "poweroffset=%d", od);
-		if (!nss || use_mesh()) {
+		if (!nss) {
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 		}
-		if (profile == 512)
-			strcpy(postfix, "-512");
+//		if (profile == 512)
+//			strcpy(postfix, "-512");
 		sprintf(driver_ath11k, "ath11k%s", postfix);
 		sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
 		sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
