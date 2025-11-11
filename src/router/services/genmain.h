@@ -134,9 +134,9 @@ static int service_main(int argc, char *argv[])
 		fprintf(stdout, "start          : starts a registered service\n");
 		fprintf(stdout, "stop           : stops a registered service\n");
 		fprintf(stdout, "restart [cold] : stops a registered service\n");
-		fprintf(stdout, "shutdown       : shutdown all service\n\n");
+		fprintf(stdout, "shutdown       : shutdown all services\n\n");
 		fprintf(stdout, "options:\n");
-		fprintf(stdout, "-f : force start of service, no matter if neccessary\n");
+		fprintf(stdout, "-f : force start of a service, no matter if neccessary\n");
 		fprintf(stdout, "List of services:\n");
 		int i;
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
