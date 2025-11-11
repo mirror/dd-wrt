@@ -1096,9 +1096,9 @@ void start_dnsmasq(void)
 					if (ipsetbasename[0] != '\0' && dnsm_ipset[0] != '\0') {
 #ifdef HAVE_IPV6
 						if (nvram_matchi("ipv6_enable", 1)) {
-							strlcpy (ipsetbasename6, ", ", sizeof(ipsetbasename6));
-							strlcat (ipsetbasename6, ipsetbasename, sizeof(ipsetbasename6));
-							strlcat (ipsetbasename6, "6", sizeof(ipsetbasename6));
+							strlcpy(ipsetbasename6, ", ", sizeof(ipsetbasename6));
+							strlcat(ipsetbasename6, ipsetbasename, sizeof(ipsetbasename6));
+							strlcat(ipsetbasename6, "6", sizeof(ipsetbasename6));
 						}
 #endif
 						fprintf(fp, "ipset=/%s%s%s\n", dnsm_ipset, ipsetbasename, ipsetbasename6);
