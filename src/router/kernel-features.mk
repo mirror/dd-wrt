@@ -56,6 +56,7 @@ define kernelfeatures
 		echo "# CONFIG_NFT_BRIDGE_REJECT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_CONNLIMIT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_COMPAT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_QUEUE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_XFRM is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_DUP_IPV4 is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_DUP_IPV6 is not set" >> $(LINUXDIR)/.config; \
