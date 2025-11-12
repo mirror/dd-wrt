@@ -43,7 +43,7 @@
 
 // Defaults configuration values
 #ifndef SYSCONFDIR
-#define DEFAULT_CONFIGFILE "/etc/opennds/opennds.conf"
+#define DEFAULT_CONFIGFILE "/tmp/opennds/opennds.conf"
 #else
 #define DEFAULT_CONFIGFILE SYSCONFDIR"/opennds/opennds.conf"
 #endif
