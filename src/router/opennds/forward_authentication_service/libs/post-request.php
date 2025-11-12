@@ -1,5 +1,5 @@
 <?php
-#Copyright (C) BlueWave Projects and Services 2016-2023
+#Copyright (C) BlueWave Projects and Services 2016-2025
 #This software is released under the GNU GPL license.
 
 if (isset($argv[1])) {$remote_url=$argv[1];} else {echo "missing argument\n"; exit(1);}

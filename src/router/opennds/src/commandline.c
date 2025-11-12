@@ -21,7 +21,7 @@
 /** @file commandline.c
     @brief Command line argument handling
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #include <stdio.h>
@@ -29,11 +29,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <syslog.h>
+#include <sys/stat.h>
 
 #include "debug.h"
 #include "safe.h"
 #include "conf.h"
-
+#include "util.h"
 
 static void usage(void);
 
@@ -47,81 +48,60 @@ usage(void)
 {
 	printf("Usage: opennds [options]\n"
 		"\n"
-		"  -c <path>   Use configuration file\n"
 		"  -f          Run in foreground\n"
-		"  -d <level>  Debug level (%d-%d)\n"
+		"  -b          Run in background\n"
 		"  -s          Log to syslog\n"
-		"  -w <path>   Ndsctl socket path\n"
 		"  -h          Print this help\n"
 		"  -v          Print version\n"
-		"\n", DEBUGLEVEL_MIN, DEBUGLEVEL_MAX
+		"\n"
 	);
 }
 
-/** Uses getopt() to parse the command line and set configuration values
+/** Parse the command line and set configuration values
  */
 void parse_commandline(int argc, char **argv)
 {
-	int c;
+	int ret;
+	int i = 1;
 
 	s_config *config = config_get_config();
 
-	while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:64"))) {
+	if (argc <= i) {
+		usage();
+		exit(1);
 
-		switch(c) {
+	} else if (strcmp(argv[i], "-f") == 0) {
 
-		case 'h':
-			usage();
+		ret = check_heartbeat();
+
+		if (ret == 0) {
+			printf("openNDS is already running, status [ %d ]. Retry later... \n", 1);
 			exit(1);
-			break;
-
-		case 'c':
-			if (optarg) {
-				strncpy(config->configfile, optarg, sizeof(config->configfile)-1);
-			}
-			break;
-
-		case 'w':
-			if (optarg) {
-				free(config->ndsctl_sock);
-				config->ndsctl_sock = safe_strdup(optarg);
-			}
-			break;
-
-		case 'f':
-			config->daemon = 0;
-			break;
-
-		case 'd':
-			if (set_debuglevel(optarg)) {
-				printf("Could not set debuglevel to %d\n", atoi(optarg));
-				exit(1);
-			}
-			break;
-
-		case 's':
-			config->log_syslog = 1;
-			break;
-
-		case 'v':
-			printf("This is openNDS version " VERSION "\n");
-			exit(1);
-			break;
-
-		case '4':
-			config->ip6 = 0;
-			break;
-
-		case '6':
-			printf("IPv6 is not supported yet\n");
-			exit(1);
-			config->ip6 = 1;
-			break;
-
-		default:
-			usage();
-			exit(1);
-			break;
 		}
+
+		config->daemon = 0;
+
+	} else if (strcmp(argv[i], "-b") == 0) {
+
+		ret = check_heartbeat();
+
+		if (ret == 0) {
+			printf("openNDS is already running, status [ %d ]. Retry later... \n", 1);
+			exit(1);
+		}
+
+		config->daemon = -1;
+
+	} else	if (strcmp(argv[i], "-h") == 0) {
+		usage();
+		exit(1);
+
+	} else if (strcmp(argv[i], "-v") == 0) {
+		printf("This is openNDS version " VERSION "\n");
+		exit(1);
+
+	} else {
+		usage();
+		exit(1);
 	}
 }

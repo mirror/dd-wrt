@@ -22,15 +22,15 @@
     @brief Config file parsing
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
-#define COPYRIGHT "openNDS, Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services"
+#define COPYRIGHT "openNDS, Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services"
 
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "9.10.0"
+#define VERSION "10.3.1"
 
 /*
  * Defines how many times should we try detecting the interface with the default route (in seconds).
@@ -40,8 +40,6 @@
 
 // How long we should wait per try to detect the interface with the default route if it isn't up yet (interval in seconds)
 #define EXT_INTERFACE_DETECT_RETRY_INTERVAL 1
-#define MAC_ALLOW 0 // macmechanism to block MAC's unless allowed
-#define MAC_BLOCK 1 // macmechanism to allow MAC's unless blocked
 
 // Defaults configuration values
 #ifndef SYSCONFDIR
@@ -49,69 +47,85 @@
 #else
 #define DEFAULT_CONFIGFILE SYSCONFDIR"/opennds/opennds.conf"
 #endif
-#define DEFAULT_DAEMON 1
-#define DEFAULT_DEBUGLEVEL 1
-#define DEFAULT_MAXCLIENTS 250
-#define DEFAULT_ONLINE_STATUS 0
+#define DEFAULT_DAEMON "0"
+#define DEFAULT_ENABLED "1"
+#define DEFAULT_DEBUGLEVEL "1"
+#define DEFAULT_MAXCLIENTS "250"
+#define DEFAULT_ONLINE_STATUS "0"
 #define DEFAULT_GATEWAYINTERFACE "br-lan"
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "openNDS"
-#define DEFAULT_ENABLE_SERIAL_NUMBER_SUFFIX 1
-#define DEFAULT_GATEWAYPORT 2050
+#define DEFAULT_ENABLE_SERIAL_NUMBER_SUFFIX "1"
+#define DEFAULT_GATEWAYPORT "2050"
 #define DEFAULT_GATEWAYFQDN "status.client"
-#define DEFAULT_DHCP_DEFAULT_URL_ENABLE 1
+#define DEFAULT_DHCP_DEFAULT_URL_ENABLE "1"
 #define DEFAULT_STATUSPATH "/usr/lib/opennds/client_params.sh"
 #define DEFAULT_LOG_MOUNTPOINT "/tmp"
-#define DEFAULT_MAX_PAGE_SIZE 10240
-#define DEFAULT_FASPORT 0
-#define DEFAULT_LOGIN_OPTION_ENABLED 0
-#define DEFAULT_MAX_LOG_ENTRIES 100
-#define DEFAULT_USE_OUTDATED_MHD 0
-#define DEFAULT_ALLOW_PREEMPTIVE_AUTHENTICATION 0
-#define DEFAULT_UNESCAPE_CALLBACK_ENABLED 0
-#define DEFAULT_FAS_SECURE_ENABLED 1
+#define DEFAULT_MAX_PAGE_SIZE "10240"
+#define DEFAULT_FASPORT "0"
+#define DEFAULT_LOGIN_OPTION_ENABLED "0"
+#define DEFAULT_MAX_LOG_ENTRIES "100"
+#define DEFAULT_USE_OUTDATED_MHD "0"
+#define DEFAULT_ALLOW_PREEMPTIVE_AUTHENTICATION "1"
+#define DEFAULT_FAS_SECURE_ENABLED "1"
 #define DEFAULT_FASPATH "/"
-#define DEFAULT_FASKEY "1234567890"
-#define DEFAULT_CHECKINTERVAL 15
-#define DEFAULT_SESSION_TIMEOUT 1440
-#define DEFAULT_PREAUTH_IDLE_TIMEOUT 30
-#define DEFAULT_AUTH_IDLE_TIMEOUT 120
-#define DEFAULT_REMOTES_REFRESH_INTERVAL 0
+#define DEFAULT_FASKEY ""
+#define DEFAULT_BINAUTH "/usr/lib/opennds/binauth_log.sh"
+#define DEFAULT_CHECKINTERVAL "15"
+#define DEFAULT_SESSION_TIMEOUT "1440"
+#define DEFAULT_PREAUTH_IDLE_TIMEOUT "30"
+#define DEFAULT_AUTH_IDLE_TIMEOUT "120"
+#define DEFAULT_REMOTES_REFRESH_INTERVAL "0"
 #define DEFAULT_WEBROOT "/etc/opennds/htdocs"
+#define DEFAULT_TMPFSMOUNTPOINT "/tmp"
 #define DEFAULT_AUTHDIR "opennds_auth"
 #define DEFAULT_DENYDIR "opennds_deny"
 #define DEFAULT_PREAUTHDIR "opennds_preauth"
-#define DEFAULT_MACMECHANISM MAC_BLOCK
-#define DEFAULT_SET_MSS 1 //allow setting the TCP Maximum Segment Size
-#define DEFAULT_MSS_VALUE 0 // value to set the MSS. 0 means use max possible ie clamp-mss-to-pmtu
-#define DEFAULT_RATE_CHECK_WINDOW 2 // The data rate check moving average window size multiply this by CHECKINTERVAL to give window size (or burst interval) in seconds
-#define DEFAULT_UPLOAD_RATE 0 // 0 means no limit
-#define DEFAULT_DOWNLOAD_RATE 0 // 0 means no limit
-#define DEFAULT_UPLOAD_BUCKET_RATIO 10 // Allows control of upload rate limit threshold overrun per client
-#define DEFAULT_DOWNLOAD_BUCKET_RATIO 10 // Allows control of download rate limit threshold overrun per client
-#define DEFAULT_MAX_UPLOAD_BUCKET_SIZE 250 // Allows control over upload rate limiting packet loss at the expense of increased latency
-#define DEFAULT_MAX_DOWNLOAD_BUCKET_SIZE 250 // Allows control over download rate limiting packet loss at the expense of increased latency
-#define DEFAULT_UPLOAD_QUOTA 0 // 0 means no limit
-#define DEFAULT_DOWNLOAD_QUOTA 0 // 0 means no limit
-#define DEFAULT_UPLOAD_UNRESTRICTED_BURSTING 0 // 0 means disabled, 1 means enabled
-#define DEFAULT_DOWNLOAD_UNRESTRICTED_BURSTING 0 // 0 means disabled, 1 means enabled
-#define DEFAULT_LOG_SYSLOG 0
-#define DEFAULT_LOG_SYSLOG 0
-#define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
+#define DEFAULT_SET_MSS "1" //allow setting the TCP Maximum Segment Size
+#define DEFAULT_MSS_VALUE "0" // value to set the MSS. 0 means use max possible ie clamp-mss-to-pmtu
+#define DEFAULT_RATE_CHECK_WINDOW "2" // The data rate check moving average window size multiply this by CHECKINTERVAL to give window size (or burst interval) in seconds
+#define DEFAULT_UPLOAD_RATE "0" // 0 means no limit
+#define DEFAULT_DOWNLOAD_RATE "0" // 0 means no limit
+#define DEFAULT_UPLOAD_BUCKET_RATIO "1" // Allows control of upload rate limit threshold overrun per client
+#define DEFAULT_DOWNLOAD_BUCKET_RATIO "1" // Allows control of download rate limit threshold overrun per client
+#define DEFAULT_MAX_UPLOAD_BUCKET_SIZE "250" // Allows control over upload rate limiting packet loss at the expense of increased latency
+#define DEFAULT_MAX_DOWNLOAD_BUCKET_SIZE "250" // Allows control over download rate limiting packet loss at the expense of increased latency
+#define DEFAULT_UPLOAD_QUOTA "0" // 0 means no limit
+#define DEFAULT_DOWNLOAD_QUOTA "0" // 0 means no limit
+#define DEFAULT_FUP_UPLOAD_THROTTLE_RATE "0" // 0 means BLOCK the client until deauthed
+#define DEFAULT_FUP_DOWNLOAD_THROTTLE_RATE "0" // 0 means BLOCK the client until deauthed
+#define DEFAULT_UPLOAD_UNRESTRICTED_BURSTING "0" // 0 means disabled, 1 means enabled
+#define DEFAULT_DOWNLOAD_UNRESTRICTED_BURSTING "0" // 0 means disabled, 1 means enabled
 #define DEFAULT_NDSCTL_SOCK "ndsctl.sock"
-#define DEFAULT_FW_MARK_AUTHENTICATED 0x30000
-#define DEFAULT_FW_MARK_TRUSTED 0x20000
-#define DEFAULT_FW_MARK_BLOCKED 0x10000
+#define DEFAULT_FW_MARK_AUTHENTICATED "0x30000"
+#define DEFAULT_FW_MARK_AUTH_BLOCKED "0x30001"
+#define DEFAULT_AUTHENTICATION_MARK "0x00030000"
+#define DEFAULT_FW_MARK_TRUSTED "0x20000"
+#define DEFAULT_THEMESPEC_PATH ""
+#define DEFAULT_FAS_REMOTEFQDN "disabled"
+#define DEFAULT_FAS_REMOTEIP "disabled"
+#define DEFAULT_FAS_SSL "wget"
+
 /* N.B.: default policies here must be ACCEPT, REJECT, or RETURN
  * In the .conf file, they must be allow, block, or passthrough
  * Mapping between these enforced by parse_empty_ruleset_policy()
  */
-#define DEFAULT_EMPTY_TRUSTED_USERS_POLICY "ACCEPT"
-#define DEFAULT_EMPTY_TRUSTED_USERS_TO_ROUTER_POLICY "ACCEPT"
-#define DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY "REJECT"
-#define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "RETURN"
-#define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
+#define DEFAULT_EMPTY_TRUSTED_USERS_POLICY "accept"
+#define DEFAULT_EMPTY_TRUSTED_USERS_TO_ROUTER_POLICY "accept"
+#define DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY "reject"
+#define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "return"
+#define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "reject"
 #define DEFAULT_IP6 0
+
+// Default lists
+#define DEFAULT_TRUSTEDMACLIST ""
+#define DEFAULT_FAS_CUSTOM_PARAMETERS_LIST ""
+#define DEFAULT_FAS_CUSTOM_VARIABLES_LIST ""
+#define DEFAULT_FAS_CUSTOM_IMAGES_LIST ""
+#define DEFAULT_FAS_CUSTOM_FILES_LIST ""
+#define DEFAULT_USERS_TO_ROUTER "allow%20udp%20port%2053 allow%20udp%20port%2067 allow%20tcp%20port%2022 allow%20tcp%20port%20443"
+#define DEFAULT_AUTHENTICATED_USERS "allow%20all"
+#define DEFAULT_PREAUTHENTICATED_USERS ""
 
 // Firewall targets
 typedef enum {
@@ -132,14 +146,6 @@ typedef struct _firewall_rule_t {
 	char *ipset;			//@brief IPset rule
 	struct _firewall_rule_t *next;
 } t_firewall_rule;
-
-// Firewall rulesets
-typedef struct _firewall_ruleset_t {
-	char *name;
-	char *emptyrulesetpolicy;
-	t_firewall_rule *rules;
-	struct _firewall_ruleset_t *next;
-} t_firewall_ruleset;
 
 // MAC Addresses
 typedef struct _MAC_t {
@@ -188,9 +194,10 @@ typedef struct {
 	char configfile[255];					//@brief name of the config file
 	char *ndsctl_sock;					//@brief ndsctl path to socket
 	char *internal_sock;					//@brief internal path to socket
-	int daemon;						//@brief if daemon > 0, use daemon mode
-	int debuglevel;					//@brief Debug information verbosity
-	int maxclients;					//@brief Maximum number of clients allowed
+	int enabled;						//@brief if openNDS is enabled
+	int daemon;						//@brief if daemon != 0, use daemon mode
+	int debuglevel;						//@brief Debug information verbosity
+	int maxclients;						//@brief Maximum number of clients allowed
 	int online_status;					//@brief Online status of the router, 1=online, 0=offline
 	char *gw_name;						//@brief Name of the gateway; e.g. its SSID or a unique identifier for use in a remote FAS
 	int enable_serial_number_suffix;			//@brief Enable/disable serial number suffix to gateway name
@@ -208,13 +215,12 @@ typedef struct {
 	unsigned int gw_port;					//@brief Port the webserver will run on
 	unsigned int fas_port;					//@brief Port the fas server will run on
 	int login_option_enabled;				//@brief Use default PreAuth Login script
-	unsigned long long int max_log_entries;		//@brief set the maximum number of log entries
+	unsigned long long int max_log_entries;			//@brief set the maximum number of log entries
 	int use_outdated_mhd;					//@brief Use outdated libmicrohttpd
 	unsigned long long int max_page_size;			//@brief Max page size to be served by libmicrohttpd
 	int allow_preemptive_authentication;			//@brief Allow Preemptive Authentication using the ndsctl utility
-	int unescape_callback_enabled;				//@brief Enable external MHD unescape callback script
-	int fas_secure_enabled;				//@brief Enable Secure FAS
-	char *fas_path;					//@brief Path to forward authentication page of FAS
+	int fas_secure_enabled;					//@brief Enable Secure FAS
+	char *fas_path;						//@brief Path to forward authentication page of FAS
 	char *fas_key;						//@brief AES key for FAS
 	char *fas_remoteip;					//@brief IP addess of a remote FAS
 	char *fas_remotefqdn;					//@brief FQDN of a remote FAS
@@ -245,18 +251,14 @@ typedef struct {
 	unsigned long long int max_download_bucket_size;	//@brief control download rate limiting packet loss at the expense of increased latency
 	unsigned long long int download_quota;			//@brief Download quota, kB
 	unsigned long long int upload_quota;			//@brief Upload quota, kB
+	unsigned long long int fup_download_throttle_rate;	//@brief Fair Useage Policy Download throttle rate, kb/s, activated when quota exceeded
+	unsigned long long int fup_upload_throttle_rate;	//@brief Fair Usage Policy Upload throttle rate, kb/s, activated when quota exceeded
 	int download_unrestricted_bursting;			//@brief Enable/disable unrestriced bursting
 	int upload_unrestricted_bursting;			//@brief Enable/disable unrestriced bursting
-	int log_syslog;					//@brief boolean, whether to log to syslog
 	int syslog_facility;					//@brief facility to use when using syslog for logging
 	int macmechanism; 					//@brief mechanism wrt MAC addrs
-	t_firewall_ruleset *rulesets;				//@brief firewall rules
 	t_MAC *trustedmaclist;					//@brief list of trusted macs
-	t_MAC *blockedmaclist;					//@brief list of blocked macs
-	t_MAC *allowedmaclist;					//@brief list of allowed macs
-	t_WGP *walledgarden_port_list;				//@brief list of Walled Garden Ports
-	t_WGFQDN *walledgarden_fqdn_list;			//@brief list of Walled Garden FQDNs
-	t_FASPARAM *fas_custom_parameters_list;		//@brief list of Custom FAS parameters
+	t_FASPARAM *fas_custom_parameters_list;			//@brief list of Custom FAS parameters
 	t_FASVAR *fas_custom_variables_list;			//@brief list of Custom FAS variables
 	t_FASIMG *fas_custom_images_list;			//@brief list of Custom FAS images
 	t_FASFILE *fas_custom_files_list;			//@brief list of Custom FAS files
@@ -264,11 +266,12 @@ typedef struct {
 	char *custom_vars;					//@brief FAS custom variable string
 	char *custom_images;					//@brief FAS custom image string
 	char *custom_files;					//@brief FAS custom file string
-	unsigned int fw_mark_authenticated;			//@brief iptables mark for authenticated packets
-	unsigned int fw_mark_blocked;				//@brief iptables mark for blocked packets
-	unsigned int fw_mark_trusted;				//@brief iptables mark for trusted packets
+	unsigned int fw_mark_authenticated;			//@brief nftables mark for authenticated packets
+	unsigned int fw_mark_auth_blocked;			//@brief nftables mark for auth_blocked packets
+	char *authentication_mark;				//@brief Padded authentication mark
+	unsigned int fw_mark_trusted;				//@brief nftables mark for trusted packets
 	int ip6;						//@brief enable IPv6
-	char *binauth;						//@brief external authentication program
+	char *binauth;						//@brief external postauthentication program
 	char *preauth;						//@brief external preauthentication program
 	int lockfd;						//@brief ndsctl lockfile file descriptor
 } s_config;
@@ -277,51 +280,14 @@ typedef struct {
 s_config *config_get_config(void);
 
 // @brief Initialise the conf system
-void config_init(void);
-
-// @brief Initialize the variables we override with the command line
-void config_init_override(void);
-
-// @brief Reads the configuration file
-void config_read(const char filename[]);
-
-// @brief Check that the configuration is valid
-void config_validate(void);
-
-// @brief Fetch a firewall rule list, given name of the ruleset. */
-t_firewall_rule *get_ruleset_list(const char[]);
-
-// @brief Fetch a firewall ruleset, given its name.
-t_firewall_ruleset *get_ruleset(const char[]);
-
-// @brief Add a firewall ruleset with the given name, and return it.
-t_firewall_ruleset *add_ruleset(const char[]);
-
-// @brief Say if a named firewall ruleset is empty.
-int is_empty_ruleset(const char[]);
-
-// @brief Get a named empty firewall ruleset policy, given ruleset name.
-char * get_empty_ruleset_policy(const char[]);
-
+void config_init(int argc, char **argv);
 void parse_trusted_mac_list(const char[]);
-void parse_blocked_mac_list(const char[]);
-void parse_allowed_mac_list(const char[]);
-void parse_walledgarden_fqdn_list(const char[]);
-void parse_walledgarden_port_list(const char[]);
 void parse_fas_custom_parameters_list(const char[]);
 void parse_fas_custom_variables_list(const char[]);
 void parse_fas_custom_images_list(const char[]);
 void parse_fas_custom_files_list(const char[]);
 
-int is_blocked_mac(const char *mac);
-int is_allowed_mac(const char *mac);
 int is_trusted_mac(const char *mac);
-
-int add_to_blocked_mac_list(const char possiblemac[]);
-int remove_from_blocked_mac_list(const char possiblemac[]);
-
-int add_to_allowed_mac_list(const char possiblemac[]);
-int remove_from_allowed_mac_list(const char possiblemac[]);
 
 int remove_from_trusted_mac_list(const char possiblemac[]);
 int add_to_trusted_mac_list(const char possiblemac[]);
@@ -345,3 +311,5 @@ int set_debuglevel(const char[]);
 } while (0)
 
 #endif // _CONF_H_
+
+char *set_list_str(char *list, const char *default_list, char *debug_level);

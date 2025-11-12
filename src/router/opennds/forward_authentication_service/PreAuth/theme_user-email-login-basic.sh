@@ -1,6 +1,6 @@
 #!/bin/sh
 #Copyright (C) The openNDS Contributors 2004-2022
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2025
 #This software is released under the GNU GPL license.
 #
 # Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
@@ -18,6 +18,7 @@ generate_splash_sequence() {
 
 header() {
 # Define a common header html for every page served
+	gatewayurl=$(printf "${gatewayurl//%/\\x}")
 	echo "<!DOCTYPE html>
 		<html>
 		<head>
@@ -26,8 +27,8 @@ header() {
 		<meta http-equiv=\"Expires\" content=\"0\">
 		<meta charset=\"utf-8\">
 		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-		<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
-		<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
+		<link rel=\"shortcut icon\" href=\"$gatewayurl/images/splash.jpg\" type=\"image/x-icon\">
+		<link rel=\"stylesheet\" type=\"text/css\" href=\"$gatewayurl/splash.css\">
 		<title>$gatewayname</title>
 		</head>
 		<body>
@@ -46,7 +47,7 @@ footer() {
 		<hr>
 		<div style=\"font-size:0.5em;\">
 			<br>
-			<img style=\"height:60px; width:60px; float:left;\" src=\"$imagepath\" alt=\"Splash Page: For access to the Internet.\">
+			<img style=\"height:60px; float:left;\" src=\"$gatewayurl""$imagepath\" alt=\"Splash Page: For access to the Internet.\">
 			&copy; Portal: BlueWave Projects and Services 2015 - $year<br>
 			<br>
 			Portal Version: $version
@@ -85,7 +86,7 @@ login_form() {
 
 	echo "
 		<big-red>Welcome!</big-red><br>
-		<med-blue>You are connected to $client_zone</med-blue><br>
+		<med-blue>You are connected to <br>$client_zone</med-blue><br>
 		<italic-black>
 			To access the Internet you must enter your full name and email address then Accept the Terms of Service to proceed.
 		</italic-black>
@@ -118,7 +119,7 @@ thankyou_page () {
 
 	echo "
 		<big-red>
-			Thankyou for using this service
+			Thankyou for using this service.<br>Please click Continue for access.
 		</big-red>
 		<br>
 		<b>Welcome $username</b>
@@ -168,6 +169,9 @@ landing_page() {
 	originurl=$(printf "${originurl//%/\\x}")
 	gatewayurl=$(printf "${gatewayurl//%/\\x}")
 
+	configure_log_location
+	. $mountpoint/ndscids/ndsinfo
+
 	# Add the user credentials to $userinfo for the log
 	userinfo="$userinfo, user=$username, email=$emailaddress"
 
@@ -203,7 +207,7 @@ landing_page() {
 			</big-red>
 			<hr>
 		</p>
-		<hr>
+
 		<p>
 			<italic-black>
 				Your login attempt probably timed out.
@@ -214,7 +218,7 @@ landing_page() {
 			Click or tap Continue to try again.
 		</p>
 		<form>
-			<input type=\"button\" VALUE=\"Continue\" onClick=\"location.href='$originurl'\" >
+			<input type=\"button\" VALUE=\"Continue\" onClick=\"location.href='http://$gatewayfqdn'\" >
 		</form>
 		<hr>
 	"

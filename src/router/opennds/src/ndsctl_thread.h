@@ -21,7 +21,7 @@
 /** @file ndsctl_thread.h
     @brief opennds monitoring thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #ifndef _NDSCTL_THREAD_H_

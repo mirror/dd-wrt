@@ -22,7 +22,7 @@
     @brief Client List functions
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #ifndef _CLIENT_LIST_H_
@@ -47,7 +47,7 @@ typedef struct _t_counters {
 /** Client node for the connected client linked list.
  */
 typedef struct _t_client {
-	struct _t_client *next;			/**< @brief Pointer to the next client */
+	struct _t_client *next;				/**< @brief Pointer to the next client */
 	char *ip;					/**< @brief Client IP address */
 	char *mac;					/**< @brief Client MAC address */
 	char *token;					/**< @brief Client token */
@@ -55,6 +55,7 @@ typedef struct _t_client {
 	char *cid;					/**< @brief Client cid */
 	char *custom;					/**< @brief Client custom string sent from FAS and sent to BinAuth */
 	char *client_type;				/**< @brief Client type, cpd (cpd_can), rfc8910-cpi (cpi_url) or rfc8908-cpi (cpi_api)  */
+	char *cpi_query;				/**< @brief RFC8910-cpi query string  */
 	unsigned int fw_connection_state;		/**< @brief Client Connection state in the firewall */
 	time_t session_start;				/**< @brief Actual Time the client was authenticated */
 	time_t window_start;				/**< @brief Actual Time the client rate check window begins */
@@ -63,6 +64,8 @@ typedef struct _t_client {
 	int window_counter;				/**< @brief Rate Check Window counter */
 	int rate_exceeded;				/**< @brief Rate Exceeded Check flag */
 	int initial_loop;				/**< @brief Check client initial loop flag */
+	int upload_limiting;				/**< @brief Limiting status flag */
+	int download_limiting;				/**< @brief Limiting status flag */
 	unsigned long long int upload_rate;		/**< @brief Client Upload rate limit, kb/s */
 	unsigned long long int download_rate;		/**< @brief Client Download rate limit, kb/s */
 	unsigned long long int uprate;			/**< @brief Current Client Upload rate, kb/s */

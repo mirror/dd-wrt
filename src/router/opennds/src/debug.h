@@ -21,17 +21,15 @@
 /** @file debug.h
     @brief Debug output routines
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
 #include <syslog.h>
-
 #define DEBUGLEVEL_MIN 0
 #define DEBUGLEVEL_MAX 3
-
 /** @brief Used to output messages.
  *The messages will include the finlname and line number, and will be sent to syslog if so configured in the config file
  */

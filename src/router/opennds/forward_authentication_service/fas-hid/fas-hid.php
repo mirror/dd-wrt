@@ -1,7 +1,10 @@
 <?php
-/* (c) Blue Wave Projects and Services 2015-2023. This software is released under the GNU GPL license.
+/* (c) Blue Wave Projects and Services 2015-2025. This software is released under the GNU GPL license.
 
- This is a FAS script providing an example of remote Forward Authentication for openNDS (NDS) on an http web server supporting PHP.
+ This is a FAS script designed to provide an http login sequence served from an **Internet hosted** http web server supporting PHP
+ It is an example of remote Forward Authentication for openNDS (NDS) that **does not require PHP support on the openNDS router**.
+ It is the **http only** version of the example fas-hid scripts.
+ It is less secure than the aes encrypted version (fas-aes.php), but with openNDS installed on routers with severe resource limitations, it is more likely to work.
 
  The following NDS configurations must be set:
  1. fasport: Set to the port number the remote webserver is using (typically port 80)
@@ -18,8 +21,8 @@
 
  5. faskey: Matching $key as set in this script (see below this introduction).
 	This is a key phrase for NDS to encrypt the query string sent to FAS.
-	It can be any combination of A-Z, a-z and 0-9, up to 16 characters with no white space.
-	eg 1234567890
+	It can be any combination of A-Z, a-z and 0-9, with no white space.
+	eg c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646
 
  6. fas_secure_enabled:  set to level 1
 	The NDS parameters: clientip, clientmac, gatewayname, hid and redir
@@ -41,7 +44,7 @@ if (ob_get_level()){ob_end_clean();}
 
 #####################################################################################
 // The pre-shared key "faskey" (this must be the same as in the openNDS config):
-$key="1234567890";
+$key="c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646";
 #####################################################################################
 
 // Setup some basics:
@@ -80,6 +83,7 @@ if (isset($fas)) {
 		if ($name == "gatewaymac") {$gatewaymac=$value;}
 		if ($name == "authdir") {$authdir=$value;}
 		if ($name == "originurl") {$originurl=$value;}
+		if ($name == "cpi_query") {$cpi_query=$value;}
 		if ($name == "clientif") {$clientif=$value;}
 		if ($name == "admin_email") {$admin_email=$value;}
 		if ($name == "location") {$location=$value;}
@@ -213,12 +217,12 @@ function write_log() {
 	$clientif=$GLOBALS["clientif"];
 	$originurl=$GLOBALS["originurl"];
 	$redir=rawurldecode($originurl);
+	$cpi_query=$GLOBALS["cpi_query"];
 	$fullname=$_GET["fullname"];
 	$email=$_GET["email"];
 
-
 	$log=date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']).
-		", $script, $gatewayname, $fullname, $email, $clientip, $clientmac, $client_type, $clientif, $user_agent, $redir\n";
+		", $script, $gatewayname, $fullname, $email, $clientip, $clientmac, $client_type, $clientif, $user_agent, $cpi_query, $redir\n";
 
 	if ($logpath == "") {
 		$logfile="ndslog/ndslog_log.php";
@@ -412,7 +416,7 @@ function footer() {
 			<img style=\"height:60px; width:60px; float:left;\" src=\"$imagepath\" alt=\"Splash Page: For access to the Internet.\">
 			&copy; The openNDS Project 2015 - $year<br>
 			Portal Version: $version
-			<br><br>
+			<br><br><br><br>
 		</div>
 		</div>
 		</div>

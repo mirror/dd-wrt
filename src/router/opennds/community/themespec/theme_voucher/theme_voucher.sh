@@ -1,6 +1,6 @@
 #!/bin/sh
 #Copyright (C) The openNDS Contributors 2004-2023
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2024
 #Copyright (C) Francesco Servida 2023
 #This software is released under the GNU GPL license.
 #
@@ -19,6 +19,7 @@ generate_splash_sequence() {
 
 header() {
 # Define a common header html for every page served
+	gatewayurl=$(printf "${gatewayurl//%/\\x}")
 	echo "<!DOCTYPE html>
 		<html>
 		<head>
@@ -44,7 +45,7 @@ footer() {
 		<hr>
 		<div style=\"font-size:0.5em;\">
 			<br>
-			<img style=\"height:60px; width:60px; float:left;\" src=\"$imagepath\" alt=\"Splash Page: For access to the Internet.\">
+			<img style=\"height:60px; width:60px; float:left;\" src=\"$gatewayurl""$imagepath\" alt=\"Splash Page: For access to the Internet.\">
 			&copy; Portal: BlueWave Projects and Services 2015 - $year<br>
 			<br>
 			Portal Version: $version
@@ -246,6 +247,19 @@ voucher_validation() {
 voucher_form() {
 	# Define a click to Continue form
 
+	# From openNDS v10.2.0 onwards, QL code scanning is supported to pre-fill the "voucher" field in this voucher_form page.
+	#
+	# The QL code must be of the link type and be of the following form:
+	#
+	# http://[gatewayfqdn]/login?voucher=[voucher_code]
+	#
+	# where [gatewayfqdn] defaults to status.client (can be set in the config)
+	# and [voucher_code] is of course the unique voucher code for the current user
+
+	# Get the voucher code:
+
+	voucher_code=$(echo "$cpi_query" | awk -F "voucher%3d" '{printf "%s", $2}' | awk -F "%26" '{printf "%s", $1}')
+
 	echo "
 		<med-blue>
 			Welcome!
@@ -257,7 +271,7 @@ voucher_form() {
 		<form action=\"/opennds_preauth/\" method=\"get\">
 			<input type=\"hidden\" name=\"fas\" value=\"$fas\"> 
 			<input type=\"checkbox\" name=\"tos\" value=\"accepted\" required> I accept the Terms of Service<br>
-			Voucher #: <input type=\"text\" name=\"voucher\" value=\"\" required><br>
+			Voucher #: <input type=\"text\" name=\"voucher\" value=\"$voucher_code\" required><br>
 			<input type=\"submit\" value=\"Connect\" >
 		</form>
 		<br>

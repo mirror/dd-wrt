@@ -22,7 +22,7 @@
   @file safe.c
   @brief Safe versions of stdlib/string functions that error out and exit if memory allocation fails
   @author Copyright (C) 2005 Mina Naguib <mina@ilesansfil.org>
-  @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+  @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
  */
 
 #define _GNU_SOURCE
@@ -69,6 +69,25 @@ char * safe_strdup(const char s[])
 		debug(LOG_CRIT, "Failed to duplicate a string: %s. Bailing out.", strerror(errno));
 		return ("error");
 	}
+	return (retval);
+}
+
+int safe_snprintf(char *strp, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+	int retval;
+
+	va_start(ap, fmt);
+	retval = vsnprintf(strp, size, fmt, ap);
+	va_end(ap);
+
+	debug(LOG_DEBUG, "safe_snprintf: [ %d ]", retval);
+
+	if (retval < 1) {
+		debug(LOG_CRIT, "safe_snprintf: Failed");
+		return (retval);
+	}
+
 	return (retval);
 }
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2025
 #This software is released under the GNU GPL license.
 #
 # Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
@@ -32,16 +32,17 @@ download_data_files() {
 ##################################################
 
 # Construct the list of custom images and files to download
-customimagelist=$(uci -q get opennds.@opennds[0].fas_custom_images_list)
-customfilelist=$(uci -q get opennds.@opennds[0].fas_custom_files_list)
+customimagelist=$(/usr/lib/opennds/libopennds.sh get_list_from_config fas_custom_images_list)
+customfilelist=$(/usr/lib/opennds/libopennds.sh get_list_from_config fas_custom_files_list)
+
 ndscustomimages=""
 ndscustomfiles=""
 
 if [ ! -z "$customimagelist" ]; then
 
 	for imageconfig in $customimagelist; do
-		imagename=$(echo "$imageconfig" | awk -F"=" '{printf "%s" $1}')
-		imageurl=$(echo "$imageconfig" | awk -F"=" '{printf "%s" $2}')
+		imagename=$(echo "$imageconfig" | awk -F"=" '{printf "%s", $1}')
+		imageurl=$(echo "$imageconfig" | awk -F"=" '{printf "%s", $2}')
 		ndscustomimages="$ndscustomimages $imagename"
 		eval $imagename=$imageurl
 	done
@@ -50,8 +51,8 @@ fi
 if [ ! -z "$customfilelist" ]; then
 
 	for fileconfig in $customfilelist; do
-		filename=$(echo "$fileconfig" | awk -F"=" '{printf "%s" $1}')
-		fileurl=$(echo "$fileconfig" | awk -F"=" '{printf "%s" $2}')
+		filename=$(echo "$fileconfig" | awk -F"=" '{printf "%s", $1}')
+		fileurl=$(echo "$fileconfig" | awk -F"=" '{printf "%s", $2}')
 		ndscustomfiles="$ndscustomfiles $filename"
 		eval $filename=$fileurl
 	done

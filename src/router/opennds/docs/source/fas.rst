@@ -7,14 +7,18 @@ openNDS (NDS) has the ability to forward requests to a third party authenticatio
 
 These options are:
  1. **fasport**. This enables Forwarding Authentication Service (FAS). Redirection is changed from the default ThemeSpec to a separate FAS. The value is the IP port number of the FAS.
- 2. **fasremoteip**. If set, this is the remote ip address of the FAS, if not set it will take the value of the NDS gateway address.
+ 2. **fasremoteip**. If set, this is the remote ip address of the FAS, if not set it will take the value of the NDS gateway address if the fasremotefqdn is NOT set.
  3. **fasremotefqdn** If set, this is the remote fully qualified domain name (FQDN) of the FAS
  4. **faspath**. This is the path from the FAS Web Root (not the file system root) to the FAS login page.
- 5. **fas_secure_enabled**. This can have four values, "0", "1", "2" or "3" providing different levels of security.
- 6. **faskey** Used in combination with fas_secure_enable level 1, 2 and 3, this is a key phrase for NDS to encrypt data sent to FAS.
+ 5. **fas_secure_enabled**. This can have four values, "0", "1", "2", "3" or "4" providing different levels of security.
+ 6. **faskey** Used in combination with fas_secure_enable level 1, 2, 3 and 4, this is a key phrase for NDS to encrypt data sent to FAS.
 
 .. note::
- FAS (and Preauth/FAS) enables pre authentication processing. NDS authentication is the process that openNDS uses to allow a client device to access the Internet through the Firewall. In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes a request to NDS for access to the Internet to be granted for that client.
+ FAS (and ThemeSpec/FAS) enables **pre-authentication processing to validate client credentials**.
+
+ NDS **authentication is the process that openNDS uses to allow a client device to access the Internet** through the Firewall.
+
+In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes a request to NDS for access to the Internet to be granted for that client.
 
 Using FAS
 *********
@@ -24,21 +28,21 @@ All addresses (with the exception of fasremoteip) are relative to the *client* d
 
 When FAS is enabled, openNDS automatically configures firewall access to the FAS service.
 
-The FAS service must serve a splash page of its own to replace the openNDS served output of the default ThemeSpec script. For fas_secure_enable "0", "1", and "2" this is enforced as http. For fas_secure_enable level "3", it is enforced as https.
+The FAS service must serve a splash page of its own to replace the openNDS served output of the default ThemeSpec script. For fas_secure_enable "0", "1", and "2" this is enforced as http. For fas_secure_enable level "3" and "4", it is enforced as https.
 
 Typically, the FAS service will be written in PHP or any other language that can provide dynamic web content.
 
-FAS can then generate an action form for the client, typically requesting login, or self account creation for login.
+FAS can then generate an html "action form" for the client, typically requesting login, or self account creation for login.
 
 The FAS can be on the same device as openNDS, on the same local area network as NDS, or on an Internet hosted web server.
 
 Security
 ********
 
-**If FAS Secure is enabled** (Levels 1 (default), 2 and 3), the client authentication token is kept secret at all times. Instead, faskey is used to generate a hashed id value (hid) and this is sent by openNDS to the FAS. The FAS must then in turn generate a new return hash id (rhid) to return to openNDS in its authentication request.
+**If FAS Secure is enabled** (Levels 1 (default), 2, 3 and 4), the client authentication token is kept secret at all times. The faskey is used to generate a hashed id value (hid) and this is sent by openNDS to the FAS. The FAS must then in turn generate a new return hash id (rhid) to return to openNDS in its authentication request.
 
    **If set to "0"** The FAS is enforced by NDS to use **http** protocol.
-   The client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir. This method is easy to bypass and useful only for the simplest systems where security does not matter.
+   The client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir. This method is easy to bypass and useful only for the simplest systems where security does not matter. Generally, it should not be used.
 
    **If set to "1"** The FAS is enforced by NDS to use **http** protocol.
    A base64 encoded query string containing the hid is sent to the FAS, along with the clientip, clientmac, gatewayname, client_hid, gatewayaddress, authdir, originurl, clientif and custom parameters and variables.
@@ -62,6 +66,9 @@ Security
    **If set to "3"** The FAS is enforced by openNDS to use **https** protocol.
    Level 3 is the same as level 2 except the use of https protocol is enforced for FAS. In addition, the "authmon" daemon is loaded. This allows the external FAS, after client verification, to effectively traverse inbound firewalls and address translation to achieve NDS authentication without generating browser security warnings or errors. An example FAS level 3 php script (fas-aes-https.php) is pre-installed in the /etc/opennds directory and also supplied in the source code. This should be copied the the web root of a suitable web server for use.
 
+   **If set to "4"** The FAS is enforced by openNDS to use **https** protocol.
+   Level 4 is the same as level 1 except the use of https protocol is enforced for FAS. In addition, the "authmon" daemon is loaded. This allows the external FAS, after client verification, to effectively traverse inbound firewalls and address translation to achieve NDS authentication without generating browser security warnings or errors. An example FAS level 4 php script (fas-hid-https.php) is pre-installed in the /etc/opennds directory and also supplied in the source code. This should be copied the the web root of a suitable web server for use.
+
    **Option faskey has a default value.** It is recommended that this is set to some secret value in the config file and the FAS script set to use a matching value, ie faskey must be pre-shared with FAS.
 
 
@@ -77,13 +84,18 @@ Example FAS Query strings
    **Note: a knowledgeable user could bypass FAS, so running fas_secure_enabled at level 1, 2 or 3 is recommended.**
 
 
-  **Level 1** (fas_secure_enabled = 1)
+  **Levels 1 and 4** (fas_secure_enabled = 1 and 4)
 
    NDS sends a query string containing a base64 encoded string containing required parameters and variables, plus any FAS variables generated in the client dialogue, such as username and email address. The client token is never exposed.
 
    Example Level 1 query string:
 
     `http://fasremotefqdn:fasport/faspath?fas=[b64encodedstring]&username=[client_username]&emailaddr=[client_email]`
+
+   Example Level 4 query string:
+
+    `https://fasremotefqdn:fasport/faspath?fas=[b64encodedstring]&username=[client_username]&emailaddr=[client_email]`
+
 
    The b64encoded string will contain a comma space separated list of parameters.
 
@@ -153,18 +165,11 @@ A very simple example would be a captive portal set up with a wireless network f
 
 NDS is aware of the interface or mesh node a client is using.
 
-For a FAS using `fas_secure_enabled = 2`, an additional variable, clientif, is sent to the FAS in the encrypted query string (local or remote FAS).
-
-For all other levels of fas_secure_enabled, PreAuth and BinAuth, the library utility "get_client_interface" is required to be used by the relevant script (local FAS only).
-
 Working examples can be found in the included scripts:
 
  * fas-aes.php
  * ThemeSpec
- * demo-preauth.sh
- * demo-preauth-remote-image.sh
-
-For details of the clientif variable and how to use get_client_interface, see the section **Library Utilities**.
+ * and others
 
 After Successful Verification by FAS
 ************************************
@@ -198,7 +203,7 @@ The default "login_option" library, libopennds.sh, is a local script so has acce
 Authentication Method for fas_secure_enabled level 3 (Authmon Daemon)
 ---------------------------------------------------------------------
 
- When fas_secure_enabled level 3 is used (https protocol), post verification authentication is achieved by the openNDS Authmon daemon.
+ When fas_secure_enabled level 3 or 4 is used (https protocol), post verification authentication is achieved by the openNDS Authmon daemon.
 
  Authmon is started by openNDS to facilitate NAT traversal and allow a remote https FAS to communicate with the local openNDS.
 
@@ -219,11 +224,16 @@ Be aware that many client CPD processes will **automatically close** the landing
 BinAuth Post FAS Processing
 ***************************
 
-As BinAuth can be enabled at the same time as FAS, a BinAuth script may be used for custom post FAS processing. (see BinAuth).
+From v10.1.0 onwards, BinAuth is enabled at all times. Additional BinAuth functionality can be added by editing the file /usr/lib/opennds/custombinauth.sh.
 
-The example BinAuth script, binauth_log.sh, is designed to locally log details of each client authentication and receives client data including the token, ipaddress and macaddress. In addition it receives the custom data string sent from FAS.
+The BinAuth script, binauth_log.sh, is designed to locally log details of each client authentication and receives client data including the token, ipaddress and macaddress. In addition it receives the custom data string sent from FAS.
 
-In addition, if option fas_secure_enabled is set to 3, binauth_log.sh sends a deauthentication log to the remote https FAS whenever a client is deauthenticated.
+If option fas_secure_enabled is set to 3, BinAuth sends a deauthentication log to the remote https FAS whenever a client is deauthenticated.
+
+BinAuth maintains a database of authenticated clients that is used by openNDS on startup to re-authenticate any clients that still have a valid session.
+
+By default this database does not survive a reboot. (see ``option log_mountpoint``)
+
 
 Manual Access of NDS Virtual URL
 ********************************
@@ -291,10 +301,10 @@ Using a CDN (Content Delivery Network) Hosted Server for a Remote FAS
  The setting for fasremoteip should be one of the valid IPv4 addresses of your CDN service.
 
 
-Using the FAS Example Scripts (fas-hid, fas-aes.php and fas-aes-https.php)
-**************************************************************************
+Using the FAS Example Scripts (fas-hid, fas-aes.php, fas-hid-https.php and fas-aes-https.php)
+*********************************************************************************************
 
-These three, fully functional, example FAS scripts are included in the package install and can be found in the /etc/opennds folder. To function, they need to be copied to the web root or a folder in the web root of your FAS http/php server.
+These four, fully functional, example FAS scripts are included in the package install and can be found in the /etc/opennds folder. To function, they need to be copied to the web root or a folder in the web root of your FAS http/php server.
 
 fas-hid.php
 -----------
@@ -310,9 +320,17 @@ fas-aes.php
 -----------
 **You can run the FAS example script, fas-aes.php**, locally on the same device that is running NDS (A minimum of 64MB of ram may be sufficient, but 128MB is recommended), or remotely on an Internet based FAS server. The use of http protocol is enforced.
 
+fas-hid-https.php
+-----------------
+**You can run the FAS example script, fas-hid-https.php**, remotely on an Internet based https FAS server. The use of https protocol is enforced. It cannot be hosted on a private network or on the router.
+
+Library calls can be made on the openNDS router to send deauthentication information and custom strings to an https FAS, and this example script will write received data to a log file on the FAS server. The example binauth_log.sh script makes use of this functionality to inform the remote FAS of the deauthentication of a client.
+
+A minimum of 32MB of ram on the openNDS device may be sufficient, but 64MB or more is recommended.
+
 fas-aes-https.php
 -----------------
-**You can run the FAS example script, fas-aes-https.php**, remotely on an Internet based https FAS server. The use of https protocol is enforced.
+**You can run the FAS example script, fas-aes-https.php**, remotely on an Internet based https FAS server. The use of https protocol is enforced.  It cannot be hosted on a private network or on the router.
 
 Library calls can be made on the openNDS router to send deauthentication information and custom strings to an https FAS, and this example script will write received data to a log file on the FAS server. The example binauth_log.sh script makes use of this functionality to inform the remote FAS of the deauthentication of a client.
 
@@ -322,9 +340,7 @@ Example Script File fas-aes.php
 -------------------------------
 Http protocol is enforced.
 
-Assuming you have installed your web server of choice, configured it for port 2080 and added PHP support using the package php8-cgi, you can do the following.
-
- (Under other operating systems you may need to edit the opennds.conf file in /etc/opennds instead, but the process is very similar.)
+Assuming you have installed your web server of choice, configured it for port 2080 and added PHP support (version 8 or higher) using the package php8-cgi, you can do the following.
 
  * Install the packages php8-cli and php8-mod-openssl
 
@@ -344,7 +360,7 @@ Assuming you have installed your web server of choice, configured it for port 20
 
     ``option fas_secure_enabled '2'``
 
-    ``option faskey '1234567890'``
+    ``option faskey 'your_secret_hashed_key_string'``
 
  * Restart NDS using the command ``service opennds restart``
 
@@ -353,8 +369,6 @@ Example Script File fas-aes-https.php
 Https protocol is enforced.
 
 Assuming you have access to an Internet based https web server you can do the following.
-
- (Under other operating systems you may need to edit the opennds.conf file in /etc/opennds instead, but the process is very similar.)
 
  * Install the packages php8-cli and php8-mod-openssl on your NDS router
 
@@ -374,7 +388,7 @@ Assuming you have access to an Internet based https web server you can do the fo
 
     ``option fas_secure_enabled '3'``
 
-    ``option faskey '1234567890'``
+    ``option faskey 'your_secret_hashed_key_string'``
 
     ``option fasremoteip '46.32.240.41'`` (change this to the actual ip address of the remote server)
 
@@ -397,8 +411,6 @@ The fas-hid.php script then uses this digest along with the pre shared faskey to
 
 Assuming you have access to an Internet based http web server you can do the following.
 
- (Under other operating systems you may need to edit the opennds.conf file in /etc/opennds instead, but the process is very similar.)
-
  * Create a folder for the FAS script eg: /[server-web-root]/nds/ on the Internet FAS server
 
  * Place the file fas-hid.php in /[server-web-root]/nds/
@@ -415,7 +427,7 @@ Assuming you have access to an Internet based http web server you can do the fol
 
     ``option fas_secure_enabled '1'``
 
-    ``option faskey '1234567890'``
+    ``option faskey 'your_secret_hashed_key_string'``
 
     ``option fasremoteip '46.32.240.41'`` (change this to the actual ip address of the remote server)
 
@@ -427,6 +439,6 @@ Assuming you have access to an Internet based http web server you can do the fol
 Changing faskey
 ***************
 
-The value of option faskey should of course be changed, but must also be pre-shared with FAS by editing the example or your own script to match the new value.
+The value of option faskey should of course be changed, but must also be pre-shared with FAS by editing the example or your own script to match the value set or changed in the openNDS config.
 
 

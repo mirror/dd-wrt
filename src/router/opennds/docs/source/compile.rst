@@ -8,9 +8,9 @@ Make sure the development suite for your Linux distribution is installed.
 
 The libmicrohttpd library (MHD) is a dependency of openNDS so compiling and installing this is a prerequisite.
 
-The nftables and iptables-nft packages are also dependencies, so should also be installed as prerequisites.
+The nftables (nft) package is also a dependency, so should also be installed as a prerequisite.
 
-The "php cli" and "php openssl" packages are required for fas_secure levels 2 and 3 operation. These may be separate packages or one large package, depending on the Linux distribution. Not required for level 1 or Themespec operation.
+The "php cli" and "php openssl" packages are required for fas_secure levels 2 and 3 operation. These may be separate packages or one large package, depending on the Linux distribution. Not required for level 1, level 4 or Themespec operation.
 
 **First**, create a working directory and "cd" into it.
 
@@ -47,14 +47,14 @@ You can find a release version number for openNDS at https://github.com/openNDS/
 
 .. code::
 
- wget https://codeload.github.com/opennds/opennds/tar.gz/v9.8.0
- tar -xf v9.8.0
- cd openNDS-9.8.0
+ wget https://codeload.github.com/opennds/opennds/tar.gz/v10.2.0
+ tar -xf v10.2.0
+ cd openNDS-10.2.0
  make
  sudo make install
  sudo systemctl enable opennds
 
-Where "9.8.0" is the openNDS version we are using in this example.
+Where "10.2.0" is the openNDS version we are using in this example.
 
 openNDS should now start automatically at boot time.
 
@@ -155,7 +155,7 @@ To do this you need to checkout the repository yourself and commit your changes 
 
  git commit -am "my change"
 
-Now create a symbolic link in the openNDS package folder using the abolute path:
+Now create a symbolic link in the openNDS package folder using the absolute path:
 
 
 .. code::

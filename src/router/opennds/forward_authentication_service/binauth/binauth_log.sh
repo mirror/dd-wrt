@@ -1,6 +1,6 @@
 #!/bin/sh
 #Copyright (C) The openNDS Contributors 2004-2022
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2025
 #This software is released under the GNU GPL license.
 
 # This is an example script for BinAuth
@@ -43,18 +43,46 @@ get_client_zone () {
 	fi
 }
 
+urlencode() {
+	entitylist="
+		s/%/%25/g
+		s/\s/%20/g
+		s/\"/%22/g
+		s/>/%3E/g
+		s/</%3C/g
+		s/'/%27/g
+		s/\`/%60/g
+	"
+	local buffer="$1"
+
+	for entity in $entitylist; do
+		urlencoded=$(echo "$buffer" | sed "$entity")
+		buffer=$urlencoded
+	done
+
+	urlencoded=$(echo "$buffer" | awk '{ gsub(/\$/, "\\%24"); print }')
+}
+
 get_option_from_config() {
-	local param=""
 
-	if [ -e "/etc/config/opennds" ]; then
-		param=$(uci -q get opennds.@opennds[0].$option | awk '{printf("%s", $0)}')
+	type uci &> /dev/null
+	uci_status=$?
 
-	elif [ -e "/etc/opennds/opennds.conf" ]; then
-		param=$(cat "/etc/opennds/opennds.conf" | awk -F"$option" '{printf("%s", $2)}')
+	if [ $uci_status -eq 0 ]; then
+		param=$(uci export opennds | grep "option" | grep "$option" | awk -F"'" 'NF > 1 {printf "%s ", $2}')
+	else
+		param=$(cat /etc/config/opennds | grep "option" | grep "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 	fi
 
-	eval $option=$param
+	# remove trailing space character
+	param=$(echo "$param" | sed 's/.$//')
+
+	# urlencode
+	urlencode "$param"
+	param=$urlencoded
+	eval $option="$param" &>/dev/null
 }
+
 
 configure_log_location() {
 	# Generate the Logfile location; use the tmpfs "temporary" directory to prevent flash wear.
@@ -67,7 +95,8 @@ configure_log_location() {
 	# set default values
 	mountpoint="/tmp"
 	logdir="/tmp/ndslog/"
-	logname="binauthlog.log"
+	fulllog="binauthlog.log"
+	authlog="authlog.log"
 
 	for var in $tempdir; do
 		_mountpoint=$(df | awk -F ' ' '$1=="tmpfs" && $6=="'$var'" {print $6}')
@@ -90,66 +119,11 @@ configure_log_location() {
 	fi
 
 	# Get PID For syslog
-	ndspid=$(pgrep '/usr/bin/opennds')
+	ndspid=$(pgrep -f '/usr/bin/opennds')
 }
 
 write_log () {
-	mountcheck=$(df | grep "$log_mountpoint")
-
-	if [ ! -z "$logname" ]; then
-
-		if [ ! -d "$logdir" ]; then
-			mkdir -p "$logdir"
-		fi
-
-		logfile="$logdir""$logname"
-		awkcmd="awk ""'\$6==""\"$log_mountpoint\"""{print \$4}'"
-		datetime=$(date)
-
-		if [ ! -f "$logfile" ]; then
-			echo "$datetime, New log file created" > $logfile
-		fi
-
-		if [ ! -z "$mountcheck" ]; then
-			# Truncate the log file if max_log_entries is set
-			max_log_entries=""
-			option="max_log_entries"
-			get_option_from_config
-
-			if [ ! -z "$max_log_entries" ]; then
-				mv "$logfile" "$logfile.cut"
-				tail -n "$max_log_entries" "$logfile.cut" >> "$logfile"
-				rm "$logfile.cut"
-			fi
-
-			available=$(df | grep "$log_mountpoint" | eval "$awkcmd")
-
-			if [ "$log_mountpoint" = "$mountpoint" ]; then
-				# Logging to tmpfs, so dynamically adjust max log size
-				# then check the logfile is not too big
-				min_freespace_to_log_ratio=10
-				filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
-				sizeratio=$(($available/$filesize))
-
-				if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-					echo "$datetime, $log_entry" >> $logfile
-				else
-					echo "Log file too big, please archive contents and reduce max_log_entries" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
-				fi
-			else
-				# Logging to dedicated storage eg usb drive
-				# so just check for free space and let the log file grow
-
-				if [ "$available" > 10 ];then
-					echo "$datetime, $log_entry" >> $logfile
-				else
-					echo "Log file too big, please archive contents and reduce max_log_entries" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
-				fi
-			fi
-		else
-			echo "Log location is NOT a mountpoint - logging disabled" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
-		fi
-	fi
+	/usr/lib/opennds/libopennds.sh "write_log" "$loginfo" "$logname" "$date_inhibit"
 }
 
 #### end of functions ####
@@ -170,8 +144,8 @@ configure_log_location
 # Get the action method from NDS ie the first command line argument.
 #
 # Possible values are:
-# "auth_client" - NDS requests validation of the client (legacy - deprecated)
-# "client_auth" - NDS has authorised the client (legacy - deprecated)
+# "auth_client" - NDS requests validation of the client
+# "client_auth" - NDS has authorised the client
 # "client_deauth" - NDS has deauthenticated the client on request (logout)
 # "idle_deauth" - NDS has deauthenticated the client because the idle timeout duration has been exceeded
 # "timeout_deauth" - NDS has deauthenticated the client because the session length duration has been exceeded
@@ -199,7 +173,7 @@ if [ $action = "auth_client" ]; then
 	# For example, to decode customdata use:
 	# customdata=$(ndsctl b64decode "$customdata")
 
-	log_entry="method=$1, clientmac=$2, clientip=$5, useragent=$4, token=$6, custom=$7"
+	loginfo="method=$1, clientmac=$2, clientip=$5, useragent=$4, token=$6, custom=$7"
 
 else
 	# All other methods
@@ -216,15 +190,14 @@ else
 	customdata=$8
 
 	# Build the log entry:
-	log_entry="method=$1, clientmac=$2, bytes_incoming=$3, bytes_outgoing=$4, session_start=$5, session_end=$6, token=$7, custom=$customdata"
+	loginfo="method=$1, clientmac=$2, bytes_incoming=$3, bytes_outgoing=$4, session_start=$5, session_end=$6, token=$7, custom=$customdata"
 
-	action=$(echo "$1" | awk -F"_" '{printf("%s", $2)}')
+	action=$(echo "$1" | awk -F"_" '{printf("%s", $NF)}')
 
 	# Send the deauth log to FAS if fas_secure_enabled = 3, if not =3 library call does nothing
 	if [ "$action" = "deauth" ]; then
-		returned=$(/usr/lib/opennds/libopennds.sh "send_to_fas_deauthed" "$log_entry")
+		returned=$(/usr/lib/opennds/libopennds.sh "send_to_fas_deauthed" "$loginfo")
 	fi
-
 fi
 
 # In the case of ThemeSpec, get the client id information from the cid database
@@ -262,7 +235,7 @@ if [ ! -z "$cidfile" ]; then
 	. $mountpoint/ndscids/$cidfile
 
 	# Add a selection of client data variables to the log entry
-	log_entry="$log_entry, client_type=$client_type, gatewayname=$gatewayname, ndsversion=$version, originurl=$originurl"
+	loginfo="$loginfo, client_type=$client_type, gatewayname=$gatewayname, ndsversion=$version, originurl=$originurl"
 else
 	clientmac=$2
 fi
@@ -272,34 +245,65 @@ fi
 get_client_zone
 
 # Add client_zone to the log entry
-log_entry="$log_entry, client_zone=$client_zone"
+loginfo="$loginfo, client_zone=$client_zone"
 
 # Append to the log.
-write_log
+logname="$fulllog"
+logtype=""
+date_inhibit=""
 
-#Quotas and session length set elsewhere can be overridden here if action=auth_client, otherwise will be ignored.
-# Set length of session in seconds (eg 24 hours is 86400 seconds - if set to 0 then defaults to global or FAS sessiontimeout value):
+write_log &> /dev/null
+
+# Append to the authenticated clients list
+session_end=$6
+
+if [ "$action" = "auth_client" ] || [ "$action" = "auth" ]; then
+	logname="$authlog"
+	b64mac=$(ndsctl b64encode "$clientmac")
+	b64mac=$(echo "$b64mac" | tr -d "=")
+	loginfo="$b64mac=$session_end"
+	logtype="raw"
+	logfile="$logdir""$logname"
+
+	if [ -f "$logdir""$logname" ]; then
+		sed -i "/\b$b64mac\b/d" "$logfile"
+	fi
+
+	date_inhibit="date_inhibit"
+
+	write_log &> /dev/null
+fi
+
+# Values for quotas and session length can be overridden here if action=auth_client, and passed in the custom string.
+# The custom string must be parsed in custombinauth.sh script for the required values.
+# exitlevel can also be set in the custonbinauth.sh script (0=allow, 1=deny)
 session_length=0
-
-custom=$8
-custom=$(/usr/lib/opennds/unescape.sh -url "$custom")
-custom=$(ndsctl b64decode "$custom")
-session_length=$(echo "$custom" | awk -F"session_length=" '{printf "%d", $2}')
-
-# Set Rate and Quota values for the client
-# The session length, rate and quota values are determined globaly or by FAS/PreAuth on a per client basis.
-# rates are in kb/s, quotas are in kB. Setting to 0 means no limit
 upload_rate=0
 download_rate=0
 upload_quota=0
 download_quota=0
+exitlevel=0
+
+if [ "$action" = "auth_client" ]; then
+	custom=$7
+else
+	custom=$8
+fi
+
+# Include custom binauth script
+custombinauthpath="/usr/lib/opennds/custombinauth.sh"
+
+if [ -e "$custombinauthpath" ]; then
+	. $custombinauthpath
+fi
 
 # Finally before exiting, output the session length, upload rate, download rate, upload quota and download quota (only effective for auth_client).
-
+# The custom binauth script migh change these values
 echo "$session_length $upload_rate $download_rate $upload_quota $download_quota"
 
 # Exit, setting level (only effective for auth_client)
 #
-# exit 0 tells NDS it is ok to allow the client to have access.
+# exit 0 tells NDS it is ok to allow the client to have access (default).
 # exit 1 would tell NDS to deny access.
-exit 0
+# The custom binauth script might change this value
+exit $exitlevel

@@ -24,8 +24,8 @@
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
   @author Copyright (C) 2006 Benoit Grégoire <bock@step.polymtl.ca>
   @author Copyright (C) 2008 Paul Kube <nodogsplash@kokoro.ucsd.edu>
-  @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
   @author Copyright (C) 2021 ndsctl_lock() and ndsctl_unlock() based on code by Linus Lüssing <ll@simonwunderlich.de>
+  @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 
  */
 
@@ -123,9 +123,8 @@ int startdaemon(char *cmd, int daemonpid)
 
 	b64_encode(buff, MID_BUF, cmd, strlen(cmd));
 
-	safe_asprintf(&daemoncmd, "/usr/lib/opennds/libopennds.sh startdaemon '%s'",
-		buff
-	);
+	daemoncmd = safe_calloc(MID_BUF);
+	safe_snprintf(daemoncmd, MID_BUF, "/usr/lib/opennds/libopennds.sh startdaemon '%s'", buff);
 
 	debug(LOG_DEBUG, "startdaemon command: %s", daemoncmd);
 
@@ -168,9 +167,8 @@ int stopdaemon(int daemonpid)
 	int ret;
 
 	msg = safe_calloc(STATUS_BUF);
-	safe_asprintf(&daemoncmd, "/usr/lib/opennds/libopennds.sh stopdaemon '%d'",
-		daemonpid
-	);
+	daemoncmd = safe_calloc(MID_BUF);
+	safe_snprintf(daemoncmd, MID_BUF, "/usr/lib/opennds/libopennds.sh stopdaemon '%d'", daemonpid);
 
 	debug(LOG_DEBUG, "stopdaemon command: %s", daemoncmd);
 
@@ -211,6 +209,14 @@ void write_ndsinfo(void)
 	);
 	execute_ret_url_encoded(msg, SMALL_BUF - 1, cmd);
 
+	if (strcmp(msg, write_yes) != 0) {
+		debug(LOG_ERR, "Unable to write ndsinfo, exiting ...");
+		exit(1);
+	}
+
+	free(msg);
+	free(cmd);
+
 	msg = safe_calloc(SMALL_BUF);
 	safe_asprintf(&cmd,
 		"/usr/lib/opennds/libopennds.sh write ndsinfo '%s' 'gatewaynamehtml=\"%s\"'",
@@ -218,6 +224,14 @@ void write_ndsinfo(void)
 		config->http_encoded_gw_name
 	);
 	execute_ret_url_encoded(msg, SMALL_BUF - 1, cmd);
+
+	if (strcmp(msg, write_yes) != 0) {
+		debug(LOG_ERR, "Unable to write ndsinfo, exiting ...");
+		exit(1);
+	}
+
+	free(msg);
+	free(cmd);
 
 	msg = safe_calloc(SMALL_BUF);
 	safe_asprintf(&cmd,
@@ -227,6 +241,14 @@ void write_ndsinfo(void)
 	);
 	execute_ret_url_encoded(msg, SMALL_BUF - 1, cmd);
 
+	if (strcmp(msg, write_yes) != 0) {
+		debug(LOG_ERR, "Unable to write ndsinfo, exiting ...");
+		exit(1);
+	}
+
+	free(msg);
+	free(cmd);
+
 	msg = safe_calloc(SMALL_BUF);
 	safe_asprintf(&cmd,
 		"/usr/lib/opennds/libopennds.sh write ndsinfo '%s' 'gatewayfqdn=\"%s\"'",
@@ -234,6 +256,14 @@ void write_ndsinfo(void)
 		config->gw_fqdn
 	);
 	execute_ret_url_encoded(msg, SMALL_BUF - 1, cmd);
+
+	if (strcmp(msg, write_yes) != 0) {
+		debug(LOG_ERR, "Unable to write ndsinfo, exiting ...");
+		exit(1);
+	}
+
+	free(msg);
+	free(cmd);
 
 	msg = safe_calloc(SMALL_BUF);
 	safe_asprintf(&cmd,
@@ -312,14 +342,22 @@ int check_routing(int watchdog)
 			}
 		}
 
+		if (config->ext_gateway) {
+			free (config->ext_gateway);
+		}
+
 		config->ext_gateway = safe_strdup(rtest);
 		free (rcmd);
 		free (rtest);
 		debug(LOG_DEBUG, "Online Status [ %d ]", config->online_status);
 		return config->online_status;
 	} else {
-		debug(LOG_ERR, "Unable to get routing configuration, exiting ...");
-		exit(1);
+		debug(LOG_ERR, "Unable to get routing configuration, retrying later ...");
+		config->online_status = 0;
+		free (rcmd);
+		free (rtest);
+
+		return config->online_status;
 	}
 }
 
@@ -374,7 +412,10 @@ int download_remotes(int refresh)
 	int daemonpid = 0;
 	s_config *config = config_get_config();
 
-	if (config->themespec_path == NULL) {
+	// If themespec is not set then we do not need to download remotes
+	// client_params.sh does its own downloads for the 511 status pages
+
+	if (strcmp(config->themespec_path, "") == 0) {
 		return 0;
 	}
 
@@ -416,10 +457,11 @@ int write_client_info(char* msg, int msg_len, const char *mode, const char *cid,
 {
 	char *cmd = NULL;
 	s_config *config = config_get_config();
-
+	cmd = safe_calloc(MID_BUF);
 	debug(LOG_DEBUG, "Client Info: %s", info);
-	safe_asprintf(&cmd, "/usr/lib/opennds/libopennds.sh '%s' '%s' '%s' '%s'", mode, cid, config->tmpfsmountpoint, info);
-		debug(LOG_DEBUG, "WriteClientInfo command: %s", cmd);
+	safe_snprintf(cmd, MID_BUF, "/usr/lib/opennds/libopennds.sh '%s' '%s' '%s' '%s'", mode, cid, config->tmpfsmountpoint, info);
+	debug(LOG_DEBUG, "WriteClientInfo command: %s", cmd);
+
 	if (execute_ret_url_encoded(msg, msg_len - 1, cmd) == 0) {
 		debug(LOG_DEBUG, "Client Info updated: %s", info);
 	} else {
@@ -436,11 +478,69 @@ int write_client_info(char* msg, int msg_len, const char *mode, const char *cid,
 	return 0;
 }
 
+int check_heartbeat()
+{
+	char *cmd;
+	char *msg;
+	int ret;
+
+	cmd = safe_calloc(SMALL_BUF);
+	msg = safe_calloc(STATUS_BUF);
+
+	safe_snprintf(cmd, SMALL_BUF, "/usr/lib/opennds/libopennds.sh check_heartbeat");
+
+	ret = execute_ret_url_encoded(msg, STATUS_BUF - 1, cmd);
+
+	free (cmd);
+	free (msg);
+	return ret;
+}
+
+int get_option_from_config(char* msg, int msg_len, const char *option)
+{
+	char *cmd;
+
+	cmd = safe_calloc(SMALL_BUF);
+	safe_snprintf(cmd, SMALL_BUF, "/usr/lib/opennds/libopennds.sh get_option_from_config '%s'", option);
+
+	if (execute_ret_url_encoded(msg, msg_len - 1, cmd) != 0) {
+		debug(LOG_INFO, "Failed to get option [%s] - retrying", option);
+		sleep(1);
+
+		if (execute_ret_url_encoded(msg, msg_len - 1, cmd) != 0) {
+			debug(LOG_INFO, "Failed to get option [%s] - giving up", option);
+		}
+	}
+
+	free (cmd);
+	return 0;
+}
+
+
+int get_list_from_config(char* msg, int msg_len, const char *list)
+{
+	char *cmd;
+
+	cmd = safe_calloc(MID_BUF);
+	safe_snprintf(cmd, MID_BUF, "/usr/lib/opennds/libopennds.sh get_list_from_config '%s'", list);
+
+	if (execute_ret_url_encoded(msg, msg_len - 1, cmd) != 0) {
+		debug(LOG_INFO, "Failed to get list [%s] - retrying", list);
+		sleep(1);
+
+		if (execute_ret_url_encoded(msg, msg_len - 1, cmd) != 0) {
+			debug(LOG_INFO, "Failed to get list [%s] - giving up", list);
+		}
+	}
+	free (cmd);
+	return 0;
+}
+
 int get_client_interface(char* clientif, int clientif_len, const char *climac)
 {
-	char *clifcmd = NULL;
-
-	safe_asprintf(&clifcmd, "/usr/lib/opennds/get_client_interface.sh %s", climac);
+	char *clifcmd;
+	clifcmd = safe_calloc(SMALL_BUF);
+	safe_snprintf(clifcmd, SMALL_BUF, "/usr/lib/opennds/get_client_interface.sh %s", climac);
 
 	if (execute_ret_url_encoded(clientif, clientif_len - 1, clifcmd) == 0) {
 		debug(LOG_DEBUG, "Client Mac Address: %s", climac);
@@ -463,10 +563,10 @@ int get_client_interface(char* clientif, int clientif_len, const char *climac)
 int hash_str(char* hash, int hash_len, const char *src)
 {
 	char *hashcmd = NULL;
-
 	s_config *config = config_get_config();
 
-	safe_asprintf(&hashcmd, "printf '%s' | %s | awk -F' ' '{printf $1}'", src, config->fas_hid);
+	hashcmd = safe_calloc(SMALL_BUF);
+	safe_snprintf(hashcmd, SMALL_BUF, "printf '%s' | %s | awk -F' ' '{printf $1}'", src, config->fas_hid);
 
 	if (execute_ret_url_encoded(hash, hash_len - 1, hashcmd) == 0) {
 		debug(LOG_DEBUG, "Source string: %s", src);
@@ -500,12 +600,12 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
 
 	fp = popen(cmd, "r");
 	if (fp == NULL) {
-		debug(LOG_ERR, "popen(): [%s] Retrying..", strerror(errno));
+		debug(LOG_INFO, "popen(): [%s] Retrying..", strerror(errno));
 		sleep(1);
 		fp = popen(cmd, "r");
 
 		if (fp == NULL) {
-			debug(LOG_ERR, "popen(): [%s] Giving up..", strerror(errno));
+			debug(LOG_INFO, "popen(): [%s] Giving up..", strerror(errno));
 			rc = -1;
 			goto abort;
 		}
@@ -525,8 +625,8 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
 	rc = pclose(fp);
 
 	if (WIFSIGNALED(rc) != 0) {
-		debug(LOG_NOTICE, "Command process exited due to signal [%d]", WTERMSIG(rc));
-		debug(LOG_NOTICE, "Requested command: [%s]", cmd);
+		debug(LOG_DEBUG, "Command process exited due to signal [%d]", WTERMSIG(rc));
+		debug(LOG_DEBUG, "Requested command: [%s]", cmd);
 		rc = WTERMSIG(rc);
 	} else {
 		rc = WEXITSTATUS(rc);
@@ -591,26 +691,36 @@ int execute_ret_url_encoded(char* msg, int msg_len, const char *cmd)
 char *
 get_iface_ip(const char ifname[], int ip6)
 {
-	char addrbuf[INET6_ADDRSTRLEN] = {0};
-	char cmd[256] = {0};
-	char iptype[8] = {0};
+	char addrbuf[STATUS_BUF] = {0};
+	char *cmd;
+	char *iptype;
+
+	iptype = safe_calloc(STATUS_BUF);
 
 	if (ip6) {
-		snprintf(iptype, sizeof(iptype), "inet6");
+		snprintf(iptype, STATUS_BUF, "inet6");
 	} else {
-		snprintf(iptype, sizeof(iptype), "inet");
+		snprintf(iptype, STATUS_BUF, "inet");
  	}
 
-	snprintf(cmd, sizeof(cmd), "/usr/lib/opennds/libopennds.sh gatewayip \"%s\" \"%s\"",
+	cmd = safe_calloc(STATUS_BUF);
+
+	snprintf(cmd, STATUS_BUF, "/usr/lib/opennds/libopennds.sh gatewayip \"%s\" \"%s\"",
 		ifname,
 		iptype
 	);
 
+	free(iptype);
+
 	debug(LOG_NOTICE, "Attempting to Bind to interface: %s", ifname);
 
-	if (execute_ret(addrbuf, sizeof(addrbuf), cmd) == 0) {
+	memset(addrbuf, 0, STATUS_BUF);
+
+	if (execute_ret(addrbuf, STATUS_BUF, cmd) == 0) {
+		free(cmd);
 		return safe_strdup(addrbuf);
 	} else {
+		free(cmd);
 		return "error";
 	}
 }
@@ -618,23 +728,30 @@ get_iface_ip(const char ifname[], int ip6)
 char *
 get_iface_mac(const char ifname[])
 {
-	char addrbuf[20] = {0};
-	char cmd[128] = {0};
+	char addrbuf[STATUS_BUF] = {0};
+	char *cmd;
 	s_config *config;
 
 	config = config_get_config();
+
+	debug(LOG_DEBUG, "Attempting to get mac of interface: %s", ifname);
 
 	if (config->gw_mac == NULL) {
 		config->gw_mac = safe_strdup("00:00:00:00:00:00");
 	}
 
-	snprintf(cmd, sizeof(cmd), "/usr/lib/opennds/libopennds.sh \"gatewaymac\" \"%s\" \"%s\"",
+	cmd = safe_calloc(STATUS_BUF);
+
+	snprintf(cmd, STATUS_BUF, "/usr/lib/opennds/libopennds.sh \"gatewaymac\" \"%s\" \"%s\"",
 		ifname,
 		config->gw_mac
 	);
 
 
-	execute_ret(addrbuf, sizeof(addrbuf), cmd);
+	memset(addrbuf, 0, STATUS_BUF);
+
+	execute_ret(addrbuf, STATUS_BUF, cmd);
+	free(cmd);
 	return safe_strdup(addrbuf);
 }
 
@@ -745,9 +862,8 @@ ndsctl_status(FILE *fp)
 	unsigned long long int download_bytes, upload_bytes;
 	t_MAC *trust_mac;
 	time_t sysuptime;
-	t_WGP *allowed_wgport;
-	t_WGFQDN *allowed_wgfqdn;
 	const char *mhdversion = MHD_get_version();
+	char *msg;
 
 	config = config_get_config();
 
@@ -813,9 +929,9 @@ ndsctl_status(FILE *fp)
 	}
 
 	if (config->preauth) {
-		fprintf(fp, "Preauth Script: %s\n", config->preauth);
+		fprintf(fp, "ThemeSpec Core Library: %s\n", config->preauth);
 	} else {
-		fprintf(fp, "Preauth: Disabled\n");
+		fprintf(fp, "ThemeSpec: Disabled\n");
 	}
 
 	if (config->fas_port) {
@@ -982,39 +1098,88 @@ ndsctl_status(FILE *fp)
 	UNLOCK_CLIENT_LIST();
 
 	fprintf(fp, "====\n");
-
-	fprintf(fp, "Trusted MAC addresses:");
+	fprintf(fp, "Trusted MAC addresses:\n");
 
 	if (config->trustedmaclist != NULL) {
-		fprintf(fp, "\n");
+
 		for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
-			fprintf(fp, "  %s\n", trust_mac->mac);
+			fprintf(fp, "%s\n", trust_mac->mac);
 		}
 	} else {
-		fprintf(fp, " none\n");
+		fprintf(fp, "none\n");
 	}
 
-	fprintf(fp, "Walled Garden FQDNs:");
+	fprintf(fp, "====\n");
+	fprintf(fp, "Walledgarden FQDNs:\n");
 
-	if (config->walledgarden_fqdn_list != NULL) {
-		fprintf(fp, "\n");
-		for (allowed_wgfqdn = config->walledgarden_fqdn_list; allowed_wgfqdn != NULL; allowed_wgfqdn = allowed_wgfqdn->next) {
-			fprintf(fp, "  %s\n", allowed_wgfqdn->wgfqdn);
+	msg = safe_calloc(SMALL_BUF);
+
+	if (execute_ret_url_encoded(msg, STATUS_BUF - 1, "/usr/lib/opennds/libopennds.sh get_list_from_config walledgarden_fqdn_list newlines") == 0) {
+
+		if (strcmp(msg, "") == 0) {
+			fprintf(fp, "none");
+
+		} else {
+			debug(LOG_INFO, "Walledgarden fqdn(s) [ %s ]", msg);
+			fprintf(fp, "%s", msg);
 		}
-	} else {
-		fprintf(fp, " none\n");
 	}
+	free(msg);
 
-	fprintf(fp, "Walled Garden Ports:");
+	fprintf(fp, "\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "Walledgarden Ports:\n");
 
-	if (config->walledgarden_port_list != NULL) {
-		fprintf(fp, "\n");
-		for (allowed_wgport = config->walledgarden_port_list; allowed_wgport != NULL; allowed_wgport = allowed_wgport->next) {
-			fprintf(fp, "  %u\n", allowed_wgport->wgport);
+	msg = safe_calloc(SMALL_BUF);
+
+	if (execute_ret_url_encoded(msg, STATUS_BUF - 1, "/usr/lib/opennds/libopennds.sh get_list_from_config walledgarden_port_list newlines") == 0) {
+
+		if (strcmp(msg, "") == 0) {
+			fprintf(fp, "all");
+
+		} else {
+			debug(LOG_INFO, "Walledgarden port(s) [ %s ]", msg);
+			fprintf(fp, "%s", msg);
 		}
-	} else {
-		fprintf(fp, " none\n");
 	}
+	fprintf(fp, "\n");
+	free(msg);
+
+	fprintf(fp, "====\n");
+	fprintf(fp, "Blocklist FQDNs:\n");
+
+	msg = safe_calloc(SMALL_BUF);
+
+	if (execute_ret_url_encoded(msg, STATUS_BUF - 1, "/usr/lib/opennds/libopennds.sh get_list_from_config blocklist_fqdn_list newlines") == 0) {
+
+		if (strcmp(msg, "") == 0) {
+			fprintf(fp, "none");
+
+		} else {
+			debug(LOG_INFO, "Blocklist fqdn(s) [ %s ]", msg);
+			fprintf(fp, "%s", msg);
+		}
+	}
+	free(msg);
+
+	fprintf(fp, "\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "Blocklist Ports:\n");
+
+	msg = safe_calloc(SMALL_BUF);
+
+	if (execute_ret_url_encoded(msg, STATUS_BUF - 1, "/usr/lib/opennds/libopennds.sh get_list_from_config blocklist_port_list newlines") == 0) {
+
+		if (strcmp(msg, "") == 0) {
+			fprintf(fp, "all\n");
+
+		} else {
+			debug(LOG_INFO, "Blocklist port(s) [ %s ]", msg);
+			fprintf(fp, "%s\n", msg);
+		}
+	}
+
+	free(msg);
 
 	fprintf(fp, "========\n");
 }
@@ -1024,11 +1189,13 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now, char *indent)
 {
 	unsigned long int durationsecs;
 	unsigned long long int download_bytes, upload_bytes;
-	char clientif[64] = {0};
+	char *clientif;
 	s_config *config;
 
 	config = config_get_config();
-	get_client_interface(clientif, sizeof(clientif), client->mac);
+
+	clientif = safe_calloc(STATUS_BUF);
+	get_client_interface(clientif, STATUS_BUF, client->mac);
 
 	fprintf(fp, "  %s\"gatewayname\":\"%s\",\n", indent, config->url_encoded_gw_name);
 	fprintf(fp, "  %s\"gatewayaddress\":\"%s\",\n", indent, config->gw_address);
@@ -1045,6 +1212,8 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now, char *indent)
 	fprintf(fp, "  %s\"ip\":\"%s\",\n", indent, client->ip);
 	fprintf(fp, "  %s\"clientif\":\"%s\",\n", indent, clientif);
 	fprintf(fp, "  %s\"session_start\":\"%lld\",\n", indent, (long long) client->session_start);
+
+	free(clientif);
 
 	if (client->session_end == 0) {
 		fprintf(fp, "  %s\"session_end\":\"null\",\n", indent);
@@ -1232,10 +1401,12 @@ void
 ndsctl_json(FILE *fp, const char *arg)
 {
 	char indent[5] = {0};
-	//if (arg && strlen(arg)) {
+
+	memset(indent, 0, 5);
+
 	debug(LOG_DEBUG, "arg [%s %d]", arg, strlen(arg));
+
 	if (strlen(arg) > 6) {
-		//snprintf(indent, sizeof(indent), "%s", "");
 		ndsctl_json_one(fp, arg, indent);
 	} else {
 		snprintf(indent, sizeof(indent), "%s", "    ");

@@ -1,5 +1,5 @@
 #!/bin/sh
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2025
 #This software is released under the GNU GPL license.
 #
 # WARNING - shebang "sh" is for compatiblity with busybox ash (eg on OpenWrt)
@@ -46,7 +46,7 @@ write_to_syslog() {
 		esac
 
 		if [ "$debuglevel" -ge "$debugnum" ]; then
-			echo "libopennds - [$syslogmessage]" | logger -p "daemon.$debugtype" -s -t "opennds[$ndspid]"
+			echo -n "libopennds - [$syslogmessage]" | logger -p "daemon.$debugtype" -t "opennds[$ndspid]"
 		fi
 	fi
 }
@@ -79,9 +79,9 @@ webget() {
 	fetch=$(type -t uclient-fetch)
 
 	if [ -z "$fetch" ]; then
-		wret="wget $spider $checkcert -t 1 -T 4"
+		wret="wget -q $spider $checkcert -t 1 -T 4"
 	else
-		wret="uclient-fetch $spider $checkcert -T 4"
+		wret="uclient-fetch -q $spider $checkcert -T 4"
 	fi
 }
 
@@ -100,6 +100,9 @@ get_image_file() {
 		imageurl=$(echo "$setcontents" | grep "$imagename=" | awk -F"$imagename=" '{print $2}' | awk -F", " 'NR==1{print $1}')
 
 	fi
+
+	# remove any trailing space character
+	imageurl=$(echo "$imageurl" | sed 's/[[:space:]]*$//')
 
 	syslogmessage="Download request for [$imageurl]"
 	debugtype="info"
@@ -129,13 +132,17 @@ get_image_file() {
 			# get protocol
 			protocol=$(echo "$imageurl" | awk -F'://' '{printf("%s", $1)}')
 
+			syslogmessage="protocol [$protocol]"
+			debugtype="debug"
+			write_to_syslog
+
 			if [ "$protocol" = "http" ]; then
 				#Try to download using http
 				spider="--spider"
 				checkcert=""
 				webget
 
-				retrieve=$($wret -q -O "$mountpoint/ndsremote/$filename" "$imageurl")
+				retrieve=$($wret -v -O "$mountpoint/ndsremote/$filename" "$imageurl")
 				retcode="$?"
 
 				if [ "$retcode" = 0 ];then
@@ -159,6 +166,7 @@ get_image_file() {
 					checkcert=""
 					webget
 					retrieve=$($wret -q -O "$mountpoint/ndsremote/$filename" "$imageurl")
+
 				else
 					spider="--spider"
 					checkcert="--no-check-certificate "
@@ -181,7 +189,7 @@ get_image_file() {
 				destinationfile="$mountpoint/ndsremote/$filename"
 				cp "$sourcefile" "$destinationfile"
 			else
-				unsupported="Unsupported protocol [$protocol] for [$filename]in url [$imageurl] - skipping download"
+				unsupported="Unsupported protocol [$protocol] or invalid URL for [$filename]in url [$imageurl] - skipping download"
 				echo "$unsupported" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
 			fi
 		fi
@@ -208,6 +216,9 @@ get_data_file() {
 		dataurl=$(echo "$setcontents" | grep "$dataname=" | awk -F"$dataname=" '{print $2}' | awk -F", " 'NR==1{print $1}')
 	fi
 
+	# remove any trailing space character
+	dataurl=$(echo "$dataurl" | sed 's/[[:space:]]*$//')
+
 	setcontents=""
 
 	if [ ! -d "$mountpoint/ndsdata" ]; then
@@ -224,6 +235,10 @@ get_data_file() {
 		if [ ! -f "$mountpoint/ndsdata/$filename" ] || [ "$refresh" -eq 1 ]; then
 			# get protocol
 			protocol=$(echo "$dataurl" | awk -F'://' '{printf("%s", $1)}')
+
+			syslogmessage="protocol [$protocol]"
+			debugtype="debug"
+			write_to_syslog
 
 			if [ "$protocol" = "http" ]; then
 				#Try to download using http
@@ -277,7 +292,7 @@ get_data_file() {
 				destinationfile="$mountpoint/ndsdata/$filename"
 				cp "$sourcefile" "$destinationfile"
 			else
-				unsupported="Unsupported protocol [$protocol] for [$filename]in url [$imageurl] - skipping download"
+				unsupported="Unsupported protocol [$protocol] or invalid URL for [$filename]in url [$dataurl] - skipping download"
 				echo "$unsupported" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
 			fi
 		fi
@@ -287,7 +302,7 @@ get_data_file() {
 
 # Function to send commands to openNDS:
 do_ndsctl () {
-	local timeout=4
+	local timeout=16
 
 	for tic in $(seq $timeout); do
 		ndsstatus="ready"
@@ -295,23 +310,23 @@ do_ndsctl () {
 
 		for keyword in $ndsctlout; do
 
-			if [ $keyword = "locked" ]; then
+			if [ "$keyword" = "locked" ] || [ "$keyword" = "busy," ]; then
 				ndsstatus="busy"
-				sleep 1
+				sleep 5
 				break
 			fi
 
-			if [ $keyword = "Failed" ]; then
+			if [ "$keyword" = "Failed" ]; then
 				ndsstatus="failed"
 				break
 			fi
 
-			if [ $keyword = "authenticated." ]; then
+			if [ "$keyword" = "authenticated." ]; then
 				ndsstatus="authenticated"
 				break
 			fi
 
-			if [ $keyword = "deauthenticated." ]; then
+			if [ "$keyword" = "deauthenticated." ]; then
 				ndsstatus="deauthenticated"
 				break
 			fi
@@ -402,7 +417,6 @@ get_theme_environment() {
 	fi
 
 	if [ ! -f "$themespecpath" ]; then
-		imagepath="/images/splash.jpg"
 		type header &>/dev/null && header || default_header
 		echo "<b>Bad or Missing ThemeSpec for mode #:[$mode]</b>"
 		type footer &>/dev/null && footer || default_footer
@@ -532,7 +546,10 @@ configure_log_location() {
 	# set default values
 	mountpoint="/tmp"
 	logdir="/tmp/ndslog/"
-	logname="ndslog.log"
+
+	if [ -z "$logname" ]; then
+		logname="ndslog.log"
+	fi
 
 	for var in $tempdir; do
 		_mountpoint=$(df | awk -F ' ' '$1=="tmpfs" && $6=="'$var'" {print $6}')
@@ -544,18 +561,18 @@ configure_log_location() {
 	done
 
 	# Check if config overrides mountpoint for logdir
-	log_mountpoint=""
 	option="log_mountpoint"
+
 	get_option_from_config
 
-	if [ ! -z "$log_mountpoint" ]; then
-		logdir="$log_mountpoint/ndslog/"
-	else
+	if [ -z "$log_mountpoint" ]; then
 		log_mountpoint="$mountpoint"
 	fi
 
+	logdir="$log_mountpoint/ndslog/"
+
 	# Get PID For syslog
-	ndspid=$(pgrep '/usr/bin/opennds')
+	ndspid=$(pgrep -f '/usr/bin/opennds')
 }
 
 check_authenticated() {
@@ -623,11 +640,13 @@ urldecode() {
 htmlentityencode() {
 	entitylist="
 		s/\"/\&quot;/g
+		s/;/\&#59;/g
 		s/>/\&gt;/g
 		s/</\&lt;/g
 		s/%/\&#37;/g
 		s/'/\&#39;/g
 		s/\`/\&#96;/g
+		s/?/\&#63;/g
 	"
 	local buffer="$1"
 
@@ -636,17 +655,23 @@ htmlentityencode() {
 		buffer=$entityencoded
 	done
 
-	entityencoded=$(echo "$buffer" | awk '{ gsub(/\$/, "\\&#36;"); print }')
+	buffer=$(echo "$buffer" | awk '{ gsub(/\$/, "\\&#36;"); print }')
+	buffer=$(echo "$buffer" | awk '{ gsub(/\//, "\\&#47;"); print }')
+	buffer=$(echo "$buffer" | awk '{ gsub(/\\/, "\\&#92;"); print }')
+	entityencoded="$buffer"
 }
 
 
 htmlentitydecode() {
 	entitylist="
 		s/\&quot;/\"/g
+		s/\&#59;/;/g
 		s/\&gt;/>/g
 		s/\&lt;/</g
 		s/\&#37;/%/g
 		s/\&#39;/'/g
+		s/\&#96;/\`/g
+		s/\&#63;/?/g
 	"
 	local buffer="$1"
 
@@ -655,8 +680,10 @@ htmlentitydecode() {
 		buffer=$entitydecoded
 	done
 
-	buffer=$(echo "$buffer" | awk '{ gsub(/&#96;/, "\\`"); print }')
-	entitydecoded=$(echo "$buffer" | awk '{ gsub(/&#36;/, "\\$"); print }')
+	buffer=$(echo "$buffer" | awk '{ gsub(/&#36;/, "\\$"); print }')
+	buffer=$(echo "$buffer" | awk '{ gsub(/&#47;/, "\/"); print }')
+	buffer=$(echo "$buffer" | awk '{ gsub(/&#92;/, "\\`"); print }')
+	entitydecoded="$buffer"
 }
 
 get_client_zone () {
@@ -676,7 +703,7 @@ get_client_zone () {
 			local_mesh_if=$(echo "$client_if_string" | awk '{printf $3}')
 
 			if [ ! -z "$client_meshnode" ]; then
-				client_zone="MeshZone: $client_meshnode LocalInterface:$local_mesh_if"
+				client_zone="MeshZone: $client_meshnode Local-Interface: $local_mesh_if"
 			else
 				client_zone="LocalZone: $client_if"
 			fi
@@ -698,12 +725,15 @@ auth_log () {
 	authstat=$ndsctlout
 	# $authstat contains the response from do_ndsctl
 
-	loginfo="$userinfo, status=$authstat, mac=$clientmac, ip=$clientip, client_type=$client_type, zone=$client_zone, ua=$user_agent"
+	loginfo="$userinfo, status=$authstat, mac=$clientmac, ip=$clientip, client_type=$client_type, cpi_query=$cpi_query, zone=$client_zone, ua=$user_agent"
 	write_log
 	# We will not remove the client id file, rather we will let openNDS delete it on deauth/timeout
 }
 
 write_log () {
+
+	configure_log_location
+
 	mountcheck=$(df | grep -w  "$log_mountpoint")
 
 	if [ ! -z "$logname" ]; then
@@ -714,11 +744,18 @@ write_log () {
 
 
 		logfile="$logdir""$logname"
-		awkcmd="awk ""'\$6==""\"$log_mountpoint\"""{print \$4}'"
-		datetime=$(date)
 
-		if [ ! -f "$logfile" ]; then
-			echo "$datetime, New log file created" > $logfile
+		awkcmd="awk ""'\$6==""\"$log_mountpoint\"""{print \$4}'"
+
+		if [ -z "$date_inhibit" ];then
+			datetime=$(date)
+			datetime="$datetime, "
+
+			if [ ! -f "$logfile" ]; then
+				echo "$datetime""New log file created" > $logfile
+			fi
+		else
+			touch $logfile
 		fi
 
 		if [ ! -z "$mountcheck" ]; then
@@ -751,13 +788,13 @@ write_log () {
 				sizeratio=$(($available/$filesize))
 
 				if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-					echo "$datetime, $loginfo" >> $logfile
+					echo "$datetime""$loginfo" >> $logfile
 				else
 					echo "Log file too big, please archive contents and reduce max_log_entries" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
 				fi
 			else
 				if [ "$available" > 10 ];then
-					echo "$datetime, $loginfo" >> $logfile
+					echo "$datetime""$loginfo" >> $logfile
 				else
 					echo "Log file too big, please archive contents and reduce max_log_entries" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
 				fi
@@ -766,6 +803,7 @@ write_log () {
 			echo "Log location is NOT a mountpoint - logs would fill storage space - logging disabled" | logger -p "daemon.err" -s -t "opennds[$ndspid]: "
 		fi
 	fi
+
 }
 
 default_header() {
@@ -839,66 +877,97 @@ serve_error_message () {
 
 # Configure custom input fields
 config_input_fields () {
-	if [ ! -z "$input" ]; then
-		if [ "$1" = "input" ]; then
-			#custom variable for form input is configured
-			inputremainder=$input
 
-			# Parse for each input field. Format is name:description:type, fields separated by ";" character
-			while true; do
-				inputtail="${inputremainder##*';'}"
-				inputremainder="${inputremainder%';'*}"
+	customvarlist=$(/usr/lib/opennds/libopennds.sh get_list_from_config 'fas_custom_variables_list')
+	input=""
 
-				fieldremainder=$inputtail
+	if [ ! -z "$customvarlist" ]; then
+		#Scan list for input fields
+		for customvar in $customvarlist; do
+			fieldlist=$(echo "$customvar" | awk -F "input=" '{printf "%s", $2}')
 
-				#inputlist must list in the reverse order to that defined in the custom var (input=....)
-				inputlist="type description name"
+			if [ ! -z "$fieldlist" ]; then
 
-				# For each field, get the values of name:description:type
-				for var in $inputlist; do
-					fieldtail="${fieldremainder##*':'}"
-					fieldremainder="${fieldremainder%':'*}"
-					htmlentityencode "$fieldtail"
-					fieldtail=$entityencoded
+				if [ -z "$input" ]; then
+					input="$fieldlist"
+					continue
+				else
+					input="$input;$fieldlist"
+					continue
+				fi
+			else
+				eval "$customvar"
+				continue
+			fi
 
-					eval $var=$(echo "\"$fieldtail\"")
 
-					if [ "$fieldtail" = "$fieldremainder" ]; then
+		done
+
+
+		urldecode "$input"
+		input="$urldecoded"
+
+		if [ ! -z "$input" ]; then
+			if [ "$1" = "input" ]; then
+				#custom variable for form input is configured
+				inputremainder=$input
+
+				# Parse for each input field. Format is name:description:type, fields separated by ";" character
+				while true; do
+					inputtail="${inputremainder##*';'}"
+					inputremainder="${inputremainder%';'*}"
+
+					fieldremainder=$inputtail
+
+					#inputlist must list in the reverse order to that defined in the custom var (input=....)
+					inputlist="type description name"
+
+					# For each field, get the values of name:description:type
+					for var in $inputlist; do
+						fieldtail="${fieldremainder##*':'}"
+						fieldremainder="${fieldremainder%':'*}"
+						htmlentityencode "$fieldtail"
+						fieldtail=$entityencoded
+
+						eval $var=$(echo "\"$fieldtail\"")
+
+						if [ "$fieldtail" = "$fieldremainder" ]; then
+							break
+						fi
+					done
+
+					# Make a list of field names
+					inputnames="$inputnames $name"
+
+
+					val=$(echo "$fasvars" | awk -F"$name=" '{print $2}' | awk -F', ' '{print $1}')
+
+					eval $name=$(echo "\"$val\"")
+
+					custom_inputs="
+						$custom_inputs
+						<input type=\"$type\" name=\"$name\" value=\"$val\" required autocomplete=\"on\" ><br><b>$description</b><br><br>
+					"
+
+					if [ "$inputtail" = "$inputremainder" ]; then
 						break
 					fi
 				done
 
-				# Make a list of field names
-				inputnames="$inputnames $name"
+			elif [ "$1" = "hidden" ]; then
 
+				for var in $inputnames; do
+					val=$(echo "$fasvars" | awk -F"$var=" '{print $2}' | awk -F', ' '{print $1}')
 
-				val=$(echo "$fasvars" | awk -F"$name=" '{print $2}' | awk -F', ' '{print $1}')
+					eval $var=$(echo "\"$val\"")
 
-				eval $name=$(echo "\"$val\"")
-
-				custom_inputs="
-					$custom_inputs
-					<input type=\"$type\" name=\"$name\" value=\"$val\" required autocomplete=\"on\" ><br><b>$description</b><br><br>
-				"
-
-				if [ "$inputtail" = "$inputremainder" ]; then
-					break
-				fi
-			done
-
-		elif [ "$1" = "hidden" ]; then
-
-			for var in $inputnames; do
-				val=$(echo "$fasvars" | awk -F"$var=" '{print $2}' | awk -F', ' '{print $1}')
-
-				eval $var=$(echo "\"$val\"")
-
-				userinfo="$userinfo, $var=$val"
-				custom_passthrough="
-					$custom_passthrough
-					<input type=\"hidden\" name=\"$var\" value=\"$val\" >
-				"
-			done
+					userinfo="$userinfo, $var=$val"
+					custom_passthrough="
+						$custom_passthrough
+						<input type=\"hidden\" name=\"$var\" value=\"$val\" >
+					"
+				done
+			fi
 		fi
 	fi
 }
@@ -959,7 +1028,7 @@ check_mhd() {
 }
 
 nft_get_status() {
-	nfttest=$(nft -a list chain ip filter ndsNET 2> /dev/null)
+	nfttest=$(nft -a list chain ip nds_filter ndsNET 2> /dev/null)
 
 	if [ ! -z "$nfttest" ]; then
 		nftstatus="1"
@@ -983,27 +1052,68 @@ mhd_get_status() {
 	fi
 }
 
+
 get_option_from_config() {
-	param=""
 
-	if [ -e "/etc/config/opennds" ]; then
-		param=$(uci -q get opennds.@opennds[0].$option | awk '{printf("%s", $0)}')
+	type uci &> /dev/null
+	uci_status=$?
 
-	elif [ -e "/etc/opennds/opennds.conf" ]; then
-		param=$(cat "/etc/opennds/opennds.conf" | awk -F"$option " '{printf("%s", $2)}')
+	if [ $uci_status -eq 0 ]; then
+		param=$(uci export opennds | grep -w "option" | grep -w "$option" | awk -F"'" 'NF > 1 {printf "%s ", $2}')
+	else
+		param=$(cat /etc/config/opennds | grep -w "option" | grep -w "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 	fi
 
+	# remove trailing space character
+	param=$(echo "$param" | sed 's/[[:space:]]*$//')
+
+	# urlencode
 	urlencode "$param"
 	param=$urlencoded
 	eval $option="$param" &>/dev/null
 }
+
+
+get_list_from_config() {
+
+	type uci &> /dev/null
+	uci_status=$?
+
+	# get list with urlencoded spaces
+
+	if [ $uci_status -eq 0 ]; then
+		param=$(uci export opennds | grep -w "list" | grep -w "$list" | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
+	else
+		param=$(cat /etc/config/opennds | grep -w "list" | grep -w "$list" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
+	fi
+
+	# urlencode the entire list set
+	urlencode "$param"
+	param="$urlencoded"
+
+	# Restore spaces or newlines between list blocks
+
+	if [ -z "$newline" ]; then
+		param=$(echo "$param" | sed "s/*/\ /g")
+		# remove trailing space character
+		param=$(echo "$param" | sed 's/[[:space:]]*$//')
+	else
+		# urldecode
+		urldecode "$param"
+		param="$urldecoded"
+		param=$(echo "$param" | tr "*" "\n")
+	fi
+
+	eval $list="$param" &>/dev/null
+}
+
 
 get_key_from_config() {
 	option="faskey"
 	get_option_from_config
 
 	if [ -z "$faskey" ]; then
-		faskey="1234567890"
+		faskey=""
 	fi
 
 	key=$faskey
@@ -1050,13 +1160,23 @@ check_gw_ip() {
 }
 
 dhcp_check() {
-	dhcpdblocations="/tmp/dhcp.leases /var/lib/misc/dnsmasq.leases /var/db/dnsmasq.leases"
+	option="dhcp_leases_file"
+	get_option_from_config
+
+	if [ -z "$dhcp_leases_file" ] ; then
+		dhcpdblocations="/tmp/dhcp.leases /var/lib/misc/dnsmasq.leases /var/db/dnsmasq.leases"
+	else
+		dhcpdblocations="$dhcp_leases_file"
+	fi
+
 	dhcprecord=""
+	dbfile="no"
 
 	for dhcpdb in $dhcpdblocations; do
 
 		if [ -e "$dhcpdb" ]; then
 			dhcprecord=$(grep -w "$iptocheck" "$dhcpdb" | tail -1 | awk '{printf "%s", $2}')
+			dbfile="yes"
 			break
 		else
 			dbfile="no"
@@ -1088,23 +1208,6 @@ wait_for_interface () {
 			ifstatus="down"
 		fi
 	done
-}
-
-send_post_data () {
-	option="fas_secure_enabled"
-	get_option_from_config
-
-	if [ "$fas_secure_enabled" -eq 3 ]; then
-		configure_log_location
-		. $mountpoint/ndscids/ndsinfo
-		. $mountpoint/ndscids/authmonargs
-		postrequest="/usr/lib/opennds/post-request.php"
-
-		# Construct our user agent string:
-		user_agent="openNDS(libopennds;NDS:$version;)"
-		returned_data=$($phpcli -f "$postrequest" "$url" "$action" "$gatewayhash" "$user_agent" "$payload")
-
-	fi
 }
 
 users_to_router () {
@@ -1148,33 +1251,15 @@ users_to_router () {
 }
 
 delete_chains () {
-	# If upgrading from 9.9.1 or earlier we need to clear our rules from INPUT and FORWARD chains
+	# If upgrading from 9.9.1 or earlier we need to clear our rules from legacy chains
 	table="filter"; src_chain="FORWARD"; dst_chain="ndsNET"
 	delete_rule
 
 	table="filter"; src_chain="INPUT"; dst_chain="ndsRTR"
 	delete_rule
 
-	# now we can delete the chains:
-	# in the filter table
-	nft delete chain ip filter nds_allow_INP 2> /dev/null
-	nft delete chain ip filter nds_allow_FWD 2> /dev/null
-	nft delete chain ip filter ndsNET 2> /dev/null
-	nft delete chain ip filter ndsRTR 2> /dev/null
-	nft delete chain ip filter ndsAUT 2> /dev/null
-	nft delete chain ip filter ndsULR 2> /dev/null
-	nft delete chain ip filter ndsTRU 2> /dev/null
-	nft delete chain ip filter ndsTRT 2> /dev/null
-
-	# in the nat table
-	# We should not delete the nat/PREROUTING chain in case someone else is using it, so flush only our rules
 	table="nat"; src_chain="PREROUTING"; dst_chain="ndsOUT"
 	delete_rule
-
-	nft delete chain ip nat "$dst_chain" 2> /dev/null
-
-	# in the mangle table
-	# We should not delete the mangle/PREROUTING and mangle/POSTROUTING chains in case someone else is using them, so flush only our rules
 
 	table="mangle"; src_chain="PREROUTING"; dst_chains="ndsTRU ndsBLK ndsALW ndsOUT"
 
@@ -1185,11 +1270,10 @@ delete_chains () {
 	table="mangle"; src_chain="POSTROUTING"; dst_chain="ndsINC"
 	delete_rule
 
-	nft delete chain ip mangle ndsTRU 2> /dev/null 
-	nft delete chain ip mangle ndsBLK 2> /dev/null
-	nft delete chain ip mangle ndsALW 2> /dev/null
-	nft delete chain ip mangle ndsOUT 2> /dev/null
-	nft delete chain ip mangle ndsINC 2> /dev/null
+	# now we can delete our chains - the quickest way is to delete our tables:
+	nft delete table ip nds_filter 2> /dev/null
+	nft delete table ip nds_mangle 2> /dev/null
+	nft delete table ip nds_nat 2> /dev/null
 }
 
 delete_rule () {
@@ -1229,7 +1313,11 @@ pre_setup () {
 		gatewayinterface="br-lan"
 	fi
 
-	ndstables="filter mangle nat"
+	# Delete any legacy iptables chains left from previous versions and any of our tables left in limbo
+	delete_chains
+
+	# Create our tables:
+	ndstables="nds_filter nds_mangle nds_nat"
 
 	for ndstable in $ndstables; do
 		nft list table ip "$ndstable" &>/dev/null
@@ -1246,35 +1334,830 @@ pre_setup () {
 		fi
 	done
 
-	# Tables should now exist, flush and initialise chains:
+	# add required chains
+	nft add chain ip nds_filter ndsINP "{ type filter hook input priority -100 ; }" 2> /dev/null
+	nft add chain ip nds_filter ndsFWD "{ type filter hook forward priority -100 ; }" 2> /dev/null
+	nft add chain ip nds_nat ndsPRE "{ type nat hook prerouting priority -100 ; }"
+	nft add chain ip nds_mangle ndsPRE "{ type filter hook prerouting priority -100 ; }"
+	nft add chain ip nds_mangle ndsPOST "{ type filter hook forward priority -100 ; }"
+	nft add chain ip nds_mangle ndsINC
+	nft add chain ip nds_mangle nds_ft_INC
+	nft add chain ip nds_filter nds_ft_OUT
+	nft add chain ip nds_filter nds_allow_INP "{ type filter hook input priority 100 ; }"
+	nft add chain ip nds_filter nds_allow_FWD "{ type filter hook forward priority 100 ; }"
 
-	delete_chains
-
-	# Test INPUT and FORWARD chain priority
-	input_priority=$(nft -a list table ip filter 2> /dev/null | grep -w -A1 "chain INPUT" | grep -w "priority -100")
-
-	if [ -z "$input_priority" ]; then
-		nft rename chain ip filter INPUT INPUT_LEGACY 2> /dev/null
-		nft add chain ip filter INPUT "{ type filter hook input priority -100 ; }" 2> /dev/null
-	fi
-
-	forward_priority=$(nft -a list table ip filter 2> /dev/null | grep -w -A1 "chain FORWARD" | grep -w "priority -100")
-
-	if [ -z "$forward_priority" ]; then
-		nft rename chain ip filter FORWARD FORWARD_LEGACY 2> /dev/null
-		nft add chain ip filter FORWARD "{ type filter hook forward priority -100 ; }" 2> /dev/null
-	fi
-
-	nft add chain ip filter nds_allow_INP "{ type filter hook input priority 100 ; }"
-	nft add chain ip filter nds_allow_FWD "{ type filter hook forward priority 100 ; }"
-
-	nft insert rule ip filter nds_allow_INP iifname "\"$gatewayinterface\"" counter accept comment "\"!opennds: allow input\""
-	nft insert rule ip filter nds_allow_FWD iifname "\"$gatewayinterface\"" counter accept comment "\"!opennds: allow forward\""
+	# add initial rules
+	nft insert rule ip nds_filter nds_allow_INP iifname "\"$gatewayinterface\"" counter accept comment "\"!opennds: allow input\""
+	nft insert rule ip nds_filter nds_allow_FWD iifname "\"$gatewayinterface\"" counter accept comment "\"!opennds: allow forward\""
+	nft insert rule ip nds_mangle ndsINC oifname "\"$gatewayinterface\"" counter jump nds_ft_INC
 
 	ret=$?
 
 }
 
+ipt_to_nft () {
+	nftstr=$($cmd $cmdstr)
+	retval=$($nftstr)
+	ret=$?
+	nds_date=$(date)
+	configure_log_location
+	echo "$nds_date: $cmdstr | $nftstr [ $ret ]" >> "$mountpoint/translate"
+}
+
+delete_client_rule () {
+
+	if [ "$nds_verdict" = "all" ]; then
+		local handles=$(nft -a list chain ip "$nds_table" "$nds_chain" | grep -w "$client_ip" | awk -F"handle " '{printf "%s ", $2}')
+	else
+		local handles=$(nft -a list chain ip "$nds_table" "$nds_chain" | grep -w "$client_ip" | grep -w "$nds_verdict" | awk -F"handle " '{printf "%s ", $2}')
+	fi
+
+	for rulehandle in $handles; do
+		nft delete rule ip $nds_table "$nds_chain" handle "$rulehandle" 2> /dev/null
+	done
+}
+
+replace_client_rule () {
+
+	if [ "$nds_verdict" = "all" ]; then
+		local handles=$(nft -a list chain ip "$nds_table" "$nds_chain" | grep -w "$client_ip" | awk -F"handle " '{printf "%s ", $2}')
+	else
+		local handles=$(nft -a list chain ip "$nds_table" "$nds_chain" | grep -w "$client_ip" | grep -w "$nds_verdict" | awk -F"handle " '{printf "%s ", $2}')
+	fi
+
+	for rulehandle in $handles; do
+		nft replace rule ip $nds_table "$nds_chain" handle "$rulehandle" "$new_rule" 2> /dev/null
+	done
+}
+
+nft_set () {
+	# Check for dnsmasq compiled options
+	dnsmasq --version | grep ' nftset ' &>/dev/null
+	optnftset=$?
+
+	dnsmasq --version | grep ' ipset ' &>/dev/null
+	optipset=$?
+
+
+	if [ $optnftset -eq 1 ]; then
+		debugtype="warn"
+		syslogmessage="Warning: dnsmasq nftset complile option not available - Upgrade to dnsmasq-full version. Trying ipset option...."
+		write_to_syslog
+
+		if [ $optipset -eq 1 ]; then
+			debugtype="warn"
+			syslogmessage="Warning: dnsmasq ipset complile option not available -- Upgrade to dnsmasq-full version. Unable to configure $nftsetname...."
+			write_to_syslog
+			exit 0
+		fi
+
+		if [ $optnftset -eq 1 ] && [ $optipset -eq 0 ]; then
+			# we have ipset option only, so check for ipset utility
+			type ipset &>/dev/null
+			have_ipset=$?
+
+			if [ $have_ipset -eq 1 ]; then
+				debugtype="warn"
+				syslogmessage="Warning: ipset utility not not available -- Install ipset utility. Unable to configure $nftsetname...."
+				write_to_syslog
+				exit 0
+			else
+				debugtype="warn"
+				syslogmessage="Warning: using deprecated legacy ipset utility -- Upgrade dnsmasq to version supporting nftsets. Configuring $nftsetname...."
+				write_to_syslog
+			fi
+		fi
+	fi
+
+	# Define the dnsmask config file location for generic Linux
+	# Edit this if your non-uci system uses a non standard location:
+	conflocation="/etc/dnsmasq.conf"
+
+	uciconfig=$(uci show dhcp 2>/dev/null)
+
+	if [ "$nftsetmode" = "delete" ]; then
+		# Delete rules using the set, the set itself and the Dnsmasq config
+
+		if [ -z "$uciconfig" ]; then
+			# Generic Linux
+			linnum=$(cat /etc/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
+			sed "$linnum""d" "/etc/dnsmasq.conf" &>/dev/null
+		else
+			uci -q delete dhcp.nds_nftset
+			uci -q delete dhcp.@dnsmasq[0].ipset
+		fi
+
+		ipset destroy "$nftsetname" &>/dev/null
+	else
+
+		if [ "$nftsetmode" = "add" ] || [ "$nftsetmode" = "insert" ]; then
+			# Add the set, add/insert the rule and the Dnsmasq config
+			nft add set ip nds_filter "$nftsetname" { type ipv4_addr\; size 128\; }
+			ret=$?
+
+			if [ "$ret" -ne 0 ]; then
+				debugtype="warn"
+				syslogmessage="Unable to create nftset [ $nftsetname ]"
+				write_to_syslog
+			fi
+
+
+			if [ $have_ipset ]; then
+				ipset create "$nftsetname" hash:ip &>/dev/null
+			fi
+
+			list="$nftsetname""_fqdn_list"
+			get_list_from_config
+			fqdns=$param
+			urldecode "$fqdns"
+			fqdns="$urldecoded"
+			debugtype="debug"
+			syslogmessage="list $list is [ $fqdns ]"
+			write_to_syslog
+			fqdnlist=""
+
+			for fqdn in $fqdns; do
+				htmlentityencode "$fqdn"
+
+				if [ "$entityencoded" = "$fqdn" ]; then
+					fqdnlist="$fqdnlist $fqdn"
+				else
+					debugtype="warn"
+					syslogmessage="fqdn [ $fqdn ] is invalid, please remove it."
+					write_to_syslog
+				fi
+			done
+
+			fqdns="$fqdnlist"
+
+			list="$nftsetname""_port_list"
+			get_list_from_config
+			ports=$param
+			urldecode "$ports"
+			ports="$urldecoded"
+
+			if [ ! -z "$ports" ]; then
+				debugtype="debug"
+				syslogmessage="list $list is [ $ports ]"
+				write_to_syslog
+			fi
+
+			if [ -z "$ports" ]; then
+				nft $nftsetmode rule ip nds_filter ndsNET counter ip daddr "@$nftsetname" "$nftruletype"
+
+			else
+				numports=$(echo $ports | tr -d "'" | awk '{printf NF}')
+
+				if [ "$numports" -gt 1 ]; then
+					ports=$(printf "$ports" | tr -d "'" | tr -s " " ",")
+				fi
+
+				nft $nftsetmode rule ip nds_filter ndsNET counter ip daddr "@$nftsetname" tcp dport {"$ports"} "$nftruletype"
+			fi
+
+
+			##### If nftset support is available, then use it ####
+			if [ $optnftset -eq 0 ]; then
+				# using nftset support in dnsmasq
+
+				if [ -z "$uciconfig" ]; then
+					# Generic Linux
+					nftsetconf="nftset="
+
+					for fqdn in $fqdns; do
+						nftsetconf="$nftsetconf/$fqdn"
+					done
+
+					if [ ! -z "$nftsetconf" ]; then
+						nftsetconf="$nftsetconf/4#ip#nds_filter#$nftsetname"
+						echo "$nftsetconf" >> "$conflocation"
+					fi
+
+				else
+					# OpenWrt
+					ucicmd="set dhcp.nds_$nftsetname='ipset'"
+					echo $ucicmd | uci -q batch
+					ucicmd="add_list dhcp.nds_$nftsetname.name='$nftsetname'"
+					echo $ucicmd | uci -q batch
+					ucicmd="set dhcp.nds_$nftsetname.table='nds_filter'"
+					echo $ucicmd | uci -q batch
+					ucicmd="set dhcp.nds_$nftsetname.table_family='ip'"
+					echo $ucicmd | uci -q batch
+
+					domains=$fqdns
+
+					for domain in $domains; do
+						ucicmd="add_list dhcp.nds_$nftsetname.domain='$domain'"
+						echo $ucicmd | uci -q batch
+					done
+
+				fi
+
+			elif [ $optipset -eq 0 ] && [ $optnftset -eq 1 ]; then
+				#### If ipset support is available BUT nft support is NOT available then we have no choice but to use ipset support ####
+
+				if [ -z "$uciconfig" ]; then
+					# Generic Linux
+					ipsetconf="ipset="
+
+					for fqdn in $fqdns; do
+						ipsetconf="$ipsetconf/$fqdn"
+					done
+
+					if [ ! -z "$ipsetconf" ]; then
+						ipsetconf="$ipsetconf/$nftsetname"
+						config=$(grep -v "$nftsetname" "$conflocation")
+						echo "$config" > "$conflocation"
+						echo "$ipsetconf" >> "$conflocation"
+					fi
+				else
+					# OpenWrt
+					# Note we do not commit here so that the config changes do NOT survive a reboot and can be reverted without writing to config files
+
+					for fqdn in $fqdns; do
+						ipsetconf="$ipsetconf/$fqdn"
+					done
+
+					if [ ! -z "$ipsetconf" ]; then
+						ipsetconf="$ipsetconf/$nftsetname"
+
+						del_ipset="del_list dhcp.@dnsmasq[0].ipset='$ipsetconf'"
+						add_ipset="add_list dhcp.@dnsmasq[0].ipset='$ipsetconf'"
+						echo $del_ipset | uci -q batch
+						echo $add_ipset | uci -q batch
+					fi
+				fi
+			fi
+		else
+			# invalid nftsetmode
+			exit 4
+		fi
+	fi
+}
+
+pad_str () {
+	if [ "$hand" = "right" ]; then
+		padded=$(printf "%s%s" "$m" "${p:${#m}}")
+	elif [ "$hand" = "left" ]; then
+		padded=$(printf "%s%s" "${p:${#m}}" "$m")
+	fi
+}
+
+check_heartbeat () {
+	option="checkinterval"
+	get_option_from_config
+
+	if [ -z "$checkinterval" ]; then
+		checkinterval=15
+	fi
+	configure_log_location
+	heartbeatpath="$mountpoint/ndscids/heartbeat"
+
+	if [ -f "$heartbeatpath" ]; then
+
+		local timeout=5
+
+		for tic in $(seq $timeout); do
+			lastbeat=$(cat "$heartbeatpath")
+			timenow=$(date +%s)
+
+			elapsed_time=$(($timenow - $lastbeat))
+
+			if [ $elapsed_time -le $checkinterval ]; then
+				dead=0
+				break
+			else
+				dead=1
+				sleep 1
+			fi
+		done
+
+		exitmessage="Time since last heartbeat is $elapsed_time second(s)"
+	else
+		exitmessage="No heartbeat found"
+		dead=1
+	fi
+}
+
+auth_restore () {
+	configure_log_location
+
+	authlog="$logdir""authlog.log"
+	preemptive_auth="$mountpoint/ndscids/preemptive_auth"
+
+	if [ ! -e "$authlog" ]; then
+		mkdir -p "$logdir"
+		touch "$authlog"
+	fi
+	
+	binauthlog="$logdir""binauthlog.log"
+
+	if [ ! -e "$binauthlog" ]; then
+		mkdir -p "$logdir"
+		touch "$binauthlog"
+	fi
+
+	if [ ! -e "$preemptive_auth" ]; then
+		mkdir -p "$preemptive_auth"
+	fi
+
+	# Get default quotas
+	option="sessiontimeout"
+	get_option_from_config
+
+	if [ -z "$sessiontimeout" ]; then
+		sessiontimeout=1440
+	fi
+
+	option="uploadquota"
+	get_option_from_config
+
+	if [ -z "$uploadquota" ]; then
+		uploadquota=0
+	fi
+
+	option="downloadquota"
+	get_option_from_config
+
+	if [ -z "$downloadquota" ]; then
+		downloadquota=0
+	fi
+
+	option="uploadrate"
+	get_option_from_config
+
+	if [ -z "$uploadrate" ]; then
+		uploadrate=0
+	fi
+
+	option="downloadrate"
+	get_option_from_config
+
+	if [ -z "$downloadrate" ]; then
+		downloadrate=0
+	fi
+
+	# Check if opennds is running
+	local timeout=15
+
+	for tic in $(seq $timeout); do
+		check_heartbeat
+
+		if [ $dead -eq 0 ]; then
+			break
+		fi
+
+		sleep 1
+	done
+
+	if [ $dead -ne 0 ]; then
+		# we should give up
+		echo "opennds failed to become ready - aborting auth_restore"
+		exit 1
+	fi
+
+	while read -r client; do
+		b64mac="$(echo "$client" | awk -F"=" '{printf("%s", $1)}')""=="
+		client_mac=$(ndsctl b64decode "$b64mac")
+
+		if [ -z "$client_mac" ]; then
+			continue
+		fi
+
+		# Skip client if it is in preemptivemac list
+		list="preemptivemac"
+		get_list_from_config
+
+		status=$(echo "$param" | grep -q "$client_mac"; echo $?)
+
+		if [ "$status" -eq 0 ]; then
+			# skip this client
+			continue
+		fi
+
+		now=$(date +%s)
+		session_end="$(echo "$client" | awk -F"=" '{printf("%s", $2)}')"
+
+		session_left=$(($session_end - $now))
+		sessiontimeout=$(($session_left / 60))
+
+		if [ $session_left -lt 0 ]; then
+			sessiontimeout=""
+		fi
+
+		was_authed=$(grep "$client_mac" "$binauthlog" | tail -1 | awk -F"method=" '{print $2}' | awk -F", " '{print $1}' | grep "deauth")
+
+		reauth=0
+
+		if [ -z "$was_authed" ]; then
+			reauth=1
+		else
+			was_shutdown_deauthed=$(grep "$client_mac" "$binauthlog" | tail -1 | awk -F"method=" '{print $2}' | awk -F", " '{print $1}' | grep "shutdown_deauth")
+
+			if [ ! -z "$was_shutdown_deauthed" ]; then
+				reauth=1
+			fi
+		fi
+
+		if [ $reauth -eq 1 ]; then
+			mac="$client_mac"
+			custom="auth_restore"
+			authstr="$mac, $sessiontimeout, $uploadrate, $downloadrate, $uploadquota, $downloadquota, preemptivemac-$mac"
+			macstr=$(echo "$mac" | awk -F":" '{printf "%s%s%s%s%s%s", $1, $2, $3, $4, $5, $6}')
+
+			echo "$authstr" > "$preemptive_auth/$macstr"
+		fi
+
+	done < $authlog
+}
+
+create_client_ruleset () {
+	status=0
+
+	# Check for user_to_router essentials and append if missing
+	if [ "$ruleset_name" = "users_to_router" ]; then
+		essentials="allow%20udp%20port%2053 allow%20udp%20port%2067 allow%20tcp%20port%2022 allow%20tcp%20port%20443"
+		newrules=""
+
+		for rule in $ruleset; do
+			checkrule=$(echo "$essentials" | grep "$rule")
+
+			if [ -z "$checkrule" ]; then
+				newrules="$newrules $rule"
+			fi
+		done
+
+		ruleset="$essentials $newrules"
+
+	fi
+
+	# Check for authenticated_users and reverse the order of rules
+	if [ "$ruleset_name" = "authenticated_users" ]; then
+		ruleset=$(echo "$ruleset" | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $i) }')
+	fi
+
+
+
+	for rule in $ruleset; do
+		urldecode $rule
+		rule=$urldecoded
+		count=0
+		proto=""
+		port=""
+		portnum=""
+		to_from=""
+		ipaddr=""
+
+		for param in $rule; do
+
+			case $count in
+				0)
+					case $param in
+						"allow") verdict="accept";;
+						"passthrough") verdict="accept";;
+						"block") verdict="drop";;
+						*) verdict="drop";;
+					esac
+					;;
+				1)
+					case $param in
+						"all") proto="";;
+						"tcp") proto="tcp";;
+						"udp") proto="udp";;
+						"port") port="port";;
+						"to") to_from="to";;
+						"from") to_from="from";;
+						*) ;;
+					esac
+					;;
+				2) #port=$param;;
+					if [ "$port" = "port" ]; then
+						portnum=$param
+					fi
+
+					if [ "$to" = "to" ] || [ "$from" = "from" ]; then
+						ipaddr=$param
+					fi
+
+					case $param in
+						"port") port="port";;
+						"to") to_from="to";;
+						"from") to_from="from";;
+						*) ;;
+					esac
+					;;
+				3) #portnum=$param;;
+					if [ "$port" = "port" ]; then
+						portnum=$param
+					fi
+
+					if [ "$to_from" = "to" ] || [ "$to_from" = "from" ]; then
+						ipaddr=$param
+					fi
+
+					case $param in
+						"to") to_from="to";;
+						"from") to_from="from";;
+						*) ;;
+					esac
+					;;
+				4) #to_from=$param;;
+					if [ "$to_from" = "to" ] || [ "$to_from" = "from" ]; then
+						ipaddr=$param
+					fi
+
+					case $param in
+						"to") to_from="to";;
+						"from") to_from="from";;
+						*) ;;
+					esac
+					;;
+				5) ipaddr=$param;;
+				*) ;;
+			esac
+
+			count=$((++count))
+		done
+
+		case $ruleset_name in
+			"authenticated_users") chain="ndsAUT";;
+			"preauthenticated_users") chain="ndsNET";;
+			"users_to_router") chain="ndsRTR";;
+		esac
+
+		if [ "$proto" = "all" ] || [ -z "$proto" ] || [ "$port" != "port" ]; then
+			proto=""
+			sdport=""
+			portnum=""
+		fi
+
+		if [ -z "$to_from" ]; then
+			sdaddr=""
+		fi
+
+		if [ "$to_from" = "to" ]; then
+
+			if [ ! -z "$portnum" ]; then
+				sdport="dport"
+			fi
+
+			sdaddr="daddr"
+
+		elif [ "$to_from" = "from" ]; then
+
+			if [ ! -z "$portnum" ]; then
+				sdport="sport"
+			fi
+
+			sdaddr="saddr"
+
+		elif [ -z "$to_from" ] && [ ! -z "$portnum" ]; then
+			sdport="dport"
+		fi
+
+		if [ -z "$ipaddr" ]; then
+			ipstr=""
+		else
+			ipstr="ip $sdaddr $ipaddr"
+		fi
+
+		if [ "$ruleset_name" = "authenticated_users" ]; then
+			nft insert rule ip nds_filter $chain index 2 "$ipstr" "$proto" "$sdport" "$portnum" counter "$verdict"
+			status=$?
+		fi
+
+		if [ "$ruleset_name" = "preauthenticated_users" ]; then
+			nft insert rule ip nds_filter $chain index 2 "$ipstr" "$proto" "$sdport" "$portnum" counter "$verdict"
+			status=$?
+		fi
+
+		if [ "$ruleset_name" = "users_to_router" ]; then
+			nft add rule ip nds_filter $chain "$ipstr" "$proto" "$sdport" "$portnum" counter "$verdict"
+			status=$?
+		fi
+
+	done
+
+	if [ "$ruleset_name" = "users_to_router" ]; then
+		# allow ping4 max 4 per second
+		nft insert rule ip nds_filter ndsRTR icmp type echo-request counter drop
+		nft insert rule ip nds_filter ndsRTR icmp type echo-request limit rate 4/second counter accept
+		# Block everything else
+		nft add rule ip nds_filter $chain counter reject
+	fi
+}
+
+hash_str () {
+	hashedstr=""
+	status=$(type sha256sum &>/dev/null; echo $?)
+
+	if [ "$status" -eq 0 ]; then
+		hashedstr=$(printf "%s" "$strtohash" | sha256sum | awk -F' ' '{printf $1}')
+	else
+		syslogmessage="The sha256sum utility cannot be found - please install it"
+		debugtype="err"
+		write_to_syslog
+	fi
+}
+
+wget_request () {
+	spider=""
+	checkcert=""
+
+	ndsctlcmd="b64encode \"$payload\""
+	do_ndsctl
+
+	payload=$ndsctlout
+
+	webget
+	retval=$($wret -O - -U "\"$user_agent\"" "$url?auth_get=$action&gatewayhash=$gatewayhash&payload=$payload")
+	status=$?
+ 
+	if [ $status -ne 0 ]; then
+		# Warning message for status and URL
+		syslogmessage="$wret failed with status $status on FAS URL $url."
+		debugtype="warn"
+		write_to_syslog
+
+		# Debug messages for additional details
+		syslogmessage="Action: $action"
+		debugtype="debug"
+		write_to_syslog
+
+		syslogmessage="Gateway Hash: $gatewayhash"
+		debugtype="debug"
+		write_to_syslog
+
+		syslogmessage="Payload: $payload"
+		debugtype="debug"
+		write_to_syslog
+	fi
+}
+
+send_post_data () {
+	configure_log_location
+	option="fas_secure_enabled"
+	get_option_from_config
+
+	if [ "$fas_secure_enabled" -ge 3 ] && [ -f "$mountpoint/ndscids/authmonargs" ]; then
+		. $mountpoint/ndscids/ndsinfo
+		. $mountpoint/ndscids/authmonargs
+
+		returned_data=$(eval "$remoterequest" "\"$url\"" "\"$action\"" "\"$gatewayhash\"" "\"$user_agent\"" "\"$payload\"")
+
+		syslogmessage="send_post_data - action [$action], payload [$payload], fas_response [$returned_data]."
+		debugtype="info"
+		write_to_syslog
+	fi
+}
+
+preemptivemac () {
+	configure_log_location
+	binauthlog="$logdir""binauthlog.log"
+	preemptive_auth="$mountpoint/ndscids/preemptive_auth"
+
+	if [ ! -e "$binauthlog" ]; then
+		mkdir -p "$logdir"
+		touch "$binauthlog"
+	fi
+
+	# Get default quotas
+	option="sessiontimeout"
+	get_option_from_config
+
+	if [ -z "$sessiontimeout" ]; then
+		sessiontimeout=1440
+	fi
+
+	option="uploadquota"
+	get_option_from_config
+
+	if [ -z "$uploadquota" ]; then
+		uploadquota=0
+	fi
+
+	option="downloadquota"
+	get_option_from_config
+
+	if [ -z "$downloadquota" ]; then
+		downloadquota=0
+	fi
+
+	option="uploadrate"
+	get_option_from_config
+
+	if [ -z "$uploadrate" ]; then
+		uploadrate=0
+	fi
+
+	option="downloadrate"
+	get_option_from_config
+
+	if [ -z "$downloadrate" ]; then
+		downloadrate=0
+	fi
+
+	if [ -z "$1" ]; then
+		list="preemptivemac"
+		get_list_from_config
+	else
+		param=" mac=$1;sessiontimeout=$sessiontimeout;uploadrate=$uploadrate;downloadrate=$downloadrate;uploadquota=$uploadquota;downloadquota=$downloadquota;custom=preemptivemac-$1 "
+	fi
+
+	for listblock in $param; do
+		mac=""
+
+		eval $listblock
+
+		# skip this client if not in dhcp database
+		iptocheck="$mac"
+		dhcp_check
+
+		if [ -z "$dhcprecord" ]; then
+			continue
+		fi
+
+		# skip this client if already authenticated
+		is_authed=$(grep "$mac" "$binauthlog" | tail -1 | awk -F"method=" '{print $2}' | awk -F", " '{printf "%s", $1}')
+
+		if [ "$is_authed" = "ndsctl_auth" ]; then
+			continue
+		fi
+
+		authstr="$mac, $sessiontimeout, $uploadrate, $downloadrate, $uploadquota, $downloadquota, preemptivemac-$mac"
+		macstr=$(echo "$mac" | awk -F":" '{printf "%s%s%s%s%s%s", $1, $2, $3, $4, $5, $6}')
+		echo "$authstr" > "$preemptive_auth/$macstr"
+
+		#b64authstr=$(ndsctl b64encode "$authstr")
+
+		#/usr/lib/opennds/libopennds.sh daemon_auth "$b64authstr" "quiet"
+	done
+}
+
+resolve_fqdn() {
+	fqdnaddress=""
+	local fqdn=$1
+	fqdnaddress=$(nslookup "$fqdn" | grep -w -A 1 "Name:" | grep "Address:" | awk -F "Address: " 'NR == 1 {print $2}')
+
+	if [ -z "$fqdnaddress" ]; then
+		option="gatewayinterface"
+		get_option_from_config
+
+		if [ -z "$gatewayinterface" ]; then
+			gatewayinterface="br-lan"
+		fi
+
+		ifname="$gatewayinterface"
+		check_gw_ip
+		fqdnaddress="$gw_ip"
+	fi
+}
+
+get_meshnode_list() {
+	type mesh11sd &>/dev/null && meshnode_list=$(mesh11sd stations | grep -w "Station" | awk '{printf "%s ", $2}')
+	local converted_maclist=""
+
+	if [ ! -z "$meshnode_list" ]; then
+		for nodemac in $meshnode_list; do
+			convert_from_la $nodemac
+			converted_maclist="$converted_maclist $mac_from_la"
+		done
+	fi
+
+	meshnode_list="$converted_maclist"
+}
+
+convert_to_la() {
+	local mac_to_convert="$1"
+
+	eval $(echo "$mac_to_convert" | awk -F":" '{printf "p1=%s p2=%s p3=%s p4=%s p5=%s p6=%s", $1 ,$2, $3, $4, $5, $6}')
+
+	la_check=$(printf '%x\n' "$(( 0x2 & 0x$p1 ))")
+
+	if [ "$la_check" -eq 0 ]; then
+		octet=$(printf '%x\n' "$(( 0x2 | 0x$p1 ))")
+	else
+		octet="$p1"
+	fi
+
+	mac_la="$octet:$p2:$p3:$p4:$p5:$p6"
+}
+
+convert_from_la() {
+	local mac_to_convert="$1"
+
+	eval $(echo "$mac_to_convert" | awk -F":" '{printf "p1=%s p2=%s p3=%s p4=%s p5=%s p6=%s", $1 ,$2, $3, $4, $5, $6}')
+
+	la_check=$(printf '%x\n' "$(( 0x2 & 0x$p1 ))")
+
+	if [ "$la_check" -eq 2 ]; then
+		octet=$(printf '%x\n' "$(( 0x2 ^ 0x$p1 ))")
+	else
+		octet="$p1"
+	fi
+
+	mac_from_la="$octet:$p2:$p3:$p4:$p5:$p6"
+}
 
 #### end of functions ####
 
@@ -1288,7 +2171,188 @@ pre_setup () {
 #					#
 #########################################
 
-if [ "$1" = "clean" ]; then
+querystr="$1"
+
+query_type=${querystr:0:9}
+
+if [ "$query_type" = "%3ffas%3d" ]; then
+	#Display a splash page sequence using a Themespec
+
+	#################################
+	# Any parameters set here	#
+	# will be overridden if set	#
+	# in the themespec file	#
+	#################################
+
+	#  setup required parameters:	#
+
+	# Client Custom String
+	custom=""
+	# You can choose to define a custom string. This will be b64 encoded and sent to openNDS.
+	# There it will be made available to be displayed in the output of ndsctl json as well as being sent
+	#	to the BinAuth post authentication processing script if enabled.
+	# Set the variable $binauth_custom to the desired value.
+	# Values set here can be overridden by the themespec file
+
+	#binauth_custom="This is sample text sent from \"$title\" to \"BinAuth\" for post authentication processing."
+
+	# Encode and activate the custom string
+	#encode_custom
+
+	# Preshared key
+	#########################################
+	# There is no default value when faskey is not set in config
+	get_key_from_config
+
+	# Quotas and Data Rates
+	#########################################
+	# Set length of session in minutes (eg 24 hours is 1440 minutes - if set to 0 then defaults to global sessiontimeout value):
+	# eg for 100 mins:
+	# session_length="100"
+	#
+	# eg for 20 hours:
+	# session_length=$((20*60))
+	#
+	# eg for 20 hours and 30 minutes:
+	# session_length=$((20*60+30))
+	session_length="0"
+
+	# Set Rate and Quota values for the client
+	# The session length, rate and quota values could be determined by this script, on a per client basis.
+	# rates are in kb/s, quotas are in kB. - if set to 0 then defaults to global value).
+	upload_rate="0"
+	download_rate="0"
+	upload_quota="0"
+	download_quota="0"
+
+	quotas="$session_length $upload_rate $download_rate $upload_quota $download_quota"
+	#########################################
+
+	# The list of Parameters sent from openNDS:
+	# Note you can add custom parameters to the config file and to read them you must also add them here.
+	# Custom parameters are "Portal" information and are the same for all clients eg "admin_email" and "location"
+	ndsparamlist="hid clientip clientmac client_type cpi_query gatewayname gatewayurl version gatewayaddress gatewaymac originurl clientif"
+
+	# The list of FAS Variables used in the Login Dialogue generated by this script.
+	# These FAS variables received from the login form presented to the client.
+	# The following are the defaults for all themes. Theme specific variables are appended by the ThemeSpec script.
+	fasvarlist="terms landing status continue custom"
+
+	# Set the Logfile location, using the tmpfs "temporary" directory to prevent flash wear.
+	# or override to a custom location in the ThemeSpec file (eg USB stick)
+	configure_log_location
+	. $mountpoint/ndscids/ndsinfo
+
+
+	############################################################################
+	### We are now ready to generate the html for the Portal "Splash" pages: ###
+	############################################################################
+
+	# Get the arguments sent from openNDS and parse/decode them, setting portal ThemeSpec as required
+	get_theme_environment $1 $2 $3 $4
+
+	refresh="3"
+	type download_image_files &>/dev/null && download_image_files
+	type download_data_files &>/dev/null && download_data_files
+
+	# Note: $mountpoint is now set to point to a safe storage area, so we have loaded custom images there
+
+	config_input_fields "input"
+
+	# Add inputnames to fasvarlist
+	fasvarlist="$fasvarlist $inputnames"
+
+	get_arguments
+
+	config_input_fields "hidden"
+
+	# Set the default image to be displayed
+	if [ -z "$imagepath" ]; then
+
+		if [ -e "/etc/opennds/htdocs/ndsremote/logo.png" ]; then
+			imagepath="/ndsremote/logo.png"
+		else
+			imagepath="/images/splash.jpg"
+		fi
+	fi
+
+	# Output the page common header
+	type header &>/dev/null && header || default_header
+
+	# Check if Terms of Service is requested
+	if [ "$terms" = "yes" ]; then
+		display_terms
+	fi
+
+	# Check if landing page is requested
+	if [ "$landing" = "yes" ]; then
+		landing_page
+	fi
+
+	# Check if the client is already logged in (have probably tapped "back" on their browser)
+	# Make this a friendly message explaining they are good to go
+	check_authenticated
+
+	# Generate the dynamic portal splash page sequence
+	type generate_splash_sequence &>/dev/null && generate_splash_sequence || serve_error_message "Invalid ThemeSpec"
+
+	# Customisation of the sequence of portal pages will normally be done in a corresponding themespec file.
+	# This script imports a themespec file for defining the dynamically generated portal sequence presented to the client
+	# The themespec file to be imported is defined in the openNDS config file
+	# Hints:
+	# The output of this script will be served by openNDS built in web server (MHD) and
+	# ultimately displayed on the client device screen via the CPD process on that device.
+	#
+	# It should be noted when designing a custom splash page that for security reasons
+	# most client device CPD implementations MAY do one or all of the following:
+	#
+	#	1.Immediately close the browser when the client has authenticated.
+	#	2.Prohibit the use of href links.
+	#	3.Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
+	#	4.Prohibit the execution of javascript.
+	#
+	exit 0
+
+elif [ "$1" = "get_option_from_config" ]; then
+	# Get the config option value
+	# $2 contains the option to get
+	option=$2
+	get_option_from_config
+	printf "%s" "$param"
+	exit 0
+
+elif [ "$1" = "get_list_from_config" ]; then
+	# Get the config list value(s)
+	# $2 contains the list to get
+	# $3 contains the newline option, ie add a newline between each element
+
+	if [ ! -z "$3" ]; then
+		newline="newline"
+	else
+		newline=""
+	fi
+
+	list=$2
+	get_list_from_config
+
+	#if [ -z "$newline" ]; then
+		printf "%s" "$param"
+	#else
+	#	echo "$param"
+	#fi
+
+	exit 0
+
+elif [ "$1" = "create_client_ruleset" ]; then
+	# Create the nftables client ruleset
+	# $2 is the client ruleset name
+	# $3 is the ruleset
+	ruleset_name=$2
+	ruleset=$3
+	create_client_ruleset
+	exit $status
+
+elif [ "$1" = "clean" ]; then
 	# Do a cleanup if asked and reply with tmpfs mountpoint
 	configure_log_location
 
@@ -1409,6 +2473,70 @@ elif [ "$1" = "gatewayroute" ]; then
 	fi
 
 	printf "$gatewayinterfaces"
+
+	if [ "$gatewayinterfaces" != "offline" ]; then
+		# check if flowtables exist and create or update them as required
+
+		# configure download flowtable
+
+		wandevices=""
+
+		for gatewayroute in $gatewayinterfaces; do
+			wandevice=$(echo "$gatewayroute" | awk -F "," '{printf "%s", $2}')
+			if [ -z "$wandevices" ]; then
+				wandevices="$wandevice"
+			else
+				wandevices=", $wandevice"
+			fi
+		done
+
+		handle=$(nft -a list flowtables | grep -w "ndsftINC" | awk -F "handle " '{printf "%s", $2}')
+
+		if [ ! -z "$handle" ]; then
+			ftdevices=$(nft -a list flowtables | grep -w -A 4 "ndsftINC" | awk -F "devices = " 'NF>1 {printf "%s", $2}')
+
+			if [ "$ftdevices" != "{ $wandevices }" ]; then
+
+				rulehandles=$(nft -a list chain ip nds_mangle nds_ft_INC | grep "@ndsftINC"| awk -F "handle " '{printf "%s ", $2}')
+
+				for rulehandle in $rulehandles; do
+					nft delete rule ip nds_mangle nds_ft_INC handle "$rulehandle"
+				done
+
+				nft delete flowtable ip nds_mangle handle "$handle"
+				nft add flowtable ip nds_mangle ndsftINC "{ hook ingress priority -100 ; devices = { $wandevices } ; }" 2> /dev/null
+				nft add rule ip nds_mangle nds_ft_INC flow offload @ndsftINC counter
+				nft add rule ip nds_mangle nds_ft_INC counter return
+			fi
+		else
+			nft add flowtable ip nds_mangle ndsftINC "{ hook ingress priority -100 ; devices = { $wandevices } ; }" 2> /dev/null
+			nft add rule ip nds_mangle nds_ft_INC meta l4proto { tcp, udp } flow offload @ndsftINC counter
+			nft add rule ip nds_mangle nds_ft_INC counter return
+		fi
+	fi
+
+	# add upload flowtable
+
+	fttest=$(nft list flowtable ip nds_filter ndsftOUT &> /dev/null ; echo $?)
+
+	if [ $fttest -gt 0 ]; then
+		option="gatewayinterface"
+		get_option_from_config
+
+		if [ -z "$gatewayinterface" ]; then
+			gatewayinterface="br-lan"
+		fi
+
+		nft add flowtable ip nds_filter ndsftOUT "{ hook ingress priority -100 ; devices = { $gatewayinterface } ; }"
+	fi
+
+	ftruletest=$(nft list chain ip nds_filter nds_ft_OUT 2> /dev/null | grep -q -w "meta l4proto"; echo $?)
+
+	if [ $ftruletest -gt 0 ]; then
+		nft add rule ip nds_filter nds_ft_OUT meta l4proto { tcp, udp } flow offload @ndsftOUT counter
+		nft add rule ip nds_filter nds_ft_OUT counter return
+	fi
+
 	exit 0
 
 elif [ "$1" = "clientaddress" ]; then
@@ -1518,14 +2646,6 @@ elif [ "$1" = "download" ]; then
 
 	exit 0
 
-elif [ "$1" = "get_option_from_config" ]; then
-	# Get the config option value
-	# $2 contains the option to get
-	option=$2
-	get_option_from_config
-	printf "%s" $param
-	exit 0
-
 elif [ "$1" = "debuglevel" ]; then
 	# Sets the debuglevel for externals
 	# $2 contains the debuglevel
@@ -1546,7 +2666,6 @@ elif [ "$1" = "syslog" ]; then
 	# Write a debug message to syslog
 	# $2 contains the string to to write to syslog if enabled by debuglevel
 	# $3 contains debug type: debug, info, warn, notice, err, emerg.
-	# debugtype contains the debug level string: debug, info, warn, notice, err, emerg.
 
 	if [ -z "$2" ]; then
 		exit 1
@@ -1628,13 +2747,24 @@ elif [ "$1" = "get_interface_by_ip" ]; then
 
 elif [ "$1" = "write_log" ]; then
 	# $2 contains the string to log
+	# $3 contains the log filename (defaulting to ndslog.log if not set)
+	# $4 contains the date inhibit flag. If set to anything, the leading date field will be inhibited from the log entry
 	if [ -z "$2" ]; then
 		exit 1
 	else
 		loginfo="$2"
-		configure_log_location
+
+		if [ ! -z "$3" ]; then
+			logname="$3"
+		fi
+
+		if [ ! -z "$4" ]; then
+			date_inhibit="$4"
+		fi
+
 		write_log
 		printf "%s" "done"
+		exit 0
 	fi
 
 elif [ "$1" = "dhcpcheck" ]; then
@@ -1642,7 +2772,7 @@ elif [ "$1" = "dhcpcheck" ]; then
 	# Returns the mac address that was allocated to the ip address
 	# 	or null and return code 1 if not allocated
 	#
-	# $2 contains the ip to check
+	# $2 contains the ip (or mac address) to check
 
 	if [ -z "$2" ]; then
 		exit 1
@@ -1657,6 +2787,63 @@ elif [ "$1" = "dhcpcheck" ]; then
 			exit 0
 		fi
 	fi
+
+elif [ "$1" = "auth" ]; then
+	# Auths a client by ip or mac address
+	# $2 contains the b64 encoded auth-string which has the format:
+	# mac|ip sessiontimeout uploadrate downloadrate uploadquota downloadquota encoded_customstring
+	# Returns the status of the auth request
+
+	if [ -z "$2" ]; then
+		exit 1
+	else
+
+		authstr=$(ndsctl b64decode "$2")
+
+		libcall="yes"
+		ndsctlcmd="auth $authstr"
+		do_ndsctl
+
+		if [ "$ndsstatus" = "authenticated" ]; then
+			debugtype="notice"
+		else
+			debugtype="debug"
+		fi
+
+		syslogmessage="$ndsctlout"
+		write_to_syslog
+	fi
+
+	exit 0
+
+elif [ "$1" = "daemon_auth" ]; then
+	# Initiates a daemon process to auth a client by ip or mac address
+	# Can be called from a binauth script
+	# $2 contains the b64 encoded auth-string which has the format:
+	# mac|ip sessiontimeout uploadrate downloadrate uploadquota downloadquota encoded_customstring
+	# Returns the pid of the daemon_deauth process
+	# The actual client deauth will be reported in the syslog if sucessful
+	# $3 contains the verbosity
+
+	if [ -z "$2" ]; then
+		exit 1
+	else
+
+		b64authstr="$2"
+
+		daemoncmd="/usr/lib/opennds/libopennds.sh auth $b64authstr"
+		ndsctlcmd="b64encode \"$daemoncmd\""
+		do_ndsctl
+
+		daemon_pid=$(/usr/lib/opennds/libopennds.sh "startdaemon" "$ndsctlout")
+
+		if [ -z "$3" ]; then
+			# return the daemon pid
+			printf "%s" "$daemonpid"
+		fi
+	fi
+
+	exit 0
 
 elif [ "$1" = "deauth" ]; then
 	# Deauths a client by ip or mac address
@@ -1693,8 +2880,10 @@ elif [ "$1" = "daemon_deauth" ]; then
 		ndsctlcmd="b64encode \"$daemoncmd\""
 		do_ndsctl
 
-		daemon_deauth=$(/usr/lib/opennds/libopennds.sh "startdaemon" "$ndsctlout")
-		echo "$daemon_deauth"
+		daemon_pid=$(/usr/lib/opennds/libopennds.sh "startdaemon" "$ndsctlout")
+
+		# return the daemon pid
+		echo "$daemon_pid"
 	fi
 
 	exit 0
@@ -1752,20 +2941,20 @@ elif [ "$1" = "htmlentitydecode" ]; then
 	fi
 
 elif [ "$1" = "send_to_fas_deauthed" ]; then
-	# Sends deauthed notification to an https fas
-	# $2 contains the deauthentication log.
+	# Sends deauthed notification to an https fas (usually called by binauth)
+	# $2 contains the deauthentication log. (will be b64encoded by send_post_data)
 	#
-	# The deauthentication log is of the format:
+	# The deauthentication log should be of the format:
 	# method=[method], clientmac=[clientmac], bytes_incoming=[bytes_incoming],
 	#	bytes_outgoing=[bytes_outgoing], session_start=[session_start],
-	#	session_end=$6, token=[token], custom=[custom data as sent to binauth]
+	#	session_end=[session_end], token=[token], custom=[custom data as sent to binauth]
 	#
 	# Returns exit code 0 if sent, 1 if failed
 
 	if [ -z "$2" ]; then
 		exit 1
 	else
-		payload=$2
+		payload="$2"
 		action="deauthed"
 		send_post_data
 		printf "%s" "$returned_data"
@@ -1774,7 +2963,7 @@ elif [ "$1" = "send_to_fas_deauthed" ]; then
 
 elif [ "$1" = "send_to_fas_custom" ]; then
 	# Sends a custom string to an https fas
-	# $2 contains the string to send
+	# $2 contains the string to send. (will be b64encoded by send_post_data)
 	#
 	# The format of the custom string is not defined, so is fully customisable.
 	#
@@ -1810,7 +2999,6 @@ elif [ "$1" = "users_to_router" ]; then
 
 elif [ "$1" = "pre_setup" ]; then
 	# creates/configures openNDS nftables base chains
-
 	# Returns exit code 0 if done, 1 if failed
 
 	pre_setup
@@ -1824,135 +3012,303 @@ elif [ "$1" = "delete_chains" ]; then
 
 	exit 0
 
-else
-	#Display a splash page sequence using a Themespec
+elif [ "$1" = "delete_client_rule" ]; then
+	# Deletes a client rule
+	# $2 is the table
+	# $3 is the chain
+	# $4 is the verdict - accept, drop, queue, continue, return, jump, goto or all
+	# $5 is the client ip address
 
-	#################################
-	# Any parameters set here	#
-	# will be overridden if set	#
-	# in the themespec file	#
-	#################################
+	nds_table=$2
+	nds_chain=$3
+	nds_verdict=$4
+	client_ip=$5
 
-	#  setup required parameters:	#
+	verdicts="accept drop queue continue return jump goto all"
 
-	# Client Custom String
-	custom=""
-	# You can choose to define a custom string. This will be b64 encoded and sent to openNDS.
-	# There it will be made available to be displayed in the output of ndsctl json as well as being sent
-	#	to the BinAuth post authentication processing script if enabled.
-	# Set the variable $binauth_custom to the desired value.
-	# Values set here can be overridden by the themespec file
+	for verdict in $verdicts; do
 
-	#binauth_custom="This is sample text sent from \"$title\" to \"BinAuth\" for post authentication processing."
+		if [ "$verdict" = "$nds_verdict" ]; then
+			delete_client_rule
+			exit 0
+		fi
+	done
 
-	# Encode and activate the custom string
-	#encode_custom
+	# bad verdict
+	exit 1
 
-	# Preshared key
-	#########################################
-	# Default value is 1234567890 when faskey is not set in config
-	get_key_from_config
+elif [ "$1" = "replace_client_rule" ]; then
+	# Deletes a client rule
+	# $2 is the table
+	# $3 is the chain
+	# $4 is the verdict - accept, drop, queue, continue, return, jump, goto or all
+	# $5 is the client ip address
 
-	# Quotas and Data Rates
-	#########################################
-	# Set length of session in minutes (eg 24 hours is 1440 minutes - if set to 0 then defaults to global sessiontimeout value):
-	# eg for 100 mins:
-	# session_length="100"
+	nds_table="$2"
+	nds_chain="$3"
+	nds_verdict="$4"
+	client_ip="$5"
+	new_rule="$6"
+
+	verdicts="accept drop queue continue return jump goto all"
+
+	for verdict in $verdicts; do
+
+		if [ "$verdict" = "$nds_verdict" ]; then
+			replace_client_rule
+			exit 0
+		fi
+	done
+
+	# bad verdict
+	exit 1
+
+elif [ "$1" = "ipt_to_nft" ]; then
+	# Translates ipt to nft and executes
+	# $2 is the command name
+	# $3 is the ipt command string
+	#  Note: The generated nft command recorded in /[log_mountpoint]/translate and is executed
+	#	This funcion is intended only for development work and requires iptables-nft to be installed.
 	#
-	# eg for 20 hours:
-	# session_length=$((20*60))
-	#
-	# eg for 20 hours and 30 minutes:
-	# session_length=$((20*60+30))
-	session_length="0"
 
-	# Set Rate and Quota values for the client
-	# The session length, rate and quota values could be determined by this script, on a per client basis.
-	# rates are in kb/s, quotas are in kB. - if set to 0 then defaults to global value).
-	upload_rate="0"
-	download_rate="0"
-	upload_quota="0"
-	download_quota="0"
+	if [ -z "$2" ]; then
+		exit 4
+	fi
 
-	quotas="$session_length $upload_rate $download_rate $upload_quota $download_quota"
-	#########################################
+	if [ -z "$3" ]; then
+		exit 4
+	fi
 
-	# The list of Parameters sent from openNDS:
-	# Note you can add custom parameters to the config file and to read them you must also add them here.
-	# Custom parameters are "Portal" information and are the same for all clients eg "admin_email" and "location"
-	ndsparamlist="hid clientip clientmac client_type gatewayname gatewayurl version gatewayaddress gatewaymac originurl clientif"
+	cmd=$2
+	cmdstr=$3
+	
+	ipt_to_nft
 
-	# The list of FAS Variables used in the Login Dialogue generated by this script.
-	# These FAS variables received from the login form presented to the client.
-	# The following are the defaults for all themes. Theme specific variables are appended by the ThemeSpec script.
-	fasvarlist="terms landing status continue custom"
+	exit $ret
 
-	# Set the Logfile location, using the tmpfs "temporary" directory to prevent flash wear.
-	# or override to a custom location in the ThemeSpec file (eg USB stick)
+elif [ "$1" = "nftset" ]; then
+	# Creates walledgarden or blocklist nftset
+	# $2 is add, insert or delete the rule
+	# $3 is the nftset name
+	# $4 is the rule type (accept, drop or reject)
+
+	if [ -z "$2" ]; then
+		exit 4
+	fi
+
+	nftsetmode=$2
+
+	if [ -z "$3" ]; then
+		exit 4
+	fi
+
+	if [ -z "$4" ]; then
+		nftruletype="accept"
+	else
+		case $4 in
+			"accept") nftruletype="accept";;
+			"drop") nftruletype="drop";;
+			"reject") nftruletype="reject";;
+			*) nftruletype="accept";;
+		esac
+	fi
+
+	if [ "$3" = "walledgarden" ] && [ "$nftruletype" = "accept" ]; then
+		nftsetname="walledgarden"
+	elif [ "$3" = "blocklist" ]; then
+		nftsetname="blocklist"
+
+		if [ -z "$nftruletype" ]; then
+			nftruletype="block"
+		fi
+	else
+		exit 4
+	fi
+
+	nft_set
+
+	exit $ret
+
+elif [ "$1" = "pad_string" ]; then
+	# Pads a string to a length given by the length of the pad string, with extra characters from the pad string
+	# $2 is the hand, ie "left" or "right"
+	# $3 is the pad string eg "1234567890"
+	# $4 is the string to pad
+
+	if [ "$2" = "right" ] || [ "$2" = "left" ]; then
+		hand="$2"
+		p="$3"
+		m="$4"
+		pad_str
+	else
+		exit 1
+	fi
+
+	printf "%s" "$padded"
+	exit 0
+
+elif [ "$1" = "write_to_syslog" ]; then
+	# Write debug message to syslog
+	# $2 contains the string to log
+	# $3 contains the debug level string: debug, info, warn, notice, err, emerg.
+
+	if [ -z "$2" ]; then
+		exit 1
+	else
+		syslogmessage="$2"
+		debugtype="$3"
+		write_to_syslog
+	fi
+
+	exit 0
+
+elif [ "$1" = "check_heartbeat" ]; then
+	# Check the openNDS heartbeat
+	# Returns the heartbeat status string
+	# and exit code 0 if alive, 1 if dead
+	check_heartbeat
+	echo "$exitmessage"
+	exit $dead
+
+elif [ "$1" = "auth_restore" ]; then
+	# Restore the authentication of clients after a restart
+	# Reads the authenticated client database if created by Binauth
+	auth_restore
+
+	exit 0
+
+elif [ "$1" = "configure_log_location" ]; then
+	# Configure the log location
+	# Returns the directory into which log files should be stored
 	configure_log_location
+	echo -n "$logdir"
 
-	############################################################################
-	### We are now ready to generate the html for the Portal "Splash" pages: ###
-	############################################################################
+	exit 0
 
-	# Get the arguments sent from openNDS and parse/decode them, setting portal ThemeSpec as required
-	get_theme_environment $1 $2 $3 $4
+elif [ "$1" = "is_nodog" ]; then
+	# Check if nodogsplash is installed
+	# Returns string nodog_yes and exit code 0 if it is, nodog_no and exit code >0 if it is not
+	type nodogsplash &>/dev/null
+	nodog=$?
 
-	refresh="3"
-	type download_image_files &>/dev/null && download_image_files
-	type download_data_files &>/dev/null && download_data_files
-
-	# Note: $mountpoint is now set to point to a safe storage area, so we have loaded custom images there
-
-	config_input_fields "input"
-
-	# Add inputnames to fasvarlist
-	fasvarlist="$fasvarlist $inputnames"
-
-	get_arguments
-
-	config_input_fields "hidden"
-
-	# Set the default image to be displayed
-	if [ -z "$imagepath" ]; then
-		imagepath="http://$gatewayaddress/images/splash.jpg"
+	if [ "$nodog" -eq 0 ]; then
+		echo "nodog_yes"
+	else
+		echo "nodog_no"
 	fi
 
-	# Output the page common header
-	type header &>/dev/null && header || default_header
+	exit $nodog
 
-	# Check if Terms of Service is requested
-	if [ "$terms" = "yes" ]; then
-		display_terms
+elif [ "$1" = "generate_key" ]; then
+	# Generate a key
+	k1=$(date | sha256sum | awk '{printf "%s", $1}')
+	k2=$(tr -cd "[:digit:]" < /dev/urandom | head -c 64 | sha256sum)
+	printf "$k1$k2" | sha256sum | awk -F' ' '{printf $1}'
+
+	exit 0
+
+elif [ "$1" = "set_key" ]; then
+	cmd="echo \"	option faskey '$2'\" >> /etc/config/opennds"
+	shelldetect=$(head -1 "/usr/lib/opennds/libopennds.sh")
+
+	if [ "$shelldetect" = "#!/bin/sh" ]; then
+		shell="/bin/sh"
+	else
+		shell="/bin/bash"
 	fi
 
-	# Check if landing page is requested
-	if [ "$landing" = "yes" ]; then
-		landing_page
+	echo "$cmd" | $shell
+
+	exit 0
+
+elif [ "$1" = "hash_str" ]; then
+
+	if [ -z "$2" ]; then
+		exit 1
 	fi
 
-	# Check if the client is already logged in (have probably tapped "back" on their browser)
-	# Make this a friendly message explaining they are good to go
-	check_authenticated
+	strtohash="$2"
+	hash_str
+	printf "%s" "$hashedstr"
+	exit "$status"
 
-	# Generate the dynamic portal splash page sequence
-	type generate_splash_sequence &>/dev/null && generate_splash_sequence || serve_error_message "Invalid ThemeSpec"
+elif [ "$1" = "wget_request" ]; then
 
-	# Customisation of the sequence of portal pages will normally be done in a corresponding themespec file.
-	# This script imports a themespec file for defining the dynamically generated portal sequence presented to the client
-	# The themespec file to be imported is defined in the openNDS config file
-	# Hints:
-	# The output of this script will be served by openNDS built in web server (MHD) and
-	# ultimately displayed on the client device screen via the CPD process on that device.
-	#
-	# It should be noted when designing a custom splash page that for security reasons
-	# most client device CPD implementations MAY do one or all of the following:
-	#
-	#	1.Immediately close the browser when the client has authenticated.
-	#	2.Prohibit the use of href links.
-	#	3.Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
-	#	4.Prohibit the execution of javascript.
-	#
+	if [ -z "$2" ]; then
+		exit 1
+	fi
+
+	url="$2"
+	action="$3"
+	gatewayhash="$4"
+	user_agent="$5"
+	payload="$6"
+
+	wget_request
+
+	printf "%s" "$retval"
+	exit "$status"
+
+elif [ "$1" = "preemptivemac" ]; then
+	# where $2 is an optional client mac address to immediately pre-emptively authenticate
+	# If $2 is not set then the preemptivemac list is parsed
+	preemptivemac "$2"
+
+	exit 0
+
+elif [ "$1" = "resolve_fqdn" ]; then
+	resolve_fqdn $2
+	printf "%s" "$fqdnaddress"
+
+	exit 0
+
+elif [ "$1" = "config_input_fields" ]; then
+	config_input_fields $2
+	echo "$custom_inputs"
+	echo "$custom_passthrough"
+
+	exit 0
+
+elif [ "$1" = "get_meshnode_list" ]; then
+	get_meshnode_list
+	echo "$meshnode_list"
+
+	exit 0
+
+elif [ "$1" = "get_next_preemptive_auth" ]; then
+	configure_log_location
+	auth_files=$(ls $mountpoint/ndscids/preemptive_auth)
+
+	if [ -z $auth_files ]; then
+		exit 1
+	fi
+
+	for auth_file in $auth_files; do
+		cat "$mountpoint/ndscids/preemptive_auth/$auth_file"
+		rm "$mountpoint/ndscids/preemptive_auth/$auth_file"
+		break
+	done
+
+	exit 0
+
+elif [ "$1" = "ipv6_routing" ]; then
+
+	is_uci=$(type uci &>/dev/null; echo $?)
+
+	if [ -z "$2" ] || [ "$is_uci" -gt 0 ]; then
+		exit 0
+
+	elif [ "$2" = "block" ]; then
+		uci set network.wan6.proto='none'
+		service network reload
+
+	elif [ "$2" = "allow" ]; then
+		uci revert network
+		service network reload
+	fi
+
+	exit 0
+
 fi
 
 ########################################################################

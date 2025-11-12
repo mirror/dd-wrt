@@ -21,7 +21,7 @@
 /* @file ndsctl_thread.c
     @brief Monitoring and control of opennds, server part
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #define _GNU_SOURCE
@@ -62,10 +62,6 @@ extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
 
 static int ndsctl_handler(int fd);
-static void ndsctl_block(FILE *fp, char *arg);
-static void ndsctl_unblock(FILE *fp, char *arg);
-static void ndsctl_allow(FILE *fp, char *arg);
-static void ndsctl_unallow(FILE *fp, char *arg);
 static void ndsctl_trust(FILE *fp, char *arg);
 static void ndsctl_untrust(FILE *fp, char *arg);
 static void ndsctl_auth(FILE *fp, char *arg);
@@ -257,14 +253,6 @@ ndsctl_handler(int fd)
 	} else if (strncmp(request, "stop", 4) == 0) {
 		// tell the caller to stop the thread
 		ret = 1;
-	} else if (strncmp(request, "block", 5) == 0) {
-		ndsctl_block(fp, (request + 6));
-	} else if (strncmp(request, "unblock", 7) == 0) {
-		ndsctl_unblock(fp, (request + 8));
-	} else if (strncmp(request, "allow", 5) == 0) {
-		ndsctl_allow(fp, (request + 6));
-	} else if (strncmp(request, "unallow", 7) == 0) {
-		ndsctl_unallow(fp, (request + 8));
 	} else if (strncmp(request, "trust", 5) == 0) {
 		ndsctl_trust(fp, (request + 6));
 	} else if (strncmp(request, "untrust", 7) == 0) {
@@ -304,7 +292,7 @@ ndsctl_auth(FILE *fp, char *arg)
 	unsigned long long int downloadquota = config->download_quota;
 	char *libcmd;
 	char *msg;
-	char customdata[256] = {0};
+	char *customdata;
 	char *argcopy;
 	const char *arg2;
 	const char *arg3;
@@ -374,8 +362,10 @@ ndsctl_auth(FILE *fp, char *arg)
 	arg8 = strsep(&argcopy, ",");
 	debug(LOG_DEBUG, "arg8 [%s]", arg8);
 
+	customdata = safe_calloc(CUSTOM_ENC);
+
 	if (arg8 != NULL) {
-	snprintf(customdata, sizeof(customdata), "%s", arg8);
+	snprintf(customdata, CUSTOM_ENC, "%s", arg8);
 	debug(LOG_DEBUG, "customdata [%s]", customdata);
 	}
 
@@ -390,7 +380,8 @@ ndsctl_auth(FILE *fp, char *arg)
 		// If Preemptive authentication is enabled we should try to auth by mac
 		debug(LOG_DEBUG, "Client is not in client list.");
 		// Build command to get client mac and ip
-		safe_asprintf(&libcmd, "/usr/lib/opennds/libopennds.sh clientaddress \"%s\"", arg2 );
+		libcmd = safe_calloc(SMALL_BUF);
+		safe_snprintf(libcmd, SMALL_BUF, "/usr/lib/opennds/libopennds.sh clientaddress \"%s\"", arg2 );
 
 		msg = safe_calloc(64);
 		rc = execute_ret_url_encoded(msg, 64 - 1, libcmd);
@@ -445,6 +436,8 @@ ndsctl_auth(FILE *fp, char *arg)
 					debug(LOG_DEBUG, "ip subnet test failed: Continuing...");
 				}
 			}
+		free(msg);
+
 		} else {
 			debug(LOG_DEBUG, "Client connection not found: Continuing...");
 			rc = -1;
@@ -472,6 +465,9 @@ ndsctl_auth(FILE *fp, char *arg)
 
 			rc = auth_client_auth_nolock(id, "ndsctl_auth", customdata);
 		}
+
+	free(argcopy);
+
 	} else {
 		// Client is neither preauthenticated nor authenticated
 		// If Preemptive authentication is enabled we should have tried to auth by mac
@@ -487,6 +483,7 @@ ndsctl_auth(FILE *fp, char *arg)
 		fprintf(fp, "No");
 	}
 
+	free(customdata);
 	debug(LOG_DEBUG, "Exiting ndsctl_auth...");
 }
 
@@ -518,74 +515,6 @@ ndsctl_deauth(FILE *fp, char *arg)
 	}
 
 	debug(LOG_DEBUG, "Exiting ndsctl_deauth...");
-}
-
-static void
-ndsctl_block(FILE *fp, char *arg)
-{
-	int rc;
-
-	debug(LOG_DEBUG, "Entering ndsctl_block [%s]", arg);
-
-	rc = auth_client_block(arg);
-	if (rc == 0) {
-		fprintf(fp, "Yes");
-	} else {
-		fprintf(fp, "No");
-	}
-
-	debug(LOG_DEBUG, "Exiting ndsctl_block.");
-}
-
-static void
-ndsctl_unblock(FILE *fp, char *arg)
-{
-	int rc;
-
-	debug(LOG_DEBUG, "Entering ndsctl_unblock [%s]", arg);
-
-	rc = auth_client_unblock(arg);
-	if (rc == 0) {
-		fprintf(fp, "Yes");
-	} else {
-		fprintf(fp, "No");
-	}
-
-	debug(LOG_DEBUG, "Exiting ndsctl_unblock.");
-}
-
-static void
-ndsctl_allow(FILE *fp, char *arg)
-{
-	int rc;
-
-	debug(LOG_DEBUG, "Entering ndsctl_allow [%s]", arg);
-
-	rc = auth_client_allow(arg);
-	if (rc == 0) {
-		fprintf(fp, "Yes");
-	} else {
-		fprintf(fp, "No");
-	}
-
-	debug(LOG_DEBUG, "Exiting ndsctl_allow.");
-}
-
-static void
-ndsctl_unallow(FILE *fp, char *arg)
-{
-	int rc;
-
-	debug(LOG_DEBUG, "Entering ndsctl_unallow [%s]", arg);
-
-	rc = auth_client_unallow(arg);
-	if (rc == 0) {
-		fprintf(fp, "Yes");
-	} else {
-		fprintf(fp, "No");
-	}
-
-	debug(LOG_DEBUG, "Exiting ndsctl_unallow.");
 }
 
 static void

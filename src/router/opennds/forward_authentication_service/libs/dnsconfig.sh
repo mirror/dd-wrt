@@ -1,5 +1,5 @@
 #!/bin/sh
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2025
 #This software is released under the GNU GPL license.
 #
 # Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
@@ -14,6 +14,31 @@ hosts="/etc/hosts"
 
 setconf="$1"
 uciconfig=$(uci show dhcp 2>/dev/null)
+
+ipset_to_nftset () {
+
+	local timeout=$loopcount
+
+	for tic in $(seq $timeout); do
+		ipset list "$ipsetname" &>/dev/null
+		ipsetstat=$?
+		elements=$(ipset list "$ipsetname" 2>/dev/null | awk -F"." 'NF==4 {printf ", %s", $0}')
+
+		if [ $ipsetstat -gt 0 ]; then
+			break
+		fi
+
+		elements=$(ipset list "$ipsetname" 2>/dev/null | awk -F"." 'NF==4 {printf ", %s", $0}')
+		elements=${elements:2}
+
+		if [ ! -z "$elements" ] && [ "$elements" != "$last_elements" ]; then
+			nft add element ip nds_filter "$ipsetname" {"$elements"}
+		fi
+
+		last_elements="$elements"
+		sleep 1
+	done
+}
 
 delete_114s() {
 
@@ -31,9 +56,17 @@ delete_114s() {
 
 restart_dnsmasq() {
 	if [ "$uciconfig" = "" ]; then
-		systemctl restart dnsmasq &
+		systemctl restart dnsmasq
 	else
-		/etc/init.d/dnsmasq restart &
+		service dnsmasq restart
+	fi
+}
+
+reload_dnsmasq() {
+	if [ "$uciconfig" = "" ]; then
+		systemctl reload dnsmasq
+	else
+		service dnsmasq reload
 	fi
 }
 
@@ -46,28 +79,15 @@ elif [ "$setconf" = "restart_only" ]; then
 	printf "%s" "done"
 	exit 0
 
+elif [ "$setconf" = "reload_only" ]; then
+	reload_dnsmasq
+	printf "%s" "done"
+	exit 0
+
 elif [ "$setconf" = "revert" ]; then
 
 	if [ ! -z "$uciconfig" ]; then
 		uci revert dhcp
-	fi
-
-	printf "%s" "done"
-	exit 0
-
-elif [ "$setconf" = "ipsetconf" ]; then
-	ipsetconf=$2	
-
-	if [ -z "$uciconfig" ]; then
-		sed -i '/System\|walledgarden/d' $conflocation
-		echo "ipset=$ipsetconf" >> $conflocation
-	else
-		# OpenWrt
-		# Note we do not commit here so that the config changes do NOT survive a reboot and can be reverted without writing to config files
-		del_ipset="del_list dhcp.@dnsmasq[0].ipset='$ipsetconf'"
-		add_ipset="add_list dhcp.@dnsmasq[0].ipset='$ipsetconf'"
-		echo $del_ipset | uci batch
-		echo $add_ipset | uci batch
 	fi
 
 	printf "%s" "done"
@@ -127,29 +147,56 @@ elif [ "$setconf" = "cpidconf" ]; then
 	else
 		# OpenWrt
 		# Note we do not commit here so that the config changes do NOT survive a reboot and can be reverted without writing to config files
-		cpidconfig=$(uci get dhcp.lan.dhcp_option_force 2>/dev/null)
-		dellist="del_list dhcp.lan.dhcp_option_force="
 
-		if [ -z "$gatewayfqdn" ]; then
-			delete_114s
-			printf "%s" "done"
-			exit 0
+		# Get the network zone
+		gwif=$(uci get opennds.@opennds[0].gatewayinterface 2> /dev/null | awk '{printf "%s", $1}')
+
+		if [ -z "$gwif" ]; then
+			gwif="br-lan"
 		fi
 
-		addlist="add_list dhcp.lan.dhcp_option_force='114,http://$gatewayfqdn'"
+		network_zone=$(uci show network | grep "device='$gwif'" | awk -F "." '{printf "%s", $2}')
 
-		if [ -z "$cpidconfig" ]; then
-			echo $addlist | uci batch
+		if [ ! -z "$network_zone" ]; then
+			cpidconfig=$(uci get dhcp.lan.dhcp_option_force 2>/dev/null)
+			dellist="del_list dhcp.$network_zone.dhcp_option_force='114,http://$gatewayfqdn'"
 
-		elif [ "$cpidconfig" != "114,http://$gatewayfqdn" ]; then
-			delete_114s
-			echo $addlist | uci batch
+			if [ -z "$gatewayfqdn" ]; then
+				delete_114s
+				printf "%s" "done"
+				exit 0
+			fi
+
+			addlist="add_list dhcp.$network_zone.dhcp_option_force='114,http://$gatewayfqdn'"
+
+			if [ -z "$cpidconfig" ]; then
+				echo $addlist | uci batch
+
+			elif [ "$cpidconfig" != "114,http://$gatewayfqdn" ]; then
+				delete_114s
+				echo $addlist | uci batch
+			fi
 		fi
 	fi
 
 	printf "%s" "done"
 	exit 0
 
+elif [ "$1" = "ipset_to_nftset" ]; then
+	ipsetname=$2
+
+	if [ -z "$2" ]; then
+		exit 4
+	fi
+
+	if [ -z "$3" ]; then
+		loopcount=1
+	else
+		loopcount=$3
+	fi
+
+	ipset_to_nftset
+	exit 0
 else
 	exit 1 
 fi

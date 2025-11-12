@@ -21,7 +21,7 @@
 /** @file common.h
     @brief Common constants and other bits
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #ifndef _COMMON_H_
@@ -37,10 +37,31 @@
 #define SMALL_BUF 1024
 
 /** @brief exec return status buffer size */
-#define STATUS_BUF 16
+#define STATUS_BUF 256
+
+/** @brief exec return user_agent buffer size */
+#define USER_AGENT (SMALL_BUF * 2)
+
+/** @brief exec return enc_user_agent buffer size */
+#define ENC_USER_AGENT (SMALL_BUF * 2)
+
+/** @brief exec return custom string buffer size */
+#define CUSTOM (MID_BUF)
+
+/** @brief exec return custom_enc string buffer size */
+#define CUSTOM_ENC (MID_BUF + SMALL_BUF)
+
+/** @brief exec return redirect_url string buffer size */
+#define REDIRECT_URL (MID_BUF)
+
+/** @brief exec return redirect_url_enc_buf string buffer size */
+#define REDIRECT_URL_ENC_BUF (REDIRECT_URL * 1.333)
 
 /* Max length of a query string in bytes */
 #define QUERYMAXLEN 8192
+
+/* Max length of a query string in bytes */
+#define ENC_QUERYSTR (QUERYMAXLEN * 1.333)
 
 /* Separator for Preauth and Encrypted query string */
 #define QUERYSEPARATOR ", "

@@ -1,6 +1,6 @@
 #!/bin/sh
 #Copyright (C) The openNDS Contributors 2004-2022
-#Copyright (C) BlueWave Projects and Services 2015-2023
+#Copyright (C) BlueWave Projects and Services 2015-2024
 #This software is released under the GNU GPL license.
 #
 # Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
@@ -40,11 +40,29 @@ click_to_continue() {
 	if [ -e "$legacy" ]; then
 		cp $legacy $legacysplash
 
+		get_option_from_config gatewayport
+
+		if [ -z "$gatewayport"]; then
+			gatewayport="2050"
+		fi
+
 		sedstr="s|\$gatewayname|$gatewayname|"
 		sed -i "$sedstr" "$legacysplash"
 
-		authaction="/opennds_auth/"
+		htmlentitydecode $gatewayurl
+		gatewayurl=$entitydecoded
+		authaction="$gatewayurl/opennds_auth/"
 		sedstr="s|\$authaction|$authaction|"
+		sed -i "$sedstr" "$legacysplash"
+
+		css_rel="\"/splash.css\""
+		css_abs="\"$gatewayurl/splash.css\""
+		sedstr="s|$css_rel|$css_abs|"
+		sed -i "$sedstr" "$legacysplash"
+
+		img_rel="\"/images/splash.jpg\""
+		img_abs="\"$gatewayurl/images/splash.jpg\""
+		sedstr="s|$img_rel|$img_abs|"
 		sed -i "$sedstr" "$legacysplash"
 
 		option="gatewayfqdn"

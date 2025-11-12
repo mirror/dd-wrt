@@ -1,5 +1,5 @@
 <?php
-/* (c) Blue Wave Projects and Services 2015-2023. This software is released under the GNU GPL license.
+/* (c) Blue Wave Projects and Services 2015-2025. This software is released under the GNU GPL license.
 
  This is a FAS script providing an example of remote Forward Authentication for openNDS (NDS) on an http web server supporting PHP.
 
@@ -18,8 +18,8 @@
 
  5. faskey: Matching $key as set in this script (see below this introduction).
 	This is a key phrase for NDS to encrypt the query string sent to FAS.
-	It can be any combination of A-Z, a-z and 0-9, up to 16 characters with no white space.
-	eg 1234567890
+	It can be any combination of A-Z, a-z and 0-9, up to 64 characters with no white space.
+	eg c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646
 
  6. fas_secure_enabled:  set to level 3
 	The NDS parameters: clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl
@@ -54,8 +54,11 @@
 
 */
 
-// Set the pre-shared key. This **MUST** be the same as faskey in the openNDS config:
-$key="1234567890";
+// Set the pre-shared key. This **MUST** be the same as faskey in the openNDS config.
+//	For example, use the sha256 hash of a secret string, but note also that if not present in the openNDS config, one will be generated and added there.
+//	See: /etc/config/opennds on the router.
+
+$key="c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646";
 
 // Allow immediate flush to browser
 if (ob_get_level()){ob_end_clean();}
@@ -226,7 +229,7 @@ function decrypt_parse() {
 	*/
 
 	$cipher="AES-256-CBC";
-	$ndsparamlist=explode(" ", "clientip clientmac client_type gatewayname gatewayurl version hid gatewayaddress gatewaymac originurl clientif admin_email location");
+	$ndsparamlist=explode(" ", "clientip clientmac client_type gatewayname gatewayurl version hid gatewayaddress gatewaymac cpi_query originurl clientif admin_email location");
 
 	if (isset($_GET['fas']) and isset($_GET['iv']))  {
 		$string=$_GET['fas'];
@@ -280,6 +283,10 @@ function auth_get_deauthed() {
 	// Add your own function to handle auth_get deauthed payload
 	// By default it isappended to the FAS deauth log
 	$payload_decoded=base64_decode($_POST["payload"]);
+
+	if (! str_contains($payload_decoded, 'method=')) {
+		$payload_decoded=base64_decode($payload_decoded);
+	}
 
 	$logpath=$GLOBALS["logpath"];
 	$log=date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']).
@@ -443,6 +450,7 @@ function write_log() {
 	$gatewaymac=$GLOBALS["gatewaymac"];
 	$clientif=$GLOBALS["clientif"];
 	$originurl=$GLOBALS["originurl"];
+	$cpi_query=$GLOBALS["cpi_query"];
 	$redir=rawurldecode($originurl);
 	if (isset($_GET["fullname"])) {
 		$fullname=$_GET["fullname"];
@@ -457,7 +465,7 @@ function write_log() {
 	}
 
 	$log=date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']).
-		", $script, $gatewayname, $fullname, $email, $clientip, $clientmac, $client_type, $clientif, $user_agent, $redir\n";
+		", $script, $gatewayname, $fullname, $email, $clientip, $clientmac, $client_type, $clientif, $user_agent, $cpi_query, $redir\n";
 
 	if ($logpath == "") {
 		$logfile="ndslog/ndslog_log.php";
@@ -830,6 +838,7 @@ function err403() {
 		<hr>
 		<b style=\"color:red; font-size:1.5em;\">Encryption Error <br> Access Forbidden</b><br>
 	";
+
 	flush();
 	footer();
 }

@@ -24,17 +24,15 @@ If an improper routing configuration is detected, openNDS will shut down.
 Installing on OpenWrt
 *********************
 
-* Have a router working with OpenWrt. At the time of writing, openNDS has been tested with OpenWrt 18.06.x, 19.7.x 21.2.x and Snapshot.
+* Have a router working with OpenWrt. At the time of writing, the current version of openNDS has been tested with OpenWrt 22.03.x, 23.05.x and Master Snapshot.
 
-* OpenWrt version 19.07.x or less requires theoogle.com updated libmicrohttpd-no-ssl_0.9.71-1 package (or higher version) from Openwrt 21.2.x or higher.
-
-* openNDS may or may not work on older versions of OpenWrt.
+* openNDS v10.0.0 or higher, will not work on versions of OpenWrt less than 22.03.x
 
 * Make sure your router is working correctly before you try to install  openNDS. In particular, make sure your DHCP daemon is serving addresses on the interface that openNDS will manage.
 
   The default interface is br-lan but can be changed to any LAN interface by editing the /etc/config/opennds file.
 
-* To install openNDS on 21.3.x or higher, you may use the OpenWrt Luci web interface or alternatively, ssh to your router and run the command:
+* To install openNDS on 23.3.x or higher, you may use the OpenWrt Luci web interface or alternatively, ssh to your router and run the command:
 
     ``opkg update``
 
@@ -42,16 +40,10 @@ Installing on OpenWrt
 
     ``opkg install opennds``
 
-* To install on 19.7.x or lower, download libmicrohttpd-no-ssl_0.9.71-1 or higher to the /tmp directory on your router. Then install using the command:
-    ``opkg install <packagename> --force-reinstall``
-
-* Similarly, download openNDS v9.0.0 or higher to /tmp, again installing using the command:
-    ``opkg install <packagename> --force-reinstall``
-
 * openNDS is enabled by default and will start automatically on reboot or can be started and stopped manually.
 
 * If the interface that you want openNDS to manage is not br-lan,
-  edit /etc/config/opennds and set GatewayInterface.
+  edit /etc/config/opennds and set the gatewayinterface option.
 
 * To start openNDS, run the following, or just reboot the router:
 

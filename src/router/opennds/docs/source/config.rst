@@ -11,7 +11,7 @@ Set to 0 to disable opennds
 Use deprecated generic configuration file
 ******************************************
 
-Use of this setting is not recommended.
+Use of this setting is no longer supported and if present is ignored.
 
 ``option config '/etc/opennds/opennds.conf'``
 
@@ -41,9 +41,11 @@ debuglevel 2 + LOG_DEBUG
 Firewall Restart hook
 *********************
 
-Set to 0 to disable hook that makes opennds restart when the firewall restarts.
+Specific to OpenWrt only, Firewall 4 (FW4) informs openNDS when it is restarting.
 
-This hook is needed as a restart of Firewall overwrites opennds iptables entries.
+If enabled (Set to 1), openNDS reinserts any nftables it may need in the FW4 ruleset.
+
+Default: 1
 
 ``option fwhook_enabled '1'``
 
@@ -69,8 +71,8 @@ Default: router's volatile tmpfs storage eg on OpenWrt '/tmp'
 
 Local logging can be directed to any storage accessible to the router eg USB drive, SSD etc
 
-**WARNING** - you cannot use the router's built in flash storage as this would cause
-excessive wear and eventual flash failure
+**WARNING** - you should not use the router's built in flash storage as this would cause
+excessive wear and in a live system will result quite quickly in flash failure making the router useless.
 
 Example:
 
@@ -115,6 +117,8 @@ Mode 0
 ------
 If FAS is not enabled, then this functions as mode 1
 
+If FAS is configured, FAS is used.
+
 Mode 1
 ------
 Default Dynamic Click to Continue
@@ -144,9 +148,9 @@ Use Theme defined in ThemeSpec path (option themespec_path)
 Allow Preemptive Authentication
 *******************************
 
-Default: 0 - Disabled
+Default: 1 - Enabled
 
-Enable by setting to 1
+Disable by setting to 0
 
 This allows the ndsctl utility to preemptively authorise **connected** clients that have not entered the preauthenticated state.
 
@@ -156,7 +160,7 @@ or for a FAS to manage inter-captive-portal roaming by making use of a centralis
 
 Example:
 
-``option allow_preemptive_authentication '1'``
+``option allow_preemptive_authentication '0'``
 
 ThemeSpec Path
 **************
@@ -165,9 +169,9 @@ Default: None
 
 Required when when login_option_enabled is set to '3'
 
-Note: /usr/lib/opennds/theme_click-to-continue.sh is used for login_option_enabled '1'
+Note: /usr/lib/opennds/theme_click-to-continue-basic.sh is used for login_option_enabled '1'
 
-and:  /usr/lib/opennds/theme_user_email_login.sh is used for login_option_enabled '2'
+and:  /usr/lib/opennds/theme_user-email-login-basic.sh is used for login_option_enabled '2'
 
 Sets the ThemeSpec file path to be used when login_option_enabled '3'
 
@@ -179,6 +183,16 @@ The file must be flagged as executable and have the correct shebang for the defa
 
 ``option themespec_path '/usr/lib/opennds/<filename>'``
 
+DHCP Leases File
+****************
+
+Default: Try /tmp/dhcp.leases, /var/lib/misc/dnsmasq.lease or /var/db/dnsmasq.leases
+
+The file containing the list of active DHCP leases.
+
+Example:
+
+``option dhcp_leases_file '/tmp/dhcp.leases.special'``
 
 Define Custom Parameters
 ************************
@@ -376,7 +390,7 @@ Use outdated libmicrohttpd (MHD)
 
 Default 0 (Disabled)
 
-Warning, enabling this *may* cause instability or in the worst case total failure - it would be better to upgrade MHD.
+**Warning**: enabling this *may* cause instability or in the worst case total failure - it would be better to upgrade MHD.
 
 **Use at your own risk.**
 
@@ -414,25 +428,6 @@ Example:
 
 ``option max_page_size '4096'``
 
-MHD Unescape callback
-*********************
-
-Default 0 (Disabled)
-
-MHD has a built in unescape function that urldecodes incoming queries from browsers.
-
-This advanced option allows an external unescape script to replace the built in decoder.
-
-The script must be named unescape.sh, be present in /usr/lib/opennds/ and be executable.
-
-A very simple standard unescape.sh script is installed by default.
-
-Set to 1 to enable this option, 0 to disable.
-
-Example:
-
-``option unescape_callback_enabled '1'``
-
 Set the MHD WebRoot
 *******************
 
@@ -449,7 +444,7 @@ Example:
 Set the GatewayInterface
 ************************
 
-Default br-lan
+Default: br-lan
 
 Use this option to set the device opennds will bind to.
 
@@ -508,7 +503,7 @@ Appends a serial number suffix to the gatewayname string.
 
 openNDS constructs a serial number based on the router mac address and adds it to the gatewayname
 
-Default 1 (enabled)
+Default: 1 (enabled)
 
 To disable, set to 0
 
@@ -609,7 +604,7 @@ Set the Checkinterval
 
 The interval in seconds at which openNDS checks client timeouts, quota usage and runs watchdog checks.
 
-Default 15 seconds (one quarter of a minute).
+Default: 15 seconds (one quarter of a minute).
 
 Example: Set to 30 seconds.
 
@@ -646,7 +641,7 @@ Default 10
 
 Upload and Download bucket ratios can be defined.
 
-Allows control of upload rate limit threshold overrun per client.
+Allows fine control of upload rate limit threshold overrun per client.
 
 Used in conjunction with MaxDownloadBucketSize and MaxUploadBucketSize.
 
@@ -702,7 +697,7 @@ Example:
 DownLoadUnrestrictedBursting
 ****************************
 
-Default 0
+Default: 0
 
 Enables / disables unrestricted bursting
 
@@ -723,7 +718,7 @@ Example:
 UpLoadUnrestrictedBursting
 **************************
 
-Default 0
+Default: 0
 
 Enables / disables unrestricted bursting
 
@@ -744,7 +739,7 @@ Example:
 Set RateCheckWindow
 *******************
 
-Default 2
+Default: 2
 
 The client data rate is calculated using a moving average.
 
@@ -768,33 +763,50 @@ Example: Disable all rate quotas for all clients, overriding settings made in FA
 Set Volume Quotas
 *****************
 
-Defaults 0
-
-Integer values only.
-
-Values are in kB.
-
-If set to 0, there is no limit.
-
-If the client data quota exceeds the value set here, the client will be deauthenticated.
+If the client data quota exceeds the value set here, the client will be deauthenticated or rate limited as defined by the Fair Usage Policy throttle rate.
 
 The client by default may re-authenticate. It is the responsibility of the FAS (whether Themespec, other local or remote) to restrict further authentication of the client if so desired.
 
-Example:
+Defaults 0
 
-``option uploadquota '1000'``
+Integer values only
 
-``option downloadquota '10000'``
+Values are in kB
+
+If set to 0, there is no limit
+
+``option uploadquota '0'``
+
+``option downloadquota '0'``
+
+Set Fair Usage Policy Throttle Rate
+***********************************
+
+If Volume quota is set, a download throttle rate can be configured.
+
+Defaults 0
+
+Integer values only
+
+Values are in kb/s
+
+If set to 0, the client will be deauthenticated when the volume quota is exceeded
+
+``option fup_upload_throttle_rate '0'``
+
+``option fup_download_throttle_rate '0'``
 
 
 Enable BinAuth Support.
 ***********************
 
-Default disabled
+Default: Enabled
 
 BinAuth enables POST AUTHENTICATION PROCESSING and and is useful in particular when a FAS is configured remotely.
 
-If set, a BinAuth program or script is triggered by several possible methods and is called with several arguments on both authentication and deauthentication.
+The default binauth script is used to generate a client authentication database that is used for pre-emptive re-authentication.
+
+The BinAuth program or script is triggered by several possible methods and is called with several arguments on both authentication and deauthentication.
 
 Possible methods
 ----------------
@@ -913,15 +925,19 @@ In the following examples, replace with your own values for faspath:
 Set the Faskey
 **************
 
-Default: 1234567890
+Default: A system generated sha256 string
 
 A key phrase for NDS to encrypt the query string sent to FAS.
 
 Can be any text string with no white space.
 
+Hint and Example: Choose a secret string and use sha256sum utility to generate a hash.
+
+eg. Use the command - `echo "mysecretopenNDSfaskey" | sha256sum`
+
 Option faskey must be pre-shared with FAS. (It is automatically pre-shared with Themespec files)
 
-``option faskey 'mysecretopenNDSfaskey'``
+``option faskey '328411b33fe55127421fa394995711658526ed47d0affad3fe56a0b3930c8689'``
 
 Set Security Level: fas_secure_enabled
 **************************************
@@ -996,83 +1012,104 @@ Example:
 
 ``option nat_traversal_poll_interval '5'``
 
-Set PreAuth
-***********
-
-Default Not set, or automatically set by "option login_option_enabled".
-
-PreAuth support allows FAS to call a local program or script with html served by the built in NDS web server.
-
-If the option is set, it points to a program/script that is called by the NDS FAS handler.
-
-All other FAS settings will be overidden.
-
-Example:
-
-``option preauth '/path/to/myscript/myscript.sh'``
-
 Access Control For Authenticated Users
 **************************************
 
-Block Access For Authenticated Users (block)
+* Access can be allowed by openNDS but the final decision will be passed on to the operating system firewall. (Note: passthrough is deprecated as in nftables "allow" is equivalent to the old "passthrough"
+* All listed rules will be applied in the order present in the list.
+* An ip address or an FQDN may be included in a list entry.
+* If an FQDN resolves to multiple ip addresses, the rule will **NOT** be added. Rules for such FQDNs must be added elsewhere (eg the operating system firewall)
+
+Allow Access for Authenticated Users (allow)
 --------------------------------------------
 
-Default: None
-
-If Block Access is specified, an allow or passthrough must be specified afterwards as any entries set here will override the access default.
-
-Examples:
-
- You might want to block entire IP subnets. e.g.:
-
- ``list authenticated_users 'block to 123.2.3.0/24'``
-
- ``list authenticated_users 'block to 123.2.0.0/16'``
-
- ``list authenticated_users 'block to 123.0.0.0/8'``
-
-or block access to a single IP address. e.g.:
-
- ``list authenticated_users 'block to 123.2.3.4'``
-
-Do not forget to add an allow or passthrough if the default only is assumed (see Grant Access)
-
-
-Grant Access For Authenticated Users (allow and passthrough)
-------------------------------------------------------------
-
-* Access can be allowed by openNDS directly, overriding the operating system firewall rules
-
-or
-
-* Access can be allowed by openNDS but the final decision can be passed on to the operating system firewall.
+Any entries set here, or below in Block Access, are in addition to the default policy of "allow all"
 
 Default:
 
 No Entry, equivalent to
 
- ``list authenticated_users 'passthrough all'``
-
-Any entries set here, or above in Block Access, will override the default
-
-Example:
-
-Grant access overriding operating system firewall
  ``list authenticated_users 'allow all'``
 
 Example:
 
 Grant access to https web sites, subject to the operating system's firewall rules
 
- ``list authenticated_users 'passthrough tcp port 443'``
+ ``list authenticated_users 'allow tcp port 443'``
 
-Grant access to http web sites, overriding the operating system firewall rules.
-
- ``list authenticated_users 'allow tcp port 80'``
-
-Grant access to udp services at address 123.1.1.1, on port 5000, overriding the operating system firewall rules.
+Grant access to udp services at address 123.1.1.1, on port 5000.
 
  ``list authenticated_users 'allow udp port 5000 to 123.1.1.1'``
+
+Block Access For Authenticated Users (Block Lists)
+--------------------------------------------------
+
+Deny authenticated users access to external services
+
+A Block List can be configured either:
+    1. Manually for known ip addresses or fqdns with single ip addresses
+    2. Autonomously from a list of FQDNs and ports
+
+Manual Block List configuration
+...............................
+
+This requires research to determine the ip addresses of the Block List site(s) and can be problematic as sites can use many dynamic ip addresses.
+
+However, manual configuration does not require any additional dependencies (ie additional installed packages).
+
+Manual configuration example:
+
+``list authenticated_users 'block udp port 8020 to 112.122.123.124'``
+
+An fqdn can be used in place of an ip address (but the fqdn must have only one possible ip address)
+
+``list authenticated_users 'block tcp port 443 to mywebsite.com'``
+
+Autonomous Blocklist configuration using a list of FQDNs and Ports
+..................................................................
+
+This has the advantage of discovering all ip addresses used by the Blocklist sites.
+
+But it does require the dnsmasq-full package (and also the ipset package if dnsmasq does not support nftsets) to be installed.
+
+Configuration is then a simple matter of adding two lists as follows:
+
+``list blocklist_fqdn_list 'fqdn1 fqdn2 fqdn3 .... fqdnN'``
+
+``list blocklist_port_list 'port1 port2 port3 .... portN'``
+
+or
+
+``list blocklist_fqdn_list 'fqdn1'``
+
+``list blocklist_fqdn_list 'fqdn2'``
+
+``list blocklist_fqdn_list '....... etc.``
+
+``list blocklist_fqdn_list 'fqdnN'``
+
+Similarly, ports can be listed on multiple lines
+
+.. Note:: If blocklist_port_list is NOT specified, then blocklist access is denied for all protocols (tcp, udp, icmp) on ALL ports for each fqdn specified in blocklist_fqdn_list.
+
+If blocklist_port_list IS specified, then:
+
+    1. Specified port numbers apply to ALL FQDN's specified in blocklist_fqdn_list.
+    2. Access is blocked only for specified ports in each blocklist fqdn.
+    3. Blocklist only applies to authenticated users.
+
+
+Autonomous configuration examples
+.................................
+
+    1. To add Facebook to the blocklist, the list entries would be:
+        ``list blocklist_fqdn_list 'facebook.com fbcdn.net'``
+
+    2. To add YouTube to the blocklist, the list entries would be:
+        ``list blocklist_fqdn_list 'youtube.com'``
+
+    3. To deny access only to a port or list of ports, allowing other ports:
+        ``list blocklist_port_list '443 80'``
 
 Access Control For Preauthenticated Users:
 ******************************************
@@ -1121,11 +1158,11 @@ Autonomous Walled Garden configuration is activated using a list of FQDNs and Po
 
 This has the advantage of discovering all ip addresses used by the Walled Garden sites.
 
-But it does require the ipset and dnsmasq-full packages to be installed by running the following commands (on OpenWrt):
+But it does require the dnsmasq-full package to be installed and on OpenWrt 22.03.x or earlier the ipset package is also required. This is achieved by running the following commands (on OpenWrt):
 
 ``opkg update``
 
-``opkg install ipset``
+``opkg install ipset`` (OpenWrt version 22.03.x or earlier)
 
 ``opkg remove dnsmasq``
 
@@ -1196,7 +1233,9 @@ Access falls into two categories:
 Essential Access
 ----------------
 
-It is essential that you allow ports for DNS and DHCP (unless you have a very specific reason for doing so, **disabling these will soft brick your router!**):
+Essential access for DNS and DHCP is granted by default.
+
+If additional optional access is required, it is essential that you specifically allow ports for DNS and DHCP (unless you have a very specific reason for not doing so and know what you are doing. **Disabling these will soft brick your router!**):
 
 ``list users_to_router 'allow tcp port 53'``
 
@@ -1219,43 +1258,56 @@ For example - Allow ports for SSH/Telnet/HTTP/HTTPS:
 
 ``list users_to_router 'allow tcp port 443'``
 
-MAC Address Access Control List
-*******************************
-
-A list of MAC addresses can be defined that are either allowed to use the system, or are blocked.
-
-Note: This can easily be bypassed as a client MAC address can usually be easily changed.
-
-The mechanism used is either 'allow' or 'block' (It cannot be both).
-
-Examples:
-
-``option macmechanism 'allow'``
-
-``list allowedmac '00:00:C0:01:D0:0D'``
-
-``list allowedmac '00:00:C0:01:D0:1D'``
-
-or
-
-``option macmechanism 'block'``
-
-``list blockedmac '00:00:C0:01:D0:2D'``
-
-
 Trusted Clients
 ***************
 
-A list of the MAC addresses of client devices that do not require authentication can be defined.
+A list of the MAC addresses of trusted client devices.
+
+Trusted clients are granted immediate and unconditional access and do not require authentication.
+
+Trusted client data usage is not recorded and no quotas or timeouts are applied.
+
+See "Pre-emptive Clients" for conditional access for "trusted" clients.
 
 .. note::
- This can easily be be used to allow unauthorised access as a client MAC address can be changed. For a potentially more secure alternative, see "option allow_preemptive_authentication"
+ Be aware that most mobile devices randomise their mac address for each wireless network encountered.
 
 Example:
 
 ``list trustedmac '00:00:C0:01:D0:0D'``
 
 ``list trustedmac '00:00:C0:01:D0:1D'``
+
+Pre-emptive Clients
+*******************
+
+A list of the MAC addresses and access conditions of pre-emptively authenticated client devices.
+
+Unlike Trusted Clients, Pre-emptive clients have their data usage monitored. Quotas and timeouts are applied.
+
+Pre-emptive clients are logged both locally and in remote fas servers in the same way as normal validated clients.
+
+Pre-emptive Authentication must be enabled (default). See "allow_preemptive_authentication".
+
+  Default: Not Set
+
+.. note::
+ Be aware that most mobile devices randomise their mac address for each wireless network encountered.
+
+List parameters will be mac, sessiontimeout, uploadrate, downloadrate, uploadquota, downloadquota and custom. The ";" character is used as a parameter separator.
+
+List parameters set to "0" or omitted are set to the global or default value.
+
+Pre-emptive clients are logged both locally and in remote fas servers in the same way as normal validated clients.
+
+Examples:
+
+``list preemptivemac 'mac=00:00:C0:01:D0:01;sessiontimeout=1200;uploadrate=200;downloadrate=0;uploadquota=0;downloadquota=0;custom=custom string for preemptivemac1'``
+
+``list preemptivemac 'mac=00:00:D0:01:D0:02;sessiontimeout=1000;uploadrate=200;downloadrate=800;uploadquota=0;downloadquota=0;custom=custom string for preemptivemac2'``
+
+``list preemptivemac 'mac=00:00:E0:01:D0:03;sessiontimeout=4200;uploadrate=100;downloadrate=0;uploadquota=0;downloadquota=0;custom=custom_string_for_preemptivemac3'``
+
 
 Dhcp option 114 Enable - RFC8910
 ********************************
@@ -1275,7 +1327,7 @@ Example:
 Packet Marking Compatibility
 ****************************
 
-openNDS uses specific HEXADECIMAL values to mark packets used by iptables as a bitwise mask.
+openNDS uses specific HEXADECIMAL values to mark packets used by nftables as a bitwise mask.
 
 This mask can conflict with the requirements of other packages.
 
@@ -1293,8 +1345,8 @@ Option: fw_mark_trusted
 
 Default: 20000 (0010|0000|0000|0000|0000 binary)
 
-Option: fw_mark_blocked
------------------------
+Option: fw_mark_blocked (deprecated)
+------------------------------------
 
 Default: 10000 (0001|0000|0000|0000|0000 binary)
 

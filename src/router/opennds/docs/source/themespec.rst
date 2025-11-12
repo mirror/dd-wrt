@@ -20,9 +20,9 @@ and
 
 ``option login_option_enabled '2'`` (for username/email login)
 
-Mode 1 selects the script file theme_click-to-continue.sh for inclusion.
+Mode 1 selects the script file theme_click-to-continue-basic.sh for inclusion.
 
-Mode 2 selects the script file theme_user-email-login.sh for inclusion.
+Mode 2 selects the script file theme_user-email-login-basic.sh for inclusion.
 
 Automated Content Updates
 -------------------------

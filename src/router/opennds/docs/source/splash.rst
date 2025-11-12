@@ -30,18 +30,23 @@ A Dynamic Web Page served by an independent web server
 
  This has the advantage having the full flexibility of using readily available mainstream web servers, located anywhere, enabling full flexibility in design and implementation of the captive portal functionality, ranging from a self contained system through to a fully integrated multi site system with a common database.
 
-The Pre-Installed Basic Splash Pages
-************************************
+The Pre-Installed ThemeSpec Splash Pages
+****************************************
 
  By default, the Splash pages consist of a simple click to continue dialogue followed by a Welcome or advertising page. A simple config option allows you to select instead a Name/EmailAddress login dialogue.
 
-
- In many instances, one or other of these simple methods will be all that is required, but the power of FAS, PreAuth and BinAuth can be used to create very sophisticated Captive Portal Systems.
+ In many instances, one or other of these simple methods will be all that is required, but the power of FAS, ThemeSpec and BinAuth can be used to create very sophisticated Captive Portal Systems.
 
 The Legacy splash.html Static Web Page
 **************************************
 
-The legacy static splash.html page has been deprecated for some time and in openNDS v 9.0.0 support has been removed.
+The legacy static splash.html page has been deprecated for some time and in openNDS v9.0.0 support was removed.
+
+A ThemeSpec script that emulates the legacy Static Web page has been provided in th Community area of Github.
+
+It can be downloaded from here:
+
+https://github.com/openNDS/openNDS/tree/master/community/themespec/theme_legacy
 
 Displaying Remote Content
 *************************

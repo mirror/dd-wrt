@@ -15,7 +15,7 @@
  * @brief a httpd implementation using libmicrohttpd
  * @author Copyright (C) 2015 Alexander Couzens <lynxis@fe80.eu>
  * @author Copyright (C) 2015-2023 The openNDS contributors <opennds@blue-wave.net>
- * @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+ * @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
  */
 
 #include <ctype.h>

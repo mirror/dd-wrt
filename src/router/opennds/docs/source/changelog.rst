@@ -1,6 +1,228 @@
 What's New? - ChangeLog
 #######################
 
+opennds (10.3.0)
+  * Fix - missing exit in library call [bluewavenet]
+  * Add - support for mesh11sd meshnodes and reimplement auth_restore to not use ndsctl -  [bluewavenet]
+  * Fix - formatting of ThemeSpec scripts -  [bluewavenet]
+  * Fix - move parsing of custom vaiables and fields to libopennds library script -  [bluewavenet]
+  * Fix - move custom_variables_list parsing to liboppennds library -  [bluewavenet]
+  * Fix - parsing of custom variables list -  [bluewavenet]
+  * Fix - non placeholder themespec logo size -  [bluewavenet]
+  * Fix - formatting of themespec custom placeholders and status page -  [bluewavenet]
+  * Fix - missing parseing of custom files list in config -  [bluewavenet]
+  * Fix - issue #596, Problem with fasremotefqdn that has multiple IPs ( CDN ) -  [bluewavenet] [viniciussotti ]
+  * Add - download protocol debug message -  [bluewavenet]
+  * Add - function resolve_fqdn() -  [bluewavenet]
+  * Fix - failure to parse custom variables and custom images from config lists -  [bluewavenet]
+  * Fix - issue #582, ensure list dhcp-option-force is added to the correct dnsmasq zone -  [bluewavenet] [flintt]
+  * Fix - issue #591, error adding nft rule when fasremotefqdn not set -  [bluewavenet] [billz]
+  * Fix - change error message to debug message when legacy ipset not present -  [bluewavenet]
+  * Fix - issue #588, Remove default value for faskey -  [bluewavenet] [billz]
+  * Fix - some memory leaks -  [bluewavenet] [LuMingYinDetect]
+  * Fix - typo preventing reload of dnsmasq -  [bluewavenet]
+  * Fix - issue #571, CVE-2024-25763, use after free - we now delete the client instead of changing state -  [bluewavenet] [LuMingYinDetect]
+  * Fix - Evaluate system call return values -  [bluewavenet] [sunweaver]
+  * Fix - enable iteration counter for all nft error codes -  [bluewavenet]
+  * Fix - issue #556, use dnsmasq reload instead of restart -  [bluewavenet] [rafaelfelix]
+  * Fix - remove unneeded memory allocation -  [bluewavenet]
+  * Fix - ensure all client memory is freed when removing client -  [bluewavenet]
+  * Fix - remove unneeded memory allocations and free some strdup allocations -  [bluewavenet]
+  * Fix - race condition when dnsmasq takes too long to restart -  [bluewavenet]
+  * Add - issue #547, Support specifying DHCP leases file location [mcassaniti]
+
+ -- Rob White <dot@blue-wave.net>  Wed, 07 Jun 2024 07:31:46 +0000
+
+opennds (10.2.0)
+  * Add - Page 202 HTTP_ACCEPTED for future use [bluewavenet]
+  * Fix - remove redundant workaround for old MHD versions [bluewavenet]
+  * Fix - some nft and other error messages [bluewavenet]
+  * Fix - remove unnecessary debug messages [bluewavenet]
+  * Add - improved ndsctl status detection for authmon [bluewavenet]
+  * Add - increase RestartSec parameter in opennds.service for generic Linux [bluewavenet]
+  * Fix - prevent unnecessary shutdown [bluewavenet]
+  * Fix - Generic Linux, error updating dnsmasq.conf [bluewavenet]
+  * Add - allow dynamic update of flowtable rules [bluewavenet]
+  * Fix - use Themespec in place of deprecated preauth in ndectl status [bluewavenet]
+  * Fix - Generic linux -  keep old config [bluewavenet]
+  * Fix - remove some unused variables [bluewavenet]
+  * Add - support for nftables blocklists [bluewavenet]
+  * Add - ensure authenticated user rules are added in list order [bluewavenet]
+  * Add - Set default authenticated policy to accept [bluewavenet]
+  * Add - urandom hash to key generation [bluewavenet]
+  * Fix - Fix - duplicate users_to_router rules [bluewavenet]
+  * Add - Automatic dns resolution of fas_remotefqdn in nftables rules [bluewavenet]
+  * Add - flowtables rules [bluewavenet]
+  * Add - dynamic flowtable support allowing multiple upstream connections [bluewavenet]
+  * Add - skip preemptivemac client if not dhcp database or is already authenticated [bluewavenet]
+  * Add - Skip auth_restore if client is in preemptivemac list [bluewavenet]
+  * Add - use daemon_auth in auth_restore [bluewavenet]
+  * Add - Dynamic refresh of configured preemptive macs [bluewavenet]
+  * Fix - suppress demon_auth debug output [bluewavenet]
+  * Add - urlencode ALL list blocks and introduce preemptivemac lists [bluewavenet]
+  * Add - fas-hid-https to makefiles [bluewavenet]
+  * Add - warning that pre-shared key will be generated and added to config if not present [bluewavenet]
+  * Add - b64decode payload in fas [bluewavenet]
+  * Add - b64encode payload before sending to fas [bluewavenet]
+  * Add - level 4 fas-hid-https [bluewavenet]
+  * Add - support for fas_secure_enabled = 4 [bluewavenet]
+  * Add - updates to comments in fas-hid script [bluewavenet]
+  * Fix - fas-hid icon position [bluewavenet]
+  * Add - wget_request support to authmon [bluewavenet]
+  * Add - ruleset full parsing of verdict, protocol ports to/from address [bluewavenet]
+  * Fix - send_to_fas_deauthed [bluewavenet]
+  * Fix - ensure action is parsed correctly in all cases [bluewavenet]
+  * Add - Quota based Fair Usage Policy, sets throttled rate when quota exceeded [bluewavenet]
+  * Add - QL code scanning support in Community theme_voucher ThemeSpec script [bluewavenet]
+  * Add - support for cpi_query in example FAS scripts [bluewavenet]
+  * Fix - memory leak when deleting client from client list [bluewavenet]
+  * Add - html entity handling for semicolon [bluewavenet]
+  * Add - Store RFC8910 request string in client data [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Wed, 22 Nov 2023 11:08:15 +0000
+
+opennds (10.1.3)
+  * Security Advisory. This version contains fixes for multiple potential security vulnerabilities
+  * Credit - Stanislav Dashevskyi - standash.github.io [standash]
+  * It also contains some minor bug fixes
+  * Fix - Buffer overflow causing segfault - CVE-2023-41101 [bluewavenet]
+  * Fix - Memory leaks due to passing allocated buffer into safe_asprintf() - CVE-2023-41102 [bluewavenet]
+  * Fix - Remove deprecated preauth option [bluewavenet]
+  * Fix - missing free in show_preauth_page if MHD does not respond [bluewavenet]
+  * Fix - more safe_asprintf memory leaks [bluewavenet]
+  * Fix - missing free for mark_auth [bluewavenet]
+  * Fix - memory leak after starting authmon daemon [bluewavenet]
+  * Fix - memory leak in encode_and_redirect_to_splashpage [bluewavenet]
+  * Fix - Community themespec, voucher css and logo image [bluewavenet]
+  * Fix - ThemeSpec, path to logo in page footer [bluewavenet]
+  * Fix - ensure gatewayurl is urldecoded to fix broken css and images in themespec [bluewavenet]
+  * Add - set default fas remote fqdn to disabled [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Sat, 28 Aug 2023 09:46:35 +0000
+
+opennds (10.1.2)
+  * Security Advisory. This version contains fixes for multiple potential security vulnerabilities
+  * Credit - Stanislav Dashevskyi - standash.github.io [standash]
+  * It also contains some minor bug fixes
+  * Fix - Generate unique sha256 faskey if not set in config - CVE-2023-38324 [bluewavenet]
+  * Fix - NULL pointer dereference if user_agent is NULL - CVE-2023-38320, CVE-2023-38322 [bluewavenet]
+  * Fix - NULL pointer dereference if authdir is called with an incomplete or missing query string - CVE-2023-38313, CVE-2023-38314, CVE-2023-38315 [bluewavenet]
+  * Fix - remove deprecated and non-functioning unescape callback - CVE-2023-38316 [bluewavenet]
+  * Fix - prevent potential recursive dependency and detect if conflicting package is installed [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Sat, 29 Jul 2023 10:04:52 +0000
+
+opennds (10.1.1)
+  * This version contains some minor bug fixes and documentation updates
+  * Fix - send only contents of buffer, not entire buffer when serving page511 [bluewavenet]
+  * Fix - Set fas_remotefqdn to gw_fqdn when overriding FAS settings [bluewavenet]
+  * Fix - use absolute path for css and images in ThemeSpec [bluewavenet]
+  * Fix - revert to old option names without underscores [bluewavenet]
+  * Fix - FAS URL when fas_remotefqdn is not set [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Fri, 14 Jul 2023 13:56:50 +0000
+
+opennds (10.1.0)
+
+  * This version is a major upgrade including full migration to nftables
+  * and native uci configuration support even for generic Linux distributions.
+  * It also includes a significant refactoring of inbuilt memory management,
+  * improving long term reliability, fixing several memory leaks, buffer overflows and several edge case crashes.
+  * Add - support for included custom binauth script [bluewavenet]
+  * Add - emit a useful stderr message if auth_restore fails [bluewavenet]
+  * Add - procd respawn threshold, respawn timeout and respawn retry parameters [bluewavenet]
+  * Add - user friendly commandline message if already running [bluewavenet]
+  * Fix - Enabling of Data volume quotas [bluewavenet]
+  * Fix - use get_list_from_config instead of get_option_from_config [bluewavenet]
+  * Fix - compiler warning - unused variable [bluewavenet]
+  * Fix - remove redundant function call ipsetconf [bluewavenet]
+  * Fix - walledgarden for both nftset and ipset on OpenWrt [bluewavenet]
+  * Add - more meaningful output if attempt is made to restart when already running [bluewavenet]
+  * Fix - resolve gatewayfqdn after startup [bluewavenet]
+  * Fix - Choose forground or background running according to commandline arguments [bluewavenet]
+  * Fix - remove superfluous debug message [bluewavenet]
+  * Fix - replace sleep with procd_set_param term_timeout [bluewavenet]
+  * Fix - make option enabled default to enabled [bluewavenet]
+  * Fix - report authmon pid instead of opennds pid from authmon [bluewavenet]
+  * Fix - ensure correct pid obtained for opennds [bluewavenet]
+  * Add - StartLimitIntervalSec and StartLimitBurst to systemd service script [bluewavenet]
+  * Fix - refactor remote downloads [bluewavenet]
+  * Fix - suppress error message on ipset test failure [bluewavenet]
+  * Fix - send non-syslog debug information to stdout by default [bluewavenet]
+  * Add - C function to check heartbeat watchdog [bluewavenet]
+  * Fix - Update generic Linux makefile [bluewavenet]
+  * Fix - remove redundant ruleset struct definition [bluewavenet]
+  * Fix - potential buffer overflow issue during config stage [bluewavenet]
+  * Fix - remove unnecessary calls to free() in page 404 processing [bluewavenet]
+  * Fix - remove redundant code from fw_iptables [bluewavenet]
+  * Add - updates to binauth_log script [bluewavenet]
+  * Add - updates for service startup, systemd and procd [bluewavenet]
+  * Add - refactoring of commandline processing [bluewavenet]
+  * Fix - remove debugging message [bluewavenet]
+  * Fix - typo in client ruleset [bluewavenet]
+  * Add - Refactor to use uci config directly even for Generic Linux [bluewavenet]
+  * Add - Parsing for multi item lists with spaces in items [bluewavenet]
+  * Add - use common library call get_option_fom_config [bluewavenet]
+  * Add - support for direct use of uci format config file - string and integer parameters [bluewavenet]
+  * Fix - Remove deprecated syslog_facility config setting [bluewavenet]
+  * Add - thread busy message to ndsctl [bluewavenet]
+  * Add - refactor configure_log_location [bluewavenet]
+  * Fix - suppress LOG_NOTICE message when getting mac of interface [bluewavenet]
+  * Fix - ndsctl error message [bluewavenet]
+  * Fix - get_client_interface for levels 2 and 3 [bluewavenet]
+  * Add - use common library write_log function [bluewavenet]
+  * Add - Refactor memory management [bluewavenet]
+  * Fix - fix and refactor upload rate limiting rules [bluewavenet]
+  * Fix - Change a debug message from err to info [bluewavenet]
+  * Add - refine common buffer sizes [bluewavenet]
+  * Add - use initialised heap memory for redirect_to_splashpage [bluewavenet]
+  * Add - user message to themespec [bluewavenet]
+  * Add - auth_restore support ie reauth clients after a restart by default. [bluewavenet]
+  * Add - Library call to preemptively re-auth clients after a restart or crash [bluewavenet]
+  * Add - BinAuth, write an authenticated clients list [bluewavenet]
+  * Add - library call "check_heartbeat" [bluewavenet]
+  * Fix - Tidy up redundant code [bluewavenet]
+  * Fix - change warning message to debug message when iw not installed [bluewavenet]
+  * Add - library call to log to syslog [bluewavenet]
+  * Fix - use initialised heap memory for client list entries [bluewavenet]
+  * Fix - ignore legacy ipset firewall rule [bluewavenet]
+  * Fix - refactor memory management for MHD calls - use heap memory for buffers etc [bluewavenet]
+  * Fix - missing free causing memory leak [bluewavenet]
+  * Fix  - predefine and initialise buffer for send_redirect_temp [bluewavenet]
+  * Add - support protocol "all" in firewall ruleset [bluewavenet]
+  * Add - pre-allocation of initialised buffers [bluewavenet]
+  * Fix  - prevent buffer overrun on removing client [bluewavenet]
+  * Add - update MHD connection timeout and connection limit [bluewavenet]
+  * Add - chain ndsDLR for dynamic client download rate limiting rules [bluewavenet]
+  * Add - Use Internal Polling Thread / Thread Per Connection in MHD [bluewavenet]
+  * Add - some new default values [bluewavenet]
+  * Fix - remove some redundant code and fix some compiler warnings [bluewavenet]
+  * Fix - remove redundant library command string [bluewavenet]
+  * Fix - Tidy up redundant iptables code [bluewavenet]
+  * Add - convert trusted client support to nftables [bluewavenet]
+  * Add - refer to nftables [bluewavenet]
+  * Add - move code for generating authentication mark string to initial setup [bluewavenet]
+  * Add - full nftset support with ipset import where required [bluewavenet]
+  * Add - nftset support library calls [bluewavenet]
+  * Add - ipset_to_nftset library call [bluewavenet]
+  * Add - support for nftables version of append_ruleset and nftables_compile [bluewavenet]
+  * Fix - buffer overflow in page_511 generation [bluewavenet]
+  * Add - more nftables migration including rate quotas [bluewavenet]
+  * Fix - change GatewayInterface to lower case [bluewavenet]
+  * Add - upload and download limiting client flags for future use [bluewavenet]
+  * add - lib calls "pad_string" and "replace_client_rule" [bluewavenet]
+  * Add - further nftables migration [bluewavenet]
+  * Fix - correctly parse options from legacy conf file [bluewavenet]
+  * Fix - some compiler warnings and set min iptables version [bluewavenet]
+  * Add - Generic Linux configure walledgarden [bluewavenet]
+  * Add - Implementation of nftsets for walledgarden [bluewavenet]
+  * Add - migration to nftables, next phase. [bluewavenet]
+  * Add - library function delete_client_rule [bluewavenet]
+  * Fix - remove duplicate definition [bluewavenet]
+  * Add - First stage migration to nftables [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Tue, 14 Jun 2023 14:22:50 +0000
+
 opennds (9.10.0)
 
   * This version adds new functionality, and fixes some issues
@@ -64,7 +286,7 @@ opennds (9.9.0)
   * fix - safe functions to return error rather than exit [bluewavenet]
   * Add - b64decode custom string received by binauth script [bluewavenet]
 
- -- Rob White <dot@blue-wave.net>  Thu, 29 Sep 2022 16:52:46 +0000
+ -- Rob White <dot@blue-wave.net>  Thu, 03 Oct 2022 16:52:46 +0000
 
 opennds (9.8.0)
 
@@ -162,7 +384,7 @@ opennds (9.6.0)
   * Add - Show unrestricted burst intervals in ndsctl status [bluewavenet]
   * Add - Set default bucket ratios to 10 [bluewavenet]
 
- -- Rob White <dot@blue-wave.net>  Sun, 06 Feb 2022 07:44:50 +0000
+ -- Rob White <dot@blue-wave.net>  Fri, 18 Feb 2022 09:35:51 +0000
 
 opennds (9.5.1)
 
@@ -192,7 +414,6 @@ opennds (9.5.0)
   * Add - more libraries documentation [bluewavenet]
   * Add - library calls startdaemon and stopdaemon [bluewavenet]
   * Fix - Increase buffer length for longer interface names [koivunen]
-  * Add - enforce minimum data rates in ndsctl auth [bluewavenet]
   * Add - Update README.md [bluewavenet]
   * Add - bucket ratio option to config file [bluewavenet]
   * Add - upload and download bucket ratio config values [bluewavenet]
@@ -271,21 +492,11 @@ opennds (9.4.0)
 
  -- Rob White <dot@blue-wave.net>  Wed, 22 Sep 2021 19:39:08 +0000
 
-opennds (9.3.1)
-
-  * This version fixes some issues
-  * Fix - Segfault in ndsctl when -s option is used incorrectly [bluewavenet] [T-X]
-  * Fix - Typo making calculation of ul/dl rates incorrect [bluewavenet]
-  * Fix - Allow port 80 to be configured in the Walled Garden [bluewavenet]
-  * Add - Warning message when Walled Garden port 80 is allowed [bluewavenet]
-
- -- Rob White <dot@blue-wave.net> Thu, 26 Aug 2021 12:09:36 +0000
-
 opennds (9.3.0)
 
   * This version adds new functionality, and fixes some issues
-  * Add - Add - firewall passthrough mode for authenticated users [bluewavenet]
-  * Add - Add - use configured debuglevel in authmon [bluewavenet]
+  * Add - firewall passthrough mode for authenticated users [bluewavenet]
+  * Add - use configured debuglevel in authmon [bluewavenet]
   * Add - automated log rotation and client_zone to binauth_log [bluewavenet]
   * Add - increased timeout interval for file downloads [bluewavenet]
   * Add - local interface to MeshZone and remove unneeded call to ip utility [bluewavenet]
@@ -301,7 +512,7 @@ opennds (9.3.0)
   * Fix - Prevent potential read overrun within the MHD page buffer [bluewavenet]
   * Remove - legacy get_ext_iface() function [bluewavenet]
 
- -- Rob White <dot@blue-wave.net> Sun, 8 Aug 2021 09:58:02 +0000
+ -- Rob White <dot@blue-wave.net>  Sun, 8 Aug 2021 09:58:02 +0000
 
 opennds (9.2.0)
 
@@ -313,7 +524,7 @@ opennds (9.2.0)
   * Add - Use heap allocation for http page buffer allowing large page sizes [bluewavenet]
   * Fix - fail to serve downloaded images on custom themespec [bluewavenet]
 
- -- Rob White <dot@blue-wave.net> Sun, 11 July 2021 15:05:39 +0000
+ -- Rob White <dot@blue-wave.net>  Sun, 11 July 2021 15:05:39 +0000
 
 opennds (9.1.1)
 
@@ -324,7 +535,7 @@ opennds (9.1.1)
   * Fix - Compiler warning, ignored return value from call to fgets() [bluewavenet]
   * Fix - Remove debug message from call to get_client_interface library [bluewavenet]
 
- -- Rob White <dot@blue-wave.net> Thu, 4 July 2021 21:07:21 +0000
+ -- Rob White <dot@blue-wave.net> Sun, 4 July 2021 21:07:21 +0000
 
 opennds (9.1.0)
 
@@ -604,4 +815,3 @@ openNDS (5.0.0)
   * Fix - Allow use of "#" in gatewayname [bluewavenet]
 
  -- Rob White <dot@blue-wave.net> Sat, 03 Apr 2020 13:23:36 +0000
-

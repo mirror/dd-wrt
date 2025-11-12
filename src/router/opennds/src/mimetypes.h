@@ -3,7 +3,7 @@
  *
  *	 Copyright (C) 2010-2013 Jo-Philipp Wich <xm@subsignal.org>
  *	 Copyright (C) 2013 Felix Fietkau <nbd@openwrt.org>
- *	 Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
+ *	 Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

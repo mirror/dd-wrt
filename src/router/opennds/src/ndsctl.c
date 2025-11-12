@@ -21,8 +21,8 @@
 /** @file ndsctl.c
     @brief Monitoring and control of opennds, client part
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
-    @author Copyright (C) 2015-2023 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
     @author Copyright (C) 2021 ndsctl_lock() and ndsctl_unlock() based on code by Linus Lüssing <ll@simonwunderlich.de>
+    @author Copyright (C) 2015-2025 Modifications and additions by BlueWave Projects and Services <opennds@blue-wave.net>
 */
 
 #define _GNU_SOURCE
@@ -197,14 +197,6 @@ usage(void)
 		"\n"
 		"  deauth mac|ip|token\n"
 		"	Deauthenticate user with specified mac, ip or token\n\n"
-		"  block mac\n"
-		"	Block the given MAC address\n\n"
-		"  unblock mac\n"
-		"	Unblock the given MAC address\n\n"
-		"  allow mac\n"
-		"	Allow the given MAC address\n\n"
-		"  unallow mac\n"
-		"	Unallow the given MAC address\n\n"
 		"  trust mac\n"
 		"	Trust the given MAC address\n\n"
 		"  untrust mac\n"
@@ -226,10 +218,6 @@ static struct argument arguments[] = {
 	{"debuglevel", "Debug level set to %s.\n", "Failed to set debug level to %s.\n"},
 	{"deauth", "Client %s deauthenticated.\n", "Client %s not found.\n"},
 	{"auth", "Client %s authenticated.\n", "Failed to authenticate client %s.\n"},
-	{"block", "MAC %s blocked.\n", "Failed to block MAC %s.\n"},
-	{"unblock", "MAC %s unblocked.\n", "Failed to unblock MAC %s.\n"},
-	{"allow", "MAC %s allowed.\n", "Failed to allow MAC %s.\n"},
-	{"unallow", "MAC %s unallowed.\n", "Failed to unallow MAC %s.\n"},
 	{"trust", "MAC %s trusted.\n", "Failed to trust MAC %s.\n"},
 	{"untrust", "MAC %s untrusted.\n", "Failed to untrust MAC %s.\n"},
 	{"b64decode", NULL, NULL},
@@ -264,7 +252,7 @@ connect_to_server(const char sock_name[])
 	strncpy(sa_un.sun_path, sock_name, (sizeof(sa_un.sun_path) - 1));
 
 	if (connect(sock, (struct sockaddr *)&sa_un, strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
-		fprintf(stderr, "ndsctl: opennds probably not started (Error: %s)\n", strerror(errno));
+		fprintf(stderr, "ndsctl: opennds probably not yet started (Error: %s)\n", strerror(errno));
 		remove(lockfile);
 		return -1;
 	}
@@ -388,6 +376,9 @@ int ndsctl_lock(char *mountpoint, int *lockfd)
 		// This is a normal operating state, no need to report to syslog
 		// It is the responsibility of the caller to check return code and retry if required
 		close(*lockfd);
+
+		printf("ndsctl thread is busy, please try later.\n");
+
 		return 4;
 	}
 }
