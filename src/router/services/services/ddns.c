@@ -195,7 +195,7 @@ static int init_ddns(FILE *fp)
 		NULL,
 		NULL,
 		"ipv6@regfish.de",
-		"ipv6@simply.com",
+		NULL,
 		NULL,
 		"ipv6@ipv64.net",
 		"ipv6@porkbun.com",
