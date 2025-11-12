@@ -42,6 +42,48 @@ define kernelfeatures
 		sed -i 's/CONFIG_IP_SET=y/\# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/CONFIG_IP_SET=m/\# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_OPENNDS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_NF_TABLES is not set/CONFIG_NF_TABLES=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES_INET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES_ARP=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES_BRIDGE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES_NETDEV=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_NUMGEN=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_FLOW_OFFLOAD=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_BRIDGE_META is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_BRIDGE_REJECT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_CONNLIMIT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_COMPAT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_XFRM is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_DUP_IPV4 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_DUP_IPV6 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_FIB_IPV4 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_FIB_IPV6 is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_LOG=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_LIMIT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_MASQ=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REDIR=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_NAT=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_TUNNEL is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_QUOTA=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REJECT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REJECT_INET=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_HASH=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_FIB=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_FIB_INET=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_SOCKET is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_OSF is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_TPROXY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_SYNPROXY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NF_DUP_NETDEV is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_DUP_NETDEV is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_FWD_NETDEV is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_FIB_NETDEV is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_REJECT_NETDEV is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NETFILTER_NETLINK_HOOK is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_NOEXTIRQ)" = "y" ]; then \
 		sed -i 's/noinitrd/noextirq noinitrd/g' $(LINUXDIR)/.config; \
 	fi
