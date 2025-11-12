@@ -268,7 +268,7 @@ obj-$(CONFIG_EOU) += eou
 #obj-$(CONFIG_MILKFISH) += milkfish
 obj-$(CONFIG_MC) += libffi zlib glib20 unrar ncurses mc util-linux pcre2
 #ifneq ($(CONFIG_OPENNDS),y)
-obj-$(CONFIG_NOCAT) += libmicrohttpd nodogsplash
+obj-$(CONFIG_NOCAT) += libmicrohttpd json-c nodogsplash
 #else
 #obj-$(CONFIG_OPENNDS) += libmicrohttpd opennds
 #endif
