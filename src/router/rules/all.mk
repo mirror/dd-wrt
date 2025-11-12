@@ -409,6 +409,7 @@ include rules/bluez.mk
 include rules/bluez-tools.mk
 include rules/jemalloc.mk
 include rules/procps.mk
+include rules/nftables.mk
 
 #
 # Generic rules
