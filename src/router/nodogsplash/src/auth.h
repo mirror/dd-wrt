@@ -23,8 +23,10 @@
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
 */
 
-#ifndef _AUTH_H_
-#define _AUTH_H_
+#ifndef _NDS_AUTH_H_
+#define _NDS_AUTH_H_
+
+#include "client_list.h"
 
 int auth_client_deauth(unsigned id, const char *reason);
 int auth_client_auth(unsigned id, const char *reason);
@@ -35,6 +37,7 @@ int auth_client_allow(const char *mac);
 int auth_client_unallow(const char *mac);
 int auth_client_block(const char *mac);
 int auth_client_unblock(const char *mac);
+int auth_change_state(t_client *client, const unsigned int new_state, const char *reason);
 
 /** @brief Periodically check if connections expired */
 void *thread_client_timeout_check(void *arg);
@@ -42,4 +45,4 @@ void *thread_client_timeout_check(void *arg);
 /** @brief Deauth all authenticated clients */
 void auth_client_deauth_all();
 
-#endif
+#endif /* _NDS_AUTH_H_ */

@@ -26,10 +26,8 @@
 
 #define _GNU_SOURCE
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include <errno.h>
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -40,7 +38,6 @@
 #include "debug.h"
 #include "conf.h"
 #include "client_list.h"
-#include "http_microhttpd.h"
 #include "fw_iptables.h"
 #include "util.h"
 
@@ -56,6 +53,8 @@ pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
  * Holds a pointer to the first element of the list
  */
 static t_client *firstclient = NULL;
+
+static void _client_list_free_node(t_client *client);
 
 /** Return current length of the client list
  */
@@ -81,6 +80,28 @@ client_list_init(void)
 {
 	firstclient = NULL;
 	client_count = 0;
+}
+
+/*! Flush all clients without calling hooks or cleaning up the fw
+ *
+ */
+void
+client_list_flush(void)
+{
+	t_client *client = firstclient;
+	t_client *prev = NULL;
+
+	if (client_count == 0)
+		return;
+
+	while (client != NULL) {
+		prev = client;
+		client = client->next;
+		_client_list_free_node(prev);
+	}
+	firstclient = NULL;
+	client_count = 0;
+	client_id = 1;
 }
 
 /** @internal

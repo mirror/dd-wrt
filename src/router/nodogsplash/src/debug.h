@@ -23,8 +23,8 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
+#ifndef _NDS_DEBUG_H_
+#define _NDS_DEBUG_H_
 
 #include <syslog.h>
 
@@ -32,7 +32,7 @@
 #define DEBUGLEVEL_MAX 3
 
 /** @brief Used to output messages.
- *The messages will include the finlname and line number, and will be sent to syslog if so configured in the config file
+ *The messages will include the filename and line number, and will be sent to syslog if so configured in the config file
  */
 #ifdef NEED_PRINTF
 #define debug(...) _debug(__BASE_FILE__, __LINE__, __VA_ARGS__)
@@ -43,4 +43,4 @@ void _debug(const char filename[], int line, int level, const char *format, ...)
 #define debug(...) do { } while(0)
 #endif
 
-#endif /* _DEBUG_H_ */
+#endif /* _NDS_DEBUG_H_ */

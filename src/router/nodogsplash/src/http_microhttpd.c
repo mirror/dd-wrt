@@ -17,11 +17,12 @@
  * @author Copyright (C) 2023 Moritz Warning <moritzwarning@web.de>
  */
 
+#define _GNU_SOURCE
+
 #include <microhttpd.h>
 #include <syslog.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <pthread.h>
 #include <linux/limits.h>

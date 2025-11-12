@@ -24,8 +24,13 @@
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
-#ifndef _CLIENT_LIST_H_
-#define _CLIENT_LIST_H_
+#ifndef _NDS_CLIENT_LIST_H_
+#define _NDS_CLIENT_LIST_H_
+
+#include <pthread.h>
+#include <time.h>
+
+#include "debug.h"
 
 /** Counters struct for a client's bandwidth usage (in bytes)
  */
@@ -88,6 +93,9 @@ void client_reset(t_client *client);
 /** @brief Deletes a client from the client list */
 void client_list_delete(t_client *client);
 
+/** @brief Flush all clients without calling any hooks or fw handlers */
+void client_list_flush(void);
+
 #define LOCK_CLIENT_LIST() do { \
 	debug(LOG_DEBUG, "Locking client list"); \
 	pthread_mutex_lock(&client_list_mutex); \
@@ -102,4 +110,4 @@ void client_list_delete(t_client *client);
 
 extern pthread_mutex_t client_list_mutex;
 
-#endif /* _CLIENT_LIST_H_ */
+#endif /* _NDS_CLIENT_LIST_H_ */

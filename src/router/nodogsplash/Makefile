@@ -1,18 +1,25 @@
 
 CC?=gcc
-CFLAGS?=-O2 -g -Wall
+CFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/libmicrohttpd/src/include -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS+=-Isrc
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS+=-pthread
-LDLIBS=-lmicrohttpd
+LDLIBS=$(LTO) -L$(TOP)/libmicrohttpd/src/microhttpd/.libs -lmicrohttpd  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 STRIP=yes
+ENABLE_STATE_FILE ?= yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/fw_iptables.o src/path.o src/main.o src/http_microhttpd.o src/http_microhttpd_utils.o \
 	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o src/template.o src/epoll.o
 
-.PHONY: all clean install checkastyle fixstyle deb
+ifeq (yes,$(ENABLE_STATE_FILE))
+CFLAGS += -DWITH_STATE_FILE -I$(TOP)/json-c
+LDLIBS += -L$(TOP)/json-c/.libs -ljson-c
+NDS_OBJS += src/state_file.o
+endif
+
+.PHONY: all clean install checkastyle fixstyle deb tests
 
 all: nodogsplash 
 #ndsctl
@@ -44,6 +51,9 @@ install:
 	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/www
 	cp resources/status.html $(DESTDIR)/etc/nodogsplash/www/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/www/images/
+
+tests:
+	$(MAKE) -C ./tests tests
 
 checkastyle:
 	@command -v astyle >/dev/null 2>&1 || \
