@@ -79,8 +79,8 @@ static int nslookup(ddns_alias_t *alias)
 
 static void read_one(ddns_alias_t *alias, const char *name, int nonslookup)
 {
-	FILE *fp;
 	char path[256];
+	FILE *fp;
 
 	alias->last_update = 0;
 	memset(alias->address, 0, sizeof(alias->address));

@@ -196,9 +196,8 @@ static int is_address_valid(int family, const char *host)
 	size_t i;
 
 	for (i = 0; i < NELEMS(except); i++) {
-		if (!strncmp(host, except[i], strlen(host))) {
+		if (!strncmp(host, except[i], strlen(host)))
 			return 0;
-		}
 	}
 
 	if (!verify_addr) {
@@ -339,7 +338,7 @@ static int parse_my_address(char *buffer, char *address, size_t len)
 
 static int get_address_remote(ddns_t *ctx, ddns_info_t *info, char *address, size_t len)
 {
-	if (!info->server_url[0])
+	if (!info->checkip_name.name[0])
 		return 1;
 
 	DO(server_transaction(ctx, info));
@@ -995,6 +994,7 @@ int ddns_main_loop(ddns_t *ctx)
 			info = conf_info_iterator(1);
 			while (info) {
 				size_t i;
+
 				for (i = 0; i < info->alias_count; i++) {
 					ddns_alias_t *alias = &info->alias[i];
 					alias->force_addr_update = 1;
@@ -1045,6 +1045,7 @@ int ddns_main_loop(ddns_t *ctx)
 			info = conf_info_iterator(1);
 			while (info) {
 				size_t i;
+
 				for (i = 0; i < info->alias_count; i++) {
 					ddns_alias_t *alias = &info->alias[i];
 					alias->force_addr_update = 1;
