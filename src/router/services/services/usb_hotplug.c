@@ -103,12 +103,6 @@ void start_hotplug_usb(void)
 	int class, subclass, protocol;
 
 	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1)) {
-		nvram_set("vm.min_free_kbytes", "2464");
-		nvram_set("vm.vfs_cache_pressure", "100");
-		nvram_set("vm.dirty_expire_centisecs", "3000");
-		nvram_set("vm.dirty_writeback_centisecs", "1500");
-		nvram_set("vm.overcommit_memory", "0");
-		nvram_set("vm.overcommit_ratio", "50");
 		return;
 	}
 
@@ -167,12 +161,6 @@ void start_hotplug_block(void)
 	char *devpath;
 	char *action;
 	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1)) {
-		nvram_set("vm.min_free_kbytes", "2464");
-		nvram_set("vm.vfs_cache_pressure", "100");
-		nvram_set("vm.dirty_expire_centisecs", "3000");
-		nvram_set("vm.dirty_writeback_centisecs", "1500");
-		nvram_set("vm.overcommit_memory", "0");
-		nvram_set("vm.overcommit_ratio", "50");
 		return;
 	}
 
@@ -352,22 +340,28 @@ static int usb_process_path(char *path, char *fs, char *target)
 #endif
 			ret = eval("/bin/mount", path, mount_point); //guess fs
 	}
+
 #ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "16384"));
+	writeprocsys("vm/min_free_kbytes", "20480");
+#elif HAVE_MVEBU
+	writeprocsys("vm/min_free_kbytes", "65536");
 #elif HAVE_IPQ6018
 	if (getmemtotal() > 512 * 1024 * 1024)
-		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+		writeprocsys("vm/min_free_kbytes", "65536");
 	else
-		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
+		writeprocsys("vm/min_free_kbytes", "4096");
 #elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", "65536");
 #elif HAVE_X86
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", "65536");
 #else
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
+	writeprocsys("vm/min_free_kbytes", "4096");
 #endif
-	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
-	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
+	writeprocsys("vm/vfs_cache_pressure", "10000");
+	writeprocsys("vm/dirty_expire_centisecs", "100");
+	writeprocsys("vm/dirty_writeback_centisecs", "100");
+	writeprocsys("vm/overcommit_memory", "2");
+	writeprocsys("vm/overcommit_ratio", "80");
 	//      writeprocsys("vm/pagecache_ratio","90");
 	//      writeprocsys("vm/swappiness","90");
 	//      writeprocsys("vm/overcommit_memory","2");

@@ -160,12 +160,6 @@ void start_hotplug_usb(void)
 		return;
 
 	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1)) {
-		nvram_set("vm.min_free_kbytes", "2464");
-		nvram_set("vm.vfs_cache_pressure", "100");
-		nvram_set("vm.dirty_expire_centisecs", "3000");
-		nvram_set("vm.dirty_writeback_centisecs", "1500");
-		nvram_set("vm.overcommit_memory", "0");
-		nvram_set("vm.overcommit_ratio", "50");
 		return;
 	}
 
@@ -259,12 +253,6 @@ void start_hotplug_block(void)
 	if (!(action = getenv("ACTION")))
 		return;
 	if (!nvram_matchi("usb_enable", 1) || !nvram_matchi("usb_storage", 1) || !nvram_matchi("usb_automnt", 1)) {
-		nvram_set("vm.min_free_kbytes", "2464");
-		nvram_set("vm.vfs_cache_pressure", "100");
-		nvram_set("vm.dirty_expire_centisecs", "3000");
-		nvram_set("vm.dirty_writeback_centisecs", "1500");
-		nvram_set("vm.overcommit_memory", "0");
-		nvram_set("vm.overcommit_ratio", "50");
 		return;
 	}
 	// e.g. /devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1.2/1-1.2:1.0/host1/target1:0:0/1:0:0:0/block/sda/sda1
@@ -624,26 +612,26 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "20480"));
+	writeprocsys("vm/min_free_kbytes", "20480");
 #elif HAVE_MVEBU
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", "65536");
 #elif HAVE_IPQ6018
 	if (getmemtotal() > 512 * 1024 * 1024)
-		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+		writeprocsys("vm/min_free_kbytes", "65536");
 	else
-		writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
+		writeprocsys("vm/min_free_kbytes", "4096");
 #elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", "65536");
 #elif HAVE_X86
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/min_free_kbytes", "65536");
 #else
-	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
+	writeprocsys("vm/min_free_kbytes", "4096");
 #endif
-	writeprocsys("vm/vfs_cache_pressure", nvram_default_get("vm.vfs_cache_pressure", "10000"));
-	writeprocsys("vm/dirty_expire_centisecs", nvram_default_get("vm.dirty_expire_centisecs", "100"));
-	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "100"));
-	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
-	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
+	writeprocsys("vm/vfs_cache_pressure", "10000");
+	writeprocsys("vm/dirty_expire_centisecs", "100");
+	writeprocsys("vm/dirty_writeback_centisecs", "100");
+	writeprocsys("vm/overcommit_memory", "2");
+	writeprocsys("vm/overcommit_ratio", "80");
 	//      writeprocsys("vm/pagecache_ratio","90");
 	//      writeprocsys("vm/swappiness","90");
 	//      writeprocsys("vm/overcommit_memory","2");
