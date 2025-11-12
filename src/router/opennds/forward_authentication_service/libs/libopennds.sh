@@ -1431,7 +1431,7 @@ nft_set () {
 
 	# Define the dnsmask config file location for generic Linux
 	# Edit this if your non-uci system uses a non standard location:
-	conflocation="/etc/dnsmasq.conf"
+	conflocation="/tmp/dnsmasq.conf"
 
 	uciconfig=$(uci show dhcp 2>/dev/null)
 
@@ -1440,8 +1440,8 @@ nft_set () {
 
 		if [ -z "$uciconfig" ]; then
 			# Generic Linux
-			linnum=$(cat /etc/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
-			sed "$linnum""d" "/etc/dnsmasq.conf" &>/dev/null
+			linnum=$(cat /tmp/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
+			sed "$linnum""d" "/tmp/dnsmasq.conf" &>/dev/null
 		else
 			uci -q delete dhcp.nds_nftset
 			uci -q delete dhcp.@dnsmasq[0].ipset
@@ -2269,7 +2269,7 @@ if [ "$query_type" = "%3ffas%3d" ]; then
 	# Set the default image to be displayed
 	if [ -z "$imagepath" ]; then
 
-		if [ -e "/etc/opennds/htdocs/ndsremote/logo.png" ]; then
+		if [ -e "/tmp/opennds/htdocs/ndsremote/logo.png" ]; then
 			imagepath="/ndsremote/logo.png"
 		else
 			imagepath="/images/splash.jpg"

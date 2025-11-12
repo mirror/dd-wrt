@@ -8,7 +8,7 @@
 
 # Define the dnsmask config file and hosts file locations for generic Linux
 # Edit these if your system uses a non standard locations:
-conflocation="/etc/dnsmasq.conf"
+conflocation="/tmp/dnsmasq.conf"
 hosts="/etc/hosts"
 #
 
