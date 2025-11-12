@@ -3,7 +3,7 @@ opennds-configure:
 
 opennds: libmicrohttpd
 	$(MAKE) -C opennds \
-	    CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) -I$(TOP)/libmicrohttpd/src/include" \
+	    CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) -I$(TOP)/libmicrohttpd/src/include -DNEED_PRINTF" \
 	    LDFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) -L$(TOP)/libmicrohttpd/src/microhttpd/.libs"
 
 
