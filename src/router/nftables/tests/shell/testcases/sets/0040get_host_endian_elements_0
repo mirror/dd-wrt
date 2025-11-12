@@ -1,0 +1,43 @@
+#!/bin/bash
+
+RULESET="table ip t {
+	set s {
+		type mark
+		flags interval
+		elements = {
+			0x23-0x42, 0x1337
+		}
+	}
+}"
+
+$NFT -f - <<< "$RULESET" || { echo "can't apply basic ruleset"; exit 1; }
+
+$NFT get element ip t s '{ 0x23-0x42 }' || {
+	echo "can't find existing range 0x23-0x42"
+	exit 1
+}
+
+$NFT get element ip t s '{ 0x26-0x28 }' || {
+	echo "can't find existing sub-range 0x26-0x28"
+	exit 1
+}
+
+$NFT get element ip t s '{ 0x26-0x99 }' && {
+	echo "found non-existing range 0x26-0x99"
+	exit 1
+}
+
+$NFT get element ip t s '{ 0x55-0x99 }' && {
+	echo "found non-existing range 0x55-0x99"
+	exit 1
+}
+
+$NFT get element ip t s '{ 0x55 }' && {
+	echo "found non-existing element 0x55"
+	exit 1
+}
+
+$NFT get element ip t s '{ 0x1337 }' || {
+	echo "can't find existing element 0x1337"
+	exit 1
+}

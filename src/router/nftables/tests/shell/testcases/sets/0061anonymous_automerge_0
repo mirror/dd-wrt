@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+	chain y {
+		ip saddr { 1.1.1.1-1.1.1.2, 1.1.1.1 }
+	}
+}"
+
+$NFT -f - <<< $RULESET

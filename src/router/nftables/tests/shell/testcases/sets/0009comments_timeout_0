@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Test that comments are added to set elements in timemout sets.
+
+$NFT flush ruleset
+$NFT add table t
+$NFT add set t s {type ipv4_addr \; flags timeout \;}
+$NFT add element t s { 1.1.1.1 comment "test" }
+if ! $NFT list ruleset | grep test >/dev/null ; then
+	echo "E: missing comment in set element" >&2
+	exit 1
+fi

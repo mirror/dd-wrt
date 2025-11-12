@@ -1,0 +1,24 @@
+# socket transparent 0
+inet sockin sockchain 
+  [ socket load transparent => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# socket transparent 1
+inet sockin sockchain 
+  [ socket load transparent => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# socket mark 0x00000005
+inet sockin sockchain 
+  [ socket load mark => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+
+# socket wildcard 0
+inet sockin sockchain
+  [ socket load wildcard => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# socket wildcard 1
+inet sockin sockchain
+  [ socket load wildcard => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]

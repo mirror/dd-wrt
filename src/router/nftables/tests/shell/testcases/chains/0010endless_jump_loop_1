@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain "t c { type filter hook input priority 0; }"
+
+# kernel should return ELOOP
+$NFT add rule t c tcp dport vmap {1 : jump c} 2>/dev/null || exit 0
+echo "E: accepted endless jump loop in a vmap" >&2
+exit 1

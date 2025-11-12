@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# support for ifname in named sets
+
+EXPECTED="table inet t {
+	set s {
+		type ifname
+		elements = { \"eth0\" }
+	}
+
+	set sc {
+		type inet_service . ifname
+		elements = { \"ssh\" . \"eth0\" }
+	}
+
+	set nv {
+		type ifname . mark
+	}
+
+	set z {
+		typeof ct zone
+		elements = { 1 }
+	}
+
+	set m {
+		typeof meta mark
+		elements = { 1 }
+	}
+
+	map cz {
+		typeof meta iifname : ct zone
+		elements = { \"veth4\" : 1 }
+	}
+
+	map cm {
+		typeof meta iifname : ct mark
+		elements = { \"veth4\" : 1 }
+	}
+
+	chain c {
+		iifname @s accept
+		oifname @s accept
+		fib saddr oifname @s accept
+		tcp dport . meta iifname @sc accept
+		meta iifname . meta mark @nv accept
+	}
+}"
+
+set -e
+$NFT -f - <<< "$EXPECTED"
+$NFT add element inet t s '{ "eth1" }'
+$NFT add element inet t s '{ "eth2", "eth3", "veth1" }'
+
+$NFT add element inet t sc '{ 80 . "eth0" }'
+$NFT add element inet t sc '{ 80 . "eth0" }' || true
+$NFT add element inet t sc '{ 80 . "eth1" }'
+$NFT add element inet t sc '{ 81 . "eth0" }'
+
+$NFT add element inet t nv '{ "eth0" . 1 }'
+$NFT add element inet t nv '{ "eth0" . 2 }'
+
+$NFT add element inet t z '{ 2, 3, 4, 5, 6 }'
+$NFT add element inet t cz '{ "eth0" : 1,  "eth1" : 2 }'
+
+$NFT add element inet t m '{ 2, 3, 4, 5, 6 }'
+$NFT add element inet t cm '{ "eth0" : 1,  "eth1" : 2 }'

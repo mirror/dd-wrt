@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+RULESET='table inet filter {
+
+    flowtable f {
+	hook ingress priority filter - 1
+	devices = { lo }
+    }
+}'
+
+$NFT -f - <<< "$RULESET"
+
+RULESET='delete flowtable inet filter f
+
+table inet filter {
+
+    flowtable f {
+	hook ingress priority filter - 1
+	devices = { lo }
+    }
+}'
+
+$NFT -f - <<< "$RULESET"

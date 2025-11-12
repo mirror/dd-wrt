@@ -1,0 +1,894 @@
+# vlan id 4094
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    }
+]
+
+# vlan id 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# vlan id 4094 vlan dei 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# vlan id 4094 vlan dei 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# vlan id 4094 vlan dei != 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    }
+]
+
+# vlan id 4094 vlan cfi 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# vlan id 4094 vlan dei 1 vlan pcp 7
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "pcp",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 7
+        }
+    }
+]
+
+# vlan id 4094 vlan dei 1 vlan pcp 3
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "pcp",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 3
+        }
+    }
+]
+
+# ether type vlan vlan id 4094
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    }
+]
+
+# ether type vlan vlan id 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# ether type vlan vlan id 4094 vlan dei 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# ether type vlan vlan id 4094 vlan dei 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dei",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# vlan id 4094 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 4094
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# vlan id 1 ip saddr 10.0.0.1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "10.0.0.1"
+        }
+    }
+]
+
+# vlan id 1 ip saddr 10.0.0.0/23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.0.0.0",
+                    "len": 23
+                }
+            }
+        }
+    }
+]
+
+# vlan id 1 ip saddr 10.0.0.0/23 udp dport 53
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.0.0.0",
+                    "len": 23
+                }
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    }
+]
+
+# ether type vlan vlan id 1 ip saddr 10.0.0.0/23 udp dport 53
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.0.0.0",
+                    "len": 23
+                }
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    }
+]
+
+# vlan id { 1, 2, 4, 100, 4095 } vlan pcp 1-3
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    1,
+                    2,
+                    4,
+                    100,
+                    4095
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "pcp",
+                    "protocol": "vlan"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 1, 3 ]
+            }
+        }
+    }
+]
+
+# ether type vlan ip protocol 1 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "vlan"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "icmp"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ether type 8021ad vlan id 1 ip protocol 6 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021ad"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "tcp"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ether type 8021ad vlan id 1 vlan type 8021q vlan id 2 vlan type ip counter
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021ad"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": "8021q"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": "ip"
+        }
+    },
+    {
+        "counter": {
+            "bytes": 0,
+            "packets": 0
+        }
+    }
+]
+
+# ether type 8021ad vlan id 1 vlan type 8021q vlan id 2 vlan type ip ip protocol 6
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021ad"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": "8021q"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "tcp"
+        }
+    }
+]
+
+# vlan id 1 vlan id set 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "value": 2
+        }
+    }
+]
+
+# ether saddr 00:01:02:03:04:05 vlan id 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "00:01:02:03:04:05"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# vlan id 2 ether saddr 0:1:2:3:4:6
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "00:01:02:03:04:06"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# ether saddr . vlan id { 0a:0b:0c:0d:0e:0f . 42, 0a:0b:0c:0d:0e:0f . 4095 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ether"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "id",
+                            "protocol": "vlan"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "0a:0b:0c:0d:0e:0f",
+                            42
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "0a:0b:0c:0d:0e:0f",
+                            4095
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# ether saddr 00:11:22:33:44:55 counter ether type 8021q
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "00:11:22:33:44:55"
+        }
+    },
+    {
+        "counter": {
+            "bytes": 0,
+            "packets": 0
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021q"
+        }
+    }
+]

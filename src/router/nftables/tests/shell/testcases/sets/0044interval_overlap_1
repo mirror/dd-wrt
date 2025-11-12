@@ -1,0 +1,38 @@
+#!/bin/bash -e
+#
+# NFT_TEST_SKIP(NFT_TEST_SKIP_slow)
+#
+# 0044interval_overlap_1 - Single-sized intervals can never overlap partially
+#
+# Check that inserting, deleting, and inserting single-sized intervals again
+# never leads to a partial overlap. Specifically trigger rbtree rebalancing in
+# the process, to ensure different tree shapes of equivalent sets don't lead to
+# false positives, by deleting every second inserted item.
+
+xorshift() {
+	# Adaptation of Xorshift algorithm from:
+	#   Marsaglia, G. (2003). Xorshift RNGs.
+	#   Journal of Statistical Software, 8(14), 1 - 6.
+	#   doi:http://dx.doi.org/10.18637/jss.v008.i14
+	# with triplet (5, 3, 1), suitable for 16-bit ranges.
+
+	: $((port ^= port << 5))
+	: $((port ^= port >> 3))
+	: $((port ^= port << 1))
+}
+
+$NFT add table t
+$NFT add set t s '{ type inet_service ; flags interval ; }'
+
+for op in add delete add; do
+	port=1
+	skip=0
+	for i in $(seq 1 500); do
+		xorshift
+		if [ "${op}" = "delete" ]; then
+			[ ${skip} -eq 0 ] && skip=1 && continue
+			skip=0
+		fi
+		$NFT ${op} element t s "{ { $((port % 32768 + 32768)) } }"
+	done
+done

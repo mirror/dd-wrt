@@ -1,0 +1,30 @@
+#!/bin/bash
+
+tmpfile1=$(mktemp -p .)
+if [ ! -w "$tmpfile1" ] ; then
+	# cwd might be readonly, mark as skip.
+	echo "Failed to create tmp file" >&2
+	exit 77
+fi
+
+cleanup()
+{
+	rm -f "$tmpfile1" "$tmpfile2"
+}
+
+trap cleanup EXIT
+
+set -e
+tmpfile2=$(mktemp -p .)
+
+RULESET1="add table x"
+RULESET2="include \"$tmpfile1\""
+
+echo "$RULESET1" > $tmpfile1
+echo "$RULESET2" > $tmpfile2
+
+$NFT -f $tmpfile2
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

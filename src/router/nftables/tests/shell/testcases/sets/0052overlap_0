@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="add table ip filter
+add set ip filter w_all {type ipv4_addr; flags interval; auto-merge}
+add element ip filter w_all {10.10.10.10, 10.10.10.11}
+"
+
+$NFT -f - <<< "$EXPECTED"
+
+EXPECTED="flush set ip filter w_all
+add element ip filter w_all {10.10.10.10, 10.10.10.253}
+"
+
+$NFT -f - <<< "$EXPECTED"

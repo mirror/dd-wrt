@@ -1,0 +1,5 @@
+table t {
+	map m {
+		elements = { 0x00000023 : 0x00001337 }
+	}
+}

@@ -1,0 +1,5 @@
+table ip foo {
+	chain bar {
+		type filter hook prerouting priority filter; policy accept;
+	}
+}

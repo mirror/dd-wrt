@@ -1,0 +1,16 @@
+#!/bin/bash
+
+for family in ip ip6 inet
+do
+	for hook in prerouting forward output
+	do
+		$NFT add table $family x
+		$NFT add chain $family x y "{ type filter hook $hook priority srcnat; }" &> /dev/null
+		if (($? == 0))
+		then
+			echo "E: srcnat should not be a valid priority name in $family $hook chains." >&2
+			exit 1
+		fi
+	done
+done
+exit 0

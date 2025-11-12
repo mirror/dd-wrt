@@ -1,0 +1,734 @@
+# icmpv6 type mld-listener-reduction accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": "mld-listener-done"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# icmpv6 type {router-renumbering, mld-listener-done, time-exceeded, nd-router-solicit} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "time-exceeded",
+                    "mld-listener-done",
+                    "nd-router-solicit",
+                    "router-renumbering"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# icmpv6 type {mld-listener-query, time-exceeded, nd-router-advert} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "time-exceeded",
+                    "mld-listener-query",
+                    "nd-router-advert"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# icmpv6 type != {mld-listener-query, time-exceeded, nd-router-advert} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "time-exceeded",
+                    "mld-listener-query",
+                    "nd-router-advert"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# icmpv6 code { 3-66}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "code",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            "addr-unreachable",
+                            66
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 code != { 3-66}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "code",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            "addr-unreachable",
+                            66
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 id 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    33,
+                    45
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 id != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [
+                    33,
+                    45
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 id {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 id != {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 id {33-55}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            33,
+                            55
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 id != {33-55}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            33,
+                            55
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 sequence 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# icmpv6 sequence {3, 4, 5, 6, 7} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# icmpv6 sequence {2, 4}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    2,
+                    4
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 sequence != {2, 4}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    2,
+                    4
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 sequence 2-4
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    2,
+                    4
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 sequence != 2-4
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [
+                    2,
+                    4
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 sequence { 2-4}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            2,
+                            4
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 sequence != { 2-4}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-request",
+                    "echo-reply"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            2,
+                            4
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# icmpv6 taddr 2001:db8::133
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "mld-listener-query",
+                    "mld-listener-report",
+                    "mld-listener-done",
+                    "nd-neighbor-solicit",
+                    "nd-neighbor-advert",
+                    "nd-redirect"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "taddr",
+                    "protocol": "icmpv6"
+                }
+            },
+            "op": "==",
+            "right": "2001:db8::133"
+        }
+    }
+]

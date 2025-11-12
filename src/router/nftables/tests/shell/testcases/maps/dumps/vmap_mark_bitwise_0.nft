@@ -1,0 +1,27 @@
+table ip x {
+	counter c_o0_0 {
+		packets 0 bytes 0
+	}
+
+	map sctm_o0 {
+		type mark : verdict
+		elements = { 0x00000000 : jump sctm_o0_0,
+			     0x00000001 : jump sctm_o0_1 }
+	}
+
+	map sctm_o1 {
+		type mark : counter
+		elements = { 0x00000000 : "c_o0_0" }
+	}
+
+	chain sctm_o0_0 {
+	}
+
+	chain sctm_o0_1 {
+	}
+
+	chain SET_ctmark_RPLYroute {
+		meta mark >> 8 & 0xf vmap @sctm_o0
+		counter name meta mark >> 8 & 0xf map @sctm_o1
+	}
+}

@@ -1,0 +1,6 @@
+table inet t {
+	chain c {
+		udp length . @th,160,118 vmap { 47-63 . 0xe3731353631303331313037353532/3 : accept }
+		jump noexist # only here so this fails to load after patch.
+	}
+}

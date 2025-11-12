@@ -1,0 +1,40 @@
+# reject
+ip6 test-ip6 output
+  [ reject type 0 code 4 ]
+
+# reject with icmpv6 no-route
+ip6 test-ip6 output
+  [ reject type 0 code 0 ]
+
+# reject with icmpv6 admin-prohibited
+ip6 test-ip6 output
+  [ reject type 0 code 1 ]
+
+# reject with icmpv6 addr-unreachable
+ip6 test-ip6 output
+  [ reject type 0 code 3 ]
+
+# reject with icmpv6 port-unreachable
+ip6 test-ip6 output
+  [ reject type 0 code 4 ]
+
+# reject with icmpv6 policy-fail
+ip6 test-ip6 output
+  [ reject type 0 code 5 ]
+
+# reject with icmpv6 reject-route
+ip6 test-ip6 output
+  [ reject type 0 code 6 ]
+
+# reject with icmpv6 3
+ip6 test-ip6 output
+  [ reject type 0 code 3 ]
+
+# mark 0x80000000 reject with tcp reset
+ip6 test-ip6 output
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ meta load mark => reg 1 ]
+  [ cmp eq reg 1 0x80000000 ]
+  [ reject type 1 code 0 ]
+

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip t {
+        map sourcemap {
+                type ipv4_addr : verdict
+                elements = { 100.123.10.2 : jump c }
+        }
+
+        chain c {
+        }
+}"
+
+$NFT -f - <<< "$RULESET"
+# again, since it is addition, not creation, it is successful
+$NFT -f - <<< "$RULESET"
+# flush it to check for refcount leak
+$NFT flush ruleset
+
+#
+# again with stateful objects
+#
+
+RULESET="table ip t {
+	counter c {}
+
+        map sourcemap {
+                type ipv4_addr : counter
+                elements = { 100.123.10.2 : \"c\" }
+        }
+}"
+
+$NFT -f - <<< "$RULESET"
+# again, since it is addition, not creation, it is successful
+$NFT -f - <<< "$RULESET"
+# flush it to check for refcount leak
+$NFT flush ruleset

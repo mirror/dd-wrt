@@ -1,0 +1,16 @@
+table ip test-binop {
+	chain in {
+		type filter hook input priority filter; policy accept;
+		icmp type echo-request jump {
+			meta mark 0x00000000 counter packets 0 bytes 0
+			meta mark 0x00000001 counter packets 1 bytes 84
+			meta mark 0x00000002 counter packets 1 bytes 84
+			meta mark 0x00000003 counter packets 0 bytes 0
+		}
+	}
+
+	chain out {
+		type filter hook output priority filter; policy accept;
+		icmp type echo-request meta mark set ip saddr ^ ip daddr map { 0.0.0.0 : 0x00000001, 0.1.2.2 : 0x00000002, 127.0.0.1 : 0x00000003 }
+	}
+}

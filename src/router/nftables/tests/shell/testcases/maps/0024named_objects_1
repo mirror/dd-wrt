@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# This is the test-case:
+# * creating valid named objects and using map variables in statements
+
+RULESET='
+define counter_map = { 192.168.2.2 : "user123", 1.1.1.1 : "user123", 2.2.2.2 : "user123" }
+define quota_map = { 192.168.2.2 : "user124", 192.168.2.3 : "user124" }
+
+table inet x {
+	counter user123 {
+		packets 12 bytes 1433
+	}
+	counter user321 {
+		packets 12 bytes 1433
+	}
+	quota user123 {
+		over 2000 bytes
+	}
+	quota user124 {
+		over 2000 bytes
+	}
+	chain y {
+		type filter hook input priority 0; policy accept;
+		counter name ip saddr map $counter_map
+		quota name ip saddr map $quota_map drop
+	}
+}'
+
+set -e
+$NFT -f - <<< "$RULESET"

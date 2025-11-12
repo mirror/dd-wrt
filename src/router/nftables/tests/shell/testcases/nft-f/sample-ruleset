@@ -1,0 +1,262 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_chain_binding)
+
+$NFT -f /dev/stdin <<"EOF"
+define public_if = eth0
+define trusted_if = eth1
+define voip_if = eth2.10
+define guest_if = eth2.20
+define home_if = { $trusted_if, $voip_if, $guest_if }
+define home_ipv6_if = { $trusted_if, $voip_if, $guest_if }
+
+define masq_ip = { 192.168.1.0/24, 192.168.2.0/24, 192.168.3.0/24, 192.168.4.0/24 }
+define masq_if = $public_if
+
+define host1_ip = 192.168.1.10
+define host2_ip = 192.168.2.20
+define host3_ip = 192.168.3.30
+define host4_ip = 192.168.4.40
+
+define proxy_port = 8443
+
+define private_ip = { 192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8 }
+define private_ip6 = { fe80::/64, fd00::/8 }
+define bogons_ip = { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.0.2.0/24, 192.168.0.0/16, 198.18.0.0/15, 198.51.100.0/24, 203.0.113.0/24, 224.0.0.0/3 }
+define bogons_ip6 = { ::/3, 2001:0002::/48, 2001:0003::/32, 2001:10::/28, 2001:20::/28, 2001::/32, 2001:db8::/32, 2002::/16, 3000::/4, 4000::/2, 8000::/1 }
+
+define sip_whitelist_ip6 = { 2001:db8::1/128, 2001:db8::2/128 }
+define smtps_whitelist_ip = 10.0.0.1
+define protocol_whitelist = { tcp, udp, icmp, ipv6-icmp }
+
+table inet filter {
+	map if_input {
+		type ifname : verdict;
+		elements = { $public_if : jump public_input, $trusted_if : jump home_input, $voip_if : jump home_input, $guest_if : jump home_input }
+	}
+	map if_forward {
+		type ifname : verdict;
+		elements = { $public_if : jump public_forward, $trusted_if : jump trusted_forward, $voip_if : jump voip_forward, $guest_if : jump guest_forward }
+	}
+	map if_output {
+		type ifname : verdict;
+		elements = { $public_if : jump public_output, $trusted_if : jump home_output, $voip_if : jump home_output, $guest_if : jump home_output }
+	}
+
+	set ipv4_blacklist { type ipv4_addr; flags interval; auto-merge; }
+	set ipv6_blacklist { type ipv6_addr; flags interval; auto-merge; }
+	set limit_src_ip { type ipv4_addr; flags dynamic, timeout; size 1024; }
+	set limit_src_ip6 { type ipv6_addr; flags dynamic, timeout; size 1024; }
+
+	chain PREROUTING_RAW {
+		type filter hook prerouting priority raw;
+
+		meta l4proto != $protocol_whitelist counter drop
+		tcp flags syn jump {
+			tcp option maxseg size 1-500 counter drop
+			tcp sport 0 counter drop
+		}
+		rt type 0 counter drop
+	}
+
+	chain PREROUTING_MANGLE {
+		type filter hook prerouting priority mangle;
+
+		ct state vmap { invalid : jump ct_invalid_pre, untracked : jump ct_untracked_pre, new : jump ct_new_pre, related : jump rpfilter }
+	}
+	chain ct_invalid_pre {
+		counter drop
+	}
+	chain ct_untracked_pre {
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, mld-listener-query, mld2-listener-report } return
+		counter drop
+	}
+	chain ct_new_pre {
+		jump rpfilter
+
+		tcp flags & (fin|syn|rst|ack) != syn counter drop
+
+		iifname $public_if meta nfproto vmap { ipv4 : jump blacklist_input_ipv4, ipv6 : jump blacklist_input_ipv6 }
+	}
+	chain rpfilter {
+		ip saddr 0.0.0.0 ip daddr 255.255.255.255 udp sport bootpc udp dport bootps return
+		ip6 saddr ::/128 ip6 daddr . icmpv6 type { ff02::1:ff00:0/104 . nd-neighbor-solicit, ff02::16 . mld2-listener-report } return
+
+		fib saddr . iif oif eq 0 counter drop
+	}
+	chain blacklist_input_ipv4{
+		ip saddr $bogons_ip counter drop
+		ip saddr @ipv4_blacklist counter drop
+	}
+	chain blacklist_input_ipv6{
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 saddr fe80::/64 return
+		udp sport dhcpv6-server ip6 saddr fe80::/64 return
+
+		ip6 saddr $bogons_ip6 counter drop
+		ip6 saddr @ipv6_blacklist counter drop
+	}
+
+	chain INPUT {
+		type filter hook input priority filter; policy drop;
+
+		iif lo accept
+
+		ct state established,related accept
+
+		iifname vmap @if_input
+
+		log prefix "NFT REJECT IN " flags ether flags ip options limit rate 5/second burst 10 packets reject
+	}
+	chain public_input {
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 saddr fe80::/64 ip6 hoplimit 255 accept
+
+		udp sport dhcpv6-server udp dport dhcpv6-client ip6 saddr fe80::/64 accept
+		fib daddr type { broadcast, multicast, anycast } counter drop
+
+		counter drop
+	}
+	chain home_input {
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+		icmpv6 type { mld-listener-query, mld2-listener-report } ip6 hoplimit 1 accept
+
+		udp sport bootpc udp dport bootps accept
+		udp sport dhcpv6-client udp dport dhcpv6-server iifname $home_ipv6_if accept
+
+		fib daddr type { broadcast, multicast, anycast } counter drop
+
+		icmp type echo-request accept
+		icmpv6 type echo-request accept
+
+		tcp dport ssh iifname $trusted_if accept
+
+		meta l4proto { tcp, udp } th dport domain jump {
+			ip6 saddr != $private_ip6 counter reject
+			accept
+		}
+
+		udp dport ntp accept
+
+		tcp dport $proxy_port accept
+	}
+
+	chain FORWARD_MANGLE {
+		type filter hook forward priority mangle;
+
+		oifname $public_if jump {
+			ct state new meta nfproto vmap { ipv4 : jump blacklist_output_ipv4, ipv6 : jump blacklist_output_ipv6 }
+			tcp flags & (syn|rst) == syn tcp option maxseg size set rt mtu
+		}
+	}
+	chain blacklist_output_ipv4 {
+		ip daddr $bogons_ip goto log_blacklist
+		ip daddr @ipv4_blacklist goto log_blacklist
+	}
+	chain blacklist_output_ipv6 {
+		icmpv6 type . ip6 daddr { nd-router-solicit . ff02::2/128, nd-neighbor-solicit . ff02::1:ff00:0/104, nd-neighbor-advert . fe80::/64, nd-neighbor-advert . ff02::1/128, nd-neighbor-advert . ff02::1:ff00:0/104, mld2-listener-report . ff02::16/128 } return
+		udp dport dhcpv6-server ip6 daddr ff02::1:2 return
+
+		ip6 daddr $bogons_ip6 goto log_blacklist
+		ip6 daddr @ipv6_blacklist goto log_blacklist
+	}
+	chain log_blacklist {
+		log prefix "NFT BLACKLIST " flags ether flags ip options limit rate 5/minute burst 10 packets drop
+		counter drop
+	}
+
+	chain FORWARD {
+		type filter hook forward priority filter; policy drop;
+
+		ct state established,related accept
+
+		fib daddr type { broadcast, multicast, anycast } counter drop
+
+		iifname vmap @if_forward
+
+		log prefix "NFT REJECT FWD " flags ether flags ip options limit rate 5/second burst 10 packets reject
+	}
+	chain public_forward {
+		udp dport { 5060, 7078-7097 } oifname $voip_if jump {
+			ip6 saddr $sip_whitelist_ip6 accept
+			meta nfproto ipv6 log prefix "NFT DROP SIP " flags ether flags ip options limit rate 5/second burst 10 packets drop
+		}
+
+		counter drop
+	}
+	chain trusted_forward {
+		oifname $public_if accept
+
+		icmp type echo-request accept
+		icmpv6 type echo-request accept
+
+		ip daddr { $host3_ip, $host4_ip } tcp dport vmap { ssh : accept, https : accept, http : drop }
+
+		ip daddr $host2_ip jump {
+			tcp dport { http, https, printer, ipp, 9100 } accept
+			udp dport snmp accept
+		}
+	}
+	chain voip_forward {
+		icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request } oifname $public_if accept
+
+		ip6 daddr $sip_whitelist_ip6 jump {
+			udp dport { 3478, 5060 } accept
+			udp sport { 7078-7097 } accept
+			tcp dport 5061 accept
+		}
+
+		tcp dport 587 ip daddr $smtps_whitelist_ip accept
+		tcp dport http oifname $public_if counter reject
+	}
+	chain guest_forward {
+		oifname $public_if accept
+	}
+
+	chain OUTPUT {
+		type filter hook output priority filter; policy drop;
+
+		oif lo accept
+
+		ct state vmap { established : accept, related : accept, invalid : jump ct_invalid_out, untracked : jump ct_untracked_out }
+
+		oifname vmap @if_output
+
+		log prefix "NFT REJECT OUT " flags ether flags ip options limit rate 5/second burst 10 packets reject
+	}
+	chain ct_invalid_out {
+		counter drop
+	}
+	chain ct_untracked_out {
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, mld-listener-query, mld2-listener-report } return
+		counter drop
+	}
+	chain public_output {
+		ct state new meta nfproto vmap { ipv4 : jump blacklist_output_ipv4, ipv6 : jump blacklist_output_ipv6 }
+
+		icmp type { destination-unreachable, time-exceeded, parameter-problem, echo-request } accept
+		icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request } accept
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+		icmpv6 type { mld-listener-query, mld2-listener-report } ip6 hoplimit 1 accept
+
+		udp dport dhcpv6-server ip6 saddr fe80::/64 ip6 daddr ff02::1:2 accept
+
+		udp dport { domain, ntp } accept
+		tcp dport { https, 587, domain-s } accept
+	}
+	chain home_output {
+		icmp type { destination-unreachable, time-exceeded, parameter-problem, echo-request } accept
+		icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request } accept
+		icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+		icmpv6 type { mld-listener-query, mld2-listener-report } ip6 hoplimit 1 accept
+
+		udp sport dhcpv6-server udp dport dhcpv6-client ip6 saddr fe80::/64 oifname $home_ipv6_if accept
+		udp sport bootps udp dport bootpc ip saddr $private_ip accept
+		tcp dport ssh ip daddr $host1_ip accept
+	}
+
+	chain POSTROUTING_SRCNAT {
+		type nat hook postrouting priority srcnat;
+
+		meta nfproto ipv4 ip saddr $masq_ip oifname $masq_if masquerade
+	}
+}
+EOF

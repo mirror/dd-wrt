@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# check update statement does print both concatentations (key and data).
+
+EXPECTED="table ip foo {
+ map pinned {
+	typeof ip saddr . ct original proto-dst : ip daddr . tcp dport
+	size 65535
+	flags dynamic,timeout
+        timeout 6m
+  }
+  chain pr {
+     update @pinned { ip saddr . ct original proto-dst timeout 1m30s : ip daddr . tcp dport }
+     meta l4proto tcp update @pinned { ip saddr . ct original proto-dst timeout 1m30s : ip daddr . tcp dport }
+  }
+}"
+
+set -e
+$NFT -f - <<< $EXPECTED

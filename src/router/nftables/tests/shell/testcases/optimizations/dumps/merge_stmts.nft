@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		ip daddr { 192.168.0.1, 192.168.0.2, 192.168.0.3 } counter packets 0 bytes 0 accept
+	}
+}

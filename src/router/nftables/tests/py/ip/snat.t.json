@@ -1,0 +1,497 @@
+# iifname "eth0" tcp dport 80-90 snat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 80, 90 ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport != 80-90 snat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 80, 90 ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport {80, 90, 23} snat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    80,
+                    90,
+                    23
+                ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport != {80, 90, 23} snat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    80,
+                    90,
+                    23
+                ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport != 23-34 snat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 23, 34 ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 80-90 snat to 192.168.3.0-192.168.3.255
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    80,
+                    90
+                ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": {
+                "prefix": {
+                    "addr": "192.168.3.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 80-90 snat to 192.168.3.15-192.168.3.240
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    80,
+                    90
+                ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": {
+                "range": [
+                    "192.168.3.15",
+                    "192.168.3.240"
+                ]
+            }
+        }
+    }
+]
+
+# snat ip to ip saddr map { 10.141.11.4 : 192.168.2.3 . 80 }
+[
+    {
+        "snat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "10.141.11.4",
+                                {
+                                    "concat": [
+                                        "192.168.2.3",
+                                        80
+                                    ]
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    }
+                }
+            },
+            "family": "ip",
+            "type_flags": "concat"
+        }
+    }
+]
+
+# snat ip prefix to ip saddr map { 10.141.11.0/24 : 192.168.2.0/24 }
+[
+    {
+        "snat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "prefix": {
+                                        "addr": "10.141.11.0",
+                                        "len": 24
+                                    }
+                                },
+                                {
+                                    "prefix": {
+                                        "addr": "192.168.2.0",
+                                        "len": 24
+                                    }
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    }
+                }
+            },
+            "family": "ip",
+            "flags": "netmap",
+            "type_flags": [
+                "interval",
+                "prefix"
+            ]
+        }
+    }
+]
+
+# meta l4proto 17 snat ip to ip saddr map { 10.141.11.4 : 192.168.2.3 . 80 }
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": "udp"
+        }
+    },
+    {
+        "snat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "10.141.11.4",
+                                {
+                                    "concat": [
+                                        "192.168.2.3",
+                                        80
+                                    ]
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+
+# snat ip to ip saddr map { 10.141.11.4 : 192.168.2.2-192.168.2.4 }
+[
+    {
+        "snat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "10.141.11.4",
+                                {
+                                    "range": [
+                                        "192.168.2.2",
+                                        "192.168.2.4"
+                                    ]
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+
+# snat ip to ip saddr map { 10.141.12.14 : 192.168.2.0/24 }
+[
+    {
+        "snat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "10.141.12.14",
+                                {
+                                    "prefix": {
+                                        "addr": "192.168.2.0",
+                                        "len": 24
+                                    }
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+
+# meta l4proto { 6, 17} snat ip to ip saddr . th dport map { 10.141.11.4 . 20 : 192.168.2.3 . 80}
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "tcp",
+                    "udp"
+                ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        "10.141.11.4",
+                                        20
+                                    ]
+                                },
+                                {
+                                    "concat": [
+                                        "192.168.2.3",
+                                        80
+                                    ]
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "concat": [
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "dport",
+                                    "protocol": "th"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+

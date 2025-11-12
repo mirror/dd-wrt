@@ -1,0 +1,44 @@
+# meta l4proto 6 tproxy to [2001:db8::1]
+ip6 x y 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ immediate reg 1 0xb80d0120 0x00000000 0x00000000 0x01000000 ]
+  [ tproxy ip6 addr reg 1 ]
+
+# meta l4proto 17 tproxy to [2001:db8::1]:50080
+ip6 x y 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ immediate reg 1 0xb80d0120 0x00000000 0x00000000 0x01000000 ]
+  [ immediate reg 2 0x0000a0c3 ]
+  [ tproxy ip6 addr reg 1 port reg 2 ]
+
+# meta l4proto 6 tproxy to :50080
+ip6 x y 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ immediate reg 1 0x0000a0c3 ]
+  [ tproxy ip6 port reg 1 ]
+
+# meta l4proto 6 tproxy ip6 to [2001:db8::1]
+ip6 x y 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ immediate reg 1 0xb80d0120 0x00000000 0x00000000 0x01000000 ]
+  [ tproxy ip6 addr reg 1 ]
+
+# meta l4proto 17 tproxy ip6 to [2001:db8::1]:50080
+ip6 x y 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ immediate reg 1 0xb80d0120 0x00000000 0x00000000 0x01000000 ]
+  [ immediate reg 2 0x0000a0c3 ]
+  [ tproxy ip6 addr reg 1 port reg 2 ]
+
+# meta l4proto 6 tproxy ip6 to :50080
+ip6 x y 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ immediate reg 1 0x0000a0c3 ]
+  [ tproxy ip6 port reg 1 ]
+

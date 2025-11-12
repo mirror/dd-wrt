@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_inet_ingress)
+
+set -e
+
+iface_cleanup() {
+        ip link del d0 &>/dev/null || :
+}
+trap 'iface_cleanup' EXIT
+
+ip link add d0 type dummy
+
+load_ruleset() {
+	family=$1
+
+	# Test auto-removal of chain hook on device removal
+	RULESET="table $family x {
+	chain x {}
+	chain w {
+		ip daddr 8.7.6.0/24 jump x
+	}
+	chain y {
+		type filter hook ingress device \"d0\" priority 0;
+		ip saddr { 1.2.3.4, 2.3.4.5 } counter
+		ip daddr vmap { 5.4.3.0/24 : jump w, 8.9.0.0/24 : jump x }
+	}
+}"
+	$NFT -c -f - <<< $RULESET
+	$NFT -f - <<< $RULESET
+}
+
+load_ruleset "inet"
+load_ruleset "netdev"

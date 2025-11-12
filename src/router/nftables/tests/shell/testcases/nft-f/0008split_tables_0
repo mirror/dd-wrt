@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table inet filter {
+	chain ssh {
+		type filter hook input priority 0; policy accept;
+		tcp dport 22 accept;
+	}
+}
+
+table inet filter {
+	chain input {
+		type filter hook input priority 1; policy accept;
+	}
+}"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

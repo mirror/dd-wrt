@@ -1,0 +1,14 @@
+table ip filter {
+	map client_to_any {
+		type ipv4_addr : verdict
+	}
+
+	chain FORWARD {
+		type filter hook forward priority filter; policy accept;
+		goto client_to_any
+	}
+
+	chain client_to_any {
+		ip saddr vmap @client_to_any
+	}
+}

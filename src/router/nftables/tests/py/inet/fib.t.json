@@ -1,0 +1,202 @@
+# fib saddr . iif oif ne 0
+[
+    {
+        "match": {
+            "left": {
+                "fib": {
+                    "flags": [
+                        "saddr",
+                        "iif"
+                    ],
+                    "result": "oif"
+                }
+            },
+            "op": "!=",
+            "right": "0"
+        }
+    }
+]
+
+# fib saddr . iif oifname "lo"
+[
+    {
+        "match": {
+            "left": {
+                "fib": {
+                    "flags": [
+                        "saddr",
+                        "iif"
+                    ],
+                    "result": "oifname"
+                }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    }
+]
+
+# fib daddr . iif type local
+[
+    {
+        "match": {
+            "left": {
+                "fib": {
+                    "flags": [
+                        "daddr",
+                        "iif"
+                    ],
+                    "result": "type"
+                }
+            },
+	    "op": "==",
+            "right": "local"
+        }
+    }
+]
+
+# fib daddr . iif type vmap { blackhole : drop, prohibit : drop, unicast : accept }
+[
+    {
+        "vmap": {
+            "key": {
+                "fib": {
+                    "flags": [
+                        "daddr",
+                        "iif"
+                    ],
+                    "result": "type"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        "blackhole",
+                        {
+                            "drop": null
+                        }
+                    ],
+                    [
+                        "prohibit",
+                        {
+                            "drop": null
+                        }
+                    ],
+                    [
+                        "unicast",
+                        {
+                            "accept": null
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+]
+
+# fib daddr oif exists
+[
+    {
+        "match": {
+            "left": {
+                "fib": {
+                    "flags": "daddr",
+                    "result": "oif"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# fib daddr check missing
+[
+    {
+        "match": {
+            "left": {
+                "fib": {
+                    "flags": "daddr",
+                    "result": "oif"
+                }
+            },
+	    "op": "==",
+            "right": false
+        }
+    }
+]
+
+# fib daddr check vmap { missing : drop, exists : accept }
+[
+    {
+        "vmap": {
+            "data": {
+                "set": [
+                    [
+                        false,
+                        {
+                            "drop": null
+                        }
+                    ],
+                    [
+                        true,
+                        {
+                            "accept": null
+                        }
+                    ]
+                ]
+            },
+            "key": {
+                "fib": {
+                    "flags": "daddr",
+                    "result": "check"
+                }
+            }
+        }
+    }
+]
+
+# meta mark set fib daddr check . ct mark map { exists . 0x00000000 : 0x00000001 }
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        true,
+                                        0
+                                    ]
+                                },
+                                1
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "concat": [
+                            {
+                                "fib": {
+                                    "flags": "daddr",
+                                    "result": "check"
+                                }
+                            },
+                            {
+                                "ct": {
+                                    "key": "mark"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]

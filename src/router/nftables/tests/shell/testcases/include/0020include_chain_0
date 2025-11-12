@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+tmpfile1=$(mktemp)
+
+trap "rm -rf $tmpfile1" EXIT # cleanup if aborted
+
+RULESET="table inet filter { }
+include \"$tmpfile1\""
+
+RULESET2="chain inet filter input2 {
+	type filter hook input priority filter; policy accept;
+	ip saddr 1.2.3.4 tcp dport { 22, 443, 123 } drop
+}"
+
+echo "$RULESET2" > $tmpfile1
+
+RULESET3="create chain inet filter output2 {
+	type filter hook output priority filter; policy accept;
+	ip daddr 1.2.3.4 tcp dport { 22, 443, 123 } drop
+}"
+
+echo "$RULESET3" >> $tmpfile1
+
+$NFT -o -f - <<< $RULESET

@@ -1,0 +1,38 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "test_set",
+        "table": "filter",
+        "type": [
+          "ipv4_addr",
+          "inet_service",
+          "ipv4_addr",
+          "inet_service",
+          "inet_proto"
+        ],
+        "handle": 0,
+        "size": 100000,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    }
+  ]
+}

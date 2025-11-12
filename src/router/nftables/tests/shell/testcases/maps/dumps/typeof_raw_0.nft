@@ -1,0 +1,13 @@
+table ip x {
+	map y {
+		typeof ip saddr . @ih,32,32 : verdict
+		elements = { 1.1.1.1 . 0x14 : accept,
+			     7.7.7.7 . 0x86 : accept,
+			     7.7.7.8 . 0x97 : drop }
+	}
+
+	chain y {
+		ip saddr . @nh,32,32 vmap @y
+		ip saddr . @nh,32,32 vmap { 4.4.4.4 . 0x34 : accept, 5.5.5.5 . 0x45 : drop }
+	}
+}

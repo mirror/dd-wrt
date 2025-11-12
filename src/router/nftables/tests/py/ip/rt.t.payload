@@ -1,0 +1,5 @@
+# rt nexthop 192.168.0.1
+ip test-ip4 output
+  [ rt load nexthop4 => reg 1 ]
+  [ cmp eq reg 1 0x0100a8c0 ]
+

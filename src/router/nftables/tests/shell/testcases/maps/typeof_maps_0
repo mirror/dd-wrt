@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# support for strings and integers in named maps.
+# without typeof, this is 'type string' and 'type integer',
+# but neither could be used because it lacks size information.
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_ipsec)
+
+set -e
+
+die() {
+	printf '%s\n' "$*"
+	exit 1
+}
+
+INPUT_OSF_CT="
+		ct mark set osf name map @m1"
+if [ "$NFT_TEST_HAVE_osf" = n ] ; then
+	INPUT_OSF_CT=
+fi
+
+INPUT="table inet t {
+	map m1 {
+		typeof osf name : ct mark
+		elements = { Linux : 0x00000001 }
+	}
+
+	map m2 {
+		typeof vlan id : mark
+		elements = { 1 : 0x1,
+			     4095 : 0x4095 }
+	}
+
+	map m3 {
+		typeof ip saddr . ip daddr : meta mark
+		elements = { 1.2.3.4 . 5.6.7.8 : 0x00000001,
+			     2.3.4.5 . 6.7.8.9 : 0x00000002 }
+	}
+
+	map m4 {
+		typeof        iifname . ip protocol . th dport : verdict
+		elements = { eth0 . tcp . 22 : accept }
+	}
+
+	map m5 {
+		typeof ipsec in reqid . meta iifname : verdict
+		elements = { 23 . eth0 : accept }
+	}
+
+	chain c {$INPUT_OSF_CT
+		ether type vlan meta mark set vlan id map @m2
+		meta mark set ip saddr . ip daddr map @m3
+		iifname . ip protocol . th dport vmap @m4
+		iifname . ip protocol . th dport vmap { \"eth0\" . tcp . 22 : accept, \"eth1\" . udp . 67 : drop }
+		ipsec in reqid . meta iifname vmap @m5
+	}
+}"
+
+EXPECTED="table inet t {
+	map m1 {
+		typeof osf name : ct mark
+		elements = { \"Linux\" : 0x00000001 }
+	}
+
+	map m2 {
+		typeof vlan id : meta mark
+		elements = { 1 : 0x00000001,
+			     4095 : 0x00004095 }
+	}
+
+	map m3 {
+		typeof ip saddr . ip daddr : meta mark
+		elements = { 1.2.3.4 . 5.6.7.8 : 0x00000001,
+			     2.3.4.5 . 6.7.8.9 : 0x00000002 }
+	}
+
+	map m4 {
+		typeof iifname . ip protocol . th dport : verdict
+		elements = { \"eth0\" . tcp . 22 : accept }
+	}
+
+	map m5 {
+		typeof ipsec in reqid . iifname : verdict
+		elements = { 23 . \"eth0\" : accept }
+	}
+
+	chain c {$INPUT_OSF_CT
+		meta mark set vlan id map @m2
+		meta mark set ip saddr . ip daddr map @m3
+		iifname . ip protocol . th dport vmap @m4
+		iifname . ip protocol . th dport vmap { \"eth0\" . tcp . 22 : accept, \"eth1\" . udp . 67 : drop }
+		ipsec in reqid . iifname vmap @m5
+	}
+}"
+
+$NFT -f - <<< "$INPUT" || die $'nft command failed to process input:\n'">$INPUT<"
+
+$DIFF -u <($NFT list ruleset) - <<<"$EXPECTED" || die $'diff failed between ruleset and expected data.\nExpected:\n'">$EXPECTED<"
+
+
+if [ "$NFT_TEST_HAVE_osf" = n ] ; then
+    echo "Partial test due to NFT_TEST_HAVE_osf=n. Skip"
+    exit 77
+fi

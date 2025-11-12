@@ -1,0 +1,258 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m1",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "length"
+                }
+              },
+              {
+                "payload": {
+                  "base": "ih",
+                  "offset": 32,
+                  "len": 32
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            {
+              "concat": [
+                {
+                  "range": [
+                    20,
+                    80
+                  ]
+                },
+                20
+              ]
+            },
+            {
+              "accept": null
+            }
+          ],
+          [
+            {
+              "concat": [
+                {
+                  "range": [
+                    1,
+                    10
+                  ]
+                },
+                10
+              ]
+            },
+            {
+              "drop": null
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m2",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "length"
+                }
+              },
+              {
+                "payload": {
+                  "base": "ih",
+                  "offset": 32,
+                  "len": 32
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "verdict",
+        "elem": [
+          [
+            {
+              "concat": [
+                30,
+                30
+              ]
+            },
+            {
+              "drop": null
+            }
+          ],
+          [
+            {
+              "concat": [
+                20,
+                36
+              ]
+            },
+            {
+              "accept": null
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "length"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "base": "nh",
+                      "offset": 32,
+                      "len": 32
+                    }
+                  }
+                ]
+              },
+              "data": "@m1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "length"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "base": "nh",
+                      "offset": 32,
+                      "len": 32
+                    }
+                  }
+                ]
+              },
+              "data": "@m2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "length"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "base": "th",
+                      "offset": 160,
+                      "len": 128
+                    }
+                  }
+                ]
+              },
+              "data": {
+                "set": [
+                  [
+                    {
+                      "concat": [
+                        {
+                          "range": [
+                            47,
+                            63
+                          ]
+                        },
+                        "0xe373135363130333131303735353203"
+                      ]
+                    },
+                    {
+                      "accept": null
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

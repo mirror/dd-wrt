@@ -1,0 +1,469 @@
+INTEGER TYPE
+~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|Integer |
+integer |
+variable |
+-
+|===================
+
+The integer type is used for numeric values. It may be specified as a decimal,
+hexadecimal or octal number. The integer type does not have a fixed size, its
+size is determined by the expression for which it is used.
+
+BITMASK TYPE
+~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|Bitmask |
+bitmask |
+variable |
+integer
+|===================
+
+The bitmask type (*bitmask*) is used for bitmasks.
+
+STRING TYPE
+~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|String |
+string |
+variable |
+-
+|===================
+
+The string type is used for character strings. A string begins with an
+alphabetic character (a-zA-Z) followed by zero or more alphanumeric characters
+or the characters /, -, _ and .. In addition, anything enclosed in double
+quotes (") is recognized as a string.
+
+.String specification
+----------------------
+# Interface name
+filter input iifname eth0
+
+# Weird interface name
+filter input iifname "(eth0)"
+----------------------------
+
+LINK LAYER ADDRESS TYPE
+~~~~~~~~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|Link layer address |
+lladdr|
+variable |
+integer
+|===================
+
+The link layer address type is used for link layer addresses. Link layer
+addresses are specified as a variable amount of groups of two hexadecimal digits
+separated using colons (:).
+
+.Link layer address specification
+----------------------
+# Ethernet destination MAC address
+filter input ether daddr 20:c9:d0:43:12:d9
+----------------------------
+
+IPV4 ADDRESS TYPE
+~~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|IPV4 address|
+ipv4_addr|
+32 bit|
+integer
+|===================
+
+The IPv4 address type is used for IPv4 addresses. Addresses are specified in
+either dotted decimal, dotted hexadecimal, dotted octal, decimal, hexadecimal,
+octal notation or as a host name. A host name will be resolved using the
+standard system resolver.
+
+.IPv4 address specification
+----------------------
+# dotted decimal notation
+filter output ip daddr 127.0.0.1
+
+# host name
+filter output ip daddr localhost
+----------------------------
+
+IPV6 ADDRESS TYPE
+~~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|IPv6 address|
+ipv6_addr|
+128 bit|
+integer
+|===================
+
+The IPv6 address type is used for IPv6 addresses. Addresses are specified as a
+host name or as hexadecimal halfwords separated by colons. Addresses might be
+enclosed in square brackets ("[]") to differentiate them from port numbers.
+
+.IPv6 address specification
+----------------------
+# abbreviated loopback address
+filter output ip6 daddr ::1
+----------------------------
+
+.IPv6 address specification with bracket notation
+----------------------
+# without [] the port number (22) would be parsed as part of the
+# ipv6 address
+ip6 nat prerouting tcp dport 2222 dnat to [1ce::d0]:22
+----------------------------
+
+BOOLEAN TYPE
+~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|Boolean |
+boolean |
+1 bit |
+integer
+|===================
+
+The boolean type is a syntactical helper type in userspace. Its use is in the
+right-hand side of a (typically implicit) relational expression to change the
+expression on the left-hand side into a boolean check (usually for existence). +
+
+.The following keywords will automatically resolve into a boolean type with given value
+
+[options="header"]
+|==================
+|Keyword | Value
+|exists |
+1 |
+missing |
+0
+|===================
+
+.expressions support a boolean comparison
+[options="header"]
+|======================================
+|Expression | Behaviour
+|fib |
+Check route existence.
+|exthdr|
+Check IPv6 extension header existence.
+|tcp option |
+Check TCP option header existence.
+|===================
+
+.Boolean specification
+----------------------
+# match if route exists
+filter input fib daddr . iif check exists
+
+# match only non-fragmented packets in IPv6 traffic
+filter input exthdr frag missing
+
+# match if TCP timestamp option is present
+filter input tcp option timestamp exists
+------------------------------------------
+
+ICMP TYPE TYPE
+~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|ICMP Type |
+icmp_type |
+8 bit |
+integer
+|===================
+The ICMP Type type is used to conveniently specify the ICMP header's type field.
+
+.Keywords may be used when specifying the ICMP type
+[options="header"]
+|==================
+|Keyword | Value
+|echo-reply |
+0
+|destination-unreachable |
+3
+|source-quench|
+4
+|redirect|
+5
+|echo-request|
+8
+|router-advertisement|
+9
+|router-solicitation|
+10
+|time-exceeded|
+11
+|parameter-problem|
+12
+|timestamp-request|
+13
+|timestamp-reply|
+14
+|info-request|
+15
+|info-reply|
+16
+|address-mask-request|
+17
+|address-mask-reply|
+18
+|===================
+
+.ICMP Type specification
+------------------------
+# match ping packets
+filter output icmp type { echo-request, echo-reply }
+------------------------
+
+ICMP CODE TYPE
+~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|ICMP Code |
+icmp_code |
+8 bit |
+integer
+|===================
+
+The ICMP Code type is used to conveniently specify the ICMP header's code field.
+
+ICMPV6 TYPE TYPE
+~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|ICMPv6 Type |
+icmpv6_type |
+8 bit |
+integer
+|===================
+
+The ICMPv6 Type type is used to conveniently specify the ICMPv6 header's type field.
+
+.keywords may be used when specifying the ICMPv6 type:
+[options="header"]
+|==================
+|Keyword | Value
+|destination-unreachable |
+1
+|packet-too-big|
+2
+|time-exceeded|
+3
+|parameter-problem|
+4
+|echo-request|
+128
+|echo-reply|
+129
+|mld-listener-query|
+130
+|mld-listener-report|
+131
+|mld-listener-done |
+132
+|mld-listener-reduction|
+132
+|nd-router-solicit |
+133
+|nd-router-advert|
+134
+|nd-neighbor-solicit|
+135
+|nd-neighbor-advert|
+136
+|nd-redirect|
+137
+|router-renumbering|
+138
+|ind-neighbor-solicit|
+141
+|ind-neighbor-advert|
+142
+|mld2-listener-report|
+143
+|===================
+
+.ICMPv6 Type specification
+--------------------------
+# match ICMPv6 ping packets
+filter output icmpv6 type { echo-request, echo-reply }
+--------------------------
+
+ICMPV6 CODE TYPE
+~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|ICMPv6 Code |
+icmpv6_code |
+8 bit |
+integer
+|===================
+
+The ICMPv6 Code type is used to conveniently specify the ICMPv6 header's code field.
+
+CONNTRACK TYPES
+~~~~~~~~~~~~~~~
+
+.overview of types used in ct expression and statement
+[options="header"]
+|==================
+|Name | Keyword |Size |Base type
+|conntrack state|
+ct_state|
+4 byte|
+bitmask
+|conntrack direction|
+ct_dir |
+8 bit|
+integer
+|conntrack status|
+ct_status|
+4 byte|
+bitmask
+|conntrack event bits|
+ct_event |
+4 byte |
+bitmask
+|conntrack label|
+ct_label |
+128 bit|
+bitmask
+|=================
+
+For each of the types above, keywords are available for convenience:
+
+.conntrack state (ct_state)
+[options="header"]
+|==================
+|Keyword| Value
+|invalid|
+1
+|established|
+2
+|related|
+4
+|new|
+8
+|untracked|
+64
+|================
+
+.conntrack direction (ct_dir)
+[options="header"]
+|==================
+|Keyword| Value
+|original|
+0
+|reply|
+1
+|================
+
+.conntrack status (ct_status)
+[options="header"]
+|==================
+|Keyword| Value	| Description
+|expected|1| Expected connection; conntrack helper set it up
+|seen-reply|2| Conntrack has seen packets in both directions
+|assured| 4 |Conntrack entry will not be removed if hash table is full
+|confirmed | 8 | Initial packet processed
+|snat| 16 | Original source address differs from reply destination
+|dnat| 32 | Original destination differs from reply source
+|seq-adjust| 64 | tcp sequence number rewrite due to conntrack helper or synproxy
+|snat-done| 128 | tried to find matching snat/masquerade rule
+|dnat-done| 256 | tried to find matching dnat/redirect rule
+|dying| 512 | Connection about to be deleted
+|fixed-timeout | 1024 | entry expires even if traffic is active
+|helper | 8192 | connection is monitored by conntrack helper
+|offload | 16384 | connection is offloaded to a flow table
+|hw-offload | 32768 | connection is offloaded to hardware
+|================
+
+.conntrack event bits (ct_event)
+[options="header"]
+|==================
+|Keyword| Value
+|new|
+1
+|related|
+2
+|destroy|
+4
+|reply|
+8
+|assured|
+16
+|protoinfo|
+32
+|helper|
+64
+|mark|
+128
+|seqadj|
+256
+|secmark|
+512
+|label|
+1024
+|==================
+
+Possible keywords for conntrack label type (ct_label) are read at runtime from /etc/connlabel.conf.
+
+DCCP PKTTYPE TYPE
+~~~~~~~~~~~~~~~~
+[options="header"]
+|==================
+|Name | Keyword | Size | Base type
+|DCCP packet type |
+dccp_pkttype |
+4 bit |
+integer
+|===================
+
+The DCCP packet type abstracts the different legal values of the respective
+four bit field in the DCCP header, as stated by RFC4340. Note that possible
+values 10-15 are considered reserved and therefore not allowed to be used. In
+iptables' *dccp* match, these values are aliased 'INVALID'. With nftables, one
+may simply match on the numeric value range, i.e. *10-15*.
+
+.keywords may be used when specifying the DCCP packet type
+[options="header"]
+|==================
+|Keyword |Value
+|request|
+0
+|response|
+1
+|data|
+2
+|ack|
+3
+|dataack|
+4
+|closereq|
+5
+|close|
+6
+|reset|
+7
+|sync|
+8
+|syncack|
+9
+|=================

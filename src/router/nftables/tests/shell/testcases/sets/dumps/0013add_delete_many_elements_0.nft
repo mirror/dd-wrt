@@ -1,0 +1,5 @@
+table ip x {
+	set y {
+		type ipv4_addr
+	}
+}

@@ -1,0 +1,220 @@
+# meta l4proto 17 tproxy ip to 192.0.2.1
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "192.0.2.1",
+            "family": "ip"
+        }
+    }
+]
+
+# meta l4proto 6 tproxy ip to 192.0.2.1:50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "192.0.2.1",
+            "family": "ip",
+            "port": 50080
+        }
+    }
+]
+
+# meta l4proto 6 tproxy ip6 to [2001:db8::1]
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "2001:db8::1",
+            "family": "ip6"
+        }
+    }
+]
+
+# meta l4proto 17 tproxy ip6 to [2001:db8::1]:50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "2001:db8::1",
+            "family": "ip6",
+            "port": 50080
+        }
+    }
+]
+
+# meta l4proto 17 tproxy ip to :50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "family": "ip",
+            "port": 50080
+        }
+    }
+]
+
+# meta l4proto 17 tproxy ip6 to :50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "family": "ip6",
+            "port": 50080
+        }
+    }
+]
+
+# meta l4proto 17 tproxy to :50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "port": 50080
+        }
+    }
+]
+
+# ip daddr 0.0.0.0/0 meta l4proto 6 tproxy ip to :2000
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": {
+                "prefix": {
+			"addr": "0.0.0.0",
+			"len": 0
+		}
+	    }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+	    "family": "ip",
+            "port": 2000
+        }
+    }
+]
+
+# meta l4proto 6 tproxy ip to 127.0.0.1:symhash mod 2 map { 0 : 23, 1 : 42 }
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "127.0.0.1",
+            "family": "ip",
+            "port": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [ 0, 23 ],
+                            [ 1, 42 ]
+                        ]
+                    },
+                    "key": {
+                        "symhash": { "mod": 2 }
+                    }
+                }
+            }
+        }
+    }
+]
+

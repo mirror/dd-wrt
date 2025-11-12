@@ -1,0 +1,12 @@
+table inet t {
+	set y {
+		typeof ip daddr . @ih,32,32
+		elements = { 1.1.1.1 . 0x14,
+			     2.2.2.2 . 0x20 }
+	}
+
+	chain y {
+		ip saddr . @nh,32,32 { 1.1.1.1 . 0x14, 2.2.2.2 . 0x1e }
+		ip daddr . @nh,32,32 @y
+	}
+}

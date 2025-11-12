@@ -1,0 +1,193 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "bridge",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "t",
+        "name": "c1",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "t",
+        "name": "c2",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "bridge",
+        "name": "nodhcpvlan",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "vlan",
+              "field": "id"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          1
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c1",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              "right": "@nodhcpvlan"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "type"
+                }
+              },
+              "right": "arp"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "jump": {
+              "target": "c2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c1",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              "right": "@nodhcpvlan"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "type"
+                }
+              },
+              "right": "ip"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "jump": {
+              "target": "c2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "bridge",
+        "table": "t",
+        "chain": "c1",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              "right": {
+                "set": [
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "type"
+                }
+              },
+              "right": "ip6"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "jump": {
+              "target": "c2"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

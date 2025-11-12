@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+$NFT add table x
+$NFT add chain x x
+$NFT add flowtable x y { hook ingress priority 0\; devices = { lo }\;}
+$NFT add rule x x flow add @y
+
+$NFT delete flowtable x y || exit 0
+echo "E: delete flowtable in use"
+exit 1

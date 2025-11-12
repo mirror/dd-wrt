@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+if [ "$NFT_TEST_HAVE_catchall_element" != n ] ; then
+	CATCHALL="* : 3,"
+else
+	CATCHALL=","
+fi
+
+RULESET="define x = {
+        1.1.1.1 : 2,
+        $CATCHALL
+}
+
+table ip x {
+        map y {
+                typeof ip saddr : mark
+                elements = \$x
+        }
+        map z {
+                typeof ip saddr : mark
+                elements = \$x
+        }
+}"
+
+$NFT -f - <<< "$RULESET"
+
+if [ "$NFT_TEST_HAVE_catchall_element" = n ] ; then
+	echo "Ran modified version of test due to NFT_TEST_HAVE_catchall_element=n (skipped)"
+	exit 77
+fi

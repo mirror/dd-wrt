@@ -1,0 +1,136 @@
+# ip saddr @set1 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "@set1"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip6 daddr != @set2 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": "@set2"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip saddr . ip daddr . tcp dport @set3 accept
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "tcp"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": "@set3"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip daddr . tcp dport { 10.0.0.0/8 . 10-23, 192.168.1.1-192.168.3.8 . 80-443 } accept
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "tcp"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            {
+                                "prefix": {
+                                    "addr": "10.0.0.0",
+                                    "len": 8
+                                }
+                            },
+                            {
+                                "range": [
+                                    10,
+                                    23
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "concat": [
+                            {
+                                "range": [
+                                    "192.168.1.1",
+                                    "192.168.3.8"
+                                ]
+                            },
+                            {
+                                "range": [
+                                    80,
+                                    443
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]

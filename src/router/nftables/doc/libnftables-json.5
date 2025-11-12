@@ -1,0 +1,2401 @@
+'\" t
+.\"     Title: libnftables-json
+.\"    Author: Phil Sutter <phil@nwl.cc>
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 08/27/2025
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "LIBNFTABLES\-JSON" "5" "08/27/2025" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libnftables-json \- Supported JSON schema by libnftables
+.SH "SYNOPSIS"
+.sp
+\fB{ "nftables": [\fR \fIOBJECTS\fR \fB] }\fR
+.sp
+\fIOBJECTS\fR := \fILIST_OBJECTS\fR | \fICMD_OBJECTS\fR
+.sp
+\fILIST_OBJECTS\fR := \fILIST_OBJECT\fR [ \fB,\fR \fILIST_OBJECTS\fR ]
+.sp
+\fICMD_OBJECTS\fR := \fICMD_OBJECT\fR [ \fB,\fR \fICMD_OBJECTS\fR ]
+.sp
+\fICMD_OBJECT\fR := \fB{\fR \fICMD\fR\fB:\fR \fILIST_OBJECT\fR \fB}\fR | \fIMETAINFO_OBJECT\fR
+.sp
+\fICMD\fR := \fB"add"\fR | \fB"replace"\fR | \fB"create"\fR | \fB"insert"\fR | \fB"delete"\fR | \fB"list"\fR | \fB"reset"\fR | \fB"flush"\fR | \fB"rename"\fR
+.sp
+\fILIST_OBJECT\fR := \fITABLE\fR | \fICHAIN\fR | \fIRULE\fR | \fISET\fR | \fIMAP\fR | \fIELEMENT\fR | \fIFLOWTABLE\fR | \fICOUNTER\fR | \fIQUOTA\fR | \fICT_HELPER\fR | \fILIMIT\fR | \fIMETAINFO_OBJECT\fR | \fICT_TIMEOUT\fR | \fICT_EXPECTATION\fR
+.SH "DESCRIPTION"
+.sp
+libnftables supports JSON formatted input and output\&. This is implemented as an alternative frontend to the standard CLI syntax parser, therefore basic behaviour is identical and, for (almost) any operation available in standard syntax, there should be an equivalent one in JSON\&.
+.sp
+JSON input may be provided in a single string as parameter to \fBnft_run_cmd_from_buffer()\fR or in a file identified by the \fIfilename\fR parameter of the \fBnft_run_cmd_from_filename()\fR function\&.
+.sp
+JSON output has to be enabled via the \fBnft_ctx_output_set_json()\fR function, turning library standard output into JSON format\&. Error output remains unaffected\&.
+.SH "GLOBAL STRUCTURE"
+.sp
+In general, any JSON input or output is enclosed in an object with a single property named \fInftables\fR\&. Its value is an array containing commands (for input) or ruleset elements (for output)\&.
+.sp
+A command is an object with a single property whose name identifies the command\&. Its value is a ruleset element \- basically identical to output elements, apart from certain properties which may be interpreted differently or are required when output generally omits them\&.
+.SH "METAINFO OBJECT"
+.sp
+In output, the first object in an \fBnftables\fR array is a special one containing library information\&. Its content is as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "metainfo": {
+        "version":\fR \fISTRING\fR\fB,
+        "release_name":\fR \fISTRING\fR\fB,
+        "json_schema_version":\fR \fINUMBER\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The values of \fBversion\fR and \fBrelease_name\fR properties are equal to the package version and release name as printed by \fBnft \-v\fR\&. The value of the \fBjson_schema_version\fR property is an integer indicating the schema version\&.
+.sp
+If supplied in library input, the parser will verify the \fBjson_schema_version\fR value to not exceed the internally hardcoded one (to make sure the given schema is fully understood)\&. In future, a lower number than the internal one may activate compatibility mode to parse outdated and incompatible JSON input\&.
+.SH "COMMAND OBJECTS"
+.sp
+The structure accepts an arbitrary amount of commands which are interpreted in order of appearance\&. For instance, the following standard syntax input:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+flush ruleset
+add table inet mytable
+add chain inet mytable mychain
+add rule inet mytable mychain tcp dport 22 accept
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+translates into JSON as such:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{ "nftables": [
+        { "flush": { "ruleset": null }},
+        { "add": { "table": {
+                        "family": "inet",
+                        "name": "mytable"
+        }}},
+        { "add": { "chain": {
+                        "family": "inet",
+                        "table": "mytable",
+                        "name": "mychain"
+        }}},
+        { "add": { "rule": {
+                        "family": "inet",
+                        "table": "mytable",
+                        "chain": "mychain",
+                        "expr": [
+                                { "match": {
+                                        "op": "==",
+                                        "left": { "payload": {
+                                                        "protocol": "tcp",
+                                                        "field": "dport"
+                                        }},
+                                        "right": 22
+                                }},
+                                { "accept": null }
+                        ]
+        }}}
+]}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "ADD"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "add":\fR \fIADD_OBJECT\fR \fB}\fR
+
+\fIADD_OBJECT\fR := \fITABLE\fR | \fICHAIN\fR | \fIRULE\fR | \fISET\fR | \fIMAP\fR | \fIELEMENT\fR |
+                \fIFLOWTABLE\fR | \fICOUNTER\fR | \fIQUOTA\fR | \fICT_HELPER\fR | \fILIMIT\fR |
+                \fICT_TIMEOUT\fR | \fICT_EXPECTATION\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Add a new ruleset element to the kernel\&.
+.SS "REPLACE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "replace":\fR \fIRULE\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Replace a rule\&. In \fIRULE\fR, the \fBhandle\fR property is mandatory and identifies the rule to be replaced\&.
+.SS "CREATE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "create":\fR \fIADD_OBJECT\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Identical to \fBadd\fR command, but returns an error if the object already exists\&.
+.SS "INSERT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "insert":\fR \fIRULE\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This command is identical to \fBadd\fR for rules, but instead of appending the rule to the chain by default, it inserts at first position\&. If a \fBhandle\fR or \fBindex\fR property is given, the rule is inserted before the rule identified by those properties\&.
+.SS "DELETE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "delete":\fR \fIADD_OBJECT\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Delete an object from the ruleset\&. Only the minimal number of properties required to uniquely identify an object is generally needed in \fIADD_OBJECT\fR\&. For most ruleset elements, this is \fBfamily\fR and \fBtable\fR plus either \fBhandle\fR or \fBname\fR (except rules since they don\(cqt have a name)\&.
+.SS "LIST"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "list":\fR \fILIST_OBJECT\fR \fB}\fR
+
+\fILIST_OBJECT\fR := \fITABLE\fR | \fITABLES\fR | \fICHAIN\fR | \fICHAINS\fR | \fISET\fR | \fISETS\fR |
+                 \fIMAP\fR | \fIMAPS | COUNTER\fR | \fICOUNTERS\fR | \fIQUOTA\fR | \fIQUOTAS\fR |
+                 \fICT_HELPER\fR | \fICT_HELPERS\fR | \fILIMIT\fR | \fILIMITS\fR | \fIRULESET\fR |
+                 \fIMETER\fR | \fIMETERS\fR | \fIFLOWTABLE\fR | \fIFLOWTABLES\fR |
+                 \fICT_TIMEOUT\fR | \fICT_EXPECTATION\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+List ruleset elements\&. The plural forms are used to list all objects of that kind, optionally filtered by \fBfamily\fR and for some, also \fBtable\fR\&.
+.SS "RESET"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "reset":\fR \fIRESET_OBJECT\fR \fB}\fR
+
+\fIRESET_OBJECT\fR := \fICOUNTER\fR | \fICOUNTERS\fR | \fIQUOTA\fR | \fIQUOTAS\fR | \fIRULE\fR | \fIRULES\fR | \fISET\fR | \fIMAP\fR | \fIELEMENT\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Reset state in suitable objects, i\&.e\&. zero their internal counter\&.
+.SS "FLUSH"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "flush":\fR \fIFLUSH_OBJECT\fR \fB}\fR
+
+\fIFLUSH_OBJECT\fR := \fITABLE\fR | \fICHAIN\fR | \fISET\fR | \fIMAP\fR | \fIMETER\fR | \fIRULESET\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Empty contents in given object, e\&.g\&. remove all chains from given \fBtable\fR or remove all elements from given \fBset\fR\&.
+.SS "RENAME"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "rename":\fR \fICHAIN\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Rename a chain\&. The new name is expected in a dedicated property named \fBnewname\fR\&.
+.SH "RULESET ELEMENTS"
+.SS "TABLE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "table": {
+        "family":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "flags":\fR \fITABLE_FLAGS\fR
+\fB}}\fR
+
+\fITABLE_FLAGS\fR := \fITABLE_FLAG\fR | \fB[\fR \fITABLE_FLAG_LIST\fR \fB]\fR
+\fITABLE_FLAG_LIST\fR := \fITABLE_FLAG\fR [\fB,\fR \fITABLE_FLAG_LIST\fR ]
+\fITABLE_FLAG\fR := \fB"dormant"\fR | \fB"owner"\fR | \fB"persist"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object describes a table\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family, e\&.g\&.
+\fB"ip"\fR
+or
+\fB"ip6"\fR\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The table\(cqs handle\&. In input, it is used only in
+\fBdelete\fR
+command as alternative to
+\fBname\fR\&.
+.RE
+.PP
+\fBflags\fR
+.RS 4
+The table\(cqs flags\&.
+.RE
+.SS "CHAIN"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "chain": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "newname":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "type":\fR \fISTRING\fR\fB,
+        "hook":\fR \fISTRING\fR\fB,
+        "prio":\fR \fINUMBER\fR\fB,
+        "dev":\fR \fISTRING\fR\fB,
+        "policy":\fR \fISTRING\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object describes a chain\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The chain\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The chain\(cqs handle\&. In input, it is used only in
+\fBdelete\fR
+command as alternative to
+\fBname\fR\&.
+.RE
+.PP
+\fBnewname\fR
+.RS 4
+A new name for the chain, only relevant in the
+\fBrename\fR
+command\&.
+.RE
+.sp
+The following properties are required for base chains:
+.PP
+\fBtype\fR
+.RS 4
+The chain\(cqs type\&.
+.RE
+.PP
+\fBhook\fR
+.RS 4
+The chain\(cqs hook\&.
+.RE
+.PP
+\fBprio\fR
+.RS 4
+The chain\(cqs priority\&.
+.RE
+.PP
+\fBdev\fR
+.RS 4
+The chain\(cqs bound interface (if in the netdev family)\&.
+.RE
+.PP
+\fBpolicy\fR
+.RS 4
+The chain\(cqs policy\&.
+.RE
+.SS "RULE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "rule": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "chain":\fR \fISTRING\fR\fB,
+        "expr": [\fR \fISTATEMENTS\fR \fB],
+        "handle":\fR \fINUMBER\fR\fB,
+        "index":\fR \fINUMBER\fR\fB,
+        "comment":\fR \fISTRING\fR
+\fB}}\fR
+
+\fISTATEMENTS\fR := \fISTATEMENT\fR [\fB,\fR \fISTATEMENTS\fR ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object describes a rule\&. Basic building blocks of rules are statements\&. Each rule consists of at least one\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBchain\fR
+.RS 4
+The chain\(cqs name\&.
+.RE
+.PP
+\fBexpr\fR
+.RS 4
+An array of statements this rule consists of\&. In input, it is used in
+\fBadd\fR/\fBinsert\fR/\fBreplace\fR
+commands only\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The rule\(cqs handle\&. In
+\fBdelete\fR/\fBreplace\fR
+commands, it serves as an identifier of the rule to delete/replace\&. In
+\fBadd\fR/\fBinsert\fR
+commands, it serves as an identifier of an existing rule to append/prepend the rule to\&.
+.RE
+.PP
+\fBindex\fR
+.RS 4
+The rule\(cqs position for
+\fBadd\fR/\fBinsert\fR
+commands\&. It is used as an alternative to
+\fBhandle\fR
+then\&.
+.RE
+.PP
+\fBcomment\fR
+.RS 4
+Optional rule comment\&.
+.RE
+.SS "SET / MAP"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "set": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "type":\fR \fISET_TYPE\fR\fB,
+        "policy":\fR \fISET_POLICY\fR\fB,
+        "flags":\fR \fISET_FLAGS\fR\fB,
+        "elem":\fR \fISET_ELEMENTS\fR\fB,
+        "timeout":\fR \fINUMBER\fR\fB,
+        "gc\-interval":\fR \fINUMBER\fR\fB,
+        "size":\fR \fINUMBER\fR\fB,
+        "auto\-merge":\fR \fIBOOLEAN\fR
+\fB}}\fR
+
+\fB{ "map": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "type":\fR \fISET_TYPE\fR\fB,
+        "map":\fR \fISTRING\fR\fB,
+        "policy":\fR \fISET_POLICY\fR\fB,
+        "flags":\fR \fISET_FLAGS\fR\fB,
+        "elem":\fR \fISET_ELEMENTS\fR\fB,
+        "timeout":\fR \fINUMBER\fR\fB,
+        "gc\-interval":\fR \fINUMBER\fR\fB,
+        "size":\fR \fINUMBER\fR\fB,
+        "auto\-merge":\fR \fIBOOLEAN\fR
+\fB}}\fR
+
+\fISET_TYPE\fR := \fISTRING\fR | \fB[\fR \fISET_TYPE_LIST\fR \fB]\fR | \fB{ "typeof":\fR \fIEXPRESSION\fR \fB}\fR
+\fISET_TYPE_LIST\fR := \fISTRING\fR [\fB,\fR \fISET_TYPE_LIST\fR ]
+\fISET_POLICY\fR := \fB"performance"\fR | \fB"memory"\fR
+\fISET_FLAGS\fR := \fISET_FLAG\fR | \fB[\fR \fISET_FLAG_LIST\fR \fB]\fR
+\fISET_FLAG_LIST\fR := \fISET_FLAG\fR [\fB,\fR \fISET_FLAG_LIST\fR ]
+\fISET_FLAG\fR := \fB"constant"\fR | \fB"interval"\fR | \fB"timeout"\fR
+\fISET_ELEMENTS\fR := \fIEXPRESSION\fR | \fB[\fR \fIEXPRESSION_LIST\fR \fB]\fR
+\fIEXPRESSION_LIST\fR := \fIEXPRESSION\fR [\fB,\fR \fIEXPRESSION_LIST\fR ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+These objects describe a named set or map\&. Maps are a special form of sets in that they translate a unique key to a value\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The set\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The set\(cqs handle\&. For input, it is used in the
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBtype\fR
+.RS 4
+The set\(cqs datatype, see below\&.
+.RE
+.PP
+\fBmap\fR
+.RS 4
+Type of values this set maps to (i\&.e\&. this set is a map)\&.
+.RE
+.PP
+\fBpolicy\fR
+.RS 4
+The set\(cqs policy\&.
+.RE
+.PP
+\fBflags\fR
+.RS 4
+The set\(cqs flags\&.
+.RE
+.PP
+\fBelem\fR
+.RS 4
+Initial set element(s), see below\&.
+.RE
+.PP
+\fBtimeout\fR
+.RS 4
+Element timeout in seconds\&.
+.RE
+.PP
+\fBgc\-interval\fR
+.RS 4
+Garbage collector interval in seconds\&.
+.RE
+.PP
+\fBsize\fR
+.RS 4
+Maximum number of elements supported\&.
+.RE
+.PP
+\fBauto\-merge\fR
+.RS 4
+Automatic merging of adjacent/overlapping set elements in interval sets\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBTYPE\fR
+.RS 4
+.sp
+The set type might be a string, such as \fB"ipv4_addr"\fR, an array consisting of strings (for concatenated types) or a \fBtypeof\fR object containing an expression to extract the type from\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBELEM\fR
+.RS 4
+.sp
+A single set element might be given as string, integer or boolean value for simple cases\&. If additional properties are required, a formal \fBelem\fR object may be used\&.
+.sp
+Multiple elements may be given in an array\&.
+.RE
+.SS "ELEMENT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "element": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "elem":\fR \fISET_ELEM\fR
+\fB}}\fR
+
+\fISET_ELEM\fR := \fIEXPRESSION\fR | \fB[\fR \fIEXPRESSION_LIST\fR \fB]\fR
+\fIEXPRESSION_LIST\fR := \fIEXPRESSION\fR [\fB,\fR \fIEXPRESSION\fR ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Manipulate element(s) in a named set\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The set\(cqs name\&.
+.RE
+.PP
+\fBelem\fR
+.RS 4
+See elem property of set object\&.
+.RE
+.SS "FLOWTABLE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "flowtable": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "hook":\fR \fISTRING\fR\fB,
+        "prio":\fR \fINUMBER\fR\fB,
+        "dev":\fR \fIFT_INTERFACE\fR
+\fB}}\fR
+
+\fIFT_INTERFACE\fR := \fISTRING\fR | \fB[\fR \fIFT_INTERFACE_LIST\fR \fB]\fR
+\fIFT_INTERFACE_LIST\fR := \fISTRING\fR [\fB,\fR \fISTRING\fR ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named flowtable\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The flow table\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The flow table\(cqs handle\&. In input, it is used by the
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBhook\fR
+.RS 4
+The flow table\(cqs hook\&.
+.RE
+.PP
+\fBprio\fR
+.RS 4
+The flow table\(cqs priority\&.
+.RE
+.PP
+\fBdev\fR
+.RS 4
+The flow table\(cqs interface(s)\&.
+.RE
+.SS "COUNTER"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "counter": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "packets":\fR \fINUMBER\fR\fB,
+        "bytes":\fR \fINUMBER\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named counter\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The counter\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The counter\(cqs handle\&. In input, it is used by the
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBpackets\fR
+.RS 4
+Packet counter value\&.
+.RE
+.PP
+\fBbytes\fR
+.RS 4
+Byte counter value\&.
+.RE
+.SS "QUOTA"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "quota": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "bytes":\fR \fINUMBER\fR\fB,
+        "used":\fR \fINUMBER\fR\fB,
+        "inv":\fR \fIBOOLEAN\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named quota\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The quota\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The quota\(cqs handle\&. In input, it is used by the
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBbytes\fR
+.RS 4
+Quota threshold\&.
+.RE
+.PP
+\fBused\fR
+.RS 4
+Quota used so far\&.
+.RE
+.PP
+\fBinv\fR
+.RS 4
+If true, match if the quota has been exceeded\&.
+.RE
+.SS "CT HELPER"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct helper": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fI\&... \*(Aq\fR\fI\fB,
+        "type":\fR\fR\fI \*(AqSTRING\fR\fB,
+        "protocol":\fR \fICTH_PROTO\fR\fB,
+        "l3proto":\fR \fISTRING\fR
+\fB}}\fR
+
+\fICTH_PROTO\fR := \fB"tcp"\fR | \fB"udp"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named conntrack helper\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The ct helper\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The ct helper\(cqs handle\&. In input, it is used by the
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBtype\fR
+.RS 4
+The ct helper type name, e\&.g\&.
+\fB"ftp"\fR
+or
+\fB"tftp"\fR\&.
+.RE
+.PP
+\fBprotocol\fR
+.RS 4
+The ct helper\(cqs layer 4 protocol\&.
+.RE
+.PP
+\fBl3proto\fR
+.RS 4
+The ct helper\(cqs layer 3 protocol, e\&.g\&.
+\fB"ip"\fR
+or
+\fB"ip6"\fR\&.
+.RE
+.SS "LIMIT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "limit": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "rate":\fR \fINUMBER\fR\fB,
+        "per":\fR \fISTRING\fR\fB,
+        "burst":\fR \fINUMBER\fR\fB,
+        "unit":\fR \fILIMIT_UNIT\fR\fB,
+        "inv":\fR \fIBOOLEAN\fR
+\fB}}\fR
+
+\fILIMIT_UNIT\fR := \fB"packets"\fR | \fB"bytes"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named limit\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The limit\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The limit\(cqs handle\&. In input, it is used by the
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBrate\fR
+.RS 4
+The limit\(cqs rate value\&.
+.RE
+.PP
+\fBper\fR
+.RS 4
+Time unit to apply the limit to, e\&.g\&.
+\fB"week"\fR,
+\fB"day"\fR,
+\fB"hour"\fR, etc\&. If omitted, defaults to
+\fB"second"\fR\&.
+.RE
+.PP
+\fBburst\fR
+.RS 4
+The limit\(cqs burst value\&. If omitted, defaults to
+\fB0\fR\&.
+.RE
+.PP
+\fBunit\fR
+.RS 4
+Unit of rate and burst values\&. If omitted, defaults to
+\fB"packets"\fR\&.
+.RE
+.PP
+\fBinv\fR
+.RS 4
+If true, match if limit was exceeded\&. If omitted, defaults to
+\fBfalse\fR\&.
+.RE
+.SS "CT TIMEOUT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct timeout": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "protocol":\fR \fICTH_PROTO\fR\fB,
+        "state":\fR \fISTRING\fR\fB,
+        "value:\fR \fINUMBER\fR\fB,
+        "l3proto":\fR \fISTRING\fR
+\fB}}\fR
+
+\fICTH_PROTO\fR := \fB"tcp"\fR | \fB"udp"\fR | \fB"dccp"\fR | \fB"sctp"\fR | \fB"gre"\fR | \fB"icmpv6"\fR | \fB"icmp"\fR | \fB"generic"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named conntrack timeout policy\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The ct timeout object\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The ct timeout object\(cqs handle\&. In input, it is used by
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBprotocol\fR
+.RS 4
+The ct timeout object\(cqs layer 4 protocol\&.
+.RE
+.PP
+\fBstate\fR
+.RS 4
+The connection state name, e\&.g\&.
+\fB"established"\fR,
+\fB"syn_sent"\fR,
+\fB"close"\fR
+or
+\fB"close_wait"\fR, for which the timeout value has to be updated\&.
+.RE
+.PP
+\fBvalue\fR
+.RS 4
+The updated timeout value for the specified connection state\&.
+.RE
+.PP
+\fBl3proto\fR
+.RS 4
+The ct timeout object\(cqs layer 3 protocol, e\&.g\&.
+\fB"ip"\fR
+or
+\fB"ip6"\fR\&.
+.RE
+.SS "CT EXPECTATION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct expectation": {
+        "family":\fR \fISTRING\fR\fB,
+        "table":\fR \fISTRING\fR\fB,
+        "name":\fR \fISTRING\fR\fB,
+        "handle":\fR \fINUMBER\fR\fB,
+        "l3proto":\fR \fISTRING\fR
+        "protocol":* \fICTH_PROTO\fR\fB,
+        "dport":\fR \fINUMBER\fR\fB,
+        "timeout:\fR \fINUMBER\fR\fB,
+        "size:\fR \fINUMBER\fR\fB,
+*}}\fR
+
+\fICTH_PROTO\fR := \fB"tcp"\fR | \fB"udp"\fR | \fB"dccp"\fR | \fB"sctp"\fR | \fB"gre"\fR | \fB"icmpv6"\fR | \fB"icmp"\fR | \fB"generic"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a named conntrack expectation\&.
+.PP
+\fBfamily\fR
+.RS 4
+The table\(cqs family\&.
+.RE
+.PP
+\fBtable\fR
+.RS 4
+The table\(cqs name\&.
+.RE
+.PP
+\fBname\fR
+.RS 4
+The ct expectation object\(cqs name\&.
+.RE
+.PP
+\fBhandle\fR
+.RS 4
+The ct expectation object\(cqs handle\&. In input, it is used by
+\fBdelete\fR
+command only\&.
+.RE
+.PP
+\fBl3proto\fR
+.RS 4
+The ct expectation object\(cqs layer 3 protocol, e\&.g\&.
+\fB"ip"\fR
+or
+\fB"ip6"\fR\&.
+.RE
+.PP
+\fBprotocol\fR
+.RS 4
+The ct expectation object\(cqs layer 4 protocol\&.
+.RE
+.PP
+\fBdport\fR
+.RS 4
+The destination port of the expected connection\&.
+.RE
+.PP
+\fBtimeout\fR
+.RS 4
+The time in millisecond that this expectation will live\&.
+.RE
+.PP
+\fBsize\fR
+.RS 4
+The maximum count of expectations to be living in the same time\&.
+.RE
+.SH "STATEMENTS"
+.sp
+Statements are the building blocks for rules\&. Each rule consists of at least one\&.
+.SS "VERDICT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "accept": null }\fR
+\fB{ "drop": null }\fR
+\fB{ "continue": null }\fR
+\fB{ "return": null }\fR
+\fB{ "jump": { "target": * \fR\fB\fISTRING\fR\fR\fB *}}\fR
+\fB{ "goto": { "target": * \fR\fB\fISTRING\fR\fR\fB *}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+A verdict either terminates packet traversal through the current chain or delegates to a different one\&.
+.sp
+\fBjump\fR and \fBgoto\fR statements expect a target chain name\&.
+.SS "MATCH"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "match": {
+        "left":\fR \fIEXPRESSION\fR\fB,
+        "right":\fR \fIEXPRESSION\fR\fB,
+        "op":\fR \fISTRING\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This matches the expression on left hand side (typically a packet header or packet meta info) with the expression on right hand side (typically a constant value)\&. If the statement evaluates to true, the next statement in this rule is considered\&. If not, processing continues with the next rule in the same chain\&.
+.PP
+\fBleft\fR
+.RS 4
+Left hand side of this match\&.
+.RE
+.PP
+\fBright\fR
+.RS 4
+Right hand side of this match\&.
+.RE
+.PP
+\fBop\fR
+.RS 4
+Operator indicating the type of comparison\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBOPERATORS\fR
+.RS 4
+.TS
+tab(:);
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt.
+T{
+.sp
+\fB==\fR
+T}:T{
+.sp
+Equal
+T}
+T{
+.sp
+\fB!=\fR
+T}:T{
+.sp
+Not equal
+T}
+T{
+.sp
+\fB<\fR
+T}:T{
+.sp
+Less than
+T}
+T{
+.sp
+\fB>\fR
+T}:T{
+.sp
+Greater than
+T}
+T{
+.sp
+\fB⇐\fR
+T}:T{
+.sp
+Less than or equal to
+T}
+T{
+.sp
+\fB>=\fR
+T}:T{
+.sp
+Greater than or equal to
+T}
+T{
+.sp
+\fBin\fR
+T}:T{
+.sp
+Perform a lookup, i\&.e\&. test if bits on RHS are contained in LHS value
+T}
+.TE
+.sp 1
+.sp
+Unlike with the standard API, the operator is mandatory here\&. In the standard API, a missing operator may be resolved in two ways, depending on the type of expression on the RHS:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If the RHS is a bitmask or a list of bitmasks, the expression resolves into a binary operation with the inequality operator, like this:
+\fILHS & RHS != 0\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+In any other case, the equality operator is simply inserted\&.
+.RE
+.sp
+For the non\-trivial first case, the JSON API supports the \fBin\fR operator\&.
+.RE
+.SS "COUNTER"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "counter": {
+        "packets":\fR \fINUMBER\fR\fB,
+        "bytes":\fR \fINUMBER\fR
+\fB}}\fR
+
+\fB{ "counter":\fR \fISTRING\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object represents a byte/packet counter\&. In input, no properties are required\&. If given, they act as initial values for the counter\&.
+.sp
+The first form creates an anonymous counter which lives in the rule it appears in\&. The second form specifies a reference to a named counter object\&.
+.PP
+\fBpackets\fR
+.RS 4
+Packets counted\&.
+.RE
+.PP
+\fBbytes\fR
+.RS 4
+Bytes counted\&.
+.RE
+.SS "MANGLE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "mangle": {
+        "key":\fR \fIEXPRESSION\fR\fB,
+        "value":\fR \fIEXPRESSION\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This changes the packet data or meta info\&.
+.PP
+\fBkey\fR
+.RS 4
+The packet data to be changed, given as an
+\fBexthdr\fR,
+\fBpayload\fR,
+\fBmeta\fR,
+\fBct\fR
+or
+\fBct helper\fR
+expression\&.
+.RE
+.PP
+\fBvalue\fR
+.RS 4
+Value to change data to\&.
+.RE
+.SS "QUOTA"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "quota": {
+        "val":\fR \fINUMBER\fR\fB,
+        "val_unit":\fR \fISTRING\fR\fB,
+        "used":\fR \fINUMBER\fR\fB,
+        "used_unit":\fR \fISTRING\fR\fB,
+        "inv":\fR \fIBOOLEAN\fR
+\fB}}\fR
+
+\fB{ "quota":\fR \fISTRING\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The first form creates an anonymous quota which lives in the rule it appears in\&. The second form specifies a reference to a named quota object\&.
+.PP
+\fBval\fR
+.RS 4
+Quota value\&.
+.RE
+.PP
+\fBval_unit\fR
+.RS 4
+Unit of
+\fBval\fR, e\&.g\&.
+\fB"kbytes"\fR
+or
+\fB"mbytes"\fR\&. If omitted, defaults to
+\fB"bytes"\fR\&.
+.RE
+.PP
+\fBused\fR
+.RS 4
+Quota used so far\&. Optional on input\&. If given, serves as initial value\&.
+.RE
+.PP
+\fBused_unit\fR
+.RS 4
+Unit of
+\fBused\fR\&. Defaults to
+\fB"bytes"\fR\&.
+.RE
+.PP
+\fBinv\fR
+.RS 4
+If
+\fBtrue\fR, will match if quota was exceeded\&. Defaults to
+\fBfalse\fR\&.
+.RE
+.SS "LIMIT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "limit": {
+        "rate":\fR \fINUMBER\fR\fB,
+        "rate_unit":\fR \fISTRING\fR\fB,
+        "per":\fR \fISTRING\fR\fB,
+        "burst":\fR \fINUMBER\fR\fB,
+        "burst_unit":\fR \fISTRING\fR\fB,
+        "inv":\fR \fIBOOLEAN\fR
+\fB}}\fR
+
+\fB{ "limit":\fR \fISTRING\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The first form creates an anonymous limit which lives in the rule it appears in\&. The second form specifies a reference to a named limit object\&.
+.PP
+\fBrate\fR
+.RS 4
+Rate value to limit to\&.
+.RE
+.PP
+\fBrate_unit\fR
+.RS 4
+Unit of
+\fBrate\fR, e\&.g\&.
+\fB"packets"\fR
+or
+\fB"mbytes"\fR\&. Defaults to
+\fB"packets"\fR\&.
+.RE
+.PP
+\fBper\fR
+.RS 4
+Denominator of
+\fBrate\fR, e\&.g\&.
+\fB"week"\fR
+or
+\fB"minutes"\fR\&.
+.RE
+.PP
+\fBburst\fR
+.RS 4
+Burst value\&. Defaults to
+\fB0\fR\&.
+.RE
+.PP
+\fBburst_unit\fR
+.RS 4
+Unit of
+\fBburst\fR, ignored if
+\fBrate_unit\fR
+is
+\fB"packets"\fR\&. Defaults to
+\fB"bytes"\fR\&.
+.RE
+.PP
+\fBinv\fR
+.RS 4
+If
+\fBtrue\fR, matches if the limit was exceeded\&. Defaults to
+\fBfalse\fR\&.
+.RE
+.SS "FWD"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "fwd": {
+        "dev":\fR \fIEXPRESSION\fR\fB,
+        "family":\fR \fIFWD_FAMILY\fR\fB,
+        "addr":\fR \fIEXPRESSION\fR
+\fB}}\fR
+
+\fIFWD_FAMILY\fR := \fB"ip"\fR | \fB"ip6"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Forward a packet to a different destination\&.
+.PP
+\fBdev\fR
+.RS 4
+Interface to forward the packet on\&.
+.RE
+.PP
+\fBfamily\fR
+.RS 4
+Family of
+\fBaddr\fR\&.
+.RE
+.PP
+\fBaddr\fR
+.RS 4
+IP(v6) address to forward the packet to\&.
+.RE
+.sp
+Both \fBfamily\fR and \fBaddr\fR are optional, but if at least one is given, both must be present\&.
+.SS "NOTRACK"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "notrack": null }\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Disable connection tracking for the packet\&.
+.SS "DUP"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "dup": {
+        "addr":\fR \fIEXPRESSION\fR\fB,
+        "dev":\fR \fIEXPRESSION\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Duplicate a packet to a different destination\&.
+.PP
+\fBaddr\fR
+.RS 4
+Address to duplicate packet to\&.
+.RE
+.PP
+\fBdev\fR
+.RS 4
+Interface to duplicate packet on\&. May be omitted to not specify an interface explicitly\&.
+.RE
+.SS "NETWORK ADDRESS TRANSLATION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "snat": {
+        "addr":\fR \fIEXPRESSION\fR\fB,
+        "family":\fR \fISTRING\fR\fB,
+        "port":\fR \fIEXPRESSION\fR\fB,
+        "flags":\fR \fIFLAGS\fR
+\fB}}\fR
+
+\fB{ "dnat": {
+        "addr":\fR \fIEXPRESSION\fR\fB,
+        "family":\fR \fISTRING\fR\fB,
+        "port":\fR \fIEXPRESSION\fR\fB,
+        "flags":\fR \fIFLAGS\fR
+\fB}}\fR
+
+\fB{ "masquerade": {
+        "port":\fR \fIEXPRESSION\fR\fB,
+        "flags":\fR \fIFLAGS\fR
+\fB}}\fR
+
+\fB{ "redirect": {
+        "port":\fR \fIEXPRESSION\fR\fB,
+        "flags":\fR \fIFLAGS\fR
+\fB}}\fR
+
+\fIFLAGS\fR := \fIFLAG\fR | \fB[\fR \fIFLAG_LIST\fR \fB]\fR
+\fIFLAG_LIST\fR := \fIFLAG\fR [\fB,\fR \fIFLAG_LIST\fR ]
+\fIFLAG\fR := \fB"random"\fR | \fB"fully\-random"\fR | \fB"persistent"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Perform Network Address Translation\&.
+.PP
+\fBaddr\fR
+.RS 4
+Address to translate to\&.
+.RE
+.PP
+\fBfamily\fR
+.RS 4
+Family of
+\fBaddr\fR, either
+\fBip\fR
+or
+\fBip6\fR\&. Required in
+\fBinet\fR
+table family\&.
+.RE
+.PP
+\fBport\fR
+.RS 4
+Port to translate to\&.
+.RE
+.PP
+\fBflags\fR
+.RS 4
+Flag(s)\&.
+.RE
+.sp
+All properties are optional and default to none\&.
+.SS "REJECT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "reject": {
+        "type":\fR \fISTRING\fR\fB,
+        "expr":\fR \fIEXPRESSION\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Reject the packet and send the given error reply\&.
+.PP
+\fBtype\fR
+.RS 4
+Type of reject, either
+\fB"tcp reset"\fR,
+\fB"icmpx"\fR,
+\fB"icmp"\fR
+or
+\fB"icmpv6"\fR\&.
+.RE
+.PP
+\fBexpr\fR
+.RS 4
+ICMP code to reject with\&.
+.RE
+.sp
+All properties are optional\&.
+.SS "SET"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "set": {
+        "op":\fR \fISTRING\fR\fB,
+        "elem":\fR \fIEXPRESSION\fR\fB,
+        "set":\fR \fISTRING\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Dynamically add/update elements to a set\&.
+.PP
+\fBop\fR
+.RS 4
+Operator on set, either
+\fB"add"\fR
+or
+\fB"update"\fR\&.
+.RE
+.PP
+\fBelem\fR
+.RS 4
+Set element to add or update\&.
+.RE
+.PP
+\fBset\fR
+.RS 4
+Set reference\&.
+.RE
+.SS "LOG"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "log": {
+        "prefix":\fR \fISTRING\fR\fB,
+        "group":\fR \fINUMBER\fR\fB,
+        "snaplen":\fR \fINUMBER\fR\fB,
+        "queue\-threshold":\fR \fINUMBER\fR\fB,
+        "level":\fR \fILEVEL\fR\fB,
+        "flags":\fR \fIFLAGS\fR
+\fB}}\fR
+
+\fILEVEL\fR := \fB"emerg"\fR | \fB"alert"\fR | \fB"crit"\fR | \fB"err"\fR | \fB"warn"\fR | \fB"notice"\fR |
+           \fB"info"\fR | \fB"debug"\fR | \fB"audit"\fR
+
+\fIFLAGS\fR := \fIFLAG\fR | \fB[\fR \fIFLAG_LIST\fR \fB]\fR
+\fIFLAG_LIST\fR := \fIFLAG\fR [\fB,\fR \fIFLAG_LIST\fR ]
+\fIFLAG\fR := \fB"tcp sequence"\fR | \fB"tcp options"\fR | \fB"ip options"\fR | \fB"skuid"\fR |
+          \fB"ether"\fR | \fB"all"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Log the packet\&.
+.PP
+\fBprefix\fR
+.RS 4
+Prefix for log entries\&.
+.RE
+.PP
+\fBgroup\fR
+.RS 4
+Log group\&.
+.RE
+.PP
+\fBsnaplen\fR
+.RS 4
+Snaplen for logging\&.
+.RE
+.PP
+\fBqueue\-threshold\fR
+.RS 4
+Queue threshold\&.
+.RE
+.PP
+\fBlevel\fR
+.RS 4
+Log level\&. Defaults to
+\fB"warn"\fR\&.
+.RE
+.PP
+\fBflags\fR
+.RS 4
+Log flags\&.
+.RE
+.sp
+All properties are optional\&.
+.SS "CT HELPER"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct helper":\fR \fIEXPRESSION\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Enable the specified conntrack helper for this packet\&.
+.PP
+\fBct helper\fR
+.RS 4
+CT helper reference\&.
+.RE
+.SS "METER"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "meter": {
+        "name":\fR \fISTRING\fR\fB,
+        "key":\fR \fIEXPRESSION\fR\fB,
+        "stmt":\fR \fISTATEMENT\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Apply a given statement using a meter\&.
+.PP
+\fBname\fR
+.RS 4
+Meter name\&.
+.RE
+.PP
+\fBkey\fR
+.RS 4
+Meter key\&.
+.RE
+.PP
+\fBstmt\fR
+.RS 4
+Meter statement\&.
+.RE
+.SS "QUEUE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "queue": {
+        "num":\fR \fIEXPRESSION\fR\fB,
+        "flags":\fR \fIFLAGS\fR
+\fB}}\fR
+
+\fIFLAGS\fR := \fIFLAG\fR | \fB[\fR \fIFLAG_LIST\fR \fB]\fR
+\fIFLAG_LIST\fR := \fIFLAG\fR [\fB,\fR \fIFLAG_LIST\fR ]
+\fIFLAG\fR := \fB"bypass"\fR | \fB"fanout"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Queue the packet to userspace\&.
+.PP
+\fBnum\fR
+.RS 4
+Queue number\&.
+.RE
+.PP
+\fBflags\fR
+.RS 4
+Queue flags\&.
+.RE
+.SS "VERDICT MAP"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "vmap": {
+        "key":\fR \fIEXPRESSION\fR\fB,
+        "data":\fR \fIEXPRESSION\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Apply a verdict conditionally\&.
+.PP
+\fBkey\fR
+.RS 4
+Map key\&.
+.RE
+.PP
+\fBdata\fR
+.RS 4
+Mapping expression consisting of value/verdict pairs\&.
+.RE
+.SS "CT COUNT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct count": {
+        "val":\fR \fINUMBER\fR\fB,
+        "inv":\fR \fIBOOLEAN\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Limit the number of connections using conntrack\&.
+.PP
+\fBval\fR
+.RS 4
+Connection count threshold\&.
+.RE
+.PP
+\fBinv\fR
+.RS 4
+If
+\fBtrue\fR, match if
+\fBval\fR
+was exceeded\&. If omitted, defaults to
+\fBfalse\fR\&.
+.RE
+.SS "CT TIMEOUT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct timeout":\fR \fIEXPRESSION\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Assign connection tracking timeout policy\&.
+.PP
+\fBct timeout\fR
+.RS 4
+CT timeout reference\&.
+.RE
+.SS "CT EXPECTATION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct expectation":\fR \fIEXPRESSION\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Assign connection tracking expectation\&.
+.PP
+\fBct expectation\fR
+.RS 4
+CT expectation reference\&.
+.RE
+.SS "XT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "xt": {
+        "type":\fR \fITYPENAME\fR\fB,
+        "name":\fR \fISTRING\fR
+\fB}}\fR
+
+\fITYPENAME\fR := \fBmatch\fR | \fBtarget\fR | \fBwatcher\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This represents an xt statement from xtables compat interface\&. It is a fallback if translation is not available or not complete\&.
+.sp
+Seeing this means the ruleset (or parts of it) were created by \fBiptables\-nft\fR and one should use that to manage it\&.
+.sp
+\fBBEWARE:\fR nftables won\(cqt restore these statements\&.
+.SH "EXPRESSIONS"
+.sp
+Expressions are the building blocks of (most) statements\&. In their most basic form, they are just immediate values represented as a JSON string, integer or boolean type\&.
+.SS "IMMEDIATES"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fISTRING\fR
+\fINUMBER\fR
+\fIBOOLEAN\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Immediate expressions are typically used for constant values\&. For strings, there are two special cases:
+.PP
+\fB@STRING\fR
+.RS 4
+The remaining part is taken as set name to create a set reference\&.
+.RE
+.PP
+\fB\e\fR*
+.RS 4
+Construct a wildcard expression\&.
+.RE
+.SS "LISTS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIARRAY\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+List expressions are constructed by plain arrays containing of an arbitrary number of expressions\&.
+.SS "CONCAT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "concat":\fR \fICONCAT\fR \fB}\fR
+
+\fICONCAT\fR := \fB[\fR \fIEXPRESSION_LIST\fR \fB]\fR
+\fIEXPRESSION_LIST\fR := \fIEXPRESSION\fR [\fB,\fR \fIEXPRESSION_LIST\fR ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Concatenate several expressions\&.
+.SS "SET"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "set":\fR \fISET\fR \fB}\fR
+
+\fISET\fR := \fIEXPRESSION\fR | \fB[\fR \fIEXPRESSION_LIST\fR \fB]\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This object constructs an anonymous set\&. For mappings, an array of arrays with exactly two elements is expected\&.
+.SS "MAP"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "map": {
+        "key":\fR \fIEXPRESSION\fR\fB,
+        "data":\fR \fIEXPRESSION\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Map a key to a value\&.
+.PP
+\fBkey\fR
+.RS 4
+Map key\&.
+.RE
+.PP
+\fBdata\fR
+.RS 4
+Mapping expression consisting of value/target pairs\&.
+.RE
+.SS "PREFIX"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "prefix": {
+        "addr":\fR \fIEXPRESSION\fR\fB,
+        "len":\fR \fINUMBER\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Construct an IPv4 or IPv6 prefix consisting of address part in \fBaddr\fR and prefix length in \fBlen\fR\&.
+.SS "RANGE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "range": [\fR \fIEXPRESSION\fR \fB,\fR \fIEXPRESSION\fR \fB] }\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Construct a range of values\&. The first array item denotes the lower boundary, the second one the upper boundary\&.
+.SS "PAYLOAD"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "payload": {
+        "base":\fR \fIBASE\fR\fB,
+        "offset":\fR \fINUMBER\fR\fB,
+        "len":\fR \fINUMBER\fR
+\fB}}\fR
+
+\fB{ "payload": {
+        "protocol":\fR \fISTRING\fR\fB,
+        "field":\fR \fISTRING\fR
+\fB}}\fR
+
+\fIBASE\fR := \fB"ll"\fR | \fB"nh"\fR | \fB"th"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Construct a payload expression, i\&.e\&. a reference to a certain part of packet data\&. The first form creates a raw payload expression to point at a random number (\fBlen\fR) of bits at a certain offset (\fBoffset\fR) from a given reference point (\fBbase\fR)\&. The following \fBbase\fR values are accepted:
+.PP
+\fB"ll"\fR
+.RS 4
+The offset is relative to Link Layer header start offset\&.
+.RE
+.PP
+\fB"nh"\fR
+.RS 4
+The offset is relative to Network Layer header start offset\&.
+.RE
+.PP
+\fB"th"\fR
+.RS 4
+The offset is relative to Transport Layer header start offset\&.
+.RE
+.sp
+The second form allows one to reference a field by name (\fBfield\fR) in a named packet header (\fBprotocol\fR)\&.
+.SS "EXTHDR"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "exthdr": {
+        "name":\fR \fISTRING\fR\fB,
+        "field":\fR \fISTRING\fR\fB,
+        "offset":\fR \fINUMBER\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to a field (\fBfield\fR) in an IPv6 extension header (\fBname\fR)\&. \fBoffset\fR is used only for \fBrt0\fR protocol\&.
+.sp
+If the \fBfield\fR property is not given, the expression is to be used as a header existence check in a \fBmatch\fR statement with a boolean on the right hand side\&.
+.SS "TCP OPTION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "tcp option": {
+        "name":\fR \fISTRING\fR\fB,
+        "field":\fR \fISTRING\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to a field (\fBfield\fR) of a TCP option header (\fBname\fR)\&.
+.sp
+If the \fBfield\fR property is not given, the expression is to be used as a TCP option existence check in a \fBmatch\fR statement with a boolean on the right hand side\&.
+.SS "SCTP CHUNK"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "sctp chunk": {
+        "name":\fR \fISTRING\fR\fB,
+        "field":\fR \fISTRING\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to a field (\fBfield\fR) of an SCTP chunk (\fBname\fR)\&.
+.sp
+If the \fBfield\fR property is not given, the expression is to be used as an SCTP chunk existence check in a \fBmatch\fR statement with a boolean on the right hand side\&.
+.SS "DCCP OPTION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "dccp option": {
+        "type":\fR \fINUMBER\fR*
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to a DCCP option (\fBtype\fR)\&.
+.sp
+The expression is to be used as a DCCP option existence check in a \fBmatch\fR statement with a boolean on the right hand side\&.
+.SS "META"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "meta": {
+        "key":\fR \fIMETA_KEY\fR
+\fB}}\fR
+
+\fIMETA_KEY\fR := \fB"length"\fR | \fB"protocol"\fR | \fB"priority"\fR | \fB"random"\fR | \fB"mark"\fR |
+              \fB"iif"\fR | \fB"iifname"\fR | \fB"iiftype"\fR | \fB"oif"\fR | \fB"oifname"\fR |
+              \fB"oiftype"\fR | \fB"skuid"\fR | \fB"skgid"\fR | \fB"nftrace"\fR |
+              \fB"rtclassid"\fR | \fB"ibriport"\fR | \fB"obriport"\fR | \fB"ibridgename"\fR |
+              \fB"obridgename"\fR | \fB"pkttype"\fR | \fB"cpu"\fR | \fB"iifgroup"\fR |
+              \fB"oifgroup"\fR | \fB"cgroup"\fR | \fB"nfproto"\fR | \fB"l4proto"\fR |
+              \fB"secpath"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to packet meta data\&.
+.SS "RT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "rt": {
+        "key":\fR \fIRT_KEY\fR\fB,
+        "family":\fR \fIRT_FAMILY\fR
+\fB}}\fR
+
+\fIRT_KEY\fR := \fB"classid"\fR | \fB"nexthop"\fR | \fB"mtu"\fR
+\fIRT_FAMILY\fR := \fB"ip"\fR | \fB"ip6"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to packet routing data\&.
+.sp
+The \fBfamily\fR property is optional and defaults to unspecified\&.
+.SS "CT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ct": {
+        "key":\fR \fISTRING\fR\fB,
+        "family":\fR \fICT_FAMILY\fR\fB,
+        "dir":\fR \fICT_DIRECTION\fR
+\fB}}\fR
+
+\fICT_FAMILY\fR := \fB"ip"\fR | \fB"ip6"\fR
+\fICT_DIRECTION\fR := \fB"original"\fR | \fB"reply"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a reference to packet conntrack data\&.
+.sp
+Some CT keys do not support a direction\&. In this case, \fBdir\fR must not be given\&.
+.SS "NUMGEN"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "numgen": {
+        "mode":\fR \fING_MODE\fR\fB,
+        "mod":\fR \fINUMBER\fR\fB,
+        "offset":\fR \fINUMBER\fR
+\fB}}\fR
+
+\fING_MODE\fR := \fB"inc"\fR | \fB"random"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a number generator\&.
+.sp
+The \fBoffset\fR property is optional and defaults to 0\&.
+.SS "HASH"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "jhash": {
+        "mod":\fR \fINUMBER\fR\fB,
+        "offset":\fR \fINUMBER\fR\fB,
+        "expr":\fR \fIEXPRESSION\fR\fB,
+        "seed":\fR \fINUMBER\fR
+\fB}}\fR
+
+\fB{ "symhash": {
+        "mod":\fR \fINUMBER\fR\fB,
+        "offset":\fR \fINUMBER\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Hash packet data\&.
+.sp
+The \fBoffset\fR and \fBseed\fR properties are optional and default to 0\&.
+.SS "FIB"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "fib": {
+        "result":\fR \fIFIB_RESULT\fR\fB,
+        "flags":\fR \fIFIB_FLAGS\fR
+\fB}}\fR
+
+\fIFIB_RESULT\fR := \fB"oif"\fR | \fB"oifname"\fR | \fB"type"\fR
+
+\fIFIB_FLAGS\fR := \fIFIB_FLAG\fR | \fB[\fR \fIFIB_FLAG_LIST\fR \fB]\fR
+\fIFIB_FLAG_LIST\fR := \fIFIB_FLAG\fR [\fB,\fR \fIFIB_FLAG_LIST\fR ]
+\fIFIB_FLAG\fR := \fB"saddr"\fR | \fB"daddr"\fR | \fB"mark"\fR | \fB"iif"\fR | \fB"oif"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Perform kernel Forwarding Information Base lookups\&.
+.SS "BINARY OPERATION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "|": [\fR \fIEXPRESSION\fR\fB,\fR \fIEXPRESSIONS\fR \fB] }\fR
+\fB{ "^": [\fR \fIEXPRESSION\fR\fB,\fR \fIEXPRESSIONS\fR \fB] }\fR
+\fB{ "&": [\fR \fIEXPRESSION\fR\fB,\fR \fIEXPRESSIONS\fR \fB] }\fR
+\fB{ "\fR\fB<<\fR\fB": [\fR \fIEXPRESSION\fR\fB,\fR \fIEXPRESSIONS\fR \fB] }\fR
+\fB{ ">>": [\fR \fIEXPRESSION\fR\fB,\fR \fIEXPRESSIONS\fR \fB] }\fR
+\fIEXPRESSIONS\fR := \fIEXPRESSION\fR | \fIEXPRESSION\fR\fB,\fR \fIEXPRESSIONS\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+All binary operations expect an array of at least two expressions, of which the first element denotes the left hand side and the second one the right hand side\&. Extra elements are accepted in the given array and appended to the term accordingly\&.
+.SS "VERDICT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "accept": null }\fR
+\fB{ "drop": null }\fR
+\fB{ "continue": null }\fR
+\fB{ "return": null }\fR
+\fB{ "jump": { "target":\fR \fISTRING\fR \fB}}\fR
+\fB{ "goto": { "target":\fR \fISTRING\fR \fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Same as the \fBverdict\fR statement, but for use in verdict maps\&.
+.sp
+\fBjump\fR and \fBgoto\fR verdicts expect a target chain name\&.
+.SS "ELEM"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "elem": {
+        "val":\fR \fIEXPRESSION\fR\fB,
+        "timeout":\fR \fINUMBER\fR\fB,
+        "expires":\fR \fINUMBER\fR\fB,
+        "comment":\fR \fISTRING\fR
+\fB}}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Explicitly set element object, in case \fBtimeout\fR, \fBexpires\fR or \fBcomment\fR are desired\&. Otherwise, it may be replaced by the value of \fBval\fR\&.
+.SS "SOCKET"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "socket": {
+        "key":\fR \fISOCKET_KEY\fR
+\fB}}\fR
+
+\fISOCKET_KEY\fR := \fB"transparent"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Construct a reference to packet\(cqs socket\&.
+.SS "OSF"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "osf": {
+        "key":\fR \fIOSF_KEY\fR\fB,
+        "ttl":\fR \fIOSF_TTL\fR
+\fB}}\fR
+
+\fIOSF_KEY\fR := \fB"name"\fR
+\fIOSF_TTL\fR := \fB"loose"\fR | \fB"skip"\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Perform OS fingerprinting\&. This expression is typically used in the LHS of a \fBmatch\fR statement\&.
+.PP
+\fBkey\fR
+.RS 4
+Which part of the fingerprint info to match against\&. At this point, only the OS name is supported\&.
+.RE
+.PP
+\fBttl\fR
+.RS 4
+Define how the packet\(cqs TTL value is to be matched\&. This property is optional\&. If omitted, the TTL value has to match exactly\&. A value of
+\fBloose\fR
+accepts TTL values less than the fingerprint one\&. A value of
+\fBskip\fR
+omits TTL value comparison entirely\&.
+.RE
+.SH "AUTHOR"
+.PP
+\fBPhil Sutter\fR <\&phil@nwl\&.cc\&>
+.RS 4
+Author.
+.RE

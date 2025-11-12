@@ -1,0 +1,316 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "nt",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "nt",
+        "name": "nc",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "vlanidset",
+        "table": "nt",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "vlan",
+              "field": "id"
+            }
+          }
+        },
+        "handle": 0,
+        "size": 1024,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "macset",
+        "table": "nt",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "saddr"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "size": 1024,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "ipset",
+        "table": "nt",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "size": 1024,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "nt",
+        "chain": "nc",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ether",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "vlan",
+                          "field": "id"
+                        }
+                      }
+                    ]
+                  },
+                  "timeout": 5
+                }
+              },
+              "set": "@macset"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "nt",
+        "chain": "nc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ether",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "vlan",
+                      "field": "id"
+                    }
+                  }
+                ]
+              },
+              "right": "@macset"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "nt",
+        "chain": "nc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "pcp"
+                }
+              },
+              "right": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "nt",
+        "chain": "nc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "saddr"
+                }
+              },
+              "right": "0a:0b:0c:0d:0e:0f"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              },
+              "right": 42
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "nt",
+        "chain": "nc",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "payload": {
+                      "protocol": "vlan",
+                      "field": "id"
+                    }
+                  },
+                  "timeout": 5
+                }
+              },
+              "set": "@vlanidset"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "nt",
+        "chain": "nc",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "vlan",
+                          "field": "id"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "saddr"
+                        }
+                      }
+                    ]
+                  },
+                  "timeout": 5
+                }
+              },
+              "set": "@ipset"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+RULESET="add table x
+add chain x y { type filter hook input priority 0; }
+add rule x y jump y"
+
+# kernel must return ELOOP
+$NFT -f - <<< "$RULESET" 2>/dev/null || exit 0
+echo "E: allowing jump to chain loop"
+exit 1

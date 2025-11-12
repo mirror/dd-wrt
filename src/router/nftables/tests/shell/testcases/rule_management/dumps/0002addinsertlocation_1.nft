@@ -1,0 +1,6 @@
+table ip t {
+	chain c {
+		accept
+		accept
+	}
+}

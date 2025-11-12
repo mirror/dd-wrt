@@ -1,0 +1,10 @@
+table ip test {
+	set tcp_good_flags {
+		type tcp_flag
+		flags constant
+		elements = { fin | ack, fin | ack | urg, fin | psh | ack, fin | psh | ack | urg, syn,
+			     syn | ack, syn | ack | urg, syn | psh | ack, syn | psh | ack | urg, rst,
+			     rst | ack, rst | ack | urg, rst | psh | ack, rst | psh | ack | urg, psh | ack,
+			     psh | ack | urg, ack, ack | urg }
+	}
+}

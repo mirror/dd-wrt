@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_position_id)
+
+RULESET="flush ruleset
+add table x
+add chain x y
+add rule x y accept comment rule1
+add rule x y accept comment rule4
+add rule x y index 0 accept comment rule2
+insert rule x y index 2 accept comment rule3"
+
+$NFT -f - <<< "$RULESET" && \
+	$NFT -f - <<< "$RULESET" && \
+	echo "$RULESET" | tr '\n' ';' | $NFT -i >/dev/null && \
+	exit 0
+echo "E: intra-transaction rule reference failed"
+exit 1
+

@@ -1,0 +1,18 @@
+table ip foo {
+	set inflows {
+		type ipv4_addr . inet_service . ifname . ipv4_addr . inet_service
+		flags dynamic
+		elements = { 10.1.0.3 . 39466 . "veth1" . 10.3.0.99 . 5201 counter packets 0 bytes 0 }
+	}
+
+	set inflows6 {
+		type ipv6_addr . inet_service . ifname . ipv6_addr . inet_service
+		flags dynamic
+	}
+
+	set inflows_ratelimit {
+		type ipv4_addr . inet_service . ifname . ipv4_addr . inet_service
+		flags dynamic
+		elements = { 10.1.0.3 . 39466 . "veth1" . 10.3.0.99 . 5201 limit rate 1/second burst 5 packets counter packets 0 bytes 0 }
+	}
+}

@@ -1,0 +1,11 @@
+table ip t {
+	chain c {
+	}
+}
+table inet filter {
+	set blacklist_v4 {
+		type ipv4_addr
+		flags interval
+		elements = { 192.168.0.0/24 }
+	}
+}

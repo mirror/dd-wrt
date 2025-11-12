@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_catchall_element)
+
+$NFT -f /dev/stdin <<EOF
+table ip test {
+	map testmap {
+		type ipv4_addr : verdict
+		elements = { * : jump testchain }
+	}
+
+	chain testchain { }
+}
+EOF
+
+# second attempt to delete the catchall element
+# musts trigger transaction abort
+$NFT -f /dev/stdin <<EOF
+delete element ip test testmap { * }
+delete element ip test testmap { * }
+EOF
+
+if [ $? -eq 1 ]; then
+	exit 0
+fi
+
+exit 1

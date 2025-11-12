@@ -1,0 +1,7 @@
+# fb961945457f ("netfilter: nf_tables: add SECMARK support")
+# v4.20-rc1~14^2~125^2~5
+table inet x {
+	secmark ssh_server {
+		"system_u:object_r:ssh_server_packet_t:s0"
+	}
+}

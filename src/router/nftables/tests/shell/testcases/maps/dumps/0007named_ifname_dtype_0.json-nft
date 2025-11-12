@@ -1,0 +1,102 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m1",
+        "table": "t",
+        "type": "ifname",
+        "handle": 0,
+        "map": "ipv4_addr",
+        "elem": [
+          [
+            "eth0",
+            "1.1.1.1"
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  },
+                  "data": "@m1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "meta": {
+                      "key": "oifname"
+                    }
+                  },
+                  "data": "@m1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

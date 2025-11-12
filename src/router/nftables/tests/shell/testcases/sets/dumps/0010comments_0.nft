@@ -1,0 +1,6 @@
+table inet t {
+	set s {
+		type ipv6_addr
+		elements = { ::1 comment "test" }
+	}
+}

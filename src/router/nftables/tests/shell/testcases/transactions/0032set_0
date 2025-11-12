@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table x
+add set x y { type ipv4_addr; }
+flush ruleset
+add table w
+add set w y { type ipv4_addr; }"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

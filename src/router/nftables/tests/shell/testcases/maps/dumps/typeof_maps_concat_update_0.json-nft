@@ -1,0 +1,168 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "foo",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "foo",
+        "name": "pr",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "pinned",
+        "table": "foo",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "ct": {
+                  "key": "proto-dst",
+                  "dir": "original"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ],
+        "size": 65535,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ],
+        "timeout": 360
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "foo",
+        "chain": "pr",
+        "handle": 0,
+        "expr": [
+          {
+            "map": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "ct": {
+                          "key": "proto-dst",
+                          "dir": "original"
+                        }
+                      }
+                    ]
+                  },
+                  "timeout": 90
+                }
+              },
+              "data": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "map": "@pinned"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "foo",
+        "chain": "pr",
+        "handle": 0,
+        "expr": [
+          {
+            "map": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "ct": {
+                          "key": "proto-dst",
+                          "dir": "original"
+                        }
+                      }
+                    ]
+                  },
+                  "timeout": 90
+                }
+              },
+              "data": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "map": "@pinned"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

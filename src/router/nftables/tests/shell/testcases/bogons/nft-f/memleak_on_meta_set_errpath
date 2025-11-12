@@ -1,0 +1,5 @@
+table filter {
+ chain y {
+  meta seccark set ct secmark
+ }
+}

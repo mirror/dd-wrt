@@ -1,0 +1,174 @@
+#!/bin/bash -e
+#
+# NFT_TEST_SKIP(NFT_TEST_SKIP_slow)
+#
+# 0044interval_overlap_0 - Add overlapping and non-overlapping intervals
+#
+# Check that adding overlapping intervals to a set returns an error, unless:
+# - the inserted element overlaps entirely, that is, it's identical to an
+#   existing one
+# - for concatenated ranges, the new element is less specific than any existing
+#   overlapping element, as elements are evaluated in order of insertion
+#
+# Then, repeat the test with a set configured with a timeout, checking that:
+# - we can insert all the elements as described above
+# - once the timeout has expired, we can insert all the elements again, and old
+#   elements are not present
+# - before the timeout expires again, we can re-add elements that are not
+#   expected to fail, but old elements might be present
+#
+# If $NFT points to a libtool wrapper, and we're running on a slow machine or
+# kernel (e.g. KASan enabled), it might not be possible to execute hundreds of
+# commands within an otherwise reasonable 1 second timeout. Estimate a usable
+# timeout first, by counting commands and measuring against one nft rule timeout
+# itself, so that we can keep this fast for a binary $NFT on a reasonably fast
+# kernel.
+
+#	Accept	Interval	List
+intervals_simple="
+	y	 0 -  2		0-2
+	y	 0 -  2		0-2
+	n	 0 -  1		0-2
+	n	 0 -  3		0-2
+	y	 3 - 10		0-2, 3-10
+	n	 3 -  9		0-2, 3-10
+	n	 4 - 10		0-2, 3-10
+	n	 4 -  9		0-2, 3-10
+	y	20 - 30		0-2, 3-10, 20-30
+	y	11 - 12		0-2, 3-10, 11-12, 20-30
+	y	13 - 19		0-2, 3-10, 11-12, 13-19, 20-30
+	n	25 - 40		0-2, 3-10, 11-12, 13-19, 20-30
+	y	50 - 60		0-2, 3-10, 11-12, 13-19, 20-30, 50-60
+	y	31 - 49		0-2, 3-10, 11-12, 13-19, 20-30, 31-49, 50-60
+	n	59 - 60		0-2, 3-10, 11-12, 13-19, 20-30, 31-49, 50-60
+"
+
+intervals_concat="
+	y	0-2 . 0-3	0-2 . 0-3
+	y	0-2 . 0-3	0-2 . 0-3
+	n	0-1 . 0-2	0-2 . 0-3
+	y	10-20 . 30-40	0-2 . 0-3, 10-20 . 30-40
+	y	15-20 . 50-60	0-2 . 0-3, 10-20 . 30-40, 15-20 . 50-60
+	y	3-9 . 4-29	0-2 . 0-3, 10-20 . 30-40, 15-20 . 50-60, 3-9 . 4-29
+	y	3-9 . 4-29	0-2 . 0-3, 10-20 . 30-40, 15-20 . 50-60, 3-9 . 4-29
+	n	11-19 . 30-40	0-2 . 0-3, 10-20 . 30-40, 15-20 . 50-60, 3-9 . 4-29
+	y	15-20 . 49-61	0-2 . 0-3, 10-20 . 30-40, 15-20 . 50-60, 3-9 . 4-29, 15-20 . 49-61
+"
+
+count_elements() {
+	pass=
+	interval=
+	elements=0
+	for t in ${intervals_simple} ${intervals_concat}; do
+		[ -z "${pass}" ]      && pass="${t}"     && continue
+		[ -z "${interval}" ]  && interval="${t}" && continue
+		unset IFS
+
+		elements=$((elements + 1))
+
+		IFS='	
+'
+	done
+	unset IFS
+}
+
+match_elements() {
+	skip=0
+	n=0
+	out=
+	for a in $($NFT list set t ${1})}; do
+		[ ${n} -eq 0 ] && { [ "${a}" = "elements" ] && n=1; continue; }
+		[ ${n} -eq 1 ] && { [ "${a}" = "=" ] 	    && n=2; continue; }
+		[ ${n} -eq 2 ] && { [ "${a}" = "{" ]	    && n=3; continue; }
+
+		[ "${a}" = "}" ]				 && break
+
+		[ ${skip} -eq 1 ] && skip=0 && out="${out},"	 && continue
+		[ "${a}" = "expires" ] && skip=1		 && continue
+
+		[ -n "${out}" ] && out="${out} ${a}" || out="${a}"
+
+	done
+
+	if [ "${out%,}" != "${2}" ]; then
+		echo "Expected: ${2}, got: ${out%,}"
+		return 1
+	fi
+}
+
+estimate_timeout() {
+	count_elements
+
+	$NFT add table t
+	$NFT add set t s '{ type inet_service ; flags timeout; timeout 1s; gc-interval 1s; }'
+	execs_1s=1
+	$NFT add element t s "{ 0 }"
+	while match_elements s "0" >/dev/null; do
+		execs_1s=$((execs_1s + 1))
+	done
+
+	timeout="$((elements / execs_1s * 3 / 2 + 1))"
+}
+
+add_elements() {
+	set="s"
+	pass=
+	interval=
+	IFS='	
+'
+	for t in ${intervals_simple} switch ${intervals_concat}; do
+if [ "$NFT_TEST_HAVE_pipapo" = y ] ; then
+		[ "${t}" = "switch" ] && set="c"         && continue
+else
+		break
+fi
+		[ -z "${pass}" ]      && pass="${t}"     && continue
+		[ -z "${interval}" ]  && interval="${t}" && continue
+		unset IFS
+
+		if [ "${pass}" = "y" ]; then
+			if ! $NFT add element t ${set} "{ ${interval} }"; then
+				echo "Failed to insert ${interval} given:"
+				$NFT list ruleset
+				exit 1
+			fi
+		else
+			if $NFT add element t ${set} "{ ${interval} }" 2>/dev/null; then
+				echo "Could insert ${interval} given:"
+				$NFT list ruleset
+				exit 1
+			fi
+		fi
+
+		[ "${1}" != "nomatch" ] && match_elements "${set}" "${t}"
+
+		pass=
+		interval=
+		IFS='	
+'
+	done
+	unset IFS
+}
+
+$NFT add table t
+$NFT add set t s '{ type inet_service ; flags interval ; }'
+if [ "$NFT_TEST_HAVE_pipapo" = y ] ; then
+	$NFT add set t c '{ type inet_service . inet_service ; flags interval ; }'
+fi
+add_elements
+
+$NFT flush ruleset
+estimate_timeout
+
+$NFT flush ruleset
+$NFT add table t
+$NFT add set t s "{ type inet_service ; flags interval,timeout; timeout ${timeout}s; gc-interval ${timeout}s; }"
+if [ "$NFT_TEST_HAVE_pipapo" = y ] ; then
+	$NFT add set t c "{ type inet_service . inet_service ; flags interval,timeout ; timeout ${timeout}s; gc-interval ${timeout}s; }"
+fi
+add_elements
+
+sleep $((timeout * 3 / 2))
+add_elements
+
+add_elements nomatch

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+EXPECTED='table inet t {
+	flowtable f {
+		hook ingress priority 10
+		devices = { lo }
+	}
+
+	chain c {
+		flow add @f
+	}
+}'
+
+set -e
+$NFT -f - <<< "$EXPECTED"

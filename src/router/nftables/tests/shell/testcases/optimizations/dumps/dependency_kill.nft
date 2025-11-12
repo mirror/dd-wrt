@@ -1,0 +1,42 @@
+table bridge foo {
+	chain bar {
+		meta protocol ip udp dport 67
+		meta protocol ip6 udp dport 67
+		ether type ip udp dport 67
+		ether type ip6 udp dport 67
+	}
+}
+table ip foo {
+	chain bar {
+		udp dport 67
+		meta protocol ip6 udp dport 67
+		udp dport 67
+		ether type ip6 udp dport 67
+	}
+}
+table ip6 foo {
+	chain bar {
+		meta protocol ip udp dport 67
+		udp dport 67
+		ether type ip udp dport 67
+		udp dport 67
+	}
+}
+table netdev foo {
+	chain bar {
+		meta protocol ip udp dport 67
+		meta protocol ip6 udp dport 67
+		ether type ip udp dport 67
+		ether type ip6 udp dport 67
+	}
+}
+table inet foo {
+	chain bar {
+		meta protocol ip udp dport 67
+		meta protocol ip6 udp dport 67
+		ether type ip udp dport 67
+		ether type ip6 udp dport 67
+		meta nfproto ipv4 udp dport 67
+		meta nfproto ipv6 udp dport 67
+	}
+}

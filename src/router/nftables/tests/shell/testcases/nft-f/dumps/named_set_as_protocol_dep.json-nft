@@ -1,0 +1,75 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "test",
+        "name": "prerouting",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "protos",
+        "table": "test",
+        "type": {
+          "typeof": {
+            "meta": {
+              "key": "l4proto"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          "tcp",
+          "udp"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "test",
+        "chain": "prerouting",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "@protos"
+            }
+          },
+          {
+            "tproxy": {
+              "port": 1088
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

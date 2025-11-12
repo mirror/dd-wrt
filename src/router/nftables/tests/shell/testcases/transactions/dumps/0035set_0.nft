@@ -1,0 +1,6 @@
+table ip x {
+	set y {
+		type ipv4_addr
+		elements = { 3.3.3.3 }
+	}
+}

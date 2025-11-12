@@ -1,0 +1,10 @@
+table inet filter {
+	set whitelist_v4 {
+		type ipv4_addr
+	}
+
+	chain prerouting {
+		type filter hook prerouting priority filter; policy accept;
+		ip daddr @whitelist_v4
+	}
+}

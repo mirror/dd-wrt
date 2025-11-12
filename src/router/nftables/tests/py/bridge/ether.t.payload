@@ -1,0 +1,60 @@
+# tcp dport 22 iiftype ether ip daddr 1.2.3.4 ether saddr 00:0f:54:0c:11:4 accept
+bridge test-bridge input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+  [ meta load iiftype => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ payload load 4b @ network header + 16 => reg 1 ]
+  [ cmp eq reg 1 0x04030201 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+  [ immediate reg 0 accept ]
+
+# tcp dport 22 ip daddr 1.2.3.4 ether saddr 00:0f:54:0c:11:04
+bridge test-bridge input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ payload load 4b @ network header + 16 => reg 1 ]
+  [ cmp eq reg 1 0x04030201 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+
+# tcp dport 22 ether saddr 00:0f:54:0c:11:04 ip daddr 1.2.3.4
+bridge test-bridge input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ payload load 4b @ network header + 16 => reg 1 ]
+  [ cmp eq reg 1 0x04030201 ]
+
+# ether saddr 00:0f:54:0c:11:04 ip daddr 1.2.3.4 accept
+bridge test-bridge input
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ payload load 4b @ network header + 16 => reg 1 ]
+  [ cmp eq reg 1 0x04030201 ]
+  [ immediate reg 0 accept ]
+
+# ether daddr 00:01:02:03:04:05 ether saddr set ff:fe:dc:ba:98:76 drop
+bridge test-bridge input
+  [ payload load 6b @ link header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x03020100 0x00000504 ]
+  [ immediate reg 1 0xbadcfeff 0x00007698 ]
+  [ payload write reg 1 => 6b @ link header + 6 csum_type 0 csum_off 0 csum_flags 0x0 ]
+  [ immediate reg 0 drop ]
+

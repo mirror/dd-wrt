@@ -1,0 +1,18 @@
+#!/bin/bash
+
+RULESET='add table ip filter
+add chain ip filter group_7933
+add map ip filter group_7933 { type ipv4_addr : classid; flags interval; }
+add rule ip filter group_7933 meta priority 0 meta priority set ip saddr map @group_7933 counter
+add element ip filter group_7933 { 10.4.22.0/24 : "1:0xc7cb" }
+'
+
+set -e
+$NFT -f - <<< "$RULESET"
+
+RULESET='delete element ip filter group_7933 { 10.4.22.0/24 }
+flush chain ip filter group_7933
+delete chain ip filter group_7933
+delete map ip filter group_7933'
+
+$NFT -f - <<< "$RULESET"

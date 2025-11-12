@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+
+# regression check for issue fixed with kernel commit
+# b975d3ee5962 ("net: add and use skb_get_hash_net")
+# without it, flow dissector used to WARN().
+
+ip link set lo up
+
+$NFT -f - <<EOF
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy accept;
+    meta nftrace set 1
+    ip daddr 127.0.0.1 tcp dport 5555 reject with tcp reset
+    ip6 daddr ::1 tcp dport 5555 reject with tcp reset
+    tcp dport 5555 counter
+   }
+   chain output {
+    type filter hook output priority filter; policy accept;
+    # empty chain, so nf_hook_slow is called from ip_local_out.
+   }
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+socat -u STDIN TCP:127.0.0.1:5555,connect-timeout=2 < /dev/null > /dev/null
+socat -u STDIN TCP:[::1]:5555,connect-timeout=2 < /dev/null > /dev/null
+
+$NFT list ruleset |grep -q 'counter packets 0 bytes 0' || exit 1
+exit 0

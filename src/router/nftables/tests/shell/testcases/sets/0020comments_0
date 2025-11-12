@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_comment)
+
+# Test that comments are added to set elements in standard sets.
+# Explicitly test bitmap backend set implementation.
+
+$NFT add table inet t
+$NFT add set inet t s {type inet_service \; }
+$NFT add element inet t s { 22 comment "test" }
+if ! $NFT list ruleset | grep test >/dev/null ; then
+	echo "E: missing comment in set element" >&2
+	exit 1
+fi

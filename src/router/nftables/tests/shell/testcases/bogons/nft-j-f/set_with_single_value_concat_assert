@@ -1,0 +1,26 @@
+{
+  "nftables": [
+    {
+  "metainfo": {
+   "version": "nftables", "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+	"family": "ip",
+	"name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "s",
+        "table": "t",
+	"type": [ "ifname" ],
+        "flags": [ "interval" ],
+        "elem": [ [] ]
+      }
+    }
+  ]
+}

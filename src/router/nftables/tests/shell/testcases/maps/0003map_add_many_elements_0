@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# test adding many map elements
+
+HOWMANY=31
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+	echo "Failed to create tmp file" >&2
+	exit 0
+fi
+
+trap "rm -rf $tmpfile" EXIT # cleanup if aborted
+
+generate_add() {
+	echo -n "{"
+	for ((i=HOWMANY; i>=1; i--)) ; do
+		for ((j=HOWMANY; j>=1; j--)) ; do
+			[ "$i" == 1 ] && [ "$j" == 1 ] && break
+			echo -n "10.0.${i}.${j} : 10.0.${i}.${j}, "
+		done
+	done
+	echo -n "}"
+}
+
+generate_test() {
+	elements=""
+	for ((i=1; i<=HOWMANY; i++)) ; do
+		for ((j=1; j<=HOWMANY; j++)) ; do
+			elements="${elements}10.0.${i}.${j} : 10.0.${i}.${j}"
+			[ "$i" == "$HOWMANY" ] && [ "$j" == "$HOWMANY" ] && break
+			elements="${elements},\\n\\t\\t\\t     "
+		done
+	done
+	echo -e "$elements"
+}
+
+echo "add table x
+add map x y { type ipv4_addr : ipv4_addr; }
+add element x y $(generate_add)" > $tmpfile
+
+set -e
+$NFT -f $tmpfile
+
+n=$HOWMANY
+echo "add element x y { 10.0.1.1 : 10.0.1.1 }" > $tmpfile
+$NFT -f $tmpfile
+
+EXPECTED="table ip x {
+	map y {
+		type ipv4_addr : ipv4_addr
+		elements = { "$(generate_test)" }
+	}
+}"
+GET=$($NFT list ruleset)
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+

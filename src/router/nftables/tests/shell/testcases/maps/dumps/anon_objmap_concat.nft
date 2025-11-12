@@ -1,0 +1,16 @@
+table inet filter {
+	ct helper sip-5060u {
+		type "sip" protocol udp
+		l3proto ip
+	}
+
+	ct helper sip-5060t {
+		type "sip" protocol tcp
+		l3proto ip
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		ct helper set ip protocol . th dport map { udp . 10000-20000 : "sip-5060u", tcp . 10000-20000 : "sip-5060t" }
+	}
+}

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+$NFT add table x
+$NFT add chain x y
+$NFT add rule x y ip saddr { 1.1.1.1 }
+$NFT add rule x y meta mark set ip saddr map { 1.1.1.1 : 2 }
+
+$NFT list set x __set0 &>/dev/null
+ret=$?
+if [ $ret -eq 0 ]
+then
+	exit 1
+fi
+
+$NFT flush set x __set0 &>/dev/null
+ret=$?
+if [ $ret -eq 0 ]
+then
+	exit 1
+fi
+
+$NFT list map x __map0 &>/dev/null
+if [ $ret -eq 0 ]
+then
+	exit 1
+fi
+
+$NFT flush map x __map0 &>/dev/null
+ret=$?
+if [ $ret -eq 0 ]
+then
+	exit 1
+fi

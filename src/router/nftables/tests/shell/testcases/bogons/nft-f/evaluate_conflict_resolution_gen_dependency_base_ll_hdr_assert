@@ -1,0 +1,5 @@
+table ip6 t {
+	chain c {
+		ip6 nexthdr comp udp dport 4789
+	}
+}

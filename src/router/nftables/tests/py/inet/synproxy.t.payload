@@ -1,0 +1,24 @@
+# synproxy
+inet synproxyinet synproxychain
+  [ synproxy mss 0 wscale 0 ]
+
+# synproxy mss 1460 wscale 7
+inet synproxyinet synproxychain
+  [ synproxy mss 1460 wscale 7 ]
+
+# synproxy mss 1460 wscale 5 timestamp sack-perm
+inet synproxyinet synproxychain
+  [ synproxy mss 1460 wscale 5 ]
+
+# synproxy timestamp sack-perm
+inet synproxyinet synproxychain
+  [ synproxy mss 0 wscale 0 ]
+
+# synproxy timestamp
+inet synproxyinet synproxychain
+  [ synproxy mss 0 wscale 0 ]
+
+# synproxy sack-perm
+inet synproxyinet synproxychain
+  [ synproxy mss 0 wscale 0 ]
+

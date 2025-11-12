@@ -1,0 +1,7 @@
+#!/bin/bash
+
+errmsg='Error: unknown ip option type/field'
+
+str=$($NFT describe ip option rr value 2>&1 | head -n 1)
+
+[ "$str" = "$errmsg" ] && exit 0

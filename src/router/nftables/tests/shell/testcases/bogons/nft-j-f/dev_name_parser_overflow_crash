@@ -1,0 +1,90 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "filter1",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "filter1",
+        "name": "Main_Ingress1",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": -500,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "filter2",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "filter2",
+        "name": "Main_Ingress2",
+        "handle": 0,
+        "dev": [
+          "d2345678999999999999999999999999999999012345",
+          "lo"
+        ],
+        "type": "filter",
+        "hook": "ingress",
+        "prio": -500,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "filter3",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "filter3",
+        "name": "Main_Ingress3",
+        "handle": 0,
+        "dev": [
+          "d23456789012345",
+          "lo"
+        ],
+        "type": "filter",
+        "hook": "ingress",
+        "prio": -500,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "filter3",
+        "name": "Main_Egress3",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "egress",
+        "prio": -500,
+        "policy": "accept"
+      }
+    }
+  ]
+}

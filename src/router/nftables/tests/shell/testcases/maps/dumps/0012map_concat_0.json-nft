@@ -1,0 +1,145 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "k",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 1,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "w",
+        "table": "x",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "meta": {
+                  "key": "mark"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            {
+              "elem": {
+                "val": {
+                  "concat": [
+                    {
+                      "range": [
+                        "127.0.0.1",
+                        "127.0.0.4"
+                      ]
+                    },
+                    {
+                      "range": [
+                        1193012,
+                        11534626
+                      ]
+                    }
+                  ]
+                },
+                "counter": {
+                  "packets": 0,
+                  "bytes": 0
+                }
+              }
+            },
+            {
+              "accept": null
+            }
+          ]
+        ],
+        "stmt": [
+          {
+            "counter": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "k",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "value": 1193012
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "k",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "mark"
+                    }
+                  }
+                ]
+              },
+              "data": "@w"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

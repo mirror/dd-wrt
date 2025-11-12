@@ -1,0 +1,31 @@
+table ip t {
+	set s {
+		type ipv4_addr
+		size 65535	# count 1
+		flags dynamic
+		counter
+		elements = { 1.1.1.1 counter packets 1 bytes 11 }
+	}
+
+	chain c {
+		counter packets 0 bytes 0 update @s { ip saddr } accept
+		counter packets 0 bytes 0 drop
+	}
+
+	chain c2 {
+		counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 drop
+	}
+}
+table inet t {
+	chain c {
+		counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 drop
+	}
+}
+table ip t2 {
+	chain c2 {
+		counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0 drop
+	}
+}

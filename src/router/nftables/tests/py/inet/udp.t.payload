@@ -1,0 +1,244 @@
+# udp sport 80 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00005000 ]
+  [ immediate reg 0 accept ]
+
+# udp sport != 60 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ cmp neq reg 1 0x00003c00 ]
+  [ immediate reg 0 accept ]
+
+# udp sport 50-70 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ range eq reg 1 0x00003200 0x00004600 ]
+  [ immediate reg 0 accept ]
+
+# udp sport != 50-60 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ range neq reg 1 0x00003200 0x00003c00 ]
+  [ immediate reg 0 accept ]
+
+# udp sport { 49, 50} drop
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00003100  : 0 [end]	element 00003200  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 drop ]
+
+# udp sport != { 50, 60} accept
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00003200  : 0 [end]	element 00003c00  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# udp dport 80 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00005000 ]
+  [ immediate reg 0 accept ]
+
+# udp dport != 60 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp neq reg 1 0x00003c00 ]
+  [ immediate reg 0 accept ]
+
+# udp dport 70-75 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00004600 0x00004b00 ]
+  [ immediate reg 0 accept ]
+
+# udp dport != 50-60 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range neq reg 1 0x00003200 0x00003c00 ]
+  [ immediate reg 0 accept ]
+
+# udp dport { 49, 50} drop
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00003100  : 0 [end]	element 00003200  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 drop ]
+
+# udp dport != { 50, 60} accept
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00003200  : 0 [end]	element 00003c00  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# udp length 6666
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00000a1a ]
+
+# udp length != 6666
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp neq reg 1 0x00000a1a ]
+
+# udp length 50-65 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range eq reg 1 0x00003200 0x00004100 ]
+  [ immediate reg 0 accept ]
+
+# udp length != 50-65 accept
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range neq reg 1 0x00003200 0x00004100 ]
+  [ immediate reg 0 accept ]
+
+# udp length { 50, 65} accept
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00003200  : 0 [end]	element 00004100  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# udp length != { 50, 65} accept
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00003200  : 0 [end]	element 00004100  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# udp checksum 6666 drop
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000a1a ]
+  [ immediate reg 0 drop ]
+
+# udp checksum != { 444, 555} accept
+__set%d test-inet 3
+__set%d test-inet 0
+	element 0000bc01  : 0 [end]	element 00002b02  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# udp checksum 22
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+
+# udp checksum != 233
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x0000e900 ]
+
+# udp checksum 33-45
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# udp checksum != 33-45
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# udp checksum { 33, 55, 67, 88}
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# udp checksum != { 33, 55, 67, 88}
+__set%d test-inet 3
+__set%d test-inet 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+inet test-inet input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# iif "lo" udp checksum set 0
+inet test-inet input
+  [ meta load iif => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ immediate reg 1 0x00000000 ]
+  [ payload write reg 1 => 2b @ transport header + 6 csum_type 0 csum_off 0 csum_flags 0x1 ]
+
+# iif "lo" udp dport set 65535
+inet test-inet input
+  [ meta load iif => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ immediate reg 1 0x0000ffff ]
+  [ payload write reg 1 => 2b @ transport header + 2 csum_type 0 csum_off 0 csum_flags 0x1 ]

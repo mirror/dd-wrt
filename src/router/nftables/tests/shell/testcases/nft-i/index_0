@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table inet foo
+add chain inet foo bar { type filter hook input priority filter; }
+add rule inet foo bar accept
+insert rule inet foo bar index 0 accept
+add rule inet foo bar index 0 accept"
+
+$NFT -i <<< "$RULESET"

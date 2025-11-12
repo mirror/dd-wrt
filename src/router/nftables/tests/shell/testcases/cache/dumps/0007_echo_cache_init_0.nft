@@ -1,0 +1,7 @@
+table inet t {
+	chain c {
+		accept comment "first"
+		accept comment "second"
+		accept comment "third"
+	}
+}

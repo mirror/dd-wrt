@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain t input {type filter hook input priority 4 \; }
+$NFT add chain t c1
+$NFT add rule t input ip saddr vmap { 1.1.1.1 : jump c1 }
+
+# kernel should return EOPNOTSUPP
+$NFT add rule t c1 masquerade 2>/dev/null >&2 || exit 0
+echo "E: accepted masquerade in chain from non-nat type basechain" 1>&2
+exit 1

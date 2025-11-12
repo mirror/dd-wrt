@@ -1,0 +1,11 @@
+table t {
+        set candidates_ipv4 {
+                type ipv4_addr . inet_service
+                size 65535
+                flags dynamic,timeout
+        }
+
+        chain input {
+                tcp dport 10003 ip saddr . tcp dport @candidates_ipv4 add @candidates_ipv4 { ip saddr . 10 :0004 timeout 1s }
+        }
+}

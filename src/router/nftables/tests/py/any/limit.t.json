@@ -1,0 +1,362 @@
+# limit rate 400/minute
+[
+    {
+        "limit": {
+            "per": "minute",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate 20/second
+[
+    {
+        "limit": {
+            "per": "second",
+            "rate": 20
+        }
+    }
+]
+
+# limit rate 400/hour
+[
+    {
+        "limit": {
+            "per": "hour",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate 40/day
+[
+    {
+        "limit": {
+            "per": "day",
+            "rate": 40
+        }
+    }
+]
+
+# limit rate 400/week
+[
+    {
+        "limit": {
+            "per": "week",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate 1023/second burst 10 packets
+[
+    {
+        "limit": {
+            "burst": 10,
+            "per": "second",
+            "rate": 1023
+        }
+    }
+]
+
+# limit rate 1 kbytes/second
+[
+    {
+        "limit": {
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 2 kbytes/second
+[
+    {
+        "limit": {
+            "per": "second",
+            "rate": 2,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 1025 kbytes/second
+[
+    {
+        "limit": {
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 1023 mbytes/second
+[
+    {
+        "limit": {
+            "per": "second",
+            "rate": 1023,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate 10230 mbytes/second
+[
+    {
+        "limit": {
+            "per": "second",
+            "rate": 10230,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate 1 bytes / second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate 1 kbytes / second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 1 mbytes / second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate 1025 bytes/second burst 512 bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate 1025 kbytes/second burst 1023 kbytes
+[
+    {
+        "limit": {
+            "burst": 1023,
+            "burst_unit": "kbytes",
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 1025 mbytes/second burst 1025 kbytes
+[
+    {
+        "limit": {
+            "burst": 1025,
+            "burst_unit": "kbytes",
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate over 400/minute
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "minute",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate over 20/second
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "second",
+            "rate": 20
+        }
+    }
+]
+
+# limit rate over 400/hour
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "hour",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate over 40/day
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "day",
+            "rate": 40
+        }
+    }
+]
+
+# limit rate over 400/week
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "week",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate over 1023/second burst 10 packets
+[
+    {
+        "limit": {
+            "burst": 10,
+            "inv": true,
+            "per": "second",
+            "rate": 1023
+        }
+    }
+]
+
+# limit rate over 1 kbytes/second
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 2 kbytes/second
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "second",
+            "rate": 2,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 1025 kbytes/second
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 1023 mbytes/second
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "second",
+            "rate": 1023,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate over 10230 mbytes/second
+[
+    {
+        "limit": {
+            "inv": true,
+            "per": "second",
+            "rate": 10230,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate over 1025 bytes/second burst 512 bytes
+[
+    {
+        "limit": {
+            "burst": 512,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "bytes"
+        }
+    }
+]
+
+# limit rate over 1025 kbytes/second burst 1023 kbytes
+[
+    {
+        "limit": {
+            "burst": 1023,
+            "burst_unit": "kbytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 1025 mbytes/second burst 1025 kbytes
+[
+    {
+        "limit": {
+            "burst": 1025,
+            "burst_unit": "kbytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "mbytes"
+        }
+    }
+]

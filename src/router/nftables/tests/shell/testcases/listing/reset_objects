@@ -1,0 +1,104 @@
+#!/bin/bash
+
+set -e
+
+load_ruleset()
+{
+	$NFT -f - <<EOF
+table ip test {
+	quota https-quota {
+		25 mbytes used 10 mbytes
+	}
+	counter https-counter {
+		packets 10 bytes 4096
+	}
+}
+EOF
+}
+
+check_list_quota()
+{
+	EXPECT="table ip test {
+	quota https-quota {
+		25 mbytes
+	}
+}"
+	$DIFF -u <(echo "$EXPECT") <($NFT list quotas)
+}
+
+check_list_counter()
+{
+	EXPECT="table ip test {
+	counter https-counter {
+		packets 0 bytes 0
+	}
+}"
+	$DIFF -u <(echo "$EXPECT") <($NFT list counters)
+}
+
+load_ruleset
+
+EXPECT="table ip test {
+	quota https-quota {
+		25 mbytes used 10 mbytes
+	}
+}"
+$DIFF -u <(echo "$EXPECT") <($NFT reset quotas)
+
+check_list_quota
+$NFT flush ruleset
+load_ruleset
+
+EXPECT="table ip test {
+	quota https-quota {
+		25 mbytes used 10 mbytes
+	}
+}"
+$DIFF -u <(echo "$EXPECT") <($NFT reset quotas ip)
+
+check_list_quota
+$NFT flush ruleset
+load_ruleset
+
+EXPECT="table ip test {
+	quota https-quota {
+		25 mbytes used 10 mbytes
+	}
+}"
+$DIFF -u <(echo "$EXPECT") <($NFT reset quota ip test https-quota)
+
+check_list_quota
+$NFT flush ruleset
+load_ruleset
+
+EXPECT="table ip test {
+	counter https-counter {
+		packets 10 bytes 4096
+	}
+}"
+$DIFF -u <(echo "$EXPECT") <($NFT reset counters)
+
+check_list_counter
+$NFT flush ruleset
+load_ruleset
+
+EXPECT="table ip test {
+	counter https-counter {
+		packets 10 bytes 4096
+	}
+}"
+$DIFF -u <(echo "$EXPECT") <($NFT reset counters ip)
+
+check_list_counter
+$NFT flush ruleset
+load_ruleset
+
+EXPECT="table ip test {
+	counter https-counter {
+		packets 10 bytes 4096
+	}
+}"
+$DIFF -u <(echo "$EXPECT") <($NFT reset counter ip test https-counter)
+
+check_list_counter
+$NFT flush ruleset

@@ -1,0 +1,231 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "x",
+        "table": "x",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "tunnel": "vxlan",
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "payload": {
+                  "tunnel": "vxlan",
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              "3.3.3.3",
+              "4.4.4.4"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "y",
+        "table": "x",
+        "type": {
+          "typeof": {
+            "payload": {
+              "tunnel": "vxlan",
+              "protocol": "ip",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "dport"
+                }
+              },
+              "right": 4789
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "tunnel": "vxlan",
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "tunnel": "vxlan",
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "1.1.1.1",
+                      "2.2.2.2"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "dport"
+                }
+              },
+              "right": 4789
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "tunnel": "vxlan",
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "tunnel": "vxlan",
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  }
+                ]
+              },
+              "right": "@x"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "udp",
+                  "field": "dport"
+                }
+              },
+              "right": 4789
+            }
+          },
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "payload": {
+                  "tunnel": "vxlan",
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@y"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

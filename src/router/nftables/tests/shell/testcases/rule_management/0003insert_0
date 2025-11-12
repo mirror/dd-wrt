@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# tests for Netfilter bug #965
+# (regarding rule management with a given position/handle spec)
+
+set -e
+$NFT add table t
+$NFT add chain t c
+$NFT insert rule t c accept
+$NFT insert rule t c drop
+$NFT insert rule t c masquerade
+
+# check 'evaluate: un-break rule insert with intervals'
+
+$NFT insert rule t c tcp sport { 3478-3497, 16384-16387 }

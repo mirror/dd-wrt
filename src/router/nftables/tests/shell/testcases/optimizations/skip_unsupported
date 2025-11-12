@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table inet x {
+	set GEOIP_CC_wan-lan_120 {
+		type ipv4_addr
+		flags interval
+		elements = { 1.32.128.0/18, 1.32.200.0-1.32.204.128,
+			     1.32.207.0/24, 1.32.216.118-1.32.216.255,
+			     1.32.219.0-1.32.222.255, 1.32.226.0/23,
+			     1.32.231.0/24, 1.32.233.0/24,
+			     1.32.238.0/23, 1.32.240.0/24,
+			     223.223.220.0/22, 223.255.254.0/24 }
+	}
+
+	chain y {
+		ip saddr 1.2.3.4 tcp dport 80 meta mark set 10 accept
+		ip saddr 1.2.3.4 tcp dport 81 meta mark set 11 accept
+		ip saddr 1.2.3.5 tcp dport 81 accept comment \"test\"
+		ip saddr 1.2.3.5 tcp dport 82 accept
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# test adding many elements to an interval map
+# this always works because nft is only called once
+
+HOWMANY=63
+
+if [ "$NFT_TEST_SKIP_slow" = y ] ; then
+	HOWMANY=5
+fi
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+	echo "Failed to create tmp file" >&2
+	exit 0
+fi
+
+trap "rm -rf $tmpfile" EXIT # cleanup if aborted
+
+generate_add() {
+	echo -n "{"
+	for ((i=1; i<=HOWMANY; i++)) ; do
+		for ((j=1; j<=HOWMANY; j++)) ; do
+			echo -n "10.${i}.${j}.0/24 : 10.0.${i}.${j}"
+			[ "$i" == "$HOWMANY" ] && [ "$j" == "$HOWMANY" ] && break
+			echo -n ", "
+		done
+	done
+	echo -n "}"
+}
+
+generate_test() {
+	elements=""
+	for ((i=1; i<=HOWMANY; i++)) ; do
+		for ((j=1; j<=HOWMANY; j++)) ; do
+			elements="${elements}10.${i}.${j}.0/24 : 10.0.${i}.${j}"
+			[ "$i" == "$HOWMANY" ] && [ "$j" == "$HOWMANY" ] && break
+			elements="${elements},\\n\\t\\t\\t     "
+		done
+	done
+	echo -e "$elements"
+}
+
+echo "add table x
+add map x y { type ipv4_addr : ipv4_addr; flags interval; }
+add element x y $(generate_add)" > $tmpfile
+
+set -e
+$NFT -f $tmpfile
+
+EXPECTED="table ip x {
+	map y {
+		type ipv4_addr : ipv4_addr
+		flags interval
+		elements = { "$(generate_test)" }
+	}
+}"
+GET=$($NFT list ruleset)
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+
+if [ "$HOWMANY" != 63 ] ; then
+	echo "Run a partial test due to NFT_TEST_SKIP_slow=y. Skip"
+	exit 77
+fi

@@ -1,0 +1,8 @@
+define range = 42-80
+
+table t {
+	chain c {
+		tcp dport 42 tproxy to 192.168.0.1:$range
+		tcp dport 42 tproxy to 192.168.0.0/16
+	}
+}

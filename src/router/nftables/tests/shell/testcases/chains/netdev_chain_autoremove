@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+# Test auto-removal of chain hook on netns removal
+unshare -n bash -e -c "ip link add br0 type bridge; \
+ $NFT add table netdev test; \
+ $NFT add chain netdev test ingress { type filter hook ingress device \"br0\" priority 0\; policy drop\; } ; \
+"

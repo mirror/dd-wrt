@@ -1,0 +1,5 @@
+table ip test {
+	chain test {
+		tcp dport set ip daddr map { 192.168.0.1 : 0x000/0001 }
+	}
+}

@@ -1,0 +1,48 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "test_set",
+        "table": "filter",
+        "type": [
+          "iface_index",
+          "ether_addr",
+          "ipv4_addr"
+        ],
+        "handle": 0,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          {
+            "elem": {
+              "val": {
+                "concat": [
+                  "lo",
+                  "00:11:22:33:44:55",
+                  "10.1.2.3"
+                ]
+              },
+              "comment": "123456789012345678901234567890"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

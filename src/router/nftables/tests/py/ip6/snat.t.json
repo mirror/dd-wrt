@@ -1,0 +1,54 @@
+# tcp dport 80-90 snat to [2001:838:35f:1::]-[2001:838:35f:2::]:80-100
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 80, 90 ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": {
+                "range": [ "2001:838:35f:1::", "2001:838:35f:2::" ]
+            },
+            "port": {
+                "range": [ 80, 100 ]
+            }
+        }
+    }
+]
+
+# tcp dport 80-90 snat to [2001:838:35f:1::]-[2001:838:35f:2::]:100
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 80, 90 ]
+            }
+        }
+    },
+    {
+        "snat": {
+            "addr": {
+                "range": [ "2001:838:35f:1::", "2001:838:35f:2::" ]
+            },
+            "port": 100
+        }
+    }
+]
+

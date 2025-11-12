@@ -1,0 +1,19 @@
+table ip x {
+	chain t1 {
+	}
+
+	chain t2 {
+	}
+
+	chain t3 {
+	}
+
+	chain t4 {
+	}
+
+	chain y {
+		counter packets 0 bytes 0 jump t1
+		counter packets 0 bytes 0 jump t2
+		ip version vmap { 4 : jump t3, 6 : jump t4 }
+	}
+}

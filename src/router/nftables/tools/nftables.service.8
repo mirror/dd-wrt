@@ -1,0 +1,17 @@
+.TH nftables.service 8 "" "nftables" "nftables admin reference"
+.SH Name
+nftables.service \(em Static Firewall Configuration with nftables.service
+.SH Description
+An nftables systemd service is provided which allows to setup static firewall
+rulesets based on a configuration file.
+.PP
+To use this service, you need to create the main configuration file in
+/etc/nftables/rules/main.nft. A template for this can be copied from
+/usr/share/doc/nftables/main.nft. Alternatively, `nft list ruleset >main.nft`
+could be used to save the active configuration (if any) to the file.
+.PP
+Once the desired static firewall configuration is in place, it can be tested by
+running `systemctl start nftables.service`. To enable the service at boot time,
+run `systemctl enable nftables.service`.
+.SH See also
+\fBnft\fP(8)

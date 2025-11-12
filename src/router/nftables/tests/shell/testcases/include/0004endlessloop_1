@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+trap "rm -rf $tmpfile" EXIT # cleanup if aborted
+
+RULESET="include \"$tmpfile\""
+
+echo "$RULESET" > $tmpfile
+
+$NFT -f $tmpfile 2>/dev/null || exit 0
+echo "E: endless include loop" >&2
+exit 1

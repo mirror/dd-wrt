@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Tests use of variables in jump statements
+
+set -e
+
+RULESET="table filter {
+ chain prerouting {
+  type filter hook prerouting priority -50
+ }
+}
+list  ruleset
+"
+
+$NFT -f - <<< "$RULESET"
+
+if [ "$NFT_TEST_HAVE_json" != n ]; then
+	$NFT flush ruleset
+	$NFT -j -f - <<< "$RULESET"
+fi

@@ -1,0 +1,126 @@
+# queue
+[
+    {
+        "queue": {
+            "num": 0
+        }
+    }
+]
+
+# queue num 4-5 fanout
+[
+    {
+        "queue": {
+            "flags": [
+                "fanout"
+            ],
+            "num": {
+                "range": [
+                    4,
+                    5
+                ]
+            }
+        }
+    }
+]
+
+# queue num 4-5 bypass
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass"
+            ],
+            "num": {
+                "range": [
+                    4,
+                    5
+                ]
+            }
+        }
+    }
+]
+
+# queue flags bypass to numgen inc mod 65536
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass"
+            ],
+            "num": {
+                "numgen": {
+                    "mod": 65536,
+                    "mode": "inc",
+                    "offset": 0
+                }
+            }
+        }
+    }
+]
+
+# queue flags bypass to 65535
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass"
+            ],
+            "num": 65535
+        }
+    }
+]
+
+# queue flags bypass to 1-65535
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass"
+            ],
+            "num": {
+                "range": [
+                    1,
+                    65535
+                ]
+            }
+        }
+    }
+]
+
+# queue flags bypass to oifname map { "eth0" : 0, "ppp0" : 2, "eth1" : 2 }
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass"
+            ],
+            "num": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "eth0",
+                                0
+                            ],
+                            [
+                                "ppp0",
+                                2
+                            ],
+                            [
+                                "eth1",
+                                2
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "meta": {
+                            "key": "oifname"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+

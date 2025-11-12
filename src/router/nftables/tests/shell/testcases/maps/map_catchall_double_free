@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_catchall_element)
+
+$NFT "add table ip test ;
+     add map ip test testmap { type ipv4_addr . ipv4_addr: verdict; flags interval,timeout; timeout 1s;};
+     add chain ip test testchain;
+     add element ip test testmap { * : jump testchain }" || exit 1
+
+sleep 2
+$NFT "add element ip test testmap { 1.2.3.4 . 5.6.7.8: jump testchain }" || exit 1
+sleep 2
+$NFT "add element ip test testmap { 2.3.4.5 . 6.7.8.9 timeout 1m: jump testchain }" || exit 1

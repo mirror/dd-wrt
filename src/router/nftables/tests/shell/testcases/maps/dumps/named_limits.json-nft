@@ -1,0 +1,367 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "input",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "limit": {
+        "family": "inet",
+        "name": "tarpit-pps",
+        "table": "filter",
+        "handle": 0,
+        "rate": 1,
+        "per": "second",
+        "burst": 5
+      }
+    },
+    {
+      "limit": {
+        "family": "inet",
+        "name": "tarpit-bps",
+        "table": "filter",
+        "handle": 0,
+        "rate": 1,
+        "per": "second",
+        "rate_unit": "kbytes"
+      }
+    },
+    {
+      "limit": {
+        "family": "inet",
+        "name": "http-bulk-rl-1m",
+        "table": "filter",
+        "handle": 0,
+        "rate": 1,
+        "per": "second",
+        "rate_unit": "mbytes"
+      }
+    },
+    {
+      "limit": {
+        "family": "inet",
+        "name": "http-bulk-rl-10m",
+        "table": "filter",
+        "handle": 0,
+        "rate": 10,
+        "per": "second",
+        "rate_unit": "mbytes"
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "tarpit4",
+        "table": "filter",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "size": 10000,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "tarpit6",
+        "table": "filter",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip6",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "size": 10000,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "addr4limit",
+        "table": "filter",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "sport"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "limit",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            {
+              "concat": [
+                "tcp",
+                {
+                  "prefix": {
+                    "addr": "192.168.0.0",
+                    "len": 16
+                  }
+                },
+                {
+                  "range": [
+                    1,
+                    65535
+                  ]
+                }
+              ]
+            },
+            "tarpit-bps"
+          ],
+          [
+            {
+              "concat": [
+                "udp",
+                {
+                  "prefix": {
+                    "addr": "192.168.0.0",
+                    "len": 16
+                  }
+                },
+                {
+                  "range": [
+                    1,
+                    65535
+                  ]
+                }
+              ]
+            },
+            "tarpit-pps"
+          ],
+          [
+            {
+              "concat": [
+                "tcp",
+                {
+                  "range": [
+                    "127.0.0.1",
+                    "127.1.2.3"
+                  ]
+                },
+                {
+                  "range": [
+                    1,
+                    1024
+                  ]
+                }
+              ]
+            },
+            "tarpit-pps"
+          ],
+          [
+            {
+              "concat": [
+                "tcp",
+                {
+                  "range": [
+                    "10.0.0.1",
+                    "10.0.0.255"
+                  ]
+                },
+                80
+              ]
+            },
+            "http-bulk-rl-1m"
+          ],
+          [
+            {
+              "concat": [
+                "tcp",
+                {
+                  "range": [
+                    "10.0.0.1",
+                    "10.0.0.255"
+                  ]
+                },
+                443
+              ]
+            },
+            "http-bulk-rl-1m"
+          ],
+          [
+            {
+              "concat": [
+                "tcp",
+                {
+                  "prefix": {
+                    "addr": "10.0.1.0",
+                    "len": 24
+                  }
+                },
+                {
+                  "range": [
+                    1024,
+                    65535
+                  ]
+                }
+              ]
+            },
+            "http-bulk-rl-10m"
+          ],
+          [
+            {
+              "concat": [
+                "tcp",
+                "10.0.2.1",
+                22
+              ]
+            },
+            "http-bulk-rl-10m"
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "saddr6limit",
+        "table": "filter",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip6",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "limit",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            {
+              "range": [
+                "dead::beef",
+                "dead::1:aced"
+              ]
+            },
+            "tarpit-pps"
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "map": {
+                "key": {
+                  "concat": [
+                    {
+                      "meta": {
+                        "key": "l4proto"
+                      }
+                    },
+                    {
+                      "payload": {
+                        "protocol": "ip",
+                        "field": "saddr"
+                      }
+                    },
+                    {
+                      "payload": {
+                        "protocol": "th",
+                        "field": "sport"
+                      }
+                    }
+                  ]
+                },
+                "data": "@addr4limit"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip6",
+                    "field": "saddr"
+                  }
+                },
+                "data": "@saddr6limit"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"description": "libnftables JSON API schema",
+
+	"type": "object",
+        "properties": {
+		"nftables": {
+			"type": "array",
+			"minitems": 0,
+			"items": {
+				"type": "object"
+			}
+		}
+	},
+	"required": [ "nftables" ]
+}

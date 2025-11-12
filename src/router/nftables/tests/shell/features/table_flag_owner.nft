@@ -1,0 +1,5 @@
+# 6001a930ce03 ("netfilter: nftables: introduce table ownership")
+# v5.12-rc1~200^2~6^2
+table t {
+	flags owner;
+}

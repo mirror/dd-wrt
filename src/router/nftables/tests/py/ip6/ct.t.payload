@@ -1,0 +1,58 @@
+# ct mark set ip6 dscp << 2 | 0x10
+ip6 test-ip6 output
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 << 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip6 dscp << 26 | 0x10
+ip6 test-ip6 output
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 << 0x0000001a ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip6 dscp | 0x04
+ip6 test-ip6 output
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffffb ) ^ 0x00000004 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip6 dscp | 0xff000000
+ip6 test-ip6 output
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0x00ffffff ) ^ 0xff000000 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip6 dscp & 0x0f << 2
+ip6 test-ip6 output
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000003c ) ^ 0x00000000 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ct mark | ip6 dscp | 0x200 counter
+ip6 test-ip6 output
+  [ ct load mark => reg 1 ]
+  [ payload load 2b @ network header + 0 => reg 2 ]
+  [ bitwise reg 2 = ( reg 2 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 2 = ntoh(reg 2, 2, 2) ]
+  [ bitwise reg 2 = ( reg 2 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 | reg 2 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffdff ) ^ 0x00000200 ]
+  [ ct set mark with reg 1 ]
+  [ counter pkts 0 bytes 0 ]

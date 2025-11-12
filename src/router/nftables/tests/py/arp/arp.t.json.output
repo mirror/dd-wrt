@@ -1,0 +1,180 @@
+# arp ptype 0x0800
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ptype",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": "ip"
+        }
+    }
+]
+
+# arp operation {nak, inreply, inrequest, rreply, rrequest, reply, request}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "operation",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "request",
+                    "reply",
+                    "rrequest",
+                    "rreply",
+                    "inrequest",
+                    "inreply",
+                    "nak"
+                ]
+            }
+        }
+    }
+]
+
+# arp operation != {nak, inreply, inrequest, rreply, rrequest, reply, request}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "operation",
+                    "protocol": "arp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "request",
+                    "reply",
+                    "rrequest",
+                    "rreply",
+                    "inrequest",
+                    "inreply",
+                    "nak"
+                ]
+            }
+        }
+    }
+]
+
+# arp daddr ether fe:ed:00:c0:ff:ee arp saddr ip 192.168.1.1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr ip",
+                    "protocol": "arp"
+                }
+            },
+            "op": "==",
+            "right": "192.168.1.1"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr ether",
+                    "protocol": "arp"
+                }
+            },
+            "op": "==",
+            "right": "fe:ed:00:c0:ff:ee"
+        }
+    }
+]
+
+# meta iifname "invalid" arp ptype 0x0800 arp htype 1 arp hlen 6 arp plen 4 @nh,192,32 0xc0a88f10 @nh,144,48 set 0x112233445566
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "invalid"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "htype",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ptype",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": "ip"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hlen",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "plen",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": 4
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr ip",
+                    "protocol": "arp"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.143.16"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "daddr ether",
+                    "protocol": "arp"
+                }
+            },
+            "value": "11:22:33:44:55:66"
+        }
+    }
+]
+

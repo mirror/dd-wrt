@@ -1,0 +1,31 @@
+table inet x {
+	chain nat_dns_dnstc {
+		meta l4proto udp redirect to :5300
+		drop
+	}
+
+	chain nat_dns_this_5301 {
+		meta l4proto udp redirect to :5301
+		drop
+	}
+
+	chain nat_dns_saturn_5301 {
+		meta nfproto ipv4 meta l4proto udp dnat ip to 240.0.1.2:5301
+		drop
+	}
+
+	chain nat_dns_saturn_5302 {
+		meta nfproto ipv4 meta l4proto udp dnat ip to 240.0.1.2:5302
+		drop
+	}
+
+	chain nat_dns_saturn_5303 {
+		meta nfproto ipv4 meta l4proto udp dnat ip to 240.0.1.2:5303
+		drop
+	}
+
+	chain nat_dns_acme {
+		udp length . @th,160,128 vmap { 47-63 . 0xe373135363130333131303735353203 : goto nat_dns_dnstc, 62-78 . 0xe31393032383939353831343037320e : goto nat_dns_this_5301, 62-78 . 0xe31363436323733373931323934300e : goto nat_dns_saturn_5301, 62-78 . 0xe32393535373539353636383732310e : goto nat_dns_saturn_5302, 62-78 . 0xe38353439353637323038363633390e : goto nat_dns_saturn_5303 }
+		drop
+	}
+}

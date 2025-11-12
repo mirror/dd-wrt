@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_comment)
+
+# comments are shown
+
+$NFT add table test { comment \"test_comment\"\; }

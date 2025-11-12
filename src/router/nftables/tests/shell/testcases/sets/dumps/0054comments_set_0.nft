@@ -1,0 +1,13 @@
+table ip t {
+	set s {
+		type ipv4_addr
+		flags interval
+		comment "test"
+	}
+
+	map m {
+		type ipv4_addr : ipv4_addr
+		flags interval
+		comment "another test"
+	}
+}

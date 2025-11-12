@@ -1,0 +1,61 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "test123",
+        "table": "filter",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "elem": {
+              "val": "1.2.3.4",
+              "limit": {
+                "rate": 1,
+                "burst": 0,
+                "per": "second",
+                "inv": true,
+                "rate_unit": "mbytes",
+                "burst_unit": "bytes"
+              }
+            }
+          }
+        ],
+        "stmt": [
+          {
+            "limit": {
+              "rate": 1,
+              "burst": 0,
+              "per": "second",
+              "inv": true,
+              "rate_unit": "mbytes",
+              "burst_unit": "bytes"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

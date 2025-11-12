@@ -1,0 +1,969 @@
+VERDICT STATEMENT
+~~~~~~~~~~~~~~~~~
+The verdict statement alters control flow in the ruleset and issues policy decisions for packets.
+
+[verse]
+____
+{*accept* | *drop* | *queue* | *continue* | *return*}
+{*jump* | *goto*} 'CHAIN'
+
+'CHAIN' := 'chain_name' | *{* 'statement' ... *}*
+____
+
+*accept* and *drop* are absolute verdicts -- they terminate ruleset evaluation immediately.
+
+[horizontal]
+*accept*:: Terminate ruleset evaluation and accept the packet.
+The packet can still be dropped later by another hook, for instance accept
+in the forward hook still allows one to drop the packet later in the postrouting hook,
+or another forward base chain that has a higher priority number and is evaluated
+afterwards in the processing pipeline.
+*drop*:: Terminate ruleset evaluation and drop the packet.
+The drop occurs instantly, no further chains or hooks are evaluated.
+It is not possible to accept the packet in a later chain again, as those
+are not evaluated anymore for the packet.
+*queue*:: Terminate ruleset evaluation and queue the packet to userspace.
+Userspace must provide a drop or accept verdict.  In case of accept, processing
+resumes with the next base chain hook, not the rule following the queue verdict.
+*continue*:: Continue ruleset evaluation with the next rule. This
+ is the default behaviour in case a rule issues no verdict.
+*return*:: Return from the current chain and continue evaluation at the
+ next rule in the last chain. If issued in a base chain, it is equivalent to the
+ base chain policy.
+*jump* 'CHAIN':: Continue evaluation at the first rule in 'CHAIN'. The current
+ position in the ruleset is pushed to a call stack and evaluation will continue
+ there when the new chain is entirely evaluated or a *return* verdict is issued.
+ In case an absolute verdict is issued by a rule in the chain, ruleset evaluation
+ terminates immediately and the specific action is taken.
+*goto* 'CHAIN':: Similar to *jump*, but the current position is not pushed to the
+ call stack, meaning that after the new chain evaluation will continue at the last
+ chain instead of the one containing the goto statement.
+
+An alternative to specifying the name of an existing, regular chain in 'CHAIN'
+is to specify an anonymous chain ad-hoc. Like with anonymous sets, it can't be
+referenced from another rule and will be removed along with the rule containing
+it.
+
+.Using verdict statements
+-------------------
+# process packets from eth0 and the internal network in from_lan
+# chain, drop all packets from eth0 with different source addresses.
+
+filter input iif eth0 ip saddr 192.168.0.0/24 jump from_lan
+filter input iif eth0 drop
+
+# jump and goto statements support anonymous chain creation
+filter input iif eth0 jump { ip saddr 192.168.0.0/24 drop ; udp dport domain drop; }
+
+-------------------
+
+PAYLOAD STATEMENT
+~~~~~~~~~~~~~~~~~
+[verse]
+'payload_expression' *set* 'value'
+
+The payload statement alters packet content. It can be used for example to
+set ip DSCP (diffserv) header field or ipv6 flow labels.
+
+.route some packets instead of bridging
+---------------------------------------
+# redirect tcp:http from 192.160.0.0/16 to local machine for routing instead of bridging
+# assumes 00:11:22:33:44:55 is local MAC address.
+bridge input meta iif eth0 ip saddr 192.168.0.0/16 tcp dport 80 meta pkttype set host ether daddr set 00:11:22:33:44:55
+-------------------------------------------
+
+.Set IPv4 DSCP header field
+---------------------------
+ip forward ip dscp set 42
+---------------------------
+
+EXTENSION HEADER STATEMENT
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+'extension_header_expression' *set* 'value'
+
+The extension header statement alters packet content in variable-sized headers.
+This can currently be used to alter the TCP Maximum segment size of packets,
+similar to the TCPMSS target in iptables.
+
+.change tcp mss
+---------------
+tcp flags syn tcp option maxseg size set 1360
+# set a size based on route information:
+tcp flags syn tcp option maxseg size set rt mtu
+---------------
+
+You can also remove tcp options via reset keyword.
+
+.remove tcp option
+---------------
+tcp flags syn reset tcp option sack-perm
+---------------
+
+LOG STATEMENT
+~~~~~~~~~~~~~
+[verse]
+*log* [*prefix* 'quoted_string'] [*level* 'syslog-level'] [*flags* 'log-flags']
+*log* *group* 'nflog_group' [*prefix* 'quoted_string'] [*queue-threshold* 'value'] [*snaplen* 'size']
+*log level audit*
+
+The log statement enables logging of matching packets. When this statement is
+used from a rule, the Linux kernel will print some information on all matching
+packets, such as header fields, via the kernel log (where it can be read with
+dmesg(1) or read in the syslog).
+
+In the second form of invocation (if 'nflog_group' is specified), the Linux
+kernel will pass the packet to nfnetlink_log which will send the log through a
+netlink socket to the specified group. One userspace process may subscribe to
+the group to receive the logs, see man(8) ulogd for the Netfilter userspace log
+daemon and libnetfilter_log documentation for details in case you would like to
+develop a custom program to digest your logs.
+
+In the third form of invocation (if level audit is specified), the Linux
+kernel writes a message into the audit buffer suitably formatted for reading
+with auditd. Therefore no further formatting options (such as prefix or flags)
+are allowed in this mode.
+
+This is a non-terminating statement, so the rule evaluation continues after
+the packet is logged.
+
+.log statement options
+[options="header"]
+|==================
+|Keyword | Description | Type
+|prefix|
+Log message prefix|
+quoted string
+|level|
+Syslog level of logging |
+string: emerg, alert, crit, err, warn [default], notice, info, debug, audit
+|group|
+NFLOG group to send messages to|
+unsigned integer (16 bit)
+|snaplen|
+Length of packet payload to include in netlink message |
+unsigned integer (32 bit)
+|queue-threshold|
+Number of packets to queue inside the kernel before sending them to userspace |
+unsigned integer (32 bit)
+|==================================
+
+.log-flags
+[options="header"]
+|==================
+| Flag | Description
+|tcp sequence|
+Log TCP sequence numbers.
+|tcp options|
+Log options from the TCP packet header.
+|ip options|
+Log options from the IP/IPv6 packet header.
+|skuid|
+Log the userid of the process which generated the packet.
+|ether|
+Decode MAC addresses and protocol.
+|all|
+Enable all log flags listed above.
+|==============================
+
+.Using log statement
+--------------------
+# log the UID which generated the packet and ip options
+ip filter output log flags skuid flags ip options
+
+# log the tcp sequence numbers and tcp options from the TCP packet
+ip filter output log flags tcp sequence,options
+
+# enable all supported log flags
+ip6 filter output log flags all
+-----------------------
+
+REJECT STATEMENT
+~~~~~~~~~~~~~~~~
+[verse]
+____
+*reject* [ *with* 'REJECT_WITH' ]
+
+'REJECT_WITH' := *icmp* 'icmp_reject_code' |
+                 *icmpv6* 'icmpv6_reject_code' |
+                 *icmpx* 'icmpx_reject_code' |
+                 *tcp reset*
+____
+
+A reject statement is used to send back an error packet in response to the
+matched packet otherwise it is equivalent to drop so it is a terminating
+statement, ending rule traversal. This statement is only valid in base chains
+using the *prerouting*, *input*,
+*forward* or *output* hooks, and user-defined chains which are only called from
+those chains.
+
+.Keywords may be used to reject when specifying the ICMP code
+[options="header"]
+|==================
+|Keyword | Value
+|net-unreachable |
+0
+|host-unreachable |
+1
+|prot-unreachable|
+2
+|port-unreachable|
+3
+|frag-needed|
+4
+|net-prohibited|
+9
+|host-prohibited|
+10
+|admin-prohibited|
+13
+|===================
+
+.keywords may be used to reject when specifying the ICMPv6 code
+[options="header"]
+|==================
+|Keyword |Value
+|no-route|
+0
+|admin-prohibited|
+1
+|addr-unreachable|
+3
+|port-unreachable|
+4
+|policy-fail|
+5
+|reject-route|
+6
+|==================
+
+The ICMPvX Code type abstraction is a set of values which overlap between ICMP
+and ICMPv6 Code types to be used from the inet family.
+
+.keywords may be used when specifying the ICMPvX code
+[options="header"]
+|==================
+|Keyword |Value
+|no-route|
+0
+|port-unreachable|
+1
+|host-unreachable|
+2
+|admin-prohibited|
+3
+|=================
+
+The common default ICMP code to reject is *port-unreachable*.
+
+Note that in bridge family, reject statement is only allowed in base chains
+which hook into input or prerouting.
+
+COUNTER STATEMENT
+~~~~~~~~~~~~~~~~~
+A counter statement sets the hit count of packets along with the number of bytes.
+
+[verse]
+*counter* *packets* 'number' *bytes* 'number'
+*counter* { *packets* 'number' | *bytes* 'number' }
+
+CONNTRACK STATEMENT
+~~~~~~~~~~~~~~~~~~~
+The conntrack statement can be used to set the conntrack mark and conntrack labels.
+
+[verse]
+*ct* {*mark* | *event* | *label* | *zone*} *set* 'value'
+
+The ct statement sets meta data associated with a connection. The zone id
+has to be assigned before a conntrack lookup takes place, i.e. this has to be
+done in prerouting and possibly output (if locally generated packets need to be
+placed in a distinct zone), with a hook priority of *raw* (-300).
+
+Unlike iptables, where the helper assignment happens in the raw table,
+the helper needs to be assigned after a conntrack entry has been
+found, i.e. it will not work when used with hook priorities equal or before
+-200.
+
+.Conntrack statement types
+[options="header"]
+|==================
+|Keyword| Description| Value
+|event|
+conntrack event bits |
+bitmask, integer (32 bit)
+|helper|
+name of ct helper object to assign to the connection |
+quoted string
+|mark|
+Connection tracking mark |
+mark
+|label|
+Connection tracking label|
+label
+|zone|
+conntrack zone|
+integer (16 bit)
+|==================
+
+.save packet nfmark in conntrack
+--------------------------------
+ct mark set meta mark
+--------------------------------
+
+.set zone mapped via interface
+------------------------------
+table inet raw {
+  chain prerouting {
+      type filter hook prerouting priority raw;
+      ct zone set iif map { "eth1" : 1, "veth1" : 2 }
+  }
+  chain output {
+      type filter hook output priority raw;
+      ct zone set oif map { "eth1" : 1, "veth1" : 2 }
+  }
+}
+------------------------------------------------------
+
+.restrict events reported by ctnetlink
+--------------------------------------
+ct event set new,related,destroy
+--------------------------------------
+
+NOTRACK STATEMENT
+~~~~~~~~~~~~~~~~~
+The notrack statement allows one to disable connection tracking for certain
+packets.
+
+[verse]
+*notrack*
+
+Note that for this statement to be effective, it has to be applied to packets
+before a conntrack lookup happens. Therefore, it needs to sit in a chain with
+either prerouting or output hook and a hook priority of -300 (*raw*) or less.
+
+See SYNPROXY STATEMENT for an example usage.
+
+META STATEMENT
+~~~~~~~~~~~~~~
+A meta statement sets the value of a meta expression. The existing meta fields
+are: priority, mark, pkttype, nftrace. +
+
+[verse]
+*meta* {*mark* | *priority* | *pkttype* | *nftrace* | *broute*} *set* 'value'
+
+A meta statement sets meta data associated with a packet. +
+
+.Meta statement types
+[options="header"]
+|==================
+|Keyword| Description| Value
+|priority |
+TC packet priority|
+tc_handle
+|mark|
+Packet mark |
+mark
+|pkttype |
+packet type |
+pkt_type
+|nftrace |
+ruleset packet tracing on/off. Use *monitor trace* command to watch traces|
+0, 1
+|broute |
+broute on/off. packets are routed instead of being bridged|
+0, 1
+|==========================
+
+LIMIT STATEMENT
+~~~~~~~~~~~~~~~
+[verse]
+____
+*limit rate* [*over*] 'packet_number' */* 'TIME_UNIT' [*burst* 'packet_number' *packets*]
+*limit rate* [*over*] 'byte_number' 'BYTE_UNIT' */* 'TIME_UNIT' [*burst* 'byte_number' 'BYTE_UNIT']
+
+'TIME_UNIT' := *second* | *minute* | *hour* | *day*
+'BYTE_UNIT' := *bytes* | *kbytes* | *mbytes*
+____
+
+A limit statement matches at a limited rate using a token bucket filter. A rule
+using this statement will match until this limit is reached. It can be used in
+combination with the log statement to give limited logging. The optional
+*over* keyword makes it match over the specified rate.
+
+The *burst* value influences the bucket size, i.e. jitter tolerance. With
+packet-based *limit*, the bucket holds exactly *burst* packets, by default
+five. If you specify packet *burst*, it must be a non-zero value. With
+byte-based *limit*, the bucket's minimum size is the given rate's byte value
+and the *burst* value adds to that, by default zero bytes.
+
+.limit statement values
+[options="header"]
+|==================
+|Value | Description | Type
+|packet_number |
+Number of packets |
+unsigned integer (32 bit)
+|byte_number |
+Number of bytes |
+unsigned integer (32 bit)
+|========================
+
+NAT STATEMENTS
+~~~~~~~~~~~~~~
+[verse]
+____
+*snat* [[*ip* | *ip6*] [ *prefix* ] *to*] 'TARGET_SPEC' ['FLAGS']
+*dnat* [[*ip* | *ip6*] [ *prefix* ] *to*] 'TARGET_SPEC' ['FLAGS']
+*masquerade* [*to :*'PORT_SPEC'] ['FLAGS']
+*redirect* [*to :*'PORT_SPEC'] ['FLAGS']
+
+'TARGET_SPEC' := 'ADDR_SPEC' | ['ADDR_SPEC'] *:*'PORT_SPEC'
+'ADDR_SPEC' := 'address' | 'address' *-* 'address'
+'PORT_SPEC' := 'port' | 'port' *-* 'port'
+
+'FLAGS'  := 'FLAG' [*,* 'FLAGS']
+'FLAG'  := *persistent* | *random* | *fully-random*
+____
+
+The nat statements are only valid from nat chain types. +
+
+The *snat* and *masquerade* statements specify that the source address/port of the
+packet should be modified. While *snat* is only valid in the postrouting and
+input chains, *masquerade* makes sense only in postrouting. The dnat and
+redirect statements are only valid in the prerouting and output chains, they
+specify that the destination address/port of the packet should be modified. You can
+use non-base chains which are called from base chains of nat chain type too.
+All future packets in this connection will also be mangled, and rules should
+cease being examined.
+
+The *masquerade* statement is a special form of snat which always uses the
+outgoing interface's IP address to translate to. It is particularly useful on
+gateways with dynamic (public) IP addresses.
+
+The *redirect* statement is a special form of dnat which always translates the
+destination address to the local host's one. It comes in handy to intercept
+traffic passing a router and feeding it to a locally running daemon, e.g. when
+building a transparent proxy or application-layer gateway.
+
+For 'TARGET_SPEC', one may specify addresses, ports, or both. If no address or
+no port is specified, the respective packet header field remains unchanged.
+
+When used in the inet family (available with kernel 5.2), the dnat and snat
+statements require the use of the ip and ip6 keyword in case an address is
+provided, see the examples below.
+
+Before kernel 4.18 nat statements require both prerouting and postrouting base chains
+to be present since otherwise packets on the return path won't be seen by
+netfilter and therefore no reverse translation will take place.
+
+The optional *prefix* keyword allows to map *n* source addresses to *n*
+destination addresses.  See 'Advanced NAT examples' below.
+
+If the 'address' for *dnat* is an IPv4 loopback address
+(i.e. 127.0.0.0/8) the "net.ipv4.conf.*.route_localnet" sysctl for the
+input interface needs to be set to 1. Otherwise packets will be
+dropped by the routing code as "martians".
+
+.NAT statement values
+[options="header"]
+|==================
+|Expression| Description| Type
+|address|
+Specifies that the source/destination address of the packet should be modified.
+You may specify a mapping to relate a list of tuples composed of arbitrary
+expression key with address value. |
+ipv4_addr, ipv6_addr, e.g. abcd::1234, or you can use a mapping, e.g. meta mark map { 10 : 192.168.1.2, 20 : 192.168.1.3 }
+|port|
+Specifies that the source/destination port of the packet should be modified. |
+port number (16 bit)
+|===============================
+
+.NAT statement flags
+[options="header"]
+|==================
+|Flag| Description
+|persistent |
+Gives a client the same source-/destination-address for each connection.
+|random|
+In kernel 5.0 and newer this is the same as fully-random.
+In earlier kernels the port mapping will be randomized using a seeded MD5
+hash mix using source and destination address and destination port.
+
+|fully-random|
+If used then port mapping is generated based on a 32-bit pseudo-random algorithm.
+|=============================
+
+.Using NAT statements
+---------------------
+# create a suitable table/chain setup for all further examples
+add table nat
+add chain nat prerouting { type nat hook prerouting priority dstnat; }
+add chain nat postrouting { type nat hook postrouting priority srcnat; }
+
+# translate source addresses of all packets leaving via eth0 to address 1.2.3.4
+add rule nat postrouting oif eth0 snat to 1.2.3.4
+
+# redirect all traffic entering via eth0 to destination address 192.168.1.120
+add rule nat prerouting iif eth0 dnat to 192.168.1.120
+
+# translate source addresses of all packets leaving via eth0 to whatever
+# locally generated packets would use as source to reach the same destination
+add rule nat postrouting oif eth0 masquerade
+
+# redirect incoming TCP traffic for port 22 to port 2222
+add rule nat prerouting tcp dport 22 redirect to :2222
+
+# inet family:
+# handle ip dnat:
+add rule inet nat prerouting dnat ip to 10.0.2.99
+# handle ip6 dnat:
+add rule inet nat prerouting dnat ip6 to fe80::dead
+# this masquerades both ipv4 and ipv6:
+add rule inet nat postrouting meta oif ppp0 masquerade
+
+------------------------
+
+.Advanced NAT examples
+----------------------
+
+# map prefixes in one network to that of another, e.g. 10.141.11.4 is mangled to 192.168.2.4,
+# 10.141.11.5 is mangled to 192.168.2.5 and so on.
+add rule nat postrouting snat ip prefix to ip saddr map { 10.141.11.0/24 : 192.168.2.0/24 }
+
+# map a source address, source port combination to a pool of destination addresses and ports:
+add rule nat postrouting dnat to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.2-10.141.10.5 . 8888-8999 }
+
+# The above example generates the following NAT expression:
+#
+# [ nat dnat ip addr_min reg 1 addr_max reg 10 proto_min reg 9 proto_max reg 11 ]
+#
+# which expects to obtain the following tuple:
+# IP address (min), source port (min), IP address (max), source port (max)
+# to be obtained from the map. The given addresses and ports are inclusive.
+
+# This also works with named maps and in combination with both concatenations and ranges:
+table ip nat {
+	map ipportmap {
+		typeof ip saddr : interval ip daddr . tcp dport
+		flags interval
+		elements = { 192.168.1.2 : 10.141.10.1-10.141.10.3 . 8888-8999, 192.168.2.0/24 : 10.141.11.5-10.141.11.20 . 8888-8999 }
+	}
+
+	chain prerouting {
+		type nat hook prerouting priority dstnat; policy accept;
+		ip protocol tcp dnat ip to ip saddr map @ipportmap
+	}
+}
+
+@ipportmap maps network prefixes to a range of hosts and ports.
+The new destination is taken from the range provided by the map element.
+Same for the destination port.
+
+Note the use of the "interval" keyword in the typeof description.
+This is required so nftables knows that it has to ask for twice the
+amount of storage for each key-value pair in the map.
+
+": ipv4_addr . inet_service" would allow associating one address and one port
+with each key.  But for this case, for each key, two addresses and two ports
+(The minimum and maximum values for both) have to be stored.
+
+------------------------
+
+TPROXY STATEMENT
+~~~~~~~~~~~~~~~~
+Tproxy redirects the packet to a local socket without changing the packet header
+in any way. If any of the arguments is missing the data of the incoming packet
+is used as parameter. Tproxy matching requires another rule that ensures the
+presence of transport protocol header is specified.
+
+[verse]
+*tproxy to* 'address'*:*'port'
+*tproxy to* {'address' | *:*'port'}
+
+This syntax can be used in *ip/ip6* tables where network layer protocol is
+obvious. Either IP address or port can be specified, but at least one of them is
+necessary.
+
+[verse]
+*tproxy* {*ip* | *ip6*} *to* 'address'[*:*'port']
+*tproxy to :*'port'
+
+This syntax can be used in *inet* tables. The *ip/ip6* parameter defines the
+family the rule will match. The *address* parameter must be of this family.
+When only *port* is defined, the address family should not be specified. In
+this case the rule will match for both families.
+
+.tproxy attributes
+[options="header"]
+|=================
+| Name | Description
+| address | IP address the listening socket with IP_TRANSPARENT option is bound to.
+| port | Port the listening socket with IP_TRANSPARENT option is bound to.
+|=================
+
+.Example ruleset for tproxy statement
+-------------------------------------
+table ip x {
+    chain y {
+        type filter hook prerouting priority mangle; policy accept;
+        tcp dport ntp tproxy to 1.1.1.1 accept
+        udp dport ssh tproxy to :2222 accept
+    }
+}
+table ip6 x {
+    chain y {
+       type filter hook prerouting priority mangle; policy accept;
+       tcp dport ntp tproxy to [dead::beef] accept
+       udp dport ssh tproxy to :2222 accept
+    }
+}
+table inet x {
+    chain y {
+        type filter hook prerouting priority mangle; policy accept;
+        tcp dport 321 tproxy to :22 accept
+        tcp dport 99 tproxy ip to 1.1.1.1:999 accept
+        udp dport 155 tproxy ip6 to [dead::beef]:smux accept
+    }
+}
+-------------------------------------
+
+Note that the tproxy statement is non-terminal to allow post-processing of
+packets. This allows packets to be logged for debugging as well as updating the
+mark to ensure that packets are delivered locally through policy routing rules.
+
+.Example ruleset for tproxy statement with logging and meta mark
+-------------------------------------
+table inet x {
+    chain y {
+        type filter hook prerouting priority mangle; policy accept;
+        udp dport 9999 goto {
+            tproxy to :1234 log prefix "packet tproxied: " meta mark set 1 accept
+            log prefix "no socket on port 1234 or not transparent?: " drop
+        }
+    }
+}
+-------------------------------------
+
+As packet headers are unchanged, packets might be forwarded instead of delivered
+locally. As mentioned above, this can be avoided by adding policy routing rules
+and the packet mark.
+
+.Example policy routing rules for local redirection
+----------------------------------------------------
+ip rule add fwmark 1 lookup 100
+ip route add local 0.0.0.0/0 dev lo table 100
+----------------------------------------------------
+
+This is a change in behavior compared to the legacy iptables TPROXY target
+which is terminal. To terminate the packet processing after the tproxy
+statement, remember to issue a verdict as in the example above.
+
+SYNPROXY STATEMENT
+~~~~~~~~~~~~~~~~~~
+This statement will process TCP three-way-handshake parallel in netfilter
+context to protect either local or backend system. This statement requires
+connection tracking because sequence numbers need to be translated.
+
+[verse]
+*synproxy* [*mss* 'mss_value'] [*wscale* 'wscale_value'] ['SYNPROXY_FLAGS']
+
+.synproxy statement attributes
+[options="header"]
+|=================
+| Name | Description
+| mss | Maximum segment size announced to clients. This must match the backend.
+| wscale | Window scale announced to clients. This must match the backend.
+|=================
+
+.synproxy statement flags
+[options="header"]
+|=================
+| Flag | Description
+| sack-perm |
+Pass client selective acknowledgement option to backend (will be disabled if
+not present).
+| timestamp |
+Pass client timestamp option to backend (will be disabled if not present, also
+needed for selective acknowledgement and window scaling).
+|=================
+
+.Example ruleset for synproxy statement
+---------------------------------------
+Determine tcp options used by backend, from an external system
+
+              tcpdump -pni eth0 -c 1 'tcp[tcpflags] == (tcp-syn|tcp-ack)'
+                  port 80 &
+              telnet 192.0.2.42 80
+              18:57:24.693307 IP 192.0.2.42.80 > 192.0.2.43.48757:
+                  Flags [S.], seq 360414582, ack 788841994, win 14480,
+                  options [mss 1460,sackOK,
+                  TS val 1409056151 ecr 9690221,
+                  nop,wscale 9],
+                  length 0
+
+Switch tcp_loose mode off, so conntrack will mark out-of-flow packets as state INVALID.
+
+              echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_loose
+
+Make SYN packets untracked.
+
+	table ip x {
+		chain y {
+			type filter hook prerouting priority raw; policy accept;
+			tcp flags syn notrack
+		}
+	}
+
+Catch UNTRACKED (SYN  packets) and INVALID (3WHS ACK packets) states and send
+them to SYNPROXY. This rule will respond to SYN packets with SYN+ACK
+syncookies, create ESTABLISHED for valid client response (3WHS ACK packets) and
+drop incorrect cookies. Flags combinations not expected during  3WHS will not
+match and continue (e.g. SYN+FIN, SYN+ACK). Finally, drop invalid packets, this
+will be out-of-flow packets that were not matched by SYNPROXY.
+
+    table ip x {
+            chain z {
+                    type filter hook input priority filter; policy accept;
+                    ct state invalid, untracked synproxy mss 1460 wscale 9 timestamp sack-perm
+                    ct state invalid drop
+            }
+    }
+---------------------------------------
+
+FLOW STATEMENT
+~~~~~~~~~~~~~~
+A flow statement allows us to select what flows you want to accelerate
+forwarding through layer 3 network stack bypass. You have to specify the
+flowtable name where you want to offload this flow.
+
+*flow add @*'flowtable'
+
+QUEUE STATEMENT
+~~~~~~~~~~~~~~~
+This statement passes the packet to userspace using the nfnetlink_queue handler.
+The packet is put into the queue identified by its 16-bit queue number.
+Userspace can inspect and modify the packet if desired. Userspace must then drop
+or re-inject the packet into the kernel. See libnetfilter_queue documentation
+for details.
+
+[verse]
+____
+*queue* [*flags* 'QUEUE_FLAGS'] [*to* 'queue_number']
+*queue* [*flags* 'QUEUE_FLAGS'] [*to* 'queue_number_from' - 'queue_number_to']
+*queue* [*flags* 'QUEUE_FLAGS'] [*to* 'QUEUE_EXPRESSION' ]
+
+'QUEUE_FLAGS' := 'QUEUE_FLAG' [*,* 'QUEUE_FLAGS']
+'QUEUE_FLAG'  := *bypass* | *fanout*
+'QUEUE_EXPRESSION' := *numgen* | *hash* | *symhash* | *MAP STATEMENT*
+____
+
+QUEUE_EXPRESSION can be used to compute a queue number
+at run-time with the hash or numgen expressions. It also
+allows one to use the map statement to assign fixed queue numbers
+based on external inputs such as the source ip address or interface names.
+
+.queue statement values
+[options="header"]
+|==================
+|Value | Description | Type
+|queue_number |
+Sets queue number, default is 0. |
+unsigned integer (16 bit)
+|queue_number_from |
+Sets initial queue in the range, if fanout is used. |
+unsigned integer (16 bit)
+|queue_number_to |
+Sets closing queue in the range, if fanout is used. |
+unsigned integer (16 bit)
+|=====================
+
+.queue statement flags
+[options="header"]
+|==================
+|Flag | Description
+|bypass |
+Let packets go through if userspace application cannot back off. Before using
+this flag, read libnetfilter_queue documentation for performance tuning recommendations.
+|fanout |
+Distribute packets between several queues.
+|===============================
+
+DUP STATEMENT
+~~~~~~~~~~~~~
+The dup statement is used to duplicate a packet and send the copy to a different
+destination.
+
+[verse]
+*dup to* 'device'
+*dup to* 'address' *device* 'device'
+
+.Dup statement values
+[options="header"]
+|==================
+|Expression | Description | Type
+|address |
+Specifies that the copy of the packet should be sent to a new gateway.|
+ipv4_addr, ipv6_addr, e.g. abcd::1234, or you can use a mapping, e.g. ip saddr map { 192.168.1.2 : 10.1.1.1 }
+|device |
+Specifies that the copy should be transmitted via device. |
+string
+|===================
+
+
+.Using the dup statement
+------------------------
+# send to machine with ip address 10.2.3.4 on eth0
+ip filter forward dup to 10.2.3.4 device "eth0"
+
+# copy raw frame to another interface
+netdev ingress dup to "eth0"
+dup to "eth0"
+
+# combine with map dst addr to gateways
+dup to ip daddr map { 192.168.7.1 : "eth0", 192.168.7.2 : "eth1" }
+-----------------------------------
+
+FWD STATEMENT
+~~~~~~~~~~~~~
+The fwd statement is used to redirect a raw packet to another interface. It is
+only available in the netdev family ingress and egress hooks. It is similar to
+the dup statement except that no copy is made.
+
+You can also specify the address of the next hop and the device to forward the
+packet to. This updates the source and destination MAC address of the packet by
+transmitting it through the neighboring layer. This also decrements the ttl
+field of the IP packet. This provides a way to effectively bypass the classical
+forwarding path, thus skipping the fib (forwarding information base) lookup.
+
+[verse]
+*fwd to* 'device'
+*fwd* [*ip* | *ip6*] *to* 'address' *device* 'device'
+
+.Using the fwd statement
+------------------------
+# redirect raw packet to device
+netdev ingress fwd to "eth0"
+
+# forward packet to next hop 192.168.200.1 via eth0 device
+netdev ingress ether saddr set fwd ip to 192.168.200.1 device "eth0"
+-----------------------------------
+
+SET STATEMENT
+~~~~~~~~~~~~~
+The set statement is used to dynamically add or update elements in a set from
+the packet path. The set setname must already exist in the given table and must
+have been created with one or both of the dynamic and the timeout flags. The
+dynamic flag is required if the set statement expression includes a stateful
+object. The timeout flag is implied if the set is created with a timeout, and is
+required if the set statement updates elements, rather than adding them.
+Furthermore, these sets should specify both a maximum set size (to prevent
+memory exhaustion), and their elements should have a timeout (so their number
+will not grow indefinitely) either from the set definition or from the statement
+that adds or updates them. The set statement can be used to e.g. create dynamic
+blacklists.
+
+Dynamic updates are also supported with maps. In this case, the *add* or
+*update* rule needs to provide both the key and the data element (value),
+separated via ':'.
+
+[verse]
+{*add* | *update*} *@*'setname' *{* 'expression' [*timeout* 'timeout'] [*comment* 'string'] *}*
+
+.Example for simple blacklist
+-----------------------------
+# declare a set, bound to table "filter", in family "ip".
+# Timeout and size are mandatory because we will add elements from packet path.
+# Entries will timeout after one minute, after which they might be
+# re-added if limit condition persists.
+nft add set ip filter blackhole \
+    "{ type ipv4_addr; flags dynamic; timeout 1m; size 65536; }"
+
+# declare a set to store the limit per saddr.
+# This must be separate from blackhole since the timeout is different
+nft add set ip filter flood \
+    "{ type ipv4_addr; flags dynamic; timeout 10s; size 128000; }"
+
+# whitelist internal interface.
+nft add rule ip filter input meta iifname "internal" accept
+
+# drop packets coming from blacklisted ip addresses.
+nft add rule ip filter input ip saddr @blackhole counter drop
+
+# add source ip addresses to the blacklist if more than 10 tcp connection
+# requests occurred per second and ip address.
+nft add rule ip filter input tcp flags syn tcp dport ssh \
+    add @flood { ip saddr limit rate over 10/second } \
+    add @blackhole { ip saddr } \
+    drop
+
+# inspect state of the sets.
+nft list set ip filter flood
+nft list set ip filter blackhole
+
+# manually add two addresses to the blackhole.
+nft add element filter blackhole { 10.2.3.4, 10.23.1.42 }
+-----------------------------------------------
+
+MAP STATEMENT
+~~~~~~~~~~~~~
+The map statement is used to lookup data based on some specific input key.
+
+[verse]
+____
+'expression' *map* *{* 'MAP_ELEMENTS' *}*
+
+'MAP_ELEMENTS' := 'MAP_ELEMENT' [*,* 'MAP_ELEMENTS']
+'MAP_ELEMENT'  := 'key' *:* 'value'
+____
+
+The 'key' is a value returned by 'expression'.
+// XXX: Write about where map statement can be used (list of statements?)
+
+.Using the map statement
+------------------------
+# select DNAT target based on TCP dport:
+# connections to port 80 are redirected to 192.168.1.100,
+# connections to port 8888 are redirected to 192.168.1.101
+nft add rule ip nat prerouting dnat tcp dport map { 80 : 192.168.1.100, 8888 : 192.168.1.101 }
+
+# source address based SNAT:
+# packets from net 192.168.1.0/24 will appear as originating from 10.0.0.1,
+# packets from net 192.168.2.0/24 will appear as originating from 10.0.0.2
+nft add rule ip nat postrouting snat to ip saddr map { 192.168.1.0/24 : 10.0.0.1, 192.168.2.0/24 : 10.0.0.2 }
+------------------------
+
+VMAP STATEMENT
+~~~~~~~~~~~~~~
+The verdict map (vmap) statement works analogous to the map statement, but
+contains verdicts as values.
+
+[verse]
+____
+'expression' *vmap* *{* 'VMAP_ELEMENTS' *}*
+
+'VMAP_ELEMENTS' := 'VMAP_ELEMENT' [*,* 'VMAP_ELEMENTS']
+'VMAP_ELEMENT'  := 'key' *:* 'verdict'
+____
+
+.Using the vmap statement
+-------------------------
+# jump to different chains depending on layer 4 protocol type:
+nft add rule ip filter input ip protocol vmap { tcp : jump tcp-chain, udp : jump udp-chain , icmp : jump icmp-chain }
+------------------------
+
+XT STATEMENT
+~~~~~~~~~~~~
+This represents an xt statement from xtables compat interface. It is a
+fallback if translation is not available or not complete.
+
+[verse]
+____
+*xt* 'TYPE' 'NAME'
+
+'TYPE' := *match* | *target* | *watcher*
+____
+
+Seeing this means the ruleset (or parts of it) were created by *iptables-nft*
+and one should use that to manage it.
+
+*BEWARE:* nftables won't restore these statements.

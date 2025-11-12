@@ -1,0 +1,12 @@
+table inet testifsets {
+	map map_wild {	elements = { "abcdex*",
+			     "othername",
+			     "ppp0" }
+	}
+	map map_wild {
+		type ifname : verdict
+		flags interval
+		elements = { "abcdez*" : jump do_nothing,
+			     "eth0" : jump do_nothing }
+	}
+}

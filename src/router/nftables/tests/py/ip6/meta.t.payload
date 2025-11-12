@@ -1,0 +1,82 @@
+# icmpv6 type nd-router-advert
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000086 ]
+
+# meta l4proto ipv6-icmp icmpv6 type nd-router-advert
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000086 ]
+
+# meta l4proto icmp icmp type echo-request
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+
+# meta l4proto 1 icmp type echo-request
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+
+# icmp type echo-request
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+
+# meta sdif "lo" accept
+ip6 test-ip6 input
+  [ meta load sdif => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ immediate reg 0 accept ]
+
+# meta sdifname != "vrf1" accept
+ip6 test-ip6 input
+  [ meta load sdifname => reg 1 ]
+  [ cmp neq reg 1 0x31667276 0x00000000 0x00000000 0x00000000 ]
+  [ immediate reg 0 accept ]
+
+# meta protocol ip udp dport 67
+ip6 test-ip6 input
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00004300 ]
+
+# meta protocol ip6 udp dport 67
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00004300 ]
+
+# meta mark set ip6 dscp << 2 | 0x10
+ip6 test-ip6 input
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 << 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ meta set mark with reg 1 ]
+
+# meta mark set ip6 dscp << 26 | 0x10
+ip6 test-ip6 input
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000c00f ) ^ 0x00000000 ]
+  [ byteorder reg 1 = ntoh(reg 1, 2, 2) ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000006 ) ]
+  [ bitwise reg 1 = ( reg 1 << 0x0000001a ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ meta set mark with reg 1 ]

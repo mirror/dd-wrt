@@ -1,0 +1,6 @@
+table inet t {
+	counter mycounter {
+		comment "my comment in counter"
+		packets 0 bytes 0
+	}
+}

@@ -1,0 +1,44 @@
+# reject
+ip test-ip4 output
+  [ reject type 0 code 3 ]
+
+# reject with icmp host-unreachable
+ip test-ip4 output
+  [ reject type 0 code 1 ]
+
+# reject with icmp net-unreachable
+ip test-ip4 output
+  [ reject type 0 code 0 ]
+
+# reject with icmp prot-unreachable
+ip test-ip4 output
+  [ reject type 0 code 2 ]
+
+# reject with icmp port-unreachable
+ip test-ip4 output
+  [ reject type 0 code 3 ]
+
+# reject with icmp net-prohibited
+ip test-ip4 output
+  [ reject type 0 code 9 ]
+
+# reject with icmp host-prohibited
+ip test-ip4 output
+  [ reject type 0 code 10 ]
+
+# reject with icmp admin-prohibited
+ip test-ip4 output
+  [ reject type 0 code 13 ]
+
+# reject with icmp 3
+ip test-ip4 output
+  [ reject type 0 code 3 ]
+
+# mark 0x80000000 reject with tcp reset
+ip test-ip4 output
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ meta load mark => reg 1 ]
+  [ cmp eq reg 1 0x80000000 ]
+  [ reject type 1 code 0 ]
+

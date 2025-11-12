@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="table inet filter {
+	map portmap {
+		type inet_service : verdict
+		counter
+	}
+
+        chain ssh_input {
+        }
+
+        chain wan_input {
+                tcp dport vmap @portmap
+        }
+
+        chain prerouting {
+                type filter hook prerouting priority -300; policy accept;
+                iif vmap { "lo" : jump wan_input }
+        }
+}"
+
+$NFT -f - <<< "$EXPECTED"
+
+if [ "$NFT_TEST_HAVE_catchall_element" != n ]; then
+	$NFT 'add element inet filter portmap { 22 : jump ssh_input, * : drop }'
+fi
+
+if [ "$NFT_TEST_HAVE_catchall_element" = n ]; then
+	echo "Ran partial tests due to NFT_TEST_HAVE_catchall_element=n (skipped)"
+	exit 77
+fi

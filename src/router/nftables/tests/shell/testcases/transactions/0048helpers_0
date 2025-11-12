@@ -1,0 +1,15 @@
+#!/bin/bash
+
+RULESET='add table ip filter
+add chain ip filter filter { type filter hook prerouting priority mangle; policy accept; }
+add ct helper ip filter ftp { type "ftp" protocol tcp; };
+add rule ip filter filter tcp dport 33 ct helper set "ftp"'
+
+set -e
+$NFT -f - <<< "$RULESET"
+
+RULESET='flush chain ip filter filter
+delete chain filter filter
+delete ct helper ip filter ftp'
+
+$NFT -f - <<< "$RULESET"

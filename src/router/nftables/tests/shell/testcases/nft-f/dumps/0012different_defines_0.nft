@@ -1,0 +1,21 @@
+table inet t {
+	chain c {
+		iifname "whatever" oifname "whatever" iif "lo" oif "lo"
+		iifname { "whatever" } iif { "lo" } meta mark 0x0000007b
+		ct state established,related,new
+		ct state != established | related | new
+		ip saddr 10.0.0.0 ip daddr 10.0.0.2 ip saddr 10.0.0.0
+		ip6 daddr fe0::1 ip6 saddr fe0::2
+		ip saddr vmap { 10.0.0.0 : drop, 10.0.0.2 : accept }
+		ip6 daddr vmap { fe0::1 : drop, fe0::2 : accept }
+		ip6 saddr . ip6 nexthdr { fe0::2 . tcp, fe0::1 . udp }
+		ip daddr . iif vmap { 10.0.0.0 . "lo" : accept }
+		tcp dport 100-222
+		udp dport vmap { 100-222 : accept }
+		tcp sport 1 tcp dport 1 oifname "foobar" queue flags bypass to 0
+		tcp sport 1 tcp dport 1 oifname "foobar" queue to 1-42
+		tcp sport 1 tcp dport 1 oifname "foobar" queue flags bypass,fanout to 1-42
+		tcp sport 1 tcp dport 1 oifname "foobar" queue to symhash mod 2
+		tcp sport 1 tcp dport 1 oifname "foobar" queue flags bypass to jhash tcp dport . tcp sport mod 4
+	}
+}

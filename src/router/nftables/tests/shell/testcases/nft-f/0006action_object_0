@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# test loading a ruleset with the 'action object' pattern
+
+set -e
+
+FAMILIES="ip ip6 inet arp bridge"
+
+generate1()
+{
+	local family=$1
+	echo "
+	add table $family t
+	add chain $family t c
+	add rule $family t c accept
+	add set $family t s {type inet_service;}
+	add element $family t s {8080}
+	insert rule $family t c meta l4proto tcp tcp dport @s accept
+	add rule $family t c meta l4proto tcp tcp dport {9090, 8080}
+	add map $family t m {type inet_service:verdict;}
+	add element $family t m {10080:drop}
+	insert rule $family t c meta l4proto tcp tcp dport vmap @m
+	add rule $family t c meta l4proto udp udp sport vmap {1111:accept, 2222:drop}
+	"
+}
+
+generate2()
+{
+	local family=$1
+	echo "
+	flush chain $family t c
+	delete element $family t m {10080:drop}
+	delete element $family t s {8080}
+	delete chain $family t c
+	delete table $family t
+	"
+}
+
+RULESET=$(for family in $FAMILIES ; do
+	generate1 $family
+done)
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+	echo "E: unable to load ruleset 1" >&2
+	exit 1
+fi
+
+RULESET=$(for family in $FAMILIES ; do
+	generate2 $family
+done)
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+	echo "E: unable to load ruleset 2" >&2
+	exit 1
+fi
+
+exit 0

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+RULESET="add table t
+add set t s { type ipv4_addr; flags interval; }
+add element t s { 1.0.1.0/24 }
+add element t s { 1.0.2.0/23 }
+add element t s { 1.0.8.0/21 }
+add element t s { 1.0.32.0/19 }
+add element t s { 1.1.0.0/24 }
+add element t s { 1.1.2.0/23 }
+add element t s { 1.1.4.0/22 }
+add element t s { 1.1.8.0/24 }
+add element t s { 1.1.9.0/24 }
+add element t s { 1.1.10.0/23 }
+add element t s { 1.1.12.0/22 }
+add element t s { 1.1.16.0/20 }
+add element t s { 1.1.32.0/19 }
+add element t s { 1.0.1.0/24 }"
+
+$NFT -f - <<< $RULESET || exit 1
+
+$NFT add element t s { 1.0.1.0/24 }

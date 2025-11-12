@@ -1,0 +1,67 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "flowtable": {
+        "family": "inet",
+        "name": "f",
+        "table": "filter",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0,
+        "dev": "lo"
+      }
+    },
+    {
+      "flowtable": {
+        "family": "inet",
+        "name": "f2",
+        "table": "filter",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "flowtable": {
+        "family": "ip",
+        "name": "f",
+        "table": "filter",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0,
+        "dev": "lo"
+      }
+    },
+    {
+      "flowtable": {
+        "family": "ip",
+        "name": "f2",
+        "table": "filter",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0
+      }
+    }
+  ]
+}

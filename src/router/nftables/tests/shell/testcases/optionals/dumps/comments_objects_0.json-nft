@@ -1,0 +1,102 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "quota": {
+        "family": "ip",
+        "name": "foo1",
+        "table": "filter",
+        "handle": 0,
+        "comment": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678",
+        "bytes": 0,
+        "used": 0,
+        "inv": false
+      }
+    },
+    {
+      "quota": {
+        "family": "ip",
+        "name": "q",
+        "table": "filter",
+        "handle": 0,
+        "comment": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678",
+        "bytes": 1200,
+        "used": 0,
+        "inv": true
+      }
+    },
+    {
+      "counter": {
+        "family": "ip",
+        "name": "c",
+        "table": "filter",
+        "handle": 0,
+        "comment": "test2",
+        "packets": 0,
+        "bytes": 0
+      }
+    },
+    {
+      "ct helper": {
+        "family": "ip",
+        "name": "h",
+        "table": "filter",
+        "handle": 0,
+        "comment": "test3",
+        "type": "sip",
+        "protocol": "tcp",
+        "l3proto": "ip"
+      }
+    },
+    {
+      "ct expectation": {
+        "family": "ip",
+        "name": "e",
+        "table": "filter",
+        "handle": 0,
+        "comment": "test4",
+        "protocol": "tcp",
+        "dport": 666,
+        "timeout": 100,
+        "size": 96,
+        "l3proto": "ip"
+      }
+    },
+    {
+      "limit": {
+        "family": "ip",
+        "name": "l",
+        "table": "filter",
+        "handle": 0,
+        "comment": "test5",
+        "rate": 400,
+        "per": "hour",
+        "burst": 5
+      }
+    },
+    {
+      "synproxy": {
+        "family": "ip",
+        "name": "s",
+        "table": "filter",
+        "handle": 0,
+        "comment": "test6",
+        "mss": 1460,
+        "wscale": 2
+      }
+    }
+  ]
+}

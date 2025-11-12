@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_rbtree_size_limit)
+
+RULESET="table inet x {
+	set x {
+		typeof ip saddr
+		flags interval
+		auto-merge
+		size 1
+	}
+
+	set y {
+		typeof ip saddr
+		flags interval
+		size 1
+	}
+}"
+
+$NFT -f - <<< $RULESET
+
+$NFT add element inet x x '{ 0.0.0.0, 255.255.255.255 }' && exit 1
+$NFT add element inet x x '{ 0.0.0.0 }' || exit 1
+$NFT add element inet x x '{ 255.255.255.0/24 }' && exit 1
+$NFT delete element inet x x '{ 0.0.0.0 }' || exit 1
+$NFT add element inet x x '{ 255.255.255.0/24 }' || exit 1
+$NFT add element inet x x '{ 0.0.0.0 }' && exit 1
+$NFT add element inet x x '{ 0.0.0.0-255.255.255.0 }' || exit 1
+$NFT delete element inet x x '{ 1.1.1.1 }' && exit 1
+$NFT delete element inet x x '{ 0.0.0.0/0 }' || exit 1
+$NFT add element inet x x '{ 255.255.255.0/24 }' || exit 1
+$NFT add element inet x x '{ 0.0.0.0 }' && exit 1
+
+$NFT add element inet x y '{ 0.0.0.0, 255.255.255.255 }' && exit 1
+$NFT add element inet x y '{ 0.0.0.0 }' || exit 1
+$NFT add element inet x y '{ 255.255.255.0/24 }' && exit 1
+$NFT delete element inet x y '{ 0.0.0.0 }' || exit 1
+$NFT add element inet x y '{ 255.255.255.0/24 }' || exit 1
+$NFT add element inet x y '{ 0.0.0.0 }' && exit 1
+$NFT add element inet x y '{ 0.0.0.0-255.255.255.0 }' && exit 1
+$NFT delete element inet x y '{ 255.255.255.0/24 }' || exit 1
+$NFT add element inet x y '{ 0.0.0.0 }' || exit 1
+$NFT add element inet x y '{ 255.255.255.255 }' && exit 1
+exit 0

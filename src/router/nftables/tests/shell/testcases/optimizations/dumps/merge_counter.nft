@@ -1,0 +1,8 @@
+table ip x {
+	chain y {
+		type filter hook input priority filter; policy drop;
+		ct state vmap { invalid counter packets 0 bytes 0 : drop, established counter packets 0 bytes 0 : accept, related counter packets 0 bytes 0 : accept }
+		tcp dport { 80, 123 } counter packets 0 bytes 0 accept
+		ip saddr . ip daddr vmap { 1.1.1.1 . 2.2.2.2 counter packets 0 bytes 0 : accept, 1.1.1.2 . 3.3.3.3 counter packets 0 bytes 0 : drop }
+	}
+}

@@ -1,0 +1,7 @@
+table ip f {
+	chain c {
+		jump {
+			accept
+		}
+	}
+}

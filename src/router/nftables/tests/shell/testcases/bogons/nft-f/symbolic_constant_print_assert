@@ -1,0 +1,7 @@
+table inet t {
+        set y {
+                typeof ip daddr . @ih,32,35
+                elements = {redirect }
+        }
+}
+reset   rules

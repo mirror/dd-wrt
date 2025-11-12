@@ -1,0 +1,12 @@
+#!/bin/bash
+
+RULESET="table ip foo {
+	chain bar {
+		type filter hook prerouting priority 0;
+	}
+}"
+
+$NFT -f - <<< "$RULESET"
+
+$NFT -c add rule foo bar fib saddr . oif type local && exit 1
+exit 0

@@ -1,0 +1,84 @@
+# ip protocol icmp icmp type echo-request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+	    "op": "==",
+            "right": "echo-request"
+        }
+    }
+]
+
+# ip6 nexthdr icmpv6 icmpv6 type echo-request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": 58
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+	    "op": "==",
+            "right": "echo-request"
+        }
+    }
+]
+
+# ip protocol ipv6-icmp meta l4proto ipv6-icmp icmpv6 type 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 58
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+	    "op": "==",
+            "right": "destination-unreachable"
+        }
+    }
+]
+

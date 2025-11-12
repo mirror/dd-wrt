@@ -1,0 +1,49 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "foo",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "foo",
+        "name": "bar",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "foo",
+        "name": "ber",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "foo",
+        "chain": "bar",
+        "handle": 0,
+        "expr": [
+          {
+            "jump": {
+              "target": "ber"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+RULESET="
+table ip x {
+        chain y {
+                define unused = 4.4.4.4
+                define address = { 1.1.1.1, 2.2.2.2 }
+                ip saddr \$address
+                redefine address = { 3.3.3.3, 4.4.4.4 }
+                ip saddr \$address
+                undefine unused
+        }
+}"
+
+EXPECTED="table ip x {
+	chain y {
+		ip saddr { 1.1.1.1, 2.2.2.2 }
+		ip saddr { 3.3.3.3, 4.4.4.4 }
+	}
+}"
+
+$NFT -f - <<< "$RULESET"
+
+GET="$($NFT list ruleset)"
+
+if [ "$EXPECTED" != "$GET" ] ; then
+        $DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+        exit 1
+fi
+
+exit 0

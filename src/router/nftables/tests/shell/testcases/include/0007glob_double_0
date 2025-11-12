@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+tmpdir=$(mktemp -d)
+if [ ! -d $tmpdir ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+# cleanup if aborted
+trap "rm -rf $tmpdir $tmpfile" EXIT
+
+RULESET1="add table x"
+RULESET2="add table y"
+RULESET3="include \"$tmpdir/*\""
+
+echo "$RULESET1" > $tmpdir/table_x
+echo "$RULESET2" > $tmpdir/table_y
+echo "$RULESET3" > $tmpfile
+
+$NFT -f $tmpfile
+
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

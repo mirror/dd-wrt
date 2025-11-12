@@ -1,0 +1,1419 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "ipfoo",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "ipfoo",
+        "name": "c",
+        "handle": 0,
+        "type": "nat",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "t1",
+        "table": "ipfoo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ipv4_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "t2",
+        "table": "ipfoo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "x",
+        "table": "ipfoo",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "ipv4_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "y",
+        "table": "ipfoo",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ],
+        "elem": [
+          [
+            "192.168.7.2",
+            {
+              "concat": [
+                "10.1.1.1",
+                4242
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "z",
+        "table": "ipfoo",
+        "type": [
+          "ipv4_addr",
+          "inet_service"
+        ],
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ],
+        "elem": [
+          [
+            {
+              "concat": [
+                "192.168.7.2",
+                42
+              ]
+            },
+            {
+              "concat": [
+                "10.1.1.1",
+                4242
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": "foobar"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  "data": "@x"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "10.1.1.1"
+            }
+          },
+          {
+            "dnat": {
+              "addr": "10.2.3.4"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "10.1.1.2"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 42
+            }
+          },
+          {
+            "dnat": {
+              "addr": "10.2.3.4",
+              "port": 4242
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  "data": "@y"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      }
+                    ]
+                  },
+                  "data": "@z"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "ipfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t2"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "ip6foo",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "name": "c",
+        "handle": 0,
+        "type": "nat",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "ip6",
+        "name": "t1",
+        "table": "ip6foo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ipv6_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "ip6",
+        "name": "t2",
+        "table": "ip6foo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": [
+          "ipv6_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "ip6",
+        "name": "x",
+        "table": "ip6foo",
+        "type": "ipv6_addr",
+        "handle": 0,
+        "map": "ipv6_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "ip6",
+        "name": "y",
+        "table": "ip6foo",
+        "type": "ipv6_addr",
+        "handle": 0,
+        "map": [
+          "ipv6_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "ip6",
+        "name": "z",
+        "table": "ip6foo",
+        "type": [
+          "ipv6_addr",
+          "inet_service"
+        ],
+        "handle": 0,
+        "map": [
+          "ipv6_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": "foobar"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip6",
+                      "field": "daddr"
+                    }
+                  },
+                  "data": "@x"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "saddr"
+                }
+              },
+              "right": "dead::1"
+            }
+          },
+          {
+            "dnat": {
+              "addr": "feed::1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "saddr"
+                }
+              },
+              "right": "dead::2"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 42
+            }
+          },
+          {
+            "dnat": {
+              "addr": "c0::1a",
+              "port": 4242
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip6",
+                      "field": "saddr"
+                    }
+                  },
+                  "data": "@y"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip6",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      }
+                    ]
+                  },
+                  "data": "@z"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "ip6foo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t2"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "inetfoo",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "inetfoo",
+        "name": "c",
+        "handle": 0,
+        "type": "nat",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "t1v4",
+        "table": "inetfoo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ipv4_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "t2v4",
+        "table": "inetfoo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "t1v6",
+        "table": "inetfoo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ipv6_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "t2v6",
+        "table": "inetfoo",
+        "type": {
+          "typeof": {
+            "numgen": {
+              "mode": "inc",
+              "mod": 2,
+              "offset": 0
+            }
+          }
+        },
+        "handle": 0,
+        "map": [
+          "ipv6_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "x4",
+        "table": "inetfoo",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "ipv4_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "y4",
+        "table": "inetfoo",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "z4",
+        "table": "inetfoo",
+        "type": [
+          "ipv4_addr",
+          "inet_service"
+        ],
+        "handle": 0,
+        "map": [
+          "ipv4_addr",
+          "inet_service"
+        ],
+        "elem": [
+          [
+            {
+              "concat": [
+                "192.168.7.2",
+                42
+              ]
+            },
+            {
+              "concat": [
+                "10.1.1.1",
+                4242
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "x6",
+        "table": "inetfoo",
+        "type": "ipv6_addr",
+        "handle": 0,
+        "map": "ipv6_addr"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "y6",
+        "table": "inetfoo",
+        "type": "ipv6_addr",
+        "handle": 0,
+        "map": [
+          "ipv6_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "z6",
+        "table": "inetfoo",
+        "type": [
+          "ipv6_addr",
+          "inet_service"
+        ],
+        "handle": 0,
+        "map": [
+          "ipv6_addr",
+          "inet_service"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": "foobar"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  "data": "@x4"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "10.1.1.1"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": "10.2.3.4"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "10.1.1.2"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 42
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": "10.2.3.4",
+              "port": 4242
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  "data": "@y4"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      }
+                    ]
+                  },
+                  "data": "@z4"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t1v4"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t2v4"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip6",
+                      "field": "daddr"
+                    }
+                  },
+                  "data": "@x6"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "saddr"
+                }
+              },
+              "right": "dead::1"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": "feed::1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "saddr"
+                }
+              },
+              "right": "dead::2"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 42
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": "c0::1a",
+              "port": 4242
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip6",
+                      "field": "saddr"
+                    }
+                  },
+                  "data": "@y6"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip6",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      }
+                    ]
+                  },
+                  "data": "@z6"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t1v6"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "inetfoo",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "tcp"
+            }
+          },
+          {
+            "dnat": {
+              "family": "ip6",
+              "addr": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 2,
+                      "offset": 0
+                    }
+                  },
+                  "data": "@t2v6"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

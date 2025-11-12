@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_chain_multidevice)
+
+set -e
+
+ip link add name d23456789012345 type dummy
+
+
+EXPECTED="define if_main = \"lo\"
+
+table netdev filter1 {
+	chain Main_Ingress1 {
+		type filter hook ingress device \$if_main priority -500; policy accept;
+	}
+}"
+
+$NFT -f - <<< $EXPECTED
+
+
+EXPECTED="define if_main = \"lo\"
+
+table netdev filter2 {
+	chain Main_Ingress2 {
+		type filter hook ingress devices = { \$if_main, d23456789012345x } priority -500; policy accept;
+	}
+}"
+
+rc=0
+$NFT -f - <<< $EXPECTED || rc=$?
+test "$rc" = 1
+cat <<EOF | $DIFF -u <($NFT list ruleset) -
+table netdev filter1 {
+	chain Main_Ingress1 {
+		type filter hook ingress device "lo" priority -500; policy accept;
+	}
+}
+EOF
+
+
+EXPECTED="define if_main = \"lo\"
+
+table netdev filter2 {
+	chain Main_Ingress2 {
+		type filter hook ingress devices = { \$if_main, d23456789012345 } priority -500; policy accept;
+	}
+}"
+
+$NFT -f - <<< $EXPECTED
+
+
+if [ "$NFT_TEST_HAVE_netdev_egress" = n ] ; then
+	echo "Skip parts of the test due to NFT_TEST_HAVE_netdev_egress=n"
+	exit 77
+fi
+
+
+EXPECTED="define if_main = { lo, d23456789012345 }
+define lan_interfaces = { lo }
+
+table netdev filter3 {
+	chain Main_Ingress3 {
+		type filter hook ingress devices = \$if_main priority -500; policy accept;
+	}
+	chain Main_Egress3 {
+		type filter hook egress devices = \$lan_interfaces priority -500; policy accept;
+	}
+}"
+
+$NFT -f - <<< $EXPECTED
+

@@ -1,0 +1,28 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "ipmap",
+        "table": "filter",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "ipv4_addr"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+table ip t {
+	map m {
+		type ipv4_addr . inet_service : ipv4_addr .  verdict
+		elements = { 10.0.0.1 . 42 : 10.1.1.1 . 0 }
+	}
+
+	chain c {
+		type nat hook prerouting priority dstnat; policy accept;
+		dnat ip to ip saddr . tcp dport map @m
+	}
+}

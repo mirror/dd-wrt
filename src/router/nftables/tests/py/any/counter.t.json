@@ -1,0 +1,39 @@
+# counter
+[
+    {
+        "counter": {
+            "bytes": 0,
+            "packets": 0
+        }
+    }
+]
+
+# counter packets 0 bytes 0
+[
+    {
+        "counter": {
+            "bytes": 0,
+            "packets": 0
+        }
+    }
+]
+
+# counter packets 2 bytes 1
+[
+    {
+        "counter": {
+            "bytes": 1,
+            "packets": 2
+        }
+    }
+]
+
+# counter bytes 1024 packets 1
+[
+    {
+        "counter": {
+            "bytes": 1024,
+            "packets": 1
+        }
+    }
+]

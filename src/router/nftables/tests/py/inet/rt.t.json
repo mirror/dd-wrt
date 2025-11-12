@@ -1,0 +1,59 @@
+# meta nfproto ipv4 rt nexthop 192.168.0.1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "nfproto" }
+            },
+	    "op": "==",
+            "right": "ipv4"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "rt": {
+                    "key": "nexthop"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    }
+]
+
+# rt ip6 nexthop fd00::1
+[
+    {
+        "match": {
+            "left": {
+                "rt": {
+                    "family": "ip6",
+                    "key": "nexthop"
+                }
+            },
+	    "op": "==",
+            "right": "fd00::1"
+        }
+    }
+]
+
+# tcp option maxseg size set rt mtu
+[
+    {
+        "mangle": {
+            "key": {
+                "tcp option": {
+                    "field": "size",
+                    "name": "maxseg"
+                }
+            },
+            "value": {
+                "rt": {
+                    "key": "mtu"
+                }
+            }
+        }
+    }
+]
+

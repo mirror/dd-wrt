@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Tests recursive definition of a variable.
+
+set -e
+
+RULESET="
+define var1 = \$var1
+
+table ip t {
+	chain c {
+		iif \$var1
+	}
+}"
+
+$NFT -f - <<< "$RULESET" && exit 1
+exit 0

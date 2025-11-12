@@ -1,0 +1,940 @@
+ETHERNET HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*ether* {*daddr* | *saddr* | *type*}
+
+.Ethernet header expression types
+[options="header"]
+|==================
+|Keyword| Description| Type
+|daddr|
+Destination MAC address|
+ether_addr
+|saddr|
+Source MAC address|
+ether_addr
+|type|
+EtherType|
+ether_type
+|==================
+
+VLAN HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*vlan* {*id* | *dei* | *pcp* | *type*}
+
+The vlan expression is used to match on the vlan header fields.
+This expression will not work in the *ip*, *ip6* and *inet* families,
+unless the vlan interface is configured with the *reorder_hdr off* setting.
+The default is *reorder_hdr on* which will automatically remove the vlan tag
+from the packet. See ip-link(8) for more information.
+For these families its easier to match the vlan interface name
+instead, using the *meta iif* or *meta iifname* expression.
+
+.VLAN header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|id|
+VLAN ID (VID) |
+integer (12 bit)
+|dei|
+Drop Eligible Indicator|
+integer (1 bit)
+|pcp|
+Priority code point|
+integer (3 bit)
+|type|
+EtherType|
+ether_type
+|==================
+
+ARP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*arp* {*htype* | *ptype* | *hlen* | *plen* | *operation* | *saddr* { *ip* | *ether* } | *daddr* { *ip* | *ether* }
+
+.ARP header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|htype|
+ARP hardware type|
+integer (16 bit)
+|ptype|
+EtherType|
+ether_type
+|hlen|
+Hardware address len|
+integer (8 bit)
+|plen|
+Protocol address len |
+integer (8 bit)
+|operation|
+Operation |
+arp_op
+|saddr ether|
+Ethernet sender address|
+ether_addr
+|daddr ether|
+Ethernet target address|
+ether_addr
+|saddr ip|
+IPv4 sender address|
+ipv4_addr
+|daddr ip|
+IPv4 target address|
+ipv4_addr
+|======================
+
+IPV4 HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*ip* {*version* | *hdrlength* | *dscp* | *ecn* | *length* | *id* | *frag-off* | *ttl* | *protocol* | *checksum* | *saddr* | *daddr* }
+
+.IPv4 header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|version|
+IP header version (4)|
+integer (4 bit)
+|hdrlength|
+IP header length including options|
+integer (4 bit) FIXME scaling
+|dscp|
+Differentiated Services Code Point|
+dscp
+|ecn|
+Explicit Congestion Notification|
+ecn
+|length|
+Total packet length |
+integer (16 bit)
+|id|
+IP ID|
+integer (16 bit)
+|frag-off|
+Fragment offset |
+integer (16 bit)
+|ttl|
+Time to live|
+integer (8 bit)
+|protocol|
+Upper layer protocol |
+inet_proto
+|checksum|
+IP header checksum|
+integer (16 bit)
+|saddr|
+Source address|
+ipv4_addr
+|daddr|
+Destination address |
+ipv4_addr
+|======================
+
+Careful with matching on *ip length*: If GRO/GSO is enabled, then the Linux
+kernel might aggregate several packets into one big packet that is larger than
+MTU. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip-link(8),
+specifically gro_ipv6_max_size and gso_ipv6_max_size), then *ip length* might
+be 0 for such jumbo packets. *meta length* allows you to match on the packet
+length including the IP header size.  If you want to perform heuristics on the
+*ip length* field, then disable GRO/GSO.
+
+ICMP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*icmp* {*type* | *code* | *checksum* | *id* | *sequence* | *gateway* | *mtu*}
+
+This expression refers to ICMP header fields. When using it in *inet*,
+*bridge* or *netdev* families, it will cause an implicit dependency on IPv4 to
+be created. To match on unusual cases like ICMP over IPv6, one has to add an
+explicit *meta protocol ip6* match to the rule.
+
+.ICMP header expression
+[options="header"]
+|==================
+|Keyword|Description| Type
+|type|
+ICMP type field |
+icmp_type
+|code|
+ICMP code field |
+integer (8 bit)
+|checksum|
+ICMP checksum field |
+integer (16 bit)
+|id|
+ID of echo request/response |
+integer (16 bit)
+|sequence|
+sequence number of echo request/response|
+integer (16 bit)
+|gateway|
+gateway of redirects|
+integer (32 bit)
+|mtu|
+MTU of path MTU discovery|
+integer (16 bit)
+|============================
+
+IGMP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*igmp* {*type* | *mrt* | *checksum* | *group*}
+
+This expression refers to IGMP header fields. When using it in *inet*,
+*bridge* or *netdev* families, it will cause an implicit dependency on IPv4 to
+be created. To match on unusual cases like IGMP over IPv6, one has to add an
+explicit *meta protocol ip6* match to the rule.
+
+.IGMP header expression
+[options="header"]
+|==================
+|Keyword|Description| Type
+|type|
+IGMP type field |
+igmp_type
+|mrt|
+IGMP maximum response time field |
+integer (8 bit)
+|checksum|
+IGMP checksum field |
+integer (16 bit)
+|group|
+Group address|
+integer (32 bit)
+|============================
+
+IPV6 HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*ip6* {*version* | *dscp* | *ecn* | *flowlabel* | *length* | *nexthdr* | *hoplimit* | *saddr* | *daddr*}
+
+This expression refers to the ipv6 header fields. Caution when using *ip6
+nexthdr*, the value only refers to the next header, i.e. *ip6 nexthdr tcp* will
+only match if the ipv6 packet does not contain any extension headers. Packets
+that are fragmented or e.g. contain a routing extension headers will not be
+matched. Please use *meta l4proto* if you wish to match the real transport header
+and ignore any additional extension headers instead.
+
+.IPv6 header expression
+[options="header"]
+|==================
+|Keyword|Description| Type
+|version|
+IP header version (6)|
+integer (4 bit)
+|dscp|
+Differentiated Services Code Point|
+dscp
+|ecn|
+Explicit Congestion Notification|
+ecn
+|flowlabel|
+Flow label|
+integer (20 bit)
+|length|
+Payload length|
+integer (16 bit)
+|nexthdr|
+Nexthdr protocol|
+inet_proto
+|hoplimit|
+Hop limit|
+integer (8 bit)
+|saddr|
+Source address|
+ipv6_addr
+|daddr|
+Destination address |
+ipv6_addr
+|=======================
+
+Careful with matching on *ip6 length*: If GRO/GSO is enabled, then the Linux
+kernel might aggregate several packets into one big packet that is larger than
+MTU. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip-link(8),
+specifically gro_ipv6_max_size and gso_ipv6_max_size), then *ip6 length* might
+be 0 for such jumbo packets. *meta length* allows you to match on the packet
+length including the IP header size.  If you want to perform heuristics on the
+*ip6 length* field, then disable GRO/GSO.
+
+.Using ip6 header expressions
+-----------------------------
+# matching if first extension header indicates a fragment
+ip6 nexthdr ipv6-frag
+-----------------------------
+
+ICMPV6 HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*icmpv6* {*type* | *code* | *checksum* | *parameter-problem* | *packet-too-big* | *id* | *sequence* | *max-delay* | *taddr* | *daddr*}
+
+This expression refers to ICMPv6 header fields. When using it in *inet*,
+*bridge* or *netdev* families, it will cause an implicit dependency on IPv6 to
+be created. To match on unusual cases like ICMPv6 over IPv4, one has to add an
+explicit *meta protocol ip* match to the rule.
+
+.ICMPv6 header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|type|
+ICMPv6 type field|
+icmpv6_type
+|code|
+ICMPv6 code field|
+integer (8 bit)
+|checksum|
+ICMPv6 checksum field|
+integer (16 bit)
+|parameter-problem|
+pointer to problem|
+integer (32 bit)
+|packet-too-big|
+oversized MTU|
+integer (32 bit)
+|id|
+ID of echo request/response |
+integer (16 bit)
+|sequence|
+sequence number of echo request/response|
+integer (16 bit)
+|max-delay|
+maximum response delay of MLD queries|
+integer (16 bit)
+|taddr|
+target address of neighbor solicit/advert, redirect or MLD|
+ipv6_addr
+|daddr|
+destination address of redirect|
+ipv6_addr
+|==============================
+
+TCP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*tcp* {*sport* | *dport* | *sequence* | *ackseq* | *doff* | *reserved* | *flags* | *window* | *checksum* | *urgptr*}
+
+.TCP header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|sport|
+Source port|
+inet_service
+|dport|
+Destination port|
+inet_service
+|sequence|
+Sequence number|
+integer (32 bit)
+|ackseq|
+Acknowledgement number |
+integer (32 bit)
+|doff|
+Data offset |
+integer (4 bit) FIXME scaling
+|reserved|
+Reserved area |
+integer (4 bit)
+|flags|
+TCP flags|
+tcp_flag
+|window|
+Window|
+integer (16 bit)
+|checksum|
+Checksum|
+integer (16 bit)
+|urgptr|
+Urgent pointer|
+integer (16 bit)
+|======================
+
+UDP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*udp* {*sport* | *dport* | *length* | *checksum*}
+
+.UDP header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|sport|
+Source port|
+inet_service
+|dport|
+Destination port|
+inet_service
+|length|
+Total packet length|
+integer (16 bit)
+|checksum|
+Checksum|
+integer (16 bit)
+|================
+
+UDP-LITE HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*udplite* {*sport* | *dport* | *checksum*}
+
+.UDP-Lite header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|sport|
+Source port|
+inet_service
+|dport|
+Destination port|
+inet_service
+|checksum|
+Checksum|
+integer (16 bit)
+|================
+
+SCTP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+____
+*sctp* {*sport* | *dport* | *vtag* | *checksum*}
+*sctp chunk* 'CHUNK' [ 'FIELD' ]
+
+'CHUNK' := *data* | *init* | *init-ack* | *sack* | *heartbeat* |
+	   *heartbeat-ack* | *abort* | *shutdown* | *shutdown-ack* | *error* |
+	   *cookie-echo* | *cookie-ack* | *ecne* | *cwr* | *shutdown-complete*
+	   | *asconf-ack* | *forward-tsn* | *asconf*
+
+'FIELD' := 'COMMON_FIELD' | 'DATA_FIELD' | 'INIT_FIELD' | 'INIT_ACK_FIELD' |
+	   'SACK_FIELD' | 'SHUTDOWN_FIELD' | 'ECNE_FIELD' | 'CWR_FIELD' |
+	   'ASCONF_ACK_FIELD' | 'FORWARD_TSN_FIELD' | 'ASCONF_FIELD'
+
+'COMMON_FIELD' := *type* | *flags* | *length*
+'DATA_FIELD' := *tsn* | *stream* | *ssn* | *ppid*
+'INIT_FIELD' := *init-tag* | *a-rwnd* | *num-outbound-streams* |
+		*num-inbound-streams* | *initial-tsn*
+'INIT_ACK_FIELD' := 'INIT_FIELD'
+'SACK_FIELD' := *cum-tsn-ack* | *a-rwnd* | *num-gap-ack-blocks* |
+		*num-dup-tsns*
+'SHUTDOWN_FIELD' := *cum-tsn-ack*
+'ECNE_FIELD' := *lowest-tsn*
+'CWR_FIELD' := *lowest-tsn*
+'ASCONF_ACK_FIELD' := *seqno*
+'FORWARD_TSN_FIELD' := *new-cum-tsn*
+'ASCONF_FIELD' := *seqno*
+____
+
+.SCTP header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|sport|
+Source port|
+inet_service
+|dport|
+Destination port|
+inet_service
+|vtag|
+Verification Tag|
+integer (32 bit)
+|checksum|
+Checksum|
+integer (32 bit)
+|chunk|
+Search chunk in packet|
+without 'FIELD', boolean indicating existence
+|================
+
+.SCTP chunk fields
+[options="header"]
+|==================
+|Name| Width in bits | Chunk | Notes
+|type| 8 | all | not useful, defined by chunk type
+|flags| 8 | all | semantics defined on per-chunk basis
+|length| 16 | all | length of this chunk in bytes excluding padding
+|tsn| 32 | data | transmission sequence number
+|stream| 16 | data | stream identifier
+|ssn| 16 | data | stream sequence number
+|ppid| 32 | data | payload protocol identifier
+|init-tag| 32 | init, init-ack | initiate tag
+|a-rwnd| 32 | init, init-ack, sack | advertised receiver window credit
+|num-outbound-streams| 16 | init, init-ack | number of outbound streams
+|num-inbound-streams| 16 | init, init-ack | number of inbound streams
+|initial-tsn| 32 | init, init-ack | initial transmit sequence number
+|cum-tsn-ack| 32 | sack, shutdown | cumulative transmission sequence number acknowledged
+|num-gap-ack-blocks| 16 | sack | number of Gap Ack Blocks included
+|num-dup-tsns| 16 | sack | number of duplicate transmission sequence numbers received
+|lowest-tsn| 32 | ecne, cwr | lowest transmission sequence number
+|seqno| 32 | asconf-ack, asconf | sequence number
+|new-cum-tsn| 32 | forward-tsn | new cumulative transmission sequence number
+|==================
+
+DCCP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*dccp* {*sport* | *dport* | *type*}
+
+.DCCP header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|sport|
+Source port|
+inet_service
+|dport|
+Destination port|
+inet_service
+|type|
+Packet type|
+dccp_pkttype
+|========================
+
+AUTHENTICATION HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*ah* {*nexthdr* | *hdrlength* | *reserved* | *spi* | *sequence*}
+
+.AH header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|nexthdr|
+Next header protocol|
+inet_proto
+|hdrlength|
+AH Header length|
+integer (8 bit)
+|reserved|
+Reserved area|
+integer (16 bit)
+|spi|
+Security Parameter Index |
+integer (32 bit)
+|sequence|
+Sequence number|
+integer (32 bit)
+|========================
+
+ENCRYPTED SECURITY PAYLOAD HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*esp* {*spi* | *sequence*}
+
+.ESP header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|spi|
+Security Parameter Index |
+integer (32 bit)
+|sequence|
+Sequence number|
+integer (32 bit)
+|===========================
+
+IPCOMP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~~
+*comp* {*nexthdr* | *flags* | *cpi*}
+
+.IPComp header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|nexthdr|
+Next header protocol|
+inet_proto
+|flags|
+Flags|
+bitmask
+|cpi|
+compression Parameter Index |
+integer (16 bit)
+|============================
+
+GRE HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*gre* {*flags* | *version* | *protocol*}
+*gre* *ip* {*version* | *hdrlength* | *dscp* | *ecn* | *length* | *id* | *frag-off* | *ttl* | *protocol* | *checksum* | *saddr* | *daddr* }
+*gre* *ip6* {*version* | *dscp* | *ecn* | *flowlabel* | *length* | *nexthdr* | *hoplimit* | *saddr* | *daddr*}
+
+The gre expression is used to match on the gre header fields. This expression
+also allows to match on the IPv4 or IPv6 packet within the gre header.
+
+.GRE header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|flags|
+checksum, routing, key, sequence and strict source route flags|
+integer (5 bit)
+|version|
+gre version field, 0 for GRE and 1 for PPTP|
+integer (3 bit)
+|protocol|
+EtherType of encapsulated packet|
+integer (16 bit)
+|==================
+
+.Matching inner IPv4 destination address encapsulated in gre
+------------------------------------------------------------
+netdev filter ingress gre ip daddr 9.9.9.9 counter
+------------------------------------------------------------
+
+GENEVE HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*geneve* {*vni* | *flags*}
+*geneve* *ether* {*daddr* | *saddr* | *type*}
+*geneve* *vlan* {*id* | *dei* | *pcp* | *type*}
+*geneve* *ip* {*version* | *hdrlength* | *dscp* | *ecn* | *length* | *id* | *frag-off* | *ttl* | *protocol* | *checksum* | *saddr* | *daddr* }
+*geneve* *ip6* {*version* | *dscp* | *ecn* | *flowlabel* | *length* | *nexthdr* | *hoplimit* | *saddr* | *daddr*}
+*geneve* *tcp* {*sport* | *dport* | *sequence* | *ackseq* | *doff* | *reserved* | *flags* | *window* | *checksum* | *urgptr*}
+*geneve* *udp* {*sport* | *dport* | *length* | *checksum*}
+
+The geneve expression is used to match on the geneve header fields. The geneve
+header encapsulates a ethernet frame within a *udp* packet. This expression
+requires that you restrict the matching to *udp* packets (usually at
+port 6081 according to IANA-assigned ports).
+
+.GENEVE header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|protocol|
+EtherType of encapsulated packet|
+integer (16 bit)
+|vni|
+Virtual Network ID (VNI)|
+integer (24 bit)
+|==================
+
+.Matching inner TCP destination port encapsulated in geneve
+----------------------------------------------------------
+netdev filter ingress udp dport 4789 geneve tcp dport 80 counter
+----------------------------------------------------------
+
+GRETAP HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*gretap* {*vni* | *flags*}
+*gretap* *ether* {*daddr* | *saddr* | *type*}
+*gretap* *vlan* {*id* | *dei* | *pcp* | *type*}
+*gretap* *ip* {*version* | *hdrlength* | *dscp* | *ecn* | *length* | *id* | *frag-off* | *ttl* | *protocol* | *checksum* | *saddr* | *daddr* }
+*gretap* *ip6* {*version* | *dscp* | *ecn* | *flowlabel* | *length* | *nexthdr* | *hoplimit* | *saddr* | *daddr*}
+*gretap* *tcp* {*sport* | *dport* | *sequence* | *ackseq* | *doff* | *reserved* | *flags* | *window* | *checksum* | *urgptr*}
+*gretap* *udp* {*sport* | *dport* | *length* | *checksum*}
+
+The gretap expression is used to match on the encapsulated ethernet frame
+within the gre header. Use the *gre* expression to match on the *gre* header
+fields.
+
+.Matching inner TCP destination port encapsulated in gretap
+----------------------------------------------------------
+netdev filter ingress gretap tcp dport 80 counter
+----------------------------------------------------------
+
+VXLAN HEADER EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*vxlan* {*vni* | *flags*}
+*vxlan* *ether* {*daddr* | *saddr* | *type*}
+*vxlan* *vlan* {*id* | *dei* | *pcp* | *type*}
+*vxlan* *ip* {*version* | *hdrlength* | *dscp* | *ecn* | *length* | *id* | *frag-off* | *ttl* | *protocol* | *checksum* | *saddr* | *daddr* }
+*vxlan* *ip6* {*version* | *dscp* | *ecn* | *flowlabel* | *length* | *nexthdr* | *hoplimit* | *saddr* | *daddr*}
+*vxlan* *tcp* {*sport* | *dport* | *sequence* | *ackseq* | *doff* | *reserved* | *flags* | *window* | *checksum* | *urgptr*}
+*vxlan* *udp* {*sport* | *dport* | *length* | *checksum*}
+
+The vxlan expression is used to match on the vxlan header fields. The vxlan
+header encapsulates a ethernet frame within a *udp* packet. This expression
+requires that you restrict the matching to *udp* packets (usually at
+port 4789 according to IANA-assigned ports).
+
+.VXLAN header expression
+[options="header"]
+|==================
+|Keyword| Description| Type
+|flags|
+vxlan flags|
+integer (8 bit)
+|vni|
+Virtual Network ID (VNI)|
+integer (24 bit)
+|==================
+
+.Matching inner TCP destination port encapsulated in vxlan
+----------------------------------------------------------
+netdev filter ingress udp dport 4789 vxlan tcp dport 80 counter
+----------------------------------------------------------
+
+RAW PAYLOAD EXPRESSION
+~~~~~~~~~~~~~~~~~~~~~~
+[verse]
+*@*'base'*,*'offset'*,*'length'
+
+The raw payload expression instructs to load 'length' bits starting at 'offset' bits.
+Bit 0 refers to the very first bit -- in the C programming language, this
+corresponds to the topmost bit, i.e. 0x80 in case of an octet. They are useful
+to match headers that do not have a human-readable template expression yet. Note
+that nft will not add dependencies for Raw payload expressions. If you e.g. want
+to match protocol fields of a transport header with protocol number 5, you need
+to manually exclude packets that have a different transport header, for instance
+by using *meta l4proto 5* before the raw expression.
+
+.Supported payload protocol bases
+[options="header"]
+|==================
+|Base| Description
+|ll|
+Link layer, for example the Ethernet header
+|nh|
+Network header, for example IPv4 or IPv6
+|th|
+Transport Header, for example TCP
+|ih|
+Inner Header / Payload, i.e. after the L4 transport level header
+|==============================
+
+.Matching destination port of both UDP and TCP
+----------------------------------------------
+inet filter input meta l4proto {tcp, udp} @th,16,16 { 53, 80 }
+-----------------------------------------------------------------
+The above can also be written as
+-----------------------------------------------------------------
+inet filter input meta l4proto {tcp, udp} th dport { 53, 80 }
+-----------------------------------------------------------------
+it is more convenient, but like the raw expression notation no
+dependencies are created or checked. It is the users responsibility
+to restrict matching to those header types that have a notion of ports.
+Otherwise, rules using raw expressions will errnously match unrelated
+packets, e.g. mis-interpreting ESP packets SPI field as a port.
+
+.Rewrite arp packet target hardware address if target protocol address matches a given address
+----------------------------------------------------------------------------------------------
+input meta iifname enp2s0 arp ptype 0x0800 arp htype 1 arp hlen 6 arp plen 4 @nh,192,32 0xc0a88f10 @nh,144,48 set 0x112233445566 accept
+-----------------------------------------------------------------------------------------------
+
+EXTENSION HEADER EXPRESSIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Extension header expressions refer to data from variable-sized protocol headers, such as IPv6 extension headers, TCP options and IPv4 options.
+
+nftables currently supports matching (finding) a given ipv6 extension header, TCP option or IPv4 option.
+[verse]
+*hbh* {*nexthdr* | *hdrlength*}
+*frag* {*nexthdr* | *frag-off* | *more-fragments* | *id*}
+*rt* {*nexthdr* | *hdrlength* | *type* | *seg-left*}
+*dst* {*nexthdr* | *hdrlength*}
+*mh* {*nexthdr* | *hdrlength* | *checksum* | *type*}
+*srh* {*flags* | *tag* | *sid* | *seg-left*}
+*tcp option* {*eol* | *nop* | *maxseg* | *window* | *sack-perm* | *sack* | *sack0* | *sack1* | *sack2* | *sack3* | *timestamp* | *mptcp* } 'tcp_option_field'
+*ip option* { lsrr | ra | rr | ssrr } 'ip_option_field'
+
+The following syntaxes are valid only in a relational expression with boolean type on right-hand side for checking header existence only:
+[verse]
+*exthdr* {*hbh* | *frag* | *rt* | *dst* | *mh*}
+*tcp option* {*eol* | *nop* | *maxseg* | *window* | *sack-perm* | *sack* | *sack0* | *sack1* | *sack2* | *sack3* | *timestamp* | *mptcp* }
+*ip option* { lsrr | ra | rr | ssrr }
+*dccp option* 'dccp_option_type'
+
+.IPv6 extension headers
+[options="header"]
+|==================
+|Keyword| Description
+|hbh|
+Hop by Hop
+|rt|
+Routing Header
+|frag|
+Fragmentation header
+|dst|
+dst options
+|mh|
+Mobility Header
+|srh|
+Segment Routing Header
+|=====================
+
+.TCP Options
+[options="header"]
+|==================
+|Keyword| Description | TCP option fields
+|eol|
+End if option list|
+-
+|nop|
+1 Byte TCP Nop padding option |
+-
+|maxseg|
+TCP Maximum Segment Size|
+length, size
+|window|
+TCP Window Scaling |
+length, count
+|sack-perm |
+TCP SACK permitted |
+length
+|sack|
+TCP Selective Acknowledgement (alias of block 0) |
+length, left, right
+|sack0|
+TCP Selective Acknowledgement (block 0) |
+length, left, right
+|sack1|
+TCP Selective Acknowledgement (block 1) |
+length, left, right
+|sack2|
+TCP Selective Acknowledgement (block 2) |
+length, left, right
+|sack3|
+TCP Selective Acknowledgement (block 3) |
+length, left, right
+|timestamp|
+TCP Timestamps |
+length, tsval, tsecr
+|mptcp|
+Multipath TCP |
+subtype
+|============================
+
+Data types can be queried with 'nft describe tcp option *keyword* [ *fieldname* ]'.
+
+TCP option matching also supports raw expression syntax to access arbitrary options:
+[verse]
+*tcp option*
+[verse]
+*tcp option* *@*'number'*,*'offset'*,*'length'
+
+.IP Options
+[options="header"]
+|==================
+|Keyword| Description | IP option fields
+|lsrr|
+Loose Source Route |
+length, ptr, addr
+|ra|
+Router Alert |
+length, value
+|rr|
+Record Route |
+length, ptr, addr
+|ssrr|
+Strict Source Route |
+length, ptr, addr
+|============================
+
+.finding TCP options
+--------------------
+filter input tcp option sack-perm exists counter
+--------------------
+
+.matching TCP options
+--------------------
+filter input tcp option maxseg size lt 536
+--------------------
+
+.matching IPv6 exthdr
+---------------------
+ip6 filter input frag more-fragments 1 counter
+---------------------------------------
+
+.finding IP option
+------------------
+filter input ip option lsrr exists counter
+---------------------------------------
+
+.finding DCCP option
+------------------
+filter input dccp option 40 exists counter
+---------------------------------------
+
+CONNTRACK EXPRESSIONS
+~~~~~~~~~~~~~~~~~~~~~
+Conntrack expressions refer to meta data of the connection tracking entry associated with a packet. +
+
+There are three types of conntrack expressions. Some conntrack expressions
+require the flow direction before the conntrack key, others must be used
+directly because they are direction agnostic. The *packets*, *bytes* and
+*avgpkt* keywords can be used with or without a direction. If the direction is
+omitted, the sum of the original and the reply direction is returned. The same
+is true for the *zone*, if a direction is given, the zone is only matched if the
+zone id is tied to the given direction. +
+
+[verse]
+*ct* {*state* | *direction* | *status* | *mark* | *expiration* | *helper* | *label* | *count* | *id*}
+*ct* [*original* | *reply*] {*l3proto* | *protocol* | *bytes* | *packets* | *avgpkt* | *zone*}
+*ct* {*original* | *reply*} {*proto-src* | *proto-dst*}
+*ct* {*original* | *reply*} {*ip* | *ip6*} {*saddr* | *daddr*}
+
+The conntrack-specific types in this table are described in the sub-section CONNTRACK TYPES above.
+
+.Conntrack expressions
+[options="header"]
+|==================
+|Keyword| Description | Type
+|state|
+State of the connection |
+ct_state
+|direction|
+Direction of the packet relative to the connection |
+ct_dir
+|status|
+Status of the connection |
+ct_status
+|mark|
+Connection mark |
+mark
+|expiration|
+Connection expiration time |
+time
+|helper|
+Helper associated with the connection|
+string
+|label|
+Connection tracking label bit or symbolic name defined in connlabel.conf in the nftables include path|
+ct_label
+|l3proto|
+Layer 3 protocol of the connection|
+nf_proto
+|saddr|
+Source address of the connection for the given direction |
+ipv4_addr/ipv6_addr
+|daddr|
+Destination address of the connection for the given direction |
+ipv4_addr/ipv6_addr
+|protocol|
+Layer 4 protocol of the connection for the given direction |
+inet_proto
+|proto-src|
+Layer 4 protocol source for the given direction|
+integer (16 bit)
+|proto-dst|
+Layer 4 protocol destination for the given direction |
+integer (16 bit)
+|packets|
+packet count seen in the given direction or sum of original and reply |
+integer (64 bit)
+|bytes|
+byte count seen, see description for *packets* keyword |
+integer (64 bit)
+|avgpkt|
+average bytes per packet, see description for *packets* keyword |
+integer (64 bit)
+|zone|
+conntrack zone |
+integer (16 bit)
+|count|
+number of current connections|
+integer (32 bit)
+|id|
+Connection id|
+ct_id|
+|==========================================
+
+.restrict the number of parallel connections to a server
+--------------------
+nft add set filter ssh_flood '{ type ipv4_addr; flags dynamic; }'
+nft add rule filter input tcp dport 22 add @ssh_flood '{ ip saddr ct count over 2 }' reject
+--------------------

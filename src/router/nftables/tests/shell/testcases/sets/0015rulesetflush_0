@@ -1,0 +1,18 @@
+#!/bin/bash
+
+RULESET="flush ruleset
+add table t
+add chain t c
+
+table inet filter {
+  set blacklist_v4 { type ipv4_addr; flags interval; }
+}
+
+add element inet filter blacklist_v4 {
+192.168.0.1/24,
+}"
+
+$NFT -f - <<< "$RULESET"
+
+# make sure flush ruleset works right
+$NFT -f - <<< "$RULESET"

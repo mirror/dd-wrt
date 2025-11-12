@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table test
+$NFT add chain test input
+$NFT add quota test https-quota 25 mbytes
+$NFT add ct helper test cthelp { type \"sip\" protocol tcp \; }
+if [ "$NFT_TEST_HAVE_cttimeout" != n ] ; then
+	$NFT add ct timeout test cttime { protocol udp \; policy = {replied : 12, unreplied : 15 } \; }
+fi
+if [ "$NFT_TEST_HAVE_ctexpect" != n ] ; then
+	$NFT add ct expectation test ctexpect { protocol tcp \; dport 5432 \; timeout 1h \; size 12 \; }
+fi
+
+if [ "$NFT_TEST_HAVE_cttimeout" = n ] ; then
+	echo "Ran partial test due to NFT_TEST_HAVE_cttimeout=n (skipped)"
+	exit 77
+fi
+if [ "$NFT_TEST_HAVE_ctexpect" = n ] ; then
+	echo "Ran partial test due to NFT_TEST_HAVE_ctexpect=n (skipped)"
+	exit 77
+fi

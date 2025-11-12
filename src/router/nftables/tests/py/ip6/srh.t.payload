@@ -1,0 +1,64 @@
+# srh last-entry 0
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# srh last-entry 127
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 4 => reg 1 ]
+  [ cmp eq reg 1 0x0000007f ]
+
+# srh last-entry { 0, 4-127, 255 }
+__set%d test-ip6 7 size 5
+__set%d test-ip6 0
+	element 00000000  : 0 [end]	element 00000001  : 1 [end]	element 00000004  : 0 [end]	element 00000080  : 1 [end]	element 000000ff  : 0 [end]  userdata = { \x01\x04\x01\x00\x00\x00 }
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# srh flags 0
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 5 => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# srh flags 127
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 5 => reg 1 ]
+  [ cmp eq reg 1 0x0000007f ]
+
+# srh flags { 0, 4-127, 255 }
+__set%d test-ip6 7 size 5
+__set%d test-ip6 0
+	element 00000000  : 0 [end]	element 00000001  : 1 [end]	element 00000004  : 0 [end]	element 00000080  : 1 [end]	element 000000ff  : 0 [end]  userdata = { \x01\x04\x01\x00\x00\x00 }
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 5 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# srh tag 0
+ip6 test-ip6 input
+  [ exthdr load ipv6 2b @ 43 + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# srh tag 127
+ip6 test-ip6 input
+  [ exthdr load ipv6 2b @ 43 + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00007f00 ]
+
+# srh tag { 0, 4-127, 0xffff }
+__set%d test-ip6 7 size 5
+__set%d test-ip6 0
+	element 00000000  : 0 [end]	element 00000100  : 1 [end]	element 00000400  : 0 [end]	element 00008000  : 1 [end]	element 0000ffff  : 0 [end]  userdata = { \x01\x04\x01\x00\x00\x00 }
+ip6 test-ip6 input
+  [ exthdr load ipv6 2b @ 43 + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# srh sid[1] dead::beef
+ip6 test-ip6 input
+  [ exthdr load ipv6 16b @ 43 + 8 => reg 1 ]
+  [ cmp eq reg 1 0x0000adde 0x00000000 0x00000000 0xefbe0000 ]
+
+# srh sid[2] dead::beef
+ip6 test-ip6 input
+  [ exthdr load ipv6 16b @ 43 + 24 => reg 1 ]
+  [ cmp eq reg 1 0x0000adde 0x00000000 0x00000000 0xefbe0000 ]
+

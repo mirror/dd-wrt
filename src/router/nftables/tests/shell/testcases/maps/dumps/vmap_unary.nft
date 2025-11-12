@@ -1,0 +1,11 @@
+table ip filter {
+	map ipsec_in {
+		typeof ipsec in reqid . iif : verdict
+		flags interval
+	}
+
+	chain INPUT {
+		type filter hook input priority filter; policy drop;
+		ipsec in reqid . iif vmap @ipsec_in
+	}
+}

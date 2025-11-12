@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain t c1
+# kernel should not return EEXIST
+$NFT rename chain t c1 c2

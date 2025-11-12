@@ -1,0 +1,612 @@
+# icmp type echo-reply accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+  [ immediate reg 0 accept ]
+
+# icmp type destination-unreachable accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ immediate reg 0 accept ]
+
+# icmp type source-quench accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000004 ]
+  [ immediate reg 0 accept ]
+
+# icmp type redirect accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ immediate reg 0 accept ]
+
+# icmp type echo-request accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ immediate reg 0 accept ]
+
+# icmp type time-exceeded accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000000b ]
+  [ immediate reg 0 accept ]
+
+# icmp type parameter-problem accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000000c ]
+  [ immediate reg 0 accept ]
+
+# icmp type timestamp-request accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000000d ]
+  [ immediate reg 0 accept ]
+
+# icmp type timestamp-reply accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000000e ]
+  [ immediate reg 0 accept ]
+
+# icmp type info-request accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000000f ]
+  [ immediate reg 0 accept ]
+
+# icmp type info-reply accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000010 ]
+  [ immediate reg 0 accept ]
+
+# icmp type address-mask-request accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ immediate reg 0 accept ]
+
+# icmp type address-mask-reply accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000012 ]
+  [ immediate reg 0 accept ]
+
+# icmp type != {echo-reply, destination-unreachable, source-quench}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000000  : 0 [end]	element 00000003  : 0 [end]	element 00000004  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp code 111 accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ cmp eq reg 1 0x0000006f ]
+  [ immediate reg 0 accept ]
+
+# icmp code != 111 accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ cmp neq reg 1 0x0000006f ]
+  [ immediate reg 0 accept ]
+
+# icmp code 33-55
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ range eq reg 1 0x00000021 0x00000037 ]
+
+# icmp code != 33-55
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ range neq reg 1 0x00000021 0x00000037 ]
+
+# icmp code { 2, 4, 54, 33, 56}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000036  : 0 [end]	element 00000021  : 0 [end]	element 00000038  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmp code != { prot-unreachable, frag-needed, 33, 54, 56}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000036  : 0 [end]	element 00000021  : 0 [end]	element 00000038  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp checksum 12343 accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003730 ]
+  [ immediate reg 0 accept ]
+
+# icmp checksum != 12343 accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp neq reg 1 0x00003730 ]
+  [ immediate reg 0 accept ]
+
+# icmp checksum 11-343 accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00000b00 0x00005701 ]
+  [ immediate reg 0 accept ]
+
+# icmp checksum != 11-343 accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range neq reg 1 0x00000b00 0x00005701 ]
+  [ immediate reg 0 accept ]
+
+# icmp checksum { 1111, 222, 343} accept
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00005704  : 0 [end]	element 0000de00  : 0 [end]	element 00005701  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmp checksum != { 1111, 222, 343} accept
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00005704  : 0 [end]	element 0000de00  : 0 [end]	element 00005701  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# icmp id 1245 log
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x0000dd04 ]
+  [ log ]
+
+# icmp id 22
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+
+# icmp id != 233
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp neq reg 1 0x0000e900 ]
+
+# icmp id 33-45
+__set%d test-ip4 3
+__set%d  test-ip4 input
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# icmp id != 33-45
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# icmp id { 22, 34, 333}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00001600  : 0 [end]	element 00002200  : 0 [end]	element 00004d01  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmp id != { 22, 34, 333}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00001600  : 0 [end]	element 00002200  : 0 [end]	element 00004d01  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp sequence 22
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+
+# icmp sequence != 233
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x0000e900 ]
+
+# icmp sequence 33-45
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# icmp sequence != 33-45
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# icmp sequence { 33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmp sequence != { 33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp id 1 icmp sequence 2
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000000  : 0 [end]
+ip 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x02000100 ]
+
+# icmp type { echo-reply, echo-request} icmp id 1 icmp sequence 2
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000000  : 0 [end]	element 00000008  : 0 [end]
+ip 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x02000100 ]
+
+# icmp type echo-reply icmp id 1
+ip
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 ]
+
+# icmp mtu 33
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00002100 ]
+
+# icmp mtu 22-33
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range eq reg 1 0x00001600 0x00002100 ]
+
+# icmp mtu 22
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+
+# icmp mtu != 233
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x0000e900 ]
+
+# icmp mtu 33-45
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# icmp mtu != 33-45
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# icmp mtu { 33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmp mtu != { 33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp gateway 22
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x16000000 ]
+
+# icmp gateway != 233
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp neq reg 1 0xe9000000 ]
+
+# icmp gateway 33-45
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ range eq reg 1 0x21000000 0x2d000000 ]
+
+# icmp gateway != 33-45
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ range neq reg 1 0x21000000 0x2d000000 ]
+
+# icmp gateway { 33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmp gateway != { 33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp gateway != 34
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp neq reg 1 0x22000000 ]
+
+# icmp gateway != { 333, 334}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 4d010000  : 0 [end]	element 4e010000  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000005 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmp type router-advertisement accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000009 ]
+  [ immediate reg 0 accept ]
+
+# icmp type router-solicitation accept
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000000a ]
+  [ immediate reg 0 accept ]
+
+# icmp type {echo-reply, destination-unreachable, source-quench, redirect, echo-request, time-exceeded, parameter-problem, timestamp-request, timestamp-reply, info-request, info-reply, address-mask-request, address-mask-reply, router-advertisement, router-solicitation} accept
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000000  : 0 [end]     element 00000003  : 0 [end]     element 00000004  : 0 [end]     element 00000005  : 0 [end]     element 00000008  : 0 [end]     element 0000000b  : 0 [end]     element 0000000c  : 0 [end]     element 0000000d  : 0 [end]     element 0000000e  : 0 [end]     element 0000000f  : 0 [end]     element 00000010  : 0 [end]     element 00000011  : 0 [end]     element 00000012  : 0 [end]     element 00000009  : 0 [end]     element 0000000a  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmp code 1 icmp type 2
+ip 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000102 ]

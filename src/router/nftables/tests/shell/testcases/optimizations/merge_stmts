@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+	chain y {
+		ip daddr 192.168.0.1 counter accept comment "test1"
+		ip daddr 192.168.0.2 counter accept comment "test2"
+		ip daddr 192.168.0.3 counter accept comment "test3"
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

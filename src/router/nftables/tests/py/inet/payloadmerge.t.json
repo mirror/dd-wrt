@@ -1,0 +1,211 @@
+# tcp sport 1 tcp dport 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# tcp sport != 1 tcp dport != 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 2
+        }
+    }
+]
+
+# tcp sport 1 tcp dport != 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 2
+        }
+    }
+]
+
+# tcp sport != 1 tcp dport 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# meta l4proto != 6 th dport 2
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "!=",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "th"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# meta l4proto 6 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp sport > 1 tcp dport > 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": ">",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": ">",
+            "right": 2
+        }
+    }
+]
+
+# tcp sport 1 tcp dport > 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": ">",
+            "right": 2
+        }
+    }
+]
+

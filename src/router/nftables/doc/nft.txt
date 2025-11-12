@@ -1,0 +1,980 @@
+nft(8)
+======
+
+NAME
+----
+nft - Administration tool of the nftables framework for packet filtering and classification
+
+
+SYNOPSIS
+--------
+[verse]
+*nft* [ *-nNscaeSupyjtT* ] [ *-I* 'directory' ] [ *-f* 'filename' | *-i* | 'cmd' ...]
+*nft* *-h*
+*nft* *-v*
+
+DESCRIPTION
+-----------
+nft is the command line tool used to set up, maintain and inspect packet
+filtering and classification rules in the Linux kernel, in the nftables
+framework. The Linux kernel subsystem is known as nf_tables, and `nf' stands
+for Netfilter.
+
+OPTIONS
+-------
+The command accepts several different options which are documented here in groups for better
+understanding of their meaning. You can get information about options by running *nft --help*.
+
+.General options:
+
+*-h*::
+*--help*::
+	Show help message and all options.
+
+*-v*::
+*--version*::
+	Show version.
+
+*-V*::
+	Show long version information, including compile-time configuration.
+
+.Ruleset input handling options that specify to how to load rulesets:
+
+*-f*::
+*--file 'filename'*::
+	Read input from 'filename'. If 'filename' is -, read from stdin.
+	The directory path to this file is inserted at the beginning the list of
+	directories to be searched for included files (see *-I/--includepath*).
+
+*-D*::
+*--define 'name=value'*::
+	Define a variable. You can only combine this option with '-f'.
+
+*-i*::
+*--interactive*::
+	Read input from an interactive readline CLI. You can use quit to exit, or use the EOF marker,
+	normally this is CTRL-D.
+
+*-I*::
+*--includepath directory*::
+	Add the directory 'directory' to the list of directories to be searched for included files. This
+	option may be specified multiple times.
+
+*-c*::
+*--check*::
+	Check commands validity without actually applying the changes.
+
+*-o*::
+*--optimize*::
+	Optimize your ruleset. You can combine this option with '-c' to inspect
+        the proposed optimizations.
+
+.Ruleset list output formatting that modify the output of the list ruleset command:
+
+*-a*::
+*--handle*::
+	Show object handles in output.
+
+*-s*::
+*--stateless*::
+	Omit stateful information of rules and stateful objects.
+
+*-t*::
+*--terse*::
+	Omit contents of sets from output.
+
+*-S*::
+*--service*::
+	Translate ports to service names as defined by /etc/services.
+
+*-N*::
+*--reversedns*::
+	Translate IP address to names via reverse DNS lookup. This may slow down
+	your listing since it generates network traffic.
+
+*-u*::
+*--guid*::
+	Translate numeric UID/GID to names as defined by /etc/passwd and /etc/group.
+
+*-n*::
+*--numeric*::
+	Print fully numerical output.
+
+*-y*::
+*--numeric-priority*::
+	Display base chain priority numerically.
+
+*-p*::
+*--numeric-protocol*::
+	Display layer 4 protocol numerically.
+
+*-T*::
+*--numeric-time*::
+	Show time, day and hour values in numeric format.
+
+.Command output formatting:
+
+*-e*::
+*--echo*::
+	When inserting items into the ruleset using *add*, *insert* or *replace* commands, print notifications
+	just like *nft monitor*.
+
+*-j*::
+*--json*::
+	Format output in JSON. See libnftables-json(5) for a schema description.
+
+*-d*::
+*--debug* 'level'::
+	Enable debugging output. The debug level can be any of *scanner*, *parser*, *eval*,
+        *netlink*, *mnl*, *proto-ctx*, *segtree*, *all*. You can combine more than one by
+        separating by the ',' symbol, for example '-d eval,mnl'.
+
+INPUT FILE FORMATS
+------------------
+LEXICAL CONVENTIONS
+~~~~~~~~~~~~~~~~~~~
+Input is parsed line-wise. When the last character of a line, just before the
+newline character, is a non-quoted backslash (\), the next line is treated as a
+continuation. Multiple commands on the same line can be separated using a
+semicolon (;). +
+
+A hash sign (#) begins a comment. All following characters on the same line are
+ignored. +
+
+Identifiers begin with an alphabetic character (a-z,A-Z), followed by zero or more
+alphanumeric characters (a-z,A-Z,0-9) and the characters slash (/), backslash
+(\), underscore (_) and dot (.). Identifiers using different characters or
+clashing with a keyword need to be enclosed in double quotes (").
+
+INCLUDE FILES
+~~~~~~~~~~~~~
+[verse]
+*include* 'filename'
+
+Other files can be included by using the *include* statement. The directories to
+be searched for include files can be specified using the *-I*/*--includepath*
+option. You can override this behaviour either by prepending `./' to your path
+to force inclusion of files located in the current working directory (i.e.
+relative path) or / for file location expressed as an absolute path. +
+
+If *-I*/*--includepath* is not specified, then nft relies on the default
+directory that is specified at compile time. You can retrieve this default
+directory via the *-h*/*--help* option. +
+
+Include statements support the usual shell wildcard symbols (*,?,[]). Having no
+matches for an include statement is not an error, if wildcard symbols are used
+in the include statement. This allows having potentially empty include
+directories for statements like **include "/etc/firewall/rules/*"**. The wildcard
+matches are loaded in alphabetical order. Files beginning with dot (.) are not
+matched by include statements.
+
+SYMBOLIC VARIABLES
+~~~~~~~~~~~~~~~~~~
+[verse]
+*define* 'variable' *=* 'expr'
+*undefine* 'variable'
+*redefine* 'variable' *=* 'expr'
+*$variable*
+
+Symbolic variables can be defined using the *define* statement. Variable
+references are expressions and can be used to initialize other variables. The scope
+of a definition is the current block and all blocks contained within.
+Symbolic variables can be undefined using the *undefine* statement, and modified
+using the *redefine* statement.
+
+.Using symbolic variables
+---------------------------------------
+define int_if1 = eth0
+define int_if2 = eth1
+define int_ifs = { $int_if1, $int_if2 }
+redefine int_if2 = wlan0
+undefine int_if2
+
+filter input iif $int_ifs accept
+---------------------------------------
+
+[[ADDRESS_FAMILIES]]
+ADDRESS FAMILIES
+----------------
+Address families determine the type of packets which are processed. For each
+address family, the kernel contains so called hooks at specific stages of the
+packet processing paths, which invoke nftables if rules for these hooks exist.
+
+[horizontal]
+*ip*:: IPv4 address family.
+*ip6*:: IPv6 address family.
+*inet*:: Internet (IPv4/IPv6) address family.
+*arp*:: ARP address family, handling IPv4 ARP packets.
+*bridge*:: Bridge address family, handling packets which traverse a bridge device.
+*netdev*:: Netdev address family, handling packets on ingress and egress.
+
+All nftables objects exist in address family specific namespaces, therefore all
+identifiers include an address family. If an identifier is specified without an
+address family, the *ip* family is used by default.
+
+IPV4/IPV6/INET ADDRESS FAMILIES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The IPv4/IPv6/Inet address families handle IPv4, IPv6 or both types of packets.
+They contain five hooks at different packet processing stages in the network
+stack.
+
+.IPv4/IPv6/Inet address family hooks
+[options="header"]
+|==================
+|Hook | Description
+|prerouting |
+All packets entering the system are processed by the prerouting hook. It is
+invoked before the routing process and is used for early filtering or changing
+packet attributes that affect routing.
+|input |
+Packets delivered to the local system are processed by the input hook.
+|forward |
+Packets forwarded to a different host are processed by the forward hook.
+|output |
+Packets sent by local processes are processed by the output hook.
+|postrouting |
+All packets leaving the system are processed by the postrouting hook.
+|ingress |
+All packets entering the system are processed by this hook. It is invoked before
+layer 3 protocol handlers, hence before the prerouting hook, and it can be used
+for filtering and policing. Ingress is only available for Inet family (since
+Linux kernel 5.10).
+|===================
+
+ARP ADDRESS FAMILY
+~~~~~~~~~~~~~~~~~~
+The ARP address family handles ARP packets received and sent by the system. It
+is commonly used to mangle ARP packets for clustering.
+
+.ARP address family hooks
+[options="header"]
+|=================
+|Hook | Description
+|input |
+Packets delivered to the local system are processed by the input hook.
+|output |
+Packets send by the local system are processed by the output hook.
+|=================
+
+BRIDGE ADDRESS FAMILY
+~~~~~~~~~~~~~~~~~~~~~
+The bridge address family handles Ethernet packets traversing bridge devices.
+
+The list of supported hooks is identical to IPv4/IPv6/Inet address families above.
+
+NETDEV ADDRESS FAMILY
+~~~~~~~~~~~~~~~~~~~~
+The Netdev address family handles packets from the device ingress and egress
+path. This family allows you to filter packets of any ethertype such as ARP,
+VLAN 802.1q, VLAN 802.1ad (Q-in-Q) as well as IPv4 and IPv6 packets.
+
+.Netdev address family hooks
+[options="header"]
+|=================
+|Hook | Description
+|ingress |
+All packets entering the system are processed by this hook. It is invoked after
+the network taps (ie. *tcpdump*), right after *tc* ingress and before layer 3
+protocol handlers, it can be used for early filtering and policing.
+|egress |
+All packets leaving the system are processed by this hook. It is invoked after
+layer 3 protocol handlers and before *tc* egress. It can be used for late
+filtering and policing.
+|=================
+
+Tunneled packets (such as *vxlan*) are processed by netdev family hooks both
+in decapsulated and encapsulated (tunneled) form. So a packet can be filtered
+on the overlay network as well as on the underlying network.
+
+Note that the order of netfilter and *tc* is mirrored on ingress versus egress.
+This ensures symmetry for NAT and other packet mangling.
+
+Ingress packets which are redirected out some other interface are only
+processed by netfilter on egress if they have passed through netfilter ingress
+processing before. Thus, ingress packets which are redirected by *tc* are not
+subjected to netfilter. But they are if they are redirected by *netfilter* on
+ingress. Conceptually, tc and netfilter can be thought of as layers, with
+netfilter layered above tc: If the packet hasn't been passed up from the
+tc layer to the netfilter layer, it's not subjected to netfilter on egress.
+
+RULESET
+-------
+[verse]
+{*list* | *flush*} *ruleset* ['family']
+
+The *ruleset* keyword is used to identify the whole set of tables, chains, etc.
+currently in place in kernel. The following *ruleset* commands exist:
+
+[horizontal]
+*list*:: Print the ruleset in human-readable format.
+
+*flush*:: Clear the whole ruleset. Note that, unlike iptables, this will remove
+all tables and whatever they contain, effectively leading to an empty ruleset -
+no packet filtering will happen anymore, so the kernel accepts any valid packet
+it receives.
+
+It is possible to limit *list* and *flush* to a specific address family only.
+For a list of valid family names, see <<ADDRESS_FAMILIES>> above.
+
+By design, *list ruleset* command output may be used as input to *nft -f*.
+Effectively, this is the nft-equivalent of *iptables-save* and
+*iptables-restore*.
+
+TABLES
+------
+[verse]
+{*add* | *create*} *table* ['family'] 'table' [*{* [*comment* 'comment' *;*] [*flags* 'flags' *;*] *}*]
+{*delete* | *destroy* | *list* | *flush*} *table* ['family'] 'table'
+*list tables* ['family']
+*delete table* ['family'] *handle* 'handle'
+*destroy table* ['family'] *handle* 'handle'
+
+Tables are containers for chains, sets and stateful objects. They are identified
+by their address family and their name. The address family must be one of *ip*,
+*ip6*, *inet*, *arp*, *bridge*, *netdev*. The *inet* address family is a dummy
+family which is used to create hybrid IPv4/IPv6 tables. The *meta expression
+nfproto* keyword can be used to test which family (ipv4 or ipv6) context the
+packet is being processed in. When no address family is specified, *ip* is used
+by default. The only difference between add and create is that the former will
+not return an error if the specified table already exists while *create* will
+return an error.
+
+.Table flags
+[options="header"]
+|=================
+|Flag | Description
+|dormant |
+table is not evaluated any more (base chains are unregistered).
+|owner |
+table is owned by the creating process.
+|persist |
+table shall outlive the owning process.
+|=================
+
+Creating a table with flag *owner* excludes other processes from manipulating
+it or its contents. By default, it will be removed when the process exits.
+Setting flag *persist* will prevent this and the resulting orphaned table will
+accept a new owner, e.g. a restarting daemon maintaining the table.
+
+.*Add, change, delete a table*
+---------------------------------------
+# start nft in interactive mode
+nft --interactive
+
+# create a new table.
+create table inet mytable
+
+# add a new base chain: get input packets
+add chain inet mytable myin { type filter hook input priority filter; }
+
+# add a single counter to the chain
+add rule inet mytable myin counter
+
+# disable the table temporarily -- rules are not evaluated anymore
+add table inet mytable { flags dormant; }
+
+# make table active again:
+add table inet mytable
+---------------------------------------
+
+[horizontal]
+*add*:: Add a new table for the given family with the given name.
+*delete*:: Delete the specified table.
+*destroy*:: Delete the specified table, it does not fail if it does not exist.
+*list*:: List all chains and rules of the specified table.
+*flush*:: Flush all chains and rules of the specified table.
+
+CHAINS
+------
+[verse]
+{*add* | *create*} *chain* ['family'] 'table' 'chain' [*{ type* 'type' *hook* 'hook' [*device* 'device'] *priority* 'priority' *;* [*policy* 'policy' *;*] [*comment* 'comment' *;*] *}*]
+{*delete* | *destroy* | *list* | *flush*} *chain* ['family'] 'table' 'chain'
+*list chains* ['family']
+*delete chain* ['family'] 'table' *handle* 'handle'
+*destroy chain* ['family'] 'table' *handle* 'handle'
+*rename chain* ['family'] 'table' 'chain' 'newname'
+
+Chains are containers for rules. They exist in two kinds, base chains and
+regular chains. A base chain is an entry point for packets from the networking
+stack, a regular chain may be used as jump target and is used for better rule
+organization. Regular chains can be anonymous, see *VERDICT STATEMENT* examples
+for details.
+
+[horizontal]
+*add*:: Add a new chain in the specified table. When a hook and priority value
+are specified, the chain is created as a base chain and hooked up to the networking stack.
+*create*:: Similar to the *add* command, but returns an error if the chain already exists.
+*delete*:: Delete the specified chain. The chain must not contain any rules or be used as jump target.
+*destroy*:: Delete the specified chain, it does not fail if it does not exist. The chain must not contain any rules or be used as jump target.
+*rename*:: Rename the specified chain.
+*list*:: List all rules of the specified chain.
+*flush*:: Flush all rules of the specified chain.
+
+For base chains, *type*, *hook* and *priority* parameters are mandatory.
+
+.Supported chain types
+[options="header"]
+|=================
+|Type | Families | Hooks | Description
+|filter | all | all |
+Standard chain type to use in doubt.
+|nat | ip, ip6, inet |
+prerouting, input, output, postrouting |
+Chains of this type perform Native Address Translation based on conntrack
+entries. Only the first packet of a connection actually traverses this chain -
+its rules usually define details of the created conntrack entry (NAT
+statements for instance).
+|route | ip, ip6, inet | output |
+If a packet has traversed a chain of this type and is about to be accepted, a
+new route lookup is performed if relevant parts of the IP header have changed.
+This allows one to e.g. implement policy routing selectors in nftables.
+|=================
+
+Apart from the special cases illustrated above (e.g. *nat* type not supporting
+*forward* hook or *route* type only supporting *output* hook), there are three
+further quirks worth noticing:
+
+* The netdev family supports merely two combinations, namely *filter* type with
+  *ingress* hook and *filter* type with *egress* hook. Base chains in this
+  family also require the *device* parameter to be present since they exist per
+  interface only.
+* The arp family supports only the *input* and *output* hooks, both in chains of type
+  *filter*.
+* The inet family also supports the *ingress* hook (since Linux kernel 5.10),
+  to filter IPv4 and IPv6 packet at the same location as the netdev *ingress*
+  hook. This inet hook allows you to share sets and maps between the usual
+  *prerouting*, *input*, *forward*, *output*, *postrouting* and this *ingress*
+  hook.
+
+The *device* parameter accepts a network interface name as a string, and is
+required when adding a base chain that filters traffic on the ingress or
+egress hooks. Any ingress or egress chains will only filter traffic from the
+interface specified in the *device* parameter.
+
+The *priority* parameter accepts a signed integer value or a standard priority
+name which specifies the order in which chains with the same *hook* value are
+traversed. The ordering is ascending, i.e. lower priority values have precedence
+over higher ones.
+
+With *nat* type chains, there's a lower excluding limit of -200 for *priority*
+values, because conntrack hooks at this priority and NAT requires it.
+
+Standard priority values can be replaced with easily memorizable names.  Not all
+names make sense in every family with every hook (see the compatibility matrices
+below) but their numerical value can still be used for prioritizing chains.
+
+These names and values are defined and made available based on what priorities
+are used by xtables when registering their default chains.
+
+Most of the families use the same values, but bridge uses different ones from
+the others. See the following tables that describe the values and compatibility.
+
+.Standard priority names, family and hook compatibility matrix
+[options="header"]
+|==================
+| Name | Value | Families | Hooks
+| raw | -300 | ip, ip6, inet | all
+| mangle | -150 | ip, ip6, inet | all
+| dstnat | -100 | ip, ip6, inet | prerouting
+| filter | 0 | ip, ip6, inet, arp, netdev | all
+| security | 50 | ip, ip6, inet | all
+| srcnat | 100 | ip, ip6, inet | postrouting
+|===================
+
+.Standard priority names and hook compatibility for the bridge family
+[option="header"]
+|==================
+| Name | Value | Hooks
+| dstnat | -300 | prerouting
+| filter | -200 | all
+| out | 100 | output
+| srcnat | 300 | postrouting
+|==================
+
+Basic arithmetic expressions (addition and subtraction) can also be achieved
+with these standard names to ease relative prioritizing, e.g. *mangle - 5* stands
+for *-155*.  Values will also be printed like this until the value is not
+further than 10 from the standard value.
+
+Base chains also allow one to set the chain's *policy*, i.e.  what happens to
+packets not explicitly accepted or refused in contained rules. Supported policy
+values are *accept* (which is the default) or *drop*.
+
+RULES
+-----
+[verse]
+{*add* | *insert*} *rule* ['family'] 'table' 'chain' [*handle* 'handle' | *index* 'index'] 'statement' ... [*comment* 'comment']
+*replace rule* ['family'] 'table' 'chain' *handle* 'handle' 'statement' ... [*comment* 'comment']
+{*delete* | *reset*} *rule* ['family'] 'table' 'chain' *handle* 'handle'
+*destroy rule* ['family'] 'table' 'chain' *handle* 'handle'
+*reset rules* ['family'] ['table' ['chain']]
+
+Rules are added to chains in the given table. If the family is not specified, the
+ip family is used. Rules are constructed from two kinds of components according
+to a set of grammatical rules: expressions and statements.
+
+The add and insert commands support an optional location specifier, which is
+either a 'handle' or the 'index' (starting at zero) of an existing rule.
+Internally, rule locations are always identified by 'handle' and the translation
+from 'index' happens in userspace. This has two potential implications in case a
+concurrent ruleset change happens after the translation was done: The effective
+rule index might change if a rule was inserted or deleted before the referred
+one. If the referred rule was deleted, the command is rejected by the kernel
+just as if an invalid 'handle' was given.
+
+A 'comment' is a single word or a double-quoted (") multi-word string which can
+be used to make notes regarding the actual rule. *Note:* If you use bash for
+adding rules, you have to escape the quotation marks, e.g. \"enable ssh for
+servers\".
+
+[horizontal]
+*add*:: Add a new rule described by the list of statements. The
+rule is appended to the given chain unless a location is specified, in which
+case the rule is inserted after the specified rule.
+*insert*:: Same as *add* except the rule is inserted at the
+beginning of the chain or before the specified rule.
+*replace*:: Similar to *add*, but the rule replaces the specified rule.
+*delete*:: Delete the specified rule.
+*destroy*:: Delete the specified rule, it does not fail if it does not exist.
+*reset*:: Reset rule-contained state, e.g. counter and quota statement values.
+
+.*add a rule to ip table output chain*
+-------------
+nft add rule filter output ip daddr 192.168.0.0/24 accept # 'ip filter' is assumed
+# same command, slightly more verbose
+nft add rule ip filter output ip daddr 192.168.0.0/24 accept
+--------------
+
+.*delete rule from inet table*
+-----------------------
+# nft -a list ruleset
+table inet filter {
+	chain input {
+		type filter hook input priority filter; policy accept;
+		ct state established,related accept # handle 4
+		ip saddr 10.1.1.1 tcp dport ssh accept # handle 5
+	  ...
+# delete the rule with handle 5
+nft delete rule inet filter input handle 5
+-------------------------
+
+SETS
+----
+nftables offers two kinds of set concepts. Anonymous sets are sets that have no
+specific name. The set members are enclosed in curly braces, with commas to
+separate elements when creating the rule the set is used in. Once that rule is
+removed, the set is removed as well. They cannot be updated, i.e. once an
+anonymous set is declared it cannot be changed anymore except by
+removing/altering the rule that uses the anonymous set.
+
+.*Using anonymous sets to accept particular subnets and ports*
+----------
+nft add rule filter input ip saddr { 10.0.0.0/8, 192.168.0.0/16 } tcp dport { 22, 443 } accept
+----------
+
+Named sets are sets that need to be defined first before they can be referenced
+in rules. Unlike anonymous sets, elements can be added to or removed from a
+named set at any time. Sets are referenced from rules using an @ prefixed to the
+sets name.
+
+.*Using named sets to accept addresses and ports*
+------------------
+nft add rule filter input ip saddr @allowed_hosts tcp dport @allowed_ports accept
+------------------
+
+The sets allowed_hosts and allowed_ports need to be created first. The next
+section describes nft set syntax in more detail.
+
+[verse]
+*add set* ['family'] 'table' 'set' *{ type* 'type' | *typeof* 'expression' *;* [*flags* 'flags' *;*] [*timeout* 'timeout' *;*] [*gc-interval* 'gc-interval' *;*] [*elements = {* 'element'[*,* ...] *} ;*] [*size* 'size' *;*] [*comment* 'comment' *;*'] [*policy* 'policy' *;*] [*auto-merge ;*] *}*
+{*delete* | *destroy* | *list* | *flush* | *reset* } *set* ['family'] 'table' 'set'
+*list sets* ['family'] ['table']
+*delete set* ['family'] 'table' *handle* 'handle'
+{*add* | *delete* | *destroy* } *element* ['family'] 'table' 'set' *{* 'element'[*,* ...] *}*
+
+Sets are element containers of a user-defined data type, they are uniquely
+identified by a user-defined name and attached to tables. Their behaviour can
+be tuned with the flags that can be specified at set creation time.
+
+See Set and Map flags below for more details.
+
+[horizontal]
+*add*:: Add a new set in the specified table. See the Set specification table below for more information about how to specify properties of a set.
+*delete*:: Delete the specified set.
+*destroy*:: Delete the specified set, it does not fail if it does not exist.
+*list*:: Display the elements in the specified set.
+*flush*:: Remove all elements from the specified set.
+*reset*:: Reset state in all contained elements, e.g. counter and quota statement values.
+
+.Set specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+|type |
+data type of set elements |
+string: ipv4_addr, ipv6_addr, ether_addr, inet_proto, inet_service, mark
+|typeof |
+data type of set element |
+expression to derive the data type from
+|flags |
+set flags | string: constant, dynamic, interval, timeout.  Used to describe the sets properties.
+|timeout |
+time an element stays in the set, mandatory if set is added to from the packet path (ruleset)|
+string, decimal followed by unit. Units are: d, h, m, s
+|gc-interval |
+garbage collection interval, only available when timeout or flag timeout are
+active |
+string, decimal followed by unit. Units are: d, h, m, s
+|elements |
+elements contained by the set |
+set data type
+|size |
+maximum number of elements in the set, mandatory if set is added to from the packet path (ruleset)|
+unsigned integer (64 bit)
+|policy |
+set policy |
+string: performance [default], memory
+|auto-merge |
+automatic merge of adjacent/overlapping set elements (only for interval sets) |
+|=================
+
+The *gc-interval* doesn't affect element timeout, but it does affect memory reclaim.
+A large set that rarely has elements that time out can use a higher (less frequent) garbage
+collection to save cpu time, whereas sets that see many updates with short-lived elements
+will benefit from a lower interval.
+Lower intervals ensure the set stays below its maximum size.
+Internally, a timed-out entry stays around until it is removed by the garbage collector, which
+also decrements the sets element count.
+This also means that it is possible to have a set that can not accept more elements, even
+if all elements timed out, if the *gc-interval* is set too large.
+
+The *size* defines the upper limit of the amount of elements that the set can support.
+Mandatory for sets that are added to from the ruleset with the *add* and *update* keywords.
+Providing the *size* keyword for sets that are only added to via *nft add element* allows for
+a more compact (memory conserving) set implementation selection, but it is not required.
+
+The optional *policy* keyword can be used to request a more memory-conserving set implementation.
+
+*auto-merge* instructs the nftables frontend to merge adjacent and overlapping ranges.
+Example: When the set contains range *1.2.3.1-1.2.3.4*, then adding element *1.2.3.2* has no
+effect.  Adding *1.2.3.5* changes the existing range to cover *1.2.3.1-1.2.3.5*.
+Without this flag, *1.2.3.2* can not be added and *1.2.3.5* is inserted as a new entry.
+
+MAPS
+-----
+[verse]
+*add map* ['family'] 'table' 'map' *{ type* 'type' | *typeof* 'expression' [*flags* 'flags' *;*] [*elements = {* 'element'[*,* ...] *} ;*] [*size* 'size' *;*] [*comment* 'comment' *;*'] [*policy* 'policy' *;*] *}*
+{*delete* | *destroy* | *list* | *flush* | *reset* } *map* ['family'] 'table' 'map'
+*list maps* ['family'] ['table']
+
+Maps store data based on some specific key used as input. They are uniquely identified by a user-defined name and attached to tables.
+
+[horizontal]
+*add*:: Add a new map in the specified table.
+*delete*:: Delete the specified map.
+*destroy*:: Delete the specified map, it does not fail if it does not exist.
+*list*:: Display the elements in the specified map.
+*flush*:: Remove all elements from the specified map.
+*reset*:: Reset state in all contained elements, e.g. counter and quota statement values.
+
+.Map specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+|type |
+data type of map elements |
+string: ipv4_addr, ipv6_addr, ether_addr, inet_proto, inet_service, mark, counter, quota. Counter and quota can't be used as keys
+|typeof |
+data type of set element |
+expression to derive the data type from
+|flags |
+map flags |
+string, same as set flags
+|elements |
+elements contained by the map |
+map data type
+|size |
+maximum number of elements in the map |
+unsigned integer (64 bit)
+| policy |
+map policy |
+string: performance [default], memory
+|=================
+
+Users can specifiy the properties/features that the set/map must support.
+This allows the kernel to pick an optimal internal representation.
+If a required flag is missing, the ruleset might still work, as
+nftables will auto-enable features if it can infer this from the ruleset.
+This may not work for all cases, however, so it is recommended to
+specify all required features in the set/map definition manually.
+Also, some features are mutually exclusive.  For example, it is not possible
+for a set to support intervals and insertion from the packet path.
+
+.Set and Map flags
+[options="header"]
+|=================
+|Flag		| Description
+|constant	| Set contents will never change after creation
+|dynamic	| Set must support updates from the packet path with the *add*, *update* or *delete* keywords.
+|interval	| Set must be able to store intervals (ranges). Cannot be combined with the *dynamic* flag.
+|timeout	| Set must support element timeouts (auto-removal of elements once they expire).
+|=================
+
+ELEMENTS
+--------
+[verse]
+____
+{*add* | *create* | *delete* | *destroy* | *get* | *reset* } *element* ['family'] 'table' 'set' *{* 'ELEMENT'[*,* ...] *}*
+
+'ELEMENT' := 'key_expression' 'OPTIONS' [*:* 'value_expression']
+'OPTIONS' := [*timeout* 'TIMESPEC'] [*expires* 'TIMESPEC'] [*comment* 'string']
+'TIMESPEC' := ['num'*d*]['num'*h*]['num'*m*]['num'[*s*]]
+____
+Element-related commands allow one to change contents of named sets and maps.
+'key_expression' is typically a value matching the set type.
+'value_expression' is not allowed in sets but mandatory when adding to maps, where it
+matches the data part in its type definition. When deleting from maps, it may
+be specified but is optional as 'key_expression' uniquely identifies the
+element.
+
+*create* command is similar to *add* with the exception that none of the
+listed elements may already exist.
+
+*get* command is useful to check if an element is contained in a set which may
+be non-trivial in very large and/or interval sets. In the latter case, the
+containing interval is returned instead of just the element itself.
+
+*reset* command resets state attached to the given element(s), e.g. counter and
+quota statement values.
+
+.Element options
+[options="header"]
+|=================
+|Option | Description
+|timeout |
+timeout value for sets/maps with flag *timeout*
+|expires |
+the time until given element expires, useful for ruleset replication only
+|comment |
+per element comment field
+|=================
+
+
+FLOWTABLES
+-----------
+[verse]
+{*add* | *create*} *flowtable* ['family'] 'table' 'flowtable' *{ hook* 'hook' *priority* 'priority' *; devices = {* 'device'[*,* ...] *} ; }*
+*list flowtables* ['family'] ['table']
+{*delete* | *destroy* | *list*} *flowtable* ['family'] 'table' 'flowtable'
+*delete* *flowtable* ['family'] 'table' *handle* 'handle'
+
+Flowtables allow you to accelerate packet forwarding in software. Flowtables
+entries are represented through a tuple that is composed of the input interface,
+source and destination address, source and destination port; and layer 3/4
+protocols. Each entry also caches the destination interface and the gateway
+address - to update the destination link-layer address - to forward packets.
+The ttl and hoplimit fields are also decremented. Hence, flowtables provides an
+alternative path that allow packets to bypass the classic forwarding path.
+Flowtables reside in the ingress *hook* that is located before the prerouting
+*hook*. You can select which flows you want to offload through the flow
+expression from the forward chain. Flowtables are identified by their address
+family and their name. The address family must be one of ip, ip6, or inet. The inet
+address family is a dummy family which is used to create hybrid IPv4/IPv6
+tables. When no address family is specified, ip is used by default.
+
+The *priority* can be a signed integer or *filter* which stands for 0. Addition
+and subtraction can be used to set relative priority, e.g. filter + 5 equals to
+5.
+
+[horizontal]
+*add*:: Add a new flowtable for the given family with the given name.
+*delete*:: Delete the specified flowtable.
+*destroy*:: Delete the specified flowtable, it does not fail if it does not exist.
+*list*:: List all flowtables.
+
+STATEFUL OBJECTS
+----------------
+[verse]
+{*add* | *delete* | *destroy* | *list* | *reset*} *counter* ['family'] 'table' 'object'
+{*add* | *delete* | *destroy* | *list* | *reset*} *quota* ['family'] 'table' 'object'
+{*add* | *delete* | *destroy* | *list*} *limit* ['family'] 'table' 'object'
+*delete* 'counter' ['family'] 'table' *handle* 'handle'
+*delete* 'quota' ['family'] 'table' *handle* 'handle'
+*delete* 'limit' ['family'] 'table' *handle* 'handle'
+*destroy* 'counter' ['family'] 'table' *handle* 'handle'
+*destroy* 'quota' ['family'] 'table' *handle* 'handle'
+*destroy* 'limit' ['family'] 'table' *handle* 'handle'
+*list* { *counters* | *limits* | *quotas* } ['family'] ['table']
+*reset* { *counters* | *quotas* } ['family'] ['table']
+
+Stateful objects are attached to tables and are identified by a unique name.
+They group stateful information from rules, to reference them in rules the
+keywords "type name" are used e.g. "counter name".
+
+[horizontal]
+*add*:: Add a new stateful object in the specified table.
+*delete*:: Delete the specified object.
+*destroy*:: Delete the specified object, it does not fail if it does not exist.
+*list*:: Display stateful information the object holds.
+*reset*:: List-and-reset stateful object.
+
+include::stateful-objects.txt[]
+
+EXPRESSIONS
+------------
+Expressions represent values, either constants like network addresses, port
+numbers, etc., or data gathered from the packet during ruleset evaluation.
+Expressions can be combined using binary, logical, relational and other types of
+expressions to form complex or relational (match) expressions. They are also
+used as arguments to certain types of operations, like NAT, packet marking etc.
+
+Each expression has a data type, which determines the size, parsing and
+representation of symbolic values and type compatibility with other expressions.
+
+DESCRIBE COMMAND
+~~~~~~~~~~~~~~~~
+[verse]
+*describe* 'expression' | 'data type'
+
+The *describe* command shows information about the type of an expression and its data type.
+A data type may also be given, in which nft will display more information
+about the type.
+
+.The describe command
+---------------------
+$ nft describe tcp flags
+payload expression, datatype tcp_flag (TCP flag) (basetype bitmask, integer), 8 bits
+
+predefined symbolic constants:
+fin                           0x01
+syn                           0x02
+rst                           0x04
+psh                           0x08
+ack                           0x10
+urg                           0x20
+ecn                           0x40
+cwr                           0x80
+---------------------
+
+DATA TYPES
+----------
+
+Data types determine the size, parsing and representation of symbolic values
+and type compatibility of expressions. A number of global data types exist, in
+addition some expression types define further data types specific to the
+expression type. Most data types have a fixed size, some however may have a
+dynamic size, f.i. the string type. +
+Some types also have predefined symbolic constants.  Those can be listed
+using the nft *describe* command:
+
+---------------------
+$ nft describe ct_state
+datatype ct_state (conntrack state) (basetype bitmask, integer), 32 bits
+
+pre-defined symbolic constants (in hexadecimal):
+invalid                         0x00000001
+new ...
+---------------------
+
+Types may be derived from lower order types, f.i. the IPv4 address type is
+derived from the integer type, meaning an IPv4 address can also be specified as
+an integer value. +
+
+In certain contexts (set and map definitions), it is necessary to explicitly
+specify a data type. Each type has a name which is used for this.
+
+include::data-types.txt[]
+
+PRIMARY EXPRESSIONS
+-------------------
+The lowest order expression is a primary expression, representing either a
+constant or a single datum from a packet's payload, meta data or a stateful
+module.
+
+include::primary-expression.txt[]
+
+PAYLOAD EXPRESSIONS
+-------------------
+Payload expressions refer to data from the packet's payload.
+
+include::payload-expression.txt[]
+
+STATEMENTS
+----------
+Statements represent actions to be performed. They can alter control flow
+(return, jump to a different chain, accept or drop the packet) or can perform
+actions, such as logging, rejecting a packet, etc. +
+
+Statements exist in two kinds. Terminal statements unconditionally terminate
+evaluation of the current rule, non-terminal statements either only
+conditionally or never terminate evaluation of the current rule, in other words,
+they are passive from the ruleset evaluation perspective. There can be an
+arbitrary amount of non-terminal statements in a rule, but only a single
+terminal statement as the final statement.
+
+include::statements.txt[]
+
+ADDITIONAL COMMANDS
+-------------------
+These are some additional commands included in nft.
+
+include::additional-commands.txt[]
+
+ERROR REPORTING
+---------------
+When an error is detected, nft shows the line(s) containing the error, the
+position of the erroneous parts in the input stream and marks up the erroneous
+parts using carets (^). If the error results from the combination of two
+expressions or statements, the part imposing the constraints which are violated
+is marked using tildes (~). +
+
+For errors returned by the kernel, nft cannot detect which parts of the input
+caused the error and the entire command is marked.
+
+.Error caused by single incorrect expression
+--------------------------------------------
+<cmdline>:1:19-22: Error: Interface does not exist
+filter output oif eth0
+		  ^^^^
+--------------------------------------------
+
+.Error caused by invalid combination of two expressions
+-------------------------------------------------------
+<cmdline>:1:28-36: Error: Right hand side of relational expression (==) must be constant
+filter output tcp dport == tcp dport
+                        ~~ ^^^^^^^^^
+-------------------------------------------------------
+
+.Error returned by the kernel
+-----------------------------
+<cmdline>:0:0-23: Error: Could not process rule: Operation not permitted
+filter output oif wlan0
+^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
+
+EXIT STATUS
+-----------
+On success, nft exits with a status of 0. Unspecified errors cause it to exit
+with a status of 1, memory allocation errors with a status of 2, unable to open
+Netlink socket with 3.
+
+SEE ALSO
+--------
+[verse]
+libnftables(3), libnftables-json(5), iptables(8), ip6tables(8), arptables(8), ebtables(8), ip(8), tc(8)
+
+There is an official wiki at: https://wiki.nftables.org
+
+AUTHORS
+-------
+nftables was written by Patrick McHardy and Pablo Neira Ayuso, among many other contributors from the Netfilter community.
+
+COPYRIGHT
+---------
+Copyright © 2008-2014 Patrick McHardy <kaber@trash.net> Copyright © 2013-2018 Pablo Neira Ayuso <pablo@netfilter.org> +
+
+nftables is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License version 2 as published by the Free
+Software Foundation. +
+
+This documentation is licensed under the terms of the Creative Commons Attribution-ShareAlike 4.0 license, CC BY-SA 4.0 http://creativecommons.org/licenses/by-sa/4.0/.

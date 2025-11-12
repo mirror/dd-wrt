@@ -1,0 +1,571 @@
+#!/bin/bash
+
+set -e
+
+RULESET="#!/sbin/nft -f
+flush ruleset;
+table ip firewalld {
+	chain nat_PREROUTING {
+		type nat hook prerouting priority -90; policy accept;
+		jump nat_PREROUTING_ZONES_SOURCE
+		jump nat_PREROUTING_ZONES
+	}
+
+	chain nat_PREROUTING_ZONES_SOURCE {
+	}
+
+	chain nat_PREROUTING_ZONES {
+		iifname "enp0s25" goto nat_PRE_home
+		goto nat_PRE_public
+	}
+
+	chain nat_POSTROUTING {
+		type nat hook postrouting priority 110; policy accept;
+		jump nat_POSTROUTING_ZONES_SOURCE
+		jump nat_POSTROUTING_ZONES
+	}
+
+	chain nat_POSTROUTING_ZONES_SOURCE {
+	}
+
+	chain nat_POSTROUTING_ZONES {
+		oifname "enp0s25" goto nat_POST_home
+		goto nat_POST_public
+	}
+
+	chain nat_PRE_public {
+		jump nat_PRE_public_log
+		jump nat_PRE_public_deny
+		jump nat_PRE_public_allow
+	}
+
+	chain nat_PRE_public_log {
+	}
+
+	chain nat_PRE_public_deny {
+	}
+
+	chain nat_PRE_public_allow {
+	}
+
+	chain nat_POST_public {
+		jump nat_POST_public_log
+		jump nat_POST_public_deny
+		jump nat_POST_public_allow
+	}
+
+	chain nat_POST_public_log {
+	}
+
+	chain nat_POST_public_deny {
+	}
+
+	chain nat_POST_public_allow {
+	}
+
+	chain nat_PRE_home {
+		jump nat_PRE_home_log
+		jump nat_PRE_home_deny
+		jump nat_PRE_home_allow
+	}
+
+	chain nat_PRE_home_log {
+	}
+
+	chain nat_PRE_home_deny {
+	}
+
+	chain nat_PRE_home_allow {
+	}
+
+	chain nat_POST_home {
+		jump nat_POST_home_log
+		jump nat_POST_home_deny
+		jump nat_POST_home_allow
+	}
+
+	chain nat_POST_home_log {
+	}
+
+	chain nat_POST_home_deny {
+	}
+
+	chain nat_POST_home_allow {
+	}
+
+	chain nat_PRE_work {
+		jump nat_PRE_work_log
+		jump nat_PRE_work_deny
+		jump nat_PRE_work_allow
+	}
+
+	chain nat_PRE_work_log {
+	}
+
+	chain nat_PRE_work_deny {
+	}
+
+	chain nat_PRE_work_allow {
+	}
+
+	chain nat_POST_work {
+		jump nat_POST_work_log
+		jump nat_POST_work_deny
+		jump nat_POST_work_allow
+	}
+
+	chain nat_POST_work_log {
+	}
+
+	chain nat_POST_work_deny {
+	}
+
+	chain nat_POST_work_allow {
+	}
+}
+table ip6 firewalld {
+	chain nat_PREROUTING {
+		type nat hook prerouting priority -90; policy accept;
+		jump nat_PREROUTING_ZONES_SOURCE
+		jump nat_PREROUTING_ZONES
+	}
+
+	chain nat_PREROUTING_ZONES_SOURCE {
+	}
+
+	chain nat_PREROUTING_ZONES {
+		iifname "enp0s25" goto nat_PRE_home
+		goto nat_PRE_public
+	}
+
+	chain nat_POSTROUTING {
+		type nat hook postrouting priority 110; policy accept;
+		jump nat_POSTROUTING_ZONES_SOURCE
+		jump nat_POSTROUTING_ZONES
+	}
+
+	chain nat_POSTROUTING_ZONES_SOURCE {
+	}
+
+	chain nat_POSTROUTING_ZONES {
+		oifname "enp0s25" goto nat_POST_home
+		goto nat_POST_public
+	}
+
+	chain nat_PRE_public {
+		jump nat_PRE_public_log
+		jump nat_PRE_public_deny
+		jump nat_PRE_public_allow
+	}
+
+	chain nat_PRE_public_log {
+	}
+
+	chain nat_PRE_public_deny {
+	}
+
+	chain nat_PRE_public_allow {
+	}
+
+	chain nat_POST_public {
+		jump nat_POST_public_log
+		jump nat_POST_public_deny
+		jump nat_POST_public_allow
+	}
+
+	chain nat_POST_public_log {
+	}
+
+	chain nat_POST_public_deny {
+	}
+
+	chain nat_POST_public_allow {
+	}
+
+	chain nat_PRE_home {
+		jump nat_PRE_home_log
+		jump nat_PRE_home_deny
+		jump nat_PRE_home_allow
+	}
+
+	chain nat_PRE_home_log {
+	}
+
+	chain nat_PRE_home_deny {
+	}
+
+	chain nat_PRE_home_allow {
+	}
+
+	chain nat_POST_home {
+		jump nat_POST_home_log
+		jump nat_POST_home_deny
+		jump nat_POST_home_allow
+	}
+
+	chain nat_POST_home_log {
+	}
+
+	chain nat_POST_home_deny {
+	}
+
+	chain nat_POST_home_allow {
+	}
+
+	chain nat_PRE_work {
+		jump nat_PRE_work_log
+		jump nat_PRE_work_deny
+		jump nat_PRE_work_allow
+	}
+
+	chain nat_PRE_work_log {
+	}
+
+	chain nat_PRE_work_deny {
+	}
+
+	chain nat_PRE_work_allow {
+	}
+
+	chain nat_POST_work {
+		jump nat_POST_work_log
+		jump nat_POST_work_deny
+		jump nat_POST_work_allow
+	}
+
+	chain nat_POST_work_log {
+	}
+
+	chain nat_POST_work_deny {
+	}
+
+	chain nat_POST_work_allow {
+	}
+}
+table inet firewalld {
+	chain raw_PREROUTING {
+		type filter hook prerouting priority -290; policy accept;
+		icmpv6 type { nd-router-advert, nd-neighbor-solicit } accept
+		meta nfproto ipv6 fib saddr . iif check missing drop
+		jump raw_PREROUTING_ZONES_SOURCE
+		jump raw_PREROUTING_ZONES
+	}
+
+	chain raw_PREROUTING_ZONES_SOURCE {
+	}
+
+	chain raw_PREROUTING_ZONES {
+		iifname "enp0s25" goto raw_PRE_home
+		goto raw_PRE_public
+	}
+
+	chain mangle_PREROUTING {
+		type filter hook prerouting priority -140; policy accept;
+		jump mangle_PREROUTING_ZONES_SOURCE
+		jump mangle_PREROUTING_ZONES
+	}
+
+	chain mangle_PREROUTING_ZONES_SOURCE {
+	}
+
+	chain mangle_PREROUTING_ZONES {
+		iifname "enp0s25" goto mangle_PRE_home
+		goto mangle_PRE_public
+	}
+
+	chain filter_INPUT {
+		type filter hook input priority 10; policy accept;
+		ct state established,related accept
+		iifname "lo" accept
+		jump filter_INPUT_ZONES_SOURCE
+		jump filter_INPUT_ZONES
+		ct state invalid drop
+		reject with icmpx type admin-prohibited
+	}
+
+	chain filter_FORWARD {
+		type filter hook forward priority 10; policy accept;
+		ct state established,related accept
+		iifname "lo" accept
+		jump filter_FORWARD_IN_ZONES_SOURCE
+		jump filter_FORWARD_IN_ZONES
+		jump filter_FORWARD_OUT_ZONES_SOURCE
+		jump filter_FORWARD_OUT_ZONES
+		ct state invalid drop
+		reject with icmpx type admin-prohibited
+	}
+
+	chain filter_INPUT_ZONES_SOURCE {
+	}
+
+	chain filter_INPUT_ZONES {
+		iifname "enp0s25" goto filter_IN_home
+		goto filter_IN_public
+	}
+
+	chain filter_FORWARD_IN_ZONES_SOURCE {
+	}
+
+	chain filter_FORWARD_IN_ZONES {
+		iifname "enp0s25" goto filter_FWDI_home
+		goto filter_FWDI_public
+	}
+
+	chain filter_FORWARD_OUT_ZONES_SOURCE {
+	}
+
+	chain filter_FORWARD_OUT_ZONES {
+		oifname "enp0s25" goto filter_FWDO_home
+		goto filter_FWDO_public
+	}
+
+	chain raw_PRE_public {
+		jump raw_PRE_public_log
+		jump raw_PRE_public_deny
+		jump raw_PRE_public_allow
+	}
+
+	chain raw_PRE_public_log {
+	}
+
+	chain raw_PRE_public_deny {
+	}
+
+	chain raw_PRE_public_allow {
+	}
+
+	chain filter_IN_public {
+		jump filter_IN_public_log
+		jump filter_IN_public_deny
+		jump filter_IN_public_allow
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_IN_public_log {
+	}
+
+	chain filter_IN_public_deny {
+	}
+
+	chain filter_IN_public_allow {
+		tcp dport ssh ct state new,untracked accept
+		ip6 daddr fe80::/64 udp dport dhcpv6-client ct state new,untracked accept
+	}
+
+	chain filter_FWDI_public {
+		jump filter_FWDI_public_log
+		jump filter_FWDI_public_deny
+		jump filter_FWDI_public_allow
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_FWDI_public_log {
+	}
+
+	chain filter_FWDI_public_deny {
+	}
+
+	chain filter_FWDI_public_allow {
+	}
+
+	chain mangle_PRE_public {
+		jump mangle_PRE_public_log
+		jump mangle_PRE_public_deny
+		jump mangle_PRE_public_allow
+	}
+
+	chain mangle_PRE_public_log {
+	}
+
+	chain mangle_PRE_public_deny {
+	}
+
+	chain mangle_PRE_public_allow {
+	}
+
+	chain filter_FWDO_public {
+		jump filter_FWDO_public_log
+		jump filter_FWDO_public_deny
+		jump filter_FWDO_public_allow
+	}
+
+	chain filter_FWDO_public_log {
+	}
+
+	chain filter_FWDO_public_deny {
+	}
+
+	chain filter_FWDO_public_allow {
+	}
+
+	chain raw_PRE_home {
+		jump raw_PRE_home_log
+		jump raw_PRE_home_deny
+		jump raw_PRE_home_allow
+	}
+
+	chain raw_PRE_home_log {
+	}
+
+	chain raw_PRE_home_deny {
+	}
+
+	chain raw_PRE_home_allow {
+		udp dport netbios-ns ct helper "netbios-ns"
+	}
+
+	chain filter_IN_home {
+		jump filter_IN_home_log
+		jump filter_IN_home_deny
+		jump filter_IN_home_allow
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_IN_home_log {
+	}
+
+	chain filter_IN_home_deny {
+	}
+
+	chain filter_IN_home_allow {
+		tcp dport ssh ct state new,untracked accept
+		ip daddr 224.0.0.251 udp dport mdns ct state new,untracked accept
+		ip6 daddr ff02::fb udp dport mdns ct state new,untracked accept
+		udp dport 1714-1764 ct state new,untracked accept
+		tcp dport 1714-1764 ct state new,untracked accept
+		ip6 daddr fe80::/64 udp dport dhcpv6-client ct state new,untracked accept
+		udp dport netbios-ns ct state new,untracked accept
+		udp dport netbios-dgm ct state new,untracked accept
+		tcp dport netbios-ssn ct state new,untracked accept
+		tcp dport microsoft-ds ct state new,untracked accept
+	}
+
+	chain filter_FWDI_home {
+		jump filter_FWDI_home_log
+		jump filter_FWDI_home_deny
+		jump filter_FWDI_home_allow
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_FWDI_home_log {
+	}
+
+	chain filter_FWDI_home_deny {
+	}
+
+	chain filter_FWDI_home_allow {
+	}
+
+	chain mangle_PRE_home {
+		jump mangle_PRE_home_log
+		jump mangle_PRE_home_deny
+		jump mangle_PRE_home_allow
+	}
+
+	chain mangle_PRE_home_log {
+	}
+
+	chain mangle_PRE_home_deny {
+	}
+
+	chain mangle_PRE_home_allow {
+	}
+
+	chain filter_FWDO_home {
+		jump filter_FWDO_home_log
+		jump filter_FWDO_home_deny
+		jump filter_FWDO_home_allow
+	}
+
+	chain filter_FWDO_home_log {
+	}
+
+	chain filter_FWDO_home_deny {
+	}
+
+	chain filter_FWDO_home_allow {
+	}
+
+	chain raw_PRE_work {
+		jump raw_PRE_work_log
+		jump raw_PRE_work_deny
+		jump raw_PRE_work_allow
+	}
+
+	chain raw_PRE_work_log {
+	}
+
+	chain raw_PRE_work_deny {
+	}
+
+	chain raw_PRE_work_allow {
+	}
+
+	chain filter_IN_work {
+		jump filter_IN_work_log
+		jump filter_IN_work_deny
+		jump filter_IN_work_allow
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_IN_work_log {
+	}
+
+	chain filter_IN_work_deny {
+	}
+
+	chain filter_IN_work_allow {
+		tcp dport ssh ct state new,untracked accept
+		ip6 daddr fe80::/64 udp dport dhcpv6-client ct state new,untracked accept
+	}
+
+	chain filter_FWDI_work {
+		jump filter_FWDI_work_log
+		jump filter_FWDI_work_deny
+		jump filter_FWDI_work_allow
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_FWDI_work_log {
+	}
+
+	chain filter_FWDI_work_deny {
+	}
+
+	chain filter_FWDI_work_allow {
+	}
+
+	chain mangle_PRE_work {
+		jump mangle_PRE_work_log
+		jump mangle_PRE_work_deny
+		jump mangle_PRE_work_allow
+	}
+
+	chain mangle_PRE_work_log {
+	}
+
+	chain mangle_PRE_work_deny {
+	}
+
+	chain mangle_PRE_work_allow {
+	}
+
+	chain filter_FWDO_work {
+		jump filter_FWDO_work_log
+		jump filter_FWDO_work_deny
+		jump filter_FWDO_work_allow
+	}
+
+	chain filter_FWDO_work_log {
+	}
+
+	chain filter_FWDO_work_deny {
+	}
+
+	chain filter_FWDO_work_allow {
+	}
+}"
+
+( echo "flush ruleset;"; echo "${RULESET}" ) | $NFT -f -
+
+exit 0

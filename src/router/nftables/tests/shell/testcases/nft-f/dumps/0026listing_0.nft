@@ -1,0 +1,5 @@
+table ip A {
+	chain B {
+		tcp dport { 1, 2 } accept
+	}
+}

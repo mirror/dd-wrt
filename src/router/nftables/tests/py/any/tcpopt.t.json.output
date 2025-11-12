@@ -1,0 +1,32 @@
+# tcp option sack0 left 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "left",
+                    "name": "sack"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack0 right 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "right",
+                    "name": "sack"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+

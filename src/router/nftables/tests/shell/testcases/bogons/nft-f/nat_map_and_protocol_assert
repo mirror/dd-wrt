@@ -1,0 +1,5 @@
+table t {
+ chain y {
+  snat to ip saddr . tcp sport map { 1.1.1.1 . 1 : 1.1.1.2 . 1 } : 6
+ }
+}

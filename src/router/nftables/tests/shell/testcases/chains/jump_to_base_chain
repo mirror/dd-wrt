@@ -1,0 +1,25 @@
+#!/bin/bash
+
+$NFT -f - <<EOF
+table t {
+	chain i {
+		type filter hook input priority 0
+	}
+
+	chain o {
+		type filter hook output priority 0
+		jump c
+	}
+
+	chain c {
+		jump i
+	}
+}
+EOF
+
+if [ $? -eq 0 ];then
+	echo "E: Accepted jump to a base chain"
+	exit 1
+fi
+
+exit 0

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="table ip nat {
+       map ipportmap {
+                type ipv4_addr : interval ipv4_addr . inet_service
+                flags interval
+                elements = { 192.168.1.2 : 10.141.10.1-10.141.10.3 . 8888-8999 }
+       }
+       chain prerouting {
+                type nat hook prerouting priority dstnat; policy accept;
+                ip protocol tcp dnat ip to ip saddr map @ipportmap
+       }
+}"
+
+$NFT -f - <<< $EXPECTED
+$NFT add element ip nat ipportmap { 192.168.2.0/24 : 10.141.11.5-10.141.11.20 . 8888-8999 }

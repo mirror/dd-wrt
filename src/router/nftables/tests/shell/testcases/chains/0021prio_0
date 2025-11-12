@@ -1,0 +1,90 @@
+#!/bin/bash
+
+set -e
+
+format_offset () {
+	local i=$1
+	if ((i == 0))
+	then
+		echo ""
+	elif ((i > 0))
+	then
+		echo "+$i"
+	else
+		echo "$i"
+	fi
+}
+
+chainname () {
+	local hook=$1
+	local prioname=$2
+	local priooffset=$3
+
+	echo "${hook}${prioname}${priooffset}" | tr "\-+" "mp"
+}
+
+gen_chains () {
+	local family=$1
+	local hook=$2
+	local prioname=$3
+	local device=${4:+device $4}
+
+	for i in -11 -10 0 10 11
+	do
+		local offset=`format_offset $i`
+		local cmd="add chain $family x"
+		cmd+=" `chainname $hook $prioname $offset` {"
+		cmd+=" type filter hook $hook $device"
+		cmd+=" priority $prioname $offset; }"
+		echo "$cmd"
+	done
+}
+
+tmpfile=$(mktemp)
+trap "rm $tmpfile" EXIT
+
+(
+
+for family in ip ip6 inet
+do
+	echo "add table $family x"
+	for hook in prerouting input forward output postrouting
+	do
+		for prioname in raw mangle filter security
+		do
+			gen_chains $family $hook $prioname
+		done
+	done
+	gen_chains $family prerouting dstnat
+	gen_chains $family postrouting srcnat
+done
+
+family=arp
+echo "add table $family x"
+for hook in input output
+do
+	gen_chains $family $hook filter
+done
+
+family=netdev
+echo "add table $family x"
+gen_chains $family ingress filter lo
+[ "$NFT_TEST_HAVE_netdev_egress" != n ] && gen_chains $family egress filter lo
+
+family=bridge
+echo "add table $family x"
+for hook in prerouting input forward output postrouting
+do
+	gen_chains $family $hook filter
+done
+gen_chains $family prerouting dstnat
+gen_chains $family output out
+gen_chains $family postrouting srcnat
+
+) >$tmpfile
+$NFT -f $tmpfile
+
+if [ "$NFT_TEST_HAVE_netdev_egress" = n ]; then
+	echo "Ran a modified version of the test due to NFT_TEST_HAVE_netdev_egress=n"
+	exit 77
+fi

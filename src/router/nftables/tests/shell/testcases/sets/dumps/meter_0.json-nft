@@ -1,0 +1,203 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "test",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip6",
+        "name": "acct_out",
+        "table": "test",
+        "type": [
+          "iface_index",
+          "ipv6_addr"
+        ],
+        "handle": 0,
+        "size": 4096,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "ip6",
+        "name": "acct_out2",
+        "table": "test",
+        "type": [
+          "ipv6_addr",
+          "iface_index"
+        ],
+        "handle": 0,
+        "size": 12345,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "test",
+        "chain": "test",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "meta": {
+                          "key": "iif"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "ip6",
+                          "field": "saddr"
+                        }
+                      }
+                    ]
+                  },
+                  "timeout": 600
+                }
+              },
+              "set": "@acct_out",
+              "stmt": [
+                {
+                  "counter": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "test",
+        "chain": "test",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip6",
+                          "field": "saddr"
+                        }
+                      },
+                      {
+                        "meta": {
+                          "key": "iif"
+                        }
+                      }
+                    ]
+                  },
+                  "timeout": 600
+                }
+              },
+              "set": "@acct_out2",
+              "stmt": [
+                {
+                  "counter": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "test",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "xyz",
+        "table": "test",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "size": 8192,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test",
+        "chain": "test",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  "timeout": 30
+                }
+              },
+              "set": "@xyz",
+              "stmt": [
+                {
+                  "counter": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

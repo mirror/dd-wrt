@@ -1,0 +1,160 @@
+# gre version 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "version",
+                    "protocol": "gre"
+                }
+            },
+            "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# gre ip saddr 10.141.11.2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "gre"
+                }
+            },
+            "op": "==",
+            "right": "10.141.11.2"
+        }
+    }
+]
+
+# gre ip saddr 10.141.11.0/24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "gre"
+                }
+            },
+            "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.141.11.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# gre ip protocol 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip",
+                    "tunnel": "gre"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# gre udp sport 8888
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp",
+                    "tunnel": "gre"
+                }
+            },
+            "op": "==",
+            "right": 8888
+        }
+    }
+]
+
+# gre icmp type echo-reply
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp",
+                    "tunnel": "gre"
+                }
+            },
+            "op": "==",
+            "right": "echo-reply"
+        }
+    }
+]
+
+# gre ip dscp 0x02
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip",
+                    "tunnel": "gre"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# gre ip saddr . gre ip daddr { 1.2.3.4 . 4.3.2.1 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip",
+                            "tunnel": "gre"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip",
+                            "tunnel": "gre"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "1.2.3.4",
+                            "4.3.2.1"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+

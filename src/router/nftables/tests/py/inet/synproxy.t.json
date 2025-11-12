@@ -1,0 +1,60 @@
+# synproxy
+[
+    {
+        "synproxy":null
+    }
+]
+
+# synproxy mss 1460 wscale 7
+[
+    {
+        "synproxy": {
+            "mss": 1460,
+            "wscale": 7
+        }
+    }
+]
+
+# synproxy timestamp
+[
+    {
+        "synproxy": {
+            "flags": "timestamp"
+        }
+    }
+]
+
+# synproxy timestamp sack-perm
+[
+    {
+        "synproxy": {
+            "flags": [
+                "timestamp",
+                "sack-perm"
+            ]
+        }
+    }
+]
+
+# synproxy mss 1460 wscale 5 timestamp sack-perm
+[
+    {
+        "synproxy": {
+            "flags": [
+                "timestamp",
+                "sack-perm"
+            ],
+            "mss": 1460,
+            "wscale": 5
+        }
+    }
+]
+
+# synproxy sack-perm
+[
+    {
+        "synproxy": {
+            "flags": "sack-perm"
+        }
+    }
+]

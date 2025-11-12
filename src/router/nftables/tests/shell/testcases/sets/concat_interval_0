@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+set -e
+
+RULESET="table ip t {
+	set s {
+		type ipv4_addr . inet_proto . inet_service
+		flags interval
+		counter
+		elements = { 1.0.0.1 . udp . 53 }
+	}
+	set s2 {
+		type ipv4_addr . mark
+		flags interval
+		elements = { 10.10.10.10 . 0x00000100,
+			     20.20.20.20 . 0x00000200 }
+	}
+}"
+
+$NFT -f - <<< $RULESET
+
+$NFT delete element t s { 1.0.0.1 . udp . 53}
+
+exit 0

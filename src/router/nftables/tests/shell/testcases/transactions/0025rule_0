@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# make sure stored delete/replace rule commands are correctly applied
+
+set -e
+
+$NFT -f - <<EOF
+flush ruleset
+table x {
+	chain y {
+		accept
+		log
+	}
+}
+EOF
+
+$NFT -f - <<EOF
+replace rule x y handle 2 log
+delete rule x y handle 3
+add rule x y index 0 drop
+EOF

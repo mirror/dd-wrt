@@ -1,0 +1,14 @@
+#!/bin/bash -e
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_destroy)
+
+$NFT add table t
+$NFT add chain t c
+
+# pass for non-existent rule
+$NFT destroy rule t c handle 3333
+
+# successfully delete existing rule
+handle=$($NFT -a -e insert rule t c accept | \
+	sed -n 's/.*handle \([0-9]*\)$/\1/p')
+$NFT destroy rule t c handle "$handle"

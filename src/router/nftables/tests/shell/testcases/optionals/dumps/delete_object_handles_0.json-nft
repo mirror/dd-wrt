@@ -1,0 +1,67 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test-ip",
+        "handle": 0
+      }
+    },
+    {
+      "quota": {
+        "family": "ip",
+        "name": "https-quota",
+        "table": "test-ip",
+        "handle": 0,
+        "bytes": 26214400,
+        "used": 0,
+        "inv": false
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "ports",
+        "table": "test-ip",
+        "type": "inet_service",
+        "handle": 0,
+        "map": "quota"
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "test-ip6",
+        "handle": 0
+      }
+    },
+    {
+      "quota": {
+        "family": "ip6",
+        "name": "http-quota",
+        "table": "test-ip6",
+        "handle": 0,
+        "bytes": 26214400,
+        "used": 0,
+        "inv": true
+      }
+    },
+    {
+      "counter": {
+        "family": "ip6",
+        "name": "http-traffic",
+        "table": "test-ip6",
+        "handle": 0,
+        "packets": 0,
+        "bytes": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+# ip6 saddr @set2 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "@set2"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip6 saddr != @set2 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": "@set2"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip6 saddr . ip6 daddr @set5 drop
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip6"
+                        }
+                    }
+                ]
+            },
+	    "op": "==",
+            "right": "@set5"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# add @set5 { ip6 saddr . ip6 daddr }
+[
+    {
+        "set": {
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip6"
+                        }
+                    }
+                ]
+            },
+            "op": "add",
+            "set": "@set5"
+        }
+    }
+]
+
+# delete @set5 { ip6 saddr . ip6 daddr }
+[
+    {
+        "set": {
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip6"
+                        }
+                    }
+                ]
+            },
+            "op": "delete",
+            "set": "@set5"
+        }
+    }
+]
+
+# add @map1 { ip6 saddr . ip6 daddr : meta mark }
+[
+    {
+        "map": {
+            "data": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip6"
+                        }
+                    }
+                ]
+            },
+            "map": "@map1",
+            "op": "add"
+        }
+    }
+]
+
+# add @map2 { ip6 saddr . ip6 daddr . th dport : 1234::1 . 80 }
+[
+    {
+        "map": {
+            "data": {
+                "concat": [
+                    "1234::1",
+                    80
+                ]
+            },
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "th"
+                        }
+                    }
+                ]
+            },
+            "map": "@map2",
+            "op": "add"
+        }
+    }
+]

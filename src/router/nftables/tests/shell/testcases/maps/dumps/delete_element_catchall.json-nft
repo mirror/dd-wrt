@@ -1,0 +1,84 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "y",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "m",
+        "table": "x",
+        "type": {
+          "typeof": {
+            "ct": {
+              "key": "bytes"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "classid",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            "*",
+            "1:3"
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "priority"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "ct": {
+                      "key": "bytes"
+                    }
+                  },
+                  "data": "@m"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_json)
+
+set -e
+
+$NFT flush ruleset
+
+RULESET='{"nftables": [{"metainfo": {"json_schema_version": 999}}]}'
+
+$NFT -j -f - <<< $RULESET && exit 1
+
+exit 0

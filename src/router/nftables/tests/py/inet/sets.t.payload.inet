@@ -1,0 +1,41 @@
+# ip saddr @set1 drop
+inet test-inet input 
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set set1 ]
+  [ immediate reg 0 drop ]
+
+# ip6 daddr != @set2 accept
+inet test-inet input 
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x0000000a ]
+  [ payload load 16b @ network header + 24 => reg 1 ]
+  [ lookup reg 1 set set2 0x1 ]
+  [ immediate reg 0 accept ]
+
+# ip saddr . ip daddr . tcp dport @set3 accept
+inet 
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ payload load 4b @ network header + 16 => reg 9 ]
+  [ payload load 2b @ transport header + 2 => reg 10 ]
+  [ lookup reg 1 set set3 ]
+  [ immediate reg 0 accept ]
+
+# ip daddr . tcp dport { 10.0.0.0/8 . 10-23, 192.168.1.1-192.168.3.8 . 80-443 } accept
+__set%d test-inet 87
+__set%d test-inet 0
+        element 0000000a 00000a00  - ffffff0a 00001700  : 0 [end]    element 0101a8c0 00005000  - 0803a8c0 0000bb01  : 0 [end]
+inet 
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 4b @ network header + 16 => reg 1 ]
+  [ payload load 2b @ transport header + 2 => reg 9 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]

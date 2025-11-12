@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# tests for Netfilter bug #965 and the related fix
+# (regarding rule management with a given position/handle spec)
+
+set -e
+$NFT add table t
+$NFT add chain t c
+$NFT add rule t c accept	# should have handle 2
+$NFT add rule t c drop		# should have handle 3
+$NFT delete rule t c handle 2

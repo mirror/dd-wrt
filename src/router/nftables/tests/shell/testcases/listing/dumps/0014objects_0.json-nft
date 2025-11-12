@@ -1,0 +1,47 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "quota": {
+        "family": "ip",
+        "name": "https-quota",
+        "table": "test",
+        "handle": 0,
+        "bytes": 26214400,
+        "used": 0,
+        "inv": false
+      }
+    },
+    {
+      "ct helper": {
+        "family": "ip",
+        "name": "cthelp",
+        "table": "test",
+        "handle": 0,
+        "type": "sip",
+        "protocol": "tcp",
+        "l3proto": "ip"
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test-ip",
+        "handle": 0
+      }
+    }
+  ]
+}

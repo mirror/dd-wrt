@@ -1,0 +1,21 @@
+[Unit]
+Description=nftables static rule set
+Documentation=man:nftables.service(8)
+Wants=network-pre.target
+Before=network-pre.target shutdown.target
+Conflicts=shutdown.target
+DefaultDependencies=no
+ConditionPathExists=@pkgsysconfdir@/rules/main.nft
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StandardInput=null
+ProtectSystem=full
+ProtectHome=true
+ExecStart=@sbindir@/nft 'flush ruleset; include "@pkgsysconfdir@/rules/main.nft"'
+ExecReload=@sbindir@/nft 'flush ruleset; include "@pkgsysconfdir@/rules/main.nft"'
+ExecStop=@sbindir@/nft flush ruleset
+
+[Install]
+WantedBy=sysinit.target

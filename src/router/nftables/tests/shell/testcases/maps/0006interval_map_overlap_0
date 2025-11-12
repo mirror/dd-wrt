@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# test adding elements to an interval map
+# shows how disjoint intervals are seen as overlaps
+# NOTE this is only an issue with two separate nft calls
+
+n=1
+RULESET="add table x
+add map x y { type ipv4_addr : ipv4_addr; flags interval; }
+add element x y { 10.0.${n}.0/24 : 10.0.0.${n} }"
+
+set -e
+$NFT -f - <<< "$RULESET"
+
+n=2
+$NFT "add element x y { 10.0.${n}.0/24 : 10.0.0.${n} }"

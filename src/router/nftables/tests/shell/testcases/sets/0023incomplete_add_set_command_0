@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This testscase checks bug identified and fixed in the commit Id "c6cd7c22548a"
+# Before the commit c6cd7c22548a, nft returns 139 (i.e, segmentation fault) which
+# indicates the bug but after the commit it returns 1.
+
+$NFT add table t
+$NFT add set t c
+
+ret=$?
+if [ $ret -ne 1 ] ;
+then
+	echo "E: returned $ret instead of 1" >&2
+	exit 1
+fi
+

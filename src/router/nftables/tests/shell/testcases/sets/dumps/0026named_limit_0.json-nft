@@ -1,0 +1,75 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "filter",
+        "name": "input",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "limit": {
+        "family": "ip",
+        "name": "http-traffic",
+        "table": "filter",
+        "handle": 0,
+        "rate": 1,
+        "per": "second",
+        "burst": 5
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "filter",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "limit": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "tcp",
+                    "field": "dport"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      80,
+                      "http-traffic"
+                    ],
+                    [
+                      443,
+                      "http-traffic"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

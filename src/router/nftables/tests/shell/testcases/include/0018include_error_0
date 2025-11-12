@@ -1,0 +1,34 @@
+#!/bin/bash
+
+tmpfile1=$(mktemp)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+touch $tmpfile1
+
+RULESET="include \"$tmpfile1\"
+)
+"
+
+tmpfile2=$(mktemp)
+if [ ! -w $tmpfile2 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+tmpfile3=$(mktemp)
+if [ ! -w $tmpfile3 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+echo "/dev/stdin:2:1-1: Error: syntax error, unexpected ')'
+)
+^" > $tmpfile3
+
+$NFT -I/tmp/ -f - <<< "$RULESET" 2> $tmpfile2
+$DIFF -u $tmpfile2 $tmpfile3
+
+rm $tmpfile1 $tmpfile2 $tmpfile3

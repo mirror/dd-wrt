@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		ip protocol . th dport vmap { tcp / 22 : accept, udp . 67 : drop }
+	}
+}

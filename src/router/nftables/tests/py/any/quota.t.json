@@ -1,0 +1,136 @@
+# quota 1025 bytes
+[
+    {
+        "quota": {
+            "val": 1025,
+            "val_unit": "bytes"
+        }
+    }
+]
+
+# quota 1 kbytes
+[
+    {
+        "quota": {
+            "val": 1,
+            "val_unit": "kbytes"
+        }
+    }
+]
+
+# quota 2 kbytes
+[
+    {
+        "quota": {
+            "val": 2,
+            "val_unit": "kbytes"
+        }
+    }
+]
+
+# quota 1025 kbytes
+[
+    {
+        "quota": {
+            "val": 1025,
+            "val_unit": "kbytes"
+        }
+    }
+]
+
+# quota 1023 mbytes
+[
+    {
+        "quota": {
+            "val": 1023,
+            "val_unit": "mbytes"
+        }
+    }
+]
+
+# quota 10230 mbytes
+[
+    {
+        "quota": {
+            "val": 10230,
+            "val_unit": "mbytes"
+        }
+    }
+]
+
+# quota 1023000 mbytes
+[
+    {
+        "quota": {
+            "val": 1023000,
+            "val_unit": "mbytes"
+        }
+    }
+]
+
+# quota over 1 kbytes
+[
+    {
+        "quota": {
+            "inv": true,
+            "val": 1,
+            "val_unit": "kbytes"
+        }
+    }
+]
+
+# quota over 2 kbytes
+[
+    {
+        "quota": {
+            "inv": true,
+            "val": 2,
+            "val_unit": "kbytes"
+        }
+    }
+]
+
+# quota over 1025 kbytes
+[
+    {
+        "quota": {
+            "inv": true,
+            "val": 1025,
+            "val_unit": "kbytes"
+        }
+    }
+]
+
+# quota over 1023 mbytes
+[
+    {
+        "quota": {
+            "inv": true,
+            "val": 1023,
+            "val_unit": "mbytes"
+        }
+    }
+]
+
+# quota over 10230 mbytes
+[
+    {
+        "quota": {
+            "inv": true,
+            "val": 10230,
+            "val_unit": "mbytes"
+        }
+    }
+]
+
+# quota over 1023000 mbytes
+[
+    {
+        "quota": {
+            "inv": true,
+            "val": 1023000,
+            "val_unit": "mbytes"
+        }
+    }
+]
+

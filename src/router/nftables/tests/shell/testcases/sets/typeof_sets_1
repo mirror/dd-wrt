@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# regression test for corner case in netlink_delinearize
+
+EXPECTED="table bridge t {
+	set nodhcpvlan {
+		typeof vlan id
+		elements = { 1 }
+	}
+
+	chain c1 {
+		vlan id != @nodhcpvlan vlan type arp counter packets 0 bytes 0 jump c2
+		vlan id != @nodhcpvlan vlan type ip counter packets 0 bytes 0 jump c2
+		vlan id != { 1, 2 } vlan type ip6 counter packets 0 bytes 0 jump c2
+	}
+
+	chain c2 {
+	}
+}"
+
+set -e
+$NFT -f - <<< $EXPECTED

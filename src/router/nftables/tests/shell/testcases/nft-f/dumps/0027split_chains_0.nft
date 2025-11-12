@@ -1,0 +1,9 @@
+table inet filter {
+	chain x {
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		jump x
+	}
+}

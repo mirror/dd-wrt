@@ -1,0 +1,8 @@
+table ip filter {
+	set w_all {
+		type ipv4_addr
+		flags interval
+		auto-merge
+		elements = { 10.10.10.10, 10.10.10.253 }
+	}
+}

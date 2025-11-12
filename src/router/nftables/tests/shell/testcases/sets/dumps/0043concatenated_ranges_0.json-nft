@@ -1,0 +1,98 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "output",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "test",
+        "table": "filter",
+        "type": [
+          "mark",
+          "inet_service",
+          "inet_proto"
+        ],
+        "handle": 0,
+        "map": "mark",
+        "flags": [
+          "interval",
+          "timeout"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "output",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "meta": {
+                          "key": "mark"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      },
+                      {
+                        "meta": {
+                          "key": "l4proto"
+                        }
+                      }
+                    ]
+                  },
+                  "data": "@test"
+                }
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

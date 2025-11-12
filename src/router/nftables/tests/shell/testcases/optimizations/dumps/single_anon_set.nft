@@ -1,0 +1,15 @@
+table ip test {
+	chain test {
+		ip saddr 127.0.0.1 accept
+		iif "lo" accept
+		tcp dport != 22 drop
+		ip saddr 127.0.0.0/8 accept
+		ip saddr 127.0.0.1-192.168.7.3 accept
+		tcp sport 1-1023 drop
+		ip daddr { 192.168.7.1, 192.168.7.5 } accept
+		tcp dport { 80, 443 } accept
+		ip daddr . tcp dport { 192.168.0.1 . 22 } accept
+		meta mark set ip daddr map { 192.168.0.1 : 0x00000001 }
+		ct state { established, related } accept
+	}
+}

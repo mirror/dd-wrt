@@ -1,0 +1,40 @@
+#!/bin/bash
+
+RULESET='table ip x {
+        chain NAME_lan-wg8 {}
+        chain NAME_mullvadgb-wg8 {}
+        chain NAME_mullvadus-wg8 {}
+        chain NAME_wan-wg8 {}
+        chain NAME_wg0-wg8 {}
+        chain NAME_wg1-wg8 {}
+        chain NAME_wg7-wg8 {}
+
+        chain VZONE_wg8 {
+                iifname "wg8" counter return
+                iifname "eth1" counter jump NAME_lan-wg8
+                iifname "eth1" counter return
+                iifname "eth3" counter jump NAME_mullvadgb-wg8
+                iifname "eth3" counter return
+                iifname "eth2" counter jump NAME_mullvadus-wg8
+                iifname "eth2" counter return
+                iifname "eth0" counter jump NAME_wan-wg8
+                iifname "eth0" counter return
+                iifname "wg0" counter jump NAME_wg0-wg8
+                iifname "wg0" counter return
+                iifname "wg1" counter jump NAME_wg1-wg8
+                iifname "wg1" counter return
+                iifname "wg7" counter jump NAME_wg7-wg8
+                iifname "wg7" counter return
+                counter drop comment "zone_wg8 default-action drop"
+        }
+
+        chain v4icmp {}
+        chain v4icmpc {}
+
+        chain y {
+               ip protocol icmp jump v4icmp
+               ip protocol icmp goto v4icmpc
+        }
+}'
+
+$NFT -c -o -f - <<< "$RULESET"

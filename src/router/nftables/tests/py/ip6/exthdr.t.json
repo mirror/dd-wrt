@@ -1,0 +1,180 @@
+# exthdr hbh exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr rt exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr frag exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr dst exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr mh exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr hbh missing
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": false
+        }
+    }
+]
+
+# exthdr hbh == exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr hbh == missing
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": false
+        }
+    }
+]
+
+# exthdr hbh != exists
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": true
+        }
+    }
+]
+
+# exthdr hbh != missing
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": false
+        }
+    }
+]
+
+# exthdr hbh 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# exthdr hbh 0
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+

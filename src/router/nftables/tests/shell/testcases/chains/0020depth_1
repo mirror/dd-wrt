@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+$NFT add table ip filter
+$NFT add chain ip filter input { type filter hook input priority 0\; }
+
+for ((i=0;i<20;i++)); do
+	$NFT add chain ip filter a$i
+done
+
+$NFT add rule ip filter input jump a1
+
+for ((i=0;i<10;i++)); do
+	$NFT add rule ip filter a$i jump a$((i+1))
+done
+
+for ((i=11;i<19;i++)); do
+	$NFT add rule ip filter a$i jump a$((i+1))
+done
+
+$NFT add rule ip filter a10 jump a11 || exit 0
+echo "E: Expected 20th jump to fail due to jump stack exhaustion" 1>&2
+exit 1

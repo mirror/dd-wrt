@@ -1,0 +1,25 @@
+table ip nat {
+	chain test {
+		tcp dport { 123, 321 }
+	}
+}
+table ip6 test {
+	chain test {
+		udp sport { 123, 321 }
+	}
+}
+table arp test_arp {
+	chain test {
+		meta mark { 0x0000007b, 0x00000141 }
+	}
+}
+table bridge test_bridge {
+	chain test {
+		ip daddr { 1.1.1.1, 2.2.2.2 }
+	}
+}
+table inet filter {
+	chain test {
+		tcp dport { 80, 443 }
+	}
+}

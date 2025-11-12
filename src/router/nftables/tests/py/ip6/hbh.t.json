@@ -1,0 +1,316 @@
+# hbh hdrlength 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# hbh hdrlength != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# hbh hdrlength 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# hbh hdrlength != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# hbh hdrlength {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# hbh hdrlength != {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr {esp, ah, comp, udp, udplite, tcp, dccp, sctp, icmpv6}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "esp",
+                    "ah",
+                    "comp",
+                    "udp",
+                    "udplite",
+                    "tcp",
+                    "dccp",
+                    "sctp",
+                    "icmpv6"
+                ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr != {esp, ah, comp, udp, udplite, tcp, dccp, sctp, icmpv6}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "esp",
+                    "ah",
+                    "comp",
+                    "udp",
+                    "udplite",
+                    "tcp",
+                    "dccp",
+                    "sctp",
+                    "icmpv6"
+                ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# hbh nexthdr != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# hbh nexthdr 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr != {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr ip
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": "ip"
+        }
+    }
+]
+
+# hbh nexthdr != ip
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": "ip"
+        }
+    }
+]
+

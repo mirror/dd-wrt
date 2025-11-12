@@ -1,0 +1,7 @@
+# d3519cb89f6d ("netfilter: nf_tables: add inet ingress support")
+# v5.10-rc1~107^2~17^2~1
+table inet t {
+        chain c {
+                type filter hook ingress device "lo" priority filter; policy accept;
+        }
+}

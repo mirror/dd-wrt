@@ -1,0 +1,114 @@
+# udp dport 4789 vxlan vni 10
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 3b @ tunnel header + 4 => reg 1 ] ]
+  [ cmp eq reg 1 0x000a0000 ]
+
+# udp dport 4789 vxlan ip saddr 10.141.11.2
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 4b @ network header + 12 => reg 1 ] ]
+  [ cmp eq reg 1 0x020b8d0a ]
+
+# udp dport 4789 vxlan ip saddr 10.141.11.0/24
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 3b @ network header + 12 => reg 1 ] ]
+  [ cmp eq reg 1 0x000b8d0a ]
+
+# udp dport 4789 vxlan ip protocol 1
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 1b @ network header + 9 => reg 1 ] ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# udp dport 4789 vxlan udp sport 8888
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load l4proto => reg 1 ] ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 2b @ transport header + 0 => reg 1 ] ]
+  [ cmp eq reg 1 0x0000b822 ]
+
+# udp dport 4789 vxlan icmp type echo-reply
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 2b @ link header + 12 => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load l4proto => reg 1 ] ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 1b @ transport header + 0 => reg 1 ] ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# udp dport 4789 vxlan ether saddr 62:87:4d:d6:19:05
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 6b @ link header + 6 => reg 1 ] ]
+  [ cmp eq reg 1 0xd64d8762 0x00000519 ]
+
+# udp dport 4789 vxlan vlan id 10
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 2b @ link header + 12 => reg 1 ] ]
+  [ cmp eq reg 1 0x00000081 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 2b @ link header + 14 => reg 1 ] ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000ff0f ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000a00 ]
+
+# udp dport 4789 vxlan ip dscp 0x02
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 1b @ network header + 1 => reg 1 ] ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000008 ]
+
+# udp dport 4789 vxlan ip saddr . vxlan ip daddr { 1.2.3.4 . 4.3.2.1 }
+__set%d test-netdev 3 size 1
+__set%d test-netdev 0
+        element 04030201 01020304  : 0 [end]
+netdev test-netdev ingress
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000b512 ]
+  [ inner type 1 hdrsize 8 flags f [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 4b @ network header + 12 => reg 1 ] ]
+  [ inner type 1 hdrsize 8 flags f [ payload load 4b @ network header + 16 => reg 9 ] ]
+  [ lookup reg 1 set __set%d ]
+

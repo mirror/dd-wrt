@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_catchall_element)
+
+set -e
+
+RULESET="flush ruleset
+
+table ip x {
+        map m {
+                typeof ct bytes : meta priority
+                flags interval
+                elements = {
+                        0-2048000 : 1:0001,
+                        * : 1:0002,
+                }
+        }
+
+        chain y {
+                type filter hook output priority 0; policy accept;
+
+                meta priority set ct bytes map @m
+        }
+}"
+
+$NFT -f - <<< $RULESET
+
+$NFT delete element ip x m { 0-2048000 }
+$NFT add element ip x m { 0-2048000 : 1:0002 }
+$NFT delete element ip x m { 0-2048000 : 1:0002 }
+
+$NFT 'delete element ip x m { * }'
+$NFT 'add element ip x m { * : 1:0003 }'
+$NFT 'delete element ip x m { * : 1:0003 }'
+$NFT 'add element ip x m { * : 1:0003 }'

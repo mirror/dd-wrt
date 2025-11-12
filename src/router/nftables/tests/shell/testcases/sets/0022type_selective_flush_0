@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# This tests the selectiveness of flush command on structures that use the
+# generic set infrastructure (sets, maps and meters).
+
+RULESET="
+add table t
+add chain t c
+add set t s {type ipv4_addr;}
+add map t m {type ipv4_addr : inet_service;}
+add rule t c tcp dport 80 meter f size 1024 {ip saddr limit rate 10/second}
+"
+
+$NFT -f - <<< "$RULESET"
+
+# Commands that should be invalid
+
+declare -a cmds=(
+		"flush set t m"
+		"flush map t s" "flush map t f"
+		"flush meter t s" "flush meter t m"
+		)
+
+for i in "${cmds[@]}"
+do
+	$NFT "$i" &>/dev/null
+	ret=$?
+
+	if [ $ret -eq 0 ]; then
+		exit 1
+	fi
+done

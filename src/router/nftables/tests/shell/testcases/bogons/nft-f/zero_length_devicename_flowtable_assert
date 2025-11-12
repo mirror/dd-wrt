@@ -1,0 +1,5 @@
+table t {
+	flowtable f {
+		devices = { """"lo }
+	}
+}

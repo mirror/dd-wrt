@@ -1,0 +1,8 @@
+table ip t {
+	chain c {
+		tcp sport { 3478-3497, 16384-16387 }
+		masquerade
+		drop
+		accept
+	}
+}

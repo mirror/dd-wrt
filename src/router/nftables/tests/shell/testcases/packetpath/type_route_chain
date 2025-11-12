@@ -1,0 +1,201 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_tcpdump)
+
+. $NFT_TEST_LIBRARY_FILE
+
+cleanup()
+{
+	for i in $C $S $R1 $R2 $B0 $B1;do
+		kill $(ip netns pid $i) 2>/dev/null
+		ip netns del $i
+	done
+	rm -rf $WORKDIR
+}
+trap cleanup EXIT
+
+#     r1_ route1 r1_
+#      │          │
+# s_──br0        br1──c_
+#      │          │
+#     r2_ route2 r2_
+
+rnd=$(mktemp -u XXXXXXXX)
+C="route-type-chain-client-$rnd"
+S="route-type-chain-server-$rnd"
+R1="route-type-chain-route1-$rnd"
+R2="route-type-chain-route2-$rnd"
+B0="route-type-chain-bridge0-$rnd"
+B1="route-type-chain-bridge1-$rnd"
+WORKDIR="/tmp/route-type-chain-$rnd"
+
+umask 022
+mkdir -p "$WORKDIR"
+assert_pass "mkdir $WORKDIR"
+
+ip netns add $S
+ip netns add $C
+ip netns add $R1
+ip netns add $R2
+ip netns add $B0
+ip netns add $B1
+
+ip -net $S  link set lo up
+ip -net $C  link set lo up
+ip -net $R1 link set lo up
+ip -net $R2 link set lo up
+ip -net $B0 link set lo up
+ip -net $B1 link set lo up
+
+ip -n $B0 link add br0 up type bridge
+ip -n $B1 link add br1 up type bridge
+
+ip link add s_br0  up netns $S  type veth peer name br0_s  netns $B0
+ip link add c_br1  up netns $C  type veth peer name br1_c  netns $B1
+ip link add r1_br0 up netns $R1 type veth peer name br0_r1 netns $B0
+ip link add r1_br1 up netns $R1 type veth peer name br1_r1 netns $B1
+ip link add r2_br0 up netns $R2 type veth peer name br0_r2 netns $B0
+ip link add r2_br1 up netns $R2 type veth peer name br1_r2 netns $B1
+
+ip -n $B0 link set br0_s  up master br0
+ip -n $B0 link set br0_r1 up master br0
+ip -n $B0 link set br0_r2 up master br0
+ip -n $B1 link set br1_c  up master br1
+ip -n $B1 link set br1_r1 up master br1
+ip -n $B1 link set br1_r2 up master br1
+
+ip6_s_br0=2000::1
+ip6_r1_br0=2000::a
+ip6_r2_br0=2000::b
+ip6_c_br1=2001::1
+ip6_r1_br1=2001::a
+ip6_r2_br1=2001::b
+
+ip netns exec $R1 sysctl -wq net.ipv6.conf.all.forwarding=1
+ip netns exec $R2 sysctl -wq net.ipv6.conf.all.forwarding=1
+
+ip -n $S  addr add ${ip6_s_br0}/64  dev s_br0  nodad
+ip -n $C  addr add ${ip6_c_br1}/64  dev c_br1  nodad
+ip -n $R1 addr add ${ip6_r1_br0}/64 dev r1_br0 nodad
+ip -n $R1 addr add ${ip6_r1_br1}/64 dev r1_br1 nodad
+ip -n $R2 addr add ${ip6_r2_br0}/64 dev r2_br0 nodad
+ip -n $R2 addr add ${ip6_r2_br1}/64 dev r2_br1 nodad
+
+ip -n $S route add default via ${ip6_r1_br0} dev s_br0
+ip -n $C route add default via ${ip6_r1_br1} dev c_br1
+
+ip4_s_br0=192.168.0.1
+ip4_r1_br0=192.168.0.254
+ip4_r2_br0=192.168.0.253
+ip4_c_br1=192.168.1.1
+ip4_r1_br1=192.168.1.254
+ip4_r2_br1=192.168.1.253
+
+ip netns exec $R1 sysctl -wq net.ipv4.conf.all.forwarding=1
+ip netns exec $R2 sysctl -wq net.ipv4.conf.all.forwarding=1
+
+ip -n $S  addr add ${ip4_s_br0}/24  dev s_br0
+ip -n $C  addr add ${ip4_c_br1}/24  dev c_br1
+ip -n $R1 addr add ${ip4_r1_br0}/24 dev r1_br0
+ip -n $R1 addr add ${ip4_r1_br1}/24 dev r1_br1
+ip -n $R2 addr add ${ip4_r2_br0}/24 dev r2_br0
+ip -n $R2 addr add ${ip4_r2_br1}/24 dev r2_br1
+
+ip -n $S route add default via ${ip4_r1_br0} dev s_br0
+ip -n $C route add default via ${ip4_r1_br1} dev c_br1
+
+ip netns exec $C ping -W 10 ${ip4_s_br0} -c2 > /dev/null
+assert_pass "topo ipv4 initialization"
+ip netns exec $C ping -W 10 ${ip6_s_br0} -c2 > /dev/null
+assert_pass "topo ipv6 initialization"
+
+check_icmp_in_r1()
+{
+	local dst_addr="$1"
+	local PCAP="${WORKDIR}/$(mktemp -u XXXX).pcap"
+	ip netns exec $R1 tcpdump --immediate-mode -Ui r1_br0 -w ${PCAP} 2>/dev/null &
+	local pid=$!
+	ip netns exec $C ping -W 1 ${dst_addr} -c2 > /dev/null
+	assert_pass "ping pass"
+
+	kill $pid; sync
+	tcpdump -nr ${PCAP} 2> /dev/null| grep -q "echo request"
+	assert_fail "echo request should be routed to r2"
+
+	ip netns exec $R1 tcpdump -nr ${PCAP} 2> /dev/null | grep -q "echo reply"
+	assert_pass "echo relpy was observed"
+}
+
+echo -e "\nTest ipv6 dscp reroute"
+# The last two bits of the DSCP field are reserved for ECN.
+# So nft dscp set 0x02 becomes 0x08 after a left shift by 2,
+# which matches ip rule dsfield 0x08.
+ip -6 -n $C route add default via ${ip6_r2_br1} dev c_br1 table 100
+ip -6 -n $C rule add dsfield 0x08 pref 1010 table 100
+assert_pass "Add ipv6 dscp policy routing rule"
+ip netns exec $C nft -f - <<-EOF
+table inet outgoing {
+	chain output_route {
+		type route hook output priority filter; policy accept;
+		icmpv6 type echo-request ip6 dscp set 0x02 counter
+	}
+}
+EOF
+assert_pass "Restore nft ruleset"
+check_icmp_in_r1 ${ip6_s_br0}
+ip -6 -n $C rule del dsfield 0x08 pref 1010 table 100
+ip -6 -n $C route del default via ${ip6_r2_br1} dev c_br1 table 100
+
+
+echo -e "\nTest ipv4 dscp reroute"
+ip -n $C route add default via ${ip4_r2_br1} dev c_br1 table 100
+ip -n $C rule add dsfield 0x08 pref 1010 table 100
+assert_pass "Add ipv4 dscp policy routing rule"
+ip netns exec $C nft -f - <<-EOF
+table inet outgoing {
+	chain output_route {
+		type route hook output priority filter; policy accept;
+		icmp type echo-request ip dscp set 0x02 counter
+	}
+}
+EOF
+assert_pass "Restore nft ruleset"
+check_icmp_in_r1 ${ip4_s_br0}
+ip -n $C rule del dsfield 0x08 pref 1010 table 100
+ip -n $C route del default via ${ip4_r2_br1} dev c_br1 table 100
+
+
+echo -e "\nTest ipv4 fwmark reroute"
+ip -n $C route add default via ${ip4_r2_br1} dev c_br1 table 100
+ip -n $C rule add fwmark 0x0100 lookup 100
+assert_pass "Add ipv4 fwmark policy routing rule"
+ip netns exec $C nft -f - <<-EOF
+table inet outgoing {
+	chain output_route {
+		type route hook output priority filter; policy accept;
+		icmp type echo-request meta mark set 0x0100 counter
+	}
+}
+EOF
+assert_pass "Restore nft ruleset"
+check_icmp_in_r1 ${ip4_s_br0}
+ip -n $C rule del fwmark 0x0100 lookup 100
+ip -n $C route del default via ${ip4_r2_br1} dev c_br1 table 100
+
+
+echo -e "\nTest ipv6 fwmark reroute"
+ip -6 -n $C route add default via ${ip6_r2_br1} dev c_br1 table 100
+ip -6 -n $C rule add fwmark 0x0100 lookup 100
+assert_pass "Add ipv6 fwmark policy routing rule"
+ip netns exec $C nft -f - <<-EOF
+table inet outgoing {
+	chain output_route {
+		type route hook output priority filter; policy accept;
+		icmpv6 type echo-request meta mark set 0x0100 counter
+	}
+}
+EOF
+assert_pass "Restore nft ruleset"
+check_icmp_in_r1 ${ip6_s_br0}
+ip -6 -n $C rule del fwmark 0x0100 lookup 100
+ip -6 -n $C route del default via ${ip6_r2_br1} dev c_br1 table 100

@@ -1,0 +1,12 @@
+table inet t {
+	set s {
+		type ipv4_addr . inet_service
+		size 65536	# count 1
+		flags dynamic,timeout
+		elements = { 192.168.7.1 . 22 }
+	}
+
+	chain c {
+		tcp dport 21 add @s { ip saddr . 22 timeout 1m }
+	}
+}

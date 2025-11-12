@@ -1,0 +1,342 @@
+# ip saddr @set1 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "@set1"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip saddr != @set1 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "@set1"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip saddr @set2 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "@set2"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip saddr != @set2 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "@set2"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip saddr . ip daddr @set5 drop
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    }
+                ]
+            },
+	    "op": "==",
+            "right": "@set5"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# add @set5 { ip saddr . ip daddr }
+[
+    {
+        "set": {
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    }
+                ]
+            },
+            "op": "add",
+            "set": "@set5"
+        }
+    }
+]
+
+# ip saddr { { 1.1.1.0, 3.3.3.0 }, 2.2.2.0 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "1.1.1.0",
+                    "2.2.2.0",
+                    "3.3.3.0"
+                ]
+            }
+        }
+    }
+]
+
+# ip saddr { { 1.1.1.0/24, 3.3.3.0/24 }, 2.2.2.0/24 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "prefix": {
+                            "addr": "1.1.1.0",
+                            "len": 24
+                        }
+                    },
+                    {
+                        "prefix": {
+                            "addr": "2.2.2.0",
+                            "len": 24
+                        }
+                    },
+                    {
+                        "prefix": {
+                            "addr": "3.3.3.0",
+                            "len": 24
+                        }
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# ip saddr @set6 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "@set6"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip saddr vmap { 1.1.1.1 : drop, * : accept }
+[
+    {
+        "vmap": {
+            "data": {
+                "set": [
+                    [
+                        "1.1.1.1",
+                        {
+                            "drop": null
+                        }
+                    ],
+                    [
+                        "*",
+                        {
+                            "accept": null
+                        }
+                    ]
+                ]
+            },
+            "key": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            }
+        }
+    }
+]
+
+# meta mark set ip saddr map { 1.1.1.1 : 0x00000001, * : 0x00000002 }
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "1.1.1.1",
+                                1
+                            ],
+                            [
+                                "*",
+                                2
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# add @map1 { ip saddr . ip daddr : meta mark }
+[
+    {
+        "map": {
+            "data": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    }
+                ]
+            },
+            "map": "@map1",
+            "op": "add"
+        }
+    }
+]
+
+# add @map2 { ip saddr . ip daddr . th dport : 10.0.0.1 . 80 }
+[
+    {
+        "map": {
+            "data": {
+                "concat": [
+                    "10.0.0.1",
+                    80
+                ]
+            },
+            "elem": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "th"
+                        }
+                    }
+                ]
+            },
+            "map": "@map2",
+            "op": "add"
+        }
+    }
+]

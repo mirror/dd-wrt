@@ -1,0 +1,9 @@
+# v5.3-rc1~140^2~44^2~10
+# ad49d86e07a4 ("netfilter: nf_tables: Add synproxy support")
+table inet x {
+       synproxy https-synproxy {
+               mss 1460
+               wscale 7
+               timestamp sack-perm
+       }
+}

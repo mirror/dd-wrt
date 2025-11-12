@@ -1,0 +1,14 @@
+#!/bin/bash
+
+RULESET="add table ip test
+add set ip test foo { type ipv4_addr; }
+add chain ip test tc
+add element ip test foo { 1.2.3.4 }
+add rule ip test tc ip saddr { 1.2.3.4, 5.6.7.8 } accept
+delete table ip test
+add element ip test foo { 1.2.3.6 }"
+
+# kernel must return ENOENT
+$NFT -f - <<< "$RULESET" 2>/dev/null || exit 0
+echo "E: allowing element insertion on unexisting set"
+exit 1

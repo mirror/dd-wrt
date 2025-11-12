@@ -1,0 +1,68 @@
+table ip t {
+	chain c1 {
+		type filter hook input priority filter; policy accept;
+		jump c2
+	}
+
+	chain c2 {
+		jump c3
+	}
+
+	chain c3 {
+		jump c4
+	}
+
+	chain c4 {
+		jump c5
+	}
+
+	chain c5 {
+		jump c6
+	}
+
+	chain c6 {
+		jump c7
+	}
+
+	chain c7 {
+		jump c8
+	}
+
+	chain c8 {
+		jump c9
+	}
+
+	chain c9 {
+		jump c10
+	}
+
+	chain c10 {
+		jump c11
+	}
+
+	chain c11 {
+		jump c12
+	}
+
+	chain c12 {
+		jump c13
+	}
+
+	chain c13 {
+		jump c14
+	}
+
+	chain c14 {
+		jump c15
+	}
+
+	chain c15 {
+		jump c16
+	}
+
+	chain c16 {
+	}
+
+	chain c17 {
+	}
+}

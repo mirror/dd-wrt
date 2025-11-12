@@ -1,0 +1,5 @@
+#!/bin/bash
+
+dumpfile=$(dirname $0)/dumps/$(basename $0).nft
+
+$NFT -f "$dumpfile" || exit 1

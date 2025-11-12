@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_comment)
+
+EXPECTED='table ip test_table {
+	chain test_chain {
+		comment "test"
+	}
+}
+'
+
+set -e
+
+$NFT -f - <<< "$EXPECTED"

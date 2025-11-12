@@ -1,0 +1,105 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "filter",
+        "name": "input",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "http1",
+        "table": "filter",
+        "type": [
+          "inet_service",
+          "ipv4_addr"
+        ],
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "filter",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 80
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  }
+                ]
+              },
+              "set": "@http1",
+              "stmt": [
+                {
+                  "limit": {
+                    "rate": 200,
+                    "burst": 5,
+                    "per": "second",
+                    "inv": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "drop": null
+          }
+        ]
+      }
+    }
+  ]
+}

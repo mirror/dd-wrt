@@ -1,0 +1,142 @@
+# ip protocol tcp tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ip protocol tcp ip saddr 1.2.3.4 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "1.2.3.4"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ip protocol tcp counter ip saddr 1.2.3.4 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "counter": null
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "1.2.3.4"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ip protocol tcp counter tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "counter": null
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+

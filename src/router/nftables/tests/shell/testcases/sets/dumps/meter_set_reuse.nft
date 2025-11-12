@@ -1,0 +1,11 @@
+table ip filter {
+	set http1 {
+		type inet_service . ipv4_addr
+		size 65535
+		flags dynamic
+	}
+
+	chain input {
+		tcp dport 80 add @http1 { tcp dport . ip saddr limit rate over 200/second burst 5 packets } counter packets 0 bytes 0 drop
+	}
+}

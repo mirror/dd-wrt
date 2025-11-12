@@ -1,0 +1,52 @@
+# quota 1025 bytes
+ip test-ip4 output 
+  [ quota bytes 1025 consumed 0 flags 0 ]
+
+# quota 1 kbytes
+ip test-ip4 output 
+  [ quota bytes 1024 consumed 0 flags 0 ]
+
+# quota 2 kbytes
+ip test-ip4 output 
+  [ quota bytes 2048 consumed 0 flags 0 ]
+
+# quota 1025 kbytes
+ip test-ip4 output 
+  [ quota bytes 1049600 consumed 0 flags 0 ]
+
+# quota 1023 mbytes
+ip test-ip4 output 
+  [ quota bytes 1072693248 consumed 0 flags 0 ]
+
+# quota 10230 mbytes
+ip test-ip4 output 
+  [ quota bytes 10726932480 consumed 0 flags 0 ]
+
+# quota 1023000 mbytes
+ip test-ip4 output 
+  [ quota bytes 1072693248000 consumed 0 flags 0 ]
+
+# quota over 1 kbytes
+ip test-ip4 output 
+  [ quota bytes 1024 consumed 0 flags 1 ]
+
+# quota over 2 kbytes
+ip test-ip4 output 
+  [ quota bytes 2048 consumed 0 flags 1 ]
+
+# quota over 1025 kbytes
+ip test-ip4 output 
+  [ quota bytes 1049600 consumed 0 flags 1 ]
+
+# quota over 1023 mbytes
+ip test-ip4 output 
+  [ quota bytes 1072693248 consumed 0 flags 1 ]
+
+# quota over 10230 mbytes
+ip test-ip4 output 
+  [ quota bytes 10726932480 consumed 0 flags 1 ]
+
+# quota over 1023000 mbytes
+ip test-ip4 output 
+  [ quota bytes 1072693248000 consumed 0 flags 1 ]
+

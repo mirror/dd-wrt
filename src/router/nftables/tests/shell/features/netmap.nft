@@ -1,0 +1,8 @@
+# 3ff7ddb1353d ("netfilter: nft_nat: add netmap support")
+# v5.8-rc1~165^2~393^2
+table ip x {
+        chain y {
+              type nat hook postrouting priority srcnat; policy accept;
+              snat ip prefix to ip saddr map { 10.141.11.0/24 : 192.168.2.0/24 }
+        }
+}

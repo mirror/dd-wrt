@@ -1,0 +1,7 @@
+# 6c47260250fc ("netfilter: nf_tables: add xfrm expression")
+# v4.20-rc1~14^2~125^2~25
+table ip x {
+	chain y {
+		ipsec in reqid 23
+	}
+}

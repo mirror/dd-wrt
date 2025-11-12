@@ -1,0 +1,1745 @@
+# tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp dport != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp dport 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp dport != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp dport { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp dport != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp dport {telnet, http, https} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "telnet",
+                    "http",
+                    "https"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# tcp dport vmap { 22 : accept, 23 : drop }
+[
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        22,
+                        {
+                            "accept": null
+                        }
+                    ],
+                    [
+                        23,
+                        {
+                            "drop": null
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+]
+
+# tcp dport vmap { 25:accept, 28:drop }
+[
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        25,
+                        {
+                            "accept": null
+                        }
+                    ],
+                    [
+                        28,
+                        {
+                            "drop": null
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+]
+
+# tcp dport { 22, 53, 80, 110 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    22,
+                    53,
+                    80,
+                    110
+                ]
+            }
+        }
+    }
+]
+
+# tcp dport != { 22, 53, 80, 110 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    22,
+                    53,
+                    80,
+                    110
+                ]
+            }
+        }
+    }
+]
+
+# tcp sport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp sport != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp sport 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp sport != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp sport { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp sport != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp sport vmap { 25:accept, 28:drop }
+[
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        25,
+                        {
+                            "accept": null
+                        }
+                    ],
+                    [
+                        28,
+                        {
+                            "drop": null
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+]
+
+# tcp sport 8080 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 8080
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# tcp sport 1024 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 1024
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp sport 1024 tcp dport 22 tcp sequence 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 1024
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# tcp sequence 0 tcp sport 1024 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 1024
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp sequence 0 tcp sport { 1024, 1022} tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    1024,
+                    1022
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp sequence 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp sequence != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp sequence 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp sequence != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp sequence { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp sequence != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp ackseq 42949672 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 42949672
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# tcp ackseq 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp ackseq != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp ackseq 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp ackseq != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp ackseq { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp ackseq != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ackseq",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags { fin, syn, rst, psh, ack, urg, ecn, cwr} drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "fin",
+                    "syn",
+                    "rst",
+                    "psh",
+                    "ack",
+                    "urg",
+                    "ecn",
+                    "cwr"
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# tcp flags != { fin, urg, ecn, cwr} drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "fin",
+                    "urg",
+                    "ecn",
+                    "cwr"
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# tcp flags cwr
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "in",
+            "right": "cwr"
+        }
+    }
+]
+
+# tcp flags != cwr
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": "cwr"
+        }
+    }
+]
+
+# tcp flags == syn
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | psh | ack | urg | ecn | cwr) == fin | syn | rst | psh | ack | urg | ecn | cwr
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [ "fin", "syn", "rst", "psh", "ack", "urg", "ecn", "cwr" ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": { "|": [ "fin", "syn", "rst", "psh", "ack", "urg", "ecn", "cwr" ] }
+        }
+    }
+]
+
+# tcp window 22222
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22222
+        }
+    }
+]
+
+# tcp window 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp window != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp window 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp window != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp window { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp window != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "window",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp checksum 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp checksum != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp checksum 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp checksum != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp checksum { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp checksum != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp urgptr 1234 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 1234
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# tcp urgptr 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp urgptr != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# tcp urgptr 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp urgptr != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# tcp urgptr { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp urgptr != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "urgptr",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# tcp doff 8
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "doff",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 8
+        }
+    }
+]
+
+# tcp flags { syn, syn | ack }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "syn",
+                    {
+                        "|": [
+                            "syn",
+                            "ack"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | psh | ack | urg) == { fin, ack, psh | ack, fin | psh | ack }
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    { "|": [ "fin", "syn", "rst", "psh", "ack", "urg" ] }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "fin",
+                    "ack",
+                    { "|": [ "psh", "ack" ] },
+                    { "|": [ "fin", "psh", "ack" ] }
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags ! fin,rst
+[
+    {
+        "match": {
+            "op": "!",
+            "left": {
+                "payload": {
+                    "protocol": "tcp",
+                    "field": "flags"
+                }
+            },
+            "right": [
+                "fin",
+                "rst"
+            ]
+        }
+    }
+]
+
+# tcp flags fin,syn / fin,syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "|": [
+                    "fin",
+                    "syn"
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags != syn / fin,syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn"
+                        ]
+                    }
+                ]
+            },
+            "op": "!=",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & syn == 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & syn != 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "in",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & (syn | ack) != 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "in",
+            "right": [
+                "syn",
+                "ack"
+            ]
+        }
+    }
+]
+
+# tcp flags & (syn | ack) == 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!",
+            "right": [
+                "syn",
+                "ack"
+            ]
+        }
+    }
+]
+
+# tcp flags & syn == syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    "syn"
+                ]
+            },
+            "op": "==",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & syn != syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    "syn"
+                ]
+            },
+            "op": "!=",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | ack) syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn",
+                            "rst",
+                            "ack"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | ack) == syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn",
+                            "rst",
+                            "ack"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": "syn"
+        }
+    }
+]
+
+
+# tcp flags & (fin | syn | rst | ack) != syn
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn",
+                            "rst",
+                            "ack"
+                        ]
+                    }
+                ]
+            },
+            "op": "!=",
+            "right": "syn"
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | ack) == syn | ack
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn",
+                            "rst",
+                            "ack"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "|": [
+                    "syn",
+                    "ack"
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags & (syn | ack) == syn | ack
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "syn",
+                            "ack"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "|": [
+                    "syn",
+                    "ack"
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | ack) != syn | ack
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    { "|": [ "fin", "syn", "rst", "ack" ] }
+                ]
+            },
+            "op": "!=",
+            "right": {
+                "|": [
+                    "syn",
+                    "ack"
+                ]
+            }
+        }
+    }
+]
+

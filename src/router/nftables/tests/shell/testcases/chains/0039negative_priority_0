@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Test parsing of negative priority values
+
+set -e
+
+$NFT add table t
+$NFT add chain t c { type filter hook input priority -30\; }

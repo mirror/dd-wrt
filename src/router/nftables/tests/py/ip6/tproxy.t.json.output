@@ -1,0 +1,60 @@
+# meta l4proto 6 tproxy ip6 to [2001:db8::1]
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "2001:db8::1"
+        }
+    }
+]
+
+# meta l4proto 17 tproxy ip6 to [2001:db8::1]:50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "2001:db8::1",
+            "port": 50080
+        }
+    }
+]
+
+# meta l4proto 6 tproxy ip6 to :50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "port": 50080
+        }
+    }
+]

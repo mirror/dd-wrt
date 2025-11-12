@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+dumpfile=$(dirname $0)/dumps/$(basename $0).nft
+
+$NFT -f "$dumpfile" || exit 1
+
+add_add_then_create()
+{
+	cmd="$@"
+
+	$NFT "add element inet filter $cmd" || exit 2
+
+	# again, kernel should suppress -EEXIST
+	$NFT "add element inet filter $cmd" || exit 3
+
+	# AGAIN, kernel should report -EEXIST
+	$NFT "create element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 4
+}
+
+add_create_dupe()
+{
+	cmd="$@"
+
+	$NFT "add element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 10
+	$NFT "create element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 11
+}
+
+delete()
+{
+	cmd="$@"
+
+	$NFT "delete element inet filter $cmd" || exit 30
+	$NFT "delete element inet filter $cmd" && echo "$cmd worked" 1>&2 && exit 31
+
+	# destroy should NOT report an error
+#	$NFT "destroy element inet filter $cmd" || exit 40
+}
+
+add_add_then_create 'saddr6limit { fee1::dead : "tarpit-pps" }'
+add_add_then_create 'saddr6limit { c01a::/64 : "tarpit-bps" }'
+
+# test same with a diffent set type (concat + interval)
+add_add_then_create 'addr4limit { udp . 1.2.3.4 . 42 : "tarpit-pps", tcp . 1.2.3.4 . 42 : "tarpit-pps" }'
+
+# now test duplicate key with *DIFFERENT* limiter, should fail
+add_create_dupe 'saddr6limit { fee1::dead : "tarpit-bps" }'
+
+add_create_dupe 'addr4limit { udp . 1.2.3.4 . 42 : "tarpit-pps", tcp . 1.2.3.4 . 42 : "http-bulk-rl-10m" }'
+add_create_dupe 'addr4limit { udp . 1.2.3.4 . 43 : "tarpit-pps", tcp . 1.2.3.4 . 42 : "http-bulk-rl-10m" }'
+add_create_dupe 'addr4limit { udp . 1.2.3.5 . 42 : "tarpit-pps", tcp . 1.2.3.4 . 42 : "http-bulk-rl-10m" }'
+add_create_dupe 'addr4limit { udp . 1.2.3.4 . 42 : "tarpit-bps", tcp . 1.2.3.4 . 42 : "tarpit-pps" }'
+
+# delete keys again
+delete 'addr4limit { udp . 1.2.3.4 . 42 : "tarpit-pps", tcp . 1.2.3.4 . 42 :"tarpit-pps" }'
+
+delete 'saddr6limit { fee1::dead : "tarpit-pps" }'
+delete 'saddr6limit { c01a::/64 : "tarpit-bps" }'
+
+exit 0

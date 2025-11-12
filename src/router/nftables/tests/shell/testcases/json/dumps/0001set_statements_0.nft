@@ -1,0 +1,12 @@
+table ip testt {
+	set ssh_meter {
+		type ipv4_addr
+		size 65535
+		flags dynamic
+	}
+
+	chain testc {
+		type filter hook input priority filter; policy accept;
+		tcp dport 22 ct state new add @ssh_meter { ip saddr limit rate 10/second burst 5 packets } accept
+	}
+}

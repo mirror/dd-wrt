@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+$NFT add table x
+$NFT add chain x y
+$NFT add flowtable x f { hook ingress priority 0\; devices = { lo }\;}
+$NFT add rule x y flow add @f
+$NFT flush chain x y
+$NFT delete flowtable x f

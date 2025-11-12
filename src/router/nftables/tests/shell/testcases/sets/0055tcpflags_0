@@ -1,0 +1,27 @@
+#!/bin/bash
+
+EXPECTED="add table ip test
+
+add set ip test tcp_good_flags { type tcp_flag ; flags constant ; elements = {
+  ( 0 | 0 | 0 |ack| 0 | 0 ),  \
+  ( 0 | 0 | 0 |ack| 0 |urg),  \
+  ( 0 | 0 | 0 |ack|psh| 0 ),  \
+  ( 0 | 0 | 0 |ack|psh|urg),  \
+  ( 0 | 0 |rst| 0 | 0 | 0 ),  \
+  ( 0 | 0 |rst|ack| 0 | 0 ),  \
+  ( 0 | 0 |rst|ack| 0 |urg),  \
+  ( 0 | 0 |rst|ack|psh| 0 ),  \
+  ( 0 | 0 |rst|ack|psh|urg),  \
+  ( 0 |syn| 0 | 0 | 0 | 0 ),  \
+  ( 0 |syn| 0 |ack| 0 | 0 ),  \
+  ( 0 |syn| 0 |ack| 0 |urg),  \
+  ( 0 |syn| 0 |ack|psh| 0 ),  \
+  ( 0 |syn| 0 |ack|psh|urg),  \
+  (fin| 0 | 0 |ack| 0 | 0 ),  \
+  (fin| 0 | 0 |ack| 0 |urg),  \
+  (fin| 0 | 0 |ack|psh| 0 ),  \
+  (fin| 0 | 0 |ack|psh|urg)   \
+} ; }"
+
+set -e
+$NFT -f - <<< $EXPECTED

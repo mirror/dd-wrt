@@ -1,0 +1,175 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_tcpdump)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_curl)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_vsftpd)
+
+. $NFT_TEST_LIBRARY_FILE
+
+cleanup()
+{
+	for i in $R $C $S;do
+		kill $(ip netns pid $i) 2>/dev/null
+		ip netns del $i
+	done
+	rm -rf $WORKDIR
+}
+trap cleanup EXIT
+
+assert_failout()
+{
+	ip netns exec $R $NFT list ruleset
+	tcpdump -nnr ${PCAP}
+	test -r /proc/net/nf_conntrack && ip netns exec $R cat /proc/net/nf_conntrack
+	ip netns exec $R conntrack -S
+	ip netns exec $R conntrack -L
+	ip netns exec $S ss -nitepal
+}
+
+rnd=$(mktemp -u XXXXXXXX)
+R="natftp-router-$rnd"
+C="natftp-client-$rnd"
+S="natftp-server-$rnd"
+
+WORKDIR="/tmp/nat_ftp_test-$rnd"
+FTPCONF="$WORKDIR/ftp-conf"
+INFILE="$WORKDIR/infile"
+OUTFILE="$WORKDIR/outfile"
+PCAP="$WORKDIR/tcpdump.pcap"
+
+umask 022
+mkdir -p $WORKDIR
+assert_pass "mkdir $WORKDIR"
+
+modprobe nf_nat_ftp
+assert_pass "modprobe nf_nat_ftp. Needed for DNAT of data connection and active mode PORT change with SNAT"
+
+ip_sr=2001:db8:ffff:22::1
+ip_cr=2001:db8:ffff:21::2
+ip_rs=2001:db8:ffff:22::fffe
+ip_rc=2001:db8:ffff:21::fffe
+
+ip netns add $R
+ip netns add $S
+ip netns add $C
+ip -net $S link set lo up
+ip -net $R link set lo up
+ip -net $C link set lo up
+ip netns exec $R sysctl -wq net.ipv6.conf.all.forwarding=1
+
+ip link add s_r netns $S type veth peer name r_s netns $R
+ip link add c_r netns $C type veth peer name r_c netns $R
+ip -net $S link set s_r up
+ip -net $R link set r_s up
+ip -net $R link set r_c up
+ip -net $C link set c_r up
+
+ip -net $S addr add ${ip_sr}/64 dev s_r nodad
+ip -net $C addr add ${ip_cr}/64 dev c_r nodad
+ip -net $R addr add ${ip_rs}/64 dev r_s nodad
+ip -net $R addr add ${ip_rc}/64 dev r_c nodad
+ip -net $C route add ${ip_rs}/64 via ${ip_rc} dev c_r
+ip -net $S route add ${ip_rc}/64 via ${ip_rs} dev s_r
+
+ip netns exec $C ping -q -6 ${ip_sr} -c1 > /dev/null
+assert_pass "topo initialization"
+
+reload_ruleset()
+{
+	ip netns exec $R conntrack -F 2> /dev/null
+	ip netns exec $R $NFT -f - <<-EOF
+	flush ruleset
+	table ip6 ftp_helper_nat_test {
+		ct helper ftp-standard {
+			type "ftp" protocol tcp;
+		}
+
+		chain PRE-dnat {
+			type nat hook prerouting priority dstnat; policy accept;
+			# Dnat the control connection, data connection will be automaticly NATed.
+			ip6 daddr ${ip_rc} counter ip6 nexthdr tcp tcp dport 2121 counter dnat ip6 to [${ip_sr}]:21
+		}
+
+		chain PRE-aftnat {
+			type filter hook prerouting priority 350; policy drop;
+			iifname r_c tcp dport 21 ct state new ct helper set "ftp-standard" counter accept
+
+			ip6 nexthdr tcp ct state related counter accept
+			ip6 nexthdr tcp ct state established counter accept
+
+			ip6 nexthdr icmpv6 counter accept
+
+			counter log
+		}
+
+		chain forward {
+			type filter hook forward priority filter; policy drop;
+			ip6 daddr ${ip_sr} counter tcp dport 21 ct state new counter accept
+			ip6 nexthdr tcp ct state established counter accept
+			ip6 nexthdr tcp ct state related     counter log accept
+		}
+
+		chain POST-srcnat {
+			type nat hook postrouting priority srcnat; policy accept;
+			ip6 daddr ${ip_sr} ip6 nexthdr tcp tcp dport 21 counter snat ip6 to [${ip_rs}]:16500
+		}
+	}
+	EOF
+	assert_pass "apply ftp helper ruleset"
+}
+
+dd if=/dev/urandom of="$INFILE" bs=4096 count=1 2>/dev/null
+chmod 755 $INFILE
+assert_pass "Prepare the file for FTP transmission"
+
+cat > ${FTPCONF} <<-EOF
+anonymous_enable=YES
+anon_root=${WORKDIR}
+local_enable=YES
+connect_from_port_20=YES
+listen=NO
+listen_ipv6=YES
+pam_service_name=vsftpd
+background=YES
+EOF
+ip netns exec $S vsftpd ${FTPCONF}
+wait_local_port_listen $S 21 tcp
+
+ip netns exec $S ss -6ltnp | grep -q '*:21'
+assert_pass "start vsftpd server"
+
+
+# test passive mode
+reload_ruleset
+ip netns exec $S tcpdump -q --immediate-mode -Ui s_r -w ${PCAP} 2> /dev/null &
+pid=$!
+sleep 0.5
+ip netns exec $C curl --no-progress-meter --connect-timeout 5 ftp://[${ip_rc}]:2121/$(basename $INFILE) -o $OUTFILE
+assert_pass "curl ftp passive mode "
+
+cmp "$INFILE" "$OUTFILE"
+assert_pass "FTP Passive mode: The input and output files remain the same when traffic passes through NAT."
+
+kill $pid; sync
+tcpdump -nnr ${PCAP} src ${ip_rs} and dst ${ip_sr} 2>&1 |grep -q FTP
+assert_pass "assert FTP traffic NATed"
+
+
+# test active mode
+reload_ruleset
+
+ip netns exec $S tcpdump -q --immediate-mode -Ui s_r -w ${PCAP} 2> /dev/null &
+pid=$!
+sleep 0.5
+ip netns exec $C curl --no-progress-meter -P - --connect-timeout 5 ftp://[${ip_rc}]:2121/$(basename $INFILE) -o $OUTFILE
+assert_pass "curl ftp active mode "
+
+cmp "$INFILE" "$OUTFILE"
+assert_pass "FTP Active mode: in and output files remain the same when FTP traffic passes through NAT."
+
+kill $pid; sync
+tcpdump -nnr ${PCAP} src ${ip_rs} and dst ${ip_sr} 2>&1 |grep -q FTP
+assert_pass "assert FTP traffic NATed"
+
+# trap calls cleanup
+exit 0

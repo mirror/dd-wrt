@@ -1,0 +1,69 @@
+#!/bin/bash
+
+RULESET="table ip x {
+	set y {
+		type ipv4_addr
+		flags interval
+	}
+}
+
+delete element ip x y { 2.3.4.5 }"
+
+$NFT -f - <<< $RULESET
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+RULESET="table ip x {
+        set y {
+                type ipv4_addr
+                flags interval
+        }
+}
+
+add element x y { 1.1.1.1/24 }
+delete element x y { 1.1.1.1/24 }
+add element x y { 1.1.1.1/24 }
+delete element x y { 2.2.2.2/24 }"
+
+$NFT -f - <<< $RULESET
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+RULESET="flush ruleset
+create table inet filter
+set inet filter foo {}
+add element inet filter foo { foobar }"
+
+$NFT -f - <<< $RULESET
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+RULESET="table ip x {
+        map x {
+                type ifname . ipv4_addr : verdict
+                elements = { if2 . 10.0.0.2 : jump chain2,
+                             if2 . 192.168.0.0/24 : jump chain2 }
+        }
+
+        chain chain2 {}
+}"
+
+$NFT -f - <<< $RULESET
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+RULESET="add set inet filter myset { type ipv4_addr; flags interval; auto-merge }
+add element inet filter myset { 192.168.0.0/24 }
+add element inet filter myset { 192.168.0.2 }
+add element inet filter myset { 192.168.1.0/24 }
+add element inet filter myset { 192.168.1.100 }"
+
+$NFT -f - <<< $RULESET || exit 0

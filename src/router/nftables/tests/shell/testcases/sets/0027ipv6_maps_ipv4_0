@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Tests IPv4 Mapped IPv6 addresses.
+
+set -e
+
+RULESET="
+table inet t {
+	set s {
+		type ipv6_addr
+		flags interval
+		elements = { ::ffff:0.0.0.0/96 }
+	}
+}
+"
+
+$NFT -f - <<< "$RULESET"

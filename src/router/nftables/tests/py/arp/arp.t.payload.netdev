@@ -1,0 +1,347 @@
+# arp htype 1
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 ]
+
+# arp htype != 1
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ cmp neq reg 1 0x00000100 ]
+
+# arp htype 22
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+
+# arp htype != 233
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ cmp neq reg 1 0x0000e900 ]
+
+# arp htype 33-45
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# arp htype != 33-45
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# arp htype { 33, 55, 67, 88}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# arp htype != { 33, 55, 67, 88}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# arp ptype 0x0800
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+
+# arp hlen 22
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00000016 ]
+
+# arp hlen != 233
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 4 => reg 1 ]
+  [ cmp neq reg 1 0x000000e9 ]
+
+# arp hlen 33-45
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 4 => reg 1 ]
+  [ range eq reg 1 0x00000021 0x0000002d ]
+
+# arp hlen != 33-45
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 4 => reg 1 ]
+  [ range neq reg 1 0x00000021 0x0000002d ]
+
+# arp hlen { 33, 55, 67, 88}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# arp hlen != { 33, 55, 67, 88}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# arp plen 22
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 5 => reg 1 ]
+  [ cmp eq reg 1 0x00000016 ]
+
+# arp plen != 233
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 5 => reg 1 ]
+  [ cmp neq reg 1 0x000000e9 ]
+
+# arp plen 33-45
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 5 => reg 1 ]
+  [ range eq reg 1 0x00000021 0x0000002d ]
+
+# arp plen != 33-45
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 5 => reg 1 ]
+  [ range neq reg 1 0x00000021 0x0000002d ]
+
+# arp plen { 33, 55, 67, 88}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 5 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# arp plen != { 33, 55, 67, 88}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00000021  : 0 [end]	element 00000037  : 0 [end]	element 00000043  : 0 [end]	element 00000058  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 1b @ network header + 5 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# arp operation {nak, inreply, inrequest, rreply, rrequest, reply, request}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00000a00  : 0 [end]	element 00000900  : 0 [end]	element 00000800  : 0 [end]	element 00000400  : 0 [end]	element 00000300  : 0 [end]	element 00000200  : 0 [end]	element 00000100  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# arp operation != {nak, inreply, inrequest, rreply, rrequest, reply, request}
+__set%d test-netdev 3
+__set%d test-netdev 0
+	element 00000a00  : 0 [end]	element 00000900  : 0 [end]	element 00000800  : 0 [end]	element 00000400  : 0 [end]	element 00000300  : 0 [end]	element 00000200  : 0 [end]	element 00000100  : 0 [end]
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# arp operation 1-2
+netdev test-netdev ingress
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ range eq reg 1 0x00000100 0x00000200 ]
+
+# arp operation request
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 ]
+
+# arp operation reply
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000200 ]
+
+# arp operation rrequest
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000300 ]
+
+# arp operation rreply
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000400 ]
+
+# arp operation inrequest
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000800 ]
+
+# arp operation inreply
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000900 ]
+
+# arp operation nak
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000a00 ]
+
+# arp operation != request
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000100 ]
+
+# arp operation != reply
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000200 ]
+
+# arp operation != rrequest
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000300 ]
+
+# arp operation != rreply
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000400 ]
+
+# arp operation != inrequest
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000800 ]
+
+# arp operation != inreply
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000900 ]
+
+# arp operation != nak
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 2b @ network header + 6 => reg 1 ]
+  [ cmp neq reg 1 0x00000a00 ]
+
+# meta iifname "invalid" arp ptype 0x0800 arp htype 1 arp hlen 6 arp plen 4 @nh,192,32 0xc0a88f10 @nh,144,48 set 0x112233445566
+netdev test-netdev ingress
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x61766e69 0x0064696c 0x00000000 0x00000000 ]
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 4b @ network header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00080100 ]
+  [ payload load 2b @ network header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00000406 ]
+  [ payload load 4b @ network header + 24 => reg 1 ]
+  [ cmp eq reg 1 0x108fa8c0 ]
+  [ immediate reg 1 0x44332211 0x00006655 ]
+  [ payload write reg 1 => 6b @ network header + 18 csum_type 0 csum_off 0 csum_flags 0x0 ]
+
+# arp saddr ip 1.2.3.4
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 4b @ network header + 14 => reg 1 ]
+  [ cmp eq reg 1 0x04030201 ]
+
+# arp daddr ip 4.3.2.1
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 4b @ network header + 24 => reg 1 ]
+  [ cmp eq reg 1 0x01020304 ]
+
+# arp saddr ether aa:bb:cc:aa:bb:cc
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 6b @ network header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xaaccbbaa 0x0000ccbb ]
+
+# arp daddr ether aa:bb:cc:aa:bb:cc
+netdev test-netdev ingress 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 6b @ network header + 18 => reg 1 ]
+  [ cmp eq reg 1 0xaaccbbaa 0x0000ccbb ]
+
+# arp saddr ip 192.168.1.1 arp daddr ether fe:ed:00:c0:ff:ee
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 10b @ network header + 14 => reg 1 ]
+  [ cmp eq reg 1 0x0101a8c0 0xc000edfe 0x0000eeff ]
+
+# arp daddr ether fe:ed:00:c0:ff:ee arp saddr ip 192.168.1.1
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000608 ]
+  [ payload load 10b @ network header + 14 => reg 1 ]
+  [ cmp eq reg 1 0x0101a8c0 0xc000edfe 0x0000eeff ]
+

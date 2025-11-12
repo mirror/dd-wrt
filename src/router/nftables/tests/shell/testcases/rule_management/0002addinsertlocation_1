@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# test rule adding with invalid position/handle/index value
+
+RULESET="flush ruleset
+table ip t {
+	chain c {
+		accept
+		accept
+	}
+}"
+
+$NFT -f - <<< "$RULESET"
+
+for cmd in add insert; do
+	for keyword in position handle index; do
+		$NFT $cmd rule t c $keyword 5 drop 2>/dev/null || continue
+
+		echo "E: invalid $keyword value allowed in $cmd command" >&2
+		exit 1
+	done
+done
+exit 0

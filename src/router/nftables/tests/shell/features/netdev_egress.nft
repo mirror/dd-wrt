@@ -1,0 +1,7 @@
+# 42df6e1d221d ("netfilter: Introduce egress hook")
+# v5.16-rc1~159^2~167^2~10
+table netdev t {
+	chain c {
+		type filter hook egress devices = { lo } priority 0; policy accept;
+	}
+}

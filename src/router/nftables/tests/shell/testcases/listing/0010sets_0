@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# listing all sets
+
+EXPECTED="table ip nat {
+	set ssh {
+		type ipv4_addr
+	}
+}
+table ip6 test {
+	set testset {
+		type ipv6_addr
+	}
+}
+table arp test_arp {
+	set test_set_arp00 {
+		type inet_service
+	}
+	set test_set_arp01 {
+		type inet_service
+		flags constant
+	}
+}
+table bridge test_bridge {
+	set test_set_bridge {
+		type inet_service
+	}
+}
+table inet filter {
+	set set0 {
+		type inet_service
+	}
+	set set1 {
+		type inet_service
+		flags constant
+	}
+	set set2 {
+		type icmpv6_type
+	}
+}"
+
+set -e
+
+$NFT add table ip nat
+$NFT add set ip nat ssh { type ipv4_addr \; }
+$NFT add table ip6 test
+$NFT add set ip6 test testset { type ipv6_addr \; }
+$NFT add table arp test_arp
+$NFT add set arp test_arp test_set_arp00 { type inet_service \; }
+$NFT add set arp test_arp test_set_arp01 { type inet_service \; flags constant \; }
+$NFT add table bridge test_bridge
+$NFT add set bridge test_bridge test_set_bridge { type inet_service \; }
+$NFT add table inet filter
+$NFT add set inet filter set0 { type inet_service \; }
+$NFT add set inet filter set1 { type inet_service \; flags constant \; }
+$NFT add set inet filter set2 { type icmpv6_type \; }
+
+GET="$($NFT list sets)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

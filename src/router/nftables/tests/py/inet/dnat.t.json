@@ -1,0 +1,241 @@
+# iifname "foo" tcp dport 80 redirect to :8080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "foo"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 80
+        }
+    },
+    {
+        "redirect": {
+            "port": 8080
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 443 dnat ip to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 443
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2",
+            "family": "ip"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 443 dnat ip6 to [dead::beef]:4443
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 443
+        }
+    },
+    {
+        "dnat": {
+            "addr": "dead::beef",
+            "family": "ip6",
+            "port": 4443
+        }
+    }
+]
+
+# dnat ip to ct mark map { 0x00000014 : 1.2.3.4}
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                20,
+                                "1.2.3.4"
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "ct": {
+                            "key": "mark"
+                        }
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+
+# dnat ip to ct mark . ip daddr map { 0x00000014 . 1.1.1.1 : 1.2.3.4}
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        20,
+                                        "1.1.1.1"
+                                    ]
+                                },
+                                "1.2.3.4"
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "concat": [
+                            {
+                                "ct": {
+                                    "key": "mark"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+
+# meta l4proto { tcp, udp } dnat ip to 1.1.1.1:80
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    6,
+                    17
+                ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "1.1.1.1",
+            "family": "ip",
+            "port": 80
+        }
+    }
+]
+
+# ip protocol { tcp, udp } dnat ip to 1.1.1.1:80
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    6,
+                    17
+                ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "1.1.1.1",
+            "family": "ip",
+            "port": 80
+        }
+    }
+]
+
+# meta l4proto tcp dnat to :80
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "dnat": {
+            "port": 80
+        }
+    }
+]
+

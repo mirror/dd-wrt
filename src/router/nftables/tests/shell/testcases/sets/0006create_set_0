@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# This testscase checks for add and create set commands.
+
+set -e
+$NFT add table t
+$NFT add set t s { type ipv4_addr \; }
+if $NFT create set t s { type ipv4_addr \; } 2>/dev/null ; then
+	echo "E: accepted set creation that already exists" >&2
+	exit 1
+fi
+$NFT add set t s { type ipv4_addr \; }
+
+exit 0

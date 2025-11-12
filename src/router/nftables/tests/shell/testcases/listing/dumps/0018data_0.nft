@@ -1,0 +1,5 @@
+table inet filter {
+	map ipmap {
+		type ipv4_addr : ipv4_addr
+	}
+}

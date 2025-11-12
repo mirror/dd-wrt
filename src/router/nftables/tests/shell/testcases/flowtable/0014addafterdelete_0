@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_flowtable_counter)
+
+set -e
+
+RULESET='table inet filter {
+
+    flowtable f {
+        hook ingress priority filter - 1
+        devices = { lo }
+    }
+
+    chain y {
+        type filter hook forward priority 0;
+        flow add @f counter
+    }
+}'
+
+$NFT -f - <<< "$RULESET"
+
+RULESET='delete rule inet filter y handle 3
+delete flowtable inet filter f
+
+table inet filter {
+    flowtable f {
+        hook ingress priority filter - 1
+        devices = { lo }
+        counter
+    }
+
+    chain y {
+        type filter hook forward priority 0;
+        flow add @f counter
+    }
+}'
+
+$NFT -f - <<< "$RULESET"

@@ -1,0 +1,7 @@
+# d0e2c7de92c7 ("netfilter: nf_tables: add NFT_CHAIN_BINDING")
+# v5.9-rc1~133^2~302^2~1
+table ip t {
+	chain c {
+		jump { counter; }
+	}
+}

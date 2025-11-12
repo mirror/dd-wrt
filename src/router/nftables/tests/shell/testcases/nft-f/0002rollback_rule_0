@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# test a kernel rollback operation
+# fail reason: rule
+
+GOOD_RULESET="table ip t {
+	set t {
+		type ipv4_addr
+		elements = { 1.1.1.1 }
+	}
+
+	chain c {
+		ct state new
+		tcp dport { 22222, 33333 }
+		ip saddr @t drop
+		jump other
+	}
+
+	chain other {
+	}
+}"
+
+BAD_RULESET="flush ruleset
+table ip t2 {
+	chain c2 {
+		this is an invalid rule
+	}
+}"
+
+$NFT -f - <<< "$GOOD_RULESET"
+if [ $? -ne 0 ] ; then
+	echo "E: unable to load good ruleset" >&2
+	exit 1
+fi
+
+$NFT -f - <<< "$BAD_RULESET" 2>/dev/null
+if [ $? -eq 0 ]	; then
+	echo "E: bogus ruleset loaded?" >&2
+	exit 1
+fi

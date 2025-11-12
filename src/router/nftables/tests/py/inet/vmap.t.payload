@@ -1,0 +1,34 @@
+# iifname . ip protocol . th dport vmap { "eth0" . tcp . 22 : accept, "eth1" . udp . 67 : drop }
+__map%d test-inet b size 2
+__map%d test-inet 0
+	element 30687465 00000000 00000000 00000000 00000006 00001600  : accept 0 [end]	element 31687465 00000000 00000000 00000000 00000011 00004300  : drop 0 [end]
+inet test-inet input
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ meta load iifname => reg 1 ]
+  [ payload load 1b @ network header + 9 => reg 2 ]
+  [ payload load 2b @ transport header + 2 => reg 13 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip saddr . @ih,32,32 { 1.1.1.1 . 0x14, 2.2.2.2 . 0x1e }
+__set%d test-inet 3 size 2
+__set%d test-inet 0
+        element 01010101 14000000  : 0 [end]    element 02020202 1e000000  : 0 [end]
+inet test-inet input
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ payload load 4b @ inner header + 4 => reg 9 ]
+  [ lookup reg 1 set __set%d ]
+
+# udp length . @th,160,128 vmap { 47-63 . 0xe373135363130333131303735353203 : accept }
+__map%d x 8f size 1
+__map%d x 0
+	element 00002f00 3531370e 33303136 37303131 03323535  - 00003f00 3531370e 33303136 37303131 03323535  : accept 0 [end]
+inet x y
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ payload load 16b @ transport header + 20 => reg 9 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+

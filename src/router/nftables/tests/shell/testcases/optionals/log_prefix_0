@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+TMP=$(mktemp)
+
+RULESET='define test = "state"
+define foo = "match, logging"
+
+table x {
+        chain y {
+                ct state invalid log prefix "invalid $test $foo:"
+        }
+}'
+
+$NFT -f - <<< "$RULESET"

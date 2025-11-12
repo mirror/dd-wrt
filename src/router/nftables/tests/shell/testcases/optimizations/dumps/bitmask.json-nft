@@ -1,0 +1,242 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "ack_chain",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "urg_chain",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "&": [
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "flags"
+                    }
+                  },
+                  {
+                    "|": [
+                      "syn",
+                      "rst",
+                      "ack",
+                      "urg"
+                    ]
+                  }
+                ]
+              },
+              "right": {
+                "|": [
+                  "ack",
+                  "urg"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "&": [
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "flags"
+                    }
+                  },
+                  {
+                    "|": [
+                      "fin",
+                      "syn",
+                      "rst",
+                      "ack",
+                      "urg"
+                    ]
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "|": [
+                      "fin",
+                      "ack",
+                      "urg"
+                    ]
+                  },
+                  {
+                    "|": [
+                      "fin",
+                      "ack"
+                    ]
+                  },
+                  "fin",
+                  {
+                    "|": [
+                      "syn",
+                      "ack"
+                    ]
+                  },
+                  "syn",
+                  {
+                    "|": [
+                      "rst",
+                      "ack"
+                    ]
+                  },
+                  "rst",
+                  {
+                    "|": [
+                      "ack",
+                      "urg"
+                    ]
+                  },
+                  "ack"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "&": [
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "flags"
+                    }
+                  },
+                  {
+                    "|": [
+                      "rst",
+                      "ack",
+                      "urg"
+                    ]
+                  }
+                ]
+              },
+              "right": {
+                "|": [
+                  "rst",
+                  "ack"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "&": [
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "flags"
+                    }
+                  },
+                  {
+                    "|": [
+                      "ack",
+                      "urg"
+                    ]
+                  }
+                ]
+              },
+              "data": {
+                "set": [
+                  [
+                    "ack",
+                    {
+                      "jump": {
+                        "target": "ack_chain"
+                      }
+                    }
+                  ],
+                  [
+                    "urg",
+                    {
+                      "jump": {
+                        "target": "urg_chain"
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

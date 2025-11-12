@@ -1,0 +1,67 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "nat",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "nat",
+        "name": "postrouting",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "m",
+        "table": "nat",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "ipv4_addr",
+        "elem": [
+          [
+            "1.1.1.1",
+            "2.2.2.2"
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "nat",
+        "chain": "postrouting",
+        "handle": 0,
+        "expr": [
+          {
+            "snat": {
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  "data": "@m"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

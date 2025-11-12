@@ -1,0 +1,63 @@
+#!/bin/bash
+
+tmpfile1=$(mktemp)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+tmpfile2=$(mktemp)
+if [ ! -w $tmpfile2 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+echo "(" >> $tmpfile2
+
+tmpdir=$(mktemp -d)
+
+echo "include \"$tmpfile2\"
+include \"$tmpdir/*.nft\"
+x" > $tmpfile1
+
+echo "=" > $tmpdir/1.nft
+echo ")" > $tmpdir/2.nft
+echo "-" > $tmpdir/3.nft
+
+tmpfile3=$(mktemp)
+if [ ! -w $tmpfile3 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+echo "In file included from $tmpfile1:1:1-30:
+$tmpfile2:1:1-1: Error: syntax error, unexpected '('
+(
+^
+In file included from $tmpfile1:2:1-36:
+$tmpdir/1.nft:1:1-1: Error: syntax error, unexpected '='
+=
+^
+In file included from $tmpfile1:2:1-36:
+$tmpdir/2.nft:1:1-1: Error: syntax error, unexpected ')'
+)
+^
+In file included from $tmpfile1:2:1-36:
+$tmpdir/3.nft:1:1-1: Error: syntax error, unexpected -
+-
+^
+$tmpfile1:3:2-2: Error: syntax error, unexpected newline, expecting string
+x
+ ^" > $tmpfile3
+
+tmpfile4=$(mktemp)
+if [ ! -w $tmpfile4 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+$NFT -I/tmp/ -f $tmpfile1 2> $tmpfile4
+$DIFF -u $tmpfile3 $tmpfile4
+
+rm $tmpfile1 $tmpfile2 $tmpfile3 $tmpfile4
+rm -r $tmpdir

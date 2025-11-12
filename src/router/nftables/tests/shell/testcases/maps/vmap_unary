@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+set -e
+
+RULESET="table ip filter {
+	map ipsec_in {
+		typeof ipsec in reqid . iif : verdict
+		flags interval
+	}
+
+	chain INPUT {
+		type filter hook input priority 0; policy drop
+		ipsec in reqid . iif vmap @ipsec_in
+	}
+}"
+
+$NFT -f - <<< $RULESET

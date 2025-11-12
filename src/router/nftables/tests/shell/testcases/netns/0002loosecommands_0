@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# test a kernel netns loading a simple ruleset
+
+IP=$(which ip)
+if [ ! -x "$IP" ] ; then
+	echo "E: no ip binary" >&2
+	exit 1
+fi
+
+function netns_exec()
+{
+	# $1: netns_name $2: command
+	$IP netns exec $1 $2
+	if [ $? -ne 0 ] ; then
+		echo "E: failed to execute command in netns $1: $2" >&2
+		$IP netns del $1
+		exit 1
+	fi
+}
+
+NETNS_NAME=$(basename "$0")
+$IP netns add $NETNS_NAME
+if [ $? -ne 0 ] ; then
+	echo "E: unable to create netns" >&2
+	exit 1
+fi
+
+netns_exec $NETNS_NAME "$NFT add table ip t"
+netns_exec $NETNS_NAME "$NFT add chain ip t c"
+netns_exec $NETNS_NAME "$NFT add chain ip t other"
+netns_exec $NETNS_NAME "$NFT add set ip t s { type ipv4_addr; }"
+netns_exec $NETNS_NAME "$NFT add element ip t s {1.1.0.0 }"
+netns_exec $NETNS_NAME "$NFT add rule ip t c ct state new"
+netns_exec $NETNS_NAME "$NFT add rule ip t c udp dport { 12345, 54321 }"
+netns_exec $NETNS_NAME "$NFT add rule ip t c ip saddr @s drop"
+netns_exec $NETNS_NAME "$NFT add rule ip t c jump other"
+
+RULESET="table ip t {
+	set s {
+		type ipv4_addr
+		elements = { 1.1.0.0 }
+	}
+
+	chain c {
+		ct state new
+		udp dport { 12345, 54321 }
+		ip saddr @s drop
+		jump other
+	}
+
+	chain other {
+	}
+}"
+
+KERNEL_RULESET="$($IP netns exec $NETNS_NAME $NFT list ruleset)"
+$IP netns del $NETNS_NAME
+if [ "$RULESET" != "$KERNEL_RULESET" ] ; then
+        $DIFF -u <(echo "$RULESET") <(echo "$KERNEL_RULESET")
+        exit 1
+fi

@@ -1,0 +1,83 @@
+# mark 12345 ip protocol tcp reject with tcp reset
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "op": "==",
+            "right": 12345
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "reject": {
+            "type": "tcp reset"
+        }
+    }
+]
+
+# reject
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpx"
+        }
+    }
+]
+
+# ether type ip reject
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# ether type ip6 reject
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpv6"
+        }
+    }
+]
+
+# ether type vlan reject
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021q"
+        }
+    },
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpx"
+        }
+    }
+]

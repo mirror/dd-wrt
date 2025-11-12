@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+$NFT -i >/dev/null <<EOF
+add table inet t
+add chain inet t c
+add rule inet t c accept comment "first"
+add rule inet t c accept comment "third"
+EOF
+
+# make sure the rule cache gets initialized when using echo option
+#
+$NFT --echo add rule inet t c index 0 accept comment '"second"' >/dev/null

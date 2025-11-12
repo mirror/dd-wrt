@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# must fail: expr MAP { expr : type1, expr : type2, .. } expr
+
+set -e
+
+$NFT add table ip filter
+$NFT add chain ip filter output { type filter hook output priority 0 \; }
+
+$NFT add rule ip filter output meta mark set tcp dport map { 22 : 1, 23 : 192.168.0.1 } || exit 0
+
+echo "E: Added two different types of expression to map"
+exit 1

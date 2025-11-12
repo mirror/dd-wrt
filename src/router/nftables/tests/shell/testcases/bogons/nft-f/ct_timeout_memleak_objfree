@@ -1,0 +1,5 @@
+table ip filter {
+	ct timeout cttime {
+		protocol tcp
+		l3proto ip
+		policy = { close : 12s }

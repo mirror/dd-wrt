@@ -1,0 +1,39 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "test",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "s",
+        "table": "test",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "elem": [
+          "192.168.3.4",
+          "192.168.3.5"
+        ]
+      }
+    }
+  ]
+}

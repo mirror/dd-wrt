@@ -1,0 +1,11 @@
+table inet test {
+	set protos {
+		typeof meta l4proto
+		elements = { tcp, udp }
+	}
+
+	chain prerouting {
+		type filter hook prerouting priority mangle; policy accept;
+		meta l4proto @protos tproxy to :1088
+	}
+}

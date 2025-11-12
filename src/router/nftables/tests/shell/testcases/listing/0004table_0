@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# list table only show table asked for
+
+EXPECTED="table ip test {
+}"
+
+set -e
+
+$NFT add table test
+$NFT add table test2
+
+GET="$($NFT list table test)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+

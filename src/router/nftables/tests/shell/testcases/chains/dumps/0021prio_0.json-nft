@@ -1,0 +1,4743 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "inputsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "forwardsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "outputsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingdstnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -111,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingdstnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingdstnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingdstnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "preroutingdstnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsrcnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsrcnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsrcnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsrcnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "postroutingsrcnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 111,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "inputsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "forwardsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "outputsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingdstnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -111,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingdstnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingdstnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingdstnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "preroutingdstnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsrcnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsrcnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsrcnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsrcnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "x",
+        "name": "postroutingsrcnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 111,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "inputsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "forwardsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "outputsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingrawm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingrawm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingraw",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingrawp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingrawp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingmanglem11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -161,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingmanglem10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -160,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingmangle",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -150,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingmanglep10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -140,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingmanglep11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -139,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsecuritym11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 39,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsecuritym10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 40,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsecurity",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 50,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsecurityp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 60,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsecurityp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 61,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingdstnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -111,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingdstnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingdstnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingdstnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "preroutingdstnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsrcnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsrcnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsrcnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsrcnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "postroutingsrcnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 111,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "arp",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "inputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "inputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "inputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "inputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "inputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "outputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "outputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "outputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "outputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "arp",
+        "table": "x",
+        "name": "outputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "ingressfilterm11",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "ingressfilterm10",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "ingressfilter",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "ingressfilterp10",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "ingressfilterp11",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "egressfilterm11",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "egress",
+        "prio": -11,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "egressfilterm10",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "egress",
+        "prio": -10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "egressfilter",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "egress",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "egressfilterp10",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "egress",
+        "prio": 10,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "egressfilterp11",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "egress",
+        "prio": 11,
+        "policy": "accept"
+      }
+    },
+    {
+      "table": {
+        "family": "bridge",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -211,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -210,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -200,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -190,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -189,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "inputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -211,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "inputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -210,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "inputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -200,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "inputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -190,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "inputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -189,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "forwardfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -211,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "forwardfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -210,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "forwardfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -200,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "forwardfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -190,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "forwardfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "forward",
+        "prio": -189,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -211,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -210,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -200,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -190,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": -189,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingfilterm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -211,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingfilterm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -210,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingfilter",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -200,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingfilterp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -190,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingfilterp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": -189,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingdstnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -311,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingdstnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingdstnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingdstnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "preroutingdstnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputoutm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 89,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputoutm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 90,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputout",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputoutp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 110,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "outputoutp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 111,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingsrcnatm11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 289,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingsrcnatm10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 290,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingsrcnat",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 300,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingsrcnatp10",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 310,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "bridge",
+        "table": "x",
+        "name": "postroutingsrcnatp11",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 311,
+        "policy": "accept"
+      }
+    }
+  ]
+}

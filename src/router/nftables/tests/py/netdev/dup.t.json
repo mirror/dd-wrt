@@ -1,0 +1,30 @@
+# dup to "lo"
+[
+    {
+        "dup": {
+            "addr": "lo"
+        }
+    }
+]
+
+# dup to meta mark map { 0x00000001 : "lo", 0x00000002 : "lo"}
+[
+    {
+        "dup": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "meta": { "key": "mark" }
+                    },
+                    "data": {
+                        "set": [
+                            [ 1, "lo" ],
+                            [ 2, "lo" ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+

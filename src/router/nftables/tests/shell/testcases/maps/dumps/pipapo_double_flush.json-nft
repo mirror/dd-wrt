@@ -1,0 +1,42 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "m",
+        "table": "t",
+        "type": [
+          "ipv4_addr",
+          "ipv4_addr"
+        ],
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "interval"
+        ]
+      }
+    }
+  ]
+}

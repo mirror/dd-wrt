@@ -1,0 +1,2168 @@
+# ip dscp cs1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "cs1"
+        }
+    }
+]
+
+# ip dscp != cs1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "cs1"
+        }
+    }
+]
+
+# ip dscp 0x38
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "0x38"
+        }
+    }
+]
+
+# ip dscp != 0x20
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "0x20"
+        }
+    }
+]
+
+# ip dscp {cs0, cs1, cs2, cs3, cs4, cs5, cs6, cs7, af11, af12, af13, af21, af22, af23, af31, af32, af33, af41, af42, af43, ef}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "cs0",
+                    "cs1",
+                    "cs2",
+                    "cs3",
+                    "cs4",
+                    "cs5",
+                    "cs6",
+                    "cs7",
+                    "af11",
+                    "af12",
+                    "af13",
+                    "af21",
+                    "af22",
+                    "af23",
+                    "af31",
+                    "af32",
+                    "af33",
+                    "af41",
+                    "af42",
+                    "af43",
+                    "ef"
+                ]
+            }
+        }
+    }
+]
+
+# ip dscp != {cs0, cs3}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "cs0",
+                    "cs3"
+                ]
+            }
+        }
+    }
+]
+
+# ip dscp vmap { cs1 : continue , cs4 : accept } counter
+[
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        "cs1",
+                        {
+                            "continue": null
+                        }
+                    ],
+                    [
+                        "cs4",
+                        {
+                            "accept": null
+                        }
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "counter": null
+    }
+]
+
+# ip length 232
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 232
+        }
+    }
+]
+
+# ip length != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# ip length 333-435
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 333, 435 ]
+            }
+        }
+    }
+]
+
+# ip length != 333-453
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 333, 453 ]
+            }
+        }
+    }
+]
+
+# ip length { 333, 553, 673, 838}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    333,
+                    553,
+                    673,
+                    838
+                ]
+            }
+        }
+    }
+]
+
+# ip length != { 333, 553, 673, 838}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    333,
+                    553,
+                    673,
+                    838
+                ]
+            }
+        }
+    }
+]
+
+# ip id 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ip id != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# ip id 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ip id != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ip id { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# ip id != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# ip frag-off 0xde accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "frag-off",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 222
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip frag-off != 0xe9
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "frag-off",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# ip frag-off 0x21-0x2d
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "frag-off",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ip frag-off != 0x21-0x2d
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "frag-off",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ip frag-off { 0x21, 0x37, 0x43, 0x58}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "frag-off",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# ip frag-off != { 0x21, 0x37, 0x43, 0x58}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "frag-off",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# ip frag-off & 0x1fff != 0x0
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "frag-off",
+                            "protocol": "ip"
+                        }
+                    },
+                    8191
+                ]
+            },
+            "op": "!=",
+            "right": 0
+        }
+    }
+]
+
+# ip frag-off & 0x2000 != 0x0
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "frag-off",
+                            "protocol": "ip"
+                        }
+                    },
+                    8192
+                ]
+            },
+            "op": "!=",
+            "right": 0
+        }
+    }
+]
+
+# ip frag-off & 0x4000 != 0x0
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "frag-off",
+                            "protocol": "ip"
+                        }
+                    },
+                    16384
+                ]
+            },
+            "op": "!=",
+            "right": 0
+        }
+    }
+]
+
+# ip ttl 0 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip ttl 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 233
+        }
+    }
+]
+
+# ip ttl 33-55
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 55 ]
+            }
+        }
+    }
+]
+
+# ip ttl != 45-50
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 45, 50 ]
+            }
+        }
+    }
+]
+
+# ip ttl {43, 53, 45 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    43,
+                    45,
+                    53
+                ]
+            }
+        }
+    }
+]
+
+# ip ttl != {43, 53, 45 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    43,
+                    45,
+                    53
+                ]
+            }
+        }
+    }
+]
+
+# ip protocol tcp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "tcp"
+        }
+    }
+]
+
+# ip protocol != tcp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "tcp"
+        }
+    }
+]
+
+# ip protocol { icmp, esp, ah, comp, udp, udplite, tcp, dccp, sctp} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "icmp",
+                    "esp",
+                    "ah",
+                    "comp",
+                    "udp",
+                    "udplite",
+                    "tcp",
+                    "dccp",
+                    "sctp"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip protocol != { icmp, esp, ah, comp, udp, udplite, tcp, dccp, sctp} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "icmp",
+                    "esp",
+                    "ah",
+                    "comp",
+                    "udp",
+                    "udplite",
+                    "tcp",
+                    "dccp",
+                    "sctp"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip protocol 255
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 255
+        }
+    }
+]
+
+# ip checksum 13172 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 13172
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip checksum 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ip checksum != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# ip checksum 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ip checksum != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ip checksum { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# ip checksum != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# ip saddr 192.168.2.0/24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "192.168.2.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# ip saddr != 192.168.2.0/24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "prefix": {
+                    "addr": "192.168.2.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# ip saddr 192.168.3.1 ip daddr 192.168.3.100
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.3.1"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.3.100"
+        }
+    }
+]
+
+# ip saddr != 1.1.1.1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "1.1.1.1"
+        }
+    }
+]
+
+# ip saddr 1.1.1.1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "1.1.1.1"
+        }
+    }
+]
+
+# ip daddr 192.168.0.1-192.168.0.250
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "192.168.0.1", "192.168.0.250" ]
+            }
+        }
+    }
+]
+
+# ip daddr 10.0.0.0-10.255.255.255
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "10.0.0.0", "10.255.255.255" ]
+            }
+        }
+    }
+]
+
+# ip daddr 172.16.0.0-172.31.255.255
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "172.16.0.0", "172.31.255.255" ]
+            }
+        }
+    }
+]
+
+# ip daddr 192.168.3.1-192.168.4.250
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "192.168.3.1", "192.168.4.250" ]
+            }
+        }
+    }
+]
+
+# ip daddr != 192.168.0.1-192.168.0.250
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ "192.168.0.1", "192.168.0.250" ]
+            }
+        }
+    }
+]
+
+# ip daddr { 192.168.5.1, 192.168.5.2, 192.168.5.3 } accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "192.168.5.1",
+                    "192.168.5.2",
+                    "192.168.5.3"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip daddr != { 192.168.5.1, 192.168.5.2, 192.168.5.3 } accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "192.168.5.1",
+                    "192.168.5.2",
+                    "192.168.5.3"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip daddr 192.168.1.2-192.168.1.55
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "192.168.1.2", "192.168.1.55" ]
+            }
+        }
+    }
+]
+
+# ip daddr != 192.168.1.2-192.168.1.55
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ "192.168.1.2", "192.168.1.55" ]
+            }
+        }
+    }
+]
+
+# ip saddr 192.168.1.3-192.168.33.55
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "192.168.1.3", "192.168.33.55" ]
+            }
+        }
+    }
+]
+
+# ip saddr != 192.168.1.3-192.168.33.55
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ "192.168.1.3", "192.168.33.55" ]
+            }
+        }
+    }
+]
+
+# ip daddr 192.168.0.1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    }
+]
+
+# ip daddr 192.168.0.1 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# ip daddr 192.168.0.2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.2"
+        }
+    }
+]
+
+# ip saddr & 0xff == 1
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    "0xff"
+                ]
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# ip saddr & 0.0.0.255 < 0.0.0.127
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    "0.0.0.255"
+                ]
+            },
+            "op": "<",
+            "right": "0.0.0.127"
+        }
+    }
+]
+
+# ip saddr & 0xffff0000 == 0xffff0000
+[
+    {
+        "match": {
+            "left": {
+		"&": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+		    "0xffff0000"
+                ]
+            },
+	    "op": "==",
+            "right": "0xffff0000"
+        }
+    }
+]
+
+# ip version 4 ip hdrlength 5
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "version",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 4
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 5
+        }
+    }
+]
+
+# ip hdrlength 0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# ip hdrlength 15
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 15
+        }
+    }
+]
+
+# ip hdrlength vmap { 0-4 : drop, 5 : accept, 6 : continue } counter
+[
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ip"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        { "range": [ 0, 4 ] },
+                        { "drop": null }
+                    ],
+                    [
+                        5,
+                        { "accept": null }
+                    ],
+                    [
+                        6,
+                        { "continue": null }
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "counter": null
+    }
+]
+
+# iif "lo" ip daddr set 127.0.0.1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "value": "127.0.0.1"
+        }
+    }
+]
+
+# iif "lo" ip checksum set 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "ip"
+                }
+            },
+            "value": 0
+        }
+    }
+]
+
+# iif "lo" ip id set 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "ip"
+                }
+            },
+            "value": 0
+        }
+    }
+]
+
+# iif "lo" ip ecn set 1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": 1
+        }
+    }
+]
+
+# iif "lo" ip ecn set ce
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": "ce"
+        }
+    }
+]
+
+# iif "lo" ip ttl set 23
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ttl",
+                    "protocol": "ip"
+                }
+            },
+            "value": 23
+        }
+    }
+]
+
+# iif "lo" ip protocol set 1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "value": 1
+        }
+    }
+]
+
+# iif "lo" ip dscp set af23
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "value": "af23"
+        }
+    }
+]
+
+# iif "lo" ip dscp set cs0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "value": "cs0"
+        }
+    }
+]
+
+# ip saddr . ip daddr { 192.0.2.1 . 10.0.0.1-10.0.0.2 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "192.0.2.1",
+                            {
+                                "range": [
+                                    "10.0.0.1",
+                                    "10.0.0.2"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# ip saddr . ip daddr vmap { 192.168.5.1-192.168.5.128 . 192.168.6.1-192.168.6.128 : accept }
+[
+    {
+        "vmap": {
+            "data": {
+                "set": [
+                    [
+                        {
+                            "concat": [
+                                {
+                                    "range": [
+                                        "192.168.5.1",
+                                        "192.168.5.128"
+                                    ]
+                                },
+                                {
+                                    "range": [
+                                        "192.168.6.1",
+                                        "192.168.6.128"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "accept": null
+                        }
+                    ]
+                ]
+            },
+            "key": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# ip saddr 1.2.3.4 ip daddr 3.4.5.6
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "1.2.3.4"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "3.4.5.6"
+        }
+    }
+]
+
+# ip saddr 1.2.3.4 counter ip daddr 3.4.5.6
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "1.2.3.4"
+        }
+    },
+    {
+        "counter": {
+            "bytes": 0,
+            "packets": 0
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "3.4.5.6"
+        }
+    }
+]
+
+# ip dscp 1/6
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    63
+                ]
+            },
+            "op": "==",
+            "right": "lephb"
+        }
+    }
+]
+
+# ip ecn set ip ecn | ect0
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "ecn",
+                            "protocol": "ip"
+                        }
+                    },
+                    "ect0"
+                ]
+            }
+        }
+    }
+]
+
+# ip ecn set ip ecn | ect1
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "ecn",
+                            "protocol": "ip"
+                        }
+                    },
+                    "ect1"
+                ]
+            }
+        }
+    }
+]
+
+# ip ecn set ip ecn & ect0
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "ecn",
+                            "protocol": "ip"
+                        }
+                    },
+                    "ect0"
+                ]
+            }
+        }
+    }
+]
+
+# ip ecn set ip ecn & ect1
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "ecn",
+                            "protocol": "ip"
+                        }
+                    },
+                    "ect1"
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags set tcp flags & (fin | syn | rst | psh | ack | urg)
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn",
+                            "rst",
+                            "psh",
+                            "ack",
+                            "urg"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags set tcp flags | ecn | cwr
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    "ecn",
+                    "cwr"
+                ]
+            }
+        }
+    }
+]
+
+# ip dscp set ip dscp | lephb
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    "lephb"
+                ]
+            }
+        }
+    }
+]
+
+# ip dscp set ip dscp & lephb
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    "lephb"
+                ]
+            }
+        }
+    }
+]
+
+# ip dscp set ip dscp & 0x1f
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    31
+                ]
+            }
+        }
+    }
+]
+
+# ip version set ip version | 1
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "version",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "version",
+                            "protocol": "ip"
+                        }
+                    },
+                    1
+                ]
+            }
+        }
+    }
+]
+
+# ip version set ip version & 1
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "version",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "version",
+                            "protocol": "ip"
+                        }
+                    },
+                    1
+                ]
+            }
+        }
+    }
+]
+
+# ip hdrlength set ip hdrlength | 1
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "hdrlength",
+                            "protocol": "ip"
+                        }
+                    },
+                    1
+                ]
+            }
+        }
+    }
+]
+
+# ip hdrlength set ip hdrlength & 1
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ip"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "hdrlength",
+                            "protocol": "ip"
+                        }
+                    },
+                    1
+                ]
+            }
+        }
+    }
+]
+

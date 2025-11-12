@@ -1,0 +1,117 @@
+# igmp type membership-query
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+
+# igmp type membership-report-v1
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000012 ]
+
+# igmp type membership-report-v2
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000016 ]
+
+# igmp type membership-report-v3
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000022 ]
+
+# igmp type leave-group
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000017 ]
+
+# igmp checksum 12343
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003730 ]
+
+# igmp checksum != 12343
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp neq reg 1 0x00003730 ]
+
+# igmp checksum 11-343
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00000b00 0x00005701 ]
+
+# igmp checksum != 11-343
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range neq reg 1 0x00000b00 0x00005701 ]
+
+# igmp checksum { 1111, 222, 343}
+__set%d test-ip4 3 size 3
+__set%d test-ip4 0
+	element 00005704  : 0 [end]	element 0000de00  : 0 [end]	element 00005701  : 0 [end]
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# igmp checksum != { 1111, 222, 343}
+__set%d test-ip4 3 size 3
+__set%d test-ip4 0
+	element 00005704  : 0 [end]	element 0000de00  : 0 [end]	element 00005701  : 0 [end]
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# igmp type { membership-report-v1, membership-report-v2, membership-report-v3}
+__set%d test-ip4 3 size 3
+__set%d test-ip4 0
+	element 00000012  : 0 [end]	element 00000016  : 0 [end]	element 00000022  : 0 [end]
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# igmp type != { membership-report-v1, membership-report-v2, membership-report-v3}
+__set%d test-ip4 3 size 3
+__set%d test-ip4 0
+	element 00000012  : 0 [end]	element 00000016  : 0 [end]	element 00000022  : 0 [end]
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# igmp mrt 10
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ cmp eq reg 1 0x0000000a ]
+
+# igmp mrt != 10
+ip test-ip4 input 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ cmp neq reg 1 0x0000000a ]
+

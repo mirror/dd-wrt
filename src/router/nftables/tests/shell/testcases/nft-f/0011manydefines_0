@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# tests many defines in a single nft -f run
+
+HOWMANY=20000
+
+if [ "$NFT_TEST_HAS_SOCKET_LIMITS" = y ] ; then
+	# The socket limit /proc/sys/net/core/wmem_max may be unsuitable for
+	# the test.
+	#
+	# Run only a subset of the test and mark as skipped at the end.
+	HOWMANY=2000
+fi
+
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+	echo "Failed to create tmp file" >&2
+	exit 0
+fi
+
+trap "rm -rf $tmpfile" EXIT # cleanup if aborted
+
+generate1()
+{
+	for ((i=0; i<=HOWMANY; i++)) ; do
+		echo "define data_${i} = ${i}"
+	done
+}
+
+generate2()
+{
+	for ((i=0; i<=HOWMANY; i++)) ; do
+		echo "iifname \$data_${i}"
+	done
+}
+
+echo " $(generate1)
+table t {
+	chain c {
+		$(generate2)
+	}
+}" > $tmpfile
+
+set -e
+$NFT -f $tmpfile
+
+if [ "$HOWMANY" != 20000 ] ; then
+	echo "NFT_TEST_HAS_SOCKET_LIMITS indicates that the socket limit for"
+	echo "/proc/sys/net/core/wmem_max is too small for this test. Mark as SKIPPED"
+	echo "You may bump the limit and rerun with \`NFT_TEST_HAS_SOCKET_LIMITS=n\`."
+	exit 77
+fi

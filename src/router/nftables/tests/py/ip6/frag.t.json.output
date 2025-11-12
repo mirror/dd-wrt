@@ -1,0 +1,118 @@
+# frag nexthdr tcp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    }
+]
+
+# frag nexthdr != icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    }
+]
+
+# frag nexthdr {esp, ah, comp, udp, udplite, tcp, dccp, sctp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    6,
+                    17,
+                    33,
+                    50,
+                    51,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# frag nexthdr != {esp, ah, comp, udp, udplite, tcp, dccp, sctp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    6,
+                    17,
+                    33,
+                    50,
+                    51,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# frag nexthdr esp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 50
+        }
+    }
+]
+
+# frag nexthdr ah
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 51
+        }
+    }
+]
+

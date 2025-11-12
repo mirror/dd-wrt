@@ -1,0 +1,17 @@
+table ip t {
+	map m {
+		typeof ip saddr : meta mark
+		elements = { 1.2.3.4 : 0x0000002a,
+			     10.1.2.1 : 0x00000017 }
+	}
+
+	chain c {
+		meta mark set ip saddr map @m
+		meta mark set ip saddr & 255.255.255.0 map @m
+		meta mark set ip saddr ^ 255.255.255.0 map @m
+		meta mark set ip saddr ^ ip daddr map @m
+		meta mark set ip saddr ^ 0.0.0.1 map @m
+		meta mark set ip saddr & ip daddr map { 10.1.2.3 : 0x00000001, 10.2.3.4 : 0x00000002 }
+		meta mark set ip saddr ^ ip daddr map { 10.1.2.3 : 0x00000001, 10.2.3.4 : 0x00000002 }
+	}
+}

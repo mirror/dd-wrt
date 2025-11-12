@@ -1,0 +1,5 @@
+table ip t {
+        flowtable f {
+                hook enoent priority filter + 10
+        }
+}

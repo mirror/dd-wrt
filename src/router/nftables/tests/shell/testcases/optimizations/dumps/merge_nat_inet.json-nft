@@ -1,0 +1,208 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "nat",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "nat",
+        "name": "prerouting",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "nat",
+        "name": "postrouting",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "nat",
+        "chain": "prerouting",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oif"
+                }
+              },
+              "right": "lo"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "nat",
+        "chain": "prerouting",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "meta": {
+                          "key": "iifname"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "daddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      }
+                    ]
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        {
+                          "concat": [
+                            "enp2s0",
+                            "72.2.3.70",
+                            80
+                          ]
+                        },
+                        {
+                          "concat": [
+                            "10.1.1.52",
+                            80
+                          ]
+                        }
+                      ],
+                      [
+                        {
+                          "concat": [
+                            "enp2s0",
+                            "72.2.3.66",
+                            53122
+                          ]
+                        },
+                        {
+                          "concat": [
+                            "10.1.1.10",
+                            22
+                          ]
+                        }
+                      ],
+                      [
+                        {
+                          "concat": [
+                            "enp2s0",
+                            "72.2.3.66",
+                            443
+                          ]
+                        },
+                        {
+                          "concat": [
+                            "10.1.1.52",
+                            443
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "nat",
+        "chain": "postrouting",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oif"
+                }
+              },
+              "right": "lo"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "nat",
+        "chain": "postrouting",
+        "handle": 0,
+        "expr": [
+          {
+            "snat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        "72.2.3.66",
+                        "10.2.2.2"
+                      ],
+                      [
+                        "72.2.3.67",
+                        "10.2.3.3"
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

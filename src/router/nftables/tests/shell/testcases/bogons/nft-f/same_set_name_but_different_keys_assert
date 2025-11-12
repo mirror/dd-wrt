@@ -1,0 +1,13 @@
+table ip t {
+	set s4 {
+		type ipv4_addr . iface_index
+		flags interval
+		elements = { 127.0.0.1 . "lo" }
+	}
+
+	set s4 {
+		type iface_index
+		flags interval
+		elements = { "lo" }
+	}
+}

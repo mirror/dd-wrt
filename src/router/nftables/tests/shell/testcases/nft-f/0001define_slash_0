@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# tests for commit 85d6803 (parser_bison: initializer_expr must use rhs_expr)
+
+RULESET="
+define net = 1.1.1.1/24
+"
+
+set -e
+
+$NFT -f - <<< "$RULESET"

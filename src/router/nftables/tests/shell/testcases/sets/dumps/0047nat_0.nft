@@ -1,0 +1,31 @@
+table ip x {
+	map y {
+		type ipv4_addr : interval ipv4_addr
+		flags interval
+		elements = { 10.141.10.0/24 : 192.168.2.2-192.168.2.4,
+			     10.141.11.0/24 : 192.168.4.2/31,
+			     10.141.12.0/24 : 192.168.5.10-192.168.5.20 }
+	}
+
+	chain x {
+		type nat hook prerouting priority dstnat; policy accept;
+		meta l4proto tcp dnat ip to iifname . ip saddr map { "enp2s0" . 10.1.1.136 : 1.1.2.69 . 22, "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 . 22 }
+		dnat ip to iifname . ip saddr map { "enp2s0" . 10.1.1.136 : 1.1.2.69/32, "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 }
+	}
+
+	chain y {
+		type nat hook postrouting priority srcnat; policy accept;
+		snat ip to ip saddr map @y
+	}
+}
+table inet x {
+	chain x {
+		type nat hook prerouting priority dstnat; policy accept;
+		dnat ip to ip daddr . tcp dport map { 10.141.10.1 . 22 : 192.168.2.2, 10.141.11.2 . 2222 : 192.168.4.2 }
+	}
+
+	chain y {
+		type nat hook postrouting priority srcnat; policy accept;
+		snat ip to ip saddr map { 10.141.10.0/24 : 192.168.2.2-192.168.2.4, 10.141.11.0/24 : 192.168.4.2/31 }
+	}
+}

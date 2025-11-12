@@ -1,0 +1,341 @@
+# reject with icmp host-unreachable
+[
+    {
+        "reject": {
+            "expr": "host-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp net-unreachable
+[
+    {
+        "reject": {
+            "expr": "net-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp prot-unreachable
+[
+    {
+        "reject": {
+            "expr": "prot-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp port-unreachable
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp net-prohibited
+[
+    {
+        "reject": {
+            "expr": "net-prohibited",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp host-prohibited
+[
+    {
+        "reject": {
+            "expr": "host-prohibited",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp admin-prohibited
+[
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmpv6 no-route
+[
+    {
+        "reject": {
+            "expr": "no-route",
+            "type": "icmpv6"
+        }
+    }
+]
+
+# reject with icmpv6 admin-prohibited
+[
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmpv6"
+        }
+    }
+]
+
+# reject with icmpv6 addr-unreachable
+[
+    {
+        "reject": {
+            "expr": "addr-unreachable",
+            "type": "icmpv6"
+        }
+    }
+]
+
+# reject with icmpv6 port-unreachable
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpv6"
+        }
+    }
+]
+
+# mark 12345 ip protocol tcp reject with tcp reset
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+	    "op": "==",
+            "right": 12345
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "tcp"
+        }
+    },
+    {
+        "reject": {
+            "type": "tcp reset"
+        }
+    }
+]
+
+# reject
+[
+    {
+        "reject": null
+    }
+]
+
+# ether type ip reject
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+	    "op": "==",
+            "right": "ip"
+        }
+    },
+    {
+        "reject": null
+    }
+]
+
+# ether type ip6 reject
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+	    "op": "==",
+            "right": "ip6"
+        }
+    },
+    {
+        "reject": null
+    }
+]
+
+# reject with icmpx host-unreachable
+[
+    {
+        "reject": {
+            "expr": "host-unreachable",
+            "type": "icmpx"
+        }
+    }
+]
+
+# reject with icmpx no-route
+[
+    {
+        "reject": {
+            "expr": "no-route",
+            "type": "icmpx"
+        }
+    }
+]
+
+# reject with icmpx admin-prohibited
+[
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmpx"
+        }
+    }
+]
+
+# reject with icmpx port-unreachable
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpx"
+        }
+    }
+]
+
+# ether type ip reject with icmpx admin-prohibited
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "ip"
+        }
+    },
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmpx"
+        }
+    }
+]
+
+# ether type ip6 reject with icmpx admin-prohibited
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "ip6"
+        }
+    },
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmpx"
+        }
+    }
+]
+
+# ether type vlan reject with tcp reset
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021q"
+        }
+    },
+    {
+        "reject": {
+            "type": "tcp reset"
+        }
+    }
+]
+
+# ether type vlan reject
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "vlan"
+        }
+    },
+    {
+        "reject": null
+    }
+]
+
+# ether type 8021q reject with icmpx admin-prohibited
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "ether"
+                }
+            },
+            "op": "==",
+            "right": "8021q"
+        }
+    },
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmpx"
+        }
+    }
+]

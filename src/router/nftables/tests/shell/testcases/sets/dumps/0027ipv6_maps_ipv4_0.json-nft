@@ -1,0 +1,38 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "s",
+        "table": "t",
+        "type": "ipv6_addr",
+        "handle": 0,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          {
+            "prefix": {
+              "addr": "::ffff:0.0.0.0",
+              "len": 96
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

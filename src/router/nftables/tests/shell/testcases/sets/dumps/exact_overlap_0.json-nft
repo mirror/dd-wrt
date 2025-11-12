@@ -1,0 +1,110 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "s",
+        "table": "t",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          {
+            "prefix": {
+              "addr": "1.0.1.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.0.2.0",
+              "len": 23
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.0.8.0",
+              "len": 21
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.0.32.0",
+              "len": 19
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.0.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.2.0",
+              "len": 23
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.4.0",
+              "len": 22
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.8.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.9.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.10.0",
+              "len": 23
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.12.0",
+              "len": 22
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.16.0",
+              "len": 20
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.1.32.0",
+              "len": 19
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

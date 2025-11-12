@@ -1,0 +1,7 @@
+table ip filter {
+	set test_set {
+		type ipv4_addr . inet_service . ipv4_addr . inet_service . inet_proto
+		size 100000
+		flags dynamic,timeout
+	}
+}

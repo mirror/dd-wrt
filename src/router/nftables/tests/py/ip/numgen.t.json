@@ -1,0 +1,129 @@
+# ct mark set numgen inc mod 2
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "numgen": {
+                    "mod": 2,
+                    "mode": "inc"
+                }
+            }
+        }
+    }
+]
+
+# ct mark set numgen inc mod 2 offset 100
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "numgen": {
+                    "mod": 2,
+                    "mode": "inc",
+                    "offset": 100
+                }
+            }
+        }
+    }
+]
+
+# dnat to numgen inc mod 2 map { 0 : 192.168.10.100, 1 : 192.168.20.200 }
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "numgen": {
+                            "mod": 2,
+                            "mode": "inc"
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                0,
+                                "192.168.10.100"
+                            ],
+                            [
+                                1,
+                                "192.168.20.200"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+
+# dnat to numgen inc mod 10 map { 0-5 : 192.168.10.100, 6-9 : 192.168.20.200}
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "numgen": {
+                            "mod": 10,
+                            "mode": "inc"
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                { "range": [ 0, 5 ] },
+                                "192.168.10.100"
+                            ],
+                            [
+                                { "range": [ 6, 9 ] },
+                                "192.168.20.200"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+
+# dnat to numgen inc mod 7 offset 167772161
+[
+    {
+        "dnat": {
+            "addr": {
+                "numgen": {
+                    "mod": 7,
+                    "mode": "inc",
+                    "offset": 167772161
+                }
+            }
+        }
+    }
+]
+
+# dnat to numgen inc mod 255 offset 167772161
+[
+    {
+        "dnat": {
+            "addr": {
+                "numgen": {
+                    "mod": 255,
+                    "mode": "inc",
+                    "offset": 167772161
+                }
+            }
+        }
+    }
+]
+

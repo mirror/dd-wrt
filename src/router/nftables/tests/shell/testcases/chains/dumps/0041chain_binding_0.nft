@@ -1,0 +1,12 @@
+table inet x {
+	chain y {
+		type filter hook input priority filter; policy accept;
+		meta l4proto { tcp, udp } th dport 53 jump {
+			ip saddr { 127.0.0.0/8, 172.23.0.0/16, 192.168.13.0/24 } counter packets 0 bytes 0 accept
+			ip6 saddr ::1 counter packets 0 bytes 0 accept
+		}
+		meta l4proto ipv6-icmp jump {
+			counter packets 0 bytes 0 accept
+		}
+	}
+}

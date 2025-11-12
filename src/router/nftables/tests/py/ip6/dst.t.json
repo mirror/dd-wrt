@@ -1,0 +1,292 @@
+# dst nexthdr 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# dst nexthdr != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# dst nexthdr 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# dst nexthdr != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# dst nexthdr { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# dst nexthdr != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# dst nexthdr { udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "udplite",
+                    "ipcomp",
+                    "udp",
+                    "ah",
+                    "sctp",
+                    "esp",
+                    "dccp",
+                    "tcp",
+                    "ipv6-icmp"
+                ]
+            }
+        }
+    }
+]
+
+# dst nexthdr != { udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "udplite",
+                    "ipcomp",
+                    "udp",
+                    "ah",
+                    "sctp",
+                    "esp",
+                    "dccp",
+                    "tcp",
+                    "ipv6-icmp"
+                ]
+            }
+        }
+    }
+]
+
+# dst nexthdr icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": "icmp"
+        }
+    }
+]
+
+# dst nexthdr != icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": "icmp"
+        }
+    }
+]
+
+# dst hdrlength 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# dst hdrlength != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# dst hdrlength 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# dst hdrlength != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "dst"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# dst hdrlength { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "dst"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]

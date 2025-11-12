@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="define interfaces = { eth0, eth1 }
+
+table ip x {
+	map z {
+		type ifname : verdict
+		elements = { \$interfaces : drop, lo : accept }
+	}
+	chain y {
+		iifname vmap { lo : accept, \$interfaces : drop }
+	}
+}"
+
+$NFT -f - <<< "$EXPECTED"

@@ -1,0 +1,114 @@
+Installation instructions for nftables
+======================================
+
+ Prerequisites
+ =============
+
+  - build tooling: glibc headers, gcc, autotools, automake, libtool, pkg-config.
+
+  - libmnl: git://git.netfilter.org/libmnl.git
+
+  - libnftnl: git://git.netfilter.org/libnftnl.git
+
+  - flex
+
+  - bison
+
+  - libgmp: alternatively, see mini-gmp support below.
+
+  - libreadline or libedit or linenoise: required by interactive command line
+
+  - optional: libxtables: required to interact with iptables-compat
+
+  - optional: libjansson: required to build JSON support
+
+  - optional: asciidoc: required for building man-page
+
+ Configuring and compiling
+ =========================
+
+ Run "sh autogen.sh" to generate the configure script, then:
+
+ sh configure [options]
+
+ --prefix=
+
+        The prefix to put all installed files under. It defaults to
+        /usr/local, so the binaries will go into /usr/local/bin, sbin,
+        manpages into /usr/local/share/man, etc.
+
+ --datarootdir=
+
+	The base directory for arch-independent files. Defaults to
+	$prefix/share.
+
+ --with-unitdir=
+
+	Directory for systemd unit files. Defaults to the value obtained from
+	pkg-config for systemd.pc, and ${prefix}/lib/systemd/system as a
+	fallback.
+
+ --disable-debug
+
+	Disable debugging
+
+ --with-mini-gmp
+
+	Use builtin mini-gmp instead of linking with a shared libgmp.
+	This is useful for embedded platforms optimizing for size and
+	having no other use for libgmp.
+	Note: This decreases the debugging verbosity in some files.
+
+ --with-xtables
+
+	For libxtables support to interact with the iptables-compat
+	utility.
+
+ --without-cli
+
+	To disable interactive command line support, ie. -i/--interactive.
+
+ --with-cli=readline
+
+	To enable interactive command line support with libreadline.
+
+ --with-cli=linenoise
+
+	To enable interactive command line support with linenoise.
+
+ --with-cli=editline
+
+	To enable interactive command line support with libedit.
+
+ --with-json
+
+	To enable JSON support, this requires libjansson.
+
+ Run "make" to compile nftables, "make install" to install it in the
+ configured paths.
+
+ Python support
+ ==============
+
+ CPython bindings are available for nftables under the py/ folder.  They can be
+ installed using pip:
+
+	python -m pip install py/
+
+ A legacy setup.py script can also be used:
+
+	( cd py && python setup.py install )
+
+ However, this method is deprecated.
+
+ Source code
+ ===========
+
+ Netfilter's Linux kernel tree can be found at:
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/netfilter/nf.git/
+ https://git.kernel.org/pub/scm/linux/kernel/git/netfilter/nf.git
+
+ The latest version of this code can be found at:
+
+ git://git.netfilter.org/nftables.git

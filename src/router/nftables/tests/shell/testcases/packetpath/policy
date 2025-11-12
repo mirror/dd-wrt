@@ -1,0 +1,42 @@
+#!/bin/bash
+
+ip link set lo up
+
+$NFT -f - <<EOF
+table inet filter {
+ chain underflow { }
+
+  chain input {
+    type filter hook input priority filter; policy accept;
+    icmp type echo-reply accept
+    ip saddr 127.0.0.1 ip daddr 127.0.0.2 counter accept
+    goto underflow
+    }
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+ping -q -c 1 127.0.0.2 >/dev/null || exit 2
+
+# should work, polict is accept.
+ping -q -c 1 127.0.0.1 >/dev/null || exit 1
+
+$NFT -f - <<EOF
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+  }
+}
+EOF
+[ $? -ne 0 ] && exit 1
+
+$NFT list ruleset
+
+ping -W 1 -q -c 1 127.0.0.2
+
+ping -q -c 1 127.0.0.2 >/dev/null || exit 2
+
+# should fail, policy is set to drop
+ping -W 1 -q -c 1 127.0.0.1 >/dev/null 2>&1 && exit 1
+
+exit 0

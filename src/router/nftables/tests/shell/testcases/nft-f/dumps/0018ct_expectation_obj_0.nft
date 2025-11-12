@@ -1,0 +1,13 @@
+table ip filter {
+	ct expectation ctexpect {
+		protocol tcp
+		dport 9876
+		timeout 1m
+		size 12
+		l3proto ip
+	}
+
+	chain c {
+		ct expectation set "ctexpect"
+	}
+}

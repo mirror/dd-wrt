@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This testcase checks for add and create element commands.
+
+set -e
+$NFT add table t
+$NFT add set t s { type ipv4_addr \; }
+$NFT add element t s { 1.1.1.1 }
+if $NFT create element t s { 1.1.1.1 } 2>/dev/null ; then
+	echo "E: accepted element creation that already exists" >&2
+	exit 1
+fi
+$NFT add element t s { 1.1.1.1 }
+
+exit 0

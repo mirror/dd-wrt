@@ -1,0 +1,9 @@
+table ip test {
+	map testmap {
+		type ipv4_addr : verdict
+		elements = { * : jump testchain }
+	}
+
+	chain testchain {
+	}
+}

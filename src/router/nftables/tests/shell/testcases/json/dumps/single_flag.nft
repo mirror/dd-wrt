@@ -1,0 +1,5 @@
+table ip t {
+	chain c {
+		queue flags bypass,fanout to 1-10
+	}
+}

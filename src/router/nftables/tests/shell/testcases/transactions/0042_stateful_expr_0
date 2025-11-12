@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+RULESET="
+add table ip filter
+add counter ip filter c1
+add map ip filter m1 { type ipv4_addr : counter ;}
+add element ip filter m1 { 1 : c1 }
+add element ip filter m1 { 1 : c1 }
+delete element ip filter m1 { 1 }
+delete counter ip filter c1"
+
+$NFT -f - <<< "$RULESET"

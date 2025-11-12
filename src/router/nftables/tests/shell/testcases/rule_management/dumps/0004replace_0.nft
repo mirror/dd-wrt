@@ -1,0 +1,14 @@
+table ip t {
+	set s1 {
+		type ipv4_addr
+	}
+
+	set s2 {
+		type ipv4_addr
+		flags interval
+	}
+
+	chain c {
+		ip saddr @s2 ip daddr { 3.3.3.3, 4.4.4.4 }
+	}
+}

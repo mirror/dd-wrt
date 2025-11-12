@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+$NFT -f /dev/stdin <<EOF
+table t {
+	set s {
+		type ipv4_addr . ifname
+		flags interval
+		elements = { 1.2.3.4 . "foo" }
+	}
+
+	set s {
+		type ipv4_addr . ifname
+		flags interval
+		elements = { 1.2.3.4 . "foo" }
+
+	}
+}
+EOF
+
+# run-tests.sh will validate dumpfile.

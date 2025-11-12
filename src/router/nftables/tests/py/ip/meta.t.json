@@ -1,0 +1,236 @@
+# icmp type echo-request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+	    "op": "==",
+            "right": "echo-request"
+        }
+    }
+]
+
+# meta l4proto icmp icmp type echo-request
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+	    "op": "==",
+            "right": "icmp"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+	    "op": "==",
+            "right": "echo-request"
+        }
+    }
+]
+
+# meta l4proto ipv6-icmp icmpv6 type nd-router-advert
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+	    "op": "==",
+            "right": "ipv6-icmp"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+	    "op": "==",
+            "right": "nd-router-advert"
+        }
+    }
+]
+
+# meta l4proto 58 icmpv6 type nd-router-advert
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+	    "op": "==",
+            "right": 58
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+	    "op": "==",
+            "right": "nd-router-advert"
+        }
+    }
+]
+
+# icmpv6 type nd-router-advert
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+	    "op": "==",
+            "right": "nd-router-advert"
+        }
+    }
+]
+
+# meta sdif "lo" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "sdif"
+                }
+            },
+            "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta sdifname != "vrf1" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "sdifname"
+                }
+            },
+            "op": "!=",
+            "right": "vrf1"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta protocol ip udp dport 67
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 67
+        }
+    }
+]
+
+# meta mark set ip dscp
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            }
+        }
+    }
+]
+
+# meta mark set ip dscp << 2 | 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "<<": [
+                            {
+                                "payload": {
+                                    "field": "dscp",
+                                    "protocol": "ip"
+                                }
+                            },
+                            2
+                        ]
+                    },
+                    16
+                ]
+            }
+        }
+    }
+]
+
+
+# meta mark set ip dscp << 26 | 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "<<": [
+                            {
+                                "payload": {
+                                    "field": "dscp",
+                                    "protocol": "ip"
+                                }
+                            },
+                            26
+                        ]
+                    },
+                    16
+                ]
+            }
+        }
+    }
+]

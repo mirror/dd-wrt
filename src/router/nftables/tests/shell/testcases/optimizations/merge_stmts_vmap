@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_expr)
+
+set -e
+
+RULESET="table ip x {
+	chain y {
+		ct state invalid drop
+		ct state established,related accept
+	}
+	chain z {
+		tcp dport { 1 } accept
+		tcp dport 2-3 drop
+		tcp dport 4 accept
+	}
+	chain w {
+		ip saddr 1.1.1.1 counter accept
+		ip saddr 1.1.1.2 counter drop
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

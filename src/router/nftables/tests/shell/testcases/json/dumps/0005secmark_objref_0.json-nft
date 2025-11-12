@@ -1,0 +1,233 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "y",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": -225,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "z",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 225,
+        "policy": "accept"
+      }
+    },
+    {
+      "secmark": {
+        "family": "inet",
+        "name": "ssh_server",
+        "table": "x",
+        "handle": 0,
+        "context": "system_u:object_r:ssh_server_packet_t:s0"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 2222
+            }
+          },
+          {
+            "match": {
+              "op": "in",
+              "left": {
+                "ct": {
+                  "key": "state"
+                }
+              },
+              "right": "new"
+            }
+          },
+          {
+            "secmark": "ssh_server"
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "in",
+              "left": {
+                "ct": {
+                  "key": "state"
+                }
+              },
+              "right": "new"
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "ct": {
+                  "key": "secmark"
+                }
+              },
+              "value": {
+                "meta": {
+                  "key": "secmark"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "in",
+              "left": {
+                "ct": {
+                  "key": "state"
+                }
+              },
+              "right": [
+                "established",
+                "related"
+              ]
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "secmark"
+                }
+              },
+              "value": {
+                "ct": {
+                  "key": "secmark"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "z",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "in",
+              "left": {
+                "ct": {
+                  "key": "state"
+                }
+              },
+              "right": "new"
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "ct": {
+                  "key": "secmark"
+                }
+              },
+              "value": {
+                "meta": {
+                  "key": "secmark"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "z",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "in",
+              "left": {
+                "ct": {
+                  "key": "state"
+                }
+              },
+              "right": [
+                "established",
+                "related"
+              ]
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "secmark"
+                }
+              },
+              "value": {
+                "ct": {
+                  "key": "secmark"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

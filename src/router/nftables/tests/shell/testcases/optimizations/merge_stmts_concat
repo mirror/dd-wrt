@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+set -e
+
+RULESET="table ip x {
+	chain y {
+		meta iifname eth1 ip saddr 1.1.1.1 ip daddr 2.2.2.3 accept
+		meta iifname eth1 ip saddr 1.1.1.2 ip daddr 2.2.2.4 accept
+		meta iifname eth1 ip saddr 1.1.1.2 ip daddr 2.2.3.0/24 accept
+		meta iifname eth1 ip saddr 1.1.1.2 ip daddr 2.2.4.0-2.2.4.10 accept
+		meta iifname eth2 ip saddr 1.1.1.3 ip daddr 2.2.2.5 accept
+		ip protocol . th dport { tcp . 22, udp . 67 }
+		udp dport 137 ct state new,untracked accept
+		udp dport 138 ct state new,untracked accept
+	}
+}"
+
+$NFT -o -f - <<< $RULESET
+
+RULESET="table ip x {
+	chain c1 {
+		udp dport 51820 iifname "foo" accept
+		udp dport { 67, 514 } iifname "bar" accept
+	}
+
+	chain c2 {
+		udp dport { 51820, 100 } iifname "foo" accept
+		udp dport { 67, 514 } iifname "bar" accept
+	}
+
+	chain c3 {
+		udp dport { 51820, 100 } iifname { "foo", "test" } accept
+		udp dport { 67, 514 } iifname "bar" accept
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

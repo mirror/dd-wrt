@@ -1,0 +1,14 @@
+table ip test-ip {
+	chain x {
+	}
+
+	chain z {
+	}
+}
+table ip6 test-ip6 {
+	chain x {
+	}
+
+	chain y {
+	}
+}

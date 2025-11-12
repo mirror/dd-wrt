@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Tests use of variables in chain policy
+
+set -e
+
+RULESET="
+define default_policy = \"drop\"
+
+table inet global {
+    chain prerouting {
+        type filter hook prerouting priority filter
+        policy \$default_policy
+    }
+}"
+
+$NFT -f - <<< "$RULESET"

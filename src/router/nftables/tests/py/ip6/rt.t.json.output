@@ -1,0 +1,88 @@
+# rt nexthdr {udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    6,
+                    17,
+                    33,
+                    50,
+                    51,
+                    58,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# rt nexthdr != {udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    6,
+                    17,
+                    33,
+                    50,
+                    51,
+                    58,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# rt nexthdr icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# rt nexthdr != icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    }
+]
+

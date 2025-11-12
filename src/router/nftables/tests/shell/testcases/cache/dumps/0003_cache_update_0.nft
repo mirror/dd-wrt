@@ -1,0 +1,18 @@
+table ip t {
+	chain c {
+	}
+}
+table ip t2 {
+	chain c {
+	}
+}
+table ip t3 {
+}
+table ip t4 {
+	chain c {
+		meta l4proto icmp accept
+		drop
+		meta l4proto igmp accept
+		drop
+	}
+}

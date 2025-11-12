@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="define BASE_ALLOWED_INCOMING_TCP_PORTS = {}
+
+table inet filter {
+	chain input {
+		type filter hook input priority 0; policy drop;
+		tcp dport {\$BASE_ALLOWED_INCOMING_TCP_PORTS} ct state new counter accept
+	}
+}
+"
+
+$NFT -f - <<< "$EXPECTED" &> /dev/null || exit 0
+echo "E: Accepted empty set" 1>&2
+exit 1

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_bitshift)
+
+set -e
+
+RULESET="table ip x {
+	chain sctm_o0_0 {
+	}
+
+	chain sctm_o0_1 {
+	}
+
+	map sctm_o0 {
+		type mark : verdict
+		elements = {
+			0x0 : jump sctm_o0_0,
+			0x1 : jump sctm_o0_1,
+		}
+	}
+
+	counter c_o0_0 {}
+
+	map sctm_o1 {
+		type mark : counter
+		elements = {
+			0x0 : \"c_o0_0\",
+		}
+	}
+
+	chain SET_ctmark_RPLYroute {
+		meta mark >> 8 & 0xf vmap @sctm_o0
+	}
+
+	chain SET_ctmark_RPLYroute {
+		counter name meta mark >> 8 & 0xf map @sctm_o1
+	}
+}"
+
+$NFT -f - <<< $RULESET

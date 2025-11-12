@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# no table x, caused segfault in earlier nft releases
+$NFT insert rule inet x y handle 107 'goto { log prefix "MOO! "; }'
+if [ $? -ne 1 ]; then
+	exit 1
+fi
+
+if [ $NFT_TEST_HAVE_chain_binding = "n" ] ; then
+	echo "Test partially skipped due to NFT_TEST_HAVE_chain_binding=n"
+	exit 77
+fi
+
+set -e
+
+EXPECTED="table inet x {
+        chain y {
+                type filter hook input priority 0;
+                meta l4proto { tcp, udp } th dport 53 jump {
+                        ip saddr { 127.0.0.0/8, 172.23.0.0/16, 192.168.13.0/24 } counter accept
+                        ip6 saddr ::1/128 counter accept
+                }
+        }
+}"
+
+$NFT -f - <<< $EXPECTED
+$NFT add rule inet x y meta l4proto icmpv6 jump { counter accept\; }
+$NFT add rule inet x y meta l4proto sctp jump { drop\; }
+$NFT delete rule inet x y handle 13

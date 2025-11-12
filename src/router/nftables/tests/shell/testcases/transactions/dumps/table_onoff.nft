@@ -1,0 +1,8 @@
+table ip t {
+	flags dormant
+
+	chain c {
+		type filter hook input priority filter; policy accept;
+		ip daddr 127.0.0.42 counter packets 0 bytes 0
+	}
+}

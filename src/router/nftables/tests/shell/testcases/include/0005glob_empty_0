@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Including files in an empty directory must not fail.
+
+set -e
+
+tmpdir=$(mktemp -d)
+if [ ! -d $tmpdir ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfile1=$(mktemp)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+# cleanup if aborted
+trap "rm -rf $tmpfile1 && rmdir $tmpdir" EXIT
+
+RULESET1="include \"$tmpdir/*\""
+
+echo "$RULESET1" > $tmpfile1
+
+$NFT -f $tmpfile1
+
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

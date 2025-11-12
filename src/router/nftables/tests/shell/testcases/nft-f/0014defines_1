@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Tests redefinition of an existing variable.
+
+set -e
+
+RULESET="
+define var1 = lo
+define var1 = lo
+
+table ip t {
+	chain c {
+		iif \$var1
+	}
+}"
+
+$NFT -f - <<< "$RULESET" && exit 1
+exit 0

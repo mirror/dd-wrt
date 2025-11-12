@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# This test netfilter bug #1090
+# https://bugzilla.netfilter.org/show_bug.cgi?id=1090
+
+$NFT add table t
+$NFT add set t s {type ipv4_addr \; flags interval \;}
+$NFT add element t s { 1.1.1.1 comment "test" }
+if ! $NFT list ruleset | grep test >/dev/null ; then
+	echo "E: missing comment in set element" >&2
+	exit 1
+fi

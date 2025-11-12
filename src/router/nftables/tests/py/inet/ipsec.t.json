@@ -1,0 +1,157 @@
+# ipsec in reqid 1
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "in",
+                    "key": "reqid",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# ipsec in spnum 0 reqid 1
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "in",
+                    "key": "reqid",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# ipsec out reqid 0xffffffff
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "out",
+                    "key": "reqid",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": 4294967295
+        }
+    }
+]
+
+# ipsec out spi 1-561
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "out",
+                    "key": "spi",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    1,
+                    561
+                ]
+            }
+        }
+    }
+]
+
+# ipsec in spnum 2 ip saddr { 1.2.3.4, 10.6.0.0/16 }
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "in",
+                    "family": "ip",
+                    "key": "saddr",
+                    "spnum": 2
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "1.2.3.4",
+                    {
+                        "prefix": {
+                            "addr": "10.6.0.0",
+                            "len": 16
+                        }
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# ipsec in ip6 daddr dead::beef
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "in",
+                    "family": "ip6",
+                    "key": "daddr",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": "dead::beef"
+        }
+    }
+]
+
+# ipsec out ip6 saddr dead::feed
+[
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "out",
+                    "family": "ip6",
+                    "key": "saddr",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": "dead::feed"
+        }
+    }
+]
+
+# counter ipsec out ip daddr 192.168.1.2
+[
+    {
+        "counter": null
+    },
+    {
+        "match": {
+            "left": {
+                "ipsec": {
+                    "dir": "out",
+                    "family": "ip",
+                    "key": "daddr",
+                    "spnum": 0
+                }
+            },
+            "op": "==",
+            "right": "192.168.1.2"
+        }
+    }
+]

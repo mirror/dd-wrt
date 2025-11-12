@@ -1,0 +1,4 @@
+table raw {
+	chain prerouting	{ type filter hook prerouting priority -300; }
+	chain output		{ type filter hook output priority -300; }
+}

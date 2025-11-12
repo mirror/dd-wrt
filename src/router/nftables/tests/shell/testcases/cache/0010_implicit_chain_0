@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_chain_binding)
+
+set -e
+
+EXPECTED="table ip f {
+	chain c {
+		jump {
+			accept
+		}
+	}
+}"
+
+$NFT 'table ip f { chain c { jump { accept; }; }; }'
+GET="$($NFT list chain ip f c)"
+
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

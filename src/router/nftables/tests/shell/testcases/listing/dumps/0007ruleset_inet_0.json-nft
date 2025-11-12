@@ -1,0 +1,46 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "table": {
+        "family": "arp",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "table": {
+        "family": "bridge",
+        "name": "test",
+        "handle": 0
+      }
+    }
+  ]
+}

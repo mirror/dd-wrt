@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Make sure nft allows to delete existing ranges only
+
+RULESET="
+table t {
+	set s {
+		type ipv4_addr
+		flags interval
+		elements = { 192.168.1.0-192.168.1.254, 192.168.1.255 }
+	}
+}"
+
+$NFT -f - <<< "$RULESET" || { echo "E: Can't load basic ruleset" 1>&2; exit 1; }
+
+$NFT delete element t s '{ 192.168.1.0/24 }' 2>/dev/null || exit 0
+echo "E: Deletion of non-existing range allowed" 1>&2

@@ -1,0 +1,10 @@
+# 857b46027d6f ("netfilter: nft_ct: add ct expectations support")
+# v5.3-rc1~140^2~153^2~19
+table t {
+	ct expectation ctexpect {
+		protocol tcp
+		dport 5432
+		timeout 1h
+		size 12;
+	}
+}

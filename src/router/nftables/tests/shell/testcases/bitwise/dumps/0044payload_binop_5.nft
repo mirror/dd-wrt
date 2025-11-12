@@ -1,0 +1,6 @@
+table ip6 t {
+	chain c {
+		type filter hook output priority filter; policy accept;
+		ct mark set ct mark | ip6 dscp | 0x00000200 counter packets 0 bytes 0
+	}
+}

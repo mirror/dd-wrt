@@ -1,0 +1,6 @@
+table inet filter {
+	chain input {
+		type filter hook input priority filter; policy drop;
+		iifname "lo" ip saddr 10.0.0.0/8 ip daddr 192.168.100.62 tcp dport 2001 counter packets 0 bytes 0 accept
+	}
+}

@@ -1,0 +1,19 @@
+{
+  "nftables": [
+    {
+  "table": { "family": "netdev", "name": "test", "ha": 0,
+    "flags": "dormant"   } },
+{
+  "chain": {
+    "family": "netdev",
+    "table": "test",
+"name": "ingress",
+    "le": 0,
+"dev": "", "ha": 0,
+    "flags": "dormy1", "type": "fi",
+    "hook": "ingress",
+    "prio": 0, "policy": "drop"
+  }
+    }
+  ]
+}

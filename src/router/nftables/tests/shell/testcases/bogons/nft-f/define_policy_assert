@@ -1,0 +1,3 @@
+chain y x { priority filter
+define p = foo
+policy $p

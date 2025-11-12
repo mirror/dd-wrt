@@ -1,0 +1,195 @@
+#!/bin/bash -e
+#
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+# NFT_TEST_SKIP(NFT_TEST_SKIP_slow)
+#
+# 0043concatenated_ranges_0 - Add, get, list, timeout for concatenated ranges
+#
+# Cycle over supported data types, forming concatenations of three fields, for
+# all possible permutations, and:
+# - add entries to set
+# - list them
+# - get entries by specifying a value matching ranges for all fields
+# - delete them
+# - check that they can't be deleted again
+# - add them with 1s timeout
+# - check that they are not listed after 1s, just once, for the first entry
+# - delete them
+# - make sure they can't be deleted again
+
+TYPES="ipv4_addr ipv6_addr ether_addr inet_proto inet_service mark"
+
+RULESPEC_ipv4_addr="ip saddr"
+ELEMS_ipv4_addr="192.0.2.1 198.51.100.0/25 203.0.113.0-203.0.113.129"
+ADD_ipv4_addr="192.0.2.252/31"
+GET_ipv4_addr="198.51.100.127 198.51.100.0/25"
+
+RULESPEC_ipv6_addr="ip6 daddr"
+ELEMS_ipv6_addr="2001:db8:c0c:c0de::1-2001:db8:cacc::a 2001:db8::1 2001:db8:dada:da::/64"
+ADD_ipv6_addr="2001:db8::d1ca:d1ca"
+GET_ipv6_addr="2001:db8::1 2001:db8::1"
+
+RULESPEC_ether_addr="ether saddr"
+ELEMS_ether_addr="00:0a:c1:d1:f1:ed-00:0a:c1:dd:ec:af 00:0b:0c:ca:cc:10-c1:a0:c1:cc:10:00 f0:ca:cc:1a:b0:1a"
+ADD_ether_addr="00:be:1d:ed:ab:e1"
+GET_ether_addr="ac:c1:ac:c0:ce:c0 00:0b:0c:ca:cc:10-c1:a0:c1:cc:10:00"
+
+RULESPEC_inet_proto="meta l4proto"
+ELEMS_inet_proto="tcp udp icmp"
+ADD_inet_proto="sctp"
+GET_inet_proto="udp udp"
+
+RULESPEC_inet_service="tcp dport"
+ELEMS_inet_service="22-23 1024-32768 31337"
+ADD_inet_service="32769-65535"
+GET_inet_service="32768 1024-32768"
+
+RULESPEC_mark="mark"
+ELEMS_mark="0x00000064-0x000000c8 0x0000006f 0x0000fffd-0x0000ffff"
+ADD_mark="0x0000002a"
+GET_mark="0x0000006f 0x0000006f"
+
+tmp="$(mktemp)"
+trap "rm -f ${tmp}" EXIT
+
+render() {
+	eval "echo \"$(cat ${1})\""
+}
+
+cat <<'EOF' > "${tmp}"
+flush ruleset
+
+table inet filter {
+	${setmap} test {
+		type ${ta} . ${tb} . ${tc} ${mapt}
+		flags interval,timeout
+		elements = { ${a1} . ${b1} . ${c1} ${mapv},
+			     ${a2} . ${b2} . ${c2} ${mapv},
+			     ${a3} . ${b3} . ${c3} ${mapv}, }
+	}
+
+	chain output {
+		type filter hook output priority 0; policy accept;
+		${rule} @test counter
+	}
+}
+EOF
+
+timeout_tested=0
+run_test()
+{
+setmap="$1"
+for ta in ${TYPES}; do
+	eval a=\$ELEMS_${ta}
+	a1=${a%% *}; a2=$(expr "$a" : ".* \(.*\) .*"); a3=${a##* }
+	eval sa=\$RULESPEC_${ta}
+
+	mark=0
+	for tb in ${TYPES}; do
+		[ "${tb}" = "${ta}" ] && continue
+		if [ "${tb}" = "ipv6_addr" ]; then
+			[ "${ta}" = "ipv4_addr" ] && continue
+		elif [ "${tb}" = "ipv4_addr" ]; then
+			[ "${ta}" = "ipv6_addr" ] && continue
+		fi
+
+		eval b=\$ELEMS_${tb}
+		b1=${b%% *}; b2=$(expr "$b" : ".* \(.*\) .*"); b3=${b##* }
+		eval sb=\$RULESPEC_${tb}
+
+		for tc in ${TYPES}; do
+			[ "${tc}" = "${ta}" ] && continue
+			[ "${tc}" = "${tb}" ] && continue
+			if [ "${tc}" = "ipv6_addr" ]; then
+				[ "${ta}" = "ipv4_addr" ] && continue
+				[ "${tb}" = "ipv4_addr" ] && continue
+			elif [ "${tc}" = "ipv4_addr" ]; then
+				[ "${ta}" = "ipv6_addr" ] && continue
+				[ "${tb}" = "ipv6_addr" ] && continue
+			fi
+
+			echo "$setmap TYPE: ${ta} ${tb} ${tc}"
+
+			eval c=\$ELEMS_${tc}
+			c1=${c%% *}; c2=$(expr "$c" : ".* \(.*\) .*"); c3=${c##* }
+			eval sc=\$RULESPEC_${tc}
+
+			case "${setmap}" in
+			"set")
+				mapt=""
+				mapv=""
+				rule="${sa} . ${sb} . ${sc}"
+			;;
+			"map")
+				mapt=": mark"
+				mark=42
+				mapv=$(printf " : 0x%08x" ${mark})
+				rule="meta mark set ${sa} . ${sb} . ${sc} map"
+			;;
+			esac
+
+			render ${tmp} | ${NFT} -f -
+
+			[ $(${NFT} list ${setmap} inet filter test |		\
+			   grep -c -e "${a1} . ${b1} . ${c1}${mapv}"		\
+				   -e "${a2} . ${b2} . ${c2}${mapv}"		\
+				   -e "${a3} . ${b3} . ${c3}${mapv}") -eq 3 ]
+
+			${NFT} delete element inet filter test \
+				"{ ${a1} . ${b1} . ${c1}${mapv} }"
+			${NFT} delete element inet filter test \
+				"{ ${a1} . ${b1} . ${c1}${mapv} }" \
+				2>/dev/null && exit 1
+
+			eval add_a=\$ADD_${ta}
+			eval add_b=\$ADD_${tb}
+			eval add_c=\$ADD_${tc}
+			${NFT} add element inet filter test \
+				"{ ${add_a} . ${add_b} . ${add_c} timeout 2m${mapv}}"
+			[ $(${NFT} list ${setmap} inet filter test |	\
+			   grep -c "${add_a} . ${add_b} . ${add_c}") -eq 1 ]
+
+			eval get_a=\$GET_${ta}
+			eval get_b=\$GET_${tb}
+			eval get_c=\$GET_${tc}
+			exp_a=${get_a##* }; get_a=${get_a%% *}
+			exp_b=${get_b##* }; get_b=${get_b%% *}
+			exp_c=${get_c##* }; get_c=${get_c%% *}
+			[ $(${NFT} get element inet filter test 	\
+			   "{ ${get_a} . ${get_b} . ${get_c}${mapv} }" |	\
+			   grep -c "${exp_a} . ${exp_b} . ${exp_c}") -eq 1 ]
+
+			${NFT} "delete element inet filter test \
+				{ ${a2} . ${b2} . ${c2}${mapv} };
+				delete element inet filter test \
+				{ ${a3} . ${b3} . ${c3}${mapv} }"
+			${NFT} "delete element inet filter test \
+				  { ${a2} . ${b2} . ${c2}${mapv} };
+				  delete element inet filter test \
+				  { ${a3} . ${b3} . ${c3} ${mapv} }" \
+				  2>/dev/null && exit 1
+
+			if [ ${timeout_tested} -eq 1 ]; then
+				${NFT} delete element inet filter test \
+					"{ ${add_a} . ${add_b} . ${add_c} ${mapv} }"
+				${NFT} delete element inet filter test \
+					"{ ${add_a} . ${add_b} . ${add_c} ${mapv} }" \
+					2>/dev/null && exit 1
+				continue
+			fi
+
+			${NFT} delete element inet filter test \
+				"{ ${add_a} . ${add_b} . ${add_c} ${mapv}}"
+			${NFT} add element inet filter test \
+				"{ ${add_a} . ${add_b} . ${add_c} timeout 1s${mapv}}"
+			sleep 1
+			[ $(${NFT} list ${setmap} inet filter test |		\
+			   grep -c "${add_a} . ${add_b} . ${add_c} ${mapv}") -eq 0 ]
+			timeout_tested=1
+		done
+	done
+done
+}
+
+run_test "set"
+run_test "map"

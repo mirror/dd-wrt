@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# This is the testscase:
+# * creating valid named limits
+# * referencing them from a valid rule
+
+RULESET="
+table ip filter {
+	limit http-traffic {
+		rate 1/second
+	}
+	chain input {
+		type filter hook input priority 0; policy accept;
+		limit name tcp dport map { 80 : "http-traffic", 443 : "http-traffic"}
+	}
+}"
+
+set -e
+$NFT -f - <<< "$RULESET"

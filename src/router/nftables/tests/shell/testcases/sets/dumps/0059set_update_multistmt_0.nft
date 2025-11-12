@@ -1,0 +1,13 @@
+table ip x {
+	set y {
+		type ipv4_addr
+		size 65535
+		flags dynamic,timeout
+		timeout 1h
+	}
+
+	chain z {
+		type filter hook output priority filter; policy accept;
+		update @y { ip daddr limit rate 1/second burst 5 packets counter }
+	}
+}

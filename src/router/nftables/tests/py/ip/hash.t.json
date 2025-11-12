@@ -1,0 +1,230 @@
+# ct mark set jhash ip saddr . ip daddr mod 2 seed 0xdeadbeef
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "jhash": {
+                    "expr": {
+                        "concat": [
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    },
+                    "mod": 2,
+                    "seed": 3735928559
+                }
+            }
+        }
+    }
+]
+
+# ct mark set jhash ip saddr . ip daddr mod 2
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "jhash": {
+                    "expr": {
+                        "concat": [
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    },
+                    "mod": 2
+                }
+            }
+        }
+    }
+]
+
+# ct mark set jhash ip saddr . ip daddr mod 2 seed 0x0
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "jhash": {
+                    "expr": {
+                        "concat": [
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    },
+                    "mod": 2,
+                    "seed": 0
+                }
+            }
+        }
+    }
+]
+
+# ct mark set jhash ip saddr . ip daddr mod 2 seed 0xdeadbeef offset 100
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "jhash": {
+                    "expr": {
+                        "concat": [
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    },
+                    "mod": 2,
+                    "offset": 100,
+                    "seed": 3735928559
+                }
+            }
+        }
+    }
+]
+
+# ct mark set jhash ip saddr . ip daddr mod 2 offset 100
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "jhash": {
+                    "expr": {
+                        "concat": [
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    },
+                    "mod": 2,
+                    "offset": 100
+                }
+            }
+        }
+    }
+]
+
+# dnat to jhash ip saddr mod 2 seed 0xdeadbeef map { 0 : 192.168.20.100, 1 : 192.168.30.100 }
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "jhash": {
+                            "expr": {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            },
+                            "mod": 2,
+                            "seed": 3735928559
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                0,
+                                "192.168.20.100"
+                            ],
+                            [
+                                1,
+                                "192.168.30.100"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+
+# ct mark set symhash mod 2 offset 100
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "symhash": {
+                    "mod": 2,
+                    "offset": 100
+                }
+            }
+        }
+    }
+]
+

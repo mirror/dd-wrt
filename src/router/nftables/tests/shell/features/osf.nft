@@ -1,0 +1,7 @@
+# b96af92d6eaf ("netfilter: nf_tables: implement Passive OS fingerprint module in nft_osf")
+# v4.19-rc1~140^2~135^2~15
+table t {
+	chain c {
+		osf name "Linux"
+	}
+}

@@ -1,0 +1,61 @@
+# meta l4proto 17 tproxy ip to 192.0.2.1
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "192.0.2.1"
+        }
+    }
+]
+
+# meta l4proto 6 tproxy ip to 192.0.2.1:50080
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "addr": "192.0.2.1",
+            "port": 50080
+        }
+    }
+]
+
+# ip protocol 6 tproxy ip to :50080
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "tproxy": {
+            "port": 50080
+        }
+    }
+]

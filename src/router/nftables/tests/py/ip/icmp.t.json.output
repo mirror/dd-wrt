@@ -1,0 +1,145 @@
+# icmp id 1245 log
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-reply",
+                    "echo-request"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": 1245
+        }
+    },
+    {
+        "log": null
+    }
+]
+
+# icmp id 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-reply",
+                    "echo-request"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# icmp id != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-reply",
+                    "echo-request"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# icmp id { 33-55}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "echo-reply",
+                    "echo-request"
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "icmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "range": [
+                            33,
+                            55
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+

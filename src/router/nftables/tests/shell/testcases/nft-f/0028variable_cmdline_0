@@ -1,0 +1,17 @@
+#!/bin/bash
+
+
+RULESET="table inet filter {
+	set whitelist_v4 { type ipv4_addr; }
+}
+add element inet filter whitelist_v4 \$whitelist_v4
+"
+
+# this is intentional: exercise error path
+$NFT --define whitelist_v4="{ wrong }" -f - <<< "$RULESET"
+$NFT --define whitelist_v4="{ 1.1.1.1, \$wrong }" -f - <<< "$RULESET"
+
+set -e
+
+$NFT --define whitelist_v4="{ 1.1.1.1, 2.2.2.2 }" -f - <<< "$RULESET"
+$NFT --define x={5.5.5.5} --define whitelist_v4="{ 3.3.3.3, 4.4.4.4, \$x }" -f - <<< "$RULESET"

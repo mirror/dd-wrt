@@ -1,0 +1,256 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "x",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "GEOIP_CC_wan-lan_120",
+        "table": "x",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          {
+            "prefix": {
+              "addr": "1.32.128.0",
+              "len": 18
+            }
+          },
+          {
+            "range": [
+              "1.32.200.0",
+              "1.32.204.128"
+            ]
+          },
+          {
+            "prefix": {
+              "addr": "1.32.207.0",
+              "len": 24
+            }
+          },
+          {
+            "range": [
+              "1.32.216.118",
+              "1.32.216.255"
+            ]
+          },
+          {
+            "range": [
+              "1.32.219.0",
+              "1.32.222.255"
+            ]
+          },
+          {
+            "prefix": {
+              "addr": "1.32.226.0",
+              "len": 23
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.32.231.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.32.233.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.32.238.0",
+              "len": 23
+            }
+          },
+          {
+            "prefix": {
+              "addr": "1.32.240.0",
+              "len": 24
+            }
+          },
+          {
+            "prefix": {
+              "addr": "223.223.220.0",
+              "len": 22
+            }
+          },
+          {
+            "prefix": {
+              "addr": "223.255.254.0",
+              "len": 24
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "1.2.3.4"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 80
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "value": 10
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "1.2.3.4"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 81
+            }
+          },
+          {
+            "mangle": {
+              "key": {
+                "meta": {
+                  "key": "mark"
+                }
+              },
+              "value": 11
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "1.2.3.5",
+                      81
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "1.2.3.5",
+                      82
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    }
+  ]
+}

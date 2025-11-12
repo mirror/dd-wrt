@@ -1,0 +1,95 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "statelessnat",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "statelessnat",
+        "name": "prerouting",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "statelessnat",
+        "name": "postrouting",
+        "handle": 0,
+        "type": "filter",
+        "hook": "postrouting",
+        "prio": 100,
+        "policy": "accept"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "statelessnat",
+        "chain": "prerouting",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "value": {
+                "map": {
+                  "key": {
+                    "numgen": {
+                      "mode": "inc",
+                      "mod": 16,
+                      "offset": 0
+                    }
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        {
+                          "range": [
+                            0,
+                            7
+                          ]
+                        },
+                        "10.0.1.1"
+                      ],
+                      [
+                        {
+                          "range": [
+                            8,
+                            15
+                          ]
+                        },
+                        "10.0.1.2"
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

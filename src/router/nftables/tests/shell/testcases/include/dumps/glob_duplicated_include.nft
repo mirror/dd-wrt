@@ -1,0 +1,6 @@
+table inet test {
+	chain test {
+		tcp dport 22 accept
+		tcp dport 25 accept
+	}
+}

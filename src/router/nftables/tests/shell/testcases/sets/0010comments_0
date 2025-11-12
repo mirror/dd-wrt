@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Test that comments are added to set elements in standard sets.
+
+$NFT add table inet t
+$NFT add set inet t s {type ipv6_addr \; }
+$NFT add element inet t s { ::1 comment "test" }
+if ! $NFT list ruleset | grep test >/dev/null ; then
+	echo "E: missing comment in set element" >&2
+	exit 1
+fi

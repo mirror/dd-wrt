@@ -1,0 +1,5 @@
+# mind the NIC, it must exist
+table netdev filter {
+        chain loinput { type filter hook ingress device lo priority 0; }
+}
+

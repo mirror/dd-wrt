@@ -1,0 +1,19 @@
+#!/bin/bash
+
+RULESET="table inet filter {
+        set ssh_meter {
+                type ipv4_addr
+                size 65535
+                flags dynamic,timeout
+                timeout 1m
+                elements = { 127.0.0.1 expires 52s44ms limit rate over 1/minute }
+        }
+
+        chain output {
+                type filter hook output priority filter; policy accept;
+                ip protocol icmp add @ssh_meter { ip saddr timeout 1m limit rate over 1/minute }
+        }
+}"
+
+set -e
+$NFT -f - <<< $EXPECTED

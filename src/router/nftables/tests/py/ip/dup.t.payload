@@ -1,0 +1,21 @@
+# dup to 192.168.2.1
+ip test-ip4 test 
+  [ immediate reg 1 0x0102a8c0 ]
+  [ dup sreg_addr 1 ]
+
+# dup to 192.168.2.1 device "lo"
+ip test-ip4 test 
+  [ immediate reg 1 0x0102a8c0 ]
+  [ immediate reg 2 0x00000001 ]
+  [ dup sreg_addr 1 sreg_dev 2 ]
+
+# dup to ip saddr map { 192.168.2.120 : 192.168.2.1 } device "lo"
+__map%d test-ip4 b
+__map%d test-ip4 0
+        element 7802a8c0  : 0102a8c0 0 [end]
+ip test-ip4 test 
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ immediate reg 2 0x00000001 ]
+  [ dup sreg_addr 1 sreg_dev 2 ]
+

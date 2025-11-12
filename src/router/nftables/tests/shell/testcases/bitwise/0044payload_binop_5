@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_bitwise_multireg)
+
+set -e
+
+RULESET="
+  add table ip6 t
+  add chain ip6 t c { type filter hook output priority filter; }
+  add rule ip6 t c ct mark set ct mark | ip6 dscp | 0x200 counter
+"
+
+$NFT -f - <<< "$RULESET"

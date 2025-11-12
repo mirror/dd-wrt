@@ -1,0 +1,591 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "ct expectation": {
+        "family": "inet",
+        "name": "exp1",
+        "table": "t",
+        "handle": 0,
+        "protocol": "tcp",
+        "dport": 9876,
+        "timeout": 60000,
+        "size": 12,
+        "l3proto": "ip"
+      }
+    },
+    {
+      "ct expectation": {
+        "family": "inet",
+        "name": "exp2",
+        "table": "t",
+        "handle": 0,
+        "protocol": "tcp",
+        "dport": 9876,
+        "timeout": 3000,
+        "size": 13,
+        "l3proto": "ip6"
+      }
+    },
+    {
+      "ct helper": {
+        "family": "inet",
+        "name": "myftp",
+        "table": "t",
+        "handle": 0,
+        "type": "ftp",
+        "protocol": "tcp",
+        "l3proto": "inet"
+      }
+    },
+    {
+      "ct timeout": {
+        "family": "inet",
+        "name": "dns",
+        "table": "t",
+        "handle": 0,
+        "protocol": "tcp",
+        "l3proto": "ip",
+        "policy": {
+          "established": 3,
+          "close": 1
+        }
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "exp",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ct expectation",
+        "elem": [
+          [
+            "192.168.2.2",
+            "exp1"
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "exp6",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip6",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ct expectation",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            {
+              "prefix": {
+                "addr": "dead:beef::",
+                "len": 64
+              }
+            },
+            "exp2"
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "helpobj",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip6",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ct helper",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            {
+              "prefix": {
+                "addr": "dead:beef::",
+                "len": 64
+              }
+            },
+            "myftp"
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "timeoutmap",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "daddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "ct timeout",
+        "elem": [
+          [
+            "192.168.0.1",
+            "dns"
+          ]
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "helpname",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "ct": {
+              "key": "helper"
+            }
+          }
+        },
+        "handle": 0,
+        "elem": [
+          "sip",
+          "ftp"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct expectation": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip",
+                    "field": "saddr"
+                  }
+                },
+                "data": "@exp"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct expectation": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip6",
+                    "field": "saddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      "dead::beef",
+                      "exp2"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct expectation": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip6",
+                    "field": "daddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      "dead::beef",
+                      "exp2"
+                    ],
+                    [
+                      "feed::17",
+                      "exp2"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct expectation": {
+              "map": {
+                "key": {
+                  "concat": [
+                    {
+                      "payload": {
+                        "protocol": "ip6",
+                        "field": "daddr"
+                      }
+                    },
+                    {
+                      "payload": {
+                        "protocol": "tcp",
+                        "field": "dport"
+                      }
+                    }
+                  ]
+                },
+                "data": {
+                  "set": [
+                    [
+                      {
+                        "concat": [
+                          "feed::17",
+                          512
+                        ]
+                      },
+                      "exp2"
+                    ],
+                    [
+                      {
+                        "concat": [
+                          "dead::beef",
+                          123
+                        ]
+                      },
+                      "exp2"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct helper": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip6",
+                    "field": "saddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      "1c3::c01d",
+                      "myftp"
+                    ],
+                    [
+                      "dead::beef",
+                      "myftp"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct helper": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip6",
+                    "field": "saddr"
+                  }
+                },
+                "data": "@helpobj"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct timeout": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip",
+                    "field": "daddr"
+                  }
+                },
+                "data": "@timeoutmap"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct timeout": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip",
+                    "field": "daddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      "1.2.3.4",
+                      "dns"
+                    ],
+                    [
+                      "5.6.7.8",
+                      "dns"
+                    ],
+                    [
+                      {
+                        "prefix": {
+                          "addr": "192.168.8.0",
+                          "len": 24
+                        }
+                      },
+                      "dns"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct timeout": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip",
+                    "field": "daddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      {
+                        "range": [
+                          "1.2.3.4",
+                          "1.2.3.8"
+                        ]
+                      },
+                      "dns"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "ct timeout": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip6",
+                    "field": "daddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      {
+                        "prefix": {
+                          "addr": "1ce::",
+                          "len": 64
+                        }
+                      },
+                      "dns"
+                    ],
+                    [
+                      "dead::beef",
+                      "dns"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "ct": {
+                  "key": "helper"
+                }
+              },
+              "right": "@helpname"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "192.168.1.1"
+            }
+          },
+          {
+            "ct timeout": "dns"
+          }
+        ]
+      }
+    }
+  ]
+}

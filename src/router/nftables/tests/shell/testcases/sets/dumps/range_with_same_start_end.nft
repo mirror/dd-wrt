@@ -1,0 +1,7 @@
+table ip t {
+	set X {
+		type inet_service
+		flags interval
+		elements = { 10, 30, 35 }
+	}
+}

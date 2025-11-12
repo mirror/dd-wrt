@@ -1,0 +1,13 @@
+table inet filter {
+	chain input {
+		type filter hook input priority filter; policy accept;
+		meta nftrace set 1
+		ip daddr 127.0.0.1 tcp dport 5555 reject with tcp reset
+		ip6 daddr ::1 tcp dport 5555 reject with tcp reset
+		tcp dport 5555 counter packets 0 bytes 0
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+	}
+}

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+$NFT add table t || exit 1
+$NFT add chain t c1 || exit 1
+$NFT add chain t c2 || exit 1
+# kernel should return EEXIST
+$NFT rename chain t c1 c2
+
+if [ $? -eq 0 ] ; then
+	echo "E: Renamed with existing chain" >&2
+	exit 1
+fi
+
+# same, should return EEXIST
+$NFT 'rename chain t c1 c3;rename chain t c2 c3'
+if [ $? -eq 0 ] ; then
+	echo "E: Renamed two chains to same name" >&2
+	exit 1
+fi

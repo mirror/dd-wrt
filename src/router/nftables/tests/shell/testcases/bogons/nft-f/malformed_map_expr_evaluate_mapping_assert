@@ -1,0 +1,6 @@
+table ip x {
+        map m {
+                typeof ct saddr :ct expectation
+                elements = { * : none}
+        }
+}

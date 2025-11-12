@@ -1,0 +1,637 @@
+# icmpv6 type destination-unreachable accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type packet-too-big accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type time-exceeded accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000003 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type echo-request accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000080 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type echo-reply accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000081 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type mld-listener-query accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000082 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type mld-listener-report accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000083 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type mld-listener-done accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000084 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type mld-listener-reduction accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000084 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type nd-router-solicit accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000085 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type nd-router-advert accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000086 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type nd-neighbor-solicit accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000087 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type nd-neighbor-advert accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000088 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type nd-redirect accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000089 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type parameter-problem accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000004 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type router-renumbering accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000008a ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type ind-neighbor-solicit accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000008d ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type ind-neighbor-advert accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000008e ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type mld2-listener-report accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x0000008f ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type {destination-unreachable, time-exceeded, nd-router-solicit} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000001  : 0 [end]	element 00000003  : 0 [end]	element 00000085  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type {router-renumbering, mld-listener-done, time-exceeded, nd-router-solicit} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 0000008a  : 0 [end]	element 00000084  : 0 [end]	element 00000003  : 0 [end]	element 00000085  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type {mld-listener-query, time-exceeded, nd-router-advert} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000082  : 0 [end]	element 00000003  : 0 [end]	element 00000086  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 type != {mld-listener-query, time-exceeded, nd-router-advert} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000082  : 0 [end]	element 00000003  : 0 [end]	element 00000086  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 code 4
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ cmp eq reg 1 0x00000004 ]
+
+# icmpv6 code 3-66
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ range eq reg 1 0x00000003 0x00000042 ]
+
+# icmpv6 code {5, 6, 7} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000005  : 0 [end]	element 00000006  : 0 [end]	element 00000007  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 code != {policy-fail, reject-route, 7} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000005  : 0 [end]	element 00000006  : 0 [end]	element 00000007  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 checksum 2222 log
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x0000ae08 ]
+  [ log ]
+
+# icmpv6 checksum != 2222 log
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp neq reg 1 0x0000ae08 ]
+  [ log ]
+
+# icmpv6 checksum 222-226
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x0000de00 0x0000e200 ]
+
+# icmpv6 checksum != 222-226
+ip6
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range neq reg 1 0x0000de00 0x0000e200 ]
+
+# icmpv6 checksum { 222, 226}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 0000de00  : 0 [end]	element 0000e200  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmpv6 checksum != { 222, 226}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 0000de00  : 0 [end]	element 0000e200  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmpv6 mtu 22
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x16000000 ]
+
+# icmpv6 mtu != 233
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp neq reg 1 0xe9000000 ]
+
+# icmpv6 mtu 33-45
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ range eq reg 1 0x21000000 0x2d000000 ]
+
+# icmpv6 mtu != 33-45
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ range neq reg 1 0x21000000 0x2d000000 ]
+
+# icmpv6 mtu {33, 55, 67, 88}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmpv6 mtu != {33, 55, 67, 88}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 21000000  : 0 [end]	element 37000000  : 0 [end]	element 43000000  : 0 [end]	element 58000000  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmpv6 type packet-too-big icmpv6 mtu 1280
+ip6 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00050000 ]
+
+# icmpv6 id 33-45
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# icmpv6 id != 33-45
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# icmpv6 id {33, 55, 67, 88}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmpv6 id != {33, 55, 67, 88}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmpv6 id 1
+__set%d test-ip6 3 size 2
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+ip6
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 ]
+
+# icmpv6 type echo-reply icmpv6 id 65534
+ip6
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000081 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ cmp eq reg 1 0x0000feff ]
+
+# icmpv6 sequence 2
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x00000200 ]
+
+# icmpv6 sequence {3, 4, 5, 6, 7} accept
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000300  : 0 [end]	element 00000400  : 0 [end]	element 00000500  : 0 [end]	element 00000600  : 0 [end]	element 00000700  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 0 accept ]
+
+# icmpv6 sequence {2, 4}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000200  : 0 [end]	element 00000400  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmpv6 sequence != {2, 4}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000200  : 0 [end]	element 00000400  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmpv6 sequence 2-4
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range eq reg 1 0x00000200 0x00000400 ]
+
+# icmpv6 sequence != 2-4
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00000080  : 0 [end]	element 00000081  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 2b @ transport header + 6 => reg 1 ]
+  [ range neq reg 1 0x00000200 0x00000400 ]
+
+# icmpv6 max-delay 33-45
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000082 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range eq reg 1 0x00002100 0x00002d00 ]
+
+# icmpv6 max-delay != 33-45
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000082 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ range neq reg 1 0x00002100 0x00002d00 ]
+
+# icmpv6 max-delay {33, 55, 67, 88}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000082 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# icmpv6 max-delay != {33, 55, 67, 88}
+__set%d test-ip6 3
+__set%d test-ip6 0
+	element 00002100  : 0 [end]	element 00003700  : 0 [end]	element 00004300  : 0 [end]	element 00005800  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000082 ]
+  [ payload load 2b @ transport header + 4 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# icmpv6 type parameter-problem icmpv6 code 0
+ip6 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 2b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000004 ]
+
+# icmpv6 type mld-listener-query icmpv6 taddr 2001:db8::133
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000082 ]
+  [ payload load 16b @ transport header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 type nd-neighbor-solicit icmpv6 taddr 2001:db8::133
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000087 ]
+  [ payload load 16b @ transport header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 type nd-neighbor-advert icmpv6 taddr 2001:db8::133
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000088 ]
+  [ payload load 16b @ transport header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 taddr 2001:db8::133
+__set%d test-ip6 3 size 6
+__set%d test-ip6 0
+	element 00000082  : 0 [end]	element 00000083  : 0 [end]	element 00000084  : 0 [end]	element 00000087  : 0 [end]	element 00000088  : 0 [end]	element 00000089  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 16b @ transport header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 type { mld-listener-query, mld-listener-report, mld-listener-done, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect} icmpv6 taddr 2001:db8::133
+__set%d test-ip6 3 size 6
+__set%d test-ip6 0
+	element 00000082  : 0 [end]	element 00000083  : 0 [end]	element 00000084  : 0 [end]	element 00000087  : 0 [end]	element 00000088  : 0 [end]	element 00000089  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 16b @ transport header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert } icmpv6 taddr 2001:db8::133
+__set%d test-ip6 3 size 2
+__set%d test-ip6 0
+	element 00000087  : 0 [end]	element 00000088  : 0 [end]
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 16b @ transport header + 8 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 daddr 2001:db8::133
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000089 ]
+  [ payload load 16b @ transport header + 24 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]
+
+# icmpv6 type nd-redirect icmpv6 daddr 2001:db8::133
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000003a ]
+  [ payload load 1b @ transport header + 0 => reg 1 ]
+  [ cmp eq reg 1 0x00000089 ]
+  [ payload load 16b @ transport header + 24 => reg 1 ]
+  [ cmp eq reg 1 0xb80d0120 0x00000000 0x00000000 0x33010000 ]

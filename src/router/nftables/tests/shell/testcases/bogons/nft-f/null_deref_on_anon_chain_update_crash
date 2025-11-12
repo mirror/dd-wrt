@@ -1,0 +1,8 @@
+table ip f {
+        chain c {
+                jump {
+                        accept
+                }
+        }
+}
+a b index 1 10.1.26.a

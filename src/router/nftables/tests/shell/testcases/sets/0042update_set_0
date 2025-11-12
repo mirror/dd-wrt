@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip t {
+        set set1 {
+                type ether_addr
+        }
+
+        set set2 {
+                type ether_addr
+                size 65535
+                flags dynamic
+        }
+
+        chain c {
+                ether daddr @set1 add @set2 { ether daddr counter }
+        }
+}"
+
+$NFT -f - <<< "$RULESET" || { echo "can't apply basic ruleset"; exit 1; }

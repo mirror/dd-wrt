@@ -1,0 +1,120 @@
+#!/bin/bash
+#
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_elem_timeout_update)
+#
+
+assert_fail()
+{
+	ret=$1
+
+	if [ $ret -eq 0 ];then
+		echo "subtest should have failed: $2"
+		exit 111
+	fi
+}
+
+assert_ok()
+{
+	ret=$1
+
+	if [ $ret -ne 0 ];then
+		echo "subtest should have passed: $2"
+		exit 111
+	fi
+}
+
+
+$NFT -f - <<EOF
+table t {
+	set s {
+		typeof ip saddr
+		timeout 1m
+		elements = { 10.0.0.1, 10.0.0.2, 10.0.0.3 }
+	}
+
+	chain base {
+		type filter hook input priority 0
+	}
+}
+EOF
+
+for i in 1 2 3;do
+	$NFT get element t s "{ 10.0.0.$i }"
+	assert_ok $? "get element $i"
+done
+
+# first, bogus updates to trigger abort path with updates.
+$NFT -f - <<EOF
+add element t s { 10.0.0.2 timeout 2m }
+create element t s { 10.0.0.1 }
+add element t s { 10.0.0.3 timeout 3m }
+EOF
+assert_fail $? "abort due to existing element"
+
+$NFT -f - <<EOF
+add chain t a
+add element t s { 10.0.0.1 timeout 1m }
+add element t s { 10.0.0.2 timeout 2m }
+add element t s { 10.0.0.3 timeout 3m }
+add chain t b
+add rule t a jump b
+add rule t b jump a
+add rule t base jump a
+EOF
+assert_fail $? "abort due to chainloop"
+
+$NFT -f - <<EOF
+add element t s { 10.0.0.1 expires 2m }
+EOF
+assert_fail $? "expire larger than timeout"
+
+$NFT -f - <<EOF
+add element t s { 10.0.0.1 timeout 1s }
+add element t s { 10.0.0.2 timeout 1s }
+add element t s { 10.0.0.3 timeout 1s }
+add element t s { 10.0.0.4 expires 2m }
+EOF
+assert_fail $? "abort because expire too large"
+
+# check timeout update had no effect
+sleep 1
+for i in 1 2 3;do
+	$NFT get element t s "{ 10.0.0.$i }"
+	assert_ok $? "get element $i after aborted update"
+done
+
+# adjust timeouts upwards.
+$NFT -f - <<EOF
+add element t s { 10.0.0.1 timeout 1m }
+add element t s { 10.0.0.2 timeout 2m }
+add element t s { 10.0.0.3 timeout 3m }
+EOF
+assert_ok $? "upwards adjust"
+
+for i in 1 2 3;do
+	$NFT get element t s "{ 10.0.0.$i }"
+	assert_ok $? "get element $i"
+done
+
+# insert 4th element with timeout larger than set default
+$NFT -f - <<EOF
+add element t s { 10.0.0.4 timeout 2m expires 2m }
+EOF
+$NFT get element t s "{ 10.0.0.4 }"
+assert_ok $? "get element 4"
+
+# adjust timeouts downwards
+$NFT -f - <<EOF
+add element t s { 10.0.0.1 timeout 1s }
+add element t s { 10.0.0.2 timeout 2s expires 1s }
+add element t s { 10.0.0.3 expires 1s }
+add element t s { 10.0.0.4 timeout 4m expires 1s }
+EOF
+assert_ok $?
+
+sleep 1
+
+for i in 1 2 3;do
+	$NFT get element t s "{ 10.0.0.$i }"
+	assert_fail $?
+done

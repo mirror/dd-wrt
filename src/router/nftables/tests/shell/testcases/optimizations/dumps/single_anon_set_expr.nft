@@ -1,0 +1,5 @@
+table ip test {
+	chain test {
+		meta mark { 0x0000000a counter packets 0 bytes 0 }
+	}
+}

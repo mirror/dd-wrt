@@ -1,0 +1,336 @@
+# ip6 saddr vmap { abcd::3 : accept }
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 0000cdab 00000000 00000000 03000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234:1234:1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34120000 34123412 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234::1234:1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 34123412 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234::1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34120000 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234::1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00003412 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234::1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34120000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234::1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 00003412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234:1234::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234:1234:1234:: : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 00003412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234:1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00000000 34123412 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234::1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 34120000 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234::1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00000000 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234::1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00003412 34120000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234::1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 00000000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 00003412 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234:1234:: : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 00000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234:1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00000000 34120000 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234::1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 00000000 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234::1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00000000 34120000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234::1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00003412 00000000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 00000000 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:1234::  : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 00003412 00000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234:1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00000000 00000000 34123412 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234::1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 00000000 34120000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234::1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00000000 00000000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00003412 00000000 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:1234:: : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 00000000 00000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234:1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00000000 00000000 34120000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234::1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 00000000 00000000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00000000 00000000 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:1234:: : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00003412 00000000 00000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234:1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00000000 00000000 00000000 34123412  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 00000000 00000000 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:1234:: : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 00000000 00000000 00000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::1234 : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00000000 00000000 00000000 34120000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { 1234:: : accept}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 00003412 00000000 00000000 00000000  : accept 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap { ::/64 : accept}
+__map%d test-ip6 f
+__map%d test-ip6 0
+	element 00000000 00000000 00000000 00000000  : accept 0 [end]	element 00000000 01000000 00000000 00000000  : 1 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap {1234:1234:1234:1234:1234:1234:aaaa:: : accept, ::aaaa : drop}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 0000aaaa  : accept 0 [end]	element 00000000 00000000 00000000 aaaa0000  : drop 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap {1234:1234:1234:1234:1234:1234:aaaa:::accept, ::bbbb : drop}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 0000aaaa  : accept 0 [end]	element 00000000 00000000 00000000 bbbb0000  : drop 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap {1234:1234:1234:1234:1234:1234:aaaa:::accept,::cccc : drop}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 0000aaaa  : accept 0 [end]	element 00000000 00000000 00000000 cccc0000  : drop 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ip6 saddr vmap {1234:1234:1234:1234:1234:1234:aaaa:::accept,::dddd: drop}
+__map%d test-ip6 b
+__map%d test-ip6 0
+	element 34123412 34123412 34123412 0000aaaa  : accept 0 [end]	element 00000000 00000000 00000000 dddd0000  : drop 0 [end]
+ip6 test-ip6 input
+  [ payload load 16b @ network header + 8 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+

@@ -1,0 +1,13 @@
+table inet t {
+        map m2 {
+                typeof udp length . @ih,32,32 : verdict
+                elements = {
+                             1-10 . 0xa : drop }
+        }
+
+	map m2 {
+                typeof udp length . @ih,32,32 : verdict
+                flags interval
+                elements = { 20-80 . 0x14 : accept }
+        }
+}

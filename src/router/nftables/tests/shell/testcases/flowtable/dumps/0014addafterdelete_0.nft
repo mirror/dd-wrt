@@ -1,0 +1,12 @@
+table inet filter {
+	flowtable f {
+		hook ingress priority filter - 1
+		devices = { "lo" }
+		counter
+	}
+
+	chain y {
+		type filter hook forward priority filter; policy accept;
+		flow add @f counter packets 0 bytes 0
+	}
+}

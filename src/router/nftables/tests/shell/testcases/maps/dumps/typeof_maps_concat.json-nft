@@ -1,0 +1,112 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "netdev",
+        "name": "m",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "saddr"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "mark",
+        "size": 1234,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "type"
+                }
+              },
+              "right": "8021q"
+            }
+          },
+          {
+            "map": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ether",
+                          "field": "daddr"
+                        }
+                      },
+                      123
+                    ]
+                  },
+                  "timeout": 60
+                }
+              },
+              "data": 42,
+              "map": "@m"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "return": null
+          }
+        ]
+      }
+    }
+  ]
+}

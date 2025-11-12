@@ -1,0 +1,14 @@
+table ip x {
+	map w {
+		typeof ip saddr . meta mark : verdict
+		flags interval
+		counter
+		elements = { 127.0.0.1-127.0.0.4 . 0x00123434-0x00b00122 counter packets 0 bytes 0 : accept }
+	}
+
+	chain k {
+		type filter hook input priority filter + 1; policy accept;
+		meta mark set 0x00123434
+		ip saddr . meta mark vmap @w
+	}
+}

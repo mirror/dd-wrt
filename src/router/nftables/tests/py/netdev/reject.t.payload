@@ -1,0 +1,142 @@
+# reject with icmp host-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 1 ]
+
+# reject with icmp net-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 0 ]
+
+# reject with icmp prot-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 2 ]
+
+# reject with icmp port-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 3 ]
+
+# reject with icmp net-prohibited
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 9 ]
+
+# reject with icmp host-prohibited
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 10 ]
+
+# reject with icmp admin-prohibited
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 13 ]
+
+# reject with icmpv6 no-route
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 0 ]
+
+# reject with icmpv6 admin-prohibited
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 1 ]
+
+# reject with icmpv6 addr-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 3 ]
+
+# reject with icmpv6 port-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 4 ]
+
+# reject with icmpv6 policy-fail
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 5 ]
+
+# reject with icmpv6 reject-route
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 6 ]
+
+# mark 12345 reject with tcp reset
+netdev 
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ meta load mark => reg 1 ]
+  [ cmp eq reg 1 0x00003039 ]
+  [ reject type 1 code 0 ]
+
+# reject
+netdev 
+  [ reject type 2 code 1 ]
+
+# meta protocol ip reject
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 3 ]
+
+# meta protocol ip6 reject
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 4 ]
+
+# reject with icmpx host-unreachable
+netdev 
+  [ reject type 2 code 2 ]
+
+# reject with icmpx no-route
+netdev 
+  [ reject type 2 code 0 ]
+
+# reject with icmpx admin-prohibited
+netdev 
+  [ reject type 2 code 3 ]
+
+# reject with icmpx port-unreachable
+netdev 
+  [ reject type 2 code 1 ]
+
+# meta protocol ip reject with icmp host-unreachable
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 0 code 1 ]
+
+# meta protocol ip6 reject with icmpv6 no-route
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 0 code 0 ]
+
+# meta protocol ip reject with icmpx admin-prohibited
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ reject type 2 code 3 ]
+
+# meta protocol ip6 reject with icmpx admin-prohibited
+netdev 
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ reject type 2 code 3 ]
+

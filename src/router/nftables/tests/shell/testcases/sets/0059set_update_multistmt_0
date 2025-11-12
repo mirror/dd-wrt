@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_with_two_expressions)
+
+RULESET="table x {
+	set y {
+		type ipv4_addr
+		size 65535
+		flags dynamic,timeout
+		timeout 1h
+	}
+	chain z {
+		type filter hook output priority 0;
+		update @y { ip daddr limit rate 1/second counter }
+	}
+}"
+
+set -e
+$NFT -f - <<< $RULESET

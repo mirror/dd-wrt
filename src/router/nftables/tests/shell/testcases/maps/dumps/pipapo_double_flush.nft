@@ -1,0 +1,9 @@
+table inet t {
+	map m {
+		type ipv4_addr . ipv4_addr : verdict
+		flags interval
+	}
+
+	chain c {
+	}
+}

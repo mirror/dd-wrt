@@ -1,0 +1,5 @@
+# rt nexthop fd00::1
+ip6 test-ip6 output
+  [ rt load nexthop6 => reg 1 ]
+  [ cmp eq reg 1 0x000000fd 0x00000000 0x00000000 0x01000000 ]
+

@@ -1,0 +1,11 @@
+table inet filter {
+	chain underflow {
+	}
+
+	chain input {
+		type filter hook input priority filter; policy drop;
+		icmp type echo-reply accept
+		ip saddr 127.0.0.1 ip daddr 127.0.0.2 counter packets 3 bytes 252 accept
+		goto underflow
+	}
+}

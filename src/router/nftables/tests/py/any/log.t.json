@@ -1,0 +1,178 @@
+# log
+[
+    {
+        "log": null
+    }
+]
+
+# log level emerg
+[
+    {
+        "log": {
+            "level": "emerg"
+        }
+    }
+]
+
+# log level alert
+[
+    {
+        "log": {
+            "level": "alert"
+        }
+    }
+]
+
+# log level crit
+[
+    {
+        "log": {
+            "level": "crit"
+        }
+    }
+]
+
+# log level err
+[
+    {
+        "log": {
+            "level": "err"
+        }
+    }
+]
+
+# log level warn
+[
+    {
+        "log": {
+            "level": "warn"
+	}
+    }
+]
+
+# log level notice
+[
+    {
+        "log": {
+            "level": "notice"
+        }
+    }
+]
+
+# log level info
+[
+    {
+        "log": {
+            "level": "info"
+        }
+    }
+]
+
+# log level debug
+[
+    {
+        "log": {
+            "level": "debug"
+        }
+    }
+]
+
+# log level audit
+[
+    {
+        "log": {
+            "level": "audit"
+        }
+    }
+]
+
+# log prefix aaaaa-aaaaaa group 2 snaplen 33
+[
+    {
+        "log": {
+            "group": 2,
+            "prefix": "aaaaa-aaaaaa",
+            "snaplen": 33
+        }
+    }
+]
+
+# log group 2 queue-threshold 2
+[
+    {
+        "log": {
+            "group": 2,
+            "queue-threshold": 2
+        }
+    }
+]
+
+# log group 2 snaplen 33
+[
+    {
+        "log": {
+            "group": 2,
+            "snaplen": 33
+        }
+    }
+]
+
+# log group 2 prefix "nft-test: "
+[
+    {
+        "log": {
+            "group": 2,
+            "prefix": "nft-test: "
+        }
+    }
+]
+
+# log flags all
+[
+    {
+        "log": {
+            "flags": "all"
+        }
+    }
+]
+
+# log level debug flags ip options flags skuid
+[
+    {
+        "log": {
+            "flags": [
+                "ip options",
+                "skuid"
+            ],
+            "level": "debug"
+        }
+    }
+]
+
+# log flags tcp sequence,options
+[
+    {
+        "log": {
+            "flags": [
+                "tcp sequence",
+                "tcp options"
+            ]
+        }
+    }
+]
+
+# log flags ip options flags ether flags skuid flags tcp sequence,options
+[
+    {
+        "log": {
+            "flags": [
+                "ip options",
+                "ether",
+                "skuid",
+                "tcp sequence",
+                "tcp options"
+            ]
+        }
+    }
+]
+

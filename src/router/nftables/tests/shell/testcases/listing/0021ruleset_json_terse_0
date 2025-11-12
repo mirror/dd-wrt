@@ -1,0 +1,19 @@
+#!/bin/bash
+
+$NFT flush ruleset
+$NFT add table ip test
+$NFT add chain ip test c
+$NFT add set ip test s { type ipv4_addr\; }
+$NFT add element ip test s { 192.168.3.4, 192.168.3.5 }
+
+if [ "$NFT_TEST_HAVE_json" != n ]; then
+	if $NFT -j -t list ruleset | grep '192\.168'
+	then
+		exit 1
+	fi
+fi
+
+if [ "$NFT_TEST_HAVE_json" = n ]; then
+    echo "Test partially skipped due to missing JSON support."
+    exit 77
+fi

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+	chain x {
+		meta pkttype broadcast udp dport { 67, 547 } accept
+		meta pkttype multicast udp dport 1900 drop
+	}
+	chain y {
+		ip saddr 1.1.1.1 ip daddr 2.2.2.2 accept
+		ip saddr 4.4.4.4 ip daddr 5.5.5.5 accept
+		ip saddr 2.2.2.2 ip daddr 3.3.3.3 drop
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

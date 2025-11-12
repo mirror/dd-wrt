@@ -1,0 +1,6 @@
+table ip t {
+	map m {
+		type ipv4_addr : mark
+		counter
+	}
+}

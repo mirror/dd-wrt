@@ -1,0 +1,46 @@
+# fib saddr . iif oif ne 0
+ip test-ip prerouting
+  [ fib saddr . iif oif => reg 1 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# fib saddr . iif oifname "lo"
+ip test-ip prerouting
+  [ fib saddr . iif oifname => reg 1 ]
+  [ cmp eq reg 1 0x00006f6c 0x00000000 0x00000000 0x00000000 ]
+
+# fib daddr . iif type local
+ip test-ip prerouting
+  [ fib daddr . iif type => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+
+# fib daddr . iif type vmap { blackhole : drop, prohibit : drop, unicast : accept }
+__map%d test-ip b
+__map%d test-ip 0
+	element 00000006  : drop 0 [end]	element 00000008  : drop 0 [end]	element 00000001  : accept 0 [end]
+ip test-ip prerouting
+  [ fib daddr . iif type => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# fib daddr oif exists
+ip test-ip prerouting
+  [ fib daddr oif present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# fib daddr check missing
+ip test-ip prerouting
+  [ fib daddr oif present => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# fib daddr check vmap { missing : drop, exists : accept }
+        element 00000000  : drop 0 [end]        element 00000001  : accept 0 [end]
+ip test-ip prerouting
+  [ fib daddr oif present => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# meta mark set fib daddr check . ct mark map { exists . 0x00000000 : 0x00000001 }
+        element 00000001 00000000  : 00000001 0 [end]
+ip test-ip prerouting
+  [ fib daddr oif present => reg 1 ]
+  [ ct load mark => reg 9 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ meta set mark with reg 1 ]

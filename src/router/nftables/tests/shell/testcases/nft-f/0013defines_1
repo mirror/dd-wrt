@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Tests use of variable before definition.
+
+set -e
+
+RULESET="
+define var2 = \$var1
+define var1 = lo
+
+table ip t {
+	chain c {
+		iif \$var2
+	}
+}"
+
+$NFT -f - <<< "$RULESET" && exit 1
+exit 0

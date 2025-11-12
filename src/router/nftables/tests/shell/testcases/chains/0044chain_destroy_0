@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_destroy)
+
+$NFT add table t
+
+# pass for non-existent chain
+$NFT destroy chain t c
+
+# successfully delete existing chain
+$NFT add chain t c
+$NFT destroy chain t c

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+RULESET="add table ip x
+add set x setA {type ipv4_addr . inet_service . ipv4_addr; flags timeout;}
+add set x setB {type ipv4_addr . inet_service; flags timeout;}
+"
+
+set -e
+$NFT -f - <<< "$RULESET"

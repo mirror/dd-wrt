@@ -1,0 +1,20 @@
+table inet filter {
+	map portmap {
+		type inet_service : verdict
+		counter
+		elements = { 22 counter packets 0 bytes 0 : jump ssh_input,
+			     * counter packets 0 bytes 0 : drop }
+	}
+
+	chain ssh_input {
+	}
+
+	chain wan_input {
+		tcp dport vmap @portmap
+	}
+
+	chain prerouting {
+		type filter hook prerouting priority raw; policy accept;
+		iif vmap { "lo" : jump wan_input }
+	}
+}

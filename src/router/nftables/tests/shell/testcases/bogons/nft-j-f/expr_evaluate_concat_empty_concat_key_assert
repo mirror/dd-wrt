@@ -1,0 +1,27 @@
+{
+  "nftables": [
+    {
+      "table": { "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "s",
+        "table": "t",
+        "type": [
+             ],
+        "elem": [
+          {
+            "concat": [
+              "foo", "bar"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+

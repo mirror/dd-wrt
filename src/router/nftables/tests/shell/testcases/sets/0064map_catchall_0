@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_catchall_element)
+
+set -e
+
+RULESET="table ip x {
+	map y {
+		type ipv4_addr : ipv4_addr
+		elements = { 10.141.0.1 : 192.168.0.2, * : 192.168.0.3 }
+	}
+	map z {
+		type ipv4_addr : ipv4_addr
+		flags interval
+		elements = { 10.141.0.0/24 : 192.168.0.2, * : 192.168.0.3 }
+	}
+}"
+
+$NFT -f - <<< $RULESET
+$NFT delete element x y { \* : 192.168.0.3 }
+$NFT add element x y { \* : 192.168.0.4 }
+
+$NFT add chain x y
+$NFT add rule x y snat to ip saddr map @z
+$NFT 'add rule x y snat to ip saddr map { 10.141.0.0/24 : 192.168.0.2, * : 192.168.0.3 }'
+$NFT 'add rule x y snat to ip saddr . ip daddr map { 10.141.0.0/24 . 10.0.0.0/8 : 192.168.0.2, 192.168.9.0/24 . 192.168.10.0/24 : 192.168.0.4, * : 192.168.0.3 }'

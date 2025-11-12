@@ -1,0 +1,12 @@
+table ip test {
+	quota https-quota {
+		25 mbytes
+	}
+
+	ct helper cthelp {
+		type "sip" protocol tcp
+		l3proto ip
+	}
+}
+table ip test-ip {
+}

@@ -1,0 +1,68 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "ssh_meter",
+        "table": "filter",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ],
+        "timeout": 2592000
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "test",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  "timeout": 2592000
+                }
+              },
+              "set": "@ssh_meter"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

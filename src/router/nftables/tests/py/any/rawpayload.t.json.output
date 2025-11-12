@@ -1,0 +1,119 @@
+# meta l4proto { tcp, udp, sctp} @th,16,16 { 22, 23, 80 }
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    6,
+                    17,
+                    132
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "th"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    22,
+                    23,
+                    80
+                ]
+            }
+        }
+    }
+]
+
+# meta l4proto tcp @th,16,16 { 22, 23, 80}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    22,
+                    23,
+                    80
+                ]
+            }
+        }
+    }
+]
+
+# @ll,0,1 1
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "base": "ll",
+                            "len": 8,
+                            "offset": 0
+                        }
+                    },
+                    128
+                ]
+            },
+            "op": "==",
+            "right": 128
+        }
+    }
+]
+
+# @ll,0,8 & 0x80 == 0x80
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "base": "ll",
+                            "len": 8,
+                            "offset": 0
+                        }
+                    },
+                    128
+                ]
+            },
+            "op": "==",
+            "right": 128
+        }
+    }
+]
+
+# @nh,8,8 0xff
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "base": "nh",
+                    "len": 8,
+                    "offset": 8
+                }
+            },
+            "op": "==",
+            "right": 255
+        }
+    }
+]

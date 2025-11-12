@@ -1,0 +1,49 @@
+# ct mark set jhash ip saddr . ip daddr mod 2 seed 0xdeadbeef
+ip test-ip4 pre 
+  [ payload load 4b @ network header + 12 => reg 2 ]
+  [ payload load 4b @ network header + 16 => reg 13 ]
+  [ hash reg 1 = jhash(reg 2, 8, 0xdeadbeef) % mod 2 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set jhash ip saddr . ip daddr mod 2
+ip test-ip4 pre
+  [ payload load 4b @ network header + 12 => reg 2 ]
+  [ payload load 4b @ network header + 16 => reg 13 ]
+  [ hash reg 1 = jhash(reg 2, 8, 0x0) % mod 2 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set jhash ip saddr . ip daddr mod 2 seed 0x0
+ip test-ip4 pre
+  [ payload load 4b @ network header + 12 => reg 2 ]
+  [ payload load 4b @ network header + 16 => reg 13 ]
+  [ hash reg 1 = jhash(reg 2, 8, 0x0) % mod 2 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set jhash ip saddr . ip daddr mod 2 seed 0xdeadbeef offset 100
+ip test-ip4 pre
+  [ payload load 4b @ network header + 12 => reg 2 ]
+  [ payload load 4b @ network header + 16 => reg 13 ]
+  [ hash reg 1 = jhash(reg 2, 8, 0xdeadbeef) % mod 2 offset 100 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set jhash ip saddr . ip daddr mod 2 offset 100
+ip test-ip4 pre
+  [ payload load 4b @ network header + 12 => reg 2 ]
+  [ payload load 4b @ network header + 16 => reg 13 ]
+  [ hash reg 1 = jhash(reg 2, 8, 0x0) % mod 2 offset 100 ]
+  [ ct set mark with reg 1 ]
+
+# dnat to jhash ip saddr mod 2 seed 0xdeadbeef map { 0 : 192.168.20.100, 1 : 192.168.30.100 }
+__map%d test-ip4 b
+__map%d test-ip4 0
+	element 00000000  : 6414a8c0 0 [end]	element 00000001  : 641ea8c0 0 [end]
+ip test-ip4 pre 
+  [ payload load 4b @ network header + 12 => reg 2 ]
+  [ hash reg 1 = jhash(reg 2, 4, 0xdeadbeef) % mod 2 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ nat dnat ip addr_min reg 1 ]
+
+# ct mark set symhash mod 2 offset 100
+ip test-ip4 pre
+  [ hash reg 1 = symhash() % mod 2 offset 100 ]
+  [ ct set mark with reg 1 ]

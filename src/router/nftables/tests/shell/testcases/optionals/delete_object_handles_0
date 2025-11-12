@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e
+$NFT add table test-ip
+$NFT add counter test-ip https-traffic
+$NFT add quota test-ip https-quota 25 mbytes
+$NFT add map test-ip ports { type inet_service : quota \; }
+$NFT add table ip6 test-ip6
+$NFT add quota ip6 test-ip6 http-quota over 25 mbytes
+$NFT add counter ip6 test-ip6 http-traffic
+$NFT add quota ip6 test-ip6 ssh-quota 10 mbytes
+
+counter_handle=$($NFT -a list ruleset | awk '/https-traffic/{print $NF}')
+quota_handle=$($NFT -a list ruleset | awk '/ssh-quota/{print $NF}')
+$NFT delete counter test-ip handle $counter_handle
+$NFT delete quota ip6 test-ip6 handle $quota_handle
+
+EXPECTED="table ip test-ip {
+	quota https-quota {
+		25 mbytes
+	}
+
+	map ports {
+		type inet_service : quota
+	}
+}
+table ip6 test-ip6 {
+	quota http-quota {
+		over 25 mbytes
+	}
+
+	counter http-traffic {
+		packets 0 bytes 0
+	}
+}"
+
+GET="$($NFT list ruleset)"
+
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

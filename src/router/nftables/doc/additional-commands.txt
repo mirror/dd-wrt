@@ -1,0 +1,116 @@
+LIST HOOKS
+~~~~~~~~~~
+
+This shows the list of functions that have been registered for the
+given protocol family, including functions that have been
+registered implicitly by kernel modules such as nf_conntrack. +
+
+[verse]
+____
+*list hooks* ['family']
+*list hooks netdev* [ *device* 'DEVICE_NAME' ]
+____
+
+*list hooks* is enough to display everything that is active
+on the system.  Hooks in the netdev family are tied to a network
+device.  If no device name is given, nft will query all network
+devices in the current network namespace.
+Example Usage:
+
+.List all active netfilter hooks in either the ip or ip6 stack
+--------------------------------------------------------------
+% nft list hooks inet
+family ip {
+        hook prerouting {
+                -0000000400 ipv4_conntrack_defrag [nf_defrag_ipv4]
+                -0000000200 ipv4_conntrack_in [nf_conntrack]
+                -0000000100 nf_nat_ipv4_pre_routing [nf_nat]
+        }
+        hook input {
+                 0000000000 chain inet filter input [nf_tables]
+                +0000000100 nf_nat_ipv4_local_in [nf_nat]
+[..]
+--------------------------------------------------------------
+
+The above shows a host that has nat, conntrack and ipv4 packet
+defragmentation enabled.
+For each hook location for the queried family a list of active hooks
+using the format +
+
+*priority* *identifier* [*module_name*]
+
+will be shown.
+
+The *priority* value dictates the order in which the hooks are called.
+The list is sorted, the lowest number is run first.
+
+The priority value of hooks registered by the kernel cannot be changed.
+For basechains registered by nftables, this value corresponds to the
+*priority* value specified in the base chain definition.
+
+After the numerical value, information about the hook is shown.
+For basechains defined in nftables this includes the table family,
+the table name and the basechains name.
+For hooks coming from kernel modules, the function name is used
+instead.
+
+If a *module name* is given, the hook was registered by the kernel
+module with this name.  You can use 'modinfo *module name*' to
+obtain more information about the module.
+
+This functionality requires a kernel built with the option +
+CONFIG_NETFILTER_NETLINK_HOOK
+enabled, either as a module or builtin. The module is named
+*nfnetlink_hook*.
+
+MONITOR
+~~~~~~~
+The monitor command allows you to listen to Netlink events produced by the
+nf_tables subsystem. These are either related to creation and deletion of
+objects or to packets for which *meta nftrace* was enabled. When they
+occur, nft will print to stdout the monitored events in either JSON or
+native nft format. +
+
+[verse]
+____
+*monitor* [*new* | *destroy*] 'MONITOR_OBJECT'
+*monitor* *trace*
+
+'MONITOR_OBJECT' := *tables* | *chains* | *sets* | *rules* | *elements* | *ruleset*
+____
+
+To filter events related to a concrete object, use one of the keywords in
+'MONITOR_OBJECT'.
+
+To filter events related to a concrete action, use keyword *new* or *destroy*.
+
+The second form of invocation takes no further options and exclusively prints
+events generated for packets with *nftrace* enabled.
+
+Hit ^C to finish the monitor operation.
+
+.Listen to all events, report in native nft format
+--------------------------------------------------
+% nft monitor
+--------------------------------------------------
+
+.Listen to deleted rules, report in JSON format
+-----------------------------------------------
+% nft -j monitor destroy rules
+-----------------------------------------------
+
+.Listen to both new and destroyed chains, in native nft format
+-----------------------------------------------------------------
+% nft monitor chains
+-------------------------------
+
+.Listen to ruleset events such as table, chain, rule, set, counters and quotas, in native nft format
+----------------------------------------------------------------------------------------------------
+% nft monitor ruleset
+---------------------
+
+.Trace incoming packets from host 10.0.0.1
+------------------------------------------
+% nft add rule filter input ip saddr 10.0.0.1 meta nftrace set 1
+% nft monitor trace
+------------------------------------------

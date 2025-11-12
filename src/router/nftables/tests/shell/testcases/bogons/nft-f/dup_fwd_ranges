@@ -1,0 +1,14 @@
+define dev = "1"-"2"
+
+table netdev t {
+	chain c {
+		fwd to 1-2
+		dup to 1-2
+	}
+}
+
+table ip t {
+	chain c {
+		dup to 1-2 device $dev
+	}
+}

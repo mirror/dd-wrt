@@ -1,0 +1,283 @@
+#!/bin/bash
+
+# support for strings/typeof in named sets.
+# s1 and s2 are identical, they just use different
+# ways for declaration.
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_ip_options)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_bitshift)
+
+set -e
+
+die() {
+	printf '%s\n' "$*"
+	exit 1
+}
+
+INPUT_OSF_SET="
+	set s1 {
+		typeof osf name
+		elements = { \"Linux\" }
+	}
+"
+
+INPUT_FRAG_SET="
+	set s4 {
+		typeof frag frag-off
+		elements = { 1, 1024 }
+	}
+"
+
+INPUT_VERSION_SET="
+	set s8 {
+		typeof ip version
+		elements = { 4, 6 }
+	}
+"
+
+INPUT_OSF_CHAIN="
+	chain c1 {
+		osf name @s1 accept
+	}
+"
+
+INPUT_FRAG_CHAIN="
+	chain c4 {
+		frag frag-off @s4 accept
+	}
+"
+
+INPUT_SCTP_CHAIN="
+	chain c7 {
+		sctp chunk init num-inbound-streams @s7 accept
+	}
+"
+INPUT_VERSION_CHAIN="
+	chain c8 {
+		ip version @s8 accept
+	}
+"
+
+if [ "$NFT_TEST_HAVE_sctp_chunks" = n ] ; then
+	INPUT_SCTP_CHAIN=
+fi
+
+if [ "$NFT_TEST_HAVE_bitshift" = n ] ; then
+	INPUT_FRAG_CHAIN=
+	INPUT_VERSION_CHAIN=
+fi
+
+if [ "$NFT_TEST_HAVE_osf" = n ] ; then
+	if [ "$((RANDOM % 2))" -eq 1 ] ; then
+		# Regardless of $NFT_TEST_HAVE_osf, we can define the set.
+		# Randomly do so.
+		INPUT_OSF_SET=
+	fi
+	INPUT_OSF_CHAIN=
+fi
+
+INPUT="table inet t {$INPUT_OSF_SET
+	set s2 {
+		typeof vlan id
+		elements = { 2, 3, 103 }
+	}
+
+	set s3 {
+		typeof meta ibrpvid
+		elements = { 2, 3, 103 }
+	}$INPUT_FRAG_SET
+
+	set s5 {
+		typeof ip option ra value
+		elements = { 1, 1024 }
+	}
+
+	set s6 {
+		typeof tcp option maxseg size
+		elements = { 1, 1024 }
+	}
+
+	set s7 {
+		typeof sctp chunk init num-inbound-streams
+		elements = { 1, 4 }
+	}$INPUT_VERSION_SET
+
+	set s9 {
+		typeof ip hdrlength
+		elements = { 0, 1, 2, 3, 4, 15 }
+	}
+
+	set s10 {
+		typeof meta iifname . ip saddr . ipsec in reqid
+		elements = { \"eth0\" . 10.1.1.2 . 42 }
+	}
+
+	set s11 {
+		typeof vlan id . ip saddr
+		elements = { 3567 . 1.2.3.4 }
+	}
+	set s12 {
+		typeof meta iifname . ip saddr . meta ipsec
+		elements = { \"eth0\" . 10.1.1.2 . 1 }
+	}
+
+	set s13 {
+		typeof tcp option mptcp subtype
+		elements = { mp-join, dss }
+	}
+
+	set s14 {
+		typeof tcp option mptcp subtype . ip daddr
+		elements = { remove-addr . 10.1.1.1, mp-join . 10.1.1.2 }
+	}
+$INPUT_OSF_CHAIN
+	chain c2 {
+		ether type vlan vlan id @s2 accept
+	}
+$INPUT_FRAG_CHAIN
+	chain c5 {
+		ip option ra value @s5 accept
+	}
+
+	chain c6 {
+		tcp option maxseg size @s6 accept
+	}
+$INPUT_SCTP_CHAIN
+$INPUT_VERSION_CHAIN
+	chain c9 {
+		ip hdrlength @s9 accept
+	}
+
+	chain c10 {
+		meta iifname . ip saddr . ipsec in reqid @s10 accept
+	}
+
+	chain c11 {
+		ether type vlan vlan id . ip saddr @s11 accept
+	}
+
+	chain c12 {
+		meta iifname . ip saddr . meta ipsec @s12 accept
+	}
+
+	chain c13 {
+		tcp option mptcp subtype @s13 accept
+	}
+
+	chain c14 {
+		tcp option mptcp subtype . ip saddr @s14 accept
+	}
+}"
+
+EXPECTED="table inet t {$INPUT_OSF_SET
+	set s2 {
+		typeof vlan id
+		elements = { 2, 3, 103 }
+	}
+
+	set s3 {
+		typeof meta ibrpvid
+		elements = { 2, 3, 103 }
+	}
+$INPUT_FRAG_SET
+	set s5 {
+		typeof ip option ra value
+		elements = { 1, 1024 }
+	}
+
+	set s6 {
+		typeof tcp option maxseg size
+		elements = { 1, 1024 }
+	}
+
+	set s7 {
+		typeof sctp chunk init num-inbound-streams
+		elements = { 1, 4 }
+	}
+$INPUT_VERSION_SET
+	set s9 {
+		typeof ip hdrlength
+		elements = { 0, 1, 2, 3, 4,
+			     15 }
+	}
+
+	set s10 {
+		typeof iifname . ip saddr . ipsec in reqid
+		elements = { \"eth0\" . 10.1.1.2 . 42 }
+	}
+
+	set s11 {
+		typeof vlan id . ip saddr
+		elements = { 3567 . 1.2.3.4 }
+	}
+
+	set s12 {
+		typeof iifname . ip saddr . meta ipsec
+		elements = { \"eth0\" . 10.1.1.2 . exists }
+	}
+
+	set s13 {
+		typeof tcp option mptcp subtype
+		elements = { mp-join, dss }
+	}
+
+	set s14 {
+		typeof tcp option mptcp subtype . ip daddr
+		elements = { remove-addr . 10.1.1.1,
+			     mp-join . 10.1.1.2 }
+	}
+$INPUT_OSF_CHAIN
+	chain c2 {
+		vlan id @s2 accept
+	}
+$INPUT_FRAG_CHAIN
+	chain c5 {
+		ip option ra value @s5 accept
+	}
+
+	chain c6 {
+		tcp option maxseg size @s6 accept
+	}
+$INPUT_SCTP_CHAIN$INPUT_VERSION_CHAIN
+	chain c9 {
+		ip hdrlength @s9 accept
+	}
+
+	chain c10 {
+		iifname . ip saddr . ipsec in reqid @s10 accept
+	}
+
+	chain c11 {
+		vlan id . ip saddr @s11 accept
+	}
+
+	chain c12 {
+		iifname . ip saddr . meta ipsec @s12 accept
+	}
+
+	chain c13 {
+		tcp option mptcp subtype @s13 accept
+	}
+
+	chain c14 {
+		tcp option mptcp subtype . ip saddr @s14 accept
+	}
+}"
+
+
+$NFT -f - <<< "$INPUT" || die $'nft command failed to process input:\n'">$INPUT<"
+
+$DIFF -u <($NFT list ruleset) - <<<"$EXPECTED" || die $'diff failed between ruleset and expected data.\nExpected:\n'">$EXPECTED<"
+
+if [ "$NFT_TEST_HAVE_bitshift" = n ] ; then
+	echo "Partial test due to NFT_TEST_HAVE_bitshift=n. Skip"
+	exit 77
+fi
+if [ "$NFT_TEST_HAVE_osf" = n ] ; then
+	echo "Partial test due to NFT_TEST_HAVE_osf=n. Skip"
+	exit 77
+fi
+if [ "$NFT_TEST_HAVE_sctp_chunks" = n ] ; then
+	echo "Partial test due to NFT_TEST_HAVE_sctp_chunks=n. Skip"
+	exit 77
+fi

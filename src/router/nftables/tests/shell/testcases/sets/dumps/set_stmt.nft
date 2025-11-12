@@ -1,0 +1,66 @@
+table ip x {
+	set y0 {
+		type ipv4_addr
+		counter
+		elements = { 2.2.2.0 counter packets 3 bytes 4,
+			     3.3.3.0 counter packets 1 bytes 2,
+			     5.5.5.0 counter packets 1 bytes 2,
+			     6.6.6.0 counter packets 3 bytes 4 }
+	}
+
+	set y1 {
+		type ipv4_addr
+		limit rate 1/second burst 5 packets
+		elements = { 2.2.2.1 limit rate 5/second burst 5 packets,
+			     3.3.3.1 limit rate 1/second burst 5 packets,
+			     5.5.5.1 limit rate 1/second burst 5 packets,
+			     6.6.6.1 limit rate 5/second burst 5 packets }
+	}
+
+	set y2 {
+		type ipv4_addr
+		ct count over 2
+		elements = { 2.2.2.2 ct count over 5,
+			     3.3.3.2 ct count over 2,
+			     5.5.5.2 ct count over 2,
+			     6.6.6.2 ct count over 5 }
+	}
+
+	set y3 {
+		type ipv4_addr
+		last
+		elements = { 2.2.2.3 last used never,
+			     3.3.3.3 last used never,
+			     5.5.5.3 last used never,
+			     6.6.6.3 last used never }
+	}
+
+	set y4 {
+		type ipv4_addr
+		quota over 1000 bytes
+		elements = { 2.2.2.4 quota over 30000 bytes used 1000 bytes,
+			     3.3.3.4 quota over 1000 bytes,
+			     5.5.5.4 quota over 1000 bytes,
+			     6.6.6.4 quota over 30000 bytes used 1000 bytes }
+	}
+
+	chain y0 {
+		ip daddr @y0
+	}
+
+	chain y1 {
+		ip daddr @y1
+	}
+
+	chain y2 {
+		ip daddr @y2
+	}
+
+	chain y3 {
+		ip daddr @y3
+	}
+
+	chain y4 {
+		ip daddr @y4
+	}
+}

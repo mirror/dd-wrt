@@ -1,0 +1,18 @@
+table inet x {
+	secmark ssh_server {
+		"system_u:object_r:ssh_server_packet_t:s0"
+	}
+
+	chain y {
+		type filter hook input priority -225; policy accept;
+		tcp dport 2222 ct state new meta secmark set "ssh_server"
+		ct state new ct secmark set meta secmark
+		ct state established,related meta secmark set ct secmark
+	}
+
+	chain z {
+		type filter hook output priority 225; policy accept;
+		ct state new ct secmark set meta secmark
+		ct state established,related meta secmark set ct secmark
+	}
+}

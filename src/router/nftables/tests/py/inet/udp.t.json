@@ -1,0 +1,583 @@
+# udp sport 80 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 80
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp sport != 60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": 60
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp sport 50-70 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 50, 70 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp sport != 50-60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 50, 60 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp sport { 49, 50} drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    49,
+                    50
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# udp sport != { 50, 60} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    50,
+                    60
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp dport 80 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 80
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp dport != 60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": 60
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp dport 70-75 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 70, 75 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp dport != 50-60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 50, 60 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp dport { 49, 50} drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    49,
+                    50
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# udp dport != { 50, 60} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    50,
+                    60
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp length 6666
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 6666
+        }
+    }
+]
+
+# udp length != 6666
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": 6666
+        }
+    }
+]
+
+# udp length 50-65 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 50, 65 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp length != 50-65 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 50, 65 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp length { 50, 65} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    50,
+                    65
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp length != { 50, 65} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "length",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    50,
+                    65
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp checksum 6666 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 6666
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# udp checksum != { 444, 555} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    444,
+                    555
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udp checksum 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# udp checksum != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# udp checksum 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# udp checksum != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# udp checksum { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# udp checksum != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# iif "lo" udp checksum set 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udp"
+                }
+            },
+            "value": 0
+        }
+    }
+]
+
+# iif "lo" udp dport set 65535
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "value": 65535
+        }
+    }
+]
+

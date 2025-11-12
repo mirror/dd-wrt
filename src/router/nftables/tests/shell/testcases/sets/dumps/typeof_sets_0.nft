@@ -1,0 +1,125 @@
+table inet t {
+	set s1 {
+		typeof osf name
+		elements = { "Linux" }
+	}
+
+	set s2 {
+		typeof vlan id
+		elements = { 2, 3, 103 }
+	}
+
+	set s3 {
+		typeof meta ibrpvid
+		elements = { 2, 3, 103 }
+	}
+
+	set s4 {
+		typeof frag frag-off
+		elements = { 1, 1024 }
+	}
+
+	set s5 {
+		typeof ip option ra value
+		elements = { 1, 1024 }
+	}
+
+	set s6 {
+		typeof tcp option maxseg size
+		elements = { 1, 1024 }
+	}
+
+	set s7 {
+		typeof sctp chunk init num-inbound-streams
+		elements = { 1, 4 }
+	}
+
+	set s8 {
+		typeof ip version
+		elements = { 4, 6 }
+	}
+
+	set s9 {
+		typeof ip hdrlength
+		elements = { 0, 1, 2, 3, 4,
+			     15 }
+	}
+
+	set s10 {
+		typeof iifname . ip saddr . ipsec in reqid
+		elements = { "eth0" . 10.1.1.2 . 42 }
+	}
+
+	set s11 {
+		typeof vlan id . ip saddr
+		elements = { 3567 . 1.2.3.4 }
+	}
+
+	set s12 {
+		typeof iifname . ip saddr . meta ipsec
+		elements = { "eth0" . 10.1.1.2 . exists }
+	}
+
+	set s13 {
+		typeof tcp option mptcp subtype
+		elements = { mp-join, dss }
+	}
+
+	set s14 {
+		typeof tcp option mptcp subtype . ip daddr
+		elements = { remove-addr . 10.1.1.1,
+			     mp-join . 10.1.1.2 }
+	}
+
+	chain c1 {
+		osf name @s1 accept
+	}
+
+	chain c2 {
+		vlan id @s2 accept
+	}
+
+	chain c4 {
+		frag frag-off @s4 accept
+	}
+
+	chain c5 {
+		ip option ra value @s5 accept
+	}
+
+	chain c6 {
+		tcp option maxseg size @s6 accept
+	}
+
+	chain c7 {
+		sctp chunk init num-inbound-streams @s7 accept
+	}
+
+	chain c8 {
+		ip version @s8 accept
+	}
+
+	chain c9 {
+		ip hdrlength @s9 accept
+	}
+
+	chain c10 {
+		iifname . ip saddr . ipsec in reqid @s10 accept
+	}
+
+	chain c11 {
+		vlan id . ip saddr @s11 accept
+	}
+
+	chain c12 {
+		iifname . ip saddr . meta ipsec @s12 accept
+	}
+
+	chain c13 {
+		tcp option mptcp subtype @s13 accept
+	}
+
+	chain c14 {
+		tcp option mptcp subtype . ip saddr @s14 accept
+	}
+}

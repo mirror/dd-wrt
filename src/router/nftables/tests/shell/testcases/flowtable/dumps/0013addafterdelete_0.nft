@@ -1,0 +1,6 @@
+table inet filter {
+	flowtable f {
+		hook ingress priority filter - 1
+		devices = { "lo" }
+	}
+}

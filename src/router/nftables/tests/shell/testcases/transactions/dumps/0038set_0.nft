@@ -1,0 +1,7 @@
+table ip x {
+	set y {
+		type ipv4_addr
+		flags interval
+		elements = { 192.168.4.0/24 }
+	}
+}

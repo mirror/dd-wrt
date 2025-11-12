@@ -1,0 +1,6 @@
+table ip x {
+	chain y {
+		ip saddr { 1.1.1.1, 2.2.2.2 }
+		ip saddr { 3.3.3.3, 4.4.4.4 }
+	}
+}

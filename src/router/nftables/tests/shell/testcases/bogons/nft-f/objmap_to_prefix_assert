@@ -1,0 +1,6 @@
+table t {
+        chain y {
+                type filter hook input priority filter; policy accept;
+                synproxy name ip saddr map { 192.168.1.0/24 : "x*" }
+        }
+}

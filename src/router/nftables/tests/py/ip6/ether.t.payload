@@ -1,0 +1,49 @@
+# tcp dport 22 iiftype ether ip6 daddr 1::2 ether saddr 00:0f:54:0c:11:4 accept
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+  [ meta load iiftype => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 16b @ network header + 24 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 0x00000000 0x00000000 0x02000000 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+  [ immediate reg 0 accept ]
+
+# tcp dport 22 ip6 daddr 1::2 ether saddr 00:0f:54:0c:11:04
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+  [ payload load 16b @ network header + 24 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 0x00000000 0x00000000 0x02000000 ]
+  [ meta load iiftype => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+
+# tcp dport 22 ether saddr 00:0f:54:0c:11:04 ip6 daddr 1::2
+ip6 test-ip6 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00001600 ]
+  [ meta load iiftype => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+  [ payload load 16b @ network header + 24 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 0x00000000 0x00000000 0x02000000 ]
+
+# ether saddr 00:0f:54:0c:11:04 ip6 daddr 1::2 accept
+ip6 test-ip6 input
+  [ meta load iiftype => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ payload load 6b @ link header + 6 => reg 1 ]
+  [ cmp eq reg 1 0x0c540f00 0x00000411 ]
+  [ payload load 16b @ network header + 24 => reg 1 ]
+  [ cmp eq reg 1 0x00000100 0x00000000 0x00000000 0x02000000 ]
+  [ immediate reg 0 accept ]

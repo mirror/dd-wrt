@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table ip filter
+$NFT add chain ip filter ap1 "{ type filter hook input priority 0; }"
+$NFT add chain ip filter ap2
+$NFT add rule ip filter ap1 jump ap2
+
+# kernel should return EOPNOTSUPP
+$NFT add rule ip filter ap1 jump ap1 2>/dev/null >&2 || exit 0
+echo "E: Accepted jump-to-self"
+exit 1

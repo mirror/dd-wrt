@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+HANDLE=`$NFT -a list ruleset | grep "table.*handle" | cut -d' ' -f7`
+$NFT delete table handle $HANDLE
+
+$NFT add table t
+
+$NFT add chain t c
+HANDLE=`$NFT -a list ruleset | grep "chain.*handle" | cut -d' ' -f6`
+$NFT delete chain t handle $HANDLE
+
+$NFT add set t s { type ipv4_addr\; }
+HANDLE=`$NFT -a list ruleset | grep "set.*handle" | cut -d' ' -f6`
+$NFT delete set t handle $HANDLE
+
+$NFT add map t m { type ipv4_addr : ipv4_addr\; }
+HANDLE=`$NFT -a list ruleset | grep "map.*handle" | cut -d' ' -f6`
+$NFT delete map t handle $HANDLE
+
+$NFT add flowtable t f { hook ingress priority 0\; devices = { lo } \; }
+HANDLE=`$NFT -a list ruleset | grep "flowtable.*handle" | cut -d' ' -f6`
+$NFT delete flowtable t handle $HANDLE
+
+$NFT add counter t x
+HANDLE=`$NFT -a list ruleset | grep "counter.*handle" | cut -d' ' -f6`
+$NFT delete counter t handle $HANDLE

@@ -1,0 +1,12 @@
+# d0a8d877da97 ("netfilter: nft_dynset: support for element deletion")
+# v5.4-rc1~131^2~59^2~4
+table ip x {
+	set s {
+		flags dynamic;
+		type inet_service;
+	}
+
+	chain y {
+		delete @s { tcp dport }
+	}
+}

@@ -1,0 +1,704 @@
+# tcp option eol exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "eol"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option nop exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "nop"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option maxseg exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "maxseg"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option maxseg length 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "length",
+                    "name": "maxseg"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option maxseg size 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "size",
+                    "name": "maxseg"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option window length 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "length",
+                    "name": "window"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option window count 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "count",
+                    "name": "window"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack-perm exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "sack-perm"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option sack-perm length 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "length",
+                    "name": "sack-perm"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "sack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option sack length 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "length",
+                    "name": "sack"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack left 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "left",
+                    "name": "sack"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack0 left 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "left",
+                    "name": "sack0"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack1 left 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "left",
+                    "name": "sack1"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack2 left 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "left",
+                    "name": "sack2"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack3 left 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "left",
+                    "name": "sack3"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack right 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "right",
+                    "name": "sack"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack0 right 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "right",
+                    "name": "sack0"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack1 right 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "right",
+                    "name": "sack1"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack2 right 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "right",
+                    "name": "sack2"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option sack3 right 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "right",
+                    "name": "sack3"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option timestamp exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "timestamp"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option timestamp length 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "length",
+                    "name": "timestamp"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option timestamp tsval 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "tsval",
+                    "name": "timestamp"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option timestamp tsecr 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "tsecr",
+                    "name": "timestamp"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# tcp option 255 missing
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "base": 255,
+                    "len": 8,
+                    "offset": 0
+                }
+            },
+            "op": "==",
+            "right": false
+        }
+    }
+]
+
+# tcp option 6 exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "base": 6,
+                    "len": 8,
+                    "offset": 0
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option @255,8,8 255
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "base": 255,
+                    "len": 8,
+                    "offset": 8
+                }
+            },
+            "op": "==",
+            "right": 255
+        }
+    }
+]
+
+# tcp option window exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "window"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option window missing
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "window"
+                }
+            },
+            "op": "==",
+            "right": false
+        }
+    }
+]
+
+# tcp option maxseg size set 1360
+[
+    {
+        "mangle": {
+            "key": {
+                "tcp option": {
+                    "field": "size",
+                    "name": "maxseg"
+                }
+            },
+            "value": 1360
+        }
+    }
+]
+
+# tcp option md5sig exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "md5sig"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option fastopen exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "fastopen"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option mptcp exists
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "name": "mptcp"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tcp option mptcp subtype mp-capable
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "subtype",
+                    "name": "mptcp"
+                }
+            },
+            "op": "==",
+            "right": "mp-capable"
+        }
+    }
+]
+
+# tcp option mptcp subtype 1
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "subtype",
+                    "name": "mptcp"
+                }
+            },
+            "op": "==",
+            "right": "mp-join"
+        }
+    }
+]
+
+# tcp option mptcp subtype { mp-capable, mp-join, remove-addr, mp-prio, mp-fail, mp-fastclose, mp-tcprst }
+[
+    {
+        "match": {
+            "left": {
+                "tcp option": {
+                    "field": "subtype",
+                    "name": "mptcp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "mp-capable",
+                    "mp-join",
+                    "remove-addr",
+                    "mp-prio",
+                    "mp-fail",
+                    "mp-fastclose",
+                    "mp-tcprst"
+                ]
+            }
+        }
+   }
+]
+
+# tcp option mptcp subtype . tcp dport { mp-capable . 10, mp-join . 100, add-addr . 200, remove-addr . 300, mp-prio . 400, mp-fail . 500, mp-fastclose . 600, mp-tcprst . 700 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "tcp option": {
+                            "field": "subtype",
+                            "name": "mptcp"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "tcp"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "mp-capable",
+                            10
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "remove-addr",
+                            300
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-fastclose",
+                            600
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-join",
+                            100
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-prio",
+                            400
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-tcprst",
+                            700
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "add-addr",
+                            200
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-fail",
+                            500
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# reset tcp option mptcp
+[
+    {
+        "reset": {
+            "tcp option": {
+                "name": "mptcp"
+            }
+        }
+    }
+]
+
+# reset tcp option 2
+[
+    {
+        "reset": {
+            "tcp option": {
+                "name": "maxseg"
+            }
+        }
+    }
+]
+
+# reset tcp option 123
+[
+    {
+        "reset": {
+            "tcp option": {
+                "base": 123,
+                "len": 0,
+                "offset": 0
+            }
+        }
+    }
+]

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_setelem_expiration)
+
+set -e
+
+drop_seconds() {
+	sed -E 's/m[0-9]*s([0-9]*ms)?/m/g'
+}
+
+RULESET="add table ip x
+add set ip x y { type ipv4_addr; flags dynamic,timeout; }
+add element ip x y { 1.1.1.1 timeout 30m expires 15m59s }"
+
+EXPECTED="add table ip x
+add set ip x y { type ipv4_addr; flags dynamic,timeout; } 
+add element ip x y { 1.1.1.1 timeout 30m expires 15m }"
+
+test_output=$($NFT -e -f - <<< "$RULESET" 2>&1 | grep -v '# new generation' | drop_seconds)
+
+if [ "$test_output" != "$EXPECTED" ] ; then
+	$DIFF -u <(echo "$test_output") <(echo "$EXPECTED")
+	exit 1
+fi
+
+$NFT "add chain ip x c; add rule ip x c ip saddr @y"

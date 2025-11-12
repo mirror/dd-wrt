@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_flowtable_no_devices)
+
+# list only the flowtable asked for with table
+
+set -e
+
+FLOWTABLES="flowtable f {
+	hook ingress priority filter
+	devices = { \"lo\" }
+}
+flowtable f2 {
+	hook ingress priority filter
+	devices = { \"d0\" }
+}"
+
+RULESET="table inet filter {
+	$FLOWTABLES
+}
+table ip filter {
+	$FLOWTABLES
+}"
+
+EXPECTED="table inet filter {
+	flowtable f {
+		hook ingress priority filter
+		devices = { \"lo\" }
+	}
+}"
+EXPECTED2="table ip filter {
+	flowtable f2 {
+		hook ingress priority filter
+		devices = { \"d0\" }
+	}
+}"
+EXPECTED3="table ip filter {
+	flowtable f {
+		hook ingress priority filter
+		devices = { \"lo\" }
+	}
+	flowtable f2 {
+		hook ingress priority filter
+		devices = { \"d0\" }
+	}
+}"
+
+iface_cleanup() {
+	ip link del d0 &>/dev/null || :
+}
+ft_cleanup() {
+	if [ "$NFT_TEST_HAVE_ifname_based_hooks" = y ]; then
+		$NFT 'delete flowtable ip filter f2 { devices = { d0 }; }'
+		$NFT 'delete flowtable inet filter f2 { devices = { d0 }; }'
+	fi
+}
+trap 'iface_cleanup; ft_cleanup' EXIT
+iface_cleanup
+
+ip link add d0 type dummy
+
+$NFT -f - <<< "$RULESET"
+
+GET="$($NFT list flowtable inet filter f)"
+$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+
+GET="$($NFT list flowtable ip filter f2)"
+$DIFF -u <(echo "$EXPECTED2") <(echo "$GET")
+
+GET="$($NFT list flowtables ip)"
+$DIFF -u <(echo "$EXPECTED3") <(echo "$GET")

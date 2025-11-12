@@ -1,0 +1,9 @@
+# 48b0ae046ee9 ("netfilter: nftables: netlink support for several set element expressions")
+# v5.11-rc1~169^2~25^2
+table x {
+        set y {
+                type ipv4_addr
+                size 65535
+                counter quota 500 bytes
+        }
+}

@@ -1,0 +1,38 @@
+{
+  "nftables": [
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "testchain",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "testmap",
+        "table": "t",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "verdict",
+        "elem": [
+          [
+            {
+              "jump": {
+                "target": ""
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ]
+}

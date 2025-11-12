@@ -1,0 +1,77 @@
+# mark 12345 reject with tcp reset
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+	    "op": "==",
+            "right": 12345
+        }
+    },
+    {
+        "reject": {
+            "type": "tcp reset"
+        }
+    }
+]
+
+# reject
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpx"
+        }
+    }
+]
+
+# meta nfproto ipv4 reject
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# meta nfproto ipv6 reject
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmpv6"
+        }
+    }
+]
+
+# meta nfproto ipv4 reject with icmp host-unreachable
+[
+    {
+        "reject": {
+            "expr": "host-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# meta nfproto ipv6 reject with icmpv6 no-route
+[
+    {
+        "reject": {
+            "expr": "no-route",
+            "type": "icmpv6"
+        }
+    }
+]
+

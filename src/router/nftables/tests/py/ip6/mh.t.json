@@ -1,0 +1,640 @@
+# mh nexthdr 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# mh nexthdr != 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    }
+]
+
+# mh nexthdr { udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp }
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "udplite",
+                    "ipcomp",
+                    "udp",
+                    "ah",
+                    "sctp",
+                    "esp",
+                    "dccp",
+                    "tcp",
+                    "ipv6-icmp"
+                ]
+            }
+        }
+    }
+]
+
+# mh nexthdr != { udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp }
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "udplite",
+                    "ipcomp",
+                    "udp",
+                    "ah",
+                    "sctp",
+                    "esp",
+                    "dccp",
+                    "tcp",
+                    "ipv6-icmp"
+                ]
+            }
+        }
+    }
+]
+
+# mh nexthdr icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": "icmp"
+        }
+    }
+]
+
+# mh nexthdr != icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": "icmp"
+        }
+    }
+]
+
+# mh nexthdr 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# mh nexthdr != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# mh nexthdr 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh nexthdr != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh nexthdr { 33, 55, 67, 88 }
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh nexthdr != { 33, 55, 67, 88 }
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh hdrlength 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# mh hdrlength != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# mh hdrlength 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh hdrlength != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh hdrlength { 33, 55, 67, 88 }
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh hdrlength != { 33, 55, 67, 88 }
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh type {binding-refresh-request, home-test-init, careof-test-init, home-test, careof-test, binding-update, binding-acknowledgement, binding-error, fast-binding-update, fast-binding-acknowledgement, fast-binding-advertisement, experimental-mobility-header, home-agent-switch-message}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "binding-refresh-request",
+                    "home-test-init",
+                    "careof-test-init",
+                    "home-test",
+                    "careof-test",
+                    "binding-update",
+                    "binding-acknowledgement",
+                    "binding-error",
+                    "fast-binding-update",
+                    "fast-binding-acknowledgement",
+                    "fast-binding-advertisement",
+                    "experimental-mobility-header",
+                    "home-agent-switch-message"
+                ]
+            }
+        }
+    }
+]
+
+# mh type home-agent-switch-message
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": "home-agent-switch-message"
+        }
+    }
+]
+
+# mh type != home-agent-switch-message
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": "home-agent-switch-message"
+        }
+    }
+]
+
+# mh reserved 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# mh reserved != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# mh reserved 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh reserved != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh reserved { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh reserved != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh checksum 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "checksum",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# mh checksum != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "checksum",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# mh checksum 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "checksum",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh checksum != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "checksum",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# mh checksum { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "checksum",
+                    "name": "mh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# mh checksum != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "checksum",
+                    "name": "mh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+

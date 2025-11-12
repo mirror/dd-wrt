@@ -1,0 +1,17 @@
+#!/bin/bash
+
+family=netdev
+	for hook in ingress egress
+	do
+		for prioname in raw mangle dstnat security srcnat
+		do
+			$NFT add table $family x || exit 1
+			$NFT add chain $family x y "{ type filter hook $hook device lo priority $prioname; }" &> /dev/null
+			if (($? == 0))
+			then
+				echo "E: $prioname should not be a valid priority name for netdev family chains." >&2
+				exit 1
+			fi
+		done
+	done
+exit 0

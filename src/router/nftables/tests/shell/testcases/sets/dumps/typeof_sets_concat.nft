@@ -1,0 +1,23 @@
+table netdev t {
+	set s {
+		typeof ether saddr . vlan id
+		size 2048
+		flags dynamic,timeout
+	}
+
+	chain c {
+		ether type != 8021q add @s { ether saddr . 0 timeout 5s } counter packets 0 bytes 0 return
+		ether type != 8021q update @s { ether daddr . 123 timeout 1m } counter packets 0 bytes 0 return
+	}
+}
+table ip t {
+	set s {
+		typeof ipsec in reqid . iif
+		size 16
+		flags interval
+	}
+
+	chain c2 {
+		ipsec in reqid . "lo" @s
+	}
+}

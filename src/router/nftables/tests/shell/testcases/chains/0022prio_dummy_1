@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table ip x
+
+$NFT add chain ip x y "{ type filter hook input priority dummy+1; }" &> /dev/null || exit 0
+echo "E: dummy should not be a valid priority." >&2
+exit 1

@@ -1,0 +1,13 @@
+table ip x {
+	map y {
+		typeof ip saddr : meta mark
+		elements = { 1.1.1.1 : 0x00000002,
+			     * : 0x00000003 }
+	}
+
+	map z {
+		typeof ip saddr : meta mark
+		elements = { 1.1.1.1 : 0x00000002,
+			     * : 0x00000003 }
+	}
+}

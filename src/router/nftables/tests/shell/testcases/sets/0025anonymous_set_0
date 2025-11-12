@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Adding anonymous sets
+
+set -e
+
+$NFT add table t
+$NFT add chain t c { type filter hook output priority 0 \; }
+# set: IP addresses
+$NFT add rule t c ip daddr { \
+        192.168.0.1, \
+        192.168.0.2, \
+        192.168.0.3, \
+}
+
+#set : tcp ports
+$NFT add rule t c meta oifname \"doesntexist\" tcp dport { 22, 23 } counter

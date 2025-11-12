@@ -1,0 +1,19 @@
+table inet t {
+	set s1 {
+		type ipv4_addr
+		flags interval
+		elements = { 10.0.0.0/8, 192.0.0.0/2 }
+	}
+
+	set s2 {
+		type ipv6_addr
+		flags interval
+		elements = { fe80::/10,
+			     ff00::/8 }
+	}
+
+	chain c {
+		ip saddr @s1 accept
+		ip6 daddr @s2 accept
+	}
+}

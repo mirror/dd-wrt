@@ -1,0 +1,214 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+dumpfile=$(dirname $0)/dumps/$(basename $0).nft
+
+[ -z "$NFT" ] && exit 111
+
+$NFT -f "$dumpfile" || exit 1
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1ifname-$rnd"
+ns2="nft2ifname-$rnd"
+
+cleanup()
+{
+	ip netns del "$ns1"
+	ip netns del "$ns2"
+}
+
+trap cleanup EXIT
+
+# check a given element is (not) present in the set.
+lookup_elem()
+{
+	local setname=$1
+	local value=$2
+	local fail=$3
+	local expect_result=$4
+	local msg=$5
+
+	result=$(ip netns exec "$ns1" $NFT get element inet testifsets $setname { "$value" } 2>/dev/null | grep "$expect_result" )
+
+	if [ -z "$result" ] && [ $fail -ne 1 ] ; then
+		echo "empty result, expected $expect_result $msg"
+		ip netns exec "$ns1" $NFT get element inet testifsets $setname { "$value" }
+		exit 1
+	fi
+}
+
+check_elem_get()
+{
+	local setname=$1
+	local value=$2
+	local fail=$3
+	local expect_result=$4
+
+	# when query is 'abcde', and set has 'abc*', result is
+	# 'abc*', not 'abcde', so returned element can be different.
+	if [ -z "$expect_result" ]; then
+		expect_result=$ifname
+	fi
+
+	lookup_elem "$setname" "$value" "$fail" "$expect_result" ""
+}
+
+# same, but also delete and re-add the element.
+check_elem()
+{
+	local setname=$1
+	local value=$2
+
+	lookup_elem "$setname" "$value" "0" "$value" "initial check"
+
+	ip netns exec "$ns1" $NFT delete element inet testifsets $setname { "$value" }
+	if [ $? -ne 0 ]; then
+		ip netns exec "$ns1" $NFT list ruleset
+		echo "delete element $setname { $value } failed"
+		exit 1
+	fi
+
+	ip netns exec "$ns1" $NFT add element inet testifsets $setname { "$value" }
+
+	lookup_elem "$setname" "$value" "0" "$value" "check after add/del"
+}
+
+# send pings, check all rules with sets that contain abcdef1 match.
+# there are 4 rules in this chain, 4 should match.
+check_matching_icmp_ppp()
+{
+	pkt=$((RANDOM%10))
+	pkt=$((pkt+1))
+	ip netns exec "$ns1" ping -f -c $pkt 10.1.2.2
+
+	# replies should arrive via 'abcdeg', so, should NOT increment any counters.
+	ip netns exec "$ns1" ping -f -c 100 10.2.2.2
+
+	matches=$(ip netns exec "$ns1" $NFT list chain inet testifsets v4icmp | grep "counter packets $pkt " | wc -l)
+	want=3
+
+	if [ "$matches" -ne $want ] ;then
+		ip netns exec "$ns1" $NFT list ruleset
+		echo "Expected $want matching rules, got $matches, packets $pkt in v4icmp"
+		exit 1
+	fi
+
+	# same, for concat set type.
+
+	matches=$(ip netns exec "$ns1" $NFT list chain inet testifsets v4icmpc | grep "counter packets $pkt " | wc -l)
+
+	if [ "$matches" -ne $want ] ;then
+		ip netns exec "$ns1" $NFT list ruleset
+		echo "Expected $want matching rules, got $matches, packets $pkt in v4icmpc"
+		exit 1
+	fi
+}
+
+check_add_del_ifnames()
+{
+	local what="$1"
+	local setname="$2"
+	local prefix="$3"
+	local data="$4"
+	local i=0
+
+	for i in $(seq 1 5);do
+		local cmd="element inet testifsets $setname { "
+		local to_batch=16
+
+		for j in $(seq 1 $to_batch);do
+			local name=$(printf '"%x-%d"' $i $j)
+
+			[ -n "$prefix" ] && cmd="$cmd $prefix . "
+
+			cmd="$cmd $name"
+
+			[ -n "$data" ] && cmd="$cmd : $data"
+
+			if [ $j -lt $to_batch ] ; then
+				cmd="$cmd, "
+			fi
+		done
+
+		cmd="$cmd }"
+
+		if ! $NFT "$what" "$cmd"; then
+			echo "$what $cmd failed."
+			$NFT list set inet testifsets $setname
+			exit 1
+		fi
+
+		if ! ip netns exec "$ns1" $NFT "$what" "$cmd"; then
+			echo "$ns1 $what $cmd failed."
+			ip netns exec "$ns1" $NFT list set inet testifsets $setname
+			exit 1
+		fi
+	done
+}
+
+check_add_ifnames()
+{
+	check_add_del_ifnames "add" "$1" "$2" "$3"
+}
+
+check_del_ifnames()
+{
+	check_add_del_ifnames "delete" "$1" "$2" "$3"
+}
+
+ip netns add "$ns1" || exit 111
+ip netns add "$ns2" || exit 111
+ip netns exec "$ns1" $NFT -f "$dumpfile" || exit 3
+
+check_add_ifnames "simple" "" ""
+check_add_ifnames "simple_wild" "" ""
+check_add_ifnames "concat" "10.1.2.2" ""
+check_add_ifnames "map_wild" "" "drop"
+
+for n in abcdef0 abcdef1 othername;do
+	check_elem simple $n
+done
+
+check_elem_get simple foo 1
+
+for n in ppp0 othername;do
+	check_elem simple_wild $n
+done
+
+check_elem_get simple_wild enoent 1
+check_elem simple_wild ppp0
+check_elem_get simple_wild abcdefghijk 0 'abcdef\*'
+
+check_elem_get concat '1.2.3.4 . "enoent"' 1
+check_elem_get concat '10.1.2.2 . "abcdef"' 1
+check_elem_get concat '10.1.2.1 . "abcdef1"' 1
+
+check_elem concat '10.1.2.2 . "abcdef0"'
+check_elem concat '10.1.2.2 . "abcdef1"'
+
+set -e
+ip -net "$ns1" link set lo up
+ip -net "$ns2" link set lo up
+ip netns exec "$ns1" ping -f -c 10 127.0.0.1
+
+ip link add abcdef1 netns $ns1 type veth peer name veth0 netns $ns2
+ip link add abcdeg  netns $ns1 type veth peer name veth1 netns $ns2
+
+ip -net "$ns1" link set abcdef1 up
+ip -net "$ns2" link set veth0 up
+ip -net "$ns1" link set abcdeg up
+ip -net "$ns2" link set veth1 up
+
+ip -net "$ns1" addr add 10.1.2.1/24 dev abcdef1
+ip -net "$ns1" addr add 10.2.2.1/24 dev abcdeg
+
+ip -net "$ns2" addr add 10.1.2.2/24 dev veth0
+ip -net "$ns2" addr add 10.2.2.2/24 dev veth1
+
+check_matching_icmp_ppp
+
+check_del_ifnames "simple" "" ""
+check_del_ifnames "simple_wild" "" ""
+check_del_ifnames "concat" "10.1.2.2" ""
+check_del_ifnames "map_wild" "" "drop"

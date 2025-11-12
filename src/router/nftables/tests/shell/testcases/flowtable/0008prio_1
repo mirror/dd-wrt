@@ -1,0 +1,14 @@
+#!/bin/bash
+
+$NFT add table t
+for prioname in raw mangle dstnar security srcnat out dummy
+do
+	$NFT add flowtable t f { hook ingress priority $prioname \; devices = { lo }\; }
+	if (($? == 0))
+	then
+		echo "E: $prioname should not be a valid priority name for flowtables" >&2
+		exit 1
+	fi
+done
+
+exit 0

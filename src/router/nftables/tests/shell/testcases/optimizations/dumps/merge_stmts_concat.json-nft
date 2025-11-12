@@ -1,0 +1,435 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "c1",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "c2",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "c3",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "eth1",
+                      "1.1.1.1",
+                      "2.2.2.3"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "eth1",
+                      "1.1.1.2",
+                      "2.2.2.4"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "eth1",
+                      "1.1.1.2",
+                      {
+                        "prefix": {
+                          "addr": "2.2.3.0",
+                          "len": 24
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "eth1",
+                      "1.1.1.2",
+                      {
+                        "range": [
+                          "2.2.4.0",
+                          "2.2.4.10"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "eth2",
+                      "1.1.1.3",
+                      "2.2.2.5"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "protocol"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "th",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "tcp",
+                      22
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "udp",
+                      67
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "dport"
+                    }
+                  },
+                  {
+                    "ct": {
+                      "key": "state"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      137,
+                      "new"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      138,
+                      "new"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      137,
+                      "untracked"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      138,
+                      "untracked"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "c1",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "dport"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      51820,
+                      "foo"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      514,
+                      "bar"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      67,
+                      "bar"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "c2",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "dport"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      100,
+                      "foo"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      51820,
+                      "foo"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      514,
+                      "bar"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      67,
+                      "bar"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "c3",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "udp",
+                      "field": "dport"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      100,
+                      "foo"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      51820,
+                      "foo"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      514,
+                      "bar"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      67,
+                      "bar"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      100,
+                      "test"
+                    ]
+                  },
+                  {
+                    "concat": [
+                      51820,
+                      "test"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    }
+  ]
+}

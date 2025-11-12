@@ -1,0 +1,12 @@
+table inet x {
+	set y {
+		type ipv4_addr
+		elements = { 2.2.2.2, 3.3.3.3 }
+	}
+
+	chain y {
+		icmpv6 type { destination-unreachable, packet-too-big } accept
+		icmp type { 1, 2 } accept
+		tcp dport { 21, 2121 } counter packets 0 bytes 0 accept
+	}
+}

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+HANDLE=$($NFT -a -e add table ip x | cut -d '#' -f 2 | awk '{ print $2 }' | head -1)
+
+# should fail
+$NFT delete table inet handle $HANDLE
+[ $? -ne 0 ] && exit 0

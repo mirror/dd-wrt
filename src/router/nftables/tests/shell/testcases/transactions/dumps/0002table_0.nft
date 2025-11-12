@@ -1,0 +1,7 @@
+table ip x {
+	flags dormant
+
+	chain y {
+		type nat hook prerouting priority filter; policy accept;
+	}
+}

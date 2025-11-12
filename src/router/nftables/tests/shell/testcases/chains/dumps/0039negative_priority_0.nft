@@ -1,0 +1,5 @@
+table ip t {
+	chain c {
+		type filter hook input priority -30; policy accept;
+	}
+}

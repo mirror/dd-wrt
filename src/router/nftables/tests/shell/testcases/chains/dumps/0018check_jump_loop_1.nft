@@ -1,0 +1,9 @@
+table ip filter {
+	chain ap1 {
+		type filter hook input priority filter; policy accept;
+		jump ap2
+	}
+
+	chain ap2 {
+	}
+}

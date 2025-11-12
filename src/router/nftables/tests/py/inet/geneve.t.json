@@ -1,0 +1,315 @@
+# udp dport 6081 geneve vni 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vni",
+                    "protocol": "geneve",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+
+# udp dport 6081 geneve ip saddr 10.141.11.2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": "10.141.11.2"
+        }
+    }
+]
+
+# udp dport 6081 geneve ip saddr 10.141.11.0/24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.141.11.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# udp dport 6081 geneve ip protocol 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# udp dport 6081 geneve udp sport 8888
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": 8888
+        }
+    }
+]
+
+# udp dport 6081 geneve icmp type echo-reply
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": "echo-reply"
+        }
+    }
+]
+
+# udp dport 6081 geneve ether saddr 62:87:4d:d6:19:05
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": "62:87:4d:d6:19:05"
+        }
+    }
+]
+
+# udp dport 6081 geneve vlan id 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+
+# udp dport 6081 geneve ip dscp 0x02
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip",
+                    "tunnel": "geneve"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# udp dport 6081 geneve ip saddr . geneve ip daddr { 1.2.3.4 . 4.3.2.1 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 6081
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip",
+                            "tunnel": "geneve"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip",
+                            "tunnel": "geneve"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "1.2.3.4",
+                            "4.3.2.1"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+

@@ -1,0 +1,11 @@
+table inet filter {
+	map test {
+		type mark . inet_service . inet_proto : mark
+		flags interval,timeout
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+		meta mark set meta mark . tcp dport . meta l4proto map @test counter packets 0 bytes 0
+	}
+}

@@ -1,0 +1,5 @@
+table inet filter {
+	map countermap {
+		type ipv4_addr : counter
+	}
+}

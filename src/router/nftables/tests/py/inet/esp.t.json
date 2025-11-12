@@ -1,0 +1,204 @@
+# esp spi 100
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "esp"
+                }
+            },
+	    "op": "==",
+            "right": 100
+        }
+    }
+]
+
+# esp spi != 100
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "esp"
+                }
+            },
+            "op": "!=",
+            "right": 100
+        }
+    }
+]
+
+# esp spi 111-222
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "esp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 111, 222 ]
+            }
+        }
+    }
+]
+
+# esp spi != 111-222
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "esp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 111, 222 ]
+            }
+        }
+    }
+]
+
+# esp spi { 100, 102}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "esp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    100,
+                    102
+                ]
+            }
+        }
+    }
+]
+
+# esp spi != { 100, 102}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "esp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    100,
+                    102
+                ]
+            }
+        }
+    }
+]
+
+# esp sequence 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "esp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# esp sequence 22-24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "esp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 22, 24 ]
+            }
+        }
+    }
+]
+
+# esp sequence != 22-24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "esp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 22, 24 ]
+            }
+        }
+    }
+]
+
+# esp sequence { 22, 24}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "esp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    22,
+                    24
+                ]
+            }
+        }
+    }
+]
+
+# esp sequence != { 22, 24}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "esp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    22,
+                    24
+                ]
+            }
+        }
+    }
+]
+

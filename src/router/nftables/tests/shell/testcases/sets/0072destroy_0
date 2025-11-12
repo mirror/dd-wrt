@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_destroy)
+
+$NFT add table x
+
+# pass for non-existent set
+$NFT destroy set x s
+
+# successfully delete existing set
+$NFT add set x s '{type ipv4_addr; size 2;}'
+$NFT destroy set x s

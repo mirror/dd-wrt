@@ -1,0 +1,374 @@
+# ip6 dscp 0x38
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "cs7"
+        }
+    }
+]
+
+# ip6 dscp != 0x20
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": "cs4"
+        }
+    }
+]
+
+# ip6 dscp {cs0, cs1, cs2, cs3, cs4, cs5, cs6, cs7, af11, af12, af13, af21, af22, af23, af31, af32, af33, af41, af42, af43, ef}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "cs0",
+                    "cs1",
+                    "af11",
+                    "af12",
+                    "af13",
+                    "cs2",
+                    "af21",
+                    "af22",
+                    "af23",
+                    "cs3",
+                    "af31",
+                    "af32",
+                    "af33",
+                    "cs4",
+                    "af41",
+                    "af42",
+                    "af43",
+                    "cs5",
+                    "ef",
+                    "cs6",
+                    "cs7"
+                ]
+            }
+        }
+    }
+]
+
+# ip6 dscp vmap { 0x04 : accept, 0x3f : continue } counter
+[
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip6"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        4,
+                        {
+                            "accept": null
+                        }
+                    ],
+                    [
+                        63,
+                        {
+                            "continue": null
+                        }
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "counter": null
+    }
+]
+
+# ip6 nexthdr {udp, ah, comp, udplite, tcp, dccp, sctp}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    6,
+                    17,
+                    33,
+                    51,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# ip6 nexthdr {esp, ah, comp, udp, udplite, tcp, dccp, sctp, icmpv6}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [ 6, 17, 33, 50, 51, 58, 108, 132, 136 ]
+            }
+        }
+    }
+]
+
+# ip6 nexthdr != {esp, ah, comp, udp, udplite, tcp, dccp, sctp, icmpv6}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [ 6, 17, 33, 50, 51, 58, 108, 132, 136 ]
+            }
+        }
+    }
+]
+
+# ip6 nexthdr esp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": 50
+        }
+    }
+]
+
+# ip6 nexthdr != esp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": 50
+        }
+    }
+]
+
+# ip6 saddr ::1234:1234:1234:1234:1234:1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "0:1234:1234:1234:1234:1234:1234:1234"
+        }
+    }
+]
+
+# ip6 saddr 1234::1234:1234:1234:1234:1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "1234:0:1234:1234:1234:1234:1234:1234"
+        }
+    }
+]
+
+# ip6 saddr 1234:1234::1234:1234:1234:1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "1234:1234:0:1234:1234:1234:1234:1234"
+        }
+    }
+]
+
+# ip6 saddr 1234:1234:1234::1234:1234:1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "1234:1234:1234:0:1234:1234:1234:1234"
+        }
+    }
+]
+
+# ip6 saddr 1234:1234:1234:1234:1234::1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "1234:1234:1234:1234:1234:0:1234:1234"
+        }
+    }
+]
+
+# ip6 saddr 1234:1234:1234:1234:1234:1234:1234::
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "1234:1234:1234:1234:1234:1234:1234:0"
+        }
+    }
+]
+
+# ip6 saddr ::1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": "::18.52.18.52"
+        }
+    }
+]
+
+# ip6 daddr != {::1234:1234:1234:1234:1234:1234:1234, 1234:1234::1234:1234:1234:1234:1234 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "0:1234:1234:1234:1234:1234:1234:1234",
+                    "1234:1234:0:1234:1234:1234:1234:1234"
+                ]
+            }
+        }
+    }
+]
+
+# ip6 daddr != ::1234:1234:1234:1234:1234:1234:1234-1234:1234::1234:1234:1234:1234:1234
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip6"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ "0:1234:1234:1234:1234:1234:1234:1234", "1234:1234:0:1234:1234:1234:1234:1234" ]
+            }
+        }
+    }
+]
+
+# iif "lo" ip6 flowlabel set 0xfffff
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "flowlabel",
+                    "protocol": "ip6"
+                }
+            },
+            "value": 1048575
+        }
+    }
+]
+

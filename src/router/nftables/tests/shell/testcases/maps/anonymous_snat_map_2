@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#
+# Test some error conditions for using variables to define maps
+#
+
+set -e
+
+for m in "1.1.1.1" "{1.1.1.1}"; do
+
+    RULESET="
+define m = $m"'
+table nat {
+  chain postrouting {
+    snat ip saddr map $m
+  }
+}
+'
+
+    $NFT -f - <<< "$RULESET" || rc=$?
+    test $rc = 1
+
+done

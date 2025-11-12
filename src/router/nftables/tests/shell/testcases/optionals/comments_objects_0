@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_comment)
+
+set -e
+
+COMMENT128="12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
+
+# test for pass with comment that is 128 bytes long.
+rc=0
+$NFT add table ip filter \{ quota foo1 \{ comment "\"${COMMENT128}\"" \}\; \}\; || rc="$?"
+test "$rc" = 0
+
+# test for failure with comment that is 128+1 bytes long.
+rc=0
+$NFT add table ip filter \{ quota foo2 \{ comment "\"${COMMENT128}x\"" \}\; \}\; || rc="$?"
+test "$rc" = 1
+
+RULESET='table ip filter {
+	quota q {
+		over 1200 bytes
+		comment "'"$COMMENT128"'"
+	}
+
+	counter c {
+		packets 0 bytes 0
+		comment "test2"
+	}
+
+	ct helper h {
+		type "sip" protocol tcp
+		l3proto ip
+		comment "test3"
+	}
+
+	ct expectation e {
+		protocol tcp
+		dport 666
+		timeout 100ms
+		size 96
+		l3proto ip
+		comment "test4"
+	}
+
+	limit l {
+		rate 400/hour
+		comment "test5"
+	}
+
+	synproxy s {
+		mss 1460
+		wscale 2
+		comment "test6"
+	}
+}
+'
+
+$NFT -f - <<< "$RULESET"

@@ -1,0 +1,87 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "set1",
+        "table": "t",
+        "type": "ether_addr",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "set2",
+        "table": "t",
+        "type": "ether_addr",
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "daddr"
+                }
+              },
+              "right": "@set1"
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "daddr"
+                }
+              },
+              "set": "@set2",
+              "stmt": [
+                {
+                  "counter": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

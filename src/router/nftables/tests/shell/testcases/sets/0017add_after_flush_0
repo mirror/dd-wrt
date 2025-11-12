@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# This tests for a bug where elements can't be added after flushing a
+# full set with the flag NFTNL_SET_DESC_SIZE set
+
+set -e
+$NFT add table x
+$NFT add set x s {type ipv4_addr\; size 2\;}
+$NFT add element x s {1.1.1.1}
+$NFT add element x s {1.1.1.2}
+$NFT flush set x s
+$NFT add element x s {1.1.1.1}

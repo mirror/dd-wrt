@@ -1,0 +1,7 @@
+# 3a07327d10a0 ("netfilter: nft_inner: support for inner tunnel header matching")
+# v6.2-rc1~99^2~350^2~4
+table ip t {
+        chain c {
+                udp dport 4789 vxlan ip saddr 1.2.3.4
+        }
+}

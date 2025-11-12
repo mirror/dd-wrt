@@ -1,0 +1,7 @@
+# 63d10e12b00d ("netfilter: nft_meta: support for time matching")
+# v5.4-rc1~131^2~59^2~6
+table ip t {
+	chain c {
+		meta time "1970-05-23 21:07:14"
+	}
+}

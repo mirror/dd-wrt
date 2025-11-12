@@ -1,0 +1,148 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "t",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "y",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              {
+                "payload": {
+                  "base": "ih",
+                  "offset": 32,
+                  "len": 32
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              "1.1.1.1",
+              20
+            ]
+          },
+          {
+            "concat": [
+              "2.2.2.2",
+              32
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "base": "nh",
+                      "offset": 32,
+                      "len": 32
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "1.1.1.1",
+                      20
+                    ]
+                  },
+                  {
+                    "concat": [
+                      "2.2.2.2",
+                      30
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "t",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "base": "nh",
+                      "offset": 32,
+                      "len": 32
+                    }
+                  }
+                ]
+              },
+              "right": "@y"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

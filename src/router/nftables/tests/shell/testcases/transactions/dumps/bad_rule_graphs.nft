@@ -1,0 +1,30 @@
+table ip t {
+	map m {
+		type ipv4_addr : verdict
+	}
+
+	chain c10 {
+	}
+
+	chain c9 {
+		jump c10
+		tcp dport 80 tproxy to :20000 meta mark set 0x00000001 accept
+	}
+
+	chain c8 {
+		jump c9
+	}
+
+	chain c2 {
+	}
+
+	chain c1 {
+		jump c2
+		ip saddr vmap @m
+	}
+
+	chain c0 {
+		type filter hook input priority filter; policy accept;
+		jump c1
+	}
+}

@@ -1,0 +1,37 @@
+# meta obrname "br0"
+bridge test-bridge input
+  [ meta load bri_oifname => reg 1 ]
+  [ cmp eq reg 1 0x00307262 0x00000000 0x00000000 0x00000000 ]
+
+# meta ibrname "br0"
+bridge test-bridge input
+  [ meta load bri_iifname => reg 1 ]
+  [ cmp eq reg 1 0x00307262 0x00000000 0x00000000 0x00000000 ]
+
+# meta ibrvproto vlan
+bridge test-bridge input
+  [ meta load bri_iifvproto => reg 1 ]
+  [ cmp eq reg 1 0x00000081 ]
+
+# meta ibrpvid 100
+bridge test-bridge input
+  [ meta load bri_iifpvid => reg 1 ]
+  [ cmp eq reg 1 0x00000064 ]
+
+# meta protocol ip udp dport 67
+bridge test-bridge input
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00004300 ]
+
+# meta protocol ip6 udp dport 67
+bridge test-bridge input
+  [ meta load protocol => reg 1 ]
+  [ cmp eq reg 1 0x0000dd86 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00004300 ]

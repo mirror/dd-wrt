@@ -1,0 +1,42 @@
+# iifname "eth0" tcp dport 81 snat ip to 192.168.3.2
+inet test-inet postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00005100 ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport 81 ip saddr 10.1.1.1 snat to 192.168.3.2
+inet test-inet postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00005100 ]
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ cmp eq reg 1 0x0101010a ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport 81 snat ip6 to dead::beef
+inet test-inet postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00005100 ]
+  [ immediate reg 1 0x0000adde 0x00000000 0x00000000 0xefbe0000 ]
+  [ nat snat ip6 addr_min reg 1 ]
+
+# iifname "foo" masquerade random
+inet test-inet postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x006f6f66 0x00000000 0x00000000 0x00000000 ]
+  [ masq flags 0x4 ]

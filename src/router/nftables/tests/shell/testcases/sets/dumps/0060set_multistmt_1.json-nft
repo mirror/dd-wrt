@@ -1,0 +1,105 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "y",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "y",
+        "table": "x",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "dynamic"
+        ],
+        "elem": [
+          {
+            "elem": {
+              "val": "1.1.1.1",
+              "counter": {
+                "packets": 0,
+                "bytes": 0
+              }
+            }
+          },
+          {
+            "elem": {
+              "val": "1.2.3.4",
+              "counter": {
+                "packets": 9,
+                "bytes": 756
+              }
+            }
+          },
+          {
+            "elem": {
+              "val": "2.2.2.2",
+              "counter": {
+                "packets": 0,
+                "bytes": 0
+              }
+            }
+          }
+        ],
+        "stmt": [
+          {
+            "counter": null
+          },
+          {
+            "quota": {
+              "val": 500,
+              "val_unit": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "x",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "set": "@y"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

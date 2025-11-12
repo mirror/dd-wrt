@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_table_flag_owner)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_table_flag_persist)
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+$NFT -f - <<EOF
+table ip t {
+	flags owner, persist
+}
+EOF
+[[ $? -eq 0 ]] || {
+	die "table add failed"
+}
+
+$NFT list ruleset | grep -q 'table ip t' || {
+	die "table does not persist"
+}
+$NFT list ruleset | grep -q 'flags persist$' || {
+	die "unexpected flags in orphaned table"
+}
+
+$NFT -f - <<EOF
+table ip t {
+	flags owner, persist
+}
+EOF
+[[ $? -eq 0 ]] || {
+	die "retake ownership failed"
+}
+
+EXPECT="table ip t {
+	flags persist
+}"
+diff -u <(echo "$EXPECT") <($NFT list ruleset) || {
+	die "unexpected ruleset before coproc setup"
+}
+
+coproc $NFT -i
+sleep 1
+
+cat >&"${COPROC[1]}" <<EOF
+add table ip t { flags owner, persist; }
+EOF
+
+COMM=$(</proc/${COPROC_PID}/comm)
+EXPECT="table ip t { # progname $COMM
+	flags owner,persist
+}"
+diff -u <(echo "$EXPECT") <($NFT list ruleset) || {
+	die "unexpected ruleset after coproc setup"
+}
+
+$NFT flush ruleset
+$NFT list ruleset | grep -q 'table ip t' || {
+	die "flushed owned table"
+}
+
+$NFT add table 'ip t { flags owner, persist; }' && {
+	die "stole owned table"
+}
+
+cat >&"${COPROC[1]}" <<EOF
+delete table ip t
+EOF
+
+[[ -z $($NFT list ruleset) ]] || {
+	die "owner should be able to delete the table"
+}
+
+eval "exec ${COPROC[1]}>&-"
+wait $COPROC_PID
+
+
+exit 0

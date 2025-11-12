@@ -1,0 +1,170 @@
+# comp nexthdr != esp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": 50
+        }
+    }
+]
+
+# comp flags 0x0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# comp flags != 0x23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": 35
+        }
+    }
+]
+
+# comp flags 0x33-0x45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 51, 69 ]
+            }
+        }
+    }
+]
+
+# comp flags != 0x33-0x45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 51, 69 ]
+            }
+        }
+    }
+]
+
+# comp flags {0x33, 0x55, 0x67, 0x88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    51,
+                    85,
+                    103,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# comp flags != {0x33, 0x55, 0x67, 0x88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    51,
+                    85,
+                    103,
+                    136
+                ]
+            }
+        }
+    }
+]
+
+# comp flags { 0x33-0x55}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 51, 85 ] }
+                ]
+            }
+        }
+    }
+]
+
+# comp flags != { 0x33-0x55}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    { "range": [ 51, 85 ] }
+                ]
+            }
+        }
+    }
+]
+

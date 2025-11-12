@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="define BASE_ALLOWED_INCOMING_TCP_PORTS = {22, 80, 443}
+define EXTRA_ALLOWED_INCOMING_TCP_PORTS = {}
+
+table inet filter {
+	chain input {
+		type filter hook input priority 0; policy drop;
+		tcp dport {\$BASE_ALLOWED_INCOMING_TCP_PORTS, \$EXTRA_ALLOWED_INCOMING_TCP_PORTS} ct state new counter accept
+	}
+}
+"
+
+$NFT -f - <<< "$EXPECTED"
+
+EXPECTED="define ip-block-4 = { 1.1.1.1 }
+
+     create set inet filter ip-block-4-test {
+            type ipv4_addr
+            flags interval
+            auto-merge
+            elements = \$ip-block-4
+     }
+"
+
+$NFT -f - <<< "$EXPECTED"

@@ -1,0 +1,169 @@
+# udp dport 53 masquerade random,persistent,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 masquerade persistent,random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 masquerade persistent,random,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 masquerade persistent,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 masquerade persistent,fully-random,random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 masquerade random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 masquerade persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "persistent"
+            ]
+        }
+    }
+]
+

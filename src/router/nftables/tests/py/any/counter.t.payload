@@ -1,0 +1,15 @@
+# counter
+ip
+  [ counter pkts 0 bytes 0 ]
+
+# counter packets 0 bytes 0
+ip
+  [ counter pkts 0 bytes 0 ]
+
+# counter packets 2 bytes 1
+ip
+  [ counter pkts 2 bytes 1 ]
+
+# counter bytes 1024 packets 1
+ip
+  [ counter pkts 1 bytes 1024 ]

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Make sure nft does not segfault when given invalid syntax in 'add flowtable' commands.
+
+$NFT add table ip t
+
+$NFT add flowtable ip t f { hook ingress priority 10\; devices = { lo } }
+[[ $? -eq 1 ]] || exit 1
+
+$NFT add flowtable ip t f { hook ingress\; priority 10\; }
+[[ $? -eq 1 ]] || exit 1

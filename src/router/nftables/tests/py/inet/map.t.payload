@@ -1,0 +1,23 @@
+# mark set ip saddr map { 10.2.3.2 : 0x0000002a, 10.2.3.1 : 0x00000017}
+__map%d test-inet b
+__map%d test-inet 0
+	element 0203020a  : 0000002a 0 [end]	element 0103020a  : 00000017 0 [end]
+inet test-inet input
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ meta set mark with reg 1 ]
+
+# mark set ip hdrlength map { 5 : 0x00000017, 4 : 0x00000001}
+__map%d test-inet b
+__map%d test-inet 0
+	element 00000005  : 00000017 0 [end]	element 00000004  : 00000001 0 [end]
+inet test-inet input
+  [ meta load nfproto => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+  [ payload load 1b @ network header + 0 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000000f ) ^ 0x00000000 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ meta set mark with reg 1 ]
+

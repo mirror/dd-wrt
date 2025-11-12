@@ -1,0 +1,7 @@
+# v5.2-rc1~133^2~174^2~15
+# d164385ec572 ("netfilter: nat: add inet family nat support")
+table inet x {
+        chain y {
+                type nat hook prerouting priority dstnat;
+	}
+}

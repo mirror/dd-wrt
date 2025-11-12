@@ -1,0 +1,73 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "group_10060",
+        "table": "filter",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "classid",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            "10.1.26.2",
+            "1:bbf8"
+          ],
+          [
+            "10.1.26.3",
+            "1:c1ad"
+          ],
+          [
+            "10.1.26.4",
+            "1:b2d7"
+          ],
+          [
+            "10.1.26.5",
+            "1:f705"
+          ],
+          [
+            "10.1.26.6",
+            "1:b895"
+          ],
+          [
+            "10.1.26.7",
+            "1:ec4c"
+          ],
+          [
+            "10.1.26.8",
+            "1:de78"
+          ],
+          [
+            "10.1.26.9",
+            "1:b4f3"
+          ],
+          [
+            "10.1.26.10",
+            "1:dec6"
+          ],
+          [
+            "10.1.26.11",
+            "1:b4c0"
+          ]
+        ]
+      }
+    }
+  ]
+}

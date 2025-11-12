@@ -1,0 +1,11 @@
+table netdev t {
+	map m {
+		typeof ether saddr . vlan id : meta mark
+		size 1234
+		flags dynamic,timeout
+	}
+
+	chain c {
+		ether type != 8021q update @m { ether daddr . 123 timeout 1m : 0x0000002a } counter packets 0 bytes 0 return
+	}
+}

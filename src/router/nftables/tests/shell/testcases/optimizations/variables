@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+RULESET='define addrv4_vpnnet = 10.1.0.0/16
+define wan = "eth0"
+define lan = "eth1"
+define vpn = "tun0"
+define server = "10.10.10.1"
+
+table inet filter {
+	chain input {
+		type filter hook input priority 0; policy drop;
+	}
+	chain forward {
+		type filter hook forward priority 1; policy drop;
+
+		iifname $lan oifname $lan accept;
+
+		iifname $lan oifname $wan ct state new accept
+		iifname $lan oifname $wan ct state {established, related} accept
+
+		iifname $wan oifname $lan ct state {established, related} accept
+
+		iifname $vpn oifname $wan accept
+		iifname $wan oifname $vpn accept
+		iifname $lan oifname $vpn accept
+		iifname $vpn oifname $lan accept
+
+		iifname $lan oifname $server accept
+		iifname $server oifname $lan accept
+		iifname $server oifname $wan accept
+		iifname $wan oifname $server accept
+	}
+	chain output {
+		type filter hook output priority 0; policy drop;
+	}
+}
+
+table nat {
+	chain prerouting {
+		type nat hook prerouting priority -100; policy accept;
+		iifname $wan tcp dport 10000 dnat to $server:10000;
+	}
+	chain postrouting {
+		type nat hook postrouting priority 100; policy accept;
+		ip saddr $addrv4_vpnnet counter masquerade fully-random comment "masquerade ipv4"
+		oifname $vpn masquerade
+		oifname $wan masquerade
+	}
+}'
+
+$NFT -c -o -f - <<< $RULESET

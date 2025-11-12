@@ -1,0 +1,64 @@
+# counter name tcp dport map {443 : "cnt1", 80 : "cnt2", 22 : "cnt1"}
+[
+    {
+        "counter": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            22,
+                            "cnt1"
+                        ],
+                        [
+                            80,
+                            "cnt2"
+                        ],
+                        [
+                            443,
+                            "cnt1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]
+
+# quota name tcp dport map {443 : "qt1", 80 : "qt2", 22 : "qt1"}
+[
+    {
+        "quota": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            22,
+                            "qt1"
+                        ],
+                        [
+                            80,
+                            "qt2"
+                        ],
+                        [
+                            443,
+                            "qt1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]
+

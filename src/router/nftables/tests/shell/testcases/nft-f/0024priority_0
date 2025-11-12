@@ -1,0 +1,14 @@
+#!/bin/bash
+
+RULESET="
+table inet statelessnat {
+    chain prerouting {
+        type filter hook prerouting priority -100;
+        ip daddr set numgen inc mod 16 map { 0-7 : 10.0.1.1, 8- 15 : 10.0.1.2 }
+    }
+    chain postrouting {
+        type filter hook postrouting priority 100
+    }
+}"
+
+exec $NFT -f - <<< "$RULESET"

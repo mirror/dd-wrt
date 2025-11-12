@@ -1,0 +1,34 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "test",
+        "handle": 0,
+        "flags": [
+          "dormant"
+        ]
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "test",
+        "name": "ingress",
+        "handle": 0,
+        "dev": "dummy1",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": 0,
+        "policy": "drop"
+      }
+    }
+  ]
+}

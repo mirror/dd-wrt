@@ -1,0 +1,7 @@
+table ip t {
+	chain c {
+		type filter hook output priority filter; policy accept;
+		ip daddr { 192.168.0.1, 192.168.0.2, 192.168.0.3 }
+		oifname "doesntexist" tcp dport { 22, 23 } counter packets 0 bytes 0
+	}
+}

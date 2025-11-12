@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		ip saddr 2.2.2.2 counter packets 0 bytes 0
+	}
+}

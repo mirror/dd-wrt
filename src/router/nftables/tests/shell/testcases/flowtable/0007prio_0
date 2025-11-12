@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+format_offset () {
+	i=$1
+	if ((i == 0))
+	then
+		echo ""
+	elif ((i > 0))
+	then
+		echo "+$i"
+	else
+		echo "$i"
+	fi
+}
+
+$NFT add table t
+for offset in -11 -10 0 10 11
+do
+	$NFT add flowtable t f "{ hook ingress priority filter `format_offset $offset`; devices = { lo }; }"
+	$NFT delete flowtable t f
+done
+

@@ -1,0 +1,5 @@
+table ip t {
+        chain c {
+		counter name meta mark >> 88888888888888888888
+        }
+}

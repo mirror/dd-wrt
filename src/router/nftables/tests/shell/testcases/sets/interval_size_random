@@ -1,0 +1,115 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_rbtree_size_limit)
+
+generate_ip() {
+	local first=($1)
+	echo -n "$first.$((RANDOM % 256)).$((RANDOM % 256)).$((RANDOM % 256))"
+}
+
+ip_to_int() {
+	local IFS='.'
+	local ip=($1)
+	printf '%d' "$((${ip[0]}<<24 | ${ip[1]}<<16 | ${ip[2]}<<8 | ${ip[3]}))"
+}
+
+compare_ips() {
+	local ip1=$(ip_to_int $1)
+	local ip2=$(ip_to_int $2)
+	if [ "$ip1" -lt "$ip2" ]; then
+		echo "$1"
+	elif [ "$ip1" -gt "$ip2" ]; then
+		echo "$2"
+	else
+		echo "$1"
+	fi
+}
+
+generate_range() {
+	start=$(generate_ip $1)
+	end=$(generate_ip $1)
+	result=$(compare_ips $start $end)
+	if [[ "$result" != "$start" ]]
+	then
+		temp=$start
+		start=$end
+		end=$temp
+	fi
+	echo -n "$start-$end"
+}
+
+generate_prefix() {
+	prefix=$(generate_ip $1 | cut -d. -f1-3)
+	echo -n "$prefix.0/24"
+}
+
+generate_intervals() {
+	echo "define x = {"
+	# not so random, first octet in IP address is $i, this cannot go over 255
+	iter=$((RANDOM % 255 + 1))
+
+	[ $(($RANDOM % 2)) -eq 0 ] && echo "0.0.0.0,"
+
+	for ((i=0; i<iter; i++)); do
+		case $((RANDOM % 3)) in
+		0) generate_ip $i;;
+		1) generate_range $i;;
+		2) generate_prefix $i;;
+		esac
+		echo ","
+	done
+
+	[ $(($RANDOM % 2)) -eq 0 ] && echo "255.255.255.255,"
+
+	echo "}"
+}
+
+run_test() {
+	local count=($1)
+	local elems=($2)
+	local ruleset=($3)
+	echo "table inet x {
+	set y {
+		include \"$elems\"
+		typeof ip saddr
+		flags interval
+		size $count
+		elements = { \$x }
+	}
+      }" > $ruleset
+}
+
+count_elems() {
+	local elems=($2)
+	count=$(wc -l $elems_file | cut -f1 -d' ')
+	# subtract enclosing define lines
+	count=$(($count-2))
+	echo $count
+}
+
+elems_file=$(mktemp /tmp/elems-XXXXX.nft)
+ruleset_file=$(mktemp /tmp/ruleset-XXXXX.nft)
+
+if [ ! -w "$elems_file" ] ; then
+	# cwd might be readonly, mark as skip.
+	echo "Failed to create tmp file" >&2
+	exit 77
+fi
+
+trap "rm -rf $elems_file $ruleset_file" EXIT
+
+generate_intervals > $elems_file
+count=$(count_elems $elems_file)
+
+run_test $count $elems_file $ruleset_file
+$NFT -f $ruleset_file || exit 1
+
+$NFT flush ruleset
+
+# subtract 1 to size, too small, it should fail
+count=$(($count-1))
+
+run_test $count $elems_file $ruleset_file
+$NFT -f $ruleset_file && exit 1
+
+exit 0

@@ -1,0 +1,15 @@
+# rt classid "cosmos"
+ip test-ip4 input
+  [ rt load classid => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# rt ipsec exists
+ip test-ip4 input
+  [ rt load ipsec => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# rt ipsec missing
+ip test-ip4 input
+  [ rt load ipsec => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+

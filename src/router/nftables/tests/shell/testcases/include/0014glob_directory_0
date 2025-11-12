@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Must not be confused in matched subdirectories.
+
+set -e
+
+tmpdir1=$(mktemp -d)
+if [ ! -d $tmpdir1 ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfile1=$(mktemp -p $tmpdir1)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpdir2=$(mktemp -p $tmpdir1 -d)
+if [ ! -w $tmpdir2 ] ; then
+        echo "Failed to create the second tmp directory" >&2
+        exit 0
+fi
+
+tmpdir3=$(mktemp -p $tmpdir2 -d)
+if [ ! -w $tmpdir3 ] ; then
+        echo "Failed to create the third tmp directory" >&2
+        exit 0
+fi
+
+# cleanup if aborted
+trap "rm -rf $tmpfile1 && rmdir $tmpdir3 && rmdir $tmpdir2 && rmdir $tmpdir1" EXIT
+
+RULESET1="include \"$tmpdir2/*\""
+
+echo "$RULESET1" > $tmpfile1
+
+$NFT -f $tmpfile1
+
+if [ $? -ne 0 ] ; then
+        echo "E: tried to include a matched directory" >&2
+        exit 1
+fi

@@ -1,0 +1,6 @@
+table ip test {
+        chain y {
+                redirect to :tcp dport map { 83 : 80/3, 84 :4 }
+        }
+}
+

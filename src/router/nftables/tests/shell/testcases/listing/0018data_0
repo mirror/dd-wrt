@@ -1,0 +1,18 @@
+#!/bin/bash
+
+EXPECTED="table inet filter {
+	map ipmap {
+		type ipv4_addr : ipv4_addr
+	}
+}"
+
+set -e
+
+$NFT -f - <<< "$EXPECTED"
+$NFT flush map inet filter ipmap
+
+GET="$($NFT list map inet filter ipmap)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

@@ -1,0 +1,243 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "ssh_input",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "log_and_drop",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "other_input",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "wan_input",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "prerouting",
+        "handle": 0,
+        "type": "filter",
+        "hook": "prerouting",
+        "prio": -300,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "portmap",
+        "table": "filter",
+        "type": "inet_service",
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "timeout"
+        ],
+        "gc-interval": 10,
+        "elem": [
+          [
+            22,
+            {
+              "jump": {
+                "target": "ssh_input"
+              }
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "portaddrmap",
+        "table": "filter",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "th",
+                  "field": "dport"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "timeout"
+        ],
+        "gc-interval": 10,
+        "elem": [
+          [
+            {
+              "concat": [
+                "1.2.3.4",
+                22
+              ]
+            },
+            {
+              "jump": {
+                "target": "ssh_input"
+              }
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "log_and_drop",
+        "handle": 0,
+        "expr": [
+          {
+            "drop": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "other_input",
+        "handle": 0,
+        "expr": [
+          {
+            "goto": {
+              "target": "log_and_drop"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "wan_input",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "daddr"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  }
+                ]
+              },
+              "data": "@portaddrmap"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "wan_input",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "data": "@portmap"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "prerouting",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "meta": {
+                  "key": "iif"
+                }
+              },
+              "data": {
+                "set": [
+                  [
+                    "lo",
+                    {
+                      "jump": {
+                        "target": "wan_input"
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

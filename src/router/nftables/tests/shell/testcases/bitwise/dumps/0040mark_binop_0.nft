@@ -1,0 +1,6 @@
+table ip t {
+	chain c {
+		type filter hook output priority filter; policy accept;
+		oif "lo" ct mark set (meta mark | 0x00000010) << 8
+	}
+}

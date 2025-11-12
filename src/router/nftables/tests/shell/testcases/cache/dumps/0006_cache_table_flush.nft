@@ -1,0 +1,14 @@
+table ip x {
+	map mapping {
+		type ipv4_addr : inet_service
+		size 65535
+		flags dynamic,timeout
+	}
+
+	chain y {
+		update @mapping { ip saddr : tcp sport }
+	}
+
+	chain z {
+	}
+}

@@ -1,0 +1,6 @@
+table ip x {
+	map y {
+		type ipv4_addr : ipv4_addr
+		flags timeout
+	}
+}

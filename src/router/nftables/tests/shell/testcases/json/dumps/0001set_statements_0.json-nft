@@ -1,0 +1,100 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "testt",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "testt",
+        "name": "testc",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "ssh_meter",
+        "table": "testt",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "size": 65535,
+        "flags": [
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "testt",
+        "chain": "testc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 22
+            }
+          },
+          {
+            "match": {
+              "op": "in",
+              "left": {
+                "ct": {
+                  "key": "state"
+                }
+              },
+              "right": "new"
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "set": "@ssh_meter",
+              "stmt": [
+                {
+                  "limit": {
+                    "rate": 10,
+                    "burst": 5,
+                    "per": "second"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    }
+  ]
+}

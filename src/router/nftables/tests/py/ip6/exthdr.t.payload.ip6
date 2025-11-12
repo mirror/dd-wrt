@@ -1,0 +1,60 @@
+# exthdr hbh exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr rt exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 43 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr frag exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 44 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr dst exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 60 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr mh exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 135 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr hbh missing
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# exthdr hbh == exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr hbh == missing
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# exthdr hbh != exists
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp neq reg 1 0x00000001 ]
+
+# exthdr hbh != missing
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# exthdr hbh 1
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# exthdr hbh 0
+ip6 test-ip6 input
+  [ exthdr load ipv6 1b @ 0 + 0 present => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+

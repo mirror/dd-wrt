@@ -1,0 +1,26 @@
+#!/bin/bash
+
+RULESET='add table ip filter
+add map ip filter group_10060 { type ipv4_addr : classid; flags interval; }
+add element ip filter group_10060 { 10.1.26.2/32 : "1:0xbbf8" }
+add element ip filter group_10060 { 10.1.26.3/32 : "1:0xc1ad" }
+add element ip filter group_10060 { 10.1.26.4/32 : "1:0xb2d7" }
+add element ip filter group_10060 { 10.1.26.5/32 : "1:0xf705" }
+add element ip filter group_10060 { 10.1.26.6/32 : "1:0xb895" }
+add element ip filter group_10060 { 10.1.26.7/32 : "1:0xec4c" }
+add element ip filter group_10060 { 10.1.26.8/32 : "1:0xde78" }
+add element ip filter group_10060 { 10.1.26.9/32 : "1:0xb4f3" }
+add element ip filter group_10060 { 10.1.26.10/32 : "1:0xdec6" }
+add element ip filter group_10060 { 10.1.26.11/32 : "1:0xb4c0" }
+add element ip filter group_10060 { 10.1.26.12/32 : "1:0xb4a2" }
+add element ip filter group_10060 { 10.1.26.13/32 : "1:0xa8ab" }
+add element ip filter group_10060 { 10.1.26.14/32 : "1:0xb3c1" }'
+
+set -e
+$NFT -f - <<< "$RULESET"
+
+RULESET='delete element ip filter group_10060 { 10.1.26.13/32 }
+delete element ip filter group_10060 { 10.1.26.14/32 }
+delete element ip filter group_10060 { 10.1.26.12/32 }'
+
+$NFT -f - <<< "$RULESET"

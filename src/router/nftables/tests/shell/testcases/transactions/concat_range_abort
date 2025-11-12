@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+set -e
+
+$NFT -f /dev/stdin <<EOF
+table ip x {
+        map m {
+                typeof ip saddr . meta mark : verdict
+                flags interval
+                counter
+                elements = {
+                        127.0.0.1-127.0.0.4 . 0x123434-0xb00122 : jump foo,
+                }
+        }
+
+	chain foo {
+		accept
+	}
+}
+EOF
+
+$NFT -f /dev/stdin <<EOF
+add chain ip x bar
+add element ip x m { 1.2.3.4 . 42 : jump bar }
+delete set ip x m
+EOF

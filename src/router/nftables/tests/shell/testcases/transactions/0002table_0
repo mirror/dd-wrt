@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table x
+delete table x
+add table x
+add chain x y { type nat hook prerouting priority 0; policy accept; }
+add table x { flags dormant; }"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

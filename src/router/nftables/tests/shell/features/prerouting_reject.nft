@@ -1,0 +1,8 @@
+# f53b9b0bdc59 netfilter: introduce support for reject at prerouting stage
+# v5.9-rc1~133^2~302^2~11
+table inet t {
+	chain nat_filter {
+		type filter hook prerouting priority 0; policy accept;
+		reject with icmpx type host-unreachable
+	}
+}

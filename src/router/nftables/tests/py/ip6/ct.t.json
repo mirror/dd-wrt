@@ -1,0 +1,161 @@
+# ct mark set ip6 dscp << 2 | 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "<<": [
+                            {
+                                "payload": {
+                                    "field": "dscp",
+                                    "protocol": "ip6"
+                                }
+                            },
+                            2
+                        ]
+                    },
+                    16
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip6 dscp << 26 | 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "<<": [
+                            {
+                                "payload": {
+                                    "field": "dscp",
+                                    "protocol": "ip6"
+                                }
+                            },
+                            26
+                        ]
+                    },
+                    16
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip6 dscp | 0x04
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip6"
+                        }
+                    },
+                    4
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip6 dscp | 0xff000000
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip6"
+                        }
+                    },
+                    4278190080
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip6 dscp & 0x0f << 2
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip6"
+                        }
+                    },
+                    60
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ct mark | ip6 dscp | 0x200 counter
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                  {
+                    "ct": {
+                      "key": "mark"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip6",
+                      "field": "dscp"
+                    }
+                  },
+                  512
+                ]
+            }
+        }
+    },
+    {
+        "counter": null
+    }
+]

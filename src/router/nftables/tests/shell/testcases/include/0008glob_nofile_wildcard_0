@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# When using wildcards, not having any match is not an error.
+
+set -e
+
+tmpdir=$(mktemp -d)
+if [ ! -d $tmpdir ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+# remove the directory
+rmdir $tmpdir
+
+tmpfile1=$(mktemp)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+# cleanup if aborted
+trap "rm -rf $tmpfile1" EXIT
+
+RULESET1="include \"$tmpdir/non_existent_file*.nft\""
+
+echo "$RULESET1" > $tmpfile1
+
+$NFT -f $tmpfile1
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

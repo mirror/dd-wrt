@@ -1,0 +1,5 @@
+table ip nat {
+	chain postrouting {
+		snat to ip saddr map { 1.1.1.1 : 2.2.2.2 }
+	}
+}

@@ -1,0 +1,5 @@
+table inet t {
+        chain c {
+		reset tcp option fastopen
+	}
+}

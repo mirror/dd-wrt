@@ -1,0 +1,85 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "nat",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "nat",
+        "name": "prerouting",
+        "handle": 0,
+        "type": "nat",
+        "hook": "prerouting",
+        "prio": -100,
+        "policy": "accept"
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "set_with_interval",
+        "table": "nat",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "flags": [
+          "interval"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "nat",
+        "chain": "prerouting",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": {
+                "set": [
+                  "tcp",
+                  "udp"
+                ]
+              }
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "th",
+                  "field": "dport"
+                }
+              },
+              "right": 443
+            }
+          },
+          {
+            "dnat": {
+              "addr": "10.0.0.1"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

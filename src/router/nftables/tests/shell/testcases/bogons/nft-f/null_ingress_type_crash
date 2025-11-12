@@ -1,0 +1,6 @@
+table netdev filter1 {
+	chain c {
+		devices = { lo }
+	}
+}
+list ruleset

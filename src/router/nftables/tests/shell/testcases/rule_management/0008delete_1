@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# tests for Netfilter bug #965 and the related fix
+# (regarding rule management with a given position/handle spec)
+
+set -e
+$NFT add table t
+$NFT add chain t c
+
+# this should fail, we don't allow delete with position
+$NFT delete rule t c position 2 drop 2>/dev/null || exit 0
+echo "E: allowed position spec with delete action" >&2
+exit 1

@@ -1,0 +1,53 @@
+# osf name "Linux"
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ cmp eq reg 1 0x756e694c 0x00000078 0x00000000 0x00000000 ]
+
+# osf ttl loose name "Linux"
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ cmp eq reg 1 0x756e694c 0x00000078 0x00000000 0x00000000 ]
+
+# osf ttl skip name "Linux"
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ cmp eq reg 1 0x756e694c 0x00000078 0x00000000 0x00000000 ]
+
+# osf ttl skip version "Linux:3.0"
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ cmp eq reg 1 0x756e694c 0x2e333a78 0x00000030 0x00000000 ]
+
+# osf name { "Windows", "MacOs" }
+__set%d osfinet 3 size 2
+__set%d osfinet 0
+	element 646e6957 0073776f 00000000 00000000  : 0 [end]	element 4f63614d 00000073 00000000 00000000  : 0 [end]
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# osf version { "Windows:XP", "MacOs:Sierra" }
+__set%d osfinet 3 size 2
+__set%d osfinet 0
+	element 646e6957 3a73776f 00005058 00000000  : 0 [end]	element 4f63614d 69533a73 61727265 00000000  : 0 [end]
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct mark set osf name map { "Windows" : 0x00000001, "MacOs" : 0x00000002 }
+__map%d osfinet b size 2
+__map%d osfinet 0
+	element 646e6957 0073776f 00000000 00000000  : 00000001 0 [end]	element 4f63614d 00000073 00000000 00000000  : 00000002 0 [end]
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set osf version map { "Windows:XP" : 0x00000003, "MacOs:Sierra" : 0x00000004 }
+__map%d osfinet b size 2
+__map%d osfinet 0
+	element 646e6957 3a73776f 00005058 00000000  : 00000003 0 [end]	element 4f63614d 69533a73 61727265 00000000  : 00000004 0 [end]
+inet osfinet osfchain
+  [ osf dreg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ ct set mark with reg 1 ]

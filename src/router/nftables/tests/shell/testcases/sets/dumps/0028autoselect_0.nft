@@ -1,0 +1,26 @@
+table ip t {
+	set s1 {
+		type inet_proto
+		size 65535
+		flags dynamic
+	}
+
+	set s2 {
+		type ipv4_addr
+		size 65535
+		flags dynamic
+	}
+
+	set s3 {
+		type ipv4_addr
+		size 1024
+		flags dynamic
+	}
+
+	chain c {
+		type filter hook input priority filter; policy accept;
+		iifname "foobar" add @s1 { ip protocol }
+		iifname "foobar" add @s2 { ip daddr }
+		iifname "foobar" add @s3 { ip daddr }
+	}
+}

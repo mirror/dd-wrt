@@ -1,0 +1,22 @@
+# iifname "foo" masquerade random
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "foo"
+        }
+    },
+    {
+        "masquerade": {
+            "flags": [
+                "random"
+            ]
+        }
+    }
+]
+

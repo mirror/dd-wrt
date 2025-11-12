@@ -1,0 +1,94 @@
+# meta nfproto ipv4 ip saddr 1.2.3.4
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "1.2.3.4"
+        }
+    }
+]
+
+# meta nfproto ipv6 meta l4proto tcp
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "nfproto" }
+            },
+	    "op": "==",
+            "right": "ipv6"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    }
+]
+
+# meta secpath missing
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "ipsec"
+                }
+            },
+            "op": "==",
+            "right": false
+        }
+    }
+]
+
+# ip saddr . ether saddr . meta l4proto { 1.2.3.4 . aa:bb:cc:dd:ee:ff . 6 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ether"
+                        }
+                    },
+                    {
+                        "meta": {
+                            "key": "l4proto"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "1.2.3.4",
+                            "aa:bb:cc:dd:ee:ff",
+                            6
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+

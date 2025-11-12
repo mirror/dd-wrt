@@ -1,0 +1,413 @@
+# udplite sport 80 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": 80
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite sport != 60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": 60
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite sport 50-70 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 50, 70 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite sport != 50-60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 50, 60 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite sport { 49, 50} drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    49,
+                    50
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# udplite sport != { 49, 50} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    49,
+                    50
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite dport 80 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": 80
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite dport != 60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": 60
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite dport 70-75 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 70, 75 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite dport != 50-60 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 50, 60 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite dport { 49, 50} drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    49,
+                    50
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# udplite dport != { 49, 50} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    49,
+                    50
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite checksum 6666 drop
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": 6666
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# udplite checksum != { 444, 555} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    444,
+                    555
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# udplite checksum 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# udplite checksum != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# udplite checksum 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# udplite checksum != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# udplite checksum { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# udplite checksum != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "udplite"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+

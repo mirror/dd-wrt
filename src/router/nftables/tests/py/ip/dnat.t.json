@@ -1,0 +1,743 @@
+# iifname "eth0" tcp dport 80-90 dnat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 80, 90 ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport != 80-90 dnat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 80, 90 ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport {80, 90, 23} dnat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    80,
+                    90
+                ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport != {80, 90, 23} dnat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    80,
+                    90
+                ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport != 23-34 dnat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 23, 34 ]
+            }
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 81 dnat to 192.168.3.2:8080
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 81
+        }
+    },
+    {
+        "dnat": {
+            "addr": "192.168.3.2",
+            "port": 8080
+        }
+    }
+]
+
+# dnat to ct mark map { 0x00000014 : 1.2.3.4}
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "ct": {
+                            "key": "mark"
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                "0x00000014",
+                                "1.2.3.4"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+
+# dnat to ct mark . ip daddr map { 0x00000014 . 1.1.1.1 : 1.2.3.4}
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "concat": [
+                            {
+                                "ct": {
+                                    "key": "mark"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "daddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        "0x00000014",
+                                        "1.1.1.1"
+                                    ]
+                                },
+                                "1.2.3.4"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 81 dnat to 192.168.3.2:8080-8999
+[
+    {
+	"match": {
+	    "left": {
+		"meta": {
+		    "key": "iifname"
+		}
+	    },
+	    "op": "==",
+	    "right": "eth0"
+	}
+    },
+    {
+	"match": {
+	    "left": {
+		"payload": {
+		    "field": "dport",
+		    "protocol": "tcp"
+		}
+	    },
+	    "op": "==",
+	    "right": 81
+	}
+    },
+    {
+	"dnat": {
+	    "addr": "192.168.3.2",
+	    "port": {
+		"range": [
+		    8080,
+		    8999
+		]
+	    }
+	}
+    }
+]
+
+# iifname "eth0" tcp dport 81 dnat to 192.168.3.2-192.168.3.4:8080-8999
+[
+    {
+	"match": {
+	    "left": {
+		"meta": {
+		    "key": "iifname"
+		}
+	    },
+	    "op": "==",
+	    "right": "eth0"
+	}
+    },
+    {
+	"match": {
+	    "left": {
+		"payload": {
+		    "field": "dport",
+		    "protocol": "tcp"
+		}
+	    },
+	    "op": "==",
+	    "right": 81
+	}
+    },
+    {
+	"dnat": {
+	    "addr": {
+		"range": [
+		    "192.168.3.2",
+		    "192.168.3.4"
+		]
+	    },
+	    "port": {
+		"range": [
+		    8080,
+		    8999
+		]
+	    }
+	}
+    }
+]
+
+# iifname "eth0" tcp dport 81 dnat to 192.168.3.2-192.168.3.4:8080
+[
+    {
+	"match": {
+	    "left": {
+		"meta": {
+		    "key": "iifname"
+		}
+	    },
+	    "op": "==",
+	    "right": "eth0"
+	}
+    },
+    {
+	"match": {
+	    "left": {
+		"payload": {
+		    "field": "dport",
+		    "protocol": "tcp"
+		}
+	    },
+	    "op": "==",
+	    "right": 81
+	}
+    },
+    {
+	"dnat": {
+	    "addr": {
+		"range": [
+		    "192.168.3.2",
+		    "192.168.3.4"
+		]
+	    },
+	    "port": 8080
+	}
+    }
+]
+
+# dnat ip to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.2 . 8888 - 8999 }
+[
+    {
+	"dnat": {
+	    "addr": {
+		"map": {
+		    "data": {
+			"set": [
+			    [
+				{
+				    "concat": [
+					"192.168.1.2",
+					80
+				    ]
+				},
+				{
+				    "concat": [
+					"10.141.10.2",
+					{
+					    "range": [
+						8888,
+						8999
+					    ]
+					}
+				    ]
+				}
+			    ]
+			]
+		    },
+		    "key": {
+			"concat": [
+			    {
+				"payload": {
+				    "field": "saddr",
+				    "protocol": "ip"
+				}
+			    },
+			    {
+				"payload": {
+				    "field": "dport",
+				    "protocol": "tcp"
+				}
+			    }
+			]
+		    }
+		}
+	    },
+	    "family": "ip"
+	}
+    }
+]
+
+# dnat ip to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.0/24  . 8888 - 8999 }
+[
+    {
+	"dnat": {
+	    "addr": {
+		"map": {
+		    "data": {
+			"set": [
+			    [
+				{
+				    "concat": [
+					"192.168.1.2",
+					80
+				    ]
+				},
+				{
+				    "concat": [
+					{
+					    "prefix": {
+						"addr": "10.141.10.0",
+						"len": 24
+					    }
+					},
+					{
+					    "range": [
+						8888,
+						8999
+					    ]
+					}
+				    ]
+				}
+			    ]
+			]
+		    },
+		    "key": {
+			"concat": [
+			    {
+				"payload": {
+				    "field": "saddr",
+				    "protocol": "ip"
+				}
+			    },
+			    {
+				"payload": {
+				    "field": "dport",
+				    "protocol": "tcp"
+				}
+			    }
+			]
+		    }
+		}
+	    },
+	    "family": "ip"
+	}
+    }
+]
+
+# dnat ip to ip saddr . tcp dport map { 192.168.1.2 . 80 : 10.141.10.0/24  . 80 }
+[
+    {
+	"dnat": {
+	    "addr": {
+		"map": {
+		    "data": {
+			"set": [
+			    [
+				{
+				    "concat": [
+					"192.168.1.2",
+					80
+				    ]
+				},
+				{
+				    "concat": [
+					{
+					    "prefix": {
+						"addr": "10.141.10.0",
+						"len": 24
+					    }
+					},
+					80
+				    ]
+				}
+			    ]
+			]
+		    },
+		    "key": {
+			"concat": [
+			    {
+				"payload": {
+				    "field": "saddr",
+				    "protocol": "ip"
+				}
+			    },
+			    {
+				"payload": {
+				    "field": "dport",
+				    "protocol": "tcp"
+				}
+			    }
+			]
+		    }
+		}
+	    },
+	    "family": "ip"
+	}
+    }
+]
+
+# ip daddr 192.168.0.1 dnat ip to tcp dport map { 443 : 10.141.10.4 . 8443, 80 : 10.141.10.4 . 8080 }
+[
+    {
+	"match": {
+	    "left": {
+		"payload": {
+		    "field": "daddr",
+		    "protocol": "ip"
+		}
+	    },
+	    "op": "==",
+	    "right": "192.168.0.1"
+	}
+    },
+    {
+	"dnat": {
+	    "addr": {
+		"map": {
+		    "data": {
+			"set": [
+			    [
+				80,
+				{
+				    "concat": [
+					"10.141.10.4",
+					8080
+				    ]
+				}
+			    ],
+			    [
+				443,
+				{
+				    "concat": [
+					"10.141.10.4",
+					8443
+				    ]
+				}
+			    ]
+			]
+		    },
+		    "key": {
+			"payload": {
+			    "field": "dport",
+			    "protocol": "tcp"
+			}
+		    }
+		}
+	    },
+	    "family": "ip"
+	}
+    }
+]
+
+# meta l4proto 6 dnat ip to iifname . ip saddr map { "enp2s0" . 10.1.1.136 : 1.1.2.69 . 22, "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 . 22 }
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "l4proto"
+                }
+            },
+            "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        "enp2s0",
+                                        "10.1.1.136"
+                                    ]
+                                },
+                                {
+                                    "concat": [
+                                        "1.1.2.69",
+                                        22
+                                    ]
+                                }
+                            ],
+                            [
+                                {
+                                    "concat": [
+                                        "enp2s0",
+                                        {
+                                            "range": [
+                                                "10.1.1.1",
+                                                "10.1.1.135"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "concat": [
+                                        {
+                                            "range": [
+                                                "1.1.2.66",
+                                                "1.84.236.78"
+                                            ]
+                                        },
+                                        22
+                                    ]
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "concat": [
+                            {
+                                "meta": {
+                                    "key": "iifname"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+
+# dnat ip to iifname . ip saddr map { "enp2s0" . 10.1.1.136 : 1.1.2.69/32, "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 }
+[
+    {
+        "dnat": {
+            "addr": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        "enp2s0",
+                                        "10.1.1.136"
+                                    ]
+                                },
+                                {
+                                    "prefix": {
+                                        "addr": "1.1.2.69",
+                                        "len": 32
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "concat": [
+                                        "enp2s0",
+                                        {
+                                            "range": [
+                                                "10.1.1.1",
+                                                "10.1.1.135"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "range": [
+                                        "1.1.2.66",
+                                        "1.84.236.78"
+                                    ]
+                                }
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "concat": [
+                            {
+                                "meta": {
+                                    "key": "iifname"
+                                }
+                            },
+                            {
+                                "payload": {
+                                    "field": "saddr",
+                                    "protocol": "ip"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "family": "ip"
+        }
+    }
+]
+

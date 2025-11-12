@@ -1,0 +1,8 @@
+# last
+ip
+  [ last never ]
+
+# last used 300s
+ip
+  [ last 300000 ]
+

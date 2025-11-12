@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+# test if using defines in interactive nft sessions works
+
+$NFT -i >/dev/null <<EOF
+add table inet t
+add chain inet t c
+define ports = { 22, 443 }
+add rule inet t c tcp dport \$ports accept
+add rule inet t c udp dport \$ports accept
+EOF
+
+$NFT -i >/dev/null <<EOF
+define port = 22
+flush chain inet t c
+redefine port = 443
+delete chain inet t c
+undefine port
+delete table inet t
+EOF

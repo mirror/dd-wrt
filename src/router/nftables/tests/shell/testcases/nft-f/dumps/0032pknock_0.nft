@@ -1,0 +1,25 @@
+table inet portknock {
+	set clients_ipv4 {
+		type ipv4_addr
+		size 65535
+		flags dynamic,timeout
+	}
+
+	set candidates_ipv4 {
+		type ipv4_addr . inet_service
+		size 65535
+		flags dynamic,timeout
+	}
+
+	chain input {
+		type filter hook input priority filter - 10; policy accept;
+		tcp dport 10001 add @candidates_ipv4 { ip saddr . 10002 timeout 1s }
+		tcp dport 10002 ip saddr . tcp dport @candidates_ipv4 add @candidates_ipv4 { ip saddr . 10003 timeout 1s }
+		tcp dport 10003 ip saddr . tcp dport @candidates_ipv4 add @candidates_ipv4 { ip saddr . 10004 timeout 1s }
+		tcp dport 10004 ip saddr . tcp dport @candidates_ipv4 add @candidates_ipv4 { ip saddr . 10005 timeout 1s }
+		tcp dport 10005 ip saddr . tcp dport @candidates_ipv4 add @clients_ipv4 { ip saddr timeout 10m } log prefix "Successful portknock: "
+		tcp dport 22 ip saddr @clients_ipv4 counter packets 0 bytes 0 accept
+		tcp dport 22 ct state established,related counter packets 0 bytes 0 accept
+		tcp dport 22 reject with tcp reset
+	}
+}

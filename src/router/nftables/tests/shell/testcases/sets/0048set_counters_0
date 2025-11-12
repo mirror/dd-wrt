@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_expr)
+
+set -e
+
+EXPECTED="table ip x {
+          set y {
+                  typeof ip saddr
+                  counter
+                  elements = { 192.168.10.35, 192.168.10.101, 192.168.10.135 }
+          }
+
+          chain z {
+                  type filter hook output priority filter; policy accept;
+                  ip daddr @y
+          }
+}"
+
+$NFT -f - <<< "$EXPECTED"

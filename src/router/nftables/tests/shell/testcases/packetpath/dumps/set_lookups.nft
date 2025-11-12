@@ -1,0 +1,51 @@
+table ip t {
+	set s {
+		type ipv4_addr . iface_index
+		flags interval
+		elements = { 127.0.0.1 . "lo",
+			     127.0.0.2 . "lo" }
+	}
+
+	set s2 {
+		typeof ip saddr . iif
+		elements = { 127.0.0.1 . "lo",
+			     127.0.0.2 . "lo" }
+	}
+
+	set s3 {
+		type iface_index
+		elements = { "lo" }
+	}
+
+	set s4 {
+		type iface_index
+		flags interval
+		elements = { "lo" }
+	}
+
+	set nomatch {
+		typeof ip saddr . iif
+		elements = { 127.0.0.3 . "lo" }
+	}
+
+	set nomatch2 {
+		type ipv4_addr . iface_index
+		elements = { 127.0.0.2 . 90000 }
+	}
+
+	chain c {
+		type filter hook input priority filter; policy accept;
+		icmp type echo-request ip saddr . iif @s counter packets 1 bytes 84
+		icmp type echo-request ip saddr . "lo" @s counter packets 1 bytes 84
+		icmp type echo-request ip saddr . "lo" @s counter packets 1 bytes 84
+		icmp type echo-request ip saddr . iif @s2 counter packets 1 bytes 84
+		icmp type echo-request ip saddr . "lo" @s2 counter packets 1 bytes 84
+		icmp type echo-request ip saddr . "lo" @s2 counter packets 1 bytes 84
+		icmp type echo-request ip daddr . "lo" @s counter packets 1 bytes 84
+		icmp type echo-request ip daddr . "lo" @s2 counter packets 1 bytes 84
+		icmp type echo-request iif @s3 counter packets 1 bytes 84
+		icmp type echo-request iif @s4 counter packets 1 bytes 84
+		ip daddr . "lo" @nomatch counter packets 0 bytes 0 drop
+		ip daddr . iif @nomatch2 counter packets 0 bytes 0 drop
+	}
+}

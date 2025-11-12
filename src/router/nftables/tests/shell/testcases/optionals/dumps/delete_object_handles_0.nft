@@ -1,0 +1,18 @@
+table ip test-ip {
+	quota https-quota {
+		25 mbytes
+	}
+
+	map ports {
+		type inet_service : quota
+	}
+}
+table ip6 test-ip6 {
+	quota http-quota {
+		over 25 mbytes
+	}
+
+	counter http-traffic {
+		packets 0 bytes 0
+	}
+}

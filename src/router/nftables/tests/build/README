@@ -1,0 +1,12 @@
+Testsuite for NFT compile options.
+
+In this testsuite, automated testing is done for following nft compile options:
+
+  cli support
+  enable debugging symbols
+  use mini-gmp
+  enable man page
+  libxtables support
+
+Run the test script 'run-tests.sh' as root user: ./run-tests.sh
+Any error encountered on compiling is saved in tests/build/tests.log file.

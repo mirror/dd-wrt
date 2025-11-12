@@ -1,0 +1,62 @@
+table inet testifsets {
+	set simple {
+		type ifname
+		elements = { "abcdef0",
+			     "abcdef1",
+			     "othername" }
+	}
+
+	set simple_wild {
+		type ifname
+		flags interval
+		elements = { "abcdef*",
+			     "othername",
+			     "ppp0" }
+	}
+
+	set concat {
+		type ipv4_addr . ifname
+		elements = { 10.1.2.2 . "abcdef0",
+			     10.1.2.2 . "abcdef1" }
+	}
+
+	set concat_wild {
+		type ipv4_addr . ifname
+		flags interval
+		elements = { 10.1.2.2 . "abcdef*",
+			     10.1.2.1 . "bar",
+			     1.1.2.0/24 . "abcdef0",
+			     12.2.2.0/24 . "abcdef*" }
+	}
+
+	map map_wild {
+		type ifname : verdict
+		flags interval
+		elements = { "abcdef*" : jump do_nothing,
+			     "eth0" : jump do_nothing }
+	}
+
+	chain v4icmp {
+		iifname @simple counter packets 0 bytes 0
+		iifname @simple_wild counter packets 0 bytes 0
+		iifname { "eth0", "abcdef0" } counter packets 0 bytes 0
+		iifname { "abcdef*", "eth0" } counter packets 0 bytes 0
+		iifname vmap @map_wild
+	}
+
+	chain v4icmpc {
+		ip saddr . iifname @concat counter packets 0 bytes 0
+		ip saddr . iifname @concat_wild counter packets 0 bytes 0
+		ip saddr . iifname { 10.1.2.2 . "abcdef0" } counter packets 0 bytes 0
+		ip saddr . iifname { 10.1.2.2 . "abcdef*" } counter packets 0 bytes 0
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		ip protocol icmp jump v4icmp
+		ip protocol icmp goto v4icmpc
+	}
+
+	chain do_nothing {
+	}
+}

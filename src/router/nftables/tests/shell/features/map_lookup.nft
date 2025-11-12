@@ -1,0 +1,11 @@
+# a4878eeae390 ("netfilter: nf_tables: relax set/map validation checks")
+# v6.5-rc1~163^2~256^2~8
+table ip t {
+        map m {
+                typeof ip daddr : meta mark
+        }
+
+        chain c {
+                ip saddr @m
+        }
+}

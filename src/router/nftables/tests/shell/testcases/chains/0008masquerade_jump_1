@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain t output {type nat hook output priority 0 \; }
+$NFT add chain t c1
+$NFT add rule t c1 masquerade
+
+# kernel should return EOPNOTSUPP
+$NFT add rule t output jump c1 2>/dev/null || exit 0
+echo "E: accepted masquerade in output hook" >&2
+exit 1

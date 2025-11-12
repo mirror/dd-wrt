@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_cttimeout)
+
+EXPECTED='table ip filter {
+	ct timeout cttime{
+		protocol tcp
+		l3proto ip
+		policy = { established : 123, close : 12 }
+	}
+
+	chain c {
+		ct timeout set "cttime"
+	}
+}'
+
+set -e
+$NFT -f - <<< "$EXPECTED"

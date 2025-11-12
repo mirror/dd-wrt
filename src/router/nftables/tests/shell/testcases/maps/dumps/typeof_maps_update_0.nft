@@ -1,0 +1,21 @@
+table ip kube-nfproxy-v4 {
+	map sticky-set-svc-M53CN2XYVUHRQ7UB {
+		type ipv4_addr : mark
+		size 65535
+		timeout 6m
+	}
+
+	map sticky-set-svc-153CN2XYVUHRQ7UB {
+		typeof ip daddr : meta mark
+		size 65535
+		timeout 1m
+	}
+
+	chain k8s-nfproxy-sep-TMVEFT7EX55F4T62 {
+		update @sticky-set-svc-M53CN2XYVUHRQ7UB { ip saddr : 0x00000002 }
+	}
+
+	chain k8s-nfproxy-sep-GMVEFT7EX55F4T62 {
+		update @sticky-set-svc-153CN2XYVUHRQ7UB { ip saddr : 0x00000003 }
+	}
+}

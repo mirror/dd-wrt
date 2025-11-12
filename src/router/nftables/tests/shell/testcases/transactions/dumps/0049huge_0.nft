@@ -1,0 +1,749 @@
+table inet firewalld {
+	chain raw_PREROUTING {
+		type filter hook prerouting priority raw + 10; policy accept;
+		icmpv6 type { nd-router-advert, nd-neighbor-solicit } accept
+		meta nfproto ipv6 fib saddr . iif check missing drop
+		jump raw_PREROUTING_ZONES
+	}
+
+	chain raw_PREROUTING_ZONES {
+		iifname "perm_dummy" goto raw_PRE_work
+		iifname "perm_dummy2" goto raw_PRE_trusted
+		goto raw_PRE_public
+	}
+
+	chain mangle_PREROUTING {
+		type filter hook prerouting priority mangle + 10; policy accept;
+		jump mangle_PREROUTING_ZONES
+	}
+
+	chain mangle_PREROUTING_ZONES {
+		iifname "perm_dummy" goto mangle_PRE_work
+		iifname "perm_dummy2" goto mangle_PRE_trusted
+		goto mangle_PRE_public
+	}
+
+	chain filter_INPUT {
+		type filter hook input priority filter + 10; policy accept;
+		ct state { established, related } accept
+		ct status dnat accept
+		iifname "lo" accept
+		jump filter_INPUT_ZONES
+		ct state invalid drop
+		reject with icmpx admin-prohibited
+	}
+
+	chain filter_FORWARD {
+		type filter hook forward priority filter + 10; policy accept;
+		ct state { established, related } accept
+		ct status dnat accept
+		iifname "lo" accept
+		ip6 daddr { ::/96, ::ffff:0.0.0.0/96, 2002::/24, 2002:a00::/24, 2002:7f00::/24, 2002:a9fe::/32, 2002:ac10::/28, 2002:c0a8::/32, 2002:e000::/19 } reject with icmpv6 addr-unreachable
+		jump filter_FORWARD_IN_ZONES
+		jump filter_FORWARD_OUT_ZONES
+		ct state invalid drop
+		reject with icmpx admin-prohibited
+	}
+
+	chain filter_OUTPUT {
+		type filter hook output priority filter + 10; policy accept;
+		oifname "lo" accept
+		ip6 daddr { ::/96, ::ffff:0.0.0.0/96, 2002::/24, 2002:a00::/24, 2002:7f00::/24, 2002:a9fe::/32, 2002:ac10::/28, 2002:c0a8::/32, 2002:e000::/19 } reject with icmpv6 addr-unreachable
+	}
+
+	chain filter_INPUT_ZONES {
+		iifname "perm_dummy" goto filter_IN_work
+		iifname "perm_dummy2" goto filter_IN_trusted
+		goto filter_IN_public
+	}
+
+	chain filter_FORWARD_IN_ZONES {
+		iifname "perm_dummy" goto filter_FWDI_work
+		iifname "perm_dummy2" goto filter_FWDI_trusted
+		goto filter_FWDI_public
+	}
+
+	chain filter_FORWARD_OUT_ZONES {
+		oifname "perm_dummy" goto filter_FWDO_work
+		oifname "perm_dummy2" goto filter_FWDO_trusted
+		goto filter_FWDO_public
+	}
+
+	chain raw_PRE_public {
+		jump raw_PRE_public_pre
+		jump raw_PRE_public_log
+		jump raw_PRE_public_deny
+		jump raw_PRE_public_allow
+		jump raw_PRE_public_post
+	}
+
+	chain raw_PRE_public_pre {
+	}
+
+	chain raw_PRE_public_log {
+	}
+
+	chain raw_PRE_public_deny {
+	}
+
+	chain raw_PRE_public_allow {
+	}
+
+	chain raw_PRE_public_post {
+	}
+
+	chain filter_IN_public {
+		jump filter_IN_public_pre
+		jump filter_IN_public_log
+		jump filter_IN_public_deny
+		jump filter_IN_public_allow
+		jump filter_IN_public_post
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_IN_public_pre {
+	}
+
+	chain filter_IN_public_log {
+	}
+
+	chain filter_IN_public_deny {
+	}
+
+	chain filter_IN_public_allow {
+		tcp dport 22 ct state { new, untracked } accept
+		ip6 daddr fe80::/64 udp dport 546 ct state { new, untracked } accept
+	}
+
+	chain filter_IN_public_post {
+	}
+
+	chain filter_FWDI_public {
+		jump filter_FWDI_public_pre
+		jump filter_FWDI_public_log
+		jump filter_FWDI_public_deny
+		jump filter_FWDI_public_allow
+		jump filter_FWDI_public_post
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_FWDI_public_pre {
+	}
+
+	chain filter_FWDI_public_log {
+	}
+
+	chain filter_FWDI_public_deny {
+	}
+
+	chain filter_FWDI_public_allow {
+	}
+
+	chain filter_FWDI_public_post {
+	}
+
+	chain mangle_PRE_public {
+		jump mangle_PRE_public_pre
+		jump mangle_PRE_public_log
+		jump mangle_PRE_public_deny
+		jump mangle_PRE_public_allow
+		jump mangle_PRE_public_post
+	}
+
+	chain mangle_PRE_public_pre {
+	}
+
+	chain mangle_PRE_public_log {
+	}
+
+	chain mangle_PRE_public_deny {
+	}
+
+	chain mangle_PRE_public_allow {
+	}
+
+	chain mangle_PRE_public_post {
+	}
+
+	chain filter_FWDO_public {
+		jump filter_FWDO_public_pre
+		jump filter_FWDO_public_log
+		jump filter_FWDO_public_deny
+		jump filter_FWDO_public_allow
+		jump filter_FWDO_public_post
+	}
+
+	chain filter_FWDO_public_pre {
+	}
+
+	chain filter_FWDO_public_log {
+	}
+
+	chain filter_FWDO_public_deny {
+	}
+
+	chain filter_FWDO_public_allow {
+	}
+
+	chain filter_FWDO_public_post {
+	}
+
+	chain raw_PRE_trusted {
+		jump raw_PRE_trusted_pre
+		jump raw_PRE_trusted_log
+		jump raw_PRE_trusted_deny
+		jump raw_PRE_trusted_allow
+		jump raw_PRE_trusted_post
+	}
+
+	chain raw_PRE_trusted_pre {
+	}
+
+	chain raw_PRE_trusted_log {
+	}
+
+	chain raw_PRE_trusted_deny {
+	}
+
+	chain raw_PRE_trusted_allow {
+	}
+
+	chain raw_PRE_trusted_post {
+	}
+
+	chain mangle_PRE_trusted {
+		jump mangle_PRE_trusted_pre
+		jump mangle_PRE_trusted_log
+		jump mangle_PRE_trusted_deny
+		jump mangle_PRE_trusted_allow
+		jump mangle_PRE_trusted_post
+	}
+
+	chain mangle_PRE_trusted_pre {
+	}
+
+	chain mangle_PRE_trusted_log {
+	}
+
+	chain mangle_PRE_trusted_deny {
+	}
+
+	chain mangle_PRE_trusted_allow {
+	}
+
+	chain mangle_PRE_trusted_post {
+	}
+
+	chain filter_IN_trusted {
+		jump filter_IN_trusted_pre
+		jump filter_IN_trusted_log
+		jump filter_IN_trusted_deny
+		jump filter_IN_trusted_allow
+		jump filter_IN_trusted_post
+		accept
+	}
+
+	chain filter_IN_trusted_pre {
+	}
+
+	chain filter_IN_trusted_log {
+	}
+
+	chain filter_IN_trusted_deny {
+	}
+
+	chain filter_IN_trusted_allow {
+	}
+
+	chain filter_IN_trusted_post {
+	}
+
+	chain filter_FWDI_trusted {
+		jump filter_FWDI_trusted_pre
+		jump filter_FWDI_trusted_log
+		jump filter_FWDI_trusted_deny
+		jump filter_FWDI_trusted_allow
+		jump filter_FWDI_trusted_post
+		accept
+	}
+
+	chain filter_FWDI_trusted_pre {
+	}
+
+	chain filter_FWDI_trusted_log {
+	}
+
+	chain filter_FWDI_trusted_deny {
+	}
+
+	chain filter_FWDI_trusted_allow {
+	}
+
+	chain filter_FWDI_trusted_post {
+	}
+
+	chain filter_FWDO_trusted {
+		jump filter_FWDO_trusted_pre
+		jump filter_FWDO_trusted_log
+		jump filter_FWDO_trusted_deny
+		jump filter_FWDO_trusted_allow
+		jump filter_FWDO_trusted_post
+		accept
+	}
+
+	chain filter_FWDO_trusted_pre {
+	}
+
+	chain filter_FWDO_trusted_log {
+	}
+
+	chain filter_FWDO_trusted_deny {
+	}
+
+	chain filter_FWDO_trusted_allow {
+	}
+
+	chain filter_FWDO_trusted_post {
+	}
+
+	chain raw_PRE_work {
+		jump raw_PRE_work_pre
+		jump raw_PRE_work_log
+		jump raw_PRE_work_deny
+		jump raw_PRE_work_allow
+		jump raw_PRE_work_post
+	}
+
+	chain raw_PRE_work_pre {
+	}
+
+	chain raw_PRE_work_log {
+	}
+
+	chain raw_PRE_work_deny {
+	}
+
+	chain raw_PRE_work_allow {
+	}
+
+	chain raw_PRE_work_post {
+	}
+
+	chain filter_IN_work {
+		jump filter_IN_work_pre
+		jump filter_IN_work_log
+		jump filter_IN_work_deny
+		jump filter_IN_work_allow
+		jump filter_IN_work_post
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_IN_work_pre {
+	}
+
+	chain filter_IN_work_log {
+	}
+
+	chain filter_IN_work_deny {
+	}
+
+	chain filter_IN_work_allow {
+		tcp dport 22 ct state { new, untracked } accept
+		ip6 daddr fe80::/64 udp dport 546 ct state { new, untracked } accept
+	}
+
+	chain filter_IN_work_post {
+	}
+
+	chain mangle_PRE_work {
+		jump mangle_PRE_work_pre
+		jump mangle_PRE_work_log
+		jump mangle_PRE_work_deny
+		jump mangle_PRE_work_allow
+		jump mangle_PRE_work_post
+	}
+
+	chain mangle_PRE_work_pre {
+	}
+
+	chain mangle_PRE_work_log {
+	}
+
+	chain mangle_PRE_work_deny {
+	}
+
+	chain mangle_PRE_work_allow {
+	}
+
+	chain mangle_PRE_work_post {
+	}
+
+	chain filter_FWDI_work {
+		jump filter_FWDI_work_pre
+		jump filter_FWDI_work_log
+		jump filter_FWDI_work_deny
+		jump filter_FWDI_work_allow
+		jump filter_FWDI_work_post
+		meta l4proto { icmp, ipv6-icmp } accept
+	}
+
+	chain filter_FWDI_work_pre {
+	}
+
+	chain filter_FWDI_work_log {
+	}
+
+	chain filter_FWDI_work_deny {
+	}
+
+	chain filter_FWDI_work_allow {
+	}
+
+	chain filter_FWDI_work_post {
+	}
+
+	chain filter_FWDO_work {
+		jump filter_FWDO_work_pre
+		jump filter_FWDO_work_log
+		jump filter_FWDO_work_deny
+		jump filter_FWDO_work_allow
+		jump filter_FWDO_work_post
+	}
+
+	chain filter_FWDO_work_pre {
+	}
+
+	chain filter_FWDO_work_log {
+	}
+
+	chain filter_FWDO_work_deny {
+	}
+
+	chain filter_FWDO_work_allow {
+	}
+
+	chain filter_FWDO_work_post {
+	}
+}
+table ip firewalld {
+	chain nat_PREROUTING {
+		type nat hook prerouting priority dstnat + 10; policy accept;
+		jump nat_PREROUTING_ZONES
+	}
+
+	chain nat_PREROUTING_ZONES {
+		iifname "perm_dummy" goto nat_PRE_work
+		iifname "perm_dummy2" goto nat_PRE_trusted
+		goto nat_PRE_public
+	}
+
+	chain nat_POSTROUTING {
+		type nat hook postrouting priority srcnat + 10; policy accept;
+		jump nat_POSTROUTING_ZONES
+	}
+
+	chain nat_POSTROUTING_ZONES {
+		oifname "perm_dummy" goto nat_POST_work
+		oifname "perm_dummy2" goto nat_POST_trusted
+		goto nat_POST_public
+	}
+
+	chain nat_PRE_public {
+		jump nat_PRE_public_pre
+		jump nat_PRE_public_log
+		jump nat_PRE_public_deny
+		jump nat_PRE_public_allow
+		jump nat_PRE_public_post
+	}
+
+	chain nat_PRE_public_pre {
+	}
+
+	chain nat_PRE_public_log {
+	}
+
+	chain nat_PRE_public_deny {
+	}
+
+	chain nat_PRE_public_allow {
+	}
+
+	chain nat_PRE_public_post {
+	}
+
+	chain nat_POST_public {
+		jump nat_POST_public_pre
+		jump nat_POST_public_log
+		jump nat_POST_public_deny
+		jump nat_POST_public_allow
+		jump nat_POST_public_post
+	}
+
+	chain nat_POST_public_pre {
+	}
+
+	chain nat_POST_public_log {
+	}
+
+	chain nat_POST_public_deny {
+	}
+
+	chain nat_POST_public_allow {
+	}
+
+	chain nat_POST_public_post {
+	}
+
+	chain nat_PRE_trusted {
+		jump nat_PRE_trusted_pre
+		jump nat_PRE_trusted_log
+		jump nat_PRE_trusted_deny
+		jump nat_PRE_trusted_allow
+		jump nat_PRE_trusted_post
+	}
+
+	chain nat_PRE_trusted_pre {
+	}
+
+	chain nat_PRE_trusted_log {
+	}
+
+	chain nat_PRE_trusted_deny {
+	}
+
+	chain nat_PRE_trusted_allow {
+	}
+
+	chain nat_PRE_trusted_post {
+	}
+
+	chain nat_POST_trusted {
+		jump nat_POST_trusted_pre
+		jump nat_POST_trusted_log
+		jump nat_POST_trusted_deny
+		jump nat_POST_trusted_allow
+		jump nat_POST_trusted_post
+	}
+
+	chain nat_POST_trusted_pre {
+	}
+
+	chain nat_POST_trusted_log {
+	}
+
+	chain nat_POST_trusted_deny {
+	}
+
+	chain nat_POST_trusted_allow {
+	}
+
+	chain nat_POST_trusted_post {
+	}
+
+	chain nat_PRE_work {
+		jump nat_PRE_work_pre
+		jump nat_PRE_work_log
+		jump nat_PRE_work_deny
+		jump nat_PRE_work_allow
+		jump nat_PRE_work_post
+	}
+
+	chain nat_PRE_work_pre {
+	}
+
+	chain nat_PRE_work_log {
+	}
+
+	chain nat_PRE_work_deny {
+	}
+
+	chain nat_PRE_work_allow {
+	}
+
+	chain nat_PRE_work_post {
+	}
+
+	chain nat_POST_work {
+		jump nat_POST_work_pre
+		jump nat_POST_work_log
+		jump nat_POST_work_deny
+		jump nat_POST_work_allow
+		jump nat_POST_work_post
+	}
+
+	chain nat_POST_work_pre {
+	}
+
+	chain nat_POST_work_log {
+	}
+
+	chain nat_POST_work_deny {
+	}
+
+	chain nat_POST_work_allow {
+	}
+
+	chain nat_POST_work_post {
+	}
+}
+table ip6 firewalld {
+	chain nat_PREROUTING {
+		type nat hook prerouting priority dstnat + 10; policy accept;
+		jump nat_PREROUTING_ZONES
+	}
+
+	chain nat_PREROUTING_ZONES {
+		iifname "perm_dummy" goto nat_PRE_work
+		iifname "perm_dummy2" goto nat_PRE_trusted
+		goto nat_PRE_public
+	}
+
+	chain nat_POSTROUTING {
+		type nat hook postrouting priority srcnat + 10; policy accept;
+		jump nat_POSTROUTING_ZONES
+	}
+
+	chain nat_POSTROUTING_ZONES {
+		oifname "perm_dummy" goto nat_POST_work
+		oifname "perm_dummy2" goto nat_POST_trusted
+		goto nat_POST_public
+	}
+
+	chain nat_PRE_public {
+		jump nat_PRE_public_pre
+		jump nat_PRE_public_log
+		jump nat_PRE_public_deny
+		jump nat_PRE_public_allow
+		jump nat_PRE_public_post
+	}
+
+	chain nat_PRE_public_pre {
+	}
+
+	chain nat_PRE_public_log {
+	}
+
+	chain nat_PRE_public_deny {
+	}
+
+	chain nat_PRE_public_allow {
+	}
+
+	chain nat_PRE_public_post {
+	}
+
+	chain nat_POST_public {
+		jump nat_POST_public_pre
+		jump nat_POST_public_log
+		jump nat_POST_public_deny
+		jump nat_POST_public_allow
+		jump nat_POST_public_post
+	}
+
+	chain nat_POST_public_pre {
+	}
+
+	chain nat_POST_public_log {
+	}
+
+	chain nat_POST_public_deny {
+	}
+
+	chain nat_POST_public_allow {
+	}
+
+	chain nat_POST_public_post {
+	}
+
+	chain nat_PRE_trusted {
+		jump nat_PRE_trusted_pre
+		jump nat_PRE_trusted_log
+		jump nat_PRE_trusted_deny
+		jump nat_PRE_trusted_allow
+		jump nat_PRE_trusted_post
+	}
+
+	chain nat_PRE_trusted_pre {
+	}
+
+	chain nat_PRE_trusted_log {
+	}
+
+	chain nat_PRE_trusted_deny {
+	}
+
+	chain nat_PRE_trusted_allow {
+	}
+
+	chain nat_PRE_trusted_post {
+	}
+
+	chain nat_POST_trusted {
+		jump nat_POST_trusted_pre
+		jump nat_POST_trusted_log
+		jump nat_POST_trusted_deny
+		jump nat_POST_trusted_allow
+		jump nat_POST_trusted_post
+	}
+
+	chain nat_POST_trusted_pre {
+	}
+
+	chain nat_POST_trusted_log {
+	}
+
+	chain nat_POST_trusted_deny {
+	}
+
+	chain nat_POST_trusted_allow {
+	}
+
+	chain nat_POST_trusted_post {
+	}
+
+	chain nat_PRE_work {
+		jump nat_PRE_work_pre
+		jump nat_PRE_work_log
+		jump nat_PRE_work_deny
+		jump nat_PRE_work_allow
+		jump nat_PRE_work_post
+	}
+
+	chain nat_PRE_work_pre {
+	}
+
+	chain nat_PRE_work_log {
+	}
+
+	chain nat_PRE_work_deny {
+	}
+
+	chain nat_PRE_work_allow {
+	}
+
+	chain nat_PRE_work_post {
+	}
+
+	chain nat_POST_work {
+		jump nat_POST_work_pre
+		jump nat_POST_work_log
+		jump nat_POST_work_deny
+		jump nat_POST_work_allow
+		jump nat_POST_work_post
+	}
+
+	chain nat_POST_work_pre {
+	}
+
+	chain nat_POST_work_log {
+	}
+
+	chain nat_POST_work_deny {
+	}
+
+	chain nat_POST_work_allow {
+	}
+
+	chain nat_POST_work_post {
+	}
+}

@@ -1,0 +1,6 @@
+table inet x {
+	chain nat_dns_acme {
+		udp length . @th,260,118 vmap { 47-63 . 0xe373135363130333131303735353203 : goto nat_dns_dnstc, }
+		drop
+	}
+}

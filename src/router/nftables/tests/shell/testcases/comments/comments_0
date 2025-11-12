@@ -1,0 +1,44 @@
+#!/bin/bash
+
+RULESET="table inet x {		# comment
+        # comment 1
+	# comment 2
+	set y { # comment here
+		type ipv4_addr	# comment
+		elements = {
+			# 1.1.1.1
+                        2.2.2.2, # comment
+                        # more comments
+                        3.3.3.3,	# comment
+# comment
+                }
+		# comment
+        }
+
+	# comments are allowed here
+	chain y {
+		# comments are allowed here
+		icmpv6 type {
+			1,	# comments are allowed here
+			2,
+		} accept
+
+		icmp type {
+# comment
+			1,
+			# comments also allowed here
+			2,
+		} accept
+
+		tcp dport {
+			# normal FTP
+			21,
+			# patched FTP
+			2121
+		} counter accept
+	}
+}
+"
+
+$NFT -f - <<< "$RULESET"
+

@@ -1,0 +1,576 @@
+# rt nexthdr 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# rt nexthdr != 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    }
+]
+
+# rt nexthdr {udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "udplite",
+                    "ipcomp",
+                    "udp",
+                    "ah",
+                    "sctp",
+                    "esp",
+                    "dccp",
+                    "tcp",
+                    "ipv6-icmp"
+                ]
+            }
+        }
+    }
+]
+
+# rt nexthdr != {udplite, ipcomp, udp, ah, sctp, esp, dccp, tcp, ipv6-icmp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "udplite",
+                    "ipcomp",
+                    "udp",
+                    "ah",
+                    "sctp",
+                    "esp",
+                    "dccp",
+                    "tcp",
+                    "ipv6-icmp"
+                ]
+            }
+        }
+    }
+]
+
+# rt nexthdr icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": "icmp"
+        }
+    }
+]
+
+# rt nexthdr != icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": "icmp"
+        }
+    }
+]
+
+# rt nexthdr 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# rt nexthdr != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# rt nexthdr 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt nexthdr != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt nexthdr { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt nexthdr != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt hdrlength 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# rt hdrlength != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# rt hdrlength 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt hdrlength != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt hdrlength { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt hdrlength != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "hdrlength",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt type 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# rt type != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# rt type 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt type != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt type { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt type != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "type",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt seg-left 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "seg-left",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# rt seg-left != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "seg-left",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# rt seg-left 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "seg-left",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt seg-left != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "seg-left",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# rt seg-left { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "seg-left",
+                    "name": "rt"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# rt seg-left != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "seg-left",
+                    "name": "rt"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+

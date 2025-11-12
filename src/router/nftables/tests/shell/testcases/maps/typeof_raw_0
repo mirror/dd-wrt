@@ -1,0 +1,18 @@
+#!/bin/bash
+
+EXPECTED="table ip x {
+	map y {
+		typeof ip saddr . @ih,32,32: verdict
+		elements = { 1.1.1.1 . 0x14 : accept, 2.2.2.2 . 0x1e : drop }
+	}
+
+	chain y {
+		ip saddr . @nh,32,32 vmap @y
+		ip saddr . @nh,32,32 vmap { 4.4.4.4 . 0x34 : accept, 5.5.5.5 . 0x45 : drop}
+	}
+}"
+
+set -e
+$NFT -f - <<< $EXPECTED
+$NFT add element ip x y { 7.7.7.7 . 0x86 : accept, 7.7.7.8 . 0x97 : drop }
+$NFT delete element ip x y { 2.2.2.2 . 0x1e : drop }

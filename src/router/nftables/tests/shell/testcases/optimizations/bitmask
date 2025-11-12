@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+RULESET='table inet t {
+	chain ack_chain {}
+	chain urg_chain {}
+
+        chain c {
+                tcp flags & (syn | rst | ack | urg) == ack | urg
+                tcp flags & (fin | syn | rst | ack | urg) == fin | ack | urg
+                tcp flags & (fin | syn | rst | ack | urg) == fin | ack
+                tcp flags & (fin | syn | rst | ack | urg) == fin
+                tcp flags & (fin | syn | rst | ack | urg) == syn | ack
+                tcp flags & (fin | syn | rst | ack | urg) == syn
+                tcp flags & (fin | syn | rst | ack | urg) == rst | ack
+                tcp flags & (fin | syn | rst | ack | urg) == rst
+                tcp flags & (fin | syn | rst | ack | urg) == ack | urg
+                tcp flags & (fin | syn | rst | ack | urg) == ack
+                tcp flags & (rst | ack | urg) == rst | ack
+                tcp flags & (ack | urg) == ack jump ack_chain
+                tcp flags & (ack | urg) == urg jump urg_chain
+        }
+}'
+
+$NFT -o -f - <<< $RULESET

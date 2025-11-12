@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_table_flag_owner)
+
+set -e
+
+$NFT -f - <<EOF
+table t {
+ flags owner
+ flowtable f {
+  hook ingress priority 0
+  devices = { lo }
+ }
+}
+EOF
+
+# trigger uaf.
+$NFT -f - <<EOF
+table t {
+ flags owner
+ flowtable f {
+  hook ingress priority 0
+  devices = { lo }
+ }
+}
+EOF

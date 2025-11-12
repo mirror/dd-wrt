@@ -1,0 +1,25 @@
+#!/bin/bash -e
+#
+# 0043concatenated_ranges_1 - Insert and list subnets of different sizes
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+check() {
+	$NFT add element "${1}" t s "{ ${2} . ${3} }"
+	[ "$( $NFT list set "${1}" t s | grep -c "${2} . ${3}" )" = 1 ]
+}
+
+$NFT add table ip6 t
+$NFT add table ip  t
+
+$NFT add set ip6 t s '{ type ipv6_addr . ipv6_addr ; flags interval ; }'
+$NFT add set ip  t s '{ type ipv4_addr . ipv4_addr ; flags interval ; }'
+
+for n in $(seq 32 127); do
+	h="$(printf %x "${n}")"
+	check ip6 "2001:db8::/${n}" "2001:db8:${h}::-2001:db8:${h}::${h}:1"
+done
+
+for n in $(seq 24 31); do
+	check ip  "192.0.2.0/${n}"  "192.0.2.$((n * 3))-192.0.2.$((n * 3 + 2))"
+done

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+MAX_JUMPS=16
+
+$NFT add table t
+
+for i in $(seq 1 $MAX_JUMPS)
+do
+	$NFT add chain t c${i}
+done
+
+for i in $(seq 1 $((MAX_JUMPS - 1)))
+do
+	$NFT add rule t c${i} jump c$((i + 1))
+done

@@ -1,0 +1,46 @@
+# dup to abcd::1
+[
+    {
+        "dup": {
+            "addr": "abcd::1"
+        }
+    }
+]
+
+# dup to abcd::1 device "lo"
+[
+    {
+        "dup": {
+            "addr": "abcd::1",
+            "dev": "lo"
+        }
+    }
+]
+
+# dup to ip6 saddr map { abcd::1 : cafe::cafe } device "lo"
+[
+    {
+        "dup": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip6"
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                "abcd::1",
+                                "cafe::cafe"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "dev": "lo"
+        }
+    }
+]
+

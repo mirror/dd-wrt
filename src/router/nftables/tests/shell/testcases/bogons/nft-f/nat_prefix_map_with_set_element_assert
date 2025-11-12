@@ -1,0 +1,7 @@
+table ip x {
+	chain y {
+	type nat hook postrouting priority srcnat; policy accept;
+		snat ip prefix to ip saddr map { 10.141.11.0/24 : 192.168.2.0/24, 10.141.12.1 }
+	}
+}
+

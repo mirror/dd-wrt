@@ -1,0 +1,216 @@
+# udp dport 53 redirect random,persistent,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,random,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,fully-random,random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# ip6 nexthdr tcp redirect to :100-200
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "ip6"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "redirect": {
+            "port": {
+                "range": [ 100, 200 ]
+            }
+        }
+    }
+]
+
+# udp dport 53 redirect random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "persistent"
+            ]
+        }
+    }
+]
+
+# tcp dport 9128 redirect to :993 random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 9128
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random"
+            ],
+            "port": 993
+        }
+    }
+]
+

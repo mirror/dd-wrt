@@ -1,0 +1,147 @@
+# ct original ip saddr 192.168.0.1
+ip test-ip4 output
+  [ ct load src_ip => reg 1 , dir original ]
+  [ cmp eq reg 1 0x0100a8c0 ]
+
+# ct reply ip saddr 192.168.0.1
+ip test-ip4 output
+  [ ct load src_ip => reg 1 , dir reply ]
+  [ cmp eq reg 1 0x0100a8c0 ]
+
+# ct original ip daddr 192.168.0.1
+ip test-ip4 output
+  [ ct load dst_ip => reg 1 , dir original ]
+  [ cmp eq reg 1 0x0100a8c0 ]
+
+# ct reply ip daddr 192.168.0.1
+ip test-ip4 output
+  [ ct load dst_ip => reg 1 , dir reply ]
+  [ cmp eq reg 1 0x0100a8c0 ]
+
+# ct original ip saddr 192.168.1.0/24
+ip test-ip4 output
+  [ ct load src_ip => reg 1 , dir original ]
+  [ cmp eq reg 1 0x0001a8c0 ]
+
+# ct reply ip saddr 192.168.1.0/24
+ip test-ip4 output
+  [ ct load src_ip => reg 1 , dir reply ]
+  [ cmp eq reg 1 0x0001a8c0 ]
+
+# ct original ip daddr 192.168.1.0/24
+ip test-ip4 output
+  [ ct load dst_ip => reg 1 , dir original ]
+  [ cmp eq reg 1 0x0001a8c0 ]
+
+# ct reply ip daddr 192.168.1.0/24
+ip test-ip4 output
+  [ ct load dst_ip => reg 1 , dir reply ]
+  [ cmp eq reg 1 0x0001a8c0 ]
+
+# ct l3proto ipv4
+ip test-ip4 output
+  [ ct load l3protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000002 ]
+
+# ct protocol 6 ct original proto-dst 22
+ip test-ip4 output
+  [ ct load protocol => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ ct load proto_dst => reg 1 , dir original ]
+  [ cmp eq reg 1 0x00001600 ]
+
+# ct original protocol 17 ct reply proto-src 53
+ip test-ip4 output
+  [ ct load protocol => reg 1 , dir original ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ ct load proto_src => reg 1 , dir reply ]
+  [ cmp eq reg 1 0x00003500 ]
+
+# meta mark set ct original ip daddr map { 1.1.1.1 : 0x00000011 }
+__map%d test-ip4 b
+__map%d test-ip4 0
+        element 01010101  : 00000011 0 [end]
+ip
+  [ ct load dst_ip => reg 1 , dir original ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ meta set mark with reg 1 ]
+
+# meta mark set ct original ip saddr . meta mark map { 1.1.1.1 . 0x00000014 : 0x0000001e }
+__map%d test-ip4 b
+__map%d test-ip4 0
+        element 01010101 00000014  : 0000001e 0 [end]
+ip
+  [ ct load src_ip => reg 1 , dir original ]
+  [ meta load mark => reg 9 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ meta set mark with reg 1 ]
+
+# ct original ip saddr . meta mark { 1.1.1.1 . 0x00000014 }
+__set%d test-ip4 3
+__set%d test-ip4 0
+        element 01010101 00000014  : 0 [end]
+ip
+  [ ct load src_ip => reg 1 , dir original ]
+  [ meta load mark => reg 9 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct mark set ip dscp << 2 | 0x10
+ip test-ip4 output
+  [ payload load 1b @ network header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 << 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip dscp << 26 | 0x10
+ip
+  [ payload load 1b @ network header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 << 0x0000001a ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip dscp & 0x0f << 1
+ip test-ip4 output
+  [ payload load 1b @ network header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000001e ) ^ 0x00000000 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip dscp & 0x0f << 2
+ip test-ip4 output
+  [ payload load 1b @ network header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000003c ) ^ 0x00000000 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip dscp | 0x04
+ip test-ip4 output
+  [ payload load 1b @ network header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffffb ) ^ 0x00000004 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ip dscp | 1 << 20
+ip test-ip4 output
+  [ payload load 1b @ network header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xffefffff ) ^ 0x00100000 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ct mark | ip dscp | 0x200 counter
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ payload load 1b @ network header + 1 => reg 2 ]
+  [ bitwise reg 2 = ( reg 2 & 0x000000fc ) ^ 0x00000000 ]
+  [ bitwise reg 2 = ( reg 2 >> 0x00000002 ) ]
+  [ bitwise reg 1 = ( reg 1 | reg 2 ) ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffdff ) ^ 0x00000200 ]
+  [ ct set mark with reg 1 ]
+  [ counter pkts 0 bytes 0 ]

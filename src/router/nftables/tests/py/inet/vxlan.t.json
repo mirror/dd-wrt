@@ -1,0 +1,315 @@
+# udp dport 4789 vxlan vni 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vni",
+                    "protocol": "vxlan",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+
+# udp dport 4789 vxlan ip saddr 10.141.11.2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": "10.141.11.2"
+        }
+    }
+]
+
+# udp dport 4789 vxlan ip saddr 10.141.11.0/24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.141.11.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# udp dport 4789 vxlan ip protocol 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# udp dport 4789 vxlan udp sport 8888
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": 8888
+        }
+    }
+]
+
+# udp dport 4789 vxlan icmp type echo-reply
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": "echo-reply"
+        }
+    }
+]
+
+# udp dport 4789 vxlan ether saddr 62:87:4d:d6:19:05
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": "62:87:4d:d6:19:05"
+        }
+    }
+]
+
+# udp dport 4789 vxlan vlan id 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+
+# udp dport 4789 vxlan ip dscp 0x02
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip",
+                    "tunnel": "vxlan"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# udp dport 4789 vxlan ip saddr . vxlan ip daddr { 1.2.3.4 . 4.3.2.1 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 4789
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip",
+                            "tunnel": "vxlan"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip",
+                            "tunnel": "vxlan"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "1.2.3.4",
+                            "4.3.2.1"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+

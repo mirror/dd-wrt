@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_expr)
+
+set -e
+
+test -d "$NFT_TEST_TESTTMPDIR"
+
+# Input file contains rules with anon sets that contain
+# one element, plus extra rule with two elements (that should be
+# left alone).
+
+# Dump file has the simplified rules where anon sets have been
+# replaced by equality tests where possible.
+file_input1="$NFT_TEST_TESTTMPDIR/input1.nft"
+
+cat <<EOF > "$file_input1"
+table ip test {
+	chain test {
+		# with stateful statement
+		meta mark { 0x0000000a counter }
+	}
+}
+EOF
+
+$NFT -f "$file_input1"

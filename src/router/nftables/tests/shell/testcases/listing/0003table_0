@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# list table show what is expected
+
+EXPECTED="table ip test {
+}"
+
+set -e
+
+$NFT add table test
+
+GET="$($NFT list table test)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+
+# also this way
+GET="$($NFT list table ip test)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

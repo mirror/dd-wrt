@@ -1,0 +1,236 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "t",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "netdev",
+        "name": "s",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "saddr"
+                }
+              },
+              {
+                "payload": {
+                  "protocol": "vlan",
+                  "field": "id"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "size": 2048,
+        "flags": [
+          "timeout",
+          "dynamic"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "type"
+                }
+              },
+              "right": "8021q"
+            }
+          },
+          {
+            "set": {
+              "op": "add",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ether",
+                          "field": "saddr"
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  "timeout": 5
+                }
+              },
+              "set": "@s"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "return": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "ether",
+                  "field": "type"
+                }
+              },
+              "right": "8021q"
+            }
+          },
+          {
+            "set": {
+              "op": "update",
+              "elem": {
+                "elem": {
+                  "val": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ether",
+                          "field": "daddr"
+                        }
+                      },
+                      123
+                    ]
+                  },
+                  "timeout": 60
+                }
+              },
+              "set": "@s"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          },
+          {
+            "return": null
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "c2",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "s",
+        "table": "t",
+        "type": {
+          "typeof": {
+            "concat": [
+              {
+                "ipsec": {
+                  "key": "reqid",
+                  "dir": "in",
+                  "spnum": 0
+                }
+              },
+              {
+                "meta": {
+                  "key": "iif"
+                }
+              }
+            ]
+          }
+        },
+        "handle": 0,
+        "size": 16,
+        "flags": [
+          "interval"
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c2",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "ipsec": {
+                      "key": "reqid",
+                      "dir": "in",
+                      "spnum": 0
+                    }
+                  },
+                  "lo"
+                ]
+              },
+              "right": "@s"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+table ip x {
+	map y {
+		type ipv4_addr : ipv4_addr
+		elements = { 1.168.0.4 }
+	}
+
+        map y {
+		type ipv4_addr : ipv4_addr
+		flags interval
+		elements = { 10.141.3.0/24 : 192.8.0.3 }
+	}
+}

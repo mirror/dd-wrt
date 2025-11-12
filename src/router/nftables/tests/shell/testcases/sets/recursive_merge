@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+RULESET="define myset2 = {
+      2.2.3.0,
+}
+define myset = {
+      1.1.1.0,
+      2.2.2.0,
+      $myset2,
+}
+define myset3 = {
+      { 1.1.1.0, 2.2.2.0 }
+}
+add table ip x
+add chain ip x y
+add rule ip x y ip saddr { \$myset, 3.3.3.0 }
+add rule ip x y ip saddr { { 4.4.4.0, 5.5.5.0 }, 6.6.6.0 }
+add rule ip x y ip saddr { { 8.8.8.0, { 4.4.4.0, 5.5.5.0 } }, 6.6.6.0 }
+add rule ip x y ip saddr { 9.9.9.0, \$myset3, 7.7.7.0 }"
+
+$NFT -f - <<< "$RULESET"

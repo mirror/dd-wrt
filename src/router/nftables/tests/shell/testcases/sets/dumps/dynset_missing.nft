@@ -1,0 +1,12 @@
+table ip test {
+	set dlist {
+		type ipv4_addr
+		size 65535
+		flags dynamic
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+		udp dport 1234 update @dlist { ip daddr } counter packets 0 bytes 0
+	}
+}

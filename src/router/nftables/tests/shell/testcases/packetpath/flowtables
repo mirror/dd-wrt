@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+# NFT_TEST_SKIP(NFT_TEST_SKIP_slow)
+
+. $NFT_TEST_LIBRARY_FILE
+
+rnd=$(mktemp -u XXXXXXXX)
+R="flowtable-router-$rnd"
+C="flowtable-client-$rnd"
+S="flowtbale-server-$rnd"
+
+cleanup()
+{
+	for i in $R $C $S;do
+		kill $(ip netns pid $i) 2>/dev/null
+		ip netns del $i
+	done
+}
+trap cleanup EXIT
+
+# Call back when assertion fails.
+assert_failout()
+{
+	ip netns exec $R cat /proc/net/nf_conntrack
+}
+
+ip netns add $R
+ip netns add $S
+ip netns add $C
+
+ip link add s_r netns $S type veth peer name r_s netns $R
+ip netns exec $S ip link set s_r up
+ip netns exec $R ip link set r_s up
+ip link add c_r netns $C type veth peer name r_c netns $R
+ip netns exec $R ip link set r_c up
+ip netns exec $C ip link set c_r up
+
+ip netns exec $S ip -6 addr add 2001:db8:ffff:22::1/64 dev s_r
+ip netns exec $C ip -6 addr add 2001:db8:ffff:21::2/64 dev c_r
+ip netns exec $R ip -6 addr add 2001:db8:ffff:22::fffe/64 dev r_s
+ip netns exec $R ip -6 addr add 2001:db8:ffff:21::fffe/64 dev r_c
+ip netns exec $R sysctl -wq net.ipv6.conf.all.forwarding=1
+ip netns exec $C ip route add 2001:db8:ffff:22::/64 via 2001:db8:ffff:21::fffe dev c_r
+ip netns exec $S ip route add 2001:db8:ffff:21::/64 via 2001:db8:ffff:22::fffe dev s_r
+ip netns exec $S ethtool -K s_r tso off
+ip netns exec $C ethtool -K c_r tso off
+sleep 3
+
+ip netns exec $C ping -q -6 2001:db8:ffff:22::1 -c1
+assert_pass "topo initialization"
+
+ip netns exec $R $NFT -f - <<EOF
+table ip6 filter {
+        flowtable f1 {
+                hook ingress priority -100
+                devices = { r_c, r_s }
+        }
+
+        chain forward {
+                type filter hook forward priority filter; policy accept;
+                ip6 nexthdr tcp ct state established,related counter packets 0 bytes 0 flow add @f1 counter packets 0 bytes 0
+                ip6 nexthdr tcp ct state invalid counter packets 0 bytes 0 drop
+                tcp flags fin,rst counter packets 0 bytes 0 accept
+                meta l4proto tcp meta length < 100 counter packets 0 bytes 0 accept
+                ip6 nexthdr tcp counter packets 0 bytes 0 log drop
+        }
+}
+EOF
+assert_pass "apply nft ruleset"
+
+if [ ! -r /proc/net/nf_conntrack ]
+then
+	echo "E: nf_conntrack unreadable, skipping" >&2
+	exit 77
+fi
+
+ip netns exec $R sysctl -wq net.netfilter.nf_flowtable_tcp_timeout=5
+assert_pass "set net.netfilter.nf_flowtable_tcp_timeout=5"
+
+ip netns exec $R sysctl -wq net.netfilter.nf_conntrack_tcp_timeout_established=86400
+assert_pass "set net.netfilter.nf_conntrack_tcp_timeout_established=86400"
+
+# A trick to control the timing to send a packet
+ip netns exec $S socat TCP6-LISTEN:10001 GOPEN:/tmp/socat-$rnd,ignoreeof &
+wait_local_port_listen $S 10001 tcp
+
+ip netns exec $C socat -b 2048 PIPE:/tmp/pipefile-$rnd 'TCP:[2001:db8:ffff:22::1]:10001' &
+sleep 1
+ip netns exec $C echo "send sth" >> /tmp/pipefile-$rnd        ; assert_pass "send a packet"
+ip netns exec $R grep -q 'OFFLOAD' /proc/net/nf_conntrack     ; assert_pass "check [OFFLOAD] tag"
+sleep 6
+ip netns exec $R grep -q 'OFFLOAD' /proc/net/nf_conntrack     ; assert_fail "CT OFFLOAD timeout, back to the classical path"
+ip netns exec $R grep -q '863[89][0-9]' /proc/net/nf_conntrack; assert_pass "check timeout adopt nf_conntrack_tcp_timeout_established"
+ip netns exec $C echo "send sth" >> /tmp/pipefile-$rnd        ; assert_pass "send a packet"
+ip netns exec $R grep -q 'OFFLOAD' /proc/net/nf_conntrack     ; assert_pass "packet detected, back to the OFFLOAD path"
+
+i=3; while ((i--))
+do
+	sleep 3
+	ip netns exec $C echo "send sth" >> /tmp/pipefile-$rnd; assert_pass "send a packet"
+	sleep 3
+	ip netns exec $R grep -q 'OFFLOAD' /proc/net/nf_conntrack
+	assert_pass "Traffic seen in 5s (nf_flowtable_tcp_timeout), should stay in OFFLOAD"
+done
+exit 0

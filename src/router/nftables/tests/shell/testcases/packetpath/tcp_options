@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_reset_tcp_options)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+
+ip link set lo up
+
+$NFT -f /dev/stdin <<EOF
+table inet t {
+	counter nomatchc {}
+	counter sackpermc {}
+	counter maxsegc {}
+	counter nopc {}
+
+	chain c {
+		type filter hook output priority 0;
+		tcp dport != 22345 accept
+		tcp flags & (fin | syn | rst | ack ) == syn tcp option 254  length ge 4 counter name nomatchc drop
+		tcp flags & (fin | syn | rst | ack ) == syn tcp option fastopen length ge 2 reset tcp option fastopen counter name nomatchc
+		tcp flags & (fin | syn | rst | ack ) == syn tcp option sack-perm missing counter name nomatchc
+		tcp flags & (fin | syn | rst | ack) == syn tcp option sack-perm exists counter name sackpermc
+		tcp flags & (fin | syn | rst | ack) == syn tcp option maxseg size gt 1400 counter name maxsegc
+		tcp flags & (fin | syn | rst | ack) == syn tcp option nop missing counter name nomatchc
+		tcp flags & (fin | syn | rst | ack) == syn tcp option nop exists counter name nopc
+		tcp flags & (fin | syn | rst | ack) == syn drop
+	}
+}
+EOF
+
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+# This will fail (drop in output -> connect fails with eperm)
+socat -u STDIN TCP:127.0.0.1:22345,connect-timeout=1 < /dev/null > /dev/null
+
+# can't validate via dump file, syn rexmit can cause counters to be > 1 in rare cases.
+
+$NFT list counter inet t nomatchc
+
+# nomatchc must be 0.
+$NFT list counter inet t nomatchc | grep -q "packets 0" || exit 1
+
+# these counters must not be 0.
+for nz in sackpermc maxsegc nopc; do
+	$NFT list counter inet t $nz
+	$NFT list counter inet t $nz | grep -q "packets 0" && exit 1
+done
+
+exit 0

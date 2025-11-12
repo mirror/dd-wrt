@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -e
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1-$rnd"
+
+cleanup() {
+	ip netns del "$ns1"
+	ip link del d0 &>/dev/null || :
+}
+trap 'cleanup' EXIT
+
+RULESET="table netdev x {
+	chain x {}
+	chain w {
+		ip daddr 8.7.6.0/24 counter
+	}
+	chain y {
+		type filter hook ingress device d0 priority 0;
+		ip saddr { 1.2.3.4, 2.3.4.5 } counter
+		ip daddr vmap { 5.4.3.0/24 : jump w, 8.9.0.0/24 : jump x }
+	}
+}"
+
+ip link add d0 type dummy
+$NFT -f - <<< $RULESET
+
+ip netns add $ns1
+# move device to $ns1 triggers UNREGISTER event
+ip link set d0 netns $ns1
+
+cleanup
+$NFT delete table netdev x
+
+# a simple test that also triggers UNREGISTER event
+ip netns add $ns1
+ip -netns $ns1 link add d0 type dummy
+ip netns exec $ns1 $NFT -f - <<< $RULESET

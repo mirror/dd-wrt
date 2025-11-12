@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+        chain y {
+                type filter hook prerouting priority raw; policy accept;
+                @th,160,32 0x02736c00 drop comment \"sl\"
+                @th,160,112 0x870697a7a6173656f03636f6d00 drop comment \"pizzaseo.com\"
+        }
+}"
+
+$NFT -o -f - <<< $RULESET

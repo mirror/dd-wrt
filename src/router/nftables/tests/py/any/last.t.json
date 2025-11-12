@@ -1,0 +1,16 @@
+# last
+[
+    {
+        "last": null
+    }
+]
+
+# last used 300s
+[
+    {
+        "last": {
+		"used": 300000
+	}
+    }
+]
+

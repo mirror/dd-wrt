@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# This test the changes made in commit id "b14572f72aac".
+# When the commit was not applied, nft pointed to wrong files name.
+# As the commit only fixes the error messages and hence does not change the
+# return value so, we need to compare the "file name" in the error message
+# instead of return value of nft.
+
+
+tmpfile1=$(mktemp)
+if [ ! -w "$tmpfile1" ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+trap "rm -rf $tmpfile1 $tmpfile2 $tmpfile3 $tmpfile4" EXIT # cleanup if aborted
+
+tmpfile2=$(mktemp)
+if [ ! -w "$tmpfile2" ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+tmpfile3=$(mktemp)
+if [ ! -w "$tmpfile3" ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+tmpfile4=$(mktemp)
+if [ ! -w "$tmpfile4" ]; then
+        echo "Failed to create tmp file" >&2
+        exit 1
+fi
+
+RULESET1="include \"$tmpfile2\""
+RULESET2="include \"$tmpfile3\""
+RULESET3="add rule x y anything everything"			# wrong nft syntax
+
+
+echo "$RULESET1" > $tmpfile1
+echo "$RULESET2" >> $tmpfile1
+echo "$RULESET3" > $tmpfile2
+
+$NFT -f $tmpfile1 2> $tmpfile4
+
+var=$(awk -F: '$4==" Error"{print $1;exit;}' "$tmpfile4")
+
+if [ $var == "$tmpfile3" ]; then
+	echo "E: Test failed" >&2
+	exit 1
+fi

@@ -1,0 +1,6 @@
+table ip x {
+	flowtable y {
+		hook ingress priority filter
+		devices = { "lo" }
+	}
+}

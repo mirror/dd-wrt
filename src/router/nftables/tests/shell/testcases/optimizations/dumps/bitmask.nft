@@ -1,0 +1,14 @@
+table inet t {
+	chain ack_chain {
+	}
+
+	chain urg_chain {
+	}
+
+	chain c {
+		tcp flags & (syn | rst | ack | urg) == ack | urg
+		tcp flags & (fin | syn | rst | ack | urg) == { fin | ack | urg, fin | ack, fin, syn | ack, syn, rst | ack, rst, ack | urg, ack }
+		tcp flags & (rst | ack | urg) == rst | ack
+		tcp flags & (ack | urg) vmap { ack : jump ack_chain, urg : jump urg_chain }
+	}
+}

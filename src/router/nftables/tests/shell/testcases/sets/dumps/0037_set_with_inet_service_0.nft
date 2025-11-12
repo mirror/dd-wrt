@@ -1,0 +1,16 @@
+table inet filter {
+	set myset {
+		type ipv4_addr . inet_proto . inet_service
+		elements = { 192.168.0.113 . tcp . 22,
+			     192.168.0.12 . tcp . 53,
+			     192.168.0.12 . udp . 53,
+			     192.168.0.12 . tcp . 80,
+			     192.168.0.13 . tcp . 80 }
+	}
+
+	chain forward {
+		type filter hook forward priority filter; policy drop;
+		ct state established,related accept
+		ct state new ip daddr . ip protocol . th dport @myset accept
+	}
+}

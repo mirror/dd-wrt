@@ -1,0 +1,262 @@
+#!/bin/bash
+
+# test case to attempt to fool ruleset validation.
+# Initial ruleset added here is fine, then we try to make the
+# ruleset exceed the jump chain depth via jumps, gotos, verdict
+# map entries etc, either by having the map loop back to itself,
+# jumping back to an earlier chain and so on.
+#
+# Also check that can't hook up a user-defined chain with a
+# restricted expression (here: tproxy, only valid from prerouting
+# hook) to the input hook, even if reachable indirectly via vmap.
+
+bad_ruleset()
+{
+	ret=$1
+	shift
+
+	if [ $ret -eq 0 ];then
+		echo "Accepted bad ruleset with $@"
+		$NFT list ruleset
+		exit 1
+	fi
+}
+
+good_ruleset()
+{
+	ret=$1
+	shift
+
+	if [ $ret -ne 0 ];then
+		echo "Rejected good ruleset with $@"
+		exit 1
+	fi
+}
+
+# add a loop with a vmap statement, either goto or jump,
+# both with single rule and delta-transaction that also
+# contains valid information.
+check_loop()
+{
+	what=$1
+
+	$NFT "add element t m { 1.2.3.9 : $what c1 }"
+	bad_ruleset $? "bound map with $what to backjump should exceed jump stack"
+
+	$NFT "add element t m { 1.2.3.9 : $what c7 }"
+	bad_ruleset $? "bound map with $what to backjump should exceed jump stack"
+
+	$NFT "add element t m { 1.2.3.9 : $what c8 }"
+	bad_ruleset $? "bound map with $what to self should exceed jump stack"
+
+	# rule bound to c8, this should not work -- jump stack should be exceeded.
+	$NFT "add element t m { 1.2.3.9 : jump c9 }"
+	bad_ruleset $? "bound map with $what should exceed jump stack"
+
+	# rule bound to c8, this should be within jump stack limit
+	$NFT "add element t m { 1.2.3.9 : jump c10 }"
+	good_ruleset $? "bound map with $what should not have exceeded jump stack"
+
+$NFT -f - <<EOF
+flush chain t c16
+flush chain t c15
+table t {
+	chain c9 {
+		ip protocol 6 goto c14
+	}
+
+	# calls @m again, but @m now runs c10, which is linked to c14 already.
+	chain c14 {
+		ip protocol 6 return
+		ip daddr vmap @m
+	}
+}
+EOF
+	bad_ruleset $? "delta with bound map with $what loop and rule deletions"
+
+	# delete mapping again
+	$NFT "delete element t m { 1.2.3.9 }"
+	good_ruleset $? "cannot delete mapping"
+}
+
+check_bad_expr()
+{
+$NFT -f -<<EOF
+table t {
+	chain c1 {
+		jump c9
+	}
+}
+EOF
+bad_ruleset $? "tproxy expr exposed to input hook"
+
+$NFT -f -<<EOF
+flush map t m
+
+table t {
+	chain c1 {
+		ip saddr vmap @m
+	}
+}
+EOF
+good_ruleset $? "bound vmap to c1"
+
+$NFT -f -<<EOF
+table t {
+	map m {
+		type ipv4_addr : verdict
+		elements = { 1.2.3.4 : jump c9 }
+	}
+}
+EOF
+bad_ruleset $? "tproxy expr exposed to input hook by vmap"
+
+$NFT -f -<<EOF
+flush chain t c10
+flush chain t c11
+add rule t c8 jump c9
+
+table t {
+	map m {
+		type ipv4_addr : verdict
+		elements = { 1.2.3.4 : goto c2 }
+	}
+}
+EOF
+bad_ruleset $? "tproxy expr exposed to input hook by vmap"
+
+$NFT -f -<<EOF
+flush chain t c2
+flush chain t c3
+flush chain t c4
+flush chain t c5
+flush chain t c6
+flush chain t c7
+flush chain t c10
+flush chain t c11
+flush chain t c12
+flush chain t c13
+flush chain t c14
+flush chain t c15
+flush chain t c16
+delete chain t c16
+delete chain t c15
+delete chain t c14
+delete chain t c13
+delete chain t c12
+delete chain t c11
+delete chain t c7
+delete chain t c6
+delete chain t c5
+delete chain t c4
+delete chain t c3
+add rule t c8 jump c9
+EOF
+good_ruleset $? "connect chain c8 to chain c9"
+
+$NFT -f -<<EOF
+table t {
+	map m {
+		type ipv4_addr : verdict
+		elements = { 1.2.3.4 : goto c8 }
+	}
+}
+EOF
+bad_ruleset $? "tproxy expr exposed to input hook by vmap c1 -> vmap -> c8 -> c9"
+}
+
+# 16 jump levels are permitted.
+# First ruleset is fine, there is no jump
+# from c8 to c9.
+$NFT -f - <<EOF
+table t {
+	map m {
+		type ipv4_addr : verdict
+	}
+
+	chain c16 { }
+	chain c15 { jump c16; }
+	chain c14 { jump c15; }
+	chain c13 { jump c14; }
+	chain c12 { jump c13; }
+	chain c11 { jump c12; }
+	chain c10 { jump c11; }
+	chain c9 { jump c10; }
+	chain c8 { }
+	chain c7 { jump c8; }
+	chain c6 { jump c7; }
+	chain c5 { jump c6; }
+	chain c4 { jump c5; }
+	chain c3 { jump c4; }
+	chain c2 { jump c3; }
+	chain c1 { jump c2; }
+	chain c0 { type filter hook input priority 0;
+		jump c1
+	}
+}
+EOF
+
+ret=$?
+if [ $ret -ne 0 ];then
+	exit 1
+fi
+
+# ensure kernel catches the exceeded jumpstack use, despite no new chains
+# are added here and cycle is acyclic.
+$NFT -f - <<EOF
+# unrelated rule.
+add rule t c14 accept
+add rule t c15 accept
+
+# close jump gap; after this jumpstack limit is exceeded.
+add rule t c8 goto c9
+
+# unrelated rules.
+add rule t c14 accept
+add rule t c15 accept
+EOF
+
+bad_ruleset $? "chain jump stack exhausted without cycle"
+
+$NFT -f - <<EOF
+# unrelated rule.
+add rule t c12 accept
+add rule t c13 accept
+
+add element t m { 1.2.3.1 : accept }
+add element t m { 1.2.3.16 : goto c16 }
+add element t m { 1.2.3.15 : goto c15 }
+
+# after this jumpstack limit is exceeded,
+# IFF @m was bound to c8, but it is not.
+add element t m { 1.2.3.9 : jump c9 }
+
+# unrelated rules.
+add rule t c12 accept
+add rule t c13 accept
+
+add element t m { 1.2.3.16 : goto c16 }
+EOF
+good_ruleset $? "unbounded map"
+
+# bind vmap to c8.  This MUST fail, map jumps to c9.
+$NFT "add rule t c8 ip saddr vmap @m"
+bad_ruleset $? "jump c8->c9 via vmap expression"
+
+# delete the mapping again.
+$NFT "delete element t m { 1.2.3.9 }"
+$NFT "add rule t c8 ip saddr vmap @m"
+good_ruleset $? "bind empty map to c8"
+
+check_loop "jump"
+check_loop "goto"
+
+$NFT "flush chain t c8"
+good_ruleset $? "flush chain t c8"
+
+# should work, c9 not connected to c0 aka filter input.
+$NFT "add rule t c9 tcp dport 80 tproxy to :20000 meta mark set 1 accept"
+good_ruleset $? "add tproxy expression to c9"
+check_bad_expr
+
+exit $?

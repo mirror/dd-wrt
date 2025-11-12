@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+set -e
+
+RULESET="
+flush ruleset
+
+add table ip filter
+add chain ip filter FORWARD { type filter hook forward priority 0; policy drop; }
+add map ip filter forwport { type ipv4_addr . inet_proto . inet_service: verdict; flags interval; counter; }
+add rule ip filter FORWARD iifname enp0s8 ip daddr . ip protocol  . th dport vmap @forwport counter
+add element ip filter forwport { 10.133.89.138 . tcp . 8081: accept }"
+
+$NFT -f - <<< "$RULESET"

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_inet_nat)
+
+set -e
+
+RULESET="table inet nat {
+	chain prerouting {
+		oif lo accept
+		iifname enp2s0 ip daddr 72.2.3.66 tcp dport 53122 dnat to 10.1.1.10:22
+		iifname enp2s0 ip daddr 72.2.3.66 tcp dport 443 dnat to 10.1.1.52:443
+		iifname enp2s0 ip daddr 72.2.3.70 tcp dport 80 dnat to 10.1.1.52:80
+	}
+	chain postrouting {
+		oif lo accept
+		ip daddr 72.2.3.66 snat to 10.2.2.2
+		ip daddr 72.2.3.67 snat to 10.2.3.3
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

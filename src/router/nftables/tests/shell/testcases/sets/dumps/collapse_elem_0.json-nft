@@ -1,0 +1,53 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "a",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "x",
+        "table": "a",
+        "type": "inet_service",
+        "handle": 0,
+        "elem": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "a",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip6",
+        "name": "x",
+        "table": "a",
+        "type": "inet_service",
+        "handle": 0,
+        "elem": [
+          2
+        ]
+      }
+    }
+  ]
+}

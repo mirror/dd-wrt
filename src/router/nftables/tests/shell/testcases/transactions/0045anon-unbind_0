@@ -1,0 +1,10 @@
+#!/bin/bash
+
+RULESET='table inet filter {
+ chain antileak {
+   udp dport { 137, 138 } drop comment "NetBT"
+ }
+}'
+
+set -e
+$NFT -c -f - <<< "$RULESET"

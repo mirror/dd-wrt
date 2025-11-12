@@ -1,0 +1,10 @@
+table ip t {
+	set s {
+		typeof ip saddr
+		timeout 1m
+	}
+
+	chain base {
+		type filter hook input priority filter; policy accept;
+	}
+}

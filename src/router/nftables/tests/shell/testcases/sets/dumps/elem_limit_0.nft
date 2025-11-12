@@ -1,0 +1,7 @@
+table netdev filter {
+	set test123 {
+		typeof ip saddr
+		limit rate over 1 mbytes/second
+		elements = { 1.2.3.4 limit rate over 1 mbytes/second }
+	}
+}

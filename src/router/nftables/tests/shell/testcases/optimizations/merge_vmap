@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+	chain y {
+		ip saddr 1.1.1.1 ip daddr 2.2.2.2 accept
+		ip saddr 2.2.2.2 ip daddr 3.3.3.3 drop
+	}
+}"
+
+# check that optimizer output displays vmap in the listing
+$NFT -o -f - <<< $RULESET 2>&1 | grep vmap

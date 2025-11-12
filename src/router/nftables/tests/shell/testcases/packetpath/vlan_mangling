@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_egress)
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1ifname-$rnd"
+ns2="nft2ifname-$rnd"
+
+cleanup()
+{
+	ip netns del "$ns1"
+	ip netns del "$ns2"
+}
+
+trap cleanup EXIT
+
+set -e
+
+ip netns add "$ns1"
+ip netns add "$ns2"
+ip -net "$ns1" link set lo up
+ip -net "$ns2" link set lo up
+
+ip link add veth0 netns $ns1 type veth peer name veth0 netns $ns2
+
+ip -net "$ns1" link set veth0 addr da:d3:00:01:02:03
+
+ip -net "$ns1" link add vlan123 link veth0 type vlan id 123
+ip -net "$ns2" link add vlan321 link veth0 type vlan id 321
+
+
+for dev in veth0 ; do
+	ip -net "$ns1" link set $dev up
+	ip -net "$ns2" link set $dev up
+done
+ip -net "$ns1" link set vlan123 up
+ip -net "$ns2" link set vlan321 up
+
+ip -net "$ns1" addr add 10.1.1.1/24 dev vlan123
+ip -net "$ns2" addr add 10.1.1.2/24 dev vlan321
+
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+table netdev t {
+	chain in_update_vlan {
+		vlan type arp vlan id set 321 counter
+		ip saddr 10.1.1.1 icmp type echo-request vlan id set 321 counter
+	}
+
+	chain in {
+		type filter hook ingress device veth0 priority filter;
+		vlan pcp 0 counter
+		ether saddr da:d3:00:01:02:03 vlan id 123 jump in_update_vlan
+	}
+
+	chain out_update_vlan {
+		vlan type arp vlan id set 123 counter
+		ip daddr 10.1.1.1 icmp type echo-reply vlan id set 123 counter
+		vlan pcp set 6 counter
+	}
+
+	chain out {
+		type filter hook egress device veth0 priority filter;
+		ether daddr da:d3:00:01:02:03 vlan id 321 jump out_update_vlan
+	}
+}
+EOF
+
+ip netns exec "$ns1" ping -c 1 10.1.1.2
+
+set +e
+
+ip netns exec "$ns2" $NFT list ruleset
+ip netns exec "$ns2" $NFT list table netdev t | grep 'counter packets' | grep 'counter packets 0 bytes 0'
+if [ $? -eq 1 ]
+then
+	exit 0
+fi
+
+exit 1

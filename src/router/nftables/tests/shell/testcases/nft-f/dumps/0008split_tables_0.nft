@@ -1,0 +1,10 @@
+table inet filter {
+	chain ssh {
+		type filter hook input priority filter; policy accept;
+		tcp dport 22 accept
+	}
+
+	chain input {
+		type filter hook input priority filter + 1; policy accept;
+	}
+}

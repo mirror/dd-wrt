@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+set -e
+
+$NFT add table inet t
+$NFT add chain inet t c
+$NFT 'add map inet t m { type ipv4_addr . ipv4_addr : verdict; flags interval;}'
+
+for i in $(seq 1 10); do
+	$NFT "add element inet t m { 10.0.0.1 . 1.2.$i.1 - 1.2.$i.10 : jump c }"
+done
+
+$NFT -f /dev/stdin <<EOF
+add element inet t m { 10.1.1.1 . 1.1.1.4 : accept }
+add element inet t m { 10.1.1.6 . 1.1.1.4 : drop  }
+add element inet t m { 10.1.1.7 . 1.1.1.4 : jump c  }
+flush map inet t m
+add element inet t m { 10.1.1.1 . 1.1.1.4 : accept }
+add element inet t m { 10.1.1.6 . 1.1.1.4 : drop  }
+add element inet t m { 10.1.1.7 . 1.1.1.4 : jump c  }
+flush map inet t m
+flush map inet t m
+EOF

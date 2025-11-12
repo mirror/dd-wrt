@@ -1,0 +1,16 @@
+# rt nexthop fd00::1
+[
+    {
+        "match": {
+            "left": {
+                "rt": {
+                    "family": "ip6",
+                    "key": "nexthop"
+                }
+            },
+	    "op": "==",
+            "right": "fd00::1"
+        }
+    }
+]
+

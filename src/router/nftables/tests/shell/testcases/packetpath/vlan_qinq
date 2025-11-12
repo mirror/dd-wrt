@@ -1,0 +1,73 @@
+#!/bin/bash
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1ifname-$rnd"
+ns2="nft2ifname-$rnd"
+
+cleanup()
+{
+	ip netns del "$ns1"
+	ip netns del "$ns2"
+}
+
+trap cleanup EXIT
+
+set -e
+
+ip netns add "$ns1"
+ip netns add "$ns2"
+ip -net "$ns1" link set lo up
+ip -net "$ns2" link set lo up
+
+ip link add veth0 netns $ns1 type veth peer name veth0 netns $ns2
+
+ip -net "$ns1" link set veth0 addr da:d3:00:01:02:03
+
+ip -net "$ns1" link add link veth0 name vlan10 type vlan proto 802.1ad id 10
+ip -net "$ns1" link add link vlan10 name vlan10.100 type vlan proto 802.1q id 100
+
+ip -net "$ns2" link add link veth0 name vlan10 type vlan proto 802.1ad id 10
+ip -net "$ns2" link add link vlan10 name vlan10.100 type vlan proto 802.1q id 100
+
+for dev in veth0 vlan10 vlan10.100; do
+	ip -net "$ns1" link set $dev up
+	ip -net "$ns2" link set $dev up
+done
+
+ip -net "$ns1" addr add 10.1.1.1/24 dev vlan10.100
+ip -net "$ns2" addr add 10.1.1.2/24 dev vlan10.100
+
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+table netdev t {
+	chain c1 {
+		type filter hook ingress device veth0 priority filter;
+		ether type 8021ad vlan id 10 vlan type 8021q vlan id 100 vlan type ip counter
+	}
+
+	chain c2 {
+		type filter hook ingress device vlan10 priority filter;
+		vlan id 100 ip daddr 10.1.1.2 counter
+	}
+
+	chain c3 {
+		type filter hook ingress device vlan10.100 priority filter;
+		ip daddr 10.1.1.2 counter
+	}
+}
+EOF
+
+ip netns exec "$ns1" ping -c 1 10.1.1.2
+ip netns exec "$ns2" $NFT list ruleset
+
+set +e
+
+ip netns exec "$ns2" $NFT list chain netdev t c1 | grep 'counter packets 0 bytes 0'
+[[ $? -eq 0 ]] && exit 1
+
+ip netns exec "$ns2" $NFT list chain netdev t c2 | grep 'counter packets 0 bytes 0'
+[[ $? -eq 0 ]] && exit 1
+
+ip netns exec "$ns2" $NFT list chain netdev t c3 | grep 'counter packets 0 bytes 0'
+[[ $? -eq 0 ]] && exit 1
+
+exit 0

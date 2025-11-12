@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+RULESET='
+define set1 = {
+	2.2.2.0/24,
+	3.3.3.0/24,
+}
+define set2 = {
+	$set1,
+	1.1.1.0/24
+}
+table ip x {
+	chain y {
+		ip saddr { 3.3.3.0/24, $set2 }
+	}
+}'
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load ruleset" >&2
+        exit 1
+fi

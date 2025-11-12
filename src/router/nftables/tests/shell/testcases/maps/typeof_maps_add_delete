@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_dynset_op_delete)
+
+CONDMATCH="ip saddr @dynmark"
+NCONDMATCH="ip saddr != @dynmark"
+
+# use reduced feature set
+if [ "$NFT_TEST_HAVE_map_lookup" = n ] ; then
+	CONDMATCH=""
+	NCONDMATCH=""
+fi
+
+EXPECTED="table ip dynset {
+	map dynmark {
+		typeof ip daddr : meta mark
+		counter
+		size 64
+		timeout 5m
+	}
+
+	chain test_ping {
+		$CONDMATCH counter comment \"should not increment\"
+		$NCONDMATCH add @dynmark { ip saddr : 0x1 } counter
+		$CONDMATCH counter comment \"should increment\"
+		$CONDMATCH delete @dynmark { ip saddr : 0x1 }
+		$CONDMATCH counter comment \"delete should be instant but might fail under memory pressure\"
+	}
+
+	chain input {
+		type filter hook input priority 0; policy accept;
+
+		add @dynmark { 10.2.3.4 timeout 2s : 0x2 } comment \"also check timeout-gc\"
+		meta l4proto icmp ip daddr 127.0.0.42 jump test_ping
+	}
+}"
+
+set -e
+$NFT -f - <<< $EXPECTED
+$NFT list ruleset
+
+ip link set lo up
+ping -c 1 127.0.0.42
+
+$NFT get element ip dynset dynmark { 10.2.3.4 }
+
+# wait so that 10.2.3.4 times out.
+sleep 3
+
+set +e
+$NFT get element ip dynset dynmark { 10.2.3.4 } && exit 1
+
+if [ "$NFT_TEST_HAVE_map_lookup" = n ] ; then
+	echo "Only tested a subset due to NFT_TEST_HAVE_map_lookup=n. Skipped."
+	exit 77
+fi

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+test -d "$NFT_TEST_TESTTMPDIR"
+
+# Input file contains rules with anon sets that contain
+# one element, plus extra rule with two elements (that should be
+# left alone).
+
+# Dump file has the simplified rules where anon sets have been
+# replaced by equality tests where possible.
+file_input1="$NFT_TEST_TESTTMPDIR/input1.nft"
+
+cat <<EOF > "$file_input1"
+table ip test {
+	chain test {
+		# Test cases where anon set can be removed:
+		ip saddr { 127.0.0.1 } accept
+		iif { "lo" } accept
+
+		# negation, can change to != 22.
+		tcp dport != { 22 } drop
+
+		# single prefix, can remove anon set.
+		ip saddr { 127.0.0.0/8 } accept
+
+		# range, can remove anon set.
+		ip saddr { 127.0.0.1-192.168.7.3 } accept
+		tcp sport { 1-1023 } drop
+
+		# Test cases where anon set must be kept.
+
+		# 2 elements, cannot remove the anon set.
+		ip daddr { 192.168.7.1, 192.168.7.5 } accept
+		tcp dport { 80, 443 } accept
+
+		# single element, but concatenation which is not
+		# supported outside of set/map context at this time.
+		ip daddr . tcp dport { 192.168.0.1 . 22 } accept
+
+		# single element, but a map.
+		meta mark set ip daddr map { 192.168.0.1 : 1 }
+
+		# 2 elements.  This could be converted because
+		# ct state cannot be both established and related
+		# at the same time, but this needs extra work.
+		ct state { established, related } accept
+	}
+}
+EOF
+
+$NFT -f "$file_input1"

@@ -1,0 +1,5 @@
+table ip t {
+        chain c {
+                oifname set ip9dscp << 26 | 0x10
+        }
+}

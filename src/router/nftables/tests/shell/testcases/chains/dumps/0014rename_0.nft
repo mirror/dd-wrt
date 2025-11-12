@@ -1,0 +1,7 @@
+table ip t {
+	chain c1 {
+	}
+
+	chain c2 {
+	}
+}

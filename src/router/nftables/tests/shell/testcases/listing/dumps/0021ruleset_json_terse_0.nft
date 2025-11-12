@@ -1,0 +1,9 @@
+table ip test {
+	set s {
+		type ipv4_addr
+		elements = { 192.168.3.4, 192.168.3.5 }
+	}
+
+	chain c {
+	}
+}

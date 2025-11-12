@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_chain_binding)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_chain_multidevice)
+
+set -e
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1ns-$rnd"
+
+iface_cleanup() {
+	ip netns del $ns1 &>/dev/null || :
+}
+trap 'iface_cleanup' EXIT
+
+load_ruleset() {
+	family=$1
+
+	ip netns add $ns1
+	ip -net $ns1 link add d0 type dummy
+	ip -net $ns1 link add d1 type dummy
+	ip -net $ns1 link add d2 type dummy
+
+	# Test auto-removal of chain hook on device removal
+	RULESET="table $family x {
+	chain x {}
+	chain w {
+		ip daddr 8.7.6.0/24 jump {
+			ip daddr vmap { 8.7.6.3 : jump x, 8.7.6.4 : jump x }
+		}
+	}
+	chain y {
+		type filter hook ingress devices = { d0, d1, d2 } priority 0;
+		ip saddr { 1.2.3.4, 2.3.4.5 } counter
+		ip daddr vmap { 5.4.3.0/24 : jump w, 8.9.0.0/24 : jump x }
+	}
+}"
+	ip netns exec $ns1 $NFT -f - <<< $RULESET
+	ip netns del $ns1
+}
+
+load_ruleset "inet"
+load_ruleset "netdev"

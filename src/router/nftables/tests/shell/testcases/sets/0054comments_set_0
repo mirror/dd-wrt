@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+# Test that comments are added to sets
+
+$NFT add table t
+$NFT add set t s {type ipv4_addr \; flags interval \; comment "test" \;}
+$NFT add map t m {type ipv4_addr : ipv4_addr \; flags interval \; comment \"another test\" \;}

@@ -1,0 +1,45 @@
+# rt classid "cosmos"
+[
+    {
+        "match": {
+            "left": {
+                "rt": {
+                    "key": "classid"
+                }
+            },
+	    "op": "==",
+            "right": "cosmos"
+        }
+    }
+]
+
+# rt ipsec exists
+[
+    {
+        "match": {
+            "left": {
+                "rt": {
+                    "key": "ipsec"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# rt ipsec missing
+[
+    {
+        "match": {
+            "left": {
+                "rt": {
+                    "key": "ipsec"
+                }
+            },
+            "op": "==",
+            "right": false
+        }
+    }
+]
+

@@ -1,0 +1,513 @@
+# ct original ip saddr 192.168.0.1
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "original",
+                    "key": "ip saddr"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    }
+]
+
+# ct reply ip saddr 192.168.0.1
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "reply",
+                    "key": "ip saddr"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    }
+]
+
+# ct original ip daddr 192.168.0.1
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "original",
+                    "key": "ip daddr"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    }
+]
+
+# ct reply ip daddr 192.168.0.1
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "reply",
+                    "key": "ip daddr"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.0.1"
+        }
+    }
+]
+
+# ct original ip saddr 192.168.1.0/24
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "original",
+                    "key": "ip saddr"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "192.168.1.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# ct reply ip saddr 192.168.1.0/24
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "reply",
+                    "key": "ip saddr"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "192.168.1.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# ct original ip daddr 192.168.1.0/24
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "original",
+                    "key": "ip daddr"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "192.168.1.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# ct reply ip daddr 192.168.1.0/24
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "reply",
+                    "key": "ip daddr"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "192.168.1.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# ct l3proto ipv4
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "key": "l3proto"
+                }
+            },
+	    "op": "==",
+            "right": "ipv4"
+        }
+    }
+]
+
+# ct protocol 6 ct original proto-dst 22
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "key": "protocol"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "original",
+                    "key": "proto-dst"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ct original protocol 17 ct reply proto-src 53
+[
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "original",
+                    "key": "protocol"
+                }
+            },
+	    "op": "==",
+            "right": 17
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "dir": "reply",
+                    "key": "proto-src"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    }
+]
+
+# meta mark set ct original ip daddr map { 1.1.1.1 : 0x00000011 }
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "1.1.1.1",
+                                17
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "ct": {
+                            "dir": "original",
+                            "key": "ip daddr"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# meta mark set ct original ip saddr . meta mark map { 1.1.1.1 . 0x00000014 : 0x0000001e }
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                {
+                                    "concat": [
+                                        "1.1.1.1",
+                                        20
+                                    ]
+                                },
+                                30
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "concat": [
+                            {
+                                "ct": {
+                                    "dir": "original",
+                                    "key": "ip saddr"
+                                }
+                            },
+                            {
+                                "meta": {
+                                    "key": "mark"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+
+# ct original ip saddr . meta mark { 1.1.1.1 . 0x00000014 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "ct": {
+                            "dir": "original",
+                            "key": "ip saddr"
+                        }
+                    },
+                    {
+                        "meta": {
+                            "key": "mark"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "1.1.1.1",
+                            20
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip dscp << 2 | 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "<<": [
+                            {
+                                "payload": {
+                                    "field": "dscp",
+                                    "protocol": "ip"
+                                }
+                            },
+                            2
+                        ]
+                    },
+                    16
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip dscp << 26 | 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "<<": [
+                            {
+                                "payload": {
+                                    "field": "dscp",
+                                    "protocol": "ip"
+                                }
+                            },
+                            26
+                        ]
+                    },
+                    16
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip dscp & 0x0f << 1
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    "af33"
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip dscp & 0x0f << 2
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    60
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip dscp | 0x04
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    4
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ip dscp | 1 << 20
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "payload": {
+                            "field": "dscp",
+                            "protocol": "ip"
+                        }
+                    },
+                    1048576
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set ct mark | ip dscp | 0x200 counter
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                  {
+                    "ct": {
+                      "key": "mark"
+                    }
+                  },
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "dscp"
+                    }
+                  },
+                  512
+                ]
+            }
+        }
+    },
+    {
+        "counter": null
+    }
+]

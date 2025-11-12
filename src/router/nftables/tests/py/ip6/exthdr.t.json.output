@@ -1,0 +1,30 @@
+# exthdr hbh 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": true
+        }
+    }
+]
+
+# exthdr hbh 0
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": false
+        }
+    }
+]
+

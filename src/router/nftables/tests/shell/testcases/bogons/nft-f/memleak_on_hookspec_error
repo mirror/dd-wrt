@@ -1,0 +1,21 @@
+table ip filter {
+	ct expectation ctexpect {
+		protocol tcp
+		size 12
+		l3proto ip
+	} . inet_proto : mark
+		flags interval,timeout
+	}
+
+	chain output {
+		type gilter hook output priori
+
+	chain c {
+		cttable inet filter {
+	map test {
+		type mark . inet_service . inet_proto : mark
+		flags interval,timeout
+	}
+
+	chain output {
+		type gilter hook output priority filuer; policy 

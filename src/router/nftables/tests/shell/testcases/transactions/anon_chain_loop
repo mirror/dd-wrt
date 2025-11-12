@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# anon chains with c1 -> c2 recursive jump, expect failure
+$NFT -f - <<EOF
+table ip t {
+ chain c2 { type filter hook input priority 0; }
+ chain c1 { }
+}
+
+add t c1 ip saddr 127.0.0.1 jump { jump c2; }
+add t c2 ip saddr 127.0.0.1 jump { jump c1; }
+EOF
+
+if [ $? -eq 0 ] ; then
+        echo "E: able to load bad ruleset" >&2
+        exit 1
+fi
+
+exit 0

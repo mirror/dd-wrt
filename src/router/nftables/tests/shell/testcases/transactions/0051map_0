@@ -1,0 +1,122 @@
+#!/bin/bash
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1trans-$rnd"
+
+#
+# dependency tracking for implicit set
+#
+RULESET="table ip x {
+	chain w {}
+	chain m {}
+
+	chain y {
+		ip saddr vmap { 1.1.1.1 : jump w, 2.2.2.2 : accept, 3.3.3.3 : goto m }
+	}
+}"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+ip netns add $ns1
+ip netns exec $ns1 $NFT -f - <<< "$RULESET" >/dev/null || exit 0
+ip netns del $ns1
+
+RULESET="flush chain ip x y
+delete chain ip x w"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+
+#
+# dependency tracking for map in implicit chain
+#
+RULESET="table ip x {
+	chain w {}
+	chain m {}
+
+	chain y {
+		meta iifname \"eno1\" jump {
+			ip saddr vmap { 1.1.1.1 : jump w, 3.3.3.3 : goto m }
+		}
+	}
+}"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+ip netns add $ns1
+ip netns exec $ns1 $NFT -f - <<< "$RULESET" >/dev/null || exit 0
+ip netns del $ns1
+
+RULESET="flush chain ip x y
+delete chain ip x w"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+
+#
+# dependency tracking for explicit map
+#
+RULESET="table ip x {
+	chain w {}
+	chain m {}
+
+	map y {
+		type ipv4_addr : verdict
+		elements = { 1.1.1.1 : jump w, 2.2.2.2 : accept, 3.3.3.3 : goto m }
+	}
+}"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+ip netns add $ns1
+ip netns exec $ns1 $NFT -f - <<< "$RULESET" >/dev/null || exit 0
+ip netns del $ns1
+
+RULESET="delete set ip x y
+delete chain ip x w"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+
+#
+# error path for implicit set
+#
+RULESET="table inet filter {
+	chain w {
+		jump z
+	}
+	chain z {
+		jump w
+	}
+
+	chain test {
+		ip protocol { tcp, udp } ip saddr vmap { 1.1.1.1 : jump z } counter flow add @nonexisting
+		ip6 nexthdr { tcp, udp } ct mark and 2 == 2 counter
+	}
+}"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+
+#
+# error path for implicit set
+#
+RULESET="table inet filter {
+	chain w {
+		jump z
+	}
+	chain z {
+		jump w
+	}
+
+	chain test {
+		ip protocol { tcp, udp } jump {
+			ip saddr vmap { 1.1.1.1 : jump z }
+		}
+	        ip6 nexthdr { tcp, udp } ct mark and 2 == 2 counter
+	}
+}"
+
+$NFT -c -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0
+$NFT flush table inet filter || exit 0

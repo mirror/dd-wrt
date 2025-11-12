@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# table with invalid expression (masquerade called from filter table).
+# nft must return an error.  Also catch nfnetlink retry loops that
+# cause nft or kernel to spin.
+timeout 3 $NFT -f - <<EOF
+table ip t0 {
+	chain c { }
+	chain input {
+		type filter hook input priority 0;
+		jump c
+	}
+}
+
+table ip t1 {
+	chain a {
+		masquerade
+	}
+	chain input {
+		type filter hook input priority 1;
+		jump a
+	}
+}
+EOF
+
+rc=$?
+if [ $rc -eq 0 ]; then
+	echo "Ruleset should have failed" 1>&2
+	exit 111
+fi
+
+# 124 means 'command timed out', fail if this
+# happens.  Else, pass, failure is wanted here.
+if [ $rc -ne 124 ]; then
+	exit 0
+fi
+
+exit $rc

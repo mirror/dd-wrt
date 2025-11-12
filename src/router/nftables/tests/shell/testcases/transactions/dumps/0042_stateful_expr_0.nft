@@ -1,0 +1,5 @@
+table ip filter {
+	map m1 {
+		type ipv4_addr : counter
+	}
+}

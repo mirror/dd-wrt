@@ -1,0 +1,39 @@
+{
+  "nftables": [
+    {
+  "metainfo": {
+"ver": "ION",
+    "rame": "RAME",
+    "json_schema_version": 1
+  }
+    },
+    {
+  "table": { "family": "ip", "name": "filter",
+    "le": 0
+  }
+    },
+    {
+  "set": {
+    "family": "ip",
+    "name": "test_set",
+    "table": "filter",
+    "type": [
+  "iface_index",   "ether_addr",   "ipv4_addr"
+    ],
+    "he": 0,
+    "flags": "interval",
+"elem": [
+  {
+    "elem": {
+  "val": {
+    "concat": [
+ "10.1.2.3"
+    ]   },
+  "comment": "90"
+}
+  }
+    ]
+  }
+}
+  ]
+}

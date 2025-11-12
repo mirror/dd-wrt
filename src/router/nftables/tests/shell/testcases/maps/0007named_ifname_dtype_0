@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# support for ifname in named maps
+
+EXPECTED="table inet t {
+	map m1 {
+		type ifname : ipv4_addr
+		elements = { \"eth0\" : 1.1.1.1 }
+	}
+
+	chain c {
+		ip daddr set iifname map @m1
+		ip daddr set oifname map @m1
+	}
+}"
+
+set -e
+$NFT -f - <<< "$EXPECTED"

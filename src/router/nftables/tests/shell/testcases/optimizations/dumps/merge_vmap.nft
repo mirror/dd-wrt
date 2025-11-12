@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		ip saddr . ip daddr vmap { 1.1.1.1 . 2.2.2.2 : accept, 2.2.2.2 . 3.3.3.3 : drop }
+	}
+}

@@ -1,0 +1,7 @@
+table inet t {
+	set s {
+		type ipv6_addr
+		flags interval
+		elements = { ::ffff:0.0.0.0/96 }
+	}
+}

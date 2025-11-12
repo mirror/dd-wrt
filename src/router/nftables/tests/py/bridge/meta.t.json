@@ -1,0 +1,105 @@
+# meta obrname "br0"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "obrname" }
+            },
+	    "op": "==",
+            "right": "br0"
+        }
+    }
+]
+
+# meta ibrname "br0"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "ibrname" }
+            },
+	    "op": "==",
+            "right": "br0"
+        }
+    }
+]
+
+# meta ibrvproto vlan
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "ibrvproto" }
+            },
+	    "op": "==",
+            "right": "8021q"
+        }
+    }
+]
+
+# meta ibrpvid 100
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "ibrpvid" }
+            },
+	    "op": "==",
+            "right": 100
+        }
+    }
+]
+
+# meta protocol ip udp dport 67
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "protocol"
+                }
+            },
+            "op": "==",
+            "right": "ip"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 67
+        }
+    }
+]
+
+# meta protocol ip6 udp dport 67
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "protocol"
+                }
+            },
+            "op": "==",
+            "right": "ip6"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+            "op": "==",
+            "right": 67
+        }
+    }
+]

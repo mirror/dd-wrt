@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_json)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_secmark)
+
+set -e
+
+$NFT flush ruleset
+
+RULESET='{"nftables": [{"metainfo": {"version": "1.0.5", "release_name": "Lester Gooch #4", "json_schema_version": 1}}, {"table": {"family": "inet", "name": "x", "handle": 4}}, {"secmark": {"family": "inet", "name": "ssh_server", "table": "x", "handle": 1, "context": "system_u:object_r:ssh_server_packet_t:s0"}}, {"chain": {"family": "inet", "table": "x", "name": "y", "handle": 2, "type": "filter", "hook": "input", "prio": -225, "policy": "accept"}}, {"chain": {"family": "inet", "table": "x", "name": "z", "handle": 3, "type": "filter", "hook": "output", "prio": 225, "policy": "accept"}}, {"rule": {"family": "inet", "table": "x", "chain": "y", "handle": 4, "expr": [{"match": {"op": "==", "left": {"payload": {"protocol": "tcp", "field": "dport"}}, "right": 2222}}, {"match": {"op": "in", "left": {"ct": {"key": "state"}}, "right": "new"}}, {"secmark": "ssh_server"}]}}, {"rule": {"family": "inet", "table": "x", "chain": "y", "handle": 5, "expr": [{"match": {"op": "in", "left": {"ct": {"key": "state"}}, "right": "new"}}, {"mangle": {"key": {"ct": {"key": "secmark"}}, "value": {"meta": {"key": "secmark"}}}}]}}, {"rule": {"family": "inet", "table": "x", "chain": "y", "handle": 6, "expr": [{"match": {"op": "in", "left": {"ct": {"key": "state"}}, "right": ["established", "related"]}}, {"mangle": {"key": {"meta": {"key": "secmark"}}, "value": {"ct": {"key": "secmark"}}}}]}}, {"rule": {"family": "inet", "table": "x", "chain": "z", "handle": 7, "expr": [{"match": {"op": "in", "left": {"ct": {"key": "state"}}, "right": "new"}}, {"mangle": {"key": {"ct": {"key": "secmark"}}, "value": {"meta": {"key": "secmark"}}}}]}}, {"rule": {"family": "inet", "table": "x", "chain": "z", "handle": 8, "expr": [{"match": {"op": "in", "left": {"ct": {"key": "state"}}, "right": ["established", "related"]}}, {"mangle": {"key": {"meta": {"key": "secmark"}}, "value": {"ct": {"key": "secmark"}}}}]}}]}'
+
+$NFT -j -f - <<< $RULESET

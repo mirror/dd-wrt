@@ -1,0 +1,116 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "filter",
+        "name": "input",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "ct helper": {
+        "family": "inet",
+        "name": "sip-5060u",
+        "table": "filter",
+        "handle": 0,
+        "type": "sip",
+        "protocol": "udp",
+        "l3proto": "ip"
+      }
+    },
+    {
+      "ct helper": {
+        "family": "inet",
+        "name": "sip-5060t",
+        "table": "filter",
+        "handle": 0,
+        "type": "sip",
+        "protocol": "tcp",
+        "l3proto": "ip"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "filter",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "ct helper": {
+              "map": {
+                "key": {
+                  "concat": [
+                    {
+                      "payload": {
+                        "protocol": "ip",
+                        "field": "protocol"
+                      }
+                    },
+                    {
+                      "payload": {
+                        "protocol": "th",
+                        "field": "dport"
+                      }
+                    }
+                  ]
+                },
+                "data": {
+                  "set": [
+                    [
+                      {
+                        "concat": [
+                          "udp",
+                          {
+                            "range": [
+                              10000,
+                              20000
+                            ]
+                          }
+                        ]
+                      },
+                      "sip-5060u"
+                    ],
+                    [
+                      {
+                        "concat": [
+                          "tcp",
+                          {
+                            "range": [
+                              10000,
+                              20000
+                            ]
+                          }
+                        ]
+                      },
+                      "sip-5060t"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

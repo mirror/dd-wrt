@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Files are included in alphabetical order.
+
+set -e
+
+tmpdir=$(mktemp -d)
+if [ ! -d $tmpdir ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfile1="$tmpdir/01_file.nft"
+touch $tmpfile1
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpfile2="$tmpdir/02_file.nft"
+touch $tmpfile2
+if [ ! -w $tmpfile2 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpfile3=$(mktemp)
+if [ ! -w $tmpfile3 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+# cleanup if aborted
+trap "rm -rf $tmpfile1 $tmpfile2 $tmpfile3 && rmdir $tmpdir" EXIT
+
+# add interdependent rulesets
+RULESET1="add table x"
+RULESET2="add chain x y"
+RULESET3="include \"$tmpdir/*\""
+
+# Note different order when compared with 0011dir_dependency_0. The idea
+# here is to introduce wrong order to get the loading fail.
+echo "$RULESET1" > $tmpfile2
+echo "$RULESET2" > $tmpfile1
+echo "$RULESET3" > $tmpfile3
+
+$NFT -f $tmpfile3 || exit 0
+echo "E: did not catch wrong file order in include directory" >&2
+exit 1

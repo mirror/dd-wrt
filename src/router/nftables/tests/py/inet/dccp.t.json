@@ -1,0 +1,232 @@
+# dccp sport 21-35
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "dccp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 21, 35 ]
+            }
+        }
+    }
+]
+
+# dccp sport != 21-35
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "dccp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 21, 35 ]
+            }
+        }
+    }
+]
+
+# dccp sport {23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "dccp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# dccp sport != {23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "dccp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# dccp sport 20-50
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "dccp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 20, 50 ]
+            }
+        }
+    }
+]
+
+# dccp dport {23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "dccp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# dccp dport != {23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "dccp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# dccp type {request, response, data, ack, dataack, closereq, close, reset, sync, syncack}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "dccp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "request",
+                    "response",
+                    "data",
+                    "ack",
+                    "dataack",
+                    "closereq",
+                    "close",
+                    "reset",
+                    "sync",
+                    "syncack"
+                ]
+            }
+        }
+    }
+]
+
+# dccp type != {request, response, data, ack, dataack, closereq, close, reset, sync, syncack}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "dccp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "request",
+                    "response",
+                    "data",
+                    "ack",
+                    "dataack",
+                    "closereq",
+                    "close",
+                    "reset",
+                    "sync",
+                    "syncack"
+                ]
+            }
+        }
+    }
+]
+
+# dccp type request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "dccp"
+                }
+            },
+	    "op": "==",
+            "right": "request"
+        }
+    }
+]
+
+# dccp type != request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "dccp"
+                }
+            },
+            "op": "!=",
+            "right": "request"
+        }
+    }
+]
+

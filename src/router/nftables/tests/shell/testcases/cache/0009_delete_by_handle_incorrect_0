@@ -1,0 +1,9 @@
+#!/bin/bash
+
+$NFT delete table handle 4000 && exit 1
+$NFT delete chain t handle 4000 && exit 1
+$NFT delete set t handle 4000 && exit 1
+$NFT delete map t handle 4000 && exit 1
+$NFT delete flowtable t handle 4000 && exit 1
+$NFT delete counter t handle 4000 && exit 1
+exit 0

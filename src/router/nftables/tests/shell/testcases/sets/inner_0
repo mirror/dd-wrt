@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_inner_matching)
+
+set -e
+
+RULESET="table netdev x {
+	set x {
+		typeof vxlan ip saddr . vxlan ip daddr
+		elements = {
+			3.3.3.3 . 4.4.4.4,
+		}
+	}
+
+	set y {
+		typeof vxlan ip saddr
+		flags dynamic
+	}
+
+        chain y {
+		udp dport 4789 vxlan ip saddr . vxlan ip daddr { 1.1.1.1 . 2.2.2.2 } counter
+		udp dport 4789 vxlan ip saddr . vxlan ip daddr @x counter
+		udp dport 4789 update @y { vxlan ip saddr }
+        }
+}"
+
+$NFT -f - <<< $RULESET

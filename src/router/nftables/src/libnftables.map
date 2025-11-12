@@ -1,0 +1,40 @@
+LIBNFTABLES_1 {
+global:
+  nft_ctx_add_include_path;
+  nft_ctx_clear_include_paths;
+  nft_ctx_new;
+  nft_ctx_buffer_output;
+  nft_ctx_unbuffer_output;
+  nft_ctx_buffer_error;
+  nft_ctx_unbuffer_error;
+  nft_ctx_get_output_buffer;
+  nft_ctx_get_error_buffer;
+  nft_ctx_free;
+  nft_ctx_set_output;
+  nft_ctx_set_error;
+  nft_ctx_get_dry_run;
+  nft_ctx_set_dry_run;
+  nft_ctx_output_get_flags;
+  nft_ctx_output_set_flags;
+  nft_ctx_output_get_debug;
+  nft_ctx_output_set_debug;
+  nft_run_cmd_from_buffer;
+  nft_run_cmd_from_filename;
+
+local: *;
+};
+
+LIBNFTABLES_2 {
+  nft_ctx_add_var;
+  nft_ctx_clear_vars;
+} LIBNFTABLES_1;
+
+LIBNFTABLES_3 {
+  nft_ctx_set_optimize;
+  nft_ctx_get_optimize;
+} LIBNFTABLES_2;
+
+LIBNFTABLES_4 {
+  nft_ctx_input_get_flags;
+  nft_ctx_input_set_flags;
+} LIBNFTABLES_3;

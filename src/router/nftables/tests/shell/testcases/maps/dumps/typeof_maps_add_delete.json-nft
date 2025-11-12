@@ -1,0 +1,290 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "dynset",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "dynset",
+        "name": "test_ping",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "dynset",
+        "name": "input",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "dynmark",
+        "table": "dynset",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "daddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "mark",
+        "size": 64,
+        "flags": [
+          "timeout"
+        ],
+        "timeout": 300,
+        "stmt": [
+          {
+            "counter": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "test_ping",
+        "handle": 0,
+        "comment": "should not increment",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "@dynmark"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "test_ping",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "!=",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "@dynmark"
+            }
+          },
+          {
+            "map": {
+              "op": "add",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "data": 1,
+              "map": "@dynmark"
+            }
+          },
+          {
+            "counter": {
+              "packets": 1,
+              "bytes": 84
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "test_ping",
+        "handle": 0,
+        "comment": "should increment",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "@dynmark"
+            }
+          },
+          {
+            "counter": {
+              "packets": 1,
+              "bytes": 84
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "test_ping",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "@dynmark"
+            }
+          },
+          {
+            "map": {
+              "op": "delete",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "data": 1,
+              "map": "@dynmark"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "test_ping",
+        "handle": 0,
+        "comment": "delete should be instant but might fail under memory pressure",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": "@dynmark"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "input",
+        "handle": 0,
+        "comment": "also check timeout-gc",
+        "expr": [
+          {
+            "map": {
+              "op": "add",
+              "elem": {
+                "elem": {
+                  "val": "10.2.3.4",
+                  "timeout": 2
+                }
+              },
+              "data": 2,
+              "map": "@dynmark"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "dynset",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "l4proto"
+                }
+              },
+              "right": "icmp"
+            }
+          },
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "127.0.0.42"
+            }
+          },
+          {
+            "jump": {
+              "target": "test_ping"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

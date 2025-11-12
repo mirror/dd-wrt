@@ -1,0 +1,14 @@
+table ip t {
+	map m {
+		type inet_service : verdict
+		elements = { 2 : jump c2 }
+	}
+
+	chain c1 {
+		type filter hook forward priority filter; policy accept;
+		tcp dport vmap @m
+	}
+
+	chain c2 {
+	}
+}

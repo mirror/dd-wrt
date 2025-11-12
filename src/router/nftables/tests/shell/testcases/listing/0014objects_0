@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# list only the object asked for with table
+
+EXPECTED="table ip test {
+	quota https-quota {
+		25 mbytes
+	}
+}"
+
+set -e
+
+$NFT add table test
+$NFT add quota test https-quota 25 mbytes
+$NFT add ct helper test cthelp { type \"sip\" protocol tcp \; }
+$NFT add table test-ip
+
+GET="$($NFT list quotas)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+
+GET="$($NFT list quota test https-quota)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi
+

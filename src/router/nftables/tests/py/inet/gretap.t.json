@@ -1,0 +1,178 @@
+# gretap ip saddr 10.141.11.2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": "10.141.11.2"
+        }
+    }
+]
+
+# gretap ip saddr 10.141.11.0/24
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "10.141.11.0",
+                    "len": 24
+                }
+            }
+        }
+    }
+]
+
+# gretap ip protocol 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# gretap udp sport 8888
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "udp",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": 8888
+        }
+    }
+]
+
+# gretap icmp type echo-reply
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": "echo-reply"
+        }
+    }
+]
+
+# gretap ether saddr 62:87:4d:d6:19:05
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": "62:87:4d:d6:19:05"
+        }
+    }
+]
+
+# gretap vlan id 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+
+# gretap ip dscp 0x02
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip",
+                    "tunnel": "gretap"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+
+# gretap ip saddr . gretap ip daddr { 1.2.3.4 . 4.3.2.1 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip",
+                            "tunnel": "gretap"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "daddr",
+                            "protocol": "ip",
+                            "tunnel": "gretap"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "1.2.3.4",
+                            "4.3.2.1"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+

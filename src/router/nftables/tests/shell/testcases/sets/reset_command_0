@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_reset_set)
+
+set -e
+
+trap '[[ $? -eq 0 ]] || echo FAIL' EXIT
+
+RULESET="table t {
+	set s {
+		type ipv4_addr . inet_proto . inet_service
+		flags interval, timeout
+		counter
+		timeout 30m
+		elements = {
+			1.0.0.1 . udp . 53 counter packets 5 bytes 30 expires 20m,
+			2.0.0.2 . tcp . 22 counter packets 10 bytes 100 timeout 15m expires 10m
+		}
+	}
+
+	set s2 {
+		type ipv4_addr
+		flags interval, timeout
+		counter
+		timeout 30m
+		elements = {
+			1.0.0.1 counter packets 5 bytes 30 expires 20m,
+			1.0.1.1-1.0.1.10 counter packets 5 bytes 30 expires 20m,
+			2.0.0.2 counter packets 10 bytes 100 timeout 15m expires 10m
+		}
+	}
+
+	map m {
+		type ipv4_addr : ipv4_addr
+		quota 50 bytes
+		elements = {
+			1.2.3.4 quota 50 bytes used 10 bytes : 10.2.3.4,
+			5.6.7.8 quota 100 bytes used 50 bytes : 50.6.7.8
+		}
+	}
+
+	map m1 {
+		type ipv4_addr : ipv4_addr
+		counter
+		timeout 30m
+		elements = {
+			1.2.3.4 counter packets 5 bytes 30 expires 20m : 10.2.3.4,
+			5.6.7.8 counter packets 10 bytes 100 timeout 15m expires 10m : 50.6.7.8
+		}
+	}
+
+	map m2 {
+		type ipv4_addr : ipv4_addr
+		flags interval, timeout
+		counter
+		timeout 30m
+		elements = {
+			1.2.3.4-1.2.3.10 counter packets 5 bytes 30 expires 20m : 10.2.3.4,
+			5.6.7.8-5.6.7.10 counter packets 10 bytes 100 timeout 15m expires 10m : 50.6.7.8
+		}
+	}
+}"
+
+echo -n "applying test ruleset: "
+$NFT -f - <<< "$RULESET"
+echo OK
+
+drop_seconds() {
+	sed 's/[0-9]\+m\?s//g'
+}
+expires_minutes() {
+	sed -n 's/.*expires \([0-9]*\)m.*/\1/p'
+}
+
+get_and_reset()
+{
+	local setname="$1"
+	local key="$2"
+
+	echo -n "get set elem matches reset set elem in set $setname: "
+
+	elem="element t $setname { $key }"
+	echo $NFT get $elem
+	$NFT get $elem
+	[[ $($NFT "get $elem ; reset $elem" | \
+		grep 'elements = ' | drop_seconds | uniq | wc -l) == 1 ]]
+	echo OK
+
+	echo -n "counters are reset, expiry left alone in set $setname: "
+	NEW=$($NFT "get $elem")
+	echo NEW $NEW
+	grep -q 'counter packets 0 bytes 0' <<< "$NEW"
+	[[ $(expires_minutes <<< "$NEW") -lt 20 ]]
+	echo OK
+}
+
+get_and_reset "s" "1.0.0.1 . udp . 53"
+get_and_reset "s2" "1.0.0.1"
+get_and_reset "s2" "1.0.1.1-1.0.1.10"
+get_and_reset "m1" "1.2.3.4"
+get_and_reset "m2" "1.2.3.4-1.2.3.10"
+
+echo -n "get map elem matches reset map elem: "
+elem='element t m { 1.2.3.4 }'
+[[ $($NFT "get $elem ; reset $elem" | \
+	grep 'elements = ' | uniq | wc -l) == 1 ]]
+echo OK
+
+echo -n "quota value is reset: "
+$NFT get element t m '{ 1.2.3.4 }' | grep -q 'quota 50 bytes : 10.2.3.4'
+echo OK
+
+echo -n "other elements remain the same: "
+OUT=$($NFT get element t s '{ 2.0.0.2 . tcp . 22 }')
+grep -q 'counter packets 10 bytes 100 timeout 15m' <<< "$OUT"
+VAL=$(expires_minutes <<< "$OUT")
+[[ $val -lt 10 ]]
+$NFT get element t m '{ 5.6.7.8 }' | grep -q 'quota 100 bytes used 50 bytes'
+echo OK
+
+echo -n "list set matches reset set: "
+EXP=$($NFT list set t s | drop_seconds)
+OUT=$($NFT reset set t s | drop_seconds)
+$DIFF -u <(echo "$EXP") <(echo "$OUT")
+echo OK
+
+echo -n "list map matches reset map: "
+EXP=$($NFT list map t m)
+OUT=$($NFT reset map t m)
+$DIFF -u <(echo "$EXP") <(echo "$OUT")
+echo OK
+
+echo -n "remaining elements are reset: "
+OUT=$($NFT list ruleset)
+grep -q '2.0.0.2 . tcp . 22 counter packets 0 bytes 0' <<< "$OUT"
+grep -q '5.6.7.8 quota 100 bytes : 50.6.7.8' <<< "$OUT"
+echo OK

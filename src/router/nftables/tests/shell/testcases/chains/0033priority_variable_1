@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Tests use of variables in priority specification
+
+set -e
+
+RULESET="
+define pri = *
+
+table inet global {
+    chain prerouting {
+        type filter hook prerouting priority \$pri
+        policy accept
+    }
+}"
+
+$NFT -f - <<< "$RULESET" && exit 1
+exit 0

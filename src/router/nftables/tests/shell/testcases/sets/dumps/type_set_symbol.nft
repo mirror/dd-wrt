@@ -1,0 +1,16 @@
+table ip t {
+	set s1 {
+		type ipv4_addr . ipv4_addr . inet_service
+		size 65535
+		flags dynamic,timeout
+		timeout 3h
+	}
+
+	chain c1 {
+		update @s1 { ip saddr . 10.180.0.4 . 80 }
+	}
+
+	chain c2 {
+		ip saddr . 1.2.3.4 . 80 @s1 goto c1
+	}
+}

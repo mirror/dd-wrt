@@ -1,0 +1,229 @@
+# ip saddr 192.168.1.3 counter name "cnt2"
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.1.3"
+        }
+    },
+    {
+        "counter": "cnt2"
+    }
+]
+
+# counter name tcp dport map {443 : "cnt1", 80 : "cnt2", 22 : "cnt1"}
+[
+    {
+        "counter": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            443,
+                            "cnt1"
+                        ],
+                        [
+                            80,
+                            "cnt2"
+                        ],
+                        [
+                            22,
+                            "cnt1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]
+
+# ip saddr 192.168.1.3 quota name "qt1"
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.1.3"
+        }
+    },
+    {
+        "quota": "qt1"
+    }
+]
+
+# quota name tcp dport map {443 : "qt1", 80 : "qt2", 22 : "qt1"}
+[
+    {
+        "quota": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            443,
+                            "qt1"
+                        ],
+                        [
+                            80,
+                            "qt2"
+                        ],
+                        [
+                            22,
+                            "qt1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]
+
+# ct helper set "cthelp1"
+[
+    {
+        "ct helper": "cthelp1"
+    }
+]
+
+# ct helper set tcp dport map {21 : "cthelp1", 2121 : "cthelp1" }
+[
+    {
+        "ct helper": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            21,
+                            "cthelp1"
+                        ],
+                        [
+                            2121,
+                            "cthelp1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]
+
+# ip saddr 192.168.1.3 limit name "lim1"
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "192.168.1.3"
+        }
+    },
+    {
+        "limit": "lim1"
+    }
+]
+
+# limit name tcp dport map {443 : "lim1", 80 : "lim2", 22 : "lim1"}
+[
+    {
+        "limit": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            22,
+                            "lim1"
+                        ],
+                        [
+                            80,
+                            "lim2"
+                        ],
+                        [
+                            443,
+                            "lim1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]
+
+# ct timeout set "cttime1"
+[
+    {
+        "ct timeout": "cttime1"
+    }
+]
+
+# ct expectation set "ctexpect1"
+[
+    {
+        "ct expectation": "ctexpect1"
+    }
+]
+
+# synproxy name tcp dport map {443 : "synproxy1", 80 : "synproxy2"}
+[
+    {
+        "synproxy": {
+            "map": {
+                "key": {
+                    "payload": {
+                        "field": "dport",
+                        "protocol": "tcp"
+                    }
+                },
+                "data": {
+                    "set": [
+                        [
+                            80,
+                            "synproxy2"
+                        ],
+                        [
+                            443,
+                            "synproxy1"
+                        ]
+                    ]
+                }
+            }
+        }
+    }
+]

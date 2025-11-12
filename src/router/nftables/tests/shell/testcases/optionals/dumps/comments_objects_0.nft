@@ -1,0 +1,42 @@
+table ip filter {
+	quota foo1 {
+		comment "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
+		0 bytes
+	}
+
+	quota q {
+		comment "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
+		over 1200 bytes
+	}
+
+	counter c {
+		comment "test2"
+		packets 0 bytes 0
+	}
+
+	ct helper h {
+		comment "test3"
+		type "sip" protocol tcp
+		l3proto ip
+	}
+
+	ct expectation e {
+		comment "test4"
+		protocol tcp
+		dport 666
+		timeout 100ms
+		size 96
+		l3proto ip
+	}
+
+	limit l {
+		comment "test5"
+		rate 400/hour
+	}
+
+	synproxy s {
+		comment "test6"
+		mss 1460
+		wscale 2
+	}
+}

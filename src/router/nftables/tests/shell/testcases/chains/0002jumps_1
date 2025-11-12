@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+MAX_JUMPS=16
+
+$NFT add table t
+
+$NFT add chain t c1 { type filter hook input priority 0\; }
+
+for i in $(seq 2 $MAX_JUMPS)
+do
+	$NFT add chain t c${i}
+done
+
+for i in $(seq 1 $((MAX_JUMPS - 1)))
+do
+	$NFT add rule t c${i} jump c$((i + 1))
+done
+
+# this last jump should fail: too many links
+$NFT add chain t c$((MAX_JUMPS + 1))
+
+$NFT add rule t c${MAX_JUMPS} jump c$((MAX_JUMPS + 1)) 2>/dev/null || exit 0
+echo "E: max jumps ignored?" >&2
+exit 1

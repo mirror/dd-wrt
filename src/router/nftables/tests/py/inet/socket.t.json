@@ -1,0 +1,74 @@
+# socket transparent 0
+[
+    {
+        "match": {
+            "left": {
+                "socket": {
+                    "key": "transparent"
+                }
+            },
+            "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# socket transparent 1
+[
+    {
+        "match": {
+            "left": {
+                "socket": {
+                    "key": "transparent"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# socket mark 0x00000005
+[
+    {
+        "match": {
+            "left": {
+                "socket": {
+                    "key": "mark"
+                }
+            },
+            "op": "==",
+            "right": 5
+        }
+    }
+]
+
+# socket wildcard 0
+[
+    {
+        "match": {
+            "left": {
+                "socket": {
+                    "key": "wildcard"
+                }
+            },
+            "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# socket wildcard 1
+[
+    {
+        "match": {
+            "left": {
+                "socket": {
+                    "key": "wildcard"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]

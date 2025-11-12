@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This testscase checks the nft checking of shadowed elements
+
+set -e
+$NFT add table inet t
+$NFT add set inet t s { type ipv6_addr \; flags interval \; }
+$NFT add element inet t s { fe00::/48 }
+if $NFT add element inet t s { fe00::/64 } 2>/dev/null ; then
+	echo "E: accepted shadowed element in named set" >&2
+	exit 1
+fi
+exit 0

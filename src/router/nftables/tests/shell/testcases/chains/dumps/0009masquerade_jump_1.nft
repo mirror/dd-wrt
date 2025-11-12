@@ -1,0 +1,9 @@
+table ip t {
+	chain output {
+		type nat hook output priority filter; policy accept;
+	}
+
+	chain c1 {
+		masquerade
+	}
+}

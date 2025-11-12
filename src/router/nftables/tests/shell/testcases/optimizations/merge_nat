@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip test1 {
+        chain y {
+                oif lo accept
+                ip saddr 4.4.4.4 dnat to 1.1.1.1
+                ip saddr 5.5.5.5 dnat to 2.2.2.2
+        }
+}"
+
+$NFT -o -f - <<< $RULESET
+
+RULESET="table ip test2 {
+        chain y {
+                oif lo accept
+                tcp dport 80 dnat to 1.1.1.1:8001
+                tcp dport 81 dnat to 2.2.2.2:9001
+                ip saddr 10.141.11.0/24 masquerade
+                ip saddr 10.141.13.0/24 masquerade
+        }
+}"
+
+$NFT -o -f - <<< $RULESET
+
+RULESET="table ip test4 {
+        chain y {
+                oif lo accept
+                ip daddr 1.1.1.1 tcp dport 80 dnat to 4.4.4.4:8000
+                ip daddr 2.2.2.2 tcp dport 81 dnat to 3.3.3.3:9000
+                tcp dport 83 redirect to :8083
+                tcp dport 84 redirect to :8084
+                tcp dport 85 redirect
+        }
+}"
+
+$NFT -o -f - <<< $RULESET

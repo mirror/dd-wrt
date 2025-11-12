@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_destroy)
+
+$NFT add table x
+
+# pass for non-existent map
+$NFT destroy map x y
+
+# successfully delete existing map
+$NFT add map x y '{ type ipv4_addr : ipv4_addr; }'
+$NFT destroy map x y

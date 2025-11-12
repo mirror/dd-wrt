@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# test for a segfault if bad syntax was used in set declaration
+# and the set is referenced in the same batch
+
+RULESET="
+add table t
+add chain t c
+add set t s {type ipv4_addr\;}
+add rule t c ip saddr @s
+"
+
+$NFT -f - <<< "$RULESET" 2>/dev/null && exit 1
+exit 0

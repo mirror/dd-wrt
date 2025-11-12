@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# test for kernel commit ca08987885a147643817d02bf260bc4756ce8cd4
+# ("netfilter: nf_tables: deactivate expressions in rule replecement routine")
+
+set -e
+$NFT add table t
+$NFT add chain t c1
+$NFT add chain t c2
+$NFT add rule ip t c1 jump c2
+$NFT replace rule ip t c1 handle 3 accept
+$NFT flush ruleset

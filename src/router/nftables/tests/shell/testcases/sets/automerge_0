@@ -1,0 +1,131 @@
+#!/bin/bash
+
+# NFT_TEST_SKIP(NFT_TEST_SKIP_slow)
+
+set -e
+
+RULESET="table inet x {
+	set y {
+		type inet_service
+		flags interval
+		auto-merge
+	}
+}"
+
+HOWMANY=65535
+if [ "$NFT_TEST_HAS_SOCKET_LIMITS" = y ] ; then
+	# The socket limit /proc/sys/net/core/wmem_max may be unsuitable for
+	# the test.
+	#
+	# Run only a subset of the test and mark as skipped at the end.
+	HOWMANY=5000
+fi
+
+$NFT -f - <<< $RULESET
+
+tmpfile=$(mktemp)
+echo -n "add element inet x y { " > $tmpfile
+for ((i=0;i<$HOWMANY;i+=2))
+do
+	echo -n "$i, " >> $tmpfile
+	if [ $i -eq $((HOWMANY-1)) ]
+	then
+		echo -n "$i" >> $tmpfile
+	fi
+done
+echo "}" >> $tmpfile
+
+$NFT -f $tmpfile
+
+tmpfile2=$(mktemp)
+for ((i=1;i<$HOWMANY;i+=2))
+do
+	echo "$i" >> $tmpfile2
+done
+
+tmpfile3=$(mktemp)
+shuf "$tmpfile2" --random-source=<("$NFT_TEST_BASEDIR/helpers/random-source.sh" "automerge-shuf-tmpfile2" "$NFT_TEST_RANDOM_SEED") > "$tmpfile3"
+i=0
+cat $tmpfile3 | while read line && [ $i -lt 10 ]
+do
+	$NFT add element inet x y { $line }
+	if [ $? -ne 0 ]
+	then
+		echo "failed to add $line"
+		exit 1
+	fi
+	i=$((i+1))
+done
+
+for ((i=0;i<10;i++))
+do
+	from=$(($RANDOM%$HOWMANY))
+	to=$(($from+100))
+	$NFT add element inet x y { $from-$to }
+	if [ $? -ne 0 ]
+	then
+		echo "failed to add $from-$to"
+		exit 1
+	fi
+
+	$NFT get element inet x y { $from-$to } 1>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo "failed to get $from-$to"
+		exit 1
+	fi
+
+	# partial removals in the previous random range
+	from2=$(($from+10))
+	to2=$(($to-10))
+	$NFT delete element inet x y { $from, $to, $from2-$to2 }
+	if [ $? -ne 0 ]
+	then
+		echo "failed to delete $from, $to, $from2-$to2"
+		exit 1
+	fi
+
+	# check deletions are correct
+	from=$(($from+1))
+	$NFT get element inet x y { $from } 1>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo "failed to get $from"
+		exit 1
+	fi
+
+	to=$(($to-1))
+	$NFT get element inet x y { $to } 1>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo "failed to get $to"
+		exit 1
+	fi
+
+	from2=$(($from2-1))
+	$NFT get element inet x y { $from2 } 1>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo "failed to get $from2"
+		exit 1
+	fi
+	to2=$(($to2+1))
+
+	$NFT get element inet x y { $to2 } 1>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo "failed to get $to2"
+		exit 1
+	fi
+done
+
+rm -f $tmpfile
+rm -f $tmpfile2
+rm -f $tmpfile3
+
+if [ "$HOWMANY" != 65535 ] ; then
+	echo "NFT_TEST_HAS_SOCKET_LIMITS indicates that the socket limit for"
+	echo "/proc/sys/net/core/wmem_max is too small for this test. Mark as SKIPPED"
+	echo "You may bump the limit and rerun with \`NFT_TEST_HAS_SOCKET_LIMITS=n\`."
+	exit 77
+fi

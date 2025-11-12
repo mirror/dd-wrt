@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain t c1
+$NFT add chain t c2
+$NFT add rule t c1 jump c2
+
+# kernel should return EBUSY
+$NFT delete chain t c2 2>/dev/null || exit 0
+echo "E: deleted a busy chain?" >&2
+exit 1

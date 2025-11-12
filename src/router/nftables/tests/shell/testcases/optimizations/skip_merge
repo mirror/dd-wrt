@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table inet filter {
+    set udp_accepted {
+        type inet_service;
+        elements = {
+            isakmp, ipsec-nat-t
+        }
+    }
+
+    set tcp_accepted {
+        type inet_service;
+        elements = {
+            http, https
+        }
+    }
+
+    chain udp_input {
+        udp dport 1-128 accept
+        udp dport @udp_accepted accept
+        udp dport domain accept
+    }
+
+    chain tcp_input {
+        tcp dport 1-128 accept
+        tcp dport 8888-9999 accept
+        tcp dport @tcp_accepted accept
+        tcp dport 1024-65535 accept
+    }
+}"
+
+$NFT -o -f - <<< $RULESET

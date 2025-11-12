@@ -1,0 +1,8 @@
+# 05abe4456fa3 ("netfilter: nf_tables: allow to register flowtable with no devices")
+# v5.8-rc1~165^2~27^2~1
+table ip filter2 {
+	flowtable main_ft2 {
+		hook ingress priority filter
+		counter
+	}
+}

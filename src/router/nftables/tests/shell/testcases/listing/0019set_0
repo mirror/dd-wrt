@@ -1,0 +1,18 @@
+#!/bin/bash
+
+EXPECTED="table inet filter {
+	set ipset {
+		type ipv4_addr
+	}
+}"
+
+set -e
+
+$NFT -f - <<< "$EXPECTED"
+$NFT flush set inet filter ipset
+
+GET="$($NFT list set inet filter ipset)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

@@ -1,0 +1,7 @@
+table netdev test {
+	flags dormant
+
+	chain ingress {
+		type filter hook ingress device "dummy1" priority filter; policy drop;
+	}
+}

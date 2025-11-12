@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table x
+delete table x
+add table x
+add table y"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

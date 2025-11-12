@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip a {
+	set x {
+		type inet_service;
+	}
+}
+table ip6 a {
+	set x {
+		type inet_service;
+	}
+}
+add element ip a x { 1 }
+add element ip a x { 2 }
+add element ip6 a x { 2 }"
+
+$NFT -f - <<< $RULESET
+
+RULESET="define m = { 3, 4 }
+add element ip a x \$m
+add element ip a x { 5 }"
+
+$NFT -f - <<< $RULESET

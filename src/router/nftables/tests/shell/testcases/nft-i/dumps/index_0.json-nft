@@ -1,0 +1,69 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "foo",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "foo",
+        "name": "bar",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "foo",
+        "chain": "bar",
+        "handle": 0,
+        "expr": [
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "foo",
+        "chain": "bar",
+        "handle": 0,
+        "expr": [
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "foo",
+        "chain": "bar",
+        "handle": 0,
+        "expr": [
+          {
+            "accept": null
+          }
+        ]
+      }
+    }
+  ]
+}

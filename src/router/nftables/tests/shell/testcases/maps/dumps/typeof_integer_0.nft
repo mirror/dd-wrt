@@ -1,0 +1,20 @@
+table inet t {
+	map m1 {
+		typeof udp length . @ih,32,32 : verdict
+		flags interval
+		elements = { 20-80 . 0x14 : accept,
+			     1-10 . 0xa : drop }
+	}
+
+	map m2 {
+		typeof udp length . @ih,32,32 : verdict
+		elements = { 30 . 0x1e : drop,
+			     20 . 0x24 : accept }
+	}
+
+	chain c {
+		udp length . @nh,32,32 vmap @m1
+		udp length . @nh,32,32 vmap @m2
+		udp length . @th,160,128 vmap { 47-63 . 0xe373135363130333131303735353203 : accept }
+	}
+}

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+	chain foo {
+		icmp id 42
+	}
+}"
+
+$NFT -f - <<< $RULESET
+
+$NFT insert rule ip x foo index 0 accept

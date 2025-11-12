@@ -1,0 +1,32 @@
+# meta nfproto ipv4 icmp type echo-request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmp"
+                }
+            },
+	    "op": "==",
+            "right": "echo-request"
+        }
+    }
+]
+
+# meta nfproto ipv6 icmpv6 type echo-request
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "icmpv6"
+                }
+            },
+	    "op": "==",
+            "right": "echo-request"
+        }
+    }
+]
+

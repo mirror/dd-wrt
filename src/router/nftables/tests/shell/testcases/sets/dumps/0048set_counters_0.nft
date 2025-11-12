@@ -1,0 +1,14 @@
+table ip x {
+	set y {
+		typeof ip saddr
+		counter
+		elements = { 192.168.10.35 counter packets 0 bytes 0,
+			     192.168.10.101 counter packets 0 bytes 0,
+			     192.168.10.135 counter packets 0 bytes 0 }
+	}
+
+	chain z {
+		type filter hook output priority filter; policy accept;
+		ip daddr @y
+	}
+}

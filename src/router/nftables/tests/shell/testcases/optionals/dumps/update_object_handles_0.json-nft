@@ -1,0 +1,39 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test-ip",
+        "handle": 0
+      }
+    },
+    {
+      "counter": {
+        "family": "ip",
+        "name": "traffic-counter",
+        "table": "test-ip",
+        "handle": 0,
+        "packets": 0,
+        "bytes": 0
+      }
+    },
+    {
+      "quota": {
+        "family": "ip",
+        "name": "traffic-quota",
+        "table": "test-ip",
+        "handle": 0,
+        "bytes": 52428800,
+        "used": 0,
+        "inv": false
+      }
+    }
+  ]
+}

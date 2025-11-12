@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+$NFT add table t
+$NFT add flowtable t f { hook ingress priority 10 \; devices = { lo }\; }
+if $NFT create flowtable t f { hook ingress priority 10 \; devices = { lo }\; } 2>/dev/null ; then
+	echo "E: flowtable creation not failing on existing set" >&2
+	exit 1
+fi
+$NFT add flowtable t f { hook ingress priority 10 \; devices = { lo }\; }
+
+exit 0

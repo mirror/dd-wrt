@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+RULESET="define concat-set-variable = { 10.10.10.10 . 25, 10.10.10.10 . 143 }
+
+table inet forward {
+	set concat-set-variable {
+		type ipv4_addr . inet_service
+		elements = \$concat-set-variable
+	}
+}"
+
+$NFT -f - <<< "$RULESET"

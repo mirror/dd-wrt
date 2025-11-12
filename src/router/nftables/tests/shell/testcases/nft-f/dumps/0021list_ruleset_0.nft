@@ -1,0 +1,5 @@
+table ip filter {
+	chain prerouting {
+		type filter hook prerouting priority -50; policy accept;
+	}
+}

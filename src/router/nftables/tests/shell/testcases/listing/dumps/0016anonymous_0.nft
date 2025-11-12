@@ -1,0 +1,6 @@
+table ip x {
+	chain y {
+		ip saddr 1.1.1.1
+		meta mark set ip saddr map { 1.1.1.1 : 0x00000002 }
+	}
+}

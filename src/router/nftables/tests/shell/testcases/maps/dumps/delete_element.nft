@@ -1,0 +1,12 @@
+table ip x {
+	map m {
+		typeof ct bytes : meta priority
+		flags interval
+		elements = { 2048001-4000000 : 1:2 }
+	}
+
+	chain y {
+		type filter hook output priority filter; policy accept;
+		meta priority set ct bytes map @m
+	}
+}

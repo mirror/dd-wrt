@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -e
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpdir1=$(mktemp -d)
+if [ ! -d $tmpdir1 ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfiles=""
+for i in `seq -w 1 32`; do
+        tmpfile2=$(mktemp -p $tmpdir1)
+        if [ ! -w $tmpfile2 ] ; then
+                echo "Failed to create tmp file" >&2
+                exit 0
+        fi
+        tmpfiles="$tmpfiles $tmpfile2"
+done
+
+trap "rm -rf $tmpfile $tmpfiles && rmdir $tmpdir1" EXIT # cleanup if aborted
+
+RULESET=" \
+include \"$tmpdir1/*\"
+"
+
+echo "$RULESET" > $tmpfile
+
+$NFT -f $tmpfile
+if [ $? -ne 0 ] ; then
+	echo "E: unable to load good ruleset" >&2
+	exit 1
+fi

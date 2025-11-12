@@ -1,0 +1,2996 @@
+# meta length 1000
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": 1000
+        }
+    }
+]
+
+# meta length 22
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# meta length != 233
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# meta length 33-45
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# meta length != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# meta length { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# meta length { 33-55, 67-88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 33, 55 ] },
+                    { "range": [ 67, 88 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta length { 33-55, 56-88, 100-120}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 33, 88 ] },
+                    { "range": [ 100, 120 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta length != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# meta length { 33-55, 66-88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 33, 55 ] },
+		    { "range": [ 66, 88 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta length != { 33-55, 66-88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "length" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    { "range": [ 33, 55 ] },
+		    { "range": [ 66, 88 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta protocol { ip, arp, ip6, vlan }
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "protocol" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "ip",
+                    "arp",
+                    "ip6",
+                    "vlan"
+                ]
+            }
+        }
+    }
+]
+
+# meta protocol != {ip, arp, ip6, 8021q}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "protocol" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "ip",
+                    "arp",
+                    "ip6",
+                    "8021q"
+                ]
+            }
+        }
+    }
+]
+
+# meta protocol ip
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "protocol" }
+            },
+            "op": "==",
+            "right": "ip"
+        }
+    }
+]
+
+# meta protocol != ip
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "protocol" }
+            },
+            "op": "!=",
+            "right": "ip"
+        }
+    }
+]
+
+# meta l4proto 22
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# meta l4proto != 233
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# meta l4proto 33-45
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# meta l4proto != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# meta l4proto { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# meta l4proto != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# meta l4proto { 33-55, 66-88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 33, 55 ] },
+                    { "range": [ 66, 88 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta l4proto != { 33-55, 66-88}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "l4proto" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    { "range": [ 33, 55 ] },
+                    { "range": [ 66, 88 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta priority root
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": "root"
+        }
+    }
+]
+
+# meta priority none
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": "none"
+        }
+    }
+]
+
+# meta priority 0x87654321
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": "0x87654321"
+        }
+    }
+]
+
+# meta priority 2271560481
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": 2271560481
+        }
+    }
+]
+
+# meta priority 1:1234
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": "1:1234"
+        }
+    }
+]
+
+# meta priority bcad:dadc
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": "bcad:dadc"
+        }
+    }
+]
+
+# meta priority aabb:0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": "aabb:0"
+        }
+    }
+]
+
+# meta priority != bcad:dadc
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "!=",
+            "right": "bcad:dadc"
+        }
+    }
+]
+
+# meta priority != aabb:0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "!=",
+            "right": "aabb:0"
+        }
+    }
+]
+
+# meta priority bcad:dada-bcad:dadc
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ "bcad:dada", "bcad:dadc" ]
+            }
+        }
+    }
+]
+
+# meta priority != bcad:dada-bcad:dadc
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ "bcad:dada", "bcad:dadc" ]
+            }
+        }
+    }
+]
+
+# meta priority {bcad:dada, bcad:dadc, aaaa:bbbb}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "bcad:dada",
+                    "bcad:dadc",
+                    "aaaa:bbbb"
+                ]
+            }
+        }
+    }
+]
+
+# meta priority set cafe:beef
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "priority" }
+            },
+            "value": "cafe:beef"
+        }
+    }
+]
+
+# meta priority != {bcad:dada, bcad:dadc, aaaa:bbbb}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "priority" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "aaaa:bbbb",
+                    "bcad:dada",
+                    "bcad:dadc"
+                ]
+            }
+        }
+    }
+]
+
+# meta mark 0x4
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+            "op": "==",
+            "right": "0x4"
+        }
+    }
+]
+
+# meta mark 0x32
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+            "op": "==",
+            "right": "0x32"
+        }
+    }
+]
+
+# meta mark and 0x03 == 0x01
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "meta": { "key": "mark" }
+                    },
+                    "0x03"
+                ]
+            },
+            "op": "==",
+            "right": "0x01"
+        }
+    }
+]
+
+# meta mark and 0x03 != 0x01
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "meta": { "key": "mark" }
+                    },
+                    "0x03"
+                ]
+            },
+            "op": "!=",
+            "right": "0x01"
+        }
+    }
+]
+
+# meta mark 0x10
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+            "op": "==",
+            "right": "0x10"
+        }
+    }
+]
+
+# meta mark != 0x10
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+            "op": "!=",
+            "right": "0x10"
+        }
+    }
+]
+
+# meta mark 0xffffff00/24
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "meta": {
+                            "key": "mark"
+                        }
+                    },
+                    4294967040
+                ]
+            },
+            "op": "==",
+            "right": 4294967040
+        }
+    }
+]
+
+# meta mark or 0x03 == 0x01
+[
+    {
+        "match": {
+            "left": {
+                "|": [
+                    {
+                        "meta": { "key": "mark" }
+                    },
+                    "0x03"
+                ]
+            },
+            "op": "==",
+            "right": "0x01"
+        }
+    }
+]
+
+# meta mark or 0x03 != 0x01
+[
+    {
+        "match": {
+            "left": {
+                "|": [
+                    {
+                        "meta": { "key": "mark" }
+                    },
+                    "0x03"
+                ]
+            },
+            "op": "!=",
+            "right": "0x01"
+        }
+    }
+]
+
+# meta mark xor 0x03 == 0x01
+[
+    {
+        "match": {
+            "left": {
+                "^": [
+		    {
+                        "meta": { "key": "mark" }
+                    },
+		    "0x03"
+                ]
+            },
+	    "op": "==",
+            "right": "0x01"
+        }
+    }
+]
+
+# meta mark xor 0x03 != 0x01
+[
+    {
+        "match": {
+            "left": {
+                "^": [
+                    {
+                        "meta": { "key": "mark" }
+                    },
+                    "0x03"
+                ]
+            },
+            "op": "!=",
+            "right": "0x01"
+        }
+    }
+]
+
+# meta iif "lo" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+            "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta iif != "lo" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+            "op": "!=",
+            "right": "lo"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta iifname "dummy0"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+            "op": "==",
+            "right": "dummy0"
+        }
+    }
+]
+
+# meta iifname != "dummy0"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+            "op": "!=",
+            "right": "dummy0"
+        }
+    }
+]
+
+# meta iifname {"dummy0", "lo"}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "dummy0",
+                    "lo"
+                ]
+            }
+        }
+    }
+]
+
+# meta iifname != {"dummy0", "lo"}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "dummy0",
+                    "lo"
+                ]
+            }
+        }
+    }
+]
+
+# meta iifname "dummy*"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+            "op": "==",
+            "right": "dummy*"
+        }
+    }
+]
+
+# meta iifname "dummy\*"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+            "op": "==",
+            "right": "dummy\\*"
+        }
+    }
+]
+
+# meta iiftype {ether, ppp, ipip, ipip6, loopback, sit, ipgre}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "ether",
+                    "ppp",
+                    "ipip",
+                    "ipip6",
+                    "loopback",
+                    "sit",
+                    "ipgre"
+                ]
+            }
+        }
+    }
+]
+
+# meta iiftype != {ether, ppp, ipip, ipip6, loopback, sit, ipgre}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "ether",
+                    "ppp",
+                    "ipip",
+                    "ipip6",
+                    "loopback",
+                    "sit",
+                    "ipgre"
+                ]
+            }
+        }
+    }
+]
+
+# meta iiftype != ether
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+            "op": "!=",
+            "right": "ether"
+        }
+    }
+]
+
+# meta iiftype ether
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+            "op": "==",
+            "right": "ether"
+        }
+    }
+]
+
+# meta iiftype != ppp
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+            "op": "!=",
+            "right": "ppp"
+        }
+    }
+]
+
+# meta iiftype ppp
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+            "op": "==",
+            "right": "ppp"
+        }
+    }
+]
+
+# meta oif "lo" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oif" }
+            },
+            "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta oif != "lo" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oif" }
+            },
+            "op": "!=",
+            "right": "lo"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta oifname "dummy0"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifname" }
+            },
+            "op": "==",
+            "right": "dummy0"
+        }
+    }
+]
+
+# meta oifname != "dummy0"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifname" }
+            },
+            "op": "!=",
+            "right": "dummy0"
+        }
+    }
+]
+
+# meta oifname { "dummy0", "lo"}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifname" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "dummy0",
+                    "lo"
+                ]
+            }
+        }
+    }
+]
+
+# meta oifname "dummy*"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifname" }
+            },
+            "op": "==",
+            "right": "dummy*"
+        }
+    }
+]
+
+# meta oifname "dummy\*"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifname" }
+            },
+            "op": "==",
+            "right": "dummy\\*"
+        }
+    }
+]
+
+# meta oiftype {ether, ppp, ipip, ipip6, loopback, sit, ipgre}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oiftype" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "ether",
+                    "ppp",
+                    "ipip",
+                    "ipip6",
+                    "loopback",
+                    "sit",
+                    "ipgre"
+                ]
+            }
+        }
+    }
+]
+
+# meta oiftype != {ether, ppp, ipip, ipip6, loopback, sit, ipgre}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oiftype" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "ether",
+                    "ppp",
+                    "ipip",
+                    "ipip6",
+                    "loopback",
+                    "sit",
+                    "ipgre"
+                ]
+            }
+        }
+    }
+]
+
+# meta oiftype != ether
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oiftype" }
+            },
+            "op": "!=",
+            "right": "ether"
+        }
+    }
+]
+
+# meta oiftype ether
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oiftype" }
+            },
+            "op": "==",
+            "right": "ether"
+        }
+    }
+]
+
+# meta skuid {"bin", "root", "daemon"} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "bin",
+                    "root",
+                    "daemon"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid != {"bin", "root", "daemon"} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "bin",
+                    "root",
+                    "daemon"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid "root"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "==",
+            "right": "root"
+        }
+    }
+]
+
+# meta skuid != "root"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "!=",
+            "right": "root"
+        }
+    }
+]
+
+# meta skuid lt 3000 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "<",
+            "right": 3000
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid gt 3000 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": ">",
+            "right": 3000
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid eq 3000 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "==",
+            "right": 3000
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid 3001-3005 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ 3001, 3005 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid != 2001-2005 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 2001, 2005 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid { 2001-2005, 3001-3005} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 2001, 2005 ] },
+                    { "range": [ 3001, 3005 ] }
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid != { 2001-2005, 3001-3005} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    { "range": [ 2001, 2005 ] },
+                    { "range": [ 3001, 3005 ] }
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid {"bin", "root", "daemon"} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "bin",
+                    "root",
+                    "daemon"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid != {"bin", "root", "daemon"} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "bin",
+                    "root",
+                    "daemon"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid "root"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "==",
+            "right": "root"
+        }
+    }
+]
+
+# meta skgid != "root"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "!=",
+            "right": "root"
+        }
+    }
+]
+
+# meta skgid lt 3000 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "<",
+            "right": 3000
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid gt 3000 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": ">",
+            "right": 3000
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid eq 3000 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "==",
+            "right": 3000
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid 2001-2005 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ 2001, 2005 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skgid != 2001-2005 accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 2001, 2005 ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta mark set 0xffffffc8 xor 0x16
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "^": [ "0xffffffc8", "0x16" ] }
+        }
+    }
+]
+
+# meta mark set 0x16 and 0x16
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "&": [ "0x16", "0x16" ] }
+        }
+    }
+]
+
+# meta mark set 0xffffffe9 or 0x16
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "|": [ "0xffffffe9", "0x16" ] }
+        }
+    }
+]
+
+# meta mark set 0xffffffde and 0x16
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "&": [ "0xffffffde", "0x16" ] }
+        }
+    }
+]
+
+# meta mark set 0xf045ffde or 0x10
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "|": [ "0xf045ffde", "0x10" ] }
+        }
+    }
+]
+
+# meta mark set 0xffffffde or 0x16
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "|": [ "0xffffffde", "0x16" ] }
+        }
+    }
+]
+
+# meta mark set 0x32 or 0xfffff
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "|": [ "0x32", "0xfffff" ] }
+        }
+    }
+]
+
+# meta mark set 0xfffe xor 0x16
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": { "^": [ "0xfffe", "0x16" ] }
+        }
+    }
+]
+
+# meta iif "lo"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+            "op": "==",
+            "right": "lo"
+        }
+    }
+]
+
+# meta oif "lo"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oif" }
+            },
+            "op": "==",
+            "right": "lo"
+        }
+    }
+]
+
+# meta oifname "dummy2" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifname" }
+            },
+            "op": "==",
+            "right": "dummy2"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta skuid 3000
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skuid" }
+            },
+            "op": "==",
+            "right": 3000
+        }
+    }
+]
+
+# meta skgid 3000
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "skgid" }
+            },
+            "op": "==",
+            "right": 3000
+        }
+    }
+]
+
+# meta rtclassid "cosmos"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "rtclassid" }
+            },
+            "op": "==",
+            "right": "cosmos"
+        }
+    }
+]
+
+# meta pkttype broadcast
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "==",
+            "right": "broadcast"
+        }
+    }
+]
+
+# meta pkttype host
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "==",
+            "right": "host"
+        }
+    }
+]
+
+# meta pkttype multicast
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "==",
+            "right": "multicast"
+        }
+    }
+]
+
+# meta pkttype != broadcast
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "!=",
+            "right": "broadcast"
+        }
+    }
+]
+
+# meta pkttype != host
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "!=",
+            "right": "host"
+        }
+    }
+]
+
+# meta pkttype != multicast
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "!=",
+            "right": "multicast"
+        }
+    }
+]
+
+# pkttype { broadcast, multicast} accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "pkttype" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "broadcast",
+                    "multicast"
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta cpu 1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# meta cpu != 1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "!=",
+            "right": 1
+        }
+    }
+]
+
+# meta cpu 1-3
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ 1, 3 ]
+            }
+        }
+    }
+]
+
+# meta cpu != 1-2
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 1, 2 ]
+            }
+        }
+    }
+]
+
+# meta cpu { 2,3}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    2,
+                    3
+                ]
+            }
+        }
+    }
+]
+
+# meta cpu { 2-3, 5-7}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 2, 3 ] },
+                    { "range": [ 5, 7 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta cpu != { 2,3}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cpu" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    2,
+                    3
+                ]
+            }
+        }
+    }
+]
+
+# meta iifgroup 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# meta iifgroup != 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "!=",
+            "right": 0
+        }
+    }
+]
+
+# meta iifgroup "default"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "==",
+            "right": "default"
+        }
+    }
+]
+
+# meta iifgroup != "default"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "!=",
+            "right": "default"
+        }
+    }
+]
+
+# meta iifgroup {"default", 11}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "default",
+		    11
+                ]
+            }
+        }
+    }
+]
+
+# meta iifgroup != {"default", 11}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "default",
+		    11
+                ]
+            }
+        }
+    }
+]
+
+# meta iifgroup { 11,33}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    11,
+                    33
+                ]
+            }
+        }
+    }
+]
+
+# meta iifgroup {11-33, 44-55}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 11, 33 ] },
+                    { "range": [ 44, 55 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta iifgroup != { 11,33}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    11,
+                    33
+                ]
+            }
+        }
+    }
+]
+
+# meta iifgroup != {11-33, 44-55}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    { "range": [ 11, 33 ] },
+                    { "range": [ 44, 55 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta oifgroup 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# meta oifgroup != 0
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "!=",
+            "right": 0
+        }
+    }
+]
+
+# meta oifgroup "default"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "==",
+            "right": "default"
+        }
+    }
+]
+
+# meta oifgroup != "default"
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "!=",
+            "right": "default"
+        }
+    }
+]
+
+# meta oifgroup {"default", 11}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "default",
+		    11
+                ]
+            }
+        }
+    }
+]
+
+# meta oifgroup != {"default", 11}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "default",
+		    11
+                ]
+            }
+        }
+    }
+]
+
+# meta oifgroup { 11,33}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    11,
+                    33
+                ]
+            }
+        }
+    }
+]
+
+# meta oifgroup {11-33, 44-55}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    { "range": [ 11, 33 ] },
+                    { "range": [ 44, 55 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta oifgroup != { 11,33}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    11,
+                    33
+                ]
+            }
+        }
+    }
+]
+
+# meta oifgroup != {11-33, 44-55}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "oifgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    { "range": [ 11, 33 ] },
+                    { "range": [ 44, 55 ] }
+                ]
+            }
+        }
+    }
+]
+
+# meta cgroup 1048577
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cgroup" }
+            },
+            "op": "==",
+            "right": 1048577
+        }
+    }
+]
+
+# meta cgroup != 1048577
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cgroup" }
+            },
+            "op": "!=",
+            "right": 1048577
+        }
+    }
+]
+
+# meta cgroup { 1048577, 1048578 }
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cgroup" }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    1048577,
+                    1048578
+                ]
+            }
+        }
+    }
+]
+
+# meta cgroup != { 1048577, 1048578}
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    1048577,
+                    1048578
+                ]
+            }
+        }
+    }
+]
+
+# meta cgroup 1048577-1048578
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cgroup" }
+            },
+            "op": "==",
+            "right": {
+                "range": [ 1048577, 1048578 ]
+            }
+        }
+    }
+]
+
+# meta cgroup != 1048577-1048578
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "cgroup" }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 1048577, 1048578 ]
+            }
+        }
+    }
+]
+
+# meta iif . meta oif { "lo" . "lo" }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "meta": { "key": "iif" }
+                    },
+                    {
+                        "meta": { "key": "oif" }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "lo",
+                            "lo"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# meta iif . meta oif . meta mark { "lo" . "lo" . 0x0000000a }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "meta": { "key": "iif" }
+                    },
+                    {
+                        "meta": { "key": "oif" }
+                    },
+                    {
+                        "meta": { "key": "mark" }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "lo",
+                            "lo",
+                            "0x0000000a"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]
+
+# meta iif . meta oif vmap { "lo" . "lo" : drop }
+[
+    {
+        "vmap": {
+            "key": {
+                "concat": [
+                    {
+                        "meta": { "key": "iif" }
+                    },
+                    {
+                        "meta": { "key": "oif" }
+                    }
+                ]
+            },
+            "data": {
+                "set": [
+                    [
+                        {
+                            "concat": [
+                                "lo",
+                                "lo"
+                            ]
+                        },
+                        {
+                            "drop": null
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+]
+
+# meta random eq 1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "random" }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# meta random gt 1000000
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "random" }
+            },
+            "op": ">",
+            "right": 1000000
+        }
+    }
+]
+
+# meta time "1970-05-23 21:07:14" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "==",
+            "right": "1970-05-23 21:07:14"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta time 12341234 drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "==",
+            "right": "12341234"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta time "2019-06-21 17:00:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "==",
+            "right": "2019-06-21 17:00:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta time "2019-07-01 00:00:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "==",
+            "right": "2019-07-01 00:00:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta time "2019-07-01 00:01:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "==",
+            "right": "2019-07-01 00:01:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta time "2019-07-01 00:00:01" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "==",
+            "right": "2019-07-01 00:00:01"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta time < "2022-07-01 11:00:00" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "<",
+            "right": "2022-07-01 11:00:00"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta time > "2022-07-01 11:00:00" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": ">",
+            "right": "2022-07-01 11:00:00"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta day "Saturday" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "day"
+                }
+            },
+            "op": "==",
+            "right": "Saturday"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta day 6 drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "day"
+                }
+            },
+            "op": "==",
+            "right": "6"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "17:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "17:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "17:00:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "17:00:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "17:00:01" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "17:00:01"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "00:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "00:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "00:01" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "00:01"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "01:01" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "01:01"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "02:02" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "02:02"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "03:03" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "03:03"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "24:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "24:00"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "23:59:60" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": "23:59:60"
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "00:00"-"02:02" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "in",
+            "right": {
+		"range": [
+		    "00:00",
+		    "02:02"
+		]
+	    }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "01:01"-"03:03" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "in",
+            "right": {
+		"range": [
+		    "01:01",
+		    "03:03"
+		]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "02:02"-"04:04" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    "02:02",
+                    "04:04"
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# meta hour "21:00"-"02:00" drop
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "hour"
+                }
+            },
+            "op": "in",
+            "right": {
+                "range": [
+                    "21:00",
+                    "02:00"
+                ]
+            }
+        }
+    },
+    {
+        "drop": null
+    }
+]
+
+# time < "2022-07-01 11:00:00" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": "<",
+            "right": "2022-07-01 11:00:00"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# time > "2022-07-01 11:00:00" accept
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "time"
+                }
+            },
+            "op": ">",
+            "right": "2022-07-01 11:00:00"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# meta mark set vlan id map { 1 : 0x00000001, 4095 : 0x00004095 }
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                4095,
+                                16533
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "payload": {
+                            "field": "id",
+                            "protocol": "vlan"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# meta mark set vlan id map @map1
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": "@map1",
+                    "key": {
+                        "payload": {
+                            "field": "id",
+                            "protocol": "vlan"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# meta mark set meta mark | iif | meta cpu
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "|": [
+                    {
+                        "meta": {
+                            "key": "mark"
+                        }
+                    },
+                    {
+                        "meta": {
+                            "key": "iif"
+                        }
+                    },
+                    {
+                        "meta": {
+                            "key": "cpu"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+]
+

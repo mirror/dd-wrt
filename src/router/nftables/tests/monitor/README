@@ -1,0 +1,59 @@
+Simple NFT MONITOR Testsuite
+============================
+
+The purpose of this suite of tests is to assert correct 'nft monitor' output for
+known input. The suite consists of the single shell script 'run-tests.sh' which
+performs the tests and a number of test definition files in 'testcases/'. The
+latter have to be suffixed '.t' in order to be recognized as such.
+
+Test Case Syntax
+----------------
+
+Each testcase defines a number of commands to pass on to 'nft' binary and an
+associated 'nft monitor' output definition. Prerequisites for each command have
+to be established manually, i.e. in order to test monitor output when adding a
+chain, the table containing it has to be created first. In between each
+testcase, rule set is flushed completely.
+
+Input lines are prefixed by 'I'. Multiple consecutive input lines are passed to
+'nft' together, hence lead to a single transaction.
+
+There are two types of output lines: Those for standard syntax, prefixed by 'O'
+and those for JSON output, prefixed by 'J'. For standard syntax output lines,
+there is a shortcut: If a line consists of 'O -' only, the test script uses all
+previous input lines as expected output directly. Of course this is not
+available for JSON output lines.
+
+Empty lines and those starting with '#' are ignored.
+
+Test Script Semantics
+---------------------
+
+The script iterates over all test case files, reading them line by line. It
+assumes that sections of 'I' lines alternate with sections of 'O'/'J' lines.
+After stripping the prefix, each line is appended to a temporary file. There are
+separate files for input and output lines.
+
+If a set of input and output lines is complete (i.e. upon encountering either a
+new input line or end of file), a testrun is performed: 'nft monitor' is run in
+background, redirecting the output into a third file. The input file is passed
+to 'nft -f'. Finally 'nft monitor' is killed and it's output compared to the
+output file created earlier. If the files differ, a unified diff is printed and
+test execution aborts.
+
+After each testrun, input and output files are cleared.
+
+Note: Running 'nft monitor' in background is prone to race conditions. Hence
+an artificial delay is introduced before calling 'nft -f' to allow for 'nft
+monitor' to complete initialization and another one before comparing the output
+to allow for 'nft monitor' to process the netlink events.
+
+By default, only standard syntax is being tested for, i.e. 'J'-prefixed lines
+are simply ignored. If JSON testing was requested (by passing '-j' flag to the
+test script), 'O'-prefixed lines in turn are ignored.
+
+There is one caveat with regards to JSON output: Since it always contains handle
+properties (if the given object possesses such) which is supposed to be
+arbitrary, there is a filter script which normalizes all handle values in
+monitor output to zero before comparison. Therefore expected output must have
+all handle properties present but with a value of zero.

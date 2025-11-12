@@ -1,0 +1,10 @@
+table inet x {
+        set y {
+                type ipv4_addr
+                elements = { 2.2.2.2, 3.3.3.3 }
+        }
+
+        chain y {
+                snat ip to ip saddr map @y
+        }
+}

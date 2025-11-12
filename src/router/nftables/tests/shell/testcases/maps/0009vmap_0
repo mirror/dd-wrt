@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_expr)
+
+set -e
+
+EXPECTED="table inet filter {
+        chain ssh_input {
+        }
+
+        chain wan_input {
+                tcp dport vmap { 22 : jump ssh_input }
+        }
+
+        chain prerouting {
+                type filter hook prerouting priority -300; policy accept;
+                iif vmap { "lo" counter : jump wan_input }
+        }
+}"
+
+$NFT -f - <<< "$EXPECTED"

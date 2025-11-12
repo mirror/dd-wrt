@@ -1,0 +1,58 @@
+table inet t {
+	set s {
+		type ifname
+		elements = { "eth0",
+			     "eth1",
+			     "eth2",
+			     "eth3",
+			     "veth1" }
+	}
+
+	set sc {
+		type inet_service . ifname
+		elements = { 22 . "eth0",
+			     80 . "eth0",
+			     81 . "eth0",
+			     80 . "eth1" }
+	}
+
+	set nv {
+		type ifname . mark
+		elements = { "eth0" . 0x00000001,
+			     "eth0" . 0x00000002 }
+	}
+
+	set z {
+		typeof ct zone
+		elements = { 1, 2, 3, 4, 5,
+			     6 }
+	}
+
+	set m {
+		typeof meta mark
+		elements = { 0x00000001, 0x00000002, 0x00000003, 0x00000004, 0x00000005,
+			     0x00000006 }
+	}
+
+	map cz {
+		typeof iifname : ct zone
+		elements = { "eth0" : 1,
+			     "eth1" : 2,
+			     "veth4" : 1 }
+	}
+
+	map cm {
+		typeof iifname : ct mark
+		elements = { "eth0" : 0x00000001,
+			     "eth1" : 0x00000002,
+			     "veth4" : 0x00000001 }
+	}
+
+	chain c {
+		iifname @s accept
+		oifname @s accept
+		fib saddr oifname @s accept
+		tcp dport . iifname @sc accept
+		iifname . meta mark @nv accept
+	}
+}

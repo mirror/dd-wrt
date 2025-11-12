@@ -1,0 +1,17 @@
+#!/bin/bash
+
+RULESET="
+table ip t {
+	map sourcemap {
+		type ipv4_addr : verdict;
+	}
+	chain postrouting {
+		ip saddr vmap @sourcemap accept
+	}
+}
+add chain t c
+add element t sourcemap { 100.123.10.2 : jump c }
+"
+
+set -e
+$NFT -f - <<< "$RULESET"

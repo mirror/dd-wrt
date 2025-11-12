@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_expr)
+
+# ordering of element options and expressions has changed, make sure parser
+# accepts both ways
+
+set -e
+
+$NFT -f - <<EOF
+table t {
+	set s {
+		type inet_service
+		counter;
+		timeout 30s;
+	}
+}
+EOF
+
+check() {
+	out=$($NFT list ruleset)
+	secs=$(sed -n 's/.*expires \([0-9]\+\)s.*/\1/p' <<< "$out")
+	[[ $secs -lt 11 ]]
+	grep -q 'counter packets 10 bytes 20' <<< "$out"
+}
+
+$NFT add element t s '{ 23 counter packets 10 bytes 20 expires 10s }'
+check
+$NFT flush set t s
+$NFT add element t s '{ 42 expires 10s counter packets 10 bytes 20 }'
+check

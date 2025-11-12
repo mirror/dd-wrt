@@ -1,0 +1,249 @@
+# limit rate 400/minute
+[
+    {
+        "limit": {
+            "burst": 5,
+            "per": "minute",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate 20/second
+[
+    {
+        "limit": {
+            "burst": 5,
+            "per": "second",
+            "rate": 20
+        }
+    }
+]
+
+# limit rate 400/hour
+[
+    {
+        "limit": {
+            "burst": 5,
+            "per": "hour",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate 40/day
+[
+    {
+        "limit": {
+            "burst": 5,
+            "per": "day",
+            "rate": 40
+        }
+    }
+]
+
+# limit rate 400/week
+[
+    {
+        "limit": {
+            "burst": 5,
+            "per": "week",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate 1 kbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 2 kbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 2,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 1025 kbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate 1023 mbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 1023,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate 10230 mbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "per": "second",
+            "rate": 10230,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate over 400/minute
+[
+    {
+        "limit": {
+            "burst": 5,
+            "inv": true,
+            "per": "minute",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate over 20/second
+[
+    {
+        "limit": {
+            "burst": 5,
+            "inv": true,
+            "per": "second",
+            "rate": 20
+        }
+    }
+]
+
+# limit rate over 400/hour
+[
+    {
+        "limit": {
+            "burst": 5,
+            "inv": true,
+            "per": "hour",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate over 40/day
+[
+    {
+        "limit": {
+            "burst": 5,
+            "inv": true,
+            "per": "day",
+            "rate": 40
+        }
+    }
+]
+
+# limit rate over 400/week
+[
+    {
+        "limit": {
+            "burst": 5,
+            "inv": true,
+            "per": "week",
+            "rate": 400
+        }
+    }
+]
+
+# limit rate over 1 kbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 2 kbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 2,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 1025 kbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1025,
+            "rate_unit": "kbytes"
+        }
+    }
+]
+
+# limit rate over 1023 mbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 1023,
+            "rate_unit": "mbytes"
+        }
+    }
+]
+
+# limit rate over 10230 mbytes/second
+[
+    {
+        "limit": {
+            "burst": 0,
+            "burst_unit": "bytes",
+            "inv": true,
+            "per": "second",
+            "rate": 10230,
+            "rate_unit": "mbytes"
+        }
+    }
+]

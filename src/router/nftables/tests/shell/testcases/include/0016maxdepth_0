@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+tmpfile=$(mktemp)
+
+echo 'include "/tmp/rules.nft"' > $tmpfile
+$NFT -f $tmpfile || exit 0

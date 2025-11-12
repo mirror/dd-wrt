@@ -1,0 +1,71 @@
+# log
+ip test-ip4 output
+  [ log ]
+
+# log level emerg
+ip test-ip4 output
+  [ log level 0 ]
+
+# log level alert
+ip test-ip4 output
+  [ log level 1 ]
+
+# log level crit
+ip test-ip4 output
+  [ log level 2 ]
+
+# log level err
+ip test-ip4 output
+  [ log level 3 ]
+
+# log level warn
+ip test-ip4 output
+  [ log level 4 ]
+
+# log level notice
+ip test-ip4 output
+  [ log level 5 ]
+
+# log level info
+ip test-ip4 output
+  [ log level 6 ]
+
+# log level debug
+ip test-ip4 output
+  [ log level 7 ]
+
+# log level audit
+ip test-ip4 output
+  [ log level 8 ]
+
+# log prefix aaaaa-aaaaaa group 2 snaplen 33
+ip test-ip4 output
+  [ log prefix aaaaa-aaaaaa group 2 snaplen 33 qthreshold 0 ]
+
+# log group 2 queue-threshold 2
+ip test-ip4 output
+  [ log group 2 snaplen 0 qthreshold 2 ]
+
+# log group 2 snaplen 33
+ip test-ip4 output
+  [ log group 2 snaplen 33 qthreshold 0 ]
+
+# log group 2 prefix "nft-test: "
+ip test-ip4 output
+  [ log prefix nft-test:  group 2 snaplen 0 qthreshold 0 ]
+
+# log flags all
+ip test-ip4 output
+  [ log tcpseq tcpopt ipopt uid macdecode ]
+
+# log level debug flags ip options flags skuid
+ip test-ip4 output
+  [ log level 7 ipopt uid ]
+
+# log flags tcp sequence,options
+ip test-ip4 output
+  [ log tcpseq tcpopt ]
+
+# log flags ip options flags ether flags skuid flags tcp sequence,options
+ip test-ip4 output
+  [ log tcpseq tcpopt ipopt uid macdecode ]

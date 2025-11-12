@@ -1,0 +1,9 @@
+table ip t {
+	chain input {
+		type filter hook input priority filter + 4; policy accept;
+		ip saddr vmap { 1.1.1.1 : jump c1 }
+	}
+
+	chain c1 {
+	}
+}

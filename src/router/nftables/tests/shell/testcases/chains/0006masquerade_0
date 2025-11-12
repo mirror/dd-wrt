@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain t c1 {type nat hook postrouting priority 0 \; }
+$NFT add rule t c1 masquerade

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_chain_without_device)
+
+set -e
+
+iface_cleanup() {
+	ip link del d0 &>/dev/null || :
+	ip link del d1 &>/dev/null || :
+	ip link del d2 &>/dev/null || :
+}
+trap 'iface_cleanup' EXIT
+iface_cleanup
+
+ip link add d0 type dummy
+ip link add d1 type dummy
+ip link add d2 type dummy
+
+RULESET="table netdev x {
+	chain y {
+		type filter hook ingress priority 0; policy accept;
+	}
+}"
+
+$NFT -f - <<< "$RULESET"
+
+$NFT add chain netdev x y '{ devices = { d0 }; }'
+$NFT add chain netdev x y '{ devices = { d1, d2, lo }; }'
+$NFT delete chain netdev x y '{ devices = { lo }; }'
+$NFT delete chain netdev x y

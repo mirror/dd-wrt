@@ -1,0 +1,29 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "flowtable": {
+        "family": "inet",
+        "name": "f",
+        "table": "filter",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": -1,
+        "dev": "lo"
+      }
+    }
+  ]
+}

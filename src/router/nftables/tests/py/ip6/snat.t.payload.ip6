@@ -1,0 +1,23 @@
+# tcp dport 80-90 snat to [2001:838:35f:1::]-[2001:838:35f:2::]:80-100
+ip6 test-ip6 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00005000 0x00005a00 ]
+  [ immediate reg 1 0x38080120 0x01005f03 0x00000000 0x00000000 ]
+  [ immediate reg 2 0x38080120 0x02005f03 0x00000000 0x00000000 ]
+  [ immediate reg 3 0x00005000 ]
+  [ immediate reg 4 0x00006400 ]
+  [ nat snat ip6 addr_min reg 1 addr_max reg 2 proto_min reg 3 proto_max reg 4 flags 0x2 ]
+
+# tcp dport 80-90 snat to [2001:838:35f:1::]-[2001:838:35f:2::]:100
+ip6 test-ip6 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00005000 0x00005a00 ]
+  [ immediate reg 1 0x38080120 0x01005f03 0x00000000 0x00000000 ]
+  [ immediate reg 2 0x38080120 0x02005f03 0x00000000 0x00000000 ]
+  [ immediate reg 3 0x00006400 ]
+  [ nat snat ip6 addr_min reg 1 addr_max reg 2 proto_min reg 3 flags 0x2 ]
+

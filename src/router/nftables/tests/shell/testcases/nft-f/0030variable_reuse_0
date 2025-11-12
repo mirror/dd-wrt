@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+RULESET="define test = { 1.1.1.1 }
+
+table ip x {
+        set y {
+                type ipv4_addr
+                elements = { 2.2.2.2, \$test }
+        }
+
+        set z {
+                type ipv4_addr
+                elements = { 3.3.3.3, \$test }
+        }
+}"
+
+$NFT -f - <<< "$RULESET"

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_stateful_object_update)
+
+set -e
+$NFT add table test-ip
+$NFT add counter test-ip traffic-counter
+$NFT add counter test-ip traffic-counter
+$NFT add quota test-ip traffic-quota 25 mbytes
+$NFT add quota test-ip traffic-quota 50 mbytes
+
+EXPECTED="table ip test-ip {
+	counter traffic-counter {
+		packets 0 bytes 0
+	}
+
+	quota traffic-quota {
+		50 mbytes
+	}
+}"
+
+GET="$($NFT list ruleset)"
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

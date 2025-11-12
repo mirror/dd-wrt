@@ -1,0 +1,273 @@
+# igmp type membership-query
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": "membership-query"
+        }
+    }
+]
+
+# igmp type membership-report-v1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": "membership-report-v1"
+        }
+    }
+]
+
+# igmp type membership-report-v2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": "membership-report-v2"
+        }
+    }
+]
+
+# igmp type membership-report-v3
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": "membership-report-v3"
+        }
+    }
+]
+
+# igmp type leave-group
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": "leave-group"
+        }
+    }
+]
+
+# igmp type { membership-report-v1, membership-report-v2, membership-report-v3}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "membership-report-v1",
+                    "membership-report-v2",
+                    "membership-report-v3"
+                ]
+            }
+        }
+    }
+]
+
+# igmp type != { membership-report-v1, membership-report-v2, membership-report-v3}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "type",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "membership-report-v1",
+                    "membership-report-v2",
+                    "membership-report-v3"
+                ]
+            }
+        }
+    }
+]
+
+# igmp checksum 12343
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": 12343
+        }
+    }
+]
+
+# igmp checksum != 12343
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "!=",
+            "right": 12343
+        }
+    }
+]
+
+# igmp checksum 11-343
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "range": [
+                    11,
+                    343
+                ]
+            }
+        }
+    }
+]
+
+# igmp checksum != 11-343
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [
+                    11,
+                    343
+                ]
+            }
+        }
+    }
+]
+
+# igmp checksum { 1111, 222, 343}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    222,
+                    343,
+                    1111
+                ]
+            }
+        }
+    }
+]
+
+# igmp checksum != { 1111, 222, 343}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    222,
+                    343,
+                    1111
+                ]
+            }
+        }
+    }
+]
+
+# igmp mrt 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "mrt",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+
+# igmp mrt != 10
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "mrt",
+                    "protocol": "igmp"
+                }
+            },
+            "op": "!=",
+            "right": 10
+        }
+    }
+]

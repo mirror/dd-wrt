@@ -1,0 +1,263 @@
+# ip dscp 0x38
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "cs7"
+        }
+    }
+]
+
+# ip dscp != 0x20
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": "cs4"
+        }
+    }
+]
+
+# ip dscp {cs0, cs1, cs2, cs3, cs4, cs5, cs6, cs7, af11, af12, af13, af21, af22, af23, af31, af32, af33, af41, af42, af43, ef}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dscp",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "cs0",
+                    "cs1",
+                    "af11",
+                    "af12",
+                    "af13",
+                    "cs2",
+                    "af21",
+                    "af22",
+                    "af23",
+                    "cs3",
+                    "af31",
+                    "af32",
+                    "af33",
+                    "cs4",
+                    "af41",
+                    "af42",
+                    "af43",
+                    "cs5",
+                    "ef",
+                    "cs6",
+                    "cs7"
+                ]
+            }
+        }
+    }
+]
+
+# ip protocol tcp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    }
+]
+
+# ip protocol != tcp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": 6
+        }
+    }
+]
+
+# ip protocol { icmp, esp, ah, comp, udp, udplite, tcp, dccp, sctp} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    1,
+                    6,
+                    17,
+                    33,
+                    50,
+                    51,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip protocol != { icmp, esp, ah, comp, udp, udplite, tcp, dccp, sctp} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    1,
+                    6,
+                    17,
+                    33,
+                    50,
+                    51,
+                    108,
+                    132,
+                    136
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ip saddr & 0xff == 1
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    "0.0.0.255"
+                ]
+            },
+            "op": "==",
+            "right": "0.0.0.1"
+        }
+    }
+]
+
+# ip saddr & 0xffff0000 == 0xffff0000
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "prefix": {
+                    "addr": "255.255.0.0",
+                    "len": 16
+                }
+            }
+        }
+    }
+]
+
+# iif "lo" ip ecn set 1
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iif" }
+            },
+	    "op": "==",
+            "right": "lo"
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "ecn",
+                    "protocol": "ip"
+                }
+            },
+            "value": "ect1"
+        }
+    }
+]
+
+# ip saddr 1.2.3.4 counter ip daddr 3.4.5.6
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "1.2.3.4"
+        }
+    },
+    {
+        "counter": null
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "3.4.5.6"
+        }
+    }
+]
+

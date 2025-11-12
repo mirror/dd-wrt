@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+
+tmpfile=$(mktemp)
+if [ ! -w $tmpfile ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpdir1=$(mktemp -d)
+if [ ! -d $tmpdir1 ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpdir2=$(mktemp -d)
+if [ ! -d $tmpdir2 ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfile1=$(mktemp -p $tmpdir1)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpfile2=$(mktemp -p $tmpdir2)
+if [ ! -w $tmpfile2 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+trap "rm -rf $tmpdfile $tmpfile1 $tmpfile2 && rmdir $tmpdir1 && rmdir $tmpdir2" EXIT # cleanup if aborted
+
+RULESET1="add table x"
+RULESET2="add chain x y"
+RULESET3=" \
+include \"$(basename $tmpfile1)\"
+include \"$(basename $tmpfile2)\"
+"
+
+echo "$RULESET1" > $tmpfile1
+echo "$RULESET2" > $tmpfile2
+echo "$RULESET3" > $tmpfile
+
+$NFT -I $tmpdir1 -I $tmpdir2 -f $tmpfile
+if [ $? -ne 0 ] ; then
+	echo "E: unable to load good ruleset" >&2
+	exit 1
+fi

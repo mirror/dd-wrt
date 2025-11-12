@@ -1,0 +1,9 @@
+table ip test-ip {
+	counter traffic-counter {
+		packets 0 bytes 0
+	}
+
+	quota traffic-quota {
+		50 mbytes
+	}
+}

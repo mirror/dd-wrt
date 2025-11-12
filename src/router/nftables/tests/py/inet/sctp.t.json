@@ -1,0 +1,928 @@
+# sctp sport 23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": 23
+        }
+    }
+]
+
+# sctp sport != 23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": 23
+        }
+    }
+]
+
+# sctp sport 23-44
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 23, 44 ]
+            }
+        }
+    }
+]
+
+# sctp sport != 23-44
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 23, 44 ]
+            }
+        }
+    }
+]
+
+# sctp sport { 23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# sctp sport != { 23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# sctp dport 23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": 23
+        }
+    }
+]
+
+# sctp dport != 23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": 23
+        }
+    }
+]
+
+# sctp dport 23-44
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 23, 44 ]
+            }
+        }
+    }
+]
+
+# sctp dport != 23-44
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 23, 44 ]
+            }
+        }
+    }
+]
+
+# sctp dport { 23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# sctp dport != { 23, 24, 25}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    24,
+                    25
+                ]
+            }
+        }
+    }
+]
+
+# sctp checksum 1111
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": 1111
+        }
+    }
+]
+
+# sctp checksum != 11
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": 11
+        }
+    }
+]
+
+# sctp checksum 21-333
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 21, 333 ]
+            }
+        }
+    }
+]
+
+# sctp checksum != 32-111
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 32, 111 ]
+            }
+        }
+    }
+]
+
+# sctp checksum { 22, 33, 44}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    22,
+                    33,
+                    44
+                ]
+            }
+        }
+    }
+]
+
+# sctp checksum != { 22, 33, 44}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "checksum",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    22,
+                    33,
+                    44
+                ]
+            }
+        }
+    }
+]
+
+# sctp vtag 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vtag",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# sctp vtag != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vtag",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# sctp vtag 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vtag",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# sctp vtag != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vtag",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# sctp vtag {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vtag",
+                    "protocol": "sctp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# sctp vtag != {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "vtag",
+                    "protocol": "sctp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# sctp chunk data exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "data"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk init exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "init"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk init-ack exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "init-ack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk sack exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "sack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk heartbeat exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "heartbeat"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk heartbeat-ack exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "heartbeat-ack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk abort exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "abort"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk shutdown exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "shutdown"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk shutdown-ack exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "shutdown-ack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk error exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "error"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk cookie-echo exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "cookie-echo"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk cookie-ack exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "cookie-ack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk ecne exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "ecne"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk cwr exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "cwr"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk shutdown-complete exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "shutdown-complete"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk asconf-ack exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "asconf-ack"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk forward-tsn exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "forward-tsn"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk asconf exists
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "name": "asconf"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# sctp chunk data type 0
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "type",
+                    "name": "data"
+                }
+            },
+            "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# sctp chunk init flags 23
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "flags",
+                    "name": "init"
+                }
+            },
+            "op": "==",
+            "right": 23
+        }
+    }
+]
+
+# sctp chunk init-ack length 42
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "length",
+                    "name": "init-ack"
+                }
+            },
+            "op": "==",
+            "right": 42
+        }
+    }
+]
+
+# sctp chunk data stream 1337
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "stream",
+                    "name": "data"
+                }
+            },
+            "op": "==",
+            "right": 1337
+        }
+    }
+]
+
+# sctp chunk init initial-tsn 5
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "initial-tsn",
+                    "name": "init"
+                }
+            },
+            "op": "==",
+            "right": 5
+        }
+    }
+]
+
+# sctp chunk init-ack num-outbound-streams 3
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "num-outbound-streams",
+                    "name": "init-ack"
+                }
+            },
+            "op": "==",
+            "right": 3
+        }
+    }
+]
+
+# sctp chunk sack a-rwnd 1
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "a-rwnd",
+                    "name": "sack"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# sctp chunk shutdown cum-tsn-ack 65535
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "cum-tsn-ack",
+                    "name": "shutdown"
+                }
+            },
+            "op": "==",
+            "right": 65535
+        }
+    }
+]
+
+# sctp chunk ecne lowest-tsn 5
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "lowest-tsn",
+                    "name": "ecne"
+                }
+            },
+            "op": "==",
+            "right": 5
+        }
+    }
+]
+
+# sctp chunk cwr lowest-tsn 8
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "lowest-tsn",
+                    "name": "cwr"
+                }
+            },
+            "op": "==",
+            "right": 8
+        }
+    }
+]
+
+# sctp chunk asconf-ack seqno 12345
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "seqno",
+                    "name": "asconf-ack"
+                }
+            },
+            "op": "==",
+            "right": 12345
+        }
+    }
+]
+
+# sctp chunk forward-tsn new-cum-tsn 31337
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "new-cum-tsn",
+                    "name": "forward-tsn"
+                }
+            },
+            "op": "==",
+            "right": 31337
+        }
+    }
+]
+
+# sctp chunk asconf seqno 12345
+[
+    {
+        "match": {
+            "left": {
+                "sctp chunk": {
+                    "field": "seqno",
+                    "name": "asconf"
+                }
+            },
+            "op": "==",
+            "right": 12345
+        }
+    }
+]
+

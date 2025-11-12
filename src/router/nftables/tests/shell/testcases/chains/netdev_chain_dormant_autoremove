@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_chain_multidevice)
+
+set -e
+
+ip link add dummy0 type dummy
+ip link add dummy1 type dummy
+$NFT add table netdev test { flags dormant\; }
+$NFT add chain netdev test ingress { type filter hook ingress devices = { "dummy0", "dummy1" } priority 0\; policy drop\; }
+ip link del dummy0
+if [ "$NFT_TEST_HAVE_ifname_based_hooks" = y ]; then
+	$NFT 'delete chain netdev test ingress { devices = { "dummy0" }; }'
+fi

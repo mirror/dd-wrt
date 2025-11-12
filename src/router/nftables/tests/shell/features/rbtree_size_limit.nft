@@ -1,0 +1,10 @@
+# 8d738c1869f6 ("netfilter: nf_tables: fix set size with rbtree backend")
+# v6.14-rc1~162^2~7^2~13
+table inet x {
+        set y {
+                typeof ip saddr
+                flags interval
+                size 1
+                elements = { 10.1.1.0/24 }
+        }
+}

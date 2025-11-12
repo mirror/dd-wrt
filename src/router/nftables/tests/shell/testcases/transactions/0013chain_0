@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table x
+add chain x y
+delete chain x y
+delete table x
+add table x
+add chain x y { type filter hook input priority 0; }
+add chain x y { policy drop; }
+flush ruleset
+add table w
+add chain w y { type filter hook output priority 0; }"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

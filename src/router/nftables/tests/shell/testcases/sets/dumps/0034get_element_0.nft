@@ -1,0 +1,23 @@
+table ip t {
+	set s {
+		type inet_service
+		flags interval
+		elements = { 10, 20-30, 40, 50-60 }
+	}
+
+	set ips {
+		type ipv4_addr
+		flags interval
+		elements = { 10.0.0.1, 10.0.0.5-10.0.0.8,
+			     10.0.0.128/25, 10.0.1.0/24,
+			     10.0.2.3-10.0.2.12 }
+	}
+
+	set cs {
+		type ipv4_addr . inet_service
+		flags interval
+		elements = { 10.0.0.1 . 22,
+			     10.1.0.0/16 . 1-1024,
+			     10.2.0.1-10.2.0.8 . 1024-65535 }
+	}
+}

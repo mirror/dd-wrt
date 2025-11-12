@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -e
+
+# Expose how naive cache update logic (i.e., drop cache and repopulate from
+# kernel ruleset) may mess things up. The following input does:
+#
+# list ruleset -> populate the cache, cache->genid is non-zero
+# add table ip t -> make kernel's genid increment (cache->genid remains
+#                   unchanged)
+# add table ip t2; -> first command of batch, new table t2 is added to the cache
+# add chain ip t2 c -> second command of batch, triggers cache_update() which
+#                      removes table t2 from it
+
+$NFT -i >/dev/null <<EOF
+list ruleset
+add table ip t
+add table ip t2; add chain ip t2 c
+EOF
+
+# The following test exposes a problem with simple locking of cache when local
+# entries are added:
+#
+# add table ip t3 -> cache would be locked without previous update
+# add chain ip t c -> table t is not found due to no cache update happening
+
+$NFT -i >/dev/null <<EOF
+add table ip t3; add chain ip t c
+EOF
+
+# The following test exposes a problem with incremental cache update when
+# reading commands from a file that add a rule using the "index" keyword.
+#
+# add rule ip t4 c meta l4proto icmp accept -> rule to reference in next step
+# add rule ip t4 c index 0 drop -> index 0 is not found due to rule cache not
+#                                  being updated
+# add rule ip t4 c index 2 drop -> index 2 is not found due to igmp rule being
+#                                  in same transaction and therefore not having
+#                                  an allocated handle
+$NFT -i >/dev/null <<EOF
+add table ip t4; add chain ip t4 c
+add rule ip t4 c meta l4proto icmp accept
+EOF
+$NFT -f - >/dev/null <<EOF
+add rule ip t4 c index 0 drop
+EOF
+$NFT -f - >/dev/null <<EOF
+add rule ip t4 c meta l4proto igmp accept
+add rule ip t4 c index 2 drop
+EOF

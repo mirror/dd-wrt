@@ -1,0 +1,65 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip6",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip6",
+        "table": "t",
+        "name": "c",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "ct": {
+                  "key": "mark"
+                }
+              },
+              "value": {
+                "|": [
+                  {
+                    "<<": [
+                      {
+                        "payload": {
+                          "protocol": "ip6",
+                          "field": "dscp"
+                        }
+                      },
+                      2
+                    ]
+                  },
+                  16
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

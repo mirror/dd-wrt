@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table ip test
+add chain ip test tc
+add rule ip test tc counter"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi
+
+RULESET="delete rule ip test tc handle 2
+flush ruleset"
+
+$NFT -f - <<< "$RULESET"
+if [ $? -ne 0 ] ; then
+        echo "E: unable to load good ruleset" >&2
+        exit 1
+fi

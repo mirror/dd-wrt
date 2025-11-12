@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		ct state invalid log prefix "invalid state match, logging:"
+	}
+}

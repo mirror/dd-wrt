@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		meta mark set ip protocol . th dport map { tcp / 22 : 1234, udp . 67 : 1234 }
+	}
+}

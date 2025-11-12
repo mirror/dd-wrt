@@ -1,0 +1,78 @@
+# gre version 0
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ payload load 1b @ transport header + 1 => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000007 ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# gre ip saddr 10.141.11.2
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 4b @ network header + 12 => reg 1 ] ]
+  [ cmp eq reg 1 0x020b8d0a ]
+
+# gre ip saddr 10.141.11.0/24
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 3b @ network header + 12 => reg 1 ] ]
+  [ cmp eq reg 1 0x000b8d0a ]
+
+# gre ip protocol 1
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 1b @ network header + 9 => reg 1 ] ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# gre udp sport 8888
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load l4proto => reg 1 ] ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 2b @ transport header + 0 => reg 1 ] ]
+  [ cmp eq reg 1 0x0000b822 ]
+
+# gre icmp type echo-reply
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 3 hdrsize 4 flags c [ meta load l4proto => reg 1 ] ]
+  [ cmp eq reg 1 0x00000001 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 1b @ transport header + 0 => reg 1 ] ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# gre ip dscp 0x02
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 1b @ network header + 1 => reg 1 ] ]
+  [ bitwise reg 1 = ( reg 1 & 0x000000fc ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000008 ]
+
+# gre ip saddr . gre ip daddr { 1.2.3.4 . 4.3.2.1 }
+__set%d test-ip4 3 size 1
+__set%d test-ip4 0
+	element 04030201 01020304  : 0 [end]
+ip test-ip4 input
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x0000002f ]
+  [ inner type 3 hdrsize 4 flags c [ meta load protocol => reg 1 ] ]
+  [ cmp eq reg 1 0x00000008 ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 4b @ network header + 12 => reg 1 ] ]
+  [ inner type 3 hdrsize 4 flags c [ payload load 4b @ network header + 16 => reg 9 ] ]
+  [ lookup reg 1 set __set%d ]
+

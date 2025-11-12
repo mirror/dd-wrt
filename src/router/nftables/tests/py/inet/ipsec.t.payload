@@ -1,0 +1,44 @@
+# ipsec in reqid 1
+ip ipsec-ip4 ipsec-input
+  [ xfrm load in 0 reqid => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# ipsec in spnum 0 reqid 1
+ip ipsec-ip4 ipsec-input
+  [ xfrm load in 0 reqid => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# ipsec out reqid 0xffffffff
+ip ipsec-ip4 ipsec-input
+  [ xfrm load out 0 reqid => reg 1 ]
+  [ cmp eq reg 1 0xffffffff ]
+
+# ipsec out spi 1-561
+inet ipsec-inet ipsec-post
+  [ xfrm load out 0 spi => reg 1 ]
+  [ range eq reg 1 0x01000000 0x31020000 ]
+
+# ipsec in spnum 2 ip saddr { 1.2.3.4, 10.6.0.0/16 }
+__set%d ipsec-ip4 7 size 5
+__set%d ipsec-ip4 0
+        element 00000000  : 1 [end]     element 04030201  : 0 [end]     element 05030201  : 1 [end]     element 0000060a  : 0 [end]     element 0000070a  : 1 [end]
+ip ipsec-ip4 ipsec-input
+  [ xfrm load in 2 saddr4 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ipsec in ip6 daddr dead::beef
+ip ipsec-ip4 ipsec-forw
+  [ xfrm load in 0 daddr6 => reg 1 ]
+  [ cmp eq reg 1 0x0000adde 0x00000000 0x00000000 0xefbe0000 ]
+
+# ipsec out ip6 saddr dead::feed
+ip ipsec-ip4 ipsec-forw
+  [ xfrm load out 0 saddr6 => reg 1 ]
+  [ cmp eq reg 1 0x0000adde 0x00000000 0x00000000 0xedfe0000 ]
+
+# counter ipsec out ip daddr 192.168.1.2
+ip ipsec-ip4 ipsec-forw
+  [ counter pkts 0 bytes 0 ]
+  [ xfrm load out 0 daddr4 => reg 1 ]
+  [ cmp eq reg 1 0x0201a8c0 ]
+

@@ -1,0 +1,12 @@
+# meta broute set 1
+[
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "broute" }
+            },
+            "value": 1
+        }
+    }
+]
+

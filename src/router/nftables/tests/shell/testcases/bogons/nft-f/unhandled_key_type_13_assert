@@ -1,0 +1,5 @@
+table ip x {
+	chain y {
+		ip protocol . th dport { tcp / 22, udp . 67 }
+	}
+}

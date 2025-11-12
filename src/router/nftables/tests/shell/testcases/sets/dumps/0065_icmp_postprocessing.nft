@@ -1,0 +1,6 @@
+table ip x {
+	chain foo {
+		accept
+		icmp type { echo-reply, echo-request } icmp id 42
+	}
+}

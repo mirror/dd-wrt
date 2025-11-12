@@ -1,0 +1,1566 @@
+table ip x {
+	chain preroutingrawm11 {
+		type filter hook prerouting priority -311; policy accept;
+	}
+
+	chain preroutingrawm10 {
+		type filter hook prerouting priority raw - 10; policy accept;
+	}
+
+	chain preroutingraw {
+		type filter hook prerouting priority raw; policy accept;
+	}
+
+	chain preroutingrawp10 {
+		type filter hook prerouting priority raw + 10; policy accept;
+	}
+
+	chain preroutingrawp11 {
+		type filter hook prerouting priority -289; policy accept;
+	}
+
+	chain preroutingmanglem11 {
+		type filter hook prerouting priority -161; policy accept;
+	}
+
+	chain preroutingmanglem10 {
+		type filter hook prerouting priority mangle - 10; policy accept;
+	}
+
+	chain preroutingmangle {
+		type filter hook prerouting priority mangle; policy accept;
+	}
+
+	chain preroutingmanglep10 {
+		type filter hook prerouting priority mangle + 10; policy accept;
+	}
+
+	chain preroutingmanglep11 {
+		type filter hook prerouting priority -139; policy accept;
+	}
+
+	chain preroutingfilterm11 {
+		type filter hook prerouting priority -11; policy accept;
+	}
+
+	chain preroutingfilterm10 {
+		type filter hook prerouting priority filter - 10; policy accept;
+	}
+
+	chain preroutingfilter {
+		type filter hook prerouting priority filter; policy accept;
+	}
+
+	chain preroutingfilterp10 {
+		type filter hook prerouting priority filter + 10; policy accept;
+	}
+
+	chain preroutingfilterp11 {
+		type filter hook prerouting priority 11; policy accept;
+	}
+
+	chain preroutingsecuritym11 {
+		type filter hook prerouting priority 39; policy accept;
+	}
+
+	chain preroutingsecuritym10 {
+		type filter hook prerouting priority security - 10; policy accept;
+	}
+
+	chain preroutingsecurity {
+		type filter hook prerouting priority security; policy accept;
+	}
+
+	chain preroutingsecurityp10 {
+		type filter hook prerouting priority security + 10; policy accept;
+	}
+
+	chain preroutingsecurityp11 {
+		type filter hook prerouting priority 61; policy accept;
+	}
+
+	chain inputrawm11 {
+		type filter hook input priority -311; policy accept;
+	}
+
+	chain inputrawm10 {
+		type filter hook input priority raw - 10; policy accept;
+	}
+
+	chain inputraw {
+		type filter hook input priority raw; policy accept;
+	}
+
+	chain inputrawp10 {
+		type filter hook input priority raw + 10; policy accept;
+	}
+
+	chain inputrawp11 {
+		type filter hook input priority -289; policy accept;
+	}
+
+	chain inputmanglem11 {
+		type filter hook input priority -161; policy accept;
+	}
+
+	chain inputmanglem10 {
+		type filter hook input priority mangle - 10; policy accept;
+	}
+
+	chain inputmangle {
+		type filter hook input priority mangle; policy accept;
+	}
+
+	chain inputmanglep10 {
+		type filter hook input priority mangle + 10; policy accept;
+	}
+
+	chain inputmanglep11 {
+		type filter hook input priority -139; policy accept;
+	}
+
+	chain inputfilterm11 {
+		type filter hook input priority -11; policy accept;
+	}
+
+	chain inputfilterm10 {
+		type filter hook input priority filter - 10; policy accept;
+	}
+
+	chain inputfilter {
+		type filter hook input priority filter; policy accept;
+	}
+
+	chain inputfilterp10 {
+		type filter hook input priority filter + 10; policy accept;
+	}
+
+	chain inputfilterp11 {
+		type filter hook input priority 11; policy accept;
+	}
+
+	chain inputsecuritym11 {
+		type filter hook input priority 39; policy accept;
+	}
+
+	chain inputsecuritym10 {
+		type filter hook input priority security - 10; policy accept;
+	}
+
+	chain inputsecurity {
+		type filter hook input priority security; policy accept;
+	}
+
+	chain inputsecurityp10 {
+		type filter hook input priority security + 10; policy accept;
+	}
+
+	chain inputsecurityp11 {
+		type filter hook input priority 61; policy accept;
+	}
+
+	chain forwardrawm11 {
+		type filter hook forward priority -311; policy accept;
+	}
+
+	chain forwardrawm10 {
+		type filter hook forward priority raw - 10; policy accept;
+	}
+
+	chain forwardraw {
+		type filter hook forward priority raw; policy accept;
+	}
+
+	chain forwardrawp10 {
+		type filter hook forward priority raw + 10; policy accept;
+	}
+
+	chain forwardrawp11 {
+		type filter hook forward priority -289; policy accept;
+	}
+
+	chain forwardmanglem11 {
+		type filter hook forward priority -161; policy accept;
+	}
+
+	chain forwardmanglem10 {
+		type filter hook forward priority mangle - 10; policy accept;
+	}
+
+	chain forwardmangle {
+		type filter hook forward priority mangle; policy accept;
+	}
+
+	chain forwardmanglep10 {
+		type filter hook forward priority mangle + 10; policy accept;
+	}
+
+	chain forwardmanglep11 {
+		type filter hook forward priority -139; policy accept;
+	}
+
+	chain forwardfilterm11 {
+		type filter hook forward priority -11; policy accept;
+	}
+
+	chain forwardfilterm10 {
+		type filter hook forward priority filter - 10; policy accept;
+	}
+
+	chain forwardfilter {
+		type filter hook forward priority filter; policy accept;
+	}
+
+	chain forwardfilterp10 {
+		type filter hook forward priority filter + 10; policy accept;
+	}
+
+	chain forwardfilterp11 {
+		type filter hook forward priority 11; policy accept;
+	}
+
+	chain forwardsecuritym11 {
+		type filter hook forward priority 39; policy accept;
+	}
+
+	chain forwardsecuritym10 {
+		type filter hook forward priority security - 10; policy accept;
+	}
+
+	chain forwardsecurity {
+		type filter hook forward priority security; policy accept;
+	}
+
+	chain forwardsecurityp10 {
+		type filter hook forward priority security + 10; policy accept;
+	}
+
+	chain forwardsecurityp11 {
+		type filter hook forward priority 61; policy accept;
+	}
+
+	chain outputrawm11 {
+		type filter hook output priority -311; policy accept;
+	}
+
+	chain outputrawm10 {
+		type filter hook output priority raw - 10; policy accept;
+	}
+
+	chain outputraw {
+		type filter hook output priority raw; policy accept;
+	}
+
+	chain outputrawp10 {
+		type filter hook output priority raw + 10; policy accept;
+	}
+
+	chain outputrawp11 {
+		type filter hook output priority -289; policy accept;
+	}
+
+	chain outputmanglem11 {
+		type filter hook output priority -161; policy accept;
+	}
+
+	chain outputmanglem10 {
+		type filter hook output priority mangle - 10; policy accept;
+	}
+
+	chain outputmangle {
+		type filter hook output priority mangle; policy accept;
+	}
+
+	chain outputmanglep10 {
+		type filter hook output priority mangle + 10; policy accept;
+	}
+
+	chain outputmanglep11 {
+		type filter hook output priority -139; policy accept;
+	}
+
+	chain outputfilterm11 {
+		type filter hook output priority -11; policy accept;
+	}
+
+	chain outputfilterm10 {
+		type filter hook output priority filter - 10; policy accept;
+	}
+
+	chain outputfilter {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain outputfilterp10 {
+		type filter hook output priority filter + 10; policy accept;
+	}
+
+	chain outputfilterp11 {
+		type filter hook output priority 11; policy accept;
+	}
+
+	chain outputsecuritym11 {
+		type filter hook output priority 39; policy accept;
+	}
+
+	chain outputsecuritym10 {
+		type filter hook output priority security - 10; policy accept;
+	}
+
+	chain outputsecurity {
+		type filter hook output priority security; policy accept;
+	}
+
+	chain outputsecurityp10 {
+		type filter hook output priority security + 10; policy accept;
+	}
+
+	chain outputsecurityp11 {
+		type filter hook output priority 61; policy accept;
+	}
+
+	chain postroutingrawm11 {
+		type filter hook postrouting priority -311; policy accept;
+	}
+
+	chain postroutingrawm10 {
+		type filter hook postrouting priority raw - 10; policy accept;
+	}
+
+	chain postroutingraw {
+		type filter hook postrouting priority raw; policy accept;
+	}
+
+	chain postroutingrawp10 {
+		type filter hook postrouting priority raw + 10; policy accept;
+	}
+
+	chain postroutingrawp11 {
+		type filter hook postrouting priority -289; policy accept;
+	}
+
+	chain postroutingmanglem11 {
+		type filter hook postrouting priority -161; policy accept;
+	}
+
+	chain postroutingmanglem10 {
+		type filter hook postrouting priority mangle - 10; policy accept;
+	}
+
+	chain postroutingmangle {
+		type filter hook postrouting priority mangle; policy accept;
+	}
+
+	chain postroutingmanglep10 {
+		type filter hook postrouting priority mangle + 10; policy accept;
+	}
+
+	chain postroutingmanglep11 {
+		type filter hook postrouting priority -139; policy accept;
+	}
+
+	chain postroutingfilterm11 {
+		type filter hook postrouting priority -11; policy accept;
+	}
+
+	chain postroutingfilterm10 {
+		type filter hook postrouting priority filter - 10; policy accept;
+	}
+
+	chain postroutingfilter {
+		type filter hook postrouting priority filter; policy accept;
+	}
+
+	chain postroutingfilterp10 {
+		type filter hook postrouting priority filter + 10; policy accept;
+	}
+
+	chain postroutingfilterp11 {
+		type filter hook postrouting priority 11; policy accept;
+	}
+
+	chain postroutingsecuritym11 {
+		type filter hook postrouting priority 39; policy accept;
+	}
+
+	chain postroutingsecuritym10 {
+		type filter hook postrouting priority security - 10; policy accept;
+	}
+
+	chain postroutingsecurity {
+		type filter hook postrouting priority security; policy accept;
+	}
+
+	chain postroutingsecurityp10 {
+		type filter hook postrouting priority security + 10; policy accept;
+	}
+
+	chain postroutingsecurityp11 {
+		type filter hook postrouting priority 61; policy accept;
+	}
+
+	chain preroutingdstnatm11 {
+		type filter hook prerouting priority -111; policy accept;
+	}
+
+	chain preroutingdstnatm10 {
+		type filter hook prerouting priority dstnat - 10; policy accept;
+	}
+
+	chain preroutingdstnat {
+		type filter hook prerouting priority dstnat; policy accept;
+	}
+
+	chain preroutingdstnatp10 {
+		type filter hook prerouting priority dstnat + 10; policy accept;
+	}
+
+	chain preroutingdstnatp11 {
+		type filter hook prerouting priority -89; policy accept;
+	}
+
+	chain postroutingsrcnatm11 {
+		type filter hook postrouting priority 89; policy accept;
+	}
+
+	chain postroutingsrcnatm10 {
+		type filter hook postrouting priority srcnat - 10; policy accept;
+	}
+
+	chain postroutingsrcnat {
+		type filter hook postrouting priority srcnat; policy accept;
+	}
+
+	chain postroutingsrcnatp10 {
+		type filter hook postrouting priority srcnat + 10; policy accept;
+	}
+
+	chain postroutingsrcnatp11 {
+		type filter hook postrouting priority 111; policy accept;
+	}
+}
+table ip6 x {
+	chain preroutingrawm11 {
+		type filter hook prerouting priority -311; policy accept;
+	}
+
+	chain preroutingrawm10 {
+		type filter hook prerouting priority raw - 10; policy accept;
+	}
+
+	chain preroutingraw {
+		type filter hook prerouting priority raw; policy accept;
+	}
+
+	chain preroutingrawp10 {
+		type filter hook prerouting priority raw + 10; policy accept;
+	}
+
+	chain preroutingrawp11 {
+		type filter hook prerouting priority -289; policy accept;
+	}
+
+	chain preroutingmanglem11 {
+		type filter hook prerouting priority -161; policy accept;
+	}
+
+	chain preroutingmanglem10 {
+		type filter hook prerouting priority mangle - 10; policy accept;
+	}
+
+	chain preroutingmangle {
+		type filter hook prerouting priority mangle; policy accept;
+	}
+
+	chain preroutingmanglep10 {
+		type filter hook prerouting priority mangle + 10; policy accept;
+	}
+
+	chain preroutingmanglep11 {
+		type filter hook prerouting priority -139; policy accept;
+	}
+
+	chain preroutingfilterm11 {
+		type filter hook prerouting priority -11; policy accept;
+	}
+
+	chain preroutingfilterm10 {
+		type filter hook prerouting priority filter - 10; policy accept;
+	}
+
+	chain preroutingfilter {
+		type filter hook prerouting priority filter; policy accept;
+	}
+
+	chain preroutingfilterp10 {
+		type filter hook prerouting priority filter + 10; policy accept;
+	}
+
+	chain preroutingfilterp11 {
+		type filter hook prerouting priority 11; policy accept;
+	}
+
+	chain preroutingsecuritym11 {
+		type filter hook prerouting priority 39; policy accept;
+	}
+
+	chain preroutingsecuritym10 {
+		type filter hook prerouting priority security - 10; policy accept;
+	}
+
+	chain preroutingsecurity {
+		type filter hook prerouting priority security; policy accept;
+	}
+
+	chain preroutingsecurityp10 {
+		type filter hook prerouting priority security + 10; policy accept;
+	}
+
+	chain preroutingsecurityp11 {
+		type filter hook prerouting priority 61; policy accept;
+	}
+
+	chain inputrawm11 {
+		type filter hook input priority -311; policy accept;
+	}
+
+	chain inputrawm10 {
+		type filter hook input priority raw - 10; policy accept;
+	}
+
+	chain inputraw {
+		type filter hook input priority raw; policy accept;
+	}
+
+	chain inputrawp10 {
+		type filter hook input priority raw + 10; policy accept;
+	}
+
+	chain inputrawp11 {
+		type filter hook input priority -289; policy accept;
+	}
+
+	chain inputmanglem11 {
+		type filter hook input priority -161; policy accept;
+	}
+
+	chain inputmanglem10 {
+		type filter hook input priority mangle - 10; policy accept;
+	}
+
+	chain inputmangle {
+		type filter hook input priority mangle; policy accept;
+	}
+
+	chain inputmanglep10 {
+		type filter hook input priority mangle + 10; policy accept;
+	}
+
+	chain inputmanglep11 {
+		type filter hook input priority -139; policy accept;
+	}
+
+	chain inputfilterm11 {
+		type filter hook input priority -11; policy accept;
+	}
+
+	chain inputfilterm10 {
+		type filter hook input priority filter - 10; policy accept;
+	}
+
+	chain inputfilter {
+		type filter hook input priority filter; policy accept;
+	}
+
+	chain inputfilterp10 {
+		type filter hook input priority filter + 10; policy accept;
+	}
+
+	chain inputfilterp11 {
+		type filter hook input priority 11; policy accept;
+	}
+
+	chain inputsecuritym11 {
+		type filter hook input priority 39; policy accept;
+	}
+
+	chain inputsecuritym10 {
+		type filter hook input priority security - 10; policy accept;
+	}
+
+	chain inputsecurity {
+		type filter hook input priority security; policy accept;
+	}
+
+	chain inputsecurityp10 {
+		type filter hook input priority security + 10; policy accept;
+	}
+
+	chain inputsecurityp11 {
+		type filter hook input priority 61; policy accept;
+	}
+
+	chain forwardrawm11 {
+		type filter hook forward priority -311; policy accept;
+	}
+
+	chain forwardrawm10 {
+		type filter hook forward priority raw - 10; policy accept;
+	}
+
+	chain forwardraw {
+		type filter hook forward priority raw; policy accept;
+	}
+
+	chain forwardrawp10 {
+		type filter hook forward priority raw + 10; policy accept;
+	}
+
+	chain forwardrawp11 {
+		type filter hook forward priority -289; policy accept;
+	}
+
+	chain forwardmanglem11 {
+		type filter hook forward priority -161; policy accept;
+	}
+
+	chain forwardmanglem10 {
+		type filter hook forward priority mangle - 10; policy accept;
+	}
+
+	chain forwardmangle {
+		type filter hook forward priority mangle; policy accept;
+	}
+
+	chain forwardmanglep10 {
+		type filter hook forward priority mangle + 10; policy accept;
+	}
+
+	chain forwardmanglep11 {
+		type filter hook forward priority -139; policy accept;
+	}
+
+	chain forwardfilterm11 {
+		type filter hook forward priority -11; policy accept;
+	}
+
+	chain forwardfilterm10 {
+		type filter hook forward priority filter - 10; policy accept;
+	}
+
+	chain forwardfilter {
+		type filter hook forward priority filter; policy accept;
+	}
+
+	chain forwardfilterp10 {
+		type filter hook forward priority filter + 10; policy accept;
+	}
+
+	chain forwardfilterp11 {
+		type filter hook forward priority 11; policy accept;
+	}
+
+	chain forwardsecuritym11 {
+		type filter hook forward priority 39; policy accept;
+	}
+
+	chain forwardsecuritym10 {
+		type filter hook forward priority security - 10; policy accept;
+	}
+
+	chain forwardsecurity {
+		type filter hook forward priority security; policy accept;
+	}
+
+	chain forwardsecurityp10 {
+		type filter hook forward priority security + 10; policy accept;
+	}
+
+	chain forwardsecurityp11 {
+		type filter hook forward priority 61; policy accept;
+	}
+
+	chain outputrawm11 {
+		type filter hook output priority -311; policy accept;
+	}
+
+	chain outputrawm10 {
+		type filter hook output priority raw - 10; policy accept;
+	}
+
+	chain outputraw {
+		type filter hook output priority raw; policy accept;
+	}
+
+	chain outputrawp10 {
+		type filter hook output priority raw + 10; policy accept;
+	}
+
+	chain outputrawp11 {
+		type filter hook output priority -289; policy accept;
+	}
+
+	chain outputmanglem11 {
+		type filter hook output priority -161; policy accept;
+	}
+
+	chain outputmanglem10 {
+		type filter hook output priority mangle - 10; policy accept;
+	}
+
+	chain outputmangle {
+		type filter hook output priority mangle; policy accept;
+	}
+
+	chain outputmanglep10 {
+		type filter hook output priority mangle + 10; policy accept;
+	}
+
+	chain outputmanglep11 {
+		type filter hook output priority -139; policy accept;
+	}
+
+	chain outputfilterm11 {
+		type filter hook output priority -11; policy accept;
+	}
+
+	chain outputfilterm10 {
+		type filter hook output priority filter - 10; policy accept;
+	}
+
+	chain outputfilter {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain outputfilterp10 {
+		type filter hook output priority filter + 10; policy accept;
+	}
+
+	chain outputfilterp11 {
+		type filter hook output priority 11; policy accept;
+	}
+
+	chain outputsecuritym11 {
+		type filter hook output priority 39; policy accept;
+	}
+
+	chain outputsecuritym10 {
+		type filter hook output priority security - 10; policy accept;
+	}
+
+	chain outputsecurity {
+		type filter hook output priority security; policy accept;
+	}
+
+	chain outputsecurityp10 {
+		type filter hook output priority security + 10; policy accept;
+	}
+
+	chain outputsecurityp11 {
+		type filter hook output priority 61; policy accept;
+	}
+
+	chain postroutingrawm11 {
+		type filter hook postrouting priority -311; policy accept;
+	}
+
+	chain postroutingrawm10 {
+		type filter hook postrouting priority raw - 10; policy accept;
+	}
+
+	chain postroutingraw {
+		type filter hook postrouting priority raw; policy accept;
+	}
+
+	chain postroutingrawp10 {
+		type filter hook postrouting priority raw + 10; policy accept;
+	}
+
+	chain postroutingrawp11 {
+		type filter hook postrouting priority -289; policy accept;
+	}
+
+	chain postroutingmanglem11 {
+		type filter hook postrouting priority -161; policy accept;
+	}
+
+	chain postroutingmanglem10 {
+		type filter hook postrouting priority mangle - 10; policy accept;
+	}
+
+	chain postroutingmangle {
+		type filter hook postrouting priority mangle; policy accept;
+	}
+
+	chain postroutingmanglep10 {
+		type filter hook postrouting priority mangle + 10; policy accept;
+	}
+
+	chain postroutingmanglep11 {
+		type filter hook postrouting priority -139; policy accept;
+	}
+
+	chain postroutingfilterm11 {
+		type filter hook postrouting priority -11; policy accept;
+	}
+
+	chain postroutingfilterm10 {
+		type filter hook postrouting priority filter - 10; policy accept;
+	}
+
+	chain postroutingfilter {
+		type filter hook postrouting priority filter; policy accept;
+	}
+
+	chain postroutingfilterp10 {
+		type filter hook postrouting priority filter + 10; policy accept;
+	}
+
+	chain postroutingfilterp11 {
+		type filter hook postrouting priority 11; policy accept;
+	}
+
+	chain postroutingsecuritym11 {
+		type filter hook postrouting priority 39; policy accept;
+	}
+
+	chain postroutingsecuritym10 {
+		type filter hook postrouting priority security - 10; policy accept;
+	}
+
+	chain postroutingsecurity {
+		type filter hook postrouting priority security; policy accept;
+	}
+
+	chain postroutingsecurityp10 {
+		type filter hook postrouting priority security + 10; policy accept;
+	}
+
+	chain postroutingsecurityp11 {
+		type filter hook postrouting priority 61; policy accept;
+	}
+
+	chain preroutingdstnatm11 {
+		type filter hook prerouting priority -111; policy accept;
+	}
+
+	chain preroutingdstnatm10 {
+		type filter hook prerouting priority dstnat - 10; policy accept;
+	}
+
+	chain preroutingdstnat {
+		type filter hook prerouting priority dstnat; policy accept;
+	}
+
+	chain preroutingdstnatp10 {
+		type filter hook prerouting priority dstnat + 10; policy accept;
+	}
+
+	chain preroutingdstnatp11 {
+		type filter hook prerouting priority -89; policy accept;
+	}
+
+	chain postroutingsrcnatm11 {
+		type filter hook postrouting priority 89; policy accept;
+	}
+
+	chain postroutingsrcnatm10 {
+		type filter hook postrouting priority srcnat - 10; policy accept;
+	}
+
+	chain postroutingsrcnat {
+		type filter hook postrouting priority srcnat; policy accept;
+	}
+
+	chain postroutingsrcnatp10 {
+		type filter hook postrouting priority srcnat + 10; policy accept;
+	}
+
+	chain postroutingsrcnatp11 {
+		type filter hook postrouting priority 111; policy accept;
+	}
+}
+table inet x {
+	chain preroutingrawm11 {
+		type filter hook prerouting priority -311; policy accept;
+	}
+
+	chain preroutingrawm10 {
+		type filter hook prerouting priority raw - 10; policy accept;
+	}
+
+	chain preroutingraw {
+		type filter hook prerouting priority raw; policy accept;
+	}
+
+	chain preroutingrawp10 {
+		type filter hook prerouting priority raw + 10; policy accept;
+	}
+
+	chain preroutingrawp11 {
+		type filter hook prerouting priority -289; policy accept;
+	}
+
+	chain preroutingmanglem11 {
+		type filter hook prerouting priority -161; policy accept;
+	}
+
+	chain preroutingmanglem10 {
+		type filter hook prerouting priority mangle - 10; policy accept;
+	}
+
+	chain preroutingmangle {
+		type filter hook prerouting priority mangle; policy accept;
+	}
+
+	chain preroutingmanglep10 {
+		type filter hook prerouting priority mangle + 10; policy accept;
+	}
+
+	chain preroutingmanglep11 {
+		type filter hook prerouting priority -139; policy accept;
+	}
+
+	chain preroutingfilterm11 {
+		type filter hook prerouting priority -11; policy accept;
+	}
+
+	chain preroutingfilterm10 {
+		type filter hook prerouting priority filter - 10; policy accept;
+	}
+
+	chain preroutingfilter {
+		type filter hook prerouting priority filter; policy accept;
+	}
+
+	chain preroutingfilterp10 {
+		type filter hook prerouting priority filter + 10; policy accept;
+	}
+
+	chain preroutingfilterp11 {
+		type filter hook prerouting priority 11; policy accept;
+	}
+
+	chain preroutingsecuritym11 {
+		type filter hook prerouting priority 39; policy accept;
+	}
+
+	chain preroutingsecuritym10 {
+		type filter hook prerouting priority security - 10; policy accept;
+	}
+
+	chain preroutingsecurity {
+		type filter hook prerouting priority security; policy accept;
+	}
+
+	chain preroutingsecurityp10 {
+		type filter hook prerouting priority security + 10; policy accept;
+	}
+
+	chain preroutingsecurityp11 {
+		type filter hook prerouting priority 61; policy accept;
+	}
+
+	chain inputrawm11 {
+		type filter hook input priority -311; policy accept;
+	}
+
+	chain inputrawm10 {
+		type filter hook input priority raw - 10; policy accept;
+	}
+
+	chain inputraw {
+		type filter hook input priority raw; policy accept;
+	}
+
+	chain inputrawp10 {
+		type filter hook input priority raw + 10; policy accept;
+	}
+
+	chain inputrawp11 {
+		type filter hook input priority -289; policy accept;
+	}
+
+	chain inputmanglem11 {
+		type filter hook input priority -161; policy accept;
+	}
+
+	chain inputmanglem10 {
+		type filter hook input priority mangle - 10; policy accept;
+	}
+
+	chain inputmangle {
+		type filter hook input priority mangle; policy accept;
+	}
+
+	chain inputmanglep10 {
+		type filter hook input priority mangle + 10; policy accept;
+	}
+
+	chain inputmanglep11 {
+		type filter hook input priority -139; policy accept;
+	}
+
+	chain inputfilterm11 {
+		type filter hook input priority -11; policy accept;
+	}
+
+	chain inputfilterm10 {
+		type filter hook input priority filter - 10; policy accept;
+	}
+
+	chain inputfilter {
+		type filter hook input priority filter; policy accept;
+	}
+
+	chain inputfilterp10 {
+		type filter hook input priority filter + 10; policy accept;
+	}
+
+	chain inputfilterp11 {
+		type filter hook input priority 11; policy accept;
+	}
+
+	chain inputsecuritym11 {
+		type filter hook input priority 39; policy accept;
+	}
+
+	chain inputsecuritym10 {
+		type filter hook input priority security - 10; policy accept;
+	}
+
+	chain inputsecurity {
+		type filter hook input priority security; policy accept;
+	}
+
+	chain inputsecurityp10 {
+		type filter hook input priority security + 10; policy accept;
+	}
+
+	chain inputsecurityp11 {
+		type filter hook input priority 61; policy accept;
+	}
+
+	chain forwardrawm11 {
+		type filter hook forward priority -311; policy accept;
+	}
+
+	chain forwardrawm10 {
+		type filter hook forward priority raw - 10; policy accept;
+	}
+
+	chain forwardraw {
+		type filter hook forward priority raw; policy accept;
+	}
+
+	chain forwardrawp10 {
+		type filter hook forward priority raw + 10; policy accept;
+	}
+
+	chain forwardrawp11 {
+		type filter hook forward priority -289; policy accept;
+	}
+
+	chain forwardmanglem11 {
+		type filter hook forward priority -161; policy accept;
+	}
+
+	chain forwardmanglem10 {
+		type filter hook forward priority mangle - 10; policy accept;
+	}
+
+	chain forwardmangle {
+		type filter hook forward priority mangle; policy accept;
+	}
+
+	chain forwardmanglep10 {
+		type filter hook forward priority mangle + 10; policy accept;
+	}
+
+	chain forwardmanglep11 {
+		type filter hook forward priority -139; policy accept;
+	}
+
+	chain forwardfilterm11 {
+		type filter hook forward priority -11; policy accept;
+	}
+
+	chain forwardfilterm10 {
+		type filter hook forward priority filter - 10; policy accept;
+	}
+
+	chain forwardfilter {
+		type filter hook forward priority filter; policy accept;
+	}
+
+	chain forwardfilterp10 {
+		type filter hook forward priority filter + 10; policy accept;
+	}
+
+	chain forwardfilterp11 {
+		type filter hook forward priority 11; policy accept;
+	}
+
+	chain forwardsecuritym11 {
+		type filter hook forward priority 39; policy accept;
+	}
+
+	chain forwardsecuritym10 {
+		type filter hook forward priority security - 10; policy accept;
+	}
+
+	chain forwardsecurity {
+		type filter hook forward priority security; policy accept;
+	}
+
+	chain forwardsecurityp10 {
+		type filter hook forward priority security + 10; policy accept;
+	}
+
+	chain forwardsecurityp11 {
+		type filter hook forward priority 61; policy accept;
+	}
+
+	chain outputrawm11 {
+		type filter hook output priority -311; policy accept;
+	}
+
+	chain outputrawm10 {
+		type filter hook output priority raw - 10; policy accept;
+	}
+
+	chain outputraw {
+		type filter hook output priority raw; policy accept;
+	}
+
+	chain outputrawp10 {
+		type filter hook output priority raw + 10; policy accept;
+	}
+
+	chain outputrawp11 {
+		type filter hook output priority -289; policy accept;
+	}
+
+	chain outputmanglem11 {
+		type filter hook output priority -161; policy accept;
+	}
+
+	chain outputmanglem10 {
+		type filter hook output priority mangle - 10; policy accept;
+	}
+
+	chain outputmangle {
+		type filter hook output priority mangle; policy accept;
+	}
+
+	chain outputmanglep10 {
+		type filter hook output priority mangle + 10; policy accept;
+	}
+
+	chain outputmanglep11 {
+		type filter hook output priority -139; policy accept;
+	}
+
+	chain outputfilterm11 {
+		type filter hook output priority -11; policy accept;
+	}
+
+	chain outputfilterm10 {
+		type filter hook output priority filter - 10; policy accept;
+	}
+
+	chain outputfilter {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain outputfilterp10 {
+		type filter hook output priority filter + 10; policy accept;
+	}
+
+	chain outputfilterp11 {
+		type filter hook output priority 11; policy accept;
+	}
+
+	chain outputsecuritym11 {
+		type filter hook output priority 39; policy accept;
+	}
+
+	chain outputsecuritym10 {
+		type filter hook output priority security - 10; policy accept;
+	}
+
+	chain outputsecurity {
+		type filter hook output priority security; policy accept;
+	}
+
+	chain outputsecurityp10 {
+		type filter hook output priority security + 10; policy accept;
+	}
+
+	chain outputsecurityp11 {
+		type filter hook output priority 61; policy accept;
+	}
+
+	chain postroutingrawm11 {
+		type filter hook postrouting priority -311; policy accept;
+	}
+
+	chain postroutingrawm10 {
+		type filter hook postrouting priority raw - 10; policy accept;
+	}
+
+	chain postroutingraw {
+		type filter hook postrouting priority raw; policy accept;
+	}
+
+	chain postroutingrawp10 {
+		type filter hook postrouting priority raw + 10; policy accept;
+	}
+
+	chain postroutingrawp11 {
+		type filter hook postrouting priority -289; policy accept;
+	}
+
+	chain postroutingmanglem11 {
+		type filter hook postrouting priority -161; policy accept;
+	}
+
+	chain postroutingmanglem10 {
+		type filter hook postrouting priority mangle - 10; policy accept;
+	}
+
+	chain postroutingmangle {
+		type filter hook postrouting priority mangle; policy accept;
+	}
+
+	chain postroutingmanglep10 {
+		type filter hook postrouting priority mangle + 10; policy accept;
+	}
+
+	chain postroutingmanglep11 {
+		type filter hook postrouting priority -139; policy accept;
+	}
+
+	chain postroutingfilterm11 {
+		type filter hook postrouting priority -11; policy accept;
+	}
+
+	chain postroutingfilterm10 {
+		type filter hook postrouting priority filter - 10; policy accept;
+	}
+
+	chain postroutingfilter {
+		type filter hook postrouting priority filter; policy accept;
+	}
+
+	chain postroutingfilterp10 {
+		type filter hook postrouting priority filter + 10; policy accept;
+	}
+
+	chain postroutingfilterp11 {
+		type filter hook postrouting priority 11; policy accept;
+	}
+
+	chain postroutingsecuritym11 {
+		type filter hook postrouting priority 39; policy accept;
+	}
+
+	chain postroutingsecuritym10 {
+		type filter hook postrouting priority security - 10; policy accept;
+	}
+
+	chain postroutingsecurity {
+		type filter hook postrouting priority security; policy accept;
+	}
+
+	chain postroutingsecurityp10 {
+		type filter hook postrouting priority security + 10; policy accept;
+	}
+
+	chain postroutingsecurityp11 {
+		type filter hook postrouting priority 61; policy accept;
+	}
+
+	chain preroutingdstnatm11 {
+		type filter hook prerouting priority -111; policy accept;
+	}
+
+	chain preroutingdstnatm10 {
+		type filter hook prerouting priority dstnat - 10; policy accept;
+	}
+
+	chain preroutingdstnat {
+		type filter hook prerouting priority dstnat; policy accept;
+	}
+
+	chain preroutingdstnatp10 {
+		type filter hook prerouting priority dstnat + 10; policy accept;
+	}
+
+	chain preroutingdstnatp11 {
+		type filter hook prerouting priority -89; policy accept;
+	}
+
+	chain postroutingsrcnatm11 {
+		type filter hook postrouting priority 89; policy accept;
+	}
+
+	chain postroutingsrcnatm10 {
+		type filter hook postrouting priority srcnat - 10; policy accept;
+	}
+
+	chain postroutingsrcnat {
+		type filter hook postrouting priority srcnat; policy accept;
+	}
+
+	chain postroutingsrcnatp10 {
+		type filter hook postrouting priority srcnat + 10; policy accept;
+	}
+
+	chain postroutingsrcnatp11 {
+		type filter hook postrouting priority 111; policy accept;
+	}
+}
+table arp x {
+	chain inputfilterm11 {
+		type filter hook input priority -11; policy accept;
+	}
+
+	chain inputfilterm10 {
+		type filter hook input priority filter - 10; policy accept;
+	}
+
+	chain inputfilter {
+		type filter hook input priority filter; policy accept;
+	}
+
+	chain inputfilterp10 {
+		type filter hook input priority filter + 10; policy accept;
+	}
+
+	chain inputfilterp11 {
+		type filter hook input priority 11; policy accept;
+	}
+
+	chain outputfilterm11 {
+		type filter hook output priority -11; policy accept;
+	}
+
+	chain outputfilterm10 {
+		type filter hook output priority filter - 10; policy accept;
+	}
+
+	chain outputfilter {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain outputfilterp10 {
+		type filter hook output priority filter + 10; policy accept;
+	}
+
+	chain outputfilterp11 {
+		type filter hook output priority 11; policy accept;
+	}
+}
+table netdev x {
+	chain ingressfilterm11 {
+		type filter hook ingress device "lo" priority -11; policy accept;
+	}
+
+	chain ingressfilterm10 {
+		type filter hook ingress device "lo" priority filter - 10; policy accept;
+	}
+
+	chain ingressfilter {
+		type filter hook ingress device "lo" priority filter; policy accept;
+	}
+
+	chain ingressfilterp10 {
+		type filter hook ingress device "lo" priority filter + 10; policy accept;
+	}
+
+	chain ingressfilterp11 {
+		type filter hook ingress device "lo" priority 11; policy accept;
+	}
+
+	chain egressfilterm11 {
+		type filter hook egress device "lo" priority -11; policy accept;
+	}
+
+	chain egressfilterm10 {
+		type filter hook egress device "lo" priority filter - 10; policy accept;
+	}
+
+	chain egressfilter {
+		type filter hook egress device "lo" priority filter; policy accept;
+	}
+
+	chain egressfilterp10 {
+		type filter hook egress device "lo" priority filter + 10; policy accept;
+	}
+
+	chain egressfilterp11 {
+		type filter hook egress device "lo" priority 11; policy accept;
+	}
+}
+table bridge x {
+	chain preroutingfilterm11 {
+		type filter hook prerouting priority -211; policy accept;
+	}
+
+	chain preroutingfilterm10 {
+		type filter hook prerouting priority filter - 10; policy accept;
+	}
+
+	chain preroutingfilter {
+		type filter hook prerouting priority filter; policy accept;
+	}
+
+	chain preroutingfilterp10 {
+		type filter hook prerouting priority filter + 10; policy accept;
+	}
+
+	chain preroutingfilterp11 {
+		type filter hook prerouting priority -189; policy accept;
+	}
+
+	chain inputfilterm11 {
+		type filter hook input priority -211; policy accept;
+	}
+
+	chain inputfilterm10 {
+		type filter hook input priority filter - 10; policy accept;
+	}
+
+	chain inputfilter {
+		type filter hook input priority filter; policy accept;
+	}
+
+	chain inputfilterp10 {
+		type filter hook input priority filter + 10; policy accept;
+	}
+
+	chain inputfilterp11 {
+		type filter hook input priority -189; policy accept;
+	}
+
+	chain forwardfilterm11 {
+		type filter hook forward priority -211; policy accept;
+	}
+
+	chain forwardfilterm10 {
+		type filter hook forward priority filter - 10; policy accept;
+	}
+
+	chain forwardfilter {
+		type filter hook forward priority filter; policy accept;
+	}
+
+	chain forwardfilterp10 {
+		type filter hook forward priority filter + 10; policy accept;
+	}
+
+	chain forwardfilterp11 {
+		type filter hook forward priority -189; policy accept;
+	}
+
+	chain outputfilterm11 {
+		type filter hook output priority -211; policy accept;
+	}
+
+	chain outputfilterm10 {
+		type filter hook output priority filter - 10; policy accept;
+	}
+
+	chain outputfilter {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain outputfilterp10 {
+		type filter hook output priority filter + 10; policy accept;
+	}
+
+	chain outputfilterp11 {
+		type filter hook output priority -189; policy accept;
+	}
+
+	chain postroutingfilterm11 {
+		type filter hook postrouting priority -211; policy accept;
+	}
+
+	chain postroutingfilterm10 {
+		type filter hook postrouting priority filter - 10; policy accept;
+	}
+
+	chain postroutingfilter {
+		type filter hook postrouting priority filter; policy accept;
+	}
+
+	chain postroutingfilterp10 {
+		type filter hook postrouting priority filter + 10; policy accept;
+	}
+
+	chain postroutingfilterp11 {
+		type filter hook postrouting priority -189; policy accept;
+	}
+
+	chain preroutingdstnatm11 {
+		type filter hook prerouting priority -311; policy accept;
+	}
+
+	chain preroutingdstnatm10 {
+		type filter hook prerouting priority dstnat - 10; policy accept;
+	}
+
+	chain preroutingdstnat {
+		type filter hook prerouting priority dstnat; policy accept;
+	}
+
+	chain preroutingdstnatp10 {
+		type filter hook prerouting priority dstnat + 10; policy accept;
+	}
+
+	chain preroutingdstnatp11 {
+		type filter hook prerouting priority -289; policy accept;
+	}
+
+	chain outputoutm11 {
+		type filter hook output priority 89; policy accept;
+	}
+
+	chain outputoutm10 {
+		type filter hook output priority out - 10; policy accept;
+	}
+
+	chain outputout {
+		type filter hook output priority out; policy accept;
+	}
+
+	chain outputoutp10 {
+		type filter hook output priority out + 10; policy accept;
+	}
+
+	chain outputoutp11 {
+		type filter hook output priority 111; policy accept;
+	}
+
+	chain postroutingsrcnatm11 {
+		type filter hook postrouting priority 289; policy accept;
+	}
+
+	chain postroutingsrcnatm10 {
+		type filter hook postrouting priority srcnat - 10; policy accept;
+	}
+
+	chain postroutingsrcnat {
+		type filter hook postrouting priority srcnat; policy accept;
+	}
+
+	chain postroutingsrcnatp10 {
+		type filter hook postrouting priority srcnat + 10; policy accept;
+	}
+
+	chain postroutingsrcnatp11 {
+		type filter hook postrouting priority 311; policy accept;
+	}
+}

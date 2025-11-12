@@ -1,0 +1,6 @@
+table ip test-ip {
+	quota htquota {		comment "tst5"	 5 kbytes
+	}
+}
+list ruleset      
+add rule t c counter

@@ -1,0 +1,3 @@
+table inet p
+list table inet p
+delete  table inet p

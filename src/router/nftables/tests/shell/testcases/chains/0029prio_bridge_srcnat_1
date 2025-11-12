@@ -1,0 +1,15 @@
+#!/bin/bash
+
+family=bridge
+	for hook in prerouting input forward output
+	do
+		prioname=srcnat
+			$NFT add table $family x
+			$NFT add chain $family x y "{ type filter hook $hook priority $prioname; }" &> /dev/null
+			if (($? == 0))
+			then
+				echo "E: $prioname should not be a valid priority name for bridge $hook chains." >&2
+				exit 1
+			fi
+	done
+exit 0

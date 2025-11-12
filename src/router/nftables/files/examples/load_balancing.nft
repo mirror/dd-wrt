@@ -1,0 +1,54 @@
+#!/usr/sbin/nft -f
+
+# This example file shows how to implement load balancing using the nftables
+# framework.
+# This script is meant to be loaded with `nft -f <file>`
+# You require linux kernel >= 4.12 and nft >= 0.7
+# For up-to-date information please visit https://wiki.nftables.org
+
+flush ruleset
+
+table ip nat {
+	chain prerouting {
+		type nat hook prerouting priority -300;
+		# round-robing load balancing between the 2 IPv4 addresses:
+		dnat to numgen inc mod 2 map {
+				0 : 192.168.10.100, \
+				1 : 192.168.20.200 }
+		# emulate flow distribution with different backend weights using intervals:
+		dnat to numgen inc mod 10 map {
+				0-5 : 192.168.10.100, \
+				6-9 : 192.168.20.200 }
+		# tcp port based distribution is also possible:
+		ip protocol tcp dnat to 192.168.1.100 : numgen inc mod 2 map {
+				0 : 4040 ,\
+				1 : 4050 }
+		# consistent hash-based distribution:
+		dnat to jhash ip saddr . tcp dport mod 2 map {
+				0 : 192.168.20.100, \
+				1 : 192.168.30.100 }
+	}
+}
+
+table ip raw {
+	chain prerouting {
+		type filter hook prerouting priority -300;
+		# using stateless NAT, round-robing distribution (you could use hashing too):
+		tcp dport 80 notrack ip daddr set numgen inc mod 2 map { 0 : 192.168.1.100, 1 : 192.168.1.101 }
+	}
+}
+
+table netdev mytable {
+	chain ingress {
+		# mind the NIC devices, they must exist in the system
+		type filter hook ingress device eth0 priority 0;
+		# using Direct Server Return (DSR), connectionless approach:
+		udp dport 53 ether saddr set aa:bb:cc:dd:ff:ee ether daddr set numgen inc mod 2 map {
+					0 : aa:aa:aa:aa:aa:aa,
+					1 : bb:bb:bb:bb:bb:bb } fwd to eth1
+		# using Direct Server Return (DSR), connection-oriented flows:
+		 tcp dport 80 ether saddr set aa:bb:cc:dd:ff:ee ether daddr set jhash ip saddr . tcp sport mod 2 map {
+					0 : aa:aa:aa:aa:aa:aa,
+					1 : bb:bb:bb:bb:bb:bb } fwd to eth1
+	}
+}

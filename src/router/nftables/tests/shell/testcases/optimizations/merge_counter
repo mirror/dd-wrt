@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_set_expr)
+
+set -e
+
+RULESET="table ip x {
+        chain y {
+                type filter hook input priority 0; policy drop;
+
+                ct state invalid counter drop
+                ct state established,related counter accept
+                tcp dport 80 counter accept
+                tcp dport 123 counter accept
+                ip saddr 1.1.1.1 ip daddr 2.2.2.2 counter accept
+                ip saddr 1.1.1.2 ip daddr 3.3.3.3 counter drop
+        }
+}"
+
+$NFT -o -f - <<< $RULESET

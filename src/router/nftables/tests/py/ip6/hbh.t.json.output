@@ -1,0 +1,68 @@
+# hbh nexthdr {esp, ah, comp, udp, udplite, tcp, dccp, sctp, icmpv6}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [ 6, 17, 33, 50, 51, 58, 108, 132, 136 ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr != {esp, ah, comp, udp, udplite, tcp, dccp, sctp, icmpv6}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [ 6, 17, 33, 50, 51, 58, 108, 132, 136 ]
+            }
+        }
+    }
+]
+
+# hbh nexthdr ip
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# hbh nexthdr != ip
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "hbh"
+                }
+            },
+            "op": "!=",
+            "right": 0
+        }
+    }
+]
+

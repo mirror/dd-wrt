@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="flush ruleset
+add table inet filter
+add map inet filter testmap { type ipv4_addr : counter; flags interval;}
+add counter inet filter TEST
+add element inet filter testmap { 192.168.0.0/24 : \"TEST\" }"
+
+$NFT -f - <<< "$EXPECTED"

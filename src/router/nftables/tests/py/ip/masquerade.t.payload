@@ -1,0 +1,141 @@
+# udp dport 53 masquerade
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq ]
+
+# udp dport 53 masquerade random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x4 ]
+
+# udp dport 53 masquerade random,persistent
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0xc ]
+
+# udp dport 53 masquerade random,persistent,fully-random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x1c ]
+
+# udp dport 53 masquerade random,fully-random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x14 ]
+
+# udp dport 53 masquerade random,fully-random,persistent
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x1c ]
+
+# udp dport 53 masquerade persistent
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x8 ]
+
+# udp dport 53 masquerade persistent,random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0xc ]
+
+# udp dport 53 masquerade persistent,random,fully-random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x1c ]
+
+# udp dport 53 masquerade persistent,fully-random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x18 ]
+
+# udp dport 53 masquerade persistent,fully-random,random
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ masq flags 0x1c ]
+
+# tcp dport { 1,2,3,4,5,6,7,8,101,202,303,1001,2002,3003} masquerade
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000100  : 0 [end]	element 00000200  : 0 [end]	element 00000300  : 0 [end]	element 00000400  : 0 [end]	element 00000500  : 0 [end]	element 00000600  : 0 [end]	element 00000700  : 0 [end]	element 00000800  : 0 [end]	element 00006500  : 0 [end]	element 0000ca00  : 0 [end]	element 00002f01  : 0 [end]	element 0000e903  : 0 [end]	element 0000d207  : 0 [end]	element 0000bb0b  : 0 [end]
+ip test-ip4 postrouting
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ masq ]
+
+# ip daddr 10.0.0.0-10.2.3.4 udp dport 53 counter masquerade
+ip test-ip4 postrouting
+  [ payload load 4b @ network header + 16 => reg 1 ]
+  [ range eq reg 1 0x0000000a 0x0403020a ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ cmp eq reg 1 0x00003500 ]
+  [ counter pkts 0 bytes 0 ]
+  [ masq ]
+
+# iifname "eth0" ct state established,new tcp dport vmap {22 : drop, 222 : drop } masquerade
+__map%d test-ip4 b
+__map%d test-ip4 0
+	element 00001600  : drop 0 [end]	element 0000de00  : drop 0 [end]
+ip test-ip4 postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ ct load state => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000000a ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+  [ masq ]
+
+# ip protocol 6 masquerade to :1024
+ip test-ip4 postrouting
+  [ payload load 1b @ network header + 9 => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ immediate reg 1 0x00000004 ]
+  [ masq proto_min reg 1 flags 0x2 ]
+
+# ip protocol 6 masquerade to :1024-2048
+ip test-ip4 postrouting
+  [ payload load 1b @ network header + 9 => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ immediate reg 1 0x00000004 ]
+  [ immediate reg 2 0x00000008 ]
+  [ masq proto_min reg 1 proto_max reg 2 flags 0x2 ]
+

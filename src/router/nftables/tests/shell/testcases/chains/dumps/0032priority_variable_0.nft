@@ -1,0 +1,13 @@
+table inet global {
+	chain prerouting {
+		type filter hook prerouting priority filter + 10; policy accept;
+	}
+
+	chain forward {
+		type filter hook prerouting priority dstnat; policy accept;
+	}
+
+	chain postrouting {
+		type filter hook postrouting priority filter - 10; policy accept;
+	}
+}

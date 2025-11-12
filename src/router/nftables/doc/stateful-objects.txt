@@ -1,0 +1,243 @@
+CT HELPER
+~~~~~~~~~
+[verse]
+*add* *ct helper* ['family'] 'table' 'name' *{ type* 'type' *protocol* 'protocol' *;* [*l3proto* 'family' *;*] *}*
+*delete* *ct helper* ['family'] 'table' 'name'
+*list* *ct helpers*
+
+Ct helper is used to define connection tracking helpers that can then be used in
+combination with the *ct helper set* statement. 'type' and 'protocol' are
+mandatory, l3proto is derived from the table family by default, i.e. in the inet
+table the kernel will try to load both the ipv4 and ipv6 helper backends, if
+they are supported by the kernel.
+
+.conntrack helper specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+| type |
+name of helper type |
+quoted string (e.g. "ftp")
+|protocol |
+layer 4 protocol of the helper |
+string (e.g. ip)
+|l3proto |
+layer 3 protocol of the helper |
+address family (e.g. ip)
+|comment |
+per ct helper comment field |
+string
+|=================
+
+.defining and assigning ftp helper
+----------------------------------
+Unlike iptables, helper assignment needs to be performed after the conntrack
+lookup has completed, for example with the default 0 hook priority.
+
+table inet myhelpers {
+  ct helper ftp-standard {
+     type "ftp" protocol tcp
+  }
+  chain prerouting {
+      type filter hook prerouting priority filter;
+      tcp dport 21 ct helper set "ftp-standard"
+  }
+}
+----------------------------------
+
+CT TIMEOUT
+~~~~~~~~~~
+[verse]
+*add* *ct timeout*  ['family'] 'table' 'name' *{ protocol* 'protocol' *; policy = {* 'state'*:* 'value' [*,* ...] *} ;* [*l3proto* 'family' *;*] *}*
+*delete* *ct timeout* ['family'] 'table' 'name'
+*list* *ct timeouts*
+
+Ct timeout is used to update connection tracking timeout values.Timeout policies are assigned
+with the *ct timeout set* statement. 'protocol' and 'policy' are
+  mandatory, l3proto is derived from the table family by default.
+
+.conntrack timeout specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+| protocol |
+layer 4 protocol of the timeout object |
+string (e.g. ip)
+|state |
+connection state name |
+string (e.g. "established")
+|value |
+timeout value for connection state |
+unsigned integer
+|l3proto |
+layer 3 protocol of the timeout object |
+address family (e.g. ip)
+|comment |
+per ct timeout comment field |
+string
+|=================
+
+tcp connection state names that can have a specific timeout value are:
+
+'close', 'close_wait', 'established', 'fin_wait', 'last_ack', 'retrans', 'syn_recv', 'syn_sent', 'time_wait' and 'unack'.
+
+You can use 'sysctl -a |grep net.netfilter.nf_conntrack_tcp_timeout_' to view and change the system-wide defaults.
+'ct timeout' allows for flow-specific settings, without changing the global timeouts.
+
+For example, tcp port 53 could have much lower settings than other traffic.
+
+udp state names that can have a specific timeout value are 'replied' and 'unreplied'.
+
+.defining and assigning ct timeout policy
+----------------------------------
+table ip filter {
+	ct timeout customtimeout {
+		protocol tcp;
+		l3proto ip
+		policy = { established: 2m, close: 20s }
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+		ct timeout set "customtimeout"
+	}
+}
+----------------------------------
+
+.testing the updated timeout policy
+----------------------------------
+
+% conntrack -E
+
+It should display:
+
+[UPDATE] tcp      6 120 ESTABLISHED src=172.16.19.128 dst=172.16.19.1
+sport=22 dport=41360 [UNREPLIED] src=172.16.19.1 dst=172.16.19.128
+sport=41360 dport=22
+----------------------------------
+
+CT EXPECTATION
+~~~~~~~~~~~~~~
+[verse]
+*add* *ct expectation*  ['family'] 'table' 'name' *{ protocol* 'protocol' *; dport* 'dport' *; timeout* 'timeout' *; size* 'size' *;* [*l3proto* 'family' *;*] *}*
+*delete* *ct expectation*  ['family'] 'table' 'name'
+*list* *ct expectations*
+
+Ct expectation is used to create connection expectations. Expectations are
+assigned with the *ct expectation set* statement. 'protocol', 'dport',
+'timeout' and 'size' are mandatory, l3proto is derived from the table family
+by default.
+
+.conntrack expectation specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+|protocol |
+layer 4 protocol of the expectation object |
+string (e.g. ip)
+|dport |
+destination port of expected connection |
+unsigned integer
+|timeout |
+timeout value for expectation |
+unsigned integer
+|size |
+size value for expectation |
+unsigned integer
+|l3proto |
+layer 3 protocol of the expectation object |
+address family (e.g. ip)
+|comment |
+per ct expectation comment field |
+string
+|=================
+
+.defining and assigning ct expectation policy
+---------------------------------------------
+table ip filter {
+	ct expectation expect {
+		protocol udp
+		dport 9876
+		timeout 2m
+		size 8
+		l3proto ip
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		ct expectation set "expect"
+	}
+}
+----------------------------------
+
+COUNTER
+~~~~~~~
+[verse]
+*add* *counter* ['family'] 'table' 'name' [*{* [ *packets* 'packets' *bytes* 'bytes' ';' ] [ *comment* 'comment' ';' *}*]
+*delete* *counter* ['family'] 'table' 'name'
+*list* *counters*
+
+.Counter specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+|packets |
+initial count of packets |
+unsigned integer (64 bit)
+|bytes |
+initial count of bytes |
+unsigned integer (64 bit)
+|comment |
+per counter comment field |
+string
+|=================
+
+.*Using named counters*
+------------------
+nft add counter filter http
+nft add rule filter input tcp dport 80 counter name \"http\"
+------------------
+
+.*Using named counters with maps*
+------------------
+nft add counter filter http
+nft add counter filter https
+nft add rule filter input counter name tcp dport map { 80 : \"http\", 443 : \"https\" }
+------------------
+
+QUOTA
+~~~~~
+[verse]
+*add* *quota* ['family'] 'table' 'name' *{* [*over*|*until*] 'bytes' 'BYTE_UNIT' [ *used* 'bytes' 'BYTE_UNIT' ] ';' [ *comment* 'comment' ';' ] *}*
+BYTE_UNIT := bytes | kbytes | mbytes
+*delete* *quota* ['family'] 'table' 'name'
+*list* *quotas*
+
+.Quota specifications
+[options="header"]
+|=================
+|Keyword | Description | Type
+|quota |
+quota limit, used as the quota name |
+Two arguments, unsigned integer (64 bit) and string: bytes, kbytes, mbytes.
+"over" and "until" go before these arguments
+|used |
+initial value of used quota |
+Two arguments, unsigned integer (64 bit) and string: bytes, kbytes, mbytes
+|comment |
+per quota comment field |
+string
+|=================
+
+.*Using named quotas*
+------------------
+nft add quota filter user123 { over 20 mbytes }
+nft add rule filter input ip saddr 192.168.10.123 quota name \"user123\"
+------------------
+
+.*Using named quotas with maps*
+------------------
+nft add quota filter user123 { over 20 mbytes }
+nft add quota filter user124 { over 20 mbytes }
+nft add rule filter input quota name ip saddr map { 192.168.10.123 : \"user123\", 192.168.10.124 : \"user124\" }
+------------------

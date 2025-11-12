@@ -1,0 +1,70 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "x",
+        "table": "x",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "size": 1,
+        "flags": [
+          "interval"
+        ],
+        "auto-merge": true,
+        "elem": [
+          {
+            "prefix": {
+              "addr": "255.255.255.0",
+              "len": 24
+            }
+          }
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "y",
+        "table": "x",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "saddr"
+            }
+          }
+        },
+        "handle": 0,
+        "size": 1,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          "0.0.0.0"
+        ]
+      }
+    }
+  ]
+}

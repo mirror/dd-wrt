@@ -1,0 +1,65 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "t",
+        "name": "c",
+        "handle": 0,
+        "type": "filter",
+        "hook": "output",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "t",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "mangle": {
+              "key": {
+                "ct": {
+                  "key": "mark"
+                }
+              },
+              "value": {
+                "|": [
+                  {
+                    "<<": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "dscp"
+                        }
+                      },
+                      2
+                    ]
+                  },
+                  16
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

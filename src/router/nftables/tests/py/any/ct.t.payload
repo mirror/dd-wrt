@@ -1,0 +1,530 @@
+# ct state new,established, related, untracked
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000004e ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct state != related
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ cmp neq reg 1 0x00000004 ]
+
+# ct state {new,established, related, untracked}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000040  : 0 [end]
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct state != {new,established, related, untracked}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008  : 0 [end]	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000040  : 0 [end]
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# ct state invalid drop
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000001 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+  [ immediate reg 0 drop ]
+
+# ct state established accept
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000002 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+  [ immediate reg 0 accept ]
+
+# ct state 8
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000008 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct direction original
+ip test-ip4 output
+  [ ct load direction => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# ct direction != original
+ip test-ip4 output
+  [ ct load direction => reg 1 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct direction reply
+ip test-ip4 output
+  [ ct load direction => reg 1 ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# ct direction != reply
+ip test-ip4 output
+  [ ct load direction => reg 1 ]
+  [ cmp neq reg 1 0x00000001 ]
+
+# ct direction {reply, original}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000001  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 output
+  [ ct load direction => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct direction != {reply, original}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000001  : 0 [end]	element 00000000  : 0 [end]
+ip test-ip4 output
+  [ ct load direction => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# ct status expected
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000001 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct status != expected
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ cmp neq reg 1 0x00000001 ]
+
+# ct status seen-reply
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000002 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct status != seen-reply
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ cmp neq reg 1 0x00000002 ]
+
+# ct status {expected, seen-reply, assured, confirmed, dying}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000001  : 0 [end]	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000008  : 0 [end]	element 00000200  : 0 [end]
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct status != {expected, seen-reply, assured, confirmed, dying}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000001  : 0 [end]	element 00000002  : 0 [end]	element 00000004  : 0 [end]	element 00000008  : 0 [end]	element 00000200  : 0 [end]
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# ct mark 0
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# ct mark or 0x23 == 0x11
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffdc ) ^ 0x00000023 ]
+  [ cmp eq reg 1 0x00000011 ]
+
+# ct mark or 0x3 != 0x1
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffffc ) ^ 0x00000003 ]
+  [ cmp neq reg 1 0x00000001 ]
+
+# ct mark and 0x23 == 0x11
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000023 ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000011 ]
+
+# ct mark and 0x3 != 0x1
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000003 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000001 ]
+
+# ct mark xor 0x23 == 0x11
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ cmp eq reg 1 0x00000032 ]
+
+# ct mark xor 0x3 != 0x1
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ cmp neq reg 1 0x00000002 ]
+
+# ct mark 0x00000032
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ cmp eq reg 1 0x00000032 ]
+
+# ct mark != 0x00000032
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ cmp neq reg 1 0x00000032 ]
+
+# ct mark 0x00000032-0x00000045
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ range eq reg 1 0x32000000 0x45000000 ]
+
+# ct mark != 0x00000032-0x00000045
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ range neq reg 1 0x32000000 0x45000000 ]
+
+# ct mark {0x32, 0x2222, 0x42de3}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000032  : 0 [end]	element 00002222  : 0 [end]	element 00042de3  : 0 [end]
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct mark {0x32-0x2222, 0x4444-0x42de3}
+__set%d test-ip4 7
+__set%d test-ip4 0
+        element 00000000  : 1 [end]     element 32000000  : 0 [end]     element 23220000  : 1 [end]     element 44440000  : 0 [end]     element e42d0400  : 1 [end]
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ lookup reg 1 set __set%d ]
+
+# ct mark != {0x32, 0x2222, 0x42de3}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000032  : 0 [end]	element 00002222  : 0 [end]	element 00042de3  : 0 [end]
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# ct mark set 0x11 xor 0x1331
+ip test-ip4 output
+  [ immediate reg 1 0x00001320 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set 0x11333 and 0x11
+ip test-ip4 output
+  [ immediate reg 1 0x00000011 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set 0x12 or 0x11
+ip test-ip4 output
+  [ immediate reg 1 0x00000013 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set 0x11
+ip test-ip4 output
+  [ immediate reg 1 0x00000011 ]
+  [ ct set mark with reg 1 ]
+
+# ct expiration 30s
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ cmp eq reg 1 0x00007530 ]
+
+# ct expiration 30000ms
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ cmp eq reg 1 0x00007530 ]
+
+# ct expiration 1m-1h
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ range eq reg 1 0x60ea0000 0x80ee3600 ]
+
+# ct expiration > 4d23h59m59s
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ cmp gt reg 1 0x18c8bf19 ]
+
+# ct expiration != 233
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ cmp neq reg 1 0x00038e28 ]
+
+# ct expiration 33-45
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ range eq reg 1 0xe8800000 0xc8af0000 ]
+
+# ct expiration != 33-45
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ range neq reg 1 0xe8800000 0xc8af0000 ]
+
+# ct expiration {33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 000080e8  : 0 [end]	element 0000d6d8  : 0 [end]	element 000105b8  : 0 [end]	element 000157c0  : 0 [end]
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct expiration != {33, 55, 67, 88}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 000080e8  : 0 [end]	element 0000d6d8  : 0 [end]	element 000105b8  : 0 [end]	element 000157c0  : 0 [end]
+ip test-ip4 output
+  [ ct load expiration => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# ct expiration {33-55, 66-88}
+__set%d test-ip4 7 size 5
+__set%d test-ip4 0
+	element 00000000  : 1 [end]	element e8800000  : 0 [end]	element d9d60000  : 1 [end]	element d0010100  : 0 [end]	element c1570100  : 1 [end]
+ip test-ip4 output 
+  [ ct load expiration => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ lookup reg 1 set __set%d ]
+
+# ct expiration != {33-55, 66-88}
+__set%d test-ip4 7 size 5
+__set%d test-ip4 0
+	element 00000000  : 1 [end]	element e8800000  : 0 [end]	element d9d60000  : 1 [end]	element d0010100  : 0 [end]	element c1570100  : 1 [end]
+ip test-ip4 output 
+  [ ct load expiration => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 4, 4) ]
+  [ lookup reg 1 set __set%d 0x1 ]
+
+# ct helper "ftp"
+ip test-ip4 output
+  [ ct load helper => reg 1 ]
+  [ cmp eq reg 1 0x00707466 0x00000000 0x00000000 0x00000000 ]
+
+# ct state . ct mark { new . 0x12345678, new . 0x34127856, established . 0x12785634}
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00000008 12345678  : 0 [end]	element 00000008 34127856  : 0 [end]	element 00000002 12785634  : 0 [end]
+ip test-ip4 output
+  [ ct load state => reg 1 ]
+  [ ct load mark => reg 9 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct mark set mark
+ip test-ip4 output
+  [ meta load mark => reg 1 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set (meta mark | 0x10) << 8
+inet test-inet output
+  [ meta load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0xffffffef ) ^ 0x00000010 ]
+  [ bitwise reg 1 = ( reg 1 << 0x00000008 ) ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set mark map { 1 : 10, 2 : 20, 3 : 30 }
+__map%d test-ip4 b
+__map%d test-ip4 0
+        element 00000001  : 0000000a 0 [end]    element 00000002  : 00000014 0 [end]    element 00000003  : 0000001e 0 [end]
+ip test-ip4 output
+  [ meta load mark => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set ct mark and 0xffff0000 or meta mark and 0xffff
+ip
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0xffff0000 ) ^ 0x00000000 ]
+  [ meta load mark => reg 2 ]
+  [ bitwise reg 2 = ( reg 2 & 0x0000ffff ) ^ 0x00000000 ]
+  [ bitwise reg 1 = ( reg 1 | reg 2 ) ]
+  [ ct set mark with reg 1 ]
+
+# ct original bytes > 100000
+ip test-ip4 output
+  [ ct load bytes => reg 1 , dir original ]
+  [ byteorder reg 1 = hton(reg 1, 8, 8) ]
+  [ cmp gt reg 1 0x00000000 0xa0860100 ]
+
+# ct reply packets < 100
+ip test-ip4 output
+  [ ct load packets => reg 1 , dir reply ]
+  [ byteorder reg 1 = hton(reg 1, 8, 8) ]
+  [ cmp lt reg 1 0x00000000 0x64000000 ]
+
+# ct bytes > 100000
+ip test-ip4 output
+  [ ct load bytes => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 8, 8) ]
+  [ cmp gt reg 1 0x00000000 0xa0860100 ]
+
+# ct avgpkt > 200
+ip test-ip4 output
+  [ ct load avgpkt => reg 1 ]
+  [ byteorder reg 1 = hton(reg 1, 8, 8) ]
+  [ cmp gt reg 1 0x00000000 0xc8000000 ]
+
+# ct original avgpkt < 500
+ip test-ip4 output
+  [ ct load avgpkt => reg 1 , dir original ]
+  [ byteorder reg 1 = hton(reg 1, 8, 8) ]
+  [ cmp lt reg 1 0x00000000 0xf4010000 ]
+
+# ct status expected,seen-reply,assured,confirmed,snat,dnat,dying
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x0000023f ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct status snat
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000010 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct status dnat
+ip test-ip4 output
+  [ ct load status => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000020 ) ^ 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 ]
+
+# ct event set new
+ip test-ip4 output
+  [ immediate reg 1 0x00000001 ]
+  [ ct set event with reg 1 ]
+
+# ct event set new | related | destroy | label
+ip test-ip4 output
+  [ immediate reg 1 0x00000407 ]
+  [ ct set event with reg 1 ]
+
+# ct event set new,related,destroy,label
+ip test-ip4 output
+  [ immediate reg 1 0x00000407 ]
+  [ ct set event with reg 1 ]
+
+# ct event set new,destroy
+ip test-ip4 output
+  [ immediate reg 1 0x00000005 ]
+  [ ct set event with reg 1 ]
+
+# ct event set 1
+ip test-ip4 output
+  [ immediate reg 1 0x00000001 ]
+  [ ct set event with reg 1 ]
+
+# ct event set 0x0
+ip test-ip4 output
+  [ immediate reg 1 0x00000000 ]
+  [ ct set event with reg 1 ]
+
+# ct label 127
+ip test-ip4 output
+  [ ct load label => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000000 0x00000000 0x00000000 0x80000000 ) ^ 0x00000000 0x00000000 0x00000000 0x00000000 ]
+  [ cmp neq reg 1 0x00000000 0x00000000 0x00000000 0x00000000 ]
+
+# ct label set 127
+ip test-ip4 output
+  [ immediate reg 1 0x00000000 0x00000000 0x00000000 0x80000000 ]
+  [ ct set label with reg 1 ]
+
+# ct zone 0
+ip test-ip4 output
+  [ ct load zone => reg 1 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# ct zone 23
+ip test-ip4 output
+  [ ct load zone => reg 1 ]
+  [ cmp eq reg 1 0x00000017 ]
+
+# ct original zone 1
+ip test-ip4 output
+  [ ct load zone => reg 1 , dir original ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# ct reply zone 1
+ip test-ip4 output
+  [ ct load zone => reg 1 , dir reply ]
+  [ cmp eq reg 1 0x00000001 ]
+
+# ct zone set 1
+ip test-ip4 output
+  [ immediate reg 1 0x00000001 ]
+  [ ct set zone with reg 1 ]
+
+# ct original zone set 1
+ip test-ip4 output
+  [ immediate reg 1 0x00000001 ]
+  [ ct set zone with reg 1 , dir original ]
+
+# ct reply zone set 1
+ip test-ip4 output
+  [ immediate reg 1 0x00000001 ]
+  [ ct set zone with reg 1 , dir reply ]
+
+# ct zone set mark map { 1 : 1,  2 : 2 }
+__map%d test-ip4 b
+__map%d test-ip4 0
+        element 00000001  : 00000001 0 [end]    element 00000002  : 00000002 0 [end]
+ip test-ip4 output
+  [ meta load mark => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ ct set zone with reg 1 ]
+
+# notrack
+ip test-ip4 output
+  [ notrack ]
+
+# ct direction . ct mark { original . 0x12345678, reply . 0x87654321}
+__set%d test-ip4 3 size 2
+__set%d test-ip4 0
+	element 00000000 12345678  : 0 [end]	element 00000001 87654321  : 0 [end]
+ip test-ip4 output 
+  [ ct load direction => reg 1 ]
+  [ ct load mark => reg 9 ]
+  [ lookup reg 1 set __set%d ]
+
+# ct state . ct mark vmap { new . 0x12345678 : drop, established . 0x87654321 : accept}
+__map%d test-ip4 b size 2
+__map%d test-ip4 0
+	element 00000008 12345678  : drop 0 [end]	element 00000002 87654321  : accept 0 [end]
+ip test-ip4 output 
+  [ ct load state => reg 1 ]
+  [ ct load mark => reg 9 ]
+  [ lookup reg 1 set __map%d dreg 0 ]
+
+# ct mark set ct mark or 0x00000001
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffffe ) ^ 0x00000001 ]
+  [ ct set mark with reg 1 ]
+
+# ct mark set 0x00000001 or ct mark
+ip test-ip4 output
+  [ ct load mark => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0xfffffffe ) ^ 0x00000001 ]
+  [ ct set mark with reg 1 ]
+
+# ct id 12345
+ip test-ip4 output
+  [ ct load id => reg 1 ]
+  [ cmp eq reg 1 0x39300000 ]
+
+# ct status ! dnat
+ip6
+  [ ct load status => reg 1 ]
+  [ bitwise reg 1 = ( reg 1 & 0x00000020 ) ^ 0x00000000 ]
+  [ cmp eq reg 1 0x00000000 ]
+
+# ct count 3
+ip test-ip4 output
+  [ connlimit count 3 flags 0 ]
+
+# ct count over 3
+ip test-ip4 output
+  [ connlimit count 3 flags 1 ]
+

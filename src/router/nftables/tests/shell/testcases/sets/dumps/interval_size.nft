@@ -1,0 +1,16 @@
+table inet x {
+	set x {
+		typeof ip saddr
+		size 1	# count 1
+		flags interval
+		auto-merge
+		elements = { 255.255.255.0/24 }
+	}
+
+	set y {
+		typeof ip saddr
+		size 1	# count 1
+		flags interval
+		elements = { 0.0.0.0 }
+	}
+}

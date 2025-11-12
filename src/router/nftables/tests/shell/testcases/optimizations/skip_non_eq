@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table inet x {
+	chain y {
+		iifname "eth0" oifname != "eth0" counter packets 0 bytes 0 accept
+		iifname "eth0" oifname "eth0" counter packets 0 bytes 0 accept
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

@@ -1,0 +1,164 @@
+# tcp dport {telnet, http, https} accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    80,
+                    443
+                ]
+            }
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# tcp sequence 0 tcp sport { 1024, 1022} tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    1022,
+                    1024
+                ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# tcp flags & (syn|fin) == (syn|fin)
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "|": [
+                    "fin",
+                    "syn"
+                ]
+            }
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | psh | ack | urg | ecn | cwr) == fin | syn | rst | psh | ack | urg | ecn | cwr
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 255
+        }
+    }
+]
+
+# tcp flags & (fin | syn | rst | psh | ack | urg) == { fin, ack, psh | ack, fin | psh | ack }
+[
+    {
+        "match": {
+            "left": {
+                "&": [
+                    {
+                        "payload": {
+                            "field": "flags",
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "|": [
+                            "fin",
+                            "syn",
+                            "rst",
+                            "psh",
+                            "ack",
+                            "urg"
+                        ]
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "fin",
+                    {
+                        "|": [
+                            "fin",
+                            "psh",
+                            "ack"
+                        ]
+                    },
+                    {
+                        "|": [
+                            "psh",
+                            "ack"
+                        ]
+                    },
+                    "ack"
+                ]
+            }
+        }
+    }
+]

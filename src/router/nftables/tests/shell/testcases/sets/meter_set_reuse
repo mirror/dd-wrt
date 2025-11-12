@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+addrule()
+{
+	$NFT add rule ip filter input tcp dport 80 meter http1 { tcp dport . ip saddr limit rate over 200/second } counter drop
+}
+
+$NFT add table filter
+$NFT add chain filter input
+addrule
+
+$NFT list meters
+
+# This used to remove the anon set, but not anymore
+$NFT flush chain filter input
+
+# This re-add should work.
+addrule

@@ -1,0 +1,11 @@
+table ip x {
+	set setA {
+		type ipv4_addr . inet_service . ipv4_addr
+		flags timeout
+	}
+
+	set setB {
+		type ipv4_addr . inet_service
+		flags timeout
+	}
+}

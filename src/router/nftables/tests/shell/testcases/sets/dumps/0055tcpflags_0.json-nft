@@ -1,0 +1,138 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "ip",
+        "name": "tcp_good_flags",
+        "table": "test",
+        "type": "tcp_flag",
+        "handle": 0,
+        "flags": [
+          "constant"
+        ],
+        "elem": [
+          {
+            "|": [
+              "fin",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "fin",
+              "ack",
+              "urg"
+            ]
+          },
+          {
+            "|": [
+              "fin",
+              "psh",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "fin",
+              "psh",
+              "ack",
+              "urg"
+            ]
+          },
+          "syn",
+          {
+            "|": [
+              "syn",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "syn",
+              "ack",
+              "urg"
+            ]
+          },
+          {
+            "|": [
+              "syn",
+              "psh",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "syn",
+              "psh",
+              "ack",
+              "urg"
+            ]
+          },
+          "rst",
+          {
+            "|": [
+              "rst",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "rst",
+              "ack",
+              "urg"
+            ]
+          },
+          {
+            "|": [
+              "rst",
+              "psh",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "rst",
+              "psh",
+              "ack",
+              "urg"
+            ]
+          },
+          {
+            "|": [
+              "psh",
+              "ack"
+            ]
+          },
+          {
+            "|": [
+              "psh",
+              "ack",
+              "urg"
+            ]
+          },
+          "ack",
+          {
+            "|": [
+              "ack",
+              "urg"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

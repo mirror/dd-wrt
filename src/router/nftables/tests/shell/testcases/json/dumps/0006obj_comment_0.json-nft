@@ -1,0 +1,29 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "counter": {
+        "family": "inet",
+        "name": "mycounter",
+        "table": "t",
+        "handle": 0,
+        "comment": "my comment in counter",
+        "packets": 0,
+        "bytes": 0
+      }
+    }
+  ]
+}

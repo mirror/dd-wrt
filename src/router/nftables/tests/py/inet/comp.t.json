@@ -1,0 +1,244 @@
+# comp nexthdr != esp
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "nexthdr",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": "esp"
+        }
+    }
+]
+
+# comp flags 0x0
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": "0x0"
+        }
+    }
+]
+
+# comp flags != 0x23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": "0x23"
+        }
+    }
+]
+
+# comp flags 0x33-0x45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "0x33", "0x45" ]
+            }
+        }
+    }
+]
+
+# comp flags != 0x33-0x45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ "0x33", "0x45" ]
+            }
+        }
+    }
+]
+
+# comp flags {0x33, 0x55, 0x67, 0x88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "0x33",
+                    "0x55",
+                    "0x67",
+                    "0x88"
+                ]
+            }
+        }
+    }
+]
+
+# comp flags != {0x33, 0x55, 0x67, 0x88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "flags",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "0x33",
+                    "0x55",
+                    "0x67",
+                    "0x88"
+                ]
+            }
+        }
+    }
+]
+
+# comp cpi 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "cpi",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# comp cpi != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "cpi",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# comp cpi 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "cpi",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# comp cpi != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "cpi",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# comp cpi {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "cpi",
+                    "protocol": "comp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# comp cpi != {33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "cpi",
+                    "protocol": "comp"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+

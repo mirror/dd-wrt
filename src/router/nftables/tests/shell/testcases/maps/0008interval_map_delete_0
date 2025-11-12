@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+EXPECTED="table ip filter {
+	map m {
+		type ipv4_addr : mark
+		flags interval
+		elements = { 127.0.0.2 : 0x00000002,
+			     127.0.0.3 : 0x00000003 }
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		meta mark set ip daddr map @m
+		meta mark 0x00000002 counter accept
+		meta mark 0x00000003 counter accept
+		counter
+	}
+}"
+
+$NFT -f - <<< "$EXPECTED"
+$NFT delete element filter m { 127.0.0.2 }
+$NFT delete element filter m { 127.0.0.3 }
+$NFT add element filter m { 127.0.0.3 : 0x3 }
+$NFT add element filter m { 127.0.0.2 : 0x2 }
+
+GET=$($NFT -s list ruleset)
+if [ "$EXPECTED" != "$GET" ] ; then
+	$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+	exit 1
+fi

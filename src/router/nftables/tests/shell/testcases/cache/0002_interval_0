@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# This testcase checks that we can load a ruleset twice in a row.
+# bug --> Error: interval overlaps with an existing one
+
+set -e
+
+RULESET="flush ruleset
+table inet t {
+	set s { type ipv4_addr; flags interval; }
+}
+
+add element inet t s {
+	192.168.0.1/24,
+}"
+
+$NFT -f - <<< "$RULESET"
+$NFT -f - <<< "$RULESET"

@@ -1,0 +1,36 @@
+table inet filter {
+	map portmap {
+		type inet_service : verdict
+		flags timeout
+		gc-interval 10s
+		elements = { 22 : jump ssh_input }
+	}
+
+	map portaddrmap {
+		typeof ip daddr . th dport : verdict
+		flags timeout
+		gc-interval 10s
+		elements = { 1.2.3.4 . 22 : jump ssh_input }
+	}
+
+	chain ssh_input {
+	}
+
+	chain log_and_drop {
+		drop
+	}
+
+	chain other_input {
+		goto log_and_drop
+	}
+
+	chain wan_input {
+		ip daddr . tcp dport vmap @portaddrmap
+		tcp dport vmap @portmap
+	}
+
+	chain prerouting {
+		type filter hook prerouting priority raw; policy accept;
+		iif vmap { "lo" : jump wan_input }
+	}
+}

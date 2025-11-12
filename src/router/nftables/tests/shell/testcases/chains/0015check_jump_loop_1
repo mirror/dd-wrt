@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain t c1
+$NFT add chain t c2
+$NFT add t c1 jump c2
+# kernel should return ENOENT
+
+$NFT add t c2 ip daddr vmap { 1 : jump c3 } || exit 0
+echo "E: Jumped to non existing chain" >&2
+exit 1

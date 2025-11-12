@@ -1,0 +1,19 @@
+table ip t {
+	set s {
+		type ipv4_addr
+	}
+
+	map m {
+		type ipv4_addr : inet_service
+	}
+
+	set f {
+		type ipv4_addr
+		size 1024
+		flags dynamic
+	}
+
+	chain c {
+		tcp dport 80 add @f { ip saddr limit rate 10/second burst 5 packets }
+	}
+}

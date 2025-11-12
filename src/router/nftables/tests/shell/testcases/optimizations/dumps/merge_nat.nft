@@ -1,0 +1,21 @@
+table ip test1 {
+	chain y {
+		oif "lo" accept
+		dnat to ip saddr map { 4.4.4.4 : 1.1.1.1, 5.5.5.5 : 2.2.2.2 }
+	}
+}
+table ip test2 {
+	chain y {
+		oif "lo" accept
+		dnat ip to tcp dport map { 80 : 1.1.1.1 . 8001, 81 : 2.2.2.2 . 9001 }
+		ip saddr { 10.141.11.0/24, 10.141.13.0/24 } masquerade
+	}
+}
+table ip test4 {
+	chain y {
+		oif "lo" accept
+		dnat ip to ip daddr . tcp dport map { 1.1.1.1 . 80 : 4.4.4.4 . 8000, 2.2.2.2 . 81 : 3.3.3.3 . 9000 }
+		redirect to :tcp dport map { 83 : 8083, 84 : 8084 }
+		tcp dport 85 redirect
+	}
+}

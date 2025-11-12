@@ -1,0 +1,3 @@
+table ip test {
+	comment "test_comment"
+}

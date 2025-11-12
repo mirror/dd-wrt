@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip6 test {
+	chain test {
+		meter acct_out size 4096 { meta iif . ip6 saddr timeout 600s counter }
+		meter acct_out2 size 12345 { ip6 saddr . meta iif timeout 600s counter }
+	}
+}
+
+table ip test {
+	chain test {
+		meter xyz size 8192 { ip saddr timeout 30s counter}
+	}
+}"
+
+$NFT -f - <<< $RULESET

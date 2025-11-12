@@ -1,0 +1,5 @@
+table netdev x {
+        chain Main_Ingress1 {
+                type filter hook ingress device "" priority -1
+	}
+}

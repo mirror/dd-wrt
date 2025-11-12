@@ -1,0 +1,137 @@
+# iifname "eth0" tcp dport 80-90 snat to 192.168.3.2
+ip test-ip4 postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00005000 0x00005a00 ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport != 80-90 snat to 192.168.3.2
+ip test-ip4 postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range neq reg 1 0x00005000 0x00005a00 ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport {80, 90, 23} snat to 192.168.3.2
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00005000  : 0 [end]	element 00005a00  : 0 [end]	element 00001700  : 0 [end]
+ip test-ip4 postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport != {80, 90, 23} snat to 192.168.3.2
+__set%d test-ip4 3
+__set%d test-ip4 0
+	element 00005000  : 0 [end]	element 00005a00  : 0 [end]	element 00001700  : 0 [end]
+ip test-ip4 postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ lookup reg 1 set __set%d 0x1 ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport != 23-34 snat to 192.168.3.2
+ip test-ip4 postrouting
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range neq reg 1 0x00001700 0x00002200 ]
+  [ immediate reg 1 0x0203a8c0 ]
+  [ nat snat ip addr_min reg 1 ]
+
+# iifname "eth0" tcp dport 80-90 snat to 192.168.3.0-192.168.3.255
+ip
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00005000 0x00005a00 ]
+  [ immediate reg 1 0x0003a8c0 ]
+  [ immediate reg 2 0xff03a8c0 ]
+  [ nat snat ip addr_min reg 1 addr_max reg 2 ]
+
+# iifname "eth0" tcp dport 80-90 snat to 192.168.3.15-192.168.3.240
+ip
+  [ meta load iifname => reg 1 ]
+  [ cmp eq reg 1 0x30687465 0x00000000 0x00000000 0x00000000 ]
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000006 ]
+  [ payload load 2b @ transport header + 2 => reg 1 ]
+  [ range eq reg 1 0x00005000 0x00005a00 ]
+  [ immediate reg 1 0x0f03a8c0 ]
+  [ immediate reg 2 0xf003a8c0 ]
+  [ nat snat ip addr_min reg 1 addr_max reg 2 ]
+
+# meta l4proto 17 snat ip to ip saddr map { 10.141.11.4 : 192.168.2.3 . 80 }
+__map%d test-ip4 b size 1
+__map%d test-ip4 0
+	element 040b8d0a  : 0302a8c0 00005000 0 [end]
+ip
+  [ meta load l4proto => reg 1 ]
+  [ cmp eq reg 1 0x00000011 ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ nat snat ip addr_min reg 1 proto_min reg 9 ]
+
+# snat ip to ip saddr map { 10.141.11.4 : 192.168.2.2-192.168.2.4 }
+__map%d test-ip4 b size 1
+__map%d test-ip4 0
+	element 040b8d0a  : 0202a8c0 0402a8c0 0 [end]
+ip 
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ nat snat ip addr_min reg 1 addr_max reg 9 ]
+
+# snat ip prefix to ip saddr map { 10.141.11.0/24 : 192.168.2.0/24 }
+__map%d test-ip4 f size 3
+__map%d test-ip4 0
+	element 00000000  : 1 [end]	element 000b8d0a  : 0002a8c0 ff02a8c0 0 [end]	element 000c8d0a  : 1 [end]
+ip 
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ nat snat ip addr_min reg 1 addr_max reg 9 flags 0x40 ]
+
+# snat ip to ip saddr map { 10.141.12.14 : 192.168.2.0/24 }
+__map%d test-ip4 b size 1
+__map%d test-ip4 0
+        element 0e0c8d0a  : 0002a8c0 ff02a8c0 0 [end]
+ip
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ nat snat ip addr_min reg 1 addr_max reg 9 ]
+
+# meta l4proto { 6, 17} snat ip to ip saddr . th dport map { 10.141.11.4 . 20 : 192.168.2.3 . 80}
+__set%d test-ip4 3 size 2
+__set%d test-ip4 0
+        element 00000006  : 0 [end]     element 00000011  : 0 [end]
+__map%d test-ip4 b size 1
+__map%d test-ip4 0
+        element 040b8d0a 00001400  : 0302a8c0 00005000 0 [end]
+ip
+  [ meta load l4proto => reg 1 ]
+  [ lookup reg 1 set __set%d ]
+  [ payload load 4b @ network header + 12 => reg 1 ]
+  [ payload load 2b @ transport header + 2 => reg 9 ]
+  [ lookup reg 1 set __map%d dreg 1 ]
+  [ nat snat ip addr_min reg 1 proto_min reg 9 ]

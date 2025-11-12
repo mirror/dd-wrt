@@ -1,0 +1,11 @@
+table inet t {
+	map get_queue_id {
+		typeof ip saddr . ip daddr . tcp dport : queue
+		elements = { 127.0.0.1 . 127.0.0.1 . 22 : 1,
+			     127.0.0.1 . 127.0.0.2 . 22 : 2 }
+	}
+
+	chain test {
+		queue flags bypass to ip saddr . ip daddr . tcp dport map @get_queue_id
+	}
+}

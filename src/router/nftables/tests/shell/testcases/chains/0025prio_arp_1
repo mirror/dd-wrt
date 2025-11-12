@@ -1,0 +1,17 @@
+#!/bin/bash
+
+family=arp
+	for hook in input output
+	do
+		for prioname in raw mangle dstnat security srcnat
+		do
+			$NFT add table $family x
+			$NFT add chain $family x y "{ type filter hook $hook priority $prioname; }" &> /dev/null
+			if (($? == 0))
+			then
+				echo "E: $prioname should not be a valid priority name for arp family chains." >&2
+				exit 1
+			fi
+		done
+	done
+exit 0

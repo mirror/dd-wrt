@@ -1,0 +1,46 @@
+# dup to 192.168.2.1
+[
+    {
+        "dup": {
+            "addr": "192.168.2.1"
+        }
+    }
+]
+
+# dup to 192.168.2.1 device "lo"
+[
+    {
+        "dup": {
+            "addr": "192.168.2.1",
+            "dev": "lo"
+        }
+    }
+]
+
+# dup to ip saddr map { 192.168.2.120 : 192.168.2.1 } device "lo"
+[
+    {
+        "dup": {
+            "addr": {
+                "map": {
+                    "key": {
+                        "payload": {
+                            "field": "saddr",
+                            "protocol": "ip"
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                "192.168.2.120",
+                                "192.168.2.1"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "dev": "lo"
+        }
+    }
+]
+

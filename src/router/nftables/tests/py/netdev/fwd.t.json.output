@@ -1,0 +1,27 @@
+# fwd to meta mark map { 0x00000001 : "lo", 0x00000002 : "lo"}
+[
+    {
+        "fwd": {
+            "dev": {
+                "map": {
+                    "key": {
+                        "meta": { "key": "mark" }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                1,
+                                "lo"
+                            ],
+                            [
+                                2,
+                                "lo"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+

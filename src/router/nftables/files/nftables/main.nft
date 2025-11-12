@@ -1,0 +1,22 @@
+#!/usr/sbin/nft -f
+
+# template static firewall configuration file
+#
+# copy this over to /etc/nftables/rules/main.nft as a starting point for
+# configuring a rule set which will be loaded by nftables.service.
+
+table inet filter {
+	chain input {
+		type filter hook input priority filter;
+	}
+	chain forward {
+		type filter hook forward priority filter;
+	}
+	chain output {
+		type filter hook output priority filter;
+	}
+}
+
+# this can be used to split the rule set into multiple smaller files concerned
+# with specific topics, like forwarding rules
+#include "/etc/nftables/rules/forwarding.nft"

@@ -1,0 +1,52 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "filter",
+        "name": "c",
+        "handle": 0
+      }
+    },
+    {
+      "ct expectation": {
+        "family": "ip",
+        "name": "ctexpect",
+        "table": "filter",
+        "handle": 0,
+        "protocol": "tcp",
+        "dport": 9876,
+        "timeout": 60000,
+        "size": 12,
+        "l3proto": "ip"
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "filter",
+        "chain": "c",
+        "handle": 0,
+        "expr": [
+          {
+            "ct expectation": "ctexpect"
+          }
+        ]
+      }
+    }
+  ]
+}

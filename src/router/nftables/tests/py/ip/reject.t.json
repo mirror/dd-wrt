@@ -1,0 +1,105 @@
+# reject
+[
+    {
+        "reject": null
+    }
+]
+
+# reject with icmp host-unreachable
+[
+    {
+        "reject": {
+            "expr": "host-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp net-unreachable
+[
+    {
+        "reject": {
+            "expr": "net-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp prot-unreachable
+[
+    {
+        "reject": {
+            "expr": "prot-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp port-unreachable
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp net-prohibited
+[
+    {
+        "reject": {
+            "expr": "net-prohibited",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp host-prohibited
+[
+    {
+        "reject": {
+            "expr": "host-prohibited",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp admin-prohibited
+[
+    {
+        "reject": {
+            "expr": "admin-prohibited",
+            "type": "icmp"
+        }
+    }
+]
+
+# reject with icmp 3
+[
+    {
+        "reject": {
+            "expr": "port-unreachable",
+            "type": "icmp"
+        }
+    }
+]
+
+# mark 0x80000000 reject with tcp reset
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "mark" }
+            },
+	    "op": "==",
+            "right": "0x80000000"
+        }
+    },
+    {
+        "reject": {
+            "type": "tcp reset"
+        }
+    }
+]
+

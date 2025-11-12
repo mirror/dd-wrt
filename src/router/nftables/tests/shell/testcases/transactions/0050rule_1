@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+# The ruleset is supposed to fail due to non-existing interfaces,
+# hence depends on non-name-based interface hooks.
+[ "$NFT_TEST_HAVE_ifname_based_hooks" = y ] && exit 77
+
+RULESET="table inet filter {
+	flowtable ftable {
+		hook ingress priority 0; devices = { eno1, eno0, x };
+	}
+
+chain forward {
+	type filter hook forward priority 0; policy drop;
+
+	ip protocol { tcp, udp } ct mark and 1 == 1 counter flow add @ftable
+	ip6 nexthdr { tcp, udp } ct mark and 2 == 2 counter flow add @ftable
+	ct mark and 30 == 30 ct state established,related log prefix \"nftables accept: \" level info accept
+	}
+}"
+
+$NFT -f - <<< "$RULESET" >/dev/null || exit 0

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+# Trigger a crash or rule restore error with nft 0.9.1
+$NFT -f - >/dev/null <<EOF
+flush ruleset
+table inet testfilter {
+}
+table inet testfilter {
+      chain test {
+        counter
+    }
+}
+EOF

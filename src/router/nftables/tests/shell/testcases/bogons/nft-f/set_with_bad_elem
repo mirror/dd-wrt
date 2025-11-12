@@ -1,0 +1,6 @@
+table t {
+        set y {
+                typeof ip daddr
+                elements = { 1.2.3.4, tcp << 8 }
+        }
+}

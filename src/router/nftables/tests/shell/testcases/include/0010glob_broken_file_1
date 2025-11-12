@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Loading broken files must fail.
+
+set -e
+
+tmpdir=$(mktemp -d)
+if [ ! -d $tmpdir ] ; then
+        echo "Failed to create tmp directory" >&2
+        exit 0
+fi
+
+tmpfile1=$(mktemp -p $tmpdir)
+if [ ! -w $tmpfile1 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpfile2=$(mktemp -p $tmpdir)
+if [ ! -w $tmpfile2 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+tmpfile3=$(mktemp)
+if [ ! -w $tmpfile3 ] ; then
+        echo "Failed to create tmp file" >&2
+        exit 0
+fi
+
+# cleanup if aborted
+trap "rm -rf $tmpfile1 $tmpfile2 $tmpfile3 && rmdir $tmpdir" EXIT
+
+RULESET1="add table x"
+
+# do an error in a file
+RULESET2="intentionally broken file"
+RULESET3="include \"$tmpdir/*\""
+
+echo "$RULESET1" > $tmpfile1
+echo "$RULESET2" > $tmpfile2
+echo "$RULESET3" > $tmpfile3
+
+$NFT -f $tmpfile3 || exit 0
+echo "E: didn't catch a broken file in directory" >&2
+exit 1

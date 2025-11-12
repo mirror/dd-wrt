@@ -1,0 +1,7 @@
+table ip x {
+	chain k {
+		meta mark set 0x001-3434
+		ct mark set 0x001-3434
+		tcp dport set 1-3
+	}
+}

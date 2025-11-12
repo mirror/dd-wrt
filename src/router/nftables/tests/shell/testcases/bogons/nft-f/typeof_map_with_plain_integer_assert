@@ -1,0 +1,7 @@
+table ip t {
+        map m {
+                typeof ip saddr . meta mark  . 0: verdict
+                flags interval
+                elements = { 127.0.0.1-127.0.0.4 . 0x00123434-0x00b00122 : accept }
+        }
+}

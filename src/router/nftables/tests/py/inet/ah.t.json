@@ -1,0 +1,412 @@
+# ah hdrlength 11-23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 11, 23 ]
+            }
+        }
+    }
+]
+
+# ah hdrlength != 11-23
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 11, 23 ]
+            }
+        }
+    }
+]
+
+# ah hdrlength {11, 23, 44 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    11,
+                    23,
+                    44
+                ]
+            }
+        }
+    }
+]
+
+# ah hdrlength != {11, 23, 44 }
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "hdrlength",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    11,
+                    23,
+                    44
+                ]
+            }
+        }
+    }
+]
+
+# ah reserved 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "reserved",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ah reserved != 233
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "reserved",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# ah reserved 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "reserved",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ah reserved != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "reserved",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# ah reserved {23, 100}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "reserved",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    100
+                ]
+            }
+        }
+    }
+]
+
+# ah reserved != {23, 100}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "reserved",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    100
+                ]
+            }
+        }
+    }
+]
+
+# ah spi 111
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": 111
+        }
+    }
+]
+
+# ah spi != 111
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": 111
+        }
+    }
+]
+
+# ah spi 111-222
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 111, 222 ]
+            }
+        }
+    }
+]
+
+# ah spi != 111-222
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 111, 222 ]
+            }
+        }
+    }
+]
+
+# ah spi {111, 122}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    111,
+                    122
+                ]
+            }
+        }
+    }
+]
+
+# ah spi != {111, 122}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "spi",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    111,
+                    122
+                ]
+            }
+        }
+    }
+]
+
+# ah sequence 123
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": 123
+        }
+    }
+]
+
+# ah sequence != 123
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": 123
+        }
+    }
+]
+
+# ah sequence {23, 25, 33}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    23,
+                    25,
+                    33
+                ]
+            }
+        }
+    }
+]
+
+# ah sequence != {23, 25, 33}
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    23,
+                    25,
+                    33
+                ]
+            }
+        }
+    }
+]
+
+# ah sequence 23-33
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "ah"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 23, 33 ]
+            }
+        }
+    }
+]
+
+# ah sequence != 23-33
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "sequence",
+                    "protocol": "ah"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 23, 33 ]
+            }
+        }
+    }
+]
+

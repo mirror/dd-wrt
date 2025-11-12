@@ -1,0 +1,50 @@
+#!/bin/bash
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1ifname-$rnd"
+ns2="nft2ifname-$rnd"
+
+cleanup()
+{
+	ip netns del "$ns1"
+	ip netns del "$ns2"
+}
+
+trap cleanup EXIT
+
+set -e
+
+ip netns add "$ns1"
+ip netns add "$ns2"
+ip -net "$ns1" link set lo up
+ip -net "$ns2" link set lo up
+
+ip link add veth0 netns $ns1 type veth peer name veth0 netns $ns2
+
+ip -net "$ns1" link set veth0 addr da:d3:00:01:02:03
+
+ip -net "$ns1" link add vlan123 link veth0 type vlan id 123 proto 802.1ad
+ip -net "$ns2" link add vlan123 link veth0 type vlan id 123 proto 802.1ad
+
+
+for dev in veth0 vlan123; do
+	ip -net "$ns1" link set $dev up
+	ip -net "$ns2" link set $dev up
+done
+
+ip -net "$ns1" addr add 10.1.1.1/24 dev vlan123
+ip -net "$ns2" addr add 10.1.1.2/24 dev vlan123
+
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+table netdev t {
+	chain c {
+		type filter hook ingress device veth0 priority filter;
+		ether saddr da:d3:00:01:02:03 ether type 8021ad vlan id 123 ip daddr 10.1.1.2 icmp type echo-request counter
+	}
+}
+EOF
+
+ip netns exec "$ns1" ping -c 1 10.1.1.2
+
+ip netns exec "$ns2" $NFT list ruleset
+ip netns exec "$ns2" $NFT list chain netdev t c | grep 'counter packets 1 bytes 84'

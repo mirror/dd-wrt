@@ -1,0 +1,6 @@
+table ip x {
+}
+table ip6 x {
+}
+table inet x {
+}

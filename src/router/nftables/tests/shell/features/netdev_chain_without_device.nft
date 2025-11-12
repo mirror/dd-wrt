@@ -1,0 +1,7 @@
+# 207296f1a03b ("netfilter: nf_tables: allow to create netdev chain without device")
+# v6.4-rc1~132^2~14^2
+table netdev t {
+	chain c {
+		type filter hook ingress priority 0; policy accept;
+        }
+}

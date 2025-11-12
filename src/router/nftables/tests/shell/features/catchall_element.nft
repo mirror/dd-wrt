@@ -1,0 +1,8 @@
+# aaa31047a6d2 ("netfilter: nftables: add catch-all set element support")
+# v5.13-rc1~94^2~10^2~2
+table t {
+	map m {
+		type inet_service : inet_service
+		elements = { * : 42 }
+	}
+}

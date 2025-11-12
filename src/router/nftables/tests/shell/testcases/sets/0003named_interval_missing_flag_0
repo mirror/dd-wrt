@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# This testscase checks the nft checking of flags in named intervals
+
+set -e
+$NFT add table t
+$NFT add set t s { type ipv4_addr \; }
+if $NFT add element t s { 192.168.0.0/24, 192.168.1.0/24 } 2>/dev/null ; then
+	echo "E: accepted interval in named set without proper flags" >&2
+	exit 1
+fi
+exit 0

@@ -1,0 +1,197 @@
+Author: Ana Rey <anarey@gmail.com>
+Date: 18/Sept/2014
+
+Here, the automated regression testing for nftables and some test
+files.
+
+This script checks that the rule input and output of nft matches.
+More details here below.
+
+A) What is this testing?
+
+This script tests two different paths:
+
+* The rule input from the command-line. This checks the different steps
+  from the command line to the kernel. This includes the parsing,
+  evaluation and netlink generation steps.
+
+* The output listing that is obtained from the kernel. This checks the
+  different steps from the kernel to the command line: The netlink
+  message parsing, postprocess and textify steps to display the rule
+  listing.
+
+As a final step, this script compares that the rule that is added can
+be listed by nft.
+
+B) What options are available?
+
+The script offers the following options:
+
+* Execute test files:
+
+./nft-test.py                           # Run all test files
+./nft-test.py path/file.t               # Run this test file
+
+If there is a problem, it shows the differences between the rule that
+is added and the rule that is listed by nft.
+
+In case you hit an error, the script doesn't keep testing for more
+families. Unless you specify the --force-family option.
+
+* Execute broken tests:
+
+./nft-test.py -e
+
+This runs tests for rules that need a fix: This mode runs the lines that
+that start with a "-" symbol.
+
+* Debugging:
+
+./nft-test.py -d
+
+This shows all the commands that the script executes, so you can watch
+its internal behaviour.
+
+* Keep testing all families on error.
+
+./nft-test.py -f
+
+Don't stop testing for more families in case of error.
+
+C) What is the structure of the test file?
+
+A test file contains a set of rules that are added in the system.
+
+Here, an example of a test file:
+
+   :input;type filter hook input priority 0    # line 1
+
+   *ip;test-ipv4;input                         # line 2
+   *ip6;test-ipv6;input                        # line 3
+   *inet;test-inet;input                       # line 4
+
+   ah hdrlength != 11-23;ok;ah hdrlength < 11 ah hdrlength > 23   # line 5
+   - tcp dport != {22-25}                                         # line 6
+
+   !set1 ipv4_addr;ok                          # line 7
+   ?set1 192.168.3.8 192.168.3.9;ok            # line 8
+   # This is a commented-line.                 # line 9
+
+Line 1 defines a chain. The name of this chain is "input". The type is "filter",
+the hook is "input" and the priority is 0.
+
+Line 2 defines a table. The name of the table is 'test-ipv4', the family is ip
+and the chain to be added to it is 'input'. Lines 3 and 4 defines more tables for
+different families so the rules in this test file are also tested there.
+
+Line 5 defines the rule, the ";" character is used as separator of several
+parts:
+
+* Part 1: "ah hdrlength != 11-23" is the rule to check.
+* Part 2: "ok" is the result expected with the execute of this rule.
+* Part 3: "ah hdrlength < 11 ah hdrlength > 23". This is the expected
+  output. You can leave this empty if the output is the same as the
+  input.
+
+Line 6 is a marked line. This means that this rule is tested if
+'-e' is passed as argument to nft-test.py.
+
+Line 7 adds a new set. The name of this set is "set1" and the type
+of this set is "ipv4_addr".
+
+Line 8 adds two elements into the 'set1' set: "192.168.3.8" and
+"192.168.3.9". A whitespace separates the elements of the set.
+
+Line 9 uses the "#" symbol that means that this line is commented out.
+
+D) What is a payload file?
+
+A payload file contains info about the netlink message exchanged to achieve the
+transaction.
+
+The output can be generated in two ways. Let's see an example via socket
+matching.
+
+   # generate an empty payload file
+   $ touch inet/socket.t.payload
+
+   $ ./nft-test.py inet/socket.t # this will generate inet/socket.t.payload.got
+
+   $ mv inet/socket.t.payload.got inet/socket.t.payload
+
+The other way is using nft --debug=netlink. This has a drawback over the former
+option, as rules has to be run one by one and also a comment has to be added
+before every rule in the payload file.
+
+   $  nft --debug=netlink add rule ip sockip4 sockchain socket exists
+   ip sockip4 sockchain
+     [ match name socket rev 3 ]
+
+E) The test folders
+
+The test files are divided in several directories: ip, ip6, inet, arp,
+bridge and any.
+
+ * "ip" folder contains the test files that are executed in ip and inet
+   table.
+
+ * "ip6" folder contains the test files that are executed in ip6 and inet
+   table.
+
+ * "inet" folder contains the test files that are executed in the ip, ip6
+    and inet table.
+
+ * "arp" folder contains the test files that are executed in the arp
+   table.
+
+ * "bridge" folder: Here are the test files are executed in bridge
+   tables.
+
+ * "any" folder: Here are the test files are executed in ip, ip6, inet,
+   arp and bridge tables.
+
+F) Meaning of messages:
+
+* A warning message means the rule input and output of nft mismatches.
+* An error message means the nft-tool shows an error when we add it or
+  the listing is broken after the rule is added.
+* An info message means something that is not necessarily related to any test
+  case and does not indicate faulty behaviour.
+
+G) Acknowledgements
+
+Thanks to the Outreach Program for Women (OPW) for sponsoring this test
+infrastructure and my mentor Pablo Neira.
+
+H) JSON (-j) Mode
+
+This mode is supposed to repeat the same tests using JSON syntax. For each test
+file example.t, there is supposed to be a file example.t.json holding the JSON
+equivalents of each rule in example.t. The file's syntax is similar to payload
+files: An initial comment identifies the rule belonging to the following JSON
+equivalent. Pairs of comment and JSON are separated by a single blank line.
+
+If the example.t.json file does not exist, the test script will warn and create
+(or append to) example.t.json.got. The JSON equivalent written is generated by
+applying the rule in standard syntax and listing the ruleset in JSON format.
+After thorough review, it may be renamed to example.t.json.
+
+One common case for editing the content in example.t.json.got is expected
+differences between input and output. The generated content will match the
+output while it is supposed to match the input.
+
+If a rule is expected to differ in output, the expected output must be recorded
+in example.t.json.output. Its syntax is identical to example.t.json, i.e. pairs
+of comment identifying the rule (in standard syntax) and JSON (output) format
+separated by blank lines. Note: the comment states the rule as in input, not
+output.
+
+If the example.t.json.output file does not exist and output differs from input,
+the file example.t.json.output.got is created with the actual output recorded.
+
+JSON mode will also check the payload created for the rule in JSON syntax by
+comparing it to the recorded one in example.t.payload. Should it differ, it
+will be recorded in example.t.json.payload.got. This is always a bug: A rule's
+JSON equivalent must turn into the same bytecode as the rule itself.
+
+-EOF-

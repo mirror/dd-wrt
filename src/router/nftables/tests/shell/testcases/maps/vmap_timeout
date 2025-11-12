@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# NFT_TEST_SKIP(NFT_TEST_SKIP_slow)
+
+set -e
+
+dumpfile=$(dirname $0)/dumps/$(basename $0).nft
+$NFT -f $dumpfile
+
+port=23
+for i in $(seq 1 100) ; do
+	timeout=$((RANDOM % 5 + 1))
+	expire=$((RANDOM%timeout))
+	j=1
+
+	batched="{ $port timeout 3s : jump other_input "
+	ubatched="$batched"
+
+	timeout_str="timeout ${timeout}s"
+	expire_str=""
+	if [ "$expire" -gt 0 ]; then
+		expire_str="expires ${expire}s"
+	fi
+
+	batched_addr="{ 10.0.$((i%256)).$j . $port ${timeout_str} ${expire_str} : jump other_input "
+	ubatched_addr="$batched_addr"
+
+	port=$((port + 1))
+	for j in $(seq 2 400); do
+		timeout=$((RANDOM % 5 + 1))
+		expire=$((RANDOM%timeout))
+		utimeout=$((RANDOM % 5 + 1))
+
+		timeout_str="timeout ${timeout}s"
+		expire_str=""
+		if [ "$expire" -gt 0 ]; then
+			expire_str="expires ${expire}s"
+		fi
+
+		batched="$batched, $port ${timeout_str} ${expire_str} : jump other_input "
+		batched_addr="$batched_addr, 10.0.$((i%256)).$((j%256)) . $port ${timeout_str} ${expire_str} : jump other_input "
+		port=$((port + 1))
+
+		timeout_str="timeout ${utimeout}s"
+		expire=$((RANDOM%utimeout))
+
+		expire_str=""
+		if [ "$expires" -gt 0 ]; then
+			expire_str="expires ${expire}s"
+		fi
+
+		update=$((RANDOM%2))
+		if [ "$update" -ne 0 ]; then
+			ubatched="$batched, $port ${timeout_str} ${expire_str} : jump other_input "
+			ubatched_addr="$batched_addr, 10.0.$((i%256)).$((j%256)) . $port ${timeout_str} ${expire_str} : jump other_input "
+		fi
+	done
+
+	fail_addr="$batched_addr, 1.2.3.4 . 23 timeout 5m : jump other_input,
+	                          1.2.3.4 . 23 timeout 3m : jump other_input }"
+	fail="$batched, 23 timeout 1m : jump other_input, 23 : jump other_input }"
+
+	batched="$batched }"
+	batched_addr="$batched_addr }"
+
+	if [ $i -gt 90 ]; then
+		# must fail, we create and $fail/$fail_addr contain one element twice.
+		$NFT create element inet filter portmap "$fail" && exit 111
+		$NFT create element inet filter portaddrmap "$fail_addr" && exit 112
+	fi
+
+	$NFT add element inet filter portmap "$batched"
+	$NFT add element inet filter portaddrmap "$batched_addr"
+
+	update=$((RANDOM%2))
+	if [ "$update" -ne 0 ]; then
+		ubatched="$ubatched }"
+		ubatched_addr="$ubatched_addr }"
+		$NFT add element inet filter portmap "$ubatched"
+		$NFT add element inet filter portaddrmap "$ubatched_addr"
+	fi
+done
+
+if [ "$NFT_TEST_HAVE_catchall_element" = n ] ; then
+	echo "Partial test due to NFT_TEST_HAVE_catchall_element=n."
+else
+	$NFT add element inet filter portaddrmap { "* timeout 2s : drop" }
+	$NFT add element inet filter portmap { "* timeout 3s : drop" }
+fi
+
+# wait for elements to time out
+sleep 5

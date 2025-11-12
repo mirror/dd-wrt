@@ -1,0 +1,13 @@
+#!/bin/bash
+
+$NFT add table t || exit 1
+$NFT add chain t c || exit 1
+$NFT add rule t c 'ip saddr 01 continue comment "0.0.0.1"' || exit 1
+$NFT add rule t c 'ip saddr 08 continue comment "error"' && {
+  echo "'"ip saddr 08"'" not rejected 1>&2
+  exit 1
+}
+$NFT delete table t || exit 1
+
+exit 0
+

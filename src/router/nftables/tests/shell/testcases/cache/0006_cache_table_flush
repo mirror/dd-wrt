@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+RULESET="add table ip x
+add chain x y
+add chain x z
+add map ip x mapping { type ipv4_addr : inet_service; flags dynamic,timeout; }
+add rule x y counter
+add rule x z counter"
+
+$NFT -f - <<< "$RULESET" 2>&1
+
+RULESET="flush table x; add rule x y update @mapping { ip saddr : tcp sport }; flush chain x z"
+
+$NFT "$RULESET" 2>&1

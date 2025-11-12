@@ -1,0 +1,22 @@
+table ip dynset {
+	map dynmark {
+		typeof ip daddr : meta mark
+		size 64
+		counter
+		timeout 5m
+	}
+
+	chain test_ping {
+		ip saddr @dynmark counter packets 0 bytes 0 comment "should not increment"
+		ip saddr != @dynmark add @dynmark { ip saddr : 0x00000001 } counter packets 1 bytes 84
+		ip saddr @dynmark counter packets 1 bytes 84 comment "should increment"
+		ip saddr @dynmark delete @dynmark { ip saddr : 0x00000001 }
+		ip saddr @dynmark counter packets 0 bytes 0 comment "delete should be instant but might fail under memory pressure"
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		add @dynmark { 10.2.3.4 timeout 2s : 0x00000002 } comment "also check timeout-gc"
+		meta l4proto icmp ip daddr 127.0.0.42 jump test_ping
+	}
+}

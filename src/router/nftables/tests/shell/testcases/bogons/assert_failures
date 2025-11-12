@@ -1,0 +1,50 @@
+#!/bin/bash
+
+dir=$(dirname $0)/nft-f/
+jsondir=$(dirname $0)/nft-j-f/
+
+tmpfile=$(mktemp)
+
+cleanup()
+{
+	rm -f "$tmpfile"
+}
+
+trap cleanup EXIT
+
+die_on_error()
+{
+	local rv="$1"
+	local fname="$2"
+
+	if [ $rv -ne 1 ]; then
+		echo "Bogus input file $fname did not cause expected error code" 1>&2
+		exit 111
+	fi
+
+	if grep AddressSanitizer "$tmpfile"; then
+		echo "Address sanitizer splat for $fname" 1>&2
+		cat "$tmpfile"
+		exit 111
+	fi
+}
+
+for f in $dir/*; do
+	echo "Check $f"
+	$NFT --check -f "$f" 2> "$tmpfile"
+
+	die_on_error $? "$f"
+done
+
+if [ "$NFT_TEST_HAVE_json" = "n" ];then
+	# Intentionally do not skip if we lack json input,
+	# we ran all the tests that we could.
+	exit 0
+fi
+
+for f in $jsondir/*; do
+	echo "Check json input $f"
+	$NFT --check -j -f "$f" 2> "$tmpfile"
+
+	die_on_error $? "$f"
+done

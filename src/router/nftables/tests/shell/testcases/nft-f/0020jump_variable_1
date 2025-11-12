@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Tests use of variables in jump statements
+
+set -e
+
+RULESET="
+define dest = *
+
+table ip foo {
+	chain bar {
+		jump \$dest
+	}
+
+	chain ber {
+	}
+}"
+
+$NFT -f - <<< "$RULESET" && exit 1
+exit 0

@@ -1,0 +1,16 @@
+table ip filter {
+	map m {
+		type ipv4_addr : mark
+		flags interval
+		elements = { 127.0.0.2 : 0x00000002,
+			     127.0.0.3 : 0x00000003 }
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		meta mark set ip daddr map @m
+		meta mark 0x00000002 counter packets 0 bytes 0 accept
+		meta mark 0x00000003 counter packets 0 bytes 0 accept
+		counter packets 0 bytes 0
+	}
+}

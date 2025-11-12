@@ -1,0 +1,35 @@
+table ip nat {
+	map ipportmap2 {
+		type ipv4_addr . ipv4_addr : interval ipv4_addr . inet_service
+		flags interval
+		elements = { 192.168.1.2 . 192.168.2.2 : 127.0.0.0/8 . 42-43 }
+	}
+
+	map fwdtoip_th {
+		type ipv4_addr . inet_service : interval ipv4_addr . inet_service
+		flags interval
+		elements = { 1.2.3.4 . 10000-20000 : 192.168.3.4 . 30000-40000 }
+	}
+
+	map ipportmap4 {
+		typeof iifname . ip saddr : interval ip daddr
+		flags interval
+		elements = { "enp2s0" . 10.1.1.136 : 1.1.2.69/32,
+			     "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 }
+	}
+
+	map ipportmap5 {
+		typeof iifname . ip saddr : interval ip daddr . tcp dport
+		flags interval
+		elements = { "enp2s0" . 10.1.1.136 : 1.1.2.69 . 22,
+			     "enp2s0" . 10.1.1.1-10.1.1.135 : 1.1.2.66-1.84.236.78 . 22 }
+	}
+
+	chain prerouting {
+		type nat hook prerouting priority dstnat; policy accept;
+		ip protocol tcp dnat ip to ip saddr . ip daddr map @ipportmap2
+		meta l4proto { tcp, udp } dnat ip to ip daddr . th dport map @fwdtoip_th
+		dnat ip to iifname . ip saddr map @ipportmap4
+		meta l4proto tcp dnat ip to iifname . ip saddr map @ipportmap5
+	}
+}

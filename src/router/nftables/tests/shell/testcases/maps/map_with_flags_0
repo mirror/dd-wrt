@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table x
+$NFT add map x y { type ipv4_addr : ipv4_addr\; flags timeout\; }

@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_flowtable_counter)
+
+set -e
+
+ft_deldev() {
+	$NFT "delete flowtable $1 $2 { devices = { $3 }; }"
+}
+
+iface_cleanup() {
+	ip link del dummy1 &>/dev/null || :
+	if [ "$NFT_TEST_HAVE_ifname_based_hooks" = y ]; then
+		ft_deldev filter1 Main_ft1 dummy1
+		ft_deldev filter2 Main_ft2 dummy1
+	fi
+}
+trap 'iface_cleanup' EXIT
+
+ip link add name dummy1 type dummy
+
+EXPECTED="define if_main = { lo, dummy1 }
+
+table filter1 {
+	flowtable Main_ft1 {
+		hook ingress priority filter
+		counter
+		devices = \$if_main
+	}
+}"
+
+$NFT -f - <<< $EXPECTED
+
+EXPECTED="define if_main = \"lo\"
+
+table filter2 {
+	flowtable Main_ft2 {
+		hook ingress priority filter
+		counter
+		devices = { \$if_main, dummy1 }
+	}
+}"
+
+$NFT -f - <<< $EXPECTED

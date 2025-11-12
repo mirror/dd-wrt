@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# This tests for the bug corrected in commit 5afa5a164ff1c066af1ec56d875b91562882bd50.
+# Sets were added to the table before checking for errors, and not removed from
+# the table on error, leading to an uninitialized set in the table, causing a
+# segfault for rules that tried to use it.
+# In this case, nft should error out because the set doesn't exist instead of
+# segfaulting
+
+RULESET="
+add table t
+add chain t c
+add set t s {type ipv4_addr\;}
+add rule t c ip saddr @s
+"
+
+$NFT -f - <<< "$RULESET"
+ret=$?
+
+trap - EXIT
+if [[ $ret -eq 1 ]]; then
+	exit 0
+else
+	exit 1
+fi

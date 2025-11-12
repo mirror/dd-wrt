@@ -1,0 +1,10 @@
+table arp test {
+	ct helper myftp {
+		type "ftp" protocol tcp
+		l3proto inet
+	}
+
+	chain y {
+		ct helper set ct  saddr map { 1c3:: : "p", dead::beef : "myftp" }
+	}
+}

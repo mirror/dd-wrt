@@ -1,0 +1,7 @@
+# 133dc203d77d ("netfilter: nft_exthdr: Support SCTP chunks")
+# v5.14-rc1~119^2~373^2~15
+table ip t {
+	chain c {
+		sctp chunk init 0
+	}
+}

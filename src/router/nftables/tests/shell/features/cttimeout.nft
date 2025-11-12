@@ -1,0 +1,8 @@
+# 7e0b2b57f01d ("netfilter: nft_ct: add ct timeout support")
+# v4.19-rc1~140^2~64^2~3
+table t {
+	ct timeout cttime {
+		protocol tcp;
+		policy = {established: 120 }
+	}
+}

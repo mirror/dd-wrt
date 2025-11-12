@@ -1,0 +1,52 @@
+# ip protocol tcp tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# ip protocol tcp meta mark set 1 tcp dport 22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": 6
+        }
+    },
+    {
+        "mangle": {
+            "key": {
+                "meta": { "key": "mark" }
+            },
+            "value": 1
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+

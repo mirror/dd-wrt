@@ -1,0 +1,6 @@
+table inet t {
+	set s {
+		type inet_service
+		elements = { 22 comment "test" }
+	}
+}

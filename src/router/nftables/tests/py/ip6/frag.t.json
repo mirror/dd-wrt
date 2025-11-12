@@ -1,0 +1,523 @@
+# frag nexthdr tcp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": "tcp"
+        }
+    }
+]
+
+# frag nexthdr != icmp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": "icmp"
+        }
+    }
+]
+
+# frag nexthdr {esp, ah, comp, udp, udplite, tcp, dccp, sctp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    "esp",
+                    "ah",
+                    "comp",
+                    "udp",
+                    "udplite",
+                    "tcp",
+                    "dccp",
+                    "sctp"
+                ]
+            }
+        }
+    }
+]
+
+# frag nexthdr != {esp, ah, comp, udp, udplite, tcp, dccp, sctp}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    "esp",
+                    "ah",
+                    "comp",
+                    "udp",
+                    "udplite",
+                    "tcp",
+                    "dccp",
+                    "sctp"
+                ]
+            }
+        }
+    }
+]
+
+# frag nexthdr esp
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": "esp"
+        }
+    }
+]
+
+# frag nexthdr ah
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "nexthdr",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": "ah"
+        }
+    }
+]
+
+# frag reserved 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# frag reserved != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# frag reserved 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# frag reserved != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# frag reserved { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# frag reserved != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# frag frag-off 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "frag-off",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# frag frag-off != 233
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "frag-off",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": 233
+        }
+    }
+]
+
+# frag frag-off 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "frag-off",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# frag frag-off != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "frag-off",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# frag frag-off { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "frag-off",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# frag frag-off != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "frag-off",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# frag reserved2 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "reserved2",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# frag more-fragments 0
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "more-fragments",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 0
+        }
+    }
+]
+
+# frag more-fragments 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "more-fragments",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# frag id 1
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# frag id 22
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    }
+]
+
+# frag id != 33
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": 33
+        }
+    }
+]
+
+# frag id 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# frag id != 33-45
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "range": [ 33, 45 ]
+            }
+        }
+    }
+]
+
+# frag id { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]
+
+# frag id != { 33, 55, 67, 88}
+[
+    {
+        "match": {
+            "left": {
+                "exthdr": {
+                    "field": "id",
+                    "name": "frag"
+                }
+            },
+            "op": "!=",
+            "right": {
+                "set": [
+                    33,
+                    55,
+                    67,
+                    88
+                ]
+            }
+        }
+    }
+]

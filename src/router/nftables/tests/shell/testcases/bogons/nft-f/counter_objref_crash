@@ -1,0 +1,5 @@
+table inet x {
+        chain y {
+                counter name ip saddr bytes 1.1.1. 1024
+        }
+}

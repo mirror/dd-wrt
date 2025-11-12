@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# attempt to re-awaken a table that is flagged dormant within
+# same transaction
+$NFT -f - <<EOF
+add table ip t
+add table ip t { flags dormant; }
+add chain ip t c { type filter hook input priority 0; }
+add table ip t
+delete table ip t
+EOF
+
+if [ $? -eq 0 ]; then
+	exit 1
+fi
+
+set -e
+
+ip link set lo up
+
+# add a dormant table, then wake it up in same
+# transaction.
+$NFT -f - <<EOF
+add table ip t { flags dormant; }
+add chain ip t c { type filter hook input priority 0; }
+add rule ip t c ip daddr 127.0.0.42 counter
+add table ip t
+EOF
+
+# check table is indeed active.
+ping -c 1 127.0.0.42
+$NFT list chain ip t c | grep "counter packets 1"
+$NFT delete table ip t
+
+# allow to flag table dormant.
+$NFT -f - <<EOF
+add table ip t
+add chain ip t c { type filter hook input priority 0; }
+add rule ip t c ip daddr 127.0.0.42 counter
+add table ip t { flags dormant; }
+EOF
+
+ping -c 1 127.0.0.42
+# expect run-tests.sh to complain if counter isn't 0.

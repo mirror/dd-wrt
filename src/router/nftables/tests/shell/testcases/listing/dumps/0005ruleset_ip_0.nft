@@ -1,0 +1,10 @@
+table ip test {
+}
+table ip6 test {
+}
+table inet test {
+}
+table arp test {
+}
+table bridge test {
+}

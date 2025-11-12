@@ -1,0 +1,9 @@
+table t {
+	set sc {
+		type inet_service . ifname
+	}
+
+	chain c {
+		tcp dport . bla* @sc accept
+	}
+}

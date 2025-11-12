@@ -1,0 +1,551 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "inet",
+        "name": "testifsets",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "testifsets",
+        "name": "v4icmp",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "testifsets",
+        "name": "v4icmpc",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "testifsets",
+        "name": "input",
+        "handle": 0,
+        "type": "filter",
+        "hook": "input",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "chain": {
+        "family": "inet",
+        "table": "testifsets",
+        "name": "do_nothing",
+        "handle": 0
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "simple",
+        "table": "testifsets",
+        "type": "ifname",
+        "handle": 0,
+        "elem": [
+          "abcdef0",
+          "abcdef1",
+          "othername"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "simple_wild",
+        "table": "testifsets",
+        "type": "ifname",
+        "handle": 0,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          "abcdef*",
+          "othername",
+          "ppp0"
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "concat",
+        "table": "testifsets",
+        "type": [
+          "ipv4_addr",
+          "ifname"
+        ],
+        "handle": 0,
+        "elem": [
+          {
+            "concat": [
+              "10.1.2.2",
+              "abcdef0"
+            ]
+          },
+          {
+            "concat": [
+              "10.1.2.2",
+              "abcdef1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "set": {
+        "family": "inet",
+        "name": "concat_wild",
+        "table": "testifsets",
+        "type": [
+          "ipv4_addr",
+          "ifname"
+        ],
+        "handle": 0,
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          {
+            "concat": [
+              "10.1.2.2",
+              "abcdef*"
+            ]
+          },
+          {
+            "concat": [
+              "10.1.2.1",
+              "bar"
+            ]
+          },
+          {
+            "concat": [
+              {
+                "prefix": {
+                  "addr": "1.1.2.0",
+                  "len": 24
+                }
+              },
+              "abcdef0"
+            ]
+          },
+          {
+            "concat": [
+              {
+                "prefix": {
+                  "addr": "12.2.2.0",
+                  "len": 24
+                }
+              },
+              "abcdef*"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "map": {
+        "family": "inet",
+        "name": "map_wild",
+        "table": "testifsets",
+        "type": "ifname",
+        "handle": 0,
+        "map": "verdict",
+        "flags": [
+          "interval"
+        ],
+        "elem": [
+          [
+            "abcdef*",
+            {
+              "jump": {
+                "target": "do_nothing"
+              }
+            }
+          ],
+          [
+            "eth0",
+            {
+              "jump": {
+                "target": "do_nothing"
+              }
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmp",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": "@simple"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmp",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": "@simple_wild"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmp",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": {
+                "set": [
+                  "eth0",
+                  "abcdef0"
+                ]
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmp",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "right": {
+                "set": [
+                  "abcdef*",
+                  "eth0"
+                ]
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmp",
+        "handle": 0,
+        "expr": [
+          {
+            "vmap": {
+              "key": {
+                "meta": {
+                  "key": "iifname"
+                }
+              },
+              "data": "@map_wild"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmpc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": "@concat"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmpc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": "@concat_wild"
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmpc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "10.1.2.2",
+                      "abcdef0"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "v4icmpc",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "concat": [
+                  {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  {
+                    "meta": {
+                      "key": "iifname"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "set": [
+                  {
+                    "concat": [
+                      "10.1.2.2",
+                      "abcdef*"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "protocol"
+                }
+              },
+              "right": "icmp"
+            }
+          },
+          {
+            "jump": {
+              "target": "v4icmp"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "inet",
+        "table": "testifsets",
+        "chain": "input",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "protocol"
+                }
+              },
+              "right": "icmp"
+            }
+          },
+          {
+            "goto": {
+              "target": "v4icmpc"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+$NFT -f /dev/stdin <<EOF
+table ip test {
+	chain output { type filter hook output priority 0;
+	}
+}
+EOF
+
+# misses 'flags dynamic'
+$NFT 'add set ip test dlist {type ipv4_addr; }'
+
+# picks rhash backend because 'size' was also missing.
+$NFT 'add rule ip test output udp dport 1234 update @dlist { ip daddr } counter'
+
+tmpfile=$(mktemp)
+
+trap "rm -rf $tmpfile" EXIT
+
+# kernel has forced an 64k upper size, i.e. this restore file
+# has 'size 65536' but no 'flags dynamic'.
+$NFT list ruleset > $tmpfile
+
+# this restore works, because set is still the rhash backend.
+$NFT -f $tmpfile # success
+$NFT flush ruleset
+
+# fails without commit 'attempt to set_eval flag if dynamic updates requested',
+# because set in $tmpfile has 'size x' but no 'flags dynamic'.
+$NFT -f $tmpfile

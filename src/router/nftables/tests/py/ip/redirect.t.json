@@ -1,0 +1,625 @@
+# udp dport 53 redirect
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": null
+    }
+]
+
+# udp dport 53 redirect random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": "random"
+        }
+    }
+]
+
+# udp dport 53 redirect random,persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect random,persistent,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "persistent",
+                "fully-random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect random,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "fully-random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect random,fully-random,persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "fully-random",
+                "persistent"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": "persistent"
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "persistent",
+                "random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,random,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "persistent",
+                "random",
+                "fully-random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "persistent",
+                "fully-random"
+            ]
+        }
+    }
+]
+
+# udp dport 53 redirect persistent,fully-random,random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "persistent",
+                "fully-random",
+                "random"
+            ]
+        }
+    }
+]
+
+# tcp dport 22 redirect to :22
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    },
+    {
+        "redirect": {
+            "port": 22
+        }
+    }
+]
+
+# udp dport 1234 redirect to :4321
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 1234
+        }
+    },
+    {
+        "redirect": {
+            "port": 4321
+        }
+    }
+]
+
+# ip daddr 172.16.0.1 udp dport 9998 redirect to :6515
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "172.16.0.1"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 9998
+        }
+    },
+    {
+        "redirect": {
+            "port": 6515
+        }
+    }
+]
+
+# tcp dport 39128 redirect to :993
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 39128
+        }
+    },
+    {
+        "redirect": {
+            "port": 993
+        }
+    }
+]
+
+# ip protocol tcp redirect to :100-200
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "protocol",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": "tcp"
+        }
+    },
+    {
+        "redirect": {
+            "port": {
+                "range": [ 100, 200 ]
+            }
+        }
+    }
+]
+
+# tcp dport 9128 redirect to :993 random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 9128
+        }
+    },
+    {
+        "redirect": {
+            "flags": "random",
+            "port": 993
+        }
+    }
+]
+
+# tcp dport 9128 redirect to :993 fully-random
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 9128
+        }
+    },
+    {
+        "redirect": {
+            "flags": "fully-random",
+            "port": 993
+        }
+    }
+]
+
+# tcp dport 9128 redirect to :123 persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 9128
+        }
+    },
+    {
+        "redirect": {
+            "flags": "persistent",
+            "port": 123
+        }
+    }
+]
+
+# tcp dport 9128 redirect to :123 random,persistent
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 9128
+        }
+    },
+    {
+        "redirect": {
+            "flags": [
+                "random",
+                "persistent"
+            ],
+            "port": 123
+        }
+    }
+]
+
+# tcp dport { 1, 2, 3, 4, 5, 6, 7, 8, 101, 202, 303, 1001, 2002, 3003} redirect
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "set": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    101,
+                    202,
+                    303,
+                    1001,
+                    2002,
+                    3003
+                ]
+            }
+        }
+    },
+    {
+        "redirect": null
+    }
+]
+
+# ip daddr 10.0.0.0-10.2.3.4 udp dport 53 counter redirect
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ip"
+                }
+            },
+	    "op": "==",
+            "right": {
+                "range": [ "10.0.0.0", "10.2.3.4" ]
+            }
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "udp"
+                }
+            },
+	    "op": "==",
+            "right": 53
+        }
+    },
+    {
+        "counter": null
+    },
+    {
+        "redirect": null
+    }
+]
+
+# iifname "eth0" ct state established,new tcp dport vmap {22 : drop, 222 : drop } redirect
+[
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iifname" }
+            },
+	    "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "ct": {
+                    "key": "state"
+                }
+            },
+	    "op": "in",
+            "right": [
+                "established",
+                "new"
+            ]
+        }
+    },
+    {
+        "vmap": {
+            "key": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "data": {
+                "set": [
+                    [
+                        22,
+                        {
+                            "drop": null
+                        }
+                    ],
+                    [
+                        222,
+                        {
+                            "drop": null
+                        }
+                    ]
+                ]
+            }
+        }
+    },
+    {
+        "redirect": null
+    }
+]
+
+# redirect to :tcp dport map { 22 : 8000, 80 : 8080}
+[
+    {
+        "redirect": {
+            "port": {
+                "map": {
+                    "key": {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "tcp"
+                        }
+                    },
+                    "data": {
+                        "set": [
+                            [
+                                22,
+                                8000
+                            ],
+                            [
+                                80,
+                                8080
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+]
+

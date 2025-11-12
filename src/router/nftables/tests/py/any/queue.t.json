@@ -1,0 +1,251 @@
+# queue
+[
+    {
+        "queue": null
+    }
+]
+
+# queue num 2
+[
+    {
+        "queue": {
+            "num": 2
+        }
+    }
+]
+
+# queue num 65535
+[
+    {
+        "queue": {
+            "num": 65535
+        }
+    }
+]
+
+# queue num 2-3
+[
+    {
+        "queue": {
+            "num": {
+                "range": [ 2, 3 ]
+            }
+        }
+    }
+]
+
+# queue num 1-65535
+[
+    {
+        "queue": {
+            "num": {
+                "range": [ 1, 65535 ]
+            }
+        }
+    }
+]
+
+# queue num 4-5 fanout bypass
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass",
+                "fanout"
+            ],
+            "num": {
+                "range": [ 4, 5 ]
+            }
+        }
+    }
+]
+
+# queue num 4-5 fanout
+[
+    {
+        "queue": {
+            "flags": "fanout",
+            "num": {
+                "range": [ 4, 5 ]
+            }
+        }
+    }
+]
+
+# queue num 4-5 bypass
+[
+    {
+        "queue": {
+            "flags": "bypass",
+            "num": {
+                "range": [ 4, 5 ]
+            }
+        }
+    }
+]
+
+# queue to symhash mod 65536
+[
+    {
+        "queue": {
+            "num": {
+                "symhash": {
+                    "mod": 65536
+                }
+            }
+        }
+    }
+]
+
+# queue flags bypass to numgen inc mod 65536
+[
+    {
+        "queue": {
+            "flags": "bypass",
+            "num": {
+                "numgen": {
+                    "mod": 65536,
+                    "mode": "inc",
+                    "offset": 0
+                }
+            }
+        }
+    }
+]
+
+# queue to jhash oif . meta mark mod 32
+[
+    {
+        "queue": {
+            "num": {
+                "jhash": {
+                    "expr": {
+                        "concat": [
+                            {
+                                "meta": {
+                                    "key": "oif"
+                                }
+                            },
+                            {
+                                "meta": {
+                                    "key": "mark"
+                                }
+                            }
+                        ]
+                    },
+                    "mod": 32
+                }
+            }
+        }
+    }
+]
+
+# queue flags bypass to oifname map { "eth0" : 0, "ppp0" : 2, "eth1" : 2 }
+[
+    {
+        "queue": {
+            "flags": "bypass",
+            "num": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "eth0",
+                                0
+                            ],
+                            [
+                                "ppp0",
+                                2
+                            ],
+                            [
+                                "eth1",
+                                2
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "meta": {
+                            "key": "oifname"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
+
+# queue to 2
+[
+    {
+        "queue": {
+            "num": 2
+        }
+    }
+]
+
+# queue to 65535
+[
+    {
+        "queue": {
+            "num": 65535
+        }
+    }
+]
+
+# queue flags bypass to 65535
+[
+    {
+        "queue": {
+            "flags": "bypass",
+            "num": 65535
+        }
+    }
+]
+
+# queue flags bypass to 1-65535
+[
+    {
+        "queue": {
+            "flags": "bypass",
+            "num": {
+                "range": [
+                    1,
+                    65535
+                ]
+            }
+        }
+    }
+]
+
+# queue flags bypass,fanout to 1-65535
+[
+    {
+        "queue": {
+            "flags": [
+                "bypass",
+                "fanout"
+            ],
+            "num": {
+                "range": [
+                    1,
+                    65535
+                ]
+            }
+        }
+    }
+]
+
+# queue to 1-65535
+[
+    {
+        "queue": {
+            "num": {
+                "range": [
+                    1,
+                    65535
+                ]
+            }
+        }
+    }
+]
+

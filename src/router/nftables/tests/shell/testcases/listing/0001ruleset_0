@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# list ruleset shows a table
+
+set -e
+
+$NFT add table test

@@ -1,0 +1,5 @@
+table inet t {
+        chain c {
+                udp length . @th,160,138 vmap { 47-63 . 0xe37313536313033&131303735353203 : accept }
+        }
+}

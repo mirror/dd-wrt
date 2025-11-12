@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#
+# Test some error conditions for using variables to define maps
+#
+
+set -e
+
+for m in "192.168.2.2" "{ 192.168.2.2, 1.1.1.1, 2.2.2.2 }"; do
+
+    RULESET="
+define m = $m"'
+table inet x {
+	chain y {
+		type filter hook input priority 0; policy accept;
+		counter name ip saddr map $m
+	}
+}'
+
+    $NFT -f - <<< "$RULESET" || rc=$?
+    test $rc = 1
+
+done

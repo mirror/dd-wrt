@@ -1,0 +1,28 @@
+table netdev nt {
+	set vlanidset {
+		typeof vlan id
+		size 1024
+		flags dynamic,timeout
+	}
+
+	set macset {
+		typeof ether saddr . vlan id
+		size 1024
+		flags dynamic,timeout
+	}
+
+	set ipset {
+		typeof vlan id . ip saddr
+		size 1024
+		flags dynamic,timeout
+	}
+
+	chain nc {
+		update @macset { ether saddr . vlan id timeout 5s } counter packets 0 bytes 0
+		ether saddr . vlan id @macset
+		vlan pcp 1
+		ether saddr 0a:0b:0c:0d:0e:0f vlan id 42
+		update @vlanidset { vlan id timeout 5s } counter packets 0 bytes 0
+		update @ipset { vlan id . ip saddr timeout 5s } counter packets 0 bytes 0
+	}
+}

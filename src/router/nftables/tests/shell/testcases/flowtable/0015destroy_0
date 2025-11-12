@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_destroy)
+
+trap "ip link del dummy1" EXIT
+
+ip link add dummy1 type dummy
+ip link set dummy1 up
+
+$NFT add table t
+
+# pass for non-existent flowtable
+$NFT destroy flowtable t f
+
+# successfully delete existing flowtable
+$NFT add flowtable t f '{ hook ingress priority 10; devices = { lo }; }'
+
+$NFT 'add flowtable t f { devices = { dummy1 } ; }'
+
+$NFT destroy flowtable t f

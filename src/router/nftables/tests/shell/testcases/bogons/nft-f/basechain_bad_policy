@@ -1,0 +1,2 @@
+define MY_POLICY = deny
+table T { chain C { policy $MY_POLICY; };};

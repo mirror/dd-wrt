@@ -1,0 +1,33 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "x",
+        "handle": 0,
+        "flags": [
+          "dormant"
+        ]
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "x",
+        "name": "y",
+        "handle": 0,
+        "type": "nat",
+        "hook": "prerouting",
+        "prio": 0,
+        "policy": "accept"
+      }
+    }
+  ]
+}

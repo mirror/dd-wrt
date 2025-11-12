@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Tests parse of corrupted verdicts
+
+set -e
+
+RULESET="
+table ip foo {
+	map bar {
+		type ipv4_addr : verdict
+		elements = {
+			192.168.0.1 : ber
+		}
+	}
+
+	chain ber {
+	}
+}"
+
+$NFT -f - <<< "$RULESET" && exit 1
+exit 0

@@ -1,0 +1,97 @@
+#!/bin/bash
+
+EXPECTED='table ip filter {
+	quota q {
+		over 1200 bytes
+		comment "test1"
+		comment "test1"
+	}
+}
+'
+
+$NFT -f - <<< "$EXPECTED"
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+EXPECTED='table ip filter {
+	counter c {
+		packets 0 bytes 0
+		comment "test2"
+		comment "test2"
+	}
+}
+'
+
+$NFT -f - <<< "$EXPECTED"
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+EXPECTED='table ip filter {
+	ct helper h {
+		type "sip" protocol tcp
+		l3proto ip
+		comment "test3"
+		comment "test3"
+	}
+}
+'
+
+$NFT -f - <<< "$EXPECTED"
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+EXPECTED='table ip filter {
+	ct expectation e {
+		protocol tcp
+		dport 666
+		timeout 100ms
+		size 96
+		l3proto ip
+		comment "test4"
+		comment "test4"
+	}
+}
+'
+
+$NFT -f - <<< "$EXPECTED"
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+EXPECTED='table ip filter {
+	limit l {
+		rate 400/hour
+		comment "test5"
+		comment "test5"
+	}
+}
+'
+
+$NFT -f - <<< "$EXPECTED"
+if [ $? -eq 0 ]
+then
+	exit 1
+fi
+
+EXPECTED='table ip filter {
+	synproxy s {
+		mss 1460
+		wscale 2
+		comment "test6"
+		comment "test6"
+	}
+}
+'
+
+$NFT -f - <<< "$EXPECTED"
+if [ $? -eq 0 ]
+then
+	exit 1
+fi

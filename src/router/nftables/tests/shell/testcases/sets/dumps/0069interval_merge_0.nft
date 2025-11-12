@@ -1,0 +1,9 @@
+table ip x {
+	set y {
+		type ipv4_addr
+		flags interval
+		auto-merge
+		elements = { 1.2.3.0-1.2.4.255, 3.3.3.3-3.3.3.6,
+			     4.4.4.0-4.4.5.0 }
+	}
+}

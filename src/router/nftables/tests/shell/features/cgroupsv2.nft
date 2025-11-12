@@ -1,0 +1,7 @@
+# e0bb96db96f8 ("netfilter: nft_socket: add support for cgroupsv2")
+# v5.13-rc1~94^2~35^2~20
+table ip t {
+	chain c {
+		socket cgroupv2 level 1 "user.slice" counter
+	}
+}

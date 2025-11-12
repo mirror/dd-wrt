@@ -1,0 +1,8 @@
+table inet foo {
+	chain bar {
+		type filter hook input priority filter; policy accept;
+		accept
+		accept
+		accept
+	}
+}

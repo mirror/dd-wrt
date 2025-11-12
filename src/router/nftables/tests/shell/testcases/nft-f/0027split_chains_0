@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table inet filter {
+       chain x {
+       }
+}
+table inet filter {
+       chain input {
+	       type filter hook input priority filter; policy accept;
+	       jump x
+       }
+}"
+
+$NFT -f - <<< "$RULESET" && exit 0
+exit 1

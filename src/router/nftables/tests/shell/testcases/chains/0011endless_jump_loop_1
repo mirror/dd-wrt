@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+$NFT add table t
+$NFT add chain "t c1 { type filter hook forward priority 0; }"
+$NFT add chain t c2
+$NFT add map t m {type inet_service : verdict \;}
+$NFT add element t m {2 : jump c2}
+$NFT add rule t c1 tcp dport vmap @m
+
+# kernel should return ELOOP
+$NFT add element t m {1 : jump c1} 2>/dev/null || exit 0
+echo "E: accepted endless jump loop in a vmap" >&2
+exit 1

@@ -1,0 +1,131 @@
+# iifname "eth0" tcp dport 81 snat ip to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 81
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2",
+            "family": "ip"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 81 ip saddr 10.1.1.1 snat to 192.168.3.2
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 81
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ip"
+                }
+            },
+            "op": "==",
+            "right": "10.1.1.1"
+        }
+    },
+    {
+        "snat": {
+            "addr": "192.168.3.2",
+            "family": "ip"
+        }
+    }
+]
+
+# iifname "eth0" tcp dport 81 snat ip6 to dead::beef
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "eth0"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+            "op": "==",
+            "right": 81
+        }
+    },
+    {
+        "snat": {
+            "addr": "dead::beef",
+            "family": "ip6"
+        }
+    }
+]
+
+# iifname "foo" masquerade random
+[
+    {
+        "match": {
+            "left": {
+                "meta": {
+                    "key": "iifname"
+                }
+            },
+            "op": "==",
+            "right": "foo"
+        }
+    },
+    {
+        "masquerade": {
+            "flags": "random"
+        }
+    }
+]
+

@@ -1,0 +1,6 @@
+table ip x {
+	map sctm_o1 {
+		type mark : counter
+		counter name meta mark
+	}
+}

@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# tests different spots, datatypes and usages for nft defines
+
+RULESET="
+define d_iifname = whatever
+define d_oifname = \$d_iifname
+define d_iif = lo
+define d_oif = \$d_iif
+define d_mark = 123
+define d_state = new,established,related
+define d_ipv4 = 10.0.0.0
+define d_ipv4_2 = 10.0.0.2
+define d_ipv6 = fe0::1
+define d_ipv6_2 = fe0::2
+define d_ports = 100-222
+define d_qnum = 0
+define d_qnumr = 1-42
+
+table inet t {
+	chain c {
+		iifname \$d_iifname oifname \$d_oifname iif \$d_iif oif \$d_oif
+		iifname { \$d_iifname , \$d_oifname } iif { \$d_iif , \$d_oif } meta mark \$d_mark
+		ct state \$d_state
+		ct state != \$d_state
+		ip saddr \$d_ipv4 ip daddr \$d_ipv4_2 ip saddr \$d_ipv4
+		ip6 daddr \$d_ipv6 ip6 saddr \$d_ipv6_2
+		ip saddr vmap { \$d_ipv4 : drop , \$d_ipv4_2 : accept }
+		ip6 daddr vmap { \$d_ipv6 : drop , \$d_ipv6_2 : accept }
+		ip6 saddr . ip6 nexthdr { \$d_ipv6 . udp, \$d_ipv6_2 . tcp }
+		ip daddr . meta iif vmap { \$d_ipv4 . \$d_iif : accept }
+		tcp dport \$d_ports
+		udp dport vmap { \$d_ports : accept }
+		tcp dport 1 tcp sport 1 meta oifname \"foobar\" queue num \$d_qnum bypass
+		tcp dport 1 tcp sport 1 meta oifname \"foobar\" queue num \$d_qnumr
+		tcp dport 1 tcp sport 1 meta oifname \"foobar\" queue flags bypass,fanout num \$d_qnumr
+		tcp dport 1 tcp sport 1 meta oifname \"foobar\" queue to symhash mod 2
+		tcp dport 1 tcp sport 1 meta oifname \"foobar\" queue flags bypass to jhash tcp dport . tcp sport mod 4
+	}
+}"
+
+set -e
+$NFT -f - <<< "$RULESET"

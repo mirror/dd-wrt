@@ -1,0 +1,117 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "kube-nfproxy-v4",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "kube-nfproxy-v4",
+        "name": "k8s-nfproxy-sep-TMVEFT7EX55F4T62",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "kube-nfproxy-v4",
+        "name": "k8s-nfproxy-sep-GMVEFT7EX55F4T62",
+        "handle": 0
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "sticky-set-svc-M53CN2XYVUHRQ7UB",
+        "table": "kube-nfproxy-v4",
+        "type": "ipv4_addr",
+        "handle": 0,
+        "map": "mark",
+        "size": 65535,
+        "flags": [
+          "timeout"
+        ],
+        "timeout": 360
+      }
+    },
+    {
+      "map": {
+        "family": "ip",
+        "name": "sticky-set-svc-153CN2XYVUHRQ7UB",
+        "table": "kube-nfproxy-v4",
+        "type": {
+          "typeof": {
+            "payload": {
+              "protocol": "ip",
+              "field": "daddr"
+            }
+          }
+        },
+        "handle": 0,
+        "map": "mark",
+        "size": 65535,
+        "flags": [
+          "timeout"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "kube-nfproxy-v4",
+        "chain": "k8s-nfproxy-sep-TMVEFT7EX55F4T62",
+        "handle": 0,
+        "expr": [
+          {
+            "map": {
+              "op": "update",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "data": 2,
+              "map": "@sticky-set-svc-M53CN2XYVUHRQ7UB"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "kube-nfproxy-v4",
+        "chain": "k8s-nfproxy-sep-GMVEFT7EX55F4T62",
+        "handle": 0,
+        "expr": [
+          {
+            "map": {
+              "op": "update",
+              "elem": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "data": 3,
+              "map": "@sticky-set-svc-153CN2XYVUHRQ7UB"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

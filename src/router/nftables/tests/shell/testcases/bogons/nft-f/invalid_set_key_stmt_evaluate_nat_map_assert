@@ -1,0 +1,10 @@
+table ip t {
+	map t2 {
+		typeof numgen inc mod 2 : ip daddr . 0
+	}
+
+	chain c {
+		type nat hook prerouting priority dstnat; policy accept;
+		meta l4proto tcp dnat ip to numgen inc mod 2 map @t2
+	}
+}

@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# tests for Netfilter bug #965 and the related fix
+# (regarding rule management with a given position/handle spec)
+
+set -e
+
+RULESET="flush ruleset
+table ip t {
+	chain c {
+		accept
+		accept
+	}
+}"
+
+EXPECTED="table ip t {
+	chain c {
+		accept
+		drop
+		accept
+	}
+}"
+
+for arg in "position 2" "handle 2" "index 0"; do
+	$NFT -f - <<< "$RULESET"
+	$NFT add rule t c $arg drop || {
+		$NFT list ruleset
+		exit 1
+	}
+
+	GET="$($NFT list ruleset)"
+	if [ "$EXPECTED" != "$GET" ] ; then
+		$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+		exit 1
+	fi
+done
+
+for arg in "position 3" "handle 3" "index 1"; do
+	$NFT -f - <<< "$RULESET"
+	$NFT insert rule t c $arg drop
+
+	GET="$($NFT list ruleset)"
+	if [ "$EXPECTED" != "$GET" ] ; then
+		$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+		exit 1
+	fi
+done
+
+EXPECTED="table ip t {
+	chain c {
+		accept
+		accept
+		drop
+	}
+}"
+
+for arg in "position 3" "handle 3" "index 1"; do
+	$NFT -f - <<< "$RULESET"
+	$NFT add rule t c $arg drop
+
+	GET="$($NFT list ruleset)"
+	if [ "$EXPECTED" != "$GET" ] ; then
+		$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+		exit 1
+	fi
+done
+
+EXPECTED="table ip t {
+	chain c {
+		drop
+		accept
+		accept
+	}
+}"
+
+for arg in "position 2" "handle 2" "index 0"; do
+	$NFT -f - <<< "$RULESET"
+	$NFT insert rule t c $arg drop
+
+	GET="$($NFT list ruleset)"
+	if [ "$EXPECTED" != "$GET" ] ; then
+		$DIFF -u <(echo "$EXPECTED") <(echo "$GET")
+		exit 1
+	fi
+done

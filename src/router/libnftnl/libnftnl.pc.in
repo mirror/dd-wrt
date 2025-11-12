@@ -1,0 +1,16 @@
+# libnftnl pkg-config file
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libnftnl
+Description: Netfilter nf_tables infrastructure library
+URL: http://netfilter.org/projects/libnftnl/
+Version: @VERSION@
+Requires:
+Requires.private: libmnl
+Conflicts:
+Libs: -L${libdir} -lnftnl
+Cflags: -I${includedir}

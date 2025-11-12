@@ -1,0 +1,547 @@
+META EXPRESSIONS
+~~~~~~~~~~~~~~~~
+[verse]
+*meta* {*length* | *nfproto* | *l4proto* | *protocol* | *priority*}
+[*meta*] {*mark* | *iif* | *iifname* | *iiftype* | *oif* | *oifname* | *oiftype* | *skuid* | *skgid* | *nftrace* | *rtclassid* | *ibrname* | *obrname* | *pkttype* | *cpu* | *iifgroup* | *oifgroup* | *cgroup* | *random* | *ipsec* | *iifkind* | *oifkind* | *time* | *hour* | *day* }
+
+A meta expression refers to meta data associated with a packet.
+
+There are two types of meta expressions: unqualified and qualified meta
+expressions. Qualified meta expressions require the meta keyword before the meta
+key, unqualified meta expressions can be specified by using the meta key
+directly or as qualified meta expressions. Meta l4proto is useful to match a
+particular transport protocol that is part of either an IPv4 or IPv6 packet. It
+will also skip any IPv6 extension headers present in an IPv6 packet.
+
+meta iif, oif, iifname and oifname are used to match the interface a packet
+arrived on or is about to be sent out on.
+
+iif and oif are used to match on the interface index, whereas iifname and
+oifname are used to match on the interface name.
+This is not the same -- assuming the rule
+
+  filter input meta iif "foo"
+
+Then this rule can only be added if the interface "foo" exists.
+Also, the rule will continue to match even if the
+interface "foo" is renamed to "bar".
+
+This is because internally the interface index is used.
+In case of dynamically created interfaces, such as tun/tap or dialup
+interfaces (ppp for example), it might be better to use iifname or oifname
+instead.
+
+In these cases, the name is used so the interface doesn't have to exist to
+add such a rule, it will stop matching if the interface gets renamed and it
+will match again in case interface gets deleted and later a new interface
+with the same name is created.
+
+Like with iptables, wildcard matching on interface name prefixes is available for
+*iifname* and *oifname* matches by appending an asterisk (*) character. Note
+however that unlike iptables, nftables does not accept interface names
+consisting of the wildcard character only - users are supposed to just skip
+those always matching expressions. In order to match on literal asterisk
+character, one may escape it using backslash (\).
+
+.Meta expression types
+[options="header"]
+|==================
+|Keyword | Description | Type
+|length|
+Length of the packet in bytes|
+integer (32-bit)
+|nfproto|
+real hook protocol family, useful only in inet table|
+integer (32 bit)
+|l4proto|
+layer 4 protocol, skips ipv6 extension headers|
+integer (8 bit)
+|protocol|
+EtherType protocol value|
+ether_type
+|priority|
+TC packet priority|
+tc_handle
+|mark|
+Packet mark |
+mark
+|iif|
+Input interface index |
+iface_index
+|iifname|
+Input interface name |
+ifname
+|iiftype|
+Input interface type|
+iface_type
+|oif|
+Output interface index|
+iface_index
+|oifname|
+Output interface name|
+ifname
+|oiftype|
+Output interface hardware type|
+iface_type
+|sdif|
+Slave device input interface index |
+iface_index
+|sdifname|
+Slave device interface name|
+ifname
+|skuid|
+UID associated with originating socket|
+uid
+|skgid|
+GID associated with originating socket|
+gid
+|rtclassid|
+Routing realm|
+realm
+|ibrname|
+Input bridge interface name|
+ifname
+|obrname|
+Output bridge interface name|
+ifname
+|pkttype|
+packet type|
+pkt_type
+|cpu|
+cpu number processing the packet|
+integer (32 bit)
+|iifgroup|
+incoming device group|
+devgroup
+|oifgroup|
+outgoing device group|
+devgroup
+|cgroup|
+control group net_cls.classid (for matching on cgroupv2, see *socket cgroupv2*)|
+integer (32 bit)
+|random|
+pseudo-random number|
+integer (32 bit)
+|ipsec|
+true if packet was ipsec encrypted |
+boolean (1 bit)
+|iifkind|
+Input interface kind |
+|oifkind|
+Output interface kind|
+|time|
+Absolute time of packet reception|
+Integer (32 bit) or string
+|day|
+Day of week|
+Integer (8 bit) or string
+|hour|
+Hour of day|
+String value in the form HH:MM or HH:MM:SS. Values are expected to be less than
+24:00, although for technical reasons, 23:59:60 is accepted, too.
+|====================
+
+.Meta expression specific types
+[options="header"]
+|==================
+|Type | Description
+|iface_index |
+Interface index (32 bit number). Can be specified numerically or as name of an existing interface.
+|ifname|
+Interface name (16 byte string). Does not have to exist.
+|iface_type|
+Interface type (16 bit number).
+|uid|
+User ID (32 bit number). Can be specified numerically or as user name.
+|gid|
+Group ID (32 bit number). Can be specified numerically or as group name.
+|realm|
+Routing Realm (32 bit number). Can be specified numerically or as symbolic name defined in /etc/iproute2/rt_realms.
+|devgroup_type|
+Device group (32 bit number). Can be specified numerically or as symbolic name defined in /etc/iproute2/group.
+|pkt_type|
+Packet type: *host* (addressed to local host), *broadcast* (to all),
+*multicast* (to group), *other* (addressed to another host).
+|ifkind|
+Interface kind (16 byte string). See TYPES in ip-link(8) for a list.
+|time|
+Either an integer or a date in ISO format. For example: "2019-06-06 17:00".
+Hour and seconds are optional and can be omitted if desired. If omitted,
+midnight will be assumed.
+The following three would be equivalent: "2019-06-06", "2019-06-06 00:00"
+and "2019-06-06 00:00:00". Use a range expression such as
+"2019-06-06 10:00"-"2019-06-10 14:00" for matching a time range.
+When an integer is given, it is assumed to be a UNIX timestamp.
+|day|
+Either a day of week ("Monday", "Tuesday", etc.), or an integer between 0 and 6.
+Strings are matched case-insensitively, and a full match is not expected (e.g. "Mon" would match "Monday").
+When an integer is given, 0 is Sunday and 6 is Saturday. Use a range expression
+such as "Monday"-"Wednesday" for matching a week day range.
+|hour|
+A string representing an hour in 24-hour format. Seconds can optionally be specified.
+For example, 17:00 and 17:00:00 would be equivalent. Use a range expression such
+as "17:00"-"19:00" for matching a time range.
+|=============================
+
+.Using meta expressions
+-----------------------
+# qualified meta expression
+filter output meta oif eth0
+filter forward meta iifkind { "tun", "veth" }
+
+# unqualified meta expression
+filter output oif eth0
+
+# incoming packet was subject to ipsec processing
+raw prerouting meta ipsec exists accept
+
+# match incoming packet from 03:00 to 14:00 local time
+raw prerouting meta hour "03:00"-"14:00" counter accept
+-----------------------
+
+SOCKET EXPRESSION
+~~~~~~~~~~~~~~~~~
+[verse]
+*socket* {*transparent* | *mark* | *wildcard*}
+*socket* *cgroupv2* *level* 'NUM'
+
+Socket expression can be used to search for an existing open TCP/UDP socket and
+its attributes that can be associated with a packet. It looks for an established
+or non-zero bound listening socket (possibly with a non-local address). You can
+also use it to match on the socket cgroupv2 at a given ancestor level, e.g. if
+the socket belongs to cgroupv2 'a/b', ancestor level 1 checks for a matching on
+cgroup 'a' and ancestor level 2 checks for a matching on cgroup 'b'.
+
+.Available socket attributes
+[options="header"]
+|==================
+|Name |Description| Type
+|transparent|
+Value of the IP_TRANSPARENT socket option in the found socket. It can be 0 or 1.|
+boolean (1 bit)
+|mark| Value of the socket mark (SOL_SOCKET, SO_MARK). | mark
+|wildcard|
+Indicates whether the socket is wildcard-bound (e.g. 0.0.0.0 or ::0). |
+boolean (1 bit)
+|cgroupv2|
+cgroup version 2 for this socket (path from /sys/fs/cgroup)|
+cgroupv2
+|==================
+
+.Using socket expression
+------------------------
+# Mark packets that correspond to a transparent socket. "socket wildcard 0"
+# means that zero-bound listener sockets are NOT matched (which is usually
+# exactly what you want).
+table inet x {
+    chain y {
+        type filter hook prerouting priority mangle; policy accept;
+        socket transparent 1 socket wildcard 0 mark set 0x00000001 accept
+    }
+}
+
+# Trace packets that corresponds to a socket with a mark value of 15
+table inet x {
+    chain y {
+        type filter hook prerouting priority mangle; policy accept;
+        socket mark 0x0000000f nftrace set 1
+    }
+}
+
+# Set packet mark to socket mark
+table inet x {
+    chain y {
+        type filter hook prerouting priority mangle; policy accept;
+        tcp dport 8080 mark set socket mark
+    }
+}
+
+# Count packets for cgroupv2 "user.slice" at level 1
+table inet x {
+    chain y {
+        type filter hook input priority filter; policy accept;
+        socket cgroupv2 level 1 "user.slice" counter
+    }
+}
+----------------------
+
+OSF EXPRESSION
+~~~~~~~~~~~~~~
+[verse]
+*osf* [*ttl* {*loose* | *skip*}] {*name* | *version*}
+
+The osf expression does passive operating system fingerprinting. This
+expression compares some data (Window Size, MSS, options and their order, DF,
+and others) from packets with the SYN bit set.
+
+.Available osf attributes
+[options="header"]
+|==================
+|Name |Description| Type
+|ttl|
+Do TTL checks on the packet to determine the operating system.|
+string
+|version|
+Do OS version checks on the packet.|
+|name|
+Name of the OS signature to match. All signatures can be found at pf.os file.
+Use "unknown" for OS signatures that the expression could not detect.|
+string
+|==================
+
+.Available ttl values
+---------------------
+If no TTL attribute is passed, make a true IP header and fingerprint TTL true comparison. This generally works for LANs.
+
+* loose: Check if the IP header's TTL is less than the fingerprint one. Works for globally-routable addresses.
+* skip: Do not compare the TTL at all.
+---------------------
+
+.Using osf expression
+---------------------
+# Accept packets that match the "Linux" OS genre signature without comparing TTL.
+table inet x {
+    chain y {
+        type filter hook input priority filter; policy accept;
+        osf ttl skip name "Linux"
+    }
+}
+-----------------------
+
+FIB EXPRESSIONS
+~~~~~~~~~~~~~~~
+[verse]
+*fib* 'FIB_TUPLE' 'FIB_RESULT'
+'FIB_TUPLE' := { *saddr* | *daddr*} [ *.* { *iif* | *oif* } *.* *mark* ]
+'FIB_RESULT'  := { *oif* | *oifname* | *check* | *type* }
+
+
+A fib expression queries the fib (forwarding information base) to obtain information
+such as the output interface index.
+
+The first arguments to the *fib* expression are the input keys to be passed to the fib lookup function.
+One of *saddr* or *daddr* is mandatory, they are also mutually exclusive.
+
+*mark*, *iif* and *oif* keywords are optional modifiers to influence the search result, see
+the *FIB_TUPLE* keyword table below for a description.
+The *iif* and *oif* tuple keywords are also mutually exclusive.
+
+The last argument to the *fib* expression is the desired result type.
+
+*oif* asks to obtain the interface index that would be used to send packets to the packets source
+(*saddr* key) or destination (*daddr* key).  If no routing entry is found, the returned interface
+index is 0.
+
+*oifname* is like *oif*, but it fills the interface name instead.  This is useful to check dynamic
+interfaces such as ppp devices.  If no entry is found, an empty interface name is returned.
+
+*type* returns the address type such as unicast or multicast.  A complete list of supported
+address types can be shown with *nft* *describe* *fib_addrtype*.
+
+.FIB_TUPLE keywords
+[options="header"]
+|==================
+|flag| Description
+|daddr| Perform a normal route lookup: search fib for route to the *destination address* of the packet.
+|saddr| Perform a reverse route lookup: search the fib for route to the *source address* of the packet.
+|mark | consider the packet mark (nfmark) when querying the fib.
+|iif  | if fib lookups provides a route then check its output interface is identical to the packets *input* interface.
+|oif  | if fib lookups provides a route then check its output interface is identical to the packets *output* interface.  This flag can only be used with the *type* result.
+|=======================
+
+.FIB_RESULT keywords
+[options="header"]
+|==================
+|Keyword| Description| Result Type
+|oif|
+Output interface index|
+iface_index
+|check|
+Output interface check|
+boolean
+|oifname|
+Output interface name|
+ifname
+|type|
+Address type |
+fib_addrtype (see *nft* *describe* *fib_addrtype* for a list)
+|=======================
+
+The *oif* and *oifname* result is only valid in the *prerouting*, *input* and *forward* hooks.
+The *type* can be queried from any one of *prerouting*, *input*, *forward* *output* and *postrouting*.
+
+For *type*, the presence of the *iif* keyword in the 'FIB_TUPLE' modifiers restrict the available
+hooks to those where the packet is associated with an incoming interface, i.e. *prerouting*, *input* and *forward*.
+Likewise, the *oif* keyword in the 'FIB_TUPLE' modifier list will limit the available hooks to
+*forward*, *output* and *postrouting*.
+
+.Using fib expressions
+----------------------
+# drop packets without a reverse path
+filter prerouting fib saddr . iif oif missing drop
+
+In this example, 'saddr . iif' looks up a route to the *source address* of the packet and restricts matching
+results to the interface that the packet arrived on, then stores the output interface index from the obtained
+fib route result.
+
+If no route was found for the source address/input interface combination, the output interface index is zero.
+Hence, this rule will drop all packets that do not have a strict reverse path (hypothetical reply packet
+would be sent via the interface the tested packet arrived on).
+
+If only 'saddr oif' is used as the input key, then this rule would only drop packets where the fib cannot
+find a route. In most setups this will never drop packets because the default route is returned.
+
+# drop packets if the destination ip address is not configured on the incoming interface
+filter prerouting fib daddr . iif type != { local, broadcast, multicast } drop
+
+This queries the fib based on the current packets' destination address and the incoming interface.
+
+If the packet is sent to a unicast address that is configured on a different interface, then the packet
+will be dropped as such an address would be classified as 'unicast' type.
+Without the 'iif' modifier, any address configured on the local machine is 'local', and unicast addresses
+not configured on any interface would return the type 'unicast'.
+
+# perform lookup in a specific 'blackhole' table (0xdead, needs ip appropriate ip rule)
+filter prerouting meta mark set 0xdead fib daddr . mark type vmap { blackhole : drop, prohibit : jump prohibited, unreachable : drop }
+----------------------
+
+ROUTING EXPRESSIONS
+~~~~~~~~~~~~~~~~~~~
+[verse]
+*rt* [*ip* | *ip6*] {*classid* | *nexthop* | *mtu* | *ipsec*}
+
+A routing expression refers to routing data associated with a packet.
+
+.Routing expression types
+[options="header"]
+|=======================
+|Keyword| Description| Type
+|classid|
+Routing realm|
+realm
+|nexthop|
+Routing nexthop|
+ipv4_addr/ipv6_addr
+|mtu|
+TCP maximum segment size of route |
+integer (16 bit)
+|ipsec|
+route via ipsec tunnel or transport |
+boolean
+|=================================
+
+.Routing expression specific types
+[options="header"]
+|=======================
+|Type| Description
+|realm|
+Routing Realm (32 bit number). Can be specified numerically or as symbolic name defined in /etc/iproute2/rt_realms.
+|========================
+
+.Using routing expressions
+--------------------------
+# IP family independent rt expression
+filter output rt classid 10
+
+# IP family dependent rt expressions
+ip filter output rt nexthop 192.168.0.1
+ip6 filter output rt nexthop fd00::1
+inet filter output rt ip nexthop 192.168.0.1
+inet filter output rt ip6 nexthop fd00::1
+
+# outgoing packet will be encapsulated/encrypted by ipsec
+filter output rt ipsec exists
+-------------------------- 
+
+IPSEC EXPRESSIONS
+~~~~~~~~~~~~~~~~~
+
+[verse]
+*ipsec* {*in* | *out*} [ *spnum* 'NUM' ]  {*reqid* | *spi*}
+*ipsec* {*in* | *out*} [ *spnum* 'NUM' ]  {*ip* | *ip6*} {*saddr* | *daddr*}
+
+An ipsec expression refers to ipsec data associated with a packet.
+
+The 'in' or 'out' keyword needs to be used to specify if the expression should
+examine inbound or outbound policies. The 'in' keyword can be used in the
+prerouting, input and forward hooks.  The 'out' keyword applies to forward,
+output and postrouting hooks.
+The optional keyword spnum can be used to match a specific state in a chain,
+it defaults to 0.
+
+.Ipsec expression types
+[options="header"]
+|=======================
+|Keyword| Description| Type
+|reqid|
+Request ID|
+integer (32 bit)
+|spi|
+Security Parameter Index|
+integer (32 bit)
+|saddr|
+Source address of the tunnel|
+ipv4_addr/ipv6_addr
+|daddr|
+Destination address of the tunnel|
+ipv4_addr/ipv6_addr
+|=================================
+
+*Note:* When using xfrm_interface, this expression is not useable in output
+hook as the plain packet does not traverse it with IPsec info attached - use a
+chain in postrouting hook instead.
+
+NUMGEN EXPRESSION
+~~~~~~~~~~~~~~~~~
+
+[verse]
+*numgen* {*inc* | *random*} *mod* 'NUM' [ *offset* 'NUM' ]
+
+Create a number generator. The *inc* or *random* keywords control its
+operation mode: In *inc* mode, the last returned value is simply incremented.
+In *random* mode, a new random number is returned. The value after *mod*
+keyword specifies an upper boundary (read: modulus) which is not reached by
+returned numbers. The optional *offset* allows one to increment the returned value
+by a fixed offset.
+
+A typical use-case for *numgen* is load-balancing:
+
+.Using numgen expression
+------------------------
+# round-robin between 192.168.10.100 and 192.168.20.200:
+add rule nat prerouting dnat to numgen inc mod 2 map \
+	{ 0 : 192.168.10.100, 1 : 192.168.20.200 }
+
+# probability-based with odd bias using intervals:
+add rule nat prerouting dnat to numgen random mod 10 map \
+        { 0-2 : 192.168.10.100, 3-9 : 192.168.20.200 }
+------------------------
+
+HASH EXPRESSIONS
+~~~~~~~~~~~~~~~~
+
+[verse]
+*jhash* {*ip saddr* | *ip6 daddr* | *tcp dport* | *udp sport* | *ether saddr*} [*.* ...] *mod* 'NUM' [ *seed* 'NUM' ] [ *offset* 'NUM' ]
+*symhash* *mod* 'NUM' [ *offset* 'NUM' ]
+
+Use a hashing function to generate a number. The functions available are
+*jhash*, known as Jenkins Hash, and *symhash*, for Symmetric Hash. The
+*jhash* requires an expression to determine the parameters of the packet
+header to apply the hashing, concatenations are possible as well. The value
+after *mod* keyword specifies an upper boundary (read: modulus) which is
+not reached by returned numbers. The optional *seed* is used to specify an
+init value used as seed in the hashing function. The optional *offset*
+allows one to increment the returned value by a fixed offset.
+
+A typical use-case for *jhash* and *symhash* is load-balancing:
+
+.Using hash expressions
+------------------------
+# load balance based on source ip between 2 ip addresses:
+add rule nat prerouting dnat to jhash ip saddr mod 2 map \
+	{ 0 : 192.168.10.100, 1 : 192.168.20.200 }
+
+# symmetric load balancing between 2 ip addresses:
+add rule nat prerouting dnat to symhash mod 2 map \
+        { 0 : 192.168.10.100, 1 : 192.168.20.200 }
+------------------------

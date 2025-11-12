@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# This testscase checks kernel picks a suitable set backends.
+# Ruleset attempts to update from packet path, so set backend
+# needs an ->update() implementation.
+
+set -e
+
+$NFT add table t
+$NFT add set t s1 { type inet_proto \; flags dynamic \; }
+$NFT add set t s2 { type ipv4_addr \; flags dynamic \; }
+$NFT add set t s3 { type ipv4_addr \; size 1024\; flags dynamic \; }
+$NFT add chain t c {type filter hook input priority 0 \; }
+
+$NFT add rule t c meta iifname foobar add @s1 { ip protocol }
+$NFT add rule t c meta iifname foobar add @s2 { ip daddr }
+$NFT add rule t c meta iifname foobar add @s3 { ip daddr }

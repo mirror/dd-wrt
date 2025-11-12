@@ -1,0 +1,27 @@
+table ip test {
+	quota https-quota {
+		25 mbytes
+	}
+
+	ct helper cthelp {
+		type "sip" protocol tcp
+		l3proto ip
+	}
+
+	ct timeout cttime {
+		protocol udp
+		l3proto ip
+		policy = { unreplied : 15s, replied : 12s }
+	}
+
+	ct expectation ctexpect {
+		protocol tcp
+		dport 5432
+		timeout 1h
+		size 12
+		l3proto ip
+	}
+
+	chain input {
+	}
+}

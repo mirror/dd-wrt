@@ -1,0 +1,5 @@
+table inet testfilter {
+	chain test {
+		counter packets 0 bytes 0
+	}
+}

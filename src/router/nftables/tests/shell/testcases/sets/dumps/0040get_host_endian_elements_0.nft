@@ -1,0 +1,7 @@
+table ip t {
+	set s {
+		type mark
+		flags interval
+		elements = { 0x00000023-0x00000042, 0x00001337 }
+	}
+}

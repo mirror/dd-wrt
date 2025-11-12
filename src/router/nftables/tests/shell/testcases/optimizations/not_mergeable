@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+RULESET="table ip x {
+	chain t1 {
+	}
+	chain t2 {
+	}
+	chain t3 {
+	}
+	chain t4 {
+	}
+	chain y {
+		counter jump t1
+		counter jump t2
+		ip version 4 jump t3
+		ip version 6 jump t4
+	}
+}"
+
+$NFT -o -f - <<< $RULESET

@@ -1,0 +1,6 @@
+table ip filter {
+	flowtable ft1 {
+		devices = { lo }
+	}
+}
+list ruleset

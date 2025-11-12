@@ -1,0 +1,379 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test1",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "test1",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test1",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oif"
+                }
+              },
+              "right": "lo"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test1",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "ip",
+                      "field": "saddr"
+                    }
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        "4.4.4.4",
+                        "1.1.1.1"
+                      ],
+                      [
+                        "5.5.5.5",
+                        "2.2.2.2"
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test2",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "test2",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test2",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oif"
+                }
+              },
+              "right": "lo"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test2",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        80,
+                        {
+                          "concat": [
+                            "1.1.1.1",
+                            8001
+                          ]
+                        }
+                      ],
+                      [
+                        81,
+                        {
+                          "concat": [
+                            "2.2.2.2",
+                            9001
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test2",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "saddr"
+                }
+              },
+              "right": {
+                "set": [
+                  {
+                    "prefix": {
+                      "addr": "10.141.11.0",
+                      "len": 24
+                    }
+                  },
+                  {
+                    "prefix": {
+                      "addr": "10.141.13.0",
+                      "len": 24
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "masquerade": null
+          }
+        ]
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "test4",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "ip",
+        "table": "test4",
+        "name": "y",
+        "handle": 0
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test4",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "meta": {
+                  "key": "oif"
+                }
+              },
+              "right": "lo"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test4",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "dnat": {
+              "family": "ip",
+              "addr": {
+                "map": {
+                  "key": {
+                    "concat": [
+                      {
+                        "payload": {
+                          "protocol": "ip",
+                          "field": "daddr"
+                        }
+                      },
+                      {
+                        "payload": {
+                          "protocol": "tcp",
+                          "field": "dport"
+                        }
+                      }
+                    ]
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        {
+                          "concat": [
+                            "1.1.1.1",
+                            80
+                          ]
+                        },
+                        {
+                          "concat": [
+                            "4.4.4.4",
+                            8000
+                          ]
+                        }
+                      ],
+                      [
+                        {
+                          "concat": [
+                            "2.2.2.2",
+                            81
+                          ]
+                        },
+                        {
+                          "concat": [
+                            "3.3.3.3",
+                            9000
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test4",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "redirect": {
+              "port": {
+                "map": {
+                  "key": {
+                    "payload": {
+                      "protocol": "tcp",
+                      "field": "dport"
+                    }
+                  },
+                  "data": {
+                    "set": [
+                      [
+                        83,
+                        8083
+                      ],
+                      [
+                        84,
+                        8084
+                      ]
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "test4",
+        "chain": "y",
+        "handle": 0,
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "tcp",
+                  "field": "dport"
+                }
+              },
+              "right": 85
+            }
+          },
+          {
+            "redirect": null
+          }
+        ]
+      }
+    }
+  ]
+}

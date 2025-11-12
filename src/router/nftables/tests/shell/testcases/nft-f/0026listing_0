@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# This is like "flush ruleset" except only flushes THIS ruleset, not ALL rulesets.
+# In particular, it leaves the dynamic sshguard/fail2ban deny lists untouched.
+RULESET="add table A
+delete table A
+table A {
+    chain B {
+        tcp dport {1,2} accept
+    }
+}
+list ruleset"
+
+exec $NFT -f - <<< "$RULESET"

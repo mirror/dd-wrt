@@ -1,0 +1,29 @@
+# log level warn
+[
+    {
+        "log": null
+    }
+]
+
+# log flags ip options flags ether flags skuid flags tcp sequence,options
+[
+    {
+        "log": {
+            "flags": [
+                "all"
+            ]
+        }
+    }
+]
+
+# log flags all
+[
+    {
+        "log": {
+            "flags": [
+                "all"
+            ]
+        }
+    }
+]
+

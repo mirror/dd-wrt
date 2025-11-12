@@ -1,0 +1,5 @@
+table t {
+	chain c {
+		 @th,160,1272 gt 0
+	}
+}

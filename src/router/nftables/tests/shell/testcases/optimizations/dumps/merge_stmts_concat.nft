@@ -1,0 +1,19 @@
+table ip x {
+	chain y {
+		iifname . ip saddr . ip daddr { "eth1" . 1.1.1.1 . 2.2.2.3, "eth1" . 1.1.1.2 . 2.2.2.4, "eth1" . 1.1.1.2 . 2.2.3.0/24, "eth1" . 1.1.1.2 . 2.2.4.0-2.2.4.10, "eth2" . 1.1.1.3 . 2.2.2.5 } accept
+		ip protocol . th dport { tcp . 22, udp . 67 }
+		udp dport . ct state { 137 . new, 138 . new, 137 . untracked, 138 . untracked } accept
+	}
+
+	chain c1 {
+		udp dport . iifname { 51820 . "foo", 514 . "bar", 67 . "bar" } accept
+	}
+
+	chain c2 {
+		udp dport . iifname { 100 . "foo", 51820 . "foo", 514 . "bar", 67 . "bar" } accept
+	}
+
+	chain c3 {
+		udp dport . iifname { 100 . "foo", 51820 . "foo", 514 . "bar", 67 . "bar", 100 . "test", 51820 . "test" } accept
+	}
+}

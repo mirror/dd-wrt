@@ -1,0 +1,12 @@
+table ip x {
+	chain y {
+		type nat hook postrouting priority srcnat; policy accept;
+		snat ip prefix to ip saddr map { 10.141.11.0/24 : 192.168.2.0/24, 10.141.12.0/24 : 192.168.3.0/24, 10.141.13.0/24 : 192.168.4.0/24 }
+	}
+}
+table ip6 x {
+	chain y {
+		type nat hook postrouting priority srcnat; policy accept;
+		snat ip6 prefix to ip6 saddr map { 2001:db8:1111::/64 : 2001:db8:2222::/64 }
+	}
+}

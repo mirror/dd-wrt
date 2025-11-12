@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+trap "rm -rf $tmpdir" EXIT
+
+tmpdir=$(mktemp -d)
+mkdir -p $tmpdir/test/include
+cat > $tmpdir/test/main << EOF
+table inet test {
+        chain test {
+                include "include/*";
+        }
+}
+EOF
+echo "tcp dport 22 accept;" > $tmpdir/test/include/one
+echo "tcp dport 25 accept;" > $tmpdir/test/include/two
+
+$NFT -I $tmpdir/test/ -f $tmpdir/test/main

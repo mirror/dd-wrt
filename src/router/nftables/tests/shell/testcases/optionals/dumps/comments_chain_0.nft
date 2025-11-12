@@ -1,0 +1,5 @@
+table ip test_table {
+	chain test_chain {
+		comment "test"
+	}
+}

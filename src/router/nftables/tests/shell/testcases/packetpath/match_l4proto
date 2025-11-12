@@ -1,0 +1,150 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_netdev_egress)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1payload-$rnd"
+ns2="nft2payload-$rnd"
+
+cleanup()
+{
+	ip netns del "$ns1"
+	ip netns del "$ns2"
+}
+
+trap cleanup EXIT
+
+run_test()
+{
+	ns1_addr=$2
+	ns2_addr=$3
+	cidr=$4
+
+	# socat needs square brackets, ie. [abcd::2]
+	if [ $1 -eq 6 ]; then
+		nsx1_addr="["$ns1_addr"]"
+		nsx2_addr="["$ns2_addr"]"
+	else
+		nsx1_addr="$ns1_addr"
+		nsx2_addr="$ns2_addr"
+	fi
+
+	ip netns add "$ns1" || exit 111
+	ip netns add "$ns2" || exit 111
+
+	ip -net "$ns1" link set lo up
+	ip -net "$ns2" link set lo up
+
+	ip link add veth0 netns $ns1 type veth peer name veth0 netns $ns2
+
+	ip -net "$ns1" link set veth0 up
+	ip -net "$ns2" link set veth0 up
+	ip -net "$ns1" addr add $ns1_addr/$cidr dev veth0
+	ip -net "$ns2" addr add $ns2_addr/$cidr dev veth0
+
+	sleep 5
+
+RULESET="table netdev payload_netdev {
+       counter ingress {}
+       counter ingress_2 {}
+       counter egress {}
+       counter egress_2 {}
+
+       chain ingress {
+               type filter hook ingress device veth0 priority 0;
+               udp dport 7777 counter name ingress
+               meta l4proto udp counter name ingress_2
+       }
+
+       chain egress {
+               type filter hook egress device veth0 priority 0;
+               udp dport 7777 counter name egress
+               meta l4proto udp counter name egress_2
+       }
+}"
+
+	ip netns exec "$ns1" $NFT -f - <<< "$RULESET" || exit 1
+
+	ip netns exec "$ns1" bash -c "echo 'A' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AAA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AAAA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AAAAA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+
+	ip netns exec "$ns2" bash -c "echo 'A' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AAA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AAAA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AAAAA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+
+	ip netns exec "$ns1" $NFT list ruleset
+
+	ip netns exec "$ns1" $NFT list counter netdev payload_netdev ingress | grep "packets 5" > /dev/null || exit 1
+	ip netns exec "$ns1" $NFT list counter netdev payload_netdev ingress_2 | grep "packets 5" > /dev/null || exit 1
+	ip netns exec "$ns1" $NFT list counter netdev payload_netdev egress | grep "packets 5" > /dev/null || exit 1
+	ip netns exec "$ns1" $NFT list counter netdev payload_netdev egress_2| grep "packets 5" > /dev/null || exit 1
+
+	#
+	# ... next stage
+	#
+	ip netns exec "$ns1" $NFT flush ruleset
+
+	#
+	# bridge
+	#
+
+	ip -net "$ns1" addr del $ns1_addr/$cidr dev veth0
+
+	ip -net "$ns1" link add name br0 type bridge
+	ip -net "$ns1" link set veth0 master br0
+	ip -net "$ns1" addr add $ns1_addr/$cidr dev br0
+	ip -net "$ns1" link set up dev br0
+
+	sleep 5
+
+RULESET="table bridge payload_bridge {
+       counter input {}
+       counter output {}
+       counter input_2 {}
+       counter output_2 {}
+
+       chain in {
+               type filter hook input priority 0;
+               udp dport 7777 counter name input
+               meta l4proto udp counter name input_2
+       }
+
+       chain out {
+               type filter hook output priority 0;
+               udp dport 7777 counter name output
+               meta l4proto udp counter name output_2
+        }
+}"
+
+	ip netns exec "$ns1" $NFT -f - <<< "$RULESET" || exit 1
+
+	ip netns exec "$ns1" bash -c "echo 'A' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AAA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AAAA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+	ip netns exec "$ns1" bash -c "echo 'AAAAA' | socat -u STDIN UDP:$nsx2_addr:7777 > /dev/null"
+
+	ip netns exec "$ns2" bash -c "echo 'A' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AAA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AAAA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+	ip netns exec "$ns2" bash -c "echo 'AAAAA' | socat -u STDIN UDP:$nsx1_addr:7777 > /dev/null"
+
+	ip netns exec "$ns1" $NFT list ruleset
+
+	ip netns exec "$ns1" $NFT list counter bridge payload_bridge input | grep "packets 5" > /dev/null || exit 1
+	ip netns exec "$ns1" $NFT list counter bridge payload_bridge input_2 | grep "packets 5" > /dev/null || exit 1
+	ip netns exec "$ns1" $NFT list counter bridge payload_bridge output | grep "packets 5" > /dev/null || exit 1
+	ip netns exec "$ns1" $NFT list counter bridge payload_bridge output_2 | grep "packets 5" > /dev/null || exit 1
+}
+
+run_test "4" "10.141.10.2" "10.141.10.3" "24"
+cleanup
+run_test "6" "abcd::2" "abcd::3" "64"
+# trap calls cleanup

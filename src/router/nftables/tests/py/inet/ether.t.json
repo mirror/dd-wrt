@@ -1,0 +1,122 @@
+# tcp dport 22 iiftype ether ether saddr 00:0f:54:0c:11:4 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "meta": { "key": "iiftype" }
+            },
+	    "op": "==",
+            "right": "ether"
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether"
+                }
+            },
+	    "op": "==",
+            "right": "00:0f:54:0c:11:04"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# tcp dport 22 ether saddr 00:0f:54:0c:11:04 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "dport",
+                    "protocol": "tcp"
+                }
+            },
+	    "op": "==",
+            "right": 22
+        }
+    },
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether"
+                }
+            },
+	    "op": "==",
+            "right": "00:0f:54:0c:11:04"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# ether saddr 00:0f:54:0c:11:04 accept
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "saddr",
+                    "protocol": "ether"
+                }
+            },
+	    "op": "==",
+            "right": "00:0f:54:0c:11:04"
+        }
+    },
+    {
+        "accept": null
+    }
+]
+
+# vlan id 1
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 1
+        }
+    }
+]
+
+# ether type vlan vlan id 2
+[
+    {
+        "match": {
+            "left": {
+                "payload": {
+                    "field": "id",
+                    "protocol": "vlan"
+                }
+            },
+            "op": "==",
+            "right": 2
+        }
+    }
+]
+

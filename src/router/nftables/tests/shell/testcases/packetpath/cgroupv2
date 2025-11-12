@@ -1,0 +1,143 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_socat)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_cgroupsv2)
+
+doit="$1"
+rc=0
+
+# Create hierarchy:
+# / -> nft-test1a/nft-test2a
+# |              `nft-test2b
+# `--> nft-test1b/nft-test2a
+# test1b/nft-test2a will remain empty and
+# should never match, it only exists so we
+# can create cgroupv2 match rules.
+
+if [ ! -r /sys/fs/cgroup/cgroup.procs ] ;then
+	echo "cgroup filesystem not available"
+	exit 77
+fi
+
+cleanup()
+{
+	echo $$ > "/sys/fs/cgroup/cgroup.procs"
+
+	rmdir "/sys/fs/cgroup/nft-test1a/nft-test2a"
+	rmdir "/sys/fs/cgroup/nft-test1a/nft-test2b"
+	rmdir "/sys/fs/cgroup/nft-test1b/nft-test2a"
+	rmdir "/sys/fs/cgroup/nft-test1a"
+	rmdir "/sys/fs/cgroup/nft-test1b"
+
+	# nft list is broken after cgroupv2 removal, as nft
+	# can't find the human-readable names anymore.
+	$NFT delete table inet testcgrpv2
+}
+
+do_initial_setup()
+{
+	trap cleanup EXIT
+	ip link set lo up
+
+	mkdir -p "/sys/fs/cgroup/nft-test1a/nft-test2a" || exit 1
+	mkdir -p "/sys/fs/cgroup/nft-test1b/nft-test2a" || exit 1
+
+	mkdir "/sys/fs/cgroup/nft-test1a/nft-test2b" || exit 1
+
+	# After this, we can create cgroupv2 rules for the these cgroups.
+	# test1a and test2a should match while test1b/test2b should not:
+$NFT -f - <<EOF
+table inet testcgrpv2 {
+       counter nft-test1a {}
+       counter nft-test1a2a {}
+       counter nft-test1a2b {}
+       counter nft-test1b {}
+       counter nft-test1b2a {}
+
+       chain output {
+               type filter hook output priority 0;
+
+		socket cgroupv2 level 1 "nft-test1a" counter name "nft-test1a"
+		socket cgroupv2 level 2 "nft-test1a/nft-test2a" counter name "nft-test1a2a"
+
+		# Next must never match
+		socket cgroupv2 level 2 "nft-test1a/nft-test2b" counter name "nft-test1a2b"
+
+		# Must never match
+		socket cgroupv2 level 1 "nft-test1b" counter name "nft-test1b"
+		# Same, must not match.
+		socket cgroupv2 level 2 "nft-test1b/nft-test2a" counter name "nft-test1b2a"
+       }
+}
+EOF
+}
+
+test_counters()
+{
+	local subtest="$1"
+
+	local t1a="$2"
+	local t1a2a="$3"
+
+	$NFT list ruleset
+
+	$NFT reset counter inet testcgrpv2 nft-test1a | grep -q "packets $t1a" || rc=1
+	$NFT reset counter inet testcgrpv2 nft-test1a2a | grep -q "packets $t1a2a" || rc=2
+
+	# dummy cgroup counters, must not match.
+	$NFT reset counter inet testcgrpv2 nft-test1a2b | grep -q 'packets 0' || rc=3
+	$NFT reset counter inet testcgrpv2 nft-test1b   | grep -q 'packets 0' || rc=4
+	$NFT reset counter inet testcgrpv2 nft-test1b2a | grep -q 'packets 0' || rc=5
+
+	if [ $rc -ne 0 ]; then
+		echo "Counters did not match expected values fur subtest $subtest, return $rc"
+		exit $rc
+	fi
+}
+
+run_test()
+{
+	echo $$ > "/sys/fs/cgroup/nft-test1a/nft-test2a/cgroup.procs" || exit 2
+	socat -u STDIN TCP:127.0.0.1:8880,connect-timeout=4 < /dev/null > /dev/null
+
+	test_counters "a1,a2" 1 1
+
+	echo $$ > "/sys/fs/cgroup/nft-test1a/cgroup.procs" || exit 2
+	socat -u STDIN TCP:127.0.0.1:8880,connect-timeout=4 < /dev/null > /dev/null
+	test_counters "a1 only" 1 0
+}
+
+
+if [ "$doit" != "setup-done" ];then
+	mkdir -p "/sys/fs/cgroup/nft-test1a" || exit 77
+
+	do_initial_setup
+	run_test
+
+	if [ $rc -ne 0 ]; then
+		exit $rc
+	fi
+
+	echo "Re-running test with changed cgroup root"
+	echo $$ > "/sys/fs/cgroup/nft-test1a/cgroup.procs" || exit 2
+	unshare --fork --pid --mount -n -C $0 "setup-done"
+	rc=$?
+else
+	want_inode=$(stat --printf=%i "/sys/fs/cgroup/nft-test1a/")
+	mount --bind /sys/fs/cgroup/nft-test1a/ /sys/fs/cgroup/
+
+	# /sys/fs/cgroup/  should now match "/sys/fs/cgroup/nft-test1a/cgroup.procs"
+	rootinode=$(stat --printf=%i "/sys/fs/cgroup/")
+
+	if [ $want_inode -ne $rootinode ] ;then
+		echo "Failed to remount cgroupv2 fs, wanted inode $want_inode as root node, but got $rootinode"
+		exit 77
+	fi
+
+	do_initial_setup
+	run_test
+
+	umount /sys/fs/group/
+fi
+
+exit $rc

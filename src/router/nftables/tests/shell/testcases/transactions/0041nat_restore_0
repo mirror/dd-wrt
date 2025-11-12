@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+RULESET="
+add table ip t
+add chain ip t c { type nat hook postrouting priority 0; }
+"
+
+$NFT -f - <<< "$RULESET"
+
+RULESET="
+flush ruleset
+$RULESET
+"
+
+$NFT -f - <<< "$RULESET"
