@@ -62,10 +62,24 @@ define kernelfeatures
 		echo "# CONFIG_NFT_DUP_IPV6 is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_FIB_IPV4 is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_FIB_IPV6 is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_EXTHDR is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_META is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_SET_RBTREE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_SET_HASH is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_ROUTE_IPV4=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_ROUTE_IPV6=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_NAT_IPV4=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_NAT_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_LOG=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_LOG_BRIDGE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_COUNTER=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_LIMIT=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_MASQ=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_MASQ_IPV4=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_MASQ_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_REDIR=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REDIR_IPV4=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REDIR_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_NAT=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_TUNNEL is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_QUOTA=m" >> $(LINUXDIR)/.config; \
