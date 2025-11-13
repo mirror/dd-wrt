@@ -93,7 +93,7 @@ elif [ "$setconf" = "hostconf" ]; then
 		# Generic Linux
 		host_entry="$gw_ip $gw_fqdn"
 		# generate a tmp filename on tmpfs
-		ram_hosts=$(mktemp --tmpdir=/run/tmpfiles.d)
+		ram_hosts=$(mktemp --tmpdir=/tmp/tmpfiles.d)
 
 		cp -p /etc/hosts "$ram_hosts" &&
 		(
