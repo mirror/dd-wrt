@@ -73,6 +73,7 @@ define kernelfeatures
 		echo "# CONFIG_NFT_EXTHDR is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_META is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_RBTREE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_RBTREE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_HASH is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_BITMAP is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_OBJREF is not set" >> $(LINUXDIR)/.config; \
