@@ -49,9 +49,15 @@ define kernelfeatures
 		echo "CONFIG_NF_TABLES_ARP=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_BRIDGE=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_NETDEV=y" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NF_FLOW_TABLE is not set/CONFIG_NF_FLOW_TABLE=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_INET=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_PROCFS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_NUMGEN=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NET_ACT_CT=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_FLOW_OFFLOAD=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_BRIDGE_META is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_BRIDGE_REJECT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_CONNLIMIT is not set" >> $(LINUXDIR)/.config; \
@@ -66,6 +72,7 @@ define kernelfeatures
 		echo "# CONFIG_NFT_META is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_RBTREE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_HASH is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_OBJREF is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_ROUTE_IPV4=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_ROUTE_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_NAT_IPV4=m" >> $(LINUXDIR)/.config; \
