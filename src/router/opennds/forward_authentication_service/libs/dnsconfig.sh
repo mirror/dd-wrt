@@ -55,19 +55,11 @@ delete_114s() {
 }
 
 restart_dnsmasq() {
-	if [ "$uciconfig" = "" ]; then
-		systemctl restart dnsmasq
-	else
-		service dnsmasq restart
-	fi
+	service dnsmasq restart
 }
 
 reload_dnsmasq() {
-	if [ "$uciconfig" = "" ]; then
-		systemctl reload dnsmasq
-	else
-		service dnsmasq reload
-	fi
+	killall -SIGHUP dnsmasq
 }
 
 
