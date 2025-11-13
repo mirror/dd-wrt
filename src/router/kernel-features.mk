@@ -72,7 +72,7 @@ define kernelfeatures
 		echo "# CONFIG_NFT_FIB_IPV4 is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_FIB_IPV6 is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_EXTHDR is not set" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_NFT_META is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_META=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_RBTREE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_RBTREE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_HASH is not set" >> $(LINUXDIR)/.config; \
