@@ -272,6 +272,7 @@ obj-$(CONFIG_MC) += libffi zlib glib20 unrar ncurses mc util-linux pcre2
 obj-$(CONFIG_NOCAT) += libmicrohttpd json-c nodogsplash
 obj-$(CONFIG_OPENNDS) += libmnl libnftnl nftables libmicrohttpd sed opennds
 obj-$(CONFIG_NFTABLES) += libmnl libnftnl nftables
+obj-$(CONFIG_SED) += sed
 
 obj-$(CONFIG_POWERTOP) += pciutils ncurses powertop
 #obj-$(CONFIG_RTPPROXY) += rtpproxy
