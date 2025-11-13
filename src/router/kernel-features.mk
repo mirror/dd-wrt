@@ -51,6 +51,8 @@ define kernelfeatures
 		echo "CONFIG_NF_TABLES_BRIDGE=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_NETDEV=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_FLOW_TABLE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_IPV4=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_FLOW_TABLE_INET=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_FLOW_TABLE_PROCFS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_NUMGEN=m" >> $(LINUXDIR)/.config; \
@@ -72,12 +74,14 @@ define kernelfeatures
 		echo "# CONFIG_NFT_META is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_RBTREE is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_HASH is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFT_SET_BITMAP is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_OBJREF is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_ROUTE_IPV4=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_ROUTE_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_NAT_IPV4=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_CHAIN_NAT_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_LOG=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_RT=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_LOG_BRIDGE=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_COUNTER=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_LIMIT=m" >> $(LINUXDIR)/.config; \
