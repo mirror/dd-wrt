@@ -748,6 +748,7 @@ ifeq ($(CONFIG_OPENNDS),y)
 	sed -i 's/\# CONFIG_PGREP is not set/CONFIG_PGREP=y/g' busybox/.config
 	sed -i 's/\# CONFIG_MKTEMP is not set/CONFIG_MKTEMP=y/g' busybox/.config
 	sed -i 's/\# CONFIG_DIFF is not set/CONFIG_DIFF=y/g' busybox/.config
+	sed -i 's/\CONFIG_SED=y/# CONFIG_SED is not set/g' busybox/.config
 endif
 ifeq ($(CONFIG_PROCPS),y)
 	sed -i 's/\CONFIG_FREE=y/# CONFIG_FREE is not set/g' busybox/.config
