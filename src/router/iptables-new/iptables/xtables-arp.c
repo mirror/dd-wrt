@@ -496,6 +496,7 @@ int nft_init_arp(struct nft_handle *h, const char *pname)
 	}
 
 #if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
+void init_extensionsa(void);
 	init_extensionsa();
 #endif
 

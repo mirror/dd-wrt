@@ -736,6 +736,7 @@ int nft_init_eb(struct nft_handle *h, const char *pname)
 	}
 
 #if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
+void init_extensionsb(void);
 	init_extensionsb();
 #endif
 
