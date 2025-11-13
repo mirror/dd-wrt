@@ -28,7 +28,7 @@ btrfsprogs-configure: lzo zstd zlib
 		ZSTD_LIBS="-L$(TOP)/zstd/lib -lzstd"
 
 
-btrfsprogs: zstd lzo util-linux zlib
+btrfsprogs: zstd lzo util-linux zlib libudev
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
