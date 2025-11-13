@@ -178,7 +178,7 @@ config_init(int argc, char **argv)
 	gatewayname_raw = safe_calloc(SMALL_BUF);
 
 	gatewayname = safe_strdup(set_option_str("gatewayname", DEFAULT_GATEWAYNAME, debug_level));
-	uh_urldecode(gatewayname_raw, SMALL_BUF, gatewayname, SMALL_BUF);
+	uh_urldecode(gatewayname_raw, SMALL_BUF, gatewayname, strlen(gatewayname));
 	config.gw_name = safe_strdup(gatewayname_raw);
 
 	openlog ("opennds", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_DAEMON);
