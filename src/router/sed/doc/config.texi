@@ -1,0 +1,67 @@
+@dircategory Text creation and manipulation
+@direntry
+* sed: (sed).                   Stream EDitor.
+
+@end direntry
+
+@clear PERL
+@set SSEDEXT GNU extensions
+@set SSED GNU @command{sed}
+
+@c Ugly hack to enable using new texinfo commands '@codequotebacktick'
+@c and '@codequoteundirected' or define empty fallbacks if they are
+@c not available.
+
+@ifclear txicommandconditionals
+@c If we got here, this is a REALLY old texinfo (pre 5.0),
+@c and '@ifcommandnotdefined' is not defined.
+@c Assume these commands are not defined as well.
+@macro codequotebacktick
+@end macro
+@macro codequoteundirected
+@end macro
+@end ifclear
+
+@ifset txicommandconditionals
+@c if we got here, this texinfo supports checking for defined
+@c commands. If these commands aren't available - define empty
+@c fallbacks.
+@ifcommandnotdefined codequotebacktick
+@macro codequotebacktick
+@end macro
+@macro codequoteundirected
+@end macro
+@end ifcommandnotdefined
+@end ifset
+
+
+@c define variables that will render as characters
+@c on both HTML (with @U{}) and PDF (with greek symbols).
+@c Use with: @value{ucsigma}
+@c
+@c Based on:
+@c https://lists.gnu.org/archive/html/help-texinfo/2012-06/msg00004.html
+@iftex
+@set ucsigma @math{@Sigma{}}
+@end iftex
+@ifnottex
+@set ucsigma @U{03A3}
+@end ifnottex
+
+@iftex
+@set lcsigma @math{@sigma{}}
+@end iftex
+@ifnottex
+@set lcsigma @U{03C3}
+@end ifnottex
+
+@c Unicode Replacement Character (U+FFFD):
+@c no easy/portable tex equivalent, so use another
+@c distinct symbol (which will be rendered very differently
+@c than ascii characters in @examples.
+@iftex
+@set unicodeFFFD @math{@otimes{}}
+@end iftex
+@ifnottex
+@set unicodeFFFD @U{FFFD}
+@end ifnottex

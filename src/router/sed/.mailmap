@@ -1,0 +1,13 @@
+# Map git author names and email addresses to canonical/preferred form.
+<jim@meyering.net> <meyering@fb.com>
+<jim@meyering.net> <meyering@redhat.com>
+<karl@gnu.org> <karl@tug.org>
+Paul Eggert <eggert@cs.ucla.edu> <eggert@penguin.cs.ucla.edu>
+Paul Eggert <eggert@cs.ucla.edu> <eggert@CS.UCLA.EDU>
+<eggert@cs.ucla.edu> <eggert@twinsun.com>
+<karl@gnu.org> <karl@freefriends.org>
+<bonzini@gnu.org> <pbonzini@redhat.com>
+<vapier@chromium.org> <vapier@gentoo.org>
+
+# Consolidate upper/lower case email
+<Ralf.Wildenhues@gmx.de> <ralf.wildenhues@gmx.de>

@@ -1,0 +1,968 @@
+# Korean translation for sed.
+# This file is distributed under the same license as the sed package.
+# Copyright (C) 2001, 2019 Free Software Foundation, Inc.
+# Jong-Hoon Ryu <redhat4u@netian.com>, 2001.
+# Seong-ho Cho <darkcircle.0426@gmail.com>, 2019, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNU sed 4.8.44\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2022-10-21 12:01+0900\n"
+"Last-Translator: Seong-ho Cho <darkcircle.0426@gmail.com>\n"
+"Language-Team: Korean <translation-team-ko@googlegroups.com>\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 3.1.1\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "기록 오류"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "%s 권한 유지"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr "짝이 맞지 않는 [ 괄호"
+
+#: lib/dfa.c:1015
+msgid "invalid character class"
+msgstr "잘못된 문자 클래스"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr "문자 클래스 표기 방식은 [:space:]가 아닌 [[:space:]]입니다"
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr "끝나지 않은 \\ 이스케이프 문자"
+
+#: lib/dfa.c:1319
+msgid "? at start of expression"
+msgstr "표현식 시작 부분에 ? 기호"
+
+#: lib/dfa.c:1331
+msgid "* at start of expression"
+msgstr "표현식 시작 부분에 * 기호"
+
+#: lib/dfa.c:1345
+msgid "+ at start of expression"
+msgstr "표현식 시작 부분에 + 기호"
+
+#: lib/dfa.c:1400
+msgid "{...} at start of expression"
+msgstr "표현식 시작 부분에 {...}"
+
+#: lib/dfa.c:1403
+msgid "invalid content of \\{\\}"
+msgstr "잘못된 \\{\\} 내용"
+
+#: lib/dfa.c:1405
+msgid "regular expression too big"
+msgstr "정규 표현식이 너무 깁니다"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr "비출력 문자 이전 잘못된 \\ 문자 위치"
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr "공백 문자 이전 잘못된 \\ 문자 위치"
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr "%lc 문자 이전 잘못된 \\ 문자 위치"
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr "잘못된 \\ 문자 위치"
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr "짝이 맞지 않는 ( 괄호"
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr "문법을 지정하지 않았습니다"
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr "짝이 맞지 않는 ) 괄호"
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "알 수 없는 시스템 오류"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "메모리가 바닥남"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "`"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "'"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "성공"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "일치 항목 없음"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "잘못된 정규 표현식"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "잘못된 조합 문자"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "잘못된 문자 클래스 이름"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "백 슬래시 문자가 따라옴"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "잘못된 후위 참조"
+
+#: lib/regcomp.c:143
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "일치하지 않는 [, [^, [:, [., [="
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "일치하지 않는 ( 또는 \\( 괄호"
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "일치하지 않는 \\{ 괄호"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "잘못된 \\{\\} 내용"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "잘못된 범위 끝"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "메모리가 바닥남"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "잘못된 선행 정규 표현식"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "정규 표현식 마감 표현이 앞서있습니다"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "정규 표현식이 너무 깁니다"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr "일치하지 않는 ) 또는 \\) 괄호"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "이전 정규 표현식 없음"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "%s 권한 설정"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "%s이(가) 패키징 함 (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "%s이(가) 패키징 함\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "(C)"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"GPLv3+ 라이선스: GNU GPL 버전 3 이상 <%s>.\n"
+"이 프로그램은 자유 소프트웨어입니다: 자유롭게 바꾸고 재배포할 수 있습니다.\n"
+"법률이 허용하는 모든 범위내의 보증은 없습니다.\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "%s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "%s와(과) %s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "%s와(과) %s, %s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"%s와(과) %s, %s,\n"
+"%s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"%s와(과) %s, %s,\n"
+"%s, %s이(가) 작성함.\n"
+"\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"%s와(과) %s, %s,\n"
+"%s, %s, %s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"%s와(과) %s, %s,\n"
+"%s, %s, %s,\n"
+"%s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"%s와(과) %s, %s,\n"
+"%s, %s, %s,\n"
+"%s, %s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"%s와(과) %s, %s,\n"
+"%s, %s, %s,\n"
+"%s, %s, %s이(가) 작성함.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"%s, %s, %s,\n"
+"%s, %s, %s,\n"
+"%s, %s, %s\n"
+"외 다수가 작성함.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, c-format
+msgid "Report bugs to: %s\n"
+msgstr "버그 보고 주소: %s\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "%s 버그 보고 주소: %s\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "%s 홈 페이지: <%s>\n"
+
+#: lib/version-etc.c:260
+#, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr "GNU 소프트웨어 활용 일반 도움말: <%s>\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "`!' 중복"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "불필요한 `,'가 있습니다"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "'+N' 또는 '~N'의 첫번째 주소 활용은 잘못된 방식입니다"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "일치하지 않는 `{' 괄호"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "일치하지 않는  `}' 괄호"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "명령 뒤에 추가 문자가 있습니다"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "`a', `c', `i' 다음 \\ 문자가 와야 합니다"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "`}'에 어떠한 주소도 필요치 않습니다"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr ": 에 어떠한 주소도 필요치 않습니다"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "설명문에는 어떤 주소 값도 넣을 수 없습니다"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "명령이 빠졌습니다"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "명령에는 주소 하나만 사용하십시오"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "주소 정규식이 끝나지 않았습니다"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "`s' 명령이 끝나지 않았습니다"
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "`y' 명령이 끝나지 않았습니다"
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "`s'에 알 수 없는 옵션이 있습니다"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "`s' 명령에 `p' 옵션이 중복되어 있습니다"
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "`s' 명령에 `g' 옵션이 중복되어 있습니다"
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "`s' 명령에 숫자 옵션이 중복되어 있습니다"
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "`s' 명령의 숫자 옵션에 '0'을 지정할 수 없습니다"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "`y' 명령의 문자열 길이가 다릅니다"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "구분 문자가 단일 바이트 문자가 아닙니다"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "sed 최신 버전이 필요합니다"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "0번째 행 주소 사용은 잘못된 방식입니다"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "알 수 없는 명령: `%c'"
+
+#: sed/compile.c:187
+msgid "incomplete command"
+msgstr "명령이 끝나지 않았습니다"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr "\":\"에 레이블이 빠졌습니다"
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr "\\c 다음에 재귀 이스케이핑을 할 수 없습니다"
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr "e/r/w 명령은 샌드박스 모드에서 사용할 수 없습니다"
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: %s 파일의 %lu 번째 행: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e 표현식 %lu번째 행, %lu번째 문자: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "`%s'(으)로 점프할 레이블을 찾을 수 없습니다"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr "대소문자 변환 과정에서 잘못된 문자가 나왔습니다"
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: %s(을)를 읽을 수 없음: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "%s 편집 불가: 종결 문자입니다"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "%s 편집 불가: 일반 파일 아님"
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr "%s: 경고: %s 기본 파일 생성 컨텍스트 설정에 실패했습니다: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr "%s: 경고: %s의 보안 컨텍스트 가져오기에 실패했습니다: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "%s 임시 파일을 열 수 없습니다: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "하위 프로세스에서 오류"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "`e' 옵션은 지원하지 않습니다"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "`e' 명령은 지원하지 않습니다"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "입력 파일이 없습니다"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "이전 정규 표현식이 없습니다"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "`s' 명령의 RHS에 잘못된 참조 \\%d"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr "정규식 입력 버퍼 길이가 최대 정수 허용치보다 깁니다"
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr "Jay Fenlason"
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr "Tom Lord"
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr "Ken Pizzini"
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr "Paolo Bonzini"
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr "Jim Meyering"
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr "Assaf Gordon"
+
+#: sed/sed.c:103
+#, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"GNU sed 홈 페이지: <https://www.gnu.org/software/sed/>.\n"
+"GNU 소프트웨어 활용 일반 도움말: <https://www.gnu.org/gethelp/>.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr "버그 보고 전자메일 주소: <%s>.\n"
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr "이 sed 프로그램은 SELinux 기능을 넣어 빌드했습니다."
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr "이 시스템에서 SELinux를 지원합니다."
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr "이 시스템에서 SELinux를 지원하지 않습니다."
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr "이 sed 프로그램은 SELinux 기능을 제외하고 빌드했습니다."
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"사용법: %s [<옵션>]... {<스크립트>} [<입력파일>]...\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"  -n, --quiet, --silent\n"
+"                 패턴 영역의 자동 출력을 생략합니다\n"
+
+#: sed/sed.c:139
+#, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"      --debug\n"
+"                 프로그램 실행 과정을 나타냅니다\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e script, --expression=<스크립트>\n"
+"                 실행할 스크립트를 명령에 추가합니다\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f script-file, --file=<스크립트-파일>\n"
+"                 실행할 스크립트 파일 내용을 명령에 추가합니다\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 심볼릭 링크의 대상 파일을 처리할 경우 심볼릭 링크를 따라갑니"
+"다\n"
+
+#: sed/sed.c:150
+#, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[<접미부>], --in-place[=<접미부>]\n"
+"                 지정 위치에서 파일을 편집합니다(<접미부>를 설정하면 백업 파"
+"일 만듦)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 바이너리 모드로 파일을 엽니다(CR+LF는 개별적으로 취급하지 않"
+"음)\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 `l' 명령에 원하는 줄 바꿈 문자열 길이를 지정합니다\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 모든 GNU 확장을 비활성화합니다.\n"
+
+#: sed/sed.c:161
+#, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -E, -r, --regexp-extended\n"
+"                 스크립트에 확장 정규 표현식을 사용합니다\n"
+"                 (간이 방식 POSIX -E 활용).\n"
+
+#: sed/sed.c:164
+#, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 파일을 긴 연속 스트림 단일체가 아닌,\n"
+"                 분할체로 간주합니다.\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+"      --sandbox\n"
+"                 샌드박스 모드로 실행합니다 (e/r/w 명령 사용 불가).\n"
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                 입력 파일에서 최소한의 데이터를 불러오고\n"
+"                 출력 버퍼로 내보내는 과정을 빈번히 수행합니다\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+"  -z, --null-data\n"
+"                 널 문자 개행\n"
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     이 도움말을 표시하고 나갑니다\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr "      --version  버전 정보를 출력하고 나갑니다\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"-e, --expression, -f, --file 옵션 중 설정한 옵션이 없다면, 옵션이 없는\n"
+"첫번째 인자를 해석할 sed 스크립트로 취합니다.  남아있는 모든 인자는\n"
+"입력 파일의 이름입니다. 입력 파일을 지정하지 않으면 표준 입력을 읽습\n"
+"니다.\n"
+"\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr "표준 입력 대상 바이너리 모드 적용에 실패했습니다"
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr "표준 출력 대상 바이너리 모드 적용에 실패했습니다"
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "%s 파일을 열 수 없습니다: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "%s에 추가할 수 없습니다: %s"
+
+#: sed/utils.c:207
+#, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "'%s' 대상 바이너리 모드 적용에 실패했습니다"
+
+#: sed/utils.c:228
+#, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "%2$s에 항목 %1$llu개를 기록할 수 없습니다: %3$s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "%s 읽기 오류: %s"
+
+#: sed/utils.c:358
+#, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "%s 읽기 링크를 처리할 수 없습니다: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "%s 심볼릭 링크를 따라갈 수 없습니다: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "%s 이름을 바꿀 수 없음: %s"
+
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: '%s%s' 옵션이 모호합니다\n"
+
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: '%s%s' 옵션이 모호합니다. 가능한 값:"
+
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: 인지할 수 없는 '%s%s' 옵션\n"
+
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: '%s%s' 옵션은 인자를 허용하지 않습니다\n"
+
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: '%s%s' 옵션에 인자가 필요합니다\n"
+
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: 잘못된 옵션 -- '%c'\n"
+
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: 옵션에 인자가 필요합니다 -- '%c'\n"
+
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "%s을(를) 제거할 수 없습니다: %s"
+
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "%s 상태를 나타낼 수 없음: %s"
+
+#~ msgid "%s home page: <https://www.gnu.org/software/%s/>\n"
+#~ msgstr "%s 홈 페이지: <https://www.gnu.org/software/%s/>\n"
+
+#~ msgid "bad regexp: %s\n"
+#~ msgstr "잘못된 정규표현식: %s\n"
+
+#~ msgid "Unexpected End-of-file"
+#~ msgstr "파일의 끝(EOF)이 잘못되었습니다"
+
+#~ msgid "Called savchar() with unexpected pushback (%x)"
+#~ msgstr "예상치 못한 pushback (%x) 과 함께 savchar() 가 호출되었습니다"
+
+#~ msgid "input read error: %s"
+#~ msgstr "입력 내용 읽기 오류: %s"
+
+#~ msgid "INTERNAL ERROR: bad address type"
+#~ msgstr "내부 오류: 잘못된 주소 유형입니다"
+
+#~ msgid "INTERNAL ERROR: Bad cmd %c"
+#~ msgstr "내부 오류: %c (은)는 잘못된 명령입니다"
+
+#~ msgid ""
+#~ "Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+#~ "\n"
+#~ "  -n, --quiet, --silent\n"
+#~ "                 suppress automatic printing of pattern space\n"
+#~ "  -e script, --expression=script\n"
+#~ "                 add the script to the commands to be executed\n"
+#~ "  -f script-file, --file=script-file\n"
+#~ "                 add the contents of script-file to the commands to be "
+#~ "executed\n"
+#~ "  -l N, --line-length=N\n"
+#~ "                 specify the desired line-wrap length for the `l' "
+#~ "command\n"
+#~ "  -u, --unbuffered\n"
+#~ "\n"
+#~ "      --help     display this help and exit\n"
+#~ "  -V, --version  output version information and exit\n"
+#~ "\n"
+#~ "If no -e, --expression, -f, or --file option is given, then the first\n"
+#~ "non-option argument is taken as the sed script to interpret.  All\n"
+#~ "remaining arguments are names of input files; if no input files are\n"
+#~ "specified, then the standard input is read.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "사용법: %s [옵션]... {스크립트-스크립트가 없을 경우에는} [입력-파일]...\n"
+#~ "\n"
+#~ "  -n, --quiet, --silent\n"
+#~ "                 자동으로 패턴 공간을 출력하지 못하도록 합니다\n"
+#~ "  -e 스크립트, --expression=스크립트\n"
+#~ "                 실행될 명령에 스크립트를 추가합니다\n"
+#~ "  -f 스크립트-파일, --file=스크립트-파일\n"
+#~ "                 실행될 명령에 스크립트-파일의 내용을 추가합니다\n"
+#~ "  -l 숫자, --line-length=숫자\n"
+#~ "                 `l' 명령에 줄바꿈(line-wrap)할 숫자를 지정합니다\n"
+#~ "  -u, --unbuffered\n"
+#~ "\n"
+#~ "      --help     현재 보여지는 도움말을 출력합니다\n"
+#~ "  -V, --version  현재 사용하는 버전 정보를 출력합니다\n"
+#~ "\n"
+#~ "만일 -e, --expression, -f, --file 옵션이 주어지지 않았을 경우에는 옵션-없"
+#~ "이\n"
+#~ "첫번째 인수에 해석될 sed 스크립트가 놓여지게 됩니다.  그 다음에 올 수 있"
+#~ "는\n"
+#~ "인수로는 입력 파일의 이름입니다; 만일 입력 파일이 지정되지 않았을 경우에"
+#~ "는\n"
+#~ "표준 입력의 내용을 읽습니다.\n"
+#~ "\n"
+
+#~ msgid ""
+#~ "E-mail bug reports to: %s .\n"
+#~ "Be sure to include the word ``%s'' somewhere in the ``Subject:'' field.\n"
+#~ msgstr ""
+#~ "버그를 보고할 E-mail 주소: %s .\n"
+#~ "``Subject:'' 항목에 반드시 ``%s'' 단어를 포함해 주시기 바랍니다.\n"
+
+#~ msgid ""
+#~ "%s\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ msgstr ""
+#~ "%s\n"
+#~ "이 프로그램은 자유 소프트웨어 입니다; 자세한 내용은 저작권 내용의 원문을\n"
+#~ "참고하시기 바랍니다.  이 프로그램은 법에 저촉되지 않는 범위에서 상업적이"
+#~ "나\n"
+#~ "특수 목적으로 사용될 경우를 포함한 어떠한 경우에도 보증하지 않습니다.\n"

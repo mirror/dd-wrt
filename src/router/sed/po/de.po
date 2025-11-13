@@ -1,0 +1,896 @@
+# sed german translation
+# This file is distributed under the same license as the sed package.
+# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2009 Free Software Foundation, Inc.
+#
+#
+# Walter Koch <koch@u32.de>, 2001-2005, 2009, 2016.
+# Mario Blättermann <mario.blaettermann@gmail.com>, 2014, 2019, 2020.
+msgid ""
+msgstr ""
+"Project-Id-Version: sed 4.7.13\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2020-01-11 10:24+0100\n"
+"Last-Translator: Mario Blättermann <mario.blaettermann@gmail.com>\n"
+"Language-Team: German <translation-team-de@lists.sourceforge.net>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 19.08.3\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "Schreibfehler"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "Rechte für %s werden beibehalten"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr "nicht geschlossenes ["
+
+#: lib/dfa.c:1015
+msgid "invalid character class"
+msgstr "Ungültige Zeichenklasse"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr "Die Syntax für Zeichenklasse lautet [[:space:]], nicht [:space:]"
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr "nicht beendete \\-Escape-Sequenz"
+
+#: lib/dfa.c:1319
+#, fuzzy
+msgid "? at start of expression"
+msgstr "Ungültiger regulärer Ausdruck"
+
+#: lib/dfa.c:1331
+#, fuzzy
+msgid "* at start of expression"
+msgstr "Ungültiger regulärer Ausdruck"
+
+#: lib/dfa.c:1345
+#, fuzzy
+msgid "+ at start of expression"
+msgstr "Ungültiger regulärer Ausdruck"
+
+#: lib/dfa.c:1400
+#, fuzzy
+msgid "{...} at start of expression"
+msgstr "Ungültiger regulärer Ausdruck"
+
+#: lib/dfa.c:1403
+msgid "invalid content of \\{\\}"
+msgstr "Ungültiger Inhalt in \\{\\}"
+
+#: lib/dfa.c:1405
+msgid "regular expression too big"
+msgstr "Regulärer Ausdruck ist zu groß"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr ""
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr ""
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr ""
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr ""
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr "nicht geschlossene ("
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr "keine Syntax angegeben"
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr "nicht geschlossene )"
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "Unbekannter Systemfehler"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "Speicher erschöpft"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "»"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "«"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "Erfolgreich"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "Keine Übereinstimmung"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "Ungültiger regulärer Ausdruck"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "Ungültiges Vergleichszeichen"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "Ungültiger Zeichenklassenname"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "Abschließender Backslash"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "Ungültiger Rückverweis"
+
+#: lib/regcomp.c:143
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "Nicht paarweises [, [^, [:, [., bzw. [="
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "Nicht paarweises ( bzw. \\("
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "Nicht paarweises \\{"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "Ungültiger Inhalt in \\{\\}"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "Ungültiges Bereichsende"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "Speicher erschöpft"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "Vorheriger regulärer Ausdruck ist ungültig"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "Regulärer Ausdruck endet zu früh"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "Regulärer Ausdruck ist zu groß"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr "Nicht paarweises ) bzw. \\)"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "Kein vorheriger regulärer Ausdruck"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "Zugriffsrechte für %s werden gesetzt"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "Gepackt von %s (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "Gepackt von %s\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "(C)"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"Lizenz GPLv3+: GNU GPL Version 3 oder neuer <%s>.\n"
+"Dies ist freie Software: Sie dürfen sie verändern und verbreiten.\n"
+"Es gibt KEINE GARANTIE, soweit diese nicht durch Gesetz vorgeschrieben\n"
+"wird.\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "Geschrieben von %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "Geschrieben von %s und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "Geschrieben von %s, %s und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s\n"
+"und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s,\n"
+"%s und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s,\n"
+"%s, %s und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s,\n"
+"%s, %s, %s und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s,\n"
+"%s, %s, %s, %s\n"
+"und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s und %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"Geschrieben von %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s und weiteren.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, c-format
+msgid "Report bugs to: %s\n"
+msgstr "Fehlerberichte an %s.\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "Melden Sie %s-Fehler an %s\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "Webseite von %s: <%s>\n"
+
+#: lib/version-etc.c:260
+#, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr "Allgemeine Hilfe zu GNU-Software: <%s>.\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "Mehrfache »!«"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "Unerwartetes »,«"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "+N oder ~N können nicht als erste Adresse benutzt werden"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "Nicht paarweises »{«"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "Unerwartetes »}«"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "Zusätzliche Zeichen nach dem Befehl"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "Nach »a«, »c« oder »i« wird \\ erwartet"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "»}« erwartet keine Adressen"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr "»:« erwartet keine Adressen"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "Kommentare erlauben keine Adressen"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "Fehlender Befehl"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "Befehl verwendet nur eine Adresse"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "Nicht beendeter regulärer Adressausdruck"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "Nicht beendeter »s«-Befehl"
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "Nicht beendeter »y«-Befehl"
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "Unbekannte Option für »s«"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "Mehrere »p«-Optionen am »s«-Befehl"
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "Mehrere »g«-Optionen am »s«-Befehl"
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "Mehrere numerische Optionen am »s«-Befehl"
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "Numerische Option zum »s«-Befehl kann nicht Null sein"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "Unterschiedliche Länge der Zeichenketten des »y«-Befehls"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "Trennzeichen ist kein Einzelbytezeichen"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "Neuere Version von sed erwartet"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "Ungültige Verwendung der Zeilenadresse 0"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "Unbekannter Befehl: »%c«"
+
+#: sed/compile.c:187
+msgid "incomplete command"
+msgstr "Unvollständiger Befehl"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr "»:« fehlt eine Bezeichnung"
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr "Rekursive Maskierung nach \\c ist nicht erlaubt"
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr "e/r/w-Befehle sind im Sandbox-Modus deaktiviert"
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: Datei %s Zeile %lu: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e Ausdruck #%lu, Zeichen %lu: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "Zielmarke für den Sprung zu »%s« kann nicht gefunden werden"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr "Umwandlung der Schreibweise erzeugte ein unzulässiges Zeichen"
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: %s kann nicht gelesen werden: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "%s kann nicht bearbeitet werden: Das ist ein Terminal"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "%s kann nicht bearbeitet werden: Das ist keine normale Datei"
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr ""
+"%s: Warnung: Vorgegebener Dateierstellungskontext konnte nicht auf %s "
+"gesetzt werden: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr ""
+"%s: Warnung: Sicherheitskontext von %s konnte nicht ermittelt werden: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "Temporäre Datei %s kann nicht geöffnet werden: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "Fehler im Unterprozess"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "Option »e« wird nicht unterstützt"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "Befehl »e« wird nicht unterstützt"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "Keine Eingabedateien"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "Kein vorheriger regulärer Ausdruck"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "Ungültiger Verweis \\%d im rechten Teil (»RHS«) des »s«-Befehls"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr "Regex-Eingabepufferlänge ist größer als INT_MAX"
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr "Jay Fenlason"
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr "Tom Lord"
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr "Ken Pizzini"
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr "Paolo Bonzini"
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr "Jim Meyering"
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr "Assaf Gordon"
+
+#: sed/sed.c:103
+#, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"GNU-sed-Homepage: <https://www.gnu.org/software/sed/>.\n"
+"Allgemeine Hilfe zu GNU-Software: <https://www.gnu.org/gethelp/>.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr "Fehlerberichte bitte per E-Mail (auf englisch) an: <%s>.\n"
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr "Diese Version von Sed wurde mit Unterstützung für SELinux erstellt."
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr "SELinux ist auf diesem System aktiviert."
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr "SELinux ist auf diesem System deaktiviert."
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr "Diese Version von Sed wurde ohne Unterstützung für SELinux erstellt."
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"Aufruf: %s [OPTION] … {Skript-falls-kein-anderes-Skript} [Eingabedatei] …\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"  -n, --quiet, --silent\n"
+"                 verhindert die automatische Ausgabe des Arbeitspuffers.\n"
+
+#: sed/sed.c:139
+#, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"      --debug\n"
+"                 kommentiert die Programmausführung\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e skript, --expression=Skript\n"
+"                 hängt »Skript« an die auszuführenden Befehle an.\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f Skriptdatei, --file=Skriptdatei\n"
+"                 hängt den Inhalt von »Skriptdatei« an die\n"
+"                 auszuführenden Befehle an.\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 folgt symbolischen Verknüpfungen bei Verwendung von -i.\n"
+
+#: sed/sed.c:150
+#, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[Suffix], --in-place[=Suffix]\n"
+"                 ändert die Eingabedatei (Sicherungsdatei wird erzeugt,\n"
+"                 falls Suffix angegeben wurde)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 öffnet Dateien binär (CR+LFs werden nicht besonders\n"
+"                   behandelt).\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 gibt die gewünschte Zeilenumbruchlänge für den\n"
+"                   »l«-Befehl an.\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 schaltet alle GNU-Funktions-Erweiterungen ab.\n"
+
+#: sed/sed.c:161
+#, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -E, -r, --regexp-extended\n"
+"                 verwendet erweiterte reg. Ausdrücke für das Skript.\n"
+"                 (für Portabilität verwende man POSIX -E).\n"
+
+#: sed/sed.c:164
+#, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 nimmt an, die Dateien sind separat und nicht eine\n"
+"                 einzige lange zusammenhängende Quelle.\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+"      --sandbox\n"
+"                 arbeitet im Sandbox-Modus (e/r/w-Befehle\n"
+"                   sind deaktiviert).\n"
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                 lädt nur kleinste Datenmengen aus den Eingabedateien\n"
+"                 und schreibt die Ausgabepuffer häufiger zurück.\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+"  -z, --null-data\n"
+"                 trennt Zeilen durch NUL-Zeichen\n"
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     zeigt diese Hilfe an und beendet das Programm.\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr "      --version  zeigt die Versionsinfo an und beendet das Programm.\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"Falls kein -e, --expression, -f oder --file als Option angegeben ist, \n"
+"wird das erste Argument, das keine Option ist, als sed-Skript verwendet.\n"
+"Alle übrigen Argumente werden als Eingabedateinamen behandelt.\n"
+"Falls keine Eingabedateien angegeben sind, wird von der Standardeingabe "
+"gelesen.\n"
+"\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr "Binärmodus für Standardeingabe konnte nicht gesetzt werden"
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr "Binärmodus für Standardausgabe konnte nicht gesetzt werden"
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "Datei %s konnte nicht geöffnet werden: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "Einklinken in %s nicht möglich: %s"
+
+#: sed/utils.c:207
+#, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "Binärmodus für »%s« konnte nicht gesetzt werden"
+
+#: sed/utils.c:228
+#, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "%llu Element kann nicht auf %s geschrieben werden: %s"
+msgstr[1] "%llu  Elemente können nicht auf %s geschrieben werden: %s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "Lesefehler in %s: %s"
+
+#: sed/utils.c:358
+#, fuzzy, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "Symbolischem Link %s kann nicht gefolgt werden: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "Symbolischem Link %s kann nicht gefolgt werden: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "%s kann nicht umbenannt werden: %s"
+
+#, c-format
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "Statusermittlung von %s schlug fehl: %s"
+
+#, c-format
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "%s kann nicht entfernt werden: %s"
+
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: Option »%s%s« ist mehrdeutig\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: Option »%s%s« ist mehrdeutig; Möglichkeiten:"
+
+#, c-format
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: nicht erkannte Option »%s%s«\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: Option »%s%s« darf kein Argument haben\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: Option »%s%s« benötigt ein Argument\n"
+
+#, c-format
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: Ungültige Option -- »%c«\n"
+
+#, c-format
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: Option benötigt ein Argument -- »%c«\n"

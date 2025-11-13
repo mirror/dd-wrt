@@ -1,0 +1,954 @@
+# Norwegian Bokmal translations for sed package.
+# Copyright (C) 2020 Free Software Foundation, Inc.
+# This file is distributed under the same license as the sed package.
+#
+# Johnny A. Solbu <johnny@solbu.net>, 2012-2020
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sed 4.7.13\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2020-02-05 10:24+0100\n"
+"Last-Translator: Johnny A. Solbu <johnny@solbu.net>\n"
+"Language-Team: Norwegian Bokmaal <i18n-nb@lister.ping.uio.no>\n"
+"Language: nb\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.8.7.1\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "skrivefeil"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "bevare tillatelser for %s"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr "ubalansert ["
+
+#: lib/dfa.c:1015
+msgid "invalid character class"
+msgstr "ugyldig tegnklassenavn"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr "tegnklassesyntaksen er [[:space:]], ikke [:space:]"
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr "uferdig \\ escape"
+
+#: lib/dfa.c:1319
+#, fuzzy
+msgid "? at start of expression"
+msgstr "Ugyldig regulært uttrykk"
+
+#: lib/dfa.c:1331
+#, fuzzy
+msgid "* at start of expression"
+msgstr "Ugyldig regulært uttrykk"
+
+#: lib/dfa.c:1345
+#, fuzzy
+msgid "+ at start of expression"
+msgstr "Ugyldig regulært uttrykk"
+
+#: lib/dfa.c:1400
+#, fuzzy
+msgid "{...} at start of expression"
+msgstr "Ugyldig regulært uttrykk"
+
+#: lib/dfa.c:1403
+msgid "invalid content of \\{\\}"
+msgstr "ugyldig innhold av \\{\\}"
+
+#: lib/dfa.c:1405
+msgid "regular expression too big"
+msgstr "regulært uttrykk for stort"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr ""
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr ""
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr ""
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr ""
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr "ubalansert ("
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr "ingen syntax spesifisert"
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr "ubalansert )"
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "Ukjent systemfeil"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "minnet oppbrukt"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "«"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "»"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "Suksess"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "Ingen treff"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "Ugyldig regulært uttrykk"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "Ugyldig sorteringstegn"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "Ugyldig tegnklassenavn"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "Etterfølgende backslash"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "Ugyldig bak-referanse"
+
+#: lib/regcomp.c:143
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "Ubalansert [, [^, [:, [., eller [="
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "Ubalansert ( eller \\("
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "Ubalansert \\{"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "Ugyldig bruk av \\{\\}"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "Ugyldig intervallslutt"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "Minnet oppbrukt"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "Ugyldig foregående regulært uttrykk"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "For tidlig slutt på regulært uttrykk"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "Regulært uttrykk for stort"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr "Ubalansert ) eller \\)"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "Intet foregående regulært uttrykk"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "setter tillatelser for %s"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "Pakket av %s (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "Pakket av %s\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "©"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"Lisens GPLv3+: GNU GPL versjon 3 eller senere <%s>\n"
+"Dette er Fri programvare: du står fritt til å endre og redistribuere det.\n"
+"Det er INGEN GARANTI, i den grad loven tillater det.\n"
+"\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "Skrevet av %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "Skrevet av %s og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "Skrevet av %s, %s og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Skrevet av %s, %s, %s\n"
+"og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Skrevet av %s, %s, %s,\n"
+"%s og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"Skrevet av %s, %s, %s,\n"
+"%s, %s og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"Skrevet av %s, %s, %s,\n"
+"%s, %s, %s og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Skrevet av %s, %s, %s,\n"
+"%s, %s, %s, %s\n"
+"og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Skrevet av %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s og %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"Skrevet av %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s og andre.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, c-format
+msgid "Report bugs to: %s\n"
+msgstr ""
+"Rapporter feil, på engelsk, til <%s>.\n"
+"Oversettelsesfeil kan rapporteres til <https://translationproject.org/team/"
+"nb.html>.\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "Rapporter %s-feil til %s.\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "%s hjemmeside: <%s>\n"
+
+#: lib/version-etc.c:260
+#, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr "Generelt hjelp med GNU-programvare: <%s>.\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "flere `!'s"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "uventet `,'"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "ugyldig bruk av +N eller ~N som første adresse"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "ubalansert `{'"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "uventet `}'"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "ekstra tegn etter kommando"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "forventet \\ etter «a», «c» eller «i»"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "`}' ønsker ingen adresser"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr ": ønsker ingen adresser"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "kommentarer aksepterer ingen adresser"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "kommandoen mangler"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "kommandoen bruker bare én adresse"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "uterminert regulært adresseuttryk"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "uterminert «s»-kommando "
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "uterminert «y»-kommando "
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "ukjent alternativ til «%s»"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "flere «p»-alternativer til «s»-kommando"
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "flere «g»-alternativer til «s»-kommando"
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "flere tallvalg til «s»-kommando"
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "tallvalget til «s»-kommandoen kan ikke være null"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "strenger for «y»-kommandoen er ulike lengder"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "skilletegn er ikke et enkeltbitstegn"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "forventet nyere versjon av sed"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "ugyldig bruk av linjeadresse 0"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "ukjent kommando: «%c»"
+
+#: sed/compile.c:187
+msgid "incomplete command"
+msgstr "ufullstendig kommando"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr "«:» mangler etikett"
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr "Rekursiv escape etter \\c ikke tillatt"
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr "e/r/w-kommandoer deaktivert i sandboks-modus"
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: fil %s linje %lu: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e uttrykk #%lu, tegn %lu: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "kan ikke finne etiketten for hopp til «%s»"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr "konvertering av bokstavstørrelse ga et ugyldig tegn"
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: kan ikke lese %s: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "Kan ikke redigere %s: er en terminal"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "Kan ikke redigere %s: ikke en vanlig fil "
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr ""
+"%s: advarsel: klarte ikke å sette standard filopprettelseskontekst til %s: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr "%s: advarsel: Klarte ikke å få sikkerhetskontekst med %s: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "Kunne ikke åpne midlertidig fil %s: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "Feil i underprosessen"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "«e»-valget støttes ikke"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "«e»-kommandoen støttes ikke"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "ingen inndatafiler"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "Intet foregående regulært uttrykk"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "ugyldig referanse \\%d på «s»-kommandoens RHS"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr "regex inngangsbufferlengde lengre enn INT_MAX"
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr "Jay Fenlason"
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr "Tom Lord"
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr "Ken Pizzini"
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr "Paolo Bonzini"
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr "Jim Meyering"
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr "Assaf Gordon"
+
+#: sed/sed.c:103
+#, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"GNU sed hjemmeside:. <https://www.gnu.org/software/sed/>\n"
+"Generelt hjelp med GNU-programvare:. <https://www.gnu.org/gethelp/>.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr "Send feilrapporter på e-post til: <%s>\n"
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr "Dette sed-programmet ble bygget med SELinux-støtte."
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr "SELinux er aktivert på dette systemet."
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr "SELinux er deaktivert på dette systemet"
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr "Dette sed-programmet ble bygget uten SELinux-støtte."
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"Bruk: %s [VALG] ... {skript-bare-hvis-ingen-andre-skript} [inndatafil]...\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"  -n, --quiet, --silent\n"
+"                 undertrykk automatisk utskrift av mønsterplass\n"
+
+#: sed/sed.c:139
+#, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"      --debug\n"
+"                 kommenter programgjennomføring\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e script, --expression=script\n"
+"                 legge skriptet til kommandoer som skal utføres\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f script-file, --file=script-file\n"
+"                 legge innholdet i skriptfil til kommandoer som skal "
+"utføres\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 Følg symbolske lenker ved prosessering «på stedet»\n"
+
+#: sed/sed.c:150
+#, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[SUFFIKS], --in-place[=SUFFIKS]\n"
+"                 rediger filer «på stedet» (tar backup hvis SUFFIKS oppgis)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 åpne filer i binært (CR+LFs prosesseres ikke spesielt)\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 angi ønsket linjebrytingslengde for «l»-kommandoen\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 deaktivere alle GNU-utvidelser.\n"
+
+#: sed/sed.c:161
+#, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -r, --regexp-extended\n"
+"                 bruk utvidede regulære uttrykk i skriptet.\n"
+"                 (for portabilitet bruk POSIX -E).\n"
+
+#: sed/sed.c:164
+#, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 vurder filer som separate i stedet for en enkelt\n"
+"                 sammenhengende lang strøm.\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+"      --sandbox\n"
+"                 operere I sandkassemodus (deaktiver e/r/w-kommandoer).\n"
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                  last minimale mengder data fra inndatafiler og skyll\n"
+"                  utdatabufferne oftere\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+"  -z, --null-data\n"
+"                 skille linjer ved NULL-tegn\n"
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     vis denne hjelpteksten og avslutt\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr "      --version  vis programversjon og avslutt\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"Hvis ingen e, --expression, -f eller --file er gitt, blir det første\n"
+"ikke-opsjonsargumentet tatt av sed-skriptet for å tolkes. Alle\n"
+"gjenværende argumentene er navnene på inndatafiler; hvis ingen\n"
+"inndatafiler angis leses standard inndata.\n"
+"\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr "kunne ikke angi binærmodus på STDIN"
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr "kunne ikke angi binærmodus på STOUT"
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "Kunne ikke åpne filen %s: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "kunne ikke koble til %s: %s"
+
+#: sed/utils.c:207
+#, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "kunne ikke angi binærmodus på «%s»"
+
+#: sed/utils.c:228
+#, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "Klarte ikke å skrive %llu element til %s: %s"
+msgstr[1] "Klarte ikke å skrive %llu elementer til %s: %s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "lesefeil på fil %s: %s"
+
+#: sed/utils.c:358
+#, fuzzy, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "kunne ikke følge symbolsk lenke %s: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "kunne ikke følge symbolsk lenke %s: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "Kan ikke omdøpe %s: %s"
+
+#, c-format
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "kan ikke lese status på %s: %s"
+
+#, c-format
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "kan ikke fjerne %s: %s "
+
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: valget «%s%s» er tvetydig\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: valget «%s%s» er tvetydig: muligheter:"
+
+#, c-format
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: ukjent valg «%s%s»\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: valget «%s%s» tillater ikke argumenter\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: valget «%s%s» krever et argument\n"
+
+#, c-format
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: ugyldig valg -- «%c»\n"
+
+#, c-format
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: valget krever et argument -- «%c»\n"
+
+#~ msgid "%s home page: <https://www.gnu.org/software/%s/>\n"
+#~ msgstr "%s hjemmeside: <https://www.gnu.org/software/%s/>\n"
+
+#~ msgid ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 use Perl 5's regular expressions syntax in the script.\n"
+#~ msgstr ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 Bruk Perl 5-syntaks for regulær uttrykk i skriptet.\n"
+
+#~ msgid "%s: option '--%s' doesn't allow an argument\n"
+#~ msgstr "%s: valget «--%s» tillater ikke argumenter\n"
+
+#~ msgid "%s: unrecognized option '--%s'\n"
+#~ msgstr "%s: ukjent valg «--%s»\n"
+
+#~ msgid "%s: option '-W %s' is ambiguous\n"
+#~ msgstr "%s: valget «-W %s» er tvetydig\n"
+
+#~ msgid "%s: option '-W %s' doesn't allow an argument\n"
+#~ msgstr "%s: valget «-W %s» tillater ikke argumenter\n"
+
+#~ msgid "%s: option '-W %s' requires an argument\n"
+#~ msgstr "%s: valget «-W %s» krever et argument\n"
+
+#~ msgid "cannot specify modifiers on empty regexp"
+#~ msgstr "kan ikke angi modifikatorer på tomt regulært uttrykk"
+
+#~ msgid ""
+#~ "E-mail bug reports to: <%s>.\n"
+#~ "Be sure to include the word ``%s'' somewhere in the ``Subject:'' field.\n"
+#~ msgstr ""
+#~ "Send feilrapporter på e-post til: <%s>\n"
+#~ "Sørg for å inkludere ordet «%s» et sted i emnefeltet\n"
+
+#~ msgid "super-sed version %s\n"
+#~ msgstr "super-sed versjon %s\n"
+
+#~ msgid ""
+#~ "based on GNU sed version %s\n"
+#~ "\n"
+#~ msgstr ""
+#~ "basert på GNU sed versjon %s\n"
+#~ "\n"
+
+#~ msgid "GNU sed version %s\n"
+#~ msgstr "GNU sed versjon %s\n"
+
+#~ msgid ""
+#~ "Copyright (C) %d Free Software Foundation, Inc.\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ msgstr ""
+#~ "Opphavsrett (C) %d Free Software Foundation, Inc.\n"
+#~ "Dette er fri programvare, se kildekoden for kopieringsvilkår. Det er "
+#~ "ingen\n"
+#~ "garanti, ikke en gang for SALGBARHET eller EGNETHET FOR ET SPESIELT "
+#~ "FORMÅL,\n"
+#~ "i den grad loven tillater.\n"

@@ -1,0 +1,955 @@
+# Translation of sed into Ukrainian
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# This file is distributed under the same license as the sed package.
+#
+# Volodymyr M. Lisivka <lvm@mystery.lviv.net>, 2003.
+# Dmytro O. Redchuk <dor@kiev-online.net>, 2002.
+# Yuri Chornoivan <yurchor@ukr.net>, 2012, 2016, 2018, 2020, 2022.
+msgid ""
+msgstr ""
+"Project-Id-Version: sed 4.8.44\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2022-10-17 13:24+0300\n"
+"Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
+"Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Lokalize 20.12.0\n"
+"Plural-Forms: nplurals=4; plural=n==1 ? 3 : n%10==1 && n%100!=11 ? 0 : "
+"n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "помилка під час спроби запису"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "зберігаємо права доступу для %s"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr "неурівноважена ["
+
+#: lib/dfa.c:1015
+msgid "invalid character class"
+msgstr "некоректний клас символів"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr "синтаксис класу символів передбачає [[:space:]], а не [:space:]"
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr "незавершене екранування \\"
+
+#: lib/dfa.c:1319
+msgid "? at start of expression"
+msgstr "? на початку виразу"
+
+#: lib/dfa.c:1331
+msgid "* at start of expression"
+msgstr "* на початку виразу"
+
+#: lib/dfa.c:1345
+msgid "+ at start of expression"
+msgstr "+ на початку виразу"
+
+#: lib/dfa.c:1400
+msgid "{...} at start of expression"
+msgstr "{...} на початку виразу"
+
+#: lib/dfa.c:1403
+msgid "invalid content of \\{\\}"
+msgstr "некоректний вміст \\{\\}"
+
+#: lib/dfa.c:1405
+msgid "regular expression too big"
+msgstr "занадто об'ємний формальний вираз"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr "зайва \\ перед непридатним до друку символом"
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr "зайва \\ перед пробілом"
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr "зайва \\ перед %lc"
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr "зайва \\"
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr "неурівноважена ("
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr "не вказано синтаксису"
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr "неурівноважена )"
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "Невідома помилка системи"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "пам’ять вичерпано"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "«"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "»"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "Успішно"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "Немає відповідності"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "Неправильний регулярний вираз"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "Неправильний символ співставлення"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "Невірне ім'я класу символів"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "Зворотній слеш у кінці рядка"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "Неправильне зворотнє посилання"
+
+#: lib/regcomp.c:143
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "Не закрито [, [^, [:, [. або [="
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "Не закрито ( чи \\("
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "Не закрито \\{"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "Неправильний вміст \\{\\}"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "Неправильний кінець діапазону"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "Пам'ять вичерпано"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "Неправильний попередній регулярний вираз"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "Передчасне закінчення регулярного виразу"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "Надто великий регулярний вираз"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr "Не закрито ) чи \\)"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "Немає попереднього регулярного виразу"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "встановлення прав доступу для %s"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "Пакування — %s (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "Пакування — %s\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "©"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"Умови ліцензування викладено у GPLv3+: GNU GPL версії 3 або новішій, <%s>\n"
+"Це вільне програмне забезпечення: ви можете вільно змінювати і поширювати "
+"його.\n"
+"Вам не надається ЖОДНИХ ГАРАНТІЙ, окрім гарантій передбачених "
+"законодавством.\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "Автор — %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "Автор — %s та %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "Автори — %s, %s і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Автори - %s, %s, %s\n"
+"і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Автори — %s, %s, %s,\n"
+"%s і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"Автори — %s, %s, %s,\n"
+"%s, %s і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"Автори - %s, %s, %s,\n"
+"%s, %s, %s і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Автори — %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Автори — %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s і %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"Автори — %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s та інші.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, c-format
+msgid "Report bugs to: %s\n"
+msgstr "Повідомляйте про вади на адресу: %s\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "Про вади у %s повідомляйте на адресу %s\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "Домашня сторінка %s: <%s>\n"
+
+#: lib/version-etc.c:260
+#, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr ""
+"Загальна довідкова інформація щодо використання програмного забезпечення "
+"GNU: <%s>\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "декілька знаків «!»"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "неочікувана кома (,)"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "некоректне використання +N чи ~N як першої адреси"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "незакрита дужка «{»"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "неочікувана дужка «}»"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "зайві символи після команди"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "очікувалося \\ після «a», «c» чи «i»"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "«}» не потребує ніяких адрес"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr ": не потребує ніяких адрес"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "у коментарях не може бути жодних адрес"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "пропущено команду"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "у команді використовується лише одна адреса"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "незавершений формальний вираз адреси"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "незавершена команда «s»"
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "незавершена команда «y»"
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "невідомий параметр «s»"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "забагато ключів \"p\" до команди \"s\""
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "забагато ключів \"g\" до команди \"s\""
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "забагато числових параметрів до команди \"s\""
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "числовий параметр до команди \"s\" не може бути нулем"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "рядки для команди «y» мають різну довжину"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "символ-роздільник не є однобайтовим символом"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "мало бути використано новішу версію sed"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "некоректне використання рядка адреси 0"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "невідома команда: «%c»"
+
+#: sed/compile.c:187
+msgid "incomplete command"
+msgstr "неповна команда"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr "«:», не вистачає мітки"
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr "не можна використовувати рекурсивне екранування після \\c"
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr "у режимі пісочниці команди e/r/w вимкнено"
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: файл %s, рядок %lu: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e вираз #%lu, літера %lu: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "не вдалося знайти мітку для переходу до «%s»"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr "перетворення регістрів літер призвело до появи некоректного символу"
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: неможливо прочитати %s: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "не вдалося змінити %s: цей об’єкт є терміналом"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "не вдалося змінити %s: не є звичайним файлом"
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr ""
+"%s: попередження: не вдалося встановити типовий контекст створення файла у "
+"%s: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr "%s: попередження: не вдалося отримати контекст захисту %s: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "не вдалося відкрити тимчасовий файл %s: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "помилка у підпроцесі"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "ключ \"e\" не підтримується"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "команда \"e\" не підтримується"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "немає вхідних даних"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "немає попереднього формального виразу"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "некоректне посилання \\%d праворуч від команди «s»"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr "довжина вхідного буфера формального виразу перевищує INT_MAX"
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr "Jay Fenlason"
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr "Tom Lord"
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr "Ken Pizzini"
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr "Paolo Bonzini"
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr "Jim Meyering"
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr "Assaf Gordon"
+
+#: sed/sed.c:103
+#, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"Домашня сторінка GNU sed: <https://www.gnu.org/software/sed/>.\n"
+"Загальні довідкові матеріали щодо користування програмами GNU: <https://www."
+"gnu.org/gethelp/>.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr "Про вади слід повідомляти на таку адресу: <%s>.\n"
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr "Цей варіант sed було зібрано із підтримкою SELinux."
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr "У цій системі SELinux увімкнено."
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr "У цій системі SELinux вимкнено"
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr "Цей варіант sed було зібрано без підтримки SELinux."
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"Користування: %s [ПАРАМЕТР]... {лише-скрипт-якщо-немає-іншого-скрипту} [файл "
+"вхідних даних]...\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"  -n, --quiet, --silent\n"
+"                 не виводити автоматично пробіли шаблонів\n"
+
+#: sed/sed.c:139
+#, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"      --debug\n"
+"                 анотувати виконання програми\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e скрипт, --expression=скрипт\n"
+"                 додати скрипт до команд, які слід виконати\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f файл-скрипту, --file=файл-скрипту\n"
+"                 додати вміст файла файл-скрипту до команд, які слід "
+"виконати\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 переходити за символічними посиланням під час обробки\n"
+
+#: sed/sed.c:150
+#, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[СУФІКС], --in-place[=СУФІКС]\n"
+"                 редагувати файл на місці (створювати резервні копії, якщо "
+"вказано суфікс назви)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 відкривати файли у бінарному режимі (CR+LF не "
+"обробляються)\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 вказати бажану довжину рядка для перенесення для команди "
+"«l»\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 вимкнути всі розширення GNU.\n"
+
+#: sed/sed.c:161
+#, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -E, -r, --regexp-extended\n"
+"                 використовувати розширені формальні вирази у скрипті\n"
+"                 (для сумісності користуйтеся -E POSIX).\n"
+
+#: sed/sed.c:164
+#, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 вважати файли окремими блоками даних, а не єдиним "
+"неперервним\n"
+"                 довгим потоком.\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+"      --sandbox\n"
+"                 працювати у режимі пісочниці (вимкнути команди e/r/w).\n"
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                 завантажувати з файлів вхідних даних мінімальний об’єм "
+"даних і\n"
+"                 частіше спорожняти буфери вихідних даних\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+"  -z, --null-data\n"
+"                 відокремити рядки символами NUL\n"
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     показати цю довідку та вийти\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr ""
+"      --version  показати інформацію щодо версії і вийти\n"
+"\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"Якщо не вказано параметрів -e, --expression, -f або --file, перший\n"
+"вираз, який не є параметром, вважатиметься назвою скрипту sed, який\n"
+"слід виконати. Решта команди вважатиметься списком назв файл вхідних\n"
+"даних. Якщо не вказано жодних файлів вхідних даних, дані буде\n"
+"прочитано зі стандартного джерела вхідних даних.\n"
+"\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr "не вдалося встановити двійковий режим для STDIN"
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr "не вдалося встановити двійковий режим для STDOUT"
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "не вдалося відкрити файл %s: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "не вдалося під’єднатися до %s: %s"
+
+#: sed/utils.c:207
+#, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "не вдалося встановити двійковий режим для «%s»"
+
+#: sed/utils.c:228
+#, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "не вдалося записати %llu елемент до %s: %s"
+msgstr[1] "не вдалося записати %llu елементи до %s: %s"
+msgstr[2] "не вдалося записати %llu елементів до %s: %s"
+msgstr[3] "не вдалося записати %llu елемент до %s: %s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "помилка читання %s: %s"
+
+#: sed/utils.c:358
+#, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "не вдалося виконати readlink %s: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "не вдалося перейти за символічним посиланням %s: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "не вдалося перейменувати %s: %s"
+
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: параметр «%s%s» є неоднозначним\n"
+
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: параметр «%s%s» є неоднозначним; можливі варіанти:"
+
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: невідомий параметр «%s%s»\n"
+
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: додавання аргументів до параметра «%s%s» не передбачено\n"
+
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: до параметра «%s%s» слід додати аргумент\n"
+
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: некоректний параметр — «%c»\n"
+
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: до параметра слід додати аргумент — «%c»\n"
+
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "не вдалося вилучити %s: %s"
+
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "не вдалося отримати статистичні дані щодо %s: %s"
+
+#~ msgid "%s home page: <https://www.gnu.org/software/%s/>\n"
+#~ msgstr "Домашня сторінка %s: <https://www.gnu.org/software/%s/>\n"
+
+#~ msgid ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 use Perl 5's regular expressions syntax in the script.\n"
+#~ msgstr ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 використовувати у сценаріях регулярні вирази Perl 5.\n"
+
+#~ msgid "%s: option '--%s' doesn't allow an argument\n"
+#~ msgstr "%s: додавання аргументів до параметра «--%s» не передбачено\n"
+
+#~ msgid "%s: unrecognized option '--%s'\n"
+#~ msgstr "%s: невідомий параметр «--%s»\n"
+
+#~ msgid "%s: option '-W %s' is ambiguous\n"
+#~ msgstr "%s: параметр «-W %s» не є однозначним\n"
+
+#~ msgid "%s: option '-W %s' doesn't allow an argument\n"
+#~ msgstr "%s: додавання аргументів до параметра «-W %s» не передбачено\n"
+
+#~ msgid "%s: option '-W %s' requires an argument\n"
+#~ msgstr "%s: до параметра «-W %s» слід додати аргумент\n"
+
+#~ msgid "cannot specify modifiers on empty regexp"
+#~ msgstr "не можна вказувати модифікатори щодо порожнього формального виразу"
+
+#~ msgid ""
+#~ "E-mail bug reports to: <%s>.\n"
+#~ "Be sure to include the word ``%s'' somewhere in the ``Subject:'' field.\n"
+#~ msgstr ""
+#~ "Повідомлення про помилки надсилайте на адресу <%s>.\n"
+#~ "Обов'язково додайте слово «%s» будь-де у полі «Тема:».\n"
+
+#~ msgid "super-sed version %s\n"
+#~ msgstr "super-sed версії %s\n"
+
+#~ msgid ""
+#~ "based on GNU sed version %s\n"
+#~ "\n"
+#~ msgstr ""
+#~ "засновано на версії GNU sed %s\n"
+#~ "\n"
+
+#~ msgid "GNU sed version %s\n"
+#~ msgstr "GNU sed версії %s\n"
+
+#~ msgid ""
+#~ "Copyright (C) %d Free Software Foundation, Inc.\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ msgstr ""
+#~ "© Free Software Foundation, Inc, %d\n"
+#~ "Це програмне забезпечення є вільним, умови копіювання викладено у його "
+#~ "початкових кодах. Умовами ліцензування програми НЕ передбачено жодних "
+#~ "гарантій, зокрема гарантій працездатності або придатності для певної мети "
+#~ "у межах, обумовлених законодавством.\n"

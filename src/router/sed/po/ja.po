@@ -1,0 +1,1480 @@
+# Japanese messages for GNU sed
+# Copyright (C) 2000, 2010 Free Software Foundation, Inc.
+# This file is distributed under the same license as the sed package.
+# Masahito Yamaga <yamaga@ipc.chiba-u.ac.jp>, 2002.
+# GOTO Masanori <gotom@debian.or.jp>, 2006.
+#  derived from the version by Yasuyuki Furukawa <yasu@on.cs.keio.ac.jp> 1998.
+#                              Jun Nishii <jun@flatout.org> 1999.
+#                              Daisuke Yamashita <yamad@mb.infoweb.ne.jp> 1999.
+# Contributed by
+# Yasuyuki Furukawa <yasu@on.cs.keio.ac.jp>, 1999.
+# and taken over on 1999-09-24 by Japanese Team.
+# Yasuaki Taniguchi <yasuakit@gmail.com>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sed 4.2.1\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2010-10-21 13:04+0900\n"
+"Last-Translator: Yasuaki Taniguchi <yasuakit@gmail.com>\n"
+"Language-Team: Japanese <translation-team-ja@lists.sourceforge.net>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "書き込みエラー"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "%s のパーミッションを保存しています"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr ""
+
+#: lib/dfa.c:1015
+#, fuzzy
+msgid "invalid character class"
+msgstr "無効な文字クラス名です"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr ""
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr ""
+
+#: lib/dfa.c:1319
+#, fuzzy
+msgid "? at start of expression"
+msgstr "無効な正規表現です"
+
+#: lib/dfa.c:1331
+#, fuzzy
+msgid "* at start of expression"
+msgstr "無効な正規表現です"
+
+#: lib/dfa.c:1345
+#, fuzzy
+msgid "+ at start of expression"
+msgstr "無効な正規表現です"
+
+#: lib/dfa.c:1400
+#, fuzzy
+msgid "{...} at start of expression"
+msgstr "無効な正規表現です"
+
+#: lib/dfa.c:1403
+#, fuzzy
+msgid "invalid content of \\{\\}"
+msgstr "\\{\\} の中身が無効です"
+
+#: lib/dfa.c:1405
+#, fuzzy
+msgid "regular expression too big"
+msgstr "正規表現が大きすぎます"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr ""
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr ""
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr ""
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr ""
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr ""
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr ""
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr ""
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "不明なシステムエラー"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "メモリを使い果たしました"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "`"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "'"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "成功です"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "一致しません"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "無効な正規表現です"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "無効な照合文字です"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "無効な文字クラス名です"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "終端のバックスラッシュ"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "無効な前方参照です"
+
+#: lib/regcomp.c:143
+#, fuzzy
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "[ または [^ が不一致です"
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "( または \\( が不一致です"
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "\\{ が不一致です"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "\\{\\} の中身が無効です"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "無効な範囲終了です"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "メモリを使い果たしました"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "無効な前方正規表現です"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "正規表現が途中で終了しました"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "正規表現が大きすぎます"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr ") または \\) が不一致です"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "以前に正規表現がありません"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "%s のパーミッションを設定します"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "パッケージ作成者: %s (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "パッケージ作成者: %s\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "(C)"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, fuzzy, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"\n"
+"ライセンス GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl."
+"html>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+"\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "作者 %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "作者 %s および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "作者 %s、 %s、および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"%s、および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"%s、 %s、および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"%s、 %s、 %s、および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"%s、 %s、 %s、 %s、\n"
+"および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"%s、 %s、 %s、 %s、\n"
+"%s、および %s。\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"作者 %s、 %s、 %s、\n"
+"%s、 %s、 %s、 %s、\n"
+"%s、 %s、 および他の方々。\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, fuzzy, c-format
+msgid "Report bugs to: %s\n"
+msgstr ""
+"\n"
+"バグを発見したら <%s> に報告して下さい。\n"
+"翻訳に関するバグは<translation-team-ja@lists.sourceforge.net>に報告してくださ"
+"い。\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "%s のバグは <%s> に報告してください。\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "%s のホームページ: <%s>\n"
+
+#: lib/version-etc.c:260
+#, fuzzy, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr ""
+"GNU ソフトウェアを使用する際の一般的なヘルプ: <http://www.gnu.org/gethelp/>\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "複数の `!' があります"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "予期しない `,' です"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "最初のアドレスへの +N または ~N の指定は無効です"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "`{' が不一致です"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "予期しない `}' です"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "コマンドの後ろに余計な文字があります"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "\\ が `a'、`c'、`i' の後に予期されます"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "`}' にアドレスは不要です"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr ": にアドレスは不要です"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "コメントはアドレスを受け付けません"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "コマンドが足りません"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "コマンドはアドレスを1つだけ使います"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "アドレスregexが終了していません"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "`s' コマンドが終了していません"
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "`y' コマンドが終了していません"
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "`s' に対するオプションが不明です"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "`s' コマンドに対して複数の `p' オプションがあります"
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "`s' コマンドに対して複数の `g' オプションがあります"
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "`s' コマンドに対して複数の数値オプションがあります"
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "`s' コマンドに対する数値オプションは 0 (ゼロ) ではいけません"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "`y' コマンドに対する文字列の長さが異なります"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "区切り文字が単一バイト文字でありません"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "sed の新版が前提です"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "無効な行アドレス 0 の使用方法です"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "不明なコマンド: `%c'"
+
+#: sed/compile.c:187
+#, fuzzy
+msgid "incomplete command"
+msgstr "コマンドが足りません"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr ""
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr ""
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr ""
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: ファイル %s 行 %lu: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e expression #%lu, char %lu: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "`%s' へジャンプするためのラベルが見つかりません"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr ""
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: %s を読み込めません: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "%s を編集できませんでした: 端末です"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "%s を編集できませんでした: 通常ファイルでありません"
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr ""
+"%s: 警告: %s にデフォルトのファイル作成コンテキストを設定できませんでした: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr "%s: 警告: %s のセキュリティコンテキストの取得に失敗しました: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "一時ファイル %s を開くことができませんでした: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "子プロセスのエラーです"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "オプション `e' はサポートされていません"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "`e' コマンドはサポートされていません"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "入力ファイルがありません"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "以前に正規表現がありません"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "`s' コマンドの右側に無効な参照 \\%d があります"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr ""
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr ""
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr ""
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr ""
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr ""
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr ""
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr ""
+
+#: sed/sed.c:103
+#, fuzzy, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"GNU sed ホームページ: <http://www.gnu.org/software/sed/>.\n"
+"GNU ソフトウェアを使用する際の一般的なヘルプ: <http://www.gnu.org/gethelp/"
+">.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr ""
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr ""
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr ""
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr ""
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr ""
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"使用法: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"-n, --quiet, --silent\n"
+"                 パターン空間の自動出力を抑制する\n"
+
+#: sed/sed.c:139
+#, fuzzy, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"  --posix\n"
+"                 全ての GNU 拡張を無効にする\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e script, --expression=script\n"
+"                 実行するコマンドとして script を追加する\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f script-file, --file=script-file\n"
+"                 実行するコマンドとして script-file の中身を追加する\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 処理の際にその場でシンボリックリンクを辿る\n"
+
+#: sed/sed.c:150
+#, fuzzy, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 ファイルを自体をその場で編集する (SUFFIX が与えられた\n"
+"                 場合はバックアップを作成する)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 ファイルをバイナリモードで開く (CR+LFs を特別に処理しない)\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 `l' コマンドの行折り返しの長さを指定する\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 全ての GNU 拡張を無効にする\n"
+
+#: sed/sed.c:161
+#, fuzzy, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -r, --regexp-extended\n"
+"                 スクリプトで拡張正規表現を使用する\n"
+
+#: sed/sed.c:164
+#, fuzzy, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 複数のファイルを処理する際に連続した単一の長いストリーム\n"
+"                 としてではなく、個別に取り扱う\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                 入力ファイルからデータをごく少量ずつ取り込み、頻繁に出力\n"
+"                 バッファに出力 (flush) する\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     このヘルプを表示して終了する\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr "      --version  バージョン情報を表示して終了する\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"-e、--expression、-f または --file オプションのいずれも与えられない場合、\n"
+"最初のオプションでない引数が解釈する sed スクリプトとして扱われます。\n"
+"全ての残りの引数は入力ファイル名として扱われます。入力ファイルが指定さ\n"
+"れていない場合は、標準入力から読み込みます。\n"
+"\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr ""
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr ""
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "ファイル %s を開けませんでした: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "%s に接続 (attach) できませんでした: %s"
+
+#: sed/utils.c:207
+#, fuzzy, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "%s をモード %s で再度開くことに失敗しました"
+
+#: sed/utils.c:228
+#, fuzzy, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "%d 個の項目を %s に書き込めませんでした: %s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "%s の読み込みエラーです: %s"
+
+#: sed/utils.c:358
+#, fuzzy, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "シンボリックリンク %s を辿れませんでした: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "シンボリックリンク %s を辿れませんでした: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "%s の名前を変更できません: %s"
+
+#, c-format
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "%s の状態取得 (stat) ができません: %s"
+
+#, c-format
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "%s を削除できません: %s"
+
+#, fuzzy, c-format
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: オプション '%s' は曖昧です\n"
+
+#, fuzzy, c-format
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: オプション '%s' は曖昧です\n"
+
+#, fuzzy, c-format
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: オプション '%c%s' を認識できません\n"
+
+#, fuzzy, c-format
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: オプション '%c%s' は引数を取ることができません\n"
+
+#, fuzzy, c-format
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: オプション '--%s' は引数が必要です\n"
+
+#, c-format
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: 無効なオプション -- '%c'\n"
+
+#, c-format
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: オプションには引数が必要です -- '%c'\n"
+
+#, fuzzy
+#~ msgid "%s home page: <https://www.gnu.org/software/%s/>\n"
+#~ msgstr "%s のホームページ: <http://www.gnu.org/software/%s/>\n"
+
+#~ msgid ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 use Perl 5's regular expressions syntax in the script.\n"
+#~ msgstr ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 スクリプトで Perl 5 の正規表現構文を使用する\n"
+
+#~ msgid "%s: option '--%s' doesn't allow an argument\n"
+#~ msgstr "%s: オプション '--%s' は引数を取ることができません\n"
+
+#~ msgid "%s: unrecognized option '--%s'\n"
+#~ msgstr "%s: オプション '--%s' を認識できません\n"
+
+#~ msgid "%s: option '-W %s' is ambiguous\n"
+#~ msgstr "%s: オプション '-W %s' は曖昧です\n"
+
+#~ msgid "%s: option '-W %s' doesn't allow an argument\n"
+#~ msgstr "%s: オプション '-W %s' は引数を取ることができません\n"
+
+#, fuzzy
+#~ msgid "%s: option '-W %s' requires an argument\n"
+#~ msgstr "%s: オプション '--%s' は引数が必要です\n"
+
+#~ msgid "cannot specify modifiers on empty regexp"
+#~ msgstr "空の正規表現に対して修飾子を指定できません"
+
+#~ msgid ""
+#~ "E-mail bug reports to: <%s>.\n"
+#~ "Be sure to include the word ``%s'' somewhere in the ``Subject:'' field.\n"
+#~ msgstr ""
+#~ "電子メールによるバグ報告の宛先: <%s>\n"
+#~ "報告の際、“Subject:” フィールドのどこかに “%s” を入れてください。\n"
+#~ "翻訳に関するバグは<translation-team-ja@lists.sourceforge.net>に報告してく"
+#~ "ださい。\n"
+
+#~ msgid "super-sed version %s\n"
+#~ msgstr "super-sed バージョン %s\n"
+
+#~ msgid ""
+#~ "based on GNU sed version %s\n"
+#~ "\n"
+#~ msgstr "GNU sed バージョン %s に基づいています\n"
+
+#~ msgid "GNU sed version %s\n"
+#~ msgstr "GNU sed バージョン %s\n"
+
+#~ msgid ""
+#~ "Copyright (C) %d Free Software Foundation, Inc.\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ msgstr ""
+#~ "Copyright (C) %d Free Software Foundation, Inc.\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ "\n"
+#~ "訳注: 非常に重要な文章のため、原文を残しています。\n"
+#~ "  -- 参考訳\n"
+#~ "これはフリー・ソフトウェアです。複製の条件に関しては、ソースをご覧くださ\n"
+#~ "い。保証は一切ありません。営利目的や法で定められた範囲での特定目的のため\n"
+#~ "の適合性もありません。\n"
+
+#~ msgid "invalid argument %s for %s"
+#~ msgstr "%2$s に対する引数 %1$s が間違っています"
+
+#~ msgid "ambiguous argument %s for %s"
+#~ msgstr "%2$s に対する引数 %1$s が曖昧です"
+
+#~ msgid "Valid arguments are:"
+#~ msgstr "有効な引数:"
+
+#~ msgid "ARGP_HELP_FMT: %s value is less than or equal to %s"
+#~ msgstr "ARGP_HELP_FMT: %s の値は %s の値以下です"
+
+#~ msgid "%.*s: ARGP_HELP_FMT parameter requires a value"
+#~ msgstr "%.*s: ARGP_HELP_FMT パラメータには値が必要です"
+
+#~ msgid "%.*s: ARGP_HELP_FMT parameter must be positive"
+#~ msgstr "%.*s: ARGP_HELP_FMT パラメータは正の値でなければいけません"
+
+#~ msgid "%.*s: Unknown ARGP_HELP_FMT parameter"
+#~ msgstr "%.*s: 不明な ARGP_HELP_FMT パラメータ"
+
+#~ msgid "Garbage in ARGP_HELP_FMT: %s"
+#~ msgstr "ARGP_HELP_FMT 中にごみがあります: %s"
+
+#~ msgid ""
+#~ "Mandatory or optional arguments to long options are also mandatory or "
+#~ "optional for any corresponding short options."
+#~ msgstr ""
+#~ "長い形式のオプションで必須または任意の引数は、それに対応する短い形式のオプ"
+#~ "ションでも同様に必須または任意です。"
+
+#~ msgid "Usage:"
+#~ msgstr "使用法:"
+
+#~ msgid "  or: "
+#~ msgstr "または: "
+
+#~ msgid " [OPTION...]"
+#~ msgstr " [OPTION...]"
+
+#~ msgid "Try `%s --help' or `%s --usage' for more information.\n"
+#~ msgstr "詳細は `%s --help' または `%s --usage' を実行して下さい。\n"
+
+#~ msgid "Report bugs to %s.\n"
+#~ msgstr "バグを発見したら %s 宛に報告して下さい。\n"
+
+#~ msgid "give this help list"
+#~ msgstr "このヘルプを表示する"
+
+#~ msgid "give a short usage message"
+#~ msgstr "短い使用方法を表示する"
+
+#~ msgid "NAME"
+#~ msgstr "名前"
+
+#~ msgid "set the program name"
+#~ msgstr "プログラム名を設定する"
+
+#~ msgid "SECS"
+#~ msgstr "SECS"
+
+#~ msgid "hang for SECS seconds (default 3600)"
+#~ msgstr "SECS 秒でハング (デフォルト 3600)"
+
+#~ msgid "print program version"
+#~ msgstr "プログラムのバージョンを表示する"
+
+#~ msgid "(PROGRAM ERROR) No version known!?"
+#~ msgstr "(プログラムエラー) 不明なバージョン!?"
+
+#~ msgid "%s: Too many arguments\n"
+#~ msgstr "%s: 引数が多すぎます\n"
+
+#~ msgid "(PROGRAM ERROR) Option should have been recognized!?"
+#~ msgstr "(プログラムエラー) オプションは認識されているべきです!?"
+
+#~ msgid "program error"
+#~ msgstr "プログラムエラー"
+
+#~ msgid "stack overflow"
+#~ msgstr "スタックオーバーフロー"
+
+#~ msgid "cannot find a temporary directory, try setting $TMPDIR"
+#~ msgstr "一時ディレクトリを作成できません。 $TMPDIR を設定してみてください"
+
+#~ msgid "cannot create a temporary directory using template \"%s\""
+#~ msgstr "テンプレート \"%s\" を使用した一時ディレクトリを作成できません"
+
+#~ msgid "cannot remove temporary file %s"
+#~ msgstr "一時ファイル %s を削除できません"
+
+#~ msgid "cannot remove temporary directory %s"
+#~ msgstr "一時ディレクトリ %s を削除できません"
+
+#~ msgid "error closing file"
+#~ msgstr "ファイルクローズエラー"
+
+#~ msgid "error while opening \"%s\" for reading"
+#~ msgstr "\"%s\"を読込むため開いている際にエラーが発生しました"
+
+#~ msgid "cannot open backup file \"%s\" for writing"
+#~ msgstr "書込み用バックアップファイル\"%s\"を開くことができません"
+
+#~ msgid "error reading \"%s\""
+#~ msgstr "\"%s\"の読込み中にエラーが発生しました"
+
+#~ msgid "error writing \"%s\""
+#~ msgstr "\"%s\"の書込み中にエラーが発生しました"
+
+#~ msgid "error after reading \"%s\""
+#~ msgstr "\"%s\"の読込み後にエラーが発生しました"
+
+#~ msgid "fdopen() failed"
+#~ msgstr "fdopen()に失敗しました"
+
+#~ msgid "C# compiler not found, try installing pnet"
+#~ msgstr "C# コンパイラが見つりません。pnet をインストールしてみてください"
+
+#~ msgid "C# virtual machine not found, try installing pnet"
+#~ msgstr "C# 仮想マシンが見つかりません。pnet をインストールしてみてください"
+
+#~ msgid "%s subprocess failed"
+#~ msgstr "%s サブプロセスが失敗しました"
+
+#~ msgid "regular empty file"
+#~ msgstr "通常の空ファイル"
+
+#~ msgid "regular file"
+#~ msgstr "通常ファイル"
+
+#~ msgid "directory"
+#~ msgstr "ディレクトリ"
+
+#~ msgid "block special file"
+#~ msgstr "ブロックスペシャルファイル"
+
+#~ msgid "character special file"
+#~ msgstr "キャラクタスペシャルファイル"
+
+#~ msgid "fifo"
+#~ msgstr "fifo"
+
+#~ msgid "symbolic link"
+#~ msgstr "シンボリックリンク"
+
+#~ msgid "socket"
+#~ msgstr "ソケット"
+
+#~ msgid "message queue"
+#~ msgstr "メッセージキュー"
+
+#~ msgid "semaphore"
+#~ msgstr "セマフォ"
+
+#~ msgid "shared memory object"
+#~ msgstr "共有メモリオブジェクト"
+
+#~ msgid "typed memory object"
+#~ msgstr "型付メモリオブジェクト"
+
+#~ msgid "weird file"
+#~ msgstr "不明なファイル"
+
+#~ msgid "Address family for hostname not supported"
+#~ msgstr "ホスト名に対する Address family がサポートされていません"
+
+#~ msgid "Temporary failure in name resolution"
+#~ msgstr "名前解決に一時的に失敗しました"
+
+#~ msgid "Bad value for ai_flags"
+#~ msgstr "ai_flags に対する誤った値です"
+
+#~ msgid "Non-recoverable failure in name resolution"
+#~ msgstr "名前解決でリカバリできない失敗が発生しました"
+
+#~ msgid "ai_family not supported"
+#~ msgstr "ai_family はサポートされていません"
+
+#~ msgid "Memory allocation failure"
+#~ msgstr "メモリ配置に失敗しました"
+
+#~ msgid "No address associated with hostname"
+#~ msgstr "ホスト名にアドレスが割り当てられていません"
+
+#~ msgid "Name or service not known"
+#~ msgstr "名前またはサービスが不明です"
+
+#~ msgid "Servname not supported for ai_socktype"
+#~ msgstr "ai_socktype に対して Servname がサポートされていません"
+
+#~ msgid "ai_socktype not supported"
+#~ msgstr "ai_socktype はサポートされていません"
+
+#~ msgid "System error"
+#~ msgstr "システムエラー"
+
+#~ msgid "Argument buffer too small"
+#~ msgstr "引数バッファが小さすぎます"
+
+#~ msgid "Processing request in progress"
+#~ msgstr "要求された処理は実行中です"
+
+#~ msgid "Request canceled"
+#~ msgstr "要求がキャンセルされました"
+
+#~ msgid "Request not canceled"
+#~ msgstr "要求がキャンセルされませんでした"
+
+#~ msgid "All requests done"
+#~ msgstr "すべての要求が完了しました"
+
+#~ msgid "Interrupted by a signal"
+#~ msgstr "シグナル割り込みが発生しました"
+
+#~ msgid "Parameter string not correctly encoded"
+#~ msgstr "パラメーター文字列が正しくエンコードされていません"
+
+#~ msgid "Unknown error"
+#~ msgstr "不明なエラー"
+
+#~ msgid "invalid source_version argument to compile_java_class"
+#~ msgstr "compile_java_class への source_version 引数が無効です"
+
+#~ msgid "invalid target_version argument to compile_java_class"
+#~ msgstr "compile_java_class への target_version 引数が無効です"
+
+#~ msgid "failed to create \"%s\""
+#~ msgstr "\"%s\" の作成に失敗しました"
+
+#~ msgid "error while writing \"%s\" file"
+#~ msgstr "\"%s\" ファイルの書き込み中にエラーが発生しました"
+
+#~ msgid "Java compiler not found, try installing gcj or set $JAVAC"
+#~ msgstr ""
+#~ "Java コンパイラが見つかりません。 gcj をインストールするか、またはt "
+#~ "$JAVAC を設定してみてください"
+
+#~ msgid "Java virtual machine not found, try installing gij or set $JAVA"
+#~ msgstr ""
+#~ "Java 仮想マシンが見つかりません。 gij をインストールするか、または $JAVA "
+#~ "を設定してみてください"
+
+#~ msgid "%s subprocess I/O error"
+#~ msgstr "%s サブプロセス I/O エラー"
+
+#~ msgid "cannot change permissions of %s"
+#~ msgstr "%s のパーミッションを変更できません"
+
+#~ msgid "cannot create directory %s"
+#~ msgstr "ディレクトリ %s を作成できません"
+
+#~ msgid "unable to record current working directory"
+#~ msgstr "現在の作業ディレクトリを記録することができません"
+
+#~ msgid "failed to return to initial working directory"
+#~ msgstr "初期作業ディレクトリに戻るのに失敗しました"
+
+#~ msgid "Failed to open /dev/zero for read"
+#~ msgstr "/dev/zeroを読込み用に開けません"
+
+#~ msgid "creation of reading thread failed"
+#~ msgstr "読み込みスレッドの作成に失敗しました"
+
+#~ msgid "cannot set up nonblocking I/O to %s subprocess"
+#~ msgstr "%s 子プロセスへ非ブロック I/O を設定できません"
+
+#~ msgid "communication with %s subprocess failed"
+#~ msgstr "%s 子プロセスとの通信に失敗しました"
+
+#~ msgid "write to %s subprocess failed"
+#~ msgstr "%s 子プロセスへの書き込みに失敗しました"
+
+#~ msgid "read from %s subprocess failed"
+#~ msgstr "%s 子プロセスからの読み込みに失敗しました"
+
+#~ msgid "subprocess %s terminated with exit code %d"
+#~ msgstr "子プロセス %s が終了コード %d で終了しました"
+
+#~ msgid "creation of threads failed"
+#~ msgstr "スレッドの作成に失敗しました"
+
+#~ msgid "%s subprocess terminated with exit code %d"
+#~ msgstr "%s 子プロセスが終了コード %d で終了しました"
+
+#~ msgid "cannot create pipe"
+#~ msgstr "パイプを作成できません"
+
+#~ msgid "^[yY]"
+#~ msgstr "^[yY]"
+
+#~ msgid "^[nN]"
+#~ msgstr "^[nN]"
+
+#~ msgid "Hangup"
+#~ msgstr "Hangup"
+
+#~ msgid "Interrupt"
+#~ msgstr "割り込み"
+
+#~ msgid "Quit"
+#~ msgstr "終了"
+
+#~ msgid "Illegal instruction"
+#~ msgstr "Illegal instruction"
+
+#~ msgid "Trace/breakpoint trap"
+#~ msgstr "Trace/breakpoint trap"
+
+#~ msgid "Aborted"
+#~ msgstr "中止"
+
+#~ msgid "Floating point exception"
+#~ msgstr "浮動小数点例外"
+
+#~ msgid "Killed"
+#~ msgstr "強制終了"
+
+#~ msgid "Bus error"
+#~ msgstr "バスエラー"
+
+#~ msgid "Segmentation fault"
+#~ msgstr "Segmentation fault"
+
+#~ msgid "Broken pipe"
+#~ msgstr "Broken pipe"
+
+#~ msgid "Alarm clock"
+#~ msgstr "Alarm clock"
+
+#~ msgid "Terminated"
+#~ msgstr "Terminated"
+
+#~ msgid "Urgent I/O condition"
+#~ msgstr "緊急 I/O 状態"
+
+#~ msgid "Stopped (signal)"
+#~ msgstr "停止 (シグナル)"
+
+#~ msgid "Stopped"
+#~ msgstr "停止"
+
+#~ msgid "Continued"
+#~ msgstr "継続"
+
+#~ msgid "Child exited"
+#~ msgstr "子プロセス終了"
+
+#~ msgid "Stopped (tty input)"
+#~ msgstr "停止 (tty 入力)"
+
+#~ msgid "Stopped (tty output)"
+#~ msgstr "停止 (tty 出力)"
+
+#~ msgid "I/O possible"
+#~ msgstr "I/O 可能"
+
+#~ msgid "CPU time limit exceeded"
+#~ msgstr "CPU時間制限を超過しました"
+
+#~ msgid "File size limit exceeded"
+#~ msgstr "ファイルサイズ制限を超過しました"
+
+#~ msgid "Virtual timer expired"
+#~ msgstr "仮想タイマーが終了しました"
+
+#~ msgid "Profiling timer expired"
+#~ msgstr "プロファイリングタイマーが終了しました"
+
+#~ msgid "Window changed"
+#~ msgstr "Window が変更されました"
+
+#~ msgid "User defined signal 1"
+#~ msgstr "ユーザー定義シグナル1"
+
+#~ msgid "User defined signal 2"
+#~ msgstr "ユーザー定義シグナル2"
+
+#~ msgid "EMT trap"
+#~ msgstr "EMT トラップ"
+
+#~ msgid "Bad system call"
+#~ msgstr "間違ったシステムコール"
+
+#~ msgid "Stack fault"
+#~ msgstr "スタックエラー"
+
+#~ msgid "Information request"
+#~ msgstr "情報要求"
+
+#~ msgid "Power failure"
+#~ msgstr "電源エラー"
+
+#~ msgid "Resource lost"
+#~ msgstr "リソースが無くなりました"
+
+#~ msgid "error writing to a closed pipe or socket"
+#~ msgstr "閉じたパイプまたはソケットへの書き込みでエラーが発生しました"
+
+#~ msgid "Real-time signal %d"
+#~ msgstr "リアルタイムシグナル %d"
+
+#~ msgid "Unknown signal %d"
+#~ msgstr "不明なシグナル %d"
+
+#~ msgid "iconv function not usable"
+#~ msgstr "iconv 関数が使えません"
+
+#~ msgid "iconv function not available"
+#~ msgstr "iconv 関数が有効ではありません"
+
+#~ msgid "character out of range"
+#~ msgstr "範囲外の文字"
+
+#~ msgid "cannot convert U+%04X to local character set"
+#~ msgstr "U+%04X をローカル文字セットに変換できません"
+
+#~ msgid "cannot convert U+%04X to local character set: %s"
+#~ msgstr "U+%04X をローカル文字セット %s に変換できません"
+
+#~ msgid "invalid user"
+#~ msgstr "無効なユーザ"
+
+#~ msgid "invalid group"
+#~ msgstr "無効なグループ"
+
+#~ msgid "invalid spec"
+#~ msgstr "無効な指定"
+
+#~ msgid "unable to display error message"
+#~ msgstr "エラーメッセージを表示できません"
+
+#~ msgid "_open_osfhandle failed"
+#~ msgstr "_open_osfhandle に失敗しました"
+
+#~ msgid "cannot restore fd %d: dup2 failed"
+#~ msgstr "ファイル記述子 (fd) %d をリストアできません: dup2 に失敗しました"
+
+#~ msgid "%s subprocess"
+#~ msgstr "%s 子プロセス"
+
+#~ msgid "%s subprocess got fatal signal %d"
+#~ msgstr "%s 子プロセスが致命的なシグナル %d を受信しました"
+
+#~ msgid "stdin"
+#~ msgstr "標準入力"
+
+#~ msgid "stdout"
+#~ msgstr "標準出力"
+
+#~ msgid "stderr"
+#~ msgstr "標準エラー出力"
+
+#~ msgid "unknown stream"
+#~ msgstr "不明なストリーム"
+
+#~ msgid "string comparison failed"
+#~ msgstr "文字列の比較に失敗しました"
+
+#~ msgid "Set LC_ALL='C' to work around the problem."
+#~ msgstr "問題を回避するために LC_ALL='C' を指定してください."
+
+#~ msgid "The strings compared were %s and %s."
+#~ msgstr "比較した文字列は %s と %s です."
+
+#~ msgid "cannot perform formatted output"
+#~ msgstr "書式設定を行った出力を実行することができません"
+
+#~ msgid "invalid %s%s argument `%s'"
+#~ msgstr "引数 `%3$s' に対して %1$s%2$s が無効です"
+
+#~ msgid "invalid suffix in %s%s argument `%s'"
+#~ msgstr "引数 `%3$s' に対して無効な接尾辞 %1$s%2$s です"
+
+#~ msgid "%s%s argument `%s' too large"
+#~ msgstr "引数 `%3$s' に対する %1$s%2$s が大きすぎます"
+
+#~ msgid "%s: illegal option -- %c\n"
+#~ msgstr "%s: 不正なオプション -- %c\n"
+
+#~ msgid "block size"
+#~ msgstr "ブロックサイズ"
+
+#~ msgid "%s exists but is not a directory"
+#~ msgstr "%s は存在しますがディレクトリではありません"
+
+#~ msgid "cannot change owner and/or group of %s"
+#~ msgstr "%s のオーナーとグループを変更できません"
+
+#~ msgid "cannot chdir to directory %s"
+#~ msgstr "ディレクトリ %s に移動できません"
+
+#~ msgid "cannot get the login group of a numeric UID"
+#~ msgstr "数字のUIDのログイングループを取得できません"
+
+#~ msgid ""
+#~ "\n"
+#~ "This is free software.  You may redistribute copies of it under the terms "
+#~ "of\n"
+#~ "the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
+#~ "There is NO WARRANTY, to the extent permitted by law.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "本プログラムはフリーソフトウェアです. GNU一般公有使用許諾\n"
+#~ "<http://www.gnu.org/licenses/gpl.html> で定められた条項の下で本プログラ\n"
+#~ "ムのコピーを再配布できます. 適切な法が認る限りにおいて全くの無保証です.\n"
+#~ "\n"

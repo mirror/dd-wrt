@@ -1,0 +1,960 @@
+# Vietnamese translation for Sed.
+# Bản dịch tiếng Việt dành cho sed.
+# Copyright © 2016 Free Software Foundation, Inc.
+# This file is distributed under the same license as the sed package.
+# Clytie Siddall <clytie@riverland.net.au>, 2005-2010.
+# Trần Ngọc Quân <vnwildman@gmail.com>, 2012-2014, 2016, 2018, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sed 4.7.13\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2020-01-08 14:22+0700\n"
+"Last-Translator: Trần Ngọc Quân <vnwildman@gmail.com>\n"
+"Language-Team: Vietnamese <translation-team-vi@lists.sourceforge.net>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 2.2.4\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "lỗi ghi"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "giữ nguyên quyền hạn cho %s"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr "thiếu dấu ngoặc vuông mở ["
+
+#: lib/dfa.c:1015
+msgid "invalid character class"
+msgstr "sai lớp ký tự"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr "cú pháp lớp ký tự là [[:space:]], không phải [:space:]"
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr "chưa kết thúc thoát chuỗi \\"
+
+#: lib/dfa.c:1319
+#, fuzzy
+msgid "? at start of expression"
+msgstr "Biểu thức chính quy không hợp lệ"
+
+#: lib/dfa.c:1331
+#, fuzzy
+msgid "* at start of expression"
+msgstr "Biểu thức chính quy không hợp lệ"
+
+#: lib/dfa.c:1345
+#, fuzzy
+msgid "+ at start of expression"
+msgstr "Biểu thức chính quy không hợp lệ"
+
+#: lib/dfa.c:1400
+#, fuzzy
+msgid "{...} at start of expression"
+msgstr "Biểu thức chính quy không hợp lệ"
+
+#: lib/dfa.c:1403
+msgid "invalid content of \\{\\}"
+msgstr "nội dung của “\\{\\}” không hợp lệ"
+
+#: lib/dfa.c:1405
+msgid "regular expression too big"
+msgstr "biểu thức chính quy quá lớn"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr ""
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr ""
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr ""
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr ""
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr "thiếu dấu ngoặc đơn mở ("
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr "chưa đưa ra cú pháp"
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr "thiếu dấu ngoặc đơn đóng )"
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "Gặp lỗi hệ thống chưa biết"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "hết bộ nhớ"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "“"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "”"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "Thành công"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "Không tìm thấy"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "Biểu thức chính quy không hợp lệ"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "Ký tự đối chiếu không hợp lệ"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "Tên lớp ký tự không hợp lệ"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "Có dấu gạch ngược theo sau"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "Tham chiếu ngược không hợp lệ"
+
+#: lib/regcomp.c:143
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "Có ký tự [, [^, [:, [., hay [= lẻ cặp"
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "Chưa khớp cặp “(” hoặc “\\(”"
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "Chưa khớp cặp “\\{”"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "“\\{\\}” có nội dung không hợp lệ"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "Kết thúc phạm vi không hợp lệ"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "Hết bộ nhớ"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "Biểu thức chính quy đi trước không hợp lệ"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "Biểu thức chính quy kết thúc quá sớm"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "Biểu thức chính quy quá lớn"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr "Có dấu ngoặc đơn đóng “)” hay “\\)” lẻ đôi"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "Không có biểu thức chính quy đi trước"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "đang cài đặt quyền hạn cho %s"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "Đóng gói bởi %s (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "Đóng gói bởi %s\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "©"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"Giấy phép GPL pb3+: Giấy phép Công cộng GNU phiên bản 3 hay sau <%s>.\n"
+"Đây là phần mềm tự do: bạn có quyền sửa đổi và phát hành lại nó.\n"
+"KHÔNG CÓ BẢO HÀNH GÌ CẢ, với điều kiện được pháp luật cho phép.\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "Viết bởi %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "Viết bởi %s và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "Viết bởi %s, %s và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Viết bởi %s, %s, %s\n"
+"và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Viết bởi %s, %s, %s,\n"
+"%s và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"Viết bởi %s, %s, %s,\n"
+"%s, %s và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"Viết bởi %s, %s, %s,\n"
+"%s, %s, %s và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Viết bởi %s, %s, %s,\n"
+"%s, %s, %s, %s\n"
+"và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Viết bởi %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s và %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"Viết bởi %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s và các người khác.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, c-format
+msgid "Report bugs to: %s\n"
+msgstr ""
+"Thông báo lỗi cho: %s\n"
+"Thông báo lỗi dịch tiếng Việt cho: <http://translationproject.org/team/vi."
+"html>\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "Báo cáo lỗi %s cho: %s\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "Trang chủ %s: <%s>\n"
+
+#: lib/version-etc.c:260
+#, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr "Trợ giúp chung về cách sử dụng phần mềm GNU: <%s>\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "có nhiều dấu cảm “!”"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "gặp dấu phẩy “,” bất thường"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "dùng “+N” hay “-N” như là địa chỉ đầu tiên một cách không là hợp lệ"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "có dấu ngoặc móc mở “{” lẻ đôi"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "gặp dấu ngoặc móc đóng “}” bất thường"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "có ký tự thêm nằm sau lệnh"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "cần “\\” nằm sau “a”, “c” hay “i”"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "dấu ngoặc móc đóng “}” không cần địa chỉ"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr "dấu hai chấm “:” không yêu cầu địa chỉ"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "chú thích không chấp nhận địa chỉ"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "thiếu lệnh"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "lệnh chỉ dùng một địa chỉ riêng lẻ"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "biểu thức chính quy kiểu đia chỉ chưa kết thúc"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "lệnh “s” chưa  kết thúc"
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "lệnh “y” chưa kết thúc"
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "không hiểu tùy chọn cho “s”"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "lệnh “s” có nhiều tùy chọn kiểu “p”"
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "lệnh “s” có nhiều tùy chọn kiểu “g”"
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "lệnh “s” có nhiều tùy chọn kiểu con số"
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "không cho phép lệnh “s” có tùy chọn con số là số không"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "lệnh “y” có các chuỗi có chiều dài khác nhau"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "ký tự định giới không phải là ký tự byte đơn"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "cần phiên bản sed mới hơn"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "sai dùng địa chỉ dòng 0"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "không hiểu lệnh: “%c”"
+
+#: sed/compile.c:187
+msgid "incomplete command"
+msgstr "lệnh chưa hoàn thiện"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr "\":\" thiếu một nhãn"
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr "thoát đệ quy sau \\c là không được phép"
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr "các lệnh e/r/w bị tắt ở chế độ hộp an toàn"
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: tập tin %s dòng %lu: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e biểu thức #%lu, ký tự %lu: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "không tìm thấy nhãn để nhảy tới “%s”"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr "chuyển đổi HOA/thường sinh ra một ký tự không hợp lệ"
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: không thể đọc %s: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "không thể chỉnh sửa %s: là thiết bị cuối"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "không thể chỉnh sửa %s: không phải là tập tin thường"
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr ""
+"%s: cảnh báo: gặp lỗi khi đặt ngữ cảnh tạo tập tin mặc định thành %s: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr "%s: cảnh báo: không lấy được ngữ cảnh bảo mật của %s: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "không thể mở tập tin tạm thời %s: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "gặp lỗi trong tiến trình con"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "không hỗ trợ tùy chọn “e”"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "không hỗ trợ lệnh “e”"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "không có tập tin đầu vào"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "không có biểu thức chính quy nằm trước"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "tham chiếu không hợp lệ “\\%d” bên phải lệnh “s”"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr "chiều dài bộ đện đầu vào regex lớn hơn INT_MAX"
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr "Jay Fenlason"
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr "Tom Lord"
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr "Ken Pizzini"
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr "Paolo Bonzini"
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr "Jim Meyering"
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr "Assaf Gordon"
+
+#: sed/sed.c:103
+#, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"Trang chủ của sed GNU: <https://www.gnu.org/software/sed/>.\n"
+"Trợ giúp dùng chung cho các phần mềm tại GNU: <https://www.gnu.org/gethelp/"
+">.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr "Gửi thư điện tử báo cáo lỗi đến: <%s>.\n"
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr "Chương trình sed này được biên dịch có hỗ trợ SELinux."
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr "SELinux được bật trên hệ thống này."
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr "SELinux bị vô hiệu hoá trên hệ thống này."
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr "Chương trình sed này được biên dịch mà không hỗ trợ SELinux."
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"Cách dùng: %s [TÙY_CHỌN]… {bó-văn-lệnh-nếu-không-có-bó-văn-lệnh-khác} [tập-"
+"tin-đầu-vào]…\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"  -n, --quiet, --silent\n"
+"                 thu hồi chức năng tự động in ra khoảng cách mẫu\n"
+
+#: sed/sed.c:139
+#, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"      --debug\n"
+"                 điễn giải việc thực thi chương trình\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e văn_lệnh, --expression=văn_lệnh\n"
+"                 thêm văn lệnh này vào các câu lệnh cần thực hiện\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f tập_tin_văn_lệnh --file=tập_tin_văn_lệnh\n"
+"                 thêm nội dung của tập tin văn lệnh này\n"
+"                 vào các câu lệnh cần thực hiện\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 theo liên kết mềm khi xử lý tại chỗ\n"
+
+#: sed/sed.c:150
+#, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[HẬU_TỐ], --in-place[=HẬU_TỐ]\n"
+"                 chỉnh sửa tập tin tại chỗ\n"
+"                 (tạo bản sao lưu nếu phần mở rộng được áp dụng)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 mở tập tin ở chế độ nhị phân (không phải xử lý một cách\n"
+"                 đặc biệt đối với các ký tự xuống dòng CR+LF)\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 chỉ ra chiều dài muốn ngắt dòng cho lệnh “l”\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 tắt mọi phần mở rộng của GNU.\n"
+
+#: sed/sed.c:161
+#, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -r, --regexp-extended\n"
+"                 dùng biểu thức chính quy đã mở rộng trong văn lệnh.\n"
+"                 (để tương thích khi dùng POSIX -E).\n"
+
+#: sed/sed.c:164
+#, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 coi các tập tin là riêng với nhau, chứ không phải đơn,\n"
+"                 luồng liên tục.\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+"      --sandbox\n"
+"                 thực hiện trong chế độ sandbox (tắt lệnh e/r/w).\n"
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                 nạp số lượng dữ liệu tối thiểu từ các tập tin đầu vào,\n"
+"                 và đẩy dữ liệu của bộ đệm kết xuất lên đĩa thường xuyên "
+"hơn\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+"  -z, --null-data\n"
+"                 ngăn cách các dòng bằng ký tự NUL\n"
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     hiện trợ giúp này rồi thoát\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr "      --version  xuất thông tin phiên bản rồi thoát\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"Không đưa ra tùy chọn “-e”, “--expression” (biểu thức),\n"
+"“-f” hay “--file” (tập tin) thì đối số khác tùy chọn thứ nhất\n"
+"được lấy làm văn lệnh sed cần giải dịch. Tất cả các đối số\n"
+"còn lại là tên của tập tin đầu vào; không chỉ ra tập tin đầu\n"
+"vào thì nó dùng đầu vào tiêu chuẩn.\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr "gặp lỗi khi đặt chế độ nhị phân trên STDIN"
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr "gặp lỗi khi đặt chế độ nhị phân trên STDOUT"
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "không thể mở tập tin %s: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "không thể gắn với %s: %s"
+
+#: sed/utils.c:207
+#, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "gặp lỗi khi đặt chế độ nhị phân trên “%s”"
+
+#: sed/utils.c:228
+#, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "không thể ghi %llu mục vào %s: %s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "lỗi đọc trên %s: %s"
+
+#: sed/utils.c:358
+#, fuzzy, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "không thể theo liên kết mềm %s: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "không thể theo liên kết mềm %s: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "không thể đổi tên %s: %s"
+
+#, c-format
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "không thể lấy thống kê %s: %s"
+
+#, c-format
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "không thể gỡ bỏ %s: %s"
+
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: tùy chọn “%s%s” chưa rõ ràng\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: tùy chọn “%s%s” chưa rõ ràng; khả năng là:"
+
+#, c-format
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: không nhận ra tùy chọn “%s%s”\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: tùy chọn “%s%s” không không cho phép một đối số\n"
+
+#, c-format
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: tùy chọn “%s%s” cần một đối số\n"
+
+#, c-format
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: tùy chọn không hợp lệ  -- “%c”\n"
+
+#, c-format
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: tùy chọn yêu cầu một đối số -- “%c”\n"
+
+#~ msgid "%s home page: <https://www.gnu.org/software/%s/>\n"
+#~ msgstr "Trang chủ %s: <https://www.gnu.org/software/%s/>\n"
+
+#~ msgid ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 use Perl 5's regular expressions syntax in the script.\n"
+#~ msgstr ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 sử dụng cú pháp của biểu thức chính quy kiểu Perl 5\n"
+#~ "                 trong văn lệnh.\n"
+
+#~ msgid "%s: option '--%s' doesn't allow an argument\n"
+#~ msgstr "%s: tùy chọn “--%s” không cho phép đối số\n"
+
+#~ msgid "%s: unrecognized option '--%s'\n"
+#~ msgstr "%s: không nhận ra tùy chọn “--%s”\n"
+
+#~ msgid "%s: option '-W %s' is ambiguous\n"
+#~ msgstr "%s: tùy chọn “-W %s” chưa rõ ràng\n"
+
+#~ msgid "%s: option '-W %s' doesn't allow an argument\n"
+#~ msgstr "%s: tùy chọn “-W %s” không nhận một đối số\n"
+
+#~ msgid "%s: option '-W %s' requires an argument\n"
+#~ msgstr "%s: tùy chọn “-W %s” yêu cầu một đối số\n"
+
+#~ msgid "cannot specify modifiers on empty regexp"
+#~ msgstr "không thể ghi rõ cờ sửa đổi với biểu thức chính quy trống"
+
+#~ msgid ""
+#~ "E-mail bug reports to: <%s>.\n"
+#~ "Be sure to include the word ``%s'' somewhere in the ``Subject:'' field.\n"
+#~ msgstr ""
+#~ "Hãy thông báo lỗi cho: <%s> .\n"
+#~ "Thư thông báo nên chứa từ “%s” trong trường “Chủ đề:”.\n"
+#~ "Thông báo lỗi dịch cho: <http://translationproject.org/team/vi.html>.\n"
+
+#~ msgid "super-sed version %s\n"
+#~ msgstr "super-sed phiên bản %s\n"
+
+#~ msgid ""
+#~ "based on GNU sed version %s\n"
+#~ "\n"
+#~ msgstr ""
+#~ "trên cơ sở chương trình GNU sed phiên bản %s\n"
+#~ "\n"
+
+#~ msgid "GNU sed version %s\n"
+#~ msgstr "GNU sed phiên bản %s\n"
+
+#~ msgid ""
+#~ "Copyright (C) %d Free Software Foundation, Inc.\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ msgstr ""
+#~ "Tác quyền © %d Tổ chức Phần mềm Tự do.\n"
+#~ "Chương trình này là phần mềm tự do; xem mã nguồn để tìm điều kiện sao "
+#~ "chép.\n"
+#~ "KHÔNG CÓ BẢO HÀNH GÌ CẢ, THẬM CHÍ KHÔNG CÓ BẢO ĐẢM ĐƯỢC NGỤ Ý\n"
+#~ "KHẢ NĂNG BÁN HAY KHẢ NĂNG LÀM ĐƯỢC VIỆC DỨT KHOÁT,\n"
+#~ "với điều kiện được pháp luật cho phép.\n"

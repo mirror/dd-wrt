@@ -1,0 +1,4011 @@
+2022-11-06  Jim Meyering  <meyering@fb.com>
+
+	version 4.9
+	* NEWS: Record release date.
+
+	build: update gnulib to latest, and testsuite/init.sh
+
+	tests: do not rely on unportable "grep -q"
+	* testsuite/inplace-selinux.sh: Avoid unportable "grep -q".
+	Instead, just redirect to /dev/null.
+
+2022-10-23  Jim Meyering  <meyering@fb.com>
+
+	test: add a test case and mention the change in NEWS
+	* testsuite/misc.pl: Add a test to exercise the preceding change.
+	* NEWS (Changes in behavior): Mention it.
+
+2022-10-23  Oğuz  <oguzismailuysal@gmail.com>
+
+	sed: handle the unspecified "n as delimiter alias" case more sensibly
+	Print the less-surprising variant in a corner case of POSIX-unspecified
+	behavior.  Before, this would print "n".  Now, it prints "X":
+	  printf n | sed 'sn\nnXn'; echo
+	* sed/compile.c (match_slash): Remove special handling of 'n'.
+	Reported in https://bugs.gnu.org/40242
+
+2022-10-23  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest, for Solaris static_assert fix
+
+2022-10-16  Jim Meyering  <meyering@fb.com>
+
+	build: fix am_DISTCHECK_CONFIGURE_FLAGS typo
+	* Makefile.am (AM_DISTCHECK_CONFIGURE_FLAGS): Correct typo
+	in recent change: s/am_/AM_/
+
+	build: update gnulib to latest, for getdelim vs macOS workaround
+
+	maint: avoid syntax-check failure
+	* Makefile.am (am_DISTCHECK_CONFIGURE_FLAGS): Change
+	DISTCHECK_CONFIGURE_FLAGS to
+	am_DISTCHECK_CONFIGURE_FLAGS.
+
+	maint: tell git to ignore new generated files in lib/
+	* lib/.gitignore: Add /assert.h and /stdckdint.h
+
+	build: work when perl is installed but not in /usr/bin/perl
+	Also support building on systems without perl and when cross-compiling.
+	* configure.ac (AC_ARG_ENABLE [bold-man-page-references]): New
+	configure-time option, using code copied from coreutils.
+	(BUILD_MAN_PAGE, BUILD_DUMMY_MAN_PAGE): Remove definitions.
+	(HAVE_PERL): Remove bogus conditional.
+	* doc/dummy-man: New file, from coreutils, with slight adapation.
+	* build-aux/help2man: Update from coreutils.
+	* doc/local.mk (EXTRA_DIST): Distribute dummy-man.
+	(run_help2man): New variable.
+	(doc/sed.1): Use it rather than simply invoking help2man.
+	Simplify to use only one copy of this rule, now that run_help2man
+	works both with and without perl and when cross-compiling.
+	Move the --name=... string argument into...
+	* doc/sed.x: ... here. Also make the "Synopsis" appear in generated file.
+	In https://lists.gnu.org/r/sed-devel/2022-10/msg00005.html,
+	Bruno Haible reported build failure with perl in a different
+	location and (in another report) another failure with no perl at all.
+
+	build: fix THANKS generation
+	* .mailmap: Building THANKS would fail due to thanks-gen finding
+	two different email addresses for Mike Frysinger.  Map the older
+	one to the newer one.
+
+	build: update gnulib to latest
+
+2022-09-15  Marvin Schmidt  <marvin.schmidt1987@gmail.com>
+
+	tests: remove stray export-ending semicolon in test setup
+	* testsuite/local.mk (TESTS_ENVIRONMENT): Remove the erroneous ";"
+	that effectively elided all following var=val pairs from the test
+	environment. Report and patch from http://bugs.gnu.org/57831
+	Bug introduced via v4.2.2-100-gb250bd4.
+
+2022-07-03  Paul Eggert  <eggert@cs.ucla.edu>
+
+	maint: pacify ‘make syntax-check’
+	* THANKS.in: Put J.T. before Jakub again, as apparently
+	that’s how it’s done in Fedora 36 which is bleeding edge.
+	* cfg.mk (sc_THANKS_in_sorted): Update for Fedora 36 sort.
+	(sc_gitignore_missing): The lib files to ignore are now
+	in lib/.gitignore, not .gitignore.
+
+	sed: fix infloop with symlink cycles
+	* bootstrap.conf (gnulib_modules):
+	Add eloop-threshold, idx, minmax, readlink.
+	* configure.ac: Do not check for lstat; no longer needed.
+	(ENABLE_FOLLOW_SYMLINKS): Remove; all uses removed.
+	(TEST_SYMLINKS): Depend only on readlink.
+	* sed/utils.c: Include eloop-threshold.h, idx.h, minmax.h.
+	(SSIZE_IDX_MAX): New macro.
+	(follow_symlink): Rewrite to not loop when given a symlink cycle.
+	Do not use lstat, since readlink suffices.  Use just one memory
+	buffer, not two; this simplifies memory management.
+	* testsuite/follow-symlinks.sh: Adjust diagnostics to
+	to match revised behavior.  Test for symlink loops.
+
+2022-07-02  Paul Eggert  <eggert@cs.ucla.edu>
+
+	build: update gnulib submodule to latest
+
+2022-07-02  Jim Meyering  <meyering@fb.com>
+
+	maint: exempt doc/fdl.texi from long-line check
+	* cfg.mk (FILTER_LONG_LINES): Also exempt doc/fdl.texi.
+
+2022-07-02  Paul Eggert  <eggert@cs.ucla.edu>
+
+	sed: fix temp file cleanup
+	Without this fix, the code would sometimes use FP after calling
+	fclose (FP), which has undefined behavior in C.
+	Problem found with --enable-gcc-warnings and GCC 12.
+	* sed/execute.c (open_next_file): Do not register here,
+	as it’s too late and this can cause the file to not
+	be cleaned up.
+	* sed/sed.c (G_file_to_unlink, register_cleanup_file, cancel_cleanup):
+	Move from here to utils.c.
+	(cleanup): Call remove_cleanup_file instead of doing it by hand.
+	* sed/utils.c (struct open_file): Remove member temp
+	(which was always false) and fclose_failed (which was
+	not enough to prevent calling fclose with a bad pointer).
+	All uses changed.
+	(register_open_file): Do not access p->fp after it’s fclosed,
+	as that has undefined behavior in C.
+	Use xmalloc instead of xcalloc, since we initialize all members.
+	(G_file_to_unlink, register_cleanup_file, cancel_cleanup):
+	Move from utils.c to here.
+	(remove_cleanup_file): New function.
+	(ck_mkstemp): Fix a screwup when mkostemp succeeded but
+	set_binary_mode or fdopen failed: we might misuse a null pointer,
+	or forget to clean up the newly-created temp file.
+	(ck_getdelim): Rename local to avoid confusion with global.
+	(mark_as_fclose_failed): Remove.  All uses removed.
+	(ck_fclose): Remove entry from open_files before attempting
+	to fclose it, so that panicking doesn’t try to fclose it again.
+	(do_ck_fclose): New arg NAME so that there’s no need to
+	call mark_as_fclose_failed, which inspected FP after fclosing
+	it, which is undefined behavior.
+	(ck_rename): Omit arg UNLINK_IF_FAIL.  All callers changed.
+	The cleanup handler removes this file now, as needed.
+
+	.gitconfig: add gt-bug* for some test cases
+
+	Remove unused BOOST.tests, PCRE.tests, SPENCER.tests
+
+	Remove unused files testcases.h, ptestcases.h
+
+	maint: stop using fdl module
+	This is as per current Gnulib recommendations.
+
+	Update COPYING, bootstrap from Gnulib
+
+	Update, simplify, and sort .gitignore files
+
+	Add NEWS item for dfa fix in Gnulib
+
+2022-02-13  Chris Marusich  <cmmarusich@gmail.com>
+
+	tests: export CONFIG_HEADER to test scripts
+	Before this change, the testsuite/inplace-selinux test fails in some
+	cases when SELinux is available.  The reason it fails is because the
+	require_selinux_ function in init.cfg expects the CONFIG_HEADER
+	environment variable to be defined, but in fact it is not defined.
+	Even though we do invoke AM_CONFIG_HEADER in configure.ac, and even
+	though the CONFIG_HEADER variable does get set in the resulting
+	Makefile, nothing actually exports the CONFIG_HEADER variable, so the
+	test is doomed to fail whenever it is not skipped.  Fix this by
+	exporting the variable.
+
+	* testsuite/local.mk (TESTS_ENVIRONMENT): Add CONFIG_HEADER to the
+	list of variables to export to the environment of the test scripts.
+
+	Reported by Vineet Jain <vkjain@gmail.com> in
+	https://bugs.gnu.org/36150 .  The fix was suggested by Timothy Sample
+	<samplet@ngyro.com> in the same bug report.
+
+2022-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: make update-copyright
+
+	build: update gnulib to latest; also bootstrap and init.sh
+
+2021-12-24  Jim Meyering  <meyering@fb.com>
+
+	maint: syntax-check: disable the indent check
+	* cfg.mk (local-checks-to-skip): Add sc_indent.
+	Otherwise, "make syntax-check" would fail for me on a
+	fedora 25 system.
+
+2021-12-17  Jim Meyering  <meyering@fb.com>
+
+	build: non-recursive Automake in a less hacky way
+	* bootstrap.conf (gnulib_modules): Remove
+	non-recursive-gnulib-prefix-hack.
+	(gnulib_tool_option_extras): Add --automake-subdir.
+	(bootstrap_post_import_hook): No need to massage lib/gnulib.mk.
+	* configure.ac [AM_INIT_AUTOMAKE]: Move subdir-objects onto the same line
+	as the function name, so gnulib-tool sees it.
+
+2021-10-02  Jim Meyering  <meyering@fb.com>
+
+	doc: fix more typos
+	* doc/sed.texi: Fix typos.
+
+2021-10-02  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	doc: fix a typo
+	* doc/sed.texi (sed regular expressions):
+	s/considrations/considerations/
+	This addresses https://bugs.gnu.org/50943
+
+2021-09-05  Jim Meyering  <meyering@fb.com>
+
+	maint: avoid new syntax-check failure
+	* doc/sed.texi: Split lines longer than 80.
+
+	build: update gnulib to latest
+
+	build: update gnulib to latest
+
+	doc: tighten/clarify wording e.g., re "g" modifier
+	* doc/sed.texi: When declaring that an example replaces
+	all occurrences, use "g" and make the description more
+	precise.  Prompted by http://bugs.gnu.org/50361
+	Stop using "the word" when describing a match, to avoid the
+	implication of a connection with "word"-delimited (\b) matching.
+	Prefer to match "on lines ...", not "in lines".
+
+2021-08-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: allow '0rFILE' (insert FILE before the first line)
+	The 'r' command can be used with address zero, effectively prepending
+	a file to the beginning of the input file, e.g.:
+	    sed '0rA.TXT' B.TXT > C.TXT
+	is equivalent to:
+	    cat A.TXT B.TXT > C.TXT
+
+	With "sed -i", this allows safe in-place prepending of files.
+	A typical example would be adding a license header to multiple source
+	files:
+	    sed -i '0rLICENSE' *.c *.h
+	    find -iname '*.cpp' | xargs sed -i '0rLICENSE'
+
+	A current cumbersome alternative is:
+	    sed -i -e 'x;${p;x};1rA.TXT' -e '1d'  B.TXT
+
+	* NEWS: Mention new feature.
+	* sed/sed.h (struct readcmd): New struct. (struct sed_cmd): Use new
+	struct instead of a char* for the filename.
+	* sed/compile.c (compile_program): Expand conditional detecting invalid
+	usage of "0" address to allow "0r"; Adjust '0r' to '1r' with prepending
+	(instead of appending).
+	* sed/execute.c (execute_program): 'r' command: support prepending.
+	* sed/debug.c (debug_print_function): Use the new 'struct readcmd'.
+	* testsuite/cmd-0r.sh: New test.
+	* testsuite/local.mk (TESTS): Add new test.
+	* doc/sed.texi (Zero Address): New section. (Adding a header to multiple
+	files): New example section.
+
+2021-08-11  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: extract print_file function
+	* sed/execute.c (dump_append_queue): Extract code to print a file to ...
+	(print_file): new function.
+
+2021-08-04  Renaud Pacalet  <renaud.pacalet@telecom-paris.fr>
+
+	doc: fix wording in 'line length adj.' example
+	Reported in https://bugs.gnu.org/49680 .
+
+	* doc/sed.texi: Fix wording, typo.
+
+2021-08-01  Jim Meyering  <meyering@fb.com>
+
+	sed: avoid potential double-fclose
+	Upon a failed temp file fclose, do_ck_fclose would call panic,
+	which would then attempt to fclose and unlink that same pointer.
+	Caught by gcc's new -Wanalyzer-double-fclose.
+	* sed/utils.c (struct open_file) [fclose_failed]: New member.
+	(panic): Don't double-close.
+	(register_open_file): Clear new member.
+	(mark_as_fclose_failed): Use new member to avoid double fclose.
+	(do_ck_fclose): Call mark_as_fclose_failed upon fclose failure.
+
+	maint: update obsolete constructs in configure.ac
+	* configure.ac: Avoid autoconf warnings:
+	Switch from obsolete AM_CONFIG_HEADER to AC_CONFIG_HEADERS, and quote.
+	Use AC_PROG_CC_STDC, not AC_PROG_CC.
+	Convert from obsolete AC_TRY_RUN to AC_RUN_IFELSE.
+
+	maint: avoid new warning about deprecated security_context_t
+	* sed/execute.c (open_next_file): Use char * in place of
+	deprecated security_context_t.
+
+2021-07-10  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+	* gnulib: update to latest
+	* .gitignore files: Reflect gnulib changes.
+	* bootstrap: update from gnulib
+
+2021-01-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: restore build rules for manual page
+	Reported by Kian Kasad in
+	https://lists.gnu.org/r/sed-devel/2020-12/msg00000.html ,
+	(continued in https://lists.gnu.org/r/sed-devel/2021-01/msg00000.html ).
+
+	* configure.ac: Enable buidling the manual page regardless of whether
+	building from git or from a tarball.
+
+2021-01-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: silence -Wformat-nonoliteral warning
+	GCC compilation fails with:
+	  sed/compile.c:206:3: error: format not a string literal, argument types
+	                       not checked [-Werror=format-nonliteral]
+	    sprintf (unknown_cmd, msg, ch);
+	             ^~~~~~~
+	While there is suppression of "-Wformat-nonliteral" in configure.ac,
+	it later '-Wformat=2' which turns "-Wformat-nonliteral" on.
+
+	* sed/compile.c (bad_command): Add explicit "#pragma GCC ... ignore".
+	The format string is fixed and known ahead of time.
+
+2021-01-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update all copyright year number ranges
+	Run "make update-copyright" and then...
+	* gnulib: Update to latest with copyright year adjusted.
+	* bootstrap.conf (gnulib_modules): Remove getopt module, depracated in
+	https://git.savannah.gnu.org/cgit/gnulib.git/commit/?id=0abc38bd2a1398f0
+	* po/POTFILES.in: Remove getopt.c
+	* sed/utils.h (panic): Rename _GL_ATTRIBUTE_FORMAT_PRINTF to
+	_GL_ATTRIBUTE_FORMAT_PRINTF_STANDARD following gnulib's change:
+	https://git.savannah.gnu.org/cgit/gnulib.git/commit/?id=387d654cabd7bc15
+	* tests/init.sh: Sync with gnulib to pick up copyright year.
+	* bootstrap: Likewise.
+
+2020-03-23  Jim Meyering  <meyering@fb.com>
+
+	build: update to newer help2man
+	* build-aux/help2man: Update from coreutils.
+	This updates from 1.28 to 1.47.3
+	* cfg.mk (exclude_file_name_regexp--sc_long_lines):
+	Exempt help2man from the 80-column-max limit.
+	This addresses https://bugs.gnu.org/30471
+
+2020-01-18  Tobias Stoeckmann  <tobias@stoeckmann.org>
+
+	sed: handle very long input lines with R (tiny change)
+	It is possible to trigger an out of bounds memory access when
+	using the sed command R with an input file containing very long
+	lines.
+
+	The problem is that the line length of parsed file is returned as
+	a size_t by ck_getdelim, but temporarily stored in an int and
+	then converted back into a size_t. On systems like amd64, on which
+	this problem can be triggered, size_t and int have different sizes.
+
+	If the input line is longer than 2 GB (which is parseable on amd64
+	or other 64 bit systems), this means that the temporarily stored
+	int turns negative. Converting the negative int back into a size_t
+	will lead to an excessively large size_t, as the conversion leads to
+	a lot of leading 1 bits.
+
+	Eventually ck_fwrite is called with this huge size_t which in turn
+	will lead to an out of bounds access on amd64 systems -- after all
+	the parsed text was just a bit above 2 GB, not near SIZE_MAX.
+
+	You can trigger this issue with GNU sed on OpenBSD like this:
+
+	$ dd if=/dev/zero bs=1M count=2049 | tr '\0' e > long.txt
+	$ sed Rlong.txt /etc/fstab
+	Segmentation fault (core dumped)
+
+	I was unable to trigger the bug on a Linux system with glibc due to
+	a bug in glibc's fwrite implementation -- it leads to a short write
+	and sed treats that correctly as an error.
+
+	* sed/execute.c (execute_program) [case 'R']: Declare result
+	to be of type size_t, not int.
+	* NEWS (Bug fixes): Mention it.
+	This addresses https://bugs.gnu.org/39166
+
+2020-01-18  Tobias Stoeckmann  <tobias@stoeckmann.org>
+
+	sed: handle very long execution lines (tiny change)
+	If sed is called with an excessively long execution line, then it is
+	prone to an out of bounds memory access.
+
+	The problem is that the length of the execution line, which is a
+	size_t, is temporarily stored in an int. This means that on systems
+	which have a 64 bit size_t and a 32 bit int (e.g. linux amd64) an
+	execution line which exceeds 2 GB will overflow int. If it is just
+	slightly larger than 2 GB, the negative int value is used as an
+	array index to finish the execution line string with '\0' which
+	therefore triggers the out of bounds access.
+
+	This problem is probably never triggered in reality, but can be
+	provoked like this (given that 'e' support is compiled in):
+
+	$ dd if=/dev/zero bs=1M count=2049 | tr '\0' e > e-command.txt
+	$ sed -f e-command.txt /etc/fstab
+	Segmentation fault (core dumped)
+
+	Also adjust another int/size_t conversion, even though it is a
+	purely cosmetic change, because it can never be larger than 4096.
+
+	* sed/execute.c (execute_program) [case 'e']: Declare cmd_length
+	to be of type size_t, not int.  Likewise for "n" just below.
+	* NEWS (Bug fixes): Mention it.
+	This addresses https://bugs.gnu.org/39165
+
+2020-01-14  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 4.8
+	* NEWS: Record release date.
+
+	doc: mention changes inherited through gnulib
+	* NEWS (Improvements): Mention gnulib.
+
+2020-01-11  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest (for updated perl.m4)
+
+	tests: remove valgrind-added diagnostics from stderr
+	* testsuite/bug32271-2.sh: Filter out lines starting with "==".
+	This avoids unwarranted failures on e.g., windows systems that
+	would emit this to stderr:
+	+==16281== error calling PR_SET_PTRACER, vgdb might block
+	* testsuite/newline-dfa-bug.sh: Likewise.
+	Reported by Vagelis Prokopiou on Windows subsystem for Linux
+	(Debian 10) in https://lists.gnu.org/r/sed-devel/2020-01/msg00018.html
+	and by Bruno Haible for mingw in
+	https://lists.gnu.org/r/sed-devel/2020-01/msg00005.html
+
+	sed: avoid MSVC build failure
+	* sed/sed.c (usage): Remove unnecessary forward declaration.
+	Reported by Bruno Haible in
+	https://lists.gnu.org/r/sed-devel/2020-01/msg00007.html
+
+	tests: avoid hpux11 test failure
+	* testsuite/title-case.sh: Correct printf usage not to trigger
+	unspecified behavior for '\(\)'. Instead, just use sed with its -r
+	option so those parentheses don't need any backslash at all.
+	Reported by Bruno Haible in
+	https://lists.gnu.org/r/sed-devel/2020-01/msg00008.html
+
+2020-01-09  Jim Meyering  <meyering@fb.com>
+
+	tests: handle missing perl
+	Before this change, the two perl-requiring tests would fail
+	on systems without perl. Now, they are skipped, as intended.
+	* bootstrap.conf (gnulib_modules): Add perl.
+	* testsuite/no-perl: New file. From coreutils.
+	* testsuite/local.mk (EXTRA_DIST): Add it.
+	(TESTSUITE_PERL): Include testsuite/ prefix.
+
+2020-01-06  Jim Meyering  <meyering@fb.com>
+
+	maint: once again distribute .tar.gz files
+	* configure.ac: Reenable distribution of gzip-compressed
+	tarballs, on request from Jan Nieuwenhuizen in
+	https://lists.gnu.org/r/sed-devel/2020-01/msg00013.html
+	* NEWS (Release): Mention this.
+
+2020-01-05  Jim Meyering  <meyering@fb.com>
+
+	maint: space-before-open-paren: avoid syntax-check error
+	* sed/sed.c (selinux_support): Insert space before open-paren.
+
+	build: update gnulib to latest (for thread-related test fixes)
+	* .gitignore: Add /lib/inttypes.h.
+
+2020-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update all copyright year number ranges
+	Run "make update-copyright" and then...
+	* gnulib: Update to latest with copyright year adjusted.
+	* tests/init.sh: Sync with gnulib to pick up copyright year.
+	* bootstrap: Likewise.
+
+	maint: remove explicit mention of gnulib's threadlib module
+	* bootstrap.conf (gnulib_modules): Remove explicit mention of threadlib.
+	It was added back in 2012 to avoid a bootstrap failure; that explicit
+	mention has long been unnecessary.
+
+2019-09-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: set correct umask on temporary files
+	"sed -i" now creates temporary files with correct umask (limited to u=rwx).
+	Previously sed would incorrectly set umask, and combined with mkostemp
+	creating file with mode 0600, the result would be a file with
+	permission mode 0.
+
+	Reported by Dr N.W. Filardo <nwf20@cam.ac.uk>:
+	https://lists.gnu.org/r/sed-devel/2019-08/msg00000.html
+	  "The net effect is that this patch does not do what it says on the tin:
+	   it does not improve the security story at all.  Things continue to
+	   function because the subsequent operations are via f*() APIs, which
+	   take the open file handle, and in particular fchmod() will put the
+	   bits back to something sensible.
+
+	   However, when running atop, for example, fuse-style filesystems which do
+	   not keep open descriptors to underlying files, this is catastrophic:
+	   the underlying file will have I_SRWXU of zero, and so the filesystem
+	   server will be unable to open the file for the fchmod() and that's
+	   the end of that."
+
+	"fuse-overlayfs" is an example of a filesystem with such issues.
+	This change was made in commit 5156c19b23c41f438bf8658e1b9a43a5ff136835
+	and was released in sed 4.2.1.
+
+	* NEWS: Mention change.
+	* sed/utils.c (ck_mkstemp): Set correct umask.
+
+2019-06-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: inplace-selinux.sh: skip if SELinux is not supported
+	Avoid false-positive failure on system with SELinux enabled when SED
+	is built without SELinux suppport.
+
+	Reported by Jeffrey Walton <noloader@gmail.com> in
+	https://bugs.gnu.org/35997 .
+
+	* testsuite/inplace-selinux.sh: Call 'sed --version' to check if sed
+	was built with SELinux support before continuing with the test.
+
+2019-06-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: report SELinux status in --version output
+	Report whether sed was built with SELinux support (determined at compile
+	time), and whether it is enabled on this system (determined at runtime).
+
+	Relates to https://bugs.gnu.org/35997 .
+
+	* sed/sed.c (selinux_support): New function, print SELinux status to
+	stdout. (main): Call selinux_support on --version.
+
+2019-01-20  Jim Meyering  <meyering@fb.com>
+
+	build: ensure no VLA is used
+	Cause developer builds to fail for any use of a VLA.
+	VLAs (variable length arrays) limit portability.
+	* configure.ac (nw): Remove -Wvla from the list of disabled warnings,
+	thus enabling the warning when configured with --enable-gcc-warnings.
+	(GNULIB_NO_VLA) Define, disabling use of VLAs in gnulib.  This commit
+	is functionally equivalent to coreutils' v8.30-44-gd26dece5d.
+
+	build: update gnulib to latest
+
+2019-01-01  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+2019-01-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update copyright dates for 2019
+	* all files: Run "make update-copyright".
+
+2018-12-20  Jim Meyering  <meyering@fb.com>
+
+	maint: use https: in gnu mirror URL prefix, not http
+	This appears in the generated release announcement message.
+	* cfg.mk (url_dir_list): Use https: prefix, not http:.
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 4.7
+	* NEWS: Record release date.
+
+	sed: fix \b DFA-bug in C locale
+	Under some conditions, \b would mistakenly fail to match. E.g.,
+	this would mistakenly print "123-x" instead of "123":
+	  echo 123-x|LC_ALL=C sed 's/.\bx//'
+	* NEWS (Bug fixes): Mention it
+	* gnulib: Update to latest, for DFA regression fix.
+	* testsuite/word-delim.sh: New file, to test for the dfa.c regression.
+	* testsuite/local.mk (T): Add it.
+	Reported by Jan Palus in
+	https://lists.gnu.org/r/sed-devel/2018-12/msg00022.html
+
+2018-12-19  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 4.6
+	* NEWS: Record release date.
+
+2018-12-17  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest for linux/sparc c-stack fix
+
+2018-12-16  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest for config.sub fix, etc.
+	* gnulib: Update for build- and test-related fixes,
+	including the config.sub fix for Solaris 10:
+	https://lists.gnu.org/r/grep-devel/2018-12/msg00013.html
+	* bootstrap: Update to latest.
+
+2018-12-13  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: fix obinary test error due to 'wc' spaces
+	On BSD systems "wc -c" prefixes the count with spaces,
+	leading to test error.
+	Discussed in https://lists.gnu.org/r/sed-devel/2018-12/msg00014.html .
+
+	* testsuite/obinary.sh: Remove leading spaces from 'wc -c' output.
+
+2018-12-12  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+2018-12-09  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: add text/binary mode tests
+	This test is skipped on most platforms (which do not support O_BINARY
+	and do not differentiate between TEXT and BINARY files).
+
+	On cygwin, the test is skipped because default cygwin installations
+	do not use O_TEXT/O_BINARY modes (unless file systems are mounted with
+	special options).
+
+	In practice this test will only run on native Windows (e.g. when compiled
+	with mingw or msvc). Note that almost every other test will fail with
+	such a binary (due to excesssive "\r" in the output). Thus it is
+	recommended to explictly run just this test alone:
+
+	   make check SUBDIRS=. TESTS=testsuite/obinary.sh
+
+	The script tries to cover all cases mentioned in https://bugs.gnu.org/25459 .
+	See also https://lists.gnu.org/r/sed-devel/2018-10/msg00001.html .
+
+	* testsuite/obinary.sh: New test.
+	* testsuite/local.mk (TESTS): Add new test.
+
+2018-12-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: fix -b/--binary mode under windows/mingw
+	Discussed in https://lists.gnu.org/r/sed-devel/2018-10/msg00001.html .
+
+	* NEWS: Mention change.
+	* bootstrap.conf: Add gnulib's binary-io module.
+	* sed/sed.c (main): Set stdin/stdout to binary mode if needed.
+	* sed/utils.c (ck_mkstemp): Explicitly set binary mode on file
+	descriptor. It seems that on (non-cygwin) Windows the fdopen(3) call
+	ignores the 'b' in the 'mode' argument - and the file was always opened
+	in O_TEXT mode. Thus "--binary" was not working with "--inplace".
+
+2018-12-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update .gitignore
+	Following gnulib recent update.
+	* lib/.gitignore, m4/.gitignore: Update file list.
+
+2018-12-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: update autoconf version requirements
+	Require version 2.64 to bootstrap. This is already required in practice
+	by bootstrap.conf, but was not updated in configure.ac.
+	After recent gnulib update, gnulib-tool would complain:
+
+	  $ ./gnulib/gnulib-tool
+	  ./gnulib/gnulib-tool: *** minimum supported autoconf version is 2.63.\
+	      Try adding AC_PREREQ([2.63]) to your configure.ac.
+	  ./gnulib/gnulib-tool: *** Stop.
+
+	Hence this update.
+
+	* configure.ac: Require autoconf version 2.64 or later.
+
+2018-12-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	gnulib: update to latest (for dfa improvements)
+
+2018-11-22  Jannick  <thirdedition@gmx.net>
+
+	sed: fix memory leakage under lint
+	The NULL-initialized char string in_place_extension is free'ed everytime
+	it is redefined (using xstrdup) and at program exit with any return code.
+
+	See: https://lists.gnu.org/r/sed-devel/2018-11/msg00005.html
+
+	* sed/sed.c (main, cleanup): Free 'in_place_extension' if running with
+	lint.
+
+2018-11-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: rename stdin local variable
+	Under windows/msys2, defining 'bool stdin' variable results in
+	compilation errors:
+
+	  ../sed/execute.c:1252:8: error: expected declaration specifiers or '...'
+	  before numeric constant
+	   bool stdin = (input->fp && fileno (input->fp) == 0);
+	        ^~~~~
+
+	Reported by Jannick <thirdedition@gmx.net> in
+	https://lists.gnu.org/archive/html/sed-devel/2018-10/msg00019.html .
+
+	* sed/execute.c (debug_print_input): Rename 'stdin' to 'is_stdin'.
+
+2018-10-28  Jim Meyering  <meyering@fb.com>
+
+	maint: fix a syntax-check nit
+	* sed/compile.c (MISSING_FILENAME): Insert a space before "(", and
+	in a following comment.
+
+2018-10-27  Jim Meyering  <meyering@fb.com>
+
+	tests: avoid unnecessary dependency on Data::Dump
+	* testsuite/debug.pl: Don't use Data::Dump.  Unnecessary.
+	That package, perl-Data-Dump, appear not to be default-installed
+	on at least a Fedora 29 beta system.
+
+	sed: avoid UMR in --debug code path
+	* sed/debug.c (debug_print_function) [b, t, T]: For a b, t or T
+	command with no LABEL, do not access uninitialized memory.
+	I.e., print the label name only when there is one.
+
+2018-10-24  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: add --debug feature
+	    $ seq 3 | sed --debug -e 's/./--&--/ ; 2d'
+	    SED PROGRAM:
+	      s/./--&--/
+	      2 d
+	    INPUT:   'STDIN' line 1
+	    PATTERN: 1
+	    COMMAND: s/./--&--/
+	    MATCHED REGEX REGISTERS
+	      regex[0] = 0-1 '1'
+	    PATTERN: --1--
+	    COMMAND: 2 d
+	    END-OF-CYCLE:
+	    --1--
+	    INPUT:   'STDIN' line 2
+	    PATTERN: 2
+	    COMMAND: s/./--&--/
+	    MATCHED REGEX REGISTERS
+	      regex[0] = 0-1 '2'
+	    PATTERN: --2--
+	    COMMAND: 2 d
+	    END-OF-CYCLE:
+	    INPUT:   'STDIN' line 3
+	    PATTERN: 3
+	    COMMAND: s/./--&--/
+	    MATCHED REGEX REGISTERS
+	      regex[0] = 0-1 '3'
+	    PATTERN: --3--
+	    COMMAND: 2 d
+	    END-OF-CYCLE:
+	    --3--
+
+	Discussed in https://lists.gnu.org/r/sed-devel/2018-07/msg00006.html
+	and https://lists.gnu.org/r/sed-devel/2018-10/msg00007.html .
+
+	* NEWS: Mention new option.
+	* doc/sed.texi (Program options): Mention new option.
+	* sed/debug.c: New unit with debug printing functions.
+	* sed/sed.h (debug_print_command, debug_print_char, debug_print_program,
+	debug): Declare functions and global variable.
+	(struct sed_cmd): Add label_name member variable.
+	* sed/compile.c (compile_program): Save the label's name.
+	(cleanup_program_filenames): extracted function to free filenames.
+	(check_final_program) Don't delete the filenames, instead move it to ...
+	(finish_program) ... here.
+	* sed/execute.c (debug_print_end_of_cycle, debug_print_input,
+	debug_print_line): New debug functions (cannot be defined in debug.c as
+	execute's structures are private).
+	(execute_program, process_files): Call debug functions.
+	* sed/sed.c: (DEBUG_OPTION): New option for getoptlong.
+	(debug): New global variable.
+	(usage): Mention new option.
+	(main): Process new option and call debug functions if needed.
+	* testsuite/debug.pl: New tests.
+	* testsuite/local.mk (T): Add new tests.
+
+2018-10-19  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: change internal storage for 'R' command
+	For the 'R' command, keep a pointer to 'struct output' instead of just
+	to FILE*. No change in functionality. This will help future debug code
+	to know the filename of the associated file.
+
+	As a side effect, fix invalid code in W/w execution:
+	The previous code checked for 'cur_cmd->x.fp' (which was related to R
+	command, not W/w). Since 'x' is a union, 'x.fp' was not relevant to
+	the 'x.outf' (which is the struct associted with W/w commands).
+
+	* sed/sed.h (struct sed_cmd): Replace 'FILE*' with 'struct *output' for
+	R command.
+	* sed/compile.c (compile_program): Adjust as needed.
+	* sed/execute.c (execute_program): Adjust as needed.
+
+2018-10-18  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: reject r/R/w/W commands without a filename
+	w/W (and s///w) commands Without a filename would print a confusing error
+	message:
+	  $ sed w
+	  sed: couldn't open file : No such file or directory
+	While r/R commands with empty file name were a silent no-op.
+
+	With this change, sed programs with empty filename are rejected with a
+	clear error:
+
+	  $ sed 's/1/2/w'
+	  sed: -e expression #1, char 7: missing filename in r/R/w/W commands
+	  $ sed r
+	  sed: -e expression #1, char 1: missing filename in r/R/w/W commands
+
+	* NEWS: Mention change.
+	* sed/compile.c (get_openfile): Exit with an error message if filename
+	is missing. (compile_program): Same for 'r' command code.
+	* testsuite/missing-filename.sh: New test.
+	* testsuite/local.mk (T): Add new test.
+
+2018-10-12  Clint Adams  <clint@debian.org>  (tiny change)
+
+	doc: use @key{TAB} in texinfo
+	Discussed in https://bugs.gnu.org/22636 .
+
+	* doc/sed.texi: Use '@kbd{@key{TAB}}' instead of '@kbd{tab}' to improve
+	rendering in HTML and info formats.
+
+2018-10-12  Bjarni Ingi Gislason  <bjarniig@rhi.hi.is>  (tiny change)
+
+	doc: sed.x: some formatting corrections
+	Reported in https://bugs.gnu.org/30479 .
+
+	doc/sed.x: Change a HYPHEN-MINUS (code 0x55, 2D) to a dash (\-, minus)
+	if it matches " -[:alpha:]" or \(aq-[:alpha:] (for options); Use a pronoun
+	instead of a repeated noun.
+
+2018-10-12  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: update authors
+	* sed/sed.c (AUTHORS): Update.
+	* doc/sed.texi (@author): Update.
+
+2018-08-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: remove REG_PERL code
+	Perl-regexp syntax (PCRE) in GNU Sed is shelved indefinitely.
+	See https://bugs.gnu.org/22801 , https://bugs.gnu.org/22647 .
+	Remove all (unused) REG_PERL related code.
+
+	* sed/sed.c, sed/sed.h, sed/regexp.c, sed/compile.c: Remove REG_PERL code.
+
+2018-08-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: remove EXPERIMENTAL_DASH_N_OPTIMIZATION code
+	The optimization was buggy and was never enabled in a released version.
+
+	* sed/execute.c: Remove EXPERIMENTAL_DASH_N_OPTIMIZATION code.
+
+2018-08-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: replace street address with URL in license text
+	* basicdefs.h, sed/compile.c, sed/execute.c, sed/mbcs.c, sed/regexp.c,
+	sed/sed.c, sed/sed.h, sed/utils.c, sed/utils.h, testsuite/get-mb-cur-max.c,
+	testsuite/test-mbrtowc.c (GPL License notice): Replace FSF's office
+	address with 'https://www.gnu.org/licenses/'.
+
+2018-08-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: use system's native sed during build
+	Use the locally built sed binary only during 'check*' targets,
+	but not during build/installation targets - it might be buggy, or contain
+	temporary debugging/ASAN features that can break the build.
+	See: https://lists.gnu.org/r/sed-devel/2018-08/msg00013.html .
+
+	* cfg.mk (PATH): Add the 'sed' directory to the PATH only if this is a
+	'check' target.
+
+2018-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: mark function as attribute(malloc)
+	Suggested by gcc-8.2.0.
+
+	* sed/compile.c (read_label): Mark as _GL_ATTRIBUTE_MALLOC.
+
+2018-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: add undefined-behavior build target
+	Using gcc-specific options, a recent gcc is required.
+	build with:
+	   make build-ubsan CC=gcc-8.2
+
+	* cfg.mk (build-ubsan): New target.
+
+2018-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: add address-sanitizer build target
+	use 'make build-asan' to rebuild sed with gcc's address sanitizer.
+
+	* cfg.mk (build-asan): New target.
+
+2018-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	gnulib: update to latest (for regex memory leaks)
+	Specifically for gnulib commits 66b99e5259,c5e76a9560.
+	see https://lists.gnu.org/r/bug-gnulib/2018-07/msg00127.html
+
+	sed: fix memory leak
+	* sed/regexp.c (match_regex): Free the previously allocated regex struct
+	before re-building the regex during program execution.
+
+2018-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: free allocated memory under lint, remove DEBUG_LEAKS
+	Under normal operation there is no need for explicit freeing,
+	as all memory will be released when sed terminates.
+	During development (and specifically, valgrind and address-sanitizing)
+	enabling lint prevents false-positive warnings about memory
+	leaks.
+	Lint mode can be enabled with CFLAGS="-Dlint". It is also automatically
+	enabled by default when building from git (as opposed to tarball).
+
+	For consistency all instances of "#ifdef DEBUG_LEAKS" are replaced
+	with "#ifdef lint".
+
+	* sed/sed.h (struct subst): Add member variable to keep the address of
+	allocated buffer in compile.c:setup_replacement().
+	(release_regex): Add declaration.
+	(finish_program): Function now takes an argument: the sed program
+	vector.
+	* sed/sed.c (main): Adjust call to finish_program.
+	* sed/compile.c (finish_program): Release program allocations.
+	(setup_replacement): Remember the allocated buffer address.
+	(compile_program): Free temporary array in 'y' command.
+	* sed/execute.c (execute_program): Free allocated but unused buffer in
+	'R' command when reaching EOF.
+	* sed/regexp.c (release_regex): Remove 'static', free the allocated
+	dfa struct.
+	* sed/utils.c (panic): Free open files linked-list elements.
+
+2018-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: do not close stderr on exit
+	Not needed, and prevents leak-sanitizing from working.
+
+	* sed/utils.c (ck_fclose): Do not close stderr.
+
+2018-08-07  Jim Meyering  <meyering@fb.com>
+
+	doc: insert two missing words
+	doc/sed.texi (BRE vs ERE): Insert "with a".
+
+2018-08-04  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: syntax-check: prohibit-operator-at-eol
+	* cfg.mk (sc_prohibit_operator_at_end_of_line): Copied from coreutils'
+	cfg.mk.
+	* sed/execute.c (do_subst,execute_program): Adjust as needed.
+
+	maint: syntax-check: fail-0 and fail-1 in shell script tests
+	* cfg.mk (prohibit_fail_0,sc_prohibit_and_fail_1): Copied from
+	coreutils' cfg.mk
+	* testsuite/*.sh: Remove 'fail=0'.
+
+	maint: syntax-check: add various test-related checks
+	* cfg.mk (sc_prohibit_env_returns, sc_prohibit_perl_hash_quotes,
+	sc_prohibit_verbose_version, sc_prohibit_framework_failure,
+	sc_prohibit_test_backticks, sc_prohibit_test_empty): Copied from
+	coreutils' cfg.mk.
+
+	maint: syntax-check: add sc_prohibit_strncmp
+	* cfg.mk (sc_prohibit_strncmp): Copied from coreutils' cfg.mk.
+	* basicdefs.h (STREQ,STREQ_LEN,STRPREFIX): Copied from coreutils' system.h.
+	* sed/execute.c (translate_mb): Replace strncmp with STREQ_LEN.
+
+	maint: syntax-check: add sc_gitignore_missing
+	* cfg.mk (sc_gitignore_missing): Copied from coreutils' cfg.mk.
+	* .gitignore: Add missing files.
+
+	maint: syntax-check: prohibit-form-feed
+	* cfg.mk (sc_prohibit-form-feed): Copied from coreutils' cfg.mk.
+	* sed/compile.c, sed/execute.c, sed/regexp.c, sed/sed.h, sed/utils.c:
+	Remove form feed characters.
+
+	maint: syntax-check: space-before-open-paren
+	* cfg.mk (sc_space_before_open_paren): Copy target from coreutils' cfg.mk.
+	* basicdefs.h, sed/compile.c, sed/execute.c, sed/regexp.c,
+	sed/sed.c, sed/utils.c: Add space before parentheses.
+
+	maint: syntax-check: fix tab indentation
+	* sed/execute.c (open_next_file): Replace tab with spaces.
+
+2018-08-03  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: replace myname with gnulib's progname
+	* compile.c (bad_prog): Use program_name instead of myname.
+	* execute.c (open_next_file): Same.
+	* utils.c (panic):  Same.
+	  (myname): Remove variable.
+	* sed.c (usage): Use program_name instead of myname.
+	  (main): Call set_program_name once, don't set variables directly.
+
+	sed: replace ck_realloc with gnulib's xrealloc/xnrealloc
+	* basicdefs.h (REALLOC): Call xnrealloc instead of ck_realloc.
+	* sed/utils.c (ck_realloc): Remove.
+
+2018-08-03  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: replace MALLOC/ck_malloc with gnulib's XCALLOC
+	ck_malloc zero'd out the allocated buffer, thus replaced with
+	xcalloc/xzalloc (not xmalloc).
+
+	* basicdefs.h (MALLOC): Remove.
+	* utils.c (ck_malloc): Remove.
+	* sed/compile.c, sed/execute.c, sed/regexp.c, sed/sed.c: Replace
+	MALLOC with XCALLOC; ck_malloc with xzalloc.
+
+2018-08-03  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: replace ck_strdup with gnulib's xstrdup
+	* sed/utils.{c,h} (ck_strdup): Remove.
+	* sed/compile.c, sed/execute.c, sed/sed.c: Replace ck_strdup with
+	xstrdup.
+
+	sed: replace ck_memdup with gnulib's xmemdup
+	* bootstrap.conf: Add gnulib's xalloc module.
+	* basicdefs.h (MEMDUP): Remove.
+	* sed/utils.{c,h} (ck_memdup): Remove.
+
+2018-08-03  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: fix heap buffer overflow from multiline EOL regex optimization
+	sed would access invalid memory when matching EOF combined with
+	s///n flag:
+
+	  $ yes 0 | fmt -w 40 | head -n2 | valgrind sed 'N;s/$//2m'
+	  ==13131== Conditional jump or move depends on uninitialised value(s)
+	  ==13131==    at 0x4C3002B: memchr (vg_replace_strmem.c:883)
+	  ==13131==    by 0x1120BD: match_regex (regexp.c:286)
+	  ==13131==    by 0x110736: do_subst (execute.c:1101)
+	  ==13131==    by 0x1115D3: execute_program (execute.c:1591)
+	  ==13131==    by 0x111A4C: process_files (execute.c:1774)
+	  ==13131==    by 0x112E1C: main (sed.c:405)
+	  ==13131==
+	  ==13131== Invalid read of size 1
+	  ==13131==    at 0x4C30027: memchr (vg_replace_strmem.c:883)
+	  ==13131==    by 0x1120BD: match_regex (regexp.c:286)
+	  ==13131==    by 0x110736: do_subst (execute.c:1101)
+	  ==13131==    by 0x1115D3: execute_program (execute.c:1591)
+	  ==13131==    by 0x111A4C: process_files (execute.c:1774)
+	  ==13131==    by 0x112E1C: main (sed.c:405)
+	  ==13131==  Address 0x55ec765 is 0 bytes after a block of size 101 alloc'd
+	  ==13131==    at 0x4C2DDCF: realloc (vg_replace_malloc.c:785)
+	  ==13131==    by 0x113BA2: ck_realloc (utils.c:418)
+	  ==13131==    by 0x10E682: resize_line (execute.c:154)
+	  ==13131==    by 0x10E6F0: str_append (execute.c:165)
+	  ==13131==    by 0x110779: do_subst (execute.c:1106)
+	  ==13131==    by 0x1115D3: execute_program (execute.c:1591)
+	  ==13131==    by 0x111A4C: process_files (execute.c:1774)
+	  ==13131==    by 0x112E1C: main (sed.c:405)
+	  ==13131==
+
+	The ^/$ optimization code added in v4.2.2-161-g6dea75e called memchr()
+	using 'buflen', ignoring the value of 'buf_start_offset' (which, if not
+	zero, reduces the number of bytes available for the search).
+
+	Reported by bugs@feusi.co (bug#32271) in
+	https://lists.gnu.org/r/bug-sed/2018-07/msg00018.html .
+
+	* NEWS: Mention the fix.
+	* sed/regexp.c (match_regex): Use correct buffer length in memchr().
+	* testsuite/bug-32271-2.sh: Test using valgrind.
+	* testsuite/local.mk (T): Add new test.
+
+2018-08-03  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: fix extraneous NUL in s///n command
+	Under certain conditions sed would add an extraneous NUL:
+
+	    $ echo 0 | sed -e 's/$/a/2' | od -tx1 -An
+	     30 00 0a
+
+	This would happen when the regex is an empty (zero-length) match at the
+	end of the line (e.g. '$' and 'a*$') and the substitute number flag
+	('n' in s///n) is higher than the number of actual matches (multiple
+	EOL matches are possible with multiline match, e.g. 's/$/a/3m').
+
+	Details:
+	The comment at the top of 'execute.c:do_subst()' says:
+
+	       /* The first part of the loop optimizes s/xxx// when xxx is at the
+	          start, and s/xxx$// */
+
+	Which refers to lines 1051-3:
+
+	  1051 /* Copy stuff to the left of this match into the output string. */
+	  1052 if (start < offset)
+	  1053   str_append(&s_accum, line.active + start, offset - start);
+
+	The above code appends text to 's_accum' but does *not* update 'start'.
+
+	Later on, if the s/// command includes 'n' flag, and if 'matched == 0'
+	(an empty match), this comparison will be incorrect:
+
+	  1081  if (start < line.length)
+	  1082     matched = 1;
+
+	Will in turn will set 'matched' to 1, and the 'str_append' call that
+	follows (line 1087) will append an additional character.
+	Because the empty match is EOL, the appended character is NUL.
+
+	More examples that trigger the bug:
+
+	  echo 0 | sed -e 's/a*$/X/3'
+	  printf "%s\n" 0 0 0 | sed -e 'N;N;s/a*$/X/4m'
+
+	Examples that do not trigger the bug:
+
+	  # The 'a*' empty regex matches at the beginning of the line (in
+	  # addition to the end of the line), and the optimization in line
+	  # 1052 is skipped.
+	  echo 0 | sed -e 's/a*/X/3'
+
+	  # There are 3 EOLs in the pattern space, s///3 is not too large.
+	  printf "%s\n" 0 0 0 | sed -e 'N;N;s/a*$/X/3m'
+
+	This was discovered while investigating bug#32271 reported by bugs@feusi.co
+	in https://lists.gnu.org/r/bug-sed/2018-07/msg00018.html .
+
+	* NEWS: Mention the fix.
+	* sed/execute.c (do_subst): Update 'start' as needed.
+	* testsuite/bug-32271-1.sh: New test.
+	* testsuite/local.mk (T): Add test.
+
+2018-07-26  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: do not flush output stream unless in unbuffered mode
+	Previously sed would explicitly flush the output after
+	every output line, except if the output was stdout in unbuffered mode.
+
+	In practice this was equivalent to forcing line-buffering, and was
+	espcially was noticable with "sed -i" (where the output is a temporary
+	file).
+
+	With this change, explicit flushing only happens with "sed -u",
+	regardless of the type of output file, making "sed -i" much faster.
+	This change also affect other write commands such as 'w'/'W' and 's///w'.
+
+	Reported by Vidar Holen <vidar@vidarholen.net> in
+	https://lists.gnu.org/r/bug-sed/2018-07/msg00014.html .
+
+	* NEWS: Mention this.
+	* sed/execute.c (flush_output): Never flush output unless in unbuffered
+	mode, regardless of which file it is.
+
+2018-07-25  Bernhard Voelker  <mail@bernhard-voelker.de>
+
+	doc: tiny fix
+	* doc/sed.texi (Regexp Addresses): Remove the word 'two': there are
+	3 examples following.
+
+2018-07-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: fix heap buffer overflow from invalid references
+	Under certain conditions sed would access invalid memory based on
+	the requested back-reference (e.g. "s//\9/" would access the 9th element
+	in the regex registers without checking it is at least 9 element in
+	size).
+
+	The following examples would trigger valgrind errors:
+	    seq 2 | valgrind sed         -e '/^/s///p ; 2s//\9/'
+	    seq 2 | valgrind sed --posix -e '/2/p ;     2s//\9/'
+
+	Reported by bugs@feusi.co in
+	https://lists.gnu.org/r/bug-sed/2018-07/msg00004.html .
+
+	* NEWS: Mention the bugfix.
+	* sed/execute.c (append_replacement): Check number of allocated regex
+	replacement registers before accessing the array.
+	* sed/testsuite/bug32082.sh: Test sed for this behaviour under valgrind.
+	* sed/testsuite/local.mk (T): Add new test.
+
+2018-03-31  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 4.5
+	* NEWS: Record release date.
+
+2018-03-30  Jim Meyering  <meyering@fb.com>
+
+	tests: port inplace-selinux.sh to Centos7 and Fedora 25
+	* testsuite/inplace-selinux.sh: Set the user (-u) portion of the security
+	context rather than the type (-t), and use system_u and user_u, which
+	appear to be reliably available, since some coreutils's tests use those.
+	Assaf Gordon reported that this test failed on those systems in
+	https://lists.gnu.org/r/sed-devel/2018-03/msg00018.html
+	Also, correct copyright date to include this year.
+
+2018-03-28  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+
+	maint: fix preceding change so "make dist" works
+	* testsuite/local.mk (EXTRA_DIST): Also remove runtest, here.
+
+2018-03-27  Jim Meyering  <meyering@fb.com>
+
+	tests: don't run $(check_PROGRAMS) directly
+	testsuite/runtest was not portable to Solaris 10 /bin/sh, but was
+	used only to keep automake test machinery from running two compiled
+	binaries stand-alone.  We can inhibit that more cleanly by removing
+	those two files from the list of TESTS to run and then just remove
+	the offending script.
+	* testsuite/local.mk (LOG_COMPILER): Set to false.
+	(TESTS): Don't put $(check_PROGRAMS) on this list.
+	* testsuite/runtest: Remove file.
+	Nelson H.F. Beebe reported the Solaris 10 /bin/sh failure.
+
+	tests: port to solaris 10's /bin/sh
+	* testsuite/runtest (test): Accommodate Solaris 10 /bin/sh
+	by sourcing init.sh, as is already done in many other shell
+	scripts in this directory, to handle (or skip test upon)
+	use of this construct: ${1##*/}. Reported by Nelson H.F. Beebe.
+
+2018-03-23  Jim Meyering  <meyering@fb.com>
+
+	maint: remove old definition of UNUSED: use _GL_UNUSED instead
+	* sed/execute.c (UNUSED): Remove macro definition.
+	(read_always_fail): Use _GL_UNUSED instead.
+
+2018-03-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: reject RE searches on buffers larger than INT_MAX
+	Sed uses 'size_t' internally, but gnulib's re_search uses 'signed int'.
+	If the buffer is larger than INT_MAX, reject it (panic, exit code 4).
+
+	The test is marked 'very expensive' and skipped by default (due to
+	creating a 2GB input file). To run it, use:
+
+	   make check SUBDIRS=. RUN_VERY_EXPENSIVE_TESTS=yes \
+	              TESTS=testsuite/regex-max-int.sh
+
+	Reported by YushiOMOTE in https://bugs.gnu.org/30520 .
+
+	* NEWS: Mention this.
+	* Makefile.am (check-expensive, check-very-expensive): New targets.
+	* init.cfg (expensive_, very_expensive_): Copied from coreutils.
+	* sed/regexp.c (match_regex): Check buffer length and panic if too large.
+	* testsuite/regex-max-int.sh: New test.
+	* testsuite/local.mk (T): Add new test.
+
+2018-03-22  Jim Meyering  <meyering@fb.com>
+
+	maint: ignore more artifacts
+	* .gitignore: Also ignore sed-*.tar.xz.sig files.
+	* lib/.gitignore: Ignore more gnulib-provided sources.
+
+	build: update gnulib to latest
+	* gnulib: Update submodule.
+	* bootstrap: Update from gnulib.
+	* testsuite/init.sh: Likewise.
+
+2018-03-14  0xddaa  <0xddaa@gmail.com>
+
+	sed: treat '\x5c' as literal backslash
+	Sed incorrectly treated '\x5c' (ASCII 92, backslash) as an escape character.
+
+	Old behavior:
+	  $ echo z | sed -E 's/(z)/\x5c1/' # identical to 's/(z)/\1/'
+	  z
+
+	New behavior:
+	  $ echo z | sed -E 's/(z)/\x5c1/'
+	  \1
+
+	Reported in https://bugs.gnu.org/30794.
+
+	* NEWS: Mention bug fix.
+	* sed/compile.c (normalize_text): Pass backslash as literal character.
+	* testsuite/misc.pl: Add tests.
+
+2018-03-02  Mike Frysinger  <vapier@chromium.org>  (tiny change)
+
+	sed: improve sandbox description in --help output
+	* sed/sed.c (usage): Add "(disable e/r/w commands)" to --sandbox text.
+
+2018-02-15  Jim Meyering  <meyering@fb.com>
+
+	doc: small improvements
+	* doc/sed.texi: s/only accepts/accepts only/.
+	(BRE vs ERE): Tweak ERE and BRE definitions, and convert a
+	passive-voice sentence to active voice.  Insert a comma.
+
+2018-02-13  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: change URLs to https
+	* doc/config.texi, doc/sed-dummy.1, doc/sed.texi: Change http to https for
+	GNU URLs. External links (e.g. sed.sf.net, autsingroup.org) currently do
+	not support https and kept as-is.
+
+	maint: change http to https in license headers
+	* all files: Change http to https for all licenses URL.
+
+	sed: use https in usage screen contact information
+	* sed/sed.c (contact): Change http to https.
+
+2018-02-04  Jim Meyering  <meyering@fb.com>
+
+	build: update gnulib to latest
+	* gnulib: This fixes a syntax-check failure that was due to the
+	new use of "/proc/filesystems" in init.cfg.
+
+2018-01-31  Jim Meyering  <meyering@fb.com>
+
+	maint: make cfg.mk slightly more generic
+	* cfg.mk (announcement_Cc_): Don't hard-code "sed-devel@".
+	Use "$(PACKAGE)-devel@" instead.
+
+2018-01-09  Jakub Martisko  <jamartis@redhat.com>
+
+	sed: with --in-place and selinux, use the symlink's context
+	When editing a file in place, the SELinux context (if exists)
+	should be based on the link instead of the target file itself.
+	--follow-symlinks option remains unchanged.
+
+	Bug reported by Jakub Jelen, fix proposed by Petr Lautrbach,
+	discussed in https://lists.gnu.org/r/sed-devel/2017-12/msg00000.html
+
+	* NEWS: Mention this.
+	* sed/execute.c (open_next_file): Use lgetfilecon (instead of getfilecon)
+	to get the context of the symlink instead of the target file.
+	* testsuite/inplace-selinux.sh: Test the above change.
+	* testsuite/local.mk (T): Add new test file.
+	* init.cfg (require_selinux_): Copied from coreutils, skip the test if
+	selinux is not available.
+
+2018-01-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update gnulib and copyright dates for 2018
+	* gnulib: Update to latest.
+	* all files: Run "make update-copyright".
+
+2017-11-22  Jim Meyering  <meyering@fb.com>
+
+	maint: update to work with GCC7's -Werror=implicit-fallthrough=
+	* sed/sed.h (FALLTHROUGH): Define.
+	* sed/execute.c (execute_program): Use new FALLTHROUGH macro in place
+	of each comment.
+	* sed/compile.c (mark_subst_opts, compile_program): Likewise.
+
+2017-10-28  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: fix incorrect line-wrapping example
+	Reported by Bamber Ward in https://bugs.gnu.org/28140 .
+
+	* doc/sed.texi (Line length adjustment): Fix sed script;
+	  Rewrite example to long script with inlined comments;
+	  Remove second example.
+
+2017-10-17  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: fix missing slash in example
+	Reported by Nick Chambers in https://bugs.gnu.org/28881 .
+
+	* doc/sed.texi (Invoking sed::overview): Add missing slash in
+	's/hello/world/' command.
+
+2017-10-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: skip utf8-ru test if required locale is not found
+	Reported by Dennis Clarke in https://bugs.gnu.org/28665#14 .
+
+	* init.cfg (require_ru_utf8_locale_): New function.
+	* testsuite/utf8-ru.sh: Skip test is required locale was not found.
+
+2017-10-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: require texinfo v6.1 for development builds
+	For development builds (using ./bootstrap), require texinfo version 6.1
+	or later (Same as GNU coreutils).
+	Sed's manual uses texinfo's @U{} command, introduced in texinfo-6.0.
+	This should not affect building from released tarballs, as the info
+	manual is pre-built and pre-packaged in the tar archive.
+	Reported by Dennis Clarke in https://bugs.gnu.org/28665#14 .
+
+	* bootstrap.conf: Require makeinfo 6.1 (up from 4.13).
+
+2017-10-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: remove non-functional regex C tests
+	These C-based tests were not updated since 2004, and were not included
+	by default. Enabling them with "./configure --enable-regex-tests"
+	resulted in false positives:
+	https://bugs.gnu.org/28665 , https://bugs.gnu.org/25381 .
+
+	This patch removes them completely.
+
+	* configure.ac: Remove "--with-regex-tests" option.
+	* local.mk (check_PROGRAMS): Remove tests.
+	* bug-regex10.c,
+	  bug-regex11.c,
+	  bug-regex12.c,
+	  bug-regex13.c,
+	  bug-regex14.c,
+	  bug-regex15.c,
+	  bug-regex16.c,
+	  bug-regex21.c,
+	  bug-regex27.c,
+	  bug-regex28.c,
+	  bug-regex7.c,
+	  bug-regex8.c,
+	  bug-regex9.c,
+	  runptests.c,
+	  runtests.c,
+	  tst-boost.c,
+	  tst-pcre.c,
+	  tst-regex.c,
+	  tst-regex2.c,
+	  tst-rxspencer.c: Remove files.
+
+2017-05-13  Jim Meyering  <meyering@fb.com>
+
+	maint: stop using @acronym{...} in texinfo sources
+	* doc/sed.texi, doc/config.texi: Remove all uses of @acronym{...},
+	per recommendation by Karl Berry.
+	* cfg.mk (local-checks-to-skip): Remove exemption, enabling
+	the @acronym{-prohibiting syntax-check rule.
+
+	gnulib: update to latest
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: fix various misspellings
+	Reported by Jim Meyering in
+	https://lists.gnu.org/archive/html/sed-devel/2017-05/msg00001.html .
+
+	* testsuite/BOOST.tests,
+	  testsuite/posix-mode-bad-ref.sh,
+	  testsuite/runptests.c,
+	  testsuite/runtests.c,
+	  testsuite/tst-pcre.c: Fix misspellings.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: remove the 'Makefile.tests' used for old-style tests
+	* testsuite/Makefile.tests: Removed.
+	* testsuite/runtest: Remove code to run old-style tests.
+	* testsuite/local.mk (EXTRA_DIST): Remove MAkefile.tests.
+
+	tests: convert "noeolw" test to new framework
+	* testsuite/misc.pl (Tests): Add noeolw.
+	* testsuite/noeolw.good: Delete file.
+	* testsuite/noeolw.1good: Likewise.
+	* testsuite/noeolw.2good: Likewise
+	* testsuite/noeolw.inp: Likewise.
+	* testsuite/noeolw.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "noeolw".
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "mac-mf" test to new framework
+	All input files (mac-mf.{inp,good,sed}) are large and are kept as-is.
+
+	* testsuite/mac-mf.sh: New test.
+	* testsuite/local.mk (SEDTEST): Remove mac-mf. (T): Add mac-mf.sh
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "newjis" test to new framework
+	* testsuite/newjis.sh: New test.
+	* testsuite/newjis.{good,inp,sed}: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove unneeded files.
+	(SEDTEST): Remove newjis. (T): Add newjis.sh
+
+	tests: convert "8to7" test to new framework
+	* testsuite/8to7.sh: New test.
+	* testsuite/8to7.{good,inp,sed}: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove unneeded files.
+	(SEDTEST): Remove 8to7. (T): Add 8to7.sh
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "madding" test to new framework
+	All input files (madding.{inp,good,sed}) contain very long lines and
+	are kept as-is (to avoid failing 'make syntax-check').
+
+	* testsuite/madding.sh: New test.
+	* testsuite/local.mk (SEDTEST): Remove madding. (T): Add madding.sh
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "badenc" test to new framework
+	* testsuite/badenc.sh: New test.
+	* testsuite/distrib.{good,inp,sed}: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove unneeded files.
+	(SEDTEST) Remove badenc. (T): Add badenc.sh
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "distrib" test to new framework
+	The input file 'distrib.inp' has lines wider than 80 characters,
+	and is kept as a separate file.
+	The existing file 'distrib.sh' (which contained the same sed program as
+	in 'distrib.sed') was never used, and is completely rewritten.
+
+	* testsuite/distrib.sh: Rewritten as a new test.
+	* testsuite/distrib.{good,sed}: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove unneeded files.
+	(SEDTEST) Remove distrib. (T): Add distrib.sh
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "inplace-hold" test to new framework
+	* testsuite/inplace-hold.sh: New test.
+	* testsuite/local.mk (SEDTEST) Remove inplace-hold.
+	(T): Add inplace-hold.sh.
+
+	tests: convert "stdin" test to new framework
+	* testsuite/stdin.sh: New test.
+	* testsuite/local.mk (SEDTEST) Remove stdin.
+	(T): Add stdin.sh.
+
+	tests: convert "eval" test to new framework
+	* testsuite/eval.sh: New test.
+	* testsuite/eval.{sed,inp,good}: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove unneeded files.
+	(SEDTEST) Remove eval.sed.
+	(T): Add eval.sh.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert 'bsd' test to new framework
+	The 'bsd.sh' is a long shell script (imported from NetBSD) which runs
+	multiple tests, then compares the output to 'bsd.good'.
+	The 'bsd.sh' is not modified. Instead, a new script 'bsd-wrapper.sh'
+	is created to work with the newer init.sh-style testing framework.
+
+	* testsuite/bsd-wrapper.sh: New test.
+	* testsuite/local.mk (SEDTESTS): Remove old test. (T): Add new test.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert 'xemacs' test to new framework
+	Keep input/expected output files (xemacs.inp/xemacs.good) as they contain
+	lines longar than 80 characters (which will fail 'make syntax-check').
+
+	* testsuite/xemacs.sed: Remove.
+	* testsuite/xemacs.sh: New test.
+	* testsuite/local.mk (EXTRA_DIST): Remove xemacs.sed.
+	(SEDTESTS): Remove old xemacs test.
+	(T): Add new xemacs.sh test.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert 'help' test to new framework
+	The 'help' test was implemented directly in 'Makefile.tests' - no
+	external files to remove/adapt.
+
+	* testsuite/help.sh: New tests.
+	* testsuite/local.mk (SEDTESTS): Remove old test.
+	(T): Add new test.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert 'uniq' test to new framework
+	Add a simple init.sh-stype wrapper to run the 'uniq' tests.
+	'uniq.sed' is a valid stand-alone script - keep it as-is.
+	The input/expected output files (uniq.inp/uniq.good) are large - keep
+	them as well instead of embedding them  in the shell script.
+
+	* testsuite/uniq.sh: New test.
+	* testsuite/local.mk (SEDTESTS): Remove uniq.sed
+	(T): Add uniq.sh.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert 'utf8-*' tests to new framework
+	Merge utf8-{1,2,3,4} into utf8-ru.sh script.
+
+	* testsuite/utf8-ru.sh: New test.
+	* testsuite/utf8-1.inp,
+	  testsuite/utf8-1.good,
+	  testsuite/utf8-1.sed,
+	  testsuite/utf8-2.inp,
+	  testsuite/utf8-2.good,
+	  testsuite/utf8-2.sed,
+	  testsuite/utf8-3.inp,
+	  testsuite/utf8-3.good,
+	  testsuite/utf8-3.sed,
+	  testsuite/utf8-4.inp,
+	  testsuite/utf8-4.good,
+	  testsuite/utf8-4.sed: Removed files.
+	* testsuite/local.mk (EXTRA_DIST): Remove deleted inp/sed/good files.
+	(SEDTESTS): Remove utf8-{1,2,3,4} tests.
+	(T): Add new test.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "dc" test to new framework
+	The 'dc.sed' program (implementing dc calculator in sed) is kept as-is.
+	The input (dc.inp) and expected output (dc.good) are merged into the
+	new shell script.
+	The old-style test executed two calculations at once (Easter 2002 and
+	square root of 2). They are now separated into two invocations of
+	'dc.sed'.
+
+	* testsuite/dc.sh: New test.
+	* testsuite/dc.inp, testuite/dc.good: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove inp/good files.
+	(SEDTEST): Remove dc.sed.
+	(T): Add dc.sh.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "binary/2/3" tests to new framework
+	The sed scripts (binary.sed, binary2.sed, binary3.sed) are large and
+	could function as stand-alone programs - there are kept as separate
+	files. The input/expected output are removed, and a new script is
+	added to run the tests.
+
+	* testsuite/binary.sh: New script.
+	* testsuite/binary.inp, testsuite/binary.good: Removed.
+	* testsuite/local.mk (EXTRA_DIST): Remove inp/good files.
+	(SEDTEST): Remove tests.
+	(T): Add new test.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "8bit" test to new framework
+	The input (8bit.inp) and expected output (8bit.good) contains non-ascii
+	octets, and are kept as-is. The sed program is converted to newer
+	init.sh-style tests.
+
+	* testsuite/8bit.sed: Removed.
+	* testsuite/8bit.sh: New test.
+	* testsuite/local.mk (EXTRA_DIST): Remove 8bit.sed.
+	(SEDTEST) Remove 8bit.sed.
+	(T): Add 8bit.sh.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: new function remove_cr_inplace in init.cfg
+	When testing on Windows OSes, remove any CR (\r) characters
+	from output files (before comparing them to expected output).
+
+	This functionality was used by the old-style tests, embedded
+	directly in 'Makefile.tests'.
+
+	* init.cfg: (remove_cr_inplace): New function.
+
+2017-05-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: convert "subwrite" test to new framework
+	* testsuite/misc.pl (Tests): Add subwrite.
+	* testsuite/subwrite.inp: Likewise.
+	* testsuite/subwrite.sed: Likewise.
+	* testsuite/subwrt1.good: Delete file.
+	* testsuite/subwrt2.good: Delete file.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "subwrite".
+
+	tests: convert "writeout" test to new framework
+	* testsuite/misc.pl (Tests): Add writeout.
+	* testsuite/writeout.inp: Likewise.
+	* testsuite/writeout.sed: Likewise.
+	* testsuite/wrtout1.good: Delete file.
+	* testsuite/wrtout2.good: Delete file.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "writeout".
+
+	tests: convert 'quiet'/'file' tests to new framework
+	* testsuite/local.mk: (SEDTESTS): Remove tests.
+	* testsuite/misc.pl: Add tests.
+
+	tests: convert "brackets" test to new framework
+	* testsuite/misc.pl (Tests): Add brackets.
+	* testsuite/brackets.good: Delete file.
+	* testsuite/brackets.inp: Likewise.
+	* testsuite/brackets.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "brackets".
+
+	tests: convert "sep" test to new framework
+	* testsuite/misc.pl (Tests): Add sep.
+	* testsuite/sep.good: Delete file.
+	* testsuite/sep.inp: Likewise.
+	* testsuite/sep.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "sep".
+
+	tests: convert "readin" test to new framework
+	* testsuite/misc.pl (Tests): Add readin.
+	* testsuite/readin.good: Delete file.
+	* testsuite/readin.inp: Likewise.
+	* testsuite/readin.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "readin".
+
+	tests: convert "numsub" test to new framework
+	* testsuite/misc.pl (Tests): Add numsub.
+	* testsuite/numsub.good: Delete file.
+	* testsuite/numsub.inp: Likewise.
+	* testsuite/numsub.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "numsub".
+
+	tests: convert "numsub5" test to new framework
+	* testsuite/misc.pl (Tests): Add numsub5.
+	* testsuite/numsub5.good: Delete file.
+	* testsuite/numsub5.inp: Likewise.
+	* testsuite/numsub5.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "numsub5".
+
+	tests: convert "numsub4" test to new framework
+	* testsuite/misc.pl (Tests): Add numsub4.
+	* testsuite/numsub4.good: Delete file.
+	* testsuite/numsub4.inp: Likewise.
+	* testsuite/numsub4.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "numsub4".
+
+	tests: convert "numsub3" test to new framework
+	* testsuite/misc.pl (Tests): Add numsub3.
+	* testsuite/numsub3.good: Delete file.
+	* testsuite/numsub3.inp: Likewise.
+	* testsuite/numsub3.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "numsub3".
+
+	tests: convert "numsub2" test to new framework
+	* testsuite/misc.pl (Tests): Add numsub2.
+	* testsuite/numsub2.good: Delete file.
+	* testsuite/numsub2.inp: Likewise.
+	* testsuite/numsub2.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "numsub2".
+
+	tests: convert "newline-anchor" test to new framework
+	* testsuite/misc.pl (Tests): Add newline-anchor.
+	* testsuite/newline-anchor.good: Delete file.
+	* testsuite/newline-anchor.inp: Likewise.
+	* testsuite/newline-anchor.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "newline-anchor".
+
+	tests: convert "middle" test to new framework
+	* testsuite/misc.pl (Tests): Add middle.
+	* testsuite/middle.good: Delete file.
+	* testsuite/middle.inp: Likewise.
+	* testsuite/middle.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "middle".
+
+	tests: convert "xabcx" test to new framework
+	* testsuite/misc.pl (Tests): Add xabcx.
+	* testsuite/xabcx.good: Delete file.
+	* testsuite/xabcx.inp: Likewise.
+	* testsuite/xabcx.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "xabcx".
+
+	tests: convert "manis" test to new framework
+	* testsuite/misc.pl (Tests): Add manis.
+	* testsuite/manis.good: Delete file.
+	* testsuite/manis.inp: Likewise.
+	* testsuite/manis.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "manis".
+
+	tests: convert "linecnt" test to new framework
+	* testsuite/misc.pl (Tests): Add linecnt.
+	* testsuite/linecnt.good: Delete file.
+	* testsuite/linecnt.inp: Likewise.
+	* testsuite/linecnt.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "linecnt".
+
+	tests: convert "khadafy" test to new framework
+	* testsuite/misc.pl (Tests): Add khadafy.
+	* testsuite/khadafy.good: Delete file.
+	* testsuite/khadafy.inp: Likewise.
+	* testsuite/khadafy.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "khadafy".
+
+	tests: convert "inclib" test to new framework
+	* testsuite/misc.pl (Tests): Add inclib.
+	* testsuite/inclib.good: Delete file.
+	* testsuite/inclib.inp: Likewise.
+	* testsuite/inclib.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "inclib".
+
+	tests: convert "factor" test to new framework
+	* testsuite/misc.pl (Tests): Add factor.
+	* testsuite/factor.good: Delete file.
+	* testsuite/factor.inp: Likewise.
+	* testsuite/factor.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "factor".
+
+	tests: convert "flipcase" test to new framework
+	* testsuite/misc.pl (Tests): Add flipcase.
+	* testsuite/flipcase.good: Delete file.
+	* testsuite/flipcase.inp: Likewise.
+	* testsuite/flipcase.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "flipcase".
+
+	tests: convert "fasts" test to new framework
+	* testsuite/misc.pl (Tests): Add fasts.
+	* testsuite/fasts.good: Delete file.
+	* testsuite/fasts.inp: Likewise.
+	* testsuite/fasts.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "fasts".
+
+	tests: convert "enable" test to new framework
+	* testsuite/misc.pl (Tests): Add enable.
+	* testsuite/enable.good: Delete file.
+	* testsuite/enable.inp: Likewise.
+	* testsuite/enable.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "enable".
+
+	tests: convert "cv-vars" test to new framework
+	* testsuite/misc.pl (Tests): Add cv-vars.
+	* testsuite/cv-vars.good: Delete file.
+	* testsuite/cv-vars.inp: Likewise.
+	* testsuite/cv-vars.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "cv-vars".
+
+	tests: convert "classes" test to new framework
+	* testsuite/misc.pl (Tests): Add classes.
+	* testsuite/classes.good: Delete file.
+	* testsuite/classes.inp: Likewise.
+	* testsuite/classes.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "classes".
+
+	tests: convert "bkslashes" test to new framework
+	* testsuite/misc.pl (Tests): Add bkslashes.
+	* testsuite/bkslashes.good: Delete file.
+	* testsuite/bkslashes.inp: Likewise.
+	* testsuite/bkslashes.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "bkslashes".
+
+	tests: convert "amp-escape" test to new framework
+	* testsuite/misc.pl (Tests): Add amp-escape.
+	* testsuite/amp-escape.good: Delete file.
+	* testsuite/amp-escape.inp: Likewise.
+	* testsuite/amp-escape.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "amp-escape".
+
+	tests: convert "appquit" test to new framework
+	* testsuite/misc.pl (Tests): Add appquit.
+	* testsuite/appquit.good: Delete file.
+	* testsuite/appquit.inp: Likewise.
+	* testsuite/appquit.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "appquit".
+
+	tests: convert "0range" test to new framework
+	* testsuite/misc.pl (Tests): Add 0range.
+	* testsuite/0range.good: Delete file.
+	* testsuite/0range.inp: Likewise.
+	* testsuite/0range.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "0range".
+
+	tests: convert "dollar" test to new framework
+	* testsuite/misc.pl (Tests): Add dollar.
+	* testsuite/dollar.good: Delete file.
+	* testsuite/dollar.inp: Likewise.
+	* testsuite/dollar.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "dollar".
+
+	tests: convert "xbxcx3" test to new framework
+	* testsuite/misc.pl (Tests): Add xbxcx3.
+	* testsuite/xbxcx3.good: Delete file.
+	* testsuite/xbxcx3.inp: Likewise.
+	* testsuite/xbxcx3.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "xbxcx3".
+
+	tests: convert "xabcx" test to new framework
+	* testsuite/misc.pl (Tests): Add xabcx.
+	* testsuite/xabcx.good: Delete file.
+	* testsuite/xabcx.inp: Likewise.
+	* testsuite/xabcx.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "xabcx".
+
+	tests: convert "xbxcx" test to new framework
+	* testsuite/misc.pl (Tests): Add xbxcx.
+	* testsuite/xbxcx.good: Delete file.
+	* testsuite/xbxcx.inp: Likewise.
+	* testsuite/xbxcx.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "xbxcx".
+
+2017-05-09  Jim Meyering  <meyering@fb.com>
+
+	tests: convert "recall2" test to new framework
+	* testsuite/misc.pl (Tests): Add recall2.
+	* testsuite/recall2.good: Delete file.
+	* testsuite/recall2.inp: Likewise.
+	* testsuite/recall2.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "recall2".
+
+	tests: convert "recall" test to new framework
+	* testsuite/misc.pl (Tests): Add recall.
+	* testsuite/recall.good: Delete file.
+	* testsuite/recall.inp: Likewise.
+	* testsuite/recall.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "recall".
+
+	tests: convert "insert" test to new framework
+	* testsuite/misc.pl (Tests): Add insert-nl.
+	* testsuite/insert.good: Delete file.
+	* testsuite/insert.inp: Likewise.
+	* testsuite/insert.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "insert".
+
+	tests: convert "allsub" test to new framework
+	* testsuite/misc.pl (Tests): Add allsub.
+	* testsuite/allsub.good: Delete file.
+	* testsuite/allsub.inp: Likewise.
+	* testsuite/allsub.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "allsub".
+
+	tests: convert "y-newline" test to new framework
+	* testsuite/misc.pl (Tests): Add y-newline.
+	* testsuite/y-newline.good: Delete file.
+	* testsuite/y-newline.inp: Likewise.
+	* testsuite/y-newline.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "y-newline".
+
+	tests: convert "y-zero" test to new framework
+	* testsuite/misc.pl (Tests): Add y-zero.
+	* testsuite/y-zero.good: Delete file.
+	* testsuite/y-zero.inp: Likewise.
+	* testsuite/y-zero.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "y-zero".
+
+	tests: convert "y-bracket" test to new framework
+	* testsuite/misc.pl (Tests): Add y-bracket.
+	* testsuite/y-bracket.good: Delete file.
+	* testsuite/y-bracket.inp: Likewise.
+	* testsuite/y-bracket.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "y-bracket".
+
+	tests: convert "noeol" to new framework
+	* testsuite/misc.pl (preserve-missing-EOL-at-EOF): New test,
+	replacing...
+	* testsuite/noeol.good: Delete file.
+	* testsuite/noeol.inp: Likewise.
+	* testsuite/noeol.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "noeol".
+	* testsuite/Makefile.tests (noeol): Remove target.
+	We also require this additional change, since the noeolw test
+	used the just-deleted noeol.inp input file:
+	* testsuite/noeolw.inp: New file, renamed from testsuite/noeol.inp.
+	* testsuite/Makefile.tests: Use noeolw.inp, not the other test's file.
+	(EXTRA_DIST): Add testsuite/noeolw.inp.
+
+	tests: convert "insens" to new framework
+	* testsuite/misc.pl (case-insensitive): New test, replacing...
+	* testsuite/insens.good: Delete file.
+	* testsuite/insens.inp: Likewise.
+	* testsuite/insens.sed: Likewise.
+	* testsuite/local.mk (EXTRA_DIST): Remove their names.
+	(SEDTESTS): Remove "insens".
+
+	tests: begin migrating test triples into perl framework
+	* testsuite/head.good: Delete file.
+	* testsuite/head.inp: Likewise.
+	* testsuite/head.sed: Likewise.
+	* testsuite/space.good: Likewise
+	* testsuite/space.inp: Likewise.
+	* testsuite/space.sed: Likewise.
+	* testsuite/empty.good: Likewise
+	* testsuite/empty.inp: Likewise.
+	* testsuite/empty.sed: Likewise.
+	* testsuite/zero-anchor.good: Likewise
+	* testsuite/zero-anchor.inp: Likewise.
+	* testsuite/zero-anchor.sed: Likewise.
+	* testsuite/misc.pl: New file, subsuming the above, with one test
+	for each of the test file triples (input, output, sed commands).
+	(empty, empty2, head, space, zero-anchor): Converted tests.
+	* testsuite/local.mk: Remove references to deleted files.
+	(T): Add misc.pl.
+
+2017-05-09  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: keep temporary directory if SAVE_TEMPS requested
+	When developers run 'make check SAVE_TEMPS=yes' the 'Coreutils.pm'
+	module does not delete the temporary files, but the CuTmpdir.pm still
+	deletes the temp directory. With this change, the temp directory is
+	kept, and printed to the log file (e.g. test-suite.log).
+
+	* testsuite/CuTmpdir.pm: if $EMV{SAVE_TEMPS} is not empty, don't
+	auto-delete the temp directory, and print it to the log.
+
+2017-05-09  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: fix wrong PATH in testsuite
+	The switch to non-recursive make in v4.2.2-129-g3b29bec used a wrong
+	directory name in the PATH construction of automake's TESTS_ENVIRONMENT
+	variable ('/src/' instead of '/sed').
+	This had no effect as each test shell script appended the ./sed/ path
+	independently. However, switching to perl-based tests - this will be
+	noticed as the just-built sed binary will not be in the PATH.
+
+	* testsuite/local.mk: Fix $PATH variable in test environment.
+
+2017-04-22  Jim Meyering  <meyering@fb.com>
+
+	maint: ignore more
+	* .gitignore: Ignore a bunch of doc/*.* texinfo artifacts and sort.
+
+	tests: support perl-based tests like those of grep and coreutils
+	* configure.ac: Define HAVE_PERL.
+	* testsuite/Coreutils.pm: New file. From grep.
+	* testsuite/CuSkip.pm: Likewise.
+	* testsuite/CuTmpdir.pm: Likewise.
+	* testsuite/local.mk (, TEST_EXTENSIONS): Add .pl.
+	(TESTSUITE_PERL, TESTSUITE_PERL_OPTIONS): Define.
+	(PL_LOG_COMPILER): Define.
+	(EXTRA_DIST): Add the new .pm files.
+
+2017-04-18  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: enable special meaning of '+' with '-E --posix'
+	in sed-4.2 and later, '--posix' option wrongly disabled the special meaning
+	of '+' even in ERE mode (--posix should only disable it in BRE mode,
+	since it is a GNU extension in BRE). Bug introduced in the original
+	implementation of --posix in v4.1a-5-gba68fb4.
+	Reported by Jordan Torbiak in https://bugs.gnu.org/26409 .
+
+	* NEWS: Mention bug fix.
+	* sed/regexp.c (compile_regex_1): In --posix mode, set RE_LIMITED_OPS
+	only in BRE mode.
+	* testsuite/posix-mode-ERE.sh: New test.
+	* testsuite/local.mk: Add new test.
+
+2017-03-21  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test comments, braces after commands
+	Test multiple combinations of comments, spaces, braces after commands,
+	to validate recently added function 'read_end_of_cmd()'.
+	See discussion in https://bugs.gnu.org/22460 .
+
+	* testsuite/command-endings.sh: New test, including y/// bug.
+	* testsuite/local.mk: Add new test.
+
+2017-03-21  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: refactor end-of-line parsing
+	Follow-up to bug#22460: extract repeated code to parse end of lines
+	(while saving comments, braces) into a new function.
+	See discussion in https://bugs.gnu.org/22460 .
+
+	* sec/compile.c (read_end_of_cmd): New function, consumes sed script
+	input until newline, EOF, semicolon, closing brace or comment is found.
+	(compile_program): Call new function instead of duplicating code.
+
+2017-03-21  Thorsten Heymann  <hek2mgl@metashock.net>
+
+	sed: allow comments, braces after y///
+	sed-4.4 and earlier rejected the following:
+	  $ sed 'y/1/a/ #f'
+	  sed: -e expression #1, char 8: extra characters after command
+
+	See https://bugs.gnu.org/22460 .
+
+	* sed/compile.c (compile_program): Handle comments, braces after 'y' command.
+	* NEWS: Mention it.
+
+2017-03-19  Kent Fredric  <kentnl@gentoo.org>  (tiny change)
+
+	tests: ensure tty device is readable before running test
+	Unreadable tty's fail with a different permissions error
+	instead of failing with "is a tty" error.
+	Reported in https://bugs.gnu.org/25692 .
+
+	* testsuite/panic-tests.sh: Run test if tty device is both readable
+	and writable.
+
+2017-03-07  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: expand "locale considerations" (multibyte) section
+	Show examples of processing valid and invalid characters.
+	Mention \L,\U for s/// command.
+	Combines reports from:
+	 https://bugs.debian.org/500501
+	 https://lists.gnu.org/archive/html/coreutils/2017-02/msg00039.html
+
+	* doc/sed.texi (Locale Consideration): Expand section.
+	* doc/config.texi: Add variables to render unicode characters portably.
+
+2017-02-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: warn against misuse of -i with other options
+	'sed -iE' is not the same as 'sed -Ei'. 'sed -ni' is dangerous.
+	From https://bugs.debian.org/832088
+
+	* doc/sed.texi (Command-Line Options): Explain and add examples
+	to '-i/--in-place' item.
+
+2017-02-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: elaborate about regex matching on pattern space
+	Regex addresses work on current pattern space, not on the original
+	input lines. From https://bugs.debian.org/284646
+
+	* doc/sed.texi (Regexp Addresses): Add a paragraph and an example.
+	* doc/sed.x (Addresses): Add a sentence about regexp.
+
+2017-02-23  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: mention escape-sequence precedence
+	Unescaping takes place before passing the pattern to the regex engine:
+	    $ echo 'a^c' | sed -e 's/\x5e/b/'
+	    ba^c
+
+	From: https://bugs.debian.org/605142
+
+	* doc/sed.texi (Escaping Precedence): Add new subsection under 'escape
+	sequences' with examples.
+
+2017-02-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: fix 'install-html' target
+	Switching to non-recursive makefiles broke the 'install-html' target:
+	The gettext plumbing requires an 'install-html' target in po/Makefile.
+	This was fixed in gettext v0.19.8.1-41-ge5a008a, but packages using
+	older gettext need to manually patch po/Makefile.in.in.
+	Report and suggested fix by Eric Blake in https://debbugs.gnu.org/25690 .
+
+	* bootstrap.conf (bootstrap_epilogue): Add 'install-{html,pdf,dvi,ps}'
+	  targets to po/Makefile.in.in (if needed).
+
+2017-02-09  Alexandre Jasmin  <alexandre.jasmin@gmail.com>
+
+	doc: reference the i command in /regexp/I
+	Remove "TODO: add @code{pxref}" in the text and add the ref.
+
+	* doc/sed.texi (selecting lines by text matching): Add reference.
+
+2017-02-09  Alexandre Jasmin  <alexandre.jasmin@gmail.com>
+
+	doc: rework BRE/ERE table to fit PDF manual
+	Sample code in the basic/extended table was too wide to fit on a Letter
+	size printout. Text was overlapping and unreadable. Remove margin,
+	split commands in two lines and change the column with.
+
+	* doc/sed.texi (Basic and extended regexp): Rework table.
+
+2017-02-07  Alexandre Jasmin  <alexandre.jasmin@gmail.com>  (tiny change)
+
+	doc: change description of the r command
+	"Reads text file a file" was probably a typo. Also remove "Example: " in
+	the summary as there's no example there.
+
+	* doc/sed.texi (sed scripts): Fix r command description.
+
+2017-02-07  Alexandre Jasmin  <alexandre.jasmin@gmail.com>  (tiny change)
+
+	doc: fix copy-pasted examples of regexp
+	The samples commands demonstrating '\B' and '\S' were both using '\w'.
+	The commands output is correct.
+
+	* doc/sed.texi (Regular Expression Extensions): Use the proper commands.
+
+2017-02-03  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 4.4
+	* NEWS: Record release date.
+
+	gnulib: update to latest
+
+	maint: avoid %x-format argument type mismatch
+	* sed/compile.c (savchar): Cast %x-format argument to "unsigned int"
+	rather than to "unsigned char".  Reported by Eric Blake in
+	https://lists.gnu.org/archive/html/sed-devel/2017-02/msg00000.html
+
+2017-02-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: fix broken xref
+	Remove an extraneous space after @xref. Older 'makeinfo' would fail with:
+
+	  ./doc/sed.texi:3461: @xref expected braces.
+	  ./doc/sed.texi:3461: ` {Execution Cycle} and @ref{Addresses ov...' is
+	                         too long for expansion; not expanded.
+
+	Introduced in sed-4.3-15-gb0009b8.
+
+	* doc/sed.texi: Remove space after @xref.
+
+2017-01-31  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest
+
+2017-01-31  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: add NEWS entry for recent newline bugfix
+	Bugfix in sed-4.3-12-g44d99bf (for https://bugs.gnu.org/25390) did not
+	included a corresponding NEWS entry.
+
+	* NEWS: Mention bugfix.
+
+2017-01-28  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: new 'multiple commands syntax' section
+	Explain which commands can be separated by semicolon and which require
+	newlines. Requested by Ori Avtalion in https://bugs.gnu.org/21845 .
+
+	* doc/sed.texi (Multiple commands syntax): New section in "sed scripts"
+	chapter.
+
+2017-01-24  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: update 'other resources' chapter
+	Remove broken link and update other resources in the manual.
+	Reported by olszkocj@aol.com in https://bugs.gnu.org/24770 .
+
+	* doc/sed.texi (Other Resources): Update wording.
+
+2017-01-18  Jim Meyering  <meyering@fb.com>
+
+	maint: update bootstrap and init.sh
+	* bootstrap: Update from gnulib.
+	* testsuite/init.sh: Likewise.
+
+2017-01-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: add 'branching and flow control' section
+	* doc/sed.texi (Branching and flow control): New section under 'Advanced
+	Sed' chapter.
+
+	doc: add 'join lines' example
+	* doc/sed.texi (Joining lines): Add example of joining SMTP header
+	lines.
+
+2017-01-16  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	tests: new test for dfa newline bug
+	sed-4.3 would segfault with:
+	   printf '$LINENO $LINEN\nB\n' | sed -e 'N;s/\$LINENO\(.*\n\)/\1/'
+
+	Culprit is dfa crash if multi-lines are read in pattern space.
+	It is fixed at gnulib commit v0.1-1117-g823b5cb .
+	Reported by S. Gilles in https://bugs.gnu.org/25390
+
+	* testsuite/newline-dfa-bug.sh: New test.
+	* testsuite/local.mk: Add the test.
+
+2017-01-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	gnulib: update to latest (with fix for dfa newline bug)
+	sed-4.3 would segfault due to dfa bug, see https://bugs.gnu.org/25390 .
+
+	* gnulib: Update to latest with various dfa fixes and improvement.
+	* m4/.gitignore: Add 'std-gnu11.m4', 'pthread_rwlock_rdlock.m4'.
+
+2017-01-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: improve README installation instructions
+	Mention README-hacking for git users.
+	Issue raised by Jean-Christophe Manciot in https://bugs.gnu.org/25377 .
+
+	* README: Improve installation paragraph based on coreutils' README.
+
+2017-01-16  Jim Meyering  <meyering@fb.com>
+
+	maint: avoid syntax-check-exposed nit
+	* doc/local.mk (doc/sed.1): Use $(...) rather than @...@.
+
+2017-01-15  Jim Meyering  <meyering@fb.com>
+
+	maint: do not distribute COPYING.DOC
+	* COPYING.DOC: Remove this file, now that we have doc/fdl.texi.
+	* Makefile.am (EXTRA_DIST): Don't distribute it.
+
+2017-01-14  Jim Meyering  <meyering@fb.com>
+
+	tests: skip valgrind-running tests when ASAN-enabled
+	* init.cfg (require_valgrind_): Skip when we detect that the
+	binary is ASAN-enabled.
+
+2017-01-13  Vagelis Prokopiou  <drz4007@gmail.com>  (tiny change)
+
+	maint: insert missing word in comment
+	* sed/sed.h (struct vector)[v_allocated]: Insert "of".
+
+2017-01-09  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: skip building man page if needed
+	Skip building the man page if building from tarball (where 'doc/sed.1'
+	is already prebuilt). Build a stub if building from git but generating
+	the man page isn't possible (if there's no Perl or cross-compiling).
+	Cross-compilation issue reported by Vishal Biswas in
+	https://bugs.gnu.org/25358 .
+	Problematic 'perl' is related to https://bugs.gnu.org/25367 .
+
+	* configure.ac: Check for Perl, cross-compilation and tarball build;
+	Set automake variable BUILD_MAN_PAGE, BUILD_DUMMY_MAN_PAGE accordingly.
+	* doc/local.mk (doc/sed.1): Build conditionally if BUILD_MAN_PAGE is true;
+	Create a dummy man page if BUILD_DUMMY_MAN_PAGE is true.
+	* doc/sed-dummy.1: Stub man page.
+
+2017-01-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: fix out-of-tree builds without dep-tracking
+	Create sed,lib,doc,testsuite subdirectories at the end of
+	'configure', preventing build problems when building out of tree
+	with --disable-dependency-tracking.
+	Reported by Juan M. Guerrero in https://bugs.gnu.org/25371 .
+
+	* configure.ac: Call AS_MKDIR_P() to create subdirectories.
+
+2017-01-07  Jim Meyering  <meyering@fb.com>
+
+	doc: fix NEWS typo
+	* NEWS: Fix typo s/introducted/introduced/
+	* cfg.mk (old_NEWS_hash): Update.
+	Reported by Karl Berry.
+
+2017-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update gnulib and copyright dates for 2017
+	* gnulib: Update to latest.
+	* all files: Run "make update-copyright".
+
+	maint: compile warning-free with -DDEBUG_LEAKS
+	* sed/regexp.c (release_regex) [DEBUG_LEAKS]: Modernize declaration.
+
+2016-12-30  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 4.3
+	* NEWS: Record release date.
+
+	gnulib: update to latest, to fix parallel getopt test failure
+
+2016-12-28  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: new annotated example for N/P/D/b commands
+	Illustrates how to restructure line breaks over multiple lines.
+
+	* doc/sed.texi (Line length adjustment): New section.
+
+2016-12-28  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: new annotated example section for N/D commands
+	Illustrate how to use N/D to search for doubled-word spanning
+	multiple lines.
+
+	* doc/sed.texi (Text search across mutliple lines): New section.
+
+2016-12-28  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: add 'multiline techniques' section
+	Expand on using D,G,H,N,P commands to process multiple lines.
+
+	* doc/sed.texi (Multiline techniques): New section.
+
+2016-12-22  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update m4/.gitignore
+	* m4/.gitignore: Add 'dirfd.m4', 'hard-locale.m4'.
+
+2016-12-20  Jim Meyering  <meyering@fb.com>
+
+	maint: RE_ICASE, RE_NO_SUB: remove useless '#ifdef's
+	* sed/regexp.c (compile_regex_1): Remove #ifdef RE_ICASE guard,
+	since dfa.c uses it unconditionally.  Suggested by Norihiro Tanaka.
+	Also remove the nearby "#ifdef RE_NO_SUB".  Those macros are guaranteed
+	to be defined by virtue of configure-time tests that ensure we're using
+	either a new-enough native glibc (RE_NO_SUB was added in 2004), or the
+	included replacement.
+
+2016-12-19  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest; dfa improvement and getopt-posix-tests build fix
+
+2016-12-18  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest and adapt to modified dfa API
+	* sed/regexp.c (compile_regex_1): Do away with use of DFA_CASE_FOLD.
+	This gnulib update pulls in a dfa module in which that symbol no
+	longer exists.  Instead, it uses RE_ICASE in syntax bits.
+	* m4/.gitignore: Add files created by running bootstrap.
+	* lib/.gitignore: Likewise.
+
+	tests: use just-built sed in more places
+	* cfg.mk (PATH): Prepend $(srcdir)/src, so that we use the just-
+	built sed also when running commands like those of "make distcheck".
+	Tested by running this in a just-built directory:
+	f=sed/sed; printf '%s\n' '#!/bin/sh' 'sleep 9h' > $f; chmod a+x $f
+	and then verifying that nearly every "make syntax-check" rule hangs.
+
+2016-12-14  Jim Meyering  <meyering@fb.com>
+
+	doc: fix sed.1-building rule to work on mingw
+	* doc/local.mk (doc/sed.1): Add $(EXEEXT) suffix on "sed/sed" dependent.
+	Patch by Miodrag Milanovic via Stephan T. Lavavej, in
+	https://lists.gnu.org/archive/html/sed-devel/2016-12/msg00026.html
+
+2016-12-12  Jim Meyering  <meyering@fb.com>
+
+	tests: port tests to avoid tr NUL-eliding behavior on Solaris
+	* testsuite/Makefile.tests (elide_cr): Define this to use sed.
+	Replace every prior use of "$(TR) -d \\r" with it.
+	Our just-built sed can do that job (elide CR bytes) even when the
+	input contains NUL bytes.  Solaris 11.3's /bin/tr would remove any
+	NUL byte from the result.  Reported by Nelson H.F. Beebe in
+	https://lists.gnu.org/archive/html/sed-devel/2016-12/msg00006.html
+
+	gnulib: update to latest, for solaris-10-vs-configure fix
+
+	doc: add a README-hacking file
+	* README-hacking: New file: instructions for building from a git clone.
+	Copied from grep's repo, but with s/grep/sed/.
+
+2016-12-11  Jim Meyering  <meyering@fb.com>
+
+	build: avoid "make dist" failure due to missing dependencies
+	* sed/local.mk ($(sed_sed_OBJECTS)): Depend on $(BUILT_SOURCES).
+	Reported by Assaf Gordon in
+	https://lists.gnu.org/archive/html/sed-devel/2016-12/msg00016.html
+
+2016-12-10  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: simplify documentation building
+	Do not bother autogenerating sed.texi from sed-in.texi.  All it did
+	was to add a few '@group' commands.  Since these are rarely modified,
+	add them manually.  This simplifies the documentation-building rules
+	and lets us distribute only one copy of the texinfo manual.
+	See http://lists.gnu.org/archive/html/sed-devel/2016-12/msg00013.html
+
+	* doc/groupify.sed, doc/sed-in.texi: Remove files.
+	* doc/sed.texi: Remove the 'auto-generated' warning, as this file is no
+	longer auto-generated.
+	* doc/local.mk (doc_sed_TEXINFOS): Rename from sed_TEXINFOS.
+	(dist_noinst_DATA): The above renaming enables us to remove
+	doc/config.texi and doc/fdl.texi from this list.
+	(dist_noinst_SCRIPTS): Remove.
+	(doc/sed.texi): Remove rule.
+	(doc/s-texi): Likewise.
+
+2016-12-06  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: add missing fdl.texi to distribution
+	Neglected to add it in commit v4.2.2-175-gc6a55aa.
+
+	* doc/local.mk (sed_TEXINFOS, dist_noinst_DATA): Add doc/fdl.texi.
+
+2016-12-06  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: follow-up changes for manual improvements
+	Fixes few missing issues from commit v4.2.2-176-g801a2c8,
+	discussed in
+	http://lists.gnu.org/archive/html/sed-devel/2016-12/msg00005.html
+
+	* doc/config.texi: Add stub texinfo macros '@codequotebacktick' and
+	'@codequoteundirected' (needed if using older versions of texinfo).
+	* doc/sed-in.texi: Fix syntax that's accepted by newer texinfo but
+	rejected by texinfo-4.13; Disable directed quote characters in examples.
+	* doc/sed.texi: Auto-regenerated.
+
+2016-12-05  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest
+
+2016-12-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: reorganize and expand manual
+	Discussed in
+	http://lists.gnu.org/archive/html/sed-devel/2016-11/msg00005.html
+
+	* doc/sed-in.texi: Reorganize and expand.
+	* doc/sed.texi: Auto-regenerated.
+
+2016-12-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: upgrade documentation license to GFDL-1.3 (or later)
+	* bootstrap.conf: Add gnulib's fdl module.
+	* doc/sed-in.texi: Update license blurb to latest recommended text.
+	Remove duplicated copyright information from title page (copied from
+	coreutil's texinfo style). Include fdl.texi in a new appendix.
+
+2016-11-29  Jim Meyering  <meyering@fb.com>
+
+	tests: use "returns_ N env VAR=val ..."
+	Use "returns_ N env VAR=val ..." rather than "VAR=val returns_ N ...".
+	Some shells do not propagate envvar settings through our use
+	of the "returns_" function, so set any envvar via use of "env".
+	This was an issue at least on Ubuntu, Debian and *BSD-based systems.
+	* testsuite/mb-bad-delim.sh: As above.
+	* testsuite/mb-y-translate.sh: Likewise.
+
+	gnulib: update to latest
+
+2016-11-27  Jim Meyering  <meyering@fb.com>
+
+	tests: use "returns_ 1" rather than "&& fail=1"
+	* testsuite/colon-with-no-label.sh: Rather than failing only upon
+	success (exit 0), fail upon exit with any value other than 1.
+
+	build: stop suppressing many -W... warnings
+	This code in configure.ac added many -W options to the list
+	of warnings that we do *not* enable.  When I copied most of
+	this code into this file from coreutils, I did not try to
+	remove the options that happened not to be needed for sed.
+	Now, compilers have improved and I have done that triage.
+	Many -W options can be left enabled.
+	* configure.ac (GNULIB_WARN_CFLAGS): There is no longer any
+	need to use a different set of warnings for lib/ files, so
+	remove this variable, along with many -W-related exemptions.
+
+	build: avoid "make distcheck" failure due to leftover .Po files
+	The following definitions caused trouble for no gain.  They caused
+	some .o file names to have a long additional prefix and even
+	resulted in some .Po files not being removed by "make distclean"
+	when building with recent automake.  The only reason to use these
+	definitions was -- long ago -- to require different compiler options
+	for files in lib/ than elsewhere.  That is no longer necessary.
+	* lib/local.mk (lib_libsed_a_CPPFLAGS): Remove definition.
+	(lib_libsed_a_CFLAGS, lib_libsed_a_LIBADD): Likewise.
+	(lib_libsed_a_DEPENDENCIES): Likewise.
+
+	maint: fix -Wformat-exposed errors in uses of "panic"
+	* sed/utils.h (panic): Add __printf__ attribute, so that compilers
+	can diagnose format/arg-type errors.  This exposed the following:
+	* sed/utils.c (ck_fwrite): Don't try to print size_t via %u.
+	Instead, use %llu and a cast to unsigned long long.
+	* sed/mbcs.c (is_mb_char): Cast an "int" to unsigned int, to avoid
+	mismatch with %x.
+
+	maint: remove unused parameters
+	* sed/compile.c (finish_program): This function's sole argument
+	was unused. Remove it and update callers.
+	* sed/sed.h: Update prototype.
+	* sed/utils.c (register_open_file): This functions's third argument,
+	"temp", was unused.  Remove it and update callers.
+	* sed/sed.c: Update use.
+
+	maint: fix two "make syntax-check" failures
+	* cfg.mk (exclude_file_name_regexp--sc_prohibit_empty_lines_at_EOF):
+	Also exempt zero-anchor.{inp,good}.
+	* sed/regexp.c (match_regex): s/can not/cannot/
+
+2016-11-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: remove explicit 'html' makefile target
+	The 'html' target was a left-over from the recursive Makefiles,
+	which were converted to non-recursive in sed v4.2.2-129-g3b29bec.
+
+	With this removed, the 'html' target in 'Makefile' is correctly
+	genererated by automake (from doc/local.mk), and 'make html' works again.
+
+	* Makefile.am: Remove explicit 'html' target.
+
+2016-11-12  Jim Meyering  <meyering@fb.com>
+
+	tests: use "returns_ 1" rather than testing $? = 1
+	* testsuite/temp-file-cleanup.sh: As above.
+
+2016-11-04  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: standardize exit code values
+	Use exit-code constants, and document them:
+	1=syntax error, 2=bad input files, 4=I/O error or panic.
+	Add "Exit Status" section in manual.
+
+	* sed/utils.h: Define new constants.
+	* sed/utils.c,
+	  sed/compile.c,
+	  sed/execute.c,
+	  sed/sed.c: Use constants instead of hard-coded values.
+	* doc/sed-in.texi: Add "Exit Status" section.
+	* doc/sed.texi: Automatically re-generated.
+
+2016-11-04  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: regenerate sed.texi after doc change
+	Regenerate sed.texi from sed-in.texi after
+	doc change in v4.2.2-160-10549b7 ( https://bugs.gnu.org/24799 ).
+
+	* doc/sed.texi: Regenerated with 'make info'.
+
+2016-11-04  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	sed: fix multi-line regex matching with -z
+	Sed incorrectly matches the anchor '^' to a newline character
+	(ASCII 10) despite using NUL line terminators (-z).
+	See https://bugs.gnu.org/24615 .
+
+	Previous (incorrect) behavior:
+
+	    $ printf "a\0b\0" | sed -z 'N;s/^/X/mg;' | od -An -a
+	       X   a nul   b nul
+
+	With this fix:
+
+	    $ printf "a\0b\0" | sed -z 'N;s/^/X/mg;' | od -An -a
+	       X   a nul   X   b nul
+
+	Current regex engine can not handle NUL multiline anchors.
+	Implement such search manually (by breaking the pattern into separate
+	NUL-terminated lines) and searching each one individually.
+
+	* NEWS: Mention it.
+	* sed/regexp.c (compile_regex_1): Don't use newline_anchor of regex, if
+	the buffer delimiter is not newline character.
+	(match_regex): Do above case line-by-line.
+	* testsuite/zero-anchor.good, testsuite/zero-anchor.inp,
+	  testsuite/zero-anchor.sed: New test.
+	* testsuite/local.mk: Add the test.
+	* testsuite/Makefile.tests: Add the test.
+	* bootstrap.conf: Add memrchr.
+	* lib/.gitignore, m4/.gitignore: Ignore memrchr files.
+
+2016-11-04  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	sed: optimize regex processing of lone ^ or $
+	Optimize /^/ and /$/ patterns and avoid invoking the regular expression
+	engine if possible.
+	See https://bugs.gnu.org/24615 .
+
+	* sed/regex.c (compile_regex_1): Mark the patterns which consist of ^ or $.
+	(match_regex): Handle the patterns which consist of ^ or $ manually.
+	* sed/sed.h (struct regex): New members 'begline' and 'endline'.
+	* testsuite/newline-anchor.good, testsuite/newline-anchor.sed,
+	testsuite/newline-anchor.sed: New test.
+	* testsuite/Makefile.tests: Add the test.
+	* testsuite/local.mk: Add the test.
+
+2016-10-26  Vincenzo Romano  <vincenzo.romano@notorand.it>
+
+	doc: make an example's description more precise
+	* doc/sed-in.texi (Regular Expressions): Mention that the match
+	must be at the end of a line.
+
+2016-10-02  Jim Meyering  <meyering@fb.com>
+
+	maint: address syntax-check warnings about @pxref
+	* doc/sed-in.texi: Improve cross-references.
+	* doc/sed.texi: Regenerate.
+
+	build: address warnings from GCC 7
+	* sed/sed.c (usage): Declare with the _Noreturn attribute to suppress
+	this warning/error:
+	sed/sed.c:359:11: error: this statement may fall through \
+	  [-Werror=implicit-fallthrough]
+	           usage(0);
+	           ^~~~~~~~
+	* sed/execute.c (execute_program) [case 'q']: Add FALLTHROUGH comment
+	to avoid warning from GCC 7's -Wimplicit-fallthrough.
+	* sed/compile.c (compile_program): Likewise.
+
+	gnulib: update to latest
+
+2016-09-25  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	sed: fix incorrect match for title case
+	* sed/regexp.c (compile_regex_1): Avoid building fastmap for case-
+	insensitive matching.
+	* testsuite/title-case.sh: New file, to test for this fix.
+	* testsuite/local.mk (T): Add the new file name and sort alphabetically.
+	* init.cfg (require_el_iso88597_locale_): Define.
+
+2016-09-11  Jim Meyering  <meyering@fb.com>
+
+	dfa: reflect move of dfa code to new gnulib module
+	* bootstrap.conf (gnulib_modules): Add dfa.
+	* sed/dfa.c: Remove file.
+	* sed/dfa.h: Likewise.
+	* sed/local.mk (sed_sed_SOURCES): Remove dfa.c.
+	(NOINST_HEADERS): Remove dfa.h.
+	* sed/regexp.c (compile_regex_1): Use new dfasyntax API.
+	* sed/sed.c (localeinfo): New global.
+	(main): Call init_localeinfo to initialize it.
+	* sed/sed.h: Include localeinfo.h and declare the new global.
+	* lib/.gitignore: Ignore new gnulib-imported files.
+	* m4/.gitignore: Likewise.
+	* po/POTFILES.in: s,sed/dfa.c,lib/dfa.c,
+
+	gnulib: update to latest, for new dfa module
+
+2016-09-04  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: new --sandbox option
+	In sandbox mode, r/w/e commands are not allowed.
+	This ensures sed operates only on files designated on the command line,
+	and cannot execute external programs.
+
+	* sed/sed.c (sandbox): New option variable.
+	  (usage): List new option.
+	  (main): Accept new option in getopt.
+	* sed/sed.h (sandbox): New extern option variable.
+	* sed/compile.c (DISALLOWED_CMD): New error message.
+	  (read_filename): Abort in sandbox mode (r/w commands).
+	  (compile_program): Abort on 'e' in sandbox mode.
+	* testsuite/sandbox.sh: Test new option.
+	* testsuite/local.mk: Add new test.
+	* NEWS: Mention new option.
+	* doc/sed-in.texi, doc/sed.texi: Document new option.
+
+2016-08-27  Jim Meyering  <meyering@fb.com>
+
+	maint: fix distclean-vs-excess-.Po files more cleanly
+	* doc/local.mk (distclean-local): Remove rule.  Moved to ...
+	* Makefile.am (distclean-local): ...here, and add a command to
+	remove all .deps directories.  It could have stayed in that .mk
+	file, but since with this change, it is no longer specific to doc/,
+	the top level makes more sense.
+	* lib/local.mk (MOSTLYCLEANFILES): Remove this.  Covered by the above.
+	Reported by Assaf Gordon in
+	https://lists.gnu.org/archive/html/sed-devel/2016-08/msg00019.html
+
+2016-08-26  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update .mailmap
+	Consolidate author's upper/lower case email addresses.
+	Fixes the following problem:
+	    $ make THANKS
+	    GEN      THANKS
+	    ./thanks-gen: THANKS.in: duplicate name: Ralf Wildenhues
+
+	Due to:
+	    $ git log --pretty=format:'%aN %aE' | grep -i ralf | sort -u
+	    Ralf Wildenhues ralf.wildenhues@gmx.de
+	    Ralf Wildenhues Ralf.Wildenhues@gmx.de
+
+	see http://lists.gnu.org/archive/html/sed-devel/2016-08/msg00023.html
+	    http://lists.gnu.org/archive/html/sed-devel/2016-08/msg00025.html
+
+	* .mailmap: Add email mapping.
+
+2016-08-24  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: update README
+	* README: Update information: remove mention of README.boot, mention
+	AUTHORS, THANKS, website and help/usage information.
+
+	maint: update program name in THANKS.in
+	* THANKS.in: Replace 'grep' with 'sed'.
+
+	maint: remove superfluous name from THANKS.in
+	* THANKS.in: Remove Pádraig Brady: He is the author of two commits
+	(v4.2.1-1-g737ca5e and v4.2.1-37-g629ef76) and will be automatically
+	included in the auto-generated THANKS file.
+
+	maint: remove README-alpha
+	* README-alpha: Removed.
+
+2016-08-22  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update AUTHORS
+	* AUTHORS: Update information.
+
+2016-08-18  Jim Meyering  <meyering@fb.com>
+
+	doc: work with read-only sed.1
+	* doc/local.mk (doc/sed.1): Also remove $@, so that mv does not
+	prompt about read-only target.
+
+2016-08-14  Jim Meyering  <meyering@fb.com>
+
+	build: fix sed.1 dependency; work with latest automake
+	* doc/local.mk (doc/sed.1): Depend not on sed.c, but on the binary
+	that help2man must run.  Also depend on .version, to be sure we
+	pick up a version change.  Also, be careful not to write directly
+	to $@: instead write to $@-t, and make read-only to mark as generated,
+	and then, only if all is well, rename atomically to $@.
+	Also, prefix commands with $(AM_V_GEN) and $(AM_V_at) and ensure
+	that doc/ exists via $(MKDIR_P).
+	(distclean-local): New target. Use this instead of ...
+	(dist-hook-man-page): ... this. Remove rule.
+	(SEDBIN): Remove unnecessary $(top_builddir)/ prefix.
+	(doc/sed.texi, doc/s-texi): Remove some uses of $(top_builddir).
+	Replace others with $(srcdir).
+	* Makefile (dist-hook): remove dependency on dist-hook-man-page.
+	* lib/local.mk (MOSTLYCLEANFILES): Arrange for lib/.deps/*.Po
+	to be removed as part of "make distclean", so that make distcheck
+	no longer fails when using latest automake.
+
+	sed: remove obsolete advice from --help output
+	* sed/sed.c (contact): Now that there is a sed-specific
+	mailing list, there is no longer any need to include "sed"
+	in the subject.  Remove that advice.
+
+2016-08-11  Assaf Gordon  <assafgordon@gmail.com>
+
+	doc: mention \s,\S,\<,\> regex gnu-extensions
+	* doc/sed-in.texi: Mention the extensions.
+	* doc/sed.texi: Automatically re-generated.
+
+	doc: expand on N command
+	* doc/sed-in.texi: Expand on gnu-extension of 'N' command.
+	* doc/sed.texi: Automatically re-generated.
+
+2016-08-09  Jim Meyering  <meyering@fb.com>
+
+	sed: avoid one-byte heap buffer overrun
+	* sed/execute.c (DFA_SLOP): Define.
+	(resize_line): Use it in each line-related allocation.
+	(line_init): Likewise.
+	(line_copy): Likewise.
+
+2016-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: adjust line-terminator of F/l/= commands when -z is used
+	Change F/l/= commands to use NUL line terminator if '-z' option is used.
+	Previously F/l/= used '\n' regardless of -z option.
+	See: http://lists.gnu.org/archive/html/sed-devel/2016-08/msg00000.html
+	http://lists.gnu.org/archive/html/sed-devel/2016-08/msg00002.html .
+
+	* sed/execute.c: (do_list,execute_program): Use 'buffer_delimiter' as
+	line delimiter instead of hard-coded '\n'.
+	* testsuite/nulldata.sh: Adjust tests accordingly.
+
+2016-08-08  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	sed: use grep's DFA matcher to speed up regular expression matching
+	When possible, sed now uses grep's DFA matcher to match regular
+	expression, often resulting in a 10x speed-up.
+	* NEWS (Improvements): Mention it.  Move this section to the top.
+	* sed/local.mk (sed_sed_SOURCES): Add dfa.c, and sort file names.
+	(noinst_HEADERS): Add dfa.h, and sort file names.
+	* sed/regexp.c (dfaerror, dfawarn): New functions.
+	(compile_regex_1): Compile pattern with dfa.
+	(match_regex): Use dfa.
+	* sed/sed.h: Include dfa.h.
+	(struct regex): New member dfa.
+	* sed/dfa.c: New file, copied from grep.
+	* sed/dfa.h: New file, copied from grep.
+	* po/POTFILES.in: Add sed/dfa.c.
+
+2016-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: reject 's///e' in --posix mode
+	's///e' modifier is a gnu extension - reject it in --posix mode.
+
+	* sed/compile.c: (mark_subst_opt): Exit upon 's///e' in posix mode.
+	* testsuite/posix-mode-s.sh: Adjust tests accordingly.
+
+2016-08-08  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: allow multiple (non-conflicting) -E/-r parameters
+	Accept multiple -E/-r parameters as they enable the same ERE operation
+	mode. Previously, sed would reject multiple -E/-r/-R parameters (as
+	preparation to supporting PERL syntax and wanting to avoid -E/-r/-R
+	conflicts). This enables 'sed -E -E -r =' which previously would exit with
+	a failure (and print the help screen).
+
+	* sed/sed.c: (main): Don't exit on multiple -E/-r parameters.
+
+2016-07-26  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: add static-analysis target to cfg.mk
+	Run 'make static-anslysis' to perform static code analysis using
+	clang's 'scan-build' tool.
+
+	* cfk.mk: (static-analysis,static-analysis-init,static-analysis-config,
+	static-analysis-make): New targets.
+
+2016-07-26  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: add copyright/license information to configure.ac
+	Starting year chosen as 1993 based on earliest 'configure.in' found in
+	sed-1.18.tar.gz from that year.
+
+	* configure.ac: Add standard copyright and license information.
+
+2016-07-26  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update .gitignore after bootstrap
+	Added by running ./bootstrap on a clean sed repository.
+
+	* build-aux/.gitignore: Add config.rpath.
+	* lib/.gitignore: Add additional gnulib C files.
+	* m4/.gitignore: Add additional gnulib m4 files.
+	* po/.gitignore: Add additional PO-related files.
+
+2016-07-26  Assaf Gordon  <assafgordon@gmail.com>
+
+	maint: update .gitignore
+	* .gitignore: Add coverage files, .dirstamp files, testsuite files.
+
+2016-07-25  Jim Meyering  <meyering@fb.com>
+
+	maint: skip a check when en_US.UTF-8 collation rules are broken
+	* cfg.mk (sc_THANKS_in_sorted): This check would fail on systems
+	for which "." is not ignored.  Add a quick sort-based check for
+	that error, and skip the check on any broken system.
+	This also corrects the command to use $(srcdir)/THANKS.in,
+	rather than just THANKS.in.
+
+2016-07-24  Jim Meyering  <meyering@fb.com>
+
+	maint: sort THANKS.in
+	* THANKS.in: Move J.T. Conklin's name "down" so it is in
+	en_US.UTF-8-sorted order.
+
+2016-07-24  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: switch to non-recursive makefile
+	* .gitignore: Ignore '.dirstamp' files
+	* bootstrap.conf: Add 'non-recursive-gnulib-prefix-hack' gnulib module.
+	  Add missing 'stdalign' module.
+	  (bootstrap_post_import_hook): Use module to adjust gnulib.mk file.
+	* configure.ac: Add 'subdir-objects' automake option, don't generate
+	  makefiles in subdirectories. Adjust path of XFAIL tests.
+	* Makefile.am: Include 'local.mk' files, adjust for non-recursive make.
+	* doc/Makefile.am: Rename to ...
+	* doc/local.mk: Adjust paths. Rename SED to
+	  SEDBIN variable, to avoid overriding the default system-wide SED value
+	  which is automatically set by autotools.
+	* lib/Makefile.am: Rename to ...
+	* lib/local.mk: Adjust paths.
+	* lib/.gitignore: Ignore 'stdalign.h' from gnulib module.
+	* sed/Makefile.am: Rename to ...
+	* sed/local.mk: Adjust paths.
+	* testsuite/Makefile.am: Rename to ...
+	* testsuite/local.mk: Adjust paths.
+	* testsuite/init.cfg: Move to ...
+	* init.cfg: ... here. Moved to avoid changing the path in init.sh, and to
+	  keep the same directory structure as coreutils.
+	  (require_en_utf8_locale_): Adjust path for get-mb-cur-max executable.
+	  (require_ja_shiftjis_locale_,require_valid_ja_shiftjis_locale_): Adjust
+	  path for test-mbrtowc executable.
+	* m4/.gitignore: Add gnulib's non-recusive-make module.
+	* testsuite/runtest: Adjust paths of Makefile.tests and dir variables,
+	  Skip utility program 'get-mb-cur-max' which is not a standalone test.
+	* testsuite/Makefile.tests: Adjust path of sed exeutable.
+	* testsuite/eval.sed, testsuite/eval.good: Adjust path of sed executable.
+	* testsuite/cmd-R.sh,
+	  testsuite/cmd-l.sh,
+	  testsuite/colon-with-no-label.sh,
+	  testsuite/comment-n.sh,
+	  testsuite/compile-errors.sh,
+	  testsuite/compile-tests.sh,
+	  testsuite/convert-number.sh,
+	  testsuite/execute-tests.sh,
+	  testsuite/follow-symlinks-stdin.sh,
+	  testsuite/follow-symlinks.sh,
+	  testsuite/help-version.sh,
+	  testsuite/in-place-hyphen.sh,
+	  testsuite/in-place-suffix-backup.sh,
+	  testsuite/invalid-mb-seq-UMR.sh,
+	  testsuite/mb-bad-delim.sh,
+	  testsuite/mb-charclass-non-utf8.sh,
+	  testsuite/mb-match-slash.sh,
+	  testsuite/mb-y-translate.sh,
+	  testsuite/normalize-text.sh,
+	  testsuite/nulldata.sh,
+	  testsuite/panic-tests.sh,
+	  testsuite/posix-char-class.sh,
+	  testsuite/posix-mode-N.sh,
+	  testsuite/posix-mode-addr.sh,
+	  testsuite/posix-mode-bad-ref.sh,
+	  testsuite/posix-mode-s.sh,
+	  testsuite/range-overlap.sh,
+	  testsuite/recursive-escape-c.sh,
+	  testsuite/regex-errors.sh,
+	  testsuite/stdin-prog.sh,
+	  testsuite/subst-mb-incomplete.sh,
+	  testsuite/subst-options.sh,
+	  testsuite/subst-replacement.sh,
+	  testsuite/temp-file-cleanup.sh,
+	  testsuite/unbuffered.sh: Adjust paths of init.sh, sed executable.
+
+2016-07-17  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test --follow-symlinks option
+	* configure.ac: (TEST_SYMLINKS): New AM_CONDITIONAL.
+	* testsuite/follow-symlinks.sh: New tests.
+	* testsuite/Makefile.am: (T): Conditionally add new test (and existing test
+	'follow-symlink-stdin.sh') based on TEST_SYMLINKS.
+
+	tests: test y command in multibyte locales
+	* testsuite/mb-y-translate.sh: New test.
+	* testsuite/Makefile.am: Add new test.
+
+2016-07-16  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test y,s non-slash multibyte delimiters
+	Test various scenarios of using a multibyte delimiters (instead of
+	slash) for s,y commands under UTF-8 and C locales.
+
+	* testsuite/mb-bad-delim.sh: New test.
+	* testsuite/Makefile.am: Add new test.
+
+2016-07-06  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: skip tests upon buggy mbrtowc implementations
+	Sed tests purposefully use invalid non-utf8 multibyte sequences to
+	test sed's handling of invalid input/program.
+	Some implementations wrongly accept invalid sequences, causing false
+	alarms. Add a test program to detect such buggy implementations and skip
+	the tests if needed.
+	See discussion in:
+	http://lists.gnu.org/archive/html/sed-devel/2016-07/msg00005.html
+	http://lists.gnu.org/archive/html/sed-devel/2016-07/msg00000.html
+	http://lists.gnu.org/archive/html/sed-devel/2016-06/msg00031.html
+	http://lists.gnu.org/archive/html/sed-devel/2016-06/msg00014.html
+
+	* bootstrap.conf: Add gnulib's closeout module.
+	* m4/.gitignore, lib/.gitignore, po/POTFILES.in: Adjust after adding
+	closeout module.
+	* testsuite/Makefile.am (check_PROGRAMS): Add new program.
+	* testsuite/test-mbrtowc.c: New program.
+	* testsuite/init.cfg (require_valid_ja_eucjp_locale_)
+	(require_valid_ja_shiftjis_locale_): New functions. Call test-mbrtowc
+	with known invalid multibyte sequences to ensure implementation is not
+	buggy and rejects them; Skip test otherwise.
+	* testsuite/invalid-mb-seq-UMR.sh: Use require_valid_ja_eucjp_locale_.
+	* testsuite/mb-charclass-non-utf8.sh: Use require_valid_ja_shiftjis_locale_.
+
+2016-07-04  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: fix minor multibyte parsing bug
+	Previously sed would parse multibyte characters incorrectly in two scenarios:
+
+	1. Slash following an incomplete-yet-valid multibyte sequence (match_slash):
+	    $ LC_ALL=en_US.UTF-8 sed $'s/\316/X/'
+	    sed: -e expression #1, char 6: unterminated `s' command
+
+	2. Open/close brackets as part of a valid mutilbyte string inside a character
+	class (snarf_char_class). In the example below, '\203]' is a valid
+	multibyte character in SHIFT-JIS locale:
+
+	    $ LC_ALL=ja_JP.shiftjis sed $'/[\203]/]/p'
+	    sed: -e expression #1, char #5: Unmatched [ or [^
+
+	Both cases stem from mbcs.c:brlen() being non-intuitive:
+	It returned 1 for valid single-byte character, invalid multibyte-character,
+	and a for the last byte of a valid multibyte sequence - making it
+	non-trivial to use correctly.
+
+	This commit replaces brlen() with a simpler is_mb_char() function:
+	returns non-zero for multibyte sequences, zero for single/invalid sequences.
+
+	* sed/sed.h: (BRLEN, brlen): Remove delaration.
+	(IS_MB_CHAR,is_mb_char): Add macro and function declaration.
+	* sed/mbcs.c: (brlen): Remove function. (is_mb_char): New function.
+	* sed/compile.c: (snarf_char_class, match_slash): Use IS_MB_CHAR instead of
+	BRLEN; Adjust local variables accordingly.
+	* testsuite/mb-match-slash.sh: New test for scenario 1.
+	* testsuite/mb-charclass-non-utf8.sh: New test for scenario 2,
+	requires SHIFT-JIS locale.
+	* testsuite/Makefile.am: Add new tests
+	* testsuite/init.cfg: (require_ja_shiftjis_locale_): New function.
+	* NEWS: Mention bug fix.
+
+2016-06-26  Tristan Verniquet  <tverniquet@gmail.com>
+
+	sed: use unlocked-io
+	Sed already imports gnulib's unlocked-io module, but it was not included
+	in 'utils.c'. Suggested in http://bugs.gnu.org/23848 .
+
+	* sed/utils.c: Include 'unlocked-io.h' header.
+	* NEWS: Mention improvement.
+
+2016-06-05  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test text normalization (\X sequences)
+	Sed understands escape-sequences such as \r \t \n \cX.
+	Test various scenarios of text normalization.
+
+	* testsuite/normalize-text.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test \dNNN \oNNN \xNN escape sequences
+	Test different variations of \dNNN \oNNN \xNN escape sequences,
+	exercising compile.c:convert_number().
+
+	* testsuite/convert-number.sh: new test.
+	* testsuite/Makefile.am: add new test
+
+2016-06-02  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test less-common compilation cases
+	Test various odds-and-ends stemming from GNU sed implementation
+	of the program compilation module.
+
+	* testsuite/compile-tests.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test less-common execution cases
+	* testsuite/execute-tests.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+	tests: test 'R' command
+	* testsuite/cmd-R.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+	tests: test program file from STDIN
+	* testsuite/stdin-prog.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+	tests: test auto-silent mode with '#n' comments
+	* testsuite/comment-n.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test character-classes escaping in POSIX mode
+	No \X escaping inside character classes in POSIX mode.
+
+	Compare:
+	  $ printf "t\t\n" | sed 's/[\t]/X/' | od -a
+	  0000000  t   X   nl
+	  $ printf "t\t\n" | sed --posix 's/[\t]/X/' | od -a
+	  0000000  X   ht  nl
+
+	* testsuite/posix-char-class.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test substitue replacements (s//\N/)
+	Test standard POSIX (e.g. \1 \2 \3) and gnu extension (\U \u \L \l \E)
+	replacements in s/// command.
+
+	* testsuite/subst-replacement.st: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test s/// modifiers
+	Test standard posix and gnu extension modifiers to s/// command.
+
+	* testsuite/subst-options.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test compilation-related errors
+	Cover code paths in copmile.c leading to errors.
+
+	* testsuite/compile-errors.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test regex compilation errors
+	Test scenarios leading to regex compilation errors.
+
+	* testsuite/regex-errors.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: exercise 'panic' calls
+	Test scenarios in which GNU sed terminates with a panic error message
+	(and verify the error message text).
+
+	* testsuite/panic-tests.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test -i/--inplace with backup suffix option
+	GNU Sed accepts optional backup filename/suffix with -i option.
+	If the name contains '*', sed replaces it with the input filename.
+	Test various scenarios of suffix names.
+	Example:
+	    sed -i'*-*-*.txt' = a
+	will generate backup file 'a-a-a.txt'.
+
+	* testsuite/in-place-suffix-backup.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test -u/--unbuffered mode
+	Test GNU Sed behaviour in --unbuffered mode (reading only the minimum
+	needed characters from STDIN, leaving output for next program when sed
+	terminates). Example:
+	   seq 10 | (sed -u 1q ; sort -nr )
+
+	* testsuite/unbuffered.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test -z/--null-data option
+	Test input/output line-terminators with -z option.
+
+	* testsuite/nulldata.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test 'l' command
+	Test output width of 'l' command, based on COLS envvar,
+	lN (GNU Extension), '-l N' command-line parameter,
+	and default output width.
+
+	* testsuite/cmd-l.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test gnu address extension in gnu/posix modes
+	The following addresses are gnu extensions:
+	  0,/regexp/
+	  addr1,+N
+	  addr2,~N
+
+	* testsuite/posix-mode-addr.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test 's///' gnu extensions in gnu/posix modes
+	s///[iImMe] should be rejected in --posix mode.
+	s//\[lLuUN]// should have no special meaning in --posix mode.
+
+	* testsuite/posix-mode-s.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test invalid backreferences in gnu/posix modes
+	's/foo/\1/' is rejected by default (gnu extension),
+	silently accepted in POSIX.
+
+	* testsuite/posix-mode-bad-ref.sh: new test.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: test N command in gnu/posix modes
+	'N' with insufficient output prints nothing in POSIX mode, prints the
+	last read line in GNU Extension mode.
+
+	Compare:
+	  echo a | sed N
+	  echo a | sed --posix N
+	  echo a | POSIXLY_CORRECT=y sed N
+
+	* testsuite/posix-mode-N.sh: test output of N command under gnu and
+	posix modes.
+	* testsuite/Makefile.am: add new test.
+
+2016-06-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	tests: invalid-mb-seq-UMR: avoid false-failure
+	* testsuite/Makefile.am (TESTS_ENVIRONMENT): Propagate the
+	LOCALE_JA envvar setting determined at configure time into
+	the test environment.  Without this, the test would fail on
+	some systems: at least CentOS6 and 7, but not Fedora 24.
+
+2016-06-01  Jim Meyering  <meyering@fb.com>
+
+	tests: don't let any envvar setting perturb tests
+	* testsuite/envvar-check: New file. Identical to the one from
+	grep, but with the addition of sed-specific "COLS".
+	* testsuite/Makefile.am (EXTRA_DIST): Add it here.
+	(TESTS_ENVIRONMENT): New prologue, mostly copied from grep.
+
+2016-05-29  Assaf Gordon  <assafgordon@gmail.com>
+
+	sed: reject recursive escaping after \c
+	previously, sed 's/./\c\\/' or 's/./\c\d/' would produce incorrect
+	results. Require two backslashes after \c to denote control sequence
+	^\ (ASCII 0x34), and reject recursive escaping (e.g. \c\x61).
+
+	* sed/compile.c: (RECURSIVE_ESCAPE_C): New error message.
+	(normalize_text): Check for \c-backslash, reject recursive escaping.
+	* testsuite/recursive-escape-c.sh: New file. Test new behaviour.
+	* testsuite/Makefile.am (T): Add new test.
+	* NEWS (Bug fixes): Mention it.
+
+2016-01-02  Jim Meyering  <meyering@fb.com>
+
+	revert v4.2.2-87-gc033bde, to make sed -i treat "-" as a file name
+	Stephane Chazelas made a fine case for why sed's --in-place (-i)
+	should treat "-" as a file name, and not as standard input in
+	http://debbugs.gnu.org/21249
+
+	There was no specific test for the prior behavior, so rather than
+	letting the revert remove the sole test, adapt and retain it:
+	* testsuite/in-place-hyphen.sh: However, retain and adapt this
+	file to test for the restored behavior.
+	* testsuite/Makefile.am: Retain this change, too.
+
+2016-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update copyright year, bootstrap, init.sh
+	Run "make update-copyright" and then...
+
+	* gnulib: Update to latest.
+	* tests/init.sh: Update from gnulib.
+	* bootstrap: Likewise.
+
+2015-12-27  Jim Meyering  <meyering@fb.com>
+
+	sed: do not elide an invalid byte in a substitution RHS
+	Now, sed copies such bytes into the output.
+	* sed/execute.c (str_append_modified): Copy each invalid byte
+	into the result string, as the comment suggests.
+	* testsuite/invalid-mb-seq-UMR.sh: Adjust this test to conform.
+	Perl does the same thing.  Also, remove an unnecessary "-e" option.
+	* NEWS (Bug fixes): Mention it.
+	Bug introduced prior to the switch to git in 2004,
+	between the releases of sed-4.0.9 and sed-4.1.
+	This addresses http://debbugs.gnu.org/22254.
+
+	sed: fix a heap-clobbering buffer overrun
+	* sed/execute.c (str_append_modified): Upon encountering an
+	incomplete multi-byte sequence in a substitution replacement
+	string, do not treat mbrtowc's return value of -2 as a large,
+	positive number.
+	* testsuite/subst-mb-incomplete.sh: New file/test.
+	* testsuite/Makefile.am (T): Add it.
+	Reported by Hanno Böck in http://debbugs.gnu.org/22127.
+	Hanno used the AFL fuzzer to find the segfault-inducing input
+	from which I derived the test's input.
+	Introduced by v4.2.2-76-g78e8e58, this bug was never in a release.
+
+2015-12-12  Jim Meyering  <meyering@fb.com>
+
+	tests: add helper prog, get-mb-cur-max and re_en_utf8_locale_ function
+
+2015-08-23  Jim Meyering  <meyering@fb.com>
+
+	sed: reject a ":" command without a label
+	Before, sed would accept it and treat it as a label whose name
+	had length 0, and that could be referenced via a "b" or "t"
+	command with no label.
+	* sed/compile.c (errors): Add the new diagnostic.
+	(COLON_LACKS_LABEL): Define.
+	(compile_program): Reject ":" command with no label.
+	* testsuite/colon-with-no-label.sh: New file.
+	* testsuite/Makefile.am (T): Add it.
+	* NEWS (Bug fixes): Mention it.
+	Reported by Stephane Chazelas in http://bugs.gnu.org/21250
+
+2015-08-01  Assaf Gordon  <assafgordon@gmail.com>
+
+	build: comment out definitions of unused macros
+	* sed/compile.c (OPEN_BRACE): Comment out definition, to prevent gcc-5.2
+	from failing with -Werror -Wunused-macros.
+	(END_ERRORS): Likewise.
+
+2015-07-30  Jim Meyering  <meyering@fb.com>
+
+	tests: avoid false-failure on system with no ja_JP.eucJP locale
+	* testsuite/invalid-mb-seq-UMR.sh: Use the configure-detected
+	locale name, $LOCALE_JA, rather than hard-coding ja_JP.eucJP.
+	If the required type of locale was not detected, then skip
+	this test. Reported by Assaf Gordon in http://bugs.gnu.org/21124
+
+2015-07-24  Jim Meyering  <meyering@fb.com>
+
+	maint: remove dead code
+	* sed/utils.c (ck_mkstemp): Remove $TMP/$TMPDIR-envvar-using code
+	that would have been run only if this function's second parameter
+	were to be NULL, but that could never happen, given the current
+	and sole caller.
+	Also, use mode_t as the type for the saved umask value, not "int".
+	Also, move each declaration down to point of definition.
+	* sed/utils.h (ck_mkstemp): Mark each of the four parameters as nonnull.
+
+2015-07-15  Stanislav Brabec  <sbrabec@suse.com>
+
+	sed: fix --follow-symlinks to work when reading stdin
+	When reading from stdin, use of --follow-symlinks would cause failure:
+
+	  $ echo abc | sed --follow-symlinks s/a/d/
+	  sed: cannot stat -: No such file or directory
+
+	* sed/execute.c (open_next_file): Set input->in_file_name earlier,
+	so we can rearrange logic to avoid calling follow_symlink("-").
+	* testsuite/follow-symlinks-stdin.sh: New file.
+	* testsuite/Makefile.am (T): Add it.
+	* NEWS (Bug fixes): Mention it.
+	Bug introduced by commit v4.2.1-13-g84066bf.
+	http://bugs.gnu.org/20795
+
+2015-06-23  Jim Meyering  <meyering@fb.com>
+
+	typo fix: s/singlebyte/single-byte/
+	* sed/compile.c (compile_program, normalize_text): Fix typo.
+	* sed/mbcs.c (brlen): Likewise.
+
+2015-06-20  Jim Meyering  <meyering@fb.com>
+
+	sed -i: do not treat "-" as a file name
+	Most GNU utilities treat "-" as standard input, sed itself does that --
+	in most contexts.  However, since the addition of support for
+	--in-place (-i) in sed-4.0, sed -i has treated a "-" argument as a
+	file name, i.e., like ./-.  Now, that usage evokes a diagnostic:
+
+	  $ sed -i s/a/b/ -
+	  sed: couldn't edit -: is a terminal
+
+	If you require the old behavior, specify the file name as "./-".
+	Prompted by the report/patch from Stanislav Brabec in
+	http://bugs.gnu.org/20796 to document the strangely
+	inconsistent legacy behavior.
+
+	* sed/execute.c (open_next_file): Call panic before
+	even attempting to operate on the file descriptor.
+	* testsuite/in-place-hyphen.sh: New file.  Test for this.
+	* testsuite/Makefile.am (T): Add it.
+	* NEWS (Feature removal): Mention it. Admittedly, the old behavior
+	feels more like a misfeature.
+
+2015-06-20  Jim Meyering  <meyering@fb.com>
+
+	tests: initialize $fail to 0
+	* testsuite/range-overlap.sh: Otherwise, with $fail set to
+	nonzero in the environment, this test would report failure,
+	even when it should pass.
+
+2015-05-10  Jim Meyering  <meyering@fb.com>
+
+	build: avoid warning about implicit declaration of unlink
+	* sed/sed.c: Include <unistd.h>, for declaration of unlink.
+	Without this change, commit makes sed v4.2.2-84-g7689015 fail
+	to compile when configured with --enable-gcc-warnings.
+
+	sed -i: don't leave behind a temporary sedXXXXXX file
+	For example, running a command like "sed -i s//b/ F" would fail
+	to remove a temporary file named sedXXXXXX (for random XXXXXX)
+	in the directory alongside F.
+	* sed/sed.c (G_file_to_unlink): New global.
+	(register_cleanup_file, cancel_cleanup, cleanup): New functions.
+	(main): Call atexit.
+	* sed/execute.c (open_next_file): Register for unlink.
+	(closedown): Call cancel_cleanup right after the rename.
+	* sed/sed.h: Declare two of the new functions.
+	* NEWS (Bug fixes): Mention it.
+	* testsuite/temp-file-cleanup.sh: New file.  Test for this.
+	* testsuite/Makefile.am (T): Add it.
+	Reported by David Jones in http://bugs.gnu.org/20002.
+
+2015-05-07  Jim Meyering  <meyering@fb.com>
+
+	maint: remove stray blank line in the middle of a comment
+	* sed/utils.c (ck_mkstemp): As above.
+
+	tests: skip the new test in presence of buggy valgrind
+	* testsuite/invalid-mb-seq-UMR.sh: Upon failure due to a
+	valgrind-internal assertion, skip this test.
+	Reported by Norihiro Tanaka in http://debbugs.gnu.org/20490
+
+2015-05-06  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	sed: fix mishandling of overlapping address ranges
+	When the line number ranges of two or more editing commands overlap,
+	sed applies all commands but the first to a line that is just beyond
+	the union of all ranges.  E.g., with this command,
+	seq 9|sed '2,7d;3,6d', sed would mistakenly delete line 8.
+
+	* sed/execute.c (match_an_address_p) [ADDR_IS_NUM]: Make this
+	function work also in this case.
+	(match_address_p): Move the ADDR_IS_NUM +
+	...->line_number == ...->addr_number comparison "up" into
+	match_an_address_p, so we can hoist two similar if/return
+	blocks out of "if" and "else" branches.
+	Change so that this function returns false when the current
+	line number is outside the specified range.
+	* testsuite/range-overlap.sh: New file, to test for this.
+	* testsuite/Makefile.am (T): Add it to the list.
+	* NEWS (Bug fixes): Mention it.
+	Reported as http://bugs.gnu.org/19899
+
+2015-05-04  Jim Meyering  <meyering@fb.com>
+
+	build: do not require autoconf.git
+	* configure.ac: Use AC_CONFIG_MACRO_DIR, not
+	the new (as yet unreleased) AC_CONFIG_MACRO_DIRS.
+	Reported by Hongyi Zhao in http://debbugs.gnu.org/20424
+
+2015-05-03  Jim Meyering  <meyering@fb.com>
+
+	maint: housekeeping: sync a few rules from coreutils
+	* cfg.mk (sc_preprocessor_indentation): New rule, from coreutils.
+	(local-checks-to-skip): Exempt it, for now.
+	(sc_THANKS_in_sorted): Another rule from coreutils.  Enabled.
+	(announcement_Cc_): Define, so the auto-generated announcement
+	message template includes sed-devel@ as a recipient.
+	(update-copyright-env) [UPDATE_COPYRIGHT_USE_INTERVALS]: Update
+	to use =2, rather than=1, so that the next time we update
+	copyright dates, it will collapse a few more ranges.
+
+	maint: tweak comments and rearrange code slightly
+	* sed/execute.c (str_append): Trivial NSC code transformation.
+	(str_append_modified): Tweak another comment.
+
+	tests: test for just-fixed UMR bug
+	* testsuite/invalid-mb-seq-UMR.sh: New file. Test for just-fixed bug.
+	* testsuite/Makefile.am (T): New variable.
+	Add the two init.sh-using test names here, rather than in
+	two separate lists.
+	(SEDTESTS, EXTRA_DIST): Use $(T).
+	(EXTRA_DIST): Add init.cfg.
+	* testsuite/init.cfg: New file, to add functions from coreutils.
+	(require_valgrind_, print_ver_): New functions.
+
+2015-05-03  Norihiro Tanaka  <noritnk@kcn.ne.jp>
+
+	sed: avoid a UMR bug when processing an invalid multibyte sequence
+	* sed/execute.c (str_append_modified): When attempting to append an
+	invalid multibyte sequence, e.g., from the RHS of a substitution
+	expression, we would read uninitialized memory.
+	Don't capitalize first word of diagnostic; remove exclamation point.
+	Wrap new translatable strings in _(...).
+	* NEWS (Bug fixes): Mention it.
+	This addresses http://debbugs.gnu.org/20490
+
+2015-05-02  Jim Meyering  <meyering@fb.com>
+
+	maint: remove SED_FEATURE_VERSION; use PACKAGE_VERSION instead
+	* configure.ac (SED_FEATURE_VERSION): Remove definition et al.
+	* sed/compile.c (compile_program): Remove sole use.
+	Use PACKAGE_VERSION instead.
+
+	maint: add "/*~" to build-aux/ and m4/.gitignore files
+	Otherwise, bootstrap would add entries for individual file names.
+	* build-aux/.gitignore: Add /*~
+	* m4/.gitignore: Likewise.
+
+2015-05-01  Jim Meyering  <meyering@fb.com>
+
+	maint: enable sc_file_system
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* BUGS (characters): s/filesystem/file system/
+	* ChangeLog-2014 (setup_jump): Likewise.
+	* doc/sed-in.texi: Likewise.
+	* doc/sed.texi: Likewise.
+
+	build: require gettext 0.19.2, perl-5.5
+	* configure.ac: Require gettext-0.19.2.
+	* bootstrap.conf: List perl and gettext version requirements.
+
+2015-04-27  Jim Meyering  <meyering@fb.com>
+
+	tests: set sed's expected failure status to 4
+	* testsuite/help-version.sh (expected_failure_status_sed): As above.
+
+2015-04-26  Jim Meyering  <meyering@fb.com>
+
+	maint: invoke make via $(MAKE), not via "make"
+	* Makefile.am (html): Invoke make via $(MAKE).
+	(full-distcheck): Likewise.
+
+	use generated version.[ch] and add init.sh and help-version.sh
+	* Makefile.am (DISTCLEANFILES): Initialize.
+	(EXTRA_DIST): Add .version.
+	(BUILT_SOURCES): Set to .version.
+	(.version): New rule.
+	(THANKS): Depend on .version.
+	* sed/Makefile.am: Add rules to build version.[ch].
+	* sed/sed.c: Include version.h, and use the new variable, Version.
+	* testsuite/Makefile.am: Arrange to distribute and run the new
+	help-version.sh test. Also distribute the new init.sh.
+	* testsuite/help-version.sh: New file.
+	* testsuite/init.sh: Likewise.
+	* .gitignore: Ignore the generated files, .version and src/version.[ch].
+
+2015-03-01  Jim Meyering  <meyering@fb.com>
+
+	maint: COPYRIGHT_YEAR: remove, along with tests that use it
+	This is covered by other tests, and the general --help/--version
+	checks provided by help-version.sh (about to be added) are more
+	thorough.
+	* configure.ac (COPYRIGHT_YEAR): Remove definition and AC_SUBST.
+	* Makefile.am (dist-hook): Remove test.
+	* testsuite/Makefile.am (SEDTESTS): Remove "version".
+	* testsuite/version.gin: Remove file.
+	* .gitignore: Remove mention of generated file, version.good.
+
+2015-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: initialize an mbstate_t with "= { 0, };", rather than with memset
+	I.e., use this:
+	  mbstate_t mbstate = { 0, };
+	rather than this:
+	  mbstate_t mbstate;
+	  memset (&cur_stat, 0, sizeof (mbstate_t));
+	Also, prefer "sizeof VAR" over sizeof(TYPE).
+	* sed/execute.c (execute_program, translate_mb): As above.
+	* sed/compile.c (match_slash, compile_program, normalize_text):
+	Likewise.
+
+	maint: enable sc_prohibit_long_lines
+	* cfg.mk (local-checks-to-skip): Remove the overall exemption,
+	but continue to exempt some files in testsuite/.
+	* configure.ac: Split a long line.
+	* doc/sed-in.texi: Split long lines.
+	* doc/sed.texi: Likewise.
+	* sed/compile.c: Likewise.
+	* sed/execute.c: Split long lines.
+	(execute_program): Reorder "#ifdef HAVE_POPEN" and
+	"if (pipe_fp != NULL)" if/else blocks to make the code
+	clearer and (incidentally) the lines shorter, due to a
+	decrease in nesting level.
+	* sed/sed.c: Split long lines.
+	* sed/utils.c: Likewise.
+	* sed/utils.h: Likewise.
+
+	maint: translate_mb: new function factored out of 'y'-handling case
+	* sed/execute.c (translate_mb): New function, factored out of
+	the "case 'y':" part of...
+	(execute_program): ...here.
+
+	maint: remove more unnecessary declarations
+	* sed/execute.c: Remove now-duplicate forward declarations.
+
+	maint: update copyright year ranges to include 2015; update gnulib
+
+2014-12-20  Jim Meyering  <meyering@fb.com>
+
+	maint: enable sc_prohibit_strncpy check
+	* cfg.mk (exclude_file_name_regexp--sc_prohibit_strncpy): Remove
+	its exemption.
+	* sed/compile.c (compile_program): Remove two misuses of strncpy;
+	use memcpy instead.
+	* sed/execute.c (do_list): Likewise, for one instance.
+
+	maint: begin to use "size_t" more, where appropriate
+	* sed/execute.c (do_list): Update some "int" locals to "size_t",
+	and combine a few declarations with needlessly separate initializations.
+
+	maint: update .gitignore
+	* .gitignore: Ignore build artifacts.
+
+	maint: remove po/sed.pot from version control
+	* po/sed.pot: Remove file.  It is unnecessary and undesirable to
+	version-control a file like this (mechanically-derived).
+
+	build: update build tool version requirements
+	* bootstrap.conf (buildreq): Blindly update tool-version number
+	requirements from those required by coreutils.
+
+	maint: fix "make distcheck" failure
+	* Makefile.am (EXTRA_DIST): List THANKS.in, not THANKS.
+	Add .mailmap, too.
+
+	build: build-aux/texi2dvi: remove file
+	* build-aux/texi2dvi: Remove file. It was out of date and could
+	no longer parse our .texi files.
+	* Makefile.am (EXTRA_DIST): Don't list it here.
+	* cfg.mk: Remove an exemption for that file.
+	* doc/Makefile.am (TEXI2DVI): Remove definition.
+
+2014-12-16  Jim Meyering  <meyering@fb.com>
+
+	remove support for the 'L' (fmt/flow-paragraph) command
+	* sed/Makefile.am (sed_SOURCES): Remove fmt.c.
+	* sed/execute.c (execute_program):
+	* sed/fmt.c: Remove file.
+	* sed/sed.h (fmt): Remove declaration.
+	* doc/sed.texi: Remove documentation for 'L' command.
+	* doc/sed-in.texi: Likewise.
+	* NEWS (Feature removal): Document it.
+	Prompted by the report from Jodie Cunningham that using this
+	command with a large number could cause sed to segfault:
+	https://bugs.launchpad.net/ubuntu/+source/sed/+bug/1400575
+
+2014-12-01  Jim Meyering  <meyering@fb.com>
+
+	doc: NEWS: mention the gzip->xz release tarball switch
+	* NEWS (Build-related): Mention that we are now distributing
+	only .tar.xz archives; no more gzip-compressed tarballs.
+
+	build: avoid warning about unused fchown result
+	* sed/execute.c: Include "ignore-value.h".
+	(closedown): Explicitly ignore fchown return value.
+	* bootstrap.conf (gnulib_modules): Add ignore-value.
+	* lib/.gitignore: Ignore the new .h file.
+	* .gitignore: Ignore all **~ backup files.
+
+2014-11-30  Jim Meyering  <meyering@fb.com>
+
+	build: use gnulib's manywarnings module
+	bootstrap.conf: Add the module name.
+	configure.ac: Copy boilerplate and exclusions from coreutils.
+	sed/Makefile.am (AM_CFLAGS): Define in terms of the two new
+	variables, $(WARN_CFLAGS) and $(WERROR_CFLAGS).
+	m4/.gitignore: Add the two new .m4 files.
+
+	maint: add three casts-in-initialization to avoid warnings
+	* sed/compile.c (special_files): When initializing, cast string
+	literals to (char *) to avoid warnings.
+
+	maint: avoid a gcc "const discard" warning
+	* sed/compile.c (compile_program): Make a local "const" to avoid
+	discarding "const" attribute in assignment.
+
+	maint: avoid more gcc warnings: apply _GL_ATTRIBUTE_PURE
+	* sed/utils.h (get_buffer, size_buffer): Make each functions
+	sole parameter "const" and declare the function itself with the
+	"pure" attribute.
+	* sed/utils.c (get_buffer, size_buffer): Adjust definitions to match.
+
+	maint: add _Noreturn attribute to two functions
+	This avoids two gcc may-be-noreturn warnings:
+	* sed/sed.h (bad_prog): Add _Noreturn attribute.
+	* sed/utils.h (panic): Likewise.
+
+	maint: manually convert K&R to ANSI style decls; and add "static"
+	Convert many function definitions from K&R to ANSI style.
+	When possible, make a function static and remove the immediately-
+	preceding declaration of that same function.
+	Also, add the const to a few declarations.
+	* sed/compile.c: As above.
+	(special_files): Likewise.
+	* sed/execute.c: Likewise.
+	* sed/fmt.c: Likewise.
+	* sed/mbcs.c: Likewise.
+	* sed/regexp.c: Likewise.
+	* sed/sed.c: Likewise.
+	* sed/sed.h: Likewise.
+	* sed/utils.c: Likewise.
+
+	maint: declare several "int" locals to be of type size_t
+	* sed/compile.c (compile_program): Using "int" was wrong: not only
+	too narrow, but would also evoke warnings from gcc when comparing
+	with variables of unsigned type.
+
+	maint: avoid gcc warning about unused macro
+	* sed/regexp.c (END_ERRORS): Remove definition of unused macro.
+
+	maint: avoid false-positive used-uninit. warning from gcc
+	* sed/sed.h (IF_LINT): Define.
+	* sed/compile.c (snarf_char_class) [lint]: Use it to initialize DELIM,
+	so that gcc doesn't report it is used uninitialized.
+
+	maint: enable sc_prohibit_empty_lines_at_EOF check
+	* cfg.mk (exclude_file_name_regexp--sc_prohibit_empty_lines_at_EOF):
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	Adjust many files to end in a single newline, but exempt a few
+	test suite input and output files.
+	* testsuite/fasts.sed: Remove three empty lines at EOF.
+	* BUGS: Remove empty line at EOF.
+	* sed/mbcs.c: Likewise.
+	* sed/sed.h: Likewise.
+	* testsuite/BOOST.tests: Likewise.
+	* testsuite/dc.inp: Add a newline at EOF; there was none.
+	* testsuite/flipcase.sed: Likewise.
+	* testsuite/utf8-1.good: Likewise.
+	* testsuite/utf8-1.inp: Likewise.
+	* testsuite/utf8-2.good: Likewise.
+	* testsuite/utf8-2.inp: Likewise.
+	* testsuite/utf8-3.good: Likewise.
+	* testsuite/utf8-3.inp: Likewise.
+	* testsuite/utf8-4.good: Likewise.
+	* testsuite/utf8-4.inp: Likewise.
+	* testsuite/xbxcx.good: Likewise.
+	* testsuite/xbxcx.inp: Likewise.
+	* testsuite/xemacs.good: Likewise.
+	* testsuite/xemacs.inp: Likewise.
+
+	maint: enable sc_prohibit_tab_based_indentation syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	Exempt all files under testsuite/, for now, and a few others.
+	* .gitmodules: Change each leading TAB to 8 spaces spaces.
+	* BUGS: Likewise.
+	* NEWS: Likewise.
+	* configure.ac: Likewise.
+	* sed/compile.c: Likewise.
+	* sed/execute.c: Likewise.
+	* sed/fmt.c: Likewise.
+	* sed/regexp.c: Likewise.
+	* sed/sed.c: Likewise.
+	* sed/sed.h: Likewise.
+	* sed/utils.c: Likewise.
+	* sed/utils.h: Likewise.
+	* COPYING: Update from coreutils.
+
+	maint: enable sc_m4_quote_check syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* configure.ac: Fix the under-quoting problems thus exposed.
+
+	maint: enable sc_cast_of_argument_to_free syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* testsuite/tst-rxspencer.c (mb_test): Remove a cast.
+
+	maint: enable sc_cast_of_alloca_return_value syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* sed/regexp.c (match_regex): Do not cast return value of alloca.
+
+	maint: enable sc_po_check syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* po/POTFILES.in: Adjust to reflect added/removed file names.
+
+	maint: enable sc_prohibit_always_true_header_tests syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	Exempt configure.ac.
+
+	maint: enable sc_makefile_at_at_check syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* testsuite/Makefile.am (LDADD, TESTS_ENVIRONMENT): Use $(...)
+	rather than obsolescent @...@ notation.
+
+	maint: enable sc_space_tab syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* doc/groupify.sed: Reverse SP-TAB sequences.
+	* sed/compile.c (compile_program): Remove spaces before TAB.
+	* sed/execute.c (append_replacement): Likewise.
+
+	maint: enable sc_program_name syntax check
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+	* sed/sed.c: Include progname.h".
+	(program_name): Remove now-unnecessary declaration.
+	(main): Call set_program_name.
+	* bootstrap.conf (gnulib_modules): Add progname.
+	* lib/.gitignore: Append the two new names.
+
+	maint: enable more checks
+	* cfg.mk (local-checks-to-skip): Remove exemptions
+	for immutable NEWS as well as the two config.h checks.
+	Also accept "sed.h", since the first thing it does is
+	to include <config.h>.
+	* sed/sed.h: Change "config.h" to <config.h>, for consistency
+	with other GNU tools.
+	* sed/utils.c: Likewise, here and for each of the following.
+	* testsuite/bug-regex10.c:
+	* testsuite/bug-regex11.c:
+	* testsuite/bug-regex12.c:
+	* testsuite/bug-regex13.c:
+	* testsuite/bug-regex14.c:
+	* testsuite/bug-regex15.c:
+	* testsuite/bug-regex16.c:
+	* testsuite/bug-regex21.c:
+	* testsuite/bug-regex7.c:
+	* testsuite/bug-regex8.c:
+	* testsuite/bug-regex9.c:
+	* testsuite/runptests.c:
+	* testsuite/runtests.c:
+	* testsuite/tst-boost.c:
+	* testsuite/tst-pcre.c:
+	* testsuite/tst-regex.c:
+	* testsuite/tst-regex2.c:
+	* testsuite/tst-rxspencer.c:
+
+	maint: enable sc_const_long_option syntax check
+	* sed/sed.c (main): Add "const" to decl of longopts.
+	* cfg.mk (local-checks-to-skip): Remove its exemption.
+
+	maint: enable double-word prohibition
+	* cfg.mk (local-checks-to-skip): Remove exemption for
+	sc_prohibit_doubled_word.
+	Exempt 4 files under testsuite/.
+
+	doc: remove doubled word
+	* doc/sed-in.texi: Remove doubled "the".
+	* doc/sed.texi: Likewise.
+
+	maint: add .prev-version
+	* .prev-version: New file.
+
+	maint: turn on the test that prohibits use of HAVE_CONFIG_H
+	* cfg.mk (local-checks-to-skip): Remove the exemption here.
+	* testsuite/bug-regex10.c: Remove the use of the offending macro.
+	* testsuite/bug-regex11.c: Likewise.
+	* testsuite/bug-regex12.c: Likewise.
+	* testsuite/bug-regex13.c: Likewise.
+	* testsuite/bug-regex14.c: Likewise.
+	* testsuite/bug-regex15.c: Likewise.
+	* testsuite/bug-regex16.c: Likewise.
+	* testsuite/bug-regex21.c: Likewise.
+	* testsuite/bug-regex7.c: Likewise.
+	* testsuite/bug-regex8.c: Likewise.
+	* testsuite/bug-regex9.c: Likewise.
+	* testsuite/runptests.c: Likewise.
+	* testsuite/runtests.c: Likewise.
+	* testsuite/tst-boost.c: Likewise.
+	* testsuite/tst-pcre.c: Likewise.
+	* testsuite/tst-regex.c: Likewise.
+	* testsuite/tst-regex2.c: Likewise.
+	* testsuite/tst-rxspencer.c: Likewise.
+
+	maint: generate THANKS from THANKS.in
+	* THANKS.in: Renamed from THANKS, adjusted formatting
+	and added header.  Also remove from this list of names those
+	that are now generated automatically.
+	* THANKS: Removed, now that it's generated.
+	* thanks-gen: New file.
+	* Makefile.am (EXTRA_DIST): Add thanks-gen
+	(THANKS): New rule.
+	* .mailmap: New file.
+
+	maint: add cfg.mk, derived from grep's
+	* cfg.mk (local-checks-to-skip): Exempt many failing tests.
+	(old_NEWS_hash): Define.
+	* NEWS: Tweak wording to avoid semblance of doubled word: in in-place.
+
+	tests: hook up gnulib-tests
+	* Makefile.am (SUBDIRS): Add gnulib-tests.
+	* gnulib-tests/Makefile.am: New file.
+	* configure.ac (AC_CONFIG_FILES): Add gnulib-tests/Makefile.
+	* .gitignore: Ignore all but Makefile.am.
+
+	maint: .gitignore: ignore more
+
+	maint: remove ACLOCAL_AMFLAGS in favor of AC_CONFIG_MACRO_DIRS
+	* Makefile.am (ACLOCAL_AMFLAGS): Remove this assignment.
+	* configure.ac: Use this macro instead.
+
+	maint: do not version-control generated files.
+	* doc/sed.1: Remove.
+	* po/sed.pot: Likewise.
+	* po/Makevars: Likewise.
+	* .gitignore: Add their names.
+
+	maint: begin to modernize configure.ac
+	* configure.ac: Turn on silent rules, by default.
+	Use git-derived versions all the time. Required a new, signed
+	v4.2.2 tag, which I've pushed.
+	Distribute .tar.xz tarballs, not .bzip2 or .gz.
+	* Makefile.am (AUTOMAKE_OPTIONS): Remove.
+	* bootstrap.conf (gnulib_modules): Add git-version-gen.
+
+	maint: convert obsolescent @VAR@ notation to $(VAR)
+	* sed/Makefile.am (sed_LDADD): Use $(VAR), no @VAR@.
+
+	maint: update copyright dates; use gnulib's update-copyright module
+	* bootstrap.conf (gnulib_modules): Add update-copyright.
+	Then, run "make update-copyright".
+	* Makefile.am: Add copyright header.
+
+	maint: remove all trailing white space
+	First, run this command:
+	  git grep -l '	 $'|xargs perl -pi -e 's/[ \t]+$//'
+	Then some minor fix-up to make the two newly-failing tests
+	pass once again:
+	* testsuite/mac-mf.sed: Append this, s/ $//,
+	to eliminate trailing spaces in the actual output.
+	* testsuite/y-newline.good: Manually remove a trailing
+	space between two concatenated prompts.
+
+	maint: update autogenerated .gitignore files
+
+	maint: update build/gnulib infrastructure; generate ChangeLog
+	* ChangeLog-2014: Renamed from ChangeLog.
+	* po/ChangeLog-2014: Renamed from po/ChangeLog.
+	* Makefile.am (EXTRA_DIST): Add the two new file names.
+	(dist-hook): Generate ChangeLog at tarball-creation time.
+	(gen-ChangeLog): New rule.  Just like the one in coreutils and grep.
+	* bootstrap.conf (gnulib_modules): Add the modules, readme-release
+	and gitlog-to-changelog, and revamp to be much more like grep and
+	coreutils.
+	* lib/Makefile.am: Update.
+
+	maint: update bootstrap from gnulib
+
+2014-09-06  Jim Meyering  <meyering@fb.com>
+
+	fixup: add the properly-named new test files
+	* testsuite/Makefile.am (EXTRA_DIST): Add y-zero.*,
+	not y-NUL.* here.

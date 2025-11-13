@@ -1,0 +1,1018 @@
+# Czech translations for GNU sed package.
+# Copyright (C) 1998 Free Software Foundation, Inc.
+# This file is distributed under the same license as the sed package.
+# Jaroslav Fojtik <fojtik@cmp.felk.cvut.cz>, 1998.
+# Petr Pisar <petr.pisar@atlas.cz>, 2008, 2010, 2016, 2017, 2018, 2020, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sed 4.8.44\n"
+"Report-Msgid-Bugs-To: bug-gnu-utils@gnu.org\n"
+"POT-Creation-Date: 2022-11-06 13:50-0800\n"
+"PO-Revision-Date: 2022-10-18 20:32+02:00\n"
+"Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
+"Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: lib/closeout.c:121
+msgid "write error"
+msgstr "chyba zápisu"
+
+#: lib/copy-acl.c:54
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "zachovávají se práva pro %s"
+
+#: lib/dfa.c:894
+msgid "unbalanced ["
+msgstr "nepárová ["
+
+#: lib/dfa.c:1015
+msgid "invalid character class"
+msgstr "chybná třída znaků"
+
+#: lib/dfa.c:1143
+msgid "character class syntax is [[:space:]], not [:space:]"
+msgstr "skladba pro třídu znaků je [[:space:]], nikoliv [:space:]"
+
+#: lib/dfa.c:1209
+msgid "unfinished \\ escape"
+msgstr "neukončená posloupnost \\"
+
+#: lib/dfa.c:1319
+msgid "? at start of expression"
+msgstr "? na začátku výrazu"
+
+#: lib/dfa.c:1331
+msgid "* at start of expression"
+msgstr "* na začátku výrazu"
+
+#: lib/dfa.c:1345
+msgid "+ at start of expression"
+msgstr "+ na začátku výrazu"
+
+#: lib/dfa.c:1400
+msgid "{...} at start of expression"
+msgstr "{…} na začátku výrazu"
+
+#: lib/dfa.c:1403
+msgid "invalid content of \\{\\}"
+msgstr "chybný obsah \\{\\}"
+
+#: lib/dfa.c:1405
+msgid "regular expression too big"
+msgstr "regulární výraz je příliš velký"
+
+#: lib/dfa.c:1555
+msgid "stray \\ before unprintable character"
+msgstr "nadbytečné \\ před netisknutelným znakem"
+
+#: lib/dfa.c:1557
+msgid "stray \\ before white space"
+msgstr "nadbytečné \\ před bílým místem"
+
+#: lib/dfa.c:1561
+#, c-format
+msgid "stray \\ before %lc"
+msgstr "nadbytečné \\ před %lc"
+
+#: lib/dfa.c:1562
+msgid "stray \\"
+msgstr "nadbytečné \\"
+
+#: lib/dfa.c:1917
+msgid "unbalanced ("
+msgstr "nepárová ("
+
+#: lib/dfa.c:2034
+msgid "no syntax specified"
+msgstr "nezadána žádná skladba"
+
+#: lib/dfa.c:2045
+msgid "unbalanced )"
+msgstr "nepárová )"
+
+#: lib/error.c:195
+msgid "Unknown system error"
+msgstr "Neznámá chyba systému"
+
+#: lib/obstack.c:337 lib/obstack.c:339 lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "paměť vyčerpána"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <https://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:354
+msgid "`"
+msgstr "„"
+
+#: lib/quotearg.c:355
+msgid "'"
+msgstr "“"
+
+#: lib/regcomp.c:122
+msgid "Success"
+msgstr "Úspěch"
+
+#: lib/regcomp.c:125
+msgid "No match"
+msgstr "Žádná shoda"
+
+#: lib/regcomp.c:128
+msgid "Invalid regular expression"
+msgstr "Chybný regulární výraz"
+
+#: lib/regcomp.c:131
+msgid "Invalid collation character"
+msgstr "Chybný srovnávací znak"
+
+#: lib/regcomp.c:134
+msgid "Invalid character class name"
+msgstr "Chybný název třídu znaků"
+
+#: lib/regcomp.c:137
+msgid "Trailing backslash"
+msgstr "Zpětné lomítko na konci"
+
+#: lib/regcomp.c:140
+msgid "Invalid back reference"
+msgstr "Chybný zpětný odkaz"
+
+#: lib/regcomp.c:143
+msgid "Unmatched [, [^, [:, [., or [="
+msgstr "Neodpovídající [, [^, [:, [. nebo [="
+
+#: lib/regcomp.c:146
+msgid "Unmatched ( or \\("
+msgstr "Neodpovídající ( nebo \\("
+
+#: lib/regcomp.c:149
+msgid "Unmatched \\{"
+msgstr "Neodpovídající \\{"
+
+#: lib/regcomp.c:152
+msgid "Invalid content of \\{\\}"
+msgstr "Chybný obsah \\{\\}"
+
+#: lib/regcomp.c:155
+msgid "Invalid range end"
+msgstr "Chybný konec rozsahu"
+
+#: lib/regcomp.c:158
+msgid "Memory exhausted"
+msgstr "Paměť vyčerpána"
+
+#: lib/regcomp.c:161
+msgid "Invalid preceding regular expression"
+msgstr "Chybný předešlý regulární výraz"
+
+#: lib/regcomp.c:164
+msgid "Premature end of regular expression"
+msgstr "Předčasný konec regulárního výrazu"
+
+#: lib/regcomp.c:167
+msgid "Regular expression too big"
+msgstr "Regulární výraz je příliš velký"
+
+#: lib/regcomp.c:170
+msgid "Unmatched ) or \\)"
+msgstr "Neodpovídající ) nebo \\)"
+
+#: lib/regcomp.c:650
+msgid "No previous regular expression"
+msgstr "Žádný předcházející regulární výraz"
+
+#: lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "nastavují se práva pro %s"
+
+#: lib/version-etc.c:73
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr "Zabalil(a) %s (%s)\n"
+
+#: lib/version-etc.c:76
+#, c-format
+msgid "Packaged by %s\n"
+msgstr "Zabalil(a) %s\n"
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:83
+msgid "(C)"
+msgstr "©"
+
+#. TRANSLATORS: The %s placeholder is the web address of the GPL license.
+#: lib/version-etc.c:88
+#, c-format
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <%s>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"License GPLv3 GNU GPL verze 3 nebo novější <%s>.\n"
+"Toto je svobodné programové vybavení: máte právo jej měnit a šířit.\n"
+"Není zde ŽÁDNÁ ZÁRUKA, jak jen zákon dovoluje.\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:105
+#, c-format
+msgid "Written by %s.\n"
+msgstr "Napsal(a) %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:109
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "Napsali %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:113
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "Napsali %s, %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:120
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:127
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:134
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:142
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:150
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:159
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:170
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s a další.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:249
+#, c-format
+msgid "Report bugs to: %s\n"
+msgstr ""
+"Chyby v programu hlaste anglicky na: %s\n"
+"Chyba v překladu hlaste česky na: <translation-team-cs@lists.sourceforge."
+"net>\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr "Hlaste chyby %s na: %s\n"
+
+#: lib/version-etc.c:255 lib/version-etc.c:257
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "Domovská stránka %s: <%s>\n"
+
+#: lib/version-etc.c:260
+#, c-format
+msgid "General help using GNU software: <%s>\n"
+msgstr "Obecný návod jak používat software GNU: <%s>\n"
+
+#: sed/compile.c:146
+msgid "multiple `!'s"
+msgstr "vícenásobný „!“"
+
+#: sed/compile.c:147
+msgid "unexpected `,'"
+msgstr "neočekávaná „,“"
+
+#: sed/compile.c:149
+msgid "invalid usage of +N or ~N as first address"
+msgstr "+N nebo ~N nelze použít jako první adresu"
+
+#: sed/compile.c:150
+msgid "unmatched `{'"
+msgstr "neodpovídající „{“"
+
+#: sed/compile.c:151
+msgid "unexpected `}'"
+msgstr "neočekávaná „}“"
+
+#: sed/compile.c:153
+msgid "extra characters after command"
+msgstr "nadbytečné znaky po příkazu"
+
+#: sed/compile.c:155
+msgid "expected \\ after `a', `c' or `i'"
+msgstr "po „a“, „c“ nebo „i“ je očekávané „\\“"
+
+#: sed/compile.c:157
+msgid "`}' doesn't want any addresses"
+msgstr "„}“ nevyžaduje jakoukoliv adresu"
+
+#: sed/compile.c:159
+msgid ": doesn't want any addresses"
+msgstr ": nechce jakoukoliv adresu"
+
+#: sed/compile.c:161
+msgid "comments don't accept any addresses"
+msgstr "komentáře nepřipouštějí žádnou adresu"
+
+#: sed/compile.c:162
+msgid "missing command"
+msgstr "chybějící příkaz"
+
+#: sed/compile.c:163
+msgid "command only uses one address"
+msgstr "příkaz používá pouze jedinou adresu"
+
+#: sed/compile.c:165
+msgid "unterminated address regex"
+msgstr "neukončená adresa regulárního výrazu"
+
+#: sed/compile.c:166
+msgid "unterminated `s' command"
+msgstr "neukončený příkaz „s“"
+
+#: sed/compile.c:167
+msgid "unterminated `y' command"
+msgstr "neukončený příkaz „y“"
+
+#: sed/compile.c:168
+msgid "unknown option to `s'"
+msgstr "neznámý přepínač pro „s“"
+
+#: sed/compile.c:170
+msgid "multiple `p' options to `s' command"
+msgstr "vícenásobné použití přepínače „p“ s příkazem „s“"
+
+#: sed/compile.c:172
+msgid "multiple `g' options to `s' command"
+msgstr "vícenásobné použití přepínače „g“ s příkazem „s“"
+
+#: sed/compile.c:174
+msgid "multiple number options to `s' command"
+msgstr "příkaz „s“ může mít maximálně jednu číselný přepínač"
+
+#: sed/compile.c:176
+msgid "number option to `s' command may not be zero"
+msgstr "číselný přepínač příkazu „s“ nemůže být nula"
+
+#: sed/compile.c:178
+msgid "strings for `y' command are different lengths"
+msgstr "řetězce pro příkaz „y“ mají rozdílnou délku"
+
+#: sed/compile.c:180
+msgid "delimiter character is not a single-byte character"
+msgstr "oddělovací znak není jednobajtovým znakem"
+
+#: sed/compile.c:182
+msgid "expected newer version of sed"
+msgstr "očekávána nová verze sedu"
+
+#: sed/compile.c:184
+msgid "invalid usage of line address 0"
+msgstr "chybné použití adresy řádku 0"
+
+#: sed/compile.c:185
+#, c-format
+msgid "unknown command: `%c'"
+msgstr "neznámý příkaz: „%c“"
+
+#: sed/compile.c:187
+msgid "incomplete command"
+msgstr "neúplný příkaz"
+
+#: sed/compile.c:189
+msgid "\":\" lacks a label"
+msgstr "„:“ postrádá jmenovku"
+
+#: sed/compile.c:191
+msgid "recursive escaping after \\c not allowed"
+msgstr "rekurzivní escapování po \\c není dovoleno"
+
+#: sed/compile.c:193
+msgid "e/r/w commands disabled in sandbox mode"
+msgstr "v režimu pískoviště jsou příkazy e/r/w zakázány"
+
+#: sed/compile.c:218
+#, c-format
+msgid "%s: file %s line %lu: %s\n"
+msgstr "%s: soubor %s, řádek %'lu: %s\n"
+
+#: sed/compile.c:221
+#, c-format
+msgid "%s: -e expression #%lu, char %lu: %s\n"
+msgstr "%s: -e výraz č. %'lu, znak %'lu: %s\n"
+
+#: sed/compile.c:1623
+#, c-format
+msgid "can't find label for jump to `%s'"
+msgstr "návěští pro skok na „%s“ nelze najít"
+
+#: sed/execute.c:253 sed/execute.c:270
+#, c-format
+msgid "case conversion produced an invalid character"
+msgstr "převod velikosti písmene vytvořil neplatný znak"
+
+#: sed/execute.c:565
+#, c-format
+msgid "%s: can't read %s: %s\n"
+msgstr "%s: %s nelze číst: %s\n"
+
+#: sed/execute.c:591
+#, c-format
+msgid "couldn't edit %s: is a terminal"
+msgstr "%s nelze upravovat: je to terminál"
+
+#: sed/execute.c:596
+#, c-format
+msgid "couldn't edit %s: not a regular file"
+msgstr "%s nelze upravovat: není obyčejným souborem"
+
+#: sed/execute.c:607
+#, c-format
+msgid "%s: warning: failed to set default file creation context to %s: %s"
+msgstr ""
+"%s: pozor: nastavení výchozího kontextu pro tvorbu souboru na %s selhalo: %s"
+
+#: sed/execute.c:615
+#, c-format
+msgid "%s: warning: failed to get security context of %s: %s"
+msgstr "%s: pozor: nepodařilo se získat bezpečnostní kontext %s: %s"
+
+#: sed/execute.c:633 sed/utils.c:215
+#, c-format
+msgid "couldn't open temporary file %s: %s"
+msgstr "dočasný soubor %s nelze otevřít: %s"
+
+#: sed/execute.c:1170 sed/execute.c:1369
+msgid "error in subprocess"
+msgstr "chyba v podprocesu"
+
+#: sed/execute.c:1172
+msgid "option `e' not supported"
+msgstr "přepínač „e“ není podporován"
+
+#: sed/execute.c:1350
+msgid "`e' command not supported"
+msgstr "příkaz „e“ není podporován"
+
+#: sed/execute.c:1672
+msgid "no input files"
+msgstr "žádné vstupní soubory"
+
+#: sed/regexp.c:40
+msgid "no previous regular expression"
+msgstr "žádný předcházející regulární výraz"
+
+#: sed/regexp.c:125
+#, c-format
+msgid "invalid reference \\%d on `s' command's RHS"
+msgstr "chybný odkaz \\%d na pravé straně příkazu „s“"
+
+#: sed/regexp.c:196
+msgid "regex input buffer length larger than INT_MAX"
+msgstr "délka vstupního pole pro regulární výraz je větší než INT_MAX"
+
+#: sed/sed.c:37
+msgid "Jay Fenlason"
+msgstr "Jay Fenlason"
+
+#: sed/sed.c:38
+msgid "Tom Lord"
+msgstr "Tom Lord"
+
+#: sed/sed.c:39
+msgid "Ken Pizzini"
+msgstr "Ken Pizzini"
+
+#: sed/sed.c:40
+msgid "Paolo Bonzini"
+msgstr "Paolo Bonzini"
+
+#: sed/sed.c:41
+msgid "Jim Meyering"
+msgstr "Jim Meyering"
+
+#: sed/sed.c:42
+msgid "Assaf Gordon"
+msgstr "Assaf Gordon"
+
+#: sed/sed.c:103
+#, c-format
+msgid ""
+"GNU sed home page: <https://www.gnu.org/software/sed/>.\n"
+"General help using GNU software: <https://www.gnu.org/gethelp/>.\n"
+msgstr ""
+"Domovská stránka GNU sed: <https://www.gnu.org/software/sed/>.\n"
+"Obecný návod jak používat software GNU: <https://www.gnu.org/gethelp/>.\n"
+
+#: sed/sed.c:109
+#, c-format
+msgid "E-mail bug reports to: <%s>.\n"
+msgstr "Chybové zprávy zasílejte e-mailem na: <%s>\n"
+
+#: sed/sed.c:117
+msgid "This sed program was built with SELinux support."
+msgstr "Tento program sed byl sestaven s podporu SELinuxu."
+
+#: sed/sed.c:119
+msgid "SELinux is enabled on this system."
+msgstr "Na tomto systému je SELinux zapnut."
+
+#: sed/sed.c:121
+msgid "SELinux is disabled on this system."
+msgstr "Na tomto systému je SELinux vypnut."
+
+#: sed/sed.c:123
+msgid "This sed program was built without SELinux support."
+msgstr "Tento program byl sestaven bez podpory SELinuxu."
+
+#: sed/sed.c:133
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+"\n"
+msgstr ""
+"Použití: %s [PŘEPÍNAČ]… {SKRIPT_JEN_KDYŽ_JE_JEDINÝ} [VSTUPNÍ_SOUBOR]…\n"
+"\n"
+
+#: sed/sed.c:137
+#, c-format
+msgid ""
+"  -n, --quiet, --silent\n"
+"                 suppress automatic printing of pattern space\n"
+msgstr ""
+"  -n, --quiet, --silent\n"
+"                 potlačí automatické vypisování prostoru vzorů\n"
+
+#: sed/sed.c:139
+#, c-format
+msgid ""
+"      --debug\n"
+"                 annotate program execution\n"
+msgstr ""
+"      --debug\n"
+"                 popíše běh programu\n"
+
+#: sed/sed.c:141
+#, c-format
+msgid ""
+"  -e script, --expression=script\n"
+"                 add the script to the commands to be executed\n"
+msgstr ""
+"  -e script, --expression=SKRIPT\n"
+"                 přidá skript mezi příkazy k provedení\n"
+
+#: sed/sed.c:143
+#, c-format
+msgid ""
+"  -f script-file, --file=script-file\n"
+"                 add the contents of script-file to the commands to be "
+"executed\n"
+msgstr ""
+"  -f script-file, --file=SKRIPTOVÝ_SOUBOR\n"
+"                 přidá obsah SKRIPTOVÉHO_SOUBORU mezi příkazy k provedení\n"
+
+#: sed/sed.c:147
+#, c-format
+msgid ""
+"  --follow-symlinks\n"
+"                 follow symlinks when processing in place\n"
+msgstr ""
+"  --follow-symlinks\n"
+"                 následuje symbolické odkazy, když zapisuje do vstupního\n"
+"                 souboru\n"
+
+#: sed/sed.c:150
+#, c-format
+msgid ""
+"  -i[SUFFIX], --in-place[=SUFFIX]\n"
+"                 edit files in place (makes backup if SUFFIX supplied)\n"
+msgstr ""
+"  -i[PŘÍPONA], --in-place[=PŘÍPONA]\n"
+"                 upravuje přímo vstupní soubory (vytváří zálohy, pokud je\n"
+"                 poskytnuta PŘÍPONA)\n"
+
+#: sed/sed.c:153
+#, c-format
+msgid ""
+"  -b, --binary\n"
+"                 open files in binary mode (CR+LFs are not processed "
+"specially)\n"
+msgstr ""
+"  -b, --binary\n"
+"                 otevře soubory v binárním režimu (znaky CR+LF nejsou\n"
+"                 zpracovávány zvláštně)\n"
+
+#: sed/sed.c:157
+#, c-format
+msgid ""
+"  -l N, --line-length=N\n"
+"                 specify the desired line-wrap length for the `l' command\n"
+msgstr ""
+"  -l N, --line-length=N\n"
+"                 určuje délku zarovnání řádku u příkazu „l“\n"
+
+#: sed/sed.c:159
+#, c-format
+msgid ""
+"  --posix\n"
+"                 disable all GNU extensions.\n"
+msgstr ""
+"  --posix\n"
+"                 vypne všechna GNU rozšíření\n"
+
+#: sed/sed.c:161
+#, c-format
+msgid ""
+"  -E, -r, --regexp-extended\n"
+"                 use extended regular expressions in the script\n"
+"                 (for portability use POSIX -E).\n"
+msgstr ""
+"  -E, r, --regexp-extended\n"
+"                 použije rozšířené regulární výrazy\n"
+"                 (kvůli přenositelnosti použijte posixový -E).\n"
+
+#: sed/sed.c:164
+#, c-format
+msgid ""
+"  -s, --separate\n"
+"                 consider files as separate rather than as a single,\n"
+"                 continuous long stream.\n"
+msgstr ""
+"  -s, --separate\n"
+"                 považuje soubory za samostatné a ne za jeden dlouhý\n"
+"                 souvislý proud.\n"
+
+#: sed/sed.c:167
+#, c-format
+msgid ""
+"      --sandbox\n"
+"                 operate in sandbox mode (disable e/r/w commands).\n"
+msgstr ""
+"      --sandbox\n"
+"                 pracuje v režimu pískoviště (vypne příkazy e, r, w).\n"
+
+#: sed/sed.c:169
+#, c-format
+msgid ""
+"  -u, --unbuffered\n"
+"                 load minimal amounts of data from the input files and "
+"flush\n"
+"                 the output buffers more often\n"
+msgstr ""
+"  -u, --unbuffered\n"
+"                 čte co nejméně dat ze vstupních souborů a výstupní\n"
+"                 buffery vyprazdňuje častěji\n"
+
+#: sed/sed.c:172
+#, c-format
+msgid ""
+"  -z, --null-data\n"
+"                 separate lines by NUL characters\n"
+msgstr ""
+"  -z, --null-data\n"
+"                 oddělí řádky znaky NUL\n"
+
+#: sed/sed.c:174
+#, c-format
+msgid "      --help     display this help and exit\n"
+msgstr "      --help     zobrazí tuto nápovědu a skončí\n"
+
+#: sed/sed.c:175
+#, c-format
+msgid "      --version  output version information and exit\n"
+msgstr "      --version  vypíše informace o verzi a skončí\n"
+
+#: sed/sed.c:176
+#, c-format
+msgid ""
+"\n"
+"If no -e, --expression, -f, or --file option is given, then the first\n"
+"non-option argument is taken as the sed script to interpret.  All\n"
+"remaining arguments are names of input files; if no input files are\n"
+"specified, then the standard input is read.\n"
+"\n"
+msgstr ""
+"\n"
+"Ne-li zadán žádný z přepínačů -e, --expression, -f nebo --file, pak první\n"
+"argument, který není přepínačem, je považován za sedový skript a bude\n"
+"vykonán. Všechny zbývající argumenty jsou jména vstupních souborů. Nejsou-"
+"li\n"
+"zadány žádné vstupní soubory, bude čten standardní vstup.\n"
+"\n"
+
+#: sed/sed.c:369
+msgid "failed to set binary mode on STDIN"
+msgstr "nastavit binární režim standardnímu vstupu se nepodařilo"
+
+#: sed/sed.c:371
+msgid "failed to set binary mode on STDOUT"
+msgstr "nastavit binární režim standardnímu výstupu se nepodařilo"
+
+#: sed/utils.c:129
+#, c-format
+msgid "couldn't open file %s: %s"
+msgstr "soubor %s nelze otevřít: %s"
+
+#: sed/utils.c:148
+#, c-format
+msgid "couldn't attach to %s: %s"
+msgstr "do %s nelze připisovat: %s"
+
+#: sed/utils.c:207
+#, c-format
+msgid "failed to set binary mode on '%s'"
+msgstr "nastavit binární režim na „%s“ se nepodařilo"
+
+#: sed/utils.c:228
+#, c-format
+msgid "couldn't write %llu item to %s: %s"
+msgid_plural "couldn't write %llu items to %s: %s"
+msgstr[0] "do %2$s nelze zapsat %1$llu položku: %3$s"
+msgstr[1] "do %2$s nelze zapsat %1$llu položky: %3$s"
+msgstr[2] "do %2$s nelze zapsat %1$llu položek: %3$s"
+
+#: sed/utils.c:240 sed/utils.c:259
+#, c-format
+msgid "read error on %s: %s"
+msgstr "chyba při čtení z %s: %s"
+
+#: sed/utils.c:358
+#, c-format
+msgid "couldn't readlink %s: %s"
+msgstr "symbolický odkaz %s nelze přečíst: %s"
+
+#: sed/utils.c:361
+#, c-format
+msgid "couldn't follow symlink %s: %s"
+msgstr "symbolický odkaz %s nelze následovat: %s"
+
+#: sed/utils.c:408
+#, c-format
+msgid "cannot rename %s: %s"
+msgstr "%s nelze přejmenovat: %s"
+
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: přepínač „%s%s“ není jednoznačný\n"
+
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: přepínač „%s%s“ není jednoznačný, možnosti:"
+
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: nerozpoznaný přepínač „%s%s“\n"
+
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: přepínač „%s%s“ nedovoluje argument\n"
+
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: přepínač „%s%s“ vyžaduje argument\n"
+
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: neplatný přepínač ­­ „%c“\n"
+
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: přepínač vyžaduje argument – „%c“\n"
+
+#~ msgid "cannot remove %s: %s"
+#~ msgstr "%s nelze odstranit: %s"
+
+#~ msgid "cannot stat %s: %s"
+#~ msgstr "o %s nelze získat údaje: %s"
+
+#~ msgid "%s home page: <https://www.gnu.org/software/%s/>\n"
+#~ msgstr "Domovská stránka %s: <https://www.gnu.org/software/%s/>\n"
+
+#~ msgid ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 use Perl 5's regular expressions syntax in the script.\n"
+#~ msgstr ""
+#~ "  -R, --regexp-perl\n"
+#~ "                 použije syntaxi regulárních výrazů podle Perlu verze 5\n"
+
+#~ msgid "%s: option '--%s' doesn't allow an argument\n"
+#~ msgstr "%s: přepínač „­­%s“ nedovoluje argument\n"
+
+#~ msgid "%s: unrecognized option '--%s'\n"
+#~ msgstr "%s: nerozpoznaný přepínač „--%s“\n"
+
+#~ msgid "%s: option '-W %s' is ambiguous\n"
+#~ msgstr "%s: přepínač „-W %s“ není jednoznačný\n"
+
+#~ msgid "%s: option '-W %s' doesn't allow an argument\n"
+#~ msgstr "%s: přepínač „-W %s“ nedovoluje argument\n"
+
+#~ msgid "%s: option '-W %s' requires an argument\n"
+#~ msgstr "%s: přepínač „-W %s“ vyžaduje argument\n"
+
+#~ msgid "cannot specify modifiers on empty regexp"
+#~ msgstr "prázdný regulární výraz nemůže mít modifikátory"
+
+#~ msgid ""
+#~ "E-mail bug reports to: <%s>.\n"
+#~ "Be sure to include the word ``%s'' somewhere in the ``Subject:'' field.\n"
+#~ msgstr ""
+#~ "Chyby v programu oznamujte na: <%s> (anglicky)\n"
+#~ "Kamkoliv do položky „Předmět:“ vložte „%s“. Připomínky k překladu\n"
+#~ "zasílejte na adresu <translation-team-cs@lists.sourceforge.net> (česky).\n"
+
+#~ msgid "super-sed version %s\n"
+#~ msgstr "super-sed verze %s\n"
+
+#~ msgid ""
+#~ "based on GNU sed version %s\n"
+#~ "\n"
+#~ msgstr ""
+#~ "založeno na GNU sedu verze %s\n"
+#~ "\n"
+
+#~ msgid "GNU sed version %s\n"
+#~ msgstr "GNU sed verze %s\n"
+
+#~ msgid ""
+#~ "Copyright (C) %d Free Software Foundation, Inc.\n"
+#~ "This is free software; see the source for copying conditions.  There is "
+#~ "NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+#~ "PURPOSE,\n"
+#~ "to the extent permitted by law.\n"
+#~ msgstr ""
+#~ "Copyright © %d Free Software Foundation, Inc.\n"
+#~ "Toto je volné programové vybavení; podmínky pro kopírování a rozšiřování\n"
+#~ "naleznete ve zdrojových textech. Toto programové vybavení je zcela BEZ "
+#~ "ZÁRUKY,\n"
+#~ "a to i bez záruky PRODEJNOSTI nebo VHODNOSTI PRO NĚJAKÝ KONKRÉTNÍ ÚČEL,\n"
+#~ "jak jen zákon dovoluje.\n"
+
+#~ msgid "bad regexp: %s\n"
+#~ msgstr "špatný regulární výraz: %s\n"
+
+#~ msgid "Unexpected End-of-file"
+#~ msgstr "Neočekávaný konec souboru (EOF)"
+
+#~ msgid "Called savchar() with unexpected pushback (%x)"
+#~ msgstr "Voláno savchar() s nečekaným pushback (%x)"
+
+#~ msgid "input read error: %s"
+#~ msgstr "chyba při čtení: %s"
+
+#~ msgid "INTERNAL ERROR: bad address type"
+#~ msgstr "INTERNÍ CHYBA: špatný typ adresy"
+
+#~ msgid "INTERNAL ERROR: Bad cmd %c"
+#~ msgstr "INTERNÍ CHYBA: špatný příkaz %c"
+
+#~ msgid ""
+#~ "Usage: %s [OPTION]... {script-only-if-no-other-script} [input-file]...\n"
+#~ "\n"
+#~ "  -n, --quiet, --silent\n"
+#~ "                 suppress automatic printing of pattern space\n"
+#~ "  -e script, --expression=script\n"
+#~ "                 add the script to the commands to be executed\n"
+#~ "  -f script-file, --file=script-file\n"
+#~ "                 add the contents of script-file to the commands to be "
+#~ "executed\n"
+#~ "  -l N, --line-length=N\n"
+#~ "                 specify the desired line-wrap length for the `l' "
+#~ "command\n"
+#~ "  -u, --unbuffered\n"
+#~ "\n"
+#~ "      --help     display this help and exit\n"
+#~ "  -V, --version  output version information and exit\n"
+#~ "\n"
+#~ "If no -e, --expression, -f, or --file option is given, then the first\n"
+#~ "non-option argument is taken as the sed script to interpret.  All\n"
+#~ "remaining arguments are names of input files; if no input files are\n"
+#~ "specified, then the standard input is read.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "Použití: %s [PŘEPÍNAČ]... {skript-pouze-není-li-jiný-skript} [vst.-"
+#~ "soubor]...\n"
+#~ "\n"
+#~ "  -n, --quiet, --silent\n"
+#~ "                 potlačí automatické vypisování vzorového úložiště "
+#~ "(pattern\n"
+#~ "                 space)\n"
+#~ "  -e script, --expression=SKRIPT\n"
+#~ "                 přidá seznam příkazů z řetězce SKRIPT k seznamu "
+#~ "příkazů,\n"
+#~ "                 které mají být vykonány\n"
+#~ "  -f script-file, --file=SKRIPT-SOUBOR\n"
+#~ "                 přidá obsah SKRIPT-SOUBORu k seznamu příkazů, které "
+#~ "mají\n"
+#~ "                 být vykonány\n"
+#~ "  -l N, --line-length=N\n"
+#~ "                 zadání pozice, na které má být řádek zalamován, pro "
+#~ "příkaz `l'\n"
+#~ "  -u, --unbuffered\n"
+#~ "                 nebufferovaný výstup\n"
+#~ "      --help     vypíše tuto nápovědu a skončí\n"
+#~ "  -V, --version  vypíše označení verze a skončí\n"
+#~ "\n"
+#~ "  Nebude-li žádný z přepínačů -e, --expression, -f, nebo --file zadán, "
+#~ "pak\n"
+#~ "první argument, který není přepínačem, bude považován za sed skript, "
+#~ "který má\n"
+#~ "být interpretován. Všechny zbylé argumenty představují jména vstupních "
+#~ "souborů.\n"
+#~ "Nebudou-li vstupní soubory zadány, bude čten standardní vstup.\n"
+#~ "\n"

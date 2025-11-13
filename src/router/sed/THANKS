@@ -1,0 +1,97 @@
+These people have contributed to the GNU sed. Those contributions are
+described in the version control logs.  If your name has been left out,
+if you'd rather not be listed, or if you'd prefer a different address
+be used, please send a note to the bug-report mailing list (as seen at
+end of e.g., sed --help).
+
+0xddaa                              0xddaa@gmail.com
+Akim Demaille                       akim@epita.fr
+Alan Modra                          alan@spri.levels.unisa.edu.au
+Alexandre Jasmin                    alexandre.jasmin@gmail.com
+Andreas Schwab                      schwab@issan.informatik.uni-dortmund.de
+Andrew Herbert                      andrew@werple.apana.org.au
+Antonio Diaz Diaz                   antonio@gnu.org
+Arnold Robbins                      arnold@skeeve.com
+Assaf Gordon                        assafgordon@gmail.com
+Bake Timmons                        b3timmons@speedymail.org
+Bernhard Voelker                    mail@bernhard-voelker.de
+Bjarni Ingi Gislason                bjarniig@rhi.hi.is
+Bruno Haible                        haible@ilog.fr
+Chip Salzenberg                     chip@fin.uucp
+Chris Marusich                      cmmarusich@gmail.com
+Chris Weber                         weber@bucknell.edu
+Clint Adams                         clint@debian.org
+Corinna Vinschen                    vinschen@redhat.com
+Daniel R. Grayson                   dan@math.uiuc.edu
+David A. Wheeler                    dwheeler@dwheeler.com
+David Eckelkamp                     eckelkamp@mcc.com
+David J. MacKenzie                  djm@nutrimat
+David Schmidt                       davids@isc-br.isc-br.com
+Dietrich Kappe                      kap1@tao.cpe.uchicago.edu
+Doug McIlroy                        doug@research.att.com
+Eero Hakkinen                       eero17@bigfoot.com
+Eli Zaretskii                       eliz@is.elta.co.il
+Eric Blake                          eblake@redhat.com
+Erick Branderhorst                  Erick.Branderhorst@asml.nl
+Eric Pement                         epement@moody.edu
+Francois Pinard                     pinard@iro.umontreal.ca
+Gaumond Pierre                      gaumondp@ERE.UMontreal.CA
+Greg Ubben                          gsu@romulus.ncsc.mil
+Isamu Hasegawa                      isamu@yamato.ibm.com
+Jakub Jelinek                       jakub@redhat.com
+Jakub Martisko                      jamartis@redhat.com
+Jannick                             thirdedition@gmx.net
+Jari Aalto                          jari.aalto@cante.net
+Jason Molenda                       crash@cygnus.com
+Jim Hill                            gjthill@gmail.com
+Jim Meyering                        jim@meyering.net
+Jose E. Marchesi                    jemarch@gnu.org
+J.T. Conklin                        jtc@gain.com
+Karl Berry                          karl@freefriends.org
+Karl Heuer                          kwzh@gnu.org
+Kaveh R. Ghazi                      ghazi@caip.rutgers.edu
+Kent Fredric                        kentnl@gentoo.org
+Kevin Buettner                      kev@cujo.geg.mot.com
+Laurent Vogel                       lvl@club-internet.fr
+Maciej W. Rozycki                   macro@linux-mips.org
+Mark Kettenis                       kettenis@phys.uva.nl
+Marvin Schmidt                      marvin.schmidt1987@gmail.com
+Michael De La Rue                   delarue@NTCCSC01WA.ntc.nokia.com
+Michel de Ruiter                    mdruiter@cs.vu.nl
+Mike Frysinger                      vapier@chromium.org
+Norihiro Tanaka                     noritnk@kcn.ne.jp
+Oğuz                                oguzismailuysal@gmail.com
+Pádraig Brady                       P@draigBrady.com
+Paolo Bonzini                       bonzini@gnu.org
+Paul Eggert                         eggert@cs.ucla.edu
+Ralf Wildenhues                     Ralf.Wildenhues@gmx.de
+Randall Cotton                      recotton@earthlink.net
+Renaud Pacalet                      renaud.pacalet@telecom-paris.fr
+Robert A Bruce                      rab@allspice.berkeley.edu
+Ronnie Glasscock                    Ronnie.N.Glasscock@bridge.bellsouth.com
+Sergey Farbotka                     z8sergey8z@gmail.com
+Simon Taylor                        simon@unisolve.com.au
+Stanislav Brabec                    sbrabec@suse.com
+Stefano Lattarini                   stefano.lattarini@gmail.com
+Stepan Kasal                        kasal@ucw.cz
+Stephen Davis                       stephend@ksr.com
+Steve Ingram                        si@maps-r-us.com
+Tapani Tarvainen                    tarvaine@tukki.jyu.fi
+Thorsten Heymann                    hek2mgl@metashock.net
+Timothy Baker                       timothypaulbaker@gmail.com
+Timothy J Luoma                     luomat@peak.org
+Tobias Stoeckmann                   tobias@stoeckmann.org
+Tom R.Hageman                       tom@basil.icce.rug.nl
+Tristan Verniquet                   tverniquet@gmail.com
+Ulrich Drepper                      drepper@redhat.com
+Vagelis Prokopiou                   drz4007@gmail.com
+Vincenzo Romano                     vincenzo.romano@notorand.it
+Vladimir Marek                      vladimir.marek@sun.com
+Vladimir Volovich                   vvv@vvv.vsu.ru
+Wichert Akkerman                    wakkerma@debian.org
+Yury G. Kudryashov                  urkud.urkud@gmail.com
+Zhongxing Xu                        xuzhongxing@gmail.com
+
+;; Local Variables:
+;; coding: utf-8
+;; End:
