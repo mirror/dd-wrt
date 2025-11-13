@@ -9,7 +9,7 @@
 # Define the dnsmask config file and hosts file locations for generic Linux
 # Edit these if your system uses a non standard locations:
 conflocation="/tmp/dnsmasq.conf"
-hosts="/etc/hosts"
+hosts="/tmp/hosts"
 #
 
 setconf="$1"
@@ -95,7 +95,7 @@ elif [ "$setconf" = "hostconf" ]; then
 		# generate a tmp filename on tmpfs
 		ram_hosts=$(mktemp --tmpdir=/tmp/tmpfiles.d)
 
-		cp -p /etc/hosts "$ram_hosts" &&
+		cp -p /tmp/hosts "$ram_hosts" &&
 		(
 			# Add record GW_IP GW_FQDN in /etc/hosts file if GW_IP does not exist
 			grep -qw "^$gw_ip" $ram_hosts || (echo "$host_entry" >> $ram_hosts)
@@ -107,7 +107,7 @@ elif [ "$setconf" = "hostconf" ]; then
 			sed -i "/^$gw_ip[[:space:]]\+/! { s/\([[:space:]]\)$gw_fqdn[[:space:]]/\1/Ig;s/\([[:space:]]\)$gw_fqdn$//I}" $ram_hosts
 
 			# rewrite /etc/hosts file only after an update
-			diff -b $ram_hosts /etc/hosts &>/dev/null ||  mv $ram_hosts /etc/hosts
+			diff -b $ram_hosts /tmp/hosts &>/dev/null ||  mv $ram_hosts /tmp/hosts
 		)
 
 		# cleanup

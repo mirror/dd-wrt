@@ -30,10 +30,6 @@ clean:
 	rm -rf dist
 
 install:
-#ifeq(yes,$(STRIP))
-	strip opennds
-	strip ndsctl
-#endif
 	mkdir -p $(DESTDIR)/usr/bin/
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp opennds $(DESTDIR)/usr/bin/
