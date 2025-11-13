@@ -20,7 +20,8 @@ iptables-new-configure:
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 iptables-new-clean:
-	-make -C iptables-new clean
+	-make -C iptables-new/normal clean
+	-make -C iptables-new/nftables clean
 
 iptables-new:
 ifeq ($(CONFIG_NFTABLES),y)
