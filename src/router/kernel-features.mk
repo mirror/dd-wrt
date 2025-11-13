@@ -44,8 +44,8 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_OPENNDS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NF_TABLES is not set/CONFIG_NF_TABLES=y/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_NF_FLOW_TABLE is not set/CONFIG_NF_FLOW_TABLE=m/g' $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_TABLES=m" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NF_FLOW_TABLE is not set/CONFIG_NF_FLOW_TABLE=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_INET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_ARP=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_BRIDGE=y" >> $(LINUXDIR)/.config; \
