@@ -61,8 +61,8 @@ define kernelfeatures
 		echo "# CONFIG_NET_ACT_CT is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_FLOW_OFFLOAD=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD=y" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_NFT_BRIDGE_META is not set" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_NFT_BRIDGE_REJECT is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_BRIDGE_META=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_BRIDGE_REJECT=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_CONNLIMIT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_COMPAT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_QUEUE is not set" >> $(LINUXDIR)/.config; \
