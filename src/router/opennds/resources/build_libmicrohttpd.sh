@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # builds and install libmicrohttp to /tmp/libmicrohttp_install
 #
 # this script is intended for test environments like travis.
