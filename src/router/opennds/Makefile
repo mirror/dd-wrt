@@ -38,16 +38,16 @@ install:
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp opennds $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/etc/opennds/htdocs/images
-	mkdir -p $(DESTDIR)/etc/config
-	if [ -e $(DESTDIR)/etc/config/opennds ]; then \
-		cp linux_openwrt/opennds/files/etc/config/opennds $(DESTDIR)/etc/config/opennds.default; \
-	else\
-		cp linux_openwrt/opennds/files/etc/config/opennds $(DESTDIR)/etc/config/; \
-	fi
+#	mkdir -p $(DESTDIR)/etc/config
+#	if [ -e $(DESTDIR)/etc/config/opennds ]; then \
+#		cp linux_openwrt/opennds/files/etc/config/opennds $(DESTDIR)/etc/config/opennds.default; \
+#	else\
+#		cp linux_openwrt/opennds/files/etc/config/opennds $(DESTDIR)/etc/config/; \
+#	fi
 	cp resources/splash.css $(DESTDIR)/etc/opennds/htdocs/
 	cp resources/splash.jpg $(DESTDIR)/etc/opennds/htdocs/images/
 	mkdir -p $(DESTDIR)/etc/systemd/system
-	cp resources/opennds.service $(DESTDIR)/etc/systemd/system/
+#	cp resources/opennds.service $(DESTDIR)/etc/systemd/system/
 	mkdir -p $(DESTDIR)/usr/lib/opennds
 	cp forward_authentication_service/binauth/custombinauth.sh $(DESTDIR)/usr/lib/opennds/
 #	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/opennds/custombinauth.sh
