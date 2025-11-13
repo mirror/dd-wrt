@@ -76,8 +76,13 @@ TARGET = upnp
 #LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables/libiptc \
 #	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -liptc $(ADDLIBS)
 
-LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables-new/libiptc/.libs \
+ifeq ($(CONFIG_NFTABLES),y)
+LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables-new/nftables/libiptc/.libs \
 	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -lip4tc $(ADDLIBS)
+else
+LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables-new/normal/libiptc/.libs \
+	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -lip4tc $(ADDLIBS)
+endif
 	
 all : $(OBJDIR) $(TARGET)
 
