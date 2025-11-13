@@ -71,7 +71,7 @@ get_option_from_config() {
 	if [ $uci_status -eq 0 ]; then
 		param=$(uci export opennds | grep "option" | grep "$option" | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 	else
-		param=$(cat /etc/config/opennds | grep "option" | grep "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
+		param=$(cat /tmp/opennds | grep "option" | grep "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 	fi
 
 	# remove trailing space character

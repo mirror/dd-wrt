@@ -70,9 +70,9 @@ $client_zone=$fullname=$email=$invalid="";
 $me=$_SERVER['SCRIPT_NAME'];
 
 // Set logpath
-if (file_exists("/etc/config/opennds")) {
+if (file_exists("/tmp/opennds")) {
 	$logpath="/tmp/";
-} elseif (file_exists("/etc/opennds/opennds.conf")) {
+} elseif (file_exists("/tmp/opennds.conf")) {
 	$logpath="/run/";
 } else {
 	$logpath="";

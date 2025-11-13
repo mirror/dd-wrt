@@ -192,9 +192,9 @@ function write_log() {
 	# By default $logpath is null so the logfile will be written to the folder this script resides in,
 	# or the /tmp directory if on the NDS router
 
-	if (file_exists("/etc/config/opennds")) {
+	if (file_exists("/tmp/opennds")) {
 		$logpath="/tmp/";
-	} elseif (file_exists("/etc/opennds/opennds.conf")) {
+	} elseif (file_exists("/tmp/opennds.conf")) {
 		$logpath="/run/";
 	} else {
 		$logpath="";
