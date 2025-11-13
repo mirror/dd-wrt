@@ -1,4 +1,4 @@
-AC_INIT([GNU libmicrohttpd],[1.0.1],[libmicrohttpd@gnu.org])
+AC_INIT([GNU libmicrohttpd],[1.0.2],[libmicrohttpd@gnu.org])
 CONFIG_STATUS='./po-config.status'
 
 AC_CONFIG_AUX_DIR([build-aux])

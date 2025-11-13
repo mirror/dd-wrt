@@ -1,3 +1,11 @@
+Mon Jul 14 2025 05:03:07 PM CEST
+Released GNU libmicrohttpd 1.0.2.
+
+    This is a bugfix release.
+    It primarily fixes a double-close() bug on bind() errors.
+
+    -- Christian Grothoff
+
 Fri 23 Feb 2024 21:00:00 UZT
 Released GNU libmicrohttpd 1.0.1.
 
@@ -49,7 +57,7 @@ Released GNU libmicrohttpd 0.9.77.
     branch and back-porting them on top of version 0.9.76.
     The most notable changes are: some improvements for Digest and Basic
     authorizations, fixed efficiency for TLS upgraded connections, fixed
-    processing of folded headers in requests, fixed functionality with 
+    processing of folded headers in requests, fixed functionality with
     blocking sockets, improved and fixed internal test-suite.
 
     The more detailed list of the important changes:
@@ -279,7 +287,7 @@ Released GNU libmicrohttpd 0.9.74
     # Fixed libcurl test with case-insensitive match for HTTP methods,
       method names must use case-sensitive match.
     # Fixed tests compatibility with old libcurl versions.
-    # Fixed build on W32 with llvm-dlltool (this tool is too 
+    # Fixed build on W32 with llvm-dlltool (this tool is too
       oversimplified)
 
     -- Evgeny Grin (Karlson2k)

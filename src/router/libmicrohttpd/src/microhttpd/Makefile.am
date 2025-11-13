@@ -123,35 +123,33 @@ libmicrohttpd_la_LIBADD = \
   $(MHD_LIBDEPS) $(MHD_TLS_LIBDEPS)
 
 
-if HAVE_W32
-MHD_DLL_RES_SRC = microhttpd_dll_res.rc
-MHD_DLL_RES_LO = libmicrohttpd_la-$(MHD_DLL_RES_SRC:.rc=.lo)
-
-EXTRA_libmicrohttpd_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
-libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
-
-AM_V_RC = $(am__v_RC_$(V))
-am__v_RC_ = $(am__v_RC_$(AM_DEFAULT_VERBOSITY))
+AM_V_RC = $(am__v_RC_@AM_V@)
+am__v_RC_ = $(am__v_RC_@AM_DEFAULT_V@)
 am__v_RC_0 = @echo "  RC      " $@;
 am__v_RC_1 = 
 
 # General rule is not required, but keep it just in case
-.rc.lo:
-	$(AM_V_RC) $(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $< -o $@
-
-# To add dll resource only to .dll file and exclude it form static
-# lib, a little trick was used. Allow libtool to create file.lo,
-# file.o and .libs/file.lo, .libs/file.o files, then overwrite file.o
-# by empty object generated from empty c-file. Later libtool will
-# use .libs/file.o for shared lib and empty file.o for static lib.
-# This implementation is based on trick found in liblzma.
 # Note: windres does not understand '-isystem' flag, so all
 # possible '-isystem' flags are replaced by simple '-I' flags.
-$(MHD_DLL_RES_LO): $(MHD_DLL_RES_SRC)
-	$(AM_V_RC) RC_CPP_FLAGS=" $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) " && \
-	$(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_CPP_FLAGS// -isystem / -I} $< -o $@ && \
-	echo > $@-empty.c && $(CC) $(DEFS) $(AM_CFLAGS) $(CFLAGS) -c $@-empty.c -o $(@:.lo=.o) && rm -f $@-empty.c
+.rc.lo:
+	$(AM_V_RC) RC_ALL_CPPFLAGS=`echo ' $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) ' | $(SED) -e 's/ -isystem / -I /g'`; \
+          $(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_ALL_CPPFLAGS} $< -o $@
+
+# Note: windres does not understand '-isystem' flag, so all
+# possible '-isystem' flags are replaced by simple '-I' flags.
+libmicrohttpd_la-microhttpd_dll_res.lo: $(builddir)/microhttpd_dll_res.rc
+	$(AM_V_RC) RC_ALL_CPPFLAGS=`echo ' $(DEFAULT_INCLUDES) $(INCLUDES) $(libmicrohttpd_la_CPPFLAGS) $(CPPFLAGS) ' | $(SED) -e 's/ -isystem / -I /g'`; \
+          $(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(RCFLAGS) $(DEFS) $${RC_ALL_CPPFLAGS} $(builddir)/microhttpd_dll_res.rc -o $@
+
+if HAVE_W32
+MHD_DLL_RES_LO = libmicrohttpd_la-microhttpd_dll_res.lo
+else
+MHD_DLL_RES_LO = 
 endif
+
+EXTRA_libmicrohttpd_la_DEPENDENCIES = $(MHD_DLL_RES_LO)
+libmicrohttpd_la_LIBADD += $(MHD_DLL_RES_LO)
+
 
 if USE_COVERAGE
   AM_CFLAGS += --coverage

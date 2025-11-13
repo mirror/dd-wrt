@@ -413,7 +413,7 @@ update_directory (void)
     update_cached_response (NULL);
     return;
   }
-  memcpy (rdc.buf, INDEX_PAGE_FOOTER, len);
+  memcpy (&rdc.buf[rdc.off], INDEX_PAGE_FOOTER, len);
   rdc.off += len;
   initial_allocation = rdc.buf_len; /* remember for next time */
   response =

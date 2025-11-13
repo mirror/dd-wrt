@@ -11,7 +11,7 @@ endif
 
 # Finally (last!) also build experimental lib...
 if HAVE_EXPERIMENTAL
-SUBDIRS += microhttpd_ws lib
+SUBDIRS += microhttpd_ws
 endif
 
 if BUILD_EXAMPLES

@@ -27,13 +27,12 @@
  */
 
 #include "mhd_options.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <pthread.h>
 #include <errno.h>
 #ifndef WINDOWS
 #include <unistd.h>

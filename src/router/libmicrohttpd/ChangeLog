@@ -1,3 +1,8 @@
+Mon Jul 14 05:03:07 PM CEST 2025
+    Fix double-close bugs on bind() errors reported by MC on the list.
+    Removed MHD2 draft code, now in libmicrohttpd2.git.
+    Releasing GNU libmicrohttpd 1.0.2 -CG
+
 Fri 23 Feb 2024 21:00:00 UZT
     Releasing GNU libmicrohttpd 1.0.1 -EG
 

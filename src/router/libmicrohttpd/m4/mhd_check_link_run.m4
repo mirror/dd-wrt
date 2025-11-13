@@ -17,10 +17,10 @@
 #   Example usage:
 #
 #     MHD_CHECK_LINK_RUN([for valid snprintf()], [mhd_cv_snprintf_valid],
+#                        [mhd_cv_snprintf_valid='assuming no'],
 #                        [AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],
 #                                         [if (4 != snprintf(NULL, 0, "test"))
-#                                            return 2;])],
-#                        [mhd_cv_snprintf_valid='assuming no'])
+#                                            return 2;])])
 #
 #
 # LICENSE
@@ -32,7 +32,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 2
+#serial 3
 
 AC_DEFUN([MHD_CHECK_LINK_RUN],[dnl
 m4_ifblank([$1],[m4_fatal([$0: The first macro argument ("MESSAGE") must not be empty])])dnl

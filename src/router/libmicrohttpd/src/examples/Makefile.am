@@ -49,6 +49,11 @@ noinst_PROGRAMS += \
   suspend_resume_epoll
 endif
 
+if HAVE_JANSSON
+noinst_PROGRAMS += \
+  json_echo
+endif
+
 EXTRA_DIST = msgs_i18n.c
 noinst_EXTRA_DIST = msgs_i18n.c
 
@@ -137,6 +142,12 @@ chunked_example_SOURCES = \
  chunked_example.c
 chunked_example_LDADD = \
  $(top_builddir)/src/microhttpd/libmicrohttpd.la
+
+json_echo_SOURCES = \
+ json_echo.c
+json_echo_LDADD = \
+ $(top_builddir)/src/microhttpd/libmicrohttpd.la \
+ -ljansson
 
 websocket_chatserver_example_SOURCES = \
  websocket_chatserver_example.c

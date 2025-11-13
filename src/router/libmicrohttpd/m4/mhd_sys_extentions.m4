@@ -40,18 +40,23 @@
 #
 # LICENSE
 #
-#   Copyright (c) 2016, 2017 Karlson2k (Evgeny Grin) <k2k@narod.ru>
+#   Copyright (c) 2016, 2017, 2024 Karlson2k (Evgeny Grin) <k2k@narod.ru>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 2
+#serial 5
 
 AC_DEFUN([MHD_SYS_EXT],[dnl
   AC_PREREQ([2.64])dnl for AS_VAR_IF, AS_VAR_SET_IF, m4_ifnblank
-  AC_LANG_PUSH([C])dnl Use C language for simplicity
+  AC_LANG_ASSERT([C])dnl Only C is supported
+m4_ifdef([_AC_UNDECLARED_BUILTIN],
+[AC_DEFUN_ONCE([_AC_UNDECLARED_BUILTIN_]_AC_LANG_ABBREV,
+               [_AC_UNDECLARED_BUILTIN])]dnl
+[AC_REQUIRE([_AC_UNDECLARED_BUILTIN_]_AC_LANG_ABBREV)]dnl
+)dnl m4_ifdef _AC_UNDECLARED_BUILTIN
   mhd_mse_sys_ext_defines=""
   mhd_mse_sys_ext_flags=""
 
@@ -277,7 +282,9 @@ int main()
 }
 "
   AC_CACHE_CHECK([[for useful system-specific features]],
-    [[mhd_cv_headers_useful_features_present]], [dnl
+    [[mhd_cv_headers_useful_features_present]], [
+    mhd_SYS_EXT_SAVE_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS $ac_[]_AC_LANG_ABBREV[]_undeclared_builtin_options"
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 ${mhd_mse_sys_ext_defines}
 ${mhd_mse_sys_features_src}
@@ -302,7 +309,9 @@ ${mhd_mse_sys_features_src}
             )dnl
           ])dnl
         ]
-      )dnl
+      )
+    CFLAGS="$mhd_SYS_EXT_SAVE_CFLAGS"
+    AS_UNSET([mhd_SYS_EXT_SAVE_CFLAGS])
     ]
   )
 
@@ -366,7 +375,6 @@ ${mhd_mse_sys_features_src}
   AS_UNSET([[mhd_mse_result]])
   AS_UNSET([[mhd_mse_xopen_flags]])
   AS_UNSET([[mhd_mse_sys_ext_flags]])
-  AC_LANG_POP([C])
 ])
 
 
@@ -761,6 +769,8 @@ $2
   dnl Check whether features test works without _XOPEN_SOURCE and
   dnl with disabled extensions (undefined most of
   dnl predefined macros for specific requested mode).
+  mhd_SYS_EXT_SAVE_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $ac_[]_AC_LANG_ABBREV[]_undeclared_builtin_options"
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 _MHD_UNDEF_ALL_EXT
 $src_Var
@@ -947,6 +957,8 @@ $src_Var
       )
     ]
   )
+  CFLAGS="$mhd_SYS_EXT_SAVE_CFLAGS"
+  AS_UNSET([mhd_SYS_EXT_SAVE_CFLAGS])
   AS_UNSET([defs_Var])
   AS_UNSET([src_Var])
   AS_VAR_POPDEF([defs_Var])dnl
@@ -987,18 +999,6 @@ AC_DEFUN([MHD_CHECK_HEADERS_PRESENCE], [dnl
   m4_foreach_w([mhd_chk_Header], [$1],
     [MHD_CHECK_HEADER_PRESENCE(m4_defn([mhd_chk_Header]))]
   )dnl
-])
-
-
-#
-# MHD_CHECK_HEADERS_PRESENCE_COMPACT(oneheader.h otherheader.h ...)
-#
-# Same as MHD_CHECK_HEADERS_PRESENCE, but a bit slower and produce more compact 'configure'.
-
-AC_DEFUN([MHD_CHECK_HEADERS_PRESENCE_COMPACT], [dnl
-  for mhd_chk_Header in $1 ; do
-    MHD_CHECK_HEADER_PRESENCE([[${mhd_chk_Header}]])
-  done
 ])
 
 

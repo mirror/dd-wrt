@@ -137,11 +137,12 @@ expect_decoded_n (const char *const hex, const size_t hex_len,
                  "Wrong output data:\n");
       }
     }
-    if (fill_chr != buf[res_size])
+    if (((0 == res_size) && (fill_chr != buf[bin_size]))
+        || ((0 != res_size) && (fill_chr != buf[res_size])))
     {
       check_res = 1;
       fprintf (stderr,
-               "'MHD_str_pct_decode_strict_n_ ()' FAILED: "
+               "'MHD_hex_to_bin ()' FAILED: "
                "A char written outside the buffer:\n");
     }
     if (0 != check_res)

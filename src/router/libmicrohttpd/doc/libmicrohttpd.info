@@ -1,8 +1,8 @@
-This is libmicrohttpd.info, produced by makeinfo version 7.1 from
+This is libmicrohttpd.info, produced by makeinfo version 7.1.1 from
 libmicrohttpd.texi.
 
-This manual is for GNU libmicrohttpd (version 1.0.1, 29 January 2024), a
-library for embedding an HTTP(S) server into C applications.
+This manual is for GNU libmicrohttpd (version 1.0.2, 24 September 2024),
+a library for embedding an HTTP(S) server into C applications.
 
    Copyright © 2007-2019 Christian Grothoff
 
@@ -23,8 +23,8 @@ File: libmicrohttpd.info,  Node: Top,  Next: microhttpd-intro,  Up: (dir)
 The GNU libmicrohttpd Library
 *****************************
 
-This manual is for GNU libmicrohttpd (version 1.0.1, 29 January 2024), a
-library for embedding an HTTP(S) server into C applications.
+This manual is for GNU libmicrohttpd (version 1.0.2, 24 September 2024),
+a library for embedding an HTTP(S) server into C applications.
 
    Copyright © 2007-2019 Christian Grothoff
 
@@ -6085,50 +6085,50 @@ Type Index
 
 
 Tag Table:
-Node: Top814
-Node: microhttpd-intro3147
-Ref: fig:performance8058
-Ref: tbl:supported9030
-Node: microhttpd-const17455
-Node: microhttpd-struct75236
-Node: microhttpd-cb76174
-Node: microhttpd-init89473
-Node: microhttpd-inspect95351
-Node: microhttpd-requests98128
-Node: microhttpd-responses102178
-Node: microhttpd-response enqueue103377
-Ref: microhttpd-response enqueue-Footnote-1105702
-Node: microhttpd-response create105937
-Node: microhttpd-response headers113947
-Node: microhttpd-response options116421
-Node: microhttpd-response inspect117304
-Node: microhttpd-response upgrade118525
-Node: microhttpd-flow123867
-Node: microhttpd-dauth127419
-Node: microhttpd-dauth basic128979
-Node: microhttpd-dauth digest130570
-Node: microhttpd-post144181
-Node: microhttpd-post api147165
-Node: microhttpd-info149833
-Node: microhttpd-info daemon150249
-Node: microhttpd-info conn153697
-Node: microhttpd-option conn158956
-Node: microhttpd-util160036
-Node: microhttpd-util feature160315
-Node: microhttpd-util unescape163901
-Node: microhttpd-websocket164545
-Node: microhttpd-websocket handshake165264
-Node: microhttpd-websocket stream170429
-Node: microhttpd-websocket decode175469
-Node: microhttpd-websocket encode179967
-Node: microhttpd-websocket memory189392
-Node: GNU-LGPL191217
-Node: eCos License219315
-Node: GNU-GPL220706
-Node: GNU-FDL239968
-Node: Concept Index265037
-Node: Function and Data Index278223
-Node: Type Index288548
+Node: Top818
+Node: microhttpd-intro3153
+Ref: fig:performance8064
+Ref: tbl:supported9036
+Node: microhttpd-const17461
+Node: microhttpd-struct75242
+Node: microhttpd-cb76180
+Node: microhttpd-init89479
+Node: microhttpd-inspect95357
+Node: microhttpd-requests98134
+Node: microhttpd-responses102184
+Node: microhttpd-response enqueue103383
+Ref: microhttpd-response enqueue-Footnote-1105708
+Node: microhttpd-response create105943
+Node: microhttpd-response headers113953
+Node: microhttpd-response options116427
+Node: microhttpd-response inspect117310
+Node: microhttpd-response upgrade118531
+Node: microhttpd-flow123873
+Node: microhttpd-dauth127425
+Node: microhttpd-dauth basic128985
+Node: microhttpd-dauth digest130576
+Node: microhttpd-post144187
+Node: microhttpd-post api147171
+Node: microhttpd-info149839
+Node: microhttpd-info daemon150255
+Node: microhttpd-info conn153703
+Node: microhttpd-option conn158962
+Node: microhttpd-util160042
+Node: microhttpd-util feature160321
+Node: microhttpd-util unescape163907
+Node: microhttpd-websocket164551
+Node: microhttpd-websocket handshake165270
+Node: microhttpd-websocket stream170435
+Node: microhttpd-websocket decode175475
+Node: microhttpd-websocket encode179973
+Node: microhttpd-websocket memory189398
+Node: GNU-LGPL191223
+Node: eCos License219321
+Node: GNU-GPL220712
+Node: GNU-FDL239974
+Node: Concept Index265043
+Node: Function and Data Index278229
+Node: Type Index288554
 
 End Tag Table
 

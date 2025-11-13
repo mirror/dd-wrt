@@ -8,16 +8,17 @@
 # DESCRIPTION
 #
 #   This macro checks for presence of specific function by including
-#   specified headers and compiling and linking CHECK_CODE.
+#   specified headers, checking for declaration of the function and then
+#   compiling and linking CHECK_CODE.
 #   This checks both declaration and presence in library.
 #   If function is available then macro HAVE_function_name (the name
-#   of the function convetedd to all uppercase characters) is defined
+#   of the function conveted to all uppercase characters) is defined
 #   automatically.
 #   Unlike AC_CHECK_FUNCS macro, this macro do not produce false
 #   negative result if function is declared with specific calling
 #   conventions like __stdcall' or attribute like
 #   __attribute__((__dllimport__)) and linker failing to build test
-#   program due to the different calling conventions. 
+#   program due to the different calling conventions.
 #   By using definition from provided headers, this macro ensures that
 #   correct calling convention is used for detection.
 #
@@ -32,10 +33,10 @@
 #   correctly on some platform, user may simply fix it by giving cache
 #   variable in configure parameters, for example:
 #
-#     ./configure mhd_cv_func_memmem_have=no
+#     ./configure mhd_cv_have_func_memmem=no
 #
 #   This simplifies building from source on exotic platforms as patching
-#   of configure.ac is not required to change results of tests.
+#   of configure.ac is not required to change the results of the tests.
 #
 # LICENSE
 #
@@ -46,7 +47,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 5
+#serial 6
 
 AC_DEFUN([MHD_CHECK_FUNC],[dnl
 AC_PREREQ([2.64])dnl for AS_VAR_IF, m4_ifblank, m4_ifnblank
@@ -59,18 +60,16 @@ m4_bmatch(m4_normalize([$1]), [\s],dnl
 m4_if(m4_index([$3], m4_normalize(m4_translit([$1],[()],[  ]))), [-1], dnl
       [m4_fatal([CHECK_CODE parameter (third macro argument) does not contain ']m4_normalize([$1])[' token])])dnl
 AS_VAR_PUSHDEF([decl_cv_Var],[ac_cv_have_decl_]m4_bpatsubst(_mhd_norm_expd(m4_translit([$1],[()],[  ])),[[^a-zA-Z0-9]],[_]))dnl
-AS_VAR_PUSHDEF([cv_Var],[mhd_cv_func_]m4_bpatsubst(_mhd_norm_expd(m4_translit([$1],[()],[  ])),[[^a-zA-Z0-9]],[_]))dnl
-AS_VAR_SET_IF([cv_Var],[],[AC_CHECK_DECL(_mhd_norm_expd([$1]),[],[],[$2])])
-AC_CACHE_CHECK([for function $1], [cv_Var],dnl
+AS_VAR_PUSHDEF([cv_Var],[mhd_cv_have_func_]m4_bpatsubst(_mhd_norm_expd(m4_translit([$1],[()],[  ])),[[^a-zA-Z0-9]],[_]))dnl
+AS_VAR_SET_IF([cv_Var],[],[AC_CHECK_DECL(_mhd_norm_expd([$1]),[],[cv_Var="no"],[$2])])
+AC_CACHE_CHECK([f][or function $1], [cv_Var],dnl
   [dnl
-    AS_VAR_IF([decl_cv_Var],["yes"],dnl
-      [dnl
-        m4_ifnblank([$6],[dnl
-          mhd_check_func_SAVE_LIBS="$LIBS"
-          LIBS="_mhd_norm_expd([$6]) $LIBS"
-        ])dnl
-        AC_LINK_IFELSE(
-          [AC_LANG_SOURCE([
+    m4_ifnblank([$6],[dnl
+      mhd_check_func_SAVE_LIBS="$LIBS"
+      LIBS="_mhd_norm_expd([$6]) $LIBS"
+    ])dnl
+    AC_LINK_IFELSE(
+      [AC_LANG_SOURCE([
 m4_default_nblank([$2],[AC_INCLUDES_DEFAULT])
 
 [int main(void)
@@ -80,18 +79,16 @@ m4_default_nblank([$2],[AC_INCLUDES_DEFAULT])
 
   return 0;
 }
-            ]])
-          ],
-          [AS_VAR_SET([cv_Var],["yes"])],
-          [AS_VAR_SET([cv_Var],["no"])]dnl
-        )
-        m4_ifnblank([$6],[dnl
-          LIBS="${mhd_check_func_SAVE_LIBS}"
-          AS_UNSET([mhd_check_func_SAVE_LIBS])
-        ])dnl
-      ],[AS_VAR_SET([cv_Var],["no"])]dnl
-    )dnl
-  ]dnl
+        ]])
+      ],
+      [AS_VAR_SET([cv_Var],["yes"])],
+      [AS_VAR_SET([cv_Var],["no"])]dnl
+    )
+    m4_ifnblank([$6],[dnl
+      LIBS="${mhd_check_func_SAVE_LIBS}"
+      AS_UNSET([mhd_check_func_SAVE_LIBS])
+    ])dnl
+  ],[AS_VAR_SET([cv_Var],["no"])]dnl
 )
 AS_VAR_IF([cv_Var], ["yes"],
           [AC_DEFINE([[HAVE_]]m4_bpatsubst(m4_toupper(_mhd_norm_expd(m4_translit([$1],[()],[  ]))),[[^A-Z0-9]],[_]),

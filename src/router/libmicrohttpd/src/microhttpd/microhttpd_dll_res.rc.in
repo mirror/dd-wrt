@@ -1,4 +1,4 @@
-/* W32 resources for .dll */
+/* W32 resources */
 
 #include <winresrc.h>
 
@@ -13,7 +13,11 @@ VS_VERSION_INFO VERSIONINFO
   FILEFLAGS      0
 #endif
   FILEOS         VOS_NT_WINDOWS32
+#ifdef DLL_EXPORT
   FILETYPE       VFT_DLL
+#else
+  FILETYPE       VFT_STATIC_LIB
+#endif
   FILESUBTYPE    VFT2_UNKNOWN
 BEGIN
     BLOCK "StringFileInfo"
@@ -23,11 +27,19 @@ BEGIN
             VALUE "ProductName", "GNU libmicrohttpd\0"
             VALUE "ProductVersion", "@PACKAGE_VERSION@\0"
             VALUE "FileVersion", "@PACKAGE_VERSION@\0"
+#ifdef DLL_EXPORT
             VALUE "FileDescription", "GNU libmicrohttpd DLL for Windows (MinGW build, @W32CRT@ run-time lib)\0"
+#else
+            VALUE "FileDescription", "GNU libmicrohttpd static library for Windows (MinGW build, @W32CRT@ run-time lib)\0"
+#endif
             VALUE "InternalName", "libmicrohttpd\0"
+#ifdef DLL_EXPORT
             VALUE "OriginalFilename", "libmicrohttpd-@MHD_W32_DLL_SUFF@.dll\0"
+#else
+            VALUE "OriginalFilename", "libmicrohttpd.lib\0"
+#endif
             VALUE "CompanyName", "Free Software Foundation\0"
-            VALUE "LegalCopyright",  "Copyright (C) 2007-2021 Christian Grothoff, Evgeny Grin, and project contributors\0"
+            VALUE "LegalCopyright",  "Copyright (C) 2007-2024 Christian Grothoff, Evgeny Grin, and project contributors\0"
             VALUE "Comments", "http://www.gnu.org/software/libmicrohttpd/\0"
         END
     END

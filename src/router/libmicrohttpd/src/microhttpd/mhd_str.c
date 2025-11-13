@@ -42,8 +42,8 @@
    functions instead.
    This may give more flexibility for size optimizations. */
 #define _MHD_static_inline static
-#ifndef INLINE_FUNC
-#define INLINE_FUNC 1
+#ifndef HAVE_INLINE_FUNCS
+#define HAVE_INLINE_FUNCS 1
 #endif /* !INLINE_FUNC */
 #endif /* MHD_FAVOR_SMALL_CODE */
 
@@ -52,7 +52,7 @@
  * standards. Not affected by current locale settings.
  */
 
-#ifdef INLINE_FUNC
+#ifdef HAVE_INLINE_FUNCS
 
 #if 0 /* Disable unused functions. */
 /**
@@ -668,7 +668,7 @@ charsequalcaseless (const char c1, const char c2)
              (((c1) - 'A' + 'a') == (c2)) : \
              (((c1) == ((c2) - 'A' + 'a')) && isasciiupper (c2))) )
 
-#endif /* !INLINE_FUNC */
+#endif /* !HAVE_INLINE_FUNCS */
 
 
 #ifndef MHD_FAVOR_SMALL_CODE
@@ -1722,15 +1722,18 @@ MHD_hex_to_bin (const char *hex,
   if (0 != len % 2)
   {
     /* Assume the first byte is encoded with single digit */
-    const int l = toxdigitvalue (hex[r++]);
+    const char c2 = hex[r++];
+    const int l = toxdigitvalue (c2);
     if (0 > l)
       return 0;
     out[w++] = (uint8_t) ((unsigned int) l);
   }
   while (r < len)
   {
-    const int h = toxdigitvalue (hex[r++]);
-    const int l = toxdigitvalue (hex[r++]);
+    const char c1 = hex[r++];
+    const char c2 = hex[r++];
+    const int h = toxdigitvalue (c1);
+    const int l = toxdigitvalue (c2);
     if ((0 > h) || (0 > l))
       return 0;
     out[w++] = (uint8_t) ( ((uint8_t) (((uint8_t) ((unsigned int) h)) << 4))
@@ -1774,8 +1777,10 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
           return 0;
         else
         {
-          const int h = toxdigitvalue (pct_encoded[++r]);
-          const int l = toxdigitvalue (pct_encoded[++r]);
+          const char c1 = pct_encoded[++r];
+          const char c2 = pct_encoded[++r];
+          const int h = toxdigitvalue (c1);
+          const int l = toxdigitvalue (c2);
           unsigned char out;
           if ((0 > h) || (0 > l))
             return 0;
@@ -1804,8 +1809,10 @@ MHD_str_pct_decode_strict_n_ (const char *pct_encoded,
         return 0;
       else
       {
-        const int h = toxdigitvalue (pct_encoded[++r]);
-        const int l = toxdigitvalue (pct_encoded[++r]);
+        const char c1 = pct_encoded[++r];
+        const char c2 = pct_encoded[++r];
+        const int h = toxdigitvalue (c1);
+        const int l = toxdigitvalue (c2);
         unsigned char out;
         if ((0 > h) || (0 > l))
           return 0;
@@ -1854,8 +1861,10 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
         }
         else
         {
-          const int h = toxdigitvalue (pct_encoded[++r]);
-          const int l = toxdigitvalue (pct_encoded[++r]);
+          const char c1 = pct_encoded[++r];
+          const char c2 = pct_encoded[++r];
+          const int h = toxdigitvalue (c1);
+          const int l = toxdigitvalue (c2);
           unsigned char out;
           if ((0 > h) || (0 > l))
           {
@@ -1896,8 +1905,10 @@ MHD_str_pct_decode_lenient_n_ (const char *pct_encoded,
       }
       else
       {
-        const int h = toxdigitvalue (pct_encoded[++r]);
-        const int l = toxdigitvalue (pct_encoded[++r]);
+        const char c1 = pct_encoded[++r];
+        const char c2 = pct_encoded[++r];
+        const int h = toxdigitvalue (c1);
+        const int l = toxdigitvalue (c2);
         if ((0 > h) || (0 > l))
         {
           r -= 2;

@@ -23,7 +23,7 @@
 #
 AC_PREREQ([2.64])
 LT_PREREQ([2.4.0])
-AC_INIT([GNU libmicrohttpd],[1.0.1],[libmicrohttpd@gnu.org])
+AC_INIT([GNU libmicrohttpd],[1.0.2],[libmicrohttpd@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 MHD_AUX_DIR='build-aux' # Must be set to the same value as in the previous line
 AC_CONFIG_HEADERS([MHD_config.h])
@@ -31,7 +31,7 @@ AC_CONFIG_MACRO_DIR([m4])
 m4_pattern_forbid([^_?MHD_[A-Z_]+_CC_])dnl
 
 LIB_VERSION_CURRENT=74
-LIB_VERSION_REVISION=1
+LIB_VERSION_REVISION=2
 LIB_VERSION_AGE=62
 AC_SUBST([LIB_VERSION_CURRENT])
 AC_SUBST([LIB_VERSION_REVISION])
@@ -47,6 +47,8 @@ AC_SUBST([PACKAGE_VERSION_MINOR])
 AC_SUBST([PACKAGE_VERSION_SUBMINOR])
 AC_SUBST([MHD_W32_DLL_SUFF])
 AC_CONFIG_FILES([src/microhttpd/microhttpd_dll_res.rc])
+
+CONF_FINAL_WARNS=""
 
 MHD_LIB_CPPFLAGS=""
 MHD_LIB_CFLAGS=""
@@ -159,8 +161,18 @@ CPPFLAGS_ac=""
 
 MHD_SYS_EXT([CPPFLAGS_ac])
 CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+m4_version_prereq([2.72],
+  [
+AC_SYS_YEAR2038
+  ],
+  [
+AC_SYS_LARGEFILE
+  ]
+)
+AC_FUNC_FSEEKO
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
+lt_prog_compiler_pic_RC="$lt_prog_compiler_pic_RC -DDLL_EXPORT" # Used only on W32
 
 AC_ARG_ENABLE([compact-code],
   [AS_HELP_STRING([[--enable-compact-code]],
@@ -749,172 +761,86 @@ AS_VAR_IF([enable_linker_hardening],["yes"],
   ]
 )
 
+MHD_BOOL
 
-AH_TEMPLATE([[HAVE_STDBOOL_H]], [Define to 1 if you have the <stdbool.h> header file and <stdbool.h> defines 'bool' type.])
-AH_TEMPLATE([[HAVE_BUILTIN_TYPE_BOOL]], [Define to 1 if you have the real boolean type.])
-AH_TEMPLATE([[bool]], [Define to type name which will be used as boolean type.])
-AC_CHECK_HEADER([stdbool.h],
+AC_C_INLINE
+AS_UNSET([errattr_CFLAGS])
+CFLAGS="${user_CFLAGS}"
+MHD_CHECK_CC_CFLAG([-Werror=attributes],[CFLAGS_ac],
   [
-   AC_CHECK_TYPE([bool],
-     [
-      AC_DEFINE([[HAVE_STDBOOL_H]], [[1]])
-      AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])
-     ],
-     [
-      AC_MSG_WARN([[Header <stdbool.h> is present, but "bool" type cannot be detected. Check compiler flags.]])
-      AC_DEFINE([[bool]], [[int]])
-     ], [
-#include <stdbool.h>
-        ]
-   )
-  ],
-  [
-   AC_CHECK_TYPE([bool],
-     [AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])],
-     [
-      AC_CHECK_TYPE([_Bool],
-        [
-         AC_DEFINE([[HAVE_BUILTIN_TYPE_BOOL]], [[1]])
-         AC_DEFINE([[bool]], [[_Bool]])
-        ],
-        [
-         AC_DEFINE([[bool]], [[int]])
-        ], []
-      )
-     ], []
-   )
-  ],
-  [AC_INCLUDES_DEFAULT]
-)
-
-AC_CACHE_CHECK([[whether "true" is defined or builtin]], [[mhd_cv_macro_true_defined]],
-  [AC_COMPILE_IFELSE(
-     [AC_LANG_PROGRAM(
-        [[
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
-        ]], [[
-#if defined(true)
-    /* dummy */
-#else
-    (void)true;
-#endif
-        ]])
-     ], [[mhd_cv_macro_true_defined='yes']], [[mhd_cv_macro_true_defined='no']])
-  ])
-AS_VAR_IF([[mhd_cv_macro_true_defined]], [["yes"]], [[:]],
-  [AC_DEFINE([[true]],[[(!0)]], [Define to value interpreted by compiler as boolean "true", if "true" is not defined by system headers.])])
-
-AC_CACHE_CHECK([[whether "false" is defined or builtin]], [[mhd_cv_macro_false_defined]],
-  [AC_COMPILE_IFELSE(
-     [AC_LANG_PROGRAM(
-        [[
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
-        ]], [[
-#if !defined(false)
-    (void)false;
-#else
-    /* dummy */
-#endif
-        ]])
-     ], [[mhd_cv_macro_false_defined='yes']], [[mhd_cv_macro_false_defined='no']])
-  ])
-AS_VAR_IF([[mhd_cv_macro_false_defined]], [["yes"]], [[:]],
-  [AC_DEFINE([[false]],[[0]], [Define to value interpreted by compiler as boolean "false", if "false" is not defined by system headers.])])
-
-AC_CACHE_CHECK([[whether "true" and "false" could be used]], [[mhd_cv_macro_true_false_valid]],
-  [AC_COMPILE_IFELSE(
-     [AC_LANG_PROGRAM(
-        [[
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
-        ]], [[
-          int var1[true ? 1 : -1] = { 1 };
-          int var2[false ? -1 : 1] = { 2 };
-          int var3[!true ? -1 : 1] = { 3 };
-          int var4[!false ? 1 : -1] = { 4 };
-          if (var1[0] == var2[0] || var3[0] == var4[0])
-            return 1;
-        ]])
-     ], [[mhd_cv_macro_true_false_valid='yes']], [[mhd_cv_macro_true_false_valid='no']])
-  ])
-AS_VAR_IF([[mhd_cv_macro_true_false_valid]], [["yes"]], [[:]],
-  [AC_MSG_ERROR([[Value of "true" or value of "false" is not valid. Check config.log for details.]])])
-
-
-AX_CHECK_COMPILE_FLAG([[-Werror=attributes]],
-  [
-   AC_MSG_CHECKING([[whether -Werror=attributes actually works]])
-   CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
-       [[int r = SimpleFunc(); if (r) return r;]])],
-     [
-       AC_MSG_RESULT([[no]])
-       errattr_CFLAGS=""
-     ], [
-       AC_MSG_RESULT([[yes]])
-       errattr_CFLAGS="-Werror=attributes"
-     ])
-   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-  ],
-                      [[errattr_CFLAGS=""]], [], [])
-
-AC_MSG_CHECKING([[for function inline keywords supported by $CC]])
-CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
-inln_prfx="none"
-# Prefer always inline functions
-for inln_prfx_chk in InlineWithAttr __forceinline inline __inline__ __inline _inline _Inline
-do
-  # Try to link to avoid "symbol undefined" problems at build time
-  AS_IF([[test "x$inln_prfx_chk" = "xInlineWithAttr"]],
-    [
-     AS_IF([[test "x$errattr_CFLAGS" = "x"]],
-       [[ # Skip test with attribute as negative result can't be detected
-          inln_prfx_chk="__forceinline" # use next value
-       ]],[[inln_prfx_chk="inline __attribute__((always_inline))"]])
-    ])
-  AC_LINK_IFELSE(
-    [
-     AC_LANG_PROGRAM(
-       [[
-#ifdef __cplusplus
-#error This test is only for C.
-choke me
-#endif
-#ifdef HAVE_STDBOOL_H
-#include <stdbool.h>
-#endif
-         static $inln_prfx_chk bool cmpfn(int x, int y)
-         { return x > y; }
-         static $inln_prfx_chk int sumfn(int x, int y)
-         { return x + y; }
-       ]],[[
-       int a = 1, b = 100, c;
-       if (cmpfn(a, b))
-         c = sumfn(a, b);
-       else
-         c = 0 - sumfn(a, b);
-       if (c)
-         return 0;
-       ]])
-    ],
-    [[ inln_prfx="$inln_prfx_chk" ]])
-  test "x$inln_prfx" != "xnone" && break
-done
-AS_IF([[test "x$inln_prfx" != "xnone"]],
+    AC_CACHE_CHECK([whether -Werror=attributes actually works],[mhd_cv_cflag_werror_attr_works],
       [
-       AC_DEFINE([INLINE_FUNC],[1],[Define to 1 if your C compiler supports inline functions.])
-       AC_DEFINE_UNQUOTED([_MHD_static_inline],[static $inln_prfx],[Define to prefix which will be used with MHD static inline functions.])
-      ], [
-       AC_DEFINE([_MHD_static_inline],[static],[Define to prefix which will be used with MHD static inline functions.])
-      ])
-AC_MSG_RESULT([[$inln_prfx]])
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS} -Werror=attributes"
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM(
+              [[__attribute__((non_existing_attrb_dummy)) static int SimpleFunc(void) {return 3;}]],
+              [[int r = SimpleFunc(); if (r) return r;]]
+            )
+          ],
+          [mhd_cv_cflag_werror_attr_works="no"],
+          [mhd_cv_cflag_werror_attr_works="yes"]
+        )
+      ]
+    )
+    AS_VAR_IF([mhd_cv_cflag_werror_attr_works],["yes"],
+      [errattr_CFLAGS="-Werror=attributes"]
+    )
+  ]
+)
 CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+AS_IF([test "x$ac_cv_c_inline" != "xno"],
+  [
+    AC_DEFINE([HAVE_INLINE_FUNCS],[1],[Define to 1 if your C compiler supports inline functions.])
+    AC_CACHE_CHECK([for function force inline keywords supported by $CC],[mhd_cv_cc_kwd_forceinline],
+      [
+        MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+        ac_c_werror_flag=yes
+        mhd_cv_cc_kwd_forceinline="none"
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS} $errattr_CFLAGS"
+        for keyword_chk in "inline __attribute__((always_inline))" __forceinline
+        do
+          AS_CASE([${keyword_chk}],
+            [*attribute*],
+            [AS_IF([test "x$errattr_CFLAGS" = "x"],[continue])]
+          )
+          AC_LINK_IFELSE([
+              AC_LANG_SOURCE([[
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+static ${keyword_chk} bool cmpfn(int x, int y)
+{ return x > y; }
+static ${keyword_chk} int sumfn(int x, int y)
+{ return x + y; }
+
+int main(void)
+{
+  int a = 1, b = 100, c;
+  if (cmpfn(a, b))
+    c = sumfn(a, b);
+  else
+    c = 0 - sumfn(a, b);
+  return (cmpfn(0, c) ? 0 : 5);
+}
+                ]]
+              )
+            ],
+            [mhd_cv_cc_kwd_forceinline="${keyword_chk}"]
+          )
+          test "x${mhd_cv_cc_kwd_forceinline}" != "xnone" && break
+        done
+        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+        ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+        AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+      ]
+    )
+  ]
+)
+AS_IF([test "x$ac_cv_c_inline" != "xno" && test "x${mhd_cv_cc_kwd_forceinline}" != "xnone"],
+  [AC_DEFINE_UNQUOTED([_MHD_static_inline],[static $mhd_cv_cc_kwd_forceinline],[Define to prefix which will be used with MHD static inline functions.])]
+  ,
+  [AC_DEFINE([_MHD_static_inline],[static inline],[Define to prefix which will be used with MHD static inline functions.])]
+)
 
 AC_CHECK_HEADERS([stdalign.h], [], [], [AC_INCLUDES_DEFAULT])
 AC_CACHE_CHECK([[for C11 'alignof()' support]], [[mhd_cv_c_alignof]],
@@ -992,6 +918,14 @@ AS_CASE(["$host_os"],
  [AC_DEFINE([SOLARIS],[1],[This is a Solaris system])
      AC_DEFINE([_REENTRANT],[1],[Need with solaris or errno does not work])
      mhd_host_os='Solaris'
+     AC_MSG_RESULT([[$mhd_host_os]])],
+  [linux-gnu],
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
+     mhd_host_os='GNU/Linux'
+     AC_MSG_RESULT([[$mhd_host_os]])],
+  [linux-android*],
+  [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
+     mhd_host_os='Android'
      AC_MSG_RESULT([[$mhd_host_os]])],
   [*linux*],
   [AC_DEFINE([LINUX],[1],[This is a Linux kernel])
@@ -1275,30 +1209,28 @@ AS_CASE([[$with_threads]],
     [AC_MSG_ERROR([[incorrect parameter "$with_threads" specified for --with-threads]])]
 )
 
-# Check for posix threads support, regardless of configure parameters as
-# testsuite uses only posix threads.
+# Check for posix threads support.
+# As the testsuite uses only posix threads, the checks are required even
+# if the library does not use posit threads.
 AX_PTHREAD(
   [
     mhd_have_posix_threads='yes'
     AC_DEFINE([[HAVE_PTHREAD_H]],[[1]],[Define to 1 if you have the <pthread.h> header file.])
-	AC_CACHE_CHECK([[whether pthread_sigmask(3) is available]],
-	  [[mhd_cv_func_pthread_sigmask]], [dnl
-	  save_LIBS="$LIBS"
-	  LIBS="$PTHREAD_LIBS $LIBS"
-  	  CFLAGS="${CFLAGS_ac} ${PTHREAD_CFLAGS} ${user_CFLAGS}"
-	  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
-	    [[
-	      sigset_t nset, oset;
-	      sigemptyset (&nset);
-	      sigaddset (&nset, SIGPIPE);
-	      if (0 != pthread_sigmask(SIG_BLOCK, &nset, &oset)) return 1;
-	    ]])],
-	    [[mhd_cv_func_pthread_sigmask="yes"]],[[mhd_cv_func_pthread_sigmask="no"]])
-	  LIBS="${save_LIBS}"
-      CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-	])
-	AS_VAR_IF([mhd_cv_func_pthread_sigmask],["yes"],
-	  [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])])
+    CFLAGS="${CFLAGS_ac} ${PTHREAD_CFLAGS} ${user_CFLAGS}"
+    MHD_CHECK_FUNC([pthread_sigmask],
+      [[
+#include <pthread.h>
+#include <signal.h>
+      ]],
+      [[
+        sigset_t nset, oset;
+        sigemptyset (&nset);
+        sigaddset (&nset, SIGPIPE);
+        i][f (0 != pthread_sigmask(SIG_BLOCK, &nset, &oset)) return 1;
+      ]],
+      [AC_DEFINE([[HAVE_PTHREAD_SIGMASK]],[[1]],[Define to 1 if you have the pthread_sigmask(3) function.])]
+    )
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ],[[mhd_have_posix_threads='no']])
 AM_CONDITIONAL([HAVE_POSIX_THREADS],[test "x$mhd_have_posix_threads" = "xyes"])
 
@@ -2232,7 +2164,7 @@ AC_C_VARARRAYS
 
 AC_CACHE_CHECK([[whether __func__ magic-macro is available]],
   [[mhd_cv_macro___func___avail]], [dnl
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __func__ ; if (NULL == funcname) return 1;]])],
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[const char *funcname = __func__ ; if (!funcname) return 1;]])],
     [[mhd_cv_macro___func___avail="yes"]],[[mhd_cv_macro___func___avail="no"]])
 ])
 AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
@@ -2240,7 +2172,7 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
   [
     AC_CACHE_CHECK([[whether __FUNCTION__ magic-macro is available]],
       [[mhd_cv_macro___function___avail]], [dnl
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __FUNCTION__ ; if (NULL == funcname) return 1;]])],
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[const char *funcname = __FUNCTION__ ; if (!funcname) return 1;]])],
         [[mhd_cv_macro___function___avail="yes"]],[[mhd_cv_macro___function___avail="no"]])
     ])
     AS_VAR_IF([mhd_cv_macro___function___avail], ["yes"],
@@ -2248,7 +2180,7 @@ AS_VAR_IF([mhd_cv_macro___func___avail], ["yes"],
       [
         AC_CACHE_CHECK([[whether __PRETTY_FUNCTION__ magic-macro is available]],
           [[mhd_cv_macro___pretty_function___avail]], [dnl
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stddef.h>]],[[const char *funcname = __PRETTY_FUNCTION__ ; if (NULL == funcname) return 1;]])],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[const char *funcname = __PRETTY_FUNCTION__ ; if (!funcname) return 1;]])],
             [[mhd_cv_macro___pretty_function___avail="yes"]],[[mhd_cv_macro___pretty_function___avail="no"]])
         ])
         AS_VAR_IF([mhd_cv_macro___pretty_function___avail], ["yes"],
@@ -2405,8 +2337,18 @@ AC_ARG_ENABLE([[epoll]],
 
 AS_IF([test "$enable_epoll" != "no"],
   [
-    AX_HAVE_EPOLL
-    AS_IF([test "${ax_cv_have_epoll}" = "yes"],
+    MHD_CHECK_FUNC_RUN([epoll_create],
+      [[
+#include <sys/epoll.h>
+#include <unistd.h>
+      ]],
+      [[
+        int epfd = epoll_create(64);
+        i][f (0 > epfd) return -epfd;
+        (void) close(epfd);
+        return 0;
+      ]],
+      [cacheVar="assuming yes"],
       [
         AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
         enable_epoll='yes'
@@ -2416,6 +2358,23 @@ AS_IF([test "$enable_epoll" != "no"],
           [AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]])]
         )
         enable_epoll='no'
+      ]
+    )
+    AS_UNSET([warn_msg])
+    AS_VAR_IF([mhd_cv_works_func_epoll_create],["assuming yes"],
+      [[warn_msg="When cross-compiling it is not possible to check whether 'epoll_create()' really works on the host (final) platform.
+'epoll' is enabled as most probably the host kernel supports it (CONFIG_EPOLL option enabled in case of Linux kernel).
+Use './configure mhd_cv_works_func_epoll_create=yes' to mute this warning."]]
+    )
+    AS_VAR_SET_IF([warn_msg],[AC_MSG_WARN([$warn_msg])
+        AS_IF([test -n "${CONF_FINAL_WARNS}" ],
+           [
+             CONF_FINAL_WARNS="${CONF_FINAL_WARNS}
+
+WARNING: "
+           ]
+        )
+        CONF_FINAL_WARNS="${CONF_FINAL_WARNS}${warn_msg}"
       ]
     )
   ]
@@ -2441,7 +2400,9 @@ AC_CACHE_CHECK([for supported 'noreturn' keyword], [mhd_cv_decl_noreturn],
   [
     mhd_cv_decl_noreturn="none"
     CFLAGS="${CFLAGS_ac} ${user_CFLAGS} ${errattr_CFLAGS}"
-    for decl_noret in '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
+    MHD_SAVED_ac_c_werror_flag="$ac_c_werror_flag"
+    ac_c_werror_flag=yes
+    for decl_noret in ['[[noreturn]]'] '_Noreturn' '__attribute__((__noreturn__))' '__declspec(noreturn)'
     do
       AC_LINK_IFELSE([AC_LANG_SOURCE(
           [[
@@ -2470,7 +2431,9 @@ int main (int argc, char *const *argv)
       )
       AS_IF([test "x${mhd_cv_decl_noreturn}" != "xnone"], [break])
     done
-   CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+    ac_c_werror_flag="$MHD_SAVED_ac_c_werror_flag"
+    AS_UNSET([MHD_SAVED_ac_c_werror_flag])
+    CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
   ]
 )
 AS_VAR_IF([mhd_cv_decl_noreturn], ["none"],
@@ -2495,7 +2458,8 @@ AC_CACHE_CHECK([size of tv_sec member of struct timeval], [mhd_cv_size_timeval_t
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-static struct timeval test_var;
+extern struct timeval test_var; /* Declaration */
+struct timeval test_var = {0, 0}; /* Definition */
       ]],
       [
         # The size is used only to exclude additional checks/comparison in code
@@ -2532,6 +2496,9 @@ AM_CONDITIONAL([MHD_HAVE_TLS_PLUGIN], [[test "x$have_tlsplugin" = xyes]])
 
 AC_CHECK_HEADERS([zlib.h],[have_zlib=yes],[have_zlib=no], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([HAVE_ZLIB], [[test "x$have_zlib" = xyes]])
+
+AC_CHECK_HEADERS([jansson.h],[have_json=yes],[have_json=no], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL([HAVE_JANSSON], [[test "x$have_json" = xyes]])
 
 # Check for generic functions
 MHD_CHECK_FUNC([random],
@@ -2573,14 +2540,12 @@ AC_CHECK_MEMBERS([struct sockaddr.sa_len, struct sockaddr_storage.ss_len,
 #endif
    ])
 
-MHD_CHECK_LINK_RUN([[f][or working getsockname()]],[[mhd_cv_getsockname_usable]],
-  [[mhd_cv_getsockname_usable='assuming yes']],
-  [
-    AC_LANG_SOURCE(
-      [[
+MHD_CHECK_FUNC_RUN([getsockname],
+  [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#include <string.h>
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -2603,12 +2568,8 @@ MHD_CHECK_LINK_RUN([[f][or working getsockname()]],[[mhd_cv_getsockname_usable]]
 #include <arpa/inet.h>
 #endif
 
-
-static void zr_mem(void *ptr, socklen_t size)
-{ char *mem = ptr; while(size--) {mem[0] = 0; mem++;} }
-
-int main(void)
-{
+  ]],
+  [[
   const socklen_t c_addr_size = (socklen_t)sizeof(struct sockaddr_in);
   struct sockaddr_in sa;
   socklen_t addr_size;
@@ -2621,35 +2582,35 @@ int main(void)
   const SOCKET invld_sckt = INVALID_SOCKET;
   WSADATA wsa_data;
 
-  if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
+  i][f (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
     return 20;
 #endif
 
   sckt = socket (PF_INET, SOCK_STREAM, 0);
-  if (invld_sckt != sckt)
+  i][f (invld_sckt != sckt)
   {
-    zr_mem(&sa, c_addr_size);
+    memset(&sa, 0, c_addr_size);
     sa.sin_family = AF_INET;
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = c_addr_size;
 #endif
-    if (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
+    i][f (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
     {
-      if (0 == listen (sckt, 1))
+      i][f (0 == listen (sckt, 1))
       {
         addr_size = c_addr_size;
-        if (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
+        i][f (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
         {
-          if (c_addr_size >= addr_size)
+          i][f (c_addr_size >= addr_size)
           {
-            if (0 != ntohs(sa.sin_port))
+            i][f (0 != ntohs(sa.sin_port))
             { ret = 0;
-            } else ret = 7;
-          } else ret = 6;
-        } else ret = 5;
-      } else ret = 4;
-    } else ret = 3;
-  } else ret = 2;
+            } el][se ret = 7;
+          } el][se ret = 6;
+        } el][se ret = 5;
+      } el][se ret = 4;
+    } el][se ret = 3;
+  } el][se ret = 2;
 #if !defined(_WIN32) || defined(__CYGWIN__)
   close (sckt);
 #else
@@ -2657,10 +2618,8 @@ int main(void)
   WSACleanup();
 #endif
   return ret;
-}
-      ]]
-    )
-  ],
+  ]],
+  [cacheVar='assuming yes'],
   [AC_DEFINE([[MHD_USE_GETSOCKNAME]], [[1]], [Define if you have usable `getsockname' function.])]
 )
 
@@ -2823,45 +2782,60 @@ AS_UNSET([[use_itc]])
 
 AS_IF([[test "x$enable_itc" = "xeventfd" || test "x$enable_itc" = "xauto"]],
   [
-    MHD_CHECK_LINK_RUN([[f][or working eventfd(2)]],[[mhd_cv_eventfd_usable]],[[mhd_cv_eventfd_usable='assuming no']],
-      [
-        AC_LANG_SOURCE([[
+    MHD_CHECK_FUNC_RUN([eventfd],[[
 #include <sys/eventfd.h>
 #include <unistd.h>
-
-int main(void)
-{
-  unsigned char buf[8];
+      ]],
+      [[
+  static unsigned char buf[8];
   int ret;
   int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-  if (0 > efd)
+  i][f (0 > efd)
     return 2;
   ret = 0;
   buf[3] = 1;
-  if (8 != write(efd, buf, 8))
+  i][f (8 != write(efd, buf, 8))
     ret = 3;
-  else
+  el][se
   {
-    if (8 != read(efd, buf, 8))
+    i][f (8 != read(efd, buf, 8))
       ret = 4;
   }
   close(efd);
   return ret;
-}
-          ]]
+      ]],
+      [
+        AS_VAR_IF([enable_itc],["eventfd"],
+          [cacheVar="assuming yes"],[cacheVar="assuming no"]
         )
       ],
       [
         use_itc='eventfd'
         enable_itc="$use_itc"
-        AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD for inter-thread communication])
-      ],
-      [
-        AS_VAR_IF([[enable_itc]], [["eventfd"]], [AC_MSG_ERROR([[eventfd(2) is not usable, consider using other type of inter-thread communication]])])
+        AC_DEFINE([[_MHD_ITC_EVENTFD]], [[1]], [Define to use eventFD f][or inter-thread communication])
       ]
     )
-    AS_VAR_IF([mhd_cv_eventfd_usable],["assuming no"],
-      [AC_MSG_WARN([if you have 'eventfd' support enabled on your target system consider overriding test result by "mhd_cv_eventfd_usable=yes" configure parameter])]
+    AS_UNSET([warn_msg])
+    AS_VAR_IF([mhd_cv_works_func_eventfd],["assuming yes"],
+      [[warn_msg="When cross-compiling it is not possible to check whether 'eventfd()' really works on the host (final) platform.
+'eventfd' is enabled as requested by configure parameters.
+Use './configure mhd_cv_works_func_eventfd=yes' to mute this warning."]]
+    )
+    AS_VAR_IF([mhd_cv_works_func_eventfd],["assuming no"],
+      [[warn_msg="When cross-compiling it is not possible to check whether 'eventfd()' really works on the host (final) platform.
+'eventfd()' is disabled. If it is available use './configure mhd_cv_works_func_eventfd=yes' to enable.
+Use './configure mhd_cv_works_func_eventfd=no' to mute this warning."]]
+    )
+    AS_VAR_SET_IF([warn_msg],[AC_MSG_WARN([$warn_msg])
+        AS_IF([test -n "${CONF_FINAL_WARNS}" ],
+           [
+             CONF_FINAL_WARNS="${CONF_FINAL_WARNS}
+
+WARNING: "
+           ]
+        )
+        CONF_FINAL_WARNS="${CONF_FINAL_WARNS}${warn_msg}"
+      ]
     )
   ]
 )
@@ -2889,32 +2863,29 @@ AC_INCLUDES_DEFAULT
       use_itc='pipe'
       enable_itc="$use_itc"
       AC_DEFINE([[_MHD_ITC_PIPE]], [[1]], [Define to use pipe for inter-thread communication])
-      MHD_CHECK_LINK_RUN([[whether pipe2(2) is usable]],[[mhd_cv_pipe2_usable]],
-        [
-          # Cross-compiling
-          AS_CASE([${host_os}], [kfreebsd*-gnu], [[mhd_cv_pipe2_usable='assuming no']],
-            [[mhd_cv_pipe2_usable='assuming yes']])
-        ],
-        [
-          AC_LANG_PROGRAM([
+      MHD_CHECK_FUNC_RUN([pipe2],[
 AC_INCLUDES_DEFAULT
+[
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-            ], [[
-              int arr[2];
-              int res;
-              res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
-              if (res != 0) return 33;
-              close (arr[0]);
-              close (arr[1]);
-            ]]
-          )
+        ]],[[
+          int arr[2];
+          int res;
+          res = pipe2(arr, O_CLOEXEC | O_NONBLOCK);
+          i][f (res != 0) return 33;
+          close (arr[0]);
+          close (arr[1]);
+          return 0;
+        ]],[
+          # Cross-compiling
+          AS_CASE([${host_os}], [kfreebsd*-gnu], [cacheVar='assuming no'],
+            [cacheVar='assuming yes'])
         ],
-        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define if you have usable pipe2(2) function])]
+        [AC_DEFINE([[HAVE_PIPE2_FUNC]], [[1]], [Define i][f you have usable pipe2(2) function])],
       )
     ], [
       AS_VAR_IF([[enable_itc]], [["pipe"]], [AC_MSG_ERROR([[pipe(3) is not usable, consider using other type of inter-thread communication]])])
@@ -3340,11 +3311,9 @@ MHD_CHECK_FUNC([magic_open],
   [],
   [-lmagic]
 )
-AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_func_magic_open" = "xyes"]])
+AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_have_func_magic_open" = "xyes"]])
 
 # large file support (> 4 GB)
-AC_SYS_LARGEFILE
-AC_FUNC_FSEEKO
 MHD_CHECK_FUNC([lseek64],
   [[
 #if defined(HAVE_SYS_TYPES_H)
@@ -4000,7 +3969,7 @@ AS_VAR_IF([enable_dauth], ["yes"],
     AC_MSG_CHECKING([[for Digest Authentication default nonce timeout value]])
     AC_ARG_ENABLE([dauth-def-timeout],
       [AS_HELP_STRING([--enable-dauth-def-timeout=NNN],
-                      [set default Digest Auth nonce validity time to NNN seconds])],
+                      [set default Digest Auth nonce validity time to NNN seconds [90]])],
       [enable_dauth_def_timeout="${enableval}"],
       [enable_dauth_def_timeout=""]
     )
@@ -4043,7 +4012,7 @@ AS_VAR_IF([enable_dauth], ["yes"],
     AC_MSG_CHECKING([[for Digest Authentication default maximum nc value]])
     AC_ARG_ENABLE([dauth-def-max-nc],
       [AS_HELP_STRING([--enable-dauth-def-max-nc=NNN],
-                      [set default Digest Auth maximum nc (nonce count) value to NNN])],
+                      [set default Digest Auth maximum nc (nonce count) value to NNN [1000]])],
       [enable_dauth_def_max_nc="${enableval}"],
       [enable_dauth_def_max_nc=""]
     )
@@ -4543,7 +4512,7 @@ AS_VAR_IF([enable_tools],["yes"],
         i][f (1 != pstat_getdynamic(&psd_data, sizeof(psd_data), (size_t)1, 0))
           return 2;
         i][f (0 >= psd_data.psd_proc_cnt)
-          return 3; 
+          return 3;
       ]]
     )
     MHD_CHECK_FUNC([vxCpuEnabledGet],[[#include <vxCpuLib.h>]],
@@ -4710,7 +4679,7 @@ AS_VAR_IF([enable_tools],["yes"],
         )
       ]
     )
-    AS_VAR_IF([mhd_cv_func_CPU_COUNT_S],["yes"],
+    AS_VAR_IF([mhd_cv_have_func_CPU_COUNT_S],["yes"],
       [
         AC_CACHE_CHECK([whether CPU_COUNT_S() expects max CPU number as 'size' parameter],[mhd_cv_func_cpu_count_s_cpus],
           [
@@ -5959,7 +5928,6 @@ doc/examples/Makefile
 m4/Makefile
 src/Makefile
 src/include/Makefile
-src/lib/Makefile
 src/microhttpd/Makefile
 src/microhttpd_ws/Makefile
 src/examples/Makefile
@@ -6042,7 +6010,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Build shared lib:  ${enable_shared}
   Build docs:        ${enable_doc}
   Build examples:    ${enable_examples}
-  Build tools:       ${enable_examples}
+  Build tools:       ${enable_tools}
   Test with libcurl: ${MSG_CURL}
   Heavy tests:       ${use_heavy_tests_MSG}
   Fuzzing tests:     ${run_zzuf_tests_MSG=no}
@@ -6068,3 +6036,4 @@ AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_postprocessor" != "xyes"],
    [AC_MSG_WARN([This will be a custom build with missing symbols. Do NOT use this build in a distribution. Building with these kinds of configure options is only for custom builds for embedded systems.])]
 )
+AS_IF([test -n "${CONF_FINAL_WARNS}"],[AC_MSG_WARN([${CONF_FINAL_WARNS}])])
