@@ -48,18 +48,18 @@ define kernelfeatures
 		echo "CONFIG_NF_TABLES=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_INET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_ARP=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_TABLES_BRIDGE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_TABLES_BRIDGE=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_TABLES_NETDEV=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_FLOW_TABLE=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_FLOW_TABLE_IPV4=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_FLOW_TABLE_IPV6=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_FLOW_TABLE_INET=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_IPV4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_IPV6=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_FLOW_TABLE_INET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_FLOW_TABLE_PROCFS=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_NUMGEN=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_CT=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NET_ACT_CT=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_FLOW_OFFLOAD=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_NUMGEN=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CT=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NET_ACT_CT is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_FLOW_OFFLOAD=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_BRIDGE_META is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_BRIDGE_REJECT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_CONNLIMIT is not set" >> $(LINUXDIR)/.config; \
@@ -77,29 +77,29 @@ define kernelfeatures
 		echo "# CONFIG_NFT_SET_HASH is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SET_BITMAP is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_OBJREF is not set" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_CHAIN_ROUTE_IPV4=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_CHAIN_ROUTE_IPV6=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_CHAIN_NAT_IPV4=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_CHAIN_NAT_IPV6=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_LOG=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_RT=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NF_LOG_BRIDGE=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_COUNTER=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_LIMIT=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_MASQ=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_MASQ_IPV4=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_MASQ_IPV6=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_REDIR=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_REDIR_IPV4=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_REDIR_IPV6=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_NAT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_ROUTE_IPV4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_ROUTE_IPV6=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_NAT_IPV4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_CHAIN_NAT_IPV6=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_LOG=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_RT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_LOG_BRIDGE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_COUNTER=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_LIMIT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_MASQ=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_MASQ_IPV4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_MASQ_IPV6=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REDIR=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REDIR_IPV4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REDIR_IPV6=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_NAT=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_TUNNEL is not set" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_QUOTA=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_REJECT=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_REJECT_INET=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_HASH=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_FIB=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_NFT_FIB_INET=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_QUOTA=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REJECT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_REJECT_INET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_HASH=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_FIB=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFT_FIB_INET=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_SOCKET is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_OSF is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFT_TPROXY is not set" >> $(LINUXDIR)/.config; \
