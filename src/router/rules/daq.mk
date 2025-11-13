@@ -20,7 +20,7 @@ daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet li
 		--with-dnet-libraries="$(TOP)/libdnet/src/.libs" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -Wno-incompatible-pointer-types -fPIC -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -I$(TOP)/iptables-new/include -I$(TOP)/iptables-new/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
 		CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -Wno-incompatible-pointer-types -fPIC -DNEED_PRINTF -D_GNU_SOURCE  -Drpl_malloc=malloc -I$(TOP)/iptables-new/include -I$(TOP)/iptables-new/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
-		LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs -L$(TOP)/libnetfilter_queue/src/.libs -L$(TOP)/libnfnetlink/src/.libs -fPIC"
+		LDFLAGS="-L$(TOP)/iptables-new/normal/libipq/.libs -L$(TOP)/libnetfilter_queue/src/.libs -L$(TOP)/libnfnetlink/src/.libs -fPIC"
 	make -C daq all install CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 else
 daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet libnetfilter_queue iptables

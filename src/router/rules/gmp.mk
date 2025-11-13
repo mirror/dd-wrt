@@ -26,7 +26,7 @@ gmp-configure:
 		--enable-static \
 		--enable-assembly \
 		--enable-assert=no \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(THUMB) $(LTO) -I$(TOP)/iptables-new/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs $(LDLTO)" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(THUMB) $(LTO) -I$(TOP)/iptables-new/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables-new/normal/libipq/.libs $(LDLTO)" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 endif

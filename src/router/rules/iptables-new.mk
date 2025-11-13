@@ -7,6 +7,7 @@ iptables-new-configure:
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+	make -C iptables-new/normal CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
 
 	cd iptables-new/nftables && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF" \

@@ -50,7 +50,7 @@ snort-configure: libnet daq-configure pcre-configure daq pcre zlib
 	export lt_sys_lib_search_path_spec="$(ARCH)-uclibc" ; \
 	export CFLAGS="$(COPTS) -fcommon $(MIPS16_OPT) -fPIC -DNEED_PRINTF -D_GNU_SOURCE -DHAVE_MALLOC=1 -Drpl_malloc=malloc -I$(TOP)/iptables-new/include -I$(TOP)/zlib -I$(TOP)/iptables-new/include/libipq/ -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include -I$(TOP)/libnet/include" ; \
 	export CPPFLAGS="$(COPTS) -fcommon $(MIPS16_OPT) -fPIC -DNEED_PRINTF  -D_GNU_SOURCE -DHAVE_MALLOC=1 -Drpl_malloc=malloc -I$(TOP)/iptables-new/include -I$(TOP)/zlib -I$(TOP)/iptables-new/include/libipq/ -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include -I$(TOP)/libnet/include" ; \
-	export LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs -L$(TOP)/libnetfilter_queue/src/.libs $(TOP)/libnetfilter_queue/src/.libs/libnetfilter_queue.a -L$(TOP)/libnet/lib -L$(TOP)/zlib -L$(TOP)/libnfnetlink/src/.libs $(TOP)/libnfnetlink/src/.libs/libnfnetlink.so  -L$(TOP)/libdnet/src/.libs -ldnet -lipq -lnet -L$(TOP)/libpcap -lpcap" ;\
+	export LDFLAGS="-L$(TOP)/iptables-new/normal/libipq/.libs -L$(TOP)/libnetfilter_queue/src/.libs $(TOP)/libnetfilter_queue/src/.libs/libnetfilter_queue.a -L$(TOP)/libnet/lib -L$(TOP)/zlib -L$(TOP)/libnfnetlink/src/.libs $(TOP)/libnfnetlink/src/.libs/libnfnetlink.so  -L$(TOP)/libdnet/src/.libs -ldnet -lipq -lnet -L$(TOP)/libpcap -lpcap" ;\
 	cd snort && ./configure \
 		--enable-reload \
 		--enable-ipv6 \
