@@ -152,7 +152,7 @@ elif [ "$setconf" = "cpidconf" ]; then
 		gwif=$(uci get opennds.@opennds[0].gatewayinterface 2> /dev/null | awk '{printf "%s", $1}')
 
 		if [ -z "$gwif" ]; then
-			gwif="br-lan"
+			gwif="br0"
 		fi
 
 		network_zone=$(uci show network | grep "device='$gwif'" | awk -F "." '{printf "%s", $2}')

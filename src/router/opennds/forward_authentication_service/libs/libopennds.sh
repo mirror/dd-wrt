@@ -1061,7 +1061,7 @@ get_option_from_config() {
 	if [ $uci_status -eq 0 ]; then
 		param=$(uci export opennds | grep -w "option" | grep -w "$option" | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 	else
-		param=$(cat /etc/config/opennds | grep -w "option" | grep -w "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
+		param=$(cat /tmp/opennds | grep -w "option" | grep -w "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 	fi
 
 	# remove trailing space character
@@ -1084,7 +1084,7 @@ get_list_from_config() {
 	if [ $uci_status -eq 0 ]; then
 		param=$(uci export opennds | grep -w "list" | grep -w "$list" | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
 	else
-		param=$(cat /etc/config/opennds | grep -w "list" | grep -w "$list" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
+		param=$(cat /tmp/opennds | grep -w "list" | grep -w "$list" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
 	fi
 
 	# urlencode the entire list set
@@ -1231,7 +1231,7 @@ users_to_router () {
 		get_option_from_config
 
 		if [ -z "$gatewayinterface" ]; then
-			gatewayinterface="br-lan"
+			gatewayinterface="br0"
 		fi
 
 		inputchain=$(nft list table inet fw4 2> /dev/null | grep -w "$gatewayinterface" | grep "jump input"\
@@ -1310,7 +1310,7 @@ pre_setup () {
 	get_option_from_config
 
 	if [ -z "$gatewayinterface" ]; then
-		gatewayinterface="br-lan"
+		gatewayinterface="br0"
 	fi
 
 	# Delete any legacy iptables chains left from previous versions and any of our tables left in limbo
@@ -2104,7 +2104,7 @@ resolve_fqdn() {
 		get_option_from_config
 
 		if [ -z "$gatewayinterface" ]; then
-			gatewayinterface="br-lan"
+			gatewayinterface="br0"
 		fi
 
 		ifname="$gatewayinterface"
@@ -2524,7 +2524,7 @@ elif [ "$1" = "gatewayroute" ]; then
 		get_option_from_config
 
 		if [ -z "$gatewayinterface" ]; then
-			gatewayinterface="br-lan"
+			gatewayinterface="br0"
 		fi
 
 		nft add flowtable ip nds_filter ndsftOUT "{ hook ingress priority -100 ; devices = { $gatewayinterface } ; }"
