@@ -1327,6 +1327,26 @@ void stop_qos(void)
 	rmmod("sch_tbf");
 	rmmod("sch_cbq");
 
+	eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-F", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-X", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-F", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-X", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-F", "SVQOS_SVCS");
+	eval("iptables", "-t", "mangle", "-X", "SVQOS_SVCS");
+
+
+	evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
+	evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
+	evalip6("ip6tables", "-t", "mangle", "-F", "SVQOS_SVCS");
+	evalip6("ip6tables", "-t", "mangle", "-X", "SVQOS_SVCS");
+	evalip6("ip6tables", "-t", "mangle", "-F", "FILTER_OUT");
+	evalip6("ip6tables", "-t", "mangle", "-X", "FILTER_OUT");
+	evalip6("ip6tables", "-t", "mangle", "-F", "FILTER_IN");
+	evalip6("ip6tables", "-t", "mangle", "-X", "FILTER_IN");
+
+
 	return;
 }
 
