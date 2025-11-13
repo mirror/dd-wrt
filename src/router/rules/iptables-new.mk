@@ -1,8 +1,20 @@
 iptables-new-configure:
 	cd iptables-new && ./autogen.sh
-	cd iptables-new && ./configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static --disable-nftables \
+	mkdir -p iptables-new/normal
+	mkdir -p iptables-new/nftables
+	cd iptables-new/normal && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static --disable-nftables \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+
+	cd iptables-new/nftables && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF" \
+		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		libnftnl_CFLAGS="-I$(TOP)/libnftnl/include -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" \
+		libnftnl_LIBS="-L$(TOP)/libnftnl/src/.libs -lnftnl" \
+		libmnl_CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libmnl/include" \
+		libmnl_LIBS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/libmnl/src/.libs -lmnl" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
@@ -10,17 +22,21 @@ iptables-new-clean:
 	-make -C iptables-new clean
 
 iptables-new:
-#ifneq ($(CONFIG_NOMESSAGE),y)
-	make -C iptables-new CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
-#else
-#	make -C iptables-new CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon"
-#endif
+ifeq ($(CONFIG_NFTABLES),y)
+	make -C iptables-new/nftables CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
+else
+	make -C iptables-new/normal CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
+endif
 
 
 
 iptables-new-install:
 ifeq ($(CONFIG_IPTABLES),y)
-	make -C iptables-new install DESTDIR=$(INSTALLDIR)/iptables-new
+ifeq ($(CONFIG_NFTABLES),y)
+	make -C iptables-new/nftables install DESTDIR=$(INSTALLDIR)/iptables-new
+else
+	make -C iptables-new/normal install DESTDIR=$(INSTALLDIR)/iptables-new
+endif
 	rm -rf $(INSTALLDIR)/iptables-new/usr/include
 	rm -rf $(INSTALLDIR)/iptables-new/usr/lib
 	rm -rf $(INSTALLDIR)/iptables-new/usr/share
