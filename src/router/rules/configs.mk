@@ -207,7 +207,7 @@ obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
 obj-$(CONFIG_VLAN_FILTERING) += bridge
 obj-$(CONFIG_IPROUTE2) += iproute2
-ifneq ($(CONFIG_NFTABLES,y)
+ifneq ($(CONFIG_NFTABLES),y)
 obj-$(CONFIG_EBTABLES) += ebtables
 endif
 obj-$(CONFIG_SSTP) += libevent sstp-client

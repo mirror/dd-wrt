@@ -763,6 +763,9 @@ ifeq ($(CONFIG_PROCPS),y)
 	sed -i 's/\CONFIG_WATCH=y/# CONFIG_WATCH is not set/g' busybox/.config
 	sed -i 's/\CONFIG_BB_SYSCTL=y/# CONFIG_BB_SYSCTL is not set/g' busybox/.config
 endif
+ifeq ($(CONFIG_SED),y)
+	sed -i 's/\CONFIG_SED=y/# CONFIG_SED is not set/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
