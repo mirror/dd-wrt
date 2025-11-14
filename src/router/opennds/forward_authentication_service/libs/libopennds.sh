@@ -76,13 +76,7 @@ encode_custom() {
 
 # Download external file
 webget() {
-	fetch=$(type -t uclient-fetch)
-
-	if [ -z "$fetch" ]; then
-		wret="wget -q $spider $checkcert -t 1 -T 4"
-	else
-		wret="uclient-fetch -q $spider $checkcert -T 4"
-	fi
+	wret="wget -q $spider $checkcert -t 1 -T 4"
 }
 
 # Get custom image files
@@ -973,11 +967,7 @@ config_input_fields () {
 }
 
 check_mhd() {
-	type uclient-fetch &>/dev/null
-	fetch=$?
-
-	type uci &>/dev/null
-	uci=$?
+	fetch=0
 
 	configure_log_location
 	heartbeatpath="$mountpoint/ndscids/heartbeat"
@@ -1016,13 +1006,7 @@ check_mhd() {
 		syslogmessage="Restarting...."
 		debugtype="warn"
 		write_to_syslog
-
-		if [ "$uci" -eq 1 ]; then
-			systemctl restart opennds
-		else
-			/etc/init.d/opennds restart
-		fi
-
+		service restart opendns
 		exit 0
 	fi
 }
@@ -1037,32 +1021,17 @@ nft_get_status() {
 
 mhd_get_status() {
 
-	if [ "$fetch" -eq 1 ]; then
-		mhdtest=$(wget -t 1 -T 1 -O - "http://$gw_address/mhdstatus" 2>&1 | grep -w  "<br>OK<br>")
+	mhdtest=$(wget -t 1 -T 1 -O - "http://$gw_address/mhdstatus" 2>&1 | grep -w  "<br>OK<br>")
 
-		if [ ! -z "$mhdtest" ]; then
-			mhdstatus="1"
-		fi
-	else
-		mhdtest=$(uclient-fetch -T 1 -O - "http://$gw_address/mhdstatus" 2>&1 | grep -w  "<br>OK<br>")
-
-		if [ ! -z "$mhdtest" ]; then
-			mhdstatus="1"
-		fi
+	if [ ! -z "$mhdtest" ]; then
+		mhdstatus="1"
 	fi
 }
 
 
 get_option_from_config() {
 
-	type uci &> /dev/null
-	uci_status=$?
-
-	if [ $uci_status -eq 0 ]; then
-		param=$(uci export opennds | grep -w "option" | grep -w "$option" | awk -F"'" 'NF > 1 {printf "%s ", $2}')
-	else
-		param=$(cat /tmp/opennds | grep -w "option" | grep -w "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
-	fi
+	param=$(cat /tmp/opennds | grep -w "option" | grep -w "$option" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {printf "%s ", $2}')
 
 	# remove trailing space character
 	param=$(echo "$param" | sed 's/[[:space:]]*$//')
@@ -1076,16 +1045,9 @@ get_option_from_config() {
 
 get_list_from_config() {
 
-	type uci &> /dev/null
-	uci_status=$?
 
 	# get list with urlencoded spaces
-
-	if [ $uci_status -eq 0 ]; then
-		param=$(uci export opennds | grep -w "list" | grep -w "$list" | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
-	else
-		param=$(cat /tmp/opennds | grep -w "list" | grep -w "$list" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
-	fi
+	param=$(cat /tmp/opennds | grep -w "list" | grep -w "$list" | awk -F"#" '{printf "%s\n", $1}' | awk -F"'" 'NF > 1 {print $2}' | awk '{printf "%s*", $0}')
 
 	# urlencode the entire list set
 	urlencode "$param"
@@ -1294,14 +1256,7 @@ pre_setup () {
 		debugtype="warn"
 		write_to_syslog
 
-		uci=$(type uci)
-
-		if [ -z "$uci" ]; then
-			systemctl stop opennds
-		else
-			/etc/init.d/opennds stop
-		fi
-
+		service stop opennds
 		exit 1
 
 	fi
@@ -1433,19 +1388,12 @@ nft_set () {
 	# Edit this if your non-uci system uses a non standard location:
 	conflocation="/tmp/dnsmasq.conf"
 
-	uciconfig=$(uci show dhcp 2>/dev/null)
-
 	if [ "$nftsetmode" = "delete" ]; then
 		# Delete rules using the set, the set itself and the Dnsmasq config
 
-		if [ -z "$uciconfig" ]; then
-			# Generic Linux
-			linnum=$(cat /tmp/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
-			sed "$linnum""d" "/tmp/dnsmasq.conf" &>/dev/null
-		else
-			uci -q delete dhcp.nds_nftset
-			uci -q delete dhcp.@dnsmasq[0].ipset
-		fi
+		# Generic Linux
+		linnum=$(cat /tmp/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
+		sed "$linnum""d" "/tmp/dnsmasq.conf" &>/dev/null
 
 		ipset destroy "$nftsetname" &>/dev/null
 	else
@@ -1520,7 +1468,6 @@ nft_set () {
 			if [ $optnftset -eq 0 ]; then
 				# using nftset support in dnsmasq
 
-				if [ -z "$uciconfig" ]; then
 					# Generic Linux
 					nftsetconf="nftset="
 
@@ -1533,30 +1480,10 @@ nft_set () {
 						echo "$nftsetconf" >> "$conflocation"
 					fi
 
-				else
-					# OpenWrt
-					ucicmd="set dhcp.nds_$nftsetname='ipset'"
-					echo $ucicmd | uci -q batch
-					ucicmd="add_list dhcp.nds_$nftsetname.name='$nftsetname'"
-					echo $ucicmd | uci -q batch
-					ucicmd="set dhcp.nds_$nftsetname.table='nds_filter'"
-					echo $ucicmd | uci -q batch
-					ucicmd="set dhcp.nds_$nftsetname.table_family='ip'"
-					echo $ucicmd | uci -q batch
-
-					domains=$fqdns
-
-					for domain in $domains; do
-						ucicmd="add_list dhcp.nds_$nftsetname.domain='$domain'"
-						echo $ucicmd | uci -q batch
-					done
-
-				fi
 
 			elif [ $optipset -eq 0 ] && [ $optnftset -eq 1 ]; then
 				#### If ipset support is available BUT nft support is NOT available then we have no choice but to use ipset support ####
 
-				if [ -z "$uciconfig" ]; then
 					# Generic Linux
 					ipsetconf="ipset="
 
@@ -1570,23 +1497,6 @@ nft_set () {
 						echo "$config" > "$conflocation"
 						echo "$ipsetconf" >> "$conflocation"
 					fi
-				else
-					# OpenWrt
-					# Note we do not commit here so that the config changes do NOT survive a reboot and can be reverted without writing to config files
-
-					for fqdn in $fqdns; do
-						ipsetconf="$ipsetconf/$fqdn"
-					done
-
-					if [ ! -z "$ipsetconf" ]; then
-						ipsetconf="$ipsetconf/$nftsetname"
-
-						del_ipset="del_list dhcp.@dnsmasq[0].ipset='$ipsetconf'"
-						add_ipset="add_list dhcp.@dnsmasq[0].ipset='$ipsetconf'"
-						echo $del_ipset | uci -q batch
-						echo $add_ipset | uci -q batch
-					fi
-				fi
 			fi
 		else
 			# invalid nftsetmode
@@ -2430,7 +2340,6 @@ elif [ "$1" = "gatewayroute" ]; then
 	online="online"
 	offline="offline"
 	defaultif=$(ip route | grep -w  "default" | awk '{printf("%s %s ", $3, $5)}')
-
 	if [ -z "$defaultif" ]; then
 		gatewayinterfaces="offline"
 	else
@@ -2504,12 +2413,12 @@ elif [ "$1" = "gatewayroute" ]; then
 				done
 
 				nft delete flowtable ip nds_mangle handle "$handle"
-				nft add flowtable ip nds_mangle ndsftINC "{ hook ingress priority -100 ; devices = { $wandevices } ; }" 2> /dev/null
+				nft add flowtable ip nds_mangle ndsftINC "{ hook ingress priority -100 ; devices = { $wandevices } ; }"
 				nft add rule ip nds_mangle nds_ft_INC flow offload @ndsftINC counter
 				nft add rule ip nds_mangle nds_ft_INC counter return
 			fi
 		else
-			nft add flowtable ip nds_mangle ndsftINC "{ hook ingress priority -100 ; devices = { $wandevices } ; }" 2> /dev/null
+			nft add flowtable ip nds_mangle ndsftINC "{ hook ingress priority -100 ; devices = { $wandevices } ; }"
 			nft add rule ip nds_mangle nds_ft_INC meta l4proto { tcp, udp } flow offload @ndsftINC counter
 			nft add rule ip nds_mangle nds_ft_INC counter return
 		fi
