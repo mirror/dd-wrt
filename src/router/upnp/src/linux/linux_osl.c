@@ -605,10 +605,30 @@ static void add_nat_entry(netconf_nat_t *entry)
 
 	set_forward_port(&nat);
 	/* Do it */
-	netconf_add_nat(&nat);
+//	netconf_add_nat(&nat);
 	/* try to delete first */
-	netconf_del_filter(&filter);
-	netconf_add_filter(&filter);
+	char ipaddr[32];
+	char ipaddr_from[32];
+	char from[32];
+	char dst[32];
+	sprintf(from, "%d:%d", nat.ports[0], nat.ports[1]);
+	inet_addr_to_cidr(nat.ipaddr.s_addr, nat.netmask.s_addr, ipaddr);
+	inet_addr_to_cidr(nat.match.dst.ipaddr, 0xffffffff, ipaddr_from);
+	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
+	if (nat.match.ipproto == IPPROTO_TCP){
+	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-A", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	    eval(IPTABLES, "-t", "nat", "-A", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	}
+	if (nat.match.ipproto == IPPROTO_UDP){
+	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-A", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "udp", "-m", "udp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	    eval(IPTABLES, "-t", "nat", "-A", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "udp", "-m", "udp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	}
+//	netconf_del_filter(&filter);
+//	netconf_add_filter(&filter);
 }
 
 /* Combination PREROUTING DNAT and FORWARD ACCEPT */
@@ -653,14 +673,33 @@ static void delete_nat_entry(netconf_nat_t *entry)
 	filter.dir = dir;
 
 	del_forward_port(&nat);
-	/* Do it */
-	errno = netconf_del_nat(&nat);
-	if (errno)
-		upnp_syslog(LOG_INFO, "netconf_del_nat returned error %d\n", errno);
 
-	errno = netconf_del_filter(&filter);
-	if (errno)
-		upnp_syslog(LOG_INFO, "netconf_del_filter returned error %d\n", errno);
+	char ipaddr[32];
+	char ipaddr_from[32];
+	char from[32];
+	char dst[32];
+	sprintf(from, "%d:%d", nat.ports[0], nat.ports[1]);
+	inet_addr_to_cidr(nat.ipaddr.s_addr, nat.netmask.s_addr, ipaddr);
+	inet_addr_to_cidr(nat.match.dst.ipaddr, 0xffffffff, ipaddr_from);
+	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
+	if (nat.match.ipproto == IPPROTO_TCP){
+	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-t", "nat", "-A", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	}
+	if (nat.match.ipproto == IPPROTO_UDP){
+	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "udp", "-m", "udp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	}
+
+
+	/* Do it */
+//	errno = netconf_del_nat(&nat);
+//	if (errno)
+//		upnp_syslog(LOG_INFO, "netconf_del_nat returned error %d\n", errno);
+
+//	errno = netconf_del_filter(&filter);
+//	if (errno)
+//		upnp_syslog(LOG_INFO, "netconf_del_filter returned error %d\n", errno);
 }
 
 /* Command to add or delete from NAT engine */
