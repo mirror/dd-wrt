@@ -100,7 +100,6 @@
 static int ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX] = {0};
 						/* Array of Number of TCP and UDP connections currently offloaded */
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
 /*
  * Expose what should be a static flag in the TCP connection tracker.
  */
@@ -108,7 +107,6 @@ static int ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX]
 extern int nf_ct_tcp_no_window_check;
 #endif
 extern int nf_ct_tcp_be_liberal;
-#endif
 extern int nf_ct_tcp_no_window_check;
 
 /*
