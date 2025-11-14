@@ -1223,6 +1223,7 @@ static struct ctl_table ecm_front_end_sysctl_tbl[] = {
 		.mode		= 0644,
 		.proc_handler	= &ecm_front_end_tcp_denied_ports_handler,
 	},
+-	{}
 };
 
 /*
