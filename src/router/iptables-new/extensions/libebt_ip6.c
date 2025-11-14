@@ -390,12 +390,11 @@ static struct xtables_match brip6_match = {
 	.family		= NFPROTO_BRIDGE,
 	.size		= XT_ALIGN(sizeof(struct ebt_ip6_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_ip6_info)),
-	.init		= brip6_init,
-	//.help		= brip6_print_help,
+//	.help		= brip6_print_help,
 	.x6_parse	= brip6_parse,
 	.x6_fcheck	= brip6_final_check,
- 	.print		= brip6_print,
- 	.xlate		= brip6_xlate,
+	.print		= brip6_print,
+	.xlate		= brip6_xlate,
 	.x6_options	= brip6_opts,
 };
 

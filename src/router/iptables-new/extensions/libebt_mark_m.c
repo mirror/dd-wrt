@@ -105,11 +105,10 @@ static struct xtables_match brmark_m_match = {
 	.family		= NFPROTO_BRIDGE,
 	.size		= XT_ALIGN(sizeof(struct ebt_mark_m_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_mark_m_info)),
-	.init		= brmark_m_init,
-	//.help		= brmark_m_print_help,
+//	.help		= brmark_m_print_help,
 	.x6_parse	= brmark_m_parse,
- 	.print		= brmark_m_print,
- 	.xlate		= brmark_m_xlate,
+	.print		= brmark_m_print,
+	.xlate		= brmark_m_xlate,
 	.x6_options	= brmark_m_opts,
 };
 
