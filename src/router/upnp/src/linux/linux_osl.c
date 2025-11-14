@@ -612,8 +612,8 @@ static void add_nat_entry(netconf_nat_t *entry)
 	char from[32];
 	char dst[32];
 	sprintf(from, "%d:%d", nat.ports[0], nat.ports[1]);
-	inet_addr_to_cidr(nat.ipaddr.s_addr, nat.netmask.s_addr, ipaddr);
-	inet_addr_to_cidr(nat.match.dst.ipaddr, 0xffffffff, ipaddr_from);
+	inet_addr_to_cidr((struct in_addr)nat.ipaddr, (struct in_addr)netmask, ipaddr);
+	inet_addr_to_cidr((struct in_addr)nat.match.dst.ipaddr, (struct in_addr)nat.match.dst.netmask , ipaddr_from);
 	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
 	if (nat.match.ipproto == IPPROTO_TCP){
 	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
@@ -679,8 +679,8 @@ static void delete_nat_entry(netconf_nat_t *entry)
 	char from[32];
 	char dst[32];
 	sprintf(from, "%d:%d", nat.ports[0], nat.ports[1]);
-	inet_addr_to_cidr(nat.ipaddr.s_addr, nat.netmask.s_addr, ipaddr);
-	inet_addr_to_cidr(nat.match.dst.ipaddr, 0xffffffff, ipaddr_from);
+	inet_addr_to_cidr((struct in_addr)nat.ipaddr, (struct in_addr)netmask, ipaddr);
+	inet_addr_to_cidr((struct in_addr)nat.match.dst.ipaddr, (struct in_addr)nat.match.dst.netmask , ipaddr_from);
 	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
 	if (nat.match.ipproto == IPPROTO_TCP){
 	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
