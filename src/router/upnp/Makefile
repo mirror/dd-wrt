@@ -47,6 +47,10 @@ CFLAGS += -DHAVE_WHRHPGN
 endif
 endif
 
+ifeq ($(CONFIG_NFTABLES),y)
+  CFLAGS += -DHAVE_NFTABLES
+endif
+
 CFLAGS += $(MIPS16_OPT) $(THUMB) $(LTO)
 LDFLAGS += $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
