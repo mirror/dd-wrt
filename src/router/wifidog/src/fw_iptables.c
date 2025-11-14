@@ -57,6 +57,12 @@ static void iptables_load_ruleset(const char *, const char *, const char *);
 Used to supress the error output of the firewall during destruction */
 static int fw_quiet = 0;
 
+int use_nft(void) {
+FILE *fp = popen("iptables-nft -V","rb");
+int ret = !fp;
+pclose(fp);
+}
+
 /** @internal
  * @brief Insert $ID$ with the gateway's id in a string.
  *
@@ -106,6 +112,9 @@ iptables_do_command(const char *format, ...)
     safe_vasprintf(&fmt_cmd, format, vlist);
     va_end(vlist);
 
+    if (use_nft())
+    safe_asprintf(&cmd, "iptables-nft %s", fmt_cmd);
+    else
     safe_asprintf(&cmd, "iptables %s", fmt_cmd);
     free(fmt_cmd);
 
@@ -517,6 +526,9 @@ iptables_fw_destroy_mention(const char *table, const char *chain, const char *me
 
     debug(LOG_DEBUG, "Attempting to destroy all mention of %s from %s.%s", victim, table, chain);
 
+    if (use_nft())
+    safe_asprintf(&command, "iptables-nft -t %s -L %s -n --line-numbers -v", table, chain);
+    else
     safe_asprintf(&command, "iptables -t %s -L %s -n --line-numbers -v", table, chain);
     iptables_insert_gateway_id(&command);
 
@@ -641,6 +653,9 @@ iptables_fw_counters_update(void)
     struct in_addr tempaddr;
 
     /* Look for outgoing traffic */
+    if (use_nft())
+    safe_asprintf(&script, "%s %s", "iptables-nft", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
+    else
     safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
     iptables_insert_gateway_id(&script);
     output = popen(script, "r");
@@ -687,6 +702,9 @@ iptables_fw_counters_update(void)
     pclose(output);
 
     /* Look for incoming traffic */
+    if (use_nft())
+    safe_asprintf(&script, "%s %s", "iptables-nft", "-v -n -x -t mangle -L " CHAIN_INCOMING);
+    else
     safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_INCOMING);
     iptables_insert_gateway_id(&script);
     output = popen(script, "r");
