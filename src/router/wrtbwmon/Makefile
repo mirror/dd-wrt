@@ -1,3 +1,10 @@
+
+include $(TOP)/.config
+
+ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
+  include $(SRCBASE)/cy_conf.mak
+endif
+
 clean:
 	@true
 all:
