@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <netinet/ether.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <linux/types.h>
@@ -61,7 +62,6 @@ struct in_addr;
  * %XTTYPE_SYSLOGLEVEL:	syslog level by name or number
  * %XTTYPE_HOST:	one host or address (ptr: union nf_inet_addr)
  * %XTTYPE_HOSTMASK:	one host or address, with an optional prefix length
- * 			(ptr: union nf_inet_addr; only host portion is stored)
  * %XTTYPE_PROTOCOL:	protocol number/name from /etc/protocols (ptr: uint8_t)
  * %XTTYPE_PORT:	16-bit port name or number (supports %XTOPT_NBO)
  * %XTTYPE_PORTRC:	colon-separated port range (names acceptable),
@@ -69,6 +69,7 @@ struct in_addr;
  * %XTTYPE_PLEN:	prefix length
  * %XTTYPE_PLENMASK:	prefix length (ptr: union nf_inet_addr)
  * %XTTYPE_ETHERMAC:	Ethernet MAC address in hex form
+ * %XTTYPE_ETHERMACMASK: Ethernet MAC address in hex form with optional mask
  */
 enum xt_option_type {
 	XTTYPE_NONE,
@@ -93,6 +94,7 @@ enum xt_option_type {
 	XTTYPE_PLEN,
 	XTTYPE_PLENMASK,
 	XTTYPE_ETHERMAC,
+	XTTYPE_ETHERMACMASK,
 };
 
 /**
@@ -122,6 +124,7 @@ enum xt_option_flags {
  * @size:	size of the item pointed to by @ptroff; this is a safeguard
  * @min:	lowest allowed value (for singular integral types)
  * @max:	highest allowed value (for singular integral types)
+ * @base:	assumed base of parsed value for integer types (default 0)
  */
 struct xt_option_entry {
 	const char *name;
@@ -129,7 +132,7 @@ struct xt_option_entry {
 	unsigned int id, excl, also, flags;
 	unsigned int ptroff;
 	size_t size;
-	unsigned int min, max;
+	unsigned int min, max, base;
 };
 
 /**
@@ -167,7 +170,9 @@ struct xt_option_call {
 		struct {
 			uint32_t mark, mask;
 		};
-		uint8_t ethermac[6];
+		struct {
+			uint8_t ethermac[ETH_ALEN], ethermacmask[ETH_ALEN];
+		};
 	} val;
 	/* Wished for a world where the ones below were gone: */
 	union {
@@ -203,6 +208,7 @@ struct xtables_lmap {
 
 enum xtables_ext_flags {
 	XTABLES_EXT_ALIAS = 1 << 0,
+	XTABLES_EXT_WATCHER = 1 << 1,
 };
 
 struct xt_xlate;
@@ -211,14 +217,14 @@ struct xt_xlate_mt_params {
 	const void			*ip;
 	const struct xt_entry_match	*match;
 	int				numeric;
-	bool				escape_quotes;
+	bool				escape_quotes;	/* not used anymore, retained for ABI */
 };
 
 struct xt_xlate_tg_params {
 	const void			*ip;
 	const struct xt_entry_target	*target;
 	int				numeric;
-	bool				escape_quotes;
+	bool				escape_quotes; /* not used anymore, retained for ABI */
 };
 
 /* Include file for additions: new matches and targets. */
@@ -453,6 +459,7 @@ extern void xtables_set_nfproto(uint8_t);
 extern void *xtables_calloc(size_t, size_t);
 extern void *xtables_malloc(size_t);
 extern void *xtables_realloc(void *, size_t);
+char *xtables_strdup(const char *);
 
 extern int xtables_insmod(const char *, const char *, bool);
 extern int xtables_load_ko(const char *, bool);
@@ -568,6 +575,9 @@ extern void xtables_save_string(const char *value);
 #define FMT(tab,notab) ((format) & FMT_NOTABLE ? (notab) : (tab))
 
 extern void xtables_print_num(uint64_t number, unsigned int format);
+extern int xtables_parse_mac_and_mask(const char *from, void *to, void *mask);
+extern int xtables_print_well_known_mac_and_mask(const void *mac,
+						 const void *mask);
 extern void xtables_print_mac(const unsigned char *macaddress);
 extern void xtables_print_mac_and_mask(const unsigned char *mac,
 				       const unsigned char *mask);
@@ -587,18 +597,6 @@ extern void xtables_print_val_mask(unsigned int val, unsigned int mask,
 				   const struct xtables_lmap *lmap);
 
 #define xtables_print_mark_mask(mark, mask) xtables_print_val_mask(mark, mask, NULL);
-
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
-#	ifdef _INIT
-#		undef _init
-#		define _init _INIT
-#	endif
-	extern void init_extensions(void);
-	extern void init_extensions4(void);
-	extern void init_extensions6(void);
-#else
-#	define _init __attribute__((constructor)) _INIT
-#endif
 
 extern const struct xtables_pprot xtables_chain_protos[];
 extern uint16_t xtables_parse_protocol(const char *s);
@@ -636,9 +634,21 @@ extern const char *xtables_lmap_id2name(const struct xtables_lmap *, int);
 struct xt_xlate *xt_xlate_alloc(int size);
 void xt_xlate_free(struct xt_xlate *xl);
 void xt_xlate_add(struct xt_xlate *xl, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void xt_xlate_add_nospc(struct xt_xlate *xl, const char *fmt, ...) __attribute__((format(printf,2,3)));
+#define xt_xlate_rule_add xt_xlate_add
+#define xt_xlate_rule_add_nospc xt_xlate_add_nospc
+void xt_xlate_set_add(struct xt_xlate *xl, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void xt_xlate_set_add_nospc(struct xt_xlate *xl, const char *fmt, ...) __attribute__((format(printf,2,3)));
 void xt_xlate_add_comment(struct xt_xlate *xl, const char *comment);
 const char *xt_xlate_get_comment(struct xt_xlate *xl);
+void xl_xlate_set_family(struct xt_xlate *xl, uint8_t family);
+uint8_t xt_xlate_get_family(struct xt_xlate *xl);
 const char *xt_xlate_get(struct xt_xlate *xl);
+#define xt_xlate_rule_get xt_xlate_get
+const char *xt_xlate_set_get(struct xt_xlate *xl);
+
+/* informed target lookups */
+void xtables_announce_chain(const char *name);
 
 #ifdef XTABLES_INTERNAL
 
@@ -648,9 +658,55 @@ const char *xt_xlate_get(struct xt_xlate *xl);
 #		define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 #	endif
 
+#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
+#	ifdef _INIT
+#		undef _init
+#		define _init _INIT
+#	endif
+	extern void init_extensions(void);
+	extern void init_extensions4(void);
+	extern void init_extensions6(void);
+	extern void init_extensionsa(void);
+	extern void init_extensionsb(void);
+#else
+#	define _init __attribute__((constructor)) _INIT
+#	define EMPTY_FUNC_DEF(x) static inline void x(void) {}
+	EMPTY_FUNC_DEF(init_extensions)
+	EMPTY_FUNC_DEF(init_extensions4)
+	EMPTY_FUNC_DEF(init_extensions6)
+	EMPTY_FUNC_DEF(init_extensionsa)
+	EMPTY_FUNC_DEF(init_extensionsb)
+#	undef EMPTY_FUNC_DEF
+#endif
+
 extern void _init(void);
 
-#endif
+/**
+ * xtables_afinfo - protocol family dependent information
+ * @kmod:		kernel module basename (e.g. "ip_tables")
+ * @proc_exists:	file which exists in procfs when module already loaded
+ * @libprefix:		prefix of .so library name (e.g. "libipt_")
+ * @family:		nfproto family
+ * @ipproto:		used by setsockopt (e.g. IPPROTO_IP)
+ * @so_rev_match:	optname to check revision support of match
+ * @so_rev_target:	optname to check revision support of target
+ */
+struct xtables_afinfo {
+	const char *kmod;
+	const char *proc_exists;
+	const char *libprefix;
+	uint8_t family;
+	uint8_t ipproto;
+	int so_rev_match;
+	int so_rev_target;
+};
+
+extern const struct xtables_afinfo *afinfo;
+
+/* base offset of merged extensions' consecutive options */
+#define XT_OPTION_OFFSET_SCALE	256
+
+#endif /* XTABLES_INTERNAL */
 
 #ifdef __cplusplus
 } /* extern "C" */

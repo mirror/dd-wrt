@@ -9,17 +9,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <xtables.h>
 #include <linux/netfilter_bridge/ebt_redirect.h>
 #include "iptables/nft.h"
 #include "iptables/nft-bridge.h"
 
-#define REDIRECT_TARGET '1'
-static const struct option brredir_opts[] =
+enum {
+	O_TARGET,
+};
+
+static const struct xt_option_entry brredir_opts[] =
 {
-	{ "redirect-target", required_argument, 0, REDIRECT_TARGET },
-	{ 0 }
+	{ .name = "redirect-target", .id = O_TARGET, .type = XTTYPE_STRING },
+	XTOPT_TABLEEND,
 };
 
 static void brredir_print_help(void)
@@ -37,23 +39,15 @@ static void brredir_init(struct xt_entry_target *target)
 	redirectinfo->target = EBT_ACCEPT;
 }
 
-#define OPT_REDIRECT_TARGET  0x01
-static int brredir_parse(int c, char **argv, int invert, unsigned int *flags,
-			 const void *entry, struct xt_entry_target **target)
+static void brredir_parse(struct xt_option_call *cb)
 {
-	struct ebt_redirect_info *redirectinfo =
-	   (struct ebt_redirect_info *)(*target)->data;
+	struct ebt_redirect_info *redirectinfo = cb->data;
 
-	switch (c) {
-	case REDIRECT_TARGET:
-		EBT_CHECK_OPTION(flags, OPT_REDIRECT_TARGET);
-		if (ebt_fill_target(optarg, (unsigned int *)&redirectinfo->target))
-			xtables_error(PARAMETER_PROBLEM, "Illegal --redirect-target target");
-		break;
-	default:
-		return 0;
-	}
-	return 1;
+	xtables_option_parse(cb);
+	if (cb->entry->id == O_TARGET &&
+	    ebt_fill_target(cb->arg, (unsigned int *)&redirectinfo->target))
+		xtables_error(PARAMETER_PROBLEM,
+			      "Illegal --redirect-target target");
 }
 
 static void brredir_print(const void *ip, const struct xt_entry_target *target, int numeric)
@@ -83,10 +77,10 @@ static int brredir_xlate(struct xt_xlate *xl,
 {
 	const struct ebt_redirect_info *red = (const void*)params->target->data;
 
-	xt_xlate_add(xl, "meta set pkttype host");
-	if (red->target != EBT_ACCEPT)
+	xt_xlate_add(xl, "meta pkttype set host");
+	if (red->target != EBT_CONTINUE)
 		xt_xlate_add(xl, " %s ", brredir_verdict(red->target));
-	return 0;
+	return 1;
 }
 
 static struct xtables_target brredirect_target = {
@@ -97,10 +91,10 @@ static struct xtables_target brredirect_target = {
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_redirect_info)),
 	//.help		= brredir_print_help,
 	.init		= brredir_init,
-	.parse		= brredir_parse,
+	.x6_parse	= brredir_parse,
 	.print		= brredir_print,
 	.xlate		= brredir_xlate,
-	.extra_opts	= brredir_opts,
+	.x6_options	= brredir_opts,
 };
 
 void _init(void)

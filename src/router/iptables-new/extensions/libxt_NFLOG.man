@@ -9,7 +9,7 @@ may subscribe to the group to receive the packets. Like LOG, this is a
 non-terminating target, i.e. rule traversal continues at the next rule.
 .TP
 \fB\-\-nflog\-group\fP \fInlgroup\fP
-The netlink group (0 - 2^16\-1) to which packets are (only applicable for
+The netlink group (0\(en2\(ha16\-1) to which packets are (only applicable for
 nfnetlink_log). The default value is 0.
 .TP
 \fB\-\-nflog\-prefix\fP \fIprefix\fP
@@ -17,7 +17,7 @@ A prefix string to include in the log message, up to 64 characters
 long, useful for distinguishing messages in the logs.
 .TP
 \fB\-\-nflog\-range\fP \fIsize\fP
-This option has never worked, use --nflog-size instead
+This option has never worked, use \-\-nflog\-size instead
 .TP
 \fB\-\-nflog\-size\fP \fIsize\fP
 The number of bytes to be copied to userspace (only applicable for

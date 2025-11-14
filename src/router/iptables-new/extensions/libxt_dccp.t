@@ -6,6 +6,16 @@
 -p dccp -m dccp --sport 1:1023;=;OK
 -p dccp -m dccp --sport 1024:65535;=;OK
 -p dccp -m dccp --sport 1024:;-p dccp -m dccp --sport 1024:65535;OK
+-p dccp -m dccp --sport :;-p dccp -m dccp --sport 0:65535;OK
+-p dccp -m dccp --sport :4;-p dccp -m dccp --sport 0:4;OK
+-p dccp -m dccp --sport 4:;-p dccp -m dccp --sport 4:65535;OK
+-p dccp -m dccp --sport 4:4;-p dccp -m dccp --sport 4;OK
+-p dccp -m dccp --sport 4:3;;FAIL
+-p dccp -m dccp --dport :;-p dccp -m dccp --dport 0:65535;OK
+-p dccp -m dccp --dport :4;-p dccp -m dccp --dport 0:4;OK
+-p dccp -m dccp --dport 4:;-p dccp -m dccp --dport 4:65535;OK
+-p dccp -m dccp --dport 4:4;-p dccp -m dccp --dport 4;OK
+-p dccp -m dccp --dport 4:3;;FAIL
 -p dccp -m dccp ! --sport 1;=;OK
 -p dccp -m dccp ! --sport 65535;=;OK
 -p dccp -m dccp ! --dport 1;=;OK

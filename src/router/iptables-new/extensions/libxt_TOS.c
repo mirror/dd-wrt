@@ -183,28 +183,41 @@ static void tos_tg_save(const void *ip, const struct xt_entry_target *target)
 	printf(" --set-tos 0x%02x/0x%02x", info->tos_value, info->tos_mask);
 }
 
+static int __tos_xlate(struct xt_xlate *xl, const char *ip,
+		       uint8_t tos, uint8_t tosmask)
+{
+	xt_xlate_add(xl, "%s dscp set ", ip);
+	if ((tosmask & 0x3f) == 0x3f)
+		xt_xlate_add(xl, "0x%02x", tos >> 2);
+	else if (!tos)
+		xt_xlate_add(xl, "%s dscp and 0x%02x",
+			     ip, (uint8_t)~tosmask >> 2);
+	else if (tos == tosmask)
+		xt_xlate_add(xl, "%s dscp or 0x%02x", ip, tos >> 2);
+	else if (!tosmask)
+		xt_xlate_add(xl, "%s dscp xor 0x%02x", ip, tos >> 2);
+	else
+		xt_xlate_add(xl, "%s dscp and 0x%02x xor 0x%02x",
+			     ip, (uint8_t)~tosmask >> 2, tos >> 2);
+	return 1;
+}
+
 static int tos_xlate(struct xt_xlate *xl,
 		     const struct xt_xlate_tg_params *params)
 {
 	const struct ipt_tos_target_info *info =
 			(struct ipt_tos_target_info *) params->target->data;
-	uint8_t dscp = info->tos >> 2;
 
-	xt_xlate_add(xl, "ip dscp set 0x%02x", dscp);
-
-	return 1;
+	return __tos_xlate(xl, "ip", info->tos, UINT8_MAX);
 }
 
 static int tos_xlate6(struct xt_xlate *xl,
 		     const struct xt_xlate_tg_params *params)
 {
-	const struct ipt_tos_target_info *info =
-			(struct ipt_tos_target_info *) params->target->data;
-	uint8_t dscp = info->tos >> 2;
+	const struct xt_tos_target_info *info =
+			(struct xt_tos_target_info *)params->target->data;
 
-	xt_xlate_add(xl, "ip6 dscp set 0x%02x", dscp);
-
-	return 1;
+	return __tos_xlate(xl, "ip6", info->tos_value, info->tos_mask);
 }
 
 static struct xtables_target tos_tg_reg[] = {

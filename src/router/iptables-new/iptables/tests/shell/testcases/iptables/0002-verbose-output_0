@@ -54,3 +54,14 @@ diff -u <(echo "Flushing chain \`foobar'") <($XT_MULTI iptables -v -F foobar)
 diff -u <(echo "Zeroing chain \`foobar'") <($XT_MULTI iptables -v -Z foobar)
 
 diff -u <(echo "Deleting chain \`foobar'") <($XT_MULTI iptables -v -X foobar)
+
+# make sure non-verbose mode is silent
+diff -u <(echo -n "") <(
+	$XT_MULTI iptables -N foobar
+	$XT_MULTI iptables -A foobar $RULE1
+	$XT_MULTI iptables -A foobar $RULE2
+	$XT_MULTI iptables -C foobar $RULE1
+	$XT_MULTI iptables -D foobar $RULE2
+	$XT_MULTI iptables -F foobar
+	$XT_MULTI iptables -X foobar
+)

@@ -82,13 +82,18 @@ print_port(uint16_t port, int numeric)
 		printf("%s", service);
 }
 
+static bool skip_ports_match(uint16_t min, uint16_t max, bool inv)
+{
+	return min == 0 && max == UINT16_MAX && !inv;
+}
+
 static void
 print_ports(const char *name, uint16_t min, uint16_t max,
 	    int invert, int numeric)
 {
 	const char *inv = invert ? "!" : "";
 
-	if (min != 0 || max != 0xFFFF || invert) {
+	if (!skip_ports_match(min, max, invert)) {
 		printf(" %s", name);
 		if (min == max) {
 			printf(":%s", inv);
@@ -122,10 +127,11 @@ udp_print(const void *ip, const struct xt_entry_match *match, int numeric)
 static void udp_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct xt_udp *udpinfo = (struct xt_udp *)match->data;
+	bool inv_srcpt = udpinfo->invflags & XT_UDP_INV_SRCPT;
+	bool inv_dstpt = udpinfo->invflags & XT_UDP_INV_DSTPT;
 
-	if (udpinfo->spts[0] != 0
-	    || udpinfo->spts[1] != 0xFFFF) {
-		if (udpinfo->invflags & XT_UDP_INV_SRCPT)
+	if (!skip_ports_match(udpinfo->spts[0], udpinfo->spts[1], inv_srcpt)) {
+		if (inv_srcpt)
 			printf(" !");
 		if (udpinfo->spts[0]
 		    != udpinfo->spts[1])
@@ -137,9 +143,8 @@ static void udp_save(const void *ip, const struct xt_entry_match *match)
 			       udpinfo->spts[0]);
 	}
 
-	if (udpinfo->dpts[0] != 0
-	    || udpinfo->dpts[1] != 0xFFFF) {
-		if (udpinfo->invflags & XT_UDP_INV_DSTPT)
+	if (!skip_ports_match(udpinfo->dpts[0], udpinfo->dpts[1], inv_dstpt)) {
+		if (inv_dstpt)
 			printf(" !");
 		if (udpinfo->dpts[0]
 		    != udpinfo->dpts[1])
@@ -156,36 +161,38 @@ static int udp_xlate(struct xt_xlate *xl,
 		     const struct xt_xlate_mt_params *params)
 {
 	const struct xt_udp *udpinfo = (struct xt_udp *)params->match->data;
-	char *space= "";
+	bool inv_srcpt = udpinfo->invflags & XT_UDP_INV_SRCPT;
+	bool inv_dstpt = udpinfo->invflags & XT_UDP_INV_DSTPT;
+	bool xlated = false;
 
-	if (udpinfo->spts[0] != 0 || udpinfo->spts[1] != 0xFFFF) {
+	if (!skip_ports_match(udpinfo->spts[0], udpinfo->spts[1], inv_srcpt)) {
 		if (udpinfo->spts[0] != udpinfo->spts[1]) {
 			xt_xlate_add(xl,"udp sport %s%u-%u",
-				   udpinfo->invflags & XT_UDP_INV_SRCPT ?
-					 "!= ": "",
+				   inv_srcpt ? "!= ": "",
 				   udpinfo->spts[0], udpinfo->spts[1]);
 		} else {
 			xt_xlate_add(xl, "udp sport %s%u",
-				   udpinfo->invflags & XT_UDP_INV_SRCPT ?
-					 "!= ": "",
+				   inv_srcpt ? "!= ": "",
 				   udpinfo->spts[0]);
 		}
-		space = " ";
+		xlated = true;
 	}
 
-	if (udpinfo->dpts[0] != 0 || udpinfo->dpts[1] != 0xFFFF) {
+	if (!skip_ports_match(udpinfo->dpts[0], udpinfo->dpts[1], inv_dstpt)) {
 		if (udpinfo->dpts[0]  != udpinfo->dpts[1]) {
-			xt_xlate_add(xl,"%sudp dport %s%u-%u", space,
-				   udpinfo->invflags & XT_UDP_INV_SRCPT ?
-					 "!= ": "",
+			xt_xlate_add(xl,"udp dport %s%u-%u",
+				   inv_dstpt ? "!= ": "",
 				   udpinfo->dpts[0], udpinfo->dpts[1]);
 		} else {
-			xt_xlate_add(xl,"%sudp dport %s%u", space,
-				   udpinfo->invflags & XT_UDP_INV_SRCPT ?
-					 "!= ": "",
+			xt_xlate_add(xl,"udp dport %s%u",
+				   inv_dstpt ? "!= ": "",
 				   udpinfo->dpts[0]);
 		}
+		xlated = true;
 	}
+
+	if (!xlated)
+		xt_xlate_add(xl, "meta l4proto udp");
 
 	return 1;
 }

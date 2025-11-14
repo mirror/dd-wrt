@@ -22,10 +22,6 @@
 
 static int counters, verbose, noflush, wait;
 
-static struct timeval wait_interval = {
-	.tv_sec	= 1,
-};
-
 /* Keeping track of external matches and targets.  */
 static const struct option options[] = {
 	{.name = "counters",      .has_arg = 0, .val = 'c'},
@@ -51,7 +47,6 @@ static void print_usage(const char *name, const char *version)
 			"	   [ --help ]\n"
 			"	   [ --noflush ]\n"
 			"	   [ --wait=<seconds>\n"
-			"	   [ --wait-interval=<usecs>\n"
 			"	   [ --table=<TABLE> ]\n"
 			"	   [ --modprobe=<command> ]\n", name);
 }
@@ -83,8 +78,9 @@ create_handle(const struct iptables_restore_cb *cb, const char *tablename)
 	}
 
 	if (!handle)
-		xtables_error(PARAMETER_PROBLEM, "%s: unable to initialize "
-			"table '%s'\n", xt_params->program_name, tablename);
+		xtables_error(PARAMETER_PROBLEM,
+			      "%s: unable to initialize table '%s'",
+			      xt_params->program_name, tablename);
 
 	return handle;
 }
@@ -101,6 +97,7 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 	FILE *in;
 	int in_table = 0, testing = 0;
 	const char *tablename = NULL;
+	bool wait_interval_set = false;
 
 	line = 0;
 	lock = XT_LOCK_NOT_ACQUIRED;
@@ -114,10 +111,10 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 				counters = 1;
 				break;
 			case 'v':
-				verbose = 1;
+				verbose++;
 				break;
 			case 'V':
-				printf("%s v%s (legacy)\n",
+				printf("%s v%s\n",
 				       xt_params->program_name,
 				       xt_params->program_version);
 				exit(0);
@@ -135,7 +132,8 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 				wait = parse_wait_time(argc, argv);
 				break;
 			case 'W':
-				parse_wait_interval(argc, argv, &wait_interval);
+				parse_wait_interval(argc, argv);
+				wait_interval_set = true;
 				break;
 			case 'M':
 				xtables_modprobe_program = optarg;
@@ -165,7 +163,7 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 	}
 	else in = stdin;
 
-	if (!wait_interval.tv_sec && !wait) {
+	if (wait_interval_set && !wait) {
 		fprintf(stderr, "Option --wait-interval requires option --wait\n");
 		exit(1);
 	}
@@ -187,12 +185,12 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 			if (!testing) {
 				DEBUGP("Calling commit\n");
 				ret = cb->ops->commit(handle);
-				cb->ops->free(handle);
-				handle = NULL;
 			} else {
 				DEBUGP("Not calling commit, testing\n");
 				ret = 1;
 			}
+			cb->ops->free(handle);
+			handle = NULL;
 
 			/* Done with the current table, release the lock. */
 			if (lock >= 0) {
@@ -203,7 +201,7 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 			in_table = 0;
 		} else if ((buffer[0] == '*') && (!in_table)) {
 			/* Acquire a lock before we create a new table handle */
-			lock = xtables_lock_or_exit(wait, &wait_interval);
+			lock = xtables_lock_or_exit(wait);
 
 			/* New table */
 			char *table;
@@ -212,8 +210,8 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 			DEBUGP("line %u, table '%s'\n", line, table);
 			if (!table)
 				xtables_error(PARAMETER_PROBLEM,
-					"%s: line %u table name invalid\n",
-					xt_params->program_name, line);
+					      "%s: line %u table name invalid",
+					      xt_params->program_name, line);
 
 			strncpy(curtable, table, XT_TABLE_MAXNAMELEN);
 			curtable[XT_TABLE_MAXNAMELEN] = '\0';
@@ -225,8 +223,6 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 				}
 				continue;
 			}
-			if (handle)
-				cb->ops->free(handle);
 
 			handle = create_handle(cb, table);
 			if (noflush == 0) {
@@ -252,8 +248,8 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 			DEBUGP("line %u, chain '%s'\n", line, chain);
 			if (!chain)
 				xtables_error(PARAMETER_PROBLEM,
-					   "%s: line %u chain name invalid\n",
-					   xt_params->program_name, line);
+					      "%s: line %u chain name invalid",
+					      xt_params->program_name, line);
 
 			if (strlen(chain) >= XT_EXTENSION_MAXNAMELEN)
 				xtables_error(PARAMETER_PROBLEM,
@@ -266,16 +262,14 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 					DEBUGP("Flushing existing user defined chain '%s'\n", chain);
 					if (!cb->ops->flush_entries(chain, handle))
 						xtables_error(PARAMETER_PROBLEM,
-							   "error flushing chain "
-							   "'%s':%s\n", chain,
-							   strerror(errno));
+							      "error flushing chain '%s':%s",
+							      chain, strerror(errno));
 				} else {
 					DEBUGP("Creating new chain '%s'\n", chain);
 					if (!cb->ops->create_chain(chain, handle))
 						xtables_error(PARAMETER_PROBLEM,
-							   "error creating chain "
-							   "'%s':%s\n", chain,
-							   strerror(errno));
+							      "error creating chain '%s':%s",
+							      chain, strerror(errno));
 				}
 			}
 
@@ -283,44 +277,46 @@ ip46tables_restore_main(const struct iptables_restore_cb *cb,
 			DEBUGP("line %u, policy '%s'\n", line, policy);
 			if (!policy)
 				xtables_error(PARAMETER_PROBLEM,
-					   "%s: line %u policy invalid\n",
-					   xt_params->program_name, line);
+					      "%s: line %u policy invalid",
+					      xt_params->program_name, line);
 
 			if (strcmp(policy, "-") != 0) {
+				char *ctrs = strtok(NULL, " \t\n");
 				struct xt_counters count = {};
 
-				if (counters) {
-					char *ctrs;
-					ctrs = strtok(NULL, " \t\n");
-
-					if (!ctrs || !parse_counters(ctrs, &count))
-						xtables_error(PARAMETER_PROBLEM,
-							  "invalid policy counters "
-							  "for chain '%s'\n", chain);
-				}
+				if ((!ctrs && counters) ||
+				    (ctrs && !parse_counters(ctrs, &count)))
+					xtables_error(PARAMETER_PROBLEM,
+						      "invalid policy counters for chain '%s'",
+						      chain);
 
 				DEBUGP("Setting policy of chain %s to %s\n",
 					chain, policy);
 
-				if (!cb->ops->set_policy(chain, policy, &count,
-						     handle))
+				if (!cb->ops->set_policy(chain, policy,
+							 counters ? &count : NULL,
+							 handle))
 					xtables_error(OTHER_PROBLEM,
-						"Can't set policy `%s'"
-						" on `%s' line %u: %s\n",
-						policy, chain, line,
-						cb->ops->strerror(errno));
+						      "Can't set policy `%s' on `%s' line %u: %s",
+						      policy, chain, line,
+						      cb->ops->strerror(errno));
 			}
 
+			xtables_announce_chain(chain);
 			ret = 1;
 
 		} else if (in_table) {
 			char *pcnt = NULL;
 			char *bcnt = NULL;
 			char *parsestart = buffer;
+			int i;
 
 			add_argv(&av_store, argv[0], 0);
 			add_argv(&av_store, "-t", 0);
 			add_argv(&av_store, curtable, 0);
+
+			for (i = 0; !noflush && i < verbose; i++)
+				add_argv(&av_store, "-v", 0);
 
 			tokenize_rule_counters(&parsestart, &pcnt, &bcnt, line);
 			if (counters && pcnt && bcnt) {
@@ -382,10 +378,8 @@ iptables_restore_main(int argc, char *argv[])
 				iptables_globals.program_version);
 		exit(1);
 	}
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 	init_extensions4();
-#endif
 
 	ret = ip46tables_restore_main(&ipt_restore_cb, argc, argv);
 
@@ -416,10 +410,8 @@ ip6tables_restore_main(int argc, char *argv[])
 				ip6tables_globals.program_version);
 		exit(1);
 	}
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 	init_extensions6();
-#endif
 
 	ret = ip46tables_restore_main(&ip6t_restore_cb, argc, argv);
 

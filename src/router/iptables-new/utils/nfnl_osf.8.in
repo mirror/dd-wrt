@@ -1,7 +1,7 @@
 .TH NFNL_OSF 8 "" "@PACKAGE_STRING@" "@PACKAGE_STRING@"
 
 .SH NAME
-nfnl_osf \- OS fingerprint loader utility
+nfnl_osf \(em OS fingerprint loader utility
 .SH SYNOPSIS
 
 .ad l
@@ -16,7 +16,7 @@ nfnl_osf \- OS fingerprint loader utility
 .SH DESCRIPTION
 The
 .B nfnl_osf
-utility allows to load a set of operating system signatures into the kernel for
+utility allows one to load a set of operating system signatures into the kernel for
 later matching against using iptables'
 .B osf
 match.

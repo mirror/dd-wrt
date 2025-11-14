@@ -11,37 +11,43 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <xtables.h>
 #include "nft.h"
 #include "nft-cmd.h"
+#include <libnftnl/set.h>
 
 struct nft_cmd *nft_cmd_new(struct nft_handle *h, int command,
 			    const char *table, const char *chain,
 			    struct iptables_command_state *state,
 			    int rulenum, bool verbose)
 {
+	struct nft_rule_ctx ctx = {
+		.command = command,
+	};
 	struct nftnl_rule *rule;
 	struct nft_cmd *cmd;
 
-	cmd = calloc(1, sizeof(struct nft_cmd));
-	if (!cmd)
-		return NULL;
-
+	cmd = xtables_calloc(1, sizeof(struct nft_cmd));
+	INIT_LIST_HEAD(&cmd->head);
+	cmd->error.lineno = h->error.lineno;
 	cmd->command = command;
-	cmd->table = strdup(table);
+	cmd->table = xtables_strdup(table);
 	if (chain)
-		cmd->chain = strdup(chain);
+		cmd->chain = xtables_strdup(chain);
 	cmd->rulenum = rulenum;
 	cmd->verbose = verbose;
 
 	if (state) {
-		rule = nft_rule_new(h, chain, table, state);
-		if (!rule)
+		rule = nft_rule_new(h, &ctx, chain, table, state);
+		if (!rule) {
+			nft_cmd_free(cmd);
 			return NULL;
+		}
 
 		cmd->obj.rule = rule;
 
 		if (!state->target && strlen(state->jumpto) > 0)
-			cmd->jumpto = strdup(state->jumpto);
+			cmd->jumpto = xtables_strdup(state->jumpto);
 	}
 
 	list_add_tail(&cmd->head, &h->cmd_list);
@@ -60,6 +66,7 @@ void nft_cmd_free(struct nft_cmd *cmd)
 	switch (cmd->command) {
 	case NFT_COMPAT_RULE_CHECK:
 	case NFT_COMPAT_RULE_DELETE:
+	case NFT_COMPAT_RULE_CHANGE_COUNTERS:
 		if (cmd->obj.rule)
 			nftnl_rule_free(cmd->obj.rule);
 		break;
@@ -91,7 +98,7 @@ static void nft_cmd_rule_bridge(struct nft_handle *h, const struct nft_cmd *cmd)
 
 int nft_cmd_rule_append(struct nft_handle *h, const char *chain,
 			const char *table, struct iptables_command_state *state,
-			void *ref, bool verbose)
+			bool verbose)
 {
 	struct nft_cmd *cmd;
 
@@ -167,7 +174,9 @@ int nft_cmd_rule_flush(struct nft_handle *h, const char *chain,
 	if (!cmd)
 		return 0;
 
-	if (chain || verbose)
+	if (h->family == NFPROTO_BRIDGE)
+		nft_cache_level_set(h, NFT_CL_RULES, cmd);
+	else if (chain || verbose)
 		nft_cache_level_set(h, NFT_CL_CHAINS, cmd);
 	else
 		nft_cache_level_set(h, NFT_CL_TABLES, cmd);
@@ -185,7 +194,7 @@ int nft_cmd_chain_zero_counters(struct nft_handle *h, const char *chain,
 	if (!cmd)
 		return 0;
 
-	nft_cache_level_set(h, NFT_CL_CHAINS, cmd);
+	nft_cache_level_set(h, NFT_CL_RULES, cmd);
 
 	return 1;
 }
@@ -205,12 +214,12 @@ int nft_cmd_chain_user_add(struct nft_handle *h, const char *chain,
 	return 1;
 }
 
-int nft_cmd_chain_user_del(struct nft_handle *h, const char *chain,
-			   const char *table, bool verbose)
+int nft_cmd_chain_del(struct nft_handle *h, const char *chain,
+		      const char *table, bool verbose)
 {
 	struct nft_cmd *cmd;
 
-	cmd = nft_cmd_new(h, NFT_COMPAT_CHAIN_USER_DEL, table, chain, NULL, -1,
+	cmd = nft_cmd_new(h, NFT_COMPAT_CHAIN_DEL, table, chain, NULL, -1,
 			  verbose);
 	if (!cmd)
 		return 0;
@@ -218,7 +227,7 @@ int nft_cmd_chain_user_del(struct nft_handle *h, const char *chain,
 	/* This triggers nft_bridge_chain_postprocess() when fetching the
 	 * rule cache.
 	 */
-	if (h->family == NFPROTO_BRIDGE)
+	if (h->family == NFPROTO_BRIDGE || !chain)
 		nft_cache_level_set(h, NFT_CL_RULES, cmd);
 	else
 		nft_cache_level_set(h, NFT_CL_CHAINS, cmd);
@@ -236,7 +245,7 @@ int nft_cmd_chain_user_rename(struct nft_handle *h,const char *chain,
 	if (!cmd)
 		return 0;
 
-	cmd->rename = strdup(newname);
+	cmd->rename = xtables_strdup(newname);
 
 	nft_cache_level_set(h, NFT_CL_CHAINS, cmd);
 
@@ -302,7 +311,7 @@ int nft_cmd_chain_set(struct nft_handle *h, const char *table,
 	if (!cmd)
 		return 0;
 
-	cmd->policy = strdup(policy);
+	cmd->policy = xtables_strdup(policy);
 	if (counters)
 		cmd->counters = *counters;
 
@@ -311,9 +320,14 @@ int nft_cmd_chain_set(struct nft_handle *h, const char *table,
 	return 1;
 }
 
-int nft_cmd_table_flush(struct nft_handle *h, const char *table)
+int nft_cmd_table_flush(struct nft_handle *h, const char *table, bool verbose)
 {
 	struct nft_cmd *cmd;
+
+	if (verbose) {
+		return nft_cmd_rule_flush(h, NULL, table, verbose) &&
+		       nft_cmd_chain_del(h, NULL, table, verbose);
+	}
 
 	cmd = nft_cmd_new(h, NFT_COMPAT_TABLE_FLUSH, table, NULL, NULL, -1,
 			  false);
@@ -382,14 +396,29 @@ int ebt_cmd_user_chain_policy(struct nft_handle *h, const char *table,
 	if (!cmd)
 		return 0;
 
-	cmd->policy = strdup(policy);
+	cmd->policy = xtables_strdup(policy);
 
 	nft_cache_level_set(h, NFT_CL_RULES, cmd);
 
 	return 1;
 }
 
-void nft_cmd_table_new(struct nft_handle *h, const char *table)
+int nft_cmd_rule_change_counters(struct nft_handle *h,
+				 const char *chain, const char *table,
+				 struct iptables_command_state *cs,
+				 int rule_nr, uint8_t counter_op, bool verbose)
 {
-	nft_cmd_new(h, NFT_COMPAT_TABLE_NEW, table, NULL, NULL, -1, false);
+	struct nft_cmd *cmd;
+
+	cmd = nft_cmd_new(h, NFT_COMPAT_RULE_CHANGE_COUNTERS, table, chain,
+			  rule_nr == -1 ? cs : NULL, rule_nr, verbose);
+	if (!cmd)
+		return 0;
+
+	cmd->counter_op = counter_op;
+	cmd->counters = cs->counters;
+
+	nft_cache_level_set(h, NFT_CL_RULES, cmd);
+
+	return 1;
 }

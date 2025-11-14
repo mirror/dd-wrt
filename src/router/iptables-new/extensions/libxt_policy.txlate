@@ -1,5 +1,5 @@
 iptables-translate -A INPUT -m policy --pol ipsec --dir in
-nft add rule ip filter INPUT meta secpath exists counter
+nft 'add rule ip filter INPUT meta secpath exists counter'
 
 iptables-translate -A INPUT -m policy --pol none --dir in
-nft add rule ip filter INPUT meta secpath missing counter
+nft 'add rule ip filter INPUT meta secpath missing counter'

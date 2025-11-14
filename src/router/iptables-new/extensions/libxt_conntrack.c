@@ -346,14 +346,13 @@ static void conntrack_parse(struct xt_option_call *cb)
 			sinfo->invflags |= XT_CONNTRACK_STATE;
 		break;
 	case O_CTPROTO:
+		if (cb->val.protocol == 0)
+			xtables_error(PARAMETER_PROBLEM, cb->invert ?
+				      "condition would always match protocol" :
+				      "rule would never match protocol");
 		sinfo->tuple[IP_CT_DIR_ORIGINAL].dst.protonum = cb->val.protocol;
 		if (cb->invert)
 			sinfo->invflags |= XT_CONNTRACK_PROTO;
-		if (sinfo->tuple[IP_CT_DIR_ORIGINAL].dst.protonum == 0
-		    && (sinfo->invflags & XT_INV_PROTO))
-			xtables_error(PARAMETER_PROBLEM,
-				   "rule would never match protocol");
-
 		sinfo->flags |= XT_CONNTRACK_PROTO;
 		break;
 	case O_CTORIGSRC:
@@ -411,11 +410,11 @@ static void conntrack_mt_parse(struct xt_option_call *cb, uint8_t rev)
 			info->invert_flags |= XT_CONNTRACK_STATE;
 		break;
 	case O_CTPROTO:
+		if (cb->val.protocol == 0)
+			xtables_error(PARAMETER_PROBLEM, cb->invert ?
+				      "conntrack: condition would always match protocol" :
+				      "conntrack: rule would never match protocol");
 		info->l4proto = cb->val.protocol;
-		if (info->l4proto == 0 && (info->invert_flags & XT_INV_PROTO))
-			xtables_error(PARAMETER_PROBLEM, "conntrack: rule would "
-			           "never match protocol");
-
 		info->match_flags |= XT_CONNTRACK_PROTO;
 		if (cb->invert)
 			info->invert_flags |= XT_CONNTRACK_PROTO;
@@ -778,7 +777,7 @@ matchinfo_print(const void *ip, const struct xt_entry_match *match, int numeric,
 
 static void
 conntrack_dump_ports(const char *prefix, const char *opt,
-		     u_int16_t port_low, u_int16_t port_high)
+		     uint16_t port_low, uint16_t port_high)
 {
 	if (port_high == 0 || port_low == port_high)
 		printf(" %s%s %u", prefix, opt, port_low);
@@ -1103,32 +1102,6 @@ static void state_ct23_parse(struct xt_option_call *cb)
 		sinfo->invert_flags |= XT_CONNTRACK_STATE;
 }
 
-static void state_print_state(unsigned int statemask)
-{
-	const char *sep = "";
-
-	if (statemask & XT_CONNTRACK_STATE_INVALID) {
-		printf("%sINVALID", sep);
-		sep = ",";
-	}
-	if (statemask & XT_CONNTRACK_STATE_BIT(IP_CT_NEW)) {
-		printf("%sNEW", sep);
-		sep = ",";
-	}
-	if (statemask & XT_CONNTRACK_STATE_BIT(IP_CT_RELATED)) {
-		printf("%sRELATED", sep);
-		sep = ",";
-	}
-	if (statemask & XT_CONNTRACK_STATE_BIT(IP_CT_ESTABLISHED)) {
-		printf("%sESTABLISHED", sep);
-		sep = ",";
-	}
-	if (statemask & XT_CONNTRACK_STATE_UNTRACKED) {
-		printf("%sUNTRACKED", sep);
-		sep = ",";
-	}
-}
-
 static void
 state_print(const void *ip,
       const struct xt_entry_match *match,
@@ -1136,21 +1109,24 @@ state_print(const void *ip,
 {
 	const struct xt_state_info *sinfo = (const void *)match->data;
 
-	printf(" state ");
-	state_print_state(sinfo->statemask);
+	printf(" state");
+	print_state(sinfo->statemask);
 }
 
 static void state_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct xt_state_info *sinfo = (const void *)match->data;
 
-	printf(" --state ");
-	state_print_state(sinfo->statemask);
+	printf(" --state");
+	print_state(sinfo->statemask);
 }
 
-static void state_xlate_print(struct xt_xlate *xl, unsigned int statemask)
+static void state_xlate_print(struct xt_xlate *xl, unsigned int statemask, int inverted)
 {
 	const char *sep = "";
+
+	if (inverted)
+		xt_xlate_add(xl, "! ");
 
 	if (statemask & XT_CONNTRACK_STATE_INVALID) {
 		xt_xlate_add(xl, "%s%s", sep, "invalid");
@@ -1180,16 +1156,18 @@ static int state_xlate(struct xt_xlate *xl,
 	const struct xt_conntrack_mtinfo3 *sinfo =
 		(const void *)params->match->data;
 
-	xt_xlate_add(xl, "ct state %s", sinfo->invert_flags & XT_CONNTRACK_STATE ?
-					"!= " : "");
-	state_xlate_print(xl, sinfo->state_mask);
-	xt_xlate_add(xl, " ");
+	xt_xlate_add(xl, "ct state ");
+	state_xlate_print(xl, sinfo->state_mask,
+			  sinfo->invert_flags & XT_CONNTRACK_STATE);
 	return 1;
 }
 
-static void status_xlate_print(struct xt_xlate *xl, unsigned int statusmask)
+static void status_xlate_print(struct xt_xlate *xl, unsigned int statusmask, int inverted)
 {
 	const char *sep = "";
+
+	if (inverted)
+		xt_xlate_add(xl, "! ");
 
 	if (statusmask & IPS_EXPECTED) {
 		xt_xlate_add(xl, "%s%s", sep, "expected");
@@ -1249,18 +1227,24 @@ static int _conntrack3_mt_xlate(struct xt_xlate *xl,
 	}
 
 	if (sinfo->match_flags & XT_CONNTRACK_STATE) {
-		xt_xlate_add(xl, "%sct state %s", space,
-			     sinfo->invert_flags & XT_CONNTRACK_STATE ?
-			     "!= " : "");
-		state_xlate_print(xl, sinfo->state_mask);
-		space = " ";
+		if ((sinfo->state_mask & XT_CONNTRACK_STATE_SNAT) ||
+		    (sinfo->state_mask & XT_CONNTRACK_STATE_DNAT)) {
+			xt_xlate_add(xl, "%sct status %s%s", space,
+				     sinfo->invert_flags & XT_CONNTRACK_STATUS ? "!=" : "",
+				     sinfo->state_mask & XT_CONNTRACK_STATE_SNAT ? "snat" : "dnat");
+			space = " ";
+		} else {
+			xt_xlate_add(xl, "%sct state ", space);
+			state_xlate_print(xl, sinfo->state_mask,
+					  sinfo->invert_flags & XT_CONNTRACK_STATE);
+			space = " ";
+		}
 	}
 
 	if (sinfo->match_flags & XT_CONNTRACK_STATUS) {
-		xt_xlate_add(xl, "%sct status %s", space,
-			     sinfo->invert_flags & XT_CONNTRACK_STATUS ?
-			     "!= " : "");
-		status_xlate_print(xl, sinfo->status_mask);
+		xt_xlate_add(xl, "%sct status ", space);
+		status_xlate_print(xl, sinfo->status_mask,
+				   sinfo->invert_flags & XT_CONNTRACK_STATUS);
 		space = " ";
 	}
 
@@ -1277,9 +1261,6 @@ static int _conntrack3_mt_xlate(struct xt_xlate *xl,
 	}
 
 	if (sinfo->match_flags & XT_CONNTRACK_ORIGSRC) {
-		if (&sinfo->origsrc_addr == 0L)
-			return 0;
-
 		xt_xlate_add(xl, "%sct original saddr %s", space,
 			     sinfo->invert_flags & XT_CONNTRACK_ORIGSRC ?
 			     "!= " : "");
@@ -1289,9 +1270,6 @@ static int _conntrack3_mt_xlate(struct xt_xlate *xl,
 	}
 
 	if (sinfo->match_flags & XT_CONNTRACK_ORIGDST) {
-		if (&sinfo->origdst_addr == 0L)
-			return 0;
-
 		xt_xlate_add(xl, "%sct original daddr %s", space,
 			     sinfo->invert_flags & XT_CONNTRACK_ORIGDST ?
 			     "!= " : "");
@@ -1301,9 +1279,6 @@ static int _conntrack3_mt_xlate(struct xt_xlate *xl,
 	}
 
 	if (sinfo->match_flags & XT_CONNTRACK_REPLSRC) {
-		if (&sinfo->replsrc_addr == 0L)
-			return 0;
-
 		xt_xlate_add(xl, "%sct reply saddr %s", space,
 			     sinfo->invert_flags & XT_CONNTRACK_REPLSRC ?
 			     "!= " : "");
@@ -1313,9 +1288,6 @@ static int _conntrack3_mt_xlate(struct xt_xlate *xl,
 	}
 
 	if (sinfo->match_flags & XT_CONNTRACK_REPLDST) {
-		if (&sinfo->repldst_addr == 0L)
-			return 0;
-
 		xt_xlate_add(xl, "%sct reply daddr %s", space,
 			     sinfo->invert_flags & XT_CONNTRACK_REPLDST ?
 			     "!= " : "");
@@ -1504,8 +1476,8 @@ static struct xtables_match conntrack_mt_reg[] = {
 		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
 		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
 		//.help          = state_help,
-		.print         = state_print,
-		.save          = state_save,
+		.print         = conntrack1_mt4_print,
+		.save          = conntrack1_mt4_save,
 		.x6_parse      = state_ct1_parse,
 		.x6_options    = state_opts,
 	},
@@ -1519,8 +1491,8 @@ static struct xtables_match conntrack_mt_reg[] = {
 		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
 		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
 		//.help          = state_help,
-		.print         = state_print,
-		.save          = state_save,
+		.print         = conntrack2_mt_print,
+		.save          = conntrack2_mt_save,
 		.x6_parse      = state_ct23_parse,
 		.x6_options    = state_opts,
 	},
@@ -1534,8 +1506,8 @@ static struct xtables_match conntrack_mt_reg[] = {
 		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo3)),
 		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo3)),
 		//.help          = state_help,
-		.print         = state_print,
-		.save          = state_save,
+		.print         = conntrack3_mt_print,
+		.save          = conntrack3_mt_save,
 		.x6_parse      = state_ct23_parse,
 		.x6_options    = state_opts,
 		.xlate         = state_xlate,

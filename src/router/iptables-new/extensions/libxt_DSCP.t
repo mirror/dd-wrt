@@ -1,6 +1,6 @@
 :PREROUTING,INPUT,FORWARD,OUTPUT,POSTROUTING
 *mangle
--j DSCP --set-dscp 0;=;OK
+-j DSCP --set-dscp 0x00;=;OK
 -j DSCP --set-dscp 0x3f;=;OK
 -j DSCP --set-dscp -1;;FAIL
 -j DSCP --set-dscp 0x40;;FAIL

@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <xtables.h>
 
+#include <linux/netfilter/nf_log.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/netfilter/xt_NFLOG.h>
 
@@ -53,12 +54,16 @@ static void NFLOG_init(struct xt_entry_target *t)
 
 static void NFLOG_parse(struct xt_option_call *cb)
 {
+	char *nf_log_prefix = cb->udata;
+
 	xtables_option_parse(cb);
 	switch (cb->entry->id) {
 	case O_PREFIX:
 		if (strchr(cb->arg, '\n') != NULL)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Newlines not allowed in --log-prefix");
+
+		snprintf(nf_log_prefix, NF_LOG_PREFIXLEN, "%s", cb->arg);
 		break;
 	}
 }
@@ -69,7 +74,7 @@ static void NFLOG_check(struct xt_fcheck_call *cb)
 
 	if (cb->xflags & F_RANGE)
 		fprintf(stderr, "warn: --nflog-range has never worked and is no"
-			" longer supported, please use --nflog-size insted\n");
+			" longer supported, please use --nflog-size instead\n");
 
 	if (cb->xflags & F_SIZE)
 		info->flags |= XT_NFLOG_F_COPY_LEN;
@@ -78,7 +83,7 @@ static void NFLOG_check(struct xt_fcheck_call *cb)
 static void nflog_print(const struct xt_nflog_info *info, char *prefix)
 {
 	if (info->prefix[0] != '\0') {
-		printf(" %snflog-prefix ", prefix);
+		printf(" %snflog-prefix", prefix);
 		xtables_save_string(info->prefix);
 	}
 	if (info->group)
@@ -107,16 +112,12 @@ static void NFLOG_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static void nflog_print_xlate(const struct xt_nflog_info *info,
-			      struct xt_xlate *xl, bool escape_quotes)
+			      struct xt_xlate *xl)
 {
 	xt_xlate_add(xl, "log ");
-	if (info->prefix[0] != '\0') {
-		if (escape_quotes)
-			xt_xlate_add(xl, "prefix \\\"%s\\\" ", info->prefix);
-		else
-			xt_xlate_add(xl, "prefix \"%s\" ", info->prefix);
+	if (info->prefix[0] != '\0')
+		xt_xlate_add(xl, "prefix \"%s\" ", info->prefix);
 
-	}
 	if (info->flags & XT_NFLOG_F_COPY_LEN)
 		xt_xlate_add(xl, "snaplen %u ", info->len);
 	if (info->threshold != XT_NFLOG_DEFAULT_THRESHOLD)
@@ -130,7 +131,7 @@ static int NFLOG_xlate(struct xt_xlate *xl,
 	const struct xt_nflog_info *info =
 		(struct xt_nflog_info *)params->target->data;
 
-	nflog_print_xlate(info, xl, params->escape_quotes);
+	nflog_print_xlate(info, xl);
 
 	return 1;
 }
@@ -149,6 +150,7 @@ static struct xtables_target nflog_target = {
 	.save		= NFLOG_save,
 	.x6_options	= NFLOG_opts,
 	.xlate		= NFLOG_xlate,
+	.udata_size	= NF_LOG_PREFIXLEN
 };
 
 void _init(void)

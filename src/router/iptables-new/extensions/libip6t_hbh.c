@@ -57,10 +57,9 @@ parse_options(const char *optsstr, uint16_t *opts)
 {
         char *buffer, *cp, *next, *range;
         unsigned int i;
-	
-	buffer = strdup(optsstr);
-	if (!buffer) xtables_error(OTHER_PROBLEM, "strdup failed");
-			
+
+	buffer = xtables_strdup(optsstr);
+
         for (cp=buffer, i=0; cp && i<IP6T_OPTS_OPTSNR; cp=next,i++)
         {
                 next=strchr(cp, ',');

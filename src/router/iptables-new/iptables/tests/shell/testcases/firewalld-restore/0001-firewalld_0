@@ -230,21 +230,8 @@ for table in nat mangle raw filter;do
 	$XT_MULTI iptables-save -t $table | grep -v '^#' >> "$tmpfile"
 done
 
-case "$XT_MULTI" in
-*xtables-nft-multi)
-	# nft-multi displays chain names in different order, work around this for now
-	tmpfile2=$(mktemp)
-	sort "$tmpfile" > "$tmpfile2"
-	sort $(dirname "$0")/dumps/ipt-save-completed.txt > "$tmpfile"
-	diff -u $tmpfile $tmpfile2
-	RET=$?
-	rm -f "$tmpfile2"
-	;;
-*)
-	diff -u $tmpfile  $(dirname "$0")/dumps/ipt-save-completed.txt
-	RET=$?
-	;;
-esac
+diff -u $tmpfile  $(dirname "$0")/dumps/ipt-save-completed.txt
+RET=$?
 
 rm -f "$tmpfile"
 

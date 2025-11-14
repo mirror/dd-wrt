@@ -15,13 +15,13 @@ get_entries_count() { # (chain)
 
 set -x
 
-for t in filter nat;do
+for t in filter nat broute; do
 	$XT_MULTI ebtables -t $t -L || exit 1
 	$XT_MULTI ebtables -t $t -X || exit 1
 	$XT_MULTI ebtables -t $t -F || exit 1
 done
 
-for t in broute foobar ;do
+for t in foobar; do
 	$XT_MULTI ebtables -t $t -L &&
 	$XT_MULTI ebtables -t $t -X &&
 	$XT_MULTI ebtables -t $t -F
@@ -85,5 +85,9 @@ if [ $? -eq 0 ]; then
 	$XT_MULTI ebtables -t filter -L
 	exit 1
 fi
+
+$XT_MULTI ebtables -t filter -E FOO BAZ || exit 1
+$XT_MULTI ebtables -t filter -L | grep -q FOO && exit 1
+$XT_MULTI ebtables -t filter -L | grep -q BAZ || exit 1
 
 $XT_MULTI ebtables -t $t -F || exit 0

@@ -16,27 +16,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <xtables.h>
 #include "iptables/nft.h"
 #include "iptables/nft-bridge.h"
 #include <linux/netfilter_bridge/ebt_nflog.h>
 
 enum {
-	NFLOG_GROUP	= 0x1,
-	NFLOG_PREFIX	= 0x2,
-	NFLOG_RANGE	= 0x4,
-	NFLOG_THRESHOLD	= 0x8,
-	NFLOG_NFLOG	= 0x16,
+	O_GROUP	= 0,
+	O_PREFIX,
+	O_RANGE,
+	O_THRESHOLD,
+	O_NFLOG,
 };
 
-static const struct option brnflog_opts[] = {
-	{ .name = "nflog-group",     .has_arg = true,  .val = NFLOG_GROUP},
-	{ .name = "nflog-prefix",    .has_arg = true,  .val = NFLOG_PREFIX},
-	{ .name = "nflog-range",     .has_arg = true,  .val = NFLOG_RANGE},
-	{ .name = "nflog-threshold", .has_arg = true,  .val = NFLOG_THRESHOLD},
-	{ .name = "nflog",           .has_arg = false, .val = NFLOG_NFLOG},
-	XT_GETOPT_TABLEEND,
+static const struct xt_option_entry brnflog_opts[] = {
+	{ .name = "nflog-group",     .id = O_GROUP, .type = XTTYPE_UINT16,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nflog_info, group) },
+	{ .name = "nflog-prefix",    .id = O_PREFIX, .type = XTTYPE_STRING,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nflog_info, prefix) },
+	{ .name = "nflog-range",     .id = O_RANGE, .type = XTTYPE_UINT32,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nflog_info, len) },
+	{ .name = "nflog-threshold", .id = O_THRESHOLD, .type = XTTYPE_UINT16,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nflog_info, threshold) },
+	{ .name = "nflog",           .id = O_NFLOG, .type = XTTYPE_NONE },
+	XTOPT_TABLEEND,
 };
 
 static void brnflog_help(void)
@@ -57,55 +60,6 @@ static void brnflog_init(struct xt_entry_target *t)
 	info->prefix[0]	= '\0';
 	info->group	= EBT_NFLOG_DEFAULT_GROUP;
 	info->threshold = EBT_NFLOG_DEFAULT_THRESHOLD;
-}
-
-static int brnflog_parse(int c, char **argv, int invert, unsigned int *flags,
-			 const void *entry, struct xt_entry_target **target)
-{
-	struct ebt_nflog_info *info = (struct ebt_nflog_info *)(*target)->data;
-	unsigned int i;
-
-	if (invert)
-		xtables_error(PARAMETER_PROBLEM,
-			      "The use of '!' makes no sense for the"
-			      " nflog watcher");
-
-	switch (c) {
-	case NFLOG_PREFIX:
-		EBT_CHECK_OPTION(flags, NFLOG_PREFIX);
-		if (strlen(optarg) > EBT_NFLOG_PREFIX_SIZE - 1)
-			xtables_error(PARAMETER_PROBLEM,
-				      "Prefix too long for nflog-prefix");
-		strncpy(info->prefix, optarg, EBT_NFLOG_PREFIX_SIZE);
-		break;
-	case NFLOG_GROUP:
-		EBT_CHECK_OPTION(flags, NFLOG_GROUP);
-		if (!xtables_strtoui(optarg, NULL, &i, 1, UINT32_MAX))
-			xtables_error(PARAMETER_PROBLEM,
-				      "--nflog-group must be a number!");
-		info->group = i;
-		break;
-	case NFLOG_RANGE:
-		EBT_CHECK_OPTION(flags, NFLOG_RANGE);
-		if (!xtables_strtoui(optarg, NULL, &i, 1, UINT32_MAX))
-			xtables_error(PARAMETER_PROBLEM,
-				      "--nflog-range must be a number!");
-		info->len = i;
-		break;
-	case NFLOG_THRESHOLD:
-		EBT_CHECK_OPTION(flags, NFLOG_THRESHOLD);
-		if (!xtables_strtoui(optarg, NULL, &i, 1, UINT32_MAX))
-			xtables_error(PARAMETER_PROBLEM,
-				      "--nflog-threshold must be a number!");
-		info->threshold = i;
-		break;
-	case NFLOG_NFLOG:
-		EBT_CHECK_OPTION(flags, NFLOG_NFLOG);
-		break;
-	default:
-		return 0;
-	}
-	return 1;
 }
 
 static void
@@ -130,12 +84,8 @@ static int brnflog_xlate(struct xt_xlate *xl,
 	const struct ebt_nflog_info *info = (void *)params->target->data;
 
 	xt_xlate_add(xl, "log ");
-	if (info->prefix[0] != '\0') {
-		if (params->escape_quotes)
-			xt_xlate_add(xl, "prefix \\\"%s\\\" ", info->prefix);
-		else
-			xt_xlate_add(xl, "prefix \"%s\" ", info->prefix);
-	}
+	if (info->prefix[0] != '\0')
+		xt_xlate_add(xl, "prefix \"%s\" ", info->prefix);
 
 	xt_xlate_add(xl, "group %u ", info->group);
 
@@ -156,10 +106,10 @@ static struct xtables_target brnflog_watcher = {
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_nflog_info)),
 	.init		= brnflog_init,
 	//.help		= brnflog_help,
-	.parse		= brnflog_parse,
-	.print		= brnflog_print,
-	.xlate		= brnflog_xlate,
-	.extra_opts	= brnflog_opts,
+	.x6_parse	= xtables_option_parse,
+ 	.print		= brnflog_print,
+ 	.xlate		= brnflog_xlate,
+	.x6_options	= brnflog_opts,
 };
 
 void _init(void)

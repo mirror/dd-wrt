@@ -466,9 +466,10 @@ static int time_xlate(struct xt_xlate *xl,
 	const struct xt_time_info *info =
 		(const struct xt_time_info *)params->match->data;
 	unsigned int h, m, s,
-		     i, sep, mask, count;
+		     i, mask, count;
 	time_t tt_start, tt_stop;
 	struct tm *t_start, *t_stop;
+	const char *sep = "";
 
 	if (info->date_start != 0 ||
 	    info->date_stop != INT_MAX) {
@@ -498,7 +499,6 @@ static int time_xlate(struct xt_xlate *xl,
 	if (info->monthdays_match != XT_TIME_ALL_MONTHDAYS)
 		return 0;
 	if (info->weekdays_match != XT_TIME_ALL_WEEKDAYS) {
-		sep = 0;
 		mask = info->weekdays_match;
 		count = time_count_weekdays(mask);
 
@@ -507,12 +507,8 @@ static int time_xlate(struct xt_xlate *xl,
 			xt_xlate_add(xl, "{");
 		for (i = 1; i <= 7; ++i)
 			if (mask & (1 << i)) {
-				if (sep)
-					xt_xlate_add(xl, ",%u", i%7);
-				else {
-					xt_xlate_add(xl, "%u", i%7);
-					++sep;
-				}
+				xt_xlate_add(xl, "%s%u", sep, i%7);
+				sep = ", ";
 			}
 		if (count > 1)
 			xt_xlate_add(xl, "}");

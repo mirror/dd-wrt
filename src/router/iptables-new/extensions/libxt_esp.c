@@ -39,13 +39,18 @@ static void esp_parse(struct xt_option_call *cb)
 		espinfo->invflags |= XT_ESP_INV_SPI;
 }
 
+static bool skip_spis_match(uint32_t min, uint32_t max, bool inv)
+{
+	return min == 0 && max == UINT32_MAX && !inv;
+}
+
 static void
 print_spis(const char *name, uint32_t min, uint32_t max,
 	    int invert)
 {
 	const char *inv = invert ? "!" : "";
 
-	if (min != 0 || max != 0xFFFFFFFF || invert) {
+	if (!skip_spis_match(min, max, invert)) {
 		if (min == max)
 			printf(" %s:%s%u", name, inv, min);
 		else
@@ -69,11 +74,10 @@ esp_print(const void *ip, const struct xt_entry_match *match, int numeric)
 static void esp_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct xt_esp *espinfo = (struct xt_esp *)match->data;
+	bool inv_spi = espinfo->invflags & XT_ESP_INV_SPI;
 
-	if (!(espinfo->spis[0] == 0
-	    && espinfo->spis[1] == 0xFFFFFFFF)) {
-		printf("%s --espspi ",
-			(espinfo->invflags & XT_ESP_INV_SPI) ? " !" : "");
+	if (!skip_spis_match(espinfo->spis[0], espinfo->spis[1], inv_spi)) {
+		printf("%s --espspi ", inv_spi ? " !" : "");
 		if (espinfo->spis[0]
 		    != espinfo->spis[1])
 			printf("%u:%u",
@@ -90,15 +94,21 @@ static int esp_xlate(struct xt_xlate *xl,
 		     const struct xt_xlate_mt_params *params)
 {
 	const struct xt_esp *espinfo = (struct xt_esp *)params->match->data;
+	bool inv_spi = espinfo->invflags & XT_ESP_INV_SPI;
 
-	if (!(espinfo->spis[0] == 0 && espinfo->spis[1] == 0xFFFFFFFF)) {
-		xt_xlate_add(xl, "esp spi%s",
-			   (espinfo->invflags & XT_ESP_INV_SPI) ? " !=" : "");
+	if (!skip_spis_match(espinfo->spis[0], espinfo->spis[1], inv_spi)) {
+		xt_xlate_add(xl, "esp spi%s", inv_spi ? " !=" : "");
 		if (espinfo->spis[0] != espinfo->spis[1])
 			xt_xlate_add(xl, " %u-%u", espinfo->spis[0],
 				   espinfo->spis[1]);
 		else
 			xt_xlate_add(xl, " %u", espinfo->spis[0]);
+	} else if (afinfo->family == NFPROTO_IPV4) {
+		xt_xlate_add(xl, "meta l4proto esp");
+	} else if (afinfo->family == NFPROTO_IPV6) {
+		xt_xlate_add(xl, "exthdr esp exists");
+	} else {
+		return 0;
 	}
 
 	return 1;

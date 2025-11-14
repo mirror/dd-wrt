@@ -10,22 +10,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <xtables.h>
 #include <netinet/ether.h>
 #include <linux/netfilter_bridge/ebt_arpreply.h>
 #include "iptables/nft.h"
 #include "iptables/nft-bridge.h"
 
-#define OPT_REPLY_MAC     0x01
-#define OPT_REPLY_TARGET  0x02
+enum {
+	O_MAC,
+	O_TARGET,
+};
 
-#define REPLY_MAC '1'
-#define REPLY_TARGET '2'
-static const struct option brarpreply_opts[] = {
-	{ "arpreply-mac" ,    required_argument, 0, REPLY_MAC    },
-	{ "arpreply-target" , required_argument, 0, REPLY_TARGET },
-	XT_GETOPT_TABLEEND,
+static const struct xt_option_entry brarpreply_opts[] = {
+	{ .name = "arpreply-mac" ,    .id = O_MAC, .type = XTTYPE_ETHERMAC,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_arpreply_info, mac) },
+	{ .name = "arpreply-target" , .id = O_TARGET, .type = XTTYPE_STRING },
+	XTOPT_TABLEEND,
 };
 
 static void brarpreply_print_help(void)
@@ -44,31 +44,15 @@ static void brarpreply_init(struct xt_entry_target *target)
 	replyinfo->target = EBT_DROP;
 }
 
-static int
-brarpreply_parse(int c, char **argv, int invert, unsigned int *flags,
-	    const void *entry, struct xt_entry_target **tg)
-
+static void brarpreply_parse(struct xt_option_call *cb)
 {
-	struct ebt_arpreply_info *replyinfo = (void *)(*tg)->data;
-	struct ether_addr *addr;
+	struct ebt_arpreply_info *replyinfo = cb->data;
 
-	switch (c) {
-	case REPLY_MAC:
-		EBT_CHECK_OPTION(flags, OPT_REPLY_MAC);
-		if (!(addr = ether_aton(optarg)))
-			xtables_error(PARAMETER_PROBLEM, "Problem with specified --arpreply-mac mac");
-		memcpy(replyinfo->mac, addr, ETH_ALEN);
-		break;
-	case REPLY_TARGET:
-		EBT_CHECK_OPTION(flags, OPT_REPLY_TARGET);
-		if (ebt_fill_target(optarg, (unsigned int *)&replyinfo->target))
-			xtables_error(PARAMETER_PROBLEM, "Illegal --arpreply-target target");
-		break;
-
-	default:
-		return 0;
-	}
-	return 1;
+	xtables_option_parse(cb);
+	if (cb->entry->id == O_TARGET &&
+	    ebt_fill_target(cb->arg, (unsigned int *)&replyinfo->target))
+		xtables_error(PARAMETER_PROBLEM,
+			      "Illegal --arpreply-target target");
 }
 
 static void brarpreply_print(const void *ip, const struct xt_entry_target *t, int numeric)
@@ -90,9 +74,9 @@ static struct xtables_target arpreply_target = {
 	.size		= XT_ALIGN(sizeof(struct ebt_arpreply_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_arpreply_info)),
 	//.help		= brarpreply_print_help,
-	.parse		= brarpreply_parse,
+	.x6_parse		= brarpreply_parse,
 	.print		= brarpreply_print,
-	.extra_opts	= brarpreply_opts,
+	.x6_options	= brarpreply_opts,
 };
 
 void _init(void)

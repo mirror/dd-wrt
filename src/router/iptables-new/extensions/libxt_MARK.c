@@ -1,4 +1,3 @@
-#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <xtables.h>
@@ -69,6 +68,16 @@ static const struct xt_option_entry mark_tg_opts[] = {
 	XTOPT_TABLEEND,
 };
 
+static const struct xt_option_entry mark_tg_arp_opts[] = {
+	{.name = "set-mark", .id = O_SET_MARK, .type = XTTYPE_UINT32,
+	 .base = 16, .excl = F_ANY},
+	{.name = "and-mark", .id = O_AND_MARK, .type = XTTYPE_UINT32,
+	 .base = 16, .excl = F_ANY},
+	{.name = "or-mark", .id = O_OR_MARK, .type = XTTYPE_UINT32,
+	 .base = 16, .excl = F_ANY},
+	XTOPT_TABLEEND,
+};
+
 static void mark_tg_help(void)
 {
 	printf(
@@ -77,8 +86,7 @@ static void mark_tg_help(void)
 "  --set-mark value[/mask]   Clear bits in mask and OR value into nfmark\n"
 "  --and-mark bits           Binary AND the nfmark with bits\n"
 "  --or-mark bits            Binary OR the nfmark with bits\n"
-"  --xor-mark bits           Binary XOR the nfmark with bits\n"
-"\n");
+"  --xor-mark bits           Binary XOR the nfmark with bits\n");
 }
 
 static void MARK_parse_v0(struct xt_option_call *cb)
@@ -137,6 +145,8 @@ static void mark_tg_parse(struct xt_option_call *cb)
 	case O_SET_MARK:
 		info->mark = cb->val.mark;
 		info->mask = cb->val.mark | cb->val.mask;
+		if (cb->entry->type == XTTYPE_UINT32)
+			info->mask = UINT32_MAX;
 		break;
 	case O_AND_MARK:
 		info->mark = 0;
@@ -264,69 +274,6 @@ static void mark_tg_arp_print(const void *ip,
 	mark_tg_arp_save(ip, target);
 }
 
-#define MARK_OPT 1
-#define AND_MARK_OPT 2
-#define OR_MARK_OPT 3
-
-static struct option mark_tg_arp_opts[] = {
-	{ .name = "set-mark", .has_arg = required_argument, .flag = 0, .val = MARK_OPT },
-	{ .name = "and-mark", .has_arg = required_argument, .flag = 0, .val = AND_MARK_OPT },
-	{ .name = "or-mark", .has_arg = required_argument, .flag = 0, .val =  OR_MARK_OPT },
-	{ .name = NULL}
-};
-
-static int
-mark_tg_arp_parse(int c, char **argv, int invert, unsigned int *flags,
-		  const void *entry, struct xt_entry_target **target)
-{
-	struct xt_mark_tginfo2 *info =
-		(struct xt_mark_tginfo2 *)(*target)->data;
-	int i;
-
-	switch (c) {
-	case MARK_OPT:
-		if (sscanf(argv[optind-1], "%x", &i) != 1) {
-			xtables_error(PARAMETER_PROBLEM,
-				"Bad mark value `%s'", optarg);
-			return 0;
-		}
-		info->mark = i;
-		if (*flags)
-			xtables_error(PARAMETER_PROBLEM,
-				"MARK: Can't specify --set-mark twice");
-		*flags = 1;
-		break;
-	case AND_MARK_OPT:
-		if (sscanf(argv[optind-1], "%x", &i) != 1) {
-			xtables_error(PARAMETER_PROBLEM,
-				"Bad mark value `%s'", optarg);
-			return 0;
-		}
-		info->mark = 0;
-		info->mask = ~i;
-		if (*flags)
-			xtables_error(PARAMETER_PROBLEM,
-				"MARK: Can't specify --and-mark twice");
-		*flags = 1;
-		break;
-	case OR_MARK_OPT:
-		if (sscanf(argv[optind-1], "%x", &i) != 1) {
-			xtables_error(PARAMETER_PROBLEM,
-				"Bad mark value `%s'", optarg);
-			return 0;
-		}
-		info->mark = info->mask = i;
-		if (*flags)
-			xtables_error(PARAMETER_PROBLEM,
-				"MARK: Can't specify --or-mark twice");
-		*flags = 1;
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
 static int mark_tg_xlate(struct xt_xlate *xl,
 			 const struct xt_xlate_tg_params *params)
 {
@@ -367,6 +314,8 @@ static int MARK_xlate(struct xt_xlate *xl,
 	case XT_MARK_OR:
 		xt_xlate_add(xl, "mark or 0x%x ", (uint32_t)markinfo->mark);
 		break;
+	default:
+		return 0;
 	}
 
 	return 1;
@@ -427,8 +376,10 @@ static struct xtables_target mark_tg_reg[] = {
 		//.help          = mark_tg_help,
 		.print         = mark_tg_arp_print,
 		.save          = mark_tg_arp_save,
-		.parse         = mark_tg_arp_parse,
-		.extra_opts    = mark_tg_arp_opts,
+		.x6_parse      = mark_tg_parse,
+		.x6_fcheck     = mark_tg_check,
+		.x6_options    = mark_tg_arp_opts,
+		.xlate	       = mark_tg_xlate,
 	},
 };
 

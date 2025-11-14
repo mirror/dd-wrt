@@ -4,7 +4,7 @@ It can be used in combination with the
 .B LOG
 target to give limited logging, for example.
 .PP
-xt_limit has no negation support - you will have to use \-m hashlimit !
+xt_limit has no negation support \(em you will have to use \-m hashlimit !
 \-\-hashlimit \fIrate\fP in this case whilst omitting \-\-hashlimit\-mode.
 .TP
 \fB\-\-limit\fP \fIrate\fP[\fB/second\fP|\fB/minute\fP|\fB/hour\fP|\fB/day\fP]

@@ -58,13 +58,18 @@ static void ah_parse(struct xt_option_call *cb)
 	}
 }
 
+static bool skip_spi_match(uint32_t min, uint32_t max, bool inv)
+{
+	return min == 0 && max == UINT32_MAX && !inv;
+}
+
 static void
 print_spis(const char *name, uint32_t min, uint32_t max,
 	    int invert)
 {
 	const char *inv = invert ? "!" : "";
 
-	if (min != 0 || max != 0xFFFFFFFF || invert) {
+	if (!skip_spi_match(min, max, invert)) {
 		if (min == max)
 			printf("%s:%s%u", name, inv, min);
 		else
@@ -103,11 +108,10 @@ static void ah_print(const void *ip, const struct xt_entry_match *match,
 static void ah_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct ip6t_ah *ahinfo = (struct ip6t_ah *)match->data;
+	bool inv_spi = ahinfo->invflags & IP6T_AH_INV_SPI;
 
-	if (!(ahinfo->spis[0] == 0
-	    && ahinfo->spis[1] == 0xFFFFFFFF)) {
-		printf("%s --ahspi ",
-			(ahinfo->invflags & IP6T_AH_INV_SPI) ? " !" : "");
+	if (!skip_spi_match(ahinfo->spis[0], ahinfo->spis[1], inv_spi)) {
+		printf("%s --ahspi ", inv_spi ? " !" : "");
 		if (ahinfo->spis[0]
 		    != ahinfo->spis[1])
 			printf("%u:%u",
@@ -132,11 +136,11 @@ static int ah_xlate(struct xt_xlate *xl,
 		    const struct xt_xlate_mt_params *params)
 {
 	const struct ip6t_ah *ahinfo = (struct ip6t_ah *)params->match->data;
+	bool inv_spi = ahinfo->invflags & IP6T_AH_INV_SPI;
 	char *space = "";
 
-	if (!(ahinfo->spis[0] == 0 && ahinfo->spis[1] == 0xFFFFFFFF)) {
-		xt_xlate_add(xl, "ah spi%s ",
-			(ahinfo->invflags & IP6T_AH_INV_SPI) ? " !=" : "");
+	if (!skip_spi_match(ahinfo->spis[0], ahinfo->spis[1], inv_spi)) {
+		xt_xlate_add(xl, "ah spi%s ", inv_spi ? " !=" : "");
 		if (ahinfo->spis[0] != ahinfo->spis[1])
 			xt_xlate_add(xl, "%u-%u", ahinfo->spis[0],
 				     ahinfo->spis[1]);
@@ -158,7 +162,7 @@ static int ah_xlate(struct xt_xlate *xl,
 	}
 
 	if (!space[0]) /* plain '-m ah' */
-		xt_xlate_add(xl, "meta l4proto ah");
+		xt_xlate_add(xl, "exthdr ah exists");
 
 	return 1;
 }

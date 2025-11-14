@@ -147,7 +147,7 @@ parse_header(const char *flags) {
         char *ptr;
         char *buffer;
 
-        buffer = strdup(flags);
+        buffer = xtables_strdup(flags);
 
         for (ptr = strtok(buffer, ","); ptr; ptr = strtok(NULL, ",")) 
 		ret |= add_proto_to_mask(name_to_proto(ptr));

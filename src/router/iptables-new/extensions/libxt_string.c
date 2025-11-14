@@ -78,14 +78,13 @@ static void string_init(struct xt_entry_match *m)
 
 static void
 parse_string(const char *s, struct xt_string_info *info)
-{	
+{
 	/* xt_string does not need \0 at the end of the pattern */
-	if (strlen(s) <= XT_STRING_MAX_PATTERN_SIZE) {
-		strncpy(info->pattern, s, XT_STRING_MAX_PATTERN_SIZE);
-		info->patlen = strnlen(s, XT_STRING_MAX_PATTERN_SIZE);
-		return;
-	}
-	xtables_error(PARAMETER_PROBLEM, "STRING too long \"%s\"", s);
+	if (strlen(s) > sizeof(info->pattern))
+		xtables_error(PARAMETER_PROBLEM, "STRING too long \"%s\"", s);
+
+	info->patlen = strnlen(s, sizeof(info->pattern));
+	memcpy(info->pattern, s, info->patlen);
 }
 
 static void
@@ -269,7 +268,7 @@ string_print(const void *ip, const struct xt_entry_match *match, int numeric)
 	printf(" ALGO name %s", info->algo);
 	if (info->from_offset != 0)
 		printf(" FROM %u", info->from_offset);
-	if (info->to_offset != 0)
+	if (info->to_offset != UINT16_MAX)
 		printf(" TO %u", info->to_offset);
 	if (revision > 0 && info->u.v1.flags & XT_STRING_FLAG_IGNORECASE)
 		printf(" ICASE");
@@ -293,7 +292,7 @@ static void string_save(const void *ip, const struct xt_entry_match *match)
 	printf(" --algo %s", info->algo);
 	if (info->from_offset != 0)
 		printf(" --from %u", info->from_offset);
-	if (info->to_offset != 0)
+	if (info->to_offset != UINT16_MAX)
 		printf(" --to %u", info->to_offset);
 	if (revision > 0 && info->u.v1.flags & XT_STRING_FLAG_IGNORECASE)
 		printf(" --icase");

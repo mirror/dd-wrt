@@ -210,11 +210,11 @@ saveChain(char *chain, char *policy, struct xt_counters *ctr)
 {
 	if (nextChain >= maxChains)
 		xtables_error(PARAMETER_PROBLEM,
-			   "%s: line %u chain name invalid\n",
-			   prog_name, line);
+			      "%s: line %u chain name invalid",
+			      prog_name, line);
 
-	chains[nextChain].chain = strdup(chain);
-	chains[nextChain].policy = strdup(policy);
+	chains[nextChain].chain = xtables_strdup(chain);
+	chains[nextChain].policy = xtables_strdup(policy);
 	chains[nextChain].count = *ctr;
 	chains[nextChain].created = 0;
 	nextChain++;
@@ -225,13 +225,13 @@ finishChains(void)
 {
 	int c;
 
-	for (c = 0; c < nextChain; c++)
-		if (!chains[c].created) {
+	for (c = 0; c < nextChain; c++) {
+		if (!chains[c].created)
 			openChain(chains[c].chain, chains[c].policy,
 				  &(chains[c].count), '/');
-			free(chains[c].chain);
-			free(chains[c].policy);
-		}
+		free(chains[c].chain);
+		free(chains[c].policy);
+	}
 	nextChain = 0;
 }
 
@@ -610,8 +610,8 @@ iptables_xml_main(int argc, char *argv[])
 			DEBUGP("line %u, table '%s'\n", line, table);
 			if (!table)
 				xtables_error(PARAMETER_PROBLEM,
-					   "%s: line %u table name invalid\n",
-					   prog_name, line);
+					      "%s: line %u table name invalid",
+					      prog_name, line);
 
 			openTable(table);
 
@@ -626,8 +626,8 @@ iptables_xml_main(int argc, char *argv[])
 			DEBUGP("line %u, chain '%s'\n", line, chain);
 			if (!chain)
 				xtables_error(PARAMETER_PROBLEM,
-					   "%s: line %u chain name invalid\n",
-					   prog_name, line);
+					      "%s: line %u chain name invalid",
+					      prog_name, line);
 
 			DEBUGP("Creating new chain '%s'\n", chain);
 
@@ -635,8 +635,8 @@ iptables_xml_main(int argc, char *argv[])
 			DEBUGP("line %u, policy '%s'\n", line, policy);
 			if (!policy)
 				xtables_error(PARAMETER_PROBLEM,
-					   "%s: line %u policy invalid\n",
-					   prog_name, line);
+					      "%s: line %u policy invalid",
+					      prog_name, line);
 
 			ctrs = strtok(NULL, " \t\n");
 			parse_counters(ctrs, &count);

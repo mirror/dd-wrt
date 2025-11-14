@@ -1,5 +1,5 @@
 :INPUT,FORWARD,OUTPUT
--m dscp --dscp 0;=;OK
+-m dscp --dscp 0x00;=;OK
 -m dscp --dscp 0x3f;=;OK
 -m dscp --dscp -1;;FAIL
 -m dscp --dscp 0x40;;FAIL

@@ -66,7 +66,8 @@ static void print_connsecmark(const struct xt_connsecmark_target_info *info)
 		break;
 		
 	default:
-		xtables_error(OTHER_PROBLEM, PFX "invalid mode %hhu\n", info->mode);
+		xtables_error(OTHER_PROBLEM,
+			      PFX "invalid mode %hhu", info->mode);
 	}
 }
 

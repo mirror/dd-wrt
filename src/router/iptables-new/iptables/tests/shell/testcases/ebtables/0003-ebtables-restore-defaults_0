@@ -24,7 +24,7 @@ EXPECT='*filter
 -A FORWARD --limit 100/sec --limit-burst 42 -j ACCEPT
 -A FORWARD --limit 1000/sec --limit-burst 5 -j ACCEPT
 -A FORWARD --log-level notice --log-prefix "foobar" -j CONTINUE
--A FORWARD --log-level notice --log-prefix "" -j CONTINUE'
+-A FORWARD --log-level notice -j CONTINUE'
 
 $XT_MULTI ebtables --init-table
 $XT_MULTI ebtables-restore <<<$DUMP

@@ -20,23 +20,28 @@ Apply the limit onto the source group. This is the default if
 Apply the limit onto the destination group.
 .PP
 Examples:
-.TP
-# allow 2 telnet connections per client host
+.IP \(bu 4
+allow 2 telnet connections per client host:
+.br
 iptables \-A INPUT \-p tcp \-\-syn \-\-dport 23 \-m connlimit \-\-connlimit\-above 2 \-j REJECT
-.TP
-# you can also match the other way around:
+.IP \(bu 4
+you can also match the other way around:
+.br
 iptables \-A INPUT \-p tcp \-\-syn \-\-dport 23 \-m connlimit \-\-connlimit\-upto 2 \-j ACCEPT
-.TP
-# limit the number of parallel HTTP requests to 16 per class C sized \
-source network (24 bit netmask)
+.IP \(bu 4
+limit the number of parallel HTTP requests to 16 per class C sized \
+source network (24 bit netmask):
+.br
 iptables \-p tcp \-\-syn \-\-dport 80 \-m connlimit \-\-connlimit\-above 16
 \-\-connlimit\-mask 24 \-j REJECT
-.TP
-# limit the number of parallel HTTP requests to 16 for the link local network
-(ipv6)
+.IP \(bu 4
+limit the number of parallel HTTP requests to 16 for the link local network
+(IPv6):
+.br
 ip6tables \-p tcp \-\-syn \-\-dport 80 \-s fe80::/64 \-m connlimit \-\-connlimit\-above
 16 \-\-connlimit\-mask 64 \-j REJECT
-.TP
-# Limit the number of connections to a particular host:
+.IP \(bu 4
+Limit the number of connections to a particular host:
+.br
 ip6tables \-p tcp \-\-syn \-\-dport 49152:65535 \-d 2001:db8::1 \-m connlimit
-\-\-connlimit-above 100 \-j REJECT
+\-\-connlimit\-above 100 \-j REJECT

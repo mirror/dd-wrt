@@ -41,6 +41,7 @@ static void HMARK_help(void)
 
 #define hi struct xt_hmark_info
 
+/* values must match XT_HMARK_* ones (apart from O_HMARK_TYPE) */
 enum {
 	O_HMARK_SADDR_MASK,
 	O_HMARK_DADDR_MASK,
@@ -88,32 +89,32 @@ static const struct xt_option_entry HMARK_opts[] = {
 	{ .name  = "hmark-sport-mask",
 	  .type  = XTTYPE_UINT16,
 	  .id	 = O_HMARK_SPORT_MASK,
-	  .flags = XTOPT_PUT, XTOPT_POINTER(hi, port_mask.p16.src)
+	  .flags = XTOPT_PUT | XTOPT_NBO, XTOPT_POINTER(hi, port_mask.p16.src)
 	},
 	{ .name  = "hmark-dport-mask",
 	  .type  = XTTYPE_UINT16,
 	  .id	 = O_HMARK_DPORT_MASK,
-	  .flags = XTOPT_PUT, XTOPT_POINTER(hi, port_mask.p16.dst)
+	  .flags = XTOPT_PUT | XTOPT_NBO, XTOPT_POINTER(hi, port_mask.p16.dst)
 	},
 	{ .name  = "hmark-spi-mask",
 	  .type  = XTTYPE_UINT32,
 	  .id	 = O_HMARK_SPI_MASK,
-	  .flags = XTOPT_PUT, XTOPT_POINTER(hi, port_mask.v32)
+	  .flags = XTOPT_PUT | XTOPT_NBO, XTOPT_POINTER(hi, port_mask.v32)
 	},
 	{ .name  = "hmark-sport",
 	  .type  = XTTYPE_UINT16,
 	  .id	 = O_HMARK_SPORT,
-	  .flags = XTOPT_PUT, XTOPT_POINTER(hi, port_set.p16.src)
+	  .flags = XTOPT_PUT | XTOPT_NBO, XTOPT_POINTER(hi, port_set.p16.src)
 	},
 	{ .name  = "hmark-dport",
 	  .type  = XTTYPE_UINT16,
 	  .id	 = O_HMARK_DPORT,
-	  .flags = XTOPT_PUT, XTOPT_POINTER(hi, port_set.p16.dst)
+	  .flags = XTOPT_PUT | XTOPT_NBO, XTOPT_POINTER(hi, port_set.p16.dst)
 	},
 	{ .name  = "hmark-spi",
 	  .type  = XTTYPE_UINT32,
 	  .id	 = O_HMARK_SPI,
-	  .flags = XTOPT_PUT, XTOPT_POINTER(hi, port_set.v32)
+	  .flags = XTOPT_PUT | XTOPT_NBO, XTOPT_POINTER(hi, port_set.v32)
 	},
 	{ .name  = "hmark-proto-mask",
 	  .type  = XTTYPE_UINT16,
@@ -211,53 +212,10 @@ static void HMARK_parse(struct xt_option_call *cb, int plen)
 	case O_HMARK_TYPE:
 		hmark_parse_type(cb);
 		break;
-	case O_HMARK_SADDR_MASK:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_SADDR_MASK);
-		break;
-	case O_HMARK_DADDR_MASK:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_DADDR_MASK);
-		break;
-	case O_HMARK_SPI:
-		info->port_set.v32 = htonl(cb->val.u32);
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_SPI);
-		break;
-	case O_HMARK_SPORT:
-		info->port_set.p16.src = htons(cb->val.u16);
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_SPORT);
-		break;
-	case O_HMARK_DPORT:
-		info->port_set.p16.dst = htons(cb->val.u16);
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_DPORT);
-		break;
-	case O_HMARK_SPORT_MASK:
-		info->port_mask.p16.src = htons(cb->val.u16);
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_SPORT_MASK);
-		break;
-	case O_HMARK_DPORT_MASK:
-		info->port_mask.p16.dst = htons(cb->val.u16);
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_DPORT_MASK);
-		break;
-	case O_HMARK_SPI_MASK:
-		info->port_mask.v32 = htonl(cb->val.u32);
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_SPI_MASK);
-		break;
-	case O_HMARK_PROTO_MASK:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_PROTO_MASK);
-		break;
-	case O_HMARK_RND:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_RND);
-		break;
-	case O_HMARK_MODULUS:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_MODULUS);
-		break;
-	case O_HMARK_OFFSET:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_OFFSET);
-		break;
-	case O_HMARK_CT:
-		info->flags |= XT_HMARK_FLAG(XT_HMARK_CT);
+	default:
+		info->flags |= XT_HMARK_FLAG(cb->entry->id);
 		break;
 	}
-	cb->xflags |= (1 << cb->entry->id);
 }
 
 static void HMARK_ip4_parse(struct xt_option_call *cb)

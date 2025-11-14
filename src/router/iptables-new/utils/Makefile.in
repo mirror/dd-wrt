@@ -91,12 +91,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 sbin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
-
-#man_MANS += nfnl_osf.8
-#sbin_PROGRAMS += nfnl_osf
-#pkgdata_DATA += pf.os
-
-#nfnl_osf_LDADD = ${libnfnetlink_LIBS}
 @ENABLE_BPFC_TRUE@am__append_1 = nfbpf_compile.8
 @ENABLE_BPFC_TRUE@am__append_2 = nfbpf_compile
 @ENABLE_SYNCONF_TRUE@am__append_3 = nfsynproxy
@@ -108,7 +102,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(dist_pkgdata_DATA) \
+	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = nfnl_osf.8 nfbpf_compile.8
@@ -120,14 +115,15 @@ am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" \
 PROGRAMS = $(sbin_PROGRAMS)
 nfbpf_compile_SOURCES = nfbpf_compile.c
 nfbpf_compile_OBJECTS = nfbpf_compile.$(OBJEXT)
-nfbpf_compile_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+@ENABLE_BPFC_TRUE@nfbpf_compile_DEPENDENCIES = $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 nfsynproxy_SOURCES = nfsynproxy.c
 nfsynproxy_OBJECTS = nfsynproxy.$(OBJEXT)
-nfsynproxy_DEPENDENCIES =
+@ENABLE_SYNCONF_TRUE@nfsynproxy_DEPENDENCIES = $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -199,7 +195,7 @@ am__uninstall_files_from_dir = { \
 man8dir = $(mandir)/man8
 NROFF = nroff
 MANS = $(man_MANS)
-DATA = $(pkgdata_DATA)
+DATA = $(dist_pkgdata_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -289,6 +285,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+XT_LOCK_NAME = @XT_LOCK_NAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -341,6 +338,8 @@ libnfnetlink_CFLAGS = @libnfnetlink_CFLAGS@
 libnfnetlink_LIBS = @libnfnetlink_LIBS@
 libnftnl_CFLAGS = @libnftnl_CFLAGS@
 libnftnl_LIBS = @libnftnl_LIBS@
+libpcap_CFLAGS = @libpcap_CFLAGS@
+libpcap_LIBS = @libpcap_LIBS@
 libxtables_vage = @libxtables_vage@
 libxtables_vcurrent = @libxtables_vcurrent@
 libxtables_vmajor = @libxtables_vmajor@
@@ -357,6 +356,7 @@ program_transform_name = @program_transform_name@
 psdir = @psdir@
 regular_CFLAGS = @regular_CFLAGS@
 regular_CPPFLAGS = @regular_CPPFLAGS@
+regular_LDFLAGS = @regular_LDFLAGS@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -368,12 +368,13 @@ top_srcdir = @top_srcdir@
 xtlibdir = @xtlibdir@
 AM_CFLAGS = ${regular_CFLAGS}
 AM_CPPFLAGS = ${regular_CPPFLAGS} -I${top_builddir}/include \
-              -I${top_srcdir}/include ${libnfnetlink_CFLAGS}
+              -I${top_srcdir}/include ${libnfnetlink_CFLAGS} ${libpcap_CFLAGS}
 
-pkgdata_DATA = 
+AM_LDFLAGS = ${regular_LDFLAGS}
+dist_pkgdata_DATA = 
 man_MANS = $(am__append_1)
-@ENABLE_BPFC_TRUE@nfbpf_compile_LDADD = -lpcap
-@ENABLE_SYNCONF_TRUE@nfsynproxy_LDADD = -lpcap
+@ENABLE_BPFC_TRUE@nfbpf_compile_LDADD = ${libpcap_LIBS}
+@ENABLE_SYNCONF_TRUE@nfsynproxy_LDADD = ${libpcap_LIBS}
 CLEANFILES = nfnl_osf.8 nfbpf_compile.8
 all: all-am
 
@@ -548,9 +549,9 @@ uninstall-man8:
 	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^8][0-9a-z]*$$,8,;x' \
 	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
 	dir='$(DESTDIR)$(man8dir)'; $(am__uninstall_files_from_dir)
-install-pkgdataDATA: $(pkgdata_DATA)
+install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
 	if test -n "$$list"; then \
 	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgdatadir)'"; \
 	  $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)" || exit 1; \
@@ -564,9 +565,9 @@ install-pkgdataDATA: $(pkgdata_DATA)
 	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgdatadir)" || exit $$?; \
 	done
 
-uninstall-pkgdataDATA:
+uninstall-dist_pkgdataDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pkgdatadir)'; $(am__uninstall_files_from_dir)
 
@@ -690,6 +691,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@HAVE_LIBNFNETLINK_FALSE@uninstall-hook:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-sbinPROGRAMS \
@@ -713,7 +715,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-man install-pkgdataDATA
+install-data-am: install-dist_pkgdataDATA install-man
 
 install-dvi: install-dvi-am
 
@@ -759,31 +761,44 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-man uninstall-pkgdataDATA \
+uninstall-am: uninstall-dist_pkgdataDATA uninstall-man \
 	uninstall-sbinPROGRAMS
-
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 uninstall-man: uninstall-man8
 
-.MAKE: install-am install-strip
+.MAKE: install-am install-strip uninstall-am
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
 	clean-libtool clean-sbinPROGRAMS cscopelist-am ctags ctags-am \
 	distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-man8 install-pdf \
-	install-pdf-am install-pkgdataDATA install-ps install-ps-am \
-	install-sbinPROGRAMS install-strip installcheck \
+	install-data-am install-dist_pkgdataDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-man8 install-pdf install-pdf-am install-ps \
+	install-ps-am install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-man \
-	uninstall-man8 uninstall-pkgdataDATA uninstall-sbinPROGRAMS
+	tags tags-am uninstall uninstall-am uninstall-dist_pkgdataDATA \
+	uninstall-hook uninstall-man uninstall-man8 \
+	uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
+
+#man_MANS += nfnl_osf.8
+#sbin_PROGRAMS += nfnl_osf
+#dist_pkgdata_DATA += pf.os
+
+#nfnl_osf_LDADD = ${libnfnetlink_LIBS}
+
+@HAVE_LIBNFNETLINK_TRUE@uninstall-hook:
+@HAVE_LIBNFNETLINK_TRUE@	dir=${DESTDIR}${pkgdatadir}; { \
+@HAVE_LIBNFNETLINK_TRUE@		test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; \
+@HAVE_LIBNFNETLINK_TRUE@	} || rmdir -p --ignore-fail-on-non-empty "$$dir"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

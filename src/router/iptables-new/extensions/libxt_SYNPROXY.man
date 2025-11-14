@@ -22,7 +22,7 @@ Example:
 .PP
 Determine tcp options used by backend, from an external system
 .IP
-tcpdump -pni eth0 -c 1 'tcp[tcpflags] == (tcp-syn|tcp-ack)'
+tcpdump \-pni eth0 \-c 1 'tcp[tcpflags] == (tcp\-syn|tcp\-ack)'
 .br
     port 80 &
 .br
@@ -40,7 +40,7 @@ telnet 192.0.2.42 80
 .br
     length 0
 .PP
-Switch tcp_loose mode off, so conntrack will mark out\-of\-flow
+Switch tcp_loose mode off, so conntrack will mark out-of-flow
 packets as state INVALID.
 .IP
 echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_loose

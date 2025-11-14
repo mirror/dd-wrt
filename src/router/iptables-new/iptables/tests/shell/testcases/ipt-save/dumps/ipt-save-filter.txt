@@ -40,8 +40,8 @@
 -A OUTPUT -s 127.0.0.1/32 -d 127.0.0.1/32 -o lo -j ACCEPT
 -A OUTPUT -o wlan0 -j wlanout
 -A OUTPUT -j block
--A WLAN -s 192.168.200.4/32 -m mac --mac-source 00:00:F1:05:A0:E0 -j RETURN
--A WLAN -s 192.168.200.9/32 -m mac --mac-source 00:00:F1:05:99:85 -j RETURN
+-A WLAN -s 192.168.200.4/32 -m mac --mac-source 00:00:f1:05:a0:e0 -j RETURN
+-A WLAN -s 192.168.200.9/32 -m mac --mac-source 00:00:f1:05:99:85 -j RETURN
 -A WLAN -m limit --limit 12/min -j LOG --log-prefix "UNKNOWN WLAN dropped:"
 -A WLAN -j DROP
 -A accept_log -i ppp0 -p tcp -m tcp --tcp-flags SYN,RST,ACK SYN -m limit --limit 1/sec -j LOG --log-prefix "TCPConnect on ppp0:"

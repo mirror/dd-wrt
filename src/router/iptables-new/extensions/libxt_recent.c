@@ -193,10 +193,12 @@ static void recent_print(const void *ip, const struct xt_entry_match *match,
 		printf(" UPDATE");
 	if (info->check_set & XT_RECENT_REMOVE)
 		printf(" REMOVE");
-	if(info->seconds) printf(" seconds: %d", info->seconds);
+	if (info->seconds)
+		printf(" seconds: %u", info->seconds);
 	if (info->check_set & XT_RECENT_REAP)
 		printf(" reap");
-	if(info->hit_count) printf(" hit_count: %d", info->hit_count);
+	if (info->hit_count)
+		printf(" hit_count: %u", info->hit_count);
 	if (info->check_set & XT_RECENT_TTL)
 		printf(" TTL-Match");
 	printf(" name: %s", info->name);
@@ -233,10 +235,12 @@ static void recent_save(const void *ip, const struct xt_entry_match *match,
 		printf(" --update");
 	if (info->check_set & XT_RECENT_REMOVE)
 		printf(" --remove");
-	if(info->seconds) printf(" --seconds %d", info->seconds);
+	if (info->seconds)
+		printf(" --seconds %u", info->seconds);
 	if (info->check_set & XT_RECENT_REAP)
 		printf(" --reap");
-	if(info->hit_count) printf(" --hitcount %d", info->hit_count);
+	if (info->hit_count)
+		printf(" --hitcount %u", info->hit_count);
 	if (info->check_set & XT_RECENT_TTL)
 		printf(" --rttl");
 	printf(" --name %s",info->name);

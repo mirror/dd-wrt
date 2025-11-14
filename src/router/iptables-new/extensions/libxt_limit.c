@@ -7,7 +7,6 @@
 #define _DEFAULT_SOURCE 1
 #define _ISOC99_SOURCE 1
 #include <errno.h>
-#include <getopt.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -77,7 +76,7 @@ int parse_rate(const char *rate, uint32_t *val)
 		 * The rate maps to infinity. (1/day is the minimum they can
 		 * specify, so we are ok at that end).
 		 */
-		xtables_error(PARAMETER_PROBLEM, "Rate too fast \"%s\"\n", rate);
+		xtables_error(PARAMETER_PROBLEM, "Rate too fast \"%s\"", rate);
 	return 1;
 }
 
@@ -93,7 +92,7 @@ static void limit_init(struct xt_entry_match *m)
 /* FIXME: handle overflow:
 	if (r->avg*r->burst/r->burst != r->avg)
 		xtables_error(PARAMETER_PROBLEM,
-			   "Sorry: burst too large for that avg rate.\n");
+			      "Sorry: burst too large for that avg rate.");
 */
 
 static void limit_parse(struct xt_option_call *cb)
@@ -202,44 +201,6 @@ static int limit_xlate_eb(struct xt_xlate *xl,
 	return 1;
 }
 
-#define FLAG_LIMIT		0x01
-#define FLAG_LIMIT_BURST	0x02
-#define ARG_LIMIT		'1'
-#define ARG_LIMIT_BURST		'2'
-
-static int brlimit_parse(int c, char **argv, int invert, unsigned int *flags,
-			 const void *entry, struct xt_entry_match **match)
-{
-	struct xt_rateinfo *r = (struct xt_rateinfo *)(*match)->data;
-	uintmax_t num;
-
-	switch (c) {
-	case ARG_LIMIT:
-		EBT_CHECK_OPTION(flags, FLAG_LIMIT);
-		if (invert)
-			xtables_error(PARAMETER_PROBLEM,
-				      "Unexpected `!' after --limit");
-		if (!parse_rate(optarg, &r->avg))
-			xtables_error(PARAMETER_PROBLEM,
-				      "bad rate `%s'", optarg);
-		break;
-	case ARG_LIMIT_BURST:
-		EBT_CHECK_OPTION(flags, FLAG_LIMIT_BURST);
-		if (invert)
-			xtables_error(PARAMETER_PROBLEM,
-				      "Unexpected `!' after --limit-burst");
-		if (!xtables_strtoul(optarg, NULL, &num, 0, 10000))
-			xtables_error(PARAMETER_PROBLEM,
-				      "bad --limit-burst `%s'", optarg);
-		r->burst = num;
-		break;
-	default:
-		return 0;
-	}
-
-	return 1;
-}
-
 static void brlimit_print(const void *ip, const struct xt_entry_match *match,
 			  int numeric)
 {
@@ -249,13 +210,6 @@ static void brlimit_print(const void *ip, const struct xt_entry_match *match,
 	print_rate(r->avg);
 	printf(" --limit-burst %u ", r->burst);
 }
-
-static const struct option brlimit_opts[] =
-{
-	{ .name = "limit",	.has_arg = true,	.val = ARG_LIMIT },
-	{ .name = "limit-burst",.has_arg = true,	.val = ARG_LIMIT_BURST },
-	XT_GETOPT_TABLEEND,
-};
 
 static struct xtables_match limit_match[] = {
 	{
@@ -280,9 +234,9 @@ static struct xtables_match limit_match[] = {
 		.userspacesize	= offsetof(struct xt_rateinfo, prev),
 		//.help		= limit_help,
 		.init		= limit_init,
-		.parse		= brlimit_parse,
+		.x6_parse	= limit_parse,
 		.print		= brlimit_print,
-		.extra_opts	= brlimit_opts,
+		.x6_options	= limit_opts,
 		.xlate		= limit_xlate_eb,
 	},
 };

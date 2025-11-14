@@ -9,23 +9,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <netinet/ether.h>
 #include <xtables.h>
 #include <linux/netfilter_bridge/ebt_nat.h>
 #include "iptables/nft.h"
 #include "iptables/nft-bridge.h"
 
-#define NAT_S '1'
-#define NAT_S_TARGET '2'
-#define NAT_S_ARP '3'
-static const struct option brsnat_opts[] =
+enum {
+	O_SRC,
+	O_TARGET,
+	O_ARP,
+};
+
+static const struct xt_option_entry brsnat_opts[] =
 {
-	{ "to-source"     , required_argument, 0, NAT_S },
-	{ "to-src"        , required_argument, 0, NAT_S },
-	{ "snat-target"   , required_argument, 0, NAT_S_TARGET },
-	{ "snat-arp"      ,       no_argument, 0, NAT_S_ARP },
-	{ 0 }
+	{ .name = "to-source", .id = O_SRC, .type = XTTYPE_ETHERMAC,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nat_info, mac) },
+	{ .name = "to-src",    .id = O_SRC, .type = XTTYPE_ETHERMAC,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nat_info, mac) },
+	{ .name = "snat-target", .id = O_TARGET, .type = XTTYPE_STRING },
+	{ .name = "snat-arp", .id = O_ARP, .type = XTTYPE_NONE },
+	XTOPT_TABLEEND,
 };
 
 static void brsnat_print_help(void)
@@ -44,43 +48,29 @@ static void brsnat_init(struct xt_entry_target *target)
 	natinfo->target = EBT_ACCEPT;
 }
 
-#define OPT_SNAT         0x01
-#define OPT_SNAT_TARGET  0x02
-#define OPT_SNAT_ARP     0x04
-static int brsnat_parse(int c, char **argv, int invert, unsigned int *flags,
-			 const void *entry, struct xt_entry_target **target)
+static void brsnat_parse(struct xt_option_call *cb)
 {
-	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)(*target)->data;
-	struct ether_addr *addr;
+	struct ebt_nat_info *natinfo = cb->data;
+	unsigned int tmp;
 
-	switch (c) {
-	case NAT_S:
-		EBT_CHECK_OPTION(flags, OPT_SNAT);
-		if (!(addr = ether_aton(optarg)))
-			xtables_error(PARAMETER_PROBLEM, "Problem with specified --to-source mac");
-		memcpy(natinfo->mac, addr, ETH_ALEN);
+	xtables_option_parse(cb);
+	switch (cb->entry->id) {
+	case O_TARGET:
+		if (ebt_fill_target(cb->arg, &tmp))
+			xtables_error(PARAMETER_PROBLEM,
+				      "Illegal --snat-target target");
+		natinfo->target &= ~EBT_VERDICT_BITS;
+		natinfo->target |= tmp & EBT_VERDICT_BITS;
 		break;
-	case NAT_S_TARGET:
-		{ unsigned int tmp;
-		EBT_CHECK_OPTION(flags, OPT_SNAT_TARGET);
-		if (ebt_fill_target(optarg, &tmp))
-			xtables_error(PARAMETER_PROBLEM, "Illegal --snat-target target");
-		natinfo->target = (natinfo->target & ~EBT_VERDICT_BITS) | (tmp & EBT_VERDICT_BITS);
-		}
-		break;
-	case NAT_S_ARP:
-		EBT_CHECK_OPTION(flags, OPT_SNAT_ARP);
+	case O_ARP:
 		natinfo->target ^= NAT_ARP_BIT;
 		break;
-	default:
-		return 0;
 	}
-	return 1;
 }
 
-static void brsnat_final_check(unsigned int flags)
+static void brsnat_final_check(struct xt_fcheck_call *fc)
 {
-	if (!flags)
+	if (!fc->xflags)
 		xtables_error(PARAMETER_PROBLEM,
 			      "You must specify proper arguments");
 }
@@ -133,11 +123,11 @@ static struct xtables_target brsnat_target =
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_nat_info)),
 	//.help		= brsnat_print_help,
 	.init		= brsnat_init,
-	.parse		= brsnat_parse,
-	.final_check	= brsnat_final_check,
+	.x6_parse	= brsnat_parse,
+	.x6_fcheck	= brsnat_final_check,
 	.print		= brsnat_print,
 	.xlate		= brsnat_xlate,
-	.extra_opts	= brsnat_opts,
+	.x6_options	= brsnat_opts,
 };
 
 void _init(void)

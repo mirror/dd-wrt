@@ -32,11 +32,6 @@ struct xt_connmark_target_info {
 };
 
 enum {
-	D_SHIFT_LEFT = 0,
-	D_SHIFT_RIGHT,
-};
-
-enum {
 	O_SET_MARK = 0,
 	O_SAVE_MARK,
 	O_RESTORE_MARK,
@@ -595,11 +590,11 @@ static int connmark_tg_xlate_v2(struct xt_xlate *xl,
 {
 	const struct xt_connmark_tginfo2 *info =
 		(const void *)params->target->data;
-	const char *shift_op = xt_connmark_shift_ops[info->shift_dir];
+	const char *braces = info->shift_bits ? "( " : "";
 
 	switch (info->mode) {
 	case XT_CONNMARK_SET:
-		xt_xlate_add(xl, "ct mark set ");
+		xt_xlate_add(xl, "ct mark set %s", braces);
 		if (info->ctmask == 0xFFFFFFFFU)
 			xt_xlate_add(xl, "0x%x ", info->ctmark);
 		else if (info->ctmark == 0)
@@ -615,26 +610,31 @@ static int connmark_tg_xlate_v2(struct xt_xlate *xl,
 				     info->ctmark, ~info->ctmask);
 		break;
 	case XT_CONNMARK_SAVE:
-		xt_xlate_add(xl, "ct mark set mark");
+		xt_xlate_add(xl, "ct mark set %smark", braces);
 		if (!(info->nfmask == UINT32_MAX &&
 		    info->ctmask == UINT32_MAX)) {
 			if (info->nfmask == info->ctmask)
 				xt_xlate_add(xl, " and 0x%x", info->nfmask);
+			else
+				return 0;
 		}
 		break;
 	case XT_CONNMARK_RESTORE:
-		xt_xlate_add(xl, "meta mark set ct mark");
+		xt_xlate_add(xl, "meta mark set %sct mark", braces);
 		if (!(info->nfmask == UINT32_MAX &&
 		    info->ctmask == UINT32_MAX)) {
 			if (info->nfmask == info->ctmask)
 				xt_xlate_add(xl, " and 0x%x", info->nfmask);
+			else
+				return 0;
 		}
 		break;
 	}
 
 	if (info->mode <= XT_CONNMARK_RESTORE &&
 	    info->shift_bits != 0) {
-		xt_xlate_add(xl, " %s %u", shift_op, info->shift_bits);
+		xt_xlate_add(xl, " ) %s %u",
+			     info->shift_dir ? ">>" : "<<", info->shift_bits);
 	}
 
 	return 1;

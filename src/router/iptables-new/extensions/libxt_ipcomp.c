@@ -76,11 +76,12 @@ static void comp_print(const void *ip, const struct xt_entry_match *match,
 static void comp_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct xt_ipcomp *compinfo = (struct xt_ipcomp *)match->data;
+	bool inv_spi = compinfo->invflags & XT_IPCOMP_INV_SPI;
 
 	if (!(compinfo->spis[0] == 0
-	    && compinfo->spis[1] == 0xFFFFFFFF)) {
-		printf("%s --ipcompspi ",
-			(compinfo->invflags & XT_IPCOMP_INV_SPI) ? " !" : "");
+	    && compinfo->spis[1] == UINT32_MAX
+	    && !inv_spi)) {
+		printf("%s --ipcompspi ", inv_spi ? " !" : "");
 		if (compinfo->spis[0]
 		    != compinfo->spis[1])
 			printf("%u:%u",
@@ -100,6 +101,8 @@ static int comp_xlate(struct xt_xlate *xl,
 {
 	const struct xt_ipcomp *compinfo =
 		(struct xt_ipcomp *)params->match->data;
+
+	/* ignore compinfo->hdrres like kernel's xt_ipcomp.c does */
 
 	xt_xlate_add(xl, "comp cpi %s",
 		     compinfo->invflags & XT_IPCOMP_INV_SPI ? "!= " : "");

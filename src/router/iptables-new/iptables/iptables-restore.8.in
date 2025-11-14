@@ -23,13 +23,13 @@ iptables-restore \(em Restore IP Tables
 .P
 ip6tables-restore \(em Restore IPv6 Tables
 .SH SYNOPSIS
-\fBiptables\-restore\fP [\fB\-chntvV\fP] [\fB\-w\fP \fIsecs\fP]
-[\fB\-W\fP \fIusecs\fP] [\fB\-M\fP \fImodprobe\fP] [\fB\-T\fP \fIname\fP]
-[\fBfile\fP]
+\fBiptables\-restore\fP [\fB\-chntvV\fP] [\fB\-w\fP \fIseconds\fP]
+[\fB\-M\fP \fImodprobe\fP] [\fB\-T\fP \fIname\fP]
+[\fIfile\fP]
 .P
-\fBip6tables\-restore\fP [\fB\-chntvV\fP] [\fB\-w\fP \fIsecs\fP]
-[\fB\-W\fP \fIusecs\fP] [\fB\-M\fP \fImodprobe\fP] [\fB\-T\fP \fIname\fP]
-[\fBfile\fP]
+\fBip6tables\-restore\fP [\fB\-chntvV\fP] [\fB\-w\fP \fIseconds\fP]
+[\fB\-M\fP \fImodprobe\fP] [\fB\-T\fP \fIname\fP]
+[\fIfile\fP]
 .SH DESCRIPTION
 .PP
 .B iptables-restore
@@ -40,13 +40,13 @@ are used to restore IP and IPv6 Tables from data specified on STDIN or in
 specify \fIfile\fP as an argument.
 .TP
 \fB\-c\fR, \fB\-\-counters\fR
-restore the values of all packet and byte counters
+Restore the values of all packet and byte counters.
 .TP
 \fB\-h\fP, \fB\-\-help\fP
 Print a short option summary.
 .TP
 \fB\-n\fR, \fB\-\-noflush\fR
-don't flush the previous contents of the table. If not specified,
+Don't flush the previous contents of the table. If not specified,
 both commands flush (delete) all previous contents of the respective table.
 .TP
 \fB\-t\fP, \fB\-\-test\fP
@@ -54,6 +54,7 @@ Only parse and construct the ruleset, but do not commit it.
 .TP
 \fB\-v\fP, \fB\-\-verbose\fP
 Print additional debug info during ruleset processing.
+Specify multiple times to increase debug level.
 .TP
 \fB\-V\fP, \fB\-\-version\fP
 Print the program version number.
@@ -66,16 +67,10 @@ the program will exit if the lock cannot be obtained.  This option will
 make the program wait (indefinitely or for optional \fIseconds\fP) until
 the exclusive lock can be obtained.
 .TP
-\fB\-W\fP, \fB\-\-wait-interval\fP \fImicroseconds\fP
-Interval to wait per each iteration.
-When running latency sensitive applications, waiting for the xtables lock
-for extended durations may not be acceptable. This option will make each
-iteration take the amount of time specified. The default interval is
-1 second. This option only works with \fB\-w\fP.
-.TP
-\fB\-M\fP, \fB\-\-modprobe\fP \fImodprobe_program\fP
-Specify the path to the modprobe program. By default, iptables-restore will
-inspect /proc/sys/kernel/modprobe to determine the executable's path.
+\fB\-M\fP, \fB\-\-modprobe\fP \fImodprobe\fP
+Specify the path to the modprobe(8) program. By default,
+iptables-restore will inspect \fI/proc/sys/kernel/modprobe\fP to
+determine the executable's path.
 .TP
 \fB\-T\fP, \fB\-\-table\fP \fIname\fP
 Restore only the named table even if the input stream contains other ones.
@@ -87,7 +82,7 @@ from Rusty Russell.
 .br
 Andras Kis-Szabo <kisza@sch.bme.hu> contributed ip6tables-restore.
 .SH SEE ALSO
-\fBiptables\-apply\fP(8),\fBiptables\-save\fP(8), \fBiptables\fP(8)
+\fBiptables\-apply\fP(8), \fBiptables\-save\fP(8), \fBiptables\fP(8)
 .PP
 The iptables-HOWTO, which details more iptables usage, the NAT-HOWTO,
 which details NAT, and the netfilter-hacking-HOWTO which details the

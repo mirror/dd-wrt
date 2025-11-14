@@ -15,21 +15,15 @@ any established connections are lost anyway).
 \fB\-\-to\-ports\fP \fIport\fP[\fB\-\fP\fIport\fP]
 This specifies a range of source ports to use, overriding the default
 .B SNAT
-source port-selection heuristics (see above).  This is only valid
+source port selection heuristics (see above). This is only valid
 if the rule also specifies one of the following protocols:
 \fBtcp\fP, \fBudp\fP, \fBdccp\fP or \fBsctp\fP.
 .TP
 \fB\-\-random\fP
-Randomize source port mapping
-If option
-\fB\-\-random\fP
-is used then port mapping will be randomized (kernel >= 2.6.21).
-Since kernel 5.0, \fB\-\-random\fP is identical to \fB\-\-random-fully\fP.
+Randomize source port mapping (kernel >= 2.6.21).
+Since kernel 5.0, \fB\-\-random\fP is identical to \fB\-\-random\-fully\fP.
 .TP
-\fB\-\-random-fully\fP
-Full randomize source port mapping
-If option
-\fB\-\-random-fully\fP
-is used then port mapping will be fully randomized (kernel >= 3.13).
+\fB\-\-random\-fully\fP
+Fully randomize source port mapping (kernel >= 3.13).
 .TP
 IPv6 support available since Linux kernels >= 3.7.

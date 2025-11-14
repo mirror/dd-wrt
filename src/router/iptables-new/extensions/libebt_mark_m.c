@@ -12,73 +12,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <xtables.h>
 #include <linux/netfilter_bridge/ebt_mark_m.h>
 
-#define MARK '1'
+enum {
+	O_MARK = 0,
+};
 
-static const struct option brmark_m_opts[] = {
-	{ .name = "mark",	.has_arg = true, .val = MARK },
-	XT_GETOPT_TABLEEND,
+static const struct xt_option_entry brmark_m_opts[] = {
+	{ .name = "mark", .id = O_MARK, .type = XTTYPE_STRING,
+	  .flags = XTOPT_INVERT | XTOPT_MAND },
+	XTOPT_TABLEEND,
 };
 
 static void brmark_m_print_help(void)
 {
 	printf(
 "mark option:\n"
-"--mark    [!] [value][/mask]: Match nfmask value (see man page)\n");
+"[!] --mark    [value][/mask]: Match nfmask value (see man page)\n");
 }
 
-static void brmark_m_init(struct xt_entry_match *match)
+static void brmark_m_parse(struct xt_option_call *cb)
 {
-	struct ebt_mark_m_info *info = (struct ebt_mark_m_info *)match->data;
-
-	info->mark = 0;
-	info->mask = 0;
-	info->invert = 0;
-	info->bitmask = 0;
-}
-
-#define OPT_MARK 0x01
-static int
-brmark_m_parse(int c, char **argv, int invert, unsigned int *flags,
-	       const void *entry, struct xt_entry_match **match)
-{
-	struct ebt_mark_m_info *info = (struct ebt_mark_m_info *)
-				       (*match)->data;
+	struct ebt_mark_m_info *info = cb->data;
 	char *end;
 
-	switch (c) {
-	case MARK:
-		if (invert)
-			info->invert = 1;
-		info->mark = strtoul(optarg, &end, 0);
+	xtables_option_parse(cb);
+
+	switch (cb->entry->id) {
+	case O_MARK:
+		info->invert = cb->invert;
+		info->mark = strtoul(cb->arg, &end, 0);
 		info->bitmask = EBT_MARK_AND;
 		if (*end == '/') {
-			if (end == optarg)
+			if (end == cb->arg)
 				info->bitmask = EBT_MARK_OR;
 			info->mask = strtoul(end+1, &end, 0);
 		} else {
-			info->mask = 0xffffffff;
+			info->mask = UINT32_MAX;
 		}
-		if (*end != '\0' || end == optarg)
+		if (*end != '\0' || end == cb->arg)
 			xtables_error(PARAMETER_PROBLEM, "Bad mark value '%s'",
-				      optarg);
+				      cb->arg);
 		break;
-	default:
-		return 0;
 	}
-
-	*flags |= info->bitmask;
-	return 1;
-}
-
-static void brmark_m_final_check(unsigned int flags)
-{
-	if (!flags)
-		xtables_error(PARAMETER_PROBLEM,
-			      "You must specify proper arguments");
 }
 
 static void brmark_m_print(const void *ip, const struct xt_entry_match *match,
@@ -86,9 +63,9 @@ static void brmark_m_print(const void *ip, const struct xt_entry_match *match,
 {
 	struct ebt_mark_m_info *info = (struct ebt_mark_m_info *)match->data;
 
-	printf("--mark ");
 	if (info->invert)
 		printf("! ");
+	printf("--mark ");
 	if (info->bitmask == EBT_MARK_OR)
 		printf("/0x%lx ", info->mask);
 	else if (info->mask != 0xffffffff)
@@ -111,7 +88,7 @@ static int brmark_m_xlate(struct xt_xlate *xl,
 	if (info->bitmask == EBT_MARK_OR) {
 		xt_xlate_add(xl, "and 0x%x %s0 ", (uint32_t)info->mask,
 			     info->invert ? "" : "!= ");
-	} else if (info->mask != 0xffffffffU) {
+	} else if (info->mask != UINT32_MAX) {
 		xt_xlate_add(xl, "and 0x%x %s0x%x ", (uint32_t)info->mask,
 			   op == XT_OP_EQ ? "" : "!= ", (uint32_t)info->mark);
 	} else {
@@ -130,11 +107,10 @@ static struct xtables_match brmark_m_match = {
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_mark_m_info)),
 	.init		= brmark_m_init,
 	//.help		= brmark_m_print_help,
-	.parse		= brmark_m_parse,
-	.final_check	= brmark_m_final_check,
-	.print		= brmark_m_print,
-	.xlate		= brmark_m_xlate,
-	.extra_opts	= brmark_m_opts,
+	.x6_parse	= brmark_m_parse,
+ 	.print		= brmark_m_print,
+ 	.xlate		= brmark_m_xlate,
+	.x6_options	= brmark_m_opts,
 };
 
 void _init(void)

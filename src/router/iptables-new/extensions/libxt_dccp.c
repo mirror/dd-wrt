@@ -76,13 +76,16 @@ static const char *const dccp_pkt_types[] = {
 	[DCCP_PKT_INVALID]	= "INVALID",
 };
 
+/* Bits for type values 11-15 */
+#define INVALID_OTHER_TYPE_MASK		0xf800
+
 static uint16_t
 parse_dccp_types(const char *typestring)
 {
 	uint16_t typemask = 0;
 	char *ptr, *buffer;
 
-	buffer = strdup(typestring);
+	buffer = xtables_strdup(typestring);
 
 	for (ptr = strtok(buffer, ","); ptr; ptr = strtok(NULL, ",")) {
 		unsigned int i;
@@ -95,6 +98,9 @@ parse_dccp_types(const char *typestring)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unknown DCCP type `%s'", ptr);
 	}
+	if (typemask & (1 << DCCP_PKT_INVALID))
+		typemask |= INVALID_OTHER_TYPE_MASK;
+
 
 	free(buffer);
 	return typemask;
@@ -193,8 +199,12 @@ print_types(uint16_t types, int inverted, int numeric)
 
 		if (numeric)
 			printf("%u", i);
-		else
+		else {
 			printf("%s", dccp_pkt_types[i]);
+
+			if (i == DCCP_PKT_INVALID)
+				break;
+		}
 
 		types &= ~(1 << i);
 	}
@@ -288,6 +298,7 @@ static const char *const dccp_pkt_types_xlate[] = {
 	[DCCP_PKT_RESET]        = "reset",
 	[DCCP_PKT_SYNC]         = "sync",
 	[DCCP_PKT_SYNCACK]      = "syncack",
+	[DCCP_PKT_INVALID]	= "10-15",
 };
 
 static int dccp_type_xlate(const struct xt_dccp_info *einfo,
@@ -296,10 +307,10 @@ static int dccp_type_xlate(const struct xt_dccp_info *einfo,
 	bool have_type = false, set_need = false;
 	uint16_t types = einfo->typemask;
 
-	if (types & (1 << DCCP_PKT_INVALID))
-		return 0;
-
-	xt_xlate_add(xl, " dccp type%s ", einfo->invflags ? " !=" : "");
+	if (types & INVALID_OTHER_TYPE_MASK) {
+		types &= ~INVALID_OTHER_TYPE_MASK;
+		types |= 1 << DCCP_PKT_INVALID;
+	}
 
 	if ((types != 0) && !(types == (types & -types))) {
 		xt_xlate_add(xl, "{");
@@ -332,37 +343,33 @@ static int dccp_xlate(struct xt_xlate *xl,
 {
 	const struct xt_dccp_info *einfo =
 		(const struct xt_dccp_info *)params->match->data;
-	char *space = "";
 	int ret = 1;
 
-	xt_xlate_add(xl, "dccp ");
-
 	if (einfo->flags & XT_DCCP_SRC_PORTS) {
+		xt_xlate_add(xl, "dccp sport%s %u",
+			     einfo->invflags & XT_DCCP_SRC_PORTS ? " !=" : "",
+			     einfo->spts[0]);
+
 		if (einfo->spts[0] != einfo->spts[1])
-			xt_xlate_add(xl, "sport%s %u-%u",
-				     einfo->invflags & XT_DCCP_SRC_PORTS ? " !=" : "",
-				     einfo->spts[0], einfo->spts[1]);
-		else
-			xt_xlate_add(xl, "sport%s %u",
-				     einfo->invflags & XT_DCCP_SRC_PORTS ? " !=" : "",
-				     einfo->spts[0]);
-		space = " ";
+			xt_xlate_add(xl, "-%u", einfo->spts[1]);
 	}
 
 	if (einfo->flags & XT_DCCP_DEST_PORTS) {
+		xt_xlate_add(xl, "dccp dport%s %u",
+			     einfo->invflags & XT_DCCP_DEST_PORTS ? " !=" : "",
+			     einfo->dpts[0]);
+
 		if (einfo->dpts[0] != einfo->dpts[1])
-			xt_xlate_add(xl, "%sdport%s %u-%u", space,
-				     einfo->invflags & XT_DCCP_DEST_PORTS ? " !=" : "",
-				     einfo->dpts[0], einfo->dpts[1]);
-		else
-			xt_xlate_add(xl, "%sdport%s %u", space,
-				     einfo->invflags & XT_DCCP_DEST_PORTS ? " !=" : "",
-				     einfo->dpts[0]);
+			xt_xlate_add(xl, "-%u", einfo->dpts[1]);
 	}
 
-	if (einfo->flags & XT_DCCP_TYPE)
+	if (einfo->flags & XT_DCCP_TYPE && einfo->typemask) {
+		xt_xlate_add(xl, "dccp type%s ",
+			     einfo->invflags & XT_DCCP_TYPE ? " !=" : "");
 		ret = dccp_type_xlate(einfo, xl);
+	}
 
+	/* FIXME: no dccp option support in nftables yet */
 	if (einfo->flags & XT_DCCP_OPTION)
 		ret = 0;
 

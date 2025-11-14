@@ -24,7 +24,7 @@
 .\"     
 .\"
 .SH NAME
-ebtables \- Ethernet bridge frame table administration (nft-based)
+ebtables \(em Ethernet bridge frame table administration (nft-based)
 .SH SYNOPSIS
 .BR "ebtables " [ -t " table ] " - [ ACDI "] chain rule specification [match extensions] [watcher extensions] target"
 .br
@@ -44,12 +44,6 @@ ebtables \- Ethernet bridge frame table administration (nft-based)
 .br
 .BR "ebtables " [ -t " table ] " --init-table
 .br
-.BR "ebtables " [ -t " table ] [" --atomic-file " file] " --atomic-commit
-.br
-.BR "ebtables " [ -t " table ] [" --atomic-file " file] " --atomic-init
-.br
-.BR "ebtables " [ -t " table ] [" --atomic-file " file] " --atomic-save
-.br
 
 .SH DESCRIPTION
 .B ebtables
@@ -61,7 +55,7 @@ It is analogous to the
 application, but less complicated, due to the fact that the Ethernet protocol
 is much simpler than the IP protocol.
 .SS CHAINS
-There are two ebtables tables with built-in chains in the
+There are three ebtables tables with built-in chains in the
 Linux kernel. These tables are used to divide functionality into
 different sets of rules. Each set of rules is called a chain.
 Each chain is an ordered list of rules that can match Ethernet frames. If a
@@ -87,7 +81,10 @@ an 'extension' (see below) or a jump to a user-defined chain.
 .B ACCEPT
 means to let the frame through.
 .B DROP
-means the frame has to be dropped.
+means the frame has to be dropped. In the
+.BR BROUTING " chain however, the " ACCEPT " and " DROP " target have different"
+meanings (see the info provided for the
+.BR -t " option)."
 .B CONTINUE
 means the next rule has to be checked. This can be handy, f.e., to know how many
 frames pass a certain point in the chain, to log those frames or to apply multiple
@@ -99,17 +96,13 @@ For the extension targets please refer to the
 .B "TARGET EXTENSIONS"
 section of this man page.
 .SS TABLES
-As stated earlier, there are two ebtables tables in the Linux
-kernel.  The table names are
-.BR filter " and " nat .
-Of these two tables,
+As stated earlier, the table names are
+.BR filter ", " nat " and " broute .
+Of these tables,
 the filter table is the default table that the command operates on.
-If you are working with the filter table, then you can drop the '-t filter'
-argument to the ebtables command.  However, you will need to provide
-the -t argument for
-.B nat
-table.  Moreover, the -t argument must be the
-first argument on the ebtables command line, if used. 
+If you are working with a table other than filter, you will need to provide
+the -t argument.  Moreover, the -t argument must be the
+first argument on the ebtables command line, if used.
 .TP
 .B "-t, --table"
 .br
@@ -137,6 +130,23 @@ iptables world to ebtables it is easier to have the same names. Note that you
 can change the name
 .BR "" ( -E )
 if you don't like the default.
+.br
+.br
+.B broute
+is used to make a brouter, it has one built-in chain:
+.BR BROUTING .
+The targets
+.BR DROP " and " ACCEPT
+have a special meaning in the broute table (these names are used for
+compatibility reasons with ebtables-legacy).
+.B DROP
+actually means the frame has to be routed, while
+.B ACCEPT
+means the frame has to be bridged. The
+.B BROUTING
+chain is traversed very early.
+Normally those frames
+would be bridged, but you can decide otherwise here.
 .SH EBTABLES COMMAND LINE ARGUMENTS
 After the initial ebtables '-t table' command line argument, the remaining
 arguments can be divided into several groups.  These groups
@@ -149,11 +159,9 @@ a table, the commands apply to the default filter table.
 Only one command may be used on the command line at a time, except when
 the commands
 .BR -L " and " -Z
-are combined, the commands
+are combined or the commands
 .BR -N " and " -P
-are combined, or when
-.B --atomic-file
-is used.
+are combined.
 .TP
 .B "-A, --append"
 Append a rule to the end of the selected chain.
@@ -313,40 +321,13 @@ of the ebtables kernel table.
 .TP
 .B "--init-table"
 Replace the current table data by the initial table data.
+.SS MISCELLANEOUS COMMANDS
 .TP
-.B "--atomic-init"
-Copy the kernel's initial data of the table to the specified
-file. This can be used as the first action, after which rules are added
-to the file. The file can be specified using the
-.B --atomic-file
-command or through the
-.IR EBTABLES_ATOMIC_FILE " environment variable."
-.TP
-.B "--atomic-save"
-Copy the kernel's current data of the table to the specified
-file. This can be used as the first action, after which rules are added
-to the file. The file can be specified using the
-.B --atomic-file
-command or through the
-.IR EBTABLES_ATOMIC_FILE " environment variable."
-.TP
-.B "--atomic-commit"
-Replace the kernel table data with the data contained in the specified
-file. This is a useful command that allows you to load all your rules of a
-certain table into the kernel at once, saving the kernel a lot of precious
-time and allowing atomic updates of the tables. The file which contains
-the table data is constructed by using either the
-.B "--atomic-init"
-or the
-.B "--atomic-save"
-command to generate a starting file. After that, using the
-.B "--atomic-file"
-command when constructing rules or setting the
-.IR EBTABLES_ATOMIC_FILE " environment variable"
-allows you to extend the file and build the complete table before
-committing it to the kernel. This command can be very useful in boot scripts
-to populate the ebtables tables in a fast way.
-.SS MISCELLANOUS COMMANDS
+.B "-v, --verbose"
+Verbose mode.
+For appending, insertion, deletion and replacement, this causes
+detailed information on the rule or rules to be printed. \fB\-v\fP may be
+specified multiple times to possibly emit more detailed debug statements.
 .TP
 .B "-V, --version"
 Show the version of the ebtables userspace program.
@@ -371,23 +352,14 @@ a target extension (see
 .BR "TARGET EXTENSIONS" ")"
 or a user-defined chain name.
 .TP
-.B --atomic-file "\fIfile\fP"
-Let the command operate on the specified
-.IR file .
-The data of the table to
-operate on will be extracted from the file and the result of the operation
-will be saved back into the file. If specified, this option should come
-before the command specification. An alternative that should be preferred,
-is setting the
-.IR EBTABLES_ATOMIC_FILE " environment variable."
-.TP
 .B -M, --modprobe "\fIprogram\fP"
 When talking to the kernel, use this
 .I program
 to try to automatically load missing kernel modules.
 .TP
 .B --concurrent
-Use a file lock to support concurrent scripts updating the ebtables kernel tables.
+This would use a file lock to support concurrent scripts updating the ebtables
+kernel tables. It is not needed with \fBebtables-nft\fP though and thus ignored.
 
 .SS
 RULE SPECIFICATIONS
@@ -401,7 +373,7 @@ and the
 .BR "WATCHER EXTENSIONS" 
 below.
 .TP
-.BR "-p, --protocol " "[!] \fIprotocol\fP"
+.RB [ ! ] " -p" , " --protocol " \fIprotocol\fP
 The protocol that was responsible for creating the frame. This can be a
 hexadecimal number, above 
 .IR 0x0600 ,
@@ -431,7 +403,7 @@ See that file for more information. The flag
 .B --proto
 is an alias for this option.
 .TP 
-.BR "-i, --in-interface " "[!] \fIname\fP"
+.RB [ ! ] " -i" , " --in-interface " \fIname\fP
 The interface (bridge port) via which a frame is received (this option is useful in the
 .BR INPUT ,
 .BR FORWARD ,
@@ -442,7 +414,7 @@ The flag
 .B --in-if
 is an alias for this option.
 .TP
-.BR "--logical-in " "[!] \fIname\fP"
+.RB [ ! ] " --logical-in " \fIname\fP
 The (logical) bridge interface via which a frame is received (this option is useful in the
 .BR INPUT ,
 .BR FORWARD ,
@@ -451,7 +423,7 @@ chains).
 If the interface name ends with '+', then
 any interface name that begins with this name (disregarding '+') will match.
 .TP
-.BR "-o, --out-interface " "[!] \fIname\fP"
+.RB [ ! ] " -o" , " --out-interface " \fIname\fP
 The interface (bridge port) via which a frame is going to be sent (this option is useful in the
 .BR OUTPUT ,
 .B FORWARD
@@ -463,7 +435,7 @@ The flag
 .B --out-if
 is an alias for this option.
 .TP
-.BR "--logical-out " "[!] \fIname\fP"
+.RB [ ! ] " --logical-out " \fIname\fP
 The (logical) bridge interface via which a frame is going to be sent (this option
 is useful in the
 .BR OUTPUT ,
@@ -474,7 +446,7 @@ chains).
 If the interface name ends with '+', then
 any interface name that begins with this name (disregarding '+') will match.
 .TP
-.BR "-s, --source " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " -s" , " --source " \fIaddress\fP[ / \fImask\fP]
 The source MAC address. Both mask and address are written as 6 hexadecimal
 numbers separated by colons. Alternatively one can specify Unicast,
 Multicast, Broadcast or BGA (Bridge Group Address):
@@ -488,7 +460,7 @@ address will also match the multicast specification. The flag
 .B --src
 is an alias for this option.
 .TP
-.BR "-d, --destination " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " -d" , " --destination " \fIaddress\fP[ / \fImask\fP]
 The destination MAC address. See
 .B -s
 (above) for more details on MAC addresses. The flag
@@ -513,11 +485,11 @@ the core ebtables code.
 Specify 802.3 DSAP/SSAP fields or SNAP type.  The protocol must be specified as
 .IR "LENGTH " "(see the option " " -p " above).
 .TP
-.BR "--802_3-sap " "[!] \fIsap\fP"
+.RB [ ! ] " --802_3-sap " \fIsap\fP
 DSAP and SSAP are two one byte 802.3 fields.  The bytes are always
 equal, so only one byte (hexadecimal) is needed as an argument.
 .TP
-.BR "--802_3-type " "[!] \fItype\fP"
+.RB [ ! ] " --802_3-type " \fItype\fP
 If the 802.3 DSAP and SSAP values are 0xaa then the SNAP type field must
 be consulted to determine the payload protocol.  This is a two byte
 (hexadecimal) argument.  Only 802.3 frames with DSAP/SSAP 0xaa are
@@ -532,88 +504,88 @@ the MAC address is optional. Multiple MAC/IP address pairs with the same MAC add
 but different IP address (and vice versa) can be specified. If the MAC address doesn't
 match any entry from the list, the frame doesn't match the rule (unless "!" was used).
 .TP
-.BR "--among-dst " "[!] \fIlist\fP"
+.RB [ ! ] " --among-dst " \fIlist\fP
 Compare the MAC destination to the given list. If the Ethernet frame has type
 .IR IPv4 " or " ARP ,
 then comparison with MAC/IP destination address pairs from the
 list is possible.
 .TP
-.BR "--among-src " "[!] \fIlist\fP"
+.RB [ ! ] " --among-src " \fIlist\fP
 Compare the MAC source to the given list. If the Ethernet frame has type
 .IR IPv4 " or " ARP ,
 then comparison with MAC/IP source address pairs from the list
 is possible.
 .TP
-.BR "--among-dst-file " "[!] \fIfile\fP"
+.RB [ ! ] " --among-dst-file " \fIfile\fP
 Same as
 .BR --among-dst " but the list is read in from the specified file."
 .TP
-.BR "--among-src-file " "[!] \fIfile\fP"
+.RB [ ! ] " --among-src-file " \fIfile\fP
 Same as
 .BR --among-src " but the list is read in from the specified file."
 .SS arp
 Specify (R)ARP fields. The protocol must be specified as
 .IR ARP " or " RARP .
 .TP
-.BR "--arp-opcode " "[!] \fIopcode\fP"
+.RB [ ! ] " --arp-opcode " \fIopcode\fP
 The (R)ARP opcode (decimal or a string, for more details see
 .BR "ebtables -h arp" ).
 .TP
-.BR "--arp-htype " "[!] \fIhardware type\fP"
+.RB [ ! ] " --arp-htype " \fIhardware-type\fP
 The hardware type, this can be a decimal or the string
 .I Ethernet
 (which sets
 .I type
 to 1). Most (R)ARP packets have Eternet as hardware type.
 .TP
-.BR "--arp-ptype " "[!] \fIprotocol type\fP"
+.RB [ ! ] " --arp-ptype " \fIprotocol-type\fP
 The protocol type for which the (r)arp is used (hexadecimal or the string
 .IR IPv4 ,
 denoting 0x0800).
 Most (R)ARP packets have protocol type IPv4.
 .TP
-.BR "--arp-ip-src " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --arp-ip-src " \fIaddress\fP[ / \fImask\fP]
 The (R)ARP IP source address specification.
 .TP
-.BR "--arp-ip-dst " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --arp-ip-dst " \fIaddress\fP[ / \fImask\fP]
 The (R)ARP IP destination address specification.
 .TP
-.BR "--arp-mac-src " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --arp-mac-src " \fIaddress\fP[ / \fImask\fP]
 The (R)ARP MAC source address specification.
 .TP
-.BR "--arp-mac-dst " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --arp-mac-dst " \fIaddress\fP[ / \fImask\fP]
 The (R)ARP MAC destination address specification.
 .TP
-.BR "" "[!]" " --arp-gratuitous"
+.RB [ ! ] " --arp-gratuitous"
 Checks for ARP gratuitous packets: checks equality of IPv4 source
 address and IPv4 destination address inside the ARP header.
 .SS ip
 Specify IPv4 fields. The protocol must be specified as
 .IR IPv4 .
 .TP
-.BR "--ip-source " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --ip-source " \fIaddress\fP[ / \fImask\fP]
 The source IP address.
 The flag
 .B --ip-src
 is an alias for this option.
 .TP
-.BR "--ip-destination " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --ip-destination " \fIaddress\fP[ / \fImask\fP]
 The destination IP address.
 The flag
 .B --ip-dst
 is an alias for this option.
 .TP
-.BR "--ip-tos " "[!] \fItos\fP"
+.RB [ ! ] " --ip-tos " \fItos\fP
 The IP type of service, in hexadecimal numbers.
 .BR IPv4 .
 .TP
-.BR "--ip-protocol " "[!] \fIprotocol\fP"
+.RB [ ! ] " --ip-protocol " \fIprotocol\fP
 The IP protocol.
 The flag
 .B --ip-proto
 is an alias for this option.
 .TP
-.BR "--ip-source-port " "[!] \fIport1\fP[:\fIport2\fP]"
+.RB [ ! ] " --ip-source-port " \fIport1\fP[ : \fIport2\fP]
 The source port or port range for the IP protocols 6 (TCP), 17
 (UDP), 33 (DCCP) or 132 (SCTP). The
 .B --ip-protocol
@@ -625,7 +597,7 @@ The flag
 .B --ip-sport
 is an alias for this option.
 .TP
-.BR "--ip-destination-port " "[!] \fIport1\fP[:\fIport2\fP]"
+.RB [ ! ] " --ip-destination-port " \fIport1\fP[ : \fIport2\fP]
 The destination port or port range for ip protocols 6 (TCP), 17
 (UDP), 33 (DCCP) or 132 (SCTP). The
 .B --ip-protocol
@@ -640,28 +612,28 @@ is an alias for this option.
 Specify IPv6 fields. The protocol must be specified as
 .IR IPv6 .
 .TP
-.BR "--ip6-source " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --ip6-source " \fIaddress\fP[ / \fImask\fP]
 The source IPv6 address.
 The flag
 .B --ip6-src
 is an alias for this option.
 .TP
-.BR "--ip6-destination " "[!] \fIaddress\fP[/\fImask\fP]"
+.RB [ ! ] " --ip6-destination " \fIaddress\fP[ / \fImask\fP]
 The destination IPv6 address.
 The flag
 .B --ip6-dst
 is an alias for this option.
 .TP
-.BR "--ip6-tclass " "[!] \fItclass\fP"
+.RB [ ! ] " --ip6-tclass " \fItclass\fP
 The IPv6 traffic class, in hexadecimal numbers.
 .TP
-.BR "--ip6-protocol " "[!] \fIprotocol\fP"
+.RB [ ! ] " --ip6-protocol " \fIprotocol\fP
 The IP protocol.
 The flag
 .B --ip6-proto
 is an alias for this option.
 .TP
-.BR "--ip6-source-port " "[!] \fIport1\fP[:\fIport2\fP]"
+.RB [ ! ] " --ip6-source-port " \fIport1\fP[ : \fIport2\fP]
 The source port or port range for the IPv6 protocols 6 (TCP), 17
 (UDP), 33 (DCCP) or 132 (SCTP). The
 .B --ip6-protocol
@@ -673,7 +645,7 @@ The flag
 .B --ip6-sport
 is an alias for this option.
 .TP
-.BR "--ip6-destination-port " "[!] \fIport1\fP[:\fIport2\fP]"
+.RB [ ! ] " --ip6-destination-port " \fIport1\fP[ : \fIport2\fP]
 The destination port or port range for IPv6 protocols 6 (TCP), 17
 (UDP), 33 (DCCP) or 132 (SCTP). The
 .B --ip6-protocol
@@ -685,7 +657,7 @@ The flag
 .B --ip6-dport
 is an alias for this option.
 .TP
-.BR "--ip6-icmp-type " "[!] {\fItype\fP[:\fItype\fP]/\fIcode\fP[:\fIcode\fP]|\fItypename\fP}"
+.RB [ ! ] " --ip6-icmp-type " {\fItype\fP[ : \fItype\fP] / \fIcode\fP[ : \fIcode\fP]|\fItypename\fP}
 Specify ipv6\-icmp type and code to match.
 Ranges for both type and code are supported. Type and code are
 separated by a slash. Valid numbers for type and range are 0 to 255.
@@ -714,7 +686,7 @@ number; the default is
 .IR 5 .
 .SS mark_m
 .TP
-.BR "--mark " "[!] [\fIvalue\fP][/\fImask\fP]"
+.RB [ ! ] " --mark " [\fIvalue\fP][ / \fImask\fP]
 Matches frames with the given unsigned mark value. If a
 .IR value " and " mask " are specified, the logical AND of the mark value of the frame and"
 the user-specified
@@ -733,7 +705,7 @@ non-zero. Only specifying a
 .IR mask " is useful to match multiple mark values."
 .SS pkttype
 .TP
-.BR "--pkttype-type " "[!] \fItype\fP"
+.RB [ ! ] " --pkttype-type " \fItype\fP
 Matches on the Ethernet "class" of the frame, which is determined by the
 generic networking code. Possible values:
 .IR broadcast " (MAC destination is the broadcast address),"
@@ -750,47 +722,47 @@ if the lower bound is omitted (but the colon is not), then the lowest possible l
 for that option is used, while if the upper bound is omitted (but the colon again is not), the
 highest possible upper bound for that option is used.
 .TP
-.BR "--stp-type " "[!] \fItype\fP"
-The BPDU type (0-255), recognized non-numerical types are
+.RB [ ! ] " --stp-type " \fItype\fP
+The BPDU type (0\(en255), recognized non-numerical types are
 .IR config ", denoting a configuration BPDU (=0), and"
 .IR tcn ", denothing a topology change notification BPDU (=128)."
 .TP
-.BR "--stp-flags " "[!] \fIflag\fP"
-The BPDU flag (0-255), recognized non-numerical flags are
+.RB [ ! ] " --stp-flags " \fIflag\fP
+The BPDU flag (0\(en255), recognized non-numerical flags are
 .IR topology-change ", denoting the topology change flag (=1), and"
 .IR topology-change-ack ", denoting the topology change acknowledgement flag (=128)."
 .TP
-.BR "--stp-root-prio " "[!] [\fIprio\fP][:\fIprio\fP]"
-The root priority (0-65535) range.
+.RB [ ! ] " --stp-root-prio " [\fIprio\fP][ : \fIprio\fP]
+The root priority (0\(en65535) range.
 .TP
-.BR "--stp-root-addr " "[!] [\fIaddress\fP][/\fImask\fP]"
+.RB [ ! ] " --stp-root-addr " [\fIaddress\fP][ / \fImask\fP]
 The root mac address, see the option
 .BR -s " for more details."
 .TP
-.BR "--stp-root-cost " "[!] [\fIcost\fP][:\fIcost\fP]"
-The root path cost (0-4294967295) range.
+.RB [ ! ] " --stp-root-cost " [\fIcost\fP][ : \fIcost\fP]
+The root path cost (0\(en4294967295) range.
 .TP
-.BR "--stp-sender-prio " "[!] [\fIprio\fP][:\fIprio\fP]"
-The BPDU's sender priority (0-65535) range.
+.RB [ ! ] " --stp-sender-prio " [\fIprio\fP][ : \fIprio\fP]
+The BPDU's sender priority (0\(en65535) range.
 .TP
-.BR "--stp-sender-addr " "[!] [\fIaddress\fP][/\fImask\fP]"
+.RB [ ! ] " --stp-sender-addr " [\fIaddress\fP][ / \fImask\fP]
 The BPDU's sender mac address, see the option
 .BR -s " for more details."
 .TP
-.BR "--stp-port " "[!] [\fIport\fP][:\fIport\fP]"
-The port identifier (0-65535) range.
+.RB [ ! ] " --stp-port " [\fIport\fP][ : \fIport\fP]
+The port identifier (0\(en65535) range.
 .TP
-.BR "--stp-msg-age " "[!] [\fIage\fP][:\fIage\fP]"
-The message age timer (0-65535) range.
+.RB [ ! ] " --stp-msg-age " [\fIage\fP][ : \fIage\fP]
+The message age timer (0\(en65535) range.
 .TP
-.BR "--stp-max-age " "[!] [\fIage\fP][:\fIage\fP]"
-The max age timer (0-65535) range.
+.RB [ ! ] " --stp-max-age " [\fIage\fP][ : \fIage\fP]
+The max age timer (0\(en65535) range.
 .TP
-.BR "--stp-hello-time " "[!] [\fItime\fP][:\fItime\fP]"
-The hello time timer (0-65535) range.
+.RB [ ! ] " --stp-hello-time " [\fItime\fP][ : \fItime\fP]
+The hello time timer (0\(en65535) range.
 .TP
-.BR "--stp-forward-delay " "[!] [\fIdelay\fP][:\fIdelay\fP]"
-The forward delay timer (0-65535) range.
+.RB [ ! ] " --stp-forward-delay " [\fIdelay\fP][ : \fIdelay\fP]
+The forward delay timer (0\(en65535) range.
 .\" .SS string
 .\" This module matches on a given string using some pattern matching strategy.
 .\" .TP
@@ -803,10 +775,10 @@ The forward delay timer (0-65535) range.
 .\" .BR "--string-to " "\fIoffset\fP"
 .\" The highest offset from which a match can start. (default: size of frame)
 .\" .TP
-.\" .BR "--string " "[!] \fIpattern\fP"
+.\" .RB [ ! ] " --string " \fIpattern\fP
 .\" Matches the given pattern.
 .\" .TP
-.\" .BR "--string-hex " "[!] \fIpattern\fP"
+.\" .RB [ ! ] " --string-hex " \fIpattern\fP
 .\" Matches the given pattern in hex notation, e.g. '|0D 0A|', '|0D0A|', 'www|09|netfilter|03|org|00|'
 .\" .TP
 .\" .BR "--string-icase"
@@ -816,15 +788,15 @@ Specify 802.1Q Tag Control Information fields.
 The protocol must be specified as
 .IR 802_1Q " (0x8100)."
 .TP
-.BR "--vlan-id " "[!] \fIid\fP"
+.RB [ ! ] " --vlan-id " \fIid\fP
 The VLAN identifier field (VID). Decimal number from 0 to 4095.
 .TP
-.BR "--vlan-prio " "[!] \fIprio\fP"
+.RB [ ! ] " --vlan-prio " \fIprio\fP
 The user priority field, a decimal number from 0 to 7.
 The VID should be set to 0 ("null VID") or unspecified
 (in the latter case the VID is deliberately set to 0).
 .TP
-.BR "--vlan-encap " "[!] \fItype\fP"
+.RB [ ! ] " --vlan-encap " \fItype\fP
 The encapsulated Ethernet frame type/length.
 Specified as a hexadecimal
 number from 0x0000 to 0xFFFF or as a symbolic name
@@ -841,7 +813,7 @@ The log watcher writes descriptive data about a frame to the syslog.
 .TP
 .B "--log"
 .br
-Log with the default loggin options: log-level=
+Log with the default logging options: log-level=
 .IR info ,
 log-prefix="", no ip logging, no arp logging.
 .TP
@@ -887,7 +859,7 @@ Log with the default logging options
 .TP
 .B --nflog-group "\fInlgroup\fP"
 .br
-The netlink group (1 - 2^32-1) to which packets are (only applicable for
+The netlink group (1\(en2\(ha32\-1) to which packets are (only applicable for
 nfnetlink_log). The default value is 1.
 .TP
 .B --nflog-prefix "\fIprefix\fP"
@@ -1100,16 +1072,17 @@ arp message and the hardware address length in the arp header is 6 bytes.
 .br
 .SH FILES
 .I /etc/ethertypes
-.SH ENVIRONMENT VARIABLES
-.I EBTABLES_ATOMIC_FILE
 .SH MAILINGLISTS
 .BR "" "See " http://netfilter.org/mailinglists.html
 .SH BUGS
 The version of ebtables this man page ships with does not support the
-.B broute
-table. Also there is no support for
 .B string
-match. And finally, this list is probably not complete.
+match. Further, support for atomic-options
+.RB ( --atomic-file ", " --atomic-init ", " --atomic-save ", " --atomic-commit )
+has not been implemented, although
+.BR ebtables-save " and " ebtables-restore
+might replace them entirely given the inherent atomicity of nftables.
+Finally, this list is probably not complete.
 .SH SEE ALSO
 .BR xtables-nft "(8), " iptables "(8), " ip (8)
 .PP

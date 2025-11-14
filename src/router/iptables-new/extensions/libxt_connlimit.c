@@ -2,6 +2,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <xtables.h>
+#include <arpa/inet.h>
+
 #include <linux/netfilter/xt_connlimit.h>
 
 enum {
@@ -183,6 +185,51 @@ static void connlimit_save6(const void *ip, const struct xt_entry_match *match)
 	}
 }
 
+static int connlimit_xlate(struct xt_xlate *xl,
+			   const struct xt_xlate_mt_params *params)
+{
+	const struct xt_connlimit_info *info = (const void *)params->match->data;
+	static uint32_t connlimit_id;
+	char netmask[128] = {};
+	char addr[64] = {};
+	uint32_t mask;
+
+	switch (xt_xlate_get_family(xl)) {
+	case AF_INET:
+		mask = count_bits4(info->v4_mask);
+		if (mask != 32) {
+			struct in_addr *in = (struct in_addr *)&info->v4_mask;
+
+			inet_ntop(AF_INET, in, addr, sizeof(addr));
+			snprintf(netmask, sizeof(netmask), "and %s ", addr);
+		}
+		break;
+	case AF_INET6:
+		mask = count_bits6(info->v6_mask);
+		if (mask != 128) {
+			struct in6_addr *in6 = (struct in6_addr *)&info->v6_mask;
+
+			inet_ntop(AF_INET6, in6, addr, sizeof(addr));
+			snprintf(netmask, sizeof(netmask), "and %s ", addr);
+		}
+		break;
+	default:
+		return 0;
+	}
+
+	xt_xlate_set_add(xl, "connlimit%u { type ipv4_addr; flags dynamic; }",
+			 connlimit_id);
+	xt_xlate_rule_add(xl, "add @connlimit%u { %s %s %sct count %s%u }",
+			  connlimit_id++,
+			  xt_xlate_get_family(xl) == AF_INET ? "ip" : "ip6",
+			  info->flags & XT_CONNLIMIT_DADDR ? "daddr" : "saddr",
+			  netmask,
+			  info->flags & XT_CONNLIMIT_INVERT ? "" : "over ",
+			  info->limit);
+
+	return 1;
+}
+
 static struct xtables_match connlimit_mt_reg[] = {
 	{
 		.name          = "connlimit",
@@ -228,6 +275,7 @@ static struct xtables_match connlimit_mt_reg[] = {
 		.print         = connlimit_print4,
 		.save          = connlimit_save4,
 		.x6_options    = connlimit_opts,
+		.xlate         = connlimit_xlate,
 	},
 	{
 		.name          = "connlimit",
@@ -243,6 +291,7 @@ static struct xtables_match connlimit_mt_reg[] = {
 		.print         = connlimit_print6,
 		.save          = connlimit_save6,
 		.x6_options    = connlimit_opts,
+		.xlate         = connlimit_xlate,
 	},
 };
 

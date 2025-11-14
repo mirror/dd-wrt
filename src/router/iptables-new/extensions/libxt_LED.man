@@ -6,9 +6,9 @@ the trigger behavior:
 .TP
 \fB\-\-led\-trigger\-id\fP \fIname\fP
 This is the name given to the LED trigger. The actual name of the trigger
-will be prefixed with "netfilter-".
+will be prefixed with "netfilter\-".
 .TP
-\fB\-\-led-delay\fP \fIms\fP
+\fB\-\-led\-delay\fP \fIms\fP
 This indicates how long (in milliseconds) the LED should be left illuminated
 when a packet arrives before being switched off again. The default is 0
 (blink as fast as possible.) The special value \fIinf\fP can be given to

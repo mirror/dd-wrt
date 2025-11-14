@@ -606,6 +606,15 @@ static int iptcc_chain_index_delete_chain(struct chain_head *c, struct xtc_handl
 
 	if (index_ptr == &c->list) { /* Chain used as index ptr */
 
+		/* If this is the last chain in the list, its index bucket just
+		 * became empty. Adjust the size to avoid a NULL-pointer deref
+		 * later.
+		 */
+		if (next == &h->chains) {
+			h->chain_index_sz--;
+			return 0;
+		}
+
 		/* See if its possible to avoid a rebuild, by shifting
 		 * to next pointer.  Its possible if the next pointer
 		 * is located in the same index bucket.
@@ -813,7 +822,7 @@ static int __iptcc_p_del_policy(struct xtc_handle *h, unsigned int num)
 
 		/* save counter and counter_map information */
 		h->chain_iterator_cur->counter_map.maptype =
-						COUNTER_MAP_ZEROED;
+						COUNTER_MAP_NORMAL_MAP;
 		h->chain_iterator_cur->counter_map.mappos = num-1;
 		memcpy(&h->chain_iterator_cur->counters, &pr->entry->counters,
 			sizeof(h->chain_iterator_cur->counters));
@@ -1169,7 +1178,7 @@ static int iptcc_compile_chain(struct xtc_handle *h, STRUCT_REPLACE *repl, struc
 	else
 		foot->target.verdict = RETURN;
 	/* set policy-counters */
-	memcpy(&foot->e.counters, &c->counters, sizeof(STRUCT_COUNTERS));
+	foot->e.counters = c->counters;
 
 	return 0;
 }
@@ -1309,15 +1318,9 @@ retry:
 		return NULL;
 	}
 
-	sockfd = socket(TC_AF, SOCK_RAW, IPPROTO_RAW);
+	sockfd = socket(TC_AF, SOCK_RAW | SOCK_CLOEXEC, IPPROTO_RAW);
 	if (sockfd < 0)
 		return NULL;
-
-	if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) == -1) {
-		fprintf(stderr, "Could not set close on exec: %s\n",
-			strerror(errno));
-		abort();
-	}
 
 	s = sizeof(info);
 
@@ -2381,11 +2384,15 @@ int TC_RENAME_CHAIN(const IPT_CHAINLABEL oldname,
 		return 0;
 	}
 
+	handle->num_chains--;
+
 	/* This only unlinks "c" from the list, thus no free(c) */
 	iptcc_chain_index_delete_chain(c, handle);
 
 	/* Change the name of the chain */
 	strncpy(c->name, newname, sizeof(IPT_CHAINLABEL) - 1);
+
+	handle->num_chains++;
 
 	/* Insert sorted into to list again */
 	iptc_insert_chain(handle, c);
@@ -2545,8 +2552,8 @@ TC_COMMIT(struct xtc_handle *handle)
 			+ sizeof(STRUCT_COUNTERS) * new_number;
 
 	/* These are the old counters we will get from kernel */
-	repl->counters = malloc(sizeof(STRUCT_COUNTERS)
-				* handle->info.num_entries);
+	repl->counters = calloc(handle->info.num_entries,
+				sizeof(STRUCT_COUNTERS));
 	if (!repl->counters) {
 		errno = ENOMEM;
 		goto out_free_repl;

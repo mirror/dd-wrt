@@ -22,6 +22,12 @@
 #include <linux/netfilter/xt_set.h>
 #include "libxt_set.h"
 
+#ifdef DEBUG
+#define DEBUGP(x, args...) fprintf(stderr, x, ## args)
+#else
+#define DEBUGP(x, args...)
+#endif
+
 /* Revision 0 */
 
 static void
@@ -328,8 +334,7 @@ parse_counter(const char *opt)
 
 	if (!xtables_strtoul(opt, NULL, &value, 0, UINT64_MAX))
 		xtables_error(PARAMETER_PROBLEM,
-			      "Cannot parse %s as a counter value\n",
-			      opt);
+			      "Cannot parse %s as a counter value", opt);
 	return (uint64_t)value;
 }
 
@@ -348,60 +353,54 @@ set_parse_v3(int c, char **argv, int invert, unsigned int *flags,
 	case '0':
 		if (info->bytes.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --bytes-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --bytes-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--bytes-gt option cannot be inverted\n");
+				      "--bytes-gt option cannot be inverted");
 		info->bytes.op = IPSET_COUNTER_GT;
 		info->bytes.value = parse_counter(optarg);
 		break;
 	case '9':
 		if (info->bytes.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --bytes-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --bytes-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--bytes-lt option cannot be inverted\n");
+				      "--bytes-lt option cannot be inverted");
 		info->bytes.op = IPSET_COUNTER_LT;
 		info->bytes.value = parse_counter(optarg);
 		break;
 	case '8':
 		if (info->bytes.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --bytes-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --bytes-[eq|lt|gt] is allowed");
 		info->bytes.op = invert ? IPSET_COUNTER_NE : IPSET_COUNTER_EQ;
 		info->bytes.value = parse_counter(optarg);
 		break;
 	case '7':
 		if (info->packets.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --packets-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --packets-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--packets-gt option cannot be inverted\n");
+				      "--packets-gt option cannot be inverted");
 		info->packets.op = IPSET_COUNTER_GT;
 		info->packets.value = parse_counter(optarg);
 		break;
 	case '6':
 		if (info->packets.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --packets-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --packets-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--packets-lt option cannot be inverted\n");
+				      "--packets-lt option cannot be inverted");
 		info->packets.op = IPSET_COUNTER_LT;
 		info->packets.value = parse_counter(optarg);
 		break;
 	case '5':
 		if (info->packets.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --packets-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --packets-[eq|lt|gt] is allowed");
 		info->packets.op = invert ? IPSET_COUNTER_NE : IPSET_COUNTER_EQ;
 		info->packets.value = parse_counter(optarg);
 		break;
@@ -412,7 +411,7 @@ set_parse_v3(int c, char **argv, int invert, unsigned int *flags,
 	case '3':
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--return-nomatch flag cannot be inverted\n");
+				      "--return-nomatch flag cannot be inverted");
 		info->flags |= IPSET_FLAG_RETURN_NOMATCH;
 		break;
 	case '2':
@@ -517,60 +516,54 @@ set_parse_v4(int c, char **argv, int invert, unsigned int *flags,
 	case '0':
 		if (info->bytes.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --bytes-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --bytes-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--bytes-gt option cannot be inverted\n");
+				      "--bytes-gt option cannot be inverted");
 		info->bytes.op = IPSET_COUNTER_GT;
 		info->bytes.value = parse_counter(optarg);
 		break;
 	case '9':
 		if (info->bytes.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --bytes-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --bytes-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--bytes-lt option cannot be inverted\n");
+				      "--bytes-lt option cannot be inverted");
 		info->bytes.op = IPSET_COUNTER_LT;
 		info->bytes.value = parse_counter(optarg);
 		break;
 	case '8':
 		if (info->bytes.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --bytes-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --bytes-[eq|lt|gt] is allowed");
 		info->bytes.op = invert ? IPSET_COUNTER_NE : IPSET_COUNTER_EQ;
 		info->bytes.value = parse_counter(optarg);
 		break;
 	case '7':
 		if (info->packets.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --packets-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --packets-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--packets-gt option cannot be inverted\n");
+				      "--packets-gt option cannot be inverted");
 		info->packets.op = IPSET_COUNTER_GT;
 		info->packets.value = parse_counter(optarg);
 		break;
 	case '6':
 		if (info->packets.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --packets-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --packets-[eq|lt|gt] is allowed");
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--packets-lt option cannot be inverted\n");
+				      "--packets-lt option cannot be inverted");
 		info->packets.op = IPSET_COUNTER_LT;
 		info->packets.value = parse_counter(optarg);
 		break;
 	case '5':
 		if (info->packets.op != IPSET_COUNTER_NONE)
 			xtables_error(PARAMETER_PROBLEM,
-				      "only one of the --packets-[eq|lt|gt]"
-				      " is allowed\n");
+				      "only one of the --packets-[eq|lt|gt] is allowed");
 		info->packets.op = invert ? IPSET_COUNTER_NE : IPSET_COUNTER_EQ;
 		info->packets.value = parse_counter(optarg);
 		break;
@@ -581,7 +574,7 @@ set_parse_v4(int c, char **argv, int invert, unsigned int *flags,
 	case '3':
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
-				      "--return-nomatch flag cannot be inverted\n");
+				      "--return-nomatch flag cannot be inverted");
 		info->flags |= IPSET_FLAG_RETURN_NOMATCH;
 		break;
 	case '2':

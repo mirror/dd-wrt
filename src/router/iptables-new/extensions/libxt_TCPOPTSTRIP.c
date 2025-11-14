@@ -142,12 +142,22 @@ tcpoptstrip_print_list(const struct xt_tcpoptstrip_target_info *info,
 	}
 }
 
+static bool tcpoptstrip_empty(const struct xt_tcpoptstrip_target_info *info)
+{
+	static const struct xt_tcpoptstrip_target_info empty = {};
+
+	return memcmp(info, &empty, sizeof(empty)) == 0;
+}
+
 static void
 tcpoptstrip_tg_print(const void *ip, const struct xt_entry_target *target,
                      int numeric)
 {
 	const struct xt_tcpoptstrip_target_info *info =
 		(const void *)target->data;
+
+	if (tcpoptstrip_empty(info))
+		return;
 
 	printf(" TCPOPTSTRIP options ");
 	tcpoptstrip_print_list(info, numeric);
@@ -158,6 +168,9 @@ tcpoptstrip_tg_save(const void *ip, const struct xt_entry_target *target)
 {
 	const struct xt_tcpoptstrip_target_info *info =
 		(const void *)target->data;
+
+	if (tcpoptstrip_empty(info))
+		return;
 
 	printf(" --strip-options ");
 	tcpoptstrip_print_list(info, true);

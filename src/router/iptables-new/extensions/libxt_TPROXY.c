@@ -147,6 +147,64 @@ static void tproxy_tg1_parse(struct xt_option_call *cb)
 	}
 }
 
+static int tproxy_tg_xlate(struct xt_xlate *xl,
+			   const struct xt_tproxy_target_info_v1 *info)
+{
+	int family = xt_xlate_get_family(xl);
+	uint32_t mask = info->mark_mask;
+	bool port_mandatory = false;
+	char buf[INET6_ADDRSTRLEN];
+
+	xt_xlate_add(xl, "tproxy to");
+
+	inet_ntop(family, &info->laddr, buf, sizeof(buf));
+
+	if (family == AF_INET6 && !IN6_IS_ADDR_UNSPECIFIED(&info->laddr.in6))
+		xt_xlate_add(xl, "[%s]", buf);
+	else if (family == AF_INET && info->laddr.ip)
+		xt_xlate_add(xl, "%s", buf);
+	else
+		port_mandatory = true;
+
+	if (port_mandatory)
+		xt_xlate_add(xl, " :%d", ntohs(info->lport));
+	else if (info->lport)
+		xt_xlate_add(xl, ":%d", ntohs(info->lport));
+
+	/* xt_TPROXY.c does: skb->mark = (skb->mark & ~mark_mask) ^ mark_value */
+	if (mask == 0xffffffff)
+		xt_xlate_add(xl, "meta mark set 0x%x", info->mark_value);
+	else if (mask || info->mark_value)
+		xt_xlate_add(xl, "meta mark set meta mark & 0x%x xor 0x%x",
+			     ~mask, info->mark_value);
+
+	/* unlike TPROXY target, tproxy statement is non-terminal */
+	xt_xlate_add(xl, "accept");
+	return 1;
+}
+
+static int tproxy_tg_xlate_v1(struct xt_xlate *xl,
+			      const struct xt_xlate_tg_params *params)
+{
+	const struct xt_tproxy_target_info_v1 *data = (const void *)params->target->data;
+
+	return tproxy_tg_xlate(xl, data);
+}
+
+static int tproxy_tg_xlate_v0(struct xt_xlate *xl,
+			      const struct xt_xlate_tg_params *params)
+{
+	const struct xt_tproxy_target_info *info = (const void *)params->target->data;
+	struct xt_tproxy_target_info_v1 t = {
+		.mark_mask = info->mark_mask,
+		.mark_value = info->mark_value,
+		.laddr.ip = info->laddr,
+		.lport = info->lport,
+	};
+
+	return tproxy_tg_xlate(xl, &t);
+}
+
 static struct xtables_target tproxy_tg_reg[] = {
 	{
 		.name          = "TPROXY",
@@ -160,6 +218,7 @@ static struct xtables_target tproxy_tg_reg[] = {
 		.save          = tproxy_tg_save,
 		.x6_options    = tproxy_tg0_opts,
 		.x6_parse      = tproxy_tg0_parse,
+		.xlate	       = tproxy_tg_xlate_v0,
 	},
 	{
 		.name          = "TPROXY",
@@ -173,6 +232,7 @@ static struct xtables_target tproxy_tg_reg[] = {
 		.save          = tproxy_tg_save4,
 		.x6_options    = tproxy_tg1_opts,
 		.x6_parse      = tproxy_tg1_parse,
+		.xlate	       = tproxy_tg_xlate_v1,
 	},
 	{
 		.name          = "TPROXY",
@@ -186,6 +246,7 @@ static struct xtables_target tproxy_tg_reg[] = {
 		.save          = tproxy_tg_save6,
 		.x6_options    = tproxy_tg1_opts,
 		.x6_parse      = tproxy_tg1_parse,
+		.xlate	       = tproxy_tg_xlate_v1,
 	},
 };
 

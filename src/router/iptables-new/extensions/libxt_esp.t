@@ -4,5 +4,12 @@
 -p esp -m esp --espspi 0:4294967295;-p esp -m esp;OK
 -p esp -m esp ! --espspi 0:4294967294;=;OK
 -p esp -m esp --espspi -1;;FAIL
+-p esp -m esp --espspi :;-p esp -m esp;OK
+-p esp -m esp ! --espspi :;-p esp -m esp ! --espspi 0:4294967295;OK
+-p esp -m esp --espspi :4;-p esp -m esp --espspi 0:4;OK
+-p esp -m esp --espspi 4:;-p esp -m esp --espspi 4:4294967295;OK
+-p esp -m esp --espspi 3:4;=;OK
+-p esp -m esp --espspi 4:4;-p esp -m esp --espspi 4;OK
+-p esp -m esp --espspi 4:3;;FAIL
 -p esp -m esp;=;OK
 -m esp;;FAIL

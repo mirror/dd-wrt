@@ -8,7 +8,7 @@ Zero out the bits given by \fImask\fP and XOR \fIvalue\fP into the ctmark.
 Copy the packet mark (nfmark) to the connection mark (ctmark) using the given
 masks. The new nfmark value is determined as follows:
 .IP
-ctmark = (ctmark & ~ctmask) ^ (nfmark & nfmask)
+ctmark = (ctmark & \(tictmask) \(ha (nfmark & nfmask)
 .IP
 i.e. \fIctmask\fP defines what bits to clear and \fInfmask\fP what bits of the
 nfmark to XOR into the ctmark. \fIctmask\fP and \fInfmask\fP default to
@@ -18,7 +18,7 @@ nfmark to XOR into the ctmark. \fIctmask\fP and \fInfmask\fP default to
 Copy the connection mark (ctmark) to the packet mark (nfmark) using the given
 masks. The new ctmark value is determined as follows:
 .IP
-nfmark = (nfmark & ~\fInfmask\fP) ^ (ctmark & \fIctmask\fP);
+nfmark = (nfmark & \(ti\fInfmask\fP) \(ha (ctmark & \fIctmask\fP);
 .IP
 i.e. \fInfmask\fP defines what bits to clear and \fIctmask\fP what bits of the
 ctmark to XOR into the nfmark. \fIctmask\fP and \fInfmask\fP default to

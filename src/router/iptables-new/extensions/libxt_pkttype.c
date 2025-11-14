@@ -30,8 +30,8 @@ static const struct pkttypes supported_types[] = {
 	{"unicast", PACKET_HOST, 1, "to us"},
 	{"broadcast", PACKET_BROADCAST, 1, "to all"},
 	{"multicast", PACKET_MULTICAST, 1, "to group"},
-/*
 	{"otherhost", PACKET_OTHERHOST, 1, "to someone else"},
+/*
 	{"outgoing", PACKET_OUTGOING, 1, "outgoing of any type"},
 */
 	/* aliases */

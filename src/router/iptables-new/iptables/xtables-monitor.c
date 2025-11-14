@@ -37,7 +37,6 @@
 #include "iptables.h" /* for xtables_globals */
 #include "xtables-multi.h"
 #include "nft.h"
-#include "nft-arp.h"
 
 struct cb_arg {
 	uint32_t nfproto;
@@ -71,6 +70,22 @@ err:
 	return MNL_CB_OK;
 }
 
+static const char *family_cmd(int family)
+{
+	switch (family) {
+	case NFPROTO_IPV4:
+		return "iptables";
+	case NFPROTO_IPV6:
+		return "ip6tables";
+	case NFPROTO_ARP:
+		return "arptables";
+	case NFPROTO_BRIDGE:
+		return "ebtables";
+	default:
+		return NULL;
+	}
+}
+
 static bool counters;
 static bool trace;
 static bool events;
@@ -93,23 +108,27 @@ static int rule_cb(const struct nlmsghdr *nlh, void *data)
 	if (arg->nfproto && arg->nfproto != family)
 		goto err_free;
 
-	if (arg->is_event)
-		printf(" EVENT: ");
-	switch (family) {
-	case AF_INET:
-	case AF_INET6:
-		printf("-%c ", family == AF_INET ? '4' : '6');
-		break;
-	case NFPROTO_ARP:
-		printf("-0 ");
-		break;
-	default:
-		goto err_free;
-	}
+	xtables_set_nfproto(family);
+	arg->h->ops = nft_family_ops_lookup(family);
+	arg->h->family = family;
 
-	printf("-t %s ", nftnl_rule_get_str(r, NFTNL_RULE_TABLE));
-	nft_rule_print_save(arg->h, r, type == NFT_MSG_NEWRULE ? NFT_RULE_APPEND :
-							   NFT_RULE_DEL,
+	/* ignore policy rules unless tracing,
+	 * they are reported when deleting user-defined chains */
+	if (family == NFPROTO_BRIDGE &&
+	    arg->is_event &&
+	    nft_rule_is_policy_rule(r))
+		goto err_free;
+
+	if (!family_cmd(family))
+		goto err_free;
+
+	printf("%s%s -t %s ",
+	       arg->is_event ? " EVENT: " : "",
+	       family_cmd(family),
+	       nftnl_rule_get_str(r, NFTNL_RULE_TABLE));
+	nft_rule_print_save(arg->h, r,
+			    type == NFT_MSG_NEWRULE ? NFT_RULE_APPEND
+						    : NFT_RULE_DEL,
 			    counters ? 0 : FMT_NOCOUNTS);
 err_free:
 	nftnl_rule_free(r);
@@ -136,25 +155,18 @@ static int chain_cb(const struct nlmsghdr *nlh, void *data)
 	if (arg->nfproto && arg->nfproto != family)
 		goto err_free;
 
-	if (nftnl_chain_is_set(c, NFTNL_CHAIN_PRIO))
-		family = -1;
-
 	printf(" EVENT: ");
-	switch (family) {
-	case NFPROTO_IPV4:
-		family = 4;
-		break;
-	case NFPROTO_IPV6:
-		family = 6;
-		break;
-	default:
-		nftnl_chain_snprintf(buf, sizeof(buf), c, NFTNL_OUTPUT_DEFAULT, 0);
-		printf("# nft: %s\n", buf);
+
+	if (nftnl_chain_is_set(c, NFTNL_CHAIN_PRIO) || !family_cmd(family)) {
+		nftnl_chain_snprintf(buf, sizeof(buf),
+				     c, NFTNL_OUTPUT_DEFAULT, 0);
+		printf("nft: %s chain: %s\n",
+		       type == NFT_MSG_NEWCHAIN ? "NEW" : "DEL", buf);
 		goto err_free;
 	}
 
-	printf("-%d -t %s -%c %s\n",
-			family,
+	printf("%s -t %s -%c %s\n",
+			family_cmd(family),
 			nftnl_chain_get_str(c, NFTNL_CHAIN_TABLE),
 			type == NFT_MSG_NEWCHAIN ? 'N' : 'X',
 			nftnl_chain_get_str(c, NFTNL_CHAIN_NAME));
@@ -225,12 +237,12 @@ static void trace_print_rule(const struct nftnl_trace *nlt, struct cb_arg *args)
 		exit(EXIT_FAILURE);
 	}
 
-	nlh = nftnl_chain_nlmsg_build_hdr(buf, NFT_MSG_GETRULE, family, NLM_F_DUMP, 0);
+	nlh = nftnl_nlmsg_build_hdr(buf, NFT_MSG_GETRULE, family, 0, 0);
 
         nftnl_rule_set_u32(r, NFTNL_RULE_FAMILY, family);
 	nftnl_rule_set_str(r, NFTNL_RULE_CHAIN, chain);
 	nftnl_rule_set_str(r, NFTNL_RULE_TABLE, table);
-	nftnl_rule_set_u64(r, NFTNL_RULE_POSITION, handle);
+	nftnl_rule_set_u64(r, NFTNL_RULE_HANDLE, handle);
 	nftnl_rule_nlmsg_build_payload(nlh, r);
 	nftnl_rule_free(r);
 
@@ -246,24 +258,21 @@ static void trace_print_rule(const struct nftnl_trace *nlt, struct cb_arg *args)
 	}
 
 	portid = mnl_socket_get_portid(nl);
-        if (mnl_socket_sendto(nl, nlh, nlh->nlmsg_len) < 0) {
-                perror("mnl_socket_send");
-                exit(EXIT_FAILURE);
-        }
+	if (mnl_socket_sendto(nl, nlh, nlh->nlmsg_len) < 0) {
+		perror("mnl_socket_send");
+		exit(EXIT_FAILURE);
+	}
 
 	ret = mnl_socket_recvfrom(nl, buf, sizeof(buf));
-        while (ret > 0) {
+	if (ret > 0) {
 		args->is_event = false;
-                ret = mnl_cb_run(buf, ret, 0, portid, rule_cb, args);
-                if (ret <= 0)
-                        break;
-                ret = mnl_socket_recvfrom(nl, buf, sizeof(buf));
-        }
-        if (ret == -1) {
-                perror("error");
-                exit(EXIT_FAILURE);
-        }
-        mnl_socket_close(nl);
+		ret = mnl_cb_run(buf, ret, 0, portid, rule_cb, args);
+	}
+	if (ret == -1) {
+		perror("error");
+		exit(EXIT_FAILURE);
+	}
+	mnl_socket_close(nl);
 }
 
 static void trace_print_packet(const struct nftnl_trace *nlt, struct cb_arg *args)
@@ -274,14 +283,14 @@ static void trace_print_packet(const struct nftnl_trace *nlt, struct cb_arg *arg
 	uint32_t mark;
 	char name[IFNAMSIZ];
 
-	printf("PACKET: %d %08x ", args->nfproto, nftnl_trace_get_u32(nlt, NFTNL_TRACE_ID));
+	family = nftnl_trace_get_u32(nlt, NFTNL_TRACE_FAMILY);
+	printf("PACKET: %d %08x ", family, nftnl_trace_get_u32(nlt, NFTNL_TRACE_ID));
 
 	if (nftnl_trace_is_set(nlt, NFTNL_TRACE_IIF))
 		printf("IN=%s ", if_indextoname(nftnl_trace_get_u32(nlt, NFTNL_TRACE_IIF), name));
 	if (nftnl_trace_is_set(nlt, NFTNL_TRACE_OIF))
 		printf("OUT=%s ", if_indextoname(nftnl_trace_get_u32(nlt, NFTNL_TRACE_OIF), name));
 
-	family = nftnl_trace_get_u32(nlt, NFTNL_TRACE_FAMILY);
 	nfproto = family;
 	if (nftnl_trace_is_set(nlt, NFTNL_TRACE_NFPROTO)) {
 		nfproto = nftnl_trace_get_u32(nlt, NFTNL_TRACE_NFPROTO);
@@ -305,6 +314,9 @@ static void trace_print_packet(const struct nftnl_trace *nlt, struct cb_arg *arg
 			printf("MACSRC=%s ", ether_ntoa((const void *)eh->h_source));
 			printf("MACDST=%s ", ether_ntoa((const void *)eh->h_dest));
 			printf("MACPROTO=%04x ", ntohs(eh->h_proto));
+			break;
+		case ARPHRD_LOOPBACK:
+			printf("LOOPBACK ");
 			break;
 		default:
 			printf("LL=0x%x ", type);
@@ -337,7 +349,7 @@ static void trace_print_packet(const struct nftnl_trace *nlt, struct cb_arg *arg
 			inet_ntop(AF_INET, &iph->daddr, addrbuf, sizeof(addrbuf));
 			printf("DST=%s ", addrbuf);
 
-			printf("LEN=%d TOS=0x%x TTL=%d ID=%d", ntohs(iph->tot_len), iph->tos, iph->ttl, ntohs(iph->id));
+			printf("LEN=%d TOS=0x%x TTL=%d ID=%d ", ntohs(iph->tot_len), iph->tos, iph->ttl, ntohs(iph->id));
 			if (iph->frag_off & htons(0x8000))
 				printf("CE ");
 			if (iph->frag_off & htons(IP_DF))
@@ -360,7 +372,7 @@ static void trace_print_packet(const struct nftnl_trace *nlt, struct cb_arg *arg
 				printf("OPT (");
 				for (i = 0; i < optsize; i++)
 					printf("%02X", op[i]);
-				printf(")");
+				printf(") ");
 			}
 			break;
 		}
@@ -434,9 +446,18 @@ static void trace_print_packet(const struct nftnl_trace *nlt, struct cb_arg *arg
 	mark = nftnl_trace_get_u32(nlt, NFTNL_TRACE_MARK);
 	if (mark)
 		printf("MARK=0x%x ", mark);
+	puts("");
 }
 
-static void print_verdict(struct nftnl_trace *nlt, uint32_t verdict)
+static void trace_print_hdr(const struct nftnl_trace *nlt)
+{
+	printf(" TRACE: %d %08x %s:%s", nftnl_trace_get_u32(nlt, NFTNL_TABLE_FAMILY),
+					nftnl_trace_get_u32(nlt, NFTNL_TRACE_ID),
+					nftnl_trace_get_str(nlt, NFTNL_TRACE_TABLE),
+					nftnl_trace_get_str(nlt, NFTNL_TRACE_CHAIN));
+}
+
+static void print_verdict(const struct nftnl_trace *nlt, uint32_t verdict)
 {
 	const char *chain;
 
@@ -497,35 +518,37 @@ static int trace_cb(const struct nlmsghdr *nlh, struct cb_arg *arg)
 	    arg->nfproto != nftnl_trace_get_u32(nlt, NFTNL_TABLE_FAMILY))
 		goto err_free;
 
-	printf(" TRACE: %d %08x %s:%s", nftnl_trace_get_u32(nlt, NFTNL_TABLE_FAMILY),
-					nftnl_trace_get_u32(nlt, NFTNL_TRACE_ID),
-					nftnl_trace_get_str(nlt, NFTNL_TRACE_TABLE),
-					nftnl_trace_get_str(nlt, NFTNL_TRACE_CHAIN));
-
 	switch (nftnl_trace_get_u32(nlt, NFTNL_TRACE_TYPE)) {
 	case NFT_TRACETYPE_RULE:
 		verdict = nftnl_trace_get_u32(nlt, NFTNL_TRACE_VERDICT);
-		printf(":rule:0x%llx:", (unsigned long long)nftnl_trace_get_u64(nlt, NFTNL_TRACE_RULE_HANDLE));
-		print_verdict(nlt, verdict);
 
-		if (nftnl_trace_is_set(nlt, NFTNL_TRACE_RULE_HANDLE))
-			trace_print_rule(nlt, arg);
 		if (nftnl_trace_is_set(nlt, NFTNL_TRACE_LL_HEADER) ||
 		    nftnl_trace_is_set(nlt, NFTNL_TRACE_NETWORK_HEADER))
 			trace_print_packet(nlt, arg);
+
+		if (nftnl_trace_is_set(nlt, NFTNL_TRACE_RULE_HANDLE)) {
+			trace_print_hdr(nlt);
+			printf(":rule:0x%" PRIx64":", nftnl_trace_get_u64(nlt, NFTNL_TRACE_RULE_HANDLE));
+			print_verdict(nlt, verdict);
+			printf(" ");
+			trace_print_rule(nlt, arg);
+		}
 		break;
 	case NFT_TRACETYPE_POLICY:
+		trace_print_hdr(nlt);
 		printf(":policy:");
 		verdict = nftnl_trace_get_u32(nlt, NFTNL_TRACE_POLICY);
 
 		print_verdict(nlt, verdict);
+		puts("");
 		break;
 	case NFT_TRACETYPE_RETURN:
+		trace_print_hdr(nlt);
 		printf(":return:");
 		trace_print_return(nlt);
+		puts("");
 		break;
 	}
-	puts("");
 err_free:
 	nftnl_trace_free(nlt);
 err:
@@ -560,6 +583,7 @@ static int monitor_cb(const struct nlmsghdr *nlh, void *data)
 		break;
 	}
 
+	fflush(stdout);
 	return ret;
 }
 
@@ -610,12 +634,13 @@ int xtables_monitor_main(int argc, char *argv[])
 				xtables_globals.program_version);
 		exit(1);
 	}
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 	init_extensions4();
-#endif
+	init_extensions6();
+	init_extensionsa();
+	init_extensionsb();
 
-	if (nft_init(&h, AF_INET, xtables_ipv4)) {
+	if (nft_init(&h, AF_INET)) {
 		fprintf(stderr, "%s/%s Failed to initialize nft: %s\n",
 			xtables_globals.program_name,
 			xtables_globals.program_version,

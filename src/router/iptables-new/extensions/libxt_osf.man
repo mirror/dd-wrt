@@ -8,29 +8,39 @@ Match an operating system genre by using a passive fingerprinting.
 \fB\-\-ttl\fP \fIlevel\fP
 Do additional TTL checks on the packet to determine the operating system.
 \fIlevel\fP can be one of the following values:
-.IP \(bu 4
-0 - True IP address and fingerprint TTL comparison. This generally works for
+.RS
+.TP
+\fB0\fP
+True IP address and fingerprint TTL comparison. This generally works for
 LANs.
-.IP \(bu 4
-1 - Check if the IP header's TTL is less than the fingerprint one. Works for
+.TP
+\fB1\fP
+Check if the IP header's TTL is less than the fingerprint one. Works for
 globally-routable addresses.
-.IP \(bu 4
-2 - Do not compare the TTL at all.
+.TP
+\fB2\fP
+Do not compare the TTL at all.
+.RE
 .TP
 \fB\-\-log\fP \fIlevel\fP
 Log determined genres into dmesg even if they do not match the desired one.
 \fIlevel\fP can be one of the following values:
-.IP \(bu 4
-0 - Log all matched or unknown signatures
-.IP \(bu 4
-1 - Log only the first one
-.IP \(bu 4
-2 - Log all known matched signatures
+.RS
+.TP
+\fB0\fP
+Log all matched or unknown signatures
+.TP
+\fB1\fP
+Log only the first one
+.TP
+\fB2\fP
+Log all known matched signatures
+.RE
 .PP
 You may find something like this in syslog:
 .PP
-Windows [2000:SP3:Windows XP Pro SP1, 2000 SP3]: 11.22.33.55:4024 ->
-11.22.33.44:139 hops=3 Linux [2.5-2.6:] : 1.2.3.4:42624 -> 1.2.3.5:22 hops=4
+Windows [2000:SP3:Windows XP Pro SP1, 2000 SP3]: 11.22.33.55:4024 \->
+11.22.33.44:139 hops=3 Linux [2.5\-2.6:] : 1.2.3.4:42624 \-> 1.2.3.5:22 hops=4
 .PP
 OS fingerprints are loadable using the \fBnfnl_osf\fP program. To load
 fingerprints from a file, use:
@@ -42,4 +52,4 @@ To remove them again,
 \fBnfnl_osf \-f /usr/share/xtables/pf.os \-d\fP
 .PP
 The fingerprint database can be downloaded from
-http://www.openbsd.org/cgi-bin/cvsweb/src/etc/pf.os .
+http://www.openbsd.org/cgi\-bin/cvsweb/src/etc/pf.os .

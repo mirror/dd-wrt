@@ -4,22 +4,26 @@ estimators and matching on the difference between two rate estimators.
 .PP
 For a better understanding of the available options, these are all possible
 combinations:
-.\" * Absolute:
+.TP
+Absolute:
 .IP \(bu 4
 \fBrateest\fP \fIoperator\fP \fBrateest-bps\fP
 .IP \(bu 4
 \fBrateest\fP \fIoperator\fP \fBrateest-pps\fP
-.\" * Absolute + Delta:
+.TP
+Absolute + Delta:
 .IP \(bu 4
 (\fBrateest\fP minus \fBrateest-bps1\fP) \fIoperator\fP \fBrateest-bps2\fP
 .IP \(bu 4
 (\fBrateest\fP minus \fBrateest-pps1\fP) \fIoperator\fP \fBrateest-pps2\fP
-.\" * Relative:
+.TP
+Relative:
 .IP \(bu 4
 \fBrateest1\fP \fIoperator\fP \fBrateest2\fP \fBrateest-bps\fP(without rate!)
 .IP \(bu 4
 \fBrateest1\fP \fIoperator\fP \fBrateest2\fP \fBrateest-pps\fP(without rate!)
-.\" * Relative + Delta:
+.TP
+Relative + Delta:
 .IP \(bu 4
 (\fBrateest1\fP minus \fBrateest-bps1\fP) \fIoperator\fP
 (\fBrateest2\fP minus \fBrateest-bps2\fP)
@@ -31,7 +35,7 @@ combinations:
 For each estimator (either absolute or relative mode), calculate the difference
 between the estimator-determined flow rate and the static value chosen with the
 BPS/PPS options. If the flow rate is higher than the specified BPS/PPS, 0 will
-be used instead of a negative value. In other words, "max(0, rateest#_rate -
+be used instead of a negative value. In other words, "max(0, rateest#_rate \-
 rateest#_bps)" is used.
 .TP
 [\fB!\fP] \fB\-\-rateest\-lt\fP
@@ -68,7 +72,7 @@ The names of the two rate estimators for relative mode.
 \fB\-\-rateest\-pps2\fP [\fIvalue\fP]
 Compare the estimator(s) by bytes or packets per second, and compare against
 the chosen value. See the above bullet list for which option is to be used in
-which case. A unit suffix may be used - available ones are: bit, [kmgt]bit,
+which case. A unit suffix may be used \(em available ones are: bit, [kmgt]bit,
 [KMGT]ibit, Bps, [KMGT]Bps, [KMGT]iBps.
 .PP
 Example: This is what can be used to route outgoing data connections from an

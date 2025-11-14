@@ -19,61 +19,6 @@ enum {
 	O_ICMP_TYPE = 0,
 };
 
-static const struct xt_icmp_names icmp_codes[] = {
-	{ "any", 0xFF, 0, 0xFF },
-	{ "echo-reply", 0, 0, 0xFF },
-	/* Alias */ { "pong", 0, 0, 0xFF },
-
-	{ "destination-unreachable", 3, 0, 0xFF },
-	{   "network-unreachable", 3, 0, 0 },
-	{   "host-unreachable", 3, 1, 1 },
-	{   "protocol-unreachable", 3, 2, 2 },
-	{   "port-unreachable", 3, 3, 3 },
-	{   "fragmentation-needed", 3, 4, 4 },
-	{   "source-route-failed", 3, 5, 5 },
-	{   "network-unknown", 3, 6, 6 },
-	{   "host-unknown", 3, 7, 7 },
-	{   "network-prohibited", 3, 9, 9 },
-	{   "host-prohibited", 3, 10, 10 },
-	{   "TOS-network-unreachable", 3, 11, 11 },
-	{   "TOS-host-unreachable", 3, 12, 12 },
-	{   "communication-prohibited", 3, 13, 13 },
-	{   "host-precedence-violation", 3, 14, 14 },
-	{   "precedence-cutoff", 3, 15, 15 },
-
-	{ "source-quench", 4, 0, 0xFF },
-
-	{ "redirect", 5, 0, 0xFF },
-	{   "network-redirect", 5, 0, 0 },
-	{   "host-redirect", 5, 1, 1 },
-	{   "TOS-network-redirect", 5, 2, 2 },
-	{   "TOS-host-redirect", 5, 3, 3 },
-
-	{ "echo-request", 8, 0, 0xFF },
-	/* Alias */ { "ping", 8, 0, 0xFF },
-
-	{ "router-advertisement", 9, 0, 0xFF },
-
-	{ "router-solicitation", 10, 0, 0xFF },
-
-	{ "time-exceeded", 11, 0, 0xFF },
-	/* Alias */ { "ttl-exceeded", 11, 0, 0xFF },
-	{   "ttl-zero-during-transit", 11, 0, 0 },
-	{   "ttl-zero-during-reassembly", 11, 1, 1 },
-
-	{ "parameter-problem", 12, 0, 0xFF },
-	{   "ip-header-bad", 12, 0, 0 },
-	{   "required-option-missing", 12, 1, 1 },
-
-	{ "timestamp-request", 13, 0, 0xFF },
-
-	{ "timestamp-reply", 14, 0, 0xFF },
-
-	{ "address-mask-request", 17, 0, 0xFF },
-
-	{ "address-mask-reply", 18, 0, 0xFF }
-};
-
 static void icmp_help(void)
 {
 	printf(
@@ -90,59 +35,6 @@ static const struct xt_option_entry icmp_opts[] = {
 	XTOPT_TABLEEND,
 };
 
-static void 
-parse_icmp(const char *icmptype, uint8_t *type, uint8_t code[])
-{
-	static const unsigned int limit = ARRAY_SIZE(icmp_codes);
-	unsigned int match = limit;
-	unsigned int i;
-
-	for (i = 0; i < limit; i++) {
-		if (strncasecmp(icmp_codes[i].name, icmptype, strlen(icmptype))
-		    == 0) {
-			if (match != limit)
-				xtables_error(PARAMETER_PROBLEM,
-					   "Ambiguous ICMP type `%s':"
-					   " `%s' or `%s'?",
-					   icmptype,
-					   icmp_codes[match].name,
-					   icmp_codes[i].name);
-			match = i;
-		}
-	}
-
-	if (match != limit) {
-		*type = icmp_codes[match].type;
-		code[0] = icmp_codes[match].code_min;
-		code[1] = icmp_codes[match].code_max;
-	} else {
-		char *slash;
-		char buffer[strlen(icmptype) + 1];
-		unsigned int number;
-
-		strcpy(buffer, icmptype);
-		slash = strchr(buffer, '/');
-
-		if (slash)
-			*slash = '\0';
-
-		if (!xtables_strtoui(buffer, NULL, &number, 0, UINT8_MAX))
-			xtables_error(PARAMETER_PROBLEM,
-				   "Invalid ICMP type `%s'\n", buffer);
-		*type = number;
-		if (slash) {
-			if (!xtables_strtoui(slash+1, NULL, &number, 0, UINT8_MAX))
-				xtables_error(PARAMETER_PROBLEM,
-					   "Invalid ICMP code `%s'\n",
-					   slash+1);
-			code[0] = code[1] = number;
-		} else {
-			code[0] = 0;
-			code[1] = 0xFF;
-		}
-	}
-}
-
 static void icmp_init(struct xt_entry_match *m)
 {
 	struct ipt_icmp *icmpinfo = (struct ipt_icmp *)m->data;
@@ -156,7 +48,7 @@ static void icmp_parse(struct xt_option_call *cb)
 	struct ipt_icmp *icmpinfo = cb->data;
 
 	xtables_option_parse(cb);
-	parse_icmp(cb->arg, &icmpinfo->type, icmpinfo->code);
+	ipt_parse_icmp(cb->arg, &icmpinfo->type, icmpinfo->code);
 	if (cb->invert)
 		icmpinfo->invflags |= IPT_ICMP_INV;
 }
@@ -216,7 +108,8 @@ static void icmp_save(const void *ip, const struct xt_entry_match *match)
 		printf(" !");
 
 	/* special hack for 'any' case */
-	if (icmp->type == 0xFF) {
+	if (icmp->type == 0xFF &&
+	    icmp->code[0] == 0 && icmp->code[1] == 0xFF) {
 		printf(" --icmp-type any");
 	} else {
 		printf(" --icmp-type %u", icmp->type);
@@ -256,6 +149,11 @@ static int icmp_xlate(struct xt_xlate *xl,
 		if (!type_xlate_print(xl, info->type, info->code[0],
 				      info->code[1]))
 			return 0;
+	} else {
+		/* '-m icmp --icmp-type any' is a noop by itself,
+		 * but it eats a (mandatory) previous '-p icmp' so
+		 * emit it here */
+		xt_xlate_add(xl, "ip protocol icmp");
 	}
 	return 1;
 }

@@ -1,5 +1,5 @@
 :INPUT,FORWARD,OUTPUT
--j REJECT;=;OK
+-j REJECT;-j REJECT --reject-with icmp6-port-unreachable;OK
 # manpage for IPv6 variant of REJECT does not show up for some reason?
 -j REJECT --reject-with icmp6-no-route;=;OK
 -j REJECT --reject-with icmp6-adm-prohibited;=;OK

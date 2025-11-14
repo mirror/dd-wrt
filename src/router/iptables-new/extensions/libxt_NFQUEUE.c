@@ -64,7 +64,7 @@ static const struct xt_option_entry NFQUEUE_opts[] = {
 	{.name = "queue-num", .id = O_QUEUE_NUM, .type = XTTYPE_UINT16,
 	 .flags = XTOPT_PUT, XTOPT_POINTER(s, queuenum),
 	 .excl = F_QUEUE_BALANCE},
-	{.name = "queue-balance", .id = O_QUEUE_BALANCE,
+	{.name = "queue-balance", .id = O_QUEUE_BALANCE, .max = UINT16_MAX - 1,
 	 .type = XTTYPE_UINT16RC, .excl = F_QUEUE_NUM},
 	{.name = "queue-bypass", .id = O_QUEUE_BYPASS, .type = XTTYPE_NONE},
 	{.name = "queue-cpu-fanout", .id = O_QUEUE_CPU_FANOUT,

@@ -69,13 +69,13 @@ Example:
 .IP
 match IP packets with total length >= 256
 .IP
-The IP header contains a total length field in bytes 2-3.
+The IP header contains a total length field in bytes 2\(en3.
 .IP
 \-\-u32 "\fB0 & 0xFFFF = 0x100:0xFFFF\fP"
 .IP
-read bytes 0-3
+read bytes 0\(en3
 .IP
-AND that with 0xFFFF (giving bytes 2-3), and test whether that is in the range
+AND that with 0xFFFF (giving bytes 2\(en3), and test whether that is in the range
 [0x100:0xFFFF]
 .PP
 Example: (more realistic, hence more complicated)
@@ -86,7 +86,7 @@ First test that it is an ICMP packet, true iff byte 9 (protocol) = 1
 .IP
 \-\-u32 "\fB6 & 0xFF = 1 &&\fP ...
 .IP
-read bytes 6-9, use \fB&\fP to throw away bytes 6-8 and compare the result to
+read bytes 6\(en9, use \fB&\fP to throw away bytes 6\(en8 and compare the result to
 1. Next test that it is not a fragment. (If so, it might be part of such a
 packet but we cannot always tell.) N.B.: This test is generally needed if you
 want to match anything beyond the IP header. The last 6 bits of byte 6 and all
@@ -101,11 +101,11 @@ stored in the right half of byte 0 of the IP header itself.
 .IP
  ... \fB0 >> 22 & 0x3C @ 0 >> 24 = 0\fP"
 .IP
-The first 0 means read bytes 0-3, \fB>>22\fP means shift that 22 bits to the
+The first 0 means read bytes 0\(en3, \fB>>22\fP means shift that 22 bits to the
 right. Shifting 24 bits would give the first byte, so only 22 bits is four
 times that plus a few more bits. \fB&3C\fP then eliminates the two extra bits
 on the right and the first four bits of the first byte. For instance, if IHL=5,
-then the IP header is 20 (4 x 5) bytes long. In this case, bytes 0-1 are (in
+then the IP header is 20 (4 x 5) bytes long. In this case, bytes 0\(en1 are (in
 binary) xxxx0101 yyzzzzzz, \fB>>22\fP gives the 10 bit value xxxx0101yy and
 \fB&3C\fP gives 010100. \fB@\fP means to use this number as a new offset into
 the packet, and read four bytes starting from there. This is the first 4 bytes
@@ -115,7 +115,7 @@ the result with 0.
 .PP
 Example:
 .IP
-TCP payload bytes 8-12 is any of 1, 2, 5 or 8
+TCP payload bytes 8\(en12 is any of 1, 2, 5 or 8
 .IP
 First we test that the packet is a tcp packet (similar to ICMP).
 .IP
@@ -130,5 +130,5 @@ makes this the new offset into the packet, which is the start of the TCP
 header. The length of the TCP header (again in 32 bit words) is the left half
 of byte 12 of the TCP header. The \fB12>>26&3C\fP computes this length in bytes
 (similar to the IP header before). "@" makes this the new offset, which is the
-start of the TCP payload. Finally, 8 reads bytes 8-12 of the payload and
+start of the TCP payload. Finally, 8 reads bytes 8\(en12 of the payload and
 \fB=\fP checks whether the result is any of 1, 2, 5 or 8.

@@ -16,144 +16,77 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <netdb.h>
 #include <inttypes.h>
 #include <xtables.h>
+#include <linux/netfilter_bridge/ebt_ip.h>
 
 #include "libxt_icmp.h"
 
-#define EBT_IP_SOURCE 0x01
-#define EBT_IP_DEST 0x02
-#define EBT_IP_TOS 0x04
-#define EBT_IP_PROTO 0x08
-#define EBT_IP_SPORT 0x10
-#define EBT_IP_DPORT 0x20
-#define EBT_IP_ICMP 0x40
-#define EBT_IP_IGMP 0x80
-#define EBT_IP_MASK (EBT_IP_SOURCE | EBT_IP_DEST | EBT_IP_TOS | EBT_IP_PROTO |\
-		     EBT_IP_SPORT | EBT_IP_DPORT | EBT_IP_ICMP | EBT_IP_IGMP)
-
-struct ebt_ip_info {
-	__be32 saddr;
-	__be32 daddr;
-	__be32 smsk;
-	__be32 dmsk;
-	__u8  tos;
-	__u8  protocol;
-	__u8  bitmask;
-	__u8  invflags;
-	union {
-		__u16 sport[2];
-		__u8 icmp_type[2];
-		__u8 igmp_type[2];
-	};
-	union {
-		__u16 dport[2];
-		__u8 icmp_code[2];
-	};
+/* must correspond to the bit position in EBT_IP6_* defines */
+enum {
+	O_SOURCE = 0,
+	O_DEST,
+	O_TOS,
+	O_PROTO,
+	O_SPORT,
+	O_DPORT,
+	O_ICMP,
+	O_IGMP,
+	F_PORT = 1 << O_ICMP | 1 << O_IGMP,
+	F_ICMP = 1 << O_SPORT | 1 << O_DPORT | 1 << O_IGMP,
+	F_IGMP = 1 << O_SPORT | 1 << O_DPORT | 1 << O_ICMP,
 };
 
-#define IP_SOURCE	'1'
-#define IP_DEST		'2'
-#define IP_EBT_TOS	'3' /* include/bits/in.h seems to already define IP_TOS */
-#define IP_PROTO	'4'
-#define IP_SPORT	'5'
-#define IP_DPORT	'6'
-#define IP_EBT_ICMP	'7'
-#define IP_EBT_IGMP	'8'
-
-static const struct option brip_opts[] = {
-	{ .name = "ip-source",		.has_arg = true, .val = IP_SOURCE },
-	{ .name = "ip-src",		.has_arg = true, .val = IP_SOURCE },
-	{ .name = "ip-destination",	.has_arg = true, .val = IP_DEST },
-	{ .name = "ip-dst",		.has_arg = true, .val = IP_DEST },
-	{ .name = "ip-tos",		.has_arg = true, .val = IP_EBT_TOS },
-	{ .name = "ip-protocol",	.has_arg = true, .val = IP_PROTO },
-	{ .name = "ip-proto",		.has_arg = true, .val = IP_PROTO },
-	{ .name = "ip-source-port",	.has_arg = true, .val = IP_SPORT },
-	{ .name = "ip-sport",		.has_arg = true, .val = IP_SPORT },
-	{ .name = "ip-destination-port",.has_arg = true, .val = IP_DPORT },
-	{ .name = "ip-dport",		.has_arg = true, .val = IP_DPORT },
-	{ .name = "ip-icmp-type",       .has_arg = true, .val = IP_EBT_ICMP },
-	{ .name = "ip-igmp-type",       .has_arg = true, .val = IP_EBT_IGMP },
-	XT_GETOPT_TABLEEND,
-};
-
-static const struct xt_icmp_names icmp_codes[] = {
-	{ "echo-reply", 0, 0, 0xFF },
-	/* Alias */ { "pong", 0, 0, 0xFF },
-
-	{ "destination-unreachable", 3, 0, 0xFF },
-	{   "network-unreachable", 3, 0, 0 },
-	{   "host-unreachable", 3, 1, 1 },
-	{   "protocol-unreachable", 3, 2, 2 },
-	{   "port-unreachable", 3, 3, 3 },
-	{   "fragmentation-needed", 3, 4, 4 },
-	{   "source-route-failed", 3, 5, 5 },
-	{   "network-unknown", 3, 6, 6 },
-	{   "host-unknown", 3, 7, 7 },
-	{   "network-prohibited", 3, 9, 9 },
-	{   "host-prohibited", 3, 10, 10 },
-	{   "TOS-network-unreachable", 3, 11, 11 },
-	{   "TOS-host-unreachable", 3, 12, 12 },
-	{   "communication-prohibited", 3, 13, 13 },
-	{   "host-precedence-violation", 3, 14, 14 },
-	{   "precedence-cutoff", 3, 15, 15 },
-
-	{ "source-quench", 4, 0, 0xFF },
-
-	{ "redirect", 5, 0, 0xFF },
-	{   "network-redirect", 5, 0, 0 },
-	{   "host-redirect", 5, 1, 1 },
-	{   "TOS-network-redirect", 5, 2, 2 },
-	{   "TOS-host-redirect", 5, 3, 3 },
-
-	{ "echo-request", 8, 0, 0xFF },
-	/* Alias */ { "ping", 8, 0, 0xFF },
-
-	{ "router-advertisement", 9, 0, 0xFF },
-
-	{ "router-solicitation", 10, 0, 0xFF },
-
-	{ "time-exceeded", 11, 0, 0xFF },
-	/* Alias */ { "ttl-exceeded", 11, 0, 0xFF },
-	{   "ttl-zero-during-transit", 11, 0, 0 },
-	{   "ttl-zero-during-reassembly", 11, 1, 1 },
-
-	{ "parameter-problem", 12, 0, 0xFF },
-	{   "ip-header-bad", 12, 0, 0 },
-	{   "required-option-missing", 12, 1, 1 },
-
-	{ "timestamp-request", 13, 0, 0xFF },
-
-	{ "timestamp-reply", 14, 0, 0xFF },
-
-	{ "address-mask-request", 17, 0, 0xFF },
-
-	{ "address-mask-reply", 18, 0, 0xFF }
-};
-
-static const struct xt_icmp_names igmp_types[] = {
-	{ "membership-query", 0x11 },
-	{ "membership-report-v1", 0x12 },
-	{ "membership-report-v2", 0x16 },
-	{ "leave-group", 0x17 },
-	{ "membership-report-v3", 0x22 },
+static const struct xt_option_entry brip_opts[] = {
+	{ .name = "ip-source",		.id = O_SOURCE, .type = XTTYPE_HOSTMASK,
+	  .flags = XTOPT_INVERT },
+	{ .name = "ip-src",		.id = O_SOURCE, .type = XTTYPE_HOSTMASK,
+	  .flags = XTOPT_INVERT },
+	{ .name = "ip-destination",	.id = O_DEST, .type = XTTYPE_HOSTMASK,
+	  .flags = XTOPT_INVERT },
+	{ .name = "ip-dst",		.id = O_DEST, .type = XTTYPE_HOSTMASK,
+	  .flags = XTOPT_INVERT },
+	{ .name = "ip-tos",		.id = O_TOS, .type = XTTYPE_UINT8,
+	  .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, tos) },
+	{ .name = "ip-protocol",	.id = O_PROTO, .type = XTTYPE_PROTOCOL,
+	  .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, protocol) },
+	{ .name = "ip-proto",		.id = O_PROTO, .type = XTTYPE_PROTOCOL,
+	  .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, protocol) },
+	{ .name = "ip-source-port",	.id = O_SPORT, .type = XTTYPE_PORTRC,
+	  .excl = F_PORT, .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, sport) },
+	{ .name = "ip-sport",		.id = O_SPORT, .type = XTTYPE_PORTRC,
+	  .excl = F_PORT, .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, sport) },
+	{ .name = "ip-destination-port",.id = O_DPORT, .type = XTTYPE_PORTRC,
+	  .excl = F_PORT, .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, dport) },
+	{ .name = "ip-dport",		.id = O_DPORT, .type = XTTYPE_PORTRC,
+	  .excl = F_PORT, .flags = XTOPT_INVERT | XTOPT_PUT,
+	  XTOPT_POINTER(struct ebt_ip_info, dport) },
+	{ .name = "ip-icmp-type",       .id = O_ICMP, .type = XTTYPE_STRING,
+	  .excl = F_ICMP, .flags = XTOPT_INVERT },
+	{ .name = "ip-igmp-type",       .id = O_IGMP, .type = XTTYPE_STRING,
+	  .excl = F_IGMP, .flags = XTOPT_INVERT },
+	XTOPT_TABLEEND,
 };
 
 static void brip_print_help(void)
 {
 	printf(
 "ip options:\n"
-"--ip-src    [!] address[/mask]: ip source specification\n"
-"--ip-dst    [!] address[/mask]: ip destination specification\n"
-"--ip-tos    [!] tos           : ip tos specification\n"
-"--ip-proto  [!] protocol      : ip protocol specification\n"
-"--ip-sport  [!] port[:port]   : tcp/udp source port or port range\n"
-"--ip-dport  [!] port[:port]   : tcp/udp destination port or port range\n"
-"--ip-icmp-type [!] type[[:type]/code[:code]] : icmp type/code or type/code range\n"
-"--ip-igmp-type [!] type[:type]               : igmp type or type range\n");
+"[!] --ip-src    address[/mask]: ip source specification\n"
+"[!] --ip-dst    address[/mask]: ip destination specification\n"
+"[!] --ip-tos    tos           : ip tos specification\n"
+"[!] --ip-proto  protocol      : ip protocol specification\n"
+"[!] --ip-sport  port[:port]   : tcp/udp source port or port range\n"
+"[!] --ip-dport  port[:port]   : tcp/udp destination port or port range\n"
+"[!] --ip-icmp-type type[[:type]/code[:code]] : icmp type/code or type/code range\n"
+"[!] --ip-igmp-type type[:type]               : igmp type or type range\n");
 
 	printf("\nValid ICMP Types:\n");
 	xt_print_icmp_types(icmp_codes, ARRAY_SIZE(icmp_codes));
@@ -161,188 +94,7 @@ static void brip_print_help(void)
 	xt_print_icmp_types(igmp_types, ARRAY_SIZE(igmp_types));
 }
 
-static void brip_init(struct xt_entry_match *match)
-{
-	struct ebt_ip_info *info = (struct ebt_ip_info *)match->data;
-
-	info->invflags = 0;
-	info->bitmask = 0;
-}
-
-static void
-parse_port_range(const char *protocol, const char *portstring, uint16_t *ports)
-{
-	char *buffer;
-	char *cp;
-
-	buffer = strdup(portstring);
-	if ((cp = strchr(buffer, ':')) == NULL)
-		ports[0] = ports[1] = xtables_parse_port(buffer, NULL);
-	else {
-		*cp = '\0';
-		cp++;
-
-		ports[0] = buffer[0] ? xtables_parse_port(buffer, NULL) : 0;
-		ports[1] = cp[0] ? xtables_parse_port(cp, NULL) : 0xFFFF;
-
-		if (ports[0] > ports[1])
-			xtables_error(PARAMETER_PROBLEM,
-				      "invalid portrange (min > max)");
-	}
-	free(buffer);
-}
-
 /* original code from ebtables: useful_functions.c */
-static int undot_ip(char *ip, unsigned char *ip2)
-{
-	char *p, *q, *end;
-	long int onebyte;
-	int i;
-	char buf[20];
-
-	strncpy(buf, ip, sizeof(buf) - 1);
-
-	p = buf;
-	for (i = 0; i < 3; i++) {
-		if ((q = strchr(p, '.')) == NULL)
-			return -1;
-		*q = '\0';
-		onebyte = strtol(p, &end, 10);
-		if (*end != '\0' || onebyte > 255 || onebyte < 0)
-			return -1;
-		ip2[i] = (unsigned char)onebyte;
-		p = q + 1;
-	}
-
-	onebyte = strtol(p, &end, 10);
-	if (*end != '\0' || onebyte > 255 || onebyte < 0)
-		return -1;
-	ip2[3] = (unsigned char)onebyte;
-
-	return 0;
-}
-
-static int ip_mask(char *mask, unsigned char *mask2)
-{
-	char *end;
-	long int bits;
-	uint32_t mask22;
-
-	if (undot_ip(mask, mask2)) {
-		/* not the /a.b.c.e format, maybe the /x format */
-		bits = strtol(mask, &end, 10);
-		if (*end != '\0' || bits > 32 || bits < 0)
-			return -1;
-		if (bits != 0) {
-			mask22 = htonl(0xFFFFFFFF << (32 - bits));
-			memcpy(mask2, &mask22, 4);
-		} else {
-			mask22 = 0xFFFFFFFF;
-			memcpy(mask2, &mask22, 4);
-		}
-	}
-	return 0;
-}
-
-static void ebt_parse_ip_address(char *address, uint32_t *addr, uint32_t *msk)
-{
-	char *p;
-
-	/* first the mask */
-	if ((p = strrchr(address, '/')) != NULL) {
-		*p = '\0';
-		if (ip_mask(p + 1, (unsigned char *)msk)) {
-			xtables_error(PARAMETER_PROBLEM,
-				      "Problem with the IP mask '%s'", p + 1);
-			return;
-		}
-	} else
-		*msk = 0xFFFFFFFF;
-
-	if (undot_ip(address, (unsigned char *)addr)) {
-		xtables_error(PARAMETER_PROBLEM,
-			      "Problem with the IP address '%s'", address);
-		return;
-	}
-	*addr = *addr & *msk;
-}
-
-static char *parse_range(const char *str, unsigned int res[])
-{
-	char *next;
-
-	if (!xtables_strtoui(str, &next, &res[0], 0, 255))
-		return NULL;
-
-	res[1] = res[0];
-	if (*next == ':') {
-		str = next + 1;
-		if (!xtables_strtoui(str, &next, &res[1], 0, 255))
-			return NULL;
-	}
-
-	return next;
-}
-
-static int ebt_parse_icmp(const struct xt_icmp_names *codes, size_t n_codes,
-			  const char *icmptype, uint8_t type[], uint8_t code[])
-{
-	unsigned int match = n_codes;
-	unsigned int i, number[2];
-
-	for (i = 0; i < n_codes; i++) {
-		if (strncasecmp(codes[i].name, icmptype, strlen(icmptype)))
-			continue;
-		if (match != n_codes)
-			xtables_error(PARAMETER_PROBLEM, "Ambiguous ICMP type `%s':"
-					" `%s' or `%s'?",
-					icmptype, codes[match].name,
-					codes[i].name);
-		match = i;
-	}
-
-	if (match < n_codes) {
-		type[0] = type[1] = codes[match].type;
-		if (code) {
-			code[0] = codes[match].code_min;
-			code[1] = codes[match].code_max;
-		}
-	} else {
-		char *next = parse_range(icmptype, number);
-		if (!next) {
-			xtables_error(PARAMETER_PROBLEM, "Unknown ICMP type `%s'",
-							icmptype);
-			return -1;
-		}
-
-		type[0] = (uint8_t) number[0];
-		type[1] = (uint8_t) number[1];
-		switch (*next) {
-		case 0:
-			if (code) {
-				code[0] = 0;
-				code[1] = 255;
-			}
-			return 0;
-		case '/':
-			if (code) {
-				next = parse_range(next+1, number);
-				code[0] = (uint8_t) number[0];
-				code[1] = (uint8_t) number[1];
-				if (next == NULL)
-					return -1;
-				if (next && *next == 0)
-					return 0;
-			}
-		/* fallthrough */
-		default:
-			xtables_error(PARAMETER_PROBLEM, "unknown character %c", *next);
-			return -1;
-		}
-	}
-	return 0;
-}
-
 static void print_icmp_code(uint8_t *code)
 {
 	if (!code)
@@ -379,80 +131,38 @@ static void ebt_print_icmp_type(const struct xt_icmp_names *codes,
 	print_icmp_code(code);
 }
 
-static int
-brip_parse(int c, char **argv, int invert, unsigned int *flags,
-	   const void *entry, struct xt_entry_match **match)
+static void brip_parse(struct xt_option_call *cb)
 {
-	struct ebt_ip_info *info = (struct ebt_ip_info *)(*match)->data;
+	struct ebt_ip_info *info = cb->data;
 
-	switch (c) {
-	case IP_SOURCE:
-		if (invert)
-			info->invflags |= EBT_IP_SOURCE;
-		ebt_parse_ip_address(optarg, &info->saddr, &info->smsk);
-		info->bitmask |= EBT_IP_SOURCE;
-		break;
-	case IP_DEST:
-		if (invert)
-			info->invflags |= EBT_IP_DEST;
-		ebt_parse_ip_address(optarg, &info->daddr, &info->dmsk);
-		info->bitmask |= EBT_IP_DEST;
-		break;
-	case IP_SPORT:
-		if (invert)
-			info->invflags |= EBT_IP_SPORT;
-		parse_port_range(NULL, optarg, info->sport);
-		info->bitmask |= EBT_IP_SPORT;
-		break;
-	case IP_DPORT:
-		if (invert)
-			info->invflags |= EBT_IP_DPORT;
-		parse_port_range(NULL, optarg, info->dport);
-		info->bitmask |= EBT_IP_DPORT;
-		break;
-	case IP_EBT_ICMP:
-		if (invert)
-			info->invflags |= EBT_IP_ICMP;
-		ebt_parse_icmp(icmp_codes, ARRAY_SIZE(icmp_codes), optarg,
-			      info->icmp_type, info->icmp_code);
-		info->bitmask |= EBT_IP_ICMP;
-		break;
-	case IP_EBT_IGMP:
-		if (invert)
-			info->invflags |= EBT_IP_IGMP;
-		ebt_parse_icmp(igmp_types, ARRAY_SIZE(igmp_types), optarg,
-			       info->igmp_type, NULL);
-		info->bitmask |= EBT_IP_IGMP;
-		break;
-	case IP_EBT_TOS: {
-		uintmax_t tosvalue;
+	xtables_option_parse(cb);
 
-		if (invert)
-			info->invflags |= EBT_IP_TOS;
-		if (!xtables_strtoul(optarg, NULL, &tosvalue, 0, 255))
-			xtables_error(PARAMETER_PROBLEM,
-				      "Problem with specified IP tos");
-		info->tos = tosvalue;
-		info->bitmask |= EBT_IP_TOS;
+	info->bitmask |= 1 << cb->entry->id;
+	info->invflags |= cb->invert ? 1 << cb->entry->id : 0;
+
+	switch (cb->entry->id) {
+	case O_SOURCE:
+		cb->val.haddr.all[0] &= cb->val.hmask.all[0];
+		info->saddr = cb->val.haddr.ip;
+		info->smsk = cb->val.hmask.ip;
+		break;
+	case O_DEST:
+		cb->val.haddr.all[0] &= cb->val.hmask.all[0];
+		info->daddr = cb->val.haddr.ip;
+		info->dmsk = cb->val.hmask.ip;
+		break;
+	case O_ICMP:
+		ebt_parse_icmp(cb->arg, info->icmp_type, info->icmp_code);
+		break;
+	case O_IGMP:
+		ebt_parse_igmp(cb->arg, info->igmp_type);
+		break;
 	}
-		break;
-	case IP_PROTO:
-		if (invert)
-			info->invflags |= EBT_IP_PROTO;
-		info->protocol = xtables_parse_protocol(optarg);
-		info->bitmask |= EBT_IP_PROTO;
-		break;
-	default:
-		return 0;
-	}
-
-	*flags |= info->bitmask;
-	return 1;
 }
 
-static void brip_final_check(unsigned int flags)
+static void brip_final_check(struct xt_fcheck_call *fc)
 {
-	if (!flags)
+	if (!fc->xflags)
 		xtables_error(PARAMETER_PROBLEM,
 			      "You must specify proper arguments");
 }
@@ -472,35 +182,34 @@ static void brip_print(const void *ip, const struct xt_entry_match *match,
 	struct in_addr *addrp, *maskp;
 
 	if (info->bitmask & EBT_IP_SOURCE) {
-		printf("--ip-src ");
 		if (info->invflags & EBT_IP_SOURCE)
 			printf("! ");
 		addrp = (struct in_addr *)&info->saddr;
 		maskp = (struct in_addr *)&info->smsk;
-		printf("%s%s ", xtables_ipaddr_to_numeric(addrp),
+		printf("--ip-src %s%s ",
+		       xtables_ipaddr_to_numeric(addrp),
 		       xtables_ipmask_to_numeric(maskp));
 	}
 	if (info->bitmask & EBT_IP_DEST) {
-		printf("--ip-dst ");
 		if (info->invflags & EBT_IP_DEST)
 			printf("! ");
 		addrp = (struct in_addr *)&info->daddr;
 		maskp = (struct in_addr *)&info->dmsk;
-		printf("%s%s ", xtables_ipaddr_to_numeric(addrp),
+		printf("--ip-dst %s%s ",
+		       xtables_ipaddr_to_numeric(addrp),
 		       xtables_ipmask_to_numeric(maskp));
 	}
 	if (info->bitmask & EBT_IP_TOS) {
-		printf("--ip-tos ");
 		if (info->invflags & EBT_IP_TOS)
 			printf("! ");
-		printf("0x%02X ", info->tos);
+		printf("--ip-tos 0x%02X ", info->tos);
 	}
 	if (info->bitmask & EBT_IP_PROTO) {
 		struct protoent *pe;
 
-		printf("--ip-proto ");
 		if (info->invflags & EBT_IP_PROTO)
 			printf("! ");
+		printf("--ip-proto ");
 		pe = getprotobynumber(info->protocol);
 		if (pe == NULL) {
 			printf("%d ", info->protocol);
@@ -509,28 +218,28 @@ static void brip_print(const void *ip, const struct xt_entry_match *match,
 		}
 	}
 	if (info->bitmask & EBT_IP_SPORT) {
-		printf("--ip-sport ");
 		if (info->invflags & EBT_IP_SPORT)
 			printf("! ");
+		printf("--ip-sport ");
 		print_port_range(info->sport);
 	}
 	if (info->bitmask & EBT_IP_DPORT) {
-		printf("--ip-dport ");
 		if (info->invflags & EBT_IP_DPORT)
 			printf("! ");
+		printf("--ip-dport ");
 		print_port_range(info->dport);
 	}
 	if (info->bitmask & EBT_IP_ICMP) {
-		printf("--ip-icmp-type ");
 		if (info->invflags & EBT_IP_ICMP)
 			printf("! ");
+		printf("--ip-icmp-type ");
 		ebt_print_icmp_type(icmp_codes, ARRAY_SIZE(icmp_codes),
 				    info->icmp_type, info->icmp_code);
 	}
 	if (info->bitmask & EBT_IP_IGMP) {
-		printf("--ip-igmp-type ");
 		if (info->invflags & EBT_IP_IGMP)
 			printf("! ");
+		printf("--ip-igmp-type ");
 		ebt_print_icmp_type(igmp_types, ARRAY_SIZE(igmp_types),
 				    info->igmp_type, NULL);
 	}
@@ -667,6 +376,24 @@ static void brip_xlate_nh(struct xt_xlate *xl,
 				  xtables_ipmask_to_numeric(maskp));
 }
 
+static bool may_skip_ether_type_dep(uint8_t flags)
+{
+	/* these convert to "ip (s|d)addr" matches */
+	if (flags & (EBT_IP_SOURCE | EBT_IP_DEST))
+		return true;
+
+	/* icmp match triggers implicit ether type dependency in nft */
+	if (flags & EBT_IP_ICMP)
+		return true;
+
+	/* allow if "ip protocol" match is created by brip_xlate() */
+	if (flags & EBT_IP_PROTO &&
+	    !(flags & (EBT_IP_SPORT | EBT_IP_DPORT | EBT_IP_ICMP)))
+		return true;
+
+	return false;
+}
+
 static int brip_xlate(struct xt_xlate *xl,
 		      const struct xt_xlate_mt_params *params)
 {
@@ -676,11 +403,14 @@ static int brip_xlate(struct xt_xlate *xl,
 	brip_xlate_nh(xl, info, EBT_IP_SOURCE);
 	brip_xlate_nh(xl, info, EBT_IP_DEST);
 
+	if (!may_skip_ether_type_dep(info->bitmask))
+		xt_xlate_add(xl, "ether type ip ");
+
 	if (info->bitmask & EBT_IP_TOS) {
-		xt_xlate_add(xl, "ip dscp ");
+		xt_xlate_add(xl, "@nh,8,8 ");
 		if (info->invflags & EBT_IP_TOS)
 			xt_xlate_add(xl, "!= ");
-		xt_xlate_add(xl, "0x%02x ", info->tos & 0x3f); /* remove ECN bits */
+		xt_xlate_add(xl, "0x%02x ", info->tos);
 	}
 	if (info->bitmask & EBT_IP_PROTO) {
 		struct protoent *pe;
@@ -717,13 +447,12 @@ static struct xtables_match brip_match = {
 	.family		= NFPROTO_BRIDGE,
 	.size		= XT_ALIGN(sizeof(struct ebt_ip_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_ip_info)),
-	.init		= brip_init,
-	//.help		= brip_print_help,
-	.parse		= brip_parse,
-	.final_check	= brip_final_check,
-	.print		= brip_print,
-	.xlate		= brip_xlate,
+	.x6_parse	= brip_parse,
+	.x6_fcheck	= brip_final_check,
+ 	.print		= brip_print,
+ 	.xlate		= brip_xlate,
 	.extra_opts	= brip_opts,
+	.x6_options	= brip_opts,
 };
 
 void _init(void)

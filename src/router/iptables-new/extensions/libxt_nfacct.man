@@ -22,9 +22,9 @@ Then, you can check for the amount of traffic that the rules match:
 .IP
 nfacct get http\-traffic
 .IP
-{ pkts = 00000000000000000156, bytes = 00000000000000151786 } = http-traffic;
+{ pkts = 00000000000000000156, bytes = 00000000000000151786 } = http\-traffic;
 .PP
 You can obtain
 .B nfacct(8)
-from http://www.netfilter.org or, alternatively, from the git.netfilter.org
+from https://www.netfilter.org or, alternatively, from the git.netfilter.org
 repository.

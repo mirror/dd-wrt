@@ -87,12 +87,13 @@ static void CLUSTERIP_parse(struct xt_option_call *cb)
 		else if (strcmp(cb->arg, "sourceip-sourceport-destport") == 0)
 			cipinfo->hash_mode = CLUSTERIP_HASHMODE_SIP_SPT_DPT;
 		else
-			xtables_error(PARAMETER_PROBLEM, "Unknown hashmode \"%s\"\n",
-				   cb->arg);
+			xtables_error(PARAMETER_PROBLEM,
+				      "Unknown hashmode \"%s\"", cb->arg);
 		break;
 	case O_CLUSTERMAC:
 		if (!(cipinfo->clustermac[0] & 0x01))
-			xtables_error(PARAMETER_PROBLEM, "MAC has to be a multicast ethernet address\n");
+			xtables_error(PARAMETER_PROBLEM,
+				      "MAC has to be a multicast ethernet address");
 		break;
 	case O_LOCAL_NODE:
 		cipinfo->num_local_nodes = 1;
@@ -107,7 +108,8 @@ static void CLUSTERIP_check(struct xt_fcheck_call *cb)
 	if ((cb->xflags & F_FULL) == F_FULL)
 		return;
 
-	xtables_error(PARAMETER_PROBLEM, "CLUSTERIP target: Invalid parameter combination\n");
+	xtables_error(PARAMETER_PROBLEM,
+		      "CLUSTERIP target: Invalid parameter combination");
 }
 
 static const char *hashmode2str(enum clusterip_hashmode mode)

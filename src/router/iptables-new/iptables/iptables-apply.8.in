@@ -3,10 +3,8 @@
 .\"      Date: May 10, 2010
 .\"
 .TH IPTABLES\-APPLY 8 "" "@PACKAGE_STRING@" "@PACKAGE_STRING@"
-.\" disable hyphenation
-.nh
 .SH NAME
-iptables-apply \- a safer way to update iptables remotely
+iptables-apply \(em a safer way to update iptables remotely
 .SH SYNOPSIS
 \fBiptables\-apply\fP [\-\fBhV\fP] [\fB-t\fP \fItimeout\fP] [\fB-w\fP \fIsavefile\fP] {[\fIrulesfile]|-c [runcmd]}\fP
 .SH "DESCRIPTION"

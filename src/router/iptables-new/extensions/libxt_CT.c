@@ -117,7 +117,7 @@ static void ct_parse_zone_id(const char *opt, unsigned int opt_id,
 
 		if (!xtables_strtoul(opt, NULL, &val, 0, UINT16_MAX))
 			xtables_error(PARAMETER_PROBLEM,
-				      "Cannot parse %s as a zone ID\n", opt);
+				      "Cannot parse %s as a zone ID", opt);
 
 		*zone_id = (uint16_t)val;
 	}

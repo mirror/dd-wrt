@@ -22,22 +22,36 @@
 .\"
 .\"
 .SH NAME
-arptables \- ARP table administration (nft-based)
+arptables \(em ARP table administration (nft-based)
 .SH SYNOPSIS
-.BR "arptables " [ "-t table" ] " -" [ AD ] " chain rule-specification " [ options ]
-.br
-.BR "arptables " [ "-t table" ] " -" [ RI ] " chain rulenum rule-specification " [ options ]
-.br
-.BR "arptables " [ "-t table" ] " -D chain rulenum " [ options ]
-.br
-.BR "arptables " [ "-t table" ] " -" [ "LFZ" ] " " [ chain ] " " [ options ]
-.br
-.BR "arptables " [ "-t table" ] " -" [ "NX" ] " chain"
-.br
-.BR "arptables " [ "-t table" ] " -E old-chain-name new-chain-name"
-.br
-.BR "arptables " [ "-t table" ] " -P chain target " [ options ]
-
+\fBarptables\fP [\fB\-t\fP \fItable\fP] {\fB\-A|\-D\fP} \fIchain\fP
+\fIrule-specification\fP [options...]
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-I\fP \fIchain\fP [\fIrulenum\fP]
+\fIrule-specification\fP
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-R\fP \fIchain rulenum
+rule-specification\fP
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-D\fP \fIchain rulenum\fP
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] {\fB\-F\fP|\fB\-L\fP|\fB\-Z\fP}
+[\fIchain\fP [\fIrulenum\fP]] [\fIoptions...\fP]
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-N\fP \fIchain\fP
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-X\fP [\fIchain\fP]
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-P\fP \fIchain policy\fP
+.PP
+\fBarptables\fP [\fB\-t\fP \fItable\fP] \fB\-E\fP \fIold-chain-name
+new-chain-name\fP
+.PP
+rule-specification := [matches...] [target]
+.PP
+match := \fB\-m\fP \fImatchname\fP [per-match-options]
+.PP
+target := \fB\-j\fP \fItargetname\fP [per-target-options]
 .SH DESCRIPTION
 .B arptables
 is a user space tool, it is used to set up and maintain the
@@ -88,11 +102,11 @@ section of this man page.
 There is only one ARP table in the Linux
 kernel.  The table is
 .BR filter.
-You can drop the '-t filter' argument to the arptables command.
-The -t argument must be the
+You can drop the '\-t filter' argument to the arptables command.
+The \-t argument must be the
 first argument on the arptables command line, if used.
 .TP
-.B "-t, --table"
+.B "\-t, \-\-table"
 .br
 .BR filter ,
 is the only table and contains two built-in chains:
@@ -109,79 +123,79 @@ are commands, miscellaneous commands, rule-specifications, match-extensions,
 and watcher-extensions.
 .SS COMMANDS
 The arptables command arguments specify the actions to perform on the table
-defined with the -t argument.  If you do not use the -t argument to name
+defined with the \-t argument. If you do not use the \-t argument to name
 a table, the commands apply to the default filter table.
 With the exception of the
-.B "-Z"
+.B "\-Z"
 command, only one command may be used on the command line at a time.
 .TP
-.B "-A, --append"
+.B "\-A, \-\-append"
 Append a rule to the end of the selected chain.
 .TP
-.B "-D, --delete"
+.B "\-D, \-\-delete"
 Delete the specified rule from the selected chain. There are two ways to
 use this command. The first is by specifying an interval of rule numbers
 to delete, syntax: start_nr[:end_nr]. Using negative numbers is allowed, for more
-details about using negative numbers, see the -I command. The second usage is by
+details about using negative numbers, see the \-I command. The second usage is by
 specifying the complete rule as it would have been specified when it was added.
 .TP
-.B "-I, --insert"
+.B "\-I, \-\-insert"
 Insert the specified rule into the selected chain at the specified rule number.
 If the current number of rules equals N, then the specified number can be
-between -N and N+1. For a positive number i, it holds that i and i-N-1 specify the
+between \-N and N+1. For a positive number i, it holds that i and i\-N\-1 specify the
 same place in the chain where the rule should be inserted. The number 0 specifies
 the place past the last rule in the chain and using this number is therefore
-equivalent with using the -A command.
+equivalent with using the \-A command.
 .TP
-.B "-R, --replace"
+.B "\-R, \-\-replace"
 Replaces the specified rule into the selected chain at the specified rule number.
 If the current number of rules equals N, then the specified number can be
 between 1 and N. i specifies the place in the chain where the rule should be replaced.
 .TP
-.B "-P, --policy"
+.B "\-P, \-\-policy"
 Set the policy for the chain to the given target. The policy can be
 .BR ACCEPT ", " DROP " or " RETURN .
 .TP
-.B "-F, --flush"
+.B "\-F, \-\-flush"
 Flush the selected chain. If no chain is selected, then every chain will be
 flushed. Flushing the chain does not change the policy of the
 chain, however.
 .TP
-.B "-Z, --zero"
+.B "\-Z, \-\-zero"
 Set the counters of the selected chain to zero. If no chain is selected, all the counters
 are set to zero. The
-.B "-Z"
+.B "\-Z"
 command can be used in conjunction with the 
-.B "-L"
+.B "\-L"
 command.
 When both the
-.B "-Z"
+.B "\-Z"
 and
-.B "-L"
+.B "\-L"
 commands are used together in this way, the rule counters are printed on the screen
 before they are set to zero.
 .TP
-.B "-L, --list"
+.B "\-L, \-\-list"
 List all rules in the selected chain. If no chain is selected, all chains
 are listed.
 .TP
-.B "-N, --new-chain"
+.B "\-N, \-\-new-chain"
 Create a new user-defined chain with the given name. The number of
 user-defined chains is unlimited. A user-defined chain name has maximum
 length of 31 characters.
 .TP
-.B "-X, --delete-chain"
+.B "\-X, \-\-delete-chain"
 Delete the specified user-defined chain. There must be no remaining references
 to the specified chain, otherwise
 .B arptables
 will refuse to delete it. If no chain is specified, all user-defined
 chains that aren't referenced will be removed.
 .TP
-.B "-E, --rename-chain"
+.B "\-E, \-\-rename\-chain"
 Rename the specified chain to a new name.  Besides renaming a user-defined
 chain, you may rename a standard chain name to a name that suits your
 taste. For example, if you like PREBRIDGING more than PREROUTING,
-then you can use the -E command to rename the PREROUTING chain. If you do
+then you can use the \-E command to rename the PREROUTING chain. If you do
 rename one of the standard
 .B arptables
 chain names, please be sure to mention
@@ -195,15 +209,15 @@ of the
 .B arptables
 kernel table.
 
-.SS MISCELLANOUS COMMANDS
+.SS MISCELLANEOUS COMMANDS
 .TP
-.B "-V, --version"
+.B "\-V, \-\-version"
 Show the version of the arptables userspace program.
 .TP
-.B "-h, --help"
+.B "\-h, \-\-help"
 Give a brief description of the command syntax.
 .TP
-.BR "-j, --jump " "\fItarget\fP"
+.BR "\-j, \-\-jump " "\fItarget\fP"
 The target of the rule. This is one of the following values:
 .BR ACCEPT ,
 .BR DROP ,
@@ -213,7 +227,7 @@ a target extension (see
 .BR "TARGET EXTENSIONS" ")"
 or a user-defined chain name.
 .TP
-.BI "-c, --set-counters " "PKTS BYTES"
+.BI "\-c, \-\-set-counters " "PKTS BYTES"
 This enables the administrator to initialize the packet and byte
 counters of a rule (during
 .B INSERT,
@@ -227,38 +241,38 @@ in the add and delete commands). A "!" option before the specification
 inverts the test for that specification. Apart from these standard rule 
 specifications there are some other command line arguments of interest.
 .TP
-.BR "-s, --source-ip " "[!] \fIaddress\fP[/\fImask]\fP"
+.BR "\-s, \-\-source\-ip " "[!] \fIaddress\fP[/\fImask]\fP"
 The Source IP specification.
 .TP 
-.BR "-d, --destination-ip " "[!] \fIaddress\fP[/\fImask]\fP"
+.BR "\-d, \-\-destination\-ip " "[!] \fIaddress\fP[/\fImask]\fP"
 The Destination IP specification.
 .TP 
-.BR "--source-mac " "[!] \fIaddress\fP[/\fImask\fP]"
+.BR "\-\-source\-mac " "[!] \fIaddress\fP[/\fImask\fP]"
 The source mac address. Both mask and address are written as 6 hexadecimal
 numbers separated by colons.
 .TP
-.BR "--destination-mac " "[!] \fIaddress\fP[/\fImask\fP]"
+.BR "\-\-destination\-mac " "[!] \fIaddress\fP[/\fImask\fP]"
 The destination mac address. Both mask and address are written as 6 hexadecimal
 numbers separated by colons.
 .TP 
-.BR "-i, --in-interface " "[!] \fIname\fP"
+.BR "\-i, \-\-in\-interface " "[!] \fIname\fP"
 The interface via which a frame is received (for the
 .B INPUT
 chain). The flag
-.B --in-if
+.B \-\-in\-if
 is an alias for this option.
 .TP
-.BR "-o, --out-interface " "[!] \fIname\fP"
+.BR "\-o, \-\-out-interface " "[!] \fIname\fP"
 The interface via which a frame is going to be sent (for the
 .B OUTPUT
 chain). The flag
-.B --out-if
+.B \-\-out\-if
 is an alias for this option.
 .TP
-.BR "-l, --h-length " "\fIlength\fP[/\fImask\fP]"
+.BR "\-l, \-\-h\-length " "\fIlength\fP[/\fImask\fP]"
 The hardware length (nr of bytes)
 .TP
-.BR "--opcode " "\fIcode\fP[/\fImask\fP]
+.BR "\-\-opcode " "\fIcode\fP[/\fImask\fP]
 The operation code (2 bytes). Available values are:
 .BR 1 = Request
 .BR 2 = Reply
@@ -270,63 +284,63 @@ The operation code (2 bytes). Available values are:
 .BR 8 = InARP_Request
 .BR 9 = ARP_NAK .
 .TP
-.BR "--h-type " "\fItype\fP[/\fImask\fP]"
+.BR "\-\-h\-type " "\fItype\fP[/\fImask\fP]"
 The hardware type (2 bytes, hexadecimal). Available values are:
 .BR 1 = Ethernet .
 .TP
-.BR "--proto-type " "\fItype\fP[/\fImask\fP]"
+.BR "\-\-proto\-type " "\fItype\fP[/\fImask\fP]"
 The protocol type (2 bytes). Available values are:
 .BR 0x800 = IPv4 .
 
 .SS TARGET-EXTENSIONS
 .B arptables
 extensions are precompiled into the userspace tool. So there is no need
-to explicitly load them with a -m option like in
+to explicitly load them with a \-m option like in
 .BR iptables .
 However, these
 extensions deal with functionality supported by supplemental kernel modules.
 .SS mangle
 .TP
-.BR "--mangle-ip-s IP address"
+.BR "\-\-mangle\-ip\-s IP address"
 Mangles Source IP Address to given value.
 .TP
-.BR "--mangle-ip-d IP address"
+.BR "\-\-mangle\-ip\-d IP address"
 Mangles Destination IP Address to given value.
 .TP
-.BR "--mangle-mac-s MAC address"
+.BR "\-\-mangle\-mac\-s MAC address"
 Mangles Source MAC Address to given value.
 .TP
-.BR "--mangle-mac-d MAC address"
+.BR "\-\-mangle\-mac\-d MAC address"
 Mangles Destination MAC Address to given value.
 .TP
-.BR "--mangle-target target "
+.BR "\-\-mangle\-target target "
 Target of ARP mangle operation
-.BR "" ( DROP ", " CONTINUE " or " ACCEPT " -- default is " ACCEPT ).
+.BR "" ( DROP ", " CONTINUE " or " ACCEPT " \(em default is " ACCEPT ).
 .SS CLASSIFY
-This  module  allows you to set the skb->priority value (and thus clas-
-sify the packet into a specific CBQ class).
+This module allows you to set the skb\->priority value (and thus
+classify the packet into a specific CBQ class).
 
 .TP
-.BR "--set-class major:minor"
+.BR "\-\-set\-class major:minor"
 
 Set the major and minor  class  value.  The  values  are  always
 interpreted as hexadecimal even if no 0x prefix is given.
 
 .SS MARK
-This  module  allows you to set the skb->mark value (and thus classify
+This  module  allows you to set the skb\->mark value (and thus classify
 the packet by the mark in u32)
 
 .TP
-.BR "--set-mark mark"
+.BR "\-\-set\-mark mark"
 Set the mark value. The  values  are  always
 interpreted as hexadecimal even if no 0x prefix is given
 
 .TP
-.BR "--and-mark mark"
+.BR "\-\-and\-mark mark"
 Binary AND the mark with bits.
 
 .TP
-.BR "--or-mark mark"
+.BR "\-\-or\-mark mark"
 Binary OR the mark with bits.
 
 .SH NOTES
@@ -343,6 +357,6 @@ chain in
 .SH MAILINGLISTS
 .BR "" "See " http://netfilter.org/mailinglists.html
 .SH SEE ALSO
-.BR xtables-nft "(8), " iptables "(8), " ebtables "(8), " ip (8)
+.BR xtables\-nft "(8), " iptables "(8), " ebtables "(8), " ip (8)
 .PP
 .BR "" "See " https://wiki.nftables.org

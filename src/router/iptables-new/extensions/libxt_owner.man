@@ -16,7 +16,7 @@ Matches if the packet socket's file structure is owned by the given group.
 You may also specify a numerical GID, or a GID range.
 .TP
 \fB\-\-suppl\-groups\fP
-Causes group(s) specified with \fB\-\-gid-owner\fP to be also checked in the
+Causes group(s) specified with \fB\-\-gid\-owner\fP to be also checked in the
 supplementary groups of a process.
 .TP
 [\fB!\fP] \fB\-\-socket\-exists\fP

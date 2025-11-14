@@ -22,21 +22,36 @@ regular_CPPFLAGS   = @regular_CPPFLAGS@
 kinclude_CPPFLAGS  = @kinclude_CPPFLAGS@
 
 AM_CFLAGS       = ${regular_CFLAGS}
-AM_CPPFLAGS     = ${regular_CPPFLAGS} -I${top_builddir}/include -I${top_builddir} -I${top_srcdir}/include -I${top_srcdir} ${kinclude_CPPFLAGS} ${CPPFLAGS} @libnetfilter_conntrack_CFLAGS@ @libnftnl_CFLAGS@
 AM_CFLAGS      += -DOPENDPI_NETFILTER_MODULE -I$(TOP)/ndpi-netfilter -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/src/include -I$(TOP)/ndpi-netfilter/src/lib -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/ndpi-netfilter/libre
 AM_CFLAGS      += -I$(TOP)/wireguard/obfuscation/include
+AM_CPPFLAGS     = ${regular_CPPFLAGS} \
+                  -I${top_builddir}/include \
+                  -I${top_builddir} \
+                  -I${top_srcdir}/include \
+                  -I${top_srcdir} \
+                  ${kinclude_CPPFLAGS} \
+                  ${CPPFLAGS} \
+                  @libnetfilter_conntrack_CFLAGS@ \
+                  @libnftnl_CFLAGS@
 AM_DEPFLAGS     = -Wp,-MMD,$(@D)/.$(@F).d,-MT,$@
-AM_LDFLAGS      = @noundef_LDFLAGS@
+AM_LDFLAGS      = @noundef_LDFLAGS@ @regular_LDFLAGS@
 
-ifeq (${V},)
-AM_LIBTOOL_SILENT = --silent
-AM_VERBOSE_CC     = @echo "  CC      " $@;
-AM_VERBOSE_CCLD   = @echo "  CCLD    " $@;
-AM_VERBOSE_CXX    = @echo "  CXX     " $@;
-AM_VERBOSE_CXXLD  = @echo "  CXXLD   " $@;
-AM_VERBOSE_AR     = @echo "  AR      " $@;
-AM_VERBOSE_GEN    = @echo "  GEN     " $@;
-endif
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+am__v_AR_0           = @echo "  AR      " $@;
+am__v_CC_0           = @echo "  CC      " $@;
+am__v_CCLD_0         = @echo "  CCLD    " $@;
+am__v_GEN_0          = @echo "  GEN     " $@;
+am__v_LN_0           = @echo "  LN      " $@;
+am__v_AR_            = ${am__v_AR_@AM_DEFAULT_V@}
+am__v_CC_            = ${am__v_CC_@AM_DEFAULT_V@}
+am__v_CCLD_          = ${am__v_CCLD_@AM_DEFAULT_V@}
+am__v_GEN_           = ${am__v_GEN_@AM_DEFAULT_V@}
+am__v_LN_            = ${am__v_LN_@AM_DEFAULT_V@}
+AM_V_AR              = ${am__v_AR_@AM_V@}
+AM_V_CC              = ${am__v_CC_@AM_V@}
+AM_V_CCLD            = ${am__v_CCLD_@AM_V@}
+AM_V_GEN             = ${am__v_GEN_@AM_V@}
+AM_V_LN              = ${am__v_LN_@AM_V@}
 
 #
 #	Wildcard module list
@@ -44,7 +59,7 @@ endif
 pfx_build_mod := $(patsubst ${srcdir}/libxt_%.c,%,$(sort $(wildcard ${srcdir}/libxt_*.c)))
 @ENABLE_NFTABLES_TRUE@ pfb_build_mod := $(patsubst ${srcdir}/libebt_%.c,%,$(sort $(wildcard ${srcdir}/libebt_*.c)))
 @ENABLE_NFTABLES_TRUE@ pfa_build_mod := $(patsubst ${srcdir}/libarpt_%.c,%,$(sort $(wildcard ${srcdir}/libarpt_*.c)))
-pfx_symlinks  := NOTRACK state
+pfx_symlinks  := NOTRACK state REDIRECT MASQUERADE SNAT DNAT
 @ENABLE_IPV4_TRUE@ pf4_build_mod := $(patsubst ${srcdir}/libipt_%.c,%,$(sort $(wildcard ${srcdir}/libipt_*.c)))
 @ENABLE_IPV6_TRUE@ pf6_build_mod := $(patsubst ${srcdir}/libip6t_%.c,%,$(sort $(wildcard ${srcdir}/libip6t_*.c)))
 pfx_build_mod := $(filter-out @blacklist_modules@ @blacklist_x_modules@,${pfx_build_mod})
@@ -81,7 +96,7 @@ targets_install :=
 
 .SECONDARY:
 
-.PHONY: all install clean distclean FORCE
+.PHONY: all install uninstall clean distclean FORCE dvi check installcheck
 
 all: ${targets}
 
@@ -94,14 +109,28 @@ install: ${targets_install} ${symlinks_install}
 		cp -P ${symlinks_install} "${DESTDIR}${xtlibdir}/"; \
 	fi;
 
+uninstall:
+	dir=${DESTDIR}${xtlibdir}; { \
+		test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; \
+	} || { \
+		test -z "${targets_install}" || ( \
+			cd "$$dir" && rm -f ${targets_install} \
+		); \
+		test -z "${symlinks_install}" || ( \
+			cd "$$dir" && rm -f ${symlinks_install} \
+		); \
+		rmdir -p --ignore-fail-on-non-empty "$$dir"; \
+	}
+
 clean:
-	rm -f *.o *.oo *.so *.a {matches,targets}.man initext.c initext4.c initext6.c initextb.c initexta.c;
+	rm -f *.o *.oo *.so *.a matches.man targets.man
+	rm -f initext.c initext4.c initext6.c initextb.c initexta.c
 	rm -f .*.d .*.dd;
 
 distclean: clean
 
 init%.o: init%.c
-	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=$*_init ${CFLAGS} -o $@ -c $<;
+	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=$*_init ${CFLAGS} -o $@ -c $<;
 
 -include .*.d
 
@@ -110,15 +139,23 @@ init%.o: init%.c
 #	Shared libraries
 #
 lib%.so: lib%.oo
-	${AM_VERBOSE_CCLD} ${CCLD} ${AM_LDFLAGS} ${LDFLAGS} -shared -o $@ $< -L../libxtables/.libs -lxtables ${$*_LIBADD};
+	${AM_V_CCLD} ${CCLD} ${AM_LDFLAGS} ${LDFLAGS} -shared -o $@ $< -L../libxtables/.libs -lxtables ${$*_LIBADD};
 
 lib%.oo: ${srcdir}/lib%.c
-	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=lib$*_init -DPIC -fPIC ${CFLAGS} -o $@ -c $<;
+	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=lib$*_init -DPIC -fPIC ${CFLAGS} -o $@ -c $<;
 
 libxt_NOTRACK.so: libxt_CT.so
-	ln -fs $< $@
+	${AM_V_LN} ln -fs $< $@
 libxt_state.so: libxt_conntrack.so
-	ln -fs $< $@
+	${AM_V_LN} ln -fs $< $@
+libxt_REDIRECT.so: libxt_NAT.so
+	${AM_V_LN} ln -fs $< $@
+libxt_MASQUERADE.so: libxt_NAT.so
+	${AM_V_LN} ln -fs $< $@
+libxt_SNAT.so: libxt_NAT.so
+	${AM_V_LN} ln -fs $< $@
+libxt_DNAT.so: libxt_NAT.so
+	${AM_V_LN} ln -fs $< $@
 
 # Need the LIBADDs in iptables/Makefile.am too for libxtables_la_LIBADD
 xt_RATEEST_LIBADD   = -lm
@@ -133,22 +170,22 @@ xt_connlabel_LIBADD = @libnetfilter_conntrack_LIBS@
 #	handling code in the Makefiles.
 #
 lib%.o: ${srcdir}/lib%.c
-	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init ${CFLAGS} -o $@ -c $<;
+	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init ${CFLAGS} -o $@ -c $<;
 
 libext.a: initext.o ${libext_objs}
-	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
+	${AM_V_AR} ${AR} crs $@ $^;
 
 libext_ebt.a: initextb.o ${libext_ebt_objs}
-	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
+	${AM_V_AR} ${AR} crs $@ $^;
 
 libext_arpt.a: initexta.o ${libext_arpt_objs}
-	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
+	${AM_V_AR} ${AR} crs $@ $^;
 
 libext4.a: initext4.o ${libext4_objs}
-	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
+	${AM_V_AR} ${AR} crs $@ $^;
 
 libext6.a: initext6.o ${libext6_objs}
-	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
+	${AM_V_AR} ${AR} crs $@ $^;
 
 initext_func  := $(addprefix xt_,${pfx_build_mod})
 initextb_func := $(addprefix ebt_,${pfb_build_mod})
@@ -156,107 +193,29 @@ initexta_func := $(addprefix arpt_,${pfa_build_mod})
 initext4_func := $(addprefix ipt_,${pf4_build_mod})
 initext6_func := $(addprefix ip6t_,${pf6_build_mod})
 
-.initext.dd: FORCE
-	@echo "${initext_func}" >$@.tmp; \
+initexts := ext exta extb ext4 ext6
+initext_depfiles = $(patsubst %,.init%.dd,${initexts})
+initext_sources = $(patsubst %,init%.c,${initexts})
+
+${initext_depfiles}: FORCE
+	@echo "$(value $(patsubst .%.dd,%,$@)_func)" >$@.tmp; \
 	cmp -s $@ $@.tmp || mv $@.tmp $@; \
 	rm -f $@.tmp;
 
-.initextb.dd: FORCE
-	@echo "${initextb_func}" >$@.tmp; \
-	cmp -s $@ $@.tmp || mv $@.tmp $@; \
-	rm -f $@.tmp;
-
-.initexta.dd: FORCE
-	@echo "${initexta_func}" >$@.tmp; \
-	cmp -s $@ $@.tmp || mv $@.tmp $@; \
-	rm -f $@.tmp;
-
-.initext4.dd: FORCE
-	@echo "${initext4_func}" >$@.tmp; \
-	cmp -s $@ $@.tmp || mv $@.tmp $@; \
-	rm -f $@.tmp;
-
-.initext6.dd: FORCE
-	@echo "${initext6_func}" >$@.tmp; \
-	cmp -s $@ $@.tmp || mv $@.tmp $@; \
-	rm -f $@.tmp;
-
-initext.c: .initext.dd
-	${AM_VERBOSE_GEN}
+${initext_sources}: %.c: .%.dd
+	${AM_V_GEN}
 	@( \
+	initext_func="$(value $(basename $@)_func)"; \
+	funcname="init_extensions$(patsubst initext%.c,%,$@)"; \
 	echo "" >$@; \
-	for i in ${initext_func}; do \
+	for i in $${initext_func}; do \
 		echo "extern void lib$${i}_init(void);" >>$@; \
 	done; \
-	echo "void init_extensions(void);" >>$@; \
-	echo "void init_extensions(void)" >>$@; \
+	echo "void $${funcname}(void);" >>$@; \
+	echo "void $${funcname}(void)" >>$@; \
 	echo "{" >>$@; \
-	for i in ${initext_func}; do \
+	for i in $${initext_func}; do \
 		echo  " ""lib$${i}_init();" >>$@; \
-	done; \
-	echo "}" >>$@; \
-	);
-
-initextb.c: .initextb.dd
-	${AM_VERBOSE_GEN}
-	@( \
-	echo "" >$@; \
-	for i in ${initextb_func}; do \
-		echo "extern void lib$${i}_init(void);" >>$@; \
-	done; \
-	echo "void init_extensionsb(void);" >>$@; \
-	echo "void init_extensionsb(void)" >>$@; \
-	echo "{" >>$@; \
-	for i in ${initextb_func}; do \
-		echo  " ""lib$${i}_init();" >>$@; \
-	done; \
-	echo "}" >>$@; \
-	);
-
-initexta.c: .initexta.dd
-	${AM_VERBOSE_GEN}
-	@( \
-	echo "" >$@; \
-	for i in ${initexta_func}; do \
-		echo "extern void lib$${i}_init(void);" >>$@; \
-	done; \
-	echo "void init_extensionsa(void);" >>$@; \
-	echo "void init_extensionsa(void)" >>$@; \
-	echo "{" >>$@; \
-	for i in ${initexta_func}; do \
-		echo  " ""lib$${i}_init();" >>$@; \
-	done; \
-	echo "}" >>$@; \
-	);
-
-initext4.c: .initext4.dd
-	${AM_VERBOSE_GEN}
-	@( \
-	echo "" >$@; \
-	for i in ${initext4_func}; do \
-		echo "extern void lib$${i}_init(void);" >>$@; \
-	done; \
-	echo "void init_extensions4(void);" >>$@; \
-	echo "void init_extensions4(void)" >>$@; \
-	echo "{" >>$@; \
-	for i in ${initext4_func}; do \
-		echo  " ""lib$${i}_init();" >>$@; \
-	done; \
-	echo "}" >>$@; \
-	);
-
-initext6.c: .initext6.dd
-	${AM_VERBOSE_GEN}
-	@( \
-	echo "" >$@; \
-	for i in ${initext6_func}; do \
-		echo "extern void lib$${i}_init(void);" >>$@; \
-	done; \
-	echo "void init_extensions6(void);" >>$@; \
-	echo "void init_extensions6(void)" >>$@; \
-	echo "{" >>$@; \
-	for i in ${initext6_func}; do \
-		echo " ""lib$${i}_init();" >>$@; \
 	done; \
 	echo "}" >>$@; \
 	);
@@ -267,30 +226,43 @@ initext6.c: .initext6.dd
 ex_matches = $(shell echo ${1} | LC_ALL=POSIX grep -Eo '\b[[:lower:][:digit:]_]+\b')
 ex_targets = $(shell echo ${1} | LC_ALL=POSIX grep -Eo '\b[[:upper:][:digit:]_]+\b')
 man_run    = \
-	${AM_VERBOSE_GEN} \
+	${AM_V_GEN} \
 	for ext in $(sort ${1}); do \
 		f="${srcdir}/libxt_$$ext.man"; \
 		if [ -f "$$f" ]; then \
-			echo -e "\t+ $$f" >&2; \
+			printf "\t+ $$f\n" >&2; \
 			echo ".SS $$ext"; \
 			cat "$$f" || exit $$?; \
 		fi; \
 		f="${srcdir}/libip6t_$$ext.man"; \
 		if [ -f "$$f" ]; then \
-			echo -e "\t+ $$f" >&2; \
+			printf "\t+ $$f\n" >&2; \
 			echo ".SS $$ext (IPv6-specific)"; \
 			cat "$$f" || exit $$?; \
 		fi; \
 		f="${srcdir}/libipt_$$ext.man"; \
 		if [ -f "$$f" ]; then \
-			echo -e "\t+ $$f" >&2; \
+			printf "\t+ $$f\n" >&2; \
 			echo ".SS $$ext (IPv4-specific)"; \
 			cat "$$f" || exit $$?; \
 		fi; \
 	done >$@;
 
-matches.man: .initext.dd .initextb.dd .initexta.dd .initext4.dd .initext6.dd $(wildcard ${srcdir}/lib*.man)
+matches.man: ${initext_depfiles} $(wildcard ${srcdir}/lib*.man)
 	$(call man_run,$(call ex_matches,${pfx_build_mod} ${pfb_build_mod} ${pfa_build_mod} ${pf4_build_mod} ${pf6_build_mod} ${pfx_symlinks}))
 
-targets.man: .initext.dd .initextb.dd .initexta.dd .initext4.dd .initext6.dd $(wildcard ${srcdir}/lib*.man)
+targets.man: ${initext_depfiles} $(wildcard ${srcdir}/lib*.man)
 	$(call man_run,$(call ex_targets,${pfx_build_mod} ${pfb_build_mod} ${pfa_build_mod} ${pf4_build_mod} ${pf6_build_mod} ${pfx_symlinks}))
+
+dist_initext_src = $(addprefix $(srcdir)/,${initext_sources})
+dist_sources = $(filter-out ${dist_initext_src},$(wildcard $(srcdir)/*.[ch]))
+
+distdir:
+	mkdir -p $(distdir)
+	cp -p ${dist_sources} $(distdir)/
+	cp -p $(wildcard ${srcdir}/lib*.man) $(distdir)/
+	cp -p $(wildcard ${srcdir}/*.t ${srcdir}/*.txlate) $(distdir)/
+
+dvi:
+check: all
+installcheck:

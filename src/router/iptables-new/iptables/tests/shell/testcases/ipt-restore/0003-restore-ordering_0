@@ -123,3 +123,19 @@ EXPECT='-A FORWARD -m comment --comment "rule 1" -j ACCEPT
 -A FORWARD -m comment --comment "rule 3" -j ACCEPT'
 
 diff -u -Z <(echo -e "$EXPECT") <(ipt_show)
+
+# test adding, referencing and deleting the same rule in a batch
+
+$XT_MULTI iptables-restore <<EOF
+*filter
+-A FORWARD -m comment --comment "first rule" -j ACCEPT
+-A FORWARD -m comment --comment "referenced rule" -j ACCEPT
+-I FORWARD 2 -m comment --comment "referencing rule" -j ACCEPT
+-D FORWARD -m comment --comment "referenced rule" -j ACCEPT
+COMMIT
+EOF
+
+EXPECT='-A FORWARD -m comment --comment "first rule" -j ACCEPT
+-A FORWARD -m comment --comment "referencing rule" -j ACCEPT'
+
+diff -u -Z <(echo -e "$EXPECT") <(ipt_show)

@@ -41,10 +41,6 @@ static void connbytes_parse(struct xt_option_call *cb)
 		if (cb->nvals == 2)
 			sinfo->count.to = cb->val.u64_range[1];
 
-		if (sinfo->count.to < sinfo->count.from)
-			xtables_error(PARAMETER_PROBLEM, "%llu should be less than %llu",
-					(unsigned long long)sinfo->count.from,
-					(unsigned long long)sinfo->count.to);
 		if (cb->invert) {
 			i = sinfo->count.from;
 			sinfo->count.from = sinfo->count.to;

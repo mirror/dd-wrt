@@ -55,9 +55,7 @@ This option must be used in conjunction with one of \fB\-\-rcheck\fP or
 address is in the list and packets had been received greater than or equal to
 the given value. This option may be used along with \fB\-\-seconds\fP to create
 an even narrower match requiring a certain number of hits within a specific
-time frame. The maximum value for the hitcount parameter is given by the
-"ip_pkt_list_tot" parameter of the xt_recent kernel module. Exceeding this
-value on the command line will cause the rule to be rejected.
+time frame.
 .TP
 \fB\-\-rttl\fP
 This option may only be used in conjunction with one of \fB\-\-rcheck\fP or
@@ -93,11 +91,15 @@ The module itself accepts parameters, defaults shown:
 \fBip_list_tot\fP=\fI100\fP
 Number of addresses remembered per table.
 .TP
-\fBip_pkt_list_tot\fP=\fI20\fP
-Number of packets per address remembered.
+\fBip_pkt_list_tot\fP=\fI0\fP
+Number of packets per address remembered. This parameter is obsolete since
+kernel version 3.19 which started to calculate the table size based on given
+\fB\-\-hitcount\fP parameter.
 .TP
 \fBip_list_hash_size\fP=\fI0\fP
-Hash table size. 0 means to calculate it based on ip_list_tot, default: 512.
+Hash table size. 0 means to calculate it based on ip_list_tot by rounding it up
+to the next power of two (with \fBip_list_tot\fP defaulting to \fI100\fP,
+\fBip_list_hash_size\fP will calculate to \fI128\fP by default).
 .TP
 \fBip_list_perms\fP=\fI0644\fP
 Permissions for /proc/net/xt_recent/* files.

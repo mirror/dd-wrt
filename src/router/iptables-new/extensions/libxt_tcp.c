@@ -43,7 +43,7 @@ parse_tcp_ports(const char *portstring, uint16_t *ports)
 	char *buffer;
 	char *cp;
 
-	buffer = strdup(portstring);
+	buffer = xtables_strdup(portstring);
 	if ((cp = strchr(buffer, ':')) == NULL)
 		ports[0] = ports[1] = xtables_parse_port(buffer, "tcp");
 	else {
@@ -83,7 +83,7 @@ parse_tcp_flag(const char *flags)
 	char *ptr;
 	char *buffer;
 
-	buffer = strdup(flags);
+	buffer = xtables_strdup(flags);
 
 	for (ptr = strtok(buffer, ","); ptr; ptr = strtok(NULL, ",")) {
 		unsigned int i;
@@ -225,13 +225,18 @@ print_port(uint16_t port, int numeric)
 		printf("%s", service);
 }
 
+static bool skip_ports_match(uint16_t min, uint16_t max, bool inv)
+{
+	return min == 0 && max == UINT16_MAX && !inv;
+}
+
 static void
 print_ports(const char *name, uint16_t min, uint16_t max,
 	    int invert, int numeric)
 {
 	const char *inv = invert ? "!" : "";
 
-	if (min != 0 || max != 0xFFFF || invert) {
+	if (!skip_ports_match(min, max, invert)) {
 		printf(" %s", name);
 		if (min == max) {
 			printf(":%s", inv);
@@ -315,10 +320,11 @@ tcp_print(const void *ip, const struct xt_entry_match *match, int numeric)
 static void tcp_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct xt_tcp *tcpinfo = (struct xt_tcp *)match->data;
+	bool inv_srcpt = tcpinfo->invflags & XT_TCP_INV_SRCPT;
+	bool inv_dstpt = tcpinfo->invflags & XT_TCP_INV_DSTPT;
 
-	if (tcpinfo->spts[0] != 0
-	    || tcpinfo->spts[1] != 0xFFFF) {
-		if (tcpinfo->invflags & XT_TCP_INV_SRCPT)
+	if (!skip_ports_match(tcpinfo->spts[0], tcpinfo->spts[1], inv_srcpt)) {
+		if (inv_srcpt)
 			printf(" !");
 		if (tcpinfo->spts[0]
 		    != tcpinfo->spts[1])
@@ -330,9 +336,8 @@ static void tcp_save(const void *ip, const struct xt_entry_match *match)
 			       tcpinfo->spts[0]);
 	}
 
-	if (tcpinfo->dpts[0] != 0
-	    || tcpinfo->dpts[1] != 0xFFFF) {
-		if (tcpinfo->invflags & XT_TCP_INV_DSTPT)
+	if (!skip_ports_match(tcpinfo->dpts[0], tcpinfo->dpts[1], inv_dstpt)) {
+		if (inv_dstpt)
 			printf(" !");
 		if (tcpinfo->dpts[0]
 		    != tcpinfo->dpts[1])
@@ -380,10 +385,9 @@ static void print_tcp_xlate(struct xt_xlate *xl, uint8_t flags)
 
 		for (i = 0; (flags & tcp_flag_names_xlate[i].flag) == 0; i++);
 
-		if (have_flag)
-			xt_xlate_add(xl, "|");
-
-		xt_xlate_add(xl, "%s", tcp_flag_names_xlate[i].name);
+		xt_xlate_add(xl, "%s%s",
+			     have_flag ? "," : "",
+			     tcp_flag_names_xlate[i].name);
 		have_flag = 1;
 
 		flags &= ~tcp_flag_names_xlate[i].flag;
@@ -398,49 +402,54 @@ static int tcp_xlate(struct xt_xlate *xl,
 {
 	const struct xt_tcp *tcpinfo =
 		(const struct xt_tcp *)params->match->data;
-	char *space= "";
+	bool inv_srcpt = tcpinfo->invflags & XT_TCP_INV_SRCPT;
+	bool inv_dstpt = tcpinfo->invflags & XT_TCP_INV_DSTPT;
+	bool xlated = false;
 
-	if (tcpinfo->spts[0] != 0 || tcpinfo->spts[1] != 0xffff) {
+	if (!skip_ports_match(tcpinfo->spts[0], tcpinfo->spts[1], inv_srcpt)) {
 		if (tcpinfo->spts[0] != tcpinfo->spts[1]) {
 			xt_xlate_add(xl, "tcp sport %s%u-%u",
-				   tcpinfo->invflags & XT_TCP_INV_SRCPT ?
-					"!= " : "",
+				   inv_srcpt ? "!= " : "",
 				   tcpinfo->spts[0], tcpinfo->spts[1]);
 		} else {
 			xt_xlate_add(xl, "tcp sport %s%u",
-				   tcpinfo->invflags & XT_TCP_INV_SRCPT ?
-					"!= " : "",
+				   inv_srcpt ? "!= " : "",
 				   tcpinfo->spts[0]);
 		}
-		space = " ";
+		xlated = true;
 	}
 
-	if (tcpinfo->dpts[0] != 0 || tcpinfo->dpts[1] != 0xffff) {
+	if (!skip_ports_match(tcpinfo->dpts[0], tcpinfo->dpts[1], inv_dstpt)) {
 		if (tcpinfo->dpts[0] != tcpinfo->dpts[1]) {
-			xt_xlate_add(xl, "%stcp dport %s%u-%u", space,
-				   tcpinfo->invflags & XT_TCP_INV_DSTPT ?
-					"!= " : "",
+			xt_xlate_add(xl, "tcp dport %s%u-%u",
+				   inv_dstpt ? "!= " : "",
 				   tcpinfo->dpts[0], tcpinfo->dpts[1]);
 		} else {
-			xt_xlate_add(xl, "%stcp dport %s%u", space,
-				   tcpinfo->invflags & XT_TCP_INV_DSTPT ?
-					"!= " : "",
+			xt_xlate_add(xl, "tcp dport %s%u",
+				   inv_dstpt ? "!= " : "",
 				   tcpinfo->dpts[0]);
 		}
-		space = " ";
+		xlated = true;
 	}
 
-	/* XXX not yet implemented */
-	if (tcpinfo->option || (tcpinfo->invflags & XT_TCP_INV_OPTION))
-		return 0;
+	if (tcpinfo->option) {
+		xt_xlate_add(xl, "tcp option %u %s", tcpinfo->option,
+			     tcpinfo->invflags & XT_TCP_INV_OPTION ?
+			     "missing" : "exists");
+		xlated = true;
+	}
 
 	if (tcpinfo->flg_mask || (tcpinfo->invflags & XT_TCP_INV_FLAGS)) {
-		xt_xlate_add(xl, "%stcp flags & (", space);
-		print_tcp_xlate(xl, tcpinfo->flg_mask);
-		xt_xlate_add(xl, ") %s ",
-			   tcpinfo->invflags & XT_TCP_INV_FLAGS ? "!=": "==");
+		xt_xlate_add(xl, "tcp flags %s",
+			     tcpinfo->invflags & XT_TCP_INV_FLAGS ? "!= ": "");
 		print_tcp_xlate(xl, tcpinfo->flg_cmp);
+		xt_xlate_add(xl, " / ");
+		print_tcp_xlate(xl, tcpinfo->flg_mask);
+		xlated = true;
 	}
+
+	if (!xlated)
+		xt_xlate_add(xl, "meta l4proto tcp");
 
 	return 1;
 }

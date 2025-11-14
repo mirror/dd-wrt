@@ -12,27 +12,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <xtables.h>
 #include <linux/netfilter_bridge/ebt_mark_t.h>
 #include "iptables/nft.h"
 #include "iptables/nft-bridge.h"
 
-#define MARK_TARGET  '1'
-#define MARK_SETMARK '2'
-#define MARK_ORMARK  '3'
-#define MARK_ANDMARK '4'
-#define MARK_XORMARK '5'
-static const struct option brmark_opts[] = {
-	{ .name = "mark-target",.has_arg = true,	.val = MARK_TARGET },
+enum {
+	O_SET_MARK = 0,
+	O_AND_MARK,
+	O_OR_MARK,
+	O_XOR_MARK,
+	O_MARK_TARGET,
+	F_SET_MARK  = 1 << O_SET_MARK,
+	F_AND_MARK  = 1 << O_AND_MARK,
+	F_OR_MARK   = 1 << O_OR_MARK,
+	F_XOR_MARK  = 1 << O_XOR_MARK,
+	F_ANY       = F_SET_MARK | F_AND_MARK | F_OR_MARK | F_XOR_MARK,
+};
+
+static const struct xt_option_entry brmark_opts[] = {
+	{ .name = "mark-target",.id = O_MARK_TARGET, .type = XTTYPE_STRING },
 	/* an oldtime messup, we should have always used the scheme
 	 * <extension-name>-<option> */
-	{ .name = "set-mark",	.has_arg = true,	.val = MARK_SETMARK },
-	{ .name = "mark-set",	.has_arg = true,	.val = MARK_SETMARK },
-	{ .name = "mark-or",	.has_arg = true,	.val = MARK_ORMARK },
-	{ .name = "mark-and",	.has_arg = true,	.val = MARK_ANDMARK },
-	{ .name = "mark-xor",	.has_arg = true,	.val = MARK_XORMARK },
-	XT_GETOPT_TABLEEND,
+	{ .name = "set-mark",	.id = O_SET_MARK, .type = XTTYPE_UINT32,
+	  .excl = F_ANY },
+	{ .name = "mark-set",	.id = O_SET_MARK, .type = XTTYPE_UINT32,
+	  .excl = F_ANY },
+	{ .name = "mark-or",	.id = O_OR_MARK, .type = XTTYPE_UINT32,
+	  .excl = F_ANY },
+	{ .name = "mark-and",	.id = O_AND_MARK, .type = XTTYPE_UINT32,
+	  .excl = F_ANY },
+	{ .name = "mark-xor",	.id = O_XOR_MARK, .type = XTTYPE_UINT32,
+	  .excl = F_ANY },
+	XTOPT_TABLEEND,
 };
 
 static void brmark_print_help(void)
@@ -54,83 +66,39 @@ static void brmark_init(struct xt_entry_target *target)
 	info->mark = 0;
 }
 
-#define OPT_MARK_TARGET   0x01
-#define OPT_MARK_SETMARK  0x02
-#define OPT_MARK_ORMARK   0x04
-#define OPT_MARK_ANDMARK  0x08
-#define OPT_MARK_XORMARK  0x10
-
-static int
-brmark_parse(int c, char **argv, int invert, unsigned int *flags,
-	     const void *entry, struct xt_entry_target **target)
+static void brmark_parse(struct xt_option_call *cb)
 {
-	struct ebt_mark_t_info *info = (struct ebt_mark_t_info *)
-				       (*target)->data;
-	char *end;
-	uint32_t mask;
+	static const unsigned long target_orval[] = {
+		[O_SET_MARK]	= MARK_SET_VALUE,
+		[O_AND_MARK]	= MARK_AND_VALUE,
+		[O_OR_MARK]	= MARK_OR_VALUE,
+		[O_XOR_MARK]	= MARK_XOR_VALUE,
+	};
+	struct ebt_mark_t_info *info = cb->data;
+	unsigned int tmp;
 
-	switch (c) {
-	case MARK_TARGET:
-		{ unsigned int tmp;
-		EBT_CHECK_OPTION(flags, OPT_MARK_TARGET);
-		if (ebt_fill_target(optarg, &tmp))
+	xtables_option_parse(cb);
+	switch (cb->entry->id) {
+	case O_MARK_TARGET:
+		if (ebt_fill_target(cb->arg, &tmp))
 			xtables_error(PARAMETER_PROBLEM,
 				      "Illegal --mark-target target");
 		/* the 4 lsb are left to designate the target */
 		info->target = (info->target & ~EBT_VERDICT_BITS) |
 			       (tmp & EBT_VERDICT_BITS);
-		}
-		return 1;
-	case MARK_SETMARK:
-		EBT_CHECK_OPTION(flags, OPT_MARK_SETMARK);
-		mask = (OPT_MARK_ORMARK|OPT_MARK_ANDMARK|OPT_MARK_XORMARK);
-		if (*flags & mask)
-			xtables_error(PARAMETER_PROBLEM,
-				      "--mark-set cannot be used together with"
-				      " specific --mark option");
-		info->target = (info->target & EBT_VERDICT_BITS) |
-			       MARK_SET_VALUE;
-		break;
-	case MARK_ORMARK:
-		EBT_CHECK_OPTION(flags, OPT_MARK_ORMARK);
-		mask = (OPT_MARK_SETMARK|OPT_MARK_ANDMARK|OPT_MARK_XORMARK);
-		if (*flags & mask)
-			xtables_error(PARAMETER_PROBLEM,
-				      "--mark-or cannot be used together with"
-				      " specific --mark option");
-		info->target = (info->target & EBT_VERDICT_BITS) |
-			       MARK_OR_VALUE;
-		break;
-	case MARK_ANDMARK:
-		EBT_CHECK_OPTION(flags, OPT_MARK_ANDMARK);
-		mask = (OPT_MARK_SETMARK|OPT_MARK_ORMARK|OPT_MARK_XORMARK);
-		if (*flags & mask)
-			xtables_error(PARAMETER_PROBLEM,
-				      "--mark-and cannot be used together with"
-				      " specific --mark option");
-		info->target = (info->target & EBT_VERDICT_BITS) |
-			       MARK_AND_VALUE;
-		break;
-	case MARK_XORMARK:
-		EBT_CHECK_OPTION(flags, OPT_MARK_XORMARK);
-		mask = (OPT_MARK_SETMARK|OPT_MARK_ANDMARK|OPT_MARK_ORMARK);
-		if (*flags & mask)
-			xtables_error(PARAMETER_PROBLEM,
-				      "--mark-xor cannot be used together with"
-				      " specific --mark option");
-		info->target = (info->target & EBT_VERDICT_BITS) |
-			       MARK_XOR_VALUE;
+		return;
+	case O_SET_MARK:
+	case O_OR_MARK:
+	case O_AND_MARK:
+	case O_XOR_MARK:
 		break;
 	default:
-		return 0;
+		return;
 	}
 	/* mutual code */
-	info->mark = strtoul(optarg, &end, 0);
-	if (*end != '\0' || end == optarg)
-		xtables_error(PARAMETER_PROBLEM, "Bad MARK value '%s'",
-			      optarg);
-
-	return 1;
+	info->mark = cb->val.u32;
+	info->target = (info->target & EBT_VERDICT_BITS) |
+		       target_orval[cb->entry->id];
 }
 
 static void brmark_print(const void *ip, const struct xt_entry_target *target,
@@ -156,9 +124,9 @@ static void brmark_print(const void *ip, const struct xt_entry_target *target,
 	printf(" --mark-target %s", ebt_target_name(tmp));
 }
 
-static void brmark_final_check(unsigned int flags)
+static void brmark_final_check(struct xt_fcheck_call *fc)
 {
-	if (!flags)
+	if (!fc->xflags)
 		xtables_error(PARAMETER_PROBLEM,
 			      "You must specify some option");
 }
@@ -201,7 +169,7 @@ static int brmark_xlate(struct xt_xlate *xl,
 		return 0;
 	}
 
-	tmp = info->target & EBT_VERDICT_BITS;
+	tmp = info->target | ~EBT_VERDICT_BITS;
 	xt_xlate_add(xl, "0x%lx %s ", info->mark, brmark_verdict(tmp));
 	return 1;
 }
@@ -215,11 +183,11 @@ static struct xtables_target brmark_target = {
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_mark_t_info)),
 	//.help		= brmark_print_help,
 	.init		= brmark_init,
-	.parse		= brmark_parse,
-	.final_check	= brmark_final_check,
+	.x6_parse	= brmark_parse,
+	.x6_fcheck	= brmark_final_check,
 	.print		= brmark_print,
 	.xlate		= brmark_xlate,
-	.extra_opts	= brmark_opts,
+	.x6_options	= brmark_opts,
 };
 
 void _init(void)

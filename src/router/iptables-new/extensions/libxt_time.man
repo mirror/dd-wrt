@@ -58,7 +58,7 @@ rest of the system uses).
 The caveat with the kernel timezone is that Linux distributions may ignore to
 set the kernel timezone, and instead only set the system time. Even if a
 particular distribution does set the timezone at boot, it is usually does not
-keep the kernel timezone offset - which is what changes on DST - up to date.
+keep the kernel timezone offset \(em which is what changes on DST \(em up to date.
 ntpd will not touch the kernel timezone, so running it will not resolve the
 issue. As such, one may encounter a timezone that is always +0000, or one that
 is wrong half of the time of the year. As such, \fBusing \-\-kerneltz is highly

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <xtables.h>
 #include <linux/netfilter_ipv6/ip6t_mh.h>
+#include <linux/netfilter_ipv6/ip6_tables.h>
 
 enum {
 	O_MH_TYPE = 0,
@@ -97,7 +98,7 @@ static unsigned int name_to_type(const char *name)
 
 		if (!xtables_strtoui(name, NULL, &number, 0, UINT8_MAX))
 			xtables_error(PARAMETER_PROBLEM,
-				   "Invalid MH type `%s'\n", name);
+				      "Invalid MH type `%s'", name);
 		return number;
 	}
 }
@@ -107,7 +108,7 @@ static void parse_mh_types(const char *mhtype, uint8_t *types)
 	char *buffer;
 	char *cp;
 
-	buffer = strdup(mhtype);
+	buffer = xtables_strdup(mhtype);
 	if ((cp = strchr(buffer, ':')) == NULL)
 		types[0] = types[1] = name_to_type(buffer);
 	else {
@@ -154,11 +155,16 @@ static void print_type(uint8_t type, int numeric)
 		printf("%s", name);
 }
 
+static bool skip_types_match(uint8_t min, uint8_t max, bool inv)
+{
+	return min == 0 && max == UINT8_MAX && !inv;
+}
+
 static void print_types(uint8_t min, uint8_t max, int invert, int numeric)
 {
 	const char *inv = invert ? "!" : "";
 
-	if (min != 0 || max != 0xFF || invert) {
+	if (!skip_types_match(min, max, invert)) {
 		printf(" ");
 		if (min == max) {
 			printf("%s", inv);
@@ -189,11 +195,12 @@ static void mh_print(const void *ip, const struct xt_entry_match *match,
 static void mh_save(const void *ip, const struct xt_entry_match *match)
 {
 	const struct ip6t_mh *mhinfo = (struct ip6t_mh *)match->data;
+	bool inv_type = mhinfo->invflags & IP6T_MH_INV_TYPE;
 
-	if (mhinfo->types[0] == 0 && mhinfo->types[1] == 0xFF)
+	if (skip_types_match(mhinfo->types[0], mhinfo->types[1], inv_type))
 		return;
 
-	if (mhinfo->invflags & IP6T_MH_INV_TYPE)
+	if (inv_type)
 		printf(" !");
 
 	if (mhinfo->types[0] != mhinfo->types[1])
@@ -206,9 +213,12 @@ static int mh_xlate(struct xt_xlate *xl,
 		    const struct xt_xlate_mt_params *params)
 {
 	const struct ip6t_mh *mhinfo = (struct ip6t_mh *)params->match->data;
+	bool inv_type = mhinfo->invflags & IP6T_MH_INV_TYPE;
 
-	if (mhinfo->types[0] == 0 && mhinfo->types[1] == 0xff)
+	if (skip_types_match(mhinfo->types[0], mhinfo->types[1], inv_type)) {
+		xt_xlate_add(xl, "exthdr mh exists");
 		return 1;
+	}
 
 	if (mhinfo->types[0] != mhinfo->types[1])
 		xt_xlate_add(xl, "mh type %s%u-%u",

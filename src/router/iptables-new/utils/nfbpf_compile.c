@@ -17,6 +17,7 @@ int main(int argc, char **argv)
 	struct bpf_program program;
 	struct bpf_insn *ins;
 	int i, dlt = DLT_RAW;
+	pcap_t *pcap;
 
 	if (argc < 2 || argc > 3) {
 		fprintf(stderr, "Usage:    %s [link] '<program>'\n\n"
@@ -36,9 +37,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (pcap_compile_nopcap(65535, dlt, &program, argv[argc - 1], 1,
+	pcap = pcap_open_dead(dlt, 65535);
+	if (!pcap) {
+		fprintf(stderr, "Memory allocation failure\n");
+		return 1;
+	}
+	if (pcap_compile(pcap, &program, argv[argc - 1], 1,
 				PCAP_NETMASK_UNKNOWN)) {
 		fprintf(stderr, "Compilation error\n");
+		pcap_close(pcap);
 		return 1;
 	}
 
@@ -50,6 +57,7 @@ int main(int argc, char **argv)
 	printf("%u %u %u %u\n", ins->code, ins->jt, ins->jf, ins->k);
 
 	pcap_freecode(&program);
+	pcap_close(pcap);
 	return 0;
 }
 

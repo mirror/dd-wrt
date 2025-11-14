@@ -60,6 +60,21 @@ static void tcpmss_save(const void *ip, const struct xt_entry_match *match)
 		printf("%u:%u", info->mss_min, info->mss_max);
 }
 
+static int tcpmss_xlate(struct xt_xlate *xl,
+			const struct xt_xlate_mt_params *params)
+{
+	const struct xt_tcpmss_match_info *info = (void *)params->match->data;
+
+	xt_xlate_add(xl, "tcp option maxseg size %s", info->invert ? "!= " : "");
+
+	if (info->mss_min == info->mss_max)
+		xt_xlate_add(xl, "%u", info->mss_min);
+	else
+		xt_xlate_add(xl, "%u-%u", info->mss_min, info->mss_max);
+
+	return 1;
+}
+
 static struct xtables_match tcpmss_match = {
 	.family		= NFPROTO_UNSPEC,
 	.name		= "tcpmss",
@@ -71,6 +86,7 @@ static struct xtables_match tcpmss_match = {
 	.save		= tcpmss_save,
 	.x6_parse	= tcpmss_parse,
 	.x6_options	= tcpmss_opts,
+	.xlate		= tcpmss_xlate,
 };
 
 void _init(void)

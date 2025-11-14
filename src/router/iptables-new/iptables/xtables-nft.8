@@ -105,15 +105,15 @@ One basic example is creating the skeleton ruleset in nf_tables from the
 xtables-nft tools, in a fresh machine:
 
 .nf
-	root@machine:~# iptables\-nft \-L
+	root@machine:\(ti# iptables\-nft \-L
 	[...]
-	root@machine:~# ip6tables\-nft \-L
+	root@machine:\(ti# ip6tables\-nft \-L
 	[...]
-	root@machine:~# arptables\-nft \-L
+	root@machine:\(ti# arptables\-nft \-L
 	[...]
-	root@machine:~# ebtables\-nft \-L
+	root@machine:\(ti# ebtables\-nft \-L
 	[...]
-	root@machine:~# nft list ruleset
+	root@machine:\(ti# nft list ruleset
 	table ip filter {
 		chain INPUT {
 			type filter hook input priority 0; policy accept;
@@ -175,12 +175,12 @@ To migrate your complete filter ruleset, in the case of \fBiptables(8)\fP,
 you would use:
 
 .nf
-	root@machine:~# iptables\-legacy\-save > myruleset # reads from x_tables
-	root@machine:~# iptables\-nft\-restore myruleset   # writes to nf_tables
+	root@machine:\(ti# iptables\-legacy\-save > myruleset # reads from x_tables
+	root@machine:\(ti# iptables\-nft\-restore myruleset   # writes to nf_tables
 .fi
 or
 .nf
-	root@machine:~# iptables\-legacy\-save | iptables-translate-restore | less
+	root@machine:\(ti# iptables\-legacy\-save | iptables\-translate\-restore | less
 .fi
 
 to see how rules would look like in the nft

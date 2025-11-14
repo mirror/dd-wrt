@@ -141,9 +141,9 @@ for opt in $OPTS; do
 			;;
 		(*)
 			case "${OPT_STATE:-}" in
-				(SET_TIMEOUT) eval TIMEOUT=$opt;;
+				(SET_TIMEOUT) eval TIMEOUT="$opt";;
 				(SET_SAVEFILE)
-					eval SAVEFILE=$opt
+					eval SAVEFILE="$opt"
 					[ -z "$SAVEFILE" ] && SAVEFILE="$DEF_SAVEFILE"
 					;;
 			esac
@@ -163,13 +163,13 @@ done
 
 # Validate parameters
 if [ "$TIMEOUT" -ge 0 ] 2>/dev/null; then
-	TIMEOUT=$(($TIMEOUT))
+	TIMEOUT=$((TIMEOUT))
 else
 	echo "Error: timeout must be a positive number" >&2
 	exit 1
 fi
 
-if [ -n "$SAVEFILE" -a -e "$SAVEFILE" -a ! -w "$SAVEFILE" ]; then
+if [ -n "$SAVEFILE" ] && [ -e "$SAVEFILE" ] && [ ! -w "$SAVEFILE" ]; then
 	echo "Error: savefile not writable: $SAVEFILE" >&2
 	exit 8
 fi
@@ -205,8 +205,8 @@ esac
 ### Begin work
 
 # Store old iptables rules to temporary file
-TMPFILE=`mktemp /tmp/$PROGNAME-XXXXXXXX`
-trap "rm -f $TMPFILE" EXIT HUP INT QUIT ILL TRAP ABRT BUS \
+TMPFILE=$(mktemp "/tmp/$PROGNAME-XXXXXXXX")
+trap 'rm -f $TMPFILE' EXIT HUP INT QUIT ILL TRAP ABRT BUS \
 		      FPE USR1 SEGV USR2 PIPE ALRM TERM
 
 if ! "$SAVE" >"$TMPFILE"; then
@@ -231,7 +231,6 @@ case "$MODE" in
 		"$RUNCMD" &
 		CMD_PID=$!
 		( sleep "$TIMEOUT"; kill "$CMD_PID" 2>/dev/null; exit 0 ) &
-		CMDTIMEOUT_PID=$!
 		if ! wait "$CMD_PID"; then
 			echo "failed."
 			echo "Error: unknown error running command: $RUNCMD" >&2
@@ -258,13 +257,13 @@ esac
 # Prompt user for confirmation
 echo -n "Can you establish NEW connections to the machine? (y/N) "
 
-read -n1 -t "$TIMEOUT" ret 2>&1 || :
+read -r -n1 -t "$TIMEOUT" ret 2>&1 || :
 case "${ret:-}" in
 	(y*|Y*)
 		# Success
 		echo
 
-		if [ ! -z "$SAVEFILE" ]; then
+		if [ -n "$SAVEFILE" ]; then
 			# Write successfully applied rules to the savefile
 			echo "Writing successfully applied rules to '$SAVEFILE'..."
 			if ! "$SAVE" >"$SAVEFILE"; then

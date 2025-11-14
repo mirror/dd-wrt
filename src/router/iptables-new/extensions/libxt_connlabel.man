@@ -23,11 +23,11 @@ Label translation is done via the \fB/etc/xtables/connlabel.conf\fP configuratio
 Example:
 .IP
 .nf
-0	eth0-in
-1	eth0-out
-2	ppp-in
-3	ppp-out
-4	bulk-traffic
+0	eth0\-in
+1	eth0\-out
+2	ppp\-in
+3	ppp\-out
+4	bulk\-traffic
 5	interactive
 .fi
 .PP

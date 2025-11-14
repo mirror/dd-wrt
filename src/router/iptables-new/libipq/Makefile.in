@@ -183,7 +183,7 @@ am__can_run_installinfo = \
   esac
 man3dir = $(mandir)/man3
 NROFF = nroff
-MANS = $(man_MANS)
+MANS = $(dist_man_MANS)
 DATA = $(pkgconfig_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -204,8 +204,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/libipq.pc.in \
-	$(top_srcdir)/build-aux/depcomp
+am__DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.in \
+	$(srcdir)/libipq.pc.in $(top_srcdir)/build-aux/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 pkgdatadir = @pkgdatadir@
 ACLOCAL = @ACLOCAL@
@@ -274,6 +274,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+XT_LOCK_NAME = @XT_LOCK_NAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -326,6 +327,8 @@ libnfnetlink_CFLAGS = @libnfnetlink_CFLAGS@
 libnfnetlink_LIBS = @libnfnetlink_LIBS@
 libnftnl_CFLAGS = @libnftnl_CFLAGS@
 libnftnl_LIBS = @libnftnl_LIBS@
+libpcap_CFLAGS = @libpcap_CFLAGS@
+libpcap_LIBS = @libpcap_LIBS@
 libxtables_vage = @libxtables_vage@
 libxtables_vcurrent = @libxtables_vcurrent@
 libxtables_vmajor = @libxtables_vmajor@
@@ -342,6 +345,7 @@ program_transform_name = @program_transform_name@
 psdir = @psdir@
 regular_CFLAGS = @regular_CFLAGS@
 regular_CPPFLAGS = @regular_CPPFLAGS@
+regular_LDFLAGS = @regular_LDFLAGS@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -351,11 +355,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 xtlibdir = @xtlibdir@
-AM_CFLAGS = ${regular_CFLAGS} -fPIC
-AM_CPPFLAGS = ${regular_CPPFLAGS} -fPIC -I${top_builddir}/include -I${top_srcdir}/include
+AM_CFLAGS = ${regular_CFLAGS}
+AM_CPPFLAGS = ${regular_CPPFLAGS} -I${top_builddir}/include -I${top_srcdir}/include
+AM_LDFLAGS = ${regular_LDFLAGS}
 libipq_la_SOURCES = libipq.c
 lib_LTLIBRARIES = libipq.la
-man_MANS = ipq_create_handle.3 ipq_destroy_handle.3 ipq_errstr.3 \
+dist_man_MANS = ipq_create_handle.3 ipq_destroy_handle.3 ipq_errstr.3 \
                    ipq_get_msgerr.3 ipq_get_packet.3 ipq_message_type.3 \
                    ipq_perror.3 ipq_read.3 ipq_set_mode.3 ipq_set_verdict.3 \
                    libipq.3
@@ -469,10 +474,10 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-install-man3: $(man_MANS)
+install-man3: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
-	list2='$(man_MANS)'; \
+	list2='$(dist_man_MANS)'; \
 	test -n "$(man3dir)" \
 	  && test -n "`echo $$list1$$list2`" \
 	  || exit 0; \
@@ -507,7 +512,7 @@ uninstall-man3:
 	@$(NORMAL_UNINSTALL)
 	@list=''; test -n "$(man3dir)" || exit 0; \
 	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(man_MANS)'; for i in $$l2; do echo "$$i"; done | \
+	l2='$(dist_man_MANS)'; for i in $$l2; do echo "$$i"; done | \
 	  sed -n '/\.3[a-z]*$$/p'; \
 	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^3][0-9a-z]*$$,3,;x' \
 	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \

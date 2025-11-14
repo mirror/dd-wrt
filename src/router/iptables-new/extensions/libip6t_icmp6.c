@@ -12,48 +12,6 @@ enum {
 	O_ICMPV6_TYPE = 0,
 };
 
-static const struct xt_icmp_names icmpv6_codes[] = {
-	{ "destination-unreachable", 1, 0, 0xFF },
-	{   "no-route", 1, 0, 0 },
-	{   "communication-prohibited", 1, 1, 1 },
-	{   "beyond-scope", 1, 2, 2 },
-	{   "address-unreachable", 1, 3, 3 },
-	{   "port-unreachable", 1, 4, 4 },
-	{   "failed-policy", 1, 5, 5 },
-	{   "reject-route", 1, 6, 6 },
-
-	{ "packet-too-big", 2, 0, 0xFF },
-
-	{ "time-exceeded", 3, 0, 0xFF },
-	/* Alias */ { "ttl-exceeded", 3, 0, 0xFF },
-	{   "ttl-zero-during-transit", 3, 0, 0 },
-	{   "ttl-zero-during-reassembly", 3, 1, 1 },
-
-	{ "parameter-problem", 4, 0, 0xFF },
-	{   "bad-header", 4, 0, 0 },
-	{   "unknown-header-type", 4, 1, 1 },
-	{   "unknown-option", 4, 2, 2 },
-
-	{ "echo-request", 128, 0, 0xFF },
-	/* Alias */ { "ping", 128, 0, 0xFF },
-
-	{ "echo-reply", 129, 0, 0xFF },
-	/* Alias */ { "pong", 129, 0, 0xFF },
-
-	{ "router-solicitation", 133, 0, 0xFF },
-
-	{ "router-advertisement", 134, 0, 0xFF },
-
-	{ "neighbour-solicitation", 135, 0, 0xFF },
-	/* Alias */ { "neighbor-solicitation", 135, 0, 0xFF },
-
-	{ "neighbour-advertisement", 136, 0, 0xFF },
-	/* Alias */ { "neighbor-advertisement", 136, 0, 0xFF },
-
-	{ "redirect", 137, 0, 0xFF },
-
-};
-
 static void icmp6_help(void)
 {
 	printf(
@@ -70,59 +28,6 @@ static const struct xt_option_entry icmp6_opts[] = {
 	XTOPT_TABLEEND,
 };
 
-static void
-parse_icmpv6(const char *icmpv6type, uint8_t *type, uint8_t code[])
-{
-	static const unsigned int limit = ARRAY_SIZE(icmpv6_codes);
-	unsigned int match = limit;
-	unsigned int i;
-
-	for (i = 0; i < limit; i++) {
-		if (strncasecmp(icmpv6_codes[i].name, icmpv6type, strlen(icmpv6type))
-		    == 0) {
-			if (match != limit)
-				xtables_error(PARAMETER_PROBLEM,
-					   "Ambiguous ICMPv6 type `%s':"
-					   " `%s' or `%s'?",
-					   icmpv6type,
-					   icmpv6_codes[match].name,
-					   icmpv6_codes[i].name);
-			match = i;
-		}
-	}
-
-	if (match != limit) {
-		*type = icmpv6_codes[match].type;
-		code[0] = icmpv6_codes[match].code_min;
-		code[1] = icmpv6_codes[match].code_max;
-	} else {
-		char *slash;
-		char buffer[strlen(icmpv6type) + 1];
-		unsigned int number;
-
-		strcpy(buffer, icmpv6type);
-		slash = strchr(buffer, '/');
-
-		if (slash)
-			*slash = '\0';
-
-		if (!xtables_strtoui(buffer, NULL, &number, 0, UINT8_MAX))
-			xtables_error(PARAMETER_PROBLEM,
-				   "Invalid ICMPv6 type `%s'\n", buffer);
-		*type = number;
-		if (slash) {
-			if (!xtables_strtoui(slash+1, NULL, &number, 0, UINT8_MAX))
-				xtables_error(PARAMETER_PROBLEM,
-					   "Invalid ICMPv6 code `%s'\n",
-					   slash+1);
-			code[0] = code[1] = number;
-		} else {
-			code[0] = 0;
-			code[1] = 0xFF;
-		}
-	}
-}
-
 static void icmp6_init(struct xt_entry_match *m)
 {
 	struct ip6t_icmp *icmpv6info = (struct ip6t_icmp *)m->data;
@@ -135,7 +40,7 @@ static void icmp6_parse(struct xt_option_call *cb)
 	struct ip6t_icmp *icmpv6info = cb->data;
 
 	xtables_option_parse(cb);
-	parse_icmpv6(cb->arg, &icmpv6info->type, icmpv6info->code);
+	ipt_parse_icmpv6(cb->arg, &icmpv6info->type, icmpv6info->code);
 	if (cb->invert)
 		icmpv6info->invflags |= IP6T_ICMP_INV;
 }

@@ -3,14 +3,12 @@
 -m hashlimit --hashlimit-above 1000000/sec --hashlimit-burst 5 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-above 1/min --hashlimit-burst 5 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-above 1/hour --hashlimit-burst 5 --hashlimit-name mini1;=;OK
-# kernel says "xt_hashlimit: overflow, try lower: 864000000/5"
--m hashlimit --hashlimit-above 1/day --hashlimit-burst 5 --hashlimit-name mini1;;FAIL
+-m hashlimit --hashlimit-above 1/day --hashlimit-burst 1 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-upto 1/sec --hashlimit-burst 5 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-upto 1000000/sec --hashlimit-burst 5 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-upto 1/min --hashlimit-burst 5 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-upto 1/hour --hashlimit-burst 5 --hashlimit-name mini1;=;OK
-# kernel says "xt_hashlimit: overflow, try lower: 864000000/5"
--m hashlimit --hashlimit-upto 1/day --hashlimit-burst 5 --hashlimit-name mini1;;FAIL
+-m hashlimit --hashlimit-upto 1/day --hashlimit-burst 1 --hashlimit-name mini1;=;OK
 -m hashlimit --hashlimit-upto 1/sec --hashlimit-burst 1 --hashlimit-name mini1 --hashlimit-htable-expire 2000;=;OK
 -m hashlimit --hashlimit-upto 1/sec --hashlimit-burst 1 --hashlimit-mode srcip --hashlimit-name mini1 --hashlimit-htable-expire 2000;=;OK
 -m hashlimit --hashlimit-upto 1/sec --hashlimit-burst 1 --hashlimit-mode dstip --hashlimit-name mini1 --hashlimit-htable-expire 2000;=;OK

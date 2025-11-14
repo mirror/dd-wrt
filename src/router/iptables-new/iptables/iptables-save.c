@@ -61,8 +61,7 @@ for_each_table(int (*func)(struct iptables_save_cb *cb, const char *tablename),
 	while (fgets(tablename, sizeof(tablename), procfile)) {
 		if (tablename[strlen(tablename) - 1] != '\n')
 			xtables_error(OTHER_PROBLEM,
-				   "Badly formed tablename `%s'\n",
-				   tablename);
+				      "Badly formed tablename `%s'", tablename);
 		tablename[strlen(tablename) - 1] = '\0';
 		ret &= func(cb, tablename);
 	}
@@ -85,7 +84,7 @@ static int do_output(struct iptables_save_cb *cb, const char *tablename)
 		h = cb->ops->init(tablename);
 	}
 	if (!h)
-		xtables_error(OTHER_PROBLEM, "Cannot initialize: %s\n",
+		xtables_error(OTHER_PROBLEM, "Cannot initialize: %s",
 			      cb->ops->strerror(errno));
 
 	time_t now = time(NULL);
@@ -173,7 +172,7 @@ do_iptables_save(struct iptables_save_cb *cb, int argc, char *argv[])
 			do_output(cb, tablename);
 			exit(0);
 		case 'V':
-			printf("%s v%s (legacy)\n",
+			printf("%s v%s\n",
 			       xt_params->program_name,
 			       xt_params->program_version);
 			exit(0);
@@ -227,10 +226,8 @@ iptables_save_main(int argc, char *argv[])
 				iptables_globals.program_version);
 		exit(1);
 	}
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 	init_extensions4();
-#endif
 
 	ret = do_iptables_save(&ipt_save_cb, argc, argv);
 
@@ -273,10 +270,8 @@ ip6tables_save_main(int argc, char *argv[])
 				ip6tables_globals.program_version);
 		exit(1);
 	}
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 	init_extensions6();
-#endif
 
 	ret = do_iptables_save(&ip6t_save_cb, argc, argv);
 

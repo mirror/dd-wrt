@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <asm/types.h>
@@ -48,19 +48,19 @@ typedef unsigned long ipq_id_t;
 struct ipq_handle
 {
 	int fd;
-	u_int8_t blocking;
+	uint8_t blocking;
 	struct sockaddr_nl local;
 	struct sockaddr_nl peer;
 };
 
-struct ipq_handle *ipq_create_handle(u_int32_t flags, u_int32_t protocol);
+struct ipq_handle *ipq_create_handle(uint32_t flags, uint32_t protocol);
 
 int ipq_destroy_handle(struct ipq_handle *h);
 
 ssize_t ipq_read(const struct ipq_handle *h,
                 unsigned char *buf, size_t len, int timeout);
 
-int ipq_set_mode(const struct ipq_handle *h, u_int8_t mode, size_t len);
+int ipq_set_mode(const struct ipq_handle *h, uint8_t mode, size_t len);
 
 ipq_packet_msg_t *ipq_get_packet(const unsigned char *buf);
 

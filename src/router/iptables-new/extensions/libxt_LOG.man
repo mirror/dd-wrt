@@ -30,3 +30,6 @@ Log options from the IP/IPv6 packet header.
 .TP
 \fB\-\-log\-uid\fP
 Log the userid of the process which generated the packet.
+.TP
+\fB\-\-log\-macdecode\fP
+Log MAC addresses and protocol.

@@ -52,11 +52,8 @@ ip6tables_main(int argc, char *argv[])
 				ip6tables_globals.program_version);
 		exit(1);
 	}
-
-#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 	init_extensions6();
-#endif
 
 	ret = do_command6(argc, argv, &table, &handle, false);
 	if (ret) {

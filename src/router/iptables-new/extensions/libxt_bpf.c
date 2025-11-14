@@ -83,8 +83,7 @@ static int bpf_obj_get_readonly(const char *filepath)
 	attr.file_flags = 0;
 	return syscall(__NR_bpf, BPF_OBJ_GET, &attr, sizeof(attr));
 #else
-	xtables_error(OTHER_PROBLEM,
-		      "No bpf header, kernel headers too old?\n");
+	xtables_error(OTHER_PROBLEM, "No bpf header, kernel headers too old?");
 	return -EINVAL;
 #endif
 }

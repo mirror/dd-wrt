@@ -14,10 +14,6 @@
 #include "ip6tables-multi.h"
 #endif
 
-#ifdef ENABLE_NFTABLES
-#include "xtables-multi.h"
-#endif
-
 static const struct subcommand multi_subcommands[] = {
 #ifdef ENABLE_IPV4
 	{"iptables",            iptables_main},

@@ -43,7 +43,7 @@ Restrict output to IPv6.
 .PP
 The first line shows a packet entering rule set evaluation.
 The protocol number is shown (AF_INET in this case), then a packet
-identifier number that allows to correlate messages coming from rule set evaluation of
+identifier number that allows one to correlate messages coming from rule set evaluation of
 this packet.  After this, the rule that was matched by the packet is shown.
 This is the TRACE rule that turns on tracing events for this packet.
 
@@ -51,9 +51,9 @@ The second line dumps information about the packet. Incoming interface
 and packet headers such as source and destination addresses are shown.
 
 The third line shows that the packet completed traversal of the raw table
-PREROUTING chain, and is returning, followed by use the chain policy to make accept/drop
+PREROUTING chain, and is returning, followed by use of the chain policy to make accept/drop
 decision (the example shows accept being applied).
-The fifth line shows that the packet leaves the filter INPUT chain, i.e., no rules in the filter tables
+The fifth line shows that the packet leaves the filter INPUT chain, i.e., no rules in the filter table's
 INPUT chain matched the packet.
 It then got DROPPED by the policy of the INPUT table, as shown by line six.
 The last line shows another packet arriving \-\- the packet id is different.
@@ -81,7 +81,7 @@ by three base hooks INPUT, FORWARD and OUTPUT.  The iptables-nftables tools all 
 chains automatically when needed, so this is expected when a table was not yet initialized or when it is
 re-created from scratch by iptables-nftables-restore.  Line five shows a new user-defined chain (TCP)
 being added, followed by addition a few rules. the last line shows that a new ruleset generation has
-become active, i.e., the rule set changes are now active.  This also lists the process id and the programs name.
+become active, i.e., the rule set changes are now active.  This also lists the process id and the program name.
 .SH LIMITATIONS
 .B xtables-monitor
 only works with rules added using iptables-nftables, rules added using

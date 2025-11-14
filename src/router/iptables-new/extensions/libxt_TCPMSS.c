@@ -131,6 +131,7 @@ static struct xtables_target tcpmss_tg_reg[] = {
 		.x6_parse      = TCPMSS_parse,
 		.x6_fcheck     = TCPMSS_check,
 		.x6_options    = TCPMSS6_opts,
+		.xlate         = TCPMSS_xlate,
 	},
 };
 

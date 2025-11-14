@@ -25,48 +25,52 @@
 #include "nft.h"
 #include "nft-shared.h"
 
-static int nft_ipv6_add(struct nft_handle *h, struct nftnl_rule *r, void *data)
+static int nft_ipv6_add(struct nft_handle *h, struct nft_rule_ctx *ctx,
+			struct nftnl_rule *r, struct iptables_command_state *cs)
 {
-	struct iptables_command_state *cs = data;
 	struct xtables_rule_match *matchp;
 	uint32_t op;
 	int ret;
-
-	if (cs->fw6.ipv6.iniface[0] != '\0') {
-		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, IPT_INV_VIA_IN);
-		add_iniface(r, cs->fw6.ipv6.iniface, op);
-	}
-
-	if (cs->fw6.ipv6.outiface[0] != '\0') {
-		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, IPT_INV_VIA_OUT);
-		add_outiface(r, cs->fw6.ipv6.outiface, op);
-	}
-
-	if (cs->fw6.ipv6.proto != 0) {
-		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, XT_INV_PROTO);
-		add_l4proto(r, cs->fw6.ipv6.proto, op);
-	}
 
 	if (!IN6_IS_ADDR_UNSPECIFIED(&cs->fw6.ipv6.src) ||
 	    !IN6_IS_ADDR_UNSPECIFIED(&cs->fw6.ipv6.smsk) ||
 	    (cs->fw6.ipv6.invflags & IPT_INV_SRCIP)) {
 		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, IPT_INV_SRCIP);
-		add_addr(r, offsetof(struct ip6_hdr, ip6_src),
+		add_addr(h, r, NFT_PAYLOAD_NETWORK_HEADER,
+			 offsetof(struct ip6_hdr, ip6_src),
 			 &cs->fw6.ipv6.src, &cs->fw6.ipv6.smsk,
 			 sizeof(struct in6_addr), op);
 	}
+
 	if (!IN6_IS_ADDR_UNSPECIFIED(&cs->fw6.ipv6.dst) ||
 	    !IN6_IS_ADDR_UNSPECIFIED(&cs->fw6.ipv6.dmsk) ||
 	    (cs->fw6.ipv6.invflags & IPT_INV_DSTIP)) {
 		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, IPT_INV_DSTIP);
-		add_addr(r, offsetof(struct ip6_hdr, ip6_dst),
+		add_addr(h, r, NFT_PAYLOAD_NETWORK_HEADER,
+			 offsetof(struct ip6_hdr, ip6_dst),
 			 &cs->fw6.ipv6.dst, &cs->fw6.ipv6.dmsk,
 			 sizeof(struct in6_addr), op);
 	}
+
+	if (cs->fw6.ipv6.iniface[0] != '\0') {
+		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, IPT_INV_VIA_IN);
+		add_iface(h, r, cs->fw6.ipv6.iniface, NFT_META_IIFNAME, op);
+	}
+
+	if (cs->fw6.ipv6.outiface[0] != '\0') {
+		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, IPT_INV_VIA_OUT);
+		add_iface(h, r, cs->fw6.ipv6.outiface, NFT_META_OIFNAME, op);
+	}
+
+	if (cs->fw6.ipv6.proto != 0) {
+		op = nft_invflags2cmp(cs->fw6.ipv6.invflags, XT_INV_PROTO);
+		add_l4proto(h, r, cs->fw6.ipv6.proto, op);
+	}
+
 	add_compat(r, cs->fw6.ipv6.proto, cs->fw6.ipv6.invflags & XT_INV_PROTO);
 
 	for (matchp = cs->matches; matchp; matchp = matchp->next) {
-		ret = add_match(h, r, matchp->match->m);
+		ret = add_match(h, ctx, r, matchp->match->m);
 		if (ret < 0)
 			return ret;
 	}
@@ -80,12 +84,9 @@ static int nft_ipv6_add(struct nft_handle *h, struct nftnl_rule *r, void *data)
 	return add_action(r, cs, !!(cs->fw6.ipv6.flags & IP6T_F_GOTO));
 }
 
-static bool nft_ipv6_is_same(const void *data_a,
-			     const void *data_b)
+static bool nft_ipv6_is_same(const struct iptables_command_state *a,
+			     const struct iptables_command_state *b)
 {
-	const struct iptables_command_state *a = data_a;
-	const struct iptables_command_state *b = data_b;
-
 	if (memcmp(a->fw6.ipv6.src.s6_addr, b->fw6.ipv6.src.s6_addr,
 		   sizeof(struct in6_addr)) != 0
 	    || memcmp(a->fw6.ipv6.dst.s6_addr, b->fw6.ipv6.dst.s6_addr,
@@ -105,86 +106,9 @@ static bool nft_ipv6_is_same(const void *data_a,
 				  b->fw6.ipv6.outiface_mask);
 }
 
-static void nft_ipv6_parse_meta(struct nft_xt_ctx *ctx, struct nftnl_expr *e,
-				void *data)
+static void nft_ipv6_set_goto_flag(struct iptables_command_state *cs)
 {
-	struct iptables_command_state *cs = data;
-
-	switch (ctx->meta.key) {
-	case NFT_META_L4PROTO:
-		cs->fw6.ipv6.proto = nftnl_expr_get_u8(e, NFTNL_EXPR_CMP_DATA);
-		if (nftnl_expr_get_u32(e, NFTNL_EXPR_CMP_OP) == NFT_CMP_NEQ)
-			cs->fw6.ipv6.invflags |= XT_INV_PROTO;
-		return;
-	default:
-		break;
-	}
-
-	parse_meta(e, ctx->meta.key, cs->fw6.ipv6.iniface,
-		   cs->fw6.ipv6.iniface_mask, cs->fw6.ipv6.outiface,
-		   cs->fw6.ipv6.outiface_mask, &cs->fw6.ipv6.invflags);
-}
-
-static void parse_mask_ipv6(struct nft_xt_ctx *ctx, struct in6_addr *mask)
-{
-	memcpy(mask, ctx->bitwise.mask, sizeof(struct in6_addr));
-}
-
-static void nft_ipv6_parse_payload(struct nft_xt_ctx *ctx,
-				   struct nftnl_expr *e, void *data)
-{
-	struct iptables_command_state *cs = data;
-	struct in6_addr addr;
-	uint8_t proto;
-	bool inv;
-
-	switch (ctx->payload.offset) {
-	case offsetof(struct ip6_hdr, ip6_src):
-		get_cmp_data(e, &addr, sizeof(addr), &inv);
-		memcpy(cs->fw6.ipv6.src.s6_addr, &addr, sizeof(addr));
-		if (ctx->flags & NFT_XT_CTX_BITWISE) {
-			parse_mask_ipv6(ctx, &cs->fw6.ipv6.smsk);
-			ctx->flags &= ~NFT_XT_CTX_BITWISE;
-		} else {
-			memset(&cs->fw6.ipv6.smsk, 0xff, sizeof(struct in6_addr));
-		}
-
-		if (inv)
-			cs->fw6.ipv6.invflags |= IP6T_INV_SRCIP;
-		break;
-	case offsetof(struct ip6_hdr, ip6_dst):
-		get_cmp_data(e, &addr, sizeof(addr), &inv);
-		memcpy(cs->fw6.ipv6.dst.s6_addr, &addr, sizeof(addr));
-		if (ctx->flags & NFT_XT_CTX_BITWISE) {
-			parse_mask_ipv6(ctx, &cs->fw6.ipv6.dmsk);
-			ctx->flags &= ~NFT_XT_CTX_BITWISE;
-		} else {
-			memset(&cs->fw6.ipv6.dmsk, 0xff, sizeof(struct in6_addr));
-		}
-
-		if (inv)
-			cs->fw6.ipv6.invflags |= IP6T_INV_DSTIP;
-		break;
-	case offsetof(struct ip6_hdr, ip6_nxt):
-		get_cmp_data(e, &proto, sizeof(proto), &inv);
-		cs->fw6.ipv6.proto = proto;
-		if (inv)
-			cs->fw6.ipv6.invflags |= IP6T_INV_PROTO;
-	default:
-		DEBUGP("unknown payload offset %d\n", ctx->payload.offset);
-		break;
-	}
-}
-
-static void nft_ipv6_parse_immediate(const char *jumpto, bool nft_goto,
-				     void *data)
-{
-	struct iptables_command_state *cs = data;
-
-	cs->jumpto = jumpto;
-
-	if (nft_goto)
-		cs->fw6.ipv6.flags |= IP6T_F_GOTO;
+	cs->fw6.ipv6.flags |= IP6T_F_GOTO;
 }
 
 static void nft_ipv6_print_rule(struct nft_handle *h, struct nftnl_rule *r,
@@ -194,14 +118,9 @@ static void nft_ipv6_print_rule(struct nft_handle *h, struct nftnl_rule *r,
 
 	nft_rule_to_iptables_command_state(h, r, &cs);
 
-	print_rule_details(&cs, cs.jumpto, cs.fw6.ipv6.flags,
-			   cs.fw6.ipv6.invflags, cs.fw6.ipv6.proto,
-			   num, format);
-	if (format & FMT_OPTIONS) {
-		if (format & FMT_NOTABLE)
-			fputs("opt ", stdout);
-		fputs("   ", stdout);
-	}
+	print_rule_details(num, &cs.counters, cs.jumpto, cs.fw6.ipv6.proto,
+			   cs.fw6.ipv6.flags, cs.fw6.ipv6.invflags, format);
+	print_fragment(cs.fw6.ipv6.flags, cs.fw6.ipv6.invflags, format, true);
 	print_ifaces(cs.fw6.ipv6.iniface, cs.fw6.ipv6.outiface,
 		     cs.fw6.ipv6.invflags, format);
 	print_ipv6_addresses(&cs.fw6, format);
@@ -217,135 +136,55 @@ static void nft_ipv6_print_rule(struct nft_handle *h, struct nftnl_rule *r,
 	if (!(format & FMT_NONEWLINE))
 		fputc('\n', stdout);
 
-	nft_clear_iptables_command_state(&cs);
+	xtables_clear_iptables_command_state(&cs);
 }
 
-static void save_ipv6_addr(char letter, const struct in6_addr *addr,
-			   const struct in6_addr *mask,
-			   int invert)
+static void nft_ipv6_save_rule(const struct iptables_command_state *cs,
+			       unsigned int format)
 {
-	char addr_str[INET6_ADDRSTRLEN];
-	int l = xtables_ip6mask_to_cidr(mask);
-
-	if (!invert && l == 0)
-		return;
-
-	printf("%s-%c %s",
-		invert ? "! " : "", letter,
-		inet_ntop(AF_INET6, addr, addr_str, sizeof(addr_str)));
-
-	if (l == -1)
-		printf("/%s ", inet_ntop(AF_INET6, mask, addr_str, sizeof(addr_str)));
-	else
-		printf("/%d ", l);
-}
-
-static void nft_ipv6_save_rule(const void *data, unsigned int format)
-{
-	const struct iptables_command_state *cs = data;
-
 	save_ipv6_addr('s', &cs->fw6.ipv6.src, &cs->fw6.ipv6.smsk,
 		       cs->fw6.ipv6.invflags & IP6T_INV_SRCIP);
 	save_ipv6_addr('d', &cs->fw6.ipv6.dst, &cs->fw6.ipv6.dmsk,
 		       cs->fw6.ipv6.invflags & IP6T_INV_DSTIP);
 
-	save_rule_details(cs, cs->fw6.ipv6.invflags, cs->fw6.ipv6.proto,
-			  cs->fw6.ipv6.iniface, cs->fw6.ipv6.iniface_mask,
-			  cs->fw6.ipv6.outiface, cs->fw6.ipv6.outiface_mask);
+	save_rule_details(cs->fw6.ipv6.iniface, cs->fw6.ipv6.outiface,
+			  cs->fw6.ipv6.proto, 0, cs->fw6.ipv6.invflags);
 
 	save_matches_and_target(cs, cs->fw6.ipv6.flags & IP6T_F_GOTO,
 				&cs->fw6, format);
-}
-
-/* These are invalid numbers as upper layer protocol */
-static int is_exthdr(uint16_t proto)
-{
-	return (proto == IPPROTO_ROUTING ||
-		proto == IPPROTO_FRAGMENT ||
-		proto == IPPROTO_AH ||
-		proto == IPPROTO_DSTOPTS);
-}
-
-static void nft_ipv6_proto_parse(struct iptables_command_state *cs,
-				 struct xtables_args *args)
-{
-	cs->fw6.ipv6.proto = args->proto;
-	cs->fw6.ipv6.invflags = args->invflags;
-
-	if (is_exthdr(cs->fw6.ipv6.proto)
-	    && (cs->fw6.ipv6.invflags & XT_INV_PROTO) == 0)
-		fprintf(stderr,
-			"Warning: never matched protocol: %s. "
-			"use extension match instead.\n",
-			cs->protocol);
-}
-
-static void nft_ipv6_post_parse(int command, struct iptables_command_state *cs,
-				struct xtables_args *args)
-{
-	cs->fw6.ipv6.flags = args->flags;
-	/* We already set invflags in proto_parse, but we need to refresh it
-	 * to include new parsed options.
-	 */
-	cs->fw6.ipv6.invflags = args->invflags;
-
-	strncpy(cs->fw6.ipv6.iniface, args->iniface, IFNAMSIZ);
-	memcpy(cs->fw6.ipv6.iniface_mask,
-	       args->iniface_mask, IFNAMSIZ*sizeof(unsigned char));
-
-	strncpy(cs->fw6.ipv6.outiface, args->outiface, IFNAMSIZ);
-	memcpy(cs->fw6.ipv6.outiface_mask,
-	       args->outiface_mask, IFNAMSIZ*sizeof(unsigned char));
-
-	if (args->goto_set)
-		cs->fw6.ipv6.flags |= IP6T_F_GOTO;
-
-	cs->fw6.counters.pcnt = args->pcnt_cnt;
-	cs->fw6.counters.bcnt = args->bcnt_cnt;
-
-	if (command & (CMD_REPLACE | CMD_INSERT |
-			CMD_DELETE | CMD_APPEND | CMD_CHECK)) {
-		if (!(cs->options & OPT_DESTINATION))
-			args->dhostnetworkmask = "::0/0";
-		if (!(cs->options & OPT_SOURCE))
-			args->shostnetworkmask = "::0/0";
-	}
-
-	if (args->shostnetworkmask)
-		xtables_ip6parse_multiple(args->shostnetworkmask,
-					  &args->s.addr.v6,
-					  &args->s.mask.v6,
-					  &args->s.naddrs);
-	if (args->dhostnetworkmask)
-		xtables_ip6parse_multiple(args->dhostnetworkmask,
-					  &args->d.addr.v6,
-					  &args->d.mask.v6,
-					  &args->d.naddrs);
-
-	if ((args->s.naddrs > 1 || args->d.naddrs > 1) &&
-	    (cs->fw6.ipv6.invflags & (IP6T_INV_SRCIP | IP6T_INV_DSTIP)))
-		xtables_error(PARAMETER_PROBLEM,
-			      "! not allowed with multiple"
-			      " source or destination IP addresses");
 }
 
 static void xlate_ipv6_addr(const char *selector, const struct in6_addr *addr,
 			    const struct in6_addr *mask,
 			    int invert, struct xt_xlate *xl)
 {
+	const char *op = invert ? "!= " : "";
 	char addr_str[INET6_ADDRSTRLEN];
+	int cidr;
 
-	if (!invert && IN6_IS_ADDR_UNSPECIFIED(addr))
+	if (!invert && IN6_IS_ADDR_UNSPECIFIED(addr) && IN6_IS_ADDR_UNSPECIFIED(mask))
 		return;
 
 	inet_ntop(AF_INET6, addr, addr_str, INET6_ADDRSTRLEN);
-	xt_xlate_add(xl, "%s %s%s%s ", selector, invert ? "!= " : "", addr_str,
-			xtables_ip6mask_to_numeric(mask));
+	cidr = xtables_ip6mask_to_cidr(mask);
+	switch (cidr) {
+	case -1:
+		xt_xlate_add(xl, "%s & %s %s %s ", selector,
+			     xtables_ip6addr_to_numeric(mask),
+			     invert ? "!=" : "==", addr_str);
+		break;
+	case 128:
+		xt_xlate_add(xl, "%s %s%s ", selector, op, addr_str);
+		break;
+	default:
+		xt_xlate_add(xl, "%s %s%s/%d ", selector, op, addr_str, cidr);
+	}
 }
 
-static int nft_ipv6_xlate(const void *data, struct xt_xlate *xl)
+static int nft_ipv6_xlate(const struct iptables_command_state *cs,
+			  struct xt_xlate *xl)
 {
-	const struct iptables_command_state *cs = data;
+	uint16_t proto = cs->fw6.ipv6.proto;
 	const char *comment;
 	int ret;
 
@@ -354,23 +193,16 @@ static int nft_ipv6_xlate(const void *data, struct xt_xlate *xl)
 	xlate_ifname(xl, "oifname", cs->fw6.ipv6.outiface,
 		     cs->fw6.ipv6.invflags & IP6T_INV_VIA_OUT);
 
-	if (cs->fw6.ipv6.proto != 0) {
-		const struct protoent *pent =
-			getprotobynumber(cs->fw6.ipv6.proto);
-		char protonum[sizeof("65535")];
-		const char *name = protonum;
+	if (proto != 0 && !xlate_find_protomatch(cs, proto)) {
+		const char *pname = proto_to_name(proto, 0);
 
-		snprintf(protonum, sizeof(protonum), "%u",
-			 cs->fw6.ipv6.proto);
-
-		if (!pent || !xlate_find_match(cs, pent->p_name)) {
-			if (pent)
-				name = pent->p_name;
-			xt_xlate_add(xl, "meta l4proto %s%s ",
-				   cs->fw6.ipv6.invflags & IP6T_INV_PROTO ?
-					"!= " : "", name);
-		}
-
+		xt_xlate_add(xl, "meta l4proto");
+		if (cs->fw6.ipv6.invflags & IP6T_INV_PROTO)
+			xt_xlate_add(xl, " !=");
+		if (pname)
+			xt_xlate_add(xl, "%s", pname);
+		else
+			xt_xlate_add(xl, "%hu", proto);
 	}
 
 	xlate_ipv6_addr("ip6 saddr", &cs->fw6.ipv6.src, &cs->fw6.ipv6.smsk,
@@ -393,20 +225,128 @@ static int nft_ipv6_xlate(const void *data, struct xt_xlate *xl)
 	return ret;
 }
 
+static int
+nft_ipv6_add_entry(struct nft_handle *h,
+		   const char *chain, const char *table,
+		   struct iptables_command_state *cs,
+		   struct xtables_args *args, bool verbose,
+		   bool append, int rulenum)
+{
+	unsigned int i, j;
+	int ret = 1;
+
+	for (i = 0; i < args->s.naddrs; i++) {
+		memcpy(&cs->fw6.ipv6.src,
+		       &args->s.addr.v6[i], sizeof(struct in6_addr));
+		memcpy(&cs->fw6.ipv6.smsk,
+		       &args->s.mask.v6[i], sizeof(struct in6_addr));
+		for (j = 0; j < args->d.naddrs; j++) {
+			memcpy(&cs->fw6.ipv6.dst,
+			       &args->d.addr.v6[j], sizeof(struct in6_addr));
+			memcpy(&cs->fw6.ipv6.dmsk,
+			       &args->d.mask.v6[j], sizeof(struct in6_addr));
+			if (append) {
+				ret = nft_cmd_rule_append(h, chain, table,
+						      cs, verbose);
+			} else {
+				ret = nft_cmd_rule_insert(h, chain, table,
+						      cs, rulenum, verbose);
+			}
+		}
+	}
+
+	return ret;
+}
+
+static int
+nft_ipv6_delete_entry(struct nft_handle *h,
+		      const char *chain, const char *table,
+		      struct iptables_command_state *cs,
+		      struct xtables_args *args, bool verbose)
+{
+	unsigned int i, j;
+	int ret = 1;
+
+	for (i = 0; i < args->s.naddrs; i++) {
+		memcpy(&cs->fw6.ipv6.src,
+		       &args->s.addr.v6[i], sizeof(struct in6_addr));
+		memcpy(&cs->fw6.ipv6.smsk,
+		       &args->s.mask.v6[i], sizeof(struct in6_addr));
+		for (j = 0; j < args->d.naddrs; j++) {
+			memcpy(&cs->fw6.ipv6.dst,
+			       &args->d.addr.v6[j], sizeof(struct in6_addr));
+			memcpy(&cs->fw6.ipv6.dmsk,
+			       &args->d.mask.v6[j], sizeof(struct in6_addr));
+			ret = nft_cmd_rule_delete(h, chain, table, cs, verbose);
+		}
+	}
+
+	return ret;
+}
+
+static int
+nft_ipv6_check_entry(struct nft_handle *h,
+		     const char *chain, const char *table,
+		     struct iptables_command_state *cs,
+		     struct xtables_args *args, bool verbose)
+{
+	unsigned int i, j;
+	int ret = 1;
+
+	for (i = 0; i < args->s.naddrs; i++) {
+		memcpy(&cs->fw6.ipv6.src,
+		       &args->s.addr.v6[i], sizeof(struct in6_addr));
+		memcpy(&cs->fw6.ipv6.smsk,
+		       &args->s.mask.v6[i], sizeof(struct in6_addr));
+		for (j = 0; j < args->d.naddrs; j++) {
+			memcpy(&cs->fw6.ipv6.dst,
+			       &args->d.addr.v6[j], sizeof(struct in6_addr));
+			memcpy(&cs->fw6.ipv6.dmsk,
+			       &args->d.mask.v6[j], sizeof(struct in6_addr));
+			ret = nft_cmd_rule_check(h, chain, table, cs, verbose);
+		}
+	}
+
+	return ret;
+}
+
+static int
+nft_ipv6_replace_entry(struct nft_handle *h,
+		       const char *chain, const char *table,
+		       struct iptables_command_state *cs,
+		       struct xtables_args *args, bool verbose,
+		       int rulenum)
+{
+	memcpy(&cs->fw6.ipv6.src, args->s.addr.v6, sizeof(struct in6_addr));
+	memcpy(&cs->fw6.ipv6.dst, args->d.addr.v6, sizeof(struct in6_addr));
+	memcpy(&cs->fw6.ipv6.smsk, args->s.mask.v6, sizeof(struct in6_addr));
+	memcpy(&cs->fw6.ipv6.dmsk, args->d.mask.v6, sizeof(struct in6_addr));
+
+	return nft_cmd_rule_replace(h, chain, table, cs, rulenum, verbose);
+}
+
 struct nft_family_ops nft_family_ops_ipv6 = {
 	.add			= nft_ipv6_add,
 	.is_same		= nft_ipv6_is_same,
-	.parse_meta		= nft_ipv6_parse_meta,
-	.parse_payload		= nft_ipv6_parse_payload,
-	.parse_immediate	= nft_ipv6_parse_immediate,
+	.set_goto_flag		= nft_ipv6_set_goto_flag,
 	.print_header		= print_header,
 	.print_rule		= nft_ipv6_print_rule,
 	.save_rule		= nft_ipv6_save_rule,
 	.save_chain		= nft_ipv46_save_chain,
-	.proto_parse		= nft_ipv6_proto_parse,
-	.post_parse		= nft_ipv6_post_parse,
-	.parse_target		= nft_ipv46_parse_target,
+	.rule_parse		= &nft_ruleparse_ops_ipv6,
+	.cmd_parse		= {
+		.proto_parse	= ipv6_proto_parse,
+		.post_parse	= ipv6_post_parse,
+		.option_name	= ip46t_option_name,
+		.option_invert	= ip46t_option_invert,
+		.command_default = command_default,
+		.print_help	= xtables_printhelp,
+	},
 	.rule_to_cs		= nft_rule_to_iptables_command_state,
-	.clear_cs		= nft_clear_iptables_command_state,
+	.clear_cs		= xtables_clear_iptables_command_state,
 	.xlate			= nft_ipv6_xlate,
+	.add_entry		= nft_ipv6_add_entry,
+	.delete_entry		= nft_ipv6_delete_entry,
+	.check_entry		= nft_ipv6_check_entry,
+	.replace_entry		= nft_ipv6_replace_entry,
 };

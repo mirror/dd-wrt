@@ -32,5 +32,5 @@ longterm releases 2.6.32 (>=.42), 2.6.33 (>=.15), and 2.6.35 (>=.14), there is
 a bug whereby IPv6 TOS mangling does not behave as documented and differs from
 the IPv4 version. The TOS mask indicates the bits one wants to zero out, so it
 needs to be inverted before applying it to the original TOS field. However, the
-aformentioned kernels forgo the inversion which breaks \-\-set\-tos and its
+aforementioned kernels forgo the inversion which breaks \-\-set\-tos and its
 mnemonics.

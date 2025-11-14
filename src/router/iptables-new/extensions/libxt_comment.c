@@ -55,12 +55,7 @@ static int comment_xlate(struct xt_xlate *xl,
 	char comment[XT_MAX_COMMENT_LEN + sizeof("\\\"\\\"")];
 
 	commentinfo->comment[XT_MAX_COMMENT_LEN - 1] = '\0';
-	if (params->escape_quotes)
-		snprintf(comment, sizeof(comment), "\\\"%s\\\"",
-			 commentinfo->comment);
-	else
-		snprintf(comment, sizeof(comment), "\"%s\"",
-			 commentinfo->comment);
+	snprintf(comment, sizeof(comment), "\"%s\"", commentinfo->comment);
 
 	xt_xlate_add_comment(xl, comment);
 

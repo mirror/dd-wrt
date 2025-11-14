@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #ifndef XT_MIN_ALIGN
-/* xt_entry has pointers and u_int64_t's in it, so if you align to
+/* xt_entry has pointers and uint64_t's in it, so if you align to
    it, you'll also align to any crazy matches and targets someone
    might write */
 #define XT_MIN_ALIGN (__alignof__(struct xt_entry))

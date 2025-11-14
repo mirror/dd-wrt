@@ -16,10 +16,9 @@ This specifies a destination port or range of ports to use: without
 this, the destination port is never altered.  This is only valid
 if the rule also specifies one of the following protocols:
 \fBtcp\fP, \fBudp\fP, \fBdccp\fP or \fBsctp\fP.
+For a single port, a service name as listed in \fB/etc/services\fP may be used.
 .TP
 \fB\-\-random\fP
-If option
-\fB\-\-random\fP
-is used then port mapping will be randomized (kernel >= 2.6.22).
+Randomize source port mapping (kernel >= 2.6.22).
 .TP
 IPv6 support available starting Linux kernels >= 3.7.

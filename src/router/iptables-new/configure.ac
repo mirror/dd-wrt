@@ -1,9 +1,9 @@
 
-AC_INIT([iptables], [1.8.5])
+AC_INIT([iptables], [1.8.11])
 
 # See libtool.info "Libtool's versioning system"
-libxtables_vcurrent=15
-libxtables_vage=3
+libxtables_vcurrent=19
+libxtables_vage=7
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
@@ -12,9 +12,8 @@ AC_PROG_INSTALL
 AM_INIT_AUTOMAKE([-Wall])
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_DISABLE_STATIC
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-AM_PROG_LIBTOOL
+LT_INIT([disable-static])
 
 AC_ARG_WITH([kernel],
 	AS_HELP_STRING([--with-kernel=PATH],
@@ -64,6 +63,9 @@ AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
 AC_ARG_ENABLE([nftables],
 	AS_HELP_STRING([--disable-nftables], [Do not build nftables compat]),
 	[enable_nftables="$enableval"], [enable_nftables="yes"])
+AC_ARG_ENABLE([libnfnetlink],
+    AS_HELP_STRING([--disable-libnfnetlink], [Do not use netfilter netlink library]),
+    [enable_libnfnetlink="$enableval"], [enable_libnfnetlink="auto"])
 AC_ARG_ENABLE([connlabel],
 	AS_HELP_STRING([--disable-connlabel],
 	[Do not build libnetfilter_conntrack]),
@@ -72,6 +74,9 @@ AC_ARG_WITH([xt-lock-name], AS_HELP_STRING([--with-xt-lock-name=PATH],
 	[Path to the xtables lock [[/run/xtables.lock]]]),
 	[xt_lock_name="$withval"],
 	[xt_lock_name="/var/run/xtables.lock"])
+AC_ARG_ENABLE([profiling],
+	AS_HELP_STRING([--enable-profiling], [build for use of gcov/gprof]),
+	[enable_profiling="$enableval"], [enable_profiling="no"])
 
 AC_MSG_CHECKING([whether $LD knows -Wl,--no-undefined])
 saved_LDFLAGS="$LDFLAGS";
@@ -111,13 +116,20 @@ AM_CONDITIONAL([ENABLE_SYNCONF], [test "$enable_nfsynproxy" = "yes"])
 AM_CONDITIONAL([ENABLE_NFTABLES], [test "$enable_nftables" = "yes"])
 AM_CONDITIONAL([ENABLE_CONNLABEL], [test "$enable_connlabel" = "yes"])
 
-if test "x$enable_bpfc" = "xyes" || test "x$enable_nfsynproxy" = "xyes"; then
-	AC_CHECK_LIB(pcap, pcap_compile,, AC_MSG_ERROR(missing libpcap library required by bpf compiler or nfsynproxy tool))
-fi
-
-PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
-	[nfnetlink=1], [nfnetlink=0])
+# If specified explicitly on the command line, error out when library was not found
+# Otherwise, disable and continue
+AS_IF([test "x$enable_libnfnetlink" = "xyes"],
+	[PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
+			   [nfnetlink=1])],
+      [test "x$enable_libnfnetlink" = "xauto"],
+	[PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
+			   [nfnetlink=1], [nfnetlink=0])])
 AM_CONDITIONAL([HAVE_LIBNFNETLINK], [test "$nfnetlink" = 1])
+
+if test "x$enable_bpfc" = "xyes" || test "x$enable_nfsynproxy" = "xyes"; then
+	PKG_CHECK_MODULES([libpcap], [libpcap], [], [
+		AC_MSG_ERROR(missing libpcap library required by bpf compiler or nfsynproxy tool)])
+fi
 
 if test "x$enable_nftables" = "xyes"; then
 	PKG_CHECK_MODULES([libmnl], [libmnl >= 1.0], [mnl=1], [mnl=0])
@@ -131,7 +143,7 @@ if test "x$enable_nftables" = "xyes"; then
 		exit 1
 	fi
 
-	PKG_CHECK_MODULES([libnftnl], [libnftnl >= 1.1.6], [nftables=1], [nftables=0])
+	PKG_CHECK_MODULES([libnftnl], [libnftnl >= 1.2.6], [nftables=1], [nftables=0])
 
 	if test "$nftables" = 0;
 	then
@@ -189,6 +201,30 @@ if [[ -n "$ksourcedir" ]]; then
 fi;
 pkgdatadir='${datadir}/xtables';
 
+if test "x$enable_profiling" = "xyes"; then
+	regular_CFLAGS+=" -fprofile-arcs -ftest-coverage"
+	regular_LDFLAGS+=" -lgcov --coverage"
+fi
+
+AC_MSG_CHECKING([whether the build is using musl-libc])
+enable_musl_build=""
+
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[#include <netinet/if_ether.h>]],
+	[[
+	#if ! defined(__UAPI_DEF_ETHHDR) || __UAPI_DEF_ETHHDR != 0
+		#error error trying musl...
+	#endif
+	]]
+	)],
+	[enable_musl_build="yes"],[enable_musl_build="no"]
+)
+AC_MSG_RESULT([${enable_musl_build}])
+
+if test "x$enable_musl_build" = "xyes"; then
+	regular_CFLAGS+=" -D__UAPI_DEF_ETHHDR=0"
+fi
+
 define([EXPAND_VARIABLE],
 [$2=[$]$1
 if test $prefix = 'NONE'; then
@@ -206,6 +242,7 @@ eval "$2=[$]$2"
 AC_SUBST([regular_CFLAGS])
 AC_SUBST([regular_CPPFLAGS])
 AC_SUBST([noundef_LDFLAGS])
+AC_SUBST([regular_LDFLAGS])
 AC_SUBST([kinclude_CPPFLAGS])
 AC_SUBST([kbuilddir])
 AC_SUBST([ksourcedir])
@@ -219,6 +256,7 @@ AC_SUBST([libxtables_vmajor])
 
 AC_DEFINE_UNQUOTED([XT_LOCK_NAME], "${xt_lock_name}",
 	[Location of the iptables lock file])
+AC_SUBST([XT_LOCK_NAME], "${xt_lock_name}")
 
 AC_CONFIG_FILES([Makefile extensions/GNUmakefile include/Makefile
 	iptables/Makefile iptables/xtables.pc
@@ -250,6 +288,7 @@ Iptables Configuration:
   nfsynproxy util support:		${enable_nfsynproxy}
   nftables support:			${enable_nftables}
   connlabel support:			${enable_connlabel}
+  profiling support:			${enable_profiling}
 
 Build parameters:
   Put plugins into executable (static):	${enable_static}
@@ -257,7 +296,8 @@ Build parameters:
   Installation prefix (--prefix):	${prefix}
   Xtables extension directory:		${e_xtlibdir}
   Pkg-config directory:			${e_pkgconfigdir}
-  Xtables lock file:			${xt_lock_name}"
+  Xtables lock file:			${xt_lock_name}
+  Build against musl-libc:		${enable_musl_build}"
 
 if [[ -n "$ksourcedir" ]]; then
 	echo "  Kernel source directory:		${ksourcedir}"

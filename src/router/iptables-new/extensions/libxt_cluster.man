@@ -22,7 +22,7 @@ Example:
 iptables \-A PREROUTING \-t mangle \-i eth1 \-m cluster
 \-\-cluster\-total\-nodes 2 \-\-cluster\-local\-node 1
 \-\-cluster\-hash\-seed 0xdeadbeef
-\-j MARK \-\-set-mark 0xffff
+\-j MARK \-\-set\-mark 0xffff
 .IP
 iptables \-A PREROUTING \-t mangle \-i eth2 \-m cluster
 \-\-cluster\-total\-nodes 2 \-\-cluster\-local\-node 1
@@ -42,10 +42,10 @@ ip maddr add 01:00:5e:00:01:01 dev eth1
 ip maddr add 01:00:5e:00:01:02 dev eth2
 .IP
 arptables \-A OUTPUT \-o eth1 \-\-h\-length 6
-\-j mangle \-\-mangle-mac-s 01:00:5e:00:01:01
+\-j mangle \-\-mangle\-mac\-s 01:00:5e:00:01:01
 .IP
-arptables \-A INPUT \-i eth1 \-\-h-length 6
-\-\-destination-mac 01:00:5e:00:01:01
+arptables \-A INPUT \-i eth1 \-\-h\-length 6
+\-\-destination\-mac 01:00:5e:00:01:01
 \-j mangle \-\-mangle\-mac\-d 00:zz:yy:xx:5a:27
 .IP
 arptables \-A OUTPUT \-o eth2 \-\-h\-length 6

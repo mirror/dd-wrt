@@ -159,6 +159,37 @@ socket_mt_print_v3(const void *ip, const struct xt_entry_match *match,
 	socket_mt_save_v3(ip, match);
 }
 
+static int socket_mt_xlate(struct xt_xlate *xl, const struct xt_xlate_mt_params *params)
+{
+	const struct xt_socket_mtinfo3 *info = (const void *)params->match->data;
+
+	/* ONLY --nowildcard: match if socket exists. It does not matter
+	 * to which address it is bound.
+	 */
+	if (info->flags == XT_SOCKET_NOWILDCARD) {
+		xt_xlate_add(xl, "socket wildcard le 1");
+		return 1;
+	}
+
+	/* Without --nowildcard, restrict to sockets NOT bound to
+	 * the any address.
+	 */
+	if ((info->flags & XT_SOCKET_NOWILDCARD) == 0)
+		xt_xlate_add(xl, "socket wildcard 0");
+
+	if (info->flags & XT_SOCKET_TRANSPARENT)
+		xt_xlate_add(xl, "socket transparent 1");
+
+	/* If --nowildcard was given, -m socket should not test
+	 * the bound address.  We can simply ignore this; its
+	 * equal to "wildcard <= 1".
+	 */
+	if (info->flags & XT_SOCKET_RESTORESKMARK)
+		xt_xlate_add(xl, "meta mark set socket mark");
+
+	return 1;
+}
+
 static struct xtables_match socket_mt_reg[] = {
 	{
 		.name          = "socket",
@@ -180,6 +211,7 @@ static struct xtables_match socket_mt_reg[] = {
 		.save          = socket_mt_save,
 		.x6_parse      = socket_mt_parse,
 		.x6_options    = socket_mt_opts,
+		.xlate	       = socket_mt_xlate,
 	},
 	{
 		.name          = "socket",
@@ -193,6 +225,7 @@ static struct xtables_match socket_mt_reg[] = {
 		.save          = socket_mt_save_v2,
 		.x6_parse      = socket_mt_parse_v2,
 		.x6_options    = socket_mt_opts_v2,
+		.xlate	       = socket_mt_xlate,
 	},
 	{
 		.name          = "socket",
@@ -206,6 +239,7 @@ static struct xtables_match socket_mt_reg[] = {
 		.save          = socket_mt_save_v3,
 		.x6_parse      = socket_mt_parse_v3,
 		.x6_options    = socket_mt_opts_v3,
+		.xlate	       = socket_mt_xlate,
 	},
 };
 

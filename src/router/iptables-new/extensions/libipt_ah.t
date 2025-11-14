@@ -11,3 +11,9 @@
 -m ah --ahspi;;FAIL
 -m ah;;FAIL
 -p ah -m ah;=;OK
+-p ah -m ah --ahspi :;-p ah -m ah;OK
+-p ah -m ah ! --ahspi :;-p ah -m ah ! --ahspi 0:4294967295;OK
+-p ah -m ah --ahspi :3;-p ah -m ah --ahspi 0:3;OK
+-p ah -m ah --ahspi 3:;-p ah -m ah --ahspi 3:4294967295;OK
+-p ah -m ah --ahspi 3:3;-p ah -m ah --ahspi 3;OK
+-p ah -m ah --ahspi 4:3;;FAIL

@@ -28,7 +28,7 @@ without the comments or trailing whitespace:
 .IP
 4               # number of instructions
 .br
-48 0 0 9        # load byte  ip->proto
+48 0 0 9        # load byte  ip\->proto
 .br
 21 0 1 6        # jump equal IPPROTO_TCP
 .br
@@ -44,7 +44,7 @@ Or instead, you can invoke the nfbpf_compile utility.
 .IP
 iptables \-A OUTPUT \-m bpf \-\-bytecode "`nfbpf_compile RAW 'ip proto 6'`" \-j ACCEPT
 .PP
-Or use tcpdump -ddd. In that case, generate BPF targeting a device with the
+Or use tcpdump \-ddd. In that case, generate BPF targeting a device with the
 same data link type as the xtables match. Iptables passes packets from the
 network layer up, without mac layer. Select a device with data link type RAW,
 such as a tun device:
@@ -53,8 +53,8 @@ ip tuntap add tun0 mode tun
 .br
 ip link set tun0 up
 .br
-tcpdump -ddd -i tun0 ip proto 6
+tcpdump \-ddd \-i tun0 ip proto 6
 .PP
-See tcpdump -L -i $dev for a list of known data link types for a given device.
+See tcpdump \-L \-i $dev for a list of known data link types for a given device.
 .PP
 You may want to learn more about BPF from FreeBSD's bpf(4) manpage.

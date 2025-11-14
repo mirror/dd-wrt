@@ -6,9 +6,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `pcap' library (-lpcap). */
-#undef HAVE_LIBPCAP
-
 /* Define to 1 if you have the <linux/bpf.h> header file. */
 #undef HAVE_LINUX_BPF_H
 

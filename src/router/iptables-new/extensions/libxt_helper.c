@@ -50,12 +50,8 @@ static int helper_xlate(struct xt_xlate *xl,
 {
 	const struct xt_helper_info *info = (const void *)params->match->data;
 
-	if (params->escape_quotes)
-		xt_xlate_add(xl, "ct helper%s \\\"%s\\\"",
-			   info->invert ? " !=" : "", info->name);
-	else
-		xt_xlate_add(xl, "ct helper%s \"%s\"",
-			   info->invert ? " !=" : "", info->name);
+	xt_xlate_add(xl, "ct helper%s \"%s\"",
+		     info->invert ? " !=" : "", info->name);
 
 	return 1;
 }

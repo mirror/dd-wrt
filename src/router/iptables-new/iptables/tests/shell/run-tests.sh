@@ -4,9 +4,23 @@
 TESTDIR="./$(dirname $0)/"
 RETURNCODE_SEPARATOR="_"
 
+usage() {
+	cat <<EOF
+Usage: $(basename $0) [-v|--verbose] [-H|--host] [-V|--valgrind]
+		      [[-l|--legacy]|[-n|--nft]] [testscript ...]
+
+-v | --verbose		Enable verbose mode (do not drop testscript output).
+-H | --host		Run tests against installed binaries in \$PATH,
+			not those built in this source tree.
+-V | --valgrind		Enable leak checking via valgrind.
+-l | --legacy		Test legacy variant only. Conflicts with --nft.
+-n | --nft		Test nft variant only. Conflicts with --legacy.
+testscript		Run only specific test(s). Implies --verbose.
+EOF
+}
+
 msg_error() {
         echo "E: $1 ..." >&2
-        exit 1
 }
 
 msg_warn() {
@@ -19,10 +33,12 @@ msg_info() {
 
 if [ "$(id -u)" != "0" ] ; then
         msg_error "this requires root!"
+        exit 77
 fi
 
 if [ ! -d "$TESTDIR" ] ; then
         msg_error "missing testdir $TESTDIR"
+        exit 99
 fi
 
 # support matching repeated pattern in SINGLE check below
@@ -50,6 +66,10 @@ while [ -n "$1" ]; do
 		VALGRIND=y
 		shift
 		;;
+	-h|--help)
+		usage
+		exit 0
+		;;
 	*${RETURNCODE_SEPARATOR}+([0-9]))
 		SINGLE+=" $1"
 		VERBOSE=y
@@ -57,6 +77,7 @@ while [ -n "$1" ]; do
 		;;
 	*)
 		msg_error "unknown parameter '$1'"
+		exit 99
 		;;
 	esac
 done
@@ -66,6 +87,17 @@ if [ "$HOST" != "y" ]; then
 	XTABLES_LEGACY_MULTI="$(dirname $0)/../../xtables-legacy-multi"
 
 	export XTABLES_LIBDIR=${TESTDIR}/../../../extensions
+
+	# maybe this is 'make distcheck' calling us from a build tree
+	if [ ! -e "$XTABLES_NFT_MULTI" -a \
+	     ! -e "$XTABLES_LEGACY_MULTI" -a \
+	     -e "./iptables/xtables-nft-multi" -a \
+	     -e "./iptables/xtables-legacy-multi" ]; then
+		msg_warn "Running in separate build-tree, using binaries from $PWD/iptables"
+		XTABLES_NFT_MULTI="$PWD/iptables/xtables-nft-multi"
+		XTABLES_LEGACY_MULTI="$PWD/iptables/xtables-legacy-multi"
+		export XTABLES_LIBDIR="$PWD/extensions"
+	fi
 else
 	XTABLES_NFT_MULTI="xtables-nft-multi"
 	XTABLES_LEGACY_MULTI="xtables-legacy-multi"
@@ -103,7 +135,8 @@ EOF
 if [ "$VALGRIND" == "y" ]; then
 	tmpd=$(mktemp -d)
 	msg_info "writing valgrind logs to $tmpd"
-	chmod a+rx $tmpd
+	# let nobody write logs, too (././testcases/iptables/0008-unprivileged_0)
+	chmod 777 $tmpd
 	printscript "$XTABLES_NFT_MULTI" "$tmpd" >${tmpd}/xtables-nft-multi
 	printscript "$XTABLES_LEGACY_MULTI" "$tmpd" >${tmpd}/xtables-legacy-multi
 	trap "rm ${tmpd}/xtables-*-multi" EXIT
@@ -132,7 +165,7 @@ do_test() {
 
 	rc_spec=`echo $(basename ${testfile}) | cut -d _ -f2-`
 
-	msg_info "[EXECUTING]   $testfile"
+	[ -t 1 ] && msg_info "[EXECUTING]   $testfile"
 
 	if [ "$VERBOSE" = "y" ]; then
 		XT_MULTI=$xtables_multi unshare -n ${testfile}
@@ -140,7 +173,7 @@ do_test() {
 	else
 		XT_MULTI=$xtables_multi unshare -n ${testfile} > /dev/null 2>&1
 		rc_got=$?
-		echo -en "\033[1A\033[K" # clean the [EXECUTING] foobar line
+		[ -t 1 ] && echo -en "\033[1A\033[K" # clean the [EXECUTING] foobar line
 	fi
 
 	if [ "$rc_got" == "$rc_spec" ] ; then
@@ -176,4 +209,4 @@ failed=$((legacy_fail+failed))
 
 msg_info "combined results: [OK] $ok [FAILED] $failed [TOTAL] $((ok+failed))"
 
-exit 0
+exit -$failed

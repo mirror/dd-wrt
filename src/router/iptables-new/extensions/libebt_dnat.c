@@ -9,21 +9,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <netinet/ether.h>
 #include <xtables.h>
 #include <linux/netfilter_bridge/ebt_nat.h>
 #include "iptables/nft.h"
 #include "iptables/nft-bridge.h"
 
-#define NAT_D '1'
-#define NAT_D_TARGET '2'
-static const struct option brdnat_opts[] =
+enum {
+	O_DST,
+	O_TARGET,
+};
+
+static const struct xt_option_entry brdnat_opts[] =
 {
-	{ "to-destination", required_argument, 0, NAT_D },
-	{ "to-dst"        , required_argument, 0, NAT_D },
-	{ "dnat-target"   , required_argument, 0, NAT_D_TARGET },
-	{ 0 }
+	{ .name = "to-destination", .id = O_DST, .type = XTTYPE_ETHERMAC,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nat_info, mac) },
+	{ .name = "to-dst"        , .id = O_DST, .type = XTTYPE_ETHERMAC,
+	  .flags = XTOPT_PUT, XTOPT_POINTER(struct ebt_nat_info, mac) },
+	{ .name = "dnat-target"   , .id = O_TARGET, .type = XTTYPE_STRING },
+	XTOPT_TABLEEND,
 };
 
 static void brdnat_print_help(void)
@@ -31,7 +35,8 @@ static void brdnat_print_help(void)
 	printf(
 	"dnat options:\n"
 	" --to-dst address       : MAC address to map destination to\n"
-	" --dnat-target target   : ACCEPT, DROP, RETURN or CONTINUE\n");
+	" --dnat-target target   : ACCEPT, DROP, RETURN or CONTINUE\n"
+	"                          (standard target is ACCEPT)\n");
 }
 
 static void brdnat_init(struct xt_entry_target *target)
@@ -41,35 +46,20 @@ static void brdnat_init(struct xt_entry_target *target)
 	natinfo->target = EBT_ACCEPT;
 }
 
-#define OPT_DNAT        0x01
-#define OPT_DNAT_TARGET 0x02
-static int brdnat_parse(int c, char **argv, int invert, unsigned int *flags,
-			 const void *entry, struct xt_entry_target **target)
+static void brdnat_parse(struct xt_option_call *cb)
 {
-	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)(*target)->data;
-	struct ether_addr *addr;
+	struct ebt_nat_info *natinfo = cb->data;
 
-	switch (c) {
-	case NAT_D:
-		EBT_CHECK_OPTION(flags, OPT_DNAT);
-		if (!(addr = ether_aton(optarg)))
-			xtables_error(PARAMETER_PROBLEM, "Problem with specified --to-destination mac");
-		memcpy(natinfo->mac, addr, ETH_ALEN);
-		break;
-	case NAT_D_TARGET:
-		EBT_CHECK_OPTION(flags, OPT_DNAT_TARGET);
-		if (ebt_fill_target(optarg, (unsigned int *)&natinfo->target))
-			xtables_error(PARAMETER_PROBLEM, "Illegal --dnat-target target");
-		break;
-	default:
-		return 0;
-	}
-	return 1;
+	xtables_option_parse(cb);
+	if (cb->entry->id == O_TARGET &&
+	    ebt_fill_target(cb->arg, (unsigned int *)&natinfo->target))
+		xtables_error(PARAMETER_PROBLEM,
+			      "Illegal --dnat-target target");
 }
 
-static void brdnat_final_check(unsigned int flags)
+static void brdnat_final_check(struct xt_fcheck_call *fc)
 {
-	if (!flags)
+	if (!fc->xflags)
 		xtables_error(PARAMETER_PROBLEM,
 			      "You must specify proper arguments");
 }
@@ -116,11 +106,11 @@ static struct xtables_target brdnat_target =
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_nat_info)),
 	//.help		= brdnat_print_help,
 	.init		= brdnat_init,
-	.parse		= brdnat_parse,
-	.final_check	= brdnat_final_check,
+	.x6_parse	= brdnat_parse,
+	.x6_fcheck	= brdnat_final_check,
 	.print		= brdnat_print,
 	.xlate		= brdnat_xlate,
-	.extra_opts	= brdnat_opts,
+	.x6_options	= brdnat_opts,
 };
 
 void _init(void)

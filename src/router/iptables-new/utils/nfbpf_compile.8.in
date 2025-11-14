@@ -1,7 +1,7 @@
 .TH NFBPF_COMPILE 8 "" "@PACKAGE_STRING@" "@PACKAGE_STRING@"
 
 .SH NAME
-nfbpf_compile \- generate bytecode for use with xt_bpf
+nfbpf_compile \(em generate bytecode for use with xt_bpf
 .SH SYNOPSIS
 
 .ad l

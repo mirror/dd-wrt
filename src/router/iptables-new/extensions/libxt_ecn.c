@@ -156,6 +156,8 @@ static int ecn_xlate(struct xt_xlate *xl,
 		case 3:
 			xt_xlate_add(xl, "ce");
 			break;
+		default:
+			return 0;
 		}
 	}
 	return 1;
