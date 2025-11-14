@@ -81,6 +81,11 @@ static const char* markop = "--set-mark";
  */
 static const char* markmask = "";
 
+int use_nft(void) {
+FILE *fp = popen("iptables-nft -V","rb");
+int ret = !fp;
+pclose(fp);
+}
 
 /** Return a string representing a connection state */
 const char *
@@ -188,7 +193,13 @@ iptables_do_command(const char *format, ...)
 
 	config = config_get_config();
 
+	if (use_nft()) {
+	iptables = config->ip6 ? "ip6tables-nft" : "iptables-nft";
+	}else{
 	iptables = config->ip6 ? "ip6tables" : "iptables";
+	}
+	
+	
 
 	for (i = 0; i < 5; i++) {
 		if (fw_quiet) {
@@ -775,7 +786,11 @@ iptables_fw_destroy_mention(
 	debug(LOG_DEBUG, "Checking all mention of %s in chain %s of table %s", mention, chain, table);
 
 	config = config_get_config();
+	if (use_nft()) {
+	iptables = config->ip6 ? "ip6tables-nft" : "iptables-nft";
+	}else{
 	iptables = config->ip6 ? "ip6tables" : "iptables";
+	}
 	safe_asprintf(&command, "%s -t %s -L %s -n --line-numbers -v", iptables, table, chain);
 
 	if ((p = popen(command, "r"))) {
@@ -979,9 +994,14 @@ iptables_fw_counters_update(void)
 	af = config->ip6 ? AF_INET6 : AF_INET;
 
 	LOCK_CLIENT_LIST();
-
+	int nft = use_nft();
 	/* Look for outgoing traffic of authenticated clients. */
+	if (nft) {
+	safe_asprintf(&script, "%s %s", "iptables-nft", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
+	}else{
 	safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
+	}
+
 	output = popen(script, "r");
 	free(script);
 	if (!output) {
@@ -1019,7 +1039,12 @@ iptables_fw_counters_update(void)
 	pclose(output);
 
 	/* Look for incoming traffic */
+	if (nft) {
+	safe_asprintf(&script, "%s %s", "iptables-nft", "-v -n -x -t mangle -L " CHAIN_INCOMING);
+	}else{
 	safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_INCOMING);
+	
+	}
 	output = popen(script, "r");
 	free(script);
 	if (!output) {
