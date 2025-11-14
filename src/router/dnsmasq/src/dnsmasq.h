@@ -1359,7 +1359,7 @@ struct server_details {
 };
 
 /* cache.c */
-void cache_init(void);
+void dnsmasq_cache_init(void);
 unsigned short rrtype(char *in);
 void next_uid(struct crec *crecp);
 void log_query(unsigned int flags, char *name, union all_addr *addr, char *arg, unsigned short type); 

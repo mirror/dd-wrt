@@ -425,7 +425,7 @@ int main (int argc, char **argv)
   
   if (daemon->port != 0)
     {
-      cache_init();
+      dnsmasq_cache_init();
       blockdata_init();
 
       /* Scale random socket pool by ftabsize, but

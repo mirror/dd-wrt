@@ -169,7 +169,7 @@ void next_uid(struct crec *crecp)
     }
 }
 
-void cache_init(void)
+void dnsmasq_cache_init(void)
 {
   struct crec *crecp;
   int i;
