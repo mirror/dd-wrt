@@ -9,10 +9,10 @@ is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ':'; }
 nv=/usr/sbin/nvram
 #Use iptables `-w` option to prevent "Another app is currently holding the xtables lock"
 ipt="$($nv get wg_fwipt)"
-: "${ipt:=/usr/sbin/iptables}"
+: "${ipt:=($nv get IPTABLES)}"
 #ipt=/usr/sbin/iptables
 ip6t="$($nv get wg_fwip6t)"
-: "${ip6t:=/usr/sbin/ip6tables}"
+: "${ip6t:=($nv get IP6TABLES)}"
 #ip6t=/usr/sbin/ip6tables
 FWWAIT=$($nv get wg_fwwait)
 : "${FWWAIT:=1}"
