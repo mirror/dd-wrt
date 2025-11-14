@@ -184,7 +184,7 @@ int hb_connect_main(int argc, char **argv)
 
 	wan_done(safe_get_wan_face(wan_if_buffer));
 
-	sysprintf("iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT", safe_get_wan_face(wan_if_buffer), argv[3],
+	sysprintf("" IPTABLES " -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT", safe_get_wan_face(wan_if_buffer), argv[3],
 		  nvram_safe_get("wan_ipaddr"), argv[1]);
 
 	return TRUE;

@@ -223,8 +223,8 @@ void start_aoss(void)
 	}
 #endif
 	if (hasaoss) {
-		eval("iptables", "-I", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
-		eval("iptables", "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
+		eval(IPTABLES, "-I", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
+		eval(IPTABLES, "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 		log_eval("aoss", "-i", "aoss", "-m", "ap");
 	} else
 		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)");
@@ -237,8 +237,8 @@ void stop_aoss(void)
 {
 #ifdef HAVE_AOSS
 	stop_process("aoss", "buffalo aoss daemon");
-	eval("iptables", "-D", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
-	eval("iptables", "-D", "INPUT", "-i", "aoss", "-j", "ACCEPT");
+	eval(IPTABLES, "-D", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
+	eval(IPTABLES, "-D", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 #endif
 	return;
 }

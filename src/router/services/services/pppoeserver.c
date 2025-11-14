@@ -98,13 +98,13 @@ static void makeipup(void)
 
 	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
-		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
+		fprintf(fp, "" IPTABLES " -I INPUT -i $1 -j ACCEPT\n");
 	//      if (nvram_match("pppoeserver_clip", "local")) //for radius ip's...to be worked on
 	if (nvram_match("wan_proto",
 			"pppoe") //only when there is an ppp0 interface
 	    || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe_dual"))
-		fprintf(fp, "iptables -I FORWARD -i $1 -j ACCEPT\n"
-			    "iptables -I FORWARD -o $1 -j ACCEPT\n");
+		fprintf(fp, "" IPTABLES " -I FORWARD -i $1 -j ACCEPT\n"
+			    "" IPTABLES " -I FORWARD -o $1 -j ACCEPT\n");
 	fprintf(fp, "addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//      just an uptime test
@@ -142,10 +142,10 @@ static void makeipup(void)
 		    "RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		    "addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n");
 	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe_dual"))
-		fprintf(fp, "iptables -D FORWARD -i $1 -j ACCEPT\n"
-			    "iptables -D FORWARD -o $1 -j ACCEPT\n");
+		fprintf(fp, "" IPTABLES " -D FORWARD -i $1 -j ACCEPT\n"
+			    "" IPTABLES " -D FORWARD -o $1 -j ACCEPT\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
-		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
+		fprintf(fp, "" IPTABLES " -D INPUT -i $1 -j ACCEPT\n");
 	if (nvram_matchi("pppoeradius_enabled", 1))
 		fprintf(fp, "tc qdisc del root dev $1\n"
 			    "tc qdisc del dev $1 ingress\n");
@@ -344,13 +344,13 @@ void start_pppoeserver(void)
 
 		//              // clamp when fw clamping is off
 		//              if (nvram_match("wan_proto", "disabled"))
-		//                      system("/usr/sbin/iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+		//                      system("/usr/sbin/" IPTABLES " -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		if (nvram_invmatch("wan_proto",
 				   "pppoe") //if there is no ppp0, reduce rules
 		    && nvram_invmatch("wan_proto", "pptp") && nvram_invmatch("wan_proto", "pppoe_dual")) {
-			eval("/usr/sbin/iptables", "-I", "FORWARD", "-i", "ppp+", "-j", "ACCEPT");
-			eval("/usr/sbin/iptables", "-I", "FORWARD", "-o", "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/" IPTABLES "", "-I", "FORWARD", "-i", "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/" IPTABLES "", "-I", "FORWARD", "-o", "ppp+", "-j", "ACCEPT");
 		}
 
 		start_pppmodules();
@@ -381,13 +381,13 @@ void stop_pppoeserver(void)
 			eval("/bin/cp", "/tmp/pppoe_peer.db", "/jffs/etc/pppoeserver");
 		}
 		//              if (nvram_match("wan_proto", "disabled"))
-		//                      system("/usr/sbin/iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+		//                      system("/usr/sbin/" IPTABLES " -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 		if (nvram_invmatch("wan_proto", "pppoe") && nvram_invmatch("wan_proto", "pptp") &&
 		    nvram_invmatch("wan_proto", "pppoe_dual")) {
-			eval("/usr/sbin/iptables", "-D", "FORWARD", "-i", "ppp+", "-j", "ACCEPT");
-			eval("/usr/sbin/iptables", "-D", "FORWARD", "-o", "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/" IPTABLES "", "-D", "FORWARD", "-i", "ppp+", "-j", "ACCEPT");
+			eval("/usr/sbin/" IPTABLES "", "-D", "FORWARD", "-o", "ppp+", "-j", "ACCEPT");
 		}
 	}
 }

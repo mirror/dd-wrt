@@ -110,7 +110,7 @@ void start_tor(void)
 
 	//      fprintf(fp, "ControlPort 9051\n");
 	if (nvram_matchi("tor_relay", 1)) {
-		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9001", "-j",
+		eval(IPTABLES, "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9001", "-j",
 		     "ACCEPT");
 		fprintf(fp, "ORPort 9001\n");
 		fprintf(fp, "ExitRelay 1\n");
@@ -122,7 +122,7 @@ void start_tor(void)
 #endif
 	}
 	if (nvram_matchi("tor_dir", 1)) {
-		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9030", "-j",
+		eval(IPTABLES, "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9030", "-j",
 		     "ACCEPT");
 		fprintf(fp, "DirPort 9030\n");
 	}
@@ -142,9 +142,9 @@ void start_tor(void)
 			fprintf(fp, "ExitNodes {%s} StrictNodes 1\n", exit);
 	}
 	if (nvram_matchi("tor_transparent", 1)) {
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353", get_lan_ipaddr());
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353", get_lan_ipaddr());
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", get_lan_ipaddr());
+		sysprintf("" IPTABLES " -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353", get_lan_ipaddr());
+		sysprintf("" IPTABLES " -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353", get_lan_ipaddr());
+		sysprintf("" IPTABLES " -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", get_lan_ipaddr());
 	}
 #ifdef HAVE_X86
 	eval("mkdir", "-p", "/tmp/tor");

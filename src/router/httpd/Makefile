@@ -295,6 +295,9 @@ endif
 ifeq ($(CONFIG_DIR860),y)
 CFLAGS += -DHAVE_DIR860
 endif
+ifeq ($(CONFIG_NFTABLES),y)
+  CFLAGS += -DHAVE_NFTABLES
+endif
 ifeq ($(CONFIG_DIR859),y)
 CFLAGS += -DHAVE_DIR859
 endif

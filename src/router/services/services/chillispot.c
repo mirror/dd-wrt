@@ -193,35 +193,35 @@ void main_config(void)
 	but if we dont have any gw we might use chilli on a local network only 
 	also we need to allow traffic in/outgoing to chilli*/
 	fprintf(fp, "#!/bin/sh\n");
-	fprintf(fp, "iptables -D INPUT -i $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -D FORWARD -i $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -D FORWARD -o $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -I INPUT -i $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -I FORWARD -i $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -I FORWARD -o $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -D INPUT -i $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -D FORWARD -i $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -D FORWARD -o $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -I INPUT -i $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -I FORWARD -i $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -I FORWARD -o $DEV -j %s\n", log_accept);
 	//      secure chilli interface, only usefull if ! br0
 	if (chilli_enable && !hss_enable && nvram_invmatch("chilli_interface", "br0")) {
-		fprintf(fp, "iptables -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"),
+		fprintf(fp, "" IPTABLES " -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"),
 			log_drop);
-		fprintf(fp, "iptables -t filter -I INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"),
+		fprintf(fp, "" IPTABLES " -t filter -I INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"),
 			log_drop);
 	}
 	if (chilli_enable && hss_enable && nvram_invmatch("hotss_interface", "br0")) {
-		fprintf(fp, "iptables -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"),
+		fprintf(fp, "" IPTABLES " -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"),
 			log_drop);
-		fprintf(fp, "iptables -t filter -I INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"),
+		fprintf(fp, "" IPTABLES " -t filter -I INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"),
 			log_drop);
 	}
 	// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
-		//              fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-		fprintf(fp, "iptables -t nat -D POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
-		//              fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");    // clamp when fw clamping is off
-		fprintf(fp, "iptables -t nat -I POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
+		//              fprintf(fp, "" IPTABLES " -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+		fprintf(fp, "" IPTABLES " -t nat -D POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
+		//              fprintf(fp, "" IPTABLES " -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");    // clamp when fw clamping is off
+		fprintf(fp, "" IPTABLES " -t nat -I POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
 	} else {
-		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n",
+		fprintf(fp, "" IPTABLES " -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n",
 			safe_get_wan_face(wan_if_buffer), get_wan_ipaddr());
-		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n",
+		fprintf(fp, "" IPTABLES " -t nat -I POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n",
 			safe_get_wan_face(wan_if_buffer), get_wan_ipaddr());
 	}
 	// enable Reverse Path Filtering to prevent double outgoing packages
@@ -239,20 +239,20 @@ void main_config(void)
 	}
 
 	fprintf(fp, "#!/bin/sh\n");
-	fprintf(fp, "iptables -D INPUT -i $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -D FORWARD -i $DEV -j %s\n", log_accept);
-	fprintf(fp, "iptables -D FORWARD -o $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -D INPUT -i $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -D FORWARD -i $DEV -j %s\n", log_accept);
+	fprintf(fp, "" IPTABLES " -D FORWARD -o $DEV -j %s\n", log_accept);
 	if (nvram_matchi("chilli_enable", 1) && nvram_matchi("hotss_enable", 0) && nvram_invmatch("chilli_interface", "br0"))
-		fprintf(fp, "iptables -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"),
+		fprintf(fp, "" IPTABLES " -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"),
 			log_drop);
 	if (nvram_matchi("chilli_enable", 1) && nvram_matchi("hotss_enable", 1) && nvram_invmatch("hotss_interface", "br0"))
-		fprintf(fp, "iptables -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"),
+		fprintf(fp, "" IPTABLES " -t filter -D INPUT -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"),
 			log_drop);
 	if (nvram_match("wan_proto", "disabled")) {
-		//              fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-		fprintf(fp, "iptables -t nat -D POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
+		//              fprintf(fp, "" IPTABLES " -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+		fprintf(fp, "" IPTABLES " -t nat -D POSTROUTING -s $NET/$MASK -j MASQUERADE\n");
 	} else
-		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n",
+		fprintf(fp, "" IPTABLES " -t nat -D POSTROUTING -o %s -s $NET/$MASK -j SNAT --to-source=%s\n",
 			safe_get_wan_face(wan_if_buffer), get_wan_ipaddr());
 	fclose(fp);
 

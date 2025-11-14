@@ -56,21 +56,21 @@ void start_privoxy(void)
 
 	char *wan = get_wan_ipaddr();
 	if (nvram_matchi("privoxy_transp_enable", 1)) {
-		sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
-		sysprintf("iptables -t nat -I PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
-		//		sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
-		//		sysprintf("iptables -t nat -I PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
-		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
-		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
-		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
-		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
+		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+		sysprintf("" IPTABLES " -t nat -I PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+		//		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
+		//		sysprintf("" IPTABLES " -t nat -I PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
+		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
+		sysprintf("" IPTABLES " -t nat -I PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
+		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
+		sysprintf("" IPTABLES " -t nat -I PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
 		char *transp = nvram_safe_get("privoxy_transp_exclude");
 		/* no gui setting yet - redirect all except this IP */
 		if (*transp) {
-			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
-			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
-			//			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
-			//			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
+			sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
+			sysprintf("" IPTABLES " -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
+			//			sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
+			//			sysprintf("" IPTABLES " -t nat -I PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
 		}
 		mode = 1;
 		getIfLists(vifs, sizeof(vifs));
@@ -78,12 +78,12 @@ void start_privoxy(void)
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
-					sysprintf("iptables -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
-					sysprintf("iptables -t nat -I PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
+					sysprintf("" IPTABLES " -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
+					sysprintf("" IPTABLES " -t nat -I PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
 					sprintf(vif_ip, "%s_ipaddr", var);
-					sysprintf("iptables -t nat -D PREROUTING -i %s -d %s -j RETURN", var,
+					sysprintf("" IPTABLES " -t nat -D PREROUTING -i %s -d %s -j RETURN", var,
 						  nvram_safe_get(vif_ip));
-					sysprintf("iptables -t nat -I PREROUTING -i %s -d %s -j RETURN", var,
+					sysprintf("" IPTABLES " -t nat -I PREROUTING -i %s -d %s -j RETURN", var,
 						  nvram_safe_get(vif_ip));
 				}
 			}
@@ -144,22 +144,22 @@ void stop_privoxy(void)
 	char var[80];
 	char vifs[512];
 
-	sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
-	//	sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
-	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
-	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
+	sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+	//	sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
+	sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
+	sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
 	if (*transp) {
-		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
-		//		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT");
+		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
+		//		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT");
 	}
 	getIfLists(vifs, sizeof(vifs));
 	char vif_ip[32];
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
-				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
+				sysprintf("" IPTABLES " -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
 				sprintf(vif_ip, "%s_ipaddr", var);
-				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
+				sysprintf("" IPTABLES " -t nat -D PREROUTING -i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
 			}
 		}
 	}

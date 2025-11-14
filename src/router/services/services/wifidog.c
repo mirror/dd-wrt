@@ -90,9 +90,9 @@ void start_wifidog(void)
 		}
 		fclose(fp);
 		log_eval("wifidog", "-c", "/tmp/wifidog/wifidog.conf");
-		eval("iptables", "-D", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j",
+		eval(IPTABLES, "-D", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j",
 		     "ACCEPT");
-		eval("iptables", "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j",
+		eval(IPTABLES, "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j",
 		     "ACCEPT");
 	}
 #ifdef HAVE_TIEXTRA2

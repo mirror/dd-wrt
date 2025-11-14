@@ -82,7 +82,7 @@ void start_zabbix(void)
 		fprintf(fp, "UserParameter=system.topcpu[*], /usr/sbin/topcpu $1 $2\n");
 		fprintf(fp, "UserParameter=listenport[*], netstat -ln 2> /dev/null  | grep -c ':'\n");
 		fprintf(fp,
-			"UserParameter=net.iptables.cksum, iptables-save | grep -v '^[#:]' | md5sum | tr -cd 0-9 | cut -b1-10\n");
+			"UserParameter=net.iptables.cksum, " IPTABLES_SAVE " | grep -v '^[#:]' | md5sum | tr -cd 0-9 | cut -b1-10\n");
 		fprintf(fp, "UserParameter=net.ipv4.cksum,ifconfig | grep -B1 ' inet ' | md5sum | tr -cd 0-9 | cut -b1-10\n");
 		fprintf(fp,
 			"UserParameter=net.ipv4,ifconfig | grep -B1 ' inet ' | grep -o -e 'addr:[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' -e '^[a-z0-9:]*'\n");

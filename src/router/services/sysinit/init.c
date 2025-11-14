@@ -428,6 +428,13 @@ void start_init_start(void)
 	set_tcp_params();
 	lcdmessage("START SERVICES");
 	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
+#ifdef HAVE_NFTABLES
+	nvram_set("IPTABLES","iptables-nft");
+	nvram_set("IP6TABLES","ip6tables-nft");
+#else
+	nvram_set("IPTABLES","iptables");
+	nvram_set("IP6TABLES","ip6tables");
+#endif
 
 #ifdef HAVE_JFFS2
 	start_service(jffs2);

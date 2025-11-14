@@ -2890,28 +2890,28 @@ void start_duallink(void)
 		sysprintf("ip route flush table 100");
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 200");
-		sysprintf("iptables -t mangle -F PREROUTING");
+		sysprintf("" IPTABLES " -t mangle -F PREROUTING");
 		sysprintf("ip route add %s/%s dev wlan0 src %s table 100", nvram_safe_get("wlan0_ipaddr"),
 			  nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
 		sysprintf("ip route default via %s table 100", nvram_safe_get("wlan0_duallink_parent"));
 		sysprintf("ip route add %s/%s dev wlan0 src %s table 200", nvram_safe_get("wlan1_ipaddr"),
 			  nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
 		sysprintf("ip route default via %s table 200", nvram_safe_get("wlan1_duallink_parent"));
-		sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
+		sysprintf("" IPTABLES " -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
 		sysprintf("ip rule add fwmark 1 table 200");
 	}
 	if (nvram_match("duallink", "slave")) {
 		sysprintf("ip route flush table 100");
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 100");
-		sysprintf("iptables -t mangle -F PREROUTING");
+		sysprintf("" IPTABLES " -t mangle -F PREROUTING");
 		sysprintf("ip route add %s/%s dev wlan0 src %s table 100", nvram_safe_get("wlan0_ipaddr"),
 			  nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
 		sysprintf("ip route default via %s table 100", nvram_safe_get("wlan0_duallink_parent"));
 		sysprintf("ip route add %s/%s dev wlan0 src %s table 200", nvram_safe_get("wlan1_ipaddr"),
 			  nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
 		sysprintf("ip route default via %s table 200", nvram_safe_get("wlan1_duallink_parent"));
-		sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
+		sysprintf("" IPTABLES " -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
 		sysprintf("ip rule add fwmark 1 table 100");
 	}
 }

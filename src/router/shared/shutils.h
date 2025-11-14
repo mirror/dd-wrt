@@ -34,6 +34,22 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
+#ifdef HAVE_NFTABLES
+#define IPTABLES "iptables-nft"
+#define IP6TABLES "ip6tables-nft"
+#define IP6TABLES_SAVE "ip6tables-nft-save"
+#define IPTABLES_SAVE "iptables-nft-save"
+#define IPTABLES_RESTORE "iptables-nft-restore"
+#define IP6TABLES_RESTORE "ip6tables-nft-restore"
+#else
+#define IPTABLES "iptables"
+#define IP6TABLES "ip6tables"
+#define IP6TABLES_SAVE "ip6tables-save"
+#define IPTABLES_SAVE "iptables-save"
+#define IPTABLES_RESTORE "iptables-restore"
+#define IP6TABLES_RESTORE "ip6tables-restore"
+#endif
+
 #define DEBUG_CONSOLE 0
 #define DEBUG_HTTPD 1
 #define DEBUG_SERVICE 2

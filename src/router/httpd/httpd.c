@@ -1216,7 +1216,7 @@ static void *handle_request(void *arg)
 			nvram_unset("ias_dnsresp");
 			char cmd[64];
 			snprintf(cmd, sizeof(cmd), "%s:55300", nvram_get("lan_ipaddr"));
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-i", "br0", "-p", "udp", "--dport", "53", "-j", "DNAT",
+			eval(IPTABLES, "-t", "nat", "-D", "PREROUTING", "-i", "br0", "-p", "udp", "--dport", "53", "-j", "DNAT",
 			     "--to", cmd);
 
 			char buf[128];

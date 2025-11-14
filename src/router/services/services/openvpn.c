@@ -231,8 +231,8 @@ void create_openvpnrules(FILE *fp)
 		"#!/bin/sh\n"); // write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp,
-			"iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n" //
-			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
+			"" IPTABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n" //
+			"" IPTABLES " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, "ip6tables -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n"
@@ -241,8 +241,8 @@ void create_openvpnrules(FILE *fp)
 #endif
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n"
-			    "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
+		fprintf(fp, "" IPTABLES " -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n"
+			    "" IPTABLES " -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	if (nvram_matchi("openvpncl_blockmulticast",
 			 1) //block multicast on bridged vpns
 	    && nvram_match("openvpncl_tuntap", "tap") && nvram_matchi("openvpncl_bridge", 1)) {
@@ -257,10 +257,10 @@ void create_openvpnrules(FILE *fp)
 	}
 	if (nvram_matchi("openvpncl_fw", 0)) {
 		if (nvram_match("openvpncl_tuntap", "tun")) {
-			fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-				    "iptables -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-				    "iptables -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-				    "iptables -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+			fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
+				    "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
+				    "" IPTABLES " -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
+				    "" IPTABLES " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #ifdef HAVE_IPV6
 			if (nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp, "ip6tables -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
@@ -312,12 +312,12 @@ void create_openvpnrules(FILE *fp)
 				"continue\n"
 				";;\n"
 				"esac\n"
-				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
-				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
-				"echo \"iptables -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"iptables -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"iptables -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"iptables -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES " -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
+				"echo \"" IPTABLES " -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
+				"echo \"" IPTABLES " -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES " -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES " -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES " -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
 				"done\n"
 				"set=1\n"
 				"fi\n");
@@ -329,7 +329,7 @@ void create_openvpnrules(FILE *fp)
 		//escape general killswitch if PBR via WAN  //todo move this to up.sh instead of rout-up.sh so that it runs when the OVPN is not connecting
 		if (nvram_matchi("openvpncl_killswitch", 1) && nvram_matchi("openvpncl_spbr", 2)) {
 			fprintf(fp, "logger -p user.info \"OpenVPN firewall PBR via WAN escape\"\n");
-			fprintf(fp, "echo \"iptables -N vpn-pbr\" >> /tmp/openvpncl_fw.sh\n");
+			fprintf(fp, "echo \"" IPTABLES " -N vpn-pbr\" >> /tmp/openvpncl_fw.sh\n");
 			fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//' \"/tmp/openvpncl/policy_ips\" | while read pbrip; do\n"
 				    "case $pbrip in\n"
 				    "[0-9]*)\n"
@@ -348,17 +348,17 @@ void create_openvpnrules(FILE *fp)
 				    ";;\n"
 				    "esac\n"
 				    "if [[ $sourcepbr = \"port\" ]];then\n"
-				    "echo \"iptables -A vpn-pbr -p tcp $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
-				    "echo \"iptables -A vpn-pbr -p udp $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
+				    "echo \"" IPTABLES " -A vpn-pbr -p tcp $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
+				    "echo \"" IPTABLES " -A vpn-pbr -p udp $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
 				    "else\n"
-				    "echo \"iptables -A vpn-pbr $sourcepbr $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
+				    "echo \"" IPTABLES " -A vpn-pbr $sourcepbr $pbrip -j ACCEPT \" >> /tmp/openvpncl_fw.sh\n"
 				    "fi\n"
 				    "done\n");
 			//fprintf(fp, "[[ $($nv get wan_proto) = \"disabled\" ]] && { IN_IF=\"-i br0\"; logger -p user.info \"VPN Killswitch for WAP\"; } || IN_IF=\"\"\n");
 			//IN_IF is declared global scope and made line 720
-			fprintf(fp, "echo \"iptables -D FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n",
+			fprintf(fp, "echo \"" IPTABLES " -D FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n",
 				IN_IF);
-			fprintf(fp, "echo \"iptables -I FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n",
+			fprintf(fp, "echo \"" IPTABLES " -I FORWARD %s -o $(get_wanface) -j vpn-pbr\" >> /tmp/openvpncl_fw.sh\n",
 				IN_IF);
 		}
 	}
@@ -427,18 +427,18 @@ void create_openvpnserverrules(FILE *fp)
 			"ebtables -t nat -I PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "" IPTABLES " -I INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "" IPTABLES " -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n"
-			    "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
+		fprintf(fp, "" IPTABLES " -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n"
+			    "" IPTABLES " -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	if (nvram_match("openvpn_tuntap", "tun")) {
 		if (nvram_matchi("openvpn_allowcnwan", 1)) {
 			fprintf(fp,
-				"iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+				"" IPTABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp,
-				"iptables -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+				"" IPTABLES " -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp,
@@ -450,9 +450,9 @@ void create_openvpnserverrules(FILE *fp)
 		}
 		if (nvram_matchi("openvpn_allowcnlan", 1)) {
 			fprintf(fp,
-				"iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE >/dev/null 2>&1\n");
+				"" IPTABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp,
-				"iptables -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+				"" IPTABLES " -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp,
@@ -806,14 +806,14 @@ void start_openvpnserver(void)
 			"ebtables -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
+		fprintf(fp, "" IPTABLES " -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	if (nvram_matchi("openvpn_allowcnwan", 1)) {
 		fprintf(fp,
-			"iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+			"" IPTABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp,
@@ -823,7 +823,7 @@ void start_openvpnserver(void)
 	}
 	if (nvram_matchi("openvpn_allowcnlan", 1)) {
 		fprintf(fp,
-			"iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+			"" IPTABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp,
@@ -972,17 +972,17 @@ void start_openvpn(void)
 			   "1")) { //if no VPN PBR and killswitch active, activate general killswitch
 		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN");
 		//eval("restart" , "firewall");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
-		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval(" IPTABLES ", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval(" IPTABLES ", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
 		//todo set IN_IF to deal with WAP
-		eval("iptables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		eval("iptables", "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		eval(" IPTABLES ", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		eval(" IPTABLES ", "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
-			eval("ip6tables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-			eval("ip6tables", "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+			eval(IP6TABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+			eval(IP6TABLES, "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		}
 #endif
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
@@ -1209,15 +1209,15 @@ void start_openvpn(void)
 		fprintf(fp, "ifconfig $dev down\n");
 
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
+		fprintf(fp, "" IPTABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		fprintf(fp, "ip6tables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #endif
 	}
 	if (nvram_matchi("openvpncl_fw", 0)) {
 		if (nvram_match("openvpncl_tuntap", "tun")) {
-			fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-				    "iptables -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+			fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
+				    "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #ifdef HAVE_IPV6
 			fprintf(fp, "ip6tables -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
 				    "ip6tables -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
@@ -1239,7 +1239,7 @@ void start_openvpn(void)
 	}
 	if (nvram_match("openvpncl_mit", "1")) {
 		fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
+		fprintf(fp, "" IPTABLES " -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	}
 	if (nvram_match("openvpncl_splitdns", "1")) {
 		fprintf(fp, "ovpndel=\"/tmp/OVPNDEL\"\n"
@@ -1250,9 +1250,9 @@ void start_openvpn(void)
 	}
 	//code to delete chains for PBR via WAN
 	if (nvram_matchi("openvpncl_killswitch", 1) && nvram_matchi("openvpncl_spbr", 2)) {
-		fprintf(fp, "iptables -D FORWARD %s -o $(get_wanface) -j vpn-pbr\n", IN_IF);
-		fprintf(fp, "iptables -F vpn-pbr\n"
-			    "iptables -X vpn-pbr\n");
+		fprintf(fp, "" IPTABLES " -D FORWARD %s -o $(get_wanface) -j vpn-pbr\n", IN_IF);
+		fprintf(fp, "" IPTABLES " -F vpn-pbr\n"
+			    "" IPTABLES " -X vpn-pbr\n");
 	}
 	// remove ebtales rules
 	if (nvram_matchi("openvpncl_blockmulticast", 1) && nvram_match("openvpncl_tuntap", "tap") &&
@@ -1309,11 +1309,11 @@ void stop_openvpn(void)
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
-		eval("iptables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval(" IPTABLES ", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 #ifdef HAVE_IPV6
-		eval("ip6tables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		eval(IP6TABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 #endif
 		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", safe_get_wan_face(wan_if_buffer));
 		// to kill running watchdog
@@ -1355,9 +1355,9 @@ void stop_openvpn_wandone(void)
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
-		eval("iptables", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval(" IPTABLES ", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", safe_get_wan_face(wan_if_buffer));
 		// to kill running watchdog
 		eval("/usr/bin/controlovpnwdog.sh", "0");

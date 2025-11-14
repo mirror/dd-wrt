@@ -67,7 +67,7 @@ void start_stabridge(void)
 	}
 #else
 	if (getWET()) {
-		// let packages pass to iptables without ebtables loaded
+		// let packages pass to " IPTABLES " without ebtables loaded
 
 		writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
 		writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
@@ -103,7 +103,7 @@ void stop_stabridge(void)
 	eval("ebtables", "-t", "broute", "-F");
 	eval("ebtables", "-t", "nat", "-F");
 	rmmod("ebt_broute ebt_arpnat ebtable_broute ebtable_nat ebtable_filter ebtables");
-	// don't let packages pass to iptables without ebtables loaded
+	// don't let packages pass to " IPTABLES " without ebtables loaded
 	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
 	writeprocsysnet("bridge/bridge-nf-call-ip6tables", "0");
 	writeprocsysnet("bridge/bridge-nf-call-iptables", "0");

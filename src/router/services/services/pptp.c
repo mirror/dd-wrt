@@ -233,10 +233,10 @@ void start_pptpd(void)
 		"#!/bin/sh\n"
 		"startservice set_routes -f\n" // reinitialize
 		"echo $PPPD_PID $1 $5 $6 $PEERNAME >> /tmp/pptp_connected\n"
-		"iptables -I INPUT -i $1 -j ACCEPT\n"
-		"iptables -I FORWARD -i $1 -j ACCEPT\n" //
-		//      "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"  // rule for wake on lan over pptp tunnel
-		"iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n" // rule for wake on lan over pptp tunnel
+		"" IPTABLES " -I INPUT -i $1 -j ACCEPT\n"
+		"" IPTABLES " -I FORWARD -i $1 -j ACCEPT\n" //
+		//      "" IPTABLES " -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "" IPTABLES " -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"  // rule for wake on lan over pptp tunnel
+		"" IPTABLES " -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n" // rule for wake on lan over pptp tunnel
 		"%s\n",
 		bcast, nvram_safe_get("pptpd_ipdown_script"));
 	//      per peer shaping
@@ -267,9 +267,9 @@ void start_pptpd(void)
 		"RCVD=$(($BYTES_RCVD/1024+$r))\n"
 		"[ $m -eq 1 ] && sed -i \"/^$PEERNAME /d\" /tmp/pptp_peer.db\n"
 		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pptp_peer.db\n"
-		"iptables -D INPUT -i $1 -j ACCEPT\n"
-		"iptables -D FORWARD -i $1 -j ACCEPT\n"
-		"iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n" // rule for wake on lan over pptp tunnel
+		"" IPTABLES " -D INPUT -i $1 -j ACCEPT\n"
+		"" IPTABLES " -D FORWARD -i $1 -j ACCEPT\n"
+		"" IPTABLES " -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n" // rule for wake on lan over pptp tunnel
 		"%s\n",
 		bcast, nvram_safe_get("pptpd_ipdown_script"));
 	if (nvram_matchi("pptpd_radius", 1))
