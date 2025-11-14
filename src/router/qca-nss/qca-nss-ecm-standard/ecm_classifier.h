@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2015, 2018-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -38,6 +38,9 @@ enum ecm_classifier_types {
 #endif
 #ifdef ECM_CLASSIFIER_MSCS_ENABLE
 	ECM_CLASSIFIER_TYPE_MSCS,		/* Mirrored Stream Classification Signalling(MSCS) classifier */
+#endif
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	ECM_CLASSIFIER_TYPE_WIFI,		/* Wi-Fi classifier */
 #endif
 #ifdef ECM_CLASSIFIER_EMESH_ENABLE
 	ECM_CLASSIFIER_TYPE_EMESH,		/* E-Mesh classifier */
@@ -127,6 +130,10 @@ typedef enum ecm_classifier_acceleration_modes ecm_classifier_acceleration_mode_
 #define ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID 0x00080000	/* Mark the HLOS TID tag */
 #endif
 
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+#define ECM_CLASSIFIER_PROCESS_ACTION_WIFI_TAG	0x00100000	/* Mark the Wi-Fi tag */
+#endif
+
 /*
  * struct ecm_classifier_process_response
  *	Response structure returned by a process call
@@ -143,7 +150,7 @@ struct ecm_classifier_process_response {
 	bool drop;					/* Drop packet at hand */
 	uint32_t flow_qos_tag;				/* QoS tag to use for the packet */
 	uint32_t return_qos_tag;			/* QoS tag to use for the packet */
-#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
+#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE || ECM_CLASSIFIER_WIFI_ENABLE
 #ifdef ECM_CLASSIFIER_DSCP_IGS
 	uint16_t igs_flow_qos_tag;			/* Ingress QoS tag to use for the packet */
 	uint16_t igs_return_qos_tag;			/* Ingress QoS tag to use for the return packet */
@@ -186,12 +193,16 @@ struct ecm_classifier_process_response {
 #endif
 	ecm_classifier_acceleration_mode_t accel_mode;	/* Acceleration needed for this connection */
 	ecm_db_timer_group_t timer_group;		/* Timer group the connection should be in */
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	uint32_t flow_wifi_ds_node_id;			/* Flow Wi-Fi ppe ds metadata i.e. node id */
+	uint32_t return_wifi_ds_node_id;		/* Return Wi-Fi ppe ds metadata i.e. node id */
+#endif
 };
 
 /*
  * Sync rule structure.
  *	Acceleration engine's sync parameters will be stored
- * in this data structure to update the classifiers.
+ *	in this data structure to update the classifiers.
  */
 struct ecm_classifier_rule_sync {
 	uint32_t tx_packet_count[ECM_CONN_DIR_MAX];

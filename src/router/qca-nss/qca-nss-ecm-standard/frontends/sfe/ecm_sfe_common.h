@@ -147,8 +147,7 @@ void ecm_sfe_common_tuple_set(struct ecm_front_end_connection_instance *feci,
 			      struct ecm_sfe_common_tuple *tuple);
 bool ecm_sfe_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr, bool is_routed);
 #ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
-void ecm_sfe_common_ipv4_vlan_filter_set(struct ecm_db_connection_instance *ci, struct sfe_ipv4_rule_create_msg *nircm);
-void ecm_sfe_common_ipv6_vlan_filter_set(struct ecm_db_connection_instance *ci, struct sfe_ipv6_rule_create_msg *nircm);
+bool ecm_sfe_common_vlan_filter_set(struct ecm_db_connection_instance *ci, struct sfe_vlan_filter_rule *vlan_filter_rule, bool is_flow_dir);
 #endif
 #ifdef ECM_MHT_ENABLE
 bool ecm_sfe_common_get_mht_port_id(struct ecm_front_end_connection_instance *feci,

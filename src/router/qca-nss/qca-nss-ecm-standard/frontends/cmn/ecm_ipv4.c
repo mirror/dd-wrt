@@ -144,6 +144,37 @@ bool ecm_ipv4_dev_has_ipaddr(struct net_device *dev)
 }
 
 /*
+ * ecm_ipv4_is_bridge_pkt()
+ *	Return true if pkt is from bridge flow.
+ *	If in/out dev is a bridge port and the other dev is a master
+ *	of the same bridge port dev, then consider it a bridge flow packet
+ *	and return true.
+ */
+static bool ecm_ipv4_is_bridge_pkt(struct net_device *in,
+		struct net_device *out)
+{
+	struct net_device *lower = NULL;
+	struct net_device *upper = NULL;
+	struct net_device *bridge = NULL;
+
+	if (in->priv_flags & IFF_BRIDGE_PORT) {
+		lower = in;
+		bridge = out;
+	} else if (out->priv_flags & IFF_BRIDGE_PORT) {
+		lower = out;
+		bridge = in;
+	}
+
+	if (!lower)
+		return false;
+
+	rcu_read_lock();
+	upper = netdev_master_upper_dev_get_rcu(lower);
+	rcu_read_unlock();
+	return upper && (upper == bridge) && !ecm_ipv4_dev_has_ipaddr(lower);
+}
+
+/*
  * ecm_ipv4_node_establish_and_ref()
  *	Returns a reference to a node, possibly creating one if necessary.
  *
@@ -1266,6 +1297,24 @@ vxlan_done:
 	}
 
 	/*
+	 * If ecm_dir is ECM_DB_DIRECTION_NON_NAT
+	 * which means packet received on post routed hook and NAT is not identified.
+	 * So, check if packet is pure bridge packet(in some race condition pure bridge packet
+	 * can be received in post routed hook). then, We shouldn't accelerate the flow this time
+	 * and wait for the packet to pass Through the bridge post routing hook.
+	 */
+	if (ecm_dir == ECM_DB_DIRECTION_NON_NAT) {
+		/*
+		 * Skip bridge flow packet
+		 */
+		if (ecm_ipv4_is_bridge_pkt(in_dev, out_dev)) {
+			DEBUG_TRACE("Bridge flow, ignoring: %px\n", skb);
+			ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PACKET_WRONG_HOOK);
+			return NF_ACCEPT;
+		}
+	}
+
+	/*
 	 * If PPPoE bridged flows are to be handled with 3-tuple rule, set protocol to IPPROTO_RAW.
 	 */
 	protonum = orig_tuple.dst.protonum;
@@ -1580,37 +1629,6 @@ vxlan_done:
 }
 
 /*
- * ecm_ipv4_is_bridge_pkt()
- *	Return true if pkt is from bridge flow.
- *	If in/out dev is a bridge port and the other dev is a master
- *	of the same bridge port dev, then consider it a bridge flow packet 
- *	and return true.
- */
-static bool ecm_ipv4_is_bridge_pkt(struct net_device *in,
-		struct net_device *out)
-{
-	struct net_device *lower = NULL;
-	struct net_device *upper = NULL;
-	struct net_device *bridge = NULL;
-
-	if (in->priv_flags & IFF_BRIDGE_PORT) {
-		lower = in;
-		bridge = out;
-	} else if (out->priv_flags & IFF_BRIDGE_PORT) {
-		lower = out;
-		bridge = in;
-	}
-
-	if (!lower)
-		return false;
-
-	rcu_read_lock();
-	upper = netdev_master_upper_dev_get_rcu(lower);
-	rcu_read_unlock();
-	return upper && (upper == bridge) && !ecm_ipv4_dev_has_ipaddr(lower);
-}
-
-/*
  * ecm_ipv4_post_routing_hook()
  *	Called for IP packets that are going out to interfaces after IP routing stage.
  */
@@ -1703,15 +1721,6 @@ static unsigned int ecm_ipv4_post_routing_hook(void *priv,
 		return NF_ACCEPT;
 	}
 
-	/*
-	 * Skip bridge flow packet
-	 */
-	if (ecm_ipv4_is_bridge_pkt(in, out)) {
-		DEBUG_TRACE("Bridge flow, ignoring: %px\n", skb);
-		dev_put(in);
-		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_PACKET_WRONG_HOOK);
-		return NF_ACCEPT;
-	}
 #ifndef ECM_INTERFACE_OVS_BRIDGE_ENABLE
 	/*
 	 * skip OpenVSwitch flows because we don't accelerate them

@@ -342,7 +342,7 @@ static void ecm_nss_non_ported_ipv6_connection_accelerate(struct ecm_front_end_c
 	ip_addr_t src_ip;
 	ip_addr_t dest_ip;
 	ecm_front_end_acceleration_mode_t result_mode;
-#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE)
+#if defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE) || defined(ECM_INTERFACE_TUNIPIP6_ENABLE)
 	struct net_device *dev;
 #endif
 
@@ -1657,6 +1657,7 @@ struct ecm_front_end_connection_instance *ecm_nss_non_ported_ipv6_connection_ins
 
 	return feci;
 }
+EXPORT_SYMBOL(ecm_nss_non_ported_ipv6_connection_instance_alloc);
 
 /*
  * ecm_nss_non_ported_ipv6_debugfs_init()

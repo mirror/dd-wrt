@@ -25,6 +25,8 @@
 #ifndef __ECM_CLASSIFIER_EMESH_PUBLIC_H__
 #define __ECM_CLASSIFIER_EMESH_PUBLIC_H__
 
+#include <net/netfilter/nf_conntrack.h>
+
 /**
  * @addtogroup ecm_classifier_emesh_subsystem
  * @{
@@ -35,6 +37,7 @@
 #define ECM_CLASSIFIER_EMESH_SAWF_VLAN_PCP_VALID	0x4
 #define ECM_CLASSIFIER_EMESH_SAWF_DSCPCTE_VALID		0x8
 #define ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ         0xffffffff
+#define ECM_CLASSIFIER_EMESH_SAWF_DEFAULT_MSDUQ         0x0
 #define ECM_CLASSIFIER_EMESH_SAWF_INVALID_SVID		0xffffffff
 #define ECM_CLASSIFIER_EMESH_SAWF_HBUCKET_MAX		256
 
@@ -349,6 +352,22 @@ int ecm_classifier_emesh_sawf_update_fse_flow_callback_register(struct ecm_class
  * None.
  */
 void ecm_classifier_emesh_sawf_update_fse_flow_callback_unregister(void);
+
+/**
+ * Gets iface names used by fls for sdwf + mesh setups for ipv4 connections
+ *
+ * @return
+ * None.
+ */
+uint8_t ecm_classifier_emesh_sawf_get_iface_names_ipv4(struct nf_conn *ct, char *from_buff, char *to_buff);
+
+/**
+ * Gets iface names used by fls for sdwf + mesh setups for ipv6 connections
+ *
+ * @return
+ * None.
+ */
+uint8_t ecm_classifier_emesh_sawf_get_iface_names_ipv6(struct nf_conn *ct, char *from_buff, char *to_buff);
 
 /**
  * @}

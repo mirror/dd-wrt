@@ -283,6 +283,7 @@ static int ecm_db_ipv6_route_table_update_event(struct notifier_block *nb,
 		struct net_device *fc_dev;
 		bool is_dest_ip_match = true;
 		ecm_db_obj_dir_t obj_dir = ECM_DB_OBJ_DIR_TO;
+		int fc_dst_len = cfg->fc_dst_len;
 
 		if (ci->ip_version != 6) {
 			goto next;
@@ -297,10 +298,19 @@ static int ecm_db_ipv6_route_table_update_event(struct notifier_block *nb,
 		/*
 		 * Compute ECM connection's prefix destination address by masking it with the
 		 * route config's destination address prefix length.
+		 *
+		 * Validate dst_len to be 0 <= len <= 128
 		 */
-		ipv6_addr_prefix(&prefix_addr, &ecm_in6, cfg->fc_dst_len);
+		if (cfg->fc_dst_len > 128) {
+			fc_dst_len = 128;
+		} else if (cfg->fc_dst_len < 0){
+			fc_dst_len = 0;
+		}
 
-		DEBUG_TRACE("dest addr prefix: %pI6 prefix_len: %d ecm_in6: %pI6\n", &prefix_addr, cfg->fc_dst_len, &ecm_in6);
+		ipv6_addr_prefix(&prefix_addr, &ecm_in6, fc_dst_len);
+
+		DEBUG_TRACE("dest addr prefix: %pI6 prefix_len: %d(cfg=%d) ecm_in6: %pI6\n",
+				&prefix_addr, fc_dst_len, cfg->fc_dst_len, &ecm_in6);
 
 		/*
 		 * Compare the ECM connection's destination address prefix with the route config's
@@ -326,9 +336,10 @@ static int ecm_db_ipv6_route_table_update_event(struct notifier_block *nb,
 			 * Compute ECM connection's prefix source address by masking it with the
 			 * route config's destination address prefix length.
 			 */
-			ipv6_addr_prefix(&prefix_addr, &ecm_in6, cfg->fc_dst_len);
+			ipv6_addr_prefix(&prefix_addr, &ecm_in6, fc_dst_len);
 
-			DEBUG_TRACE("src addr prefix: %pI6 prefix_len: %d ecm_in6: %pI6\n", &prefix_addr, cfg->fc_dst_len, &ecm_in6);
+			DEBUG_TRACE("src addr prefix: %pI6 prefix_len: %d(cfg=%d) ecm_in6: %pI6\n",
+					&prefix_addr, fc_dst_len, cfg->fc_dst_len, &ecm_in6);
 
 			if (ipv6_addr_cmp(&prefix_addr, &cfg->fc_dst)) {
 				DEBUG_TRACE("src addr prefix: %pI6 not equal to cfg->fc_dst: %pI6, go to next connection\n", &prefix_addr, &cfg->fc_dst);

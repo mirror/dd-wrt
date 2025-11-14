@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -446,7 +446,9 @@ EXPORT_SYMBOL(ecm_db_connection_make_defunct);
  */
 void ecm_db_connection_data_totals_update(struct ecm_db_connection_instance *ci, bool is_from, uint64_t size, uint64_t packets)
 {
+#ifdef ECM_DB_ADVANCED_STATS_ENABLE
 	int32_t i;
+#endif
 
 	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
@@ -696,7 +698,7 @@ EXPORT_SYMBOL(ecm_db_connection_node_address_get);
 void ecm_db_connection_iface_name_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, char *name_buffer)
 {
 	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
-	strlcpy(name_buffer, ci->node[dir]->iface->name, IFNAMSIZ);
+	strscpy(name_buffer, ci->node[dir]->iface->name, IFNAMSIZ);
 }
 EXPORT_SYMBOL(ecm_db_connection_iface_name_get);
 
@@ -1539,6 +1541,7 @@ void ecm_db_connection_defunct_all(void)
 }
 EXPORT_SYMBOL(ecm_db_connection_defunct_all);
 
+#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
 /*
  * ecm_db_connection_defunct_by_classifier()
  *	Make defunct based on masked fields
@@ -1705,6 +1708,7 @@ next_ci:
 				ECM_IP_ADDR_TO_OCTAL(dest_addr_mask), dest_port_mask, proto_mask, cnt);
 	}
 }
+#endif
 
 /*
  * ecm_db_connection_defunct_by_port()
@@ -1994,6 +1998,7 @@ struct ecm_db_node_instance *ecm_db_connection_node_get_and_ref(struct ecm_db_co
 }
 EXPORT_SYMBOL(ecm_db_connection_node_get_and_ref);
 
+#ifdef ECM_DB_XREF_ENABLE
 /*
  * ecm_db_connection_mapping_get_and_ref_next()
  *	Return reference to next connection in the mapping chain in the specified direction.
@@ -2035,6 +2040,7 @@ struct ecm_db_connection_instance *ecm_db_connection_iface_get_and_ref_next(stru
 	return nci;
 }
 EXPORT_SYMBOL(ecm_db_connection_iface_get_and_ref_next);
+#endif
 
 /*
  * ecm_db_connection_mapping_get_and_ref()
@@ -2792,7 +2798,7 @@ bool ecm_db_connection_fill_vlan_filter(struct ecm_db_connection_instance *ci, s
 									skb, dest_mac_addr, *vid, next_dev->name);
 							goto fail;
 						}
-
+						dev_put(next_dev);
 					}
 				} else {
 					DEBUG_TRACE("%px: src_mac_addr lookup success. vlan tag found for dev:%s, mac:%pM, vid=%d netdev=%s\n",
@@ -2836,7 +2842,6 @@ bool ecm_db_connection_fill_vlan_filter(struct ecm_db_connection_instance *ci, s
 			/*
 			 * Fill vlan filter info in connection instance.
 			 * Reference for "ii" has been taken here, and released in ecm_db_connection_del_vlan_filter().
-			 * TODO: Fill vlan_proto from skb? But skb may not be a tagged packet?
 			 */
 			ecm_db_iface_ref(interfaces[i]);
 			ci->vlan_filter[vlan_filter_idx].ii = interfaces[i];
@@ -2973,6 +2978,7 @@ bool ecm_db_connection_fill_vlan_filter(struct ecm_db_connection_instance *ci, s
 									skb, dest_mac_addr, *vid, next_dev->name);
 							goto fail;
 						}
+						dev_put(next_dev);
 					}
 				} else {
 					DEBUG_TRACE("%px: src_mac_addr lookup success. vlan tag found for dev:%s, mac:%pM, vid=%d netdev=%s\n",
@@ -3016,7 +3022,6 @@ bool ecm_db_connection_fill_vlan_filter(struct ecm_db_connection_instance *ci, s
 			/*
 			 * Fill vlan filter info in connection instance.
 			 * Reference for "ii" has been taken here, and released in ecm_db_connection_del_vlan_filter().
-			 * TODO: Fill vlan_proto from skb? But skb may not be a tagged packet?
 			 */
 			ecm_db_iface_ref(interfaces[i]);
 			ci->vlan_filter[vlan_filter_idx].ii = interfaces[i];
@@ -3502,31 +3507,23 @@ EXPORT_SYMBOL(ecm_db_connection_add);
 
 #ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
 /*
- * ecm_db_connection_heirarchy_state_get()
- *	Output state for an interface heirarchy list.
+ * ecm_db_connection_vlan_filter_rule_state_get()
+ *	Output state for all interfaces with Bridge VLAN Filter configuration.
  */
-int ecm_db_connection_vlan_filter_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_connection_vlan_filter *v)
+static int ecm_db_connection_vlan_filter_rule_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_connection_vlan_filter *v)
 {
 	int result;
-	struct net_device *dev;
+	char name[IFNAMSIZ];
 
-	if (!(v->is_valid)) {
-		DEBUG_WARN("%px: ecm_db_connection_vlan_filter_state_get() VLAN Filter v->is_valid is FALSE\n", v);
+	if (!v->is_valid) {
+		DEBUG_WARN("%px: Bridge VLAN Filter is NOT valid\n", v);
 		return 0;
 	}
 
-	dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(v->ii));;
-
-	if (!dev) {
-		DEBUG_WARN("%px: VLAN Filter dev not found for ii->ae_interface_num=%d\n", v, ecm_db_iface_interface_identifier_get(v->ii));
-		return -EINVAL;
-	}
-
-	if ((result = ecm_state_write(sfi, "dev_name", "%s", dev->name))) {
-		dev_put(dev);
+	ecm_db_iface_interface_name_get(v->ii, name);
+	if ((result = ecm_state_write(sfi, "dev_name", "%s", name))) {
 		return result;
 	}
-	dev_put(dev);
 
 	if ((result = ecm_state_write(sfi, "tag", "0x%x", v->vlan_tag))) {
 		return result;
@@ -3548,10 +3545,10 @@ int ecm_db_connection_vlan_filter_state_get(struct ecm_state_file_instance *sfi,
 }
 
 /*
- * ecm_db_connection_instance_state_get()
- *	Output state for an interface heirarchy list.
+ * ecm_db_connection_heirarchy_vlan_filter_state_get()
+ *	Output state for Bridge VLAN Filter configuration.
  */
-int ecm_db_connection_instance_vlan_filter_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_connection_instance *ci)
+int ecm_db_connection_heirarchy_vlan_filter_state_get(struct ecm_state_file_instance *sfi, struct ecm_db_connection_instance *ci)
 {
 	int result;
 	int i;
@@ -3562,14 +3559,12 @@ int ecm_db_connection_instance_vlan_filter_state_get(struct ecm_state_file_insta
 		return 0;
 	}
 
-	for (i=0; i<ECM_VLAN_FILTER_RULE_MAX; i++) {
+	for (i = 0; i<ECM_VLAN_FILTER_RULE_MAX; i++) {
 		if ((result = ecm_state_prefix_add(sfi, ecm_db_connection_vlan_filter_type_strings[i]))) {
-			DEBUG_WARN("ecm_db_connection_instance_vlan_filter_state_get() : ecm_db_connection_vlan_filter_type_strings[] is invalid it seems. i=%d\n",i);
 			return result;
 		}
 
-		if ((result = ecm_db_connection_vlan_filter_state_get(sfi, &ci->vlan_filter[i]))) {
-			DEBUG_WARN("ecm_db_connection_vlan_filter_state_get has a problem\n");
+		if ((result = ecm_db_connection_vlan_filter_rule_state_get(sfi, &ci->vlan_filter[i]))) {
 			return result;
 		}
 
@@ -3985,7 +3980,7 @@ int ecm_db_connection_state_get(struct ecm_state_file_instance *sfi, struct ecm_
 		return result;
 	}
 
-	result = ecm_db_connection_instance_vlan_filter_state_get(sfi, ci);
+	result = ecm_db_connection_heirarchy_vlan_filter_state_get(sfi, ci);
 	if (result) {
 		return result;
 	}
@@ -4181,6 +4176,7 @@ struct ecm_db_connection_instance *ecm_db_connection_ipv6_from_ct_get_and_ref(st
 	case IPPROTO_IPIP:
 	case IPPROTO_GRE:
 	case IPPROTO_L2TP:
+	case IPPROTO_ESP:
 		host1_port = 0;
 		host2_port = 0;
 		break;

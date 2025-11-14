@@ -308,6 +308,7 @@ int ecm_db_multicast_connection_to_interfaces_reset(struct ecm_db_connection_ins
 	struct ecm_db_iface_instance *ii_db;
 	struct ecm_db_iface_instance *ii_db_single;
 	struct ecm_db_iface_instance **ifaces_db;
+	struct ecm_db_iface_instance *interfaces_base;
 	int32_t *nf_p;
 	int32_t heirarchy_index;
 	int32_t i;
@@ -319,8 +320,8 @@ int ecm_db_multicast_connection_to_interfaces_reset(struct ecm_db_connection_ins
 	 */
 	ecm_db_multicast_connection_to_interfaces_clear(ci);
 
-	ci->to_mcast_interfaces = (struct ecm_db_iface_instance *)kzalloc(ECM_DB_TO_MCAST_INTERFACES_SIZE, GFP_ATOMIC | __GFP_NOWARN);
-	if (!ci->to_mcast_interfaces) {
+	interfaces_base = (struct ecm_db_iface_instance *)kzalloc(ECM_DB_TO_MCAST_INTERFACES_SIZE, GFP_ATOMIC | __GFP_NOWARN);
+	if (!interfaces_base) {
 		DEBUG_WARN("%px: Memory is not available for to_mcast_interfaces\n", ci);
 		return -1;
 	}
@@ -329,6 +330,15 @@ int ecm_db_multicast_connection_to_interfaces_reset(struct ecm_db_connection_ins
 	 * Iterate the to interface list and add the new interface hierarchies
 	 */
 	spin_lock_bh(&ecm_db_lock);
+
+	if (ci->to_mcast_interfaces_set) {
+		spin_unlock_bh(&ecm_db_lock);
+		DEBUG_WARN("%px: to_mcast_interface was already set\n", ci);
+		kfree(interfaces_base);
+		return -1;
+	}
+
+	ci->to_mcast_interfaces = interfaces_base;
 
 	for (heirarchy_index = 0; heirarchy_index < ECM_DB_MULTICAST_IF_MAX; heirarchy_index++) {
 		ii_temp = ecm_db_multicast_if_heirarchy_get(interfaces, heirarchy_index);
@@ -978,6 +988,8 @@ void ecm_db_multicast_connection_to_interfaces_clear_at_index(struct ecm_db_conn
 	 */
 	if (!_ecm_db_multicast_connection_to_interface_first_is_valid(ci->to_mcast_interface_first)) {
 		ci->to_mcast_interfaces_set = false;
+		kfree(ci->to_mcast_interfaces);
+		ci->to_mcast_interfaces = NULL;
 	}
 
 	spin_unlock_bh(&ecm_db_lock);
@@ -1018,22 +1030,16 @@ void ecm_db_multicast_connection_to_interfaces_clear(struct ecm_db_connection_in
 	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
 	spin_lock_bh(&ecm_db_lock);
-	if (!ci->to_mcast_interfaces) {
+	if (!ci->to_mcast_interfaces_set) {
 		spin_unlock_bh(&ecm_db_lock);
 		return;
 	}
-
 	_ecm_db_multicast_connection_to_interfaces_set_clear(ci);
 	spin_unlock_bh(&ecm_db_lock);
 
 	for (heirarchy_index = 0; heirarchy_index < ECM_DB_MULTICAST_IF_MAX; heirarchy_index++) {
 		ecm_db_multicast_connection_to_interfaces_clear_at_index(ci, heirarchy_index);
 	}
-
-	spin_lock_bh(&ecm_db_lock);
-	kfree(ci->to_mcast_interfaces);
-	ci->to_mcast_interfaces = NULL;
-	spin_unlock_bh(&ecm_db_lock);
 }
 EXPORT_SYMBOL(ecm_db_multicast_connection_to_interfaces_clear);
 

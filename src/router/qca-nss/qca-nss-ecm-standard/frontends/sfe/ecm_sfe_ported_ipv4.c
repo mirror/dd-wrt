@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -101,6 +101,7 @@ extern int nf_ct_tcp_no_window_check;
 #endif
 extern int nf_ct_tcp_be_liberal;
 #endif
+
 extern int nf_ct_tcp_no_window_check;
 
 /*
@@ -1196,7 +1197,16 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 
 #ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
 	if (feci->ci->vlan_filter_valid) {
-		ecm_sfe_common_ipv4_vlan_filter_set(feci->ci, nircm);
+		DEBUG_INFO("%px: Bridge vlan filter is valid. Updating the create rule\n", feci);
+		if (ecm_sfe_common_vlan_filter_set(feci->ci, &nircm->flow_vlan_filter_rule, true) &&
+			ecm_sfe_common_vlan_filter_set(feci->ci, &nircm->return_vlan_filter_rule, false)) {
+			/*
+			 * Both flow and return directions are valid.
+			 */
+			nircm->valid_flags |= SFE_RULE_CREATE_VLAN_FILTER_VALID;
+		} else {
+			nircm->valid_flags &= ~SFE_RULE_CREATE_VLAN_FILTER_VALID;
+		}
 	}
 
 	/*
@@ -1208,7 +1218,7 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 	}
 #endif
 
-#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
+#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE || ECM_CLASSIFIER_WIFI_ENABLE
 	/*
 	 * DSCP information?
 	 */
@@ -1399,11 +1409,11 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 			int return_dir;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
 			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
 #else
 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
-//			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
-			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
 #endif
 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);
@@ -1498,12 +1508,6 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 			"secondary_ingress_vlan_tag: %x\n"
 			"secondary_egress_vlan_tag: %x\n"
 			"flags: rule=%x valid=%x src_mac_valid=%x\n"
-#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
-			"flow_vlan_filter_ingress_vlan_tag: %x, flags: %x\n"
-			"flow_vlan_filter_egress_vlan_tag: %x, flags: %x\n"
-			"return_vlan_filter_ingress_vlan_tag: %x, flags: %x\n"
-			"return_vlan_filter_egress_vlan_tag: %x, flags: %x\n"
-#endif
 			"return_pppoe_session_id: %u\n"
 			"return_pppoe_remote_mac: %pM\n"
 			"flow_pppoe_session_id: %u\n"
@@ -1546,12 +1550,6 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 			nircm->rule_flags,
 			nircm->valid_flags,
 			nircm->src_mac_rule.mac_valid_flags,
-#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
-			nircm->flow_vlan_filter_rule.ingress_vlan_tag, nircm->flow_vlan_filter_rule.ingress_flags,
-			nircm->flow_vlan_filter_rule.egress_vlan_tag, nircm->flow_vlan_filter_rule.egress_flags,
-			nircm->return_vlan_filter_rule.ingress_vlan_tag, nircm->return_vlan_filter_rule.ingress_flags,
-			nircm->return_vlan_filter_rule.egress_vlan_tag, nircm->return_vlan_filter_rule.egress_flags,
-#endif
 			nircm->pppoe_rule.return_pppoe_session_id,
 			nircm->pppoe_rule.return_pppoe_remote_mac,
 			nircm->pppoe_rule.flow_pppoe_session_id,
@@ -1571,8 +1569,18 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 			nircm->mark_rule.flow_mark,
 			nircm->mark_rule.return_mark);
 
-	if (protocol == IPPROTO_TCP) {
+#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+	DEBUG_INFO("flow_vlan_filter_ingress_vlan_tag: %x, flags: %x\n"
+			"flow_vlan_filter_egress_vlan_tag: %x, flags: %x\n"
+			"return_vlan_filter_ingress_vlan_tag: %x, flags: %x\n"
+			"return_vlan_filter_egress_vlan_tag: %x, flags: %x\n",
+			nircm->flow_vlan_filter_rule.ingress_vlan_tag, nircm->flow_vlan_filter_rule.ingress_flags,
+			nircm->flow_vlan_filter_rule.egress_vlan_tag, nircm->flow_vlan_filter_rule.egress_flags,
+			nircm->return_vlan_filter_rule.ingress_vlan_tag, nircm->return_vlan_filter_rule.ingress_flags,
+			nircm->return_vlan_filter_rule.egress_vlan_tag, nircm->return_vlan_filter_rule.egress_flags);
+#endif
 
+	if (protocol == IPPROTO_TCP) {
 		DEBUG_INFO("flow_window_scale: %u\n"
 			"flow_max_window: %u\n"
 			"flow_end: %u\n"

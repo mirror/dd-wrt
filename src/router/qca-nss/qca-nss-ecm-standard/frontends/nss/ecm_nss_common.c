@@ -67,6 +67,7 @@ bool ecm_nss_ipv6_is_conn_limit_reached(void)
 
 	return false;
 }
+EXPORT_SYMBOL(ecm_nss_ipv6_is_conn_limit_reached);
 #endif
 
 /*
@@ -116,3 +117,4 @@ bool ecm_nss_ipv4_is_conn_limit_reached(void)
 
 	return false;
 }
+EXPORT_SYMBOL(ecm_nss_ipv4_is_conn_limit_reached);

@@ -209,22 +209,31 @@ static void ecm_classifier_emesh_sawf_mark_set(
 				uint32_t flow_service_class_id, uint32_t return_service_class_id,
 				uint32_t msduq_forward, uint32_t msduq_reverse,
 				struct ecm_front_end_flowsawf_msg *msg,
-				struct ecm_classifier_emesh_sawf_instance *cemi)
+				struct ecm_classifier_emesh_sawf_instance *cemi,
+				uint32_t key, uint32_t rule_id)
 {
-	if (msduq_forward != ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ) {
+	if (flow_service_class_id != ECM_CLASSIFIER_EMESH_SAWF_INVALID_SERVICE_CLASS) {
 		msg->flow_mark = msduq_forward;
 		cemi->process_response.flow_service_class = flow_service_class_id;
 		cemi->process_response.flow_sawf_metadata = msduq_forward;
+		cemi->flow_rule_id = rule_id;
+		cemi->flow_rule_key = key;
+		cemi->flow_rule_classifier_type = SP_RULE_TYPE_SAWF_IFLI;
 		cemi->flow_valid_flag |= ECM_CLASSIFIER_EMESH_SAWF_SVID_VALID;
+		cemi->sawf_rule_stats |= ECM_CLASSIFIER_EMESH_SAWF_RULE_MATCH_SUCCESS;
 	} else {
 		msg->flow_mark = ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ;
 	}
 
-	if (msduq_reverse != ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ) {
+	if (return_service_class_id != ECM_CLASSIFIER_EMESH_SAWF_INVALID_SERVICE_CLASS) {
 		msg->return_mark = msduq_reverse;
 		cemi->process_response.return_service_class = return_service_class_id;
 		cemi->process_response.return_sawf_metadata = msduq_reverse;
+		cemi->return_rule_id = rule_id;
+		cemi->return_rule_key = key;
+		cemi->return_rule_classifier_type = SP_RULE_TYPE_SAWF_IFLI;
 		cemi->return_valid_flag |= ECM_CLASSIFIER_EMESH_SAWF_SVID_VALID;
+		cemi->sawf_rule_stats |= ECM_CLASSIFIER_EMESH_SAWF_RULE_MATCH_SUCCESS;
 	} else {
 		msg->return_mark = ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ;
 	}
@@ -241,17 +250,26 @@ static void ecm_classfier_emesh_stc_mark_set(struct sp_rule *r)
 	struct ecm_db_connection_instance *ci;
 	struct ecm_front_end_connection_instance *feci;
 	struct ecm_classifier_instance *aci;
-	ip_addr_t src_ip, dest_ip, match_addr;
+	ip_addr_t src_ip, dest_ip, match_addr, dest_ip_xlate;
 	ecm_tracker_sender_type_t sender;
 	struct net_device *src_dev = NULL;
 	struct net_device *dest_dev = NULL;
-	uint32_t msduq_forward = ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ;
-	uint32_t msduq_reverse = ECM_CLASSIFIER_EMESH_SAWF_INVALID_MSDUQ;
+	uint32_t msduq_forward;
+	uint32_t msduq_reverse;
+	uint32_t msduq_forward_prev;
+	uint32_t msduq_reverse_prev;
+	uint32_t flow_svid_prev;
+	uint32_t return_svid_prev;
+	uint8_t flow_valid_flag_prev;
+	uint8_t return_valid_flag_prev;
+	struct ecm_classifer_emesh_sawf_sync_params sawf_sync_params = {0};
 	uint8_t dmac[ETH_ALEN];
 	uint8_t smac[ETH_ALEN];
+#ifdef ECM_MULTICAST_ENABLE
+	bool is_mc_flow = false;
+#endif
 	struct ecm_classifier_emesh_sawf_flow_info sawf_flow_info = {0};
 	struct ecm_classifier_emesh_sawf_instance *cemi;
-	bool is_mc_flow = false;
 
 	/*
 	 * Check if MSDUQ callback is registered.
@@ -261,45 +279,35 @@ static void ecm_classfier_emesh_stc_mark_set(struct sp_rule *r)
 		return;
 	}
 
-	msg->ip_version = in->ip_version_type;
-	msg->protocol = in->protocol_number;
-	msg->flow_service_class_id = in->service_class_id;
-	msg->flow_src_port = htons(in->src_port);
-	msg->flow_dest_port = htons(in->dst_port);
-	msg->return_service_class_id = in->service_class_id;
 	if (in->ip_version_type == 4) {
-		msg->flow_src_ip[0] = in->src_ipv4_addr;
-		msg->flow_dest_ip[0] = in->dst_ipv4_addr;
-
-		DEBUG_TRACE("%px: flow/return service_class_id=%u/%u %pI4n:%u -> %pI4n:%u protocol=%d\n", r,
-				msg->flow_service_class_id, msg->return_service_class_id,
-				msg->flow_src_ip, ntohs(msg->flow_src_port),
-				msg->flow_dest_ip, ntohs(msg->flow_dest_port), msg->protocol);
-
 		ECM_NIN4_ADDR_TO_IP_ADDR(src_ip, in->src_ipv4_addr);
 		ECM_NIN4_ADDR_TO_IP_ADDR(dest_ip, in->dst_ipv4_addr);
 	} else {
-		ECM_IP_ADDR_COPY(msg->flow_src_ip, in->src_ipv6_addr);
-		ECM_IP_ADDR_COPY(msg->flow_dest_ip, in->dst_ipv6_addr);
-
-		DEBUG_TRACE("%px: flow/return service_class_id=%u/%u %pI6c@%u -> %pI6c@%u protocol=%d\n", r,
-				msg->flow_service_class_id, msg->return_service_class_id,
-				msg->flow_src_ip, ntohs(msg->flow_src_port),
-				msg->flow_dest_ip, ntohs(msg->flow_dest_port), msg->protocol);
-
-		ECM_NET_IPV6_ADDR_TO_IP_ADDR(src_ip, msg->flow_src_ip);
-		ECM_NET_IPV6_ADDR_TO_IP_ADDR(dest_ip, msg->flow_dest_ip);
+		ECM_NET_IPV6_ADDR_TO_IP_ADDR(src_ip, in->src_ipv6_addr);
+		ECM_NET_IPV6_ADDR_TO_IP_ADDR(dest_ip, in->dst_ipv6_addr);
 	}
 
+	/*
+	 * Find the ECM connection based on the IP addresses got from the rule.
+	 */
 	ci = ecm_db_connection_find_and_ref(src_ip,
 					    dest_ip,
-					    msg->protocol,
+					    in->protocol_number,
 					    in->src_port,
 					    in->dst_port);
 	if (unlikely(!ci)) {
 		DEBUG_WARN("%px: no ci\n", r);
 		return;
 	}
+
+	/*
+	 * Get the direction in which this rule is to be applied.
+	 */
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, match_addr);
+	if (ECM_IP_ADDR_MATCH(src_ip, match_addr))
+		sender = ECM_TRACKER_SENDER_TYPE_SRC;
+	else
+		sender = ECM_TRACKER_SENDER_TYPE_DEST;
 
 #ifdef ECM_MULTICAST_ENABLE
 	/*
@@ -330,31 +338,97 @@ static void ecm_classfier_emesh_stc_mark_set(struct sp_rule *r)
 
 	/*
 	 * IFLI is given lowest prority among classifiers, So return if already a classifier is used
+	 *
+	 * TODO: need to take care of inter VAP cases so that IFLI can prioritize flow in one direction
+	 * if there is no admin configured svc
 	 */
+	spin_lock_bh(&ecm_classifier_emesh_sawf_lock);
 	cemi = (struct ecm_classifier_emesh_sawf_instance *)aci;
-	if (cemi->flow_rule_classifier_type != SP_RULE_TYPE_SAWF_INVALID) {
+	if ((cemi->flow_rule_classifier_type != SP_RULE_TYPE_SAWF_INVALID && cemi->flow_rule_classifier_type != SP_RULE_TYPE_SAWF_IFLI) ||
+			(cemi->return_rule_classifier_type != SP_RULE_TYPE_SAWF_INVALID && cemi->return_rule_classifier_type != SP_RULE_TYPE_SAWF_IFLI)) {
 		DEBUG_INFO("%p: Another classifier %d is already in use", cemi, cemi->flow_rule_classifier_type);
+		spin_unlock_bh(&ecm_classifier_emesh_sawf_lock);
 		aci->deref(aci);
 		goto end;
 	}
 
-	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, match_addr);
-	if (ECM_IP_ADDR_MATCH(src_ip, match_addr)) {
-		sender = ECM_TRACKER_SENDER_TYPE_SRC;
-		ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM, smac);
-		ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_TO, dmac);
+	/*
+	 * Set previous variables for SUB sync message
+	 */
+	msduq_forward_prev = cemi->process_response.flow_sawf_metadata;
+	msduq_reverse_prev = cemi->process_response.return_sawf_metadata;
+	flow_valid_flag_prev = cemi->flow_valid_flag;
+	return_valid_flag_prev = cemi->return_valid_flag;
+	flow_svid_prev = cemi->process_response.flow_service_class;
+	return_svid_prev = cemi->process_response.return_service_class;
+
+	spin_unlock_bh(&ecm_classifier_emesh_sawf_lock);
+
+	/*
+	 * Construct the message to be sent to AEs for the 5 tuple information and the
+	 * mark value.
+	 *
+	 * NOTE: While filling the message, get the IP / ports as per the ECM's 5 tuple
+	 * database instead of the tuples specified in rule. This is to ensure that the right
+	 * direction is updated in AEs, as AEs connections are created based on ECM's 5 tuple
+	 * database.
+	 *
+	 * Following are the directions in which ECM's connection and AE's connections are
+	 * created wrt ECM's directions:
+	 *	ECM connection:		ECM_DB_OBJ_DIR_FROM - ECM_DB_OBJ_DIR_TO
+	 *	AE's connection:	ECM_DB_OBJ_DIR_FROM - ECM_DB_OBJ_DIR_TO_NAT
+	 *	AE's orig cme:		ECM_DB_OBJ_DIR_FROM - ECM_DB_OBJ_DIR_TO-NAT
+	 *	AE's reply cme:		ECM_DB_OBJ_DIR_TO – ECM_DB_OBJ_DIR_FROM
+	 *
+	 * We are supposed to find the SFE connection which takes the from and to_nat
+	 * IP addresses from the ECM database. So take these IPs to send the message to SFE.
+	 */
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, src_ip);
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO_NAT, dest_ip_xlate);
+	msg->flow_src_port = htons(ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_FROM));
+	msg->flow_dest_port = htons(ecm_db_connection_port_get(ci, ECM_DB_OBJ_DIR_TO_NAT));
+
+	msg->ip_version = in->ip_version_type;
+	msg->protocol = in->protocol_number;
+
+	/*
+	 * Get the service class as per the rule direction.
+	 */
+	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+		msg->flow_service_class_id = in->service_class_id;
+		msg->return_service_class_id = ECM_CLASSIFIER_EMESH_SAWF_INVALID_SERVICE_CLASS;
 	} else {
-		sender = ECM_TRACKER_SENDER_TYPE_DEST;
-		ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_TO, smac);
-		ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM, dmac);
+		msg->flow_service_class_id = ECM_CLASSIFIER_EMESH_SAWF_INVALID_SERVICE_CLASS;
+		msg->return_service_class_id = in->service_class_id;
 	}
 
-	ecm_db_netdevs_get_and_hold(ci, sender, &src_dev, &dest_dev);
+	if (in->ip_version_type == 4) {
+		ECM_NIN4_ADDR_TO_IP_ADDR(msg->flow_src_ip, src_ip[0]);
+		ECM_NIN4_ADDR_TO_IP_ADDR(msg->flow_dest_ip, dest_ip_xlate[0]);
+		DEBUG_TRACE("%px: flow/return service_class_id=%u/%u %pI4n:%u -> %pI4n:%u protocol=%d\n", r,
+				msg->flow_service_class_id, msg->return_service_class_id,
+				msg->flow_src_ip, ntohs(msg->flow_src_port),
+				msg->flow_dest_ip, ntohs(msg->flow_dest_port), msg->protocol);
+	} else {
+		ECM_NET_IPV6_ADDR_TO_IP_ADDR(msg->flow_src_ip, src_ip);
+		ECM_NET_IPV6_ADDR_TO_IP_ADDR(msg->flow_dest_ip, dest_ip_xlate);
+		DEBUG_TRACE("%px: flow/return service_class_id=%u/%u %pI6c@%u -> %pI6c@%u protocol=%d\n", r,
+				msg->flow_service_class_id, msg->return_service_class_id,
+				msg->flow_src_ip, ntohs(msg->flow_src_port),
+				msg->flow_dest_ip, ntohs(msg->flow_dest_port), msg->protocol);
+	}
+
+	/*
+	 * TODO: Add support for rules with WLAN<->WLAN traffic
+	 */
+	ecm_db_netdevs_get_and_hold(ci, ECM_TRACKER_SENDER_TYPE_SRC, &src_dev, &dest_dev);
 
 	/*
 	 * Get the bidirectional msduq by calling wlan driver API
 	 * using the service id, netdev, and peer's mac address.
 	 */
+	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_FROM, smac);
+	ecm_db_connection_node_address_get(ci, ECM_DB_OBJ_DIR_TO, dmac);
 	if (dest_dev) {
 		sawf_flow_info.netdev = dest_dev;
 		sawf_flow_info.peer_mac = dmac;
@@ -394,18 +468,76 @@ static void ecm_classfier_emesh_stc_mark_set(struct sp_rule *r)
 	/*
 	 * Set msg's flow/return marks to sawf_meta created from service ids and msduqs
 	 */
-	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
-		ecm_classifier_emesh_sawf_mark_set(msg->flow_service_class_id, msg->return_service_class_id,
-				msduq_forward, msduq_reverse, msg, cemi);
-	} else {
-		ecm_classifier_emesh_sawf_mark_set(msg->return_service_class_id, msg->flow_service_class_id,
-				msduq_reverse, msduq_forward, msg, cemi);
-	}
+	ecm_classifier_emesh_sawf_mark_set(msg->flow_service_class_id, msg->return_service_class_id,
+			msduq_forward, msduq_reverse, msg, cemi, r->key, r->id);
 
 	/*
 	 * Update frontend's mark rule
 	 */
 	feci->update_rule(feci, ECM_RULE_UPDATE_TYPE_SAWFMARK, msg);
+
+	/*
+	 * Shares sync messages with WLAN driver regarding msduq usage
+	 */
+	if (ecm_emesh.sawf_conn_sync && (msduq_forward || msduq_reverse)) {
+		spin_lock_bh(&ecm_classifier_emesh_sawf_lock);
+		if (msduq_forward == msduq_forward_prev &&
+			msduq_reverse == msduq_reverse_prev){
+			DEBUG_TRACE("%px: ci=%px not calling WLAN sync due to no difference in MSDUQ\n", r, ci);
+			spin_unlock_bh(&ecm_classifier_emesh_sawf_lock);
+			goto done;
+		}
+
+		/*
+		 * Fill default values for sync message
+		 */
+		sawf_sync_params.fwd_mark_metadata = ECM_CLASSIFIER_EMESH_SAWF_DEFAULT_MSDUQ;
+		sawf_sync_params.rev_mark_metadata = ECM_CLASSIFIER_EMESH_SAWF_DEFAULT_MSDUQ;
+		sawf_sync_params.src_dev = src_dev;
+		sawf_sync_params.dest_dev = dest_dev;
+		ether_addr_copy(sawf_sync_params.src_mac, smac);
+		ether_addr_copy(sawf_sync_params.dest_mac, dmac);
+
+		/*
+		 * Get metadata and svid for SUB message
+		 */
+		if (flow_valid_flag_prev & (ECM_CLASSIFIER_EMESH_SAWF_DSCP_VALID | ECM_CLASSIFIER_EMESH_SAWF_VLAN_PCP_VALID | ECM_CLASSIFIER_EMESH_SAWF_SVID_VALID)) {
+			sawf_sync_params.fwd_mark_metadata = msduq_forward_prev;
+			sawf_sync_params.fwd_service_id = flow_svid_prev;
+		}
+
+		if (return_valid_flag_prev & (ECM_CLASSIFIER_EMESH_SAWF_DSCP_VALID | ECM_CLASSIFIER_EMESH_SAWF_VLAN_PCP_VALID | ECM_CLASSIFIER_EMESH_SAWF_SVID_VALID)) {
+			sawf_sync_params.rev_mark_metadata = msduq_reverse_prev;
+			sawf_sync_params.rev_service_id = return_svid_prev;
+		}
+
+		spin_unlock_bh(&ecm_classifier_emesh_sawf_lock);
+
+		/*
+		 * If the flow was previously mapped to a non default msduq, send a SUB message to WLAN Driver
+		 */
+		if (msduq_forward_prev || msduq_reverse_prev) {
+			sawf_sync_params.add_or_sub = ECM_CLASSIFIER_EMESH_SAWF_SUB_FLOW;
+			DEBUG_TRACE("%px: SUB SAWF conn  forward service id: %x reverse service id: %x fwd_mark_metadata: %x rev_mark_metadata: %x\n",
+				cemi, sawf_sync_params.fwd_service_id, sawf_sync_params.rev_service_id,
+				sawf_sync_params.fwd_mark_metadata, sawf_sync_params.rev_mark_metadata);
+
+			ecm_emesh.sawf_conn_sync(&sawf_sync_params);
+		}
+
+		/*
+		 * If either of the new MSDUQs recieved from WLAN driver are not default, send ADD message
+		 */
+		sawf_sync_params.fwd_service_id = msg->flow_service_class_id;
+		sawf_sync_params.rev_service_id = msg->return_service_class_id;
+		sawf_sync_params.fwd_mark_metadata = msduq_forward;
+		sawf_sync_params.rev_mark_metadata = msduq_reverse;
+		sawf_sync_params.add_or_sub = ECM_CLASSIFIER_EMESH_SAWF_ADD_FLOW;
+		DEBUG_TRACE("%px: ADD SAWF conn  forward service id: %x reverse service id: %x fwd_mark_metadata: %x rev_mark_metadata: %x\n",
+			cemi, sawf_sync_params.fwd_service_id, sawf_sync_params.rev_service_id,
+			sawf_sync_params.fwd_mark_metadata, sawf_sync_params.rev_mark_metadata);
+		ecm_emesh.sawf_conn_sync(&sawf_sync_params);
+	}
 
 	/*
 	 * All done
@@ -426,6 +558,111 @@ end:
 
 	return;
 }
+
+/*
+ * ecm_classifier_emesh_sawf_get_iface_names_ipv4
+ *	Function used by FLS to get interfaces for ipv4 conn
+ */
+uint8_t ecm_classifier_emesh_sawf_get_iface_names_ipv4(struct nf_conn *ct, char *from_buff, char *to_buff)
+{
+	struct ecm_db_connection_instance *ci;
+	struct net_device *src_dev = NULL;
+	struct net_device *dest_dev = NULL;
+	struct nf_conntrack_tuple orig_tuple;
+	struct nf_conntrack_tuple reply_tuple;
+	ip_addr_t match_addr, src_addr, dst_addr;
+	ecm_tracker_sender_type_t sender;
+
+	ci = ecm_db_connection_ipv4_from_ct_get_and_ref(ct);
+	if (!ci) {
+		DEBUG_TRACE("%px: not found\n", ct);
+		return 0;
+	}
+
+	orig_tuple = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
+	reply_tuple = ct->tuplehash[IP_CT_DIR_REPLY].tuple;
+	ECM_NIN4_ADDR_TO_IP_ADDR(src_addr, orig_tuple.src.u3.ip);
+	ECM_NIN4_ADDR_TO_IP_ADDR(dst_addr, reply_tuple.src.u3.ip);
+
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, match_addr);
+
+	if (ECM_IP_ADDR_MATCH(match_addr, src_addr)) {
+		sender = ECM_TRACKER_SENDER_TYPE_SRC;
+	} else if (ECM_IP_ADDR_MATCH(match_addr, dst_addr)) {
+		sender = ECM_TRACKER_SENDER_TYPE_DEST;
+	} else {
+		DEBUG_TRACE("%px: unable to match conntrack entry with ECM Tuples\n", ct);
+		return 0;
+	}
+
+	ecm_db_netdevs_get_and_hold(ci, sender, &src_dev, &dest_dev);
+	memcpy(from_buff, src_dev->name, IFNAMSIZ);
+	memcpy(to_buff, dest_dev->name, IFNAMSIZ);
+
+	if (src_dev) {
+		dev_put(src_dev);
+	}
+
+	if (dest_dev) {
+		dev_put(dest_dev);
+	}
+	ecm_db_connection_deref(ci);
+
+	return 1;
+}
+EXPORT_SYMBOL(ecm_classifier_emesh_sawf_get_iface_names_ipv4);
+
+/*
+ * ecm_classifier_emesh_sawf_get_iface_names_ipv6
+ *	Function used by FLS to get interfaces for ipv6 conn
+ */
+uint8_t ecm_classifier_emesh_sawf_get_iface_names_ipv6(struct nf_conn *ct, char *from_buff, char *to_buff)
+{
+	struct ecm_db_connection_instance *ci;
+	struct net_device *src_dev = NULL;
+	struct net_device *dest_dev = NULL;
+	struct nf_conntrack_tuple orig_tuple;
+	struct nf_conntrack_tuple reply_tuple;
+	ip_addr_t match_addr, src_addr, dst_addr;
+	ecm_tracker_sender_type_t sender;
+
+	ci = ecm_db_connection_ipv6_from_ct_get_and_ref(ct);
+	if (!ci) {
+		DEBUG_TRACE("%px: not found\n", ct);
+		return 0;
+	}
+
+	orig_tuple = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
+	reply_tuple = ct->tuplehash[IP_CT_DIR_REPLY].tuple;
+	ECM_NIN6_ADDR_TO_IP_ADDR(src_addr, orig_tuple.src.u3.in6);
+	ECM_NIN6_ADDR_TO_IP_ADDR(dst_addr, reply_tuple.src.u3.in6);
+
+	ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, match_addr);
+
+	if (ECM_IP_ADDR_MATCH(match_addr, src_addr)) {
+		sender = ECM_TRACKER_SENDER_TYPE_SRC;
+	} else if (ECM_IP_ADDR_MATCH(match_addr, dst_addr)) {
+		sender = ECM_TRACKER_SENDER_TYPE_DEST;
+	} else {
+		DEBUG_TRACE("%px: unable to match conntrack entry with ECM Tuples\n", ct);
+		return 0;
+	}
+	ecm_db_netdevs_get_and_hold(ci, sender, &src_dev, &dest_dev);
+	memcpy(from_buff, src_dev->name, IFNAMSIZ);
+	memcpy(to_buff, dest_dev->name, IFNAMSIZ);
+
+	if (src_dev) {
+		dev_put(src_dev);
+	}
+
+	if (dest_dev) {
+		dev_put(dest_dev);
+	}
+	ecm_db_connection_deref(ci);
+
+	return 1;
+}
+EXPORT_SYMBOL(ecm_classifier_emesh_sawf_get_iface_names_ipv6);
 
 /*
  * ecm_classifier_emesh_sawf_ref()
@@ -2387,10 +2624,6 @@ void ecm_classifier_emesh_sawf_update(struct ecm_classifier_instance *aci, enum 
 	 */
 	nf_ct_put(ct);
 
-	/*
-	 * Invoke wlan callbacks on connection update.
-	 */
-	ecm_classifier_emesh_sawf_params_sync_on_conn_accel(aci);
 #ifdef ECM_FRONT_END_FSE_ENABLE
 	ecm_classifier_emesh_sawf_update_fse_flow(aci, ECM_CLASSIFIER_EMESH_SAWF_FSE_UPDATE);
 #endif

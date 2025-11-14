@@ -716,9 +716,9 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 	o_feature_flags = rule->feature_flags;
 	rule->accel = accel;
 	rule->feature_flags = feature_flags;
-	strlcpy(rule->name, name, sizeof(rule->name));
-	strlcpy(rule->mirror_info.tuple_mirror_dev, tuple_mirror_dev, IFNAMSIZ);
-	strlcpy(rule->mirror_info.tuple_ret_mirror_dev, tuple_ret_mirror_dev, IFNAMSIZ);
+	strscpy(rule->name, name, sizeof(rule->name));
+	strscpy(rule->mirror_info.tuple_mirror_dev, tuple_mirror_dev, IFNAMSIZ);
+	strscpy(rule->mirror_info.tuple_ret_mirror_dev, tuple_ret_mirror_dev, IFNAMSIZ);
 	rule->ap_info.flow_ap_index = flow_ap_index;
 	rule->ap_info.return_ap_index = return_ap_index;
 	spin_unlock_bh(&ecm_pcc_test_rules_lock);
@@ -881,7 +881,7 @@ static unsigned int ecm_pcc_test_add_rule(char *name,
 	if (!new_rule)
 		return 0;
 
-	strlcpy(new_rule->name, name, sizeof(new_rule->name));
+	strscpy(new_rule->name, name, sizeof(new_rule->name));
 	new_rule->accel = accel;
 	new_rule->proto = proto;
 	new_rule->src_port = src_port;
@@ -892,8 +892,8 @@ static unsigned int ecm_pcc_test_add_rule(char *name,
 	new_rule->dest_addr = *dest_addr;
 	new_rule->ipv = ipv;
 	new_rule->feature_flags = feature_flags;
-	strlcpy(new_rule->mirror_info.tuple_mirror_dev, tuple_mirror_dev, IFNAMSIZ);
-	strlcpy(new_rule->mirror_info.tuple_ret_mirror_dev, tuple_ret_mirror_dev, IFNAMSIZ);
+	strscpy(new_rule->mirror_info.tuple_mirror_dev, tuple_mirror_dev, IFNAMSIZ);
+	strscpy(new_rule->mirror_info.tuple_ret_mirror_dev, tuple_ret_mirror_dev, IFNAMSIZ);
 	new_rule->ap_info.flow_ap_index = flow_ap_index;
 	new_rule->ap_info.return_ap_index = return_ap_index;
 	INIT_LIST_HEAD(&new_rule->list);
@@ -1024,7 +1024,7 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 	/*
 	 * Convert fields
 	 */
-	strlcpy(name, fields[0], sizeof(name));
+	strscpy(name, fields[0], sizeof(name));
 
 	name[sizeof(name) - 1] = 0;
 	if (sscanf(fields[1], "%u", &oper) != 1)
@@ -1072,9 +1072,9 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 		return -EINVAL;
 	}
 
-	strlcpy(tuple_mirror_dev, fields[11], IFNAMSIZ);
+	strscpy(tuple_mirror_dev, fields[11], IFNAMSIZ);
 
-	strlcpy(tuple_ret_mirror_dev, fields[12], IFNAMSIZ);
+	strscpy(tuple_ret_mirror_dev, fields[12], IFNAMSIZ);
 
 	if (sscanf(fields[13], "%d", &flow_ap_index) != 1)
 		goto sscanf_read_error;

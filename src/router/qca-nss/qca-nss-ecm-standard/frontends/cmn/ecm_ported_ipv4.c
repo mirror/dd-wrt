@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1060,6 +1060,18 @@ done:
 			}
 		}
 
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+		/*
+		 * WIFI classifier is Valid
+		 */
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_WIFI_TAG) {
+			DEBUG_TRACE("%px: aci: %px, type: %d, WIFI classifier is valid\n",
+				ci, aci, aci->type_get(aci));
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_WIFI_TAG;
+			prevalent_pr.flow_wifi_ds_node_id = aci_pr.flow_wifi_ds_node_id;
+			prevalent_pr.return_wifi_ds_node_id = aci_pr.return_wifi_ds_node_id;
+		}
+#endif
 		/*
 		 * Timer group (the last classifier i.e. the highest priority one) will 'win'
 		 */
@@ -1116,7 +1128,7 @@ done:
 		}
 #endif
 
-#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
+#if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE || ECM_CLASSIFIER_WIFI_ENABLE
 #ifdef ECM_CLASSIFIER_DSCP_IGS
 		/*
 		 * Ingress QoS tag

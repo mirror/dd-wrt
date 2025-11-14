@@ -29,8 +29,8 @@
 #else
 #include <qca_mscs_if.h>
 #include <qca_mesh_latency_if.h>
-#include <qca_sawf_if.h>
 #include <qca_fse_if.h>
+#include <qca_wifi_metadata_info_if.h>
 #ifdef ECM_CLASSIFIER_MSCS_SCS_ENABLE
 #include <qca_scs_if.h>
 #endif
@@ -38,6 +38,7 @@
 
 #include <ecm_classifier_mscs_public.h>
 #include <ecm_classifier_emesh_public.h>
+#include <ecm_classifier_wifi_public.h>
 #include <ecm_front_end_common_public.h>
 
 #if defined(CONFIG_DYNAMIC_DEBUG)
@@ -79,6 +80,8 @@
 #define ECM_WIFI_PLUGIN_SAWF_SERVICE_CLASS_SHIFT 16
 #define ECM_WIFI_PLUGIN_SAWF_MSDUQ_MASK 0xFFFF
 #endif
+
+#define ECM_WIFI_PLUGIN_METADATA_INVALID_DS_NODE 0xFF
 
 /*
  * ecm_wifi_plugin_emesh_register()
@@ -134,4 +137,16 @@ int ecm_wifi_plugin_mscs_register(void);
  *	API to unregister the mscs callbacks.
  */
 void ecm_wifi_plugin_mscs_unregister(void);
+
+/*
+ * ecm_wifi_plugin_wifi_cb_register()
+ *	API to register WIFI programming callbacks.
+ */
+extern int ecm_wifi_plugin_wifi_cb_register(void);
+
+/*
+ * ecm_wifi_plugin_wifi_cb_unregister()
+ *	API to unregister WIFI programming callbacks.
+ */
+extern void ecm_wifi_plugin_wifi_cb_unregister(void);
 #endif

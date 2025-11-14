@@ -91,6 +91,9 @@
 #include "ecm_ppe_ipv4.h"
 #include "ecm_ppe_common.h"
 #include "ecm_front_end_common.h"
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+#include "ecm_classifier_wifi.h"
+#endif
 
 static int ecm_ppe_ported_ipv4_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX] = {0};
 						/* Array of Number of TCP and UDP connections currently offloaded */
@@ -975,39 +978,64 @@ static void ecm_ppe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 	}
 #endif
 
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID) {
+		/*
+		 * Set HLOS TID valid flag as true.
+		 */
+		pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_WIFI_TID;
+	}
+#endif
+
 #ifdef ECM_CLASSIFIER_EMESH_ENABLE
 
 	/*
 	 * SAWF information
 	 */
 	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_TAG) {
-		bool sawf_rule_valid = true;
 		pd4rc->sawf_rule.flow_mark = pr->flow_sawf_metadata;
 		pd4rc->sawf_rule.flow_service_class = pr->flow_service_class;
 		pd4rc->sawf_rule.return_mark = pr->return_sawf_metadata;
 		pd4rc->sawf_rule.return_service_class = pr->return_service_class;
 		pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_SAWF;
+	}
 
-		/*
-		 * In case of SAWF denying acceleration through PPE-DS
-		 * Allowing acceleration only through PPE-VP
-		 * For legacy scs and non-SPM rule case, do not deny acceleration through PPE-DS
-		 * TODO: configure accel using DS for SAWF and SPM rule valid case as well.
-		 */
-		aci = ecm_db_connection_assigned_classifier_find_and_ref(feci->ci, ECM_CLASSIFIER_TYPE_EMESH);
-		if (aci) {
-			sawf_rule_valid = ecm_classifier_emesh_is_sawf_rule_valid((struct ecm_classifier_emesh_sawf_instance *)aci);
-			aci->deref(aci);
+	/*
+	 * Set sawf valid flag as false and mark scs
+	 * flag as true.
+	 */
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_LEGACY_SCS_TAG) {
+		pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_SCS;
+		pd4rc->valid_flags &= (~PPE_DRV_V4_VALID_FLAG_SAWF);
+	}
+
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	/*
+	 * WIFI information
+	 * Set up the flow and return mark.
+	 */
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_WIFI_TAG) {
+		if (pr->flow_mark) {
+			pd4rc->wifi_rule.flow_mark = pr->flow_mark;
+			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_FLOW_WIFI_MDATA;
 		}
 
-		if (!(pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_LEGACY_SCS_TAG) && sawf_rule_valid) {
-			spin_lock_bh(&feci->lock);
-			feci->fe_info.front_end_flags &= (~ECM_FRONT_END_ENGINE_FLAG_PPE_DS);
-			feci->fe_info.front_end_flags |= ECM_FRONT_END_ENGINE_FLAG_PPE_VP;
-			spin_unlock_bh(&feci->lock);
+		if (pr->return_mark) {
+			pd4rc->wifi_rule.return_mark = pr->return_mark;
+			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_RETURN_WIFI_MDATA;
 		}
-        }
 
+		if (pr->flow_wifi_ds_node_id != ECM_CLASSIFIER_WIFI_INVALID_DS_NODE_ID) {
+			pd4rc->wifi_rule.flow_ds_node_mdata = pr->flow_wifi_ds_node_id;
+			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_FLOW_WIFI_DS;
+		}
+
+		if (pr->return_wifi_ds_node_id != ECM_CLASSIFIER_WIFI_INVALID_DS_NODE_ID) {
+			pd4rc->wifi_rule.return_ds_node_mdata = pr->return_wifi_ds_node_id;
+			pd4rc->valid_flags |= PPE_DRV_V4_VALID_FLAG_RETURN_WIFI_DS;
+		}
+	}
+#endif
 	/*
 	 * VLAN pcp remark set in SAWF classifer, we modify the pcp value in VLAN tag
 	 * and send the update VLAN tag to PPE.

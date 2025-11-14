@@ -1,19 +1,3 @@
-##########################################################################
-# Copyright (c) 2014-2016, 2018-2021 The Linux Foundation. All rights reserved.
-# Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
-#
-# Permission to use, copy, modify, and/or distribute this software for
-# any purpose with or without fee is hereby granted, provided that the
-# above copyright notice and this permission notice appear in all copies.
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-# OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-##########################################################################
-
 # ###################################################
 # Makefile for the QCA NSS ECM
 # ###################################################
@@ -77,8 +61,6 @@ ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/cmn/ecm_non_ported_ipv4.o
 ifeq ($(ECM_NON_PORTED_SUPPORT_ENABLE), y)
 ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_non_ported_ipv6.o
 endif
-
-ECM_MULTICAST_ENABLE=y
 
 #SFE Multicast is enabled in case NSS disabled
 ecm-$(ECM_MULTICAST_ENABLE) += frontends/cmn/ecm_multicast_ipv4.o
@@ -358,9 +340,9 @@ ccflags-$(ECM_CLASSIFIER_HYFI_ENABLE) += -DECM_CLASSIFIER_HYFI_ENABLE
 # the Parental Controls subsystem classifier in ECM. Currently disabled until
 # customers require it / if they need to integrate their Parental Controls with it.
 # #############################################################################
-#ifndef $(ECM_CLASSIFIER_PCC_ENABLE)
-#	ECM_CLASSIFIER_PCC_ENABLE=y
-#endif
+ifndef $(ECM_CLASSIFIER_PCC_ENABLE)
+	ECM_CLASSIFIER_PCC_ENABLE=y
+endif
 ecm-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
 ccflags-$(ECM_CLASSIFIER_PCC_ENABLE) += -DECM_CLASSIFIER_PCC_ENABLE
 
@@ -378,6 +360,10 @@ ccflags-$(ECM_CLASSIFIER_EMESH_ENABLE) += -DECM_CLASSIFIER_EMESH_ENABLE
 # Define ECM_MHT_ENABLE=y in order to enable MHT related features.
 # #############################################################################
 ccflags-$(ECM_MHT_ENABLE) += -DECM_MHT_ENABLE
+# Define ECM_CLASSIFIER_WIFI_ENABLE=y in order to enable WIFI classifier.
+# #############################################################################
+ecm-$(ECM_CLASSIFIER_WIFI_ENABLE) += ecm_classifier_wifi.o
+ccflags-$(ECM_CLASSIFIER_WIFI_ENABLE) += -DECM_CLASSIFIER_WIFI_ENABLE
 
 ifeq ($(ECM_FRONT_END_NSS_ENABLE), y)
 ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/nss/ecm_nss_non_ported_ipv4.o
@@ -489,7 +475,7 @@ ccflags-y += -DECM_CLASSIFIER_EMESH_DEBUG_LEVEL=0
 ccflags-y += -DECM_CLASSIFIER_MSCS_DEBUG_LEVEL=0
 ccflags-y += -DECM_CLASSIFIER_DEFAULT_DEBUG_LEVEL=0
 ccflags-y += -DECM_DB_DEBUG_LEVEL=0
-ccflags-y += -DECM_INIT_DEBUG_LEVEL=0
+ccflags-y += -DECM_INIT_DEBUG_LEVEL=3
 ccflags-y += -DECM_FRONT_END_IPV4_DEBUG_LEVEL=0
 ccflags-y += -DECM_FRONT_END_IPV6_DEBUG_LEVEL=0
 ccflags-y += -DECM_FRONT_END_COMMON_DEBUG_LEVEL=0
@@ -538,6 +524,7 @@ ccflags-y += -DECM_OPENWRT_SUPPORT=1
 ccflags-y += -DECM_NOTIFIER_DEBUG_LEVEL=0
 ccflags-y += -DECM_AE_CLASSIFIER_DEBUG_LEVEL=0
 ccflags-y += -DECM_STATS_DEBUG_LEVEL=0
+ccflags-y += -DECM_CLASSIFIER_WIFI_DEBUG_LEVEL=0
 
 ccflags-y += -I$(obj)/ -I$(obj)/ecm_db -I$(obj)/frontends/include -I$(obj)/frontends/nss -I$(obj)/frontends/sfe -I$(obj)/frontends/cmn -I$(obj)/exports
 
@@ -553,5 +540,11 @@ endif
 endif
 
 ccflags-y += -Wall -Werror
+
+# Kernel 6.12 compat headers
+ccflags-y += -I$(obj)/compat
+
+# GCC 15+ has stricter checks for prototypes and declarations. Silence them
+ccflags-y += -Wno-missing-prototypes -Wno-missing-declarations
 
 obj ?= .

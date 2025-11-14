@@ -1988,6 +1988,7 @@ static void ecm_sfe_multicast_ipv6_connection_destroy_callback(void *app_data, s
 	if (feci->accel_mode != ECM_FRONT_END_ACCELERATION_MODE_DECEL_PENDING) {
 		spin_unlock_bh(&feci->lock);
 
+		ecm_db_multicast_connection_to_interfaces_clear(feci->ci);
 		/*
 		 * Release the connections.
 		 */
@@ -2021,6 +2022,8 @@ static void ecm_sfe_multicast_ipv6_connection_destroy_callback(void *app_data, s
 	ecm_sfe_ipv6_accelerated_count--;		/* General running counter */
 	DEBUG_ASSERT(ecm_sfe_ipv6_accelerated_count >= 0, "Bad accel counter\n");
 	spin_unlock_bh(&ecm_sfe_ipv6_lock);
+
+	ecm_db_multicast_connection_to_interfaces_clear(feci->ci);
 
 	/*
 	 * Release the connections.

@@ -136,6 +136,23 @@
 #include "ecm_front_end_common.h"
 
 /*
+ * Peer authorization event coming from WLAN driver.
+ */
+#define ECM_INTERFACE_WIFI_EVENT_NODE_AUTH	30
+
+/*
+ * Wi-Fi event node authorized information structure.
+ */
+struct ecm_interface_wifi_event_node_authorized {
+	u_int8_t  mac_addr[ETH_ALEN];	/* MAC address */
+	u_int8_t  channel_num;		/* Operating channel number */
+	u_int16_t assoc_id;		/* Assoc id */
+	u_int16_t phymode;		/* Phymode(11ac/abgn) */
+	u_int8_t  nss;			/* TX/RX chains */
+	u_int8_t  is_256qam;		/* TX/RX chains */
+};
+
+/*
  * Wifi event handler structure.
  */
 struct ecm_interface_wifi_event {
@@ -1261,7 +1278,11 @@ static bool ecm_interface_find_route_by_addr_ipv4(ip_addr_t addr, struct ecm_int
 	 * it is using to communicate with that IP address.
 	 */
 	ECM_IP_ADDR_TO_NIN4_ADDR(be_addr, addr);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	ecm_rt->rt.rtv4 = ip_route_output(&init_net, be_addr, 0, 0, 0);
+#else
+	ecm_rt->rt.rtv4 = ip_route_output(&init_net, be_addr, 0, 0, 0, 0);
+#endif
 	if (IS_ERR(ecm_rt->rt.rtv4)) {
 		DEBUG_TRACE("No output route to: %pI4n\n", &be_addr);
 		return false;
@@ -1452,7 +1473,11 @@ struct neighbour *ecm_interface_ipv4_neigh_get(ip_addr_t addr)
 	__be32 ipv4_addr;
 
 	ECM_IP_ADDR_TO_NIN4_ADDR(ipv4_addr, addr);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, ipv4_addr, 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, ipv4_addr, 0, 0, 0, 0);
+#endif
 	if (IS_ERR(rt)) {
 		return NULL;
 	}
@@ -1508,6 +1533,7 @@ struct neighbour *ecm_interface_ipv6_neigh_get(struct ecm_front_end_connection_i
  */
 bool ecm_interface_is_pptp(struct sk_buff *skb, const struct net_device *out)
 {
+#ifdef ECM_INTERFACE_PPTP_ENABLE
 	struct net_device *in;
 
 	/*
@@ -1532,6 +1558,7 @@ bool ecm_interface_is_pptp(struct sk_buff *skb, const struct net_device *out)
 	}
 
 	dev_put(in);
+#endif
 	return false;
 }
 
@@ -1544,6 +1571,7 @@ bool ecm_interface_is_pptp(struct sk_buff *skb, const struct net_device *out)
  */
 bool ecm_interface_is_l2tp_packet_by_version(struct sk_buff *skb, const struct net_device *out, int ver)
 {
+#ifdef ECM_INTERFACE_L2TPV2_PPTP_ENABLE
 	uint32_t flag = 0;
 	struct net_device *in;
 
@@ -1576,6 +1604,7 @@ bool ecm_interface_is_l2tp_packet_by_version(struct sk_buff *skb, const struct n
 	}
 
 	dev_put(in);
+#endif
 	return false;
 }
 
@@ -1588,6 +1617,7 @@ bool ecm_interface_is_l2tp_packet_by_version(struct sk_buff *skb, const struct n
  */
 bool ecm_interface_is_l2tp_pptp(struct sk_buff *skb, const struct net_device *out)
 {
+#ifdef ECM_INTERFACE_L2TPV2_PPTP_ENABLE
 	struct net_device *in;
 
 	/*
@@ -1610,6 +1640,7 @@ bool ecm_interface_is_l2tp_pptp(struct sk_buff *skb, const struct net_device *ou
 	}
 
 	dev_put(in);
+#endif
 	return false;
 }
 
@@ -3617,7 +3648,7 @@ identifier_update:
 		if (skb && (skb->skb_iif == dev->ifindex)) {
 			struct pppol2tp_common_addr info;
 
-			if (__ppp_is_multilink(dev) > 0) {
+			if (ppp_is_multilink(dev) > 0) {
 				DEBUG_TRACE("%px: Net device: %px is MULTILINK PPP - Unknown to the ECM\n", feci, dev);
 				type_info.unknown.os_specific_ident = dev_interface_num;
 
@@ -3627,7 +3658,7 @@ identifier_update:
 				ii = ecm_interface_unknown_interface_establish(&type_info.unknown, dev_name, dev_interface_num, ae_interface_num, dev_mtu);
 				return ii;
 			}
-			channel_count = __ppp_hold_channels(dev, ppp_chan, 1);
+			channel_count = ppp_hold_channels(dev, ppp_chan, 1);
 			if (channel_count != 1) {
 				DEBUG_TRACE("%px: Net device: %px PPP has %d channels - ECM cannot handle this (interface becomes Unknown type)\n",
 					    feci, dev, channel_count);
@@ -4034,7 +4065,7 @@ static uint32_t ecm_interface_multicast_heirarchy_construct_single(struct ecm_fr
 				 * For MLO bond netdevice, destination for multicast is bond netdevice itself
 				 * Therefore, slave lookup is not needed.
 				 */
-				if (ecm_front_end_is_lag_master(dest_dev) && !bond_is_mlo_device(dest_dev)) {
+				if (ecm_front_end_is_lag_master(dest_dev)) {
 					/*
 					 * Link aggregation
 					 * Figure out which slave device of the link aggregation will be used to reach the destination.
@@ -5161,6 +5192,11 @@ int32_t ecm_interface_heirarchy_construct(struct ecm_front_end_connection_instan
 		 * Get the ecm db interface instance for the device at hand
 		 */
 		ii = ecm_interface_establish_and_ref(feci, dest_dev, skb);
+
+		if (!(dest_dev->flags & IFF_UP)) {
+			DEBUG_WARN("%px: dest interface(%s) is not up\n", feci, dest_dev->name);
+			goto done;
+		}
 
 		/*
 		 * If the interface could not be established then we abort
@@ -7165,6 +7201,7 @@ static void ecm_interface_regenerate_connections(struct ecm_db_iface_instance *i
 		return;
 	}
 
+#ifdef ECM_DB_XREF_ENABLE
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
 		/*
 		 * Re-generate all connections associated with this interface
@@ -7180,6 +7217,7 @@ static void ecm_interface_regenerate_connections(struct ecm_db_iface_instance *i
 			ci[dir] = cin;
 		}
 	}
+#endif
 
 #ifdef ECM_MULTICAST_ENABLE
 	/*
@@ -7925,15 +7963,6 @@ static int ecm_interface_neigh_mac_update_notify_event(struct notifier_block *nb
 {
 	struct neigh_mac_update *nmu = (struct neigh_mac_update *)data;
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	/*
-	 * We handle only mac addr 'update' event and ignore add/delete
-	 * Below enum is defined only in 5.4 kernel
-	 */
-	if (val != NEIGH_EVENT_NOTIFY_UPDATE) {
-		return NOTIFY_DONE;
-	}
-#endif
 	/*
 	 * If the old and new mac addresses are equal, do nothing.
 	 * This case shouldn't happen.
@@ -7977,7 +8006,10 @@ static struct notifier_block ecm_interface_neigh_mac_update_nb = {
 static int ecm_interface_wifi_event_iwevent(int ifindex, unsigned char *buf, size_t len)
 {
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
-	char *pos, *end;
+	char *pos, *end, *custom, *dpos;
+	int dlen;
+	void *dbuf;
+	struct ecm_interface_wifi_event_node_authorized *wifi_ev_au;
 
 	pos = buf;
 	end = buf + len;
@@ -7986,30 +8018,67 @@ static int ecm_interface_wifi_event_iwevent(int ifindex, unsigned char *buf, siz
 		/*
 		 * Copy the base data structure to get iwe->len
 		 */
-		memcpy(&iwe_buf, pos, IW_EV_LCP_LEN);
+		memcpy(&iwe_buf, pos, min_t(size_t, IW_EV_LCP_LEN, (size_t)(end - pos)));
 
 		/*
 		 * Check that len is valid and that we have that much in the buffer.
-		 *
 		 */
 		if (iwe->len < IW_EV_LCP_LEN) {
 			return -1;
 		}
 
-		if ((iwe->len > sizeof (struct iw_event)) || (iwe->len + pos) > end) {
+		/*
+		 * Check for any custom events like STA authorized.
+		 */
+		custom = pos + IW_EV_POINT_LEN;
+		if (iwe->cmd == IWEVCUSTOM) {
+			dpos = (char *)&iwe_buf.u.data.length;
+			dlen = dpos - (char *)&iwe_buf;
+
+			memcpy(dpos, pos + IW_EV_LCP_LEN, min_t(size_t, sizeof(struct iw_event) - dlen, (size_t)(end - pos - IW_EV_LCP_LEN)));
+
+			if (custom + iwe->u.data.length > end) {
+				DEBUG_WARN("Invalid buffer length received in the event iwe->u.data.length %d\n", (int)iwe->u.data.length);
+				return -1;
+			}
+
+			/*
+			 * Check the flags of iw event if it indicates the IW authorized signal.
+			 */
+			if (iwe->u.data.flags == ECM_INTERFACE_WIFI_EVENT_NODE_AUTH) {
+				dbuf = kzalloc(iwe->u.data.length, GFP_KERNEL);
+				if (!dbuf) {
+					DEBUG_WARN("Failed to allocated a buffer to process the custom event");
+					return -1;
+				}
+
+				/*
+				 * Copy the user content of custom event to extract information.
+				 */
+				memset(dbuf, 0, iwe->u.data.length);
+				memcpy(dbuf, custom, iwe->u.data.length);
+
+				wifi_ev_au = (struct ecm_interface_wifi_event_node_authorized *)dbuf;
+
+				DEBUG_INFO("STA %pM is authorized \n", (uint8_t *)wifi_ev_au->mac_addr);
+                ecm_db_connection_defunct_all();
+
+				kfree(dbuf);
+			}
+
+			return 0;
+		}
+
+		if ((iwe->len > sizeof(struct iw_event)) || (iwe->len + pos > end)) {
 			return -1;
 		}
 
 		/*
 		 * Do the copy again with the full length.
 		 */
-		memcpy(&iwe_buf, pos, iwe->len);
+		memcpy(&iwe_buf, pos, min_t(size_t, iwe->len, (size_t)(end - pos)));
 
-		if (iwe->cmd == IWEVREGISTERED) {
-			DEBUG_INFO("STA %pM joining\n", (uint8_t *)iwe->u.addr.sa_data);
-			ecm_interface_node_connections_defunct_by_type((uint8_t *)iwe->u.addr.sa_data, ECM_DB_IP_VERSION_IGNORE,
-								ECM_DB_CONNECTION_DEFUNCT_TYPE_STA_JOIN);
-		} else if (iwe->cmd == IWEVEXPIRED) {
+		if (iwe->cmd == IWEVEXPIRED && iwe->len >= sizeof(struct iw_event)) {
 			DEBUG_INFO("STA %pM leaving\n", (uint8_t *)iwe->u.addr.sa_data);
 			ecm_interface_node_connections_defunct((uint8_t *)iwe->u.addr.sa_data, ECM_DB_IP_VERSION_IGNORE);
 		} else {
@@ -8213,8 +8282,13 @@ int ecm_interface_wifi_event_stop(void)
  * ecm_interface_igs_enabled_handler()
  *	IGS enabled check sysctl node handler.
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 static int ecm_interface_igs_enabled_handler(struct ctl_table *ctl, int write, void __user *buffer,
 		 size_t *lenp, loff_t *ppos)
+#else
+static int ecm_interface_igs_enabled_handler(const struct ctl_table *ctl, int write, void __user *buffer,
+		 size_t *lenp, loff_t *ppos)
+#endif
 {
 	int ret;
 	int current_value;
@@ -8254,7 +8328,11 @@ static int ecm_interface_igs_enabled_handler(struct ctl_table *ctl, int write, v
  * ecm_interface_src_check_handler()
  *	Source interface check sysctl node handler.
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 static int ecm_interface_src_check_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+#else
+static int ecm_interface_src_check_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+#endif
 {
 	int ret;
 	int current_value;
@@ -8308,7 +8386,6 @@ static struct ctl_table ecm_interface_table[] = {
 		.proc_handler		= &ecm_interface_igs_enabled_handler,
 	},
 #endif
-	{ }
 };
 
 #ifdef ECM_INTERFACE_IPSEC_GLUE_LAYER_SUPPORT_ENABLE

@@ -18,6 +18,7 @@
  */
 
 #include <linux/version.h>
+#include <linux/vmalloc.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/debugfs.h>
@@ -130,6 +131,8 @@ unsigned int ecm_front_end_ppe_fse_enable = 1;
 
 #define ECM_FRONT_END_DENIED_PORTS_HASH_BITS 6
 #define ECM_FRONT_END_DENIED_PORTS_HTABLE_SIZE (1 << ECM_FRONT_END_DENIED_PORTS_HASH_BITS)
+
+#define ECM_FRONT_END_QDISC_NOQUEUE "noqueue"
 
 /*
  * Denied acceleration port hash tables and port counts in the tables.
@@ -538,6 +541,7 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 							     struct nf_conntrack_tuple *reply_tuple,
 							     int ip_version, uint16_t offset)
 {
+#ifdef ECM_INTERFACE_GRE_ENABLE
 	struct net_device *dev;
 	struct gre_base_hdr *greh;
 
@@ -549,10 +553,12 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 		/*
 		 * Case 1: PPTP locally terminated
 		 */
+#ifdef ECM_INTERFACE_PPTP_ENABLE
 		if (ecm_interface_is_pptp(skb, outdev)) {
 			DEBUG_TRACE("%px: PPTP GRE locally terminated - allow acceleration\n", skb);
 			return true;
 		}
+#endif
 
 		/*
 		 * Case 2: PPTP pass through
@@ -680,6 +686,10 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 	 */
 	DEBUG_TRACE("%px: GRE IPv%d pass through non NAT - allow acceleration\n", skb, ip_version);
 	return true;
+#else
+	DEBUG_TRACE("%px: GRE%d feature is disabled - do not allow acceleration\n", skb, ip_version);
+	return false;
+#endif
 }
 
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
@@ -851,7 +861,7 @@ uint64_t ecm_front_end_get_slow_packet_count(struct ecm_front_end_connection_ins
  * ecm_front_end_ppe_fse_enable_limit_handler()
  *	Sysctl to enable/disable FSE programming through PPE.
  */
-int ecm_front_end_ppe_fse_enable_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+int ecm_front_end_ppe_fse_enable_handler(struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -886,7 +896,11 @@ int ecm_front_end_ppe_fse_enable_handler(struct ctl_table *ctl, int write, void 
  * ecm_front_end_db_conn_limit_handler()
  *	Database connection limit sysctl node handler.
  */
-int ecm_front_end_db_conn_limit_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
+int ecm_front_end_db_conn_limit_handler(struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+#else
+int ecm_front_end_db_conn_limit_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+#endif
 {
 	int ret;
 	int current_value;
@@ -921,7 +935,7 @@ int ecm_front_end_db_conn_limit_handler(struct ctl_table *ctl, int write, void _
  * ecm_front_end_denied_ports_read()
  *	Reads the denied ports from the denied ports array and prints.
  */
-static void ecm_front_end_denied_ports_read(void __user *buffer, size_t *lenp, loff_t *ppos, struct hlist_head *denied_ports)
+static void ecm_front_end_denied_ports_read(void *buffer, size_t *lenp, loff_t *ppos, struct hlist_head *denied_ports)
 {
 	char *read_buf;
 	int i, len;
@@ -952,12 +966,14 @@ static void ecm_front_end_denied_ports_read(void __user *buffer, size_t *lenp, l
 	}
 
 	/*
-	 * Add new line character at the end.
+	 * Add new line character at the end only if we have content
 	 */
-	len = scnprintf(read_buf + bytes, 4, "\n");
-	bytes += len;
+	if (bytes > 0) {
+		len = scnprintf(read_buf + bytes, 4, "\n");
+		bytes += len;
+	}
 
-	bytes = simple_read_from_buffer(buffer, *lenp, ppos, read_buf, bytes);
+	bytes = memory_read_from_buffer(buffer, *lenp, ppos, read_buf, bytes);
 	*lenp = bytes;
 	kfree(read_buf);
 }
@@ -984,9 +1000,8 @@ static inline bool ecm_front_end_is_port_in_denied_list(int port, struct hlist_h
  * ecm_front_end_denied_ports_handler()
  *	Proc handler function for denied ports read/write operation.
  */
-static int ecm_front_end_denied_ports_handler(int write, void __user *buffer, size_t *lenp, loff_t *ppos, struct hlist_head *denied_ports, bool is_udp)
+static int ecm_front_end_denied_ports_handler(int write, void *buffer, size_t *lenp, loff_t *ppos, struct hlist_head *denied_ports, bool is_udp)
 {
-
 	char *buf;
 	char *pfree;
 	char *token;
@@ -1009,10 +1024,9 @@ static int ecm_front_end_denied_ports_handler(int write, void __user *buffer, si
 		count = ECM_FRONT_END_DENIED_PORTS_HTABLE_SIZE * 8 * sizeof(char);
 	}
 
-	if (copy_from_user(buf, buffer, count)) {
-		kfree(pfree);
-		return -EFAULT;
-	}
+	memcpy(buf, buffer, count);
+	*lenp = count;
+	*ppos += count;
 
 	token = strsep(&buf, " ");
 	if (strlen(token) != 3) {
@@ -1062,36 +1076,58 @@ static int ecm_front_end_denied_ports_handler(int write, void __user *buffer, si
 			}
 		}
 	} else if (!strncmp(token, "del", 3)) {
-		while (buf) {
-			token = strsep(&buf, " ");
-			if (kstrtol(token, 10, &val)) {
-				DEBUG_ERROR("%s is not a number\n", token);
-				kfree(pfree);
-				return -EINVAL;
-			}
-			if (sscanf(token, "%d", &port)) {
-				struct hlist_node *pnode, *temp;
-				uint32_t hash;
+		token = strsep(&buf, " ");
 
-				if (port < 0 || port > 65535) {
-					DEBUG_ERROR("port %d is not between (0-65535)\n", port);
+		/* Simple check for wildcard - handles both with and without newline */
+		if (token && token[0] == '*') {
+			int i;
+			struct hlist_node *pnode, *temp;
+
+			/* Loop through all hash buckets and delete all entries */
+			for (i = 0; i < ECM_FRONT_END_DENIED_PORTS_HTABLE_SIZE; i++) {
+				hlist_for_each_safe(pnode, temp, &denied_ports[i]) {
+					struct ecm_denied_port_node *p = hlist_entry(pnode, struct ecm_denied_port_node, hnode);
+					hlist_del(&p->hnode);
+					vfree(p);
+					if (is_udp) {
+						atomic_dec(&ecm_udp_denied_port_count);
+					} else {
+						atomic_dec(&ecm_tcp_denied_port_count);
+					}
+				}
+			}
+		} else {
+			while (token) {
+				if (kstrtol(token, 10, &val)) {
+					DEBUG_ERROR("%s is not a number\n", token);
 					kfree(pfree);
 					return -EINVAL;
 				}
+				if (sscanf(token, "%d", &port)) {
+					struct hlist_node *pnode, *temp;
+					uint32_t hash;
 
-				hash = hash_32(port, ECM_FRONT_END_DENIED_PORTS_HTABLE_SIZE);
-				hlist_for_each_safe(pnode, temp, &denied_ports[hash]) {
-					struct ecm_denied_port_node *p = hlist_entry(pnode, struct ecm_denied_port_node, hnode);
-					if (p->port == port) {
-						hlist_del(&p->hnode);
-						vfree(p);
-						if (is_udp) {
-							atomic_dec(&ecm_udp_denied_port_count);
-						} else {
-							atomic_dec(&ecm_tcp_denied_port_count);
+					if (port < 0 || port > 65535) {
+						DEBUG_ERROR("port %d is not between (0-65535)\n", port);
+						kfree(pfree);
+						return -EINVAL;
+					}
+
+					hash = hash_32(port, ECM_FRONT_END_DENIED_PORTS_HTABLE_SIZE);
+					hlist_for_each_safe(pnode, temp, &denied_ports[hash]) {
+						struct ecm_denied_port_node *p = hlist_entry(pnode, struct ecm_denied_port_node, hnode);
+						if (p->port == port) {
+							hlist_del(&p->hnode);
+							vfree(p);
+							if (is_udp) {
+								atomic_dec(&ecm_udp_denied_port_count);
+							} else {
+								atomic_dec(&ecm_tcp_denied_port_count);
+							}
 						}
 					}
 				}
+				token = strsep(&buf, " ");
 			}
 		}
 	} else {
@@ -1106,7 +1142,11 @@ static int ecm_front_end_denied_ports_handler(int write, void __user *buffer, si
  * ecm_front_end_udp_denied_ports_handler()
  *	Proc handler function for UDP denied ports read/write operation.
  */
-static int ecm_front_end_udp_denied_ports_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
+int ecm_front_end_udp_denied_ports_handler(struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+#else
+int ecm_front_end_udp_denied_ports_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+#endif
 {
 	/*
 	 * Usage:
@@ -1115,6 +1155,9 @@ static int ecm_front_end_udp_denied_ports_handler(struct ctl_table *ctl, int wri
 	 *
 	 *	Delete ports from the list:
 	 *	echo del 67 > /proc/sys/net/ecm/udp_denied_ports
+	 *
+	 *	Delete all ports from the list:
+	 *	echo del * > /proc/sys/net/ecm/udp_denied_ports
 	 *
 	 *	Dump the list to the console:
 	 *	cat /proc/sys/net/ecm/udp_denied_ports
@@ -1126,7 +1169,11 @@ static int ecm_front_end_udp_denied_ports_handler(struct ctl_table *ctl, int wri
  * ecm_front_end_tcp_denied_ports_handler()
  *	Proc handler function for TCP denied ports read/write operation.
  */
-static int ecm_front_end_tcp_denied_ports_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
+int ecm_front_end_tcp_denied_ports_handler(struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+#else
+int ecm_front_end_tcp_denied_ports_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+#endif
 {
 	/*
 	 * Usage:
@@ -1135,6 +1182,9 @@ static int ecm_front_end_tcp_denied_ports_handler(struct ctl_table *ctl, int wri
 	 *
 	 *	Delete ports from the list:
 	 *	echo del 67 > /proc/sys/net/ecm/tcp_denied_ports
+	 *
+	 *	Delete all ports from the list:
+	 *	echo del * > /proc/sys/net/ecm/tcp_denied_ports
 	 *
 	 *	Dump the list to the console:
 	 *	cat /proc/sys/net/ecm/tcp_denied_ports
@@ -1173,14 +1223,13 @@ static struct ctl_table ecm_front_end_sysctl_tbl[] = {
 		.mode		= 0644,
 		.proc_handler	= &ecm_front_end_tcp_denied_ports_handler,
 	},
-	{}
 };
 
 /*
  * ecm_front_end_common_sysctl_register()
  *	Function to register sysctl node during front end init
  */
-void ecm_front_end_common_sysctl_register()
+void ecm_front_end_common_sysctl_register(void)
 {
 	/*
 	 * Register sysctl table.
@@ -1197,7 +1246,7 @@ void ecm_front_end_common_sysctl_register()
  * ecm_front_end_common_sysctl_unregister()
  *	Function to unregister sysctl node during front end exit
  */
-void ecm_front_end_common_sysctl_unregister()
+void ecm_front_end_common_sysctl_unregister(void)
 {
 	/*
 	 * Unregister sysctl table.
@@ -1730,9 +1779,10 @@ bool ecm_front_end_common_intf_ingress_qdisc_check(int32_t interface_num)
 bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq)
 {
 	struct net_device *dev;
-        struct netdev_queue *txq;
-        struct Qdisc *q;
-        int i;
+	struct netdev_queue *txq;
+	struct Qdisc *q;
+	struct Qdisc *sleeping_q;
+	int i;
 #if defined(CONFIG_NET_CLS_ACT) && defined(CONFIG_NET_EGRESS)
 	struct mini_Qdisc *miniq;
 #endif
@@ -1749,6 +1799,15 @@ bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq)
 		txq = netdev_get_tx_queue(dev, i);
 		q = rcu_dereference_bh(txq->qdisc);
 		if ((!q) || (!q->enqueue)) {
+			continue;
+		}
+
+		/*
+		 * if sleeping qdisc is noqueue, ignore
+		 */
+		sleeping_q = rtnl_dereference(txq->qdisc_sleeping);
+		if (sleeping_q && !strncmp(ECM_FRONT_END_QDISC_NOQUEUE,
+					sleeping_q->ops->id, strlen(ECM_FRONT_END_QDISC_NOQUEUE))) {
 			continue;
 		}
 

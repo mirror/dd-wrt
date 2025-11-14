@@ -114,6 +114,10 @@ extern void ecm_classifier_emesh_sawf_exit(void);
 extern int ecm_classifier_mscs_init(struct dentry *dentry);
 extern void ecm_classifier_mscs_exit(void);
 #endif
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+extern int ecm_classifier_wifi_init(struct dentry *dentry);
+extern void ecm_classifier_wifi_exit(void);
+#endif
 
 /*
  * ecm_init()
@@ -218,6 +222,13 @@ static int __init ecm_init(void)
 	}
 #endif
 
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	ret = ecm_classifier_wifi_init(ecm_dentry);
+	if (0 != ret) {
+		goto err_cls_wifi;
+	}
+#endif
+
 	ret = ecm_interface_init();
 	if (0 != ret) {
 		goto err_iface;
@@ -253,8 +264,8 @@ static int __init ecm_init(void)
 		goto err_state;
 	}
 #endif
-	ecm_front_end_common_sysctl_register();
 
+	ecm_front_end_common_sysctl_register();
 	printk(KERN_INFO "ECM init complete\n");
 	return 0;
 
@@ -275,6 +286,14 @@ err_bond:
 #endif
 	ecm_interface_exit();
 err_iface:
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	ecm_classifier_wifi_exit();
+err_cls_wifi:
+#endif
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+	ecm_classifier_mscs_exit();
+err_cls_mscs:
+#endif
 #ifdef ECM_CLASSIFIER_EMESH_ENABLE
 	ecm_classifier_emesh_sawf_exit();
 err_cls_emesh:
@@ -302,10 +321,6 @@ err_cls_hyfi:
 #ifdef ECM_CLASSIFIER_NL_ENABLE
 	ecm_classifier_nl_rules_exit();
 err_cls_nl:
-#endif
-#ifdef ECM_CLASSIFIER_MSCS_ENABLE
-	ecm_classifier_mscs_exit();
-err_cls_mscs:
 #endif
 	ecm_classifier_default_exit();
 err_cls_default:
@@ -396,6 +411,10 @@ static void __exit ecm_exit(void)
 #ifdef ECM_CLASSIFIER_MSCS_ENABLE
 	DEBUG_INFO("exit mscs classifier\n");
 	ecm_classifier_mscs_exit();
+#endif
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	DEBUG_INFO("exit wifi classifier\n");
+	ecm_classifier_wifi_exit();
 #endif
 	DEBUG_INFO("exit default classifier\n");
 	ecm_classifier_default_exit();

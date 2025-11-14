@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2016, 2018-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -64,6 +64,9 @@
 #endif
 #ifdef ECM_CLASSIFIER_MSCS_ENABLE
 #include "ecm_classifier_mscs.h"
+#endif
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+#include "ecm_classifier_wifi.h"
 #endif
 
 /*
@@ -194,6 +197,21 @@ struct ecm_classifier_instance *ecm_classifier_assign_classifier(struct ecm_db_c
 		DEBUG_TRACE("%px: Created mscs classifier: %px\n", ci, ecmi);
 		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)ecmi);
 		return (struct ecm_classifier_instance *)ecmi;
+	}
+#endif
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	case ECM_CLASSIFIER_TYPE_WIFI: {
+		struct ecm_classifier_wifi_instance *ecwi;
+
+		ecwi = ecm_classifier_wifi_instance_alloc(ci);
+		if (!ecwi) {
+			DEBUG_TRACE("%px: Failed to create wifi classifier\n", ci);
+			return NULL;
+		}
+
+		DEBUG_TRACE("%px: Created wifi classifier: %px\n", ci, ecwi);
+		ecm_db_connection_classifier_assign(ci, (struct ecm_classifier_instance *)ecwi);
+		return (struct ecm_classifier_instance *)ecwi;
 	}
 #endif
 	default:

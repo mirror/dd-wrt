@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -854,6 +854,16 @@ static void ecm_nss_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			DEBUG_TRACE("%px: PPTP - unsupported\n", feci);
 #endif
 			break;
+#ifdef NSS_FIRMWARE_VERSION_12_5
+		case ECM_DB_IFACE_TYPE_RAWIP:
+#ifdef ECM_INTERFACE_RAWIP_ENABLE
+			nircm->valid_flags |= NSS_IPV4_RULE_CREATE_RAWIP_VALID;
+#else
+			rule_invalid = true;
+			DEBUG_TRACE("%px: RAWIP - unsupported\n", feci);
+#endif
+			break;
+#endif
 		default:
 			DEBUG_TRACE("%px: Ignoring: %d (%s)\n", feci, ii_type, ii_name);
 		}
@@ -1063,6 +1073,16 @@ static void ecm_nss_non_ported_ipv4_connection_accelerate(struct ecm_front_end_c
 			DEBUG_TRACE("%px: IPSEC - unsupported\n", feci);
 #endif
 			break;
+#ifdef NSS_FIRMWARE_VERSION_12_5
+		case ECM_DB_IFACE_TYPE_RAWIP:
+#ifdef ECM_INTERFACE_RAWIP_ENABLE
+			nircm->valid_flags |= NSS_IPV4_RULE_CREATE_RAWIP_VALID;
+#else
+			rule_invalid = true;
+			DEBUG_TRACE("%px: RAWIP - unsupported\n", feci);
+#endif
+			break;
+#endif
 		default:
 			DEBUG_TRACE("%px: Ignoring: %d (%s)\n", feci, ii_type, ii_name);
 		}
@@ -1831,6 +1851,7 @@ struct ecm_front_end_connection_instance *ecm_nss_non_ported_ipv4_connection_ins
 
 	return feci;
 }
+EXPORT_SYMBOL(ecm_nss_non_ported_ipv4_connection_instance_alloc);
 
 /*
  * ecm_nss_non_ported_ipv4_debugfs_init()

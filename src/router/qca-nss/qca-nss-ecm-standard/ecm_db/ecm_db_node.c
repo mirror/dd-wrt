@@ -489,8 +489,10 @@ EXPORT_SYMBOL(ecm_db_node_iface_get_and_ref);
 void ecm_db_node_add(struct ecm_db_node_instance *ni, struct ecm_db_iface_instance *ii, uint8_t *address,
 					ecm_db_node_final_callback_t final, void *arg)
 {
+#ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	int dir;
+#endif
 #endif
 	ecm_db_node_hash_t hash_index;
 	struct ecm_db_listener_instance *li;
@@ -817,11 +819,10 @@ static bool ecm_db_should_keep_connection(
 	struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
 
 	/*
-	 * In case of STA join event, we need to keep all connections apart from
-	 * the connections with SAWF classifier. So we will make should_keep_connection
-	 * flag true by default, and let the relevent classifier take the decision.
+	 * Keep should_keep_connection false by default. Classifier can update based
+	 * on the event being sent to it.
 	 */
-	info->should_keep_connection = (info->type == ECM_DB_CONNECTION_DEFUNCT_TYPE_STA_JOIN) ? true : false;
+	info->should_keep_connection = false;
 
 	assignment_count =
 		ecm_db_connection_classifier_assignments_get_and_ref(ci, assignments);

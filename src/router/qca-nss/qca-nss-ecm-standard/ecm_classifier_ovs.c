@@ -1,6 +1,8 @@
 /*
  **************************************************************************
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -711,6 +713,9 @@ static void ecm_classifier_ovs_process_route_flow(struct ecm_classifier_ovs_inst
 	 * 5. Tunnelled packet:  PC1 ------------> eth1---[ovs-br1]---gretap (DUT) eth0----->[gretap device]
 	 * 	After the packet is encapsulated, the packet is routed and the
 	 * 	flow is not relavant flow.
+	 * for tunnel rule
+	 * 	FROM hierarchy will have gretap dev (from_dev = gretap dev)
+	 * 	TO hierarchy will have eth0 (to_dev = NULL)
 	 */
 	if (from_dev) {
 		/*
@@ -730,6 +735,19 @@ static void ecm_classifier_ovs_process_route_flow(struct ecm_classifier_ovs_inst
 		if (!br_dev) {
 			DEBUG_WARN("%px: from_dev = %s is a OVS bridge port, bridge interface is not found\n",
 					ecvi, from_dev->name);
+			/*
+			 * Case 6
+			 * PC1 -----> eth1---[ovs-br1]---gretap (DUT) [ovs-br2]---eth2 -----> PC2
+			 * for tunnel rule
+			 * 	FROM hierarchy will have gretap dev (from_dev = gretap dev)
+			 * 	TO hierarchy will have ovs-br2, eth2 (to_dev = eth2)
+			 * the ovs tracks statistics only for bridge flow. so ovs flow in openvswitch is created
+			 * between eth2 and ovs-br2. so skip evaluating gretap dev and check if we can find in to_dev hierarchy.
+			 */
+			if ((netif_is_gretap(from_dev) || netif_is_ip6gretap(from_dev)) && to_dev) {
+					goto check_to_dev;
+			}
+
 			goto route_not_relevant;
 		}
 
@@ -840,6 +858,7 @@ static void ecm_classifier_ovs_process_route_flow(struct ecm_classifier_ovs_inst
 		}
 	}
 
+check_to_dev:
 	if (to_dev) {
 		/*
 		 * Case 1/2
@@ -1853,6 +1872,18 @@ static void ecm_classifier_ovs_sync_to_stats(struct ecm_classifier_instance *aci
 		if (!br_dev) {
 			DEBUG_WARN("%px: from_dev = %s is a OVS bridge port, bridge interface is not found\n",
 					aci, from_dev->name);
+			/*
+			 * PC1 -----> eth1---[ovs-br1]---gretap (DUT) [ovs-br2]---eth2 -----> PC2
+			 * for tunnel rule
+			 * 	from hierarchy will have gretap dev
+			 * 	to hierarchy will have ovs-br2, eth2
+			 * the ovs tracks statistics only for bridge flow. so ovs flow in openvswitch is created
+			 * between eth2 and ovs-br2. so skip evaluating gretap dev since it is routed.
+			 */
+			if ((netif_is_gretap(from_dev) || netif_is_ip6gretap(from_dev)) && to_dev) {
+					goto check_to_dev;
+			}
+
 			goto done;
 		}
 
@@ -1892,6 +1923,7 @@ static void ecm_classifier_ovs_sync_to_stats(struct ecm_classifier_instance *aci
 		dev_put(br_dev);
 	}
 
+check_to_dev:
 	if (to_dev) {
 		/*
 		 * to_dev = eth2/eth1 (can be tagged)

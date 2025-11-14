@@ -259,7 +259,7 @@ static void ecm_sfe_ipv4_process_one_conn_sync_msg(struct sfe_ipv4_conn_sync *sy
 
 	if (!ci) {
 		DEBUG_TRACE("%px: SFE Sync: no connection\n", sync);
-		goto sync_conntrack;
+		return;
 	}
 	DEBUG_TRACE("%px: Sync conn %px\n", sync, ci);
 
@@ -288,6 +288,17 @@ static void ecm_sfe_ipv4_process_one_conn_sync_msg(struct sfe_ipv4_conn_sync *sy
 		aci->sync_to_v4(aci, &class_sync);
 	}
 	ecm_db_connection_assignments_release(assignment_count, assignments);
+
+	/*
+	 * Get the elapsed time since the last sync. If the return value is
+	 * a negative value which means the timer is not in a valid state, just
+	 * return here and do not update the defunct timer and the conntrack.
+	 */
+	if (ecm_db_connection_elapsed_defunct_timer(ci) < 0) {
+		DEBUG_TRACE("%px: Defunct timer is expired or not in a valid state\n", ci);
+		ecm_db_connection_deref(ci);
+		return;
+	}
 
 	/*
 	 * Keep connection alive and updated

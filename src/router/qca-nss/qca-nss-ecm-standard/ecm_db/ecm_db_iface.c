@@ -247,7 +247,7 @@ static int ecm_db_iface_state_get_base(struct ecm_db_iface_instance *ii, struct 
 	interface_identifier = ii->interface_identifier;
 	ae_interface_identifier = ii->ae_interface_identifier;
 	spin_lock_bh(&ecm_db_lock);
-	strlcpy(name, ii->name, IFNAMSIZ);
+	strscpy(name, ii->name, IFNAMSIZ);
 	mtu = ii->mtu;
 	spin_unlock_bh(&ecm_db_lock);
 
@@ -1178,7 +1178,7 @@ void ecm_db_iface_interface_name_get(struct ecm_db_iface_instance *ii, char *nam
 {
 	DEBUG_CHECK_MAGIC(ii,
 		ECM_DB_IFACE_INSTANCE_MAGIC, "%px: magic failed", ii);
-	strlcpy(name_buffer, ii->name, IFNAMSIZ);
+	strscpy(name_buffer, ii->name, IFNAMSIZ);
 }
 EXPORT_SYMBOL(ecm_db_iface_interface_name_get);
 
@@ -2705,7 +2705,7 @@ void ecm_db_iface_add_ethernet(struct ecm_db_iface_instance *ii, uint8_t *addres
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -2757,7 +2757,7 @@ void ecm_db_iface_add_lag(struct ecm_db_iface_instance *ii, uint8_t *address, ch
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -2808,7 +2808,7 @@ void ecm_db_iface_add_bridge(struct ecm_db_iface_instance *ii, uint8_t *address,
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -2859,7 +2859,7 @@ void ecm_db_iface_add_ovs_bridge(struct ecm_db_iface_instance *ii, uint8_t *addr
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -2910,7 +2910,7 @@ void ecm_db_iface_add_macvlan(struct ecm_db_iface_instance *ii, uint8_t *address
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -2961,7 +2961,7 @@ void ecm_db_iface_add_vlan(struct ecm_db_iface_instance *ii, uint8_t *address, u
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3015,7 +3015,7 @@ void ecm_db_iface_add_map_t(struct ecm_db_iface_instance *ii, struct ecm_db_inte
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3067,7 +3067,7 @@ void ecm_db_iface_add_gre_tun(struct ecm_db_iface_instance *ii, struct ecm_db_in
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3119,7 +3119,7 @@ void ecm_db_iface_add_pppoe(struct ecm_db_iface_instance *ii, uint16_t pppoe_ses
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3172,7 +3172,7 @@ void ecm_db_iface_add_pppol2tpv2(struct ecm_db_iface_instance *ii, struct ecm_db
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3225,7 +3225,7 @@ void ecm_db_iface_add_pptp(struct ecm_db_iface_instance *ii, struct ecm_db_inter
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3275,7 +3275,7 @@ void ecm_db_iface_add_unknown(struct ecm_db_iface_instance *ii, uint32_t os_spec
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3324,7 +3324,7 @@ void ecm_db_iface_add_loopback(struct ecm_db_iface_instance *ii, uint32_t os_spe
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3383,7 +3383,7 @@ void ecm_db_iface_add_sit(struct ecm_db_iface_instance *ii, struct ecm_db_interf
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3433,7 +3433,7 @@ void ecm_db_iface_add_tunipip6(struct ecm_db_iface_instance *ii, struct ecm_db_i
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3486,7 +3486,7 @@ void ecm_db_iface_add_ipsec_tunnel(struct ecm_db_iface_instance *ii, uint32_t os
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3538,7 +3538,7 @@ void ecm_db_iface_add_rawip(struct ecm_db_iface_instance *ii, uint8_t *address, 
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;
@@ -3589,7 +3589,7 @@ void ecm_db_iface_add_ovpn(struct ecm_db_iface_instance *ii,
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = type_info->tun_ifnum;
@@ -3640,7 +3640,7 @@ void ecm_db_iface_add_vxlan(struct ecm_db_iface_instance *ii, uint32_t vni, uint
 #endif
 	ii->arg = arg;
 	ii->final = final;
-	strlcpy(ii->name, name, IFNAMSIZ);
+	strscpy(ii->name, name, IFNAMSIZ);
 	ii->mtu = mtu;
 	ii->interface_identifier = interface_identifier;
 	ii->ae_interface_identifier = ae_interface_identifier;

@@ -65,6 +65,17 @@ int __init ecm_wifi_plugin_init_module(void)
 	}
 #endif
 
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	ret = ecm_wifi_plugin_wifi_cb_register();
+	if (ret) {
+		ecm_wifi_plugin_emesh_unregister();
+		ecm_wifi_plugin_fse_cb_unregister();
+		ecm_wifi_plugin_mscs_unregister();
+		ecm_wifi_plugin_adm_ctrl_cb_unregister();
+		ecm_wifi_plugin_warning("WIFI callback registration failed\n");
+		return ret;
+	}
+#endif
 	ecm_wifi_plugin_info("ECM_WIFI_PLUGIN module loaded");
 	return 0;
 }
@@ -80,6 +91,10 @@ static void __exit ecm_wifi_plugin_exit_module(void)
 #ifndef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
 	ecm_wifi_plugin_mscs_unregister();
 	ecm_wifi_plugin_adm_ctrl_cb_unregister();
+#endif
+
+#ifdef ECM_CLASSIFIER_WIFI_ENABLE
+	ecm_wifi_plugin_wifi_cb_unregister();
 #endif
 	ecm_wifi_plugin_info("ECM_WIFI_PLUGIN unloaded\n");
 }

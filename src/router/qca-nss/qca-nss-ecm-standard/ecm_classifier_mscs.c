@@ -429,7 +429,6 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	struct ecm_db_connection_instance *ci = NULL;
 	struct ecm_front_end_connection_instance *feci;
 	ecm_front_end_acceleration_mode_t accel_mode;
-	int protocol;
 	uint32_t became_relevant = 0;
 	ecm_classifier_mscs_process_callback_t cb = NULL;
 	bool scs_result = false;
@@ -441,10 +440,10 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	struct net_device *src_dev = NULL;
 	struct net_device *dest_dev = NULL;
 	uint64_t slow_pkts;
+	struct ecm_classifier_mscs_get_priority_info get_priority_info = {0};
 #ifdef ECM_CLASSIFIER_MSCS_SCS_ENABLE
 	struct sp_rule_input_params flow_input_params;
 	struct sp_rule_output_params flow_output_params;
-	struct ecm_classifier_mscs_get_priority_info get_priority_info = {0};
 	struct ecm_classifier_mscs_rule_match_info rule_match_info = {0};
 	ecm_classifier_mscs_scs_priority_callback_t scs_cb = NULL;
 #endif
@@ -542,6 +541,17 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	}
 
 	ecm_db_netdevs_get_and_hold(ci, sender, &src_dev, &dest_dev);
+
+	/*
+	 * If there is not src / destination dev, make the classifier relevance NO.
+	 */
+	if (!src_dev || !dest_dev) {
+		DEBUG_TRACE("%px: Not able to find the dev information, make the classifier not relevant !\n", ci);
+		ecm_db_connection_deref(ci);
+		spin_lock_bh(&ecm_classifier_mscs_lock);
+		cmscsi->process_response.relevance = ECM_CLASSIFIER_RELEVANCE_NO;
+		goto mscs_classifier_out;
+	}
 
 	/*
 	 * Make the classifier relevance NO for non wlan flows.
