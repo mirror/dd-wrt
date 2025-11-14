@@ -64,32 +64,46 @@ endif
 ifeq ($(KERNELVERSION),4.14)
 obj-$(CONFIG_IPV6) += nat46
 obj-y += portscan
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 CONFIG_PORTSCAN=y
 endif
 ifeq ($(KERNELVERSION),4.9)
 obj-$(CONFIG_IPV6) += nat46
 obj-y += portscan
 CONFIG_PORTSCAN=y
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 endif
 ifeq ($(KERNELVERSION),4.4)
 obj-y += portscan
 CONFIG_PORTSCAN=y
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 endif
 ifeq ($(KERNELVERSION),3.18)
 obj-y += portscan
 CONFIG_PORTSCAN=y
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 endif
 ifeq ($(KERNELVERSION),3.10)
 obj-y += portscan
 CONFIG_PORTSCAN=y
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 endif
 ifeq ($(KERNELVERSION),3.2)
 obj-y += portscan
 CONFIG_PORTSCAN=y
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 endif
 ifeq ($(KERNELVERSION),3.5)
 obj-y += portscan
 CONFIG_PORTSCAN=y
+CONFIG_NFTABLES=n
+CONFIG_OPENNDS=n
 endif
 
 #ifneq ($(CONFIG_MIMALLOC),y)
