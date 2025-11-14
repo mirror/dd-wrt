@@ -713,6 +713,9 @@ endif
 ifeq ($(CONFIG_MT7620),y)
   CFLAGS += -DHAVE_MT7620
 endif
+ifeq ($(CONFIG_NFTABLES),y)
+  CFLAGS += -DHAVE_NFTABLES
+endif
 ifeq ($(CONFIG_WR941NV6_CN),y)
   CFLAGS += -DHAVE_WR941NV6_CN
 endif
