@@ -447,11 +447,11 @@ static struct xtables_match brip_match = {
 	.family		= NFPROTO_BRIDGE,
 	.size		= XT_ALIGN(sizeof(struct ebt_ip_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct ebt_ip_info)),
+//	.help		= brip_print_help,
 	.x6_parse	= brip_parse,
 	.x6_fcheck	= brip_final_check,
- 	.print		= brip_print,
- 	.xlate		= brip_xlate,
-	.extra_opts	= brip_opts,
+	.print		= brip_print,
+	.xlate		= brip_xlate,
 	.x6_options	= brip_opts,
 };
 
