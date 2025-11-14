@@ -2,11 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#if defined(__GLIBC__) && __GLIBC__ == 2
+//#if defined(__GLIBC__) && __GLIBC__ == 2
 #include <net/ethernet.h>
-#else
-#include <linux/if_ether.h>
-#endif
+//#else
+//#include <linux/if_ether.h>
+//#endif
 #include <xtables.h>
 #include <linux/netfilter_ipv4/ipt_realm.h>
 

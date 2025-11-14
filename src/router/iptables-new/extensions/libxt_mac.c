@@ -1,9 +1,9 @@
 #include <stdio.h>
-#if defined(__GLIBC__) && __GLIBC__ == 2
+//#if defined(__GLIBC__) && __GLIBC__ == 2
 #include <net/ethernet.h>
-#else
-#include <linux/if_ether.h>
-#endif
+//#else
+//#include <linux/if_ether.h>
+//#endif
 #include <xtables.h>
 #include <linux/netfilter/xt_mac.h>
 
