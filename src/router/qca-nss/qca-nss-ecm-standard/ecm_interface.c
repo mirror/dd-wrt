@@ -8386,6 +8386,7 @@ static struct ctl_table ecm_interface_table[] = {
 		.proc_handler		= &ecm_interface_igs_enabled_handler,
 	},
 #endif
+	{}
 };
 
 #ifdef ECM_INTERFACE_IPSEC_GLUE_LAYER_SUPPORT_ENABLE
