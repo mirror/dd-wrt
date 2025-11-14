@@ -37,7 +37,8 @@ ifneq ($(CONFIG_NOMESSAGE),y)
 DNSMASQ_COPTS += -DNEED_PRINTF
 endif
 ifeq ($(CONFIG_OPENNDS),y)
-DNSMASQ_COPTS += -DHAVE_NFTSET
+DNSMASQ_COPTS += -DHAVE_NFTSET -I$(TOP)/nftables/include
+DNSSEC_LINKFLAGS = -L$(TOP)/nftables/src/.libs -lnftables -L$(TOP)/libmnl/src/.libs -lmnl -L$(TOP)/libnftnl/src/.libs -lnftnl
 endif
 
 INOTIFY_SUPPORT = $(shell grep CONFIG_INOTIFY_USER=y $(LINUXDIR)/.config)
@@ -49,7 +50,7 @@ ifneq ($(CONFIG_80211AC),y)
 DNSMASQ_COPTS += -DNO_INOTIFY
 endif
 endif
-DNSSEC_LINKFLAGS = -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
+DNSSEC_LINKFLAGS += -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
 ifeq ($(CONFIG_DNSSEC),y)
 export DNSSEC_MAKEFLAGS += -DHAVE_DNSSEC -DNO_NETTLE_ECC -DHAVE_NETTLEHASH -I$(TOP) -I$(TOP)/gmp
 #export DNSSEC_LINKFLAGS:=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz -L$(TOP)/nettle/.lib -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp
