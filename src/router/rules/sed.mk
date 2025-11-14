@@ -6,6 +6,11 @@ sed-install:
 	rm -rf $(INSTALLDIR)/sed/usr/share
 
 sed-configure:
+	cd sed && libtoolize
+	cd sed && aclocal
+	cd sed && autoconf
+	cd sed && autoheader
+	cd sed && automake --add-missing
 	cd sed && ./configure \
 	--host=$(ARCH)-linux \
 	--enable-linux \
