@@ -161,7 +161,7 @@ include rules/sodium.mk
 include rules/dnscrypt.mk
 include rules/iptables-new.mk
 include rules/iptables.mk
-include rules/netconf.mk
+//include rules/netconf.mk
 include rules/pptpd.mk
 include rules/sstp.mk
 include rules/pipsec.mk
