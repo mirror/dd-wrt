@@ -29,6 +29,26 @@
 
 void start_conntrack(void)
 {
+#ifdef HAVE_MICRO
+	/*
+		 * adjust ip_conntrack_max based on available memory size
+		 * some routers that can run micro only have 16MB memory
+		 */
+	if (getmemfree() > (8 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "4096");
+	} else {
+		nvram_default_get("ip_conntrack_max", "1024");
+	}
+#else
+	if (getmemfree() > (256 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "65536");
+	} else if (getmemfree() > (64 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "32768");
+	} else
+		nvram_default_get("ip_conntrack_max", "4096");
+#endif
+
+
 	char *CONNTRACK_MAX = nvram_safe_get("ip_conntrack_max");
 	char *CONNTRACK_TCP_TIMEOUTS = nvram_default_get("ip_conntrack_tcp_timeouts", "3600");
 	char *CONNTRACK_UDP_TIMEOUTS = nvram_default_get("ip_conntrack_udp_timeouts", "180");
