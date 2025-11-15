@@ -1,7 +1,7 @@
 upnp-clean:
 	make -C upnp clean
 
-upnp: nvram netconf
+upnp: nvram
 	make -C upnp
 
 upnp-install:
