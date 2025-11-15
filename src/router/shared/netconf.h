@@ -21,7 +21,8 @@
 #include <netinet/in.h>
 
 #include <typedefs.h>
-//#include <proto/ethernet.h>
+//#include <net/ethernet.h>
+#include <proto/ethernet.h>
 /*
  * Supported match states 
  */
