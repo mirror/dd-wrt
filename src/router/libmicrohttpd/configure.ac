@@ -2335,50 +2335,8 @@ AC_ARG_ENABLE([[epoll]],
     [enable_epoll='auto']
   )
 
-AS_IF([test "$enable_epoll" != "no"],
-  [
-    MHD_CHECK_FUNC_RUN([epoll_create],
-      [[
-#include <sys/epoll.h>
-#include <unistd.h>
-      ]],
-      [[
-        int epfd = epoll_create(64);
-        i][f (0 > epfd) return -epfd;
-        (void) close(epfd);
-        return 0;
-      ]],
-      [cacheVar="assuming yes"],
-      [
-        AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
-        enable_epoll='yes'
-      ],
-      [
-        AS_IF([test "$enable_epoll" = "yes"],
-          [AC_MSG_ERROR([[Support for epoll was explicitly requested but cannot be enabled on this platform.]])]
-        )
-        enable_epoll='no'
-      ]
-    )
-    AS_UNSET([warn_msg])
-    AS_VAR_IF([mhd_cv_works_func_epoll_create],["assuming yes"],
-      [[warn_msg="When cross-compiling it is not possible to check whether 'epoll_create()' really works on the host (final) platform.
-'epoll' is enabled as most probably the host kernel supports it (CONFIG_EPOLL option enabled in case of Linux kernel).
-Use './configure mhd_cv_works_func_epoll_create=yes' to mute this warning."]]
-    )
-    AS_VAR_SET_IF([warn_msg],[AC_MSG_WARN([$warn_msg])
-        AS_IF([test -n "${CONF_FINAL_WARNS}" ],
-           [
-             CONF_FINAL_WARNS="${CONF_FINAL_WARNS}
-
-WARNING: "
-           ]
-        )
-        CONF_FINAL_WARNS="${CONF_FINAL_WARNS}${warn_msg}"
-      ]
-    )
-  ]
-)
+enable_epoll='yes'
+AC_DEFINE([[EPOLL_SUPPORT]],[[1]],[Define to 1 to enable epoll support])
 
 AM_CONDITIONAL([MHD_HAVE_EPOLL], [[test "x$enable_epoll" = xyes]])
 
