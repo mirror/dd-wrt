@@ -1936,31 +1936,6 @@ void start_restore_defaults(void)
 	struct nvram_param *srouter_defaults;
 	srouter_defaults = load_defaults();
 
-	nvram_default_get("ip_conntrack_tcp_timeouts", "3600");
-#ifdef HAVE_MICRO
-	/*
-		 * adjust ip_conntrack_max based on available memory size
-		 * some routers that can run micro only have 16MB memory
-		 */
-	if (getmemfree() > (8 * 1024 * 1024)) {
-		nvram_default_get("ip_conntrack_max", "4096");
-	} else {
-		nvram_default_get("ip_conntrack_max", "1024");
-	}
-#else
-	if (getmemfree() > (256 * 1024 * 1024)) {
-		nvram_default_get("ip_conntrack_max", "65536");
-	} else if (getmemfree() > (64 * 1024 * 1024)) {
-		nvram_default_get("ip_conntrack_max", "32768");
-	} else
-		nvram_default_get("ip_conntrack_max", "4096");
-#endif
-
-	if (getmemtotal() > 128 * 1024 * 1024) {
-		nvram_default_get("sshd_rw", "262144");
-	} else {
-		nvram_default_get("sshd_rw", "24576");
-	}
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -2718,6 +2693,32 @@ void start_restore_defaults(void)
 		nvram_seti("wl0_txpwr", 28);
 	}
 #endif
+	nvram_default_get("ip_conntrack_tcp_timeouts", "3600");
+#ifdef HAVE_MICRO
+	/*
+		 * adjust ip_conntrack_max based on available memory size
+		 * some routers that can run micro only have 16MB memory
+		 */
+	if (getmemfree() > (8 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "4096");
+	} else {
+		nvram_default_get("ip_conntrack_max", "1024");
+	}
+#else
+	if (getmemfree() > (256 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "65536");
+	} else if (getmemfree() > (64 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "32768");
+	} else
+		nvram_default_get("ip_conntrack_max", "4096");
+#endif
+
+	if (getmemtotal() > 128 * 1024 * 1024) {
+		nvram_default_get("sshd_rw", "262144");
+	} else {
+		nvram_default_get("sshd_rw", "24576");
+	}
+
 	/*
 	 * Always set OS defaults 
 	 */
