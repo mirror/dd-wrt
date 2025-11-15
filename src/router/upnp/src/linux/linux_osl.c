@@ -614,7 +614,7 @@ static void add_nat_entry(netconf_nat_t *entry)
 	sprintf(from, "%d:%d", nat.ports[0], nat.ports[1]);
 	inet_addr_to_cidr((struct in_addr)nat.ipaddr, (struct in_addr)netmask, ipaddr);
 	inet_addr_to_cidr((struct in_addr)nat.match.dst.ipaddr, (struct in_addr)nat.match.dst.netmask , ipaddr_from);
-	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
+	sprintf(dst, "%s:%d", inet_ntoa(nat.ipaddr),  nat.match.src.ports[1]);
 	if (nat.match.ipproto == IPPROTO_TCP){
 	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
 	    eval(IPTABLES, "-A", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
@@ -622,8 +622,8 @@ static void add_nat_entry(netconf_nat_t *entry)
 	    eval(IPTABLES, "-t", "nat", "-A", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
 	}
 	if (nat.match.ipproto == IPPROTO_UDP){
-	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
-	    eval(IPTABLES, "-A", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "udp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-A", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "udp", "--dport", from, "-j", "ACCEPT");
 	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "udp", "-m", "udp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
 	    eval(IPTABLES, "-t", "nat", "-A", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "udp", "-m", "udp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
 	}
@@ -681,13 +681,13 @@ static void delete_nat_entry(netconf_nat_t *entry)
 	sprintf(from, "%d:%d", nat.ports[0], nat.ports[1]);
 	inet_addr_to_cidr((struct in_addr)nat.ipaddr, (struct in_addr)netmask, ipaddr);
 	inet_addr_to_cidr((struct in_addr)nat.match.dst.ipaddr, (struct in_addr)nat.match.dst.netmask , ipaddr_from);
-	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
+	sprintf(dst, "%s:%d", inet_ntoa(nat.ipaddr),  nat.match.src.ports[1]);
 	if (nat.match.ipproto == IPPROTO_TCP){
 	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
 	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
 	}
 	if (nat.match.ipproto == IPPROTO_UDP){
-	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
+	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "udp", "--dport", from, "-j", "ACCEPT");
 	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "udp", "-m", "udp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
 	}
 
