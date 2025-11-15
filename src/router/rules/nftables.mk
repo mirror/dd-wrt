@@ -23,6 +23,7 @@ libnftnl-install:
 	rm -rf $(INSTALLDIR)/libnftnl/usr/include
 	rm -rf $(INSTALLDIR)/libnftnl/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/libnftnl/usr/lib/*.la
+	rm -f $(INSTALLDIR)/libnftnl/usr/lib/*.a
 	
 	
 nftables-configure: libmnl libnftnl
