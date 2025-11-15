@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <netdb.h>
-#include <spawn.h>
+//#include <spawn.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -482,7 +482,7 @@ static char *get_modprobe(void)
 	char *ret;
 	int count;
 
-	procfile = open(PROC_SYS_MODPROBE, O_RDONLY | O_CLOEXEC);
+	procfile = open(PROC_SYS_MODPROBE, O_RDONLY);
 	if (procfile < 0)
 		return NULL;
 
