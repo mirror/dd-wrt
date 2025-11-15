@@ -245,7 +245,8 @@ state_file_import(const char *path)
 
 	LOCK_CLIENT_LIST();
 	int len = json_object_array_length(clients);
-	for (int i = 0; i < len; i++) {
+	int i;
+	for (i = 0; i < len; i++) {
 		json_object *client = json_object_array_get_idx(clients, i);
 		if (!json_object_is_type(client, json_type_object)) {
 			debug(LOG_ERR, "clients: Invalid type of array entry %d in state file. Expected %s, but found %s",
