@@ -24,7 +24,7 @@ iptables-new-clean:
 	-make -C iptables-new/nftables clean
 
 iptables-new:
-	make -C iptables-new/normal CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
+	-make -C iptables-new/normal CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
 ifeq ($(CONFIG_NFTABLES),y)
 	make -C iptables-new/nftables CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
 endif
@@ -36,7 +36,7 @@ ifeq ($(CONFIG_IPTABLES),y)
 ifeq ($(CONFIG_NFTABLES),y)
 	make -C iptables-new/nftables install DESTDIR=$(INSTALLDIR)/iptables-new
 else
-	make -C iptables-new/normal install DESTDIR=$(INSTALLDIR)/iptables-new
+	-make -C iptables-new/normal install DESTDIR=$(INSTALLDIR)/iptables-new
 endif
 	rm -rf $(INSTALLDIR)/iptables-new/usr/include
 	rm -rf $(INSTALLDIR)/iptables-new/usr/lib
