@@ -40,7 +40,7 @@ void start_conntrack(void)
 		nvram_default_get("ip_conntrack_max", "1024");
 	}
 #else
-	if (getmemfree() > (256 * 1024 * 1024)) {
+	if (getmemfree() > (512 * 1024 * 1024)) {
 		nvram_default_get("ip_conntrack_max", "65536");
 	} else if (getmemfree() > (64 * 1024 * 1024)) {
 		nvram_default_get("ip_conntrack_max", "32768");
