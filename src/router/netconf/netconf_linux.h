@@ -49,7 +49,7 @@
 #include <linux/netfilter/nf_nat.h>
 #include <linux/netfilter/nf_conntrack_common.h>
 #endif
-#define ETH_ALEN ETHER_ADDR_LEN
+#define ETH_ALEN 6
 #include <linux/netfilter_ipv4/ipt_mac.h>
 #include <linux/netfilter_ipv4/ipt_state.h>
 #if 1 //(LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
@@ -60,6 +60,14 @@
 #include <linux/netfilter_ipv4/ipt_TCPMSS.h>
 #include <linux/netfilter_ipv4/ipt_LOG.h>
 #include <linux/netfilter_ipv4/ip_autofw.h>
+#define ETHER_ISNULLADDR(ea) ((((uint8 *)(ea))[0] |		\
+			    ((uint8 *)(ea))[1] |		\
+			    ((uint8 *)(ea))[2] |		\
+			    ((uint8 *)(ea))[3] |		\
+			    ((uint8 *)(ea))[4] |		\
+			    ((uint8 *)(ea))[5]) == 0)
+
+
 
 /* ipt_entry alignment attribute */
 #define IPT_ALIGNED ((aligned(__alignof__(struct ipt_entry))))

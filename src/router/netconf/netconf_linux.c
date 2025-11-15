@@ -35,7 +35,8 @@
 #include <net/if_arp.h>
 
 #include <typedefs.h>
-#include <proto/ethernet.h>
+#include <net/ethernet.h>
+//#include <proto/ethernet.h>
 #include <netconf.h>
 #include <netconf_linux.h>
 
@@ -373,7 +374,7 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 					break;
 				}
 				if (mac) {
-					memcpy(fw->match.mac.octet, mac->srcaddr, ETHER_ADDR_LEN);
+					memcpy(fw->match.mac.ether_addr_octet, mac->srcaddr, ETHER_ADDR_LEN);
 					fw->match.flags |= mac->invert ? NETCONF_INV_MAC : 0;
 				}
 
@@ -663,7 +664,7 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 				}
 
 				/* Compare source MAC addresses */
-				if (!ETHER_ISNULLADDR(fw->match.mac.octet)) {
+				if (!ETHER_ISNULLADDR(fw->match.mac.ether_addr_octet)) {
 					for_each_ipt_match(match, entry)
 					{
 						if (strncmp(match->u.user.name, "mac", IPT_FUNCTION_MAXNAMELEN) != 0)
@@ -673,7 +674,7 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 						break;
 					}
 
-					if (!mac || memcmp(mac->srcaddr, fw->match.mac.octet, ETHER_ADDR_LEN) != 0 ||
+					if (!mac || memcmp(mac->srcaddr, fw->match.mac.ether_addr_octet, ETHER_ADDR_LEN) != 0 ||
 					    (mac->invert && !(fw->match.flags & NETCONF_INV_MAC)) ||
 					    (!mac->invert && (fw->match.flags & NETCONF_INV_MAC)))
 						continue;
@@ -1076,14 +1077,14 @@ int netconf_add_fw(netconf_fw_t *fw)
 	}
 
 	/* Match by source MAC address */
-	if (!ETHER_ISNULLADDR(fw->match.mac.octet)) {
+	if (!ETHER_ISNULLADDR(fw->match.mac.ether_addr_octet)) {
 		struct ipt_mac_info *mac;
 
 		if (!(match = netconf_append_match(&entry, "mac", sizeof(struct ipt_mac_info))))
 			goto err;
 		mac = (struct ipt_mac_info *)&match->data[0];
 
-		memcpy(mac->srcaddr, fw->match.mac.octet, ETHER_ADDR_LEN);
+		memcpy(mac->srcaddr, fw->match.mac.ether_addr_octet, ETHER_ADDR_LEN);
 		mac->invert = (fw->match.flags & NETCONF_INV_MAC) ? 1 : 0;
 	}
 
