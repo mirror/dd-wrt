@@ -542,7 +542,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
-				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : "tarpit");
+				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? "tarpit" : log_accept);
 			addsuspense(buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
@@ -551,7 +551,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p udp -m udp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
-				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : log_drop);
+				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_drop : log_accept);
 			addsuspense(buff);
 		}
 	}
