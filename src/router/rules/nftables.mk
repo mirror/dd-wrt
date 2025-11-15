@@ -4,13 +4,13 @@ libnftnl-configure:
 	cd libnftnl && autoconf
 	cd libnftnl && autoheader
 	cd libnftnl && automake --add-missing
-	cd libnftnl && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-shared --enable-static --libdir=/usr/lib \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include " \
-		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LIBMNL_CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libmnl/include" \
-		LIBMNL_LIBS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/libmnl/src/.libs -lmnl" \
-		AR_FLAGS="'cru $(LTOPLUGIN)'" \
-		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+	cd libnftnl && ./configure --host=$(ARCH)-linux --prefix=/usr --enable-shared --disable-static --libdir=/usr/lib \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include " \
+		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LIBMNL_CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libmnl/include" \
+		LIBMNL_LIBS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libmnl/src/.libs -lmnl"
+	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/libnftnl/build-aux/ltmain.sh
+	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/libnftnl/libtool
 
 libnftnl-clean:
 	-make -C libnftnl clean
@@ -19,8 +19,10 @@ libnftnl:
 	make -C libnftnl
 
 libnftnl-install:
-        # So that generic rule does not take precedence
-	@true
+	make -C libnftnl install DESTDIR=$(INSTALLDIR)/libnftnl
+	rm -rf $(INSTALLDIR)/libnftnl/usr/include
+	rm -rf $(INSTALLDIR)/libnftnl/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/libnftnl/usr/lib/*.la
 	
 	
 nftables-configure: libmnl libnftnl
