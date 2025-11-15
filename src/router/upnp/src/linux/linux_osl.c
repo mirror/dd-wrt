@@ -684,7 +684,7 @@ static void delete_nat_entry(netconf_nat_t *entry)
 	sprintf(dst, "%s:%d", ipaddr,  nat.match.src.ports[1]);
 	if (nat.match.ipproto == IPPROTO_TCP){
 	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "tcp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
-	    eval(IPTABLES, "-t", "nat", "-A", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
+	    eval(IPTABLES, "-t", "nat", "-D", "upnp", "-d", ipaddr_from, "-i", nat.match.in.name, "-p", "tcp", "-m", "tcp", "--dport", from, "-j", "DNAT", "--to-destination", dst);
 	}
 	if (nat.match.ipproto == IPPROTO_UDP){
 	    eval(IPTABLES, "-D", "upnp" ,"-d", ipaddr, "-i", nat.match.in.name,"-p", "udp", "-m", "tcp", "--dport", from, "-j", "ACCEPT");
