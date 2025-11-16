@@ -504,6 +504,7 @@ static char *get_modprobe(void)
 	return NULL;
 }
 
+#if 0
 int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 {
 	char *buf = NULL;
@@ -542,7 +543,7 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 		return 0;
 	return -1;
 }
-
+#endif
 /* return true if a given file exists within procfs */
 static bool proc_file_exists(const char *filename)
 {
@@ -562,6 +563,7 @@ static bool proc_file_exists(const char *filename)
 
 int xtables_load_ko(const char *modprobe, bool quiet)
 {
+#if 0
 	static bool loaded = false;
 	int ret;
 
@@ -578,8 +580,9 @@ int xtables_load_ko(const char *modprobe, bool quiet)
 		loaded = true;
 
 	return ret;
+#endif
+	return 0;
 }
-
 /**
  * xtables_strtoul_base - string to number conversion
  * @s:	input string
