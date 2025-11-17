@@ -63,7 +63,7 @@ dnsmasq-clean:
 
 
 
-dnsmasq: nettle gmp
+dnsmasq: nettle gmp nftables
 	install -D udhcpd/config/dhcpd.webservices httpd/ej_temp/dhcpd.webservices
 	$(MAKE) -C $(DNSMASQ_PATH) clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
