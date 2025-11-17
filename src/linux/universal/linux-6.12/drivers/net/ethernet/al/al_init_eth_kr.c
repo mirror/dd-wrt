@@ -394,11 +394,11 @@ static enum al_eth_kr_cl72_coef_op al_eth_kr_lt_coef_report_get(
 {
 	switch (coef) {
 	case AL_ETH_KR_COEF_C_MINUS:
-		return report->c_minus;
+		return (enum al_eth_kr_cl72_coef_op)(report->c_minus);
 	case AL_ETH_KR_COEF_C_PLUS:
-		return report->c_plus;
+		return (enum al_eth_kr_cl72_coef_op)(report->c_plus);
 	case AL_ETH_KR_COEF_C_ZERO:
-		return report->c_zero;
+		return (enum al_eth_kr_cl72_coef_op)(report->c_zero);
 	}
 
 	return 0;
