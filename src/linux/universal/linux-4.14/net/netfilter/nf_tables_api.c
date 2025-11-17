@@ -6914,7 +6914,10 @@ static void __nft_release_tables(struct net *net)
 		list_for_each_entry_safe(set, ns, &table->sets, list) {
 			list_del(&set->list);
 			nft_use_dec(&chain->use);
-			nft_set_destroy(set);
+			if (set->flags & (NFT_SET_MAP | NFT_SET_OBJECT))
+				nft_map_deactivate(&ctx, set);
+
+			nft_set_destroy(&ctx, set);
 		}
 		list_for_each_entry_safe(obj, ne, &table->objects, list) {
 			list_del(&obj->list);
