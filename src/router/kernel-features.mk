@@ -85,6 +85,7 @@ define kernelfeatures
 		echo "CONFIG_NFT_LOG=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_RT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_LOG_BRIDGE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_NF_ARP_MANGLE=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_COUNTER=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_LIMIT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFT_MASQ=y" >> $(LINUXDIR)/.config; \
