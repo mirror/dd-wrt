@@ -232,6 +232,7 @@ machine-$(CONFIG_PLAT_SPEAR)		+= spear
 machdirs-$(CONFIG_ARCH_FOOTBRIDGE)	+= arch/arm/mach-footbridge
 machdirs-$(CONFIG_ARCH_RPC)		+= arch/arm/mach-rpc
 machdirs-$(CONFIG_ARCH_SA1100)		+= arch/arm/mach-sa1100
+machdirs-$(CONFIG_ARCH_ALPINE)		+= arch/arm/mach-alpine
 KBUILD_CPPFLAGS += $(patsubst %,-I$(srctree)/%/include,$(machdirs-y))
 
 # The byte offset of the kernel image in RAM from the start of RAM.

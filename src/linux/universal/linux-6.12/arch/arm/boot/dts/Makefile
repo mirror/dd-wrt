@@ -3,7 +3,6 @@ subdir-y += actions
 subdir-y += airoha
 subdir-y += allwinner
 subdir-y += alphascale
-subdir-y += amazon
 subdir-y += amlogic
 subdir-y += arm
 subdir-y += aspeed
@@ -39,3 +38,7 @@ subdir-y += unisoc
 subdir-y += vt8500
 subdir-y += xen
 subdir-y += xilinx
+
+dtb-$(CONFIG_ARCH_ALPINE) += \
+	alpine-r9000.dtb \
+	alpine-xr700.dtb

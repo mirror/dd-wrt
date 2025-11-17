@@ -762,6 +762,8 @@ source "drivers/dma/lgm/Kconfig"
 
 source "drivers/dma/stm32/Kconfig"
 
+source "drivers/dma/al/Kconfig"
+
 # clients
 comment "DMA Clients"
 	depends on DMA_ENGINE

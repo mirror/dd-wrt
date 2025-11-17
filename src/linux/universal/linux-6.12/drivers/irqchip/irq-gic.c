@@ -704,6 +704,20 @@ void gic_cpu_restore(struct gic_chip_data *gic)
 	gic_cpu_if_up(gic);
 }
 
+static void gic_cpu_mask(unsigned int gic_nr)
+{
+	void __iomem *cpu_base;
+
+	cpu_base = gic_data_cpu_base(&gic_data[gic_nr]);
+
+	if (!cpu_base)
+		return;
+
+	/* do not raise any interrupt from cpu interface.
+	 * do not bypass to legacy_irq and legacy_fiq legs*/
+	writel_relaxed(0 | (3<<5), cpu_base + GIC_CPU_CTRL);
+}
+
 static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 {
 	int i;
@@ -726,6 +740,12 @@ static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 			break;
 		}
 	}
+
+#ifdef CONFIG_ARCH_ALPINE
+	/*do not accept interrupt from main gic*/
+	if (cmd == CPU_PM_ENTER)
+		gic_cpu_mask(0);
+#endif
 
 	return NOTIFY_OK;
 }

@@ -311,6 +311,7 @@ static int pl061_probe(struct amba_device *adev, const struct amba_id *id)
 	struct pl061 *pl061;
 	struct gpio_irq_chip *girq;
 	int ret, irq;
+	const void *ptr;
 
 	pl061 = devm_kzalloc(dev, sizeof(*pl061), GFP_KERNEL);
 	if (pl061 == NULL)
@@ -333,6 +334,10 @@ static int pl061_probe(struct amba_device *adev, const struct amba_id *id)
 	pl061->gc.label = dev_name(dev);
 	pl061->gc.parent = dev;
 	pl061->gc.owner = THIS_MODULE;
+
+	ptr = of_get_property(dev->of_node, "baseidx", NULL);
+	if (ptr)
+		pl061->gc.base = be32_to_cpup(ptr);
 
 	/*
 	 * irq_chip support

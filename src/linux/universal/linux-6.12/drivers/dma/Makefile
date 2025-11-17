@@ -91,3 +91,4 @@ obj-y += qcom/
 obj-y += stm32/
 obj-y += ti/
 obj-y += xilinx/
+obj-y += al/

@@ -199,6 +199,14 @@ config ARM_DMA_IOMMU_ALIGNMENT
 
 endif
 
+config ARM_HWCC_FLAG
+	bool
+	default n
+	help
+	  Select if you want the ARM specific device structure to inclue a flag
+	  for determining whether HW cache coherency is enabled.
+	  If unsure, say 'N'.
+
 config SYS_SUPPORTS_APM_EMULATION
 	bool
 

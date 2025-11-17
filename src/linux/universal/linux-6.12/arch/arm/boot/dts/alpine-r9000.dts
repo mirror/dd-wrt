@@ -1,0 +1,6 @@
+
+#include "alpine-netgear.dtsi"
+
+/ {
+	compatible = "netgear,r9000", "annapurna-labs,alpine";
+};

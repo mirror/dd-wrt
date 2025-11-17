@@ -565,4 +565,6 @@ config EDAC_VERSAL
 	  for debugging purposes.
 
 
+source "drivers/edac/al/Kconfig"
+
 endif # EDAC

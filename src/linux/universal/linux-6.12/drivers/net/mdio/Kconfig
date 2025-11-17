@@ -332,6 +332,12 @@ config MDIO_BUS_MUX_MMIOREG
 
 	  Currently, only 8/16/32 bits registers are supported.
 
+config MDIO_AL_GPIO
+	tristate "Alpine MDIO GPIO bus controller"
+	depends on ARCH_ALPINE
+	help
+	  This module provides a driver for the MDIO GPIO bus found in the
+	  Alpine SoC.
 
 endif
 endif

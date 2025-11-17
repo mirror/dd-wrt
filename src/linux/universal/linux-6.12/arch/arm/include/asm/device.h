@@ -10,6 +10,9 @@ struct dev_archdata {
 	struct dma_iommu_mapping	*mapping;
 #endif
 	unsigned int dma_ops_setup:1;
+#ifdef CONFIG_ARM_HWCC_FLAG
+	int hwcc; /* 1 - HW cache coherency, 0 - SW cache coherency */
+#endif
 };
 
 struct omap_device;

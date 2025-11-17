@@ -8,6 +8,30 @@
 
 struct of_bus;
 
+struct of_pci_range_iter {
+	const __be32 *range, *end;
+	int np, pna;
+
+	u32 pci_space;
+	u64 pci_addr;
+	u64 cpu_addr;
+	u64 size;
+	u32 flags;
+};
+
+#define for_each_of_pci_range_compat(iter, np) \
+	for (memset((iter), 0, sizeof(struct of_pci_range_iter)); \
+	     of_pci_process_ranges(iter, np);)
+
+#define range_iter_fill_resource(iter, np, res) \
+	do { \
+		(res)->flags = (iter).flags; \
+		(res)->start = (iter).cpu_addr; \
+		(res)->end = (iter).cpu_addr + (iter).size - 1; \
+		(res)->parent = (res)->child = (res)->sibling = NULL; \
+		(res)->name = (np)->full_name; \
+	} while (0)
+
 struct of_pci_range_parser {
 	struct device_node *node;
 	struct of_bus *bus;
@@ -89,6 +113,8 @@ extern int of_pci_range_to_resource(struct of_pci_range *range,
 extern int of_range_to_resource(struct device_node *np, int index,
 				struct resource *res);
 extern bool of_dma_is_coherent(struct device_node *np);
+struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
+						struct device_node *node);
 #else /* CONFIG_OF_ADDRESS */
 static inline void __iomem *of_io_request_and_map(struct device_node *device,
 						  int index, const char *name)
@@ -154,6 +180,12 @@ static inline int of_range_to_resource(struct device_node *np, int index,
 static inline bool of_dma_is_coherent(struct device_node *np)
 {
 	return false;
+}
+
+static inline struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
+						struct device_node *node)
+{
+	return NULL;
 }
 #endif /* CONFIG_OF_ADDRESS */
 

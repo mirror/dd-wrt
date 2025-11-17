@@ -130,3 +130,11 @@ config ARM_QCOM_SPM_CPUIDLE
 	  The Subsystem Power Manager (SPM) controls low power modes for the
 	  CPU and L2 cores. It interface with various system drivers to put
 	  the cores in low power modes.
+
+config CPU_IDLE_ALPINE
+	bool "CPU Idle Driver for Annapurna Labs Alpine SOC"
+	depends on ARCH_ALPINE
+	default y
+	help
+	  Select this to enable cpuidle on  Annapurna Labs Alpine SOC.
+	  If unsure say Y.

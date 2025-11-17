@@ -60,15 +60,16 @@ static int sg_calculate_split(struct scatterlist *in, int nents, int nb_splits,
 			curr->length_last_sg = len;
 			size -= len;
 		}
+
+		if (!nb_splits)
+			break;
+
 		skip = 0;
 
 		if (!size && --nb_splits > 0) {
 			curr++;
 			size = *(++sizes);
 		}
-
-		if (!nb_splits)
-			break;
 	}
 
 	return (size || !splitters[0].in_sg0) ? -EINVAL : 0;
@@ -90,7 +91,8 @@ static void sg_split_phys(struct sg_splitter *splitters, const int nb_splits)
 				out_sg->length -= split->skip_sg0;
 			}
 			sg_dma_address(out_sg) = 0;
-			sg_dma_len(out_sg) = 0;
+			if (IS_ENABLED(CONFIG_NEED_SG_DMA_LENGTH))
+				sg_dma_len(out_sg) = 0;
 			in_sg = sg_next(in_sg);
 		}
 		out_sg[-1].length = split->length_last_sg;
