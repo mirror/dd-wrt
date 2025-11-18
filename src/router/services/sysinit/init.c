@@ -427,8 +427,8 @@ void start_init_start(void)
 	set_tcp_params();
 	lcdmessage("START SERVICES");
 	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
-	nvram_set("IPTABLES",IPTABLES);
-	nvram_set("IP6TABLES",IP6TABLES);
+	nvram_set("IPTABLES", IPTABLES);
+	nvram_set("IP6TABLES", IP6TABLES);
 
 #ifdef HAVE_JFFS2
 	start_service(jffs2);

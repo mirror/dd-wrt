@@ -48,7 +48,6 @@ void start_conntrack(void)
 		nvram_default_get("ip_conntrack_max", "4096");
 #endif
 
-
 	char *CONNTRACK_MAX = nvram_safe_get("ip_conntrack_max");
 	char *CONNTRACK_TCP_TIMEOUTS = nvram_default_get("ip_conntrack_tcp_timeouts", "3600");
 	char *CONNTRACK_UDP_TIMEOUTS = nvram_default_get("ip_conntrack_udp_timeouts", "180");

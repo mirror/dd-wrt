@@ -235,8 +235,8 @@ void create_openvpnrules(FILE *fp)
 			"" IPTABLES " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
-			fprintf(fp, IP6TABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n"
-				    IP6TABLES " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
+			fprintf(fp, IP6TABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n" IP6TABLES
+					      " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 		}
 #endif
 	}
@@ -263,10 +263,10 @@ void create_openvpnrules(FILE *fp)
 				    "" IPTABLES " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #ifdef HAVE_IPV6
 			if (nvram_matchi("ipv6_enable", 1)) {
-				fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-					    IP6TABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-					    IP6TABLES " -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-					    IP6TABLES " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+				fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n" IP6TABLES
+						      " -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n" IP6TABLES
+						      " -I INPUT -i $dev -m state --state NEW -j ACCEPT\n" IP6TABLES
+						      " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 			}
 #endif
 		}
@@ -312,12 +312,18 @@ void create_openvpnrules(FILE *fp)
 				"continue\n"
 				";;\n"
 				"esac\n"
-				"echo \"" IPTABLES " -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
-				"echo \"" IPTABLES " -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
-				"echo \"" IPTABLES " -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"" IPTABLES " -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"" IPTABLES " -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
-				"echo \"" IPTABLES " -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES
+				" -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
+				"echo \"" IPTABLES
+				" -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/OVPNDEL\n"
+				"echo \"" IPTABLES
+				" -t nat -D PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES
+				" -t nat -I PREROUTING -p udp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES
+				" -t nat -D PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns >/dev/null 2>&1\" >> /tmp/openvpncl_fw.sh\n"
+				"echo \"" IPTABLES
+				" -t nat -I PREROUTING -p tcp $sourcepbr $pbrip --dport 53 -j DNAT --to $dns\" >> /tmp/openvpncl_fw.sh\n"
 				"done\n"
 				"set=1\n"
 				"fi\n");
@@ -436,29 +442,33 @@ void create_openvpnserverrules(FILE *fp)
 	if (nvram_match("openvpn_tuntap", "tun")) {
 		if (nvram_matchi("openvpn_allowcnwan", 1)) {
 			fprintf(fp,
-				"" IPTABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+				"" IPTABLES
+				" -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp,
-				"" IPTABLES " -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+				"" IPTABLES
+				" -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
-				fprintf(fp,
-					IP6TABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
-				fprintf(fp,
-					IP6TABLES " -t nat -A POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE\n");
+				fprintf(fp, IP6TABLES
+					" -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+				fprintf(fp, IP6TABLES
+					" -t nat -A POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE\n");
 			}
 #endif
 		}
 		if (nvram_matchi("openvpn_allowcnlan", 1)) {
 			fprintf(fp,
-				"" IPTABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE >/dev/null 2>&1\n");
+				"" IPTABLES
+				" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp,
-				"" IPTABLES " -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+				"" IPTABLES
+				" -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
-				fprintf(fp,
-					IP6TABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
-				fprintf(fp,
-					IP6TABLES " -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE\n");
+				fprintf(fp, IP6TABLES
+					" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
+				fprintf(fp, IP6TABLES
+					" -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE\n");
 			}
 #endif
 		}
@@ -813,21 +823,23 @@ void start_openvpnserver(void)
 		fprintf(fp, "" IPTABLES " -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	if (nvram_matchi("openvpn_allowcnwan", 1)) {
 		fprintf(fp,
-			"" IPTABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+			"" IPTABLES
+			" -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
-			fprintf(fp,
-				IP6TABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+			fprintf(fp, IP6TABLES
+				" -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 		}
 #endif
 	}
 	if (nvram_matchi("openvpn_allowcnlan", 1)) {
 		fprintf(fp,
-			"" IPTABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+			"" IPTABLES
+			" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
-			fprintf(fp,
-				IP6TABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
+			fprintf(fp, IP6TABLES
+				" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
 		}
 #endif
 	}
@@ -1219,8 +1231,8 @@ void start_openvpn(void)
 			fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
 				    "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #ifdef HAVE_IPV6
-			fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-				    IP6TABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+			fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n" IP6TABLES
+					      " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #endif
 		}
 	}
