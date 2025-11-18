@@ -3461,17 +3461,17 @@ static void run_firewall6(char *vifs)
 	//      eval(IP6TABLES, "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", log_accept);
 
 	if (remotemanage) {
-		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, log_accept);
+		sysprintf(IP6TABLES " -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, log_accept);
 	}
 #ifdef HAVE_SSHD
 	if (remotessh) {
-		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_accept);
+		sysprintf(IP6TABLES " -A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_accept);
 	}
 #endif
 
 #ifdef HAVE_TELNET
 	if (remotetelnet) {
-		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, log_accept);
+		sysprintf(IP6TABLES " -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, log_accept);
 	}
 #endif
 	/* Allow loopback communication */
