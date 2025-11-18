@@ -52,7 +52,7 @@ temp-killswitch() {
 		fi
 	fi
 }
-waitfortime () {
+waitfortime() {
 	#debug todo check if nvram get ntp_succes and/or ntp_done can be used to see if time is set
 	#logger -p user.info "WireGuard debug st start of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done)"
 	SLEEPCT=$MINTIME
@@ -79,7 +79,7 @@ waitfortime () {
 acquire_lock() { 
 	logger -p user.info "WireGuard acquiring $LOCK for prewall $$ "
 	local SLEEPCT=0
-	local MAXTIME=60
+	local MAXTIME=105
 	while ! mkdir $LOCK >/dev/null 2>&1; do
 		sleep 2
 		SLEEPCT=$((SLEEPCT+2))
@@ -95,8 +95,17 @@ trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i
 
 #sleep "$(nvram get wgp_mintime)"
 
+acquire_lock
+
+#reset dns
+$nv unset wg_get_dns
+if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
+	logger -p user.info "WireGuard DNS reset"
+	cp -f /tmp/resolv.dnsmasq_oet /tmp/resolv.dnsmasq
+	rm -f /tmp/resolv.dnsmasq_oet
+fi
+
 if is_eop_active; then
-	acquire_lock
 	temp-killswitch
 	waitfortime
 	[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
@@ -136,13 +145,6 @@ if is_eop_active; then
 		logger -p user.info "WireGuard number of non failed tunnels in fail set: $fset"
 	fi
 fi
-#reset dns
-if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
-	logger -p user.info "WireGuard DNS reset"
-	cp -f /tmp/resolv.dnsmasq_oet /tmp/resolv.dnsmasq
-	rm -f /tmp/resolv.dnsmasq_oet
-fi
-$nv unset wg_get_dns
 #remove route to endpoint
 if [[ -f "$WGDELRT" ]]; then
 	(while read route; do $route >/dev/null 2>&1; done < $WGDELRT)
@@ -157,9 +159,8 @@ for i in $(seq 1 $tunnels); do
 		brctl delif $(getbridge oet${i}) oet${i}
 		brctl delif $(getbridge oet${i}) vxlan${i}
 		$IP tunnel del oet${i}
-		#$IP link set oet${i} down
-		#$IP link del oet${i}
-		[[ $($nv get oet${i}_proto) -eq 2 ]] && { $IP link set oet${i} down; } || { $IP link del oet${i}; }
+		$IP link set oet${i} down
+		$IP link del oet${i}
 		$IP link del vxlan${i}
 		rm -f ${i}.pid
 		} >/dev/null 2>&1
