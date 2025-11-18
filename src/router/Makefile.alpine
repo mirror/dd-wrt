@@ -82,7 +82,7 @@ export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
 #endif
 
-export THUMB:=-mthumb
+#export THUMB:=-mthumb
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)gcc-ar
@@ -131,8 +131,13 @@ kernel:
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	
+ifeq ($(KERNELVERSION),6.12)
+	$(MAKE) -f Makefile.alpine kernel-relink-prep MAKEEXT=alpine KBUILD_TARGETS="zImage dtbs"
+	$(MAKE) -f Makefile.alpine kernel-relink MAKEEXT=alpine KBUILD_TARGETS="zImage dtbs"
+else
 	$(MAKE) -f Makefile.alpine kernel-relink-prep MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
 	$(MAKE) -f Makefile.alpine kernel-relink MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
+endif
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -188,12 +193,16 @@ endif
 
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="$(TOP)/sstrip/sstrip -z" && \
+	export NO_RENAME=1 && \
+	export KEEP_SYMBOLS=1 && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 #	#mkdir $(TARGETDIR)/boot
 	
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/zImage-alpine
-#	cat $(LINUXDIR)/arch/arm/boot/dts/alpine-r9000.dtb >> $(ARCH)-uclibc/zImage-alpine;
+ifeq ($(KERNELVERSION),6.12)
+	cat $(LINUXDIR)/arch/arm/boot/dts/alpine-r9000.dtb >> $(ARCH)-uclibc/zImage-alpine
+endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -sort tools/sort.txt -nopad  -root-owned -noappend -Xbcj arm -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	
