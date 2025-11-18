@@ -53,7 +53,7 @@ static int al_crypto_pci_probe(
 static void al_crypto_pci_remove(
 	struct pci_dev	*pdev);
 
-static void al_crypto_flr(struct pci_dev *pdev);
+static inline void al_crypto_flr(struct pci_dev *pdev);
 
 
 static const struct pci_device_id al_crypto_pci_tbl[] = {
@@ -257,7 +257,7 @@ int al_crypto_write_pcie_flr(void *handle)
 
 /******************************************************************************
  *****************************************************************************/
-static void inline al_crypto_flr(struct pci_dev *pdev)
+static inline void al_crypto_flr(struct pci_dev *pdev)
 {
 	al_pcie_perform_flr(al_crypto_read_pcie_config,
 			al_crypto_write_pcie_config,

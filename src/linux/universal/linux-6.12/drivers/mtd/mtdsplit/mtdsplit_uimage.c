@@ -90,19 +90,19 @@ static ssize_t uimage_verify_default(u_char *buf, u32 ih_magic, u32 ih_type)
 
 	/* default sanity checks */
 	if (be32_to_cpu(header->ih_magic) != ih_magic) {
-		pr_debug("invalid uImage magic: %08x != %08x\n",
+		pr_warn("invalid uImage magic: %08x != %08x\n",
 			 be32_to_cpu(header->ih_magic), ih_magic);
 		return -EINVAL;
 	}
 
 	if (header->ih_os != IH_OS_LINUX) {
-		pr_debug("invalid uImage OS: %08x != %08x\n",
+		pr_warn("invalid uImage OS: %08x != %08x\n",
 			 be32_to_cpu(header->ih_os), IH_OS_LINUX);
 		return -EINVAL;
 	}
 
 	if (header->ih_type != ih_type) {
-		pr_debug("invalid uImage type: %08x != %08x\n",
+		pr_warn("invalid uImage type: %08x != %08x\n",
 			 be32_to_cpu(header->ih_type), ih_type);
 		return -EINVAL;
 	}

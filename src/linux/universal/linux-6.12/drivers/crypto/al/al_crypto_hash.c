@@ -895,7 +895,7 @@ static int ahash_digest(struct ahash_request *req)
 
 	dev_dbg(to_dev(ctx->chan), "%s:%d\n", __func__, __LINE__);
 
-	ahash->init(req);
+	ahash_init(req);
 	req_ctx->last = true;
 
 	return ahash_process_req(req, req->nbytes);

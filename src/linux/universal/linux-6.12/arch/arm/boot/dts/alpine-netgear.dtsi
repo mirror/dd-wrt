@@ -937,14 +937,14 @@
 		};
 	};
 
-	aliases {
+/*	aliases {
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
 		led-upgrade = &led_system;
-	};
+	};*/
 
-	leds: leds {
+/*	leds: leds {
 		compatible = "gpio-leds";
 
 		led_system: system {
@@ -988,8 +988,8 @@
 			gpios = <&gpio4 0x7 0x0>;
 		};
 	};
-
-	keys: keys {
+*/
+/*	keys: keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -1009,7 +1009,7 @@
 			gpios = <&gpio4 0x0 0x1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
-	};
+	};*/
 
 	thermal-zones {
 		cpu-thermal {
@@ -1189,18 +1189,45 @@
 		};
 
 		kernel {
-			label = "kernel";
-			reg = <0x00580000 0x02000000>;
+			label = "linux";
+			reg = <0x00580000 0x02c40000>;
+			compatible = "openwrt,uimage";
+			openwrt,offset = <4>;
+		};
+		
+		netgear {
+			label = "netgear";
+			reg = <0x031c0000 0x4480000>;
 		};
 
-		ubi {
-			label = "ubi";
-			reg = <0x02580000 0x1ca80000>;
+		plex {
+			label = "plex";
+			reg = <0x07640000 0x12c00000>;
 		};
 
-		recovery {
-			label = "recovery";
-			reg = <0x1f000000 0x01000000>;
+		reserve {
+			label = "reserve";
+			reg = <0x01a240000 0x5780000>;
+		};
+
+		crashdump {
+			label = "crashdump";
+			reg = <0x01f9c0000 0x800000>;
+		};
+
+		language {
+			label = "language";
+			reg = <0x01fa40000 0x380000>;
+		};
+		
+		nvram {
+			label = "nvram";
+			reg = <0x01fdc0000 0x120000>;
+		};
+
+		pot {
+			label = "pot";
+			reg = <0x01fee0000 0x120000>;
 		};
 	};
 };

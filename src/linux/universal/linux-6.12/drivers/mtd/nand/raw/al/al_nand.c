@@ -957,7 +957,7 @@ err:
 	return ret;
 }
 
-static int al_nand_remove(struct platform_device *pdev)
+static void al_nand_remove(struct platform_device *pdev)
 {
 	struct nand_data *nand_dat = dev_get_drvdata(&pdev->dev);
 	int ret;
@@ -971,7 +971,7 @@ static int al_nand_remove(struct platform_device *pdev)
 	kfree(nand_dat->mtd.name);
 	kfree(nand_dat);
 
-	return 0;
+	return;
 }
 
 static const struct of_device_id al_nand_match[] = {

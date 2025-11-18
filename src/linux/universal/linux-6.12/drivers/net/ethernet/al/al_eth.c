@@ -44,6 +44,7 @@
 #include <linux/if.h>
 #include <linux/if_vlan.h>
 #include <linux/cpu_rmap.h>
+#include <linux/ethtool.h>
 #include <net/ip.h>
 #include <net/tcp.h>
 #include <net/checksum.h>
@@ -2182,7 +2183,7 @@ next:
 	if (unlikely(refill_actual < refill_required)) {
 		netdev_warn(adapter->netdev, "%s: rescheduling rx queue %d\n",
 			    __func__, qid);
-		napi_reschedule(napi);
+		napi_schedule(napi);
 	} else if (budget > 0) {
 		dev_dbg(&adapter->pdev->dev,
 			"rx_poll: q %d done next to clean %x\n", qid,
@@ -3820,9 +3821,9 @@ static void al_eth_get_drvinfo(struct net_device *dev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(dev);
 
-	strlcpy(info->driver, DRV_MODULE_NAME, sizeof(info->driver));
-	strlcpy(info->version, DRV_MODULE_VERSION, sizeof(info->version));
-	strlcpy(info->bus_info, pci_name(adapter->pdev),
+	strscpy(info->driver, DRV_MODULE_NAME, sizeof(info->driver));
+	strscpy(info->version, DRV_MODULE_VERSION, sizeof(info->version));
+	strscpy(info->bus_info, pci_name(adapter->pdev),
 		sizeof(info->bus_info));
 }
 
@@ -3942,33 +3943,30 @@ static u32 al_eth_get_rxfh_indir_size(struct net_device *netdev)
 	return AL_ETH_RX_RSS_TABLE_SIZE;
 }
 
-static int al_eth_get_rxfh(struct net_device *netdev, u32 *indir, u8 *key,
-			   u8 *hfunc)
+static int al_eth_get_rxfh(struct net_device *netdev, struct ethtool_rxfh_param *param)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	int i;
-	if (hfunc)
-		*hfunc = ETH_RSS_HASH_TOP;
+	param->hfunc = ETH_RSS_HASH_TOP;
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
-		indir[i] = adapter->rss_ind_tbl[i];
+		param->indir[i] = adapter->rss_ind_tbl[i];
 
 	return 0;
 }
 
-static int al_eth_set_rxfh(struct net_device *netdev, const u32 *indir,
-			   const u8 *key, const u8 hfunc)
+static int al_eth_set_rxfh(struct net_device *netdev, struct ethtool_rxfh_param *param, struct netlink_ext_ack *netlink)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	size_t i;
 
-	if (key ||
-	    (hfunc != ETH_RSS_HASH_NO_CHANGE && hfunc != ETH_RSS_HASH_TOP))
+	if (param->key ||
+	    (param->hfunc != ETH_RSS_HASH_NO_CHANGE && param->hfunc != ETH_RSS_HASH_TOP))
 		return -EOPNOTSUPP;
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++) {
-		adapter->rss_ind_tbl[i] = indir[i];
-		al_eth_thash_table_set(&adapter->hal_adapter, i, 0, indir[i]);
+		adapter->rss_ind_tbl[i] = param->indir[i];
+		al_eth_thash_table_set(&adapter->hal_adapter, i, 0, param->indir[i]);
 	}
 
 	return 0;
@@ -3990,7 +3988,8 @@ static void al_eth_get_channels(struct net_device *netdev,
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
-static int al_eth_get_eee(struct net_device *netdev, struct ethtool_eee *edata)
+
+static int al_eth_get_eee(struct net_device *netdev, struct ethtool_keee *edata)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_eee_params params;
@@ -4006,7 +4005,7 @@ static int al_eth_get_eee(struct net_device *netdev, struct ethtool_eee *edata)
 	return phy_ethtool_get_eee(adapter->phydev, edata);
 }
 
-static int al_eth_set_eee(struct net_device *netdev, struct ethtool_eee *edata)
+static int al_eth_set_eee(struct net_device *netdev, struct ethtool_keee *edata)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_eee_params params;

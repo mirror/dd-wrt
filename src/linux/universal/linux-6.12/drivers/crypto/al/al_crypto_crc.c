@@ -471,7 +471,7 @@ static int crc_digest(struct ahash_request *req)
 	struct al_crc_req_ctx *req_ctx = ahash_request_ctx(req);
 	struct crypto_ahash *ahash = crypto_ahash_reqtfm(req);
 
-	ahash->init(req);
+	crc_init(req);
 	req_ctx->last = true;
 
 	return crc_process_req(req, req->nbytes);

@@ -283,11 +283,11 @@ static int al_mdio_gpio_probe(struct platform_device *pdev)
 	return ret;
 }
 
-static int al_mdio_gpio_remove(struct platform_device *pdev)
+static void al_mdio_gpio_remove(struct platform_device *pdev)
 {
 	al_mdio_gpio_destroy(&pdev->dev);
 
-	return 0;
+	return;
 }
 
 static const struct of_device_id al_mdio_gpio_of_match[] = {

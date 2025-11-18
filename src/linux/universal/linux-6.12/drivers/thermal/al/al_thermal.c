@@ -21,6 +21,7 @@
 #include <linux/thermal.h>
 
 #include "../thermal_hwmon.h"
+#include "../thermal_core.h"
 
 #include "al_hal_thermal_sensor.h"
 
@@ -179,7 +180,7 @@ static int al_thermal_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int al_thermal_exit(struct platform_device *pdev)
+static void al_thermal_exit(struct platform_device *pdev)
 {
 	struct thermal_zone_device *al_thermal = platform_get_drvdata(pdev);
 	struct al_thermal_dev *al_dev = al_thermal->devdata;
@@ -189,7 +190,7 @@ static int al_thermal_exit(struct platform_device *pdev)
 
 	al_thermal_sensor_enable_set(&al_dev->handle, 0);
 
-	return 0;
+	return;
 }
 
 static const struct of_device_id al_thermal_id_table[] = {

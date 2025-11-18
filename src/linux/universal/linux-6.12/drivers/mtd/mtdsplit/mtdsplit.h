@@ -17,7 +17,7 @@
 #define ROOTFS_PART_NAME	"rootfs"
 #define UBI_PART_NAME		"ubi"
 
-#define ROOTFS_SPLIT_NAME	"rootfs_data"
+#define ROOTFS_SPLIT_NAME	"ddwrt"
 
 enum mtdsplit_part_type {
 	MTDSPLIT_PART_TYPE_UNK = 0,

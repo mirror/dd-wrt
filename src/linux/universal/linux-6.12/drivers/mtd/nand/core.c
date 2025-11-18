@@ -12,6 +12,7 @@
 #include <linux/module.h>
 #include <linux/mtd/nand.h>
 
+#if 0
 /**
  * nand_check_erased_buf - check if a buffer contains (almost) only 0xff data
  * @buf: buffer to test
@@ -142,7 +143,7 @@ int nand_check_erased_ecc_chunk(void *data, int datalen,
 	return data_bitflips + ecc_bitflips + extraoob_bitflips;
 }
 EXPORT_SYMBOL(nand_check_erased_ecc_chunk);
-
+#endif
 /**
  * nanddev_isbad() - Check if a block is bad
  * @nand: NAND device

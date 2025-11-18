@@ -24,4 +24,6 @@ obj-$(CONFIG_HOTPLUG_CPU)	+= sleep-alpine.o
 ifneq ($(CONFIG_HOTPLUG_CPU), y)
 obj-$(CONFIG_CPU_IDLE_ALPINE)	+= sleep-alpine.o
 endif
+obj-y	+= al_hal_pll.o
+obj-y	+= cpufreq.o
 
