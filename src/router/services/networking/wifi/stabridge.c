@@ -72,12 +72,12 @@ void start_stabridge(void)
 		writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
 		writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
 		writeprocsysnet("bridge/bridge-nf-call-iptables", "1");
-		insmod("ebtables ebtables ebtable_filter ebtable_nat ebtable_broute ebt_arpnat ebt_broute");
-		eval("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target",
+		insmod("ebtables ebtable_filter ebtable_nat ebtable_broute ebt_arpnat ebt_broute");
+		eval(EBTABLES, "-t", "nat", "-A", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target",
 		     "ACCEPT");
-		eval("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target",
+		eval(EBTABLES, "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target",
 		     "ACCEPT");
-		eval("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j",
+		eval(EBTABLES, "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j",
 		     "DROP");
 	}
 #endif
@@ -89,19 +89,19 @@ void stop_stabridge(void)
 	stop_process("relayd", "Client Bridge Relay Daemon");
 #else
 	if (getWET()) {
-		eval("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j",
+		eval(EBTABLES, "-t", "broute", "-D", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j",
 		     "DROP");
-		eval("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target",
+		eval(EBTABLES, "-t", "nat", "-D", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target",
 		     "ACCEPT");
-		eval("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target",
+		eval(EBTABLES, "-t", "nat", "-D", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target",
 		     "ACCEPT");
 	}
 	// flush the tables, since getWET will not find the interface
 	// in the nvram (if changed from client-bridge to whatever)
 	// Fix, cause the rmmod command does not
 	// remove the modules (..if rules are in?).
-	eval("ebtables", "-t", "broute", "-F");
-	eval("ebtables", "-t", "nat", "-F");
+	eval(EBTABLES, "-t", "broute", "-F");
+	eval(EBTABLES, "-t", "nat", "-F");
 	rmmod("ebt_broute ebt_arpnat ebtable_broute ebtable_nat ebtable_filter ebtables");
 	// don't let packages pass to " IPTABLES " without ebtables loaded
 	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
