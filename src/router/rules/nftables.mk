@@ -45,7 +45,7 @@ nftables-configure: libmnl libnftnl
 nftables-new-clean:
 	-make -C nftables clean
 
-nftables:
+nftables: libmnl libnftnl
 	-make -C nftables
 
 nftables-install:
