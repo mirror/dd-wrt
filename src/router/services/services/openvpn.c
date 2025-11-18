@@ -235,8 +235,8 @@ void create_openvpnrules(FILE *fp)
 			"" IPTABLES " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
-			fprintf(fp, "ip6tables -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n"
-				    "ip6tables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
+			fprintf(fp, IP6TABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n"
+				    IP6TABLES " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 		}
 #endif
 	}
@@ -263,10 +263,10 @@ void create_openvpnrules(FILE *fp)
 				    "" IPTABLES " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #ifdef HAVE_IPV6
 			if (nvram_matchi("ipv6_enable", 1)) {
-				fprintf(fp, "ip6tables -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-					    "ip6tables -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-					    "ip6tables -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-					    "ip6tables -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+				fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
+					    IP6TABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
+					    IP6TABLES " -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
+					    IP6TABLES " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 			}
 #endif
 		}
@@ -442,9 +442,9 @@ void create_openvpnserverrules(FILE *fp)
 #ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp,
-					"ip6tables -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+					IP6TABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 				fprintf(fp,
-					"ip6tables -t nat -A POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE\n");
+					IP6TABLES " -t nat -A POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE\n");
 			}
 #endif
 		}
@@ -456,9 +456,9 @@ void create_openvpnserverrules(FILE *fp)
 #ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp,
-					"ip6tables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
+					IP6TABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
 				fprintf(fp,
-					"ip6tables -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE\n");
+					IP6TABLES " -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE\n");
 			}
 #endif
 		}
@@ -817,7 +817,7 @@ void start_openvpnserver(void)
 #ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp,
-				"ip6tables -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
+				IP6TABLES " -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 		}
 #endif
 	}
@@ -827,7 +827,7 @@ void start_openvpnserver(void)
 #ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp,
-				"ip6tables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
+				IP6TABLES " -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
 		}
 #endif
 	}
@@ -1211,7 +1211,7 @@ void start_openvpn(void)
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "" IPTABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #ifdef HAVE_IPV6
-		fprintf(fp, "ip6tables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
+		fprintf(fp, IP6TABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 #endif
 	}
 	if (nvram_matchi("openvpncl_fw", 0)) {
@@ -1219,8 +1219,8 @@ void start_openvpn(void)
 			fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
 				    "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #ifdef HAVE_IPV6
-			fprintf(fp, "ip6tables -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-				    "ip6tables -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+			fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
+				    IP6TABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 #endif
 		}
 	}

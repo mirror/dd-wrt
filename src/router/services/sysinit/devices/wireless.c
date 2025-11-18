@@ -352,9 +352,9 @@ int load_brcmfmac(void)
 
 int load_wil6210(void)
 {
-	eval("insmod", "wil6210", "led_id=2");
-	if (!detectchange(NULL))
-		rmmod("wil6210");
+//	eval("insmod", "wil6210", "led_id=2");
+//	if (!detectchange(NULL))
+//		rmmod("wil6210");
 	return 0;
 }
 
