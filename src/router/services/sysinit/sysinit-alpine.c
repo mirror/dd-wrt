@@ -62,7 +62,7 @@ void start_sysinit(void)
 	 */
 
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-
+	insmod("al_eth_drv");
 	char mtdpath[64];
 	int board = getRouterBrand();
 
@@ -96,6 +96,23 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth2", "up");
+
+		eval("swconfig", "dev", "switch1", "set", "reset", "1");
+		eval("swconfig", "dev", "switch1", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch1", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch1", "set", "igmp_v3", "1");
+		
+		eval("swconfig", "dev", "switch1", "vlan", "1", "set", "ports", "0t 1 2 4 6");
+		eval("swconfig", "dev", "switch1", "vlan", "2", "set", "ports", "3 5t");
+		eval("swconfig", "dev", "switch1", "set", "apply");
+
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
+
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4 5 6t");
+		eval("swconfig", "dev", "switch0", "set", "apply");
 
 	insmod("mii_gpio");
 	insmod("gpio-pca953x");
@@ -307,10 +324,10 @@ void start_resetleds(void)
 
 void start_postnetwork(void)
 {
-	set_gpio(434 + 17, 0); // reset wifi card gpio pin
-	set_gpio(469 + 17, 0); // reset wifi card gpio pin
-	set_gpio(434 + 17, 1); // reset wifi card gpio pin
-	set_gpio(469 + 17, 1); // reset wifi card gpio pin
+//	set_gpio(434 + 17, 0); // reset wifi card gpio pin
+//	set_gpio(469 + 17, 0); // reset wifi card gpio pin
+//	set_gpio(434 + 17, 1); // reset wifi card gpio pin
+//	set_gpio(469 + 17, 1); // reset wifi card gpio pin
 }
 
 int check_cfe_nv(void)
@@ -331,7 +348,9 @@ void sys_overclocking(void)
 		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
 		sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
 	} else {
-		sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo 1700000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
+//		sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
 	}
 }
 
@@ -356,7 +375,7 @@ void start_wifi_drivers(void)
 		set_named_smp_affinity("ath10k_pci", 3, 2);
 		set_named_smp_affinity_mask("wil6210", 6, 1);
 		ifconfig("wlan2", IFUP, "0.0.0.0", NULL); // trigger firmware load and init
-		start_resetleds();
+//		start_resetleds();
 		start_postnetwork();
 	}
 }
