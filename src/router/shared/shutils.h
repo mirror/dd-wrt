@@ -35,6 +35,7 @@
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 #ifdef HAVE_NFTABLES
+#define EBTABLES "ebtables-nft"
 #define IPTABLES "iptables-nft"
 #define IP6TABLES "ip6tables-nft"
 #define IP6TABLES_SAVE "ip6tables-nft-save"
@@ -42,6 +43,7 @@
 #define IPTABLES_RESTORE "iptables-nft-restore"
 #define IP6TABLES_RESTORE "ip6tables-nft-restore"
 #else
+#define EBTABLES "ebtables"
 #define IPTABLES "iptables"
 #define IP6TABLES "ip6tables"
 #define IP6TABLES_SAVE "ip6tables-save"
