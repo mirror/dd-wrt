@@ -71,7 +71,7 @@ static inline int thermal_get_temp(struct thermal_zone_device *thermal,
 		return -ETIME;
 	}
 
-	*temp = MCELSIUS(al_thermal_sensor_readout_get(&al_dev->handle));
+	*temp = al_thermal_sensor_readout_get(&al_dev->handle)	;
 
 	return 0;
 }
