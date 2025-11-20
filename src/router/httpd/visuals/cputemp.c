@@ -548,6 +548,15 @@ static int show_temp(webs_t wp, int mon, int input, char *name, int two)
 		snprintf(sysfs2, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input + 1);
 	return showsensor(wp, sysfs, NULL, name, 1, CELSIUS, two ? sysfs2 : NULL);
 }
+static int show_fan(webs_t wp, int mon, int input, char *name, int two)
+{
+	char sysfs[128];
+	char sysfs2[128];
+	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/fan%d_input", mon, input);
+	if (two)
+		snprintf(sysfs2, 64, "/sys/class/hwmon/hwmon%d/fan%d_input", mon, input + 1);
+	return showsensor(wp, sysfs, NULL, name, 1, RPM, two ? sysfs2 : NULL);
+}
 #elif defined(HAVE_IPQ806X)
 static int show_temp(webs_t wp, char *name)
 {
@@ -891,7 +900,9 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 exit_error:;
 	}
 #endif
-
+#ifdef HAVE_ALPINE
+	cpufound |= show_fan(wp, 0, 1, "FAN", 0);
+#endif
 #if !defined(HAVE_IPQ806X) && !defined(HAVE_PB42) && !defined(HAVE_LSX)
 	if (fp != NULL) {
 		my_fclose(fp);
