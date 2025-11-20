@@ -61,7 +61,14 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
 
 # This selects which instruction set is used.
 arch-$(CONFIG_CPU_32v7M)	:=-march=armv7-m
+
+ifeq ($(CONFIG_ARCH_ALPINE),y)
+arch-$(CONFIG_CPU_32v7)		:=-mcpu=cortex-a15 -mtune=cortex-a15
+CFLAGS_ABI	:=-mabi=aapcs-linux  -mfpu=neon-vfpv4
+else
 arch-$(CONFIG_CPU_32v7)		:=-march=armv7-a
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
+endif
 arch-$(CONFIG_CPU_32v6)		:=-march=armv6
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
@@ -110,7 +117,6 @@ tune-$(CONFIG_CPU_V6)		:=-mtune=arm1136j-s
 tune-$(CONFIG_CPU_V6K)		:=-mtune=arm1136j-s
 
 ifeq ($(CONFIG_AEABI),y)
-CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
 else
 CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
 endif
