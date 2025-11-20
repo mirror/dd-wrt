@@ -422,10 +422,6 @@ void start_wifileds(void)
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	}
-
-
-
-
 }
 void start_sysinit(void)
 {

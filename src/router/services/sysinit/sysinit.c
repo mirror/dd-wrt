@@ -3783,7 +3783,7 @@ static void unset_nvram(void)
 void start_overclocking(void)
 {
 	char *newsetting = nvram_safe_get("overclocking");
-	nvram_default_get("prev_overclocking",newsetting);
+	nvram_default_get("prev_overclocking", newsetting);
 	if (!nvram_match("prev_overclocking", newsetting)) {
 		nvram_unset("cpu_rating");
 		nvram_set("prev_overclocking", newsetting);
