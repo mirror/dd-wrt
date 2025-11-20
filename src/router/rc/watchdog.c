@@ -115,11 +115,13 @@ static void check_fan(int brand)
 			if (tempfp) {
 				fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
 				pclose(tempfp);
+				wifi3_mac *= 1000;
 			}
 			tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
 			if (tempfp) {
 				fscanf(tempfp, "%d.%d", &wifi3_phy, &dummy);
 				pclose(tempfp);
+				wifi3_phy *= 1000;
 			}
 		}
 	}
@@ -137,11 +139,12 @@ static void check_fan(int brand)
 		target = 0;
 	if (target > 10000)
 		target = 10000;
+	//	fprintf(stderr, "%d %d %d %d %d target=%d lasttarget %d\n", cpu, wifi1, wifi2, wifi3_mac, wifi3_phy, target, lasttarget);
 	target *= 4000;
 	target /= 10000;
 	if (target != lasttarget) {
-		fprintf(stderr, "set fan to %d\n", target);
-		sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
+		//		fprintf(stderr, "set fan to %d\n", target);
+		sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/fan1_target", target);
 		lasttarget = target;
 	}
 #endif
