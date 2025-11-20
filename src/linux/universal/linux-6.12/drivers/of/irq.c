@@ -755,7 +755,6 @@ struct irq_domain *of_msi_get_domain(struct device *dev,
 		printk(KERN_EMERG "msi override %s\n",np->name);
 		msi_np = msi_external;
 	} else
-#endif
 	msi_np = of_parse_phandle(np, "msi-parent", 0);
 	if (msi_np && !of_property_read_bool(msi_np, "#msi-cells")) {
 		d = irq_find_matching_host(msi_np, token);
@@ -763,6 +762,7 @@ struct irq_domain *of_msi_get_domain(struct device *dev,
 			of_node_put(msi_np);
 		return d;
 	}
+#endif
 
 	of_for_each_phandle(&it, err, np, "msi-parent", "#msi-cells", 0) {
 		d = irq_find_matching_host(it.node, token);

@@ -750,6 +750,7 @@ int of_property_read_reg(struct device_node *np, int idx, u64 *addr, u64 *size)
 }
 EXPORT_SYMBOL(of_property_read_reg);
 
+#ifdef CONFIG_PCI
 struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
 						struct device_node *node)
 {
@@ -802,7 +803,7 @@ struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
 	return iter;
 }
 EXPORT_SYMBOL_GPL(of_pci_process_ranges);
-
+#endif
 static int parser_init(struct of_pci_range_parser *parser,
 			struct device_node *node, const char *name)
 {
