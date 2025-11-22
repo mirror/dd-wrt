@@ -161,17 +161,13 @@ skip:;
 		} else
 			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, wanport));
 
-		struct portstatus status;
-		int r = getLanPortStatus(var, &status);
-		if (!r && status.link) {
-			show_bwif(wp, &ctx, wanport, name);
+		show_bwif(wp, &ctx, wanport, name);
 
-			if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
-				if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
-					show_bwif(wp, &ctx, "eth2.0008", "IPTV");
-				else
-					show_bwif(wp, &ctx, "eth0.0008", "IPTV");
-			}
+		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
+			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
+				show_bwif(wp, &ctx, "eth2.0008", "IPTV");
+			else
+				show_bwif(wp, &ctx, "eth0.0008", "IPTV");
 		}
 	}
 #ifdef HAVE_MADWIFI
