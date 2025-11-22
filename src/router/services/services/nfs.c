@@ -109,7 +109,7 @@ void start_nfs(void)
 		//fprintf(fp, "storagedir=/var/lib/nfs/nfsdcld\n");
 		fprintf(fp, "[nfsd]\n");
 		fprintf(fp, "debug=0\n");
-		fprintf(fp, "threads=16\n");
+		fprintf(fp, "threads=%d\n", cpucount * 4);
 		//fprintf(fp, "host=\n");
 		fprintf(fp, "grace-time=90\n");
 		fprintf(fp, "lease-time=90\n");
