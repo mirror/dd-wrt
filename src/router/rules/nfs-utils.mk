@@ -57,5 +57,6 @@ nfs-utils-install:
 	mkdir -p $(INSTALLDIR)/nfs-utils/etc
 	rm -f $(INSTALLDIR)/nfs-utils/etc/exports
 	-cd $(INSTALLDIR)/nfs-utils/etc && ln -s /tmp/exports exports
+	-cd $(INSTALLDIR)/nfs-utils/etc && ln -s /tmp/nfs.conf nfs.conf
 	install -D nfs-utils/config/nfs.webnas $(INSTALLDIR)/nfs-utils/etc/config/04nfs.webnas
 	install -D nfs-utils/config/nfs.nvramconfig $(INSTALLDIR)/nfs-utils/etc/config/nfs.nvramconfig
