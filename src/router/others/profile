@@ -4,7 +4,7 @@ export PS1='\[\e]0;\u@\h: \w\a\]\n\[\033[0;37m\]\342\224\214\342\224\200$(if [[ 
 export TZ=`cat /etc/TZ`
 export HISTFILE=/tmp/.ash_history
 export LANG=POSIX
-export LC_CTYPE=UTF-8
+export LC_CTYPE=C.UTF-8
 
 alias ll='ls -lahrt'
 
