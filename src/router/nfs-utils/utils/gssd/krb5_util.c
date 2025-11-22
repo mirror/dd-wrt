@@ -619,6 +619,7 @@ get_full_hostname(const char *inhost, char *outhost, int outhostlen)
 		goto out;
 	}
 	strncpy(outhost, addrs->ai_canonname, outhostlen);
+	outhost[outhostlen - 1] = '\0';
 	nfs_freeaddrinfo(addrs);
 	for (c = outhost; *c != '\0'; c++)
 	    *c = tolower(*c);

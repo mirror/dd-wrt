@@ -436,7 +436,7 @@ static struct nl_msg *netlink_msg_alloc(struct nl_sock *sock, const char *family
 
 	id = genl_ctrl_resolve(sock, family);
 	if (id < 0) {
-		xlog(L_ERROR, "%s not found", NFSD_FAMILY_NAME);
+		xlog(L_ERROR, "failed to resolve %s generic netlink family", family);
 		return NULL;
 	}
 
@@ -447,7 +447,7 @@ static struct nl_msg *netlink_msg_alloc(struct nl_sock *sock, const char *family
 	}
 
 	if (!genlmsg_put(msg, 0, 0, id, 0, 0, 0, 0)) {
-		xlog(L_ERROR, "failed to allocate netlink message");
+		xlog(L_ERROR, "failed to add generic netlink headers to netlink message");
 		nlmsg_free(msg);
 		return NULL;
 	}
@@ -1417,7 +1417,6 @@ static int lockd_configure(struct nl_sock *sock, int grace)
 {
 	char *tcp_svc, *udp_svc;
 	int tcpport = 0, udpport = 0;
-	int ret;
 
 	tcp_svc = conf_get_str("lockd", "port");
 	if (tcp_svc) {
@@ -1432,6 +1431,8 @@ static int lockd_configure(struct nl_sock *sock, int grace)
 		if (udpport < 0)
 			return 1;
 	}
+
+	return lockd_config_doit(sock, LOCKD_CMD_SERVER_SET, grace, tcpport, udpport);
 }
 
 static int
@@ -1520,7 +1521,7 @@ static int configure_versions(void)
 
 static int configure_listeners(void)
 {
-	char *port, *rdma_port;
+	char *port, *rdma_port = NULL;
 	bool rdma, udp, tcp;
 	struct conf_list *hosts;
 	int ret = 0;
@@ -1591,8 +1592,6 @@ static int autostart_func(struct nl_sock *sock, int argc, char ** argv)
 			return 0;
 		}
 	}
-
-	read_nfsd_conf();
 
 	grace = conf_get_num("nfsd", "grace-time", 0);
 	ret = lockd_configure(sock, grace);
@@ -1676,10 +1675,7 @@ static void nlm_usage(void)
 
 static int nlm_func(struct nl_sock *sock, int argc, char ** argv)
 {
-	int *threads, grace, lease, idx, ret, opt, pools;
-	struct conf_list *thread_str;
-	struct conf_list_node *n;
-	char *scope, *pool_mode;
+	int opt;
 
 	optind = 1;
 	while ((opt = getopt_long(argc, argv, "h", help_only_options, NULL)) != -1) {
@@ -1823,6 +1819,8 @@ int main(int argc, char **argv)
 
 	xlog_syslog(0);
 	xlog_stderr(1);
+
+	read_nfsd_conf();
 
 	/* Parse the preliminary options */
 	while ((opt = getopt_long(argc, argv, "+hdsV", pre_options, NULL)) != -1) {

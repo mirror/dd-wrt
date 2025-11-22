@@ -14,13 +14,13 @@ The
 .I nfs-utils
 package provides a suite of
 .I systemd
-unit files which allow the various services to be started and
-managed.  These unit files ensure that the services are started in the
-correct order, and the prerequisites are active before dependant
-services start.  As there are quite  few unit files, it is not
-immediately obvious how best to achieve certain results.  The
-following subsections attempt to cover the issues that are most likely
-to come up.
+unit files and generators which allow the various services to be
+started and managed.  These unit files and generators ensure that the
+services are started in the correct order, and the prerequisites are
+active before dependant services start.  As there are quite a few unit
+files and generators, it is not immediately obvious how best to achieve
+certain results.  The following subsections attempt to cover the issues
+that are most likely to come up.
 .SS Configuration
 The standard systemd unit files do not provide any easy way to pass
 any command line arguments to daemons so as to configure their
@@ -166,6 +166,52 @@ file is present.  If a site needs this file present but does not want
 running, it can be masked with
 .RS
 .B systemctl mask rpc-gssd
+.SS Generators
+systemd unit generators are small executables placed in
+.I /usr/lib/systemd/system-generators/
+to dynamically extend the unit file hierarchy.  The
+.I nfs-utils
+package provides three:
+.TP
+.B nfsroot-generator
+It creates the
+.B sysroot.mount
+unit to mount /sysroot via NFSv4 in the initrd, if it detects one the
+following options in the kernel command line:
+.PP
+.RS
+.B root=/dev/nfs nfsroot=[<server>:]<path>[,<options>]
+.PP
+.RS
+Defined in
+.I <kernel_source>/Documentation/admin-guide/nfs/nfsroot.rst
+.RE
+.RE
+.PP
+.RS
+.B root=nfs[4]:[<server>:]<path>[:<options>]
+.PP
+.RS
+Defined in
+.BR dracut.cmdline (7).
+.PP
+.B NOTE:
+Although "nfs" can be used as type indicator for the mountpoint, the
+mount unit will use always "nfs4".
+.RE
+.RE
+.TP
+.B nfs-server-generator
+It creates ordering dependencies between
+.I nfs-server.service
+and various filesystem mounts: it should start before any "nfs"
+mountpoints are mounted, in case they are loop-back mounts, and after
+all exported filesystems are mounted, so there is no risk of exporting
+the underlying directory.
+.TP
+.B rpc-pipefs-generator
+It creates ordering dependencies between NFS services and the
+rpc_pipefs mountpoint.
 .RE
 .SH FILES
 /etc/nfs.conf
@@ -180,6 +226,8 @@ and in related
 .I conf.d
 drop-in directories.
 .SH SEE ALSO
+.BR bootup (7),
+.BR systemd.generator (7),
 .BR systemd.unit (5),
 .BR nfs.conf (5),
 .BR nfsmount.conf (5).

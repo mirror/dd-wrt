@@ -20,20 +20,20 @@ if not sunrpc.is_dir():
     sys.exit(1)
 
 
-def read_addr_file(path):
-    """Read an xprt address file."""
+def read_sysfs_file(path, *, missing="enoent"):
+    """Read a sysfs file."""
     try:
         with open(path, 'r') as f:
             return f.readline().strip()
     except FileNotFoundError:
-        return "(enoent)"
+        return f"({missing})"
 
 
-def write_addr_file(path, newaddr):
-    """Write a new address to an xprt address file."""
+def write_sysfs_file(path, input):
+    """Write 'input' to a sysfs file."""
     with open(path, 'w') as f:
-        f.write(newaddr)
-    return read_addr_file(path)
+        f.write(input)
+    return read_sysfs_file(path)
 
 
 def read_info_file(path):
@@ -56,8 +56,9 @@ class Xprt:
         self.name = path.stem.rsplit("-", 1)[0]
         self.type = path.stem.split("-")[2]
         self.info = read_info_file(path / "xprt_info")
-        self.dstaddr = read_addr_file(path / "dstaddr")
-        self.srcaddr = read_addr_file(path / "srcaddr")
+        self.dstaddr = read_sysfs_file(path / "dstaddr")
+        self.srcaddr = read_sysfs_file(path / "srcaddr")
+        self.xprtsec = read_sysfs_file(path / "xprtsec", missing="unknown")
         self.read_state()
 
     def __lt__(self, rhs):
@@ -67,7 +68,8 @@ class Xprt:
     def _xprt(self):
         main = ", main" if self.info.get("main_xprt") else ""
         return f"{self.name}: {self.type}, {self.dstaddr}, " \
-               f"port {self.info['dst_port']}, state <{self.state}>{main}"
+               f"port {self.info['dst_port']}, sec {self.xprtsec}, " \
+               f"state <{self.state}>{main}"
 
     def _src_reqs(self):
         return f"	Source: {self.srcaddr}, port {self.info['src_port']}, " \
@@ -106,7 +108,7 @@ class Xprt:
 
     def set_dstaddr(self, newaddr):
         """Change the dstaddr of an xprt."""
-        self.dstaddr = write_addr_file(self.path / "dstaddr", newaddr)
+        self.dstaddr = write_sysfs_file(self.path / "dstaddr", newaddr)
 
     def set_state(self, state):
         """Change the state of an xprt."""
@@ -183,14 +185,13 @@ class Xprt:
 class XprtSwitch:
     """Represents a group of xprt connections."""
 
-    def __init__(self, path, sep=":"):
+    def __init__(self, path):
         """Read in xprt switch information from sysfs."""
         self.path = path
         self.name = path.stem
         self.info = read_info_file(path / "xprt_switch_info")
         self.xprts = sorted([Xprt(p) for p in self.path.iterdir()
                              if p.is_dir()])
-        self.sep = sep
 
     def __lt__(self, rhs):
         """Compare the name of two xprt switch instances."""
@@ -198,7 +199,7 @@ class XprtSwitch:
 
     def __str__(self):
         """Return a string representation of an xprt switch."""
-        switch = f"{self.name}{self.sep} " \
+        switch = f"{self.name}: " \
                  f"xprts {self.info['num_xprts']}, " \
                  f"active {self.info['num_active']}, " \
                  f"queue {self.info['queue_len']}"
@@ -211,6 +212,12 @@ class XprtSwitch:
                                       help="Commands for xprt switches")
         parser.set_defaults(func=XprtSwitch.show, switch=None)
         subparser = parser.add_subparsers()
+
+        add = subparser.add_parser("add-xprt",
+                                   help="Add an xprt to the switch")
+        add.add_argument("switch", metavar="SWITCH", nargs=1,
+                         help="Name of a specific xprt switch to modify")
+        add.set_defaults(func=XprtSwitch.add_xprt)
 
         show = subparser.add_parser("show", help="Show xprt switches")
         show.add_argument("switch", metavar="SWITCH", nargs='?',
@@ -235,6 +242,11 @@ class XprtSwitch:
             return [XprtSwitch(xprt_switches / name)]
         return [XprtSwitch(f) for f in sorted(xprt_switches.iterdir())]
 
+    def add_xprt(args):
+        """Handle the `rpcctl switch add-xprt` command."""
+        for switch in XprtSwitch.get_by_name(args.switch[0]):
+            write_sysfs_file(switch.path / "add_xprt", "1")
+
     def show(args):
         """Handle the `rpcctl switch show` command."""
         for switch in XprtSwitch.get_by_name(args.switch):
@@ -256,7 +268,11 @@ class RpcClient:
         """Read in rpc client information from sysfs."""
         self.path = path
         self.name = path.stem
-        self.switch = XprtSwitch(path / (path / "switch").readlink(), sep=",")
+        self.switch = XprtSwitch(path / (path / "switch").readlink())
+        self.program = read_sysfs_file(path / "program", missing="unknown")
+        self.version = read_sysfs_file(path / "rpc_version", missing="unknown")
+        self.max_connect = read_sysfs_file(path / "max_connect",
+                                           missing="unknown")
 
     def __lt__(self, rhs):
         """Compare the name of two rpc client instances."""
@@ -264,7 +280,9 @@ class RpcClient:
 
     def __str__(self):
         """Return a string representation of an rpc client."""
-        return f"{self.name}: {self.switch}"
+        return f"{self.name}: {self.program}, rpc version {self.version}, " \
+               f"max_connect {self.max_connect}" \
+               f"\n  {' ' * len(self.name)}{self.switch}"
 
     def add_command(subparser):
         """Add parser options for the `rpcctl client` command."""

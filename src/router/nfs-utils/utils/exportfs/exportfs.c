@@ -74,13 +74,19 @@ grab_lockfile(void)
 {
 	_lockfd = open(lockfile, O_CREAT|O_RDWR, 0666);
 	if (_lockfd != -1)
-		lockf(_lockfd, F_LOCK, 0);
+		if (lockf(_lockfd, F_LOCK, 0) != 0) {
+			xlog_warn("%s: lockf() failed: errno %d (%s)",
+			__func__, errno, strerror(errno));
+		}
 }
 static void
 release_lockfile(void)
 {
 	if (_lockfd != -1) {
-		lockf(_lockfd, F_ULOCK, 0);
+		if (lockf(_lockfd, F_ULOCK, 0) != 0) {
+			xlog_warn("%s: lockf() failed: errno %d (%s)",
+			__func__, errno, strerror(errno));
+		}
 		close(_lockfd);
 		_lockfd = -1;
 	}

@@ -59,14 +59,18 @@ EXTRA_DIST = $(unit_files) $(udev_files) $(man5_MANS) $(man7_MANS)
 
 generator_dir = $(unitdir)/../system-generators
 
-EXTRA_PROGRAMS	= nfs-server-generator rpc-pipefs-generator
+EXTRA_PROGRAMS	= nfsroot-generator nfs-server-generator rpc-pipefs-generator
 genexecdir = $(generator_dir)
 
 COMMON_SRCS = systemd.c systemd.h
 
+nfsroot_generator_SOURCES = $(COMMON_SRCS) nfsroot-generator.c
+
 nfs_server_generator_SOURCES = $(COMMON_SRCS) nfs-server-generator.c
 
 rpc_pipefs_generator_SOURCES = $(COMMON_SRCS) rpc-pipefs-generator.c
+
+nfsroot_generator_LDADD = ../support/nfs/libnfs.la
 
 nfs_server_generator_LDADD = ../support/export/libexport.a \
 			     ../support/nfs/libnfs.la \
@@ -78,7 +82,7 @@ nfs_server_generator_LDADD = ../support/export/libexport.a \
 rpc_pipefs_generator_LDADD = ../support/nfs/libnfs.la
 
 if INSTALL_SYSTEMD
-genexec_PROGRAMS = nfs-server-generator rpc-pipefs-generator
+genexec_PROGRAMS = nfsroot-generator nfs-server-generator rpc-pipefs-generator
 install-data-hook: $(unit_files) $(udev_files)
 	mkdir -p $(DESTDIR)/$(unitdir)
 	cp $(unit_files) $(DESTDIR)/$(unitdir)

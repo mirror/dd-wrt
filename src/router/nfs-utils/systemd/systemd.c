@@ -1,13 +1,12 @@
 /*
  * Helper functions for systemd generators in nfs-utils.
- *
- * Currently just systemd_escape().
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <unistd.h>
 #include "systemd.h"
 
 static const char hex[16] =
@@ -131,4 +130,17 @@ char *systemd_escape(char *path, char *suffix)
 out:
 	sprintf(p, "%s", suffix);
 	return result;
+}
+
+/*
+ * check if the system is running in the initrd, following the same logic as
+ * systemd, described in os-release(5):
+ *
+ *     In the initrd[2] and exitrd, /etc/initrd-release plays the same role as
+ *     os-release in the main system. Additionally, the presence of that file
+ *     means that the system is in the initrd/exitrd phase.
+ */
+int systemd_in_initrd(void)
+{
+	return (access("/etc/initrd-release", F_OK) >= 0);
 }

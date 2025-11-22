@@ -822,6 +822,7 @@ main(int argc, char **argv)
 	evbase = event_base_new();
 	if (evbase == NULL) {
 		fprintf(stderr, "%s: unable to allocate event base.\n", argv[0]);
+		free(progname);
 		return 1;
 	}
 	xlog_syslog(0);

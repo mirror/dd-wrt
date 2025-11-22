@@ -6,7 +6,7 @@ Requires=rpc_pipefs.target
 After=rpc_pipefs.target local-fs.target network-online.target
 Wants=network-online.target
 
-BindsTo=nfs-server.service
+PartOf=nfs-server.service
 
 [Service]
 Type=forking

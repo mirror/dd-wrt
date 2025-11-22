@@ -117,9 +117,11 @@ out_free_device_info:
 
 static int get_device_info(const char *device_number, struct device_info *device_info)
 {
-	int ret = ENOENT;
-	for (int retry_count = 0; retry_count < 10 && ret != 0; retry_count++)
+	int ret = get_mountinfo(device_number, device_info, MOUNTINFO_PATH);
+	for (int retry_count = 0; retry_count < 5 && ret != 0; retry_count++) {
+		usleep(50000);
 		ret = get_mountinfo(device_number, device_info, MOUNTINFO_PATH);
+	}
 
 	return ret;
 }
@@ -135,7 +137,7 @@ static int conf_get_readahead(const char *kind) {
 
 int main(int argc, char **argv)
 {
-	int ret = 0, retry, opt;
+	int ret = 0, opt;
 	struct device_info device;
 	unsigned int readahead = 128, log_level, log_stderr = 0;
 
@@ -163,11 +165,7 @@ int main(int argc, char **argv)
 	if ((argc - optind) != 1)
 		xlog_err("expected the device number of a BDI; is udev ok?");
 
-	for (retry = 0; retry <= 10; retry++ )
-		if ((ret = get_device_info(argv[optind], &device)) == 0)
-			break;
-
-	if (ret != 0 || device.fstype == NULL) {
+	if ((ret = get_device_info(argv[optind], &device)) != 0 || device.fstype == NULL) {
 		xlog(D_GENERAL, "unable to find device %s\n", argv[optind]);
 		goto out;
 	}

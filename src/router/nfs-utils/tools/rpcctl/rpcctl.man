@@ -12,6 +12,7 @@ rpcctl \- Displays SunRPC connection information
 .BR "rpcctl client show " "\fR[ \fB\-h \f| \fB\-\-help \fR] [ \fIXPRT \fR]"
 .P
 .BR "rpcctl switch" " \fR[ \fB\-h \fR| \fB\-\-help \fR] { \fBset \fR| \fBshow \fR}"
+.BR "rpcctl switch add-xprt" " \fR[ \fB\-h \fR| \fB\-\-help \fR] [ \fISWITCH \fR]"
 .BR "rpcctl switch set" " \fR[ \fB\-h \fR| \fB\-\-help \fR] \fISWITCH \fBdstaddr \fINEWADDR"
 .BR "rpcctl switch show" " \fR[ \fB\-h \fR| \fB\-\-help \fR] [ \fISWITCH \fR]"
 .P
@@ -29,6 +30,9 @@ Show detailed information about the RPC clients on this system.
 If \fICLIENT \fRwas provided, then only show information about a single RPC client.
 .P
 .SS rpcctl switch \fR- \fBCommands operating on groups of transports
+.IP "\fBadd-xprt \fISWITCH"
+Add an aditional transport to the \fISWITCH\fR.
+Note that the new transport will take its values from the "main" transport.
 .IP "\fBset \fISWITCH \fBdstaddr \fINEWADDR"
 Change the destination address of all transports in the \fISWITCH \fRto \fINEWADDR\fR.
 \fINEWADDR \fRcan be an IP address, DNS name, or anything else resolvable by \fBgethostbyname\fR(3).
