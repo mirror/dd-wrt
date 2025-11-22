@@ -163,7 +163,7 @@ void start_nfs(void)
 	if (pidof("rpc.mountd") <= 0)
 		log_eval("rpc.mountd");
 	char threads[32];
-	sprintf(threads, "%d", cpucount);
+	sprintf(threads, "%d", cpucount * 4);
 	if (pidof("rpc.nfsd") <= 0)
 		log_eval("rpc.nfsd", threads);
 	if (pidof("rpc.statd") <= 0)
