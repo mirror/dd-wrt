@@ -249,7 +249,7 @@ int main_mbr(int argc, char *argv[])
 	int count = len / 65536;
 	fprintf(stderr, "write image len = %d, count %d\n", len, count);
 	for (i = 0; i < count; i++) {
-		fprintf(stderr, "write %d\n", i * 65536);
+		fprintf(stderr, "write %d\r", i * 65536);
 		fread(buf, 65536, 1, in);
 		fwrite(buf, 65536, 1, out);
 		fflush(in);
@@ -334,7 +334,7 @@ int main_gpt(int argc, char *argv[])
 	int count = len / 65536;
 	fprintf(stderr, "write image len = %d, count %d\n", len, count);
 	for (i = 0; i < count; i++) {
-		fprintf(stderr, "write %d\n", i * 65536);
+		fprintf(stderr, "write %d\r", i * 65536);
 		fread(sbuf, 65536, 1, in);
 		fwrite(sbuf, 65536, 1, out);
 		fflush(in);
