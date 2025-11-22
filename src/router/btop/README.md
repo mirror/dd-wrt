@@ -186,8 +186,8 @@ C++ version and continuation of [bashtop](https://github.com/aristocratos/bashto
 ## Features
 
 * Easy to use, with a game inspired menu system.
-* Full mouse support, all buttons with a highlighted key is clickable and mouse scroll works in process list and menu boxes.
-* Fast and responsive UI with UP, DOWN keys process selection.
+* Full mouse support: all buttons with a highlighted key are clickable and mouse scrolling works in process list and menu boxes.
+* Fast and responsive UI with UP, DOWN key process selection.
 * Function for showing detailed stats for selected process.
 * Ability to filter processes.
 * Easy switching between sorting options.
@@ -203,33 +203,47 @@ C++ version and continuation of [bashtop](https://github.com/aristocratos/bashto
 
 ## Themes
 
-Btop++ uses the same theme files as bpytop and bashtop (some color values missing in bashtop themes) .
+Btop++ uses the same theme files as bpytop and bashtop (some color values missing in bashtop themes).
 
 See [themes](https://github.com/aristocratos/btop/tree/main/themes) folder for available themes.
 
+Btop searches the following directories for system themes:
+
+* `../share/btop/themes` (this path is relative to the btop executable)
+* `/usr/local/share/btop/themes`
+* `/usr/share/btop/themes`
+
+The first directory that exists and isn't empty is used as the system themes directory.
+
+The user themes directory depends on which environment variables are set:
+
+* If `$XDG_CONFIG_HOME` is set, the user themes directory is `$XDG_CONFIG_HOME/btop/themes`
+* Otherwise, if `$HOME` is set, the user themes directory is `$HOME/.config/btop/themes`
+* Otherwise, the user themes directory is `~/.config/btop/themes`
+
 The `make install` command places the default themes in `[$PREFIX or /usr/local]/share/btop/themes`.
-User created themes should be placed in `$XDG_CONFIG_HOME/btop/themes` or `$HOME/.config/btop/themes`.
+User created themes should be placed in the user themes directory.
 
 Let me know if you want to contribute with new themes.
 
 ## Support and funding
 
-You can sponsor this project through github, see [my sponsors page](https://github.com/sponsors/aristocratos) for options.
+You can sponsor this project through GitHub. See [my sponsors page](https://github.com/sponsors/aristocratos) for options.
 
-Or donate through [paypal](https://paypal.me/aristocratos) or [ko-fi](https://ko-fi.com/aristocratos).
+Or donate through [PayPal](https://paypal.me/aristocratos) or [ko-fi](https://ko-fi.com/aristocratos).
 
 Any support is greatly appreciated!
 
 ## Prerequisites
 
-For best experience, a terminal with support for:
+For the best experience run within a terminal with support for:
 
 * 24-bit truecolor ([See list of terminals with truecolor support](https://github.com/termstandard/colors))
 * 256-color terminals are supported through 24-bit to 256-color conversion when setting "truecolor" to False in the options or with "-lc/--low-color" arguments.
-* 16 color TTY mode will be activated if a real tty device is detected. Can be forced with "-t/--tty_on" arguments.
+* 16 color TTY mode will be activated if a real tty device is detected. Can be forced with "-t/--tty" arguments.
 * Wide characters (Are sometimes problematic in web-based terminals)
 
-Also needs a UTF8 locale and a font that covers:
+Also necessary is a UTF8 locale and a font that includes:
 
 * Unicode Block “Braille Patterns” U+2800 - U+28FF (Not needed in TTY mode or with graphs set to type: block or tty.)
 * Unicode Block “Geometric Shapes” U+25A0 - U+25FF
@@ -301,7 +315,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 ## Installation
 
-**Binaries for Linux are statically compiled with musl and works on kernel 2.6.39 and newer**
+**Binaries for Linux are statically compiled with musl and work on kernel releases 2.6.39 and newer**
 
 1. **Download btop-(VERSION)-(ARCH)-(PLATFORM).tbz from [latest release](https://github.com/aristocratos/btop/releases/latest) and unpack to a new folder**
 
@@ -317,11 +331,11 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
    sudo make install
    ```
 
-3. **(Optional/Required for Intel GPU) Set extended capabilities or suid bit to btop**
+3. **(Optional/Required for Intel GPU and CPU wattage) Set extended capabilities or suid bit to btop**
 
    Enables signal sending to any process without starting with `sudo` and can prevent /proc read permissions problems on some systems.
 
-   Is required for Intel GPU support.
+   Is required for Intel GPU support and CPU wattage monitoring.
 
    * **Run:**
 
@@ -363,7 +377,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
     ```bash
     sudo dnf install btop
 	```
-* **RHEL/AlmaLinux 8+**
+* **RHEL/Rocky/AlmaLinux 8+**
     ```bash
     sudo dnf install epel-release
 	sudo dnf install btop
@@ -389,7 +403,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
    Requires at least GCC 11 or Clang 16.
 
-   The makefile also needs GNU coreutils and `sed` (should already be installed on any modern distribution).
+   The Makefile also needs GNU `coreutils` and `sed` (should already be installed on any modern distribution).
 
    ### GPU compatibility
 
@@ -471,11 +485,11 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
    Notice! Only use "sudo" when installing to a NON user owned directory.
 
-5. **(Optional/Required for Intel GPU support) Set extended capabilities or suid bit to btop**
+5. **(Optional/Required for Intel GPU support and CPU wattage) Set extended capabilities or suid bit to btop**
 
    No need for `sudo` to enable signal sending to any process and to prevent /proc read permissions problems on some systems.
 
-   Also required for Intel GPU monitoring.
+   Also required for Intel GPU monitoring and CPU wattage monitoring.
 
    Run after make install and use same PREFIX if any was used at install.
 
@@ -592,7 +606,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
    With GCC, version 12 (or better) is needed for macOS Ventura. If you get linker errors on Ventura you'll need to upgrade your command line tools (Version 14.0) is bugged.
 
-   The makefile also needs GNU coreutils and `sed`.
+   The Makefile also needs GNU coreutils and `sed`.
 
    Install and use Homebrew or MacPorts package managers for easy dependency installation
 
@@ -1340,8 +1354,8 @@ shown_boxes = "proc cpu mem net"
 #* Update time in milliseconds, recommended 2000 ms or above for better sample times for graphs.
 update_ms = 1500
 
-#* Processes sorting, "pid" "program" "arguments" "threads" "user" "memory" "cpu lazy" "cpu responsive",
-#* "cpu lazy" sorts top process over time (easier to follow), "cpu responsive" updates top process directly.
+#* Processes sorting, "pid" "program" "arguments" "threads" "user" "memory" "cpu lazy" "cpu direct",
+#* "cpu lazy" sorts top process over time (easier to follow), "cpu direct" updates top process directly.
 proc_sorting = "cpu lazy"
 
 #* Reverse sorting order, True or False.
@@ -1387,6 +1401,9 @@ cpu_bottom = False
 
 #* Shows the system uptime in the CPU box.
 show_uptime = True
+
+#* Shows the CPU package current power consumption in watts. Requires running `make setcap` or `make setuid` or running with sudo.
+show_cpu_watts = True
 
 #* Show cpu temperature.
 check_temp = True

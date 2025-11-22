@@ -519,7 +519,8 @@ namespace Cpu {
 	int x = 1, y = 1, width = 20, height;
 	int b_columns, b_column_size;
 	int b_x, b_y, b_width, b_height;
-	long unsigned int lavg_str_len = 0;
+	float max_observed_pwr = 1.0f;
+
 	int graph_up_height, graph_low_height;
 	int graph_up_width, graph_low_width;
 	int gpu_meter_width;
@@ -538,6 +539,7 @@ namespace Cpu {
 		if (Runner::stopping) return "";
 		if (force_redraw) redraw = true;
 		bool show_temps = (Config::getB("check_temp") and got_sensors);
+		bool show_watts = (Config::getB("show_cpu_watts") and supports_watts);
 		auto single_graph = Config::getB("cpu_single_graph");
 		bool hide_cores = show_temps and (cpu_temp_only or not Config::getB("show_coretemp"));
 		const int extra_width = (hide_cores ? max(6, 6 * b_column_size) : 0);
@@ -584,7 +586,6 @@ namespace Cpu {
 			graph_up_height = (single_graph ? height - 2 : ceil((double)(height - 2) / 2) - (mid_line and height % 2 != 0));
 			graph_low_height = height - 2 - graph_up_height - mid_line;
 			const int button_y = cpu_bottom ? y + height - 1 : y;
-			lavg_str_len = 0;
 			out += box;
 
 			//? Buttons on title
@@ -681,7 +682,12 @@ namespace Cpu {
 			}
 			#endif
 
-			cpu_meter = Draw::Meter{b_width - (show_temps ? 23 - (b_column_size <= 1 and b_columns == 1 ? 6 : 0) : 11), "cpu"};
+			int cpu_meter_width = b_width - (show_temps ? 23 - (b_column_size <= 1 and b_columns == 1 ? 6 : 0) : 11);
+			if (show_watts) {
+				cpu_meter_width -= 6;
+			}
+
+			cpu_meter = Draw::Meter{cpu_meter_width, "cpu"};
 
 			if (mid_line) {
 				out += Mv::to(y + graph_up_height + 1, x) + Fx::ub + Theme::c("cpu_box") + Symbols::div_left + Theme::c("div_line")
@@ -752,58 +758,64 @@ namespace Cpu {
 		}
 
 		try {
-		//? Cpu/Gpu graphs
-		out += Fx::ub + Mv::to(y + 1, x + 1);
-		auto draw_graphs = [&](vector<Draw::Graph>& graphs, const int graph_height, const int graph_width, const string& graph_field) {
-		#ifdef GPU_SUPPORT
-			if (graph_field.starts_with("gpu"))
-				if (graph_field.ends_with("totals")) {
-					int gpu_drawn = 0;
-					for (size_t i = 0; i < gpus.size(); i++) {
-						if (gpu_auto and v_contains(Gpu::shown_panels, i))
-							continue;
-						out += graphs[i](safeVal(gpus[i].gpu_percent, graph_field), (data_same or redraw));
-						if (Gpu::count - (gpu_auto ? Gpu::shown : 0) > 1) {
-							auto i_str = to_string(i);
-							out += Mv::l(graph_width-1) + Mv::u(graph_height/2) + (graph_width > 5 ? "GPU" : "") + i_str
-								+ Mv::d(graph_height/2) + Mv::r(graph_width - 1 - (graph_width > 5)*3 - i_str.size());
+			//? Cpu/Gpu graphs
+			out += Fx::ub + Mv::to(y + 1, x + 1);
+			auto draw_graphs = [&](vector<Draw::Graph>& graphs, const int graph_height, const int graph_width, const string& graph_field) {
+			#ifdef GPU_SUPPORT
+				if (graph_field.starts_with("gpu"))
+					if (graph_field.ends_with("totals")) {
+						int gpu_drawn = 0;
+						for (size_t i = 0; i < gpus.size(); i++) {
+							if (gpu_auto and v_contains(Gpu::shown_panels, i)) {
+								continue;
+							}
+							try {
+								const auto& gpu_percent = gpus[i].gpu_percent;
+								out += graphs[i](safeVal(gpu_percent, graph_field), (data_same or redraw));
+							} catch (std::out_of_range& /* unused */) {
+								continue;
+							}
+							if (Gpu::count - (gpu_auto ? Gpu::shown : 0) > 1) {
+								auto i_str = to_string(i);
+								out += Mv::l(graph_width-1) + Mv::u(graph_height/2) + (graph_width > 5 ? "GPU" : "") + i_str
+									+ Mv::d(graph_height/2) + Mv::r(graph_width - 1 - (graph_width > 5)*3 - i_str.size());
+							}
+
+							if (++gpu_drawn < Gpu::count - (gpu_auto ? Gpu::shown : 0))
+								out += Theme::c("div_line") + (Symbols::v_line + Mv::l(1) + Mv::u(1))*graph_height + Mv::r(1) + Mv::d(1);
 						}
-
-						if (++gpu_drawn < Gpu::count - (gpu_auto ? Gpu::shown : 0))
-							out += Theme::c("div_line") + (Symbols::v_line + Mv::l(1) + Mv::u(1))*graph_height + Mv::r(1) + Mv::d(1);
 					}
-				}
+					else
+						out += graphs[0](safeVal(Gpu::shared_gpu_percent, graph_field), (data_same or redraw));
 				else
-					out += graphs[0](safeVal(Gpu::shared_gpu_percent, graph_field), (data_same or redraw));
-			else
-		#else
-			(void)graph_height;
-			(void)graph_width;
-		#endif
-				out += graphs[0](safeVal(cpu.cpu_percent, graph_field), (data_same or redraw));
-		};
+			#else
+				(void)graph_height;
+				(void)graph_width;
+			#endif
+					out += graphs[0](safeVal(cpu.cpu_percent, graph_field), (data_same or redraw));
+			};
 
-		draw_graphs(graphs_upper, graph_up_height, graph_up_width, graph_up_field);
-		if (not single_graph) {
-			out += Mv::to(y + graph_up_height + 1 + mid_line, x + 1);
-			draw_graphs(graphs_lower, graph_low_height, graph_low_width, graph_lo_field);
-		}
-
-		//? Uptime
-		if (Config::getB("show_uptime")) {
-			string upstr = sec_to_dhms(system_uptime());
-			if (upstr.size() > 8) {
-				upstr.resize(upstr.size() - 3);
-				upstr = trans(upstr);
+			draw_graphs(graphs_upper, graph_up_height, graph_up_width, graph_up_field);
+			if (not single_graph) {
+				out += Mv::to(y + graph_up_height + 1 + mid_line, x + 1);
+				draw_graphs(graphs_lower, graph_low_height, graph_low_width, graph_lo_field);
 			}
-			out += Mv::to(y + (single_graph or not Config::getB("cpu_invert_lower") ? 1 : height - 2), x + 2)
-				+ Theme::c("graph_text") + "up" + Mv::r(1) + upstr;
-		}
 
-		//? Cpu clock and cpu meter
-		if (Config::getB("show_cpu_freq") and not cpuHz.empty())
-			out += Mv::to(b_y, b_x + b_width - 10) + Fx::ub + Theme::c("div_line") + Symbols::h_line * (7 - cpuHz.size())
-				+ Symbols::title_left + Fx::b + Theme::c("title") + cpuHz + Fx::ub + Theme::c("div_line") + Symbols::title_right;
+			//? Uptime
+			if (Config::getB("show_uptime")) {
+				string upstr = sec_to_dhms(system_uptime());
+				if (upstr.size() > 8) {
+					upstr.resize(upstr.size() - 3);
+					upstr = trans(upstr);
+				}
+				out += Mv::to(y + (single_graph or not Config::getB("cpu_invert_lower") ? 1 : height - 2), x + 2)
+					+ Theme::c("graph_text") + "up" + Mv::r(1) + upstr;
+			}
+
+			//? Cpu clock and cpu meter
+			if (Config::getB("show_cpu_freq") and not cpuHz.empty())
+				out += Mv::to(b_y, b_x + b_width - 10) + Fx::ub + Theme::c("div_line") + Symbols::h_line * (7 - cpuHz.size())
+					+ Symbols::title_left + Fx::b + Theme::c("title") + cpuHz + Fx::ub + Theme::c("div_line") + Symbols::title_right;
 
 		out += Mv::to(b_y + 1, b_x + 1) + Theme::c("main_fg") + Fx::b + "CPU " + cpu_meter(safeVal(cpu.cpu_percent, "total"s).back())
 			+ Theme::g("cpu").at(clamp(safeVal(cpu.cpu_percent, "total"s).back(), 0ll, 100ll)) + rjust(to_string(safeVal(cpu.cpu_percent, "total"s).back()), 4) + Theme::c("main_fg") + '%';
@@ -815,9 +827,26 @@ namespace Cpu {
 					+ temp_graphs.at(0)(safeVal(cpu.temp, 0), data_same or redraw);
 			out += rjust(to_string(temp), 4) + Theme::c("main_fg") + unit;
 		}
-		out += Theme::c("div_line") + Symbols::v_line;
 
-		} catch (const std::exception& e) { throw std::runtime_error("graphs, clock, meter : " + string{e.what()}); }
+		if (show_watts) {
+			string cwatts = fmt::format(" {:>4.{}f}", cpu.usage_watts, cpu.usage_watts < 10.0f ? 2 : cpu.usage_watts < 100.0f ? 1 : 0);
+			string cwatts_post = "W";
+
+			max_observed_pwr = max(max_observed_pwr, cpu.usage_watts);
+			out += Theme::g("cached").at(clamp(cpu.usage_watts / max_observed_pwr * 100.0f, 0.0f, 100.0f)) + cwatts + Theme::c("main_fg") + cwatts_post; 
+		}
+
+			out += Theme::c("div_line") + Symbols::v_line;
+		} catch (const std::exception& e) {
+			throw std::runtime_error("graphs, clock, meter : " + string{e.what()});
+		}
+
+		int max_row = b_height - 3; // Subtracting one extra row for the load average (and power if enabled)
+		int n_gpus_to_show = 0;
+	#ifdef GPU_SUPPORT
+		n_gpus_to_show = show_gpu ? (gpus.size() - (gpu_always ? 0 : Gpu::shown)) : 0;
+	#endif
+		max_row -= n_gpus_to_show;
 
 		//? Core text and graphs
 		int cx = 0, cy = 1, cc = 0, core_width = (b_column_size == 0 ? 2 : 3);
@@ -843,7 +872,7 @@ namespace Cpu {
 
 			out += Theme::c("div_line") + Symbols::v_line;
 
-			if ((++cy > ceil((double)Shared::coreCount / b_columns) or cy == b_height - 2) and n != Shared::coreCount - 1) {
+			if ((++cy > ceil((double)Shared::coreCount / b_columns) or cy == max_row) and n != Shared::coreCount - 1) {
 				if (++cc >= b_columns) break;
 				cy = 1; cx = (b_width / b_columns) * cc;
 			}
@@ -851,28 +880,17 @@ namespace Cpu {
 
 		//? Load average
 		if (cy < b_height - 1 and cc <= b_columns) {
-			string lavg_pre;
-			int sep = 1;
-			if (b_column_size == 2 and show_temps) { lavg_pre = "Load AVG: "; sep = 3; }
-			else if (b_column_size == 2 or (b_column_size == 1 and show_temps)) { lavg_pre = "LAV:"; }
-			else if (b_column_size == 1 or (b_column_size == 0 and show_temps)) { lavg_pre = "L "; }
-			string lavg;
+			cy = b_height - 2 - n_gpus_to_show;
+
+			string load_avg_pre = "Load avg:";
+			string load_avg;
+
 			for (const auto& val : cpu.load_avg) {
-				lavg += string(sep, ' ') + (lavg_pre.size() < 3 ? to_string((int)round(val)) : to_string(val).substr(0, 4));
+				load_avg += fmt::format(" {:.2f}", val);
 			}
 
-			string lavg_str = lavg_pre + lavg;
-			if (lavg_str_len > lavg_str.length()) {
-				lavg_str += string(lavg_str_len - lavg_str.length(), ' ');
-			} else {
-				lavg_str_len = lavg_str.length();
-			}
-		#ifdef GPU_SUPPORT
-			cy = b_height - 2 - (show_gpu ? (gpus.size() - (gpu_always ? 0 : Gpu::shown)) : 0);
-		#else
-			cy = b_height - 2;
-		#endif
-			out += Mv::to(b_y + cy, b_x + cx + 1) + Theme::c("main_fg") + lavg_str;
+			int len = load_avg_pre.size() + load_avg.size();
+			out += Mv::to(b_y + cy, b_x + 1) + string(max(b_width - len - 2, 0), ' ') + Theme::c("main_fg") + Fx::b + load_avg_pre + Fx::ub + load_avg;
 		}
 
 	#ifdef GPU_SUPPORT
@@ -947,6 +965,7 @@ namespace Gpu {
 	vector<Draw::Graph> mem_used_graph_vec = {}, mem_util_graph_vec = {};
 	vector<Draw::Meter> gpu_meter_vec = {};
 	vector<Draw::Meter> pwr_meter_vec = {};
+	vector<Draw::Meter> enc_meter_vec = {};
 	vector<string> box = {};
 
     string draw(const gpu_info& gpu, unsigned long index, bool force_redraw, bool data_same) {
@@ -964,6 +983,7 @@ namespace Gpu {
 		auto& mem_util_graph = mem_util_graph_vec[index];
 		auto& gpu_meter = gpu_meter_vec[index];
 		auto& pwr_meter = pwr_meter_vec[index];
+		auto& enc_meter = enc_meter_vec[index];
 
 		if (force_redraw) redraw[index] = true;
         bool show_temps = gpu.supported_functions.temp_info and (Config::getB("check_temp"));
@@ -1002,6 +1022,8 @@ namespace Gpu {
 				mem_util_graph = Draw::Graph{b_width/2 - 1, 2, "free", gpu.mem_utilization_percent, graph_symbol, 0, 0, 100, 4}; // offset so the graph isn't empty at 0-5% utilization
 			if (gpu.supported_functions.mem_used and gpu.supported_functions.mem_total)
 				mem_used_graph = Draw::Graph{b_width/2 - 2, 2 + 2*(gpu.supported_functions.mem_utilization), "used", safeVal(gpu.gpu_percent, "gpu-vram-totals"s), graph_symbol};
+			if (gpu.supported_functions.encoder_utilization)
+				enc_meter = Draw::Meter{b_width/2 - 10, "cpu"};
 		}
 
 
@@ -1041,8 +1063,17 @@ namespace Gpu {
 				out += std::string(" P-state: ") + (gpu.pwr_state > 9 ? "" : " ") + 'P' + Theme::g("cached").at(clamp(gpu.pwr_state, 0ll, 100ll)) + to_string(gpu.pwr_state);
 		}
 
+		//? Encode and Decode meters
+		bool drawnEncDec = gpu.supported_functions.encoder_utilization and gpu.supported_functions.decoder_utilization;
+		if (drawnEncDec) {
+			out += Mv::to(b_y + 3, b_x +1) + Theme::c("main_fg") + Fx::b + "ENC " + enc_meter(gpu.encoder_utilization)
+				+ Theme::g("cpu").at(clamp(gpu.encoder_utilization, 0ll, 100ll)) + rjust(to_string(gpu.encoder_utilization), 4) + Theme::c("main_fg") + '%'
+				+ Theme::c("div_line") + Symbols::v_line + Theme::c("main_fg") + Fx::b + "DEC " + enc_meter(gpu.decoder_utilization)
+				+ Theme::g("cpu").at(clamp(gpu.decoder_utilization, 0ll, 100ll)) + rjust(to_string(gpu.decoder_utilization), 4) + Theme::c("main_fg") + '%';
+		}
+
 		if (gpu.supported_functions.mem_total or gpu.supported_functions.mem_used) {
-			out += Mv::to(b_y + 3, b_x);
+			out += Mv::to(b_y + (drawnEncDec ? 4 : 3), b_x);
 			if (gpu.supported_functions.mem_total and gpu.supported_functions.mem_used) {
 				string used_memory_string = floating_humanizer(gpu.mem_used);
 
@@ -1067,7 +1098,7 @@ namespace Gpu {
 				//? Memory clock speed
 				if (gpu.supported_functions.mem_clock) {
 					string clock_speed_string = to_string(gpu.mem_clock_speed);
-					out += Mv::to(b_y + 3, b_x + b_width/2 - 11) + Theme::c("div_line") + Symbols::h_line*(5-clock_speed_string.size())
+					out += Mv::to(b_y + (drawnEncDec ? 4 : 3), b_x + b_width/2 - 11) + Theme::c("div_line") + Symbols::h_line*(5-clock_speed_string.size())
 						+ Symbols::title_left + Fx::b + Theme::c("title") + clock_speed_string + " MHz" + Fx::ub + Theme::c("div_line") + Symbols::title_right;
 				}
 			} else {
@@ -1754,13 +1785,13 @@ namespace Proc {
 			const int item_width = floor((double)(d_width - 2) / min(item_fit, 8));
 
 			//? Graph part of box
-			string cpu_str = (alive ? to_string(detailed.entry.cpu_p) : "");
+			string cpu_str = (alive ? fmt::format("{:.2f}", detailed.entry.cpu_p) : "");
 			if (alive) {
-				cpu_str.resize((detailed.entry.cpu_p < 10 or detailed.entry.cpu_p >= 100 ? 3 : 4));
-				cpu_str += '%';
+				cpu_str.resize(4);
+				if (cpu_str.ends_with('.')) { cpu_str.pop_back(); cpu_str.pop_back(); }
 			}
 			out += Mv::to(d_y + 1, dgraph_x + 1) + Fx::ub + detailed_cpu_graph(detailed.cpu_percent, (redraw or data_same or not alive))
-				+ Mv::to(d_y + 1, dgraph_x + 1) + Theme::c("title") + Fx::b + cpu_str;
+				+ Mv::to(d_y + 1, dgraph_x + 1) + Theme::c("title") + Fx::b + rjust(cpu_str, 4) + "%";
 			for (int i = 0; const auto& l : {'C', 'P', 'U'})
 					out += Mv::to(d_y + 3 + i++, dgraph_x + 1) + l;
 
@@ -1777,10 +1808,11 @@ namespace Proc {
 			if (item_fit >= 8) out += cjust(to_string(detailed.entry.p_nice), item_width);
 
 
-			const double mem_p = (double)detailed.mem_bytes.back() * 100 / totalMem;
-			string mem_str = to_string(mem_p);
-			mem_str.resize((mem_p < 10 or mem_p >= 100 ? 3 : 4));
-			out += Mv::to(d_y + 4, d_x + 1) + Theme::c("title") + Fx::b + rjust((item_fit > 4 ? "Memory: " : "M:") + mem_str + "% ", (d_width / 3) - 2)
+			const double mem_p = detailed.mem_bytes.back() * 100.0 / totalMem;
+			string mem_str = fmt::format("{:.2f}", mem_p);
+			mem_str.resize(4);
+			if (mem_str.ends_with('.')) mem_str.pop_back();
+			out += Mv::to(d_y + 4, d_x + 1) + Theme::c("title") + Fx::b + rjust((item_fit > 4 ? "Memory: " : "M:") + rjust(mem_str, 4) + "% ", (d_width / 3) - 2)
 				+ Theme::c("inactive_fg") + Fx::ub + graph_bg * (d_width / 3) + Mv::l(d_width / 3)
 				+ Theme::c("proc_misc") + detailed_mem_graph(detailed.mem_bytes, (redraw or data_same or not alive)) + ' '
 				+ Theme::c("title") + Fx::b + detailed.memory;
@@ -1887,10 +1919,10 @@ namespace Proc {
 				out += string(max(0, width_left), ' ') + Mv::to(y+2+lc, x+2+tree_size);
 			}
 			//? Common end of line
-			string cpu_str = to_string(p.cpu_p);
+			string cpu_str = fmt::format("{:.2f}", p.cpu_p);
 			if (p.cpu_p < 10 or (p.cpu_p >= 100 and p.cpu_p < 1000)) cpu_str.resize(3);
 			else if (p.cpu_p >= 10'000) {
-				cpu_str = to_string(p.cpu_p / 1000);
+				cpu_str = fmt::format("{:.2f}", p.cpu_p / 1000);
 				cpu_str.resize(3);
 				if (cpu_str.ends_with('.')) cpu_str.pop_back();
 				cpu_str += "k";
@@ -1898,9 +1930,9 @@ namespace Proc {
 			string mem_str = (mem_bytes ? floating_humanizer(p.mem, true) : "");
 			if (not mem_bytes) {
 				double mem_p = clamp((double)p.mem * 100 / totalMem, 0.0, 100.0);
-				mem_str = to_string(mem_p);
-				if (mem_str.size() < 4)	mem_str = "0";
-				else mem_str.resize((mem_p < 10 or mem_p >= 100 ? 3 : 4));
+				mem_str = mem_p < 0.01 ? "0" : fmt::format("{:.1f}", mem_p);
+				if (mem_str.size() > 3) mem_str.resize(3);
+				if (mem_str.ends_with('.')) mem_str.pop_back();
 				mem_str += '%';
 			}
 
@@ -2099,6 +2131,7 @@ namespace Draw {
 			mem_used_graph_vec.resize(shown); mem_util_graph_vec.resize(shown);
 			gpu_meter_vec.resize(shown);
 			pwr_meter_vec.resize(shown);
+			enc_meter_vec.resize(shown);
 			redraw.resize(shown);
 			for (auto i = 0; i < shown; ++i) {
 				redraw[i] = true;
@@ -2119,7 +2152,7 @@ namespace Draw {
 				box[i] = createBox(x_vec[i], y_vec[i], width, height, Theme::c("cpu_box"), true, std::string("gpu") + (char)(shown_panels[i]+'0'), "", (shown_panels[i]+5)%10); // TODO gpu_box
 
 				b_height_vec[i] = 2 + gpu_b_height_offsets[shown_panels[i]];
-				b_width = clamp(width/2, min_width, 64);
+				b_width = clamp(width/2, min_width, 65);
 
 				//? Main statistics box
 				b_x_vec[i] = x_vec[i] + width - b_width - 1;

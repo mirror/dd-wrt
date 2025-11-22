@@ -83,7 +83,7 @@ namespace Cpu {
 	vector<string> available_fields = {"total"};
 	vector<string> available_sensors = {"Auto"};
 	cpu_info current_cpu;
-	bool got_sensors = false, cpu_temp_only = false;
+	bool got_sensors = false, cpu_temp_only = false, supports_watts = false;
 
 	//* Populate found_sensors map
 	bool get_sensors();
@@ -1198,13 +1198,10 @@ namespace Proc {
 			int index = 0;
 			tree_sort(tree_procs, sorting, reverse, index, current_procs.size());
 
-			//? Add tree begin symbol to first item if childless
-			if (tree_procs.front().children.empty())
-				tree_procs.front().entry.get().prefix.replace(tree_procs.front().entry.get().prefix.size() - 8, 8, " ┌─ ");
-
-			//? Add tree terminator symbol to last item if childless
-			if (tree_procs.back().children.empty())
-				tree_procs.back().entry.get().prefix.replace(tree_procs.back().entry.get().prefix.size() - 8, 8, " └─ ");
+			//? Recursive construction of ASCII tree prefixes.
+			for (auto t = tree_procs.begin(); t != tree_procs.end(); ++t) {
+				_collect_prefixes(*t, t == tree_procs.end() - 1);
+			}
 
 			//? Final sort based on tree index
 			rng::sort(current_procs, rng::less{}, & proc_info::tree_index);

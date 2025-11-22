@@ -81,7 +81,7 @@ namespace Global {
 		{"#801414", "██████╔╝   ██║   ╚██████╔╝██║        ╚═╝    ╚═╝"},
 		{"#000000", "╚═════╝    ╚═╝    ╚═════╝ ╚═╝"},
 	};
-	const string Version = "1.4.4";
+	const string Version = "1.4.5";
 
 	int coreCount;
 	string overlay;
@@ -785,6 +785,22 @@ namespace Runner {
 
 }
 
+static auto configure_tty_mode(std::optional<bool> force_tty) {
+	if (force_tty.has_value()) {
+		Config::set("tty_mode", force_tty.value());
+		Logger::debug("TTY mode set via command line");
+  	}
+
+#if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+	else if (Term::current_tty.starts_with("/dev/tty")) {
+		Config::set("tty_mode", true);
+		Logger::debug("Auto detect real TTY");
+  	}
+#endif
+
+	Logger::debug(fmt::format("TTY mode enabled: {}", Config::getB("tty_mode")));
+}
+
 
 //* --------------------------------------------- Main starts here! ---------------------------------------------------
 int main(const int argc, const char** argv) {
@@ -882,7 +898,7 @@ int main(const int argc, const char** argv) {
 	//? Try to find and set a UTF-8 locale
 	if (std::setlocale(LC_ALL, "") != nullptr and not s_contains((string)std::setlocale(LC_ALL, ""), ";")
 	and str_to_upper(s_replace((string)std::setlocale(LC_ALL, ""), "-", "")).ends_with("UTF8")) {
-		Logger::debug("Using locale " + (string)std::setlocale(LC_ALL, ""));
+		Logger::debug("Using locale " + std::locale().name());
 	}
 	else {
 		string found;
@@ -945,8 +961,9 @@ int main(const int argc, const char** argv) {
 #endif
 	#endif
 #if 0
-		else if (not set_failure)
+		else if (not set_failure) {
 			Logger::debug("Setting LC_ALL=" + found);
+		}
 #endif
 	}
 
@@ -956,17 +973,11 @@ int main(const int argc, const char** argv) {
 		clean_quit(1);
 	}
 
-	if (Term::current_tty != "unknown") Logger::info("Running on " + Term::current_tty);
-	if ((!cli.force_tty.has_value() || !cli.force_tty.value()) && Config::getB("force_tty")) {
-		Config::set("tty_mode", true);
-		Logger::info("Forcing tty mode: setting 16 color mode and using tty friendly graph symbols");
+	if (Term::current_tty != "unknown") {
+		Logger::info("Running on " + Term::current_tty);
 	}
-#if not defined __APPLE__ && not defined __OpenBSD__ && not defined __NetBSD__
-	else if ((!cli.force_tty.has_value() || !cli.force_tty.value()) && Term::current_tty.starts_with("/dev/tty")) {
-		Config::set("tty_mode", true);
-		Logger::info("Real tty detected: setting 16 color mode and using tty friendly graph symbols");
-	}
-#endif
+
+	configure_tty_mode(cli.force_tty);
 
 	//? Check for valid terminal dimensions
 	{

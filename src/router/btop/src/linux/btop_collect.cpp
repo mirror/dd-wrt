@@ -54,6 +54,7 @@ extern "C" {
 	#undef class
 #endif
 
+using std::abs;
 using std::clamp;
 using std::cmp_greater;
 using std::cmp_less;
@@ -77,6 +78,18 @@ using namespace std::literals; // for operator""s
 using namespace std::chrono_literals;
 //? --------------------------------------------------- FUNCTIONS -----------------------------------------------------
 
+namespace
+{
+
+long long get_monotonicTimeUSec()
+{
+	struct timespec time;
+	clock_gettime(CLOCK_MONOTONIC, &time);
+	return time.tv_sec * 1000000 + time.tv_nsec / 1000;
+}
+
+}
+
 namespace Cpu {
 	vector<long long> core_old_totals;
 	vector<long long> core_old_idles;
@@ -86,6 +99,7 @@ namespace Cpu {
 	fs::path freq_path = "/sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq";
 	bool got_sensors{};
 	bool cpu_temp_only{};
+	bool supports_watts = true;
 
 	//* Populate found_sensors map
 	bool get_sensors();
@@ -150,6 +164,8 @@ namespace Gpu {
 		nvmlReturn_t (*nvmlDeviceGetTemperature)(nvmlDevice_t, nvmlTemperatureSensors_t, unsigned int*);
 		nvmlReturn_t (*nvmlDeviceGetMemoryInfo)(nvmlDevice_t, nvmlMemory_t*);
 		nvmlReturn_t (*nvmlDeviceGetPcieThroughput)(nvmlDevice_t, nvmlPcieUtilCounter_t, unsigned int*);
+		nvmlReturn_t (*nvmlDeviceGetEncoderUtilization)(nvmlDevice_t, unsigned int*, unsigned int*);
+		nvmlReturn_t (*nvmlDeviceGetDecoderUtilization)(nvmlDevice_t, unsigned int*, unsigned int*);
 
 		//? Data
 		void* nvml_dl_handle;
@@ -307,6 +323,7 @@ namespace Shared {
 			for (size_t i = 0; i < gpu_b_height_offsets.size(); ++i)
 				gpu_b_height_offsets[i] = gpus[i].supported_functions.gpu_utilization
 					   + gpus[i].supported_functions.pwr_usage
+					   + (gpus[i].supported_functions.encoder_utilization or gpus[i].supported_functions.decoder_utilization)
 					   + (gpus[i].supported_functions.mem_total or gpus[i].supported_functions.mem_used)
 						* (1 + 2*(gpus[i].supported_functions.mem_total and gpus[i].supported_functions.mem_used) + 2*gpus[i].supported_functions.mem_utilization);
 		}
@@ -568,16 +585,24 @@ namespace Cpu {
 				}
 			}
 
-			if (hz <= 1 or hz >= 1000000)
+			if (hz <= 1 or hz >= 999999999)
 				throw std::runtime_error("Failed to read /sys/devices/system/cpu/cpufreq/policy and /proc/cpuinfo.");
 
-			if (hz >= 1000) {
-				if (hz >= 10000) cpuhz = to_string((int)round(hz / 1000)); // Future proof until we reach THz speeds :)
-				else cpuhz = to_string(round(hz / 100) / 10.0).substr(0, 3);
+			if (hz > 999999) {
+				cpuhz = fmt::format("{:.1f}", hz / 1'000'000);
+				cpuhz.resize(3);
+				if (cpuhz.back() == '.') cpuhz.pop_back();
+				cpuhz += " THz";
+			}
+			else if (hz > 999) {
+				cpuhz = fmt::format("{:.1f}", hz / 1'000);
+				cpuhz.resize(3);
+				if (cpuhz.back() == '.') cpuhz.pop_back();
 				cpuhz += " GHz";
 			}
-			else if (hz > 0)
-				cpuhz = to_string((int)hz) + " MHz";
+			else {
+				cpuhz = fmt::format("{:.0f} MHz", hz);
+			}
 
 		}
 		catch (const std::exception& e) {
@@ -757,21 +782,21 @@ namespace Cpu {
 		//? Try to get battery percentage
 		if (percent < 0) {
 			try {
-				percent = stoll(readfile(b.base_dir / "capacity", "-1"));
+				percent = stoi(readfile(b.base_dir / "capacity", "-1"));
 			}
 			catch (const std::invalid_argument&) { }
 			catch (const std::out_of_range&) { }
 		}
 		if (b.use_energy_or_charge and percent < 0) {
 			try {
-				percent = round(100.0 * stoll(readfile(b.energy_now, "-1")) / stoll(readfile(b.energy_full, "1")));
+				percent = round(100.0 * stod(readfile(b.energy_now, "-1")) / stod(readfile(b.energy_full, "1")));
 			}
 			catch (const std::invalid_argument&) { }
 			catch (const std::out_of_range&) { }
 		}
 		if (b.use_energy_or_charge and percent < 0) {
 			try {
-				percent = round(100.0 * stoll(readfile(b.charge_now, "-1")) / stoll(readfile(b.charge_full, "1")));
+				percent = round(100.0 * stod(readfile(b.charge_now, "-1")) / stod(readfile(b.charge_full, "1")));
 			}
 			catch (const std::invalid_argument&) { }
 			catch (const std::out_of_range&) { }
@@ -795,14 +820,14 @@ namespace Cpu {
 			if (b.use_energy_or_charge ) {
 				if (not b.power_now.empty()) {
 					try {
-						seconds = round((double)stoll(readfile(b.energy_now, "0")) / stoll(readfile(b.power_now, "1")) * 3600);
+						seconds = abs(round(stod(readfile(b.energy_now, "0")) / stod(readfile(b.power_now, "1")) * 3600));
 					}
 					catch (const std::invalid_argument&) { }
 					catch (const std::out_of_range&) { }
 				}
 				else if (not b.current_now.empty()) {
 					try {
-						seconds = round((double)stoll(readfile(b.charge_now, "0")) / (double)stoll(readfile(b.current_now, "1")) * 3600);
+						seconds = abs(round(stod(readfile(b.charge_now, "0")) / stod(readfile(b.current_now, "1")) * 3600));
 					}
 					catch (const std::invalid_argument&) { }
 					catch (const std::out_of_range&) { }
@@ -816,20 +841,41 @@ namespace Cpu {
 				catch (const std::invalid_argument&) { }
 				catch (const std::out_of_range&) { }
 			}
-		}
+		} 
+		//? Or get seconds to full
+		else if(is_in(status, "charging")) {
+			if (b.use_energy_or_charge ) {
+				if (not b.power_now.empty()) {
+					try {
+						seconds = (round(stod(readfile(b.energy_full , "0")) - round(stod(readfile(b.energy_now, "0"))))  
+									/ abs(stod(readfile(b.power_now, "1"))) * 3600);
+					}
+					catch (const std::invalid_argument&) { }
+					catch (const std::out_of_range&) { }
+				}
+				else if (not b.current_now.empty()) {
+					try {
+						seconds = (round(stod(readfile(b.charge_full , "0")) - stod(readfile(b.charge_now, "0")))  
+									/ std::abs(stod(readfile(b.current_now, "1"))) * 3600);
+					}
+					catch (const std::invalid_argument&) { }
+					catch (const std::out_of_range&) { }
+				}
+			}
+		} 
 
 		//? Get power draw
 		if (b.use_power) {
 			if (not b.power_now.empty()) {
 				try {
-					watts = (float)stoll(readfile(b.power_now, "-1")) / 1000000.0;
+					watts = stof(readfile(b.power_now, "-1")) / 1000000.0F;
 				}
 				catch (const std::invalid_argument&) { }
 				catch (const std::out_of_range&) { }
 			}
 			else if (not b.voltage_now.empty() and not b.current_now.empty()) {
 				try {
-					watts = (float)stoll(readfile(b.current_now, "-1")) / 1000000.0 * stoll(readfile(b.voltage_now, "1")) / 1000000.0;
+					watts = stof(readfile(b.current_now, "-1")) / 1000000.0F * stof(readfile(b.voltage_now, "1")) / 1000000.0F;
 				}
 				catch (const std::invalid_argument&) { }
 				catch (const std::out_of_range&) { }
@@ -838,6 +884,47 @@ namespace Cpu {
 		}
 
 		return {percent, watts, seconds, status};
+	}
+
+	long long get_cpuConsumptionUJoules()
+	{
+		long long consumption = -1;
+		const auto rapl_power_usage_path = "/sys/class/powercap/intel-rapl:0/energy_uj";
+		std::ifstream file(rapl_power_usage_path);
+		if(file.good())
+		{
+			file >> consumption;
+		}
+		return consumption;
+	}
+
+	float get_cpuConsumptionWatts()
+	{
+		static long long previous_usage = 0;
+		static long long previous_timestamp = 0;
+
+		if (previous_usage == 0)
+		{
+			previous_usage = get_cpuConsumptionUJoules();
+			previous_timestamp = get_monotonicTimeUSec();
+			supports_watts = (previous_usage > 0);
+			return 0;
+		}
+
+		if (!supports_watts)
+		{
+			return -1;
+		}
+
+		auto current_timestamp = get_monotonicTimeUSec();
+		auto current_usage = get_cpuConsumptionUJoules();
+
+		auto watts = (float)(current_usage - previous_usage) / (float)(current_timestamp - previous_timestamp);
+
+		previous_timestamp = current_timestamp;
+		previous_usage = current_usage;
+
+		return watts;
 	}
 
 	auto collect(bool no_update) -> cpu_info& {
@@ -977,6 +1064,9 @@ namespace Cpu {
 		if (Config::getB("show_battery") and has_battery)
 			current_bat = get_battery();
 
+		if (Config::getB("show_cpu_watts") and supports_watts)
+			current_cpu.usage_watts = get_cpuConsumptionWatts();
+
 		return cpu;
 	}
 }
@@ -1032,6 +1122,8 @@ namespace Gpu {
 		    LOAD_SYM(nvmlDeviceGetTemperature);
 		    LOAD_SYM(nvmlDeviceGetMemoryInfo);
 		    LOAD_SYM(nvmlDeviceGetPcieThroughput);
+			LOAD_SYM(nvmlDeviceGetEncoderUtilization);
+			LOAD_SYM(nvmlDeviceGetDecoderUtilization);
 
             #undef LOAD_SYM
 
@@ -1087,7 +1179,7 @@ namespace Gpu {
     				result = nvmlDeviceGetHandleByIndex(i, devices.data() + i);
         			if (result != NVML_SUCCESS) {
     					Logger::warning(std::string("NVML: Failed to get device handle: ") + nvmlErrorString(result));
-    					gpus[i].supported_functions = {false, false, false, false, false, false, false, false};
+						gpus[i].supported_functions = {false, false, false, false, false, false, false, false, false, false};
     					continue;
         			}
 
@@ -1232,6 +1324,30 @@ namespace Gpu {
 						auto used_percent = (long long)round((double)memory.used * 100.0 / (double)memory.total);
 						gpus_slice[i].gpu_percent.at("gpu-vram-totals").push_back(used_percent);
 					}
+				}
+
+				// nvTimer.stop_rename_reset("Nv enc");
+				//? Encoder info
+				if (gpus_slice[i].supported_functions.encoder_utilization) {
+					unsigned int utilization;
+					unsigned int samplingPeriodUs;
+					result = nvmlDeviceGetEncoderUtilization(devices[i], &utilization, &samplingPeriodUs);
+					if (result != NVML_SUCCESS) {
+						Logger::warning(std::string("NVML: Failed to get encoder utilization: ") + nvmlErrorString(result));
+						if constexpr(is_init) gpus_slice[i].supported_functions.encoder_utilization = false;
+					} else gpus_slice[i].encoder_utilization = (long long)utilization;
+				}
+
+				// nvTimer.stop_rename_reset("Nv dec");
+				//? Decoder info
+				if (gpus_slice[i].supported_functions.decoder_utilization) {
+					unsigned int utilization;
+					unsigned int samplingPeriodUs;
+					result = nvmlDeviceGetDecoderUtilization(devices[i], &utilization, &samplingPeriodUs);
+					if (result != NVML_SUCCESS) {
+						Logger::warning(std::string("NVML: Failed to get decoder utilization: ") + nvmlErrorString(result));
+						if constexpr(is_init) gpus_slice[i].supported_functions.decoder_utilization = false;
+					} else gpus_slice[i].decoder_utilization = (long long)utilization;
 				}
 
     			//? TODO: Processes using GPU
@@ -1407,6 +1523,10 @@ namespace Gpu {
         			if (result != RSMI_STATUS_SUCCESS)
     					Logger::warning("ROCm SMI: Failed to get maximum GPU temperature, defaulting to 110°C");
     				else gpus_slice[i].temp_max = (long long)temp_max;
+
+					//? Disable encoder and decoder utilisation on AMD
+					gpus_slice[i].supported_functions.encoder_utilization = false;
+					gpus_slice[i].supported_functions.decoder_utilization = false;
     			}
 
 				//? GPU utilization
@@ -1638,7 +1758,9 @@ namespace Gpu {
 					.temp_info = false,
 					.mem_total = false,
 					.mem_used = false,
-					.pcie_txrx = false
+					.pcie_txrx = false,
+					.encoder_utilization = false,
+					.decoder_utilization = false
 				};
 
 				gpus_slice->pwr_max_usage = 10'000; //? 10W
@@ -1729,6 +1851,36 @@ namespace Gpu {
 	}
 }
 #endif
+
+/// Convert ascii escapes like \040 into chars.
+static auto convert_ascii_escapes(const std::string& input) -> std::string {
+    std::string out;
+    out.reserve(input.size());
+
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '\\' &&
+	    	// Peek the next three characters.
+            i + 3 < input.size() &&
+            std::isdigit(input[i + 1]) &&
+            std::isdigit(input[i + 2]) &&
+            std::isdigit(input[i + 3])) {
+
+			// Convert octal chars to decimal int.
+			//   '0' - '0' -> 0, '4' - '0' -> 4, '0' - '0' -> 0.
+			//   0 * 64 (0)
+			//   + 4 * 8 (32)
+			//   + 0
+			//   = 32 (ascii space)
+            int value = ((input[i + 1] - '0') * 64) + ((input[i + 2] - '0') * 8) + (input[i + 3] - '0');
+            out.push_back(static_cast<char>(value));
+            // Consume the three digits.
+            i += 3;
+        } else {
+            out.push_back(input[i]);
+        }
+    }
+    return out;
+}
 
 namespace Mem {
 	bool has_swap{};
@@ -1918,16 +2070,21 @@ namespace Mem {
 					diskread.close();
 				}
 
-				//? Get mounts from /etc/mtab or /proc/self/mounts
-				diskread.open((fs::exists("/etc/mtab") ? fs::path("/etc/mtab") : Shared::procPath / "self/mounts"));
+				//? Get mounts from /proc/self/mountinfo
+				diskread.open((Shared::procPath / "self/mountinfo"));
 				if (diskread.good()) {
 					vector<string> found;
 					found.reserve(last_found.size());
-					string dev, mountpoint, fstype;
+					string dev, major_minor, mountpoint, fstype, _;
 					while (not diskread.eof()) {
+						// See proc_pid_mountinfo(5) for the file format
+						// We specifically want the major/minor device numbers
 						std::error_code ec;
-						diskread >> dev >> mountpoint >> fstype;
+						diskread >> _ >> _ >> major_minor >> _ >> mountpoint >> _ >> _ >> _ >> fstype >> dev >> _;
 						diskread.ignore(SSmax, '\n');
+
+						// A mountpoint can ascii escape codes, which will not work with `statvfs`.
+						mountpoint = convert_ascii_escapes(mountpoint);
 
 						if (v_contains(ignore_list, mountpoint) or v_contains(found, mountpoint)) continue;
 
@@ -1956,25 +2113,17 @@ namespace Mem {
 									if (mountpoint == "/mnt") disks.at(mountpoint).name = "root";
 								#endif
 								if (disks.at(mountpoint).name.empty()) disks.at(mountpoint).name = (mountpoint == "/" ? "root" : mountpoint);
-								string devname = disks.at(mountpoint).dev.filename();
-								int c = 0;
-								while (devname.size() >= 2) {
-									if (fs::exists("/sys/block/" + devname + "/stat", ec) and access(string("/sys/block/" + devname + "/stat").c_str(), R_OK) == 0) {
-										if (c > 0 and fs::exists("/sys/block/" + devname + '/' + disks.at(mountpoint).dev.filename().string() + "/stat", ec))
-											disks.at(mountpoint).stat = "/sys/block/" + devname + '/' + disks.at(mountpoint).dev.filename().string() + "/stat";
-										else
-											disks.at(mountpoint).stat = "/sys/block/" + devname + "/stat";
-										break;
+
+								// Use the major:minor device numbers to get device stats; see sysfs(5)
+								auto stat_path = "/sys/dev/block/" + major_minor + "/stat";
+								if (fs::exists(stat_path, ec) and access(stat_path.c_str(), R_OK) == 0) {
+									disks.at(mountpoint).stat = stat_path;
+								} else if (fstype == "zfs") {
 									//? Set ZFS stat filepath
-									} else if (fstype == "zfs") {
-										disks.at(mountpoint).stat = get_zfs_stat_file(dev, zfs_dataset_name_start, zfs_hide_datasets);
-										if (disks.at(mountpoint).stat.empty()) {
-											Logger::debug("Failed to get ZFS stat file for device " + dev);
-										}
-										break;
+									disks.at(mountpoint).stat = get_zfs_stat_file(dev, zfs_dataset_name_start, zfs_hide_datasets);
+									if (disks.at(mountpoint).stat.empty()) {
+										Logger::debug("Failed to get ZFS stat file for device " + dev);
 									}
-									devname.resize(devname.size() - 1);
-									c++;
 								}
 							}
 
@@ -2001,7 +2150,7 @@ namespace Mem {
 					last_found = std::move(found);
 				}
 				else
-					throw std::runtime_error("Failed to get mounts from /etc/mtab and /proc/self/mounts");
+					throw std::runtime_error("Failed to get mounts from /proc/self/mountinfo");
 				diskread.close();
 
 				//? Get disk/partition stats
@@ -2394,7 +2543,7 @@ namespace Net {
 					auto& bandwidth = netif.bandwidth.at(dir);
 
 					uint64_t val{};
-					try { val = (uint64_t)stoull(readfile(sys_file, "0")); }
+					try { val = stoull(readfile(sys_file, "0")); }
 					catch (const std::invalid_argument&) {}
 					catch (const std::out_of_range&) {}
 
@@ -2969,13 +3118,10 @@ namespace Proc {
 			int index = 0;
 			tree_sort(tree_procs, sorting, reverse, index, current_procs.size());
 
-			//? Add tree begin symbol to first item if childless
-			if (tree_procs.size() > 0 and tree_procs.front().children.empty() and tree_procs.front().entry.get().prefix.size() >= 8)
-				tree_procs.front().entry.get().prefix.replace(tree_procs.front().entry.get().prefix.size() - 8, 8, " ┌─ ");
-
-			//? Add tree terminator symbol to last item if childless
-			if (tree_procs.size() > 0 and tree_procs.back().children.empty() and tree_procs.back().entry.get().prefix.size() >= 8)
-				tree_procs.back().entry.get().prefix.replace(tree_procs.back().entry.get().prefix.size() - 8, 8, " └─ ");
+			//? Recursive construction of ASCII tree prefixes.
+			for (auto t = tree_procs.begin(); t != tree_procs.end(); ++t) {
+				_collect_prefixes(*t, t == tree_procs.end() - 1);
+			}
 
 			//? Final sort based on tree index
 			rng::sort(current_procs, rng::less{}, & proc_info::tree_index);
