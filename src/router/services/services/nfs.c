@@ -89,20 +89,15 @@ void start_nfs(void)
 		fprintf(fp, "upcall-timeout=30\n");
 		fprintf(fp, "cancel-timed-out-upcalls=0\n");
 		fprintf(fp, "[lockd]\n");
-		fprintf(fp, "port=0\n");
-		fprintf(fp, "udp-port=0\n");
 		fprintf(fp, "[exportd]\n");
-		fprintf(fp, "debug=\"all|auth|call|general|parse\"\n");
 		fprintf(fp, "manage-gids=n\n");
 		fprintf(fp, "state-directory-path=/var/lib/nfs\n");
 		fprintf(fp, "threads=1\n");
 		fprintf(fp, "cache-use-ipaddr=n\n");
 		fprintf(fp, "ttl=1800\n");
 		fprintf(fp, "[mountd]\n");
-		fprintf(fp, "debug=\"all|auth|call|general|parse\"\n");
 		fprintf(fp, "manage-gids=n\n");
 		fprintf(fp, "descriptors=0\n");
-		fprintf(fp, "port=0\n");
 		fprintf(fp, "threads=1\n");
 		fprintf(fp, "reverse-lookup=n\n");
 		fprintf(fp, "state-directory-path=/var/lib/nfs\n");
@@ -116,7 +111,6 @@ void start_nfs(void)
 		fprintf(fp, "debug=0\n");
 		fprintf(fp, "threads=16\n");
 		//fprintf(fp, "host=\n");
-		fprintf(fp, "port=0\n");
 		fprintf(fp, "grace-time=90\n");
 		fprintf(fp, "lease-time=90\n");
 		fprintf(fp, "udp=y\n");
@@ -130,8 +124,6 @@ void start_nfs(void)
 		fprintf(fp, "rdma-port=20049\n");
 		fprintf(fp, "[statd]\n");
 		fprintf(fp, "debug=0\n");
-		fprintf(fp, "port=0\n");
-		fprintf(fp, "outgoing-port=0\n");
 		//fprintf(fp, "name=\n");
 		//fprintf(fp, "state-directory-path=/var/lib/nfs/statd\n");
 		//fprintf(fp, "ha-callout=\n");
