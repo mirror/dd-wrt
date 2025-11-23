@@ -114,6 +114,7 @@ void start_jffs2(void)
 #endif
 	nvram_seti("jffs_mounted", 0);
 	umount2("/jffs", MNT_DETACH);
+	u_int64_t space = freediskSpace("/jffs");
 	char udev[32];
 	sprintf(udev, "/dev/ubi%d", ubidev);
 	char upath[32];
@@ -205,12 +206,13 @@ void start_jffs2(void)
 			mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			didntwork = is_mtd_mounted(dev);
 #endif
-			if (didntwork) {
+			if (!space && didntwork) {
 				nvram_seti("jffs_mounted", 0);
 				nvram_seti("clean_jffs2", 1);
 				start_jffs2();
 			} else {
-				nvram_seti("jffs_mounted", 1);
+				if (freediskSpace("/jffs") > 0)
+					nvram_seti("jffs_mounted", 1);
 			}
 		}
 	}
