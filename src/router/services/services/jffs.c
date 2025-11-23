@@ -113,9 +113,7 @@ void start_jffs2(void)
 	mtd = getMTD("rootfs_data");
 #endif
 	nvram_seti("jffs_mounted", 0);
-	if (!nvram_matchi("enable_jffs2", 1) || nvram_matchi("clean_jffs2", 1)) {
-		umount2("/jffs", MNT_DETACH);
-	}
+	umount2("/jffs", MNT_DETACH);
 	char udev[32];
 	sprintf(udev, "/dev/ubi%d", ubidev);
 	char upath[32];
@@ -188,9 +186,12 @@ void start_jffs2(void)
 				didntwork = mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			} else {
 				sprintf(dev, "/dev/mtd%d", mtd);
-				if (mtd >= 0)
+				if (mtd >= 0) {
+					eval("ubidetach", "-p", dev);
 					eval("ubiattach", "-p", dev);
+				}
 				didntwork = mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, "compr=" DEFAULT_UBIFS_COMPR);
+				fprintf(stderr, "errorcode %d\n", didntwork);
 			}
 #else
 			/*
