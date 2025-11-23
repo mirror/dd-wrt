@@ -679,6 +679,11 @@ static char *getUEnvExt(char *name)
 	defined(HAVE_IPQ6018) || defined(HAVE_PERU) || defined(HAVE_REALTEK)
 void *getUEnv(char *name)
 {
+#ifdef HAVE_ALPINE
+#define USIZE 0x40000
+#else
+#define USIZE 0x2000
+#endif
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
 #elif HAVE_WZR450HP2
@@ -718,6 +723,8 @@ void *getUEnv(char *name)
 #elif HAVE_PERU
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #elif HAVE_VENTANA
+	FILE *fp = fopen("/dev/mtdblock/1", "rb");
+#elif HAVE_ALPINE
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #elif HAVE_REALTEK
 	int brand = getRouterBrand();
@@ -773,9 +780,9 @@ void *getUEnv(char *name)
 	char newname[64];
 	snprintf(newname, 64, "%s=", name);
 	fseek(fp, UOFFSET, SEEK_SET);
-	char *mem = safe_malloc(0x2000);
+	char *mem = safe_malloc(USIZE);
 again:;
-	fread(mem, 0x2000, 1, fp);
+	fread(mem, USIZE, 1, fp);
 	fclose(fp);
 #ifdef HAVE_VENTANA
 	if (try == 0 && mem[0] == 0xff) {
@@ -784,7 +791,7 @@ again:;
 		goto again;
 	}
 #endif
-	int s = (0x2000 - 1) - strlen(newname);
+	int s = (USIZE - 1) - strlen(newname);
 	int i;
 	int l = strlen(newname);
 	for (i = 0; i < s; i++) {
