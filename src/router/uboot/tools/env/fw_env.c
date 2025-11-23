@@ -1448,7 +1448,7 @@ int fw_env_open(struct env_opts *opts)
 		crc0_ok = (crc0 == single->crc);
 		if (!crc0_ok) {
 			fprintf(stderr,
-				"Warning: Bad CRC, using default environment\n");
+				"Warning: Bad CRC, using default environment (original 0x%08X, calculated 0x%08X)\n", single->crc, crc0);
 			memcpy(single->data, default_environment,
 			       sizeof(default_environment));
 			environment.dirty = 1;
