@@ -50,7 +50,7 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
-void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int nums)
+void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int nums, char *offset2)
 {
 	char m[32];
 	sprintf(m, "/dev/mtd%d", mtd);
@@ -60,6 +60,12 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 			fprintf(fp, "%s\t%s\t%s\t%s\t%d\n", m, offset, envsize, blocksize, nums);
 		else
 			fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset, envsize, blocksize);
+		if (offset2) {
+			if (nums)
+				fprintf(fp, "%s\t%s\t%s\t%s\t%d\n", m, offset2, envsize, blocksize, nums);
+			else
+				fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset2, envsize, blocksize);
+		}
 		fclose(fp);
 	}
 }
@@ -165,7 +171,7 @@ void start_sysinit(void)
 		break;
 	}
 
-	set_envtools(uenv, "0x0", "0x4000", "0x20000", 2);
+	set_envtools(1, "0x0", "0x4000", "0x20000", 1, "0x20000");
 
 	/*
 	   ","*","Set","a","sane","date","
