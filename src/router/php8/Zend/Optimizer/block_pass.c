@@ -274,7 +274,9 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 				 * If it's not local, then the other blocks successors must also eventually either FREE or consume the temporary,
 				 * hence removing the temporary is not safe in the general case, especially when other consumers are not FREE.
 				 * A FREE may not be removed without also removing the source's result, because otherwise that would cause a memory leak. */
-				if (opline->op1_type == IS_TMP_VAR) {
+				if (opline->extended_value == ZEND_FREE_VOID_CAST) {
+					/* Keep the ZEND_FREE opcode alive. */
+				} else if (opline->op1_type == IS_TMP_VAR) {
 					src = VAR_SOURCE(opline->op1);
 					if (src) {
 						switch (src->opcode) {
@@ -418,6 +420,14 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 				}
 				break;
 
+			case ZEND_EXT_STMT:
+				if (opline->op1_type & (IS_TMP_VAR|IS_VAR)) {
+					/* Variable will be deleted later by FREE, so we can't optimize it */
+					Tsource[VAR_NUM(opline->op1.var)] = NULL;
+					break;
+				}
+				break;
+
 			case ZEND_CASE:
 			case ZEND_CASE_STRICT:
 			case ZEND_COPY_TMP:
@@ -426,18 +436,11 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 					Tsource[VAR_NUM(opline->op1.var)] = NULL;
 					break;
 				}
-				ZEND_FALLTHROUGH;
-
-			case ZEND_IS_EQUAL:
-			case ZEND_IS_NOT_EQUAL:
 				if (opline->op1_type == IS_CONST &&
 				    opline->op2_type == IS_CONST) {
 					goto optimize_constant_binary_op;
 				}
-		        /* IS_EQ(TRUE, X)      => BOOL(X)
-		         * IS_EQ(FALSE, X)     => BOOL_NOT(X)
-		         * IS_NOT_EQ(TRUE, X)  => BOOL_NOT(X)
-		         * IS_NOT_EQ(FALSE, X) => BOOL(X)
+		        /*
 		         * CASE(TRUE, X)       => BOOL(X)
 		         * CASE(FALSE, X)      => BOOL_NOT(X)
 		         */
@@ -469,6 +472,81 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 				}
 				break;
 
+			case ZEND_IS_EQUAL:
+			case ZEND_IS_NOT_EQUAL:
+				if (opline->op1_type == IS_CONST &&
+					opline->op2_type == IS_CONST) {
+					goto optimize_constant_binary_op;
+				}
+				/* IS_EQ(TRUE, X)      => BOOL(X)
+				 * IS_EQ(FALSE, X)     => BOOL_NOT(X)
+				 * IS_NOT_EQ(TRUE, X)  => BOOL_NOT(X)
+				 * IS_NOT_EQ(FALSE, X) => BOOL(X)
+				 * Those optimizations are not safe if the other operand ends up being NAN
+				 * as BOOL/BOOL_NOT will warn, while IS_EQUAL/IS_NOT_EQUAL do not.
+				 */
+				break;
+			case ZEND_IS_IDENTICAL:
+				if (opline->op1_type == IS_CONST &&
+					opline->op2_type == IS_CONST) {
+					goto optimize_constant_binary_op;
+				}
+
+				if (opline->op1_type == IS_CONST &&
+					(Z_TYPE(ZEND_OP1_LITERAL(opline)) <= IS_TRUE && Z_TYPE(ZEND_OP1_LITERAL(opline)) >= IS_NULL)) {
+					/* IS_IDENTICAL(TRUE, T)  => TYPE_CHECK(T, TRUE)
+					 * IS_IDENTICAL(FALSE, T) => TYPE_CHECK(T, FALSE)
+					 * IS_IDENTICAL(NULL, T)  => TYPE_CHECK(T, NULL)
+					 */
+					opline->opcode = ZEND_TYPE_CHECK;
+					opline->extended_value = (1 << Z_TYPE(ZEND_OP1_LITERAL(opline)));
+					COPY_NODE(opline->op1, opline->op2);
+					SET_UNUSED(opline->op2);
+					++(*opt_count);
+					goto optimize_type_check;
+				} else if (opline->op2_type == IS_CONST &&
+					(Z_TYPE(ZEND_OP2_LITERAL(opline)) <= IS_TRUE && Z_TYPE(ZEND_OP2_LITERAL(opline)) >= IS_NULL)) {
+					/* IS_IDENTICAL(T, TRUE)  => TYPE_CHECK(T, TRUE)
+					 * IS_IDENTICAL(T, FALSE) => TYPE_CHECK(T, FALSE)
+					 * IS_IDENTICAL(T, NULL)  => TYPE_CHECK(T, NULL)
+					 */
+					opline->opcode = ZEND_TYPE_CHECK;
+					opline->extended_value = (1 << Z_TYPE(ZEND_OP2_LITERAL(opline)));
+					SET_UNUSED(opline->op2);
+					++(*opt_count);
+					goto optimize_type_check;
+				}
+				break;
+			case ZEND_TYPE_CHECK:
+optimize_type_check:
+				if (opline->extended_value == (1 << IS_TRUE) || opline->extended_value == (1 << IS_FALSE)) {
+					if (opline->op1_type == IS_TMP_VAR &&
+						!zend_bitset_in(used_ext, VAR_NUM(opline->op1.var))) {
+						src = VAR_SOURCE(opline->op1);
+
+						if (src) {
+							switch (src->opcode) {
+								case ZEND_BOOL:
+								case ZEND_BOOL_NOT:
+									/* T = BOOL(X)     + TYPE_CHECK(T, TRUE)  -> BOOL(X), NOP
+									 * T = BOOL(X)     + TYPE_CHECK(T, FALSE) -> BOOL_NOT(X), NOP
+									 * T = BOOL_NOT(X) + TYPE_CHECK(T, TRUE)  -> BOOL_NOT(X), NOP
+									 * T = BOOL_NOT(X) + TYPE_CHECK(T, FALSE) -> BOOL(X), NOP
+									 */
+									src->opcode =
+										((src->opcode == ZEND_BOOL) == (opline->extended_value == (1 << IS_TRUE))) ?
+										ZEND_BOOL : ZEND_BOOL_NOT;
+									COPY_NODE(src->result, opline->result);
+									SET_VAR_SOURCE(src);
+									MAKE_NOP(opline);
+									++(*opt_count);
+									break;
+							}
+						}
+					}
+				}
+				break;
+	
 			case ZEND_BOOL:
 			case ZEND_BOOL_NOT:
 			optimize_bool:
@@ -801,7 +879,6 @@ static void zend_optimize_block(zend_basic_block *block, zend_op_array *op_array
 			case ZEND_SR:
 			case ZEND_IS_SMALLER:
 			case ZEND_IS_SMALLER_OR_EQUAL:
-			case ZEND_IS_IDENTICAL:
 			case ZEND_IS_NOT_IDENTICAL:
 			case ZEND_BOOL_XOR:
 			case ZEND_BW_OR:

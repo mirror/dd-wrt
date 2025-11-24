@@ -70,15 +70,6 @@ END_EXTERN_C()
 #define ZSTR_H(zstr)    (zstr)->h
 #define ZSTR_HASH(zstr) zend_string_hash_val(zstr)
 
-/* Compatibility macros */
-
-#define IS_INTERNED(s)	ZSTR_IS_INTERNED(s)
-#define STR_EMPTY_ALLOC()	ZSTR_EMPTY_ALLOC()
-#define _STR_HEADER_SIZE _ZSTR_HEADER_SIZE
-#define STR_ALLOCA_ALLOC(str, _len, use_heap) ZSTR_ALLOCA_ALLOC(str, _len, use_heap)
-#define STR_ALLOCA_INIT(str, s, len, use_heap) ZSTR_ALLOCA_INIT(str, s, len, use_heap)
-#define STR_ALLOCA_FREE(str, use_heap) ZSTR_ALLOCA_FREE(str, use_heap)
-
 /*---*/
 
 #define ZSTR_IS_INTERNED(s)					(GC_FLAGS(s) & IS_STR_INTERNED)
@@ -560,6 +551,8 @@ EMPTY_SWITCH_DEFAULT_CASE()
 #endif
 }
 
+// When adding a new string here, please also update build/gen_stub.php to the
+// known strings to be used in property registration; see gh-15751
 #define ZEND_KNOWN_STRINGS(_) \
 	_(ZEND_STR_FILE,                   "file") \
 	_(ZEND_STR_LINE,                   "line") \
@@ -573,6 +566,7 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_UNKNOWN,                "unknown") \
 	_(ZEND_STR_UNKNOWN_CAPITALIZED,    "Unknown") \
 	_(ZEND_STR_EXIT,                   "exit") \
+	_(ZEND_STR_CLONE,                  "clone") \
 	_(ZEND_STR_EVAL,                   "eval") \
 	_(ZEND_STR_INCLUDE,                "include") \
 	_(ZEND_STR_REQUIRE,                "require") \
@@ -595,7 +589,9 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_HOST,                   "host") \
 	_(ZEND_STR_PORT,                   "port") \
 	_(ZEND_STR_USER,                   "user") \
+	_(ZEND_STR_USERNAME,               "username") \
 	_(ZEND_STR_PASS,                   "pass") \
+	_(ZEND_STR_PASSWORD,               "password") \
 	_(ZEND_STR_PATH,                   "path") \
 	_(ZEND_STR_QUERY,                  "query") \
 	_(ZEND_STR_FRAGMENT,               "fragment") \
@@ -622,6 +618,8 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_NULL_LOWERCASE,         "null") \
 	_(ZEND_STR_MIXED,                  "mixed") \
 	_(ZEND_STR_TRAVERSABLE,            "Traversable") \
+	_(ZEND_STR_SELF,                   "self") \
+	_(ZEND_STR_PARENT,                 "parent") \
 	_(ZEND_STR_SLEEP,                  "__sleep") \
 	_(ZEND_STR_WAKEUP,                 "__wakeup") \
 	_(ZEND_STR_CASES,                  "cases") \
@@ -638,6 +636,12 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_SINCE,                  "since") \
 	_(ZEND_STR_GET,                    "get") \
 	_(ZEND_STR_SET,                    "set") \
+	_(ZEND_STR_8_DOT_0,                "8.0") \
+	_(ZEND_STR_8_DOT_1,                "8.1") \
+	_(ZEND_STR_8_DOT_2,                "8.2") \
+	_(ZEND_STR_8_DOT_3,                "8.3") \
+	_(ZEND_STR_8_DOT_4,                "8.4") \
+	_(ZEND_STR_8_DOT_5,                "8.5") \
 
 
 typedef enum _zend_known_string_id {

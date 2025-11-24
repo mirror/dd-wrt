@@ -39,7 +39,7 @@ extern zend_module_entry zip_module_entry;
 /* Additionnal flags not from libzip */
 #define ZIP_FL_OPEN_FILE_NOW (1u<<30)
 
-#define PHP_ZIP_VERSION "1.22.6"
+#define PHP_ZIP_VERSION "1.22.7"
 
 #ifdef HAVE_LIBZIP_VERSION
 #define LIBZIP_VERSION_STR zip_libzip_version()
@@ -77,10 +77,10 @@ typedef struct _ze_zip_object {
 	int err_zip;
 	int err_sys;
 #ifdef HAVE_PROGRESS_CALLBACK
-	zval progress_callback;
+	zend_fcall_info_cache progress_callback;
 #endif
 #ifdef HAVE_CANCEL_CALLBACK
-	zval cancel_callback;
+	zend_fcall_info_cache cancel_callback;
 #endif
 	zend_object zo;
 } ze_zip_object;

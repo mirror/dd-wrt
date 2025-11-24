@@ -41,7 +41,7 @@
 #include "phpdbg_lexer.h"
 #include "phpdbg_parser.h"
 
-#if ZEND_VM_KIND != ZEND_VM_KIND_CALL && ZEND_VM_KIND != ZEND_VM_KIND_HYBRID
+#if ZEND_VM_KIND != ZEND_VM_KIND_CALL && ZEND_VM_KIND != ZEND_VM_KIND_TAILCALL && ZEND_VM_KIND != ZEND_VM_KIND_HYBRID
 #error "phpdbg can only be built with CALL zend vm kind"
 #endif
 
@@ -81,7 +81,7 @@ const phpdbg_command_t phpdbg_prompt_commands[] = {
 	PHPDBG_COMMAND_D(clear,     "clear breakpoints",                        'C', NULL, 0, 0),
 	PHPDBG_COMMAND_D(help,      "show help menu",                           'h', phpdbg_help_commands, "|s", PHPDBG_ASYNC_SAFE),
 	PHPDBG_COMMAND_D(set,       "set phpdbg configuration",                 'S', phpdbg_set_commands,   "s", PHPDBG_ASYNC_SAFE),
-	PHPDBG_COMMAND_D(register,  "register a function",                      'R', NULL, "s", 0),
+	PHPDBG_COMMAND_D(register,  "register a phpdbginit function as a command alias", 'R', NULL, "s", 0),
 	PHPDBG_COMMAND_D(source,    "execute a phpdbginit",                     '<', NULL, "s", 0),
 	PHPDBG_COMMAND_D(export,    "export breaks to a .phpdbginit script",    '>', NULL, "s", PHPDBG_ASYNC_SAFE),
 	PHPDBG_COMMAND_D(sh,   	    "shell a command",                           0 , NULL, "i", 0),
@@ -96,38 +96,22 @@ static inline int phpdbg_call_register(phpdbg_param_t *stack) /* {{{ */
 	phpdbg_param_t *name = NULL;
 
 	if (stack->type == STACK_PARAM) {
-		char *lc_name;
-
 		name = stack->next;
 
 		if (!name || name->type != STR_PARAM) {
 			return FAILURE;
 		}
 
-		lc_name = zend_str_tolower_dup(name->str, name->len);
-
-		if (zend_hash_str_exists(&PHPDBG_G(registered), lc_name, name->len)) {
-			zval fretval;
-			zend_fcall_info fci;
-
-			memset(&fci, 0, sizeof(zend_fcall_info));
-
-			ZVAL_STRINGL(&fci.function_name, lc_name, name->len);
-			fci.size = sizeof(zend_fcall_info);
-			fci.object = NULL;
-			fci.retval = &fretval;
-			fci.param_count = 0;
-			fci.params = NULL;
-			fci.named_params = NULL;
-
-			zval params;
+		zend_function *user_fn = zend_hash_str_find_ptr_lc(&PHPDBG_G(registered), name->str, name->len);
+		if (user_fn != NULL) {
+			HashTable *params_ht = NULL;
 			if (name->next) {
 				phpdbg_param_t *next = name->next;
-
+				zval params;
 				array_init(&params);
 
 				while (next) {
-					char *buffered = NULL;
+					zend_string *buffered = NULL;
 
 					switch (next->type) {
 						case OP_PARAM:
@@ -141,28 +125,28 @@ static inline int phpdbg_call_register(phpdbg_param_t *stack) /* {{{ */
 						break;
 
 						case METHOD_PARAM:
-							spprintf(&buffered, 0, "%s::%s", next->method.class, next->method.name);
-							add_next_index_string(&params, buffered);
+							buffered = strpprintf(0, "%s::%s", next->method.class, next->method.name);
+							add_next_index_str(&params, buffered);
 						break;
 
 						case NUMERIC_METHOD_PARAM:
-							spprintf(&buffered, 0, "%s::%s#"ZEND_LONG_FMT, next->method.class, next->method.name, next->num);
-							add_next_index_string(&params, buffered);
+							buffered = strpprintf(0, "%s::%s#"ZEND_LONG_FMT, next->method.class, next->method.name, next->num);
+							add_next_index_str(&params, buffered);
 						break;
 
 						case NUMERIC_FUNCTION_PARAM:
-							spprintf(&buffered, 0, "%s#"ZEND_LONG_FMT, next->str, next->num);
-							add_next_index_string(&params, buffered);
+							buffered = strpprintf(0, "%s#"ZEND_LONG_FMT, next->str, next->num);
+							add_next_index_str(&params, buffered);
 						break;
 
 						case FILE_PARAM:
-							spprintf(&buffered, 0, "%s:"ZEND_ULONG_FMT, next->file.name, next->file.line);
-							add_next_index_string(&params, buffered);
+							buffered = strpprintf(0, "%s:"ZEND_ULONG_FMT, next->file.name, next->file.line);
+							add_next_index_str(&params, buffered);
 						break;
 
 						case NUMERIC_FILE_PARAM:
-							spprintf(&buffered, 0, "%s:#"ZEND_ULONG_FMT, next->file.name, next->file.line);
-							add_next_index_string(&params, buffered);
+							buffered = strpprintf(0, "%s:#"ZEND_ULONG_FMT, next->file.name, next->file.line);
+							add_next_index_str(&params, buffered);
 						break;
 
 						default: {
@@ -173,30 +157,23 @@ static inline int phpdbg_call_register(phpdbg_param_t *stack) /* {{{ */
 					next = next->next;
 				}
 				/* Add positional arguments */
-				fci.named_params = Z_ARRVAL(params);
+				params_ht = Z_ARRVAL(params);
+				phpdbg_debug("created " PRIu32 " params from arguments", zend_hash_num_elements(params_ht));
 			}
 
 			phpdbg_activate_err_buf(0);
 			phpdbg_free_err_buf();
 
-			phpdbg_debug("created %d params from arguments", fci.param_count);
 
-			if (zend_call_function(&fci, NULL) == SUCCESS) {
-				zend_print_zval_r(&fretval, 0);
-				phpdbg_out("\n");
-				zval_ptr_dtor(&fretval);
-			}
+			zend_call_known_function(user_fn, NULL, NULL, NULL, 0, NULL, params_ht);
+			phpdbg_out("\n");
 
-			zval_ptr_dtor_str(&fci.function_name);
-			efree(lc_name);
-			if (fci.named_params) {
-				zend_array_destroy(fci.named_params);
+			if (params_ht) {
+				zend_array_destroy(params_ht);
 			}
 
 			return SUCCESS;
 		}
-
-		efree(lc_name);
 	}
 
 	return FAILURE;
@@ -725,6 +702,10 @@ static inline void phpdbg_handle_exception(void) /* {{{ */
 		EG(exception) = NULL;
 		msg = ZSTR_EMPTY_ALLOC();
 	} else {
+		if (UNEXPECTED(Z_ISREF(tmp))) {
+			zend_unwrap_reference(&tmp);
+		}
+		ZEND_ASSERT(Z_TYPE(tmp) == IS_STRING);
 		zend_update_property_string(zend_get_exception_base(ex), ex, ZEND_STRL("string"), Z_STRVAL(tmp));
 		zval_ptr_dtor(&tmp);
 		msg = zval_get_string(zend_read_property_ex(zend_get_exception_base(ex), ex, ZSTR_KNOWN(ZEND_STR_STRING), /* silent */ true, &rv));

@@ -20,7 +20,7 @@
 #ifndef ZEND_H
 #define ZEND_H
 
-#define ZEND_VERSION "4.4.13"
+#define ZEND_VERSION "4.5.0"
 
 #define ZEND_ENGINE_3
 
@@ -444,6 +444,7 @@ ZEND_API void zend_replace_error_handling(zend_error_handling_t error_handling, 
 ZEND_API void zend_restore_error_handling(zend_error_handling *saved);
 ZEND_API void zend_begin_record_errors(void);
 ZEND_API void zend_emit_recorded_errors(void);
+ZEND_API void zend_emit_recorded_errors_ex(uint32_t num_errors, zend_error_info **errors);
 ZEND_API void zend_free_recorded_errors(void);
 END_EXTERN_C()
 

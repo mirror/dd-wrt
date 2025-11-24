@@ -25,6 +25,7 @@
 #include "zend_smart_str.h"
 #include "zend_interfaces.h"
 #include "zend_exceptions.h"
+#include "zend_attributes.h"
 
 #include "php_spl.h" /* For php_spl_object_hash() */
 #include "spl_observer.h"
@@ -258,8 +259,7 @@ static zend_object *spl_object_storage_new_ex(zend_class_entry *class_type, zend
 	spl_SplObjectStorage *intern;
 	zend_class_entry *parent = class_type;
 
-	intern = emalloc(sizeof(spl_SplObjectStorage) + zend_object_properties_size(parent));
-	memset(intern, 0, sizeof(spl_SplObjectStorage) - sizeof(zval));
+	intern = zend_object_alloc(sizeof(spl_SplObjectStorage), parent);
 	intern->pos = 0;
 
 	zend_object_std_init(&intern->std, class_type);

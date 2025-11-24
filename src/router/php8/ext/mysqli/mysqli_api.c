@@ -327,7 +327,7 @@ PHP_FUNCTION(mysqli_data_seek)
 	MYSQLI_FETCH_RESOURCE(result, MYSQL_RES *, mysql_result, "mysqli_result", MYSQLI_STATUS_VALID);
 
 	if (mysqli_result_is_unbuffered(result)) {
-		if (getThis()) {
+		if (hasThis()) {
 			zend_throw_error(NULL, "mysqli_result::data_seek() cannot be used in MYSQLI_USE_RESULT mode");
 		} else {
 			zend_throw_error(NULL, "mysqli_data_seek() cannot be used in MYSQLI_USE_RESULT mode");
@@ -855,7 +855,7 @@ PHP_FUNCTION(mysqli_free_result)
 /* {{{ Get MySQL client info */
 PHP_FUNCTION(mysqli_get_client_info)
 {
-	if (getThis()) {
+	if (hasThis()) {
 		if (zend_parse_parameters_none() == FAILURE) {
 			RETURN_THROWS();
 		}
@@ -969,10 +969,6 @@ void php_mysqli_init(INTERNAL_FUNCTION_PARAMETERS, bool is_method)
 	MYSQLI_RESOURCE *mysqli_resource;
 	MY_MYSQL *mysql;
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		RETURN_THROWS();
-	}
-
 	if (is_method && (Z_MYSQLI_P(getThis()))->ptr) {
 		return;
 	}
@@ -1004,6 +1000,7 @@ void php_mysqli_init(INTERNAL_FUNCTION_PARAMETERS, bool is_method)
 /* {{{ Initialize mysqli and return a resource for use with mysql_real_connect */
 PHP_FUNCTION(mysqli_init)
 {
+	ZEND_PARSE_PARAMETERS_NONE();
 	php_mysqli_init(INTERNAL_FUNCTION_PARAM_PASSTHRU, false);
 }
 /* }}} */

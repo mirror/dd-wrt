@@ -64,6 +64,11 @@
  * unless buf is not NULL.
  * Also works sensibly for win32 */
 BEGIN_EXTERN_C()
+#ifdef PHP_WIN32
+char *php_socket_strerror_s(long err, char *buf, size_t bufsize);
+#else
+#define php_socket_strerror_s php_socket_strerror
+#endif
 PHPAPI char *php_socket_strerror(long err, char *buf, size_t bufsize);
 PHPAPI zend_string *php_socket_error_str(long err);
 END_EXTERN_C()
@@ -96,8 +101,10 @@ END_EXTERN_C()
 
 #ifdef PHP_WIN32
 typedef SOCKET php_socket_t;
+#define PHP_SOCKET_FMT "%" PRIxPTR
 #else
 typedef int php_socket_t;
+#define PHP_SOCKET_FMT "%d"
 #endif
 
 #ifdef PHP_WIN32
@@ -311,9 +318,9 @@ END_EXTERN_C()
 
 struct _php_netstream_data_t	{
 	php_socket_t socket;
-	char is_blocked;
+	bool is_blocked;
+	bool timeout_event;
 	struct timeval timeout;
-	char timeout_event;
 	size_t ownsize;
 };
 typedef struct _php_netstream_data_t php_netstream_data_t;

@@ -40,6 +40,8 @@ typedef struct _zend_closure {
 ZEND_API zend_class_entry *zend_ce_closure;
 static zend_object_handlers closure_handlers;
 
+static zend_result zend_closure_get_closure(zend_object *obj, zend_class_entry **ce_ptr, zend_function **fptr_ptr, zend_object **obj_ptr, bool check_only);
+
 ZEND_METHOD(Closure, __invoke) /* {{{ */
 {
 	zend_function *func = EX(func);
@@ -51,9 +53,12 @@ ZEND_METHOD(Closure, __invoke) /* {{{ */
 		Z_PARAM_VARIADIC_WITH_NAMED(args, num_args, named_args)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (call_user_function_named(CG(function_table), NULL, ZEND_THIS, return_value, num_args, args, named_args) == FAILURE) {
-		RETVAL_FALSE;
-	}
+	zend_fcall_info_cache fcc = {
+		.closure = Z_OBJ_P(ZEND_THIS),
+	};
+	zend_closure_get_closure(Z_OBJ_P(ZEND_THIS), &fcc.calling_scope, &fcc.function_handler, &fcc.object, false);
+	fcc.called_scope = fcc.calling_scope;
+	zend_call_known_fcc(&fcc, return_value, num_args, args, named_args);
 
 	/* destruct the function also, then - we have allocated it in get_method */
 	zend_string_release_ex(func->internal_function.function_name, 0);
@@ -76,14 +81,14 @@ static bool zend_valid_closure_binding(
 	bool is_fake_closure = (func->common.fn_flags & ZEND_ACC_FAKE_CLOSURE) != 0;
 	if (newthis) {
 		if (func->common.fn_flags & ZEND_ACC_STATIC) {
-			zend_error(E_WARNING, "Cannot bind an instance to a static closure");
+			zend_error(E_WARNING, "Cannot bind an instance to a static closure, this will be an error in PHP 9");
 			return 0;
 		}
 
 		if (is_fake_closure && func->common.scope &&
 				!instanceof_function(Z_OBJCE_P(newthis), func->common.scope)) {
 			/* Binding incompatible $this to an internal method is not supported. */
-			zend_error(E_WARNING, "Cannot bind method %s::%s() to object of class %s",
+			zend_error(E_WARNING, "Cannot bind method %s::%s() to object of class %s, this will be an error in PHP 9",
 					ZSTR_VAL(func->common.scope->name),
 					ZSTR_VAL(func->common.function_name),
 					ZSTR_VAL(Z_OBJCE_P(newthis)->name));
@@ -91,26 +96,26 @@ static bool zend_valid_closure_binding(
 		}
 	} else if (is_fake_closure && func->common.scope
 			&& !(func->common.fn_flags & ZEND_ACC_STATIC)) {
-		zend_error(E_WARNING, "Cannot unbind $this of method");
+		zend_error(E_WARNING, "Cannot unbind $this of method, this will be an error in PHP 9");
 		return 0;
 	} else if (!is_fake_closure && !Z_ISUNDEF(closure->this_ptr)
 			&& (func->common.fn_flags & ZEND_ACC_USES_THIS)) {
-		zend_error(E_WARNING, "Cannot unbind $this of closure using $this");
+		zend_error(E_WARNING, "Cannot unbind $this of closure using $this, this will be an error in PHP 9");
 		return 0;
 	}
 
 	if (scope && scope != func->common.scope && scope->type == ZEND_INTERNAL_CLASS) {
 		/* rebinding to internal class is not allowed */
-		zend_error(E_WARNING, "Cannot bind closure to scope of internal class %s",
+		zend_error(E_WARNING, "Cannot bind closure to scope of internal class %s, this will be an error in PHP 9",
 				ZSTR_VAL(scope->name));
 		return 0;
 	}
 
 	if (is_fake_closure && scope != func->common.scope) {
 		if (func->common.scope == NULL) {
-			zend_error(E_WARNING, "Cannot rebind scope of closure created from function");
+			zend_error(E_WARNING, "Cannot rebind scope of closure created from function, this will be an error in PHP 9");
 		} else {
-			zend_error(E_WARNING, "Cannot rebind scope of closure created from method");
+			zend_error(E_WARNING, "Cannot rebind scope of closure created from method, this will be an error in PHP 9");
 		}
 		return 0;
 	}
@@ -413,6 +418,23 @@ ZEND_METHOD(Closure, fromCallable)
 }
 /* }}} */
 
+ZEND_METHOD(Closure, getCurrent)
+{
+	ZEND_PARSE_PARAMETERS_NONE();
+
+	zend_execute_data *prev_ex = EX(prev_execute_data);
+
+	if (!prev_ex
+	 || !prev_ex->func
+	 || (prev_ex->func->common.fn_flags & (ZEND_ACC_CLOSURE|ZEND_ACC_FAKE_CLOSURE)) != ZEND_ACC_CLOSURE) {
+			zend_throw_error(NULL, "Current function is not a closure");
+			RETURN_THROWS();
+	}
+
+	zend_object *obj = ZEND_CLOSURE_OBJECT(prev_ex->func);
+	RETURN_OBJ_COPY(obj);
+}
+
 static ZEND_COLD zend_function *zend_closure_get_constructor(zend_object *object) /* {{{ */
 {
 	zend_throw_error(NULL, "Instantiation of class Closure is not allowed");
@@ -523,7 +545,6 @@ static void zend_closure_free_storage(zend_object *object) /* {{{ */
 		/* We don't own the static variables of fake closures. */
 		if (!(closure->func.op_array.fn_flags & ZEND_ACC_FAKE_CLOSURE)) {
 			zend_destroy_static_vars(&closure->func.op_array);
-			closure->func.op_array.static_variables = NULL;
 		}
 		destroy_op_array(&closure->func.op_array);
 	} else if (closure->func.type == ZEND_INTERNAL_FUNCTION) {
@@ -755,16 +776,14 @@ static void zend_create_closure_ex(zval *res, zend_function *func, zend_class_en
 		}
 
 		/* For fake closures, we want to reuse the static variables of the original function. */
+		HashTable *ht = ZEND_MAP_PTR_GET(func->op_array.static_variables_ptr);
 		if (!is_fake) {
-			if (closure->func.op_array.static_variables) {
-				closure->func.op_array.static_variables =
-					zend_array_dup(closure->func.op_array.static_variables);
+			if (!ht) {
+				ht = closure->func.op_array.static_variables;
 			}
 			ZEND_MAP_PTR_INIT(closure->func.op_array.static_variables_ptr,
-				closure->func.op_array.static_variables);
+				ht ? zend_array_dup(ht) : NULL);
 		} else if (func->op_array.static_variables) {
-			HashTable *ht = ZEND_MAP_PTR_GET(func->op_array.static_variables_ptr);
-
 			if (!ht) {
 				ht = zend_array_dup(func->op_array.static_variables);
 				ZEND_MAP_PTR_SET(func->op_array.static_variables_ptr, ht);
@@ -847,6 +866,9 @@ ZEND_API void zend_create_fake_closure(zval *res, zend_function *func, zend_clas
 
 	closure = (zend_closure *)Z_OBJ_P(res);
 	closure->func.common.fn_flags |= ZEND_ACC_FAKE_CLOSURE;
+	if (Z_TYPE(closure->this_ptr) != IS_OBJECT) {
+		GC_ADD_FLAGS(&closure->std, GC_NOT_COLLECTABLE);
+	}
 }
 /* }}} */
 

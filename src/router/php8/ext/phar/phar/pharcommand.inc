@@ -225,13 +225,13 @@ class PharCommand extends CLICommand
                 }
             }
             if ($pear) {
-                $apiver = (string) `pear -q info PHP_Archive 2>/dev/null|grep 'API Version'`;
+                $apiver = (string) shell_exec("pear -q info PHP_Archive 2>/dev/null|grep 'API Version'");
                 $apiver = trim(substr($apiver, strlen('API Version')));
             }
             if ($apiver) {
                 self::notice("PEAR package PHP_Archive: API Version: $apiver.\n");
-                $files  = explode("\n", (string) `pear list-files PHP_Archive`);
-                $phpdir = (string) `pear config-get php_dir 2>/dev/null`;
+                $files  = explode("\n", (string) shell_exec("pear list-files PHP_Archive"));
+                $phpdir = (string) shell_exec("pear config-get php_dir 2>/dev/null");
                 $phpdir = trim($phpdir);
                 self::notice("PEAR package PHP_Archive: $phpdir.\n");
                 if (is_dir($phpdir)) {
@@ -1578,7 +1578,7 @@ class PharCommand extends CLICommand
         $use_ext = extension_loaded('phar');
         $version = array(
             'PHP Version' => phpversion(),
-            'phar.phar version' => '$Id: fee6c069ab085376ce8b4d48727a0db8e8b30c57 $',
+            'phar.phar version' => '$Id: 7d35335a29470fb6334293611cf3a0d3708c9deb $',
             'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
             'Phar API version' => Phar::apiVersion(),
             'Phar-based phar archives' => true,

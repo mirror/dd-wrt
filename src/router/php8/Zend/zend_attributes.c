@@ -31,6 +31,8 @@ ZEND_API zend_class_entry *zend_ce_sensitive_parameter;
 ZEND_API zend_class_entry *zend_ce_sensitive_parameter_value;
 ZEND_API zend_class_entry *zend_ce_override;
 ZEND_API zend_class_entry *zend_ce_deprecated;
+ZEND_API zend_class_entry *zend_ce_nodiscard;
+ZEND_API zend_class_entry *zend_ce_delayed_target_validation;
 
 static zend_object_handlers attributes_object_handlers_sensitive_parameter_value;
 
@@ -68,30 +70,63 @@ uint32_t zend_attribute_attribute_get_flags(zend_attribute *attr, zend_class_ent
 	return ZEND_ATTRIBUTE_TARGET_ALL;
 }
 
-static void validate_allow_dynamic_properties(
+static zend_string *validate_allow_dynamic_properties(
 		zend_attribute *attr, uint32_t target, zend_class_entry *scope)
 {
+	ZEND_ASSERT(scope != NULL);
+	const char *msg = NULL;
 	if (scope->ce_flags & ZEND_ACC_TRAIT) {
-		zend_error_noreturn(E_ERROR, "Cannot apply #[AllowDynamicProperties] to trait %s",
-			ZSTR_VAL(scope->name)
-		);
+		msg = "Cannot apply #[\\AllowDynamicProperties] to trait %s";
+	} else if (scope->ce_flags & ZEND_ACC_INTERFACE) {
+		msg = "Cannot apply #[\\AllowDynamicProperties] to interface %s";
+	} else if (scope->ce_flags & ZEND_ACC_READONLY_CLASS) {
+		msg = "Cannot apply #[\\AllowDynamicProperties] to readonly class %s";
+	} else if (scope->ce_flags & ZEND_ACC_ENUM) {
+		msg = "Cannot apply #[\\AllowDynamicProperties] to enum %s";
 	}
-	if (scope->ce_flags & ZEND_ACC_INTERFACE) {
-		zend_error_noreturn(E_ERROR, "Cannot apply #[AllowDynamicProperties] to interface %s",
-			ZSTR_VAL(scope->name)
-		);
-	}
-	if (scope->ce_flags & ZEND_ACC_READONLY_CLASS) {
-		zend_error_noreturn(E_ERROR, "Cannot apply #[AllowDynamicProperties] to readonly class %s",
-			ZSTR_VAL(scope->name)
-		);
-	}
-	if (scope->ce_flags & ZEND_ACC_ENUM) {
-		zend_error_noreturn(E_ERROR, "Cannot apply #[AllowDynamicProperties] to enum %s",
-			ZSTR_VAL(scope->name)
-		);
+	if (msg != NULL) {
+		return zend_strpprintf(0, msg, ZSTR_VAL(scope->name));
 	}
 	scope->ce_flags |= ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES;
+	return NULL;
+}
+
+static zend_string *validate_attribute(
+	zend_attribute *attr, uint32_t target, zend_class_entry *scope)
+{
+	const char *msg = NULL;
+	if (scope->ce_flags & ZEND_ACC_TRAIT) {
+		msg = "Cannot apply #[\\Attribute] to trait %s";
+	} else if (scope->ce_flags & ZEND_ACC_INTERFACE) {
+		msg = "Cannot apply #[\\Attribute] to interface %s";
+	} else if (scope->ce_flags & ZEND_ACC_ENUM) {
+		msg = "Cannot apply #[\\Attribute] to enum %s";
+	} else if (scope->ce_flags & ZEND_ACC_EXPLICIT_ABSTRACT_CLASS) {
+		msg = "Cannot apply #[\\Attribute] to abstract class %s";
+	}
+	if (msg != NULL) {
+		return zend_strpprintf(0, msg, ZSTR_VAL(scope->name));
+	}
+	return NULL;
+}
+
+static zend_string *validate_deprecated(
+	zend_attribute *attr,
+	uint32_t target,
+	zend_class_entry *scope
+) {
+	if (target != ZEND_ATTRIBUTE_TARGET_CLASS) {
+		/* Being used for a method or something, validation does not apply */
+		return NULL;
+	}
+	if (!(scope->ce_flags & ZEND_ACC_TRAIT)) {
+		const char *type = zend_get_object_type_case(scope, false);
+		return zend_strpprintf(0, "Cannot apply #[\\Deprecated] to %s %s", type, ZSTR_VAL(scope->name));
+	}
+
+	scope->ce_flags |= ZEND_ACC_DEPRECATED;
+	return NULL;
+
 }
 
 ZEND_METHOD(Attribute, __construct)
@@ -186,6 +221,43 @@ ZEND_METHOD(Deprecated, __construct)
 		ZVAL_NULL(&value);
 	}
 	zend_update_property_ex(zend_ce_deprecated, Z_OBJ_P(ZEND_THIS), ZSTR_KNOWN(ZEND_STR_SINCE), &value);
+
+	/* The assignment might fail due to 'readonly'. */
+	if (UNEXPECTED(EG(exception))) {
+		RETURN_THROWS();
+	}
+}
+
+static zend_string *validate_nodiscard(
+	zend_attribute *attr, uint32_t target, zend_class_entry *scope)
+{
+	ZEND_ASSERT(CG(in_compilation));
+	const zend_string *prop_info_name = CG(context).active_property_info_name;
+	if (prop_info_name != NULL) {
+		// Applied to a hook
+		return ZSTR_INIT_LITERAL("#[\\NoDiscard] is not supported for property hooks", 0);
+	}
+	zend_op_array *op_array = CG(active_op_array);
+	op_array->fn_flags |= ZEND_ACC_NODISCARD;
+	return NULL;
+}
+
+ZEND_METHOD(NoDiscard, __construct)
+{
+	zend_string *message = NULL;
+	zval value;
+
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_STR_OR_NULL(message)
+	ZEND_PARSE_PARAMETERS_END();
+
+	if (message) {
+		ZVAL_STR(&value, message);
+	} else {
+		ZVAL_NULL(&value);
+	}
+	zend_update_property_ex(zend_ce_nodiscard, Z_OBJ_P(ZEND_THIS), ZSTR_KNOWN(ZEND_STR_MESSAGE), &value);
 
 	/* The assignment might fail due to 'readonly'. */
 	if (UNEXPECTED(EG(exception))) {
@@ -354,7 +426,8 @@ static const char *target_names[] = {
 	"method",
 	"property",
 	"class constant",
-	"parameter"
+	"parameter",
+	"constant"
 };
 
 ZEND_API zend_string *zend_get_attribute_target_names(uint32_t flags)
@@ -396,6 +469,9 @@ static void attr_free(zval *v)
 
 	zend_string_release(attr->name);
 	zend_string_release(attr->lcname);
+	if (attr->validation_error != NULL) {
+		zend_string_release(attr->validation_error);
+	}
 
 	for (uint32_t i = 0; i < attr->argc; i++) {
 		if (attr->args[i].name) {
@@ -428,6 +504,7 @@ ZEND_API zend_attribute *zend_add_attribute(HashTable **attributes, zend_string 
 	}
 
 	attr->lcname = zend_string_tolower_ex(attr->name, persistent);
+	attr->validation_error = NULL;
 	attr->flags = flags;
 	attr->lineno = lineno;
 	attr->offset = offset;
@@ -497,6 +574,7 @@ void zend_register_attribute_ce(void)
 
 	zend_ce_attribute = register_class_Attribute();
 	attr = zend_mark_internal_attribute(zend_ce_attribute);
+	attr->validator = validate_attribute;
 
 	zend_ce_return_type_will_change_attribute = register_class_ReturnTypeWillChange();
 	zend_mark_internal_attribute(zend_ce_return_type_will_change_attribute);
@@ -520,6 +598,14 @@ void zend_register_attribute_ce(void)
 
 	zend_ce_deprecated = register_class_Deprecated();
 	attr = zend_mark_internal_attribute(zend_ce_deprecated);
+	attr->validator = validate_deprecated;
+
+	zend_ce_nodiscard = register_class_NoDiscard();
+	attr = zend_mark_internal_attribute(zend_ce_nodiscard);
+	attr->validator = validate_nodiscard;
+
+	zend_ce_delayed_target_validation = register_class_DelayedTargetValidation();
+	attr = zend_mark_internal_attribute(zend_ce_delayed_target_validation);
 }
 
 void zend_attributes_shutdown(void)

@@ -335,6 +335,10 @@ static inline zend_result ct_eval_bool_cast(zval *result, zval *op) {
 		ZVAL_TRUE(result);
 		return SUCCESS;
 	}
+	/* NAN warns when casting */
+	if (Z_TYPE_P(op) == IS_DOUBLE && zend_isnan(Z_DVAL_P(op))) {
+		return FAILURE;
+	}
 
 	ZVAL_BOOL(result, zend_is_true(op));
 	return SUCCESS;
@@ -371,7 +375,7 @@ static inline zend_result fetch_array_elem(zval **result, zval *op1, zval *op2) 
 			*result = zend_hash_index_find(Z_ARR_P(op1), Z_LVAL_P(op2));
 			return SUCCESS;
 		case IS_DOUBLE: {
-			zend_long lval = zend_dval_to_lval(Z_DVAL_P(op2));
+			zend_long lval = zend_dval_to_lval_silent(Z_DVAL_P(op2));
 			if (!zend_is_long_compatible(Z_DVAL_P(op2), lval)) {
 				return FAILURE;
 			}
@@ -459,7 +463,7 @@ static inline zend_result ct_eval_del_array_elem(zval *result, const zval *key) 
 			zend_hash_index_del(Z_ARR_P(result), Z_LVAL_P(key));
 			break;
 		case IS_DOUBLE: {
-			zend_long lval = zend_dval_to_lval(Z_DVAL_P(key));
+			zend_long lval = zend_dval_to_lval_silent(Z_DVAL_P(key));
 			if (!zend_is_long_compatible(Z_DVAL_P(key), lval)) {
 				return FAILURE;
 			}
@@ -504,7 +508,7 @@ static inline zend_result ct_eval_add_array_elem(zval *result, zval *value, cons
 			value = zend_hash_index_update(Z_ARR_P(result), Z_LVAL_P(key), value);
 			break;
 		case IS_DOUBLE: {
-			zend_long lval = zend_dval_to_lval(Z_DVAL_P(key));
+			zend_long lval = zend_dval_to_lval_silent(Z_DVAL_P(key));
 			if (!zend_is_long_compatible(Z_DVAL_P(key), lval)) {
 				return FAILURE;
 			}
@@ -838,9 +842,7 @@ static inline zend_result ct_eval_func_call_ex(
 		zval_ptr_dtor(result);
 		zend_clear_exception();
 		retval = FAILURE;
-	}
-
-	if (EG(capture_warnings_during_sccp) > 1) {
+	} else if (EG(capture_warnings_during_sccp) > 1) {
 		zval_ptr_dtor(result);
 		retval = FAILURE;
 	}
@@ -1104,6 +1106,11 @@ static void sccp_visit_instr(scdf_ctx *scdf, zend_op *opline, zend_ssa_op *ssa_o
 
 			if (op2) {
 				SKIP_IF_TOP(op2);
+				if (Z_TYPE_P(op2) == IS_NULL) {
+					/* Emits deprecation at run-time. */
+					SET_RESULT_BOT(result);
+					return;
+				}
 			}
 
 			/* We want to avoid keeping around intermediate arrays for each SSA variable in the

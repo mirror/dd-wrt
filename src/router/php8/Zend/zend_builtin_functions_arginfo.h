@@ -1,5 +1,10 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 3dbc84896823c9aaa9ac8aeef8841266920c3e50 */
+ * Stub hash: 9b49f527064695c812cd204d9efc63c13681d942 */
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_clone, 0, 1, IS_OBJECT, 0)
+	ZEND_ARG_TYPE_INFO(0, object, IS_OBJECT, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, withProperties, IS_ARRAY, 0, "[]")
+ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_exit, 0, 0, IS_NEVER, 0)
 	ZEND_ARG_TYPE_MASK(0, status, MAY_BE_STRING|MAY_BE_LONG, "0")
@@ -148,11 +153,16 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_restore_error_handler, 0, 0, IS_TRUE, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_get_error_handler, 0, 0, IS_CALLABLE, 1)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_set_exception_handler, 0, 0, 1)
 	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 1)
 ZEND_END_ARG_INFO()
 
 #define arginfo_restore_exception_handler arginfo_restore_error_handler
+
+#define arginfo_get_exception_handler arginfo_get_error_handler
 
 #define arginfo_get_declared_classes arginfo_func_get_args
 
@@ -238,6 +248,7 @@ static const zend_frameless_function_info frameless_function_infos_class_exists[
 	{ 0 },
 };
 
+ZEND_FUNCTION(clone);
 ZEND_FUNCTION(exit);
 ZEND_FUNCTION(zend_version);
 ZEND_FUNCTION(func_num_args);
@@ -272,8 +283,10 @@ ZEND_FUNCTION(get_included_files);
 ZEND_FUNCTION(trigger_error);
 ZEND_FUNCTION(set_error_handler);
 ZEND_FUNCTION(restore_error_handler);
+ZEND_FUNCTION(get_error_handler);
 ZEND_FUNCTION(set_exception_handler);
 ZEND_FUNCTION(restore_exception_handler);
+ZEND_FUNCTION(get_exception_handler);
 ZEND_FUNCTION(get_declared_classes);
 ZEND_FUNCTION(get_declared_traits);
 ZEND_FUNCTION(get_declared_interfaces);
@@ -299,6 +312,7 @@ ZEND_FUNCTION(gc_disable);
 ZEND_FUNCTION(gc_status);
 
 static const zend_function_entry ext_functions[] = {
+	ZEND_FE(clone, arginfo_clone)
 	ZEND_FE(exit, arginfo_exit)
 	ZEND_RAW_FENTRY("die", zif_exit, arginfo_die, 0, NULL, NULL)
 	ZEND_FE(zend_version, arginfo_zend_version)
@@ -336,8 +350,10 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_RAW_FENTRY("user_error", zif_trigger_error, arginfo_user_error, 0, NULL, NULL)
 	ZEND_FE(set_error_handler, arginfo_set_error_handler)
 	ZEND_FE(restore_error_handler, arginfo_restore_error_handler)
+	ZEND_FE(get_error_handler, arginfo_get_error_handler)
 	ZEND_FE(set_exception_handler, arginfo_set_exception_handler)
 	ZEND_FE(restore_exception_handler, arginfo_restore_exception_handler)
+	ZEND_FE(get_exception_handler, arginfo_get_exception_handler)
 	ZEND_FE(get_declared_classes, arginfo_get_declared_classes)
 	ZEND_FE(get_declared_traits, arginfo_get_declared_traits)
 	ZEND_FE(get_declared_interfaces, arginfo_get_declared_interfaces)

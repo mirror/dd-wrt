@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 05487a0b7668688c1885a14a8ce02493b96f63bb */
+ * Stub hash: 9d2c0327499693f1ca2825a9ad42ad769f44a24a */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Pdo_Mysql_getWarningCount, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO()
@@ -42,16 +42,12 @@ static zend_class_entry *register_class_Pdo_Mysql(zend_class_entry *class_entry_
 	zend_string *const_ATTR_MAX_BUFFER_SIZE_name = zend_string_init_interned("ATTR_MAX_BUFFER_SIZE", sizeof("ATTR_MAX_BUFFER_SIZE") - 1, 1);
 	zend_declare_typed_class_constant(class_entry, const_ATTR_MAX_BUFFER_SIZE_name, &const_ATTR_MAX_BUFFER_SIZE_value, ZEND_ACC_PUBLIC, NULL, (zend_type) ZEND_TYPE_INIT_MASK(MAY_BE_LONG));
 	zend_string_release(const_ATTR_MAX_BUFFER_SIZE_name);
-#endif
-#if !defined(PDO_USE_MYSQLND)
 
 	zval const_ATTR_READ_DEFAULT_FILE_value;
 	ZVAL_LONG(&const_ATTR_READ_DEFAULT_FILE_value, PDO_MYSQL_ATTR_READ_DEFAULT_FILE);
 	zend_string *const_ATTR_READ_DEFAULT_FILE_name = zend_string_init_interned("ATTR_READ_DEFAULT_FILE", sizeof("ATTR_READ_DEFAULT_FILE") - 1, 1);
 	zend_declare_typed_class_constant(class_entry, const_ATTR_READ_DEFAULT_FILE_name, &const_ATTR_READ_DEFAULT_FILE_value, ZEND_ACC_PUBLIC, NULL, (zend_type) ZEND_TYPE_INIT_MASK(MAY_BE_LONG));
 	zend_string_release(const_ATTR_READ_DEFAULT_FILE_name);
-#endif
-#if !defined(PDO_USE_MYSQLND)
 
 	zval const_ATTR_READ_DEFAULT_GROUP_value;
 	ZVAL_LONG(&const_ATTR_READ_DEFAULT_GROUP_value, PDO_MYSQL_ATTR_READ_DEFAULT_GROUP);
@@ -67,7 +63,7 @@ static zend_class_entry *register_class_Pdo_Mysql(zend_class_entry *class_entry_
 	zend_string_release(const_ATTR_COMPRESS_name);
 
 	zval const_ATTR_DIRECT_QUERY_value;
-	ZVAL_LONG(&const_ATTR_DIRECT_QUERY_value, PDO_MYSQL_ATTR_DIRECT_QUERY);
+	ZVAL_LONG(&const_ATTR_DIRECT_QUERY_value, PDO_ATTR_EMULATE_PREPARES);
 	zend_string *const_ATTR_DIRECT_QUERY_name = zend_string_init_interned("ATTR_DIRECT_QUERY", sizeof("ATTR_DIRECT_QUERY") - 1, 1);
 	zend_declare_typed_class_constant(class_entry, const_ATTR_DIRECT_QUERY_name, &const_ATTR_DIRECT_QUERY_value, ZEND_ACC_PUBLIC, NULL, (zend_type) ZEND_TYPE_INIT_MASK(MAY_BE_LONG));
 	zend_string_release(const_ATTR_DIRECT_QUERY_name);

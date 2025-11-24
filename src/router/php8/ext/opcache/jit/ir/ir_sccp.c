@@ -12,6 +12,8 @@
 #include "ir.h"
 #include "ir_private.h"
 
+#include <math.h>
+
 #define IR_COMBO_COPY_PROPAGATION 1
 
 #define IR_TOP                  IR_UNUSED
@@ -420,11 +422,12 @@ static bool ir_is_dead_load_ex(ir_ctx *ctx, ir_ref ref, uint32_t flags, ir_insn 
 static bool ir_is_dead_load(ir_ctx *ctx, ir_ref ref)
 {
 	if (ctx->use_lists[ref].count == 1) {
-		uint32_t flags = ir_op_flags[ctx->ir_base[ref].op];
+		ir_insn *insn = &ctx->ir_base[ref];
+		uint32_t flags = ir_op_flags[insn->op];
 
 		if ((flags & (IR_OP_FLAG_MEM|IR_OP_FLAG_MEM_MASK)) == (IR_OP_FLAG_MEM|IR_OP_FLAG_MEM_LOAD)) {
 			return 1;
-		} else if (ctx->ir_base[ref].op == IR_ALLOCA) {
+		} else if (insn->op == IR_ALLOCA || insn->op == IR_BLOCK_BEGIN) {
 			return 1;
 		}
 	}
@@ -583,6 +586,15 @@ static IR_NEVER_INLINE void ir_sccp_analyze(ir_ctx *ctx, ir_insn *_values, ir_bi
 				}
 			} else {
 				IR_MAKE_BOTTOM_EX(i);
+				n = IR_INPUT_EDGES_COUNT(flags);
+				for (p = insn->ops + 1; n > 0; p++, n--) {
+					ir_ref input = *p;
+					if (input > 0) {
+						if (_values[input].op == IR_TOP) {
+							ir_sccp_add_input(ctx, _values, worklist, input);
+						}
+					}
+				}
 			}
 		} else if (flags & IR_OP_FLAG_BB_START) {
 			if (insn->op == IR_MERGE || insn->op == IR_LOOP_BEGIN || insn->op == IR_BEGIN) {
@@ -717,52 +729,32 @@ static IR_NEVER_INLINE void ir_sccp_analyze(ir_ctx *ctx, ir_insn *_values, ir_bi
 				ir_bitqueue_add(iter_worklist, i);
 				IR_MAKE_BOTTOM(i);
 			} else {
-				if (_values[i].op == IR_TOP) {
-					bool has_top = 0;
-
-					/* control, call, load and store instructions may have unprocessed inputs */
-					n = IR_INPUT_EDGES_COUNT(flags);
-					if (IR_OP_HAS_VAR_INPUTS(flags) && (n = insn->inputs_count) > 3) {
-						for (j = 0; j < (n>>2); j++) {
-							_values[i+j+1].optx = IR_BOTTOM; /* keep the tail of a long multislot instruction */
-						}
-						for (j = 2, p = insn->ops + j; j <= n; j++, p++) {
-							IR_ASSERT(IR_OPND_KIND(flags, j) == IR_OPND_DATA);
-							use = *p;
-							if (use > 0 && _values[use].op == IR_TOP) {
-								has_top = 1;
-								ir_sccp_add_input(ctx, _values, worklist, use);
-							}
-						}
-					} else if (n >= 2) {
-						IR_ASSERT(IR_OPND_KIND(flags, 2) == IR_OPND_DATA);
-						use = insn->op2;
+				/* control, call, load and store instructions may have unprocessed inputs */
+				n = IR_INPUT_EDGES_COUNT(flags);
+				if (IR_OP_HAS_VAR_INPUTS(flags) && (n = insn->inputs_count) > 3) {
+					for (j = 0; j < (n>>2); j++) {
+						_values[i+j+1].optx = IR_BOTTOM; /* keep the tail of a long multislot instruction */
+					}
+					for (j = 2, p = insn->ops + j; j <= n; j++, p++) {
+						IR_ASSERT(IR_OPND_KIND(flags, j) == IR_OPND_DATA);
+						use = *p;
 						if (use > 0 && _values[use].op == IR_TOP) {
-							has_top = 1;
 							ir_sccp_add_input(ctx, _values, worklist, use);
 						}
-						if (n > 2) {
-							IR_ASSERT(n == 3);
-							IR_ASSERT(IR_OPND_KIND(flags, 3) == IR_OPND_DATA);
-							use = insn->op3;
-							if (use > 0 && _values[use].op == IR_TOP) {
-								has_top = 1;
-								ir_sccp_add_input(ctx, _values, worklist, use);
-							}
-						}
 					}
-
-					if (has_top && !(flags & IR_OP_FLAG_BB_END)) {
-						use = ir_next_control(ctx, i);
-						if (_values[use].op == IR_TOP) {
-							has_top = 1;
-							/* do forward control propagaton only once */
-							if (!_values[use].op1) {
-								_values[use].op1 = 1;
-								ir_bitqueue_add(worklist, use);
-							}
+				} else if (n >= 2) {
+					IR_ASSERT(IR_OPND_KIND(flags, 2) == IR_OPND_DATA);
+					use = insn->op2;
+					if (use > 0 && _values[use].op == IR_TOP) {
+						ir_sccp_add_input(ctx, _values, worklist, use);
+					}
+					if (n > 2) {
+						IR_ASSERT(n == 3);
+						IR_ASSERT(IR_OPND_KIND(flags, 3) == IR_OPND_DATA);
+						use = insn->op3;
+						if (use > 0 && _values[use].op == IR_TOP) {
+							ir_sccp_add_input(ctx, _values, worklist, use);
 						}
-						continue;
 					}
 				}
 				IR_MAKE_BOTTOM(i);
@@ -1325,8 +1317,8 @@ static ir_ref ir_iter_find_cse(ir_ctx *ctx, ir_ref ref, uint32_t opt, ir_ref op1
 			}
 		}
 	 } else if (n < 2) {
-		IR_ASSERT(n == 1);
-		if (!IR_IS_CONST_REF(op1)) {
+		if (op1 > 0) {
+			IR_ASSERT(n == 1);
 			use_list = &ctx->use_lists[op1];
 			n = use_list->count;
 			for (p = ctx->use_edges + use_list->refs; n > 0; p++, n--) {
@@ -1875,6 +1867,7 @@ static ir_ref ir_ext_const(ir_ctx *ctx, ir_insn *val_insn, ir_op op, ir_type typ
 		case IR_I8:
 		case IR_U8:
 		case IR_BOOL:
+		case IR_CHAR:
 			if (op == IR_SEXT) {
 				new_val.i64 = (int64_t)val_insn->val.i8;
 			} else {
@@ -1928,7 +1921,7 @@ static ir_ref ir_ext_ref(ir_ctx *ctx, ir_ref var_ref, ir_ref src_ref, ir_op op, 
 	return ref;
 }
 
-static uint32_t _ir_estimated_control(ir_ctx *ctx, ir_ref val)
+static uint32_t _ir_estimated_control(ir_ctx *ctx, ir_ref val, ir_ref loop)
 {
 	ir_insn *insn;
 	ir_ref n, *p, input, result, ctrl;
@@ -1953,7 +1946,8 @@ static uint32_t _ir_estimated_control(ir_ctx *ctx, ir_ref val)
 	result = 1;
 	for (; n > 0; p++, n--) {
 		input = *p;
-		ctrl = _ir_estimated_control(ctx, input);
+		ctrl = _ir_estimated_control(ctx, input, loop);
+		if (ctrl >= loop) return ctrl;
 		if (ctrl > result) { // TODO: check dominance depth instead of order
 			result = ctrl;
 		}
@@ -1963,7 +1957,7 @@ static uint32_t _ir_estimated_control(ir_ctx *ctx, ir_ref val)
 
 static bool ir_is_loop_invariant(ir_ctx *ctx, ir_ref ref, ir_ref loop)
 {
-	ref = _ir_estimated_control(ctx, ref);
+	ref = _ir_estimated_control(ctx, ref, loop);
 	return ref < loop; // TODO: check dominance instead of order
 }
 
@@ -2817,6 +2811,10 @@ static bool ir_cmp_is_true(ir_op op, ir_insn *op1, ir_insn *op2)
 			return !(op1->val.d > op2->val.d);
 		} else if (op == IR_UGT) {
 			return !(op1->val.d <= op2->val.d);
+		} else if (op == IR_ORDERED) {
+			return !isnan(op1->val.d) && !isnan(op2->val.d);
+		} else if (op == IR_UNORDERED) {
+			return isnan(op1->val.d) || isnan(op2->val.d);
 		} else {
 			IR_ASSERT(0);
 			return 0;
@@ -2843,6 +2841,10 @@ static bool ir_cmp_is_true(ir_op op, ir_insn *op1, ir_insn *op2)
 			return !(op1->val.f > op2->val.f);
 		} else if (op == IR_UGT) {
 			return !(op1->val.f <= op2->val.f);
+		} else if (op == IR_ORDERED) {
+			return !isnan(op1->val.f) && !isnan(op2->val.f);
+		} else if (op == IR_UNORDERED) {
+			return isnan(op1->val.f) || isnan(op2->val.f);
 		} else {
 			IR_ASSERT(0);
 			return 0;
@@ -3474,9 +3476,18 @@ static void ir_iter_optimize_guard(ir_ctx *ctx, ir_ref ref, ir_insn *insn, ir_bi
 remove_guard:
 				prev = insn->op1;
 				next = ir_next_control(ctx, ref);
+				if (ctx->ir_base[prev].op == IR_SNAPSHOT) {
+					ir_ref snapshot = prev;
+					prev = ctx->ir_base[prev].op1;
+					ir_use_list_remove_one(ctx, snapshot, ref);
+					ir_use_list_remove_one(ctx, ref, next);
+					ir_use_list_replace_one(ctx, prev, snapshot, next);
+					ir_iter_remove_insn(ctx, snapshot, worklist);
+				} else {
+					ir_use_list_remove_one(ctx, ref, next);
+					ir_use_list_replace_one(ctx, prev, ref, next);
+				}
 				ctx->ir_base[next].op1 = prev;
-				ir_use_list_remove_one(ctx, ref, next);
-				ir_use_list_replace_one(ctx, prev, ref, next);
 				insn->op1 = IR_UNUSED;
 
 				if (!IR_IS_CONST_REF(insn->op2)) {
@@ -3487,9 +3498,12 @@ remove_guard:
 					}
 				}
 
-				if (insn->op3) {
-					/* SNAPSHOT */
-					ir_iter_remove_insn(ctx, insn->op3, worklist);
+				if (!IR_IS_CONST_REF(insn->op3)) {
+					ir_use_list_remove_one(ctx, insn->op3, ref);
+					if (ir_is_dead(ctx, insn->op3)) {
+						/* schedule DCE */
+						ir_bitqueue_add(worklist, insn->op3);
+					}
 				}
 
 				MAKE_NOP(insn);

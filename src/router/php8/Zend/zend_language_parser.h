@@ -190,35 +190,37 @@ extern int zenddebug;
     T_INC = 379,                   /* "'++'"  */
     T_DEC = 380,                   /* "'--'"  */
     T_INT_CAST = 381,              /* "'(int)'"  */
-    T_DOUBLE_CAST = 382,           /* "'(double)'"  */
+    T_DOUBLE_CAST = 382,           /* "'(float)'"  */
     T_STRING_CAST = 383,           /* "'(string)'"  */
     T_ARRAY_CAST = 384,            /* "'(array)'"  */
     T_OBJECT_CAST = 385,           /* "'(object)'"  */
     T_BOOL_CAST = 386,             /* "'(bool)'"  */
     T_UNSET_CAST = 387,            /* "'(unset)'"  */
-    T_OBJECT_OPERATOR = 388,       /* "'->'"  */
-    T_NULLSAFE_OBJECT_OPERATOR = 389, /* "'?->'"  */
-    T_DOUBLE_ARROW = 390,          /* "'=>'"  */
-    T_COMMENT = 391,               /* "comment"  */
-    T_DOC_COMMENT = 392,           /* "doc comment"  */
-    T_OPEN_TAG = 393,              /* "open tag"  */
-    T_OPEN_TAG_WITH_ECHO = 394,    /* "'<?='"  */
-    T_CLOSE_TAG = 395,             /* "'?>'"  */
-    T_WHITESPACE = 396,            /* "whitespace"  */
-    T_START_HEREDOC = 397,         /* "heredoc start"  */
-    T_END_HEREDOC = 398,           /* "heredoc end"  */
-    T_DOLLAR_OPEN_CURLY_BRACES = 399, /* "'${'"  */
-    T_CURLY_OPEN = 400,            /* "'{$'"  */
-    T_PAAMAYIM_NEKUDOTAYIM = 401,  /* "'::'"  */
-    T_NS_SEPARATOR = 402,          /* "'\\'"  */
-    T_ELLIPSIS = 403,              /* "'...'"  */
-    T_COALESCE = 404,              /* "'??'"  */
-    T_POW = 405,                   /* "'**'"  */
-    T_POW_EQUAL = 406,             /* "'**='"  */
-    T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG = 407, /* "'&'"  */
-    T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG = 408, /* "amp"  */
-    T_BAD_CHARACTER = 409,         /* "invalid character"  */
-    T_ERROR = 410                  /* T_ERROR  */
+    T_VOID_CAST = 388,             /* "'(void)'"  */
+    T_OBJECT_OPERATOR = 389,       /* "'->'"  */
+    T_NULLSAFE_OBJECT_OPERATOR = 390, /* "'?->'"  */
+    T_DOUBLE_ARROW = 391,          /* "'=>'"  */
+    T_COMMENT = 392,               /* "comment"  */
+    T_DOC_COMMENT = 393,           /* "doc comment"  */
+    T_OPEN_TAG = 394,              /* "open tag"  */
+    T_OPEN_TAG_WITH_ECHO = 395,    /* "'<?='"  */
+    T_CLOSE_TAG = 396,             /* "'?>'"  */
+    T_WHITESPACE = 397,            /* "whitespace"  */
+    T_START_HEREDOC = 398,         /* "heredoc start"  */
+    T_END_HEREDOC = 399,           /* "heredoc end"  */
+    T_DOLLAR_OPEN_CURLY_BRACES = 400, /* "'${'"  */
+    T_CURLY_OPEN = 401,            /* "'{$'"  */
+    T_PAAMAYIM_NEKUDOTAYIM = 402,  /* "'::'"  */
+    T_NS_SEPARATOR = 403,          /* "'\\'"  */
+    T_ELLIPSIS = 404,              /* "'...'"  */
+    T_COALESCE = 405,              /* "'??'"  */
+    T_POW = 406,                   /* "'**'"  */
+    T_POW_EQUAL = 407,             /* "'**='"  */
+    T_PIPE = 408,                  /* "'|>'"  */
+    T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG = 409, /* "'&'"  */
+    T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG = 410, /* "amp"  */
+    T_BAD_CHARACTER = 411,         /* "invalid character"  */
+    T_ERROR = 412                  /* T_ERROR  */
   };
   typedef enum zendtokentype zendtoken_kind_t;
 #endif

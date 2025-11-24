@@ -2413,7 +2413,7 @@ static const zend_property_info *lookup_prop_info(const zend_class_entry *ce, ze
 	/* If the class is linked, reuse the precise runtime logic. */
 	if ((ce->ce_flags & ZEND_ACC_LINKED)
 	 && (!scope || (scope->ce_flags & ZEND_ACC_LINKED))) {
-		zend_class_entry *prev_scope = EG(fake_scope);
+		const zend_class_entry *prev_scope = EG(fake_scope);
 		EG(fake_scope) = scope;
 		prop_info = zend_get_property_info(ce, name, 1);
 		EG(fake_scope) = prev_scope;
@@ -5109,14 +5109,16 @@ ZEND_API bool zend_may_throw_ex(const zend_op *opline, const zend_ssa_op *ssa_op
 		case ZEND_PRE_DEC:
 		case ZEND_POST_DEC:
 			return (t1 & (MAY_BE_NULL|MAY_BE_FALSE|MAY_BE_TRUE|MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE));
-		case ZEND_BOOL_NOT:
 		case ZEND_JMPZ:
 		case ZEND_JMPNZ:
 		case ZEND_JMPZ_EX:
 		case ZEND_JMPNZ_EX:
-		case ZEND_BOOL:
 		case ZEND_JMP_SET:
 			return (t1 & MAY_BE_OBJECT);
+		case ZEND_BOOL:
+		case ZEND_BOOL_NOT:
+			/* NAN Cast to bool will warn, but if we have a range it is fine */
+			return (t1 & MAY_BE_OBJECT) || ((t1 & MAY_BE_DOUBLE) && !OP1_HAS_RANGE());
 		case ZEND_BOOL_XOR:
 			return (t1 & MAY_BE_OBJECT) || (t2 & MAY_BE_OBJECT);
 		case ZEND_IS_EQUAL:
@@ -5250,7 +5252,7 @@ ZEND_API bool zend_may_throw_ex(const zend_op *opline, const zend_ssa_op *ssa_op
 		case ZEND_INIT_ARRAY:
 			return (opline->op2_type != IS_UNUSED) && (t2 & (MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE));
 		case ZEND_ADD_ARRAY_ELEMENT:
-			return (opline->op2_type == IS_UNUSED) || (t2 & (MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE));
+			return (opline->op2_type == IS_UNUSED) || (t2 & (MAY_BE_NULL|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE));
 		case ZEND_STRLEN:
 			return (t1 & MAY_BE_ANY) != MAY_BE_STRING;
 		case ZEND_COUNT:
@@ -5283,6 +5285,7 @@ ZEND_API bool zend_may_throw_ex(const zend_op *opline, const zend_ssa_op *ssa_op
 		case ZEND_CAST:
 			switch (opline->extended_value) {
 				case IS_LONG:
+					return (t1 & (MAY_BE_DOUBLE|MAY_BE_STRING|MAY_BE_OBJECT));
 				case IS_DOUBLE:
 					return (t1 & MAY_BE_OBJECT);
 				case IS_STRING:
