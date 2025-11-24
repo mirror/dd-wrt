@@ -52,7 +52,7 @@ const char *rtl838x_drop_cntr[] = {
 
 const char *rtl839x_drop_cntr[] = {
     "ALE_TX_GOOD_PKTS", "ERROR_PKTS", "EGR_ACL_DROP", "EGR_METER_DROP",
-    "OAM", "CFM" "VLAN_IGR_FLTR", "VLAN_ERR",
+    "OAM", "CFM", "VLAN_IGR_FLTR", "VLAN_ERR",
     "INNER_OUTER_CFI_EQUAL_1", "VLAN_TAG_FORMAT", "SRC_PORT_SPENDING_TREE", "INBW",
     "RMA", "HW_ATTACK_PREVENTION", "PROTO_STORM", "MCAST_SA",
     "IGR_ACL_DROP", "IGR_METER_DROP", "DFLT_ACTION_FOR_MISS_ACL_AND_C2SC", "NEW_SA",
@@ -205,22 +205,26 @@ static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t 
 	case RTL8380_FAMILY_ID:
 		d = rtl838x_drop_cntr;
 		offset = RTL838X_STAT_PRVTE_DROP_COUNTERS;
-		num = 40;
+		num = ARRAY_SIZE(rtl838x_drop_cntr);
+		BUILD_BUG_ON(num != 40);
 		break;
 	case RTL8390_FAMILY_ID:
 		d = rtl839x_drop_cntr;
 		offset = RTL839X_STAT_PRVTE_DROP_COUNTERS;
-		num = 45;
+		num = ARRAY_SIZE(rtl839x_drop_cntr);
+		BUILD_BUG_ON(num != 45);
 		break;
 	case RTL9300_FAMILY_ID:
 		d = rtl930x_drop_cntr;
 		offset = RTL930X_STAT_PRVTE_DROP_COUNTERS;
-		num = 85;
+		num = ARRAY_SIZE(rtl930x_drop_cntr);
+		BUILD_BUG_ON(num != 85);
 		break;
 	case RTL9310_FAMILY_ID:
 		d = rtl931x_drop_cntr;
 		offset = RTL931X_STAT_PRVTE_DROP_COUNTERS;
-		num = 81;
+		num = ARRAY_SIZE(rtl931x_drop_cntr);
+		BUILD_BUG_ON(num != 81);
 		break;
 	}
 
