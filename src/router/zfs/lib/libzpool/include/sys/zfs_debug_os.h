@@ -23,7 +23,8 @@
 #ifndef _SYS_ZFS_DEBUG_OS_H
 #define	_SYS_ZFS_DEBUG_OS_H
 
-#define	SET_ERROR(err) \
-	(__set_error(__FILE__, __func__, __LINE__, err), err)
+#define	SET_ERROR(err)	({ 					\
+	err;							\
+})
 
 #endif
