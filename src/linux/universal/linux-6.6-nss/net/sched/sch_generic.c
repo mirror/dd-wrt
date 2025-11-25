@@ -305,10 +305,10 @@ trace:
 	return skb;
 }
 
-struct sk_buff *qdisc_dequeue_skb(struct Qdisc *q, bool *validate)
+struct sk_buff *qdisc_dequeue_skb(struct Qdisc *q, bool *validate, int budged)
 {
 	int packets;
-	return dequeue_skb(q, validate, &packets);
+	return dequeue_skb(q, validate, &packets, budged);
 }
 EXPORT_SYMBOL(qdisc_dequeue_skb);
 
