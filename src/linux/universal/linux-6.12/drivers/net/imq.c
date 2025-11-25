@@ -33,6 +33,7 @@
 #include <net/netfilter/nf_queue.h>
 #include <net/sock.h>
 #include <net/gso.h>
+#include <net/hotdata.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <linux/if_vlan.h>
