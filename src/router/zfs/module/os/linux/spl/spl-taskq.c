@@ -32,7 +32,6 @@
 #include <sys/taskq.h>
 #include <sys/kmem.h>
 #include <sys/tsd.h>
-#include <sys/trace_spl.h>
 #include <sys/time.h>
 #include <sys/atomic.h>
 #include <sys/kstat.h>
@@ -325,7 +324,6 @@ task_expire_impl(taskq_ent_t *t)
 	}
 
 	t->tqent_birth = jiffies;
-	DTRACE_PROBE1(taskq_ent__birth, taskq_ent_t *, t);
 
 	/*
 	 * The priority list must be maintained in strict task id order
@@ -635,14 +633,31 @@ taskq_cancel_id(taskq_t *tq, taskqid_t id)
 
 		/*
 		 * The task_expire() function takes the tq->tq_lock so drop
-		 * drop the lock before synchronously cancelling the timer.
+		 * the lock before synchronously cancelling the timer.
+		 *
+		 * Always call timer_delete_sync() unconditionally. A
+		 * timer_pending() check would be insufficient and unsafe.
+		 * When a timer expires, it is immediately dequeued from the
+		 * timer wheel (timer_pending() returns FALSE), but the
+		 * callback (task_expire) may not run until later.
+		 *
+		 * The race window:
+		 * 1) Timer expires and is dequeued - timer_pending() now
+		 *    returns FALSE
+		 * 2) task_done() is called below, freeing the task, sets
+		 *    tqent_func = NULL and clears flags including CANCEL
+		 * 3) Timer callback finally runs, sees no CANCEL flag,
+		 *    queues task to prio_list
+		 * 4) Worker thread attempts to execute NULL tqent_func
+		 *    and panics
+		 *
+		 * timer_delete_sync() prevents this by ensuring the timer
+		 * callback completes before the task is freed.
 		 */
-		if (timer_pending(&t->tqent_timer)) {
-			spin_unlock_irqrestore(&tq->tq_lock, flags);
-			timer_delete_sync(&t->tqent_timer);
-			spin_lock_irqsave_nested(&tq->tq_lock, flags,
-			    tq->tq_lock_class);
-		}
+		spin_unlock_irqrestore(&tq->tq_lock, flags);
+		timer_delete_sync(&t->tqent_timer);
+		spin_lock_irqsave_nested(&tq->tq_lock, flags,
+		    tq->tq_lock_class);
 
 		if (!(t->tqent_flags & TQENT_FLAG_PREALLOC))
 			task_done(tq, t);
@@ -713,9 +728,7 @@ taskq_dispatch(taskq_t *tq, task_func_t func, void *arg, uint_t flags)
 	t->tqent_taskq = tq;
 	t->tqent_timer.function = NULL;
 	t->tqent_timer.expires = 0;
-
 	t->tqent_birth = jiffies;
-	DTRACE_PROBE1(taskq_ent__birth, taskq_ent_t *, t);
 
 	ASSERT(!(t->tqent_flags & TQENT_FLAG_PREALLOC));
 
@@ -840,9 +853,7 @@ taskq_dispatch_ent(taskq_t *tq, task_func_t func, void *arg, uint_t flags,
 	t->tqent_func = func;
 	t->tqent_arg = arg;
 	t->tqent_taskq = tq;
-
 	t->tqent_birth = jiffies;
-	DTRACE_PROBE1(taskq_ent__birth, taskq_ent_t *, t);
 
 	spin_unlock(&t->tqent_lock);
 
@@ -1054,11 +1065,6 @@ taskq_thread(void *args)
 			 * A TQENT_FLAG_PREALLOC task may be reused or freed
 			 * during the task function call. Store tqent_id and
 			 * tqent_flags here.
-			 *
-			 * Also use an on stack taskq_ent_t for tqt_task
-			 * assignment in this case; we want to make sure
-			 * to duplicate all fields, so the values are
-			 * correct when it's accessed via DTRACE_PROBE*.
 			 */
 			tqt->tqt_id = t->tqent_id;
 			tqt->tqt_flags = t->tqent_flags;
@@ -1074,12 +1080,9 @@ taskq_thread(void *args)
 			spin_unlock_irqrestore(&tq->tq_lock, flags);
 
 			TQSTAT_INC(tq, threads_active);
-			DTRACE_PROBE1(taskq_ent__start, taskq_ent_t *, t);
 
 			/* Perform the requested task */
 			t->tqent_func(t->tqent_arg);
-
-			DTRACE_PROBE1(taskq_ent__finish, taskq_ent_t *, t);
 
 			TQSTAT_DEC(tq, threads_active);
 			if ((t->tqent_flags & TQENT_LIST_MASK) ==

@@ -4872,7 +4872,7 @@ spa_raidz_expand_thread(void *arg, zthr_t *zthr)
 	else
 		vre->vre_offset = RRSS_GET_OFFSET(&spa->spa_ubsync);
 
-	/* Reflow the begining portion using the scratch area */
+	/* Reflow the beginning portion using the scratch area */
 	if (vre->vre_offset == 0) {
 		VERIFY0(dsl_sync_task(spa_name(spa),
 		    NULL, raidz_reflow_scratch_sync,
@@ -5495,7 +5495,7 @@ ZFS_MODULE_PARAM(zfs, zfs_, scrub_after_expand, INT, ZMOD_RW,
 	"completes");
 ZFS_MODULE_PARAM(zfs_vdev, vdev_, read_sit_out_secs, ULONG, ZMOD_RW,
 	"Raidz/draid slow disk sit out time period in seconds");
-ZFS_MODULE_PARAM(zfs_vdev, vdev_, raidz_outlier_check_interval_ms, ULONG,
+ZFS_MODULE_PARAM(zfs_vdev, vdev_, raidz_outlier_check_interval_ms, U64,
 	ZMOD_RW, "Interval to check for slow raidz/draid children");
 ZFS_MODULE_PARAM(zfs_vdev, vdev_, raidz_outlier_insensitivity, UINT,
 	ZMOD_RW, "How insensitive the slow raidz/draid child check should be");

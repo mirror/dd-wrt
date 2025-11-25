@@ -55,8 +55,7 @@ libzfs_la_LIBADD = \
 	libshare.la \
 	libzfs_core.la \
 	libnvpair.la \
-	libzutil.la \
-	libuutil.la
+	libzutil.la
 
 libzfs_la_LIBADD += -lrt -lm $(LIBCRYPTO_LIBS) $(ZLIB_LIBS) $(LIBFETCH_LIBS) $(LTLIBINTL)
 
@@ -70,7 +69,7 @@ if BUILD_FREEBSD
 libzfs_la_LIBADD += -lutil -lgeom
 endif
 
-libzfs_la_LDFLAGS += -version-info 6:0:0
+libzfs_la_LDFLAGS += -version-info 7:0:0
 
 pkgconfig_DATA += %D%/libzfs.pc
 

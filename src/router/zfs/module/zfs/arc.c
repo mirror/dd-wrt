@@ -1157,7 +1157,7 @@ buf_fini(void)
 #if defined(_KERNEL)
 	/*
 	 * Large allocations which do not require contiguous pages
-	 * should be using vmem_free() in the linux kernel\
+	 * should be using vmem_free() in the linux kernel.
 	 */
 	vmem_free(buf_hash_table.ht_table,
 	    (buf_hash_table.ht_mask + 1) * sizeof (void *));
@@ -1392,6 +1392,7 @@ arc_get_complevel(arc_buf_t *buf)
 	return (buf->b_hdr->b_complevel);
 }
 
+__maybe_unused
 static inline boolean_t
 arc_buf_is_shared(arc_buf_t *buf)
 {
@@ -4650,10 +4651,10 @@ arc_flush_task(void *arg)
 	arc_flush_impl(spa_guid, B_FALSE);
 	arc_async_flush_remove(spa_guid, af->af_cache_level);
 
-	uint64_t elaspsed = NSEC2MSEC(gethrtime() - start_time);
-	if (elaspsed > 0) {
+	uint64_t elapsed = NSEC2MSEC(gethrtime() - start_time);
+	if (elapsed > 0) {
 		zfs_dbgmsg("spa %llu arc flushed in %llu ms",
-		    (u_longlong_t)spa_guid, (u_longlong_t)elaspsed);
+		    (u_longlong_t)spa_guid, (u_longlong_t)elapsed);
 	}
 }
 
@@ -8547,7 +8548,7 @@ l2arc_dev_get_next(void)
 	 * of cache devices (l2arc_dev_mtx).  Once a device has been selected,
 	 * both locks will be dropped and a spa config lock held instead.
 	 */
-	mutex_enter(&spa_namespace_lock);
+	spa_namespace_enter(FTAG);
 	mutex_enter(&l2arc_dev_mtx);
 
 	/* if there are no vdevs, there is nothing to do */
@@ -8590,7 +8591,7 @@ out:
 	 */
 	if (next != NULL)
 		spa_config_enter(next->l2ad_spa, SCL_L2ARC, next, RW_READER);
-	mutex_exit(&spa_namespace_lock);
+	spa_namespace_exit(FTAG);
 
 	return (next);
 }
@@ -9151,7 +9152,7 @@ top:
 		if (dev->l2ad_first) {
 			/*
 			 * This is the first sweep through the device. There is
-			 * nothing to evict. We have already trimmmed the
+			 * nothing to evict. We have already trimmed the
 			 * whole device.
 			 */
 			goto out;
@@ -10085,12 +10086,12 @@ l2arc_device_teardown(void *arg)
 	kmem_free(remdev->l2ad_dev_hdr, remdev->l2ad_dev_hdr_asize);
 	vmem_free(remdev, sizeof (l2arc_dev_t));
 
-	uint64_t elaspsed = NSEC2MSEC(gethrtime() - start_time);
-	if (elaspsed > 0) {
+	uint64_t elapsed = NSEC2MSEC(gethrtime() - start_time);
+	if (elapsed > 0) {
 		zfs_dbgmsg("spa %llu, vdev %llu removed in %llu ms",
 		    (u_longlong_t)rva->rva_spa_gid,
 		    (u_longlong_t)rva->rva_vdev_gid,
-		    (u_longlong_t)elaspsed);
+		    (u_longlong_t)elapsed);
 	}
 
 	if (rva->rva_async)
@@ -10230,7 +10231,7 @@ l2arc_stop(void)
 void
 l2arc_spa_rebuild_start(spa_t *spa)
 {
-	ASSERT(MUTEX_HELD(&spa_namespace_lock));
+	ASSERT(spa_namespace_held());
 
 	/*
 	 * Locate the spa's l2arc devices and kick off rebuild threads.
@@ -10255,7 +10256,7 @@ l2arc_spa_rebuild_start(spa_t *spa)
 void
 l2arc_spa_rebuild_stop(spa_t *spa)
 {
-	ASSERT(MUTEX_HELD(&spa_namespace_lock) ||
+	ASSERT(spa_namespace_held() ||
 	    spa->spa_export_thread == curthread);
 
 	for (int i = 0; i < spa->spa_l2cache.sav_count; i++) {

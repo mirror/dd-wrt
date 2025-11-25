@@ -1447,7 +1447,8 @@ zfs_aclset_common(znode_t *zp, zfs_acl_t *aclp, cred_t *cr, dmu_tx_t *tx)
 				if (aclnode->z_ace_count == 0)
 					continue;
 				dmu_write(zfsvfs->z_os, aoid, off,
-				    aclnode->z_size, aclnode->z_acldata, tx);
+				    aclnode->z_size, aclnode->z_acldata, tx,
+				    DMU_READ_NO_PREFETCH);
 				off += aclnode->z_size;
 			}
 		} else {
@@ -2524,7 +2525,7 @@ zfs_zaccess_common(znode_t *zp, uint32_t v4_mode, uint32_t *working_mode,
 	 * Also note: DOS R/O is ignored for directories.
 	 */
 	if ((v4_mode & WRITE_MASK_DATA) &&
-	    S_ISDIR(ZTOI(zp)->i_mode) &&
+	    !S_ISDIR(ZTOI(zp)->i_mode) &&
 	    (zp->z_pflags & ZFS_READONLY)) {
 		return (SET_ERROR(EPERM));
 	}
