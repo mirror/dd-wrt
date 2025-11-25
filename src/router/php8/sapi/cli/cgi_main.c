@@ -2427,7 +2427,7 @@ parent_loop_end:
 				 *  test.php v1=test "v2=hello world!"
 				*/
 				if (!SG(request_info).query_string && argc > php_optind) {
-					size_t slen = strlen(PG(arg_separator).input);
+					size_t slen = strlen((char *)PG(arg_separator).input);
 					len = 0;
 					for (i = php_optind; i < argc; i++) {
 						if (i < (argc - 1)) {
@@ -2443,7 +2443,7 @@ parent_loop_end:
 					for (i = php_optind; i < argc; i++) {
 						strlcat(s, argv[i], len);
 						if (i < (argc - 1)) {
-							strlcat(s, PG(arg_separator).input, len);
+							strlcat(s, (char *)PG(arg_separator).input, len);
 						}
 					}
 					SG(request_info).query_string = s;
