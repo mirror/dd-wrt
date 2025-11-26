@@ -1,3 +1,7 @@
+ifeq ($(ARCH),aarch64)
+NO_GLOBAL_REGS:=--disable-gcc-global-regs
+endif
+
 icu-configure:
 	-make -C icu clean
 	rm -f icu/config.cache
@@ -141,6 +145,7 @@ PHP_CONFIGURE_ARGS= \
 	--enable-cli \
 	--enable-cgi \
 	--enable-zip \
+	$(NO_GLOBAL_REGS) \
 	--with-zip \
 	--enable-gd \
 	--with-libzip=$(TOP)/libzip/lib \
@@ -208,7 +213,7 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php8-configure: libpng-configure libpng libgd-configure libgd libxml2-configure libxml2 zlib-configure zlib curl-configure curl glib20-configure glib20 libzip-configure libzip openssl sqlite
+php8-configure: libpng libgd libxml2libxml2 zlibzlib curl curl glib20 glib20 libzip libzip openssl sqlite
 	rm -f php8/config.cache
 	rm -rf php8/autom4te.cach
 	cd php8 && touch configure.ac && autoconf
