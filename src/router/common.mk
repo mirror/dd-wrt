@@ -5,7 +5,7 @@ comma:=,
 pound:=\#
 
 export MAKE := make -j 4
-export LTO := -flto -fwhole-program -flto-partition=none
+export LTO := -flto -fwhole-program -flto-partition=max
 export LTOAUTO := -flto=auto -fno-fat-lto-objects
 export LDLTOAUTO := -fuse-ld=bfd -flto=auto -fuse-linker-plugin
 export LTOMIN := -flto
