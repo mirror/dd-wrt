@@ -1,6 +1,12 @@
 ifeq ($(ARCH),aarch64)
 NO_GLOBAL_REGS:=--disable-gcc-global-regs
 endif
+#ifeq ($(ARCH),i386)
+#NO_GLOBAL_REGS:=--disable-gcc-global-regs
+#endif
+ifeq ($(ARCH),x86_64)
+NO_GLOBAL_REGS:=--disable-gcc-global-regs
+endif
 
 icu-configure:
 	-make -C icu clean
