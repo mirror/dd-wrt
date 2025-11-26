@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -181,7 +181,14 @@ enum {
 #elif defined(PLUTON_CRYPTO_ECC)
     ECC_MAX_CRYPTO_HW_SIZE = 32,
 #elif defined(WOLFSSL_SILABS_SE_ACCEL)
+    #if defined(_SILICON_LABS_SECURITY_FEATURE) && \
+            (_SILICON_LABS_SECURITY_FEATURE == \
+             _SILICON_LABS_SECURITY_FEATURE_VAULT) && \
+        !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+    ECC_MAX_CRYPTO_HW_SIZE = 66, /* up to 521 bit curves */
+    #else
     ECC_MAX_CRYPTO_HW_SIZE = 32,
+    #endif
 #elif defined(WOLFSSL_CRYPTOCELL)
     #ifndef CRYPTOCELL_KEY_SIZE
         CRYPTOCELL_KEY_SIZE = ECC_MAXSIZE,
@@ -215,7 +222,7 @@ enum {
 #if defined(HAVE_ECC) || defined(HAVE_CURVE25519) || \
     defined(HAVE_CURVE448) || defined(WOLFCRYPT_HAVE_SAKKE)
 /* Curve Types */
-typedef enum ecc_curve_id {
+enum ecc_curve_ids {
     ECC_CURVE_INVALID = -1,
     ECC_CURVE_DEF = 0, /* NIST or SECP */
 
@@ -272,7 +279,8 @@ typedef enum ecc_curve_id {
     ECC_CURVE_CUSTOM,
 #endif
     ECC_CURVE_MAX
-} ecc_curve_id;
+};
+typedef enum ecc_curve_ids ecc_curve_id;
 #endif
 
 #ifdef HAVE_ECC
@@ -905,9 +913,11 @@ int wc_ecc_export_point_der_ex(const int curve_idx, ecc_point* point, byte* out,
 WOLFSSL_API
 int wc_ecc_export_point_der(const int curve_idx, ecc_point* point,
                             byte* out, word32* outLen);
+#ifdef HAVE_COMP_KEY
 WOLFSSL_LOCAL
 int wc_ecc_export_point_der_compressed(const int curve_idx, ecc_point* point,
                                        byte* out, word32* outLen);
+#endif /* HAVE_COMP_KEY */
 #endif /* HAVE_ECC_KEY_EXPORT */
 
 

@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -44,16 +44,6 @@
 #define ERROR_OUT(err, eLabel) { ret = (err); goto eLabel; }
 
 enum {
-    WC_PKCS12_KeyBag = 667,
-    WC_PKCS12_ShroudedKeyBag = 668,
-    WC_PKCS12_CertBag = 669,
-    WC_PKCS12_CertBag_Type1 = 675,
-    WC_PKCS12_CrlBag = 670,
-    WC_PKCS12_SecretBag = 671,
-    WC_PKCS12_SafeContentsBag = 672,
-    WC_PKCS12_DATA = 651,
-    WC_PKCS12_ENCRYPTED_DATA = 656,
-
     WC_PKCS12_DATA_OBJ_SZ = 11,
     WC_PKCS12_MAC_SALT_SZ = 8
 };
@@ -987,8 +977,10 @@ int wc_i2d_PKCS12(WC_PKCS12* pkcs12, byte** der, int* derSz)
             totalSz += seqSz;
 
             /* check if getting length only */
-            if (der == NULL && derSz != NULL) {
-                *derSz = (int)totalSz;
+            if (der == NULL) {
+                /* repeat nullness check locally to mollify -Wnull-dereference. */
+                if (derSz != NULL)
+                    *derSz = (int)totalSz;
                 XFREE(sdBuf, pkcs12->heap, DYNAMIC_TYPE_PKCS);
                 return WC_NO_ERR_TRACE(LENGTH_ONLY_E);
             }
@@ -1129,9 +1121,7 @@ static WARN_UNUSED_RESULT int freeDecCertList(WC_DerCertList** list,
         current  = current->next;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(DeCert, heap, DYNAMIC_TYPE_PKCS);
-#endif
+    WC_FREE_VAR_EX(DeCert, heap, DYNAMIC_TYPE_PKCS);
 
     return 0;
 }
@@ -1770,6 +1760,51 @@ exit_pk12par:
 }
 
 
+/* Helper function to get parameters for key and cert encryptions */
+static int wc_PKCS12_get_enc_params(int inAlgo, int* vPKCS, int* outAlgo,
+        int* blkOid, int* hmacOid)
+{
+    int ret = 0;
+
+    if (inAlgo == PBE_SHA1_RC4_128) {
+        *vPKCS = 1;   /* PKCS#12 */
+        *outAlgo = PBE_SHA1_RC4_128;
+        *blkOid = 0;  /* Unused */
+        *hmacOid = 0; /* Use SHA1 as default */
+    }
+    else if (inAlgo == PBE_SHA1_DES) {
+        *vPKCS = PKCS5;
+        *outAlgo = PBES1_SHA1_DES;
+        *blkOid = 0;  /* Unused */
+        *hmacOid = 0; /* Use SHA1 as default */
+    }
+    else if (inAlgo == PBE_SHA1_DES3) {
+        *vPKCS = 1;   /* PKCS#12 */
+        *outAlgo = PBE_SHA1_DES3;
+        *blkOid = 0;  /* Unused */
+        *hmacOid = 0; /* Use SHA1 as default */
+    }
+    else if (inAlgo == PBE_AES256_CBC) {
+        *vPKCS = PKCS5;
+        *outAlgo = PBES2;
+        *blkOid = AES256CBCb;
+        *hmacOid = HMAC_SHA256_OID;
+    }
+    else if (inAlgo == PBE_AES128_CBC) {
+        *vPKCS = PKCS5;
+        *outAlgo = PBES2;
+        *blkOid = AES128CBCb;
+        *hmacOid = HMAC_SHA256_OID;
+    }
+    else {
+        WOLFSSL_MSG("Unsupported algorithm for PKCS12 encryption");
+        ret = ALGO_ID_E;
+    }
+
+    return ret;
+}
+
+
 /* Helper function to shroud keys.
  *
  * pkcs12 structure to use with shrouding key
@@ -1791,11 +1826,17 @@ static int wc_PKCS12_shroud_key(WC_PKCS12* pkcs12, WC_RNG* rng,
 {
     void* heap;
     word32 tmpIdx = 0;
-    int vPKCS     = 1; /* PKCS#12 default set to 1 */
     word32 sz;
     word32 totalSz = 0;
     int ret;
     byte* pkcs8Key = NULL;
+    byte salt[PKCS5V2_SALT_SZ]; /* PKCS5V2_SALT_SZ > PKCS5_SALT_SZ */
+    word32 saltSz = 0;
+
+    int vPKCS = -1;
+    int outAlgo = -1;
+    int blkOid = 0;
+    int hmacOid = 0;
 
     if (outSz == NULL || pkcs12 == NULL || rng == NULL || key == NULL ||
             pass == NULL) {
@@ -1832,13 +1873,17 @@ static int wc_PKCS12_shroud_key(WC_PKCS12* pkcs12, WC_RNG* rng,
     else {
         WOLFSSL_MSG("creating PKCS12 Shrouded Key Bag");
 
-        if (vAlgo == PBE_SHA1_DES) {
-            vPKCS = PKCS5;
-            vAlgo = 10;
+        if ((ret = wc_PKCS12_get_enc_params(vAlgo, &vPKCS, &outAlgo, &blkOid,
+                &hmacOid)) < 0) {
+            return ret;
+        }
+        saltSz = (outAlgo != PBES2) ? PKCS5_SALT_SZ : PKCS5V2_SALT_SZ;
+        if ((ret = wc_RNG_GenerateBlock(rng, salt, saltSz)) < 0) {
+            return ret;
         }
 
-        ret = UnTraditionalEnc(key, keySz, pkcs8Key, &sz, pass, passSz,
-                vPKCS, vAlgo, NULL, 0, itt, rng, heap);
+        ret = TraditionalEnc_ex(key, keySz, pkcs8Key, &sz, pass, passSz,
+                vPKCS, outAlgo, blkOid, salt, saltSz, itt, hmacOid, rng, heap);
     }
     if (ret == WC_NO_ERR_TRACE(LENGTH_ONLY_E)) {
         *outSz =  sz + MAX_LENGTH_SZ + 1;
@@ -2078,7 +2123,6 @@ static int wc_PKCS12_encrypt_content(WC_PKCS12* pkcs12, WC_RNG* rng,
         const char* pass, int passSz, int iter, int type)
 {
     void* heap;
-    int vPKCS     = 1; /* PKCS#12 is always set to 1 */
     int ret;
     byte*  tmp;
     word32 idx = 0;
@@ -2086,6 +2130,11 @@ static int wc_PKCS12_encrypt_content(WC_PKCS12* pkcs12, WC_RNG* rng,
     word32 length = 0;
     word32 tmpSz;
     word32 encSz;
+
+    int vPKCS = -1;
+    int outAlgo = -1;
+    int blkOid = 0;
+    int hmacOid = 0;
 
     byte seq[MAX_SEQ_SZ];
 
@@ -2103,9 +2152,15 @@ static int wc_PKCS12_encrypt_content(WC_PKCS12* pkcs12, WC_RNG* rng,
     if (type == WC_PKCS12_ENCRYPTED_DATA) {
         word32 outerSz = 0;
 
+        if ((ret = wc_PKCS12_get_enc_params(vAlgo, &vPKCS, &outAlgo, &blkOid,
+                &hmacOid)) < 0) {
+            return ret;
+        }
+
         encSz = contentSz;
         if ((ret = EncryptContent(NULL, contentSz, NULL, &encSz,
-                   pass, passSz, vPKCS, vAlgo, NULL, 0, iter, rng, heap)) < 0) {
+                   pass, passSz, vPKCS, outAlgo, blkOid, NULL, 0, iter, hmacOid,
+                   rng, heap)) < 0) {
             if (ret != WC_NO_ERR_TRACE(LENGTH_ONLY_E)) {
                 return ret;
             }
@@ -2157,7 +2212,8 @@ static int wc_PKCS12_encrypt_content(WC_PKCS12* pkcs12, WC_RNG* rng,
         }
 
         if ((ret = EncryptContent(content, contentSz, tmp, &encSz,
-                   pass, passSz, vPKCS, vAlgo, NULL, 0, iter, rng, heap)) < 0) {
+                   pass, passSz, vPKCS, outAlgo, blkOid, NULL, 0, iter, hmacOid,
+                   rng, heap)) < 0) {
             XFREE(tmp, heap, DYNAMIC_TYPE_TMP_BUFFER);
             return ret;
         }
@@ -2271,6 +2327,7 @@ static byte* PKCS12_create_key_content(WC_PKCS12* pkcs12, int nidKey,
     heap = wc_PKCS12_GetHeap(pkcs12);
     *keyCiSz = 0;
     switch (nidKey) {
+        /* supported key encryptions */
         case PBE_SHA1_RC4_128:
             algo = 1;
             break;
@@ -2283,8 +2340,15 @@ static byte* PKCS12_create_key_content(WC_PKCS12* pkcs12, int nidKey,
             algo = 3;
             break;
 
-        /* no encryption */
-        case -1:
+        case PBE_AES256_CBC:
+            algo = PBE_AES256_CBC;
+            break;
+
+        case PBE_AES128_CBC:
+            algo = PBE_AES128_CBC;
+            break;
+
+        case -1: /* no encryption */
             algo = -1;
             break;
 
@@ -2391,6 +2455,7 @@ static byte* PKCS12_create_cert_content(WC_PKCS12* pkcs12, int nidCert,
 
     heap = wc_PKCS12_GetHeap(pkcs12);
     switch (nidCert) {
+        /* supported certificate encryptions */
         case PBE_SHA1_RC4_128:
             type = WC_PKCS12_ENCRYPTED_DATA;
             algo = 1;
@@ -2406,7 +2471,17 @@ static byte* PKCS12_create_cert_content(WC_PKCS12* pkcs12, int nidCert,
             algo = 3;
             break;
 
-        case -1:
+        case PBE_AES256_CBC:
+            type = WC_PKCS12_ENCRYPTED_DATA;
+            algo = PBE_AES256_CBC;
+            break;
+
+        case PBE_AES128_CBC:
+            type = WC_PKCS12_ENCRYPTED_DATA;
+            algo = PBE_AES128_CBC;
+            break;
+
+        case -1: /* no encryption */
             type = WC_PKCS12_DATA;
             algo = -1;
             break;

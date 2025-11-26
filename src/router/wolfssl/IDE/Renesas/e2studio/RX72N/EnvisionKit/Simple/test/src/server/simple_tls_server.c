@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -26,6 +26,8 @@
 #include "wolfssl/ssl.h"
 #include "wolfssl/certs_test.h"
 #include <wolfssl_simple_demo.h>
+
+#if defined(SIMPLE_TLS_SERVER)
 
 static WOLFSSL_CTX *server_ctx;
 
@@ -192,3 +194,4 @@ out:
     tcp_sht_cep(cepid);
     tcp_cls_cep(cepid, TMO_FEVR);
 }
+#endif

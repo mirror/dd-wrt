@@ -7,7 +7,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -20,11 +20,62 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#if defined(LINUXKM_LKCAPI_REGISTER_ECDSA)
+/* included by linuxkm/lkcapi_glue.c */
+#ifndef WC_SKIP_INCLUDED_C_FILES
 
 #ifndef LINUXKM_LKCAPI_REGISTER
     #error lkcapi_ecdsa_glue.c included in non-LINUXKM_LKCAPI_REGISTER project.
 #endif
+
+#ifdef HAVE_ECC
+    #if (defined(LINUXKM_LKCAPI_REGISTER_ALL) || \
+         (defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && defined(CONFIG_CRYPTO_ECDSA))) && \
+        !defined(LINUXKM_LKCAPI_DONT_REGISTER_ECDSA) &&              \
+        !defined(LINUXKM_LKCAPI_REGISTER_ECDSA)
+        #define LINUXKM_LKCAPI_REGISTER_ECDSA
+    #endif
+#else
+    #undef LINUXKM_LKCAPI_REGISTER_ECDSA
+#endif
+
+#if defined (LINUXKM_LKCAPI_REGISTER_ECDSA)
+    #if (defined(HAVE_ECC192) || defined(HAVE_ALL_CURVES)) && \
+        ECC_MIN_KEY_SZ <= 192 && !defined(CONFIG_CRYPTO_FIPS)
+        /* only register p192 if specifically enabled, and if not fips. */
+        #define LINUXKM_ECC192
+    #endif
+#endif /* LINUXKM_LKCAPI_REGISTER_ECDSA */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
+    /*
+     * notes:
+     *   - ecdsa supported with linux 6.12 and earlier for now, only.
+     *   - pkcs1pad rsa supported both before and after linux 6.13, but
+     *     without sign/verify after linux 6.13.
+     *
+     * In linux 6.13 the sign/verify callbacks were removed from
+     * akcipher_alg, and ecdsa changed from a struct akcipher_alg type to
+     * struct sig_alg type.
+     *
+     * pkcs1pad rsa remained a struct akcipher_alg, but without sign/verify
+     * functionality.
+     */
+    #if defined (LINUXKM_LKCAPI_REGISTER_ECDSA)
+        #undef LINUXKM_LKCAPI_REGISTER_ECDSA
+    #endif /* LINUXKM_LKCAPI_REGISTER_ECDSA */
+
+    #if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && defined(CONFIG_CRYPTO_ECDSA)
+        #error Config conflict: missing implementation forces off LINUXKM_LKCAPI_REGISTER_ECDSA.
+    #endif
+#endif
+
+#if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && \
+    defined(CONFIG_CRYPTO_ECDSA) && \
+    !defined(LINUXKM_LKCAPI_REGISTER_ECDSA)
+    #error Config conflict: target kernel has CONFIG_CRYPTO_ECDSA, but module is missing LINUXKM_LKCAPI_REGISTER_ECDSA.
+#endif
+
+#if defined(LINUXKM_LKCAPI_REGISTER_ECDSA)
 
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/ecc.h>
@@ -217,7 +268,7 @@ static int km_ecdsa_set_pub(struct crypto_akcipher *tfm, const void *key,
     }
 
     #ifdef WOLFKM_DEBUG_ECDSA
-    pr_info("info: exiting km_ecdsa_set_pub\n");
+    pr_info("info: exiting km_ecdsa_set_pub %d\n", keylen);
     #endif /* WOLFKM_DEBUG_ECDSA */
     return err;
 }
@@ -384,7 +435,7 @@ static int km_ecdsa_verify(struct akcipher_request *req)
 
     if (result != 1) {
         #ifdef WOLFKM_DEBUG_ECDSA
-        pr_err("error: %s: ecdsa verify: verify fail: %d\n",
+        pr_err("info: %s: ecdsa verify: verify fail: %d\n",
                WOLFKM_ECDSA_DRIVER, result);
         #endif /* WOLFKM_DEBUG_ECDSA */
         err = -EBADMSG;
@@ -395,7 +446,8 @@ ecdsa_verify_end:
     if (sig != NULL) { free(sig); sig = NULL; }
 
     #ifdef WOLFKM_DEBUG_ECDSA
-    pr_info("info: exiting km_ecdsa_verify: %d\n", result);
+    pr_info("info: exiting km_ecdsa_verify hash_len %d, sig_len %d, "
+            "err %d, result %d\n", hash_len, sig_len, err, result);
     #endif /* WOLFKM_DEBUG_ECDSA */
     return err;
 }
@@ -447,7 +499,6 @@ static int linuxkm_test_ecdsa_nist_p192(void)
                                         p192_pub, pub_len,
                                         sig, sig_len,
                                         hash, hash_len);
-
     return rc;
 }
 #endif /* LINUXKM_ECC192 */
@@ -650,7 +701,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
                                           const byte * sig, word32 sig_len,
                                           const byte * hash, word32 hash_len)
 {
-    int                       test_rc = -1;
+    int                       test_rc = WC_NO_ERR_TRACE(WC_FAILURE);
     int                       ret = 0;
     struct crypto_akcipher *  tfm = NULL;
     struct akcipher_request * req = NULL;
@@ -664,6 +715,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
     param_copy = (byte *)malloc(sig_len + hash_len);
     if (! param_copy) {
         pr_err("error: allocating param_copy buffer failed.\n");
+        test_rc = MEMORY_E;
         goto test_ecdsa_nist_end;
     }
     memcpy(param_copy, sig, sig_len);
@@ -677,8 +729,27 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
      */
     tfm = crypto_alloc_akcipher(driver, 0, 0);
     if (IS_ERR(tfm)) {
-        pr_err("error: allocating akcipher algorithm %s failed: %ld\n",
-               driver, PTR_ERR(tfm));
+        #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)) &&       \
+            defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_MANAGER) && \
+            !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+        /* ecdsa was not recognized as fips_allowed before linux v6.3
+         * in kernel crypto/testmgr.c, and the kernel will block
+         * its allocation if fips_enabled is set. */
+        if ((PTR_ERR(tfm) == -ENOENT) && fips_enabled) {
+            pr_info("info: skipping unsupported akcipher algorithm %s: %ld\n",
+                    driver, PTR_ERR(tfm));
+            test_rc = NOT_COMPILED_IN;
+        }
+        else
+        #endif
+        {
+            pr_err("error: allocating akcipher algorithm %s failed: %ld\n",
+                   driver, PTR_ERR(tfm));
+            if (PTR_ERR(tfm) == -ENOMEM)
+                test_rc = MEMORY_E;
+            else
+                test_rc = BAD_FUNC_ARG;
+        }
         tfm = NULL;
         goto test_ecdsa_nist_end;
     }
@@ -687,6 +758,10 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
     if (IS_ERR(req)) {
         pr_err("error: allocating akcipher request %s failed\n",
                driver);
+        if (PTR_ERR(req) == -ENOMEM)
+            test_rc = MEMORY_E;
+        else
+            test_rc = BAD_FUNC_ARG;
         req = NULL;
         goto test_ecdsa_nist_end;
     }
@@ -695,6 +770,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
     ret = crypto_akcipher_set_pub_key(tfm, pub, pub_len);
     if (ret) {
         pr_err("error: crypto_akcipher_set_pub_key returned: %d\n", ret);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdsa_nist_end;
     }
 
@@ -703,6 +779,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
         if ((int) maxsize <= 0) {
             pr_err("error: crypto_akcipher_maxsize "
                    "returned %d\n", maxsize);
+            test_rc = BAD_FUNC_ARG;
             goto test_ecdsa_nist_end;
         }
     }
@@ -725,6 +802,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
     ret = crypto_akcipher_verify(req);
     if (ret) {
         pr_err("error: crypto_akcipher_verify returned: %d\n", ret);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdsa_nist_end;
     }
 
@@ -732,6 +810,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
     bad_sig = malloc(sig_len);
     if (bad_sig == NULL) {
         pr_err("error: alloc sig failed\n");
+        test_rc = MEMORY_E;
         goto test_ecdsa_nist_end;
     }
 
@@ -749,6 +828,7 @@ static int linuxkm_test_ecdsa_nist_driver(const char * driver,
     if (ret != -EBADMSG) {
         pr_err("error: crypto_akcipher_verify returned %d, expected %d\n",
                ret, -EBADMSG);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdsa_nist_end;
     }
 
@@ -762,8 +842,9 @@ test_ecdsa_nist_end:
     #ifdef WOLFKM_DEBUG_ECDSA
     pr_info("info: %s: self test returned: %d\n", driver, test_rc);
     #endif /* WOLFKM_DEBUG_ECDSA */
-
     return test_rc;
 }
 
 #endif /* LINUXKM_LKCAPI_REGISTER_ECDSA */
+
+#endif /* !WC_SKIP_INCLUDED_C_FILES */

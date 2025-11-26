@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -133,6 +133,12 @@
     #else
         typedef unsigned long ProviderHandle;
     #endif
+
+    #ifdef WIN_REUSE_CRYPT_HANDLE
+        /* called from wolfCrypt_Init() and wolfCrypt_Cleanup() */
+        WOLFSSL_LOCAL int  wc_WinCryptHandleInit(void);
+        WOLFSSL_LOCAL void wc_WinCryptHandleCleanup(void);
+    #endif
 #endif
 
 #ifndef WC_RNG_TYPE_DEFINED /* guard on redeclaration */
@@ -158,7 +164,11 @@ struct OS_Seed {
 
 #ifdef HAVE_HASHDRBG
 struct DRBG_internal {
+    #ifdef WORD64_AVAILABLE
+    word64 reseedCtr;
+    #else
     word32 reseedCtr;
+    #endif
     byte V[DRBG_SEED_LEN];
     byte C[DRBG_SEED_LEN];
     void* heap;
@@ -183,6 +193,9 @@ struct WC_RNG {
 #endif
     byte status;
 #endif
+#if defined(HAVE_GETPID) && !defined(WOLFSSL_NO_GETPID)
+    pid_t pid;
+#endif
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
 #endif
@@ -199,7 +212,7 @@ struct WC_RNG {
     #define RNG WC_RNG
 #endif
 
-WOLFSSL_API int wc_GenerateSeed(OS_Seed* os, byte* seed, word32 sz);
+WOLFSSL_API int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz);
 
 
 #ifdef HAVE_WNR
@@ -222,7 +235,7 @@ WOLFSSL_API int  wc_InitRng_ex(WC_RNG* rng, void* heap, int devId);
 WOLFSSL_API int  wc_InitRngNonce(WC_RNG* rng, byte* nonce, word32 nonceSz);
 WOLFSSL_API int  wc_InitRngNonce_ex(WC_RNG* rng, byte* nonce, word32 nonceSz,
                                     void* heap, int devId);
-WOLFSSL_ABI WOLFSSL_API int wc_RNG_GenerateBlock(WC_RNG* rng, byte* b, word32 sz);
+WOLFSSL_ABI WOLFSSL_API int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz);
 WOLFSSL_API int  wc_RNG_GenerateByte(WC_RNG* rng, byte* b);
 WOLFSSL_API int  wc_FreeRng(WC_RNG* rng);
 #else
@@ -235,7 +248,12 @@ WOLFSSL_API int  wc_FreeRng(WC_RNG* rng);
 /* some older compilers do not like macro function in expression */
 #define wc_RNG_GenerateBlock(rng, b, s) NOT_COMPILED_IN
 #else
-#define wc_RNG_GenerateBlock(rng, b, s) ({(void)rng; (void)b; (void)s; NOT_COMPILED_IN;})
+#ifdef _MSC_VER
+#define wc_RNG_GenerateBlock(rng, b, s) (int)(NOT_COMPILED_IN)
+#else
+#define wc_RNG_GenerateBlock(rng, b, s) \
+        ({(void)rng; (void)b; (void)s; NOT_COMPILED_IN;})
+#endif
 #endif
 #define wc_RNG_GenerateByte(rng, b) NOT_COMPILED_IN
 #define wc_FreeRng(rng) (void)NOT_COMPILED_IN
@@ -246,17 +264,17 @@ WOLFSSL_API int  wc_FreeRng(WC_RNG* rng);
 #endif
 
 #ifdef HAVE_HASHDRBG
-    WOLFSSL_API int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* entropy,
-                                       word32 entropySz);
+    WOLFSSL_API int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* seed,
+                                       word32 seedSz);
     WOLFSSL_API int wc_RNG_TestSeed(const byte* seed, word32 seedSz);
     WOLFSSL_API int wc_RNG_HealthTest(int reseed,
-                                        const byte* entropyA, word32 entropyASz,
-                                        const byte* entropyB, word32 entropyBSz,
+                                        const byte* seedA, word32 seedASz,
+                                        const byte* seedB, word32 seedBSz,
                                         byte* output, word32 outputSz);
     WOLFSSL_API int wc_RNG_HealthTest_ex(int reseed,
                                         const byte* nonce, word32 nonceSz,
-                                        const byte* entropyA, word32 entropyASz,
-                                        const byte* entropyB, word32 entropyBSz,
+                                        const byte* seedA, word32 seedASz,
+                                        const byte* seedB, word32 seedBSz,
                                         byte* output, word32 outputSz,
                                         void* heap, int devId);
 #endif /* HAVE_HASHDRBG */

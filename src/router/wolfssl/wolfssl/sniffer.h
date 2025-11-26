@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -150,6 +150,8 @@ SSL_SNIFFER_API void ssl_InitSniffer_ex2(int threadNum);
 WOLFSSL_API
 SSL_SNIFFER_API void ssl_FreeSniffer(void);
 
+WOLFSSL_API
+SSL_SNIFFER_API void ssl_RemoveStaleSessions(void);
 
 /* ssl_SetPrivateKey typeKs */
 enum {
@@ -342,6 +344,11 @@ typedef int (*SSLSnifferSecretCb)(unsigned char* client_random,
                                   unsigned char* output_secret);
 
 #endif /* WOLFSSL_SNIFFER_KEYLOGFILE */
+
+WOLFSSL_API
+SSL_SNIFFER_API int ssl_RemoveSession(const char* clientIp, int clientPort,
+                                      const char* serverIp, int serverPort,
+                                      char* error);
 
 
 #ifdef __cplusplus

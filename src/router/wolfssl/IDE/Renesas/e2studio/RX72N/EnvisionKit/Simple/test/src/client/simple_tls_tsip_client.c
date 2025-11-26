@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -31,7 +31,8 @@
     #include <wolfssl/wolfcrypt/port/Renesas/renesas-tsip-crypt.h>
 #endif
 
-#define SIMPLE_TLSSEVER_IP       "192.168.11.5"
+#if defined(SIMPLE_TLS_TSIP_CLIENT) || defined(SIMPLE_TLS_CLIENT)
+#define SIMPLE_TLSSEVER_IP       "192.168.11.6"
 #define SIMPLE_TLSSERVER_PORT    "11111"
 
 ER    t4_tcp_callback(ID cepid, FN fncd , VP p_parblk);
@@ -244,7 +245,7 @@ void wolfSSL_TLS_client( )
         ret = tsip_use_PrivateKey_buffer_TLS(ssl,
                 (const char*)g_key_block_data.encrypted_user_ecc256_private_key,
                 sizeof(g_key_block_data.encrypted_user_ecc256_private_key),
-                TSIP_ECCP256);
+                TSIP_KEY_TYPE_ECDSAP256);
         if (ret != 0) {
             printf("ERROR tsip_use_PrivateKey_buffer_TLS\n");
         }
@@ -254,7 +255,7 @@ void wolfSSL_TLS_client( )
         ret = tsip_use_PublicKey_buffer_TLS(ssl,
                 (const char*)g_key_block_data.encrypted_user_ecc256_public_key,
                 sizeof(g_key_block_data.encrypted_user_ecc256_public_key),
-                TSIP_ECCP256);
+                TSIP_KEY_TYPE_ECDSAP256);
         if (ret != 0) {
             printf("ERROR tsip_use_PublicKey_buffer_TLS\n");
         }
@@ -289,7 +290,7 @@ void wolfSSL_TLS_client( )
         ret = tsip_use_PrivateKey_buffer_TLS(ssl,
                (const char*)g_key_block_data.encrypted_user_rsa2048_private_key,
                sizeof(g_key_block_data.encrypted_user_rsa2048_private_key),
-                                                        TSIP_RSA2048);
+                                                        TSIP_KEY_TYPE_RSA2048);
         if (ret != 0) {
             printf("ERROR tsip_use_PrivateKey_buffer_TLS :%d\n", ret);
         }
@@ -298,7 +299,7 @@ void wolfSSL_TLS_client( )
         ret = tsip_use_PublicKey_buffer_TLS(ssl,
                 (const char*)g_key_block_data.encrypted_user_rsa2048_public_key,
                 sizeof(g_key_block_data.encrypted_user_rsa2048_public_key),
-                                                        TSIP_RSA2048);
+                                                        TSIP_KEY_TYPE_RSA2048);
         if (ret != 0) {
             printf("ERROR tsip_use_PublicKey_buffer_TLS: %d\n", ret);
         }
@@ -307,10 +308,10 @@ void wolfSSL_TLS_client( )
     #else
 
     if (ret == 0) {
-        err = wolfSSL_use_PrivateKey_buffer(ssl, client_key_der_2048,
+        ret = wolfSSL_use_PrivateKey_buffer(ssl, client_key_der_2048,
                             sizeof_client_key_der_2048, WOLFSSL_FILETYPE_ASN1);
 
-        if (err != SSL_SUCCESS) {
+        if (ret != SSL_SUCCESS) {
             printf("ERROR wolfSSL_use_PrivateKey_buffer: %d\n",
                                                 wolfSSL_get_error(ssl, 0));
             ret = -1;
@@ -360,3 +361,4 @@ void wolfSSL_TLS_client( )
 
     return;
 }
+#endif /* SIMPLE_TSIP TLS_CLIENT || SIMPLE_TLS_CLIENT */

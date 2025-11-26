@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -372,7 +372,7 @@ int wc_tsip_RsaVerifyPkcs(wc_CryptoInfo* info, TsipUserCtx* tuc)
 
         if ((ret = tsip_hw_lock()) == 0) {
             switch (tuc->wrappedKeyType) {
-#if defined(TSIP_RSAES_1024) && TSIP_RSAES_1024 == 1
+#if defined(TSIP_RSASSA_1024) && TSIP_RSASSA_1024 == 1
                 case TSIP_KEY_TYPE_RSA1024:
                     err = R_TSIP_RsassaPkcs1024SignatureVerification(&sigData,
                             &hashData,
@@ -390,7 +390,7 @@ int wc_tsip_RsaVerifyPkcs(wc_CryptoInfo* info, TsipUserCtx* tuc)
                     }
                     break;
 #endif
-#if defined(TSIP_RSAES_2048) && TSIP_RSAES_2048 == 1
+#if defined(TSIP_RSASSA_2048) && TSIP_RSASSA_2048 == 1
                 case TSIP_KEY_TYPE_RSA2048:
                     err = R_TSIP_RsassaPkcs2048SignatureVerification(&sigData,
                             &hashData,

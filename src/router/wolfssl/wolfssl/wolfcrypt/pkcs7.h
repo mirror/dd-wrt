@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -80,22 +80,6 @@
 #define WOLFSSL_CONTENT_TYPE_ATTRIBUTE 0x2
 #define WOLFSSL_SIGNING_TIME_ATTRIBUTE 0x4
 #define WOLFSSL_MESSAGE_DIGEST_ATTRIBUTE 0x8
-
-/* PKCS#7 content types, ref RFC 2315 (Section 14) */
-enum PKCS7_TYPES {
-    PKCS7_MSG                 = 650,  /* 1.2.840.113549.1.7   */
-    DATA                      = 651,  /* 1.2.840.113549.1.7.1 */
-    SIGNED_DATA               = 652,  /* 1.2.840.113549.1.7.2 */
-    ENVELOPED_DATA            = 653,  /* 1.2.840.113549.1.7.3 */
-    SIGNED_AND_ENVELOPED_DATA = 654,  /* 1.2.840.113549.1.7.4 */
-    DIGESTED_DATA             = 655,  /* 1.2.840.113549.1.7.5 */
-    ENCRYPTED_DATA            = 656,  /* 1.2.840.113549.1.7.6 */
-#if defined(HAVE_LIBZ) && !defined(NO_PKCS7_COMPRESSED_DATA)
-    COMPRESSED_DATA           = 678,  /* 1.2.840.113549.1.9.16.1.9,  RFC 3274 */
-#endif
-    FIRMWARE_PKG_DATA         = 685,  /* 1.2.840.113549.1.9.16.1.16, RFC 4108 */
-    AUTH_ENVELOPED_DATA       = 692   /* 1.2.840.113549.1.9.16.1.23, RFC 5083 */
-};
 
 enum PKCS7_STATE {
     WC_PKCS7_START = 0,
@@ -229,6 +213,8 @@ typedef int (*CallbackWrapCEK)(wc_PKCS7* pkcs7, byte* cek, word32 cekSz,
                                   byte* originKey, word32 originKeySz,
                                   byte* out, word32 outSz,
                                   int keyWrapAlgo, int type, int dir);
+typedef int (*CallbackAESKeyWrapUnwrap)(const byte* key, word32 keySz,
+        const byte* in, word32 inSz, int wrap, byte* out, word32 outSz);
 
 /* Callbacks for supporting different stream cases */
 typedef int (*CallbackGetContent)(wc_PKCS7* pkcs7, byte** content, void* ctx);
@@ -363,6 +349,7 @@ struct wc_PKCS7 {
     /* used by DecodeEnvelopedData with multiple encrypted contents */
     byte*  cachedEncryptedContent;
     word32 cachedEncryptedContentSz;
+    word32 totalEncryptedContentSz; /* track encrypted content across octets */
     WC_BITFIELD contentCRLF:1; /* have content line endings been converted to CRLF */
     WC_BITFIELD contentIsPkcs7Type:1; /* eContent follows PKCS#7 RFC not CMS */
     WC_BITFIELD hashParamsAbsent:1;
@@ -386,6 +373,8 @@ struct wc_PKCS7 {
     #endif
     } decryptKey;
 #endif
+
+    CallbackAESKeyWrapUnwrap aesKeyWrapUnwrapCb;
 
     /* !! NEW DATA MEMBERS MUST BE ADDED AT END !! */
 };
@@ -514,6 +503,8 @@ WOLFSSL_API int  wc_PKCS7_AddRecipient_ORI(wc_PKCS7* pkcs7, CallbackOriEncrypt c
                                            int options);
 WOLFSSL_API int  wc_PKCS7_SetWrapCEKCb(wc_PKCS7* pkcs7,
         CallbackWrapCEK wrapCEKCb);
+WOLFSSL_API int  wc_PKCS7_SetAESKeyWrapUnwrapCb(wc_PKCS7* pkcs7,
+        CallbackAESKeyWrapUnwrap aesKeyWrapUnwrapCb);
 
 #if defined(HAVE_PKCS7_RSA_RAW_SIGN_CALLBACK) && !defined(NO_RSA)
 WOLFSSL_API int  wc_PKCS7_SetRsaSignRawDigestCb(wc_PKCS7* pkcs7,
@@ -526,6 +517,8 @@ WOLFSSL_API int  wc_PKCS7_EncodeEnvelopedData(wc_PKCS7* pkcs7,
 WOLFSSL_API int  wc_PKCS7_DecodeEnvelopedData(wc_PKCS7* pkcs7, byte* pkiMsg,
                                           word32 pkiMsgSz, byte* output,
                                           word32 outputSz);
+WOLFSSL_API int wc_PKCS7_GetEnvelopedDataKariRid(const byte * in, word32 inSz,
+        byte * out, word32 * outSz);
 
 /* CMS/PKCS#7 AuthEnvelopedData */
 WOLFSSL_API int  wc_PKCS7_EncodeAuthEnvelopedData(wc_PKCS7* pkcs7,
@@ -546,6 +539,10 @@ WOLFSSL_API int  wc_PKCS7_SetDecodeEncryptedCb(wc_PKCS7* pkcs7,
 WOLFSSL_API int  wc_PKCS7_SetDecodeEncryptedCtx(wc_PKCS7* pkcs7, void* ctx);
 #endif /* NO_PKCS7_ENCRYPTED_DATA */
 
+/* CMS/PKCS#7 EncryptedKeyPackage */
+WOLFSSL_API int wc_PKCS7_DecodeEncryptedKeyPackage(wc_PKCS7 * pkcs7,
+        byte * pkiMsg, word32 pkiMsgSz, byte * output, word32 outputSz);
+
 /* stream and certs */
 WOLFSSL_LOCAL int wc_PKCS7_WriteOut(wc_PKCS7* pkcs7, byte* output,
     const byte* input, word32 inputSz);
@@ -564,10 +561,18 @@ WOLFSSL_API int wc_PKCS7_DecodeCompressedData(wc_PKCS7* pkcs7, byte* pkiMsg,
                                               word32 outputSz);
 #endif /* HAVE_LIBZ && !NO_PKCS7_COMPRESSED_DATA */
 
+WOLFSSL_API int wc_PKCS7_DecodeSymmetricKeyPackageAttribute(const byte * skp,
+        word32 skpSz, size_t index, const byte ** attr, word32 * attrSz);
+WOLFSSL_API int wc_PKCS7_DecodeSymmetricKeyPackageKey(const byte * skp,
+        word32 skpSz, size_t index, const byte ** key, word32 * keySz);
+WOLFSSL_API int wc_PKCS7_DecodeOneSymmetricKeyAttribute(const byte * osk,
+        word32 oskSz, size_t index, const byte ** attr, word32 * attrSz);
+WOLFSSL_API int wc_PKCS7_DecodeOneSymmetricKeyKey(const byte * osk,
+        word32 oskSz, const byte ** key, word32 * keySz);
+
 #ifdef __cplusplus
     } /* extern "C" */
 #endif
 
 #endif /* HAVE_PKCS7 */
 #endif /* WOLF_CRYPT_PKCS7_H */
-

@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -1041,6 +1041,15 @@ int wc_LmsKey_Verify(LmsKey * key, const byte * sig, word32 sigSz,
     }
 
     return 0;
+}
+
+int wc_LmsKey_GetKid(LmsKey * key, const byte ** kid, word32* kidSz)
+{
+    if ((key == NULL) || (kid == NULL) || (kidSz == NULL)) {
+        return BAD_FUNC_ARG;
+    }
+
+    return NOT_COMPILED_IN;
 }
 
 const byte * wc_LmsKey_GetKidFromPrivRaw(const byte * priv, word32 privSz)

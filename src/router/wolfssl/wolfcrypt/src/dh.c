@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -57,12 +57,12 @@
     }
 #endif
 
-#if defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_SP_ASM)
+#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(WOLFSSL_SP_ASM)
     /* force off unneeded vector register save/restore. */
     #undef SAVE_VECTOR_REGISTERS
-    #define SAVE_VECTOR_REGISTERS(fail_clause) WC_DO_NOTHING
+    #define SAVE_VECTOR_REGISTERS(fail_clause) SAVE_NO_VECTOR_REGISTERS(fail_clause)
     #undef RESTORE_VECTOR_REGISTERS
-    #define RESTORE_VECTOR_REGISTERS() WC_DO_NOTHING
+    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
 #endif
 
 /*
@@ -1373,6 +1373,36 @@ static int GeneratePublicDh(DhKey* key, byte* priv, word32 privSz,
     return ret;
 }
 
+/**
+ * Given a DhKey with set params and a priv key, generate the corresponding
+ * public key. If fips, does pub key validation.
+ * */
+int wc_DhGeneratePublic(DhKey* key, byte* priv, word32 privSz,
+    byte* pub, word32* pubSz)
+{
+    int ret = 0;
+
+    if (key == NULL || priv == NULL || privSz == 0 ||
+        pub == NULL || pubSz == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    SAVE_VECTOR_REGISTERS(return _svr_ret;);
+
+    ret = GeneratePublicDh(key, priv, privSz, pub, pubSz);
+
+    #if FIPS_VERSION_GE(5,0) || defined(WOLFSSL_VALIDATE_DH_KEYGEN)
+    if (ret == 0)
+        ret = _ffc_validate_public_key(key, pub, *pubSz, NULL, 0, 0);
+    if (ret == 0)
+        ret = _ffc_pairwise_consistency_test(key, pub, *pubSz, priv, privSz);
+    #endif /* FIPS V5 or later || WOLFSSL_VALIDATE_DH_KEYGEN */
+
+    RESTORE_VECTOR_REGISTERS();
+
+    return ret;
+}
+
 static int wc_DhGenerateKeyPair_Sync(DhKey* key, WC_RNG* rng,
     byte* priv, word32* privSz, byte* pub, word32* pubSz)
 {
@@ -2026,80 +2056,19 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
 #endif
 
 #ifdef WOLFSSL_HAVE_SP_DH
+    if (0
 #ifndef WOLFSSL_SP_NO_2048
-    if (mp_count_bits(&key->p) == 2048) {
-        if (mp_init(y) != MP_OKAY)
-            ret = MP_INIT_E;
-
-        if (ret == 0) {
-            SAVE_VECTOR_REGISTERS(ret = _svr_ret;);
-
-            if (ret == 0 && mp_read_unsigned_bin(y, otherPub, pubSz) != MP_OKAY)
-                ret = MP_READ_E;
-
-            if (ret == 0)
-                ret = sp_DhExp_2048(y, priv, privSz, &key->p, agree, agreeSz);
-
-            mp_clear(y);
-
-            RESTORE_VECTOR_REGISTERS();
-        }
-
-        /* make sure agree is > 1 (SP800-56A, 5.7.1.1) */
-        if ((ret == 0) &&
-            ((*agreeSz == 0) || ((*agreeSz == 1) && (agree[0] == 1))))
-        {
-            ret = MP_VAL;
-        }
-
-    #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    #if !defined(WOLFSSL_SP_MATH)
-        XFREE(z, key->heap, DYNAMIC_TYPE_DH);
-        XFREE(x, key->heap, DYNAMIC_TYPE_DH);
-    #endif
-        XFREE(y, key->heap, DYNAMIC_TYPE_DH);
-    #endif
-        return ret;
-    }
+        || mp_count_bits(&key->p) == 2048
 #endif
 #ifndef WOLFSSL_SP_NO_3072
-    if (mp_count_bits(&key->p) == 3072) {
-        if (mp_init(y) != MP_OKAY)
-            ret = MP_INIT_E;
-
-        if (ret == 0) {
-            SAVE_VECTOR_REGISTERS(ret = _svr_ret;);
-
-            if (ret == 0 && mp_read_unsigned_bin(y, otherPub, pubSz) != MP_OKAY)
-                ret = MP_READ_E;
-
-            if (ret == 0)
-                ret = sp_DhExp_3072(y, priv, privSz, &key->p, agree, agreeSz);
-
-            mp_clear(y);
-
-            RESTORE_VECTOR_REGISTERS();
-        }
-
-        /* make sure agree is > 1 (SP800-56A, 5.7.1.1) */
-        if ((ret == 0) &&
-            ((*agreeSz == 0) || ((*agreeSz == 1) && (agree[0] == 1))))
-        {
-            ret = MP_VAL;
-        }
-
-    #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    #if !defined(WOLFSSL_SP_MATH)
-        XFREE(z, key->heap, DYNAMIC_TYPE_DH);
-        XFREE(x, key->heap, DYNAMIC_TYPE_DH);
-    #endif
-        XFREE(y, key->heap, DYNAMIC_TYPE_DH);
-    #endif
-        return ret;
-    }
+        || mp_count_bits(&key->p) == 3072
 #endif
 #ifdef WOLFSSL_SP_4096
-    if (mp_count_bits(&key->p) == 4096) {
+        || mp_count_bits(&key->p) == 4096
+#endif
+       ) {
+        int i = (int)*agreeSz - 1;
+
         if (mp_init(y) != MP_OKAY)
             ret = MP_INIT_E;
 
@@ -2109,8 +2078,26 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
             if (ret == 0 && mp_read_unsigned_bin(y, otherPub, pubSz) != MP_OKAY)
                 ret = MP_READ_E;
 
-            if (ret == 0)
-                ret = sp_DhExp_4096(y, priv, privSz, &key->p, agree, agreeSz);
+            if (ret == 0) {
+            #ifndef WOLFSSL_SP_NO_2048
+                if (mp_count_bits(&key->p) == 2048) {
+                    ret = sp_DhExp_2048(y, priv, privSz, &key->p, agree,
+                                        agreeSz);
+                }
+            #endif
+            #ifndef WOLFSSL_SP_NO_3072
+                if (mp_count_bits(&key->p) == 3072) {
+                    ret = sp_DhExp_3072(y, priv, privSz, &key->p, agree,
+                                        agreeSz);
+                }
+            #endif
+            #ifdef WOLFSSL_SP_4096
+                if (mp_count_bits(&key->p) == 4096) {
+                    ret = sp_DhExp_4096(y, priv, privSz, &key->p, agree,
+                                        agreeSz);
+                }
+            #endif
+            }
 
             mp_clear(y);
 
@@ -2124,6 +2111,18 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
             ret = MP_VAL;
         }
 
+        if ((ret == 0) && ct) {
+            volatile word16 mask = 0xff;
+            sword16 o = (sword16)(*agreeSz - 1);
+
+            *agreeSz = (word32)(i + 1);
+            for (; i >= 0 ; i--) {
+                agree[i] = agree[o] & (byte)mask;
+                mask = ctMask16LT(0, (int)o);
+                o = (sword16)(o + (sword16)mask);
+            }
+        }
+
     #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     #if !defined(WOLFSSL_SP_MATH)
         XFREE(z, key->heap, DYNAMIC_TYPE_DH);
@@ -2133,17 +2132,9 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
     #endif
         return ret;
     }
-#endif
 #endif
 
 #if !defined(WOLFSSL_SP_MATH)
-    if (ct) {
-        /* for the constant-time variant, we will probably use more bits in x for
-         * the modexp than we read from the private key, and those extra bits need
-         * to be zeroed.
-         */
-        XMEMSET(x, 0, sizeof *x);
-    }
     if (mp_init_multi(x, y, z, 0, 0, 0) != MP_OKAY) {
     #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
         XFREE(z, key->heap, DYNAMIC_TYPE_DH);
@@ -2152,6 +2143,14 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
     #endif
         return MP_INIT_E;
     }
+#if defined(WOLFSSL_SP_MATH_ALL)
+    if (ct) {
+        /* TFM and Integer implementations keep high words zero.
+         * SP math implementation needs all words set to zero as it doesn't
+         * ensure unused words are zero. */
+        mp_forcezero(x);
+    }
+#endif
 
     SAVE_VECTOR_REGISTERS(ret = _svr_ret;);
 
@@ -2166,12 +2165,24 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
         ret = MP_READ_E;
 
     if (ret == 0) {
-        if (ct)
-            ret = mp_exptmod_ex(y, x,
-                                ((int)*agreeSz + DIGIT_BIT - 1) / DIGIT_BIT,
+        if (ct) {
+            int bits;
+
+            /* x is mod q but if q not available, use p (> q). */
+            if (mp_iszero(&key->q) == MP_NO) {
+                bits = mp_count_bits(&key->q);
+            }
+            else {
+                bits = mp_count_bits(&key->p);
+            }
+            /* Exponentiate to the maximum words of a valid x to ensure a
+             * constant time operation. */
+            ret = mp_exptmod_ex(y, x, (bits + DIGIT_BIT - 1) / DIGIT_BIT,
                                 &key->p, z);
-        else
+        }
+        else {
             ret = mp_exptmod(y, x, &key->p, z);
+        }
         if (ret != MP_OKAY)
             ret = MP_EXPTMOD_E;
     }
@@ -2187,6 +2198,7 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
 
     if (ret == 0) {
         if (ct) {
+            /* Put the secret into a buffer in constant time. */
             ret = mp_to_unsigned_bin_len_ct(z, agree, (int)*agreeSz);
         }
         else {
@@ -2284,7 +2296,8 @@ int wc_DhAgree(DhKey* key, byte* agree, word32* agreeSz, const byte* priv,
 #else
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_DH)
     if (key->asyncDev.marker == WOLFSSL_ASYNC_MARKER_DH) {
-        ret = wc_DhAgree_Async(key, agree, agreeSz, priv, privSz, otherPub, pubSz);
+        ret = wc_DhAgree_Async(key, agree, agreeSz, priv, privSz, otherPub,
+                               pubSz);
     }
     else
 #endif
@@ -2300,56 +2313,21 @@ int wc_DhAgree(DhKey* key, byte* agree, word32* agreeSz, const byte* priv,
 int wc_DhAgree_ct(DhKey* key, byte* agree, word32 *agreeSz, const byte* priv,
             word32 privSz, const byte* otherPub, word32 pubSz)
 {
-    int ret;
     word32 requested_agreeSz;
-#ifndef WOLFSSL_NO_MALLOC
-    byte *agree_buffer = NULL;
-#else
-    byte agree_buffer[DH_MAX_SIZE / 8];
-#endif
 
     if (key == NULL || agree == NULL || agreeSz == NULL || priv == NULL ||
                                                             otherPub == NULL) {
         return BAD_FUNC_ARG;
     }
 
-    requested_agreeSz = *agreeSz;
-
-#ifndef WOLFSSL_NO_MALLOC
-    agree_buffer = (byte *)XMALLOC(requested_agreeSz, key->heap,
-                                   DYNAMIC_TYPE_DH);
-    if (agree_buffer == NULL)
-        return MEMORY_E;
-#endif
-
-    XMEMSET(agree_buffer, 0, requested_agreeSz);
-
-    ret = wc_DhAgree_Sync(key, agree_buffer, agreeSz, priv, privSz, otherPub,
-                          pubSz, 1);
-
-    if (ret == 0) {
-        /* Arrange for correct fixed-length, right-justified key, even if the
-         * crypto back end doesn't support it.  This assures that the key is
-         * unconditionally agreed correctly.  With some crypto back ends,
-         * e.g. heapmath, there are no provisions for actual constant time, but
-         * with others the key computation and clamping is constant time, and
-         * the unclamping here is also constant time.
-         */
-        byte *agree_src = agree_buffer + *agreeSz - 1,
-            *agree_dst = agree + requested_agreeSz - 1;
-        while (agree_dst >= agree) {
-            word32 mask = (agree_src >= agree_buffer) - 1U;
-            agree_src += (mask & requested_agreeSz);
-            *agree_dst-- = *agree_src--;
-        }
-        *agreeSz = requested_agreeSz;
+    requested_agreeSz = (word32)mp_unsigned_bin_size(&key->p);
+    if (requested_agreeSz > *agreeSz) {
+        return BUFFER_E;
     }
+    *agreeSz = requested_agreeSz;
 
-#ifndef WOLFSSL_NO_MALLOC
-    XFREE(agree_buffer, key->heap, DYNAMIC_TYPE_DH);
-#endif
-
-    return ret;
+    return wc_DhAgree_Sync(key, agree, agreeSz, priv, privSz, otherPub, pubSz,
+                           1);
 }
 
 #ifdef WOLFSSL_DH_EXTRA
@@ -2501,8 +2479,8 @@ int wc_DhExportKeyPair(DhKey* key, byte* priv, word32* pPrivSz,
 #endif /* WOLFSSL_DH_EXTRA */
 
 static int _DhSetKey(DhKey* key, const byte* p, word32 pSz, const byte* g,
-                   word32 gSz, const byte* q, word32 qSz, int trusted,
-                   WC_RNG* rng)
+                     word32 gSz, const byte* q, word32 qSz, int trusted,
+                     WC_RNG* rng)
 {
     int ret = 0;
     mp_int* keyP = NULL;
@@ -3250,6 +3228,7 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
     return ret;
 }
 
+#endif /* WOLFSSL_KEY_GEN */
 
 /* Export raw DH parameters from DhKey structure
  *
@@ -3346,7 +3325,5 @@ int wc_DhExportParamsRaw(DhKey* dh, byte* p, word32* pSz,
 
     return ret;
 }
-
-#endif /* WOLFSSL_KEY_GEN */
 
 #endif /* NO_DH */

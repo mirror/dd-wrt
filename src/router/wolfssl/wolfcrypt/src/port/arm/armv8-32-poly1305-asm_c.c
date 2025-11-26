@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -48,16 +48,17 @@
 #define __volatile__
 #define WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* __ghs__ */
+
 #ifdef HAVE_POLY1305
 #include <wolfssl/wolfcrypt/poly1305.h>
 
 #ifdef WOLFSSL_ARMASM_NO_NEON
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_arm32_blocks_16(Poly1305* ctx_p, const byte* m_p, word32 len_p,
-    int notLast_p)
+WC_OMIT_FRAME_POINTER void poly1305_arm32_blocks_16(Poly1305* ctx_p,
+    const byte* m_p, word32 len_p, int notLast_p)
 #else
-void poly1305_arm32_blocks_16(Poly1305* ctx, const byte* m, word32 len,
-    int notLast)
+WC_OMIT_FRAME_POINTER void poly1305_arm32_blocks_16(Poly1305* ctx,
+    const byte* m, word32 len, int notLast)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -295,9 +296,9 @@ static const word32 L_poly1305_arm32_clamp[] = {
 };
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_set_key(Poly1305* ctx_p, const byte* key_p)
+WC_OMIT_FRAME_POINTER void poly1305_set_key(Poly1305* ctx_p, const byte* key_p)
 #else
-void poly1305_set_key(Poly1305* ctx, const byte* key)
+WC_OMIT_FRAME_POINTER void poly1305_set_key(Poly1305* ctx, const byte* key)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -308,7 +309,6 @@ void poly1305_set_key(Poly1305* ctx, const byte* key)
 #else
     register word32* L_poly1305_arm32_clamp_c =
         (word32*)&L_poly1305_arm32_clamp;
-
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -357,9 +357,9 @@ void poly1305_set_key(Poly1305* ctx, const byte* key)
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_final(Poly1305* ctx_p, byte* mac_p)
+WC_OMIT_FRAME_POINTER void poly1305_final(Poly1305* ctx_p, byte* mac_p)
 #else
-void poly1305_final(Poly1305* ctx, byte* mac)
+WC_OMIT_FRAME_POINTER void poly1305_final(Poly1305* ctx, byte* mac)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -425,11 +425,11 @@ void poly1305_final(Poly1305* ctx, byte* mac)
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_arm32_blocks_16(Poly1305* ctx_p, const byte* m_p, word32 len_p,
-    int notLast_p)
+WC_OMIT_FRAME_POINTER void poly1305_arm32_blocks_16(Poly1305* ctx_p,
+    const byte* m_p, word32 len_p, int notLast_p)
 #else
-void poly1305_arm32_blocks_16(Poly1305* ctx, const byte* m, word32 len,
-    int notLast)
+WC_OMIT_FRAME_POINTER void poly1305_arm32_blocks_16(Poly1305* ctx,
+    const byte* m, word32 len, int notLast)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -663,10 +663,11 @@ void poly1305_arm32_blocks_16(Poly1305* ctx, const byte* m, word32 len,
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_arm32_blocks(Poly1305* ctx_p, const unsigned char* m_p,
-    size_t bytes_p)
+WC_OMIT_FRAME_POINTER void poly1305_arm32_blocks(Poly1305* ctx_p,
+    const unsigned char* m_p, size_t bytes_p)
 #else
-void poly1305_arm32_blocks(Poly1305* ctx, const unsigned char* m, size_t bytes)
+WC_OMIT_FRAME_POINTER void poly1305_arm32_blocks(Poly1305* ctx,
+    const unsigned char* m, size_t bytes)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -1138,9 +1139,9 @@ static const word32 L_poly1305_arm32_clamp[] = {
 };
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_set_key(Poly1305* ctx_p, const byte* key_p)
+WC_OMIT_FRAME_POINTER void poly1305_set_key(Poly1305* ctx_p, const byte* key_p)
 #else
-void poly1305_set_key(Poly1305* ctx, const byte* key)
+WC_OMIT_FRAME_POINTER void poly1305_set_key(Poly1305* ctx, const byte* key)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -1151,7 +1152,6 @@ void poly1305_set_key(Poly1305* ctx, const byte* key)
 #else
     register word32* L_poly1305_arm32_clamp_c =
         (word32*)&L_poly1305_arm32_clamp;
-
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -1380,9 +1380,9 @@ void poly1305_set_key(Poly1305* ctx, const byte* key)
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_final(Poly1305* ctx_p, byte* mac_p)
+WC_OMIT_FRAME_POINTER void poly1305_final(Poly1305* ctx_p, byte* mac_p)
 #else
-void poly1305_final(Poly1305* ctx, byte* mac)
+WC_OMIT_FRAME_POINTER void poly1305_final(Poly1305* ctx, byte* mac)
 #endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG

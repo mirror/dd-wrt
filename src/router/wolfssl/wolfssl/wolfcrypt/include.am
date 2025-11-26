@@ -85,7 +85,8 @@ nobase_include_HEADERS+= \
                          wolfssl/wolfcrypt/ext_lms.h \
                          wolfssl/wolfcrypt/xmss.h \
                          wolfssl/wolfcrypt/wc_xmss.h \
-                         wolfssl/wolfcrypt/ext_xmss.h
+                         wolfssl/wolfcrypt/ext_xmss.h \
+                         wolfssl/wolfcrypt/oid_sum.h
 
 noinst_HEADERS+= \
                          wolfssl/wolfcrypt/port/aria/aria-crypt.h \
@@ -108,6 +109,7 @@ noinst_HEADERS+= \
                          wolfssl/wolfcrypt/port/silabs/silabs_random.h \
                          wolfssl/wolfcrypt/port/st/stm32.h \
                          wolfssl/wolfcrypt/port/st/stsafe.h \
+                         wolfssl/wolfcrypt/port/tropicsquare/tropic01.h \
                          wolfssl/wolfcrypt/port/Espressif/esp-sdk-lib.h \
                          wolfssl/wolfcrypt/port/Espressif/esp32-crypt.h \
                          wolfssl/wolfcrypt/port/Espressif/esp_crt_bundle.h \
@@ -118,6 +120,7 @@ noinst_HEADERS+= \
                          wolfssl/wolfcrypt/port/Renesas/renesas_sync.h \
                          wolfssl/wolfcrypt/port/Renesas/renesas_cmn.h \
                          wolfssl/wolfcrypt/port/Renesas/renesas_tsip_types.h \
+                         wolfssl/wolfcrypt/port/Renesas/renesas_tsip_internal.h \
                          wolfssl/wolfcrypt/port/cypress/psoc6_crypto.h \
                          wolfssl/wolfcrypt/port/maxim/max3266x.h \
                          wolfssl/wolfcrypt/port/maxim/max3266x-cryptocb.h \
@@ -226,6 +229,10 @@ endif
 
 if BUILD_SE050
 nobase_include_HEADERS+= wolfssl/wolfcrypt/port/nxp/se050_port.h
+endif
+
+if BUILD_TROPIC01
+nobase_include_HEADERS+= wolfssl/wolfcrypt/port/tropicsquare/tropic01.h
 endif
 
 if BUILD_MAXQ10XX

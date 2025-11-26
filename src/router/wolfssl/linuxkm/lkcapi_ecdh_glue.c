@@ -7,7 +7,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -20,23 +20,46 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#if defined(LINUXKM_LKCAPI_REGISTER_ECDH)
+/* included by linuxkm/lkcapi_glue.c */
+#ifndef WC_SKIP_INCLUDED_C_FILES
 
 #ifndef LINUXKM_LKCAPI_REGISTER
     #error lkcapi_ecdh_glue.c included in non-LINUXKM_LKCAPI_REGISTER project.
 #endif
 
+#ifdef HAVE_ECC
+    #if (defined(LINUXKM_LKCAPI_REGISTER_ALL) || \
+         (defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && defined(CONFIG_CRYPTO_ECDH))) && \
+        !defined(LINUXKM_LKCAPI_DONT_REGISTER_ECDH) &&     \
+        !defined(LINUXKM_LKCAPI_REGISTER_ECDH)
+        #define LINUXKM_LKCAPI_REGISTER_ECDH
+    #endif
+#else
+    #undef LINUXKM_LKCAPI_REGISTER_ECDH
+#endif /* HAVE_ECC */
+
+#ifdef LINUXKM_LKCAPI_REGISTER_ECDH
+    #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0)
+        /* currently incompatible with kernel 5.12 or earlier. */
+        #undef LINUXKM_LKCAPI_REGISTER_ECDH
+
+        #if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && defined(CONFIG_CRYPTO_ECDH)
+            #error Config conflict: missing implementation forces off LINUXKM_LKCAPI_REGISTER_ECDH.
+        #endif
+    #endif
+#endif
+
+#if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && \
+    defined(CONFIG_CRYPTO_ECDH) && \
+    !defined(LINUXKM_LKCAPI_REGISTER_ECDH)
+    #error Config conflict: target kernel has CONFIG_CRYPTO_ECDH, but module is missing LINUXKM_LKCAPI_REGISTER_ECDH.
+#endif
+
+#if defined(LINUXKM_LKCAPI_REGISTER_ECDH)
+
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <crypto/ecdh.h>
-
-/* need misc.c for ForceZero(). */
-#ifdef NO_INLINE
-    #include <wolfssl/wolfcrypt/misc.h>
-#else
-    #define WOLFSSL_MISC_INCLUDED
-    #include <wolfcrypt/src/misc.c>
-#endif
 
 #define WOLFKM_ECDH_DRIVER       ("ecdh-wolfcrypt")
 
@@ -133,6 +156,61 @@ static struct kpp_alg ecdh_nist_p384 = {
     .exit                  = km_ecdh_exit,
 };
 
+/* The ecdh secret is passed in this format:
+ *    __________________________________________________________
+ *   | secret hdr          | key_size |  key                    |
+ *   | (struct kpp_secret) | (int)    | (curve_len, if present) |
+ *    ----------------------------------------------------------
+ *
+ *   - the key_size field is mandatory, but may be 0 value.
+ *   - the key is optional.
+ *
+ * If key_size is 0, then key pair should be generated.
+ * */
+#define ECDH_KPP_SECRET_MIN_SIZE (sizeof(struct kpp_secret) + sizeof(short))
+
+static int km_ecdh_decode_secret(const u8 * buf, unsigned int len,
+                                 struct ecdh * params)
+{
+    struct kpp_secret secret;
+    const u8 *        ptr = NULL;
+    size_t            expected_len = 0;
+
+    if (unlikely(!buf || len < ECDH_KPP_SECRET_MIN_SIZE || !params)) {
+        return -EINVAL;
+    }
+
+    /* the type of secret should be the first byte. */
+    ptr = buf;
+    memcpy(&secret, ptr, sizeof(secret));
+    ptr += sizeof(secret);
+    if (secret.type != CRYPTO_KPP_SECRET_TYPE_ECDH) {
+        return -EINVAL;
+    }
+
+    /* the key_size field will be present */
+    memcpy(&params->key_size, ptr, sizeof(params->key_size));
+    ptr += sizeof(params->key_size);
+
+    /* Calculate expected len. Verify we got expected data. */
+    expected_len = ECDH_KPP_SECRET_MIN_SIZE + params->key_size;
+
+    if (secret.len != expected_len) {
+        #ifdef WOLFKM_DEBUG_ECDH
+        pr_err("%s: km_ecdh_decode_secret: got %d, expected %zu",
+               WOLFKM_ECDH_DRIVER, secret.len, expected_len);
+        #endif /* WOLFKM_DEBUG_ECDH */
+        return -EINVAL;
+    }
+
+    /* Only set the key if it was provided.  */
+    if (params->key_size) {
+        params->key = (void *)ptr;
+    }
+
+    return 0;
+}
+
 /*
  * Set the secret. Kernel crypto expects secret is passed with
  * struct kpp_secret as header, followed by secret data as payload.
@@ -150,6 +228,7 @@ static int km_ecdh_set_secret(struct crypto_kpp *tfm, const void *buf,
     struct ecdh          params;
 
     ctx = kpp_tfm_ctx(tfm);
+    memset(&params, 0, sizeof(params));
 
     switch (ctx->curve_len) {
     #if defined(LINUXKM_ECC192)
@@ -166,8 +245,7 @@ static int km_ecdh_set_secret(struct crypto_kpp *tfm, const void *buf,
         return -EINVAL;
     }
 
-    /* use decode key helper so we observe the same format. */
-    if (crypto_ecdh_decode_key(buf, len, &params) < 0) {
+    if (km_ecdh_decode_secret(buf, len, &params) < 0) {
         #ifdef WOLFKM_DEBUG_ECDH
         pr_err("%s: ecdh_set_secret: decode secret failed: %d",
                WOLFKM_ECDH_DRIVER, params.key_size);
@@ -459,7 +537,6 @@ ecdh_gen_pub_end:
     #ifdef WOLFKM_DEBUG_ECDH
     pr_info("info: exiting km_ecdh_gen_pub: %d", err);
     #endif /* WOLFKM_DEBUG_ECDH */
-
     return err;
 }
 
@@ -642,7 +719,6 @@ static int linuxkm_test_ecdh_nist_p192(void)
                                        b_pub, expected_a_pub, sizeof(b_pub),
                                        secret, sizeof(secret),
                                        shared_secret, sizeof(shared_secret));
-
     return rc;
 }
 #endif /* LINUXKM_ECC192 */
@@ -702,7 +778,6 @@ static int linuxkm_test_ecdh_nist_p256(void)
                                        b_pub, expected_a_pub, sizeof(b_pub),
                                        secret, sizeof(secret),
                                        shared_secret, sizeof(shared_secret));
-
     return rc;
 }
 
@@ -774,7 +849,6 @@ static int linuxkm_test_ecdh_nist_p384(void)
                                        b_pub, expected_a_pub, sizeof(b_pub),
                                        secret, sizeof(secret),
                                        shared_secret, sizeof(shared_secret));
-
     return rc;
 }
 
@@ -787,7 +861,7 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
                                          const byte * shared_secret,
                                          word32 shared_s_len)
 {
-    int                  test_rc = -1;
+    int                  test_rc = WC_NO_ERR_TRACE(WC_FAILURE);
     struct crypto_kpp *  tfm = NULL;
     struct kpp_request * req = NULL;
     struct scatterlist   src, dst;
@@ -802,8 +876,23 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
      */
     tfm = crypto_alloc_kpp(driver, 0, 0);
     if (IS_ERR(tfm)) {
-        pr_err("error: allocating kpp algorithm %s failed: %ld\n",
-               driver, PTR_ERR(tfm));
+        #if defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_MANAGER) && \
+            !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+        if ((PTR_ERR(tfm) == -ENOENT) && fips_enabled) {
+            pr_info("info: skipping unsupported kpp algorithm %s: %ld\n",
+                    driver, PTR_ERR(tfm));
+            test_rc = NOT_COMPILED_IN;
+        }
+        else
+        #endif
+        {
+            pr_err("error: allocating kpp algorithm %s failed: %ld\n",
+                   driver, PTR_ERR(tfm));
+            if (PTR_ERR(tfm) == -ENOMEM)
+                test_rc = MEMORY_E;
+            else
+                test_rc = BAD_FUNC_ARG;
+        }
         tfm = NULL;
         goto test_ecdh_nist_end;
     }
@@ -812,6 +901,10 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
     if (IS_ERR(req)) {
         pr_err("error: allocating kpp request %s failed\n",
                driver);
+        if (PTR_ERR(req) == -ENOMEM)
+            test_rc = MEMORY_E;
+        else
+            test_rc = BAD_FUNC_ARG;
         req = NULL;
         goto test_ecdh_nist_end;
     }
@@ -819,6 +912,7 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
     err = crypto_kpp_set_secret(tfm, secret, secret_len);
     if (err) {
         pr_err("error: crypto_kpp_set_secret returned: %d\n", err);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
@@ -826,12 +920,14 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
     dst_len = crypto_kpp_maxsize(tfm);
     if (dst_len <= 0) {
         pr_err("error: crypto_kpp_maxsize returned: %d\n", dst_len);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
     dst_buf = malloc(dst_len);
     if (dst_buf == NULL) {
         pr_err("error: allocating out buf failed");
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
@@ -845,17 +941,20 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
     err = crypto_kpp_generate_public_key(req);
     if (err) {
         pr_err("error: crypto_kpp_generate_public_key returned: %d", err);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
     if (memcmp(expected_a_pub, sg_virt(req->dst), pub_len)) {
         pr_err("error: crypto_kpp_generate_public_key: wrong output");
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
     src_buf = malloc(src_len);
     if (src_buf == NULL) {
         pr_err("error: allocating in buf failed");
+        test_rc = MEMORY_E;
         goto test_ecdh_nist_end;
     }
 
@@ -870,11 +969,13 @@ static int linuxkm_test_ecdh_nist_driver(const char * driver,
     err = crypto_kpp_compute_shared_secret(req);
     if (err) {
         pr_err("error: crypto_kpp_compute_shared_secret returned: %d", err);
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
     if (memcmp(shared_secret, sg_virt(req->dst), shared_s_len)) {
         pr_err("error: shared secret does not match");
+        test_rc = BAD_FUNC_ARG;
         goto test_ecdh_nist_end;
     }
 
@@ -889,8 +990,9 @@ test_ecdh_nist_end:
     #ifdef WOLFKM_DEBUG_ECDH
     pr_info("info: %s: self test returned: %d\n", driver, test_rc);
     #endif /* WOLFKM_DEBUG_ECDH */
-
     return test_rc;
 }
 
 #endif /* LINUXKM_LKCAPI_REGISTER_ECDH */
+
+#endif /* !WC_SKIP_INCLUDED_C_FILES */

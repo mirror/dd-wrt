@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -452,8 +452,8 @@ static WC_INLINE void AddLength(wc_Sha256* sha256, word32 len)
  * @param [in]      data    Buffer of data to hash.
  * @param [in]      blocks  Number of blocks of data to hash.
  */
-static WC_INLINE void Sha256Transform(wc_Sha256* sha256, const byte* data,
-    word32 blocks)
+static WC_OMIT_FRAME_POINTER WC_INLINE void Sha256Transform(wc_Sha256* sha256,
+    const byte* data, word32 blocks)
 {
     word32* k = (word32*)K;
 
@@ -567,6 +567,7 @@ static WC_INLINE void Sha256Transform(wc_Sha256* sha256, const byte* data,
           "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10",
           "s11"
     );
+
 }
 
 #else
@@ -965,15 +966,24 @@ int wc_Sha256FinalRaw(wc_Sha256* sha256, byte* hash)
         ret = BAD_FUNC_ARG;
     }
     else {
-    #ifdef LITTLE_ENDIAN_ORDER
         word32 digest[WC_SHA256_DIGEST_SIZE / sizeof(word32)];
 
+    #ifndef WOLFSSL_RISCV_VECTOR_CRYPTO_ASM
         ByteReverseWords((word32*)digest, (word32*)sha256->digest,
             WC_SHA256_DIGEST_SIZE);
-        XMEMCPY(hash, digest, WC_SHA256_DIGEST_SIZE);
     #else
-        XMEMCPY(hash, sha256->digest, WC_SHA256_DIGEST_SIZE);
+        /* f, e, b, a, h, g, d, c */
+        digest[0] = ByteReverseWord32(sha256->digest[3]);
+        digest[1] = ByteReverseWord32(sha256->digest[2]);
+        digest[2] = ByteReverseWord32(sha256->digest[7]);
+        digest[3] = ByteReverseWord32(sha256->digest[6]);
+        digest[4] = ByteReverseWord32(sha256->digest[1]);
+        digest[5] = ByteReverseWord32(sha256->digest[0]);
+        digest[6] = ByteReverseWord32(sha256->digest[5]);
+        digest[7] = ByteReverseWord32(sha256->digest[4]);
     #endif
+
+        XMEMCPY(hash, digest, WC_SHA256_DIGEST_SIZE);
     }
 
     return ret;

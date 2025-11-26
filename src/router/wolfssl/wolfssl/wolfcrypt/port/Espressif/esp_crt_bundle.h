@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -90,6 +90,16 @@ extern "C" {
 #define WOLFSSL_X509_VERIFY_CALLBACK (void *, WOLFSSL_X509 *, int, uint32_t *)
 #include <wolfssl/ssl.h>
 
+#if defined(CONFIG_WOLFSSL_DEBUG_CERT_BUNDLE) || \
+    defined(       WOLFSSL_DEBUG_CERT_BUNDLE)
+    /* Default WOLFSSL_MAX_ERROR_SZ assigned in settings.h or user_settings.h */
+    extern char last_esp_crt_bundle_error[WOLFSSL_MAX_ERROR_SZ];
+    #define SHOW_WOLFSSL_BUNDLE_ERROR(THIS_ERR)              \
+    {                                                        \
+        wc_ErrorString(THIS_ERR, last_esp_crt_bundle_error); \
+        ESP_LOGE(TAG,"%s", last_esp_crt_bundle_error);       \
+    }
+#endif
 typedef struct wolfssl_ssl_config wolfssl_ssl_config;
 
 struct wolfssl_ssl_config

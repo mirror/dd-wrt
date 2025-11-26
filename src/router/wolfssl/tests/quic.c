@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -144,6 +144,9 @@ static int test_set_quic_method(void) {
 
     for (i = 0; valids[i].name != NULL; ++i) {
         ExpectNotNull(ctx = wolfSSL_CTX_new(valids[i].method()));
+        if (ctx == NULL) {
+            break;
+        }
         if (valids[i].is_server) {
             ExpectTrue(wolfSSL_CTX_use_certificate_file(ctx, svrCertFile,
                                                         WOLFSSL_FILETYPE_PEM));
@@ -152,6 +155,9 @@ static int test_set_quic_method(void) {
         }
         /* ctx does not have quic enabled, so will SSL* derived from it */
         ExpectNotNull(ssl = wolfSSL_new(ctx));
+        if (ssl == NULL) {
+            break;
+        }
         ExpectFalse(wolfSSL_is_quic(ssl));
         /* Enable quic on the SSL* */
         ExpectFalse(wolfSSL_set_quic_method(ssl, &null_method) == WOLFSSL_SUCCESS);
@@ -184,32 +190,54 @@ static int test_set_quic_method(void) {
         data_len = wolfSSL_quic_max_handshake_flight_len(ssl, wolfssl_encryption_application);
         ExpectTrue(data_len == 16*1024);
         wolfSSL_free(ssl);
+        ssl = NULL;
         /* Enabled quic on the ctx */
         ExpectTrue(wolfSSL_CTX_set_quic_method(ctx, &dummy_method) == WOLFSSL_SUCCESS);
         /* It will be enabled on the SSL* */
         ExpectNotNull(ssl = wolfSSL_new(ctx));
+        if (ssl == NULL) {
+            break;
+        }
         ExpectTrue(wolfSSL_is_quic(ssl));
         wolfSSL_free(ssl);
-
+        ssl = NULL;
         wolfSSL_CTX_free(ctx);
+        ctx = NULL;
     }
 
     for (i = 0; invalids[i].name != NULL; ++i) {
-
         ExpectNotNull(ctx = wolfSSL_CTX_new(invalids[i].method()));
+        if (ctx == NULL) {
+            break;
+        }
         ExpectTrue(wolfSSL_CTX_use_certificate_file(ctx, svrCertFile,
                                                     WOLFSSL_FILETYPE_PEM));
         ExpectTrue(wolfSSL_CTX_use_PrivateKey_file(ctx, svrKeyFile,
                                                    WOLFSSL_FILETYPE_PEM));
         ExpectFalse(wolfSSL_CTX_set_quic_method(ctx, &dummy_method) == WOLFSSL_SUCCESS);
         ExpectNotNull(ssl = wolfSSL_new(ctx));
+        if (ssl == NULL) {
+            break;
+        }
         ExpectFalse(wolfSSL_set_quic_method(ssl, &dummy_method) == WOLFSSL_SUCCESS);
         ExpectFalse(wolfSSL_is_quic(ssl));
         /* even though not quic, this is the only level we can return */
         ExpectTrue(wolfSSL_quic_read_level(ssl) == wolfssl_encryption_initial);
         ExpectTrue(wolfSSL_quic_write_level(ssl) == wolfssl_encryption_initial);
         wolfSSL_free(ssl);
+        ssl = NULL;
         wolfSSL_CTX_free(ctx);
+        ctx = NULL;
+    }
+
+    /* cleanup */
+    if (ssl != NULL) {
+        wolfSSL_free(ssl);
+        ssl = NULL;
+    }
+    if (ctx != NULL) {
+        wolfSSL_CTX_free(ctx);
+        ctx = NULL;
     }
 
     printf("    test_set_quic_method: %s\n", (EXPECT_SUCCESS()) ? pass : fail);
@@ -318,6 +346,7 @@ static int test_provide_quic_data(void) {
     len = fake_record(1, 100, lbuffer);
     ExpectTrue(provide_data(ssl, wolfssl_encryption_initial, lbuffer, len, 1));
     wolfSSL_free(ssl);
+    ssl = NULL;
 
     ExpectNotNull(ssl = wolfSSL_new(ctx));
     len = fake_record(1, 100, lbuffer);
@@ -492,7 +521,8 @@ static void QuicTestContext_init(QuicTestContext *tctx, WOLFSSL_CTX *ctx,
     AssertNotNull(tctx);
     memset(tctx, 0, sizeof(*tctx));
     tctx->name = name;
-    AssertNotNull((tctx->ssl = wolfSSL_new(ctx)));
+    tctx->ssl = wolfSSL_new(ctx);
+    AssertNotNull(tctx->ssl);
     tctx->verbose = verbose;
     wolfSSL_set_app_data(tctx->ssl, tctx);
     AssertTrue(wolfSSL_set_quic_method(tctx->ssl, &ctx_method) == WOLFSSL_SUCCESS);
@@ -521,7 +551,8 @@ static void QuicTestContext_init_fail_cb(QuicTestContext *tctx, WOLFSSL_CTX *ctx
     AssertNotNull(tctx);
     memset(tctx, 0, sizeof(*tctx));
     tctx->name = name;
-    AssertNotNull((tctx->ssl = wolfSSL_new(ctx)));
+    tctx->ssl = wolfSSL_new(ctx);
+    AssertNotNull(tctx->ssl);
     tctx->verbose = verbose;
     wolfSSL_set_app_data(tctx->ssl, tctx);
     AssertTrue(wolfSSL_set_quic_method(tctx->ssl, &ctx_method_fail) == WOLFSSL_SUCCESS);
@@ -717,7 +748,8 @@ static void ext_equals(const byte *data, size_t data_len, int ext_type,
     const byte *ext;
     word16 len16;
 
-    AssertNotNull(ext = ext_find(data, data_len, ext_type));
+    ext = ext_find(data, data_len, ext_type);
+    AssertNotNull(ext);
     ato16(&ext[2], &len16);
     AssertTrue(len16 == exp_len);
     AssertTrue(memcmp(ext + 4, exp_data, exp_len) == 0);
@@ -738,8 +770,10 @@ static void check_quic_client_hello(const byte *data, size_t data_len,
     idx = HANDSHAKE_HEADER_SZ;
     /* the client hello arrives alone */
     AssertIntEQ(rec_len, data_len);
-    AssertTrue(data[idx++] == SSLv3_MAJOR);
-    AssertTrue(data[idx++] == TLSv1_2_MINOR);
+    AssertTrue(data[idx] == SSLv3_MAJOR);
+    idx++;
+    AssertTrue(data[idx] == TLSv1_2_MINOR);
+    idx++;
     idx += 32; /* 32 bytes RANDOM */
     AssertIntEQ(data[idx], 0);  /* session id length MUST be 0, RFC9001 ch. 8.4 */
     idx += 1 + data[idx];
@@ -852,8 +886,10 @@ static void check_quic_server_hello(const byte *data, size_t data_len,
     check_handshake_record(data, data_len, &rec_type, &rec_len);
     AssertIntEQ(rec_type, server_hello);
     idx = HANDSHAKE_HEADER_SZ;
-    AssertTrue(data[idx++] == SSLv3_MAJOR);
-    AssertTrue(data[idx++] == TLSv1_2_MINOR);
+    AssertTrue(data[idx] == SSLv3_MAJOR);
+    idx++;
+    AssertTrue(data[idx] == TLSv1_2_MINOR);
+    idx++;
     idx += 32; /* 32 bytes RANDOM */
     /* AssertIntEQ(data[idx], 0);  session id of len 0 */
     idx += 1 + data[idx];
@@ -1474,10 +1510,19 @@ static int test_quic_key_share(int verbose) {
     /*If that is supported by the server, expect a smooth handshake.*/
     QuicTestContext_init(&tclient, ctx_c, "client", verbose);
     QuicTestContext_init(&tserver, ctx_s, "server", verbose);
+
+#ifdef HAVE_CURVE25519
     ExpectTrue(wolfSSL_set1_curves_list(tclient.ssl, "X25519:P-256")
                == WOLFSSL_SUCCESS);
     ExpectTrue(wolfSSL_set1_curves_list(tserver.ssl, "X25519")
                == WOLFSSL_SUCCESS);
+#else
+    ExpectTrue(wolfSSL_set1_curves_list(tclient.ssl, "P-256:P-384")
+               == WOLFSSL_SUCCESS);
+    ExpectTrue(wolfSSL_set1_curves_list(tserver.ssl, "P-256")
+               == WOLFSSL_SUCCESS);
+#endif
+
     QuicConversation_init(&conv, &tclient, &tserver);
     QuicConversation_do(&conv);
     ExpectStrEQ(conv.rec_log,
@@ -1490,10 +1535,19 @@ static int test_quic_key_share(int verbose) {
     /* If group is not supported by server, expect HelloRetry */
     QuicTestContext_init(&tclient, ctx_c, "client", verbose);
     QuicTestContext_init(&tserver, ctx_s, "server", verbose);
+
+#ifdef HAVE_CURVE25519
     ExpectTrue(wolfSSL_set1_curves_list(tclient.ssl, "X25519:P-256")
                == WOLFSSL_SUCCESS);
     ExpectTrue(wolfSSL_set1_curves_list(tserver.ssl, "P-256")
                == WOLFSSL_SUCCESS);
+#else
+    ExpectTrue(wolfSSL_set1_curves_list(tclient.ssl, "P-384:P-256")
+               == WOLFSSL_SUCCESS);
+    ExpectTrue(wolfSSL_set1_curves_list(tserver.ssl, "P-256")
+               == WOLFSSL_SUCCESS);
+#endif
+
     QuicConversation_init(&conv, &tclient, &tserver);
     QuicConversation_do(&conv);
     ExpectStrEQ(conv.rec_log,
@@ -1506,10 +1560,19 @@ static int test_quic_key_share(int verbose) {
     /* If no group overlap, expect failure */
     QuicTestContext_init(&tclient, ctx_c, "client", verbose);
     QuicTestContext_init(&tserver, ctx_s, "server", verbose);
+
+#ifdef HAVE_CURVE25519
     ExpectTrue(wolfSSL_set1_curves_list(tclient.ssl, "P-256")
                == WOLFSSL_SUCCESS);
     ExpectTrue(wolfSSL_set1_curves_list(tserver.ssl, "X25519")
                == WOLFSSL_SUCCESS);
+#else
+    ExpectTrue(wolfSSL_set1_curves_list(tclient.ssl, "P-256")
+               == WOLFSSL_SUCCESS);
+    ExpectTrue(wolfSSL_set1_curves_list(tserver.ssl, "P-384")
+               == WOLFSSL_SUCCESS);
+#endif
+
     QuicConversation_init(&conv, &tclient, &tserver);
     QuicConversation_fail(&conv);
     ExpectIntEQ(wolfSSL_get_error(tserver.ssl, 0),

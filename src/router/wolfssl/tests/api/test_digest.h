@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -510,6 +510,7 @@ do {                                                                           \
     byte data[WC_##upper##_BLOCK_SIZE];                                        \
                                                                                \
     XMEMSET(data, 0xa5, sizeof(data));                                         \
+    XMEMSET(&src, 0, sizeof(src));                                             \
                                                                                \
     ExpectIntEQ(wc_Init##name(&src, HEAP_HINT, INVALID_DEVID), 0);             \
     XMEMSET(&dst, 0, sizeof(dst));                                             \
@@ -557,6 +558,8 @@ do {                                                                           \
     byte data[WC_##upper##_BLOCK_SIZE];                                        \
                                                                                \
     XMEMSET(data, 0xa5, sizeof(data));                                         \
+    XMEMSET(&src, 0, sizeof(src));                                              \
+    XMEMSET(&dst, 0, sizeof(dst));                                              \
                                                                                \
     ExpectIntEQ(wc_Init##name(&src, HEAP_HINT, INVALID_DEVID), 0);             \
     XMEMSET(&dst, 0, sizeof(dst));                                             \
@@ -786,6 +789,7 @@ do {                                                                           \
     type dgst_copy;                                                            \
     word32 flags;                                                              \
                                                                                \
+    XMEMSET(&dgst, 0, sizeof(dgst));                                           \
     XMEMSET(&dgst_copy, 0, sizeof(dgst_copy));                                 \
     ExpectIntEQ(wc_Init##inst(&dgst, HEAP_HINT, INVALID_DEVID), 0);            \
                                                                                \

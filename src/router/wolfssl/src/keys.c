@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -1218,8 +1218,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
         specs->bulk_cipher_algorithm = wolfssl_cipher_null;
         specs->cipher_type           = aead;
         specs->mac_algorithm         = sha256_mac;
-        specs->kea                   = 0;
-        specs->sig_algo              = 0;
+        specs->kea                   = any_kea;
+        specs->sig_algo              = any_sa_algo;
         specs->hash_size             = WC_SHA256_DIGEST_SIZE;
         specs->pad_size              = PAD_SHA;
         specs->static_ecdh           = 0;
@@ -1236,8 +1236,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
         specs->bulk_cipher_algorithm = wolfssl_cipher_null;
         specs->cipher_type           = aead;
         specs->mac_algorithm         = sha384_mac;
-        specs->kea                   = 0;
-        specs->sig_algo              = 0;
+        specs->kea                   = any_kea;
+        specs->sig_algo              = any_sa_algo;
         specs->hash_size             = WC_SHA384_DIGEST_SIZE;
         specs->pad_size              = PAD_SHA;
         specs->static_ecdh           = 0;
@@ -1266,8 +1266,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
             specs->bulk_cipher_algorithm = wolfssl_aes_gcm;
             specs->cipher_type           = aead;
             specs->mac_algorithm         = sha256_mac;
-            specs->kea                   = 0;
-            specs->sig_algo              = 0;
+            specs->kea                   = any_kea;
+            specs->sig_algo              = any_sa_algo;
             specs->hash_size             = WC_SHA256_DIGEST_SIZE;
             specs->pad_size              = PAD_SHA;
             specs->static_ecdh           = 0;
@@ -1284,8 +1284,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
             specs->bulk_cipher_algorithm = wolfssl_aes_gcm;
             specs->cipher_type           = aead;
             specs->mac_algorithm         = sha384_mac;
-            specs->kea                   = 0;
-            specs->sig_algo              = 0;
+            specs->kea                   = any_kea;
+            specs->sig_algo              = any_sa_algo;
             specs->hash_size             = WC_SHA384_DIGEST_SIZE;
             specs->pad_size              = PAD_SHA;
             specs->static_ecdh           = 0;
@@ -1302,8 +1302,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
             specs->bulk_cipher_algorithm = wolfssl_chacha;
             specs->cipher_type           = aead;
             specs->mac_algorithm         = sha256_mac;
-            specs->kea                   = 0;
-            specs->sig_algo              = 0;
+            specs->kea                   = any_kea;
+            specs->sig_algo              = any_sa_algo;
             specs->hash_size             = WC_SHA256_DIGEST_SIZE;
             specs->pad_size              = PAD_SHA;
             specs->static_ecdh           = 0;
@@ -1322,8 +1322,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
             specs->bulk_cipher_algorithm = wolfssl_aes_ccm;
             specs->cipher_type           = aead;
             specs->mac_algorithm         = sha256_mac;
-            specs->kea                   = 0;
-            specs->sig_algo              = 0;
+            specs->kea                   = any_kea;
+            specs->sig_algo              = any_sa_algo;
             specs->hash_size             = WC_SHA256_DIGEST_SIZE;
             specs->pad_size              = PAD_SHA;
             specs->static_ecdh           = 0;
@@ -1340,8 +1340,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
             specs->bulk_cipher_algorithm = wolfssl_aes_ccm;
             specs->cipher_type           = aead;
             specs->mac_algorithm         = sha256_mac;
-            specs->kea                   = 0;
-            specs->sig_algo              = 0;
+            specs->kea                   = any_kea;
+            specs->sig_algo              = any_sa_algo;
             specs->hash_size             = WC_SHA256_DIGEST_SIZE;
             specs->pad_size              = PAD_SHA;
             specs->static_ecdh           = 0;
@@ -1466,8 +1466,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
         specs->bulk_cipher_algorithm = wolfssl_sm4_gcm;
         specs->cipher_type           = aead;
         specs->mac_algorithm         = sm3_mac;
-        specs->kea                   = 0;
-        specs->sig_algo              = 0;
+        specs->kea                   = any_kea;
+        specs->sig_algo              = any_sa_algo;
         specs->hash_size             = WC_SM3_DIGEST_SIZE;
         specs->pad_size              = PAD_SHA;
         specs->static_ecdh           = 0;
@@ -1484,8 +1484,8 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
         specs->bulk_cipher_algorithm = wolfssl_sm4_ccm;
         specs->cipher_type           = aead;
         specs->mac_algorithm         = sm3_mac;
-        specs->kea                   = 0;
-        specs->sig_algo              = 0;
+        specs->kea                   = any_kea;
+        specs->sig_algo              = any_sa_algo;
         specs->hash_size             = WC_SM3_DIGEST_SIZE;
         specs->pad_size              = PAD_SHA;
         specs->static_ecdh           = 0;
@@ -3554,6 +3554,13 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
     ret = PROTOCOLCB_UNAVAILABLE;
     if (ssl->ctx->EncryptKeysCb) {
         void* ctx = wolfSSL_GetEncryptKeysCtx(ssl);
+        #if defined(WOLFSSL_RENESAS_FSPSM_TLS)
+            FSPSM_ST* cbInfo = (FSPSM_ST*)ctx;
+            cbInfo->internal->side = side;
+        #elif defined(WOLFSSL_RENESAS_TSIP_TLS)
+            TsipUserCtx* cbInfo = (TsipUserCtx*)ctx;
+            cbInfo->internal->key_side = side;
+        #endif
         ret = ssl->ctx->EncryptKeysCb(ssl, ctx);
     }
     if (!ssl->ctx->EncryptKeysCb ||
@@ -3927,14 +3934,12 @@ int DeriveKeys(WOLFSSL* ssl)
             ret = StoreKeys(ssl, keyData, PROVISION_CLIENT_SERVER);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(shaOutput, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(md5Input,  NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(shaInput,  NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(keyData,   NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(md5,       NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(sha,       NULL, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+    WC_FREE_VAR_EX(shaOutput, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(md5Input, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(shaInput, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(keyData, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(md5, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(sha, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 
     return ret;
 }
@@ -4077,13 +4082,11 @@ static int MakeSslMasterSecret(WOLFSSL* ssl)
             ret = DeriveKeys(ssl);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(shaOutput, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(md5Input,  NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(shaInput,  NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(md5,       NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(sha,       NULL, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+    WC_FREE_VAR_EX(shaOutput, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(md5Input, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(shaInput, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(md5, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(sha, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 
     if (ret == 0)
         ret = CleanPreMaster(ssl);

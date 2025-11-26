@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -20,6 +20,10 @@
  */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
+
+#if defined(WC_SIPHASH_NO_ASM) && !defined(WOLFSSL_NO_ASM)
+    #define WOLFSSL_NO_ASM
+#endif
 
 #include <wolfssl/wolfcrypt/siphash.h>
 

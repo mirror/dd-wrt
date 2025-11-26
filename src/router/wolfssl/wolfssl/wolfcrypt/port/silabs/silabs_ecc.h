@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -33,7 +33,6 @@
 #include <sl_se_manager_key_derivation.h>
 #include <sl_se_manager_signature.h>
 
-typedef enum ecc_curve_id ecc_curve_id;
 typedef struct ecc_key ecc_key;
 
 int silabs_ecc_sign_hash (const byte* in, word32 inlen,

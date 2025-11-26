@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -214,9 +214,9 @@ int test_wc_HashInit(void)
 
     for (i = 0; i < notSupportedHashLen; i++) {
         /* check for null ptr */
-        ExpectIntEQ(wc_HashInit(NULL, supportedHash[i]),
+        ExpectIntEQ(wc_HashInit(NULL, notSupportedHash[i]),
             WC_NO_ERR_TRACE(BAD_FUNC_ARG));
-        ExpectIntEQ(wc_HashInit_ex(NULL, supportedHash[i], HEAP_HINT,
+        ExpectIntEQ(wc_HashInit_ex(NULL, notSupportedHash[i], HEAP_HINT,
             INVALID_DEVID), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
 
         ExpectIntEQ(wc_HashInit(&hash, notSupportedHash[i]),
@@ -653,10 +653,18 @@ int test_wc_Hash_Algs(void)
 #endif
 #endif /* WOLFSSL_SHA512 */
 #ifdef WOLFSSL_SHA3
+    #ifndef WOLFSSL_NOSHA3_224
     DIGEST_COUNT_HASH_TEST(Sha3_224, SHA3_224);
+    #endif
+    #ifndef WOLFSSL_NOSHA3_256
     DIGEST_COUNT_HASH_TEST(Sha3_256, SHA3_256);
+    #endif
+    #ifndef WOLFSSL_NOSHA3_384
     DIGEST_COUNT_HASH_TEST(Sha3_384, SHA3_384);
+    #endif
+    #ifndef WOLFSSL_NOSHA3_512
     DIGEST_COUNT_HASH_TEST(Sha3_512, SHA3_512);
+    #endif
 #endif
 #ifdef WOLFSSL_SM3
     DIGEST_HASH_TEST(Sm3, SM3);

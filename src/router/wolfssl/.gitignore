@@ -3,7 +3,6 @@ ctaocrypt/src/src/
 *.lo
 *.la
 *.o
-*.patch
 *.deps
 *.d
 *.libs
@@ -34,7 +33,7 @@ aclocal.m4
 aminclude.am
 lt*.m4
 Makefile.in
-Makefile
+/Makefile
 depcomp
 missing
 libtool
@@ -246,7 +245,16 @@ linuxkm/libwolfssl.mod.c
 linuxkm/libwolfssl.lds
 linuxkm/module_exports.c
 linuxkm/linuxkm/get_thread_size
+linuxkm/linuxkm
+linuxkm/src
+linuxkm/patches/src
 *.nds
+bsdkm/export_syms
+bsdkm/i386
+bsdkm/libwolfssl.ko
+bsdkm/machine
+bsdkm/opt_global.h
+bsdkm/x86
 
 # autotools generated
 scripts/unit.test
@@ -447,6 +455,7 @@ MagicCrypto
 # debian packaging
 debian/changelog
 debian/control
+debian/rules
 *.deb
 
 # Ada/Alire files
@@ -454,6 +463,9 @@ wrapper/Ada/alire/
 wrapper/Ada/config/
 wrapper/Ada/lib/
 wrapper/Ada/obj/
+
+# Rust wrapper files
+/wrapper/rust/*/target/
 
 # PlatformIO
 /**/.pio

@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -1048,11 +1048,7 @@ unsigned char* wolfSSL_SHA1(const unsigned char* data, size_t len,
 {
     /* Buffer to use when hash is NULL. */
     static byte dgst[WC_SHA_DIGEST_SIZE];
-#ifdef WOLFSSL_SMALL_STACK
-    wc_Sha* sha;
-#else
-    wc_Sha sha[1];
-#endif
+    WC_DECLARE_VAR(sha, wc_Sha, 1, 0);
     int ret = 0;
 
     WOLFSSL_ENTER("wolfSSL_SHA1");
@@ -1064,13 +1060,9 @@ unsigned char* wolfSSL_SHA1(const unsigned char* data, size_t len,
         hash = dgst;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
     /* Allocate dynamic memory for a wolfSSL SHA object. */
-    sha = (wc_Sha*)XMALLOC(sizeof(wc_Sha), NULL, DYNAMIC_TYPE_DIGEST);
-    if (sha == NULL) {
-        ret = MEMORY_E;
-    }
-#endif
+    WC_ALLOC_VAR_EX(sha, wc_Sha, 1, NULL, DYNAMIC_TYPE_DIGEST,
+        ret=MEMORY_E);
 
     if (ret == 0) {
         /* Initialize wolfCrypt SHA object. */
@@ -1100,10 +1092,7 @@ unsigned char* wolfSSL_SHA1(const unsigned char* data, size_t len,
         wc_ShaFree(sha);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    /* Free dynamic memory of a wolfSSL SHA object. */
-    XFREE(sha, NULL, DYNAMIC_TYPE_DIGEST);
-#endif
+    WC_FREE_VAR_EX(sha, NULL, DYNAMIC_TYPE_DIGEST);
     return hash;
 }
 #endif /* ! NO_SHA */
@@ -1126,11 +1115,7 @@ unsigned char* wolfSSL_SHA224(const unsigned char* data, size_t len,
 {
     /* Buffer to use when hash is NULL. */
     static byte dgst[WC_SHA224_DIGEST_SIZE];
-#ifdef WOLFSSL_SMALL_STACK
-    wc_Sha224* sha224;
-#else
-    wc_Sha224 sha224[1];
-#endif
+    WC_DECLARE_VAR(sha224, wc_Sha224, 1, 0);
     int ret = 0;
 
     WOLFSSL_ENTER("wolfSSL_SHA224");
@@ -1142,13 +1127,9 @@ unsigned char* wolfSSL_SHA224(const unsigned char* data, size_t len,
         hash = dgst;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
     /* Allocate dynamic memory for a wolfSSL SHA-224 object. */
-    sha224 = (wc_Sha224*)XMALLOC(sizeof(wc_Sha224), NULL, DYNAMIC_TYPE_DIGEST);
-    if (sha224 == NULL) {
-        ret = MEMORY_E;
-    }
-#endif
+    WC_ALLOC_VAR_EX(sha224, wc_Sha224, 1, NULL, DYNAMIC_TYPE_DIGEST,
+        ret=MEMORY_E);
 
     if (ret == 0) {
         /* Initialize wolfCrypt SHA224 object. */
@@ -1178,10 +1159,7 @@ unsigned char* wolfSSL_SHA224(const unsigned char* data, size_t len,
         wc_Sha224Free(sha224);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    /* Free dynamic memory of a wolfSSL SHA-224 object. */
-    XFREE(sha224, NULL, DYNAMIC_TYPE_DIGEST);
-#endif
+    WC_FREE_VAR_EX(sha224, NULL, DYNAMIC_TYPE_DIGEST);
     return hash;
 }
 #endif
@@ -1204,11 +1182,7 @@ unsigned char* wolfSSL_SHA256(const unsigned char* data, size_t len,
 {
     /* Buffer to use when hash is NULL. */
     static byte dgst[WC_SHA256_DIGEST_SIZE];
-#ifdef WOLFSSL_SMALL_STACK
-    wc_Sha256* sha256;
-#else
-    wc_Sha256 sha256[1];
-#endif
+    WC_DECLARE_VAR(sha256, wc_Sha256, 1, 0);
     int ret = 0;
 
     WOLFSSL_ENTER("wolfSSL_SHA256");
@@ -1220,13 +1194,9 @@ unsigned char* wolfSSL_SHA256(const unsigned char* data, size_t len,
         hash = dgst;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
     /* Allocate dynamic memory for a wolfSSL SHA-256 object. */
-    sha256 = (wc_Sha256*)XMALLOC(sizeof(wc_Sha256), NULL, DYNAMIC_TYPE_DIGEST);
-    if (sha256 == NULL) {
-        ret = MEMORY_E;
-    }
-#endif
+    WC_ALLOC_VAR_EX(sha256, wc_Sha256, 1, NULL, DYNAMIC_TYPE_DIGEST,
+        ret=MEMORY_E);
 
     if (ret == 0) {
         /* Initialize wolfCrypt SHA256 object. */
@@ -1256,10 +1226,7 @@ unsigned char* wolfSSL_SHA256(const unsigned char* data, size_t len,
         wc_Sha256Free(sha256);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    /* Free dynamic memory of a wolfSSL SHA object. */
-    XFREE(sha256, NULL, DYNAMIC_TYPE_DIGEST);
-#endif
+    WC_FREE_VAR_EX(sha256, NULL, DYNAMIC_TYPE_DIGEST);
     return hash;
 }
 #endif /* ! NO_SHA256 */
@@ -1282,11 +1249,7 @@ unsigned char* wolfSSL_SHA384(const unsigned char* data, size_t len,
 {
     /* Buffer to use when hash is NULL. */
     static byte dgst[WC_SHA384_DIGEST_SIZE];
-#ifdef WOLFSSL_SMALL_STACK
-    wc_Sha384* sha384;
-#else
-    wc_Sha384 sha384[1];
-#endif
+    WC_DECLARE_VAR(sha384, wc_Sha384, 1, 0);
     int ret = 0;
 
     WOLFSSL_ENTER("wolfSSL_SHA384");
@@ -1298,13 +1261,9 @@ unsigned char* wolfSSL_SHA384(const unsigned char* data, size_t len,
         hash = dgst;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
     /* Allocate dynamic memory for a wolfSSL SHA-384 object. */
-    sha384 = (wc_Sha384*)XMALLOC(sizeof(wc_Sha384), NULL, DYNAMIC_TYPE_DIGEST);
-    if (sha384 == NULL) {
-        ret = MEMORY_E;
-    }
-#endif
+    WC_ALLOC_VAR_EX(sha384, wc_Sha384, 1, NULL, DYNAMIC_TYPE_DIGEST,
+        ret=MEMORY_E);
 
     if (ret == 0) {
         /* Initialize wolfCrypt SHA384 object. */
@@ -1334,10 +1293,7 @@ unsigned char* wolfSSL_SHA384(const unsigned char* data, size_t len,
         wc_Sha384Free(sha384);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    /* Free dynamic memory of a wolfSSL SHA-384 object. */
-    XFREE(sha384, NULL, DYNAMIC_TYPE_DIGEST);
-#endif
+    WC_FREE_VAR_EX(sha384, NULL, DYNAMIC_TYPE_DIGEST);
     return hash;
 }
 #endif /* WOLFSSL_SHA384  */
@@ -1360,11 +1316,7 @@ unsigned char* wolfSSL_SHA512(const unsigned char* data, size_t len,
 {
     /* Buffer to use when hash is NULL. */
     static byte dgst[WC_SHA512_DIGEST_SIZE];
-#ifdef WOLFSSL_SMALL_STACK
-    wc_Sha512* sha512;
-#else
-    wc_Sha512 sha512[1];
-#endif
+    WC_DECLARE_VAR(sha512, wc_Sha512, 1, 0);
     int ret = 0;
 
     WOLFSSL_ENTER("wolfSSL_SHA512");
@@ -1376,13 +1328,9 @@ unsigned char* wolfSSL_SHA512(const unsigned char* data, size_t len,
         hash = dgst;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
     /* Allocate dynamic memory for a wolfSSL SHA-512 object. */
-    sha512 = (wc_Sha512*)XMALLOC(sizeof(wc_Sha512), NULL, DYNAMIC_TYPE_DIGEST);
-    if (sha512 == NULL) {
-        ret = MEMORY_E;
-    }
-#endif
+    WC_ALLOC_VAR_EX(sha512, wc_Sha512, 1, NULL, DYNAMIC_TYPE_DIGEST,
+        ret=MEMORY_E);
 
     if (ret == 0) {
         /* Initialize wolfCrypt SHA512 object. */
@@ -1412,10 +1360,7 @@ unsigned char* wolfSSL_SHA512(const unsigned char* data, size_t len,
         wc_Sha512Free(sha512);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    /* Free dynamic memory of a wolfSSL SHA-512 object. */
-    XFREE(sha512, NULL, DYNAMIC_TYPE_DIGEST);
-#endif
+    WC_FREE_VAR_EX(sha512, NULL, DYNAMIC_TYPE_DIGEST);
     return hash;
 }
 #endif /* WOLFSSL_SHA512 */
@@ -1472,59 +1417,153 @@ int wolfSSL_HmacCopy(Hmac* dst, Hmac* src)
     #ifndef NO_MD5
         case WC_MD5:
             rc = wc_Md5Copy(&src->hash.md5, &dst->hash.md5);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Md5Copy(&src->i_hash.md5, &dst->i_hash.md5);
+            }
+            if (rc == 0) {
+                rc = wc_Md5Copy(&src->o_hash.md5, &dst->o_hash.md5);
+            }
+        #endif
             break;
     #endif /* !NO_MD5 */
 
     #ifndef NO_SHA
         case WC_SHA:
             rc = wc_ShaCopy(&src->hash.sha, &dst->hash.sha);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_ShaCopy(&src->i_hash.sha, &dst->i_hash.sha);
+            }
+            if (rc == 0) {
+                rc = wc_ShaCopy(&src->o_hash.sha, &dst->o_hash.sha);
+            }
+        #endif
             break;
     #endif /* !NO_SHA */
 
     #ifdef WOLFSSL_SHA224
         case WC_SHA224:
             rc = wc_Sha224Copy(&src->hash.sha224, &dst->hash.sha224);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha224Copy(&src->i_hash.sha224, &dst->i_hash.sha224);
+            }
+            if (rc == 0) {
+                rc = wc_Sha224Copy(&src->o_hash.sha224, &dst->o_hash.sha224);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_SHA224 */
 
     #ifndef NO_SHA256
         case WC_SHA256:
             rc = wc_Sha256Copy(&src->hash.sha256, &dst->hash.sha256);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha256Copy(&src->i_hash.sha256, &dst->i_hash.sha256);
+            }
+            if (rc == 0) {
+                rc = wc_Sha256Copy(&src->o_hash.sha256, &dst->o_hash.sha256);
+            }
+        #endif
             break;
     #endif /* !NO_SHA256 */
 
     #ifdef WOLFSSL_SHA384
         case WC_SHA384:
             rc = wc_Sha384Copy(&src->hash.sha384, &dst->hash.sha384);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha384Copy(&src->i_hash.sha384, &dst->i_hash.sha384);
+            }
+            if (rc == 0) {
+                rc = wc_Sha384Copy(&src->o_hash.sha384, &dst->o_hash.sha384);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_SHA384 */
     #ifdef WOLFSSL_SHA512
         case WC_SHA512:
             rc = wc_Sha512Copy(&src->hash.sha512, &dst->hash.sha512);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha512Copy(&src->i_hash.sha512, &dst->i_hash.sha512);
+            }
+            if (rc == 0) {
+                rc = wc_Sha512Copy(&src->o_hash.sha512, &dst->o_hash.sha512);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_SHA512 */
 #ifdef WOLFSSL_SHA3
     #ifndef WOLFSSL_NOSHA3_224
         case WC_SHA3_224:
             rc = wc_Sha3_224_Copy(&src->hash.sha3, &dst->hash.sha3);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha3_224_Copy(&src->i_hash.sha3, &dst->i_hash.sha3);
+            }
+            if (rc == 0) {
+                rc = wc_Sha3_224_Copy(&src->o_hash.sha3, &dst->o_hash.sha3);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_NO_SHA3_224 */
     #ifndef WOLFSSL_NOSHA3_256
         case WC_SHA3_256:
             rc = wc_Sha3_256_Copy(&src->hash.sha3, &dst->hash.sha3);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha3_256_Copy(&src->i_hash.sha3, &dst->i_hash.sha3);
+            }
+            if (rc == 0) {
+                rc = wc_Sha3_256_Copy(&src->o_hash.sha3, &dst->o_hash.sha3);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_NO_SHA3_256 */
     #ifndef WOLFSSL_NOSHA3_384
         case WC_SHA3_384:
             rc = wc_Sha3_384_Copy(&src->hash.sha3, &dst->hash.sha3);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha3_384_Copy(&src->i_hash.sha3, &dst->i_hash.sha3);
+            }
+            if (rc == 0) {
+                rc = wc_Sha3_384_Copy(&src->o_hash.sha3, &dst->o_hash.sha3);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_NO_SHA3_384 */
     #ifndef WOLFSSL_NOSHA3_512
         case WC_SHA3_512:
             rc = wc_Sha3_512_Copy(&src->hash.sha3, &dst->hash.sha3);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sha3_512_Copy(&src->i_hash.sha3, &dst->i_hash.sha3);
+            }
+            if (rc == 0) {
+                rc = wc_Sha3_512_Copy(&src->o_hash.sha3, &dst->o_hash.sha3);
+            }
+        #endif
             break;
     #endif /* WOLFSSL_NO_SHA3_512 */
 #endif /* WOLFSSL_SHA3 */
+
+    #ifdef WOLFSSL_SM3
+        case WC_SM3:
+            rc = wc_Sm3Copy(&src->hash.sm3, &dst->hash.sm3);
+        #ifdef WOLFSSL_HMAC_COPY_HASH
+            if (rc == 0) {
+                rc = wc_Sm3Copy(&src->i_hash.sm3, &dst->i_hash.sm3);
+            }
+            if (rc == 0) {
+                rc = wc_Sm3Copy(&src->o_hash.sm3, &dst->o_hash.sm3);
+            }
+        #endif
+            break;
+    #endif /* WOLFSSL_SM3 */
 
         default:
             /* Digest algorithm not supported. */
@@ -1823,12 +1862,23 @@ int wolfSSL_HMAC_Init(WOLFSSL_HMAC_CTX* ctx, const void* key, int keylen,
             WC_HMAC_BLOCK_SIZE);
         XMEMCPY((byte *)&ctx->hmac.opad, (byte *)&ctx->save_opad,
             WC_HMAC_BLOCK_SIZE);
-        /* Initialize the wolfSSL HMAC object. */
-        rc = _HMAC_Init(&ctx->hmac, ctx->hmac.macType, heap);
+    #ifdef WOLFSSL_HMAC_COPY_HASH
+        rc = _HmacInitIOHashes(&ctx->hmac);
         if (rc != 0) {
-            WOLFSSL_MSG("hmac init error");
+            WOLFSSL_MSG("hmac init i_hash/o_hash error");
             WOLFSSL_ERROR(rc);
             ret = 0;
+        }
+        if (ret == 1)
+    #endif
+        {
+            /* Initialize the wolfSSL HMAC object. */
+            rc = _HMAC_Init(&ctx->hmac, ctx->hmac.macType, heap);
+            if (rc != 0) {
+                WOLFSSL_MSG("hmac init error");
+                WOLFSSL_ERROR(rc);
+                ret = 0;
+            }
         }
     }
 
@@ -1957,11 +2007,7 @@ unsigned char* wolfSSL_HMAC(const WOLFSSL_EVP_MD* evp_md, const void* key,
     int rc = 0;
     int type = 0;
     int hmacLen = 0;
-#ifdef WOLFSSL_SMALL_STACK
-    Hmac* hmac = NULL;
-#else
-    Hmac  hmac[1];
-#endif
+    WC_DECLARE_VAR(hmac, Hmac, 1, 0);
     void* heap = NULL;
 
     /* Validate parameters. */
@@ -2011,10 +2057,7 @@ unsigned char* wolfSSL_HMAC(const WOLFSSL_EVP_MD* evp_md, const void* key,
         wc_HmacFree(hmac);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    /* Free dynamic memory of a wolfSSL HMAC object. */
-    XFREE(hmac, heap, DYNAMIC_TYPE_HMAC);
-#endif
+    WC_FREE_VAR_EX(hmac, heap, DYNAMIC_TYPE_HMAC);
     return ret;
 }
 
@@ -2149,8 +2192,17 @@ int wolfSSL_CMAC_Init(WOLFSSL_CMAC_CTX* ctx, const void *key, size_t keySz,
         ret = 0;
     }
     /* Only AES-CBC ciphers are supported. */
-    if ((ret == 1) && (cipher != EVP_AES_128_CBC) &&
-            (cipher != EVP_AES_192_CBC) && (cipher != EVP_AES_256_CBC)) {
+    if ((ret == 1)
+    #ifdef WOLFSSL_AES_128
+        && (cipher != EVP_AES_128_CBC)
+    #endif
+    #ifdef WOLFSSL_AES_192
+        && (cipher != EVP_AES_192_CBC)
+    #endif
+    #ifdef WOLFSSL_AES_256
+        && (cipher != EVP_AES_256_CBC)
+    #endif
+    ) {
         WOLFSSL_MSG("wolfSSL_CMAC_Init: requested cipher is unsupported");
         ret = 0;
     }
@@ -2601,11 +2653,7 @@ void wolfSSL_DES_cbc_encrypt(const unsigned char* input, unsigned char* output,
     long length, WOLFSSL_DES_key_schedule* schedule, WOLFSSL_DES_cblock* ivec,
     int enc)
 {
-#ifdef WOLFSSL_SMALL_STACK
-    Des* des = NULL;
-#else
-    Des  des[1];
-#endif
+    WC_DECLARE_VAR(des, Des, 1, 0);
     byte lastBlock[DES_BLOCK_SIZE];
 
     WOLFSSL_ENTER("wolfSSL_DES_cbc_encrypt");
@@ -2653,9 +2701,7 @@ void wolfSSL_DES_cbc_encrypt(const unsigned char* input, unsigned char* output,
         }
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(des, NULL, DYNAMIC_TYPE_CIPHER);
-#endif
+    WC_FREE_VAR_EX(des, NULL, DYNAMIC_TYPE_CIPHER);
 }
 
 /* Encrypt/decrypt data with DES-CBC. Sets the IV for following operation.
@@ -2720,11 +2766,7 @@ void wolfSSL_DES_ede3_cbc_encrypt(const unsigned char* input,
     WOLFSSL_DES_key_schedule* ks2, WOLFSSL_DES_key_schedule* ks3,
     WOLFSSL_DES_cblock* ivec, int enc)
 {
-#ifdef WOLFSSL_SMALL_STACK
-    Des3* des3;
-#else
-    Des3  des3[1];
-#endif
+    WC_DECLARE_VAR(des3, Des3, 1, 0);
 
     WOLFSSL_ENTER("wolfSSL_DES_ede3_cbc_encrypt");
 
@@ -2829,9 +2871,7 @@ void wolfSSL_DES_ede3_cbc_encrypt(const unsigned char* input,
         wc_Des3Free(des3);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(des3, NULL, DYNAMIC_TYPE_CIPHER);
-#endif
+    WC_FREE_VAR_EX(des3, NULL, DYNAMIC_TYPE_CIPHER);
 }
 
 #ifdef WOLFSSL_DES_ECB
@@ -2845,11 +2885,7 @@ void wolfSSL_DES_ede3_cbc_encrypt(const unsigned char* input,
 void wolfSSL_DES_ecb_encrypt(WOLFSSL_DES_cblock* in, WOLFSSL_DES_cblock* out,
     WOLFSSL_DES_key_schedule* key, int enc)
 {
-#ifdef WOLFSSL_SMALL_STACK
-    Des* des = NULL;
-#else
-    Des  des[1];
-#endif
+    WC_DECLARE_VAR(des, Des, 1, 0);
 
     WOLFSSL_ENTER("wolfSSL_DES_ecb_encrypt");
 
@@ -2887,9 +2923,7 @@ void wolfSSL_DES_ecb_encrypt(WOLFSSL_DES_cblock* in, WOLFSSL_DES_cblock* out,
         }
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(des, NULL, DYNAMIC_TYPE_CIPHER);
-#endif
+    WC_FREE_VAR_EX(des, NULL, DYNAMIC_TYPE_CIPHER);
 }
 #endif
 #endif /* NO_DES3 */
@@ -3002,7 +3036,7 @@ void wolfSSL_AES_encrypt(const unsigned char* input, unsigned char* output,
     else
 #if !defined(HAVE_SELFTEST) && \
     (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)) \
-    || defined(WOLFSSL_LINUXKM))
+    || defined(WOLFSSL_KERNEL_MODE))
     /* Encrypt a block with wolfCrypt AES. */
     if (wc_AesEncryptDirect((Aes*)key, output, input) != 0) {
         WOLFSSL_MSG("wc_AesEncryptDirect failed");

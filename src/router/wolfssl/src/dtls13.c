@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -255,7 +255,7 @@ static int Dtls13GetRnMask(WOLFSSL* ssl, const byte* ciphertext, byte* mask,
             return BAD_STATE_E;
 #if !defined(HAVE_SELFTEST) && \
     (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)) \
-    || defined(WOLFSSL_LINUXKM))
+    || defined(WOLFSSL_KERNEL_MODE))
         return wc_AesEncryptDirect(c->aes, mask, ciphertext);
 #else
         wc_AesEncryptDirect(c->aes, mask, ciphertext);
@@ -905,7 +905,7 @@ static int Dtls13RtxMsgRecvd(WOLFSSL* ssl, enum HandShakeType hs,
         /* the other peer may have retransmitted because an ACK for a flight
            that needs explicit ACK was lost.*/
         if (ssl->dtls13Rtx.seenRecords != NULL)
-            ssl->dtls13Rtx.sendAcks = (byte)ssl->options.dtls13SendMoreAcks;
+            ssl->dtls13Rtx.sendAcks = 1;
     }
 
     if (ssl->keys.dtls_peer_handshake_number ==
@@ -1898,11 +1898,11 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
 
     ret = DoTls13HandShakeMsgType(ssl, input, &idx, handshakeType,
         messageLength, size);
+    *processedSize = idx;
     if (ret != 0)
         return ret;
 
     Dtls13MsgWasProcessed(ssl, (enum HandShakeType)handshakeType);
-    *processedSize = idx;
 
     /* check if we have buffered some message */
     if (Dtls13NextMessageComplete(ssl))
@@ -2618,19 +2618,16 @@ static int Dtls13RtxIsTrackedByRn(const Dtls13RtxRecord* r, w64wrapper epoch,
 static int Dtls13KeyUpdateAckReceived(WOLFSSL* ssl)
 {
     int ret;
-    w64Increment(&ssl->dtls13Epoch);
-
-    /* Epoch wrapped up */
-    if (w64IsZero(ssl->dtls13Epoch))
-        return BAD_STATE_E;
 
     ret = DeriveTls13Keys(ssl, update_traffic_key, ENCRYPT_SIDE_ONLY, 1);
     if (ret != 0)
         return ret;
 
-    ret = Dtls13NewEpoch(ssl, ssl->dtls13Epoch, ENCRYPT_SIDE_ONLY);
-    if (ret != 0)
-        return ret;
+    w64Increment(&ssl->dtls13Epoch);
+
+    /* Epoch wrapped up */
+    if (w64IsZero(ssl->dtls13Epoch))
+        return BAD_STATE_E;
 
     return Dtls13SetEpochKeys(ssl, ssl->dtls13Epoch, ENCRYPT_SIDE_ONLY);
 }

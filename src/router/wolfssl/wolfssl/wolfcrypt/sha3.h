@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -117,8 +117,22 @@ enum {
     #include <wolfssl/wolfcrypt/port/af_alg/afalg_hash.h>
 #else
 
+#if defined(WOLFSSL_PSOC6_CRYPTO)
+    #include <wolfssl/wolfcrypt/port/cypress/psoc6_crypto.h>
+
+    #include "cy_crypto_core_sha.h"
+    #include "cy_device_headers.h"
+    #include "cy_crypto_common.h"
+    #include "cy_crypto_core.h"
+#endif
+
 /* Sha3 digest */
 struct wc_Sha3 {
+#if defined(PSOC6_HASH_SHA3)
+    cy_stc_crypto_sha_state_t hash_state;
+    cy_stc_crypto_v2_sha3_buffers_t sha_buffers;
+    bool init_done;
+#else
     /* State data that is processed for each block. */
     word64 s[25];
     /* Unprocessed message data. */
@@ -130,6 +144,8 @@ struct wc_Sha3 {
 
 #ifdef WOLF_CRYPTO_CB
     int    devId;
+    void*  devCtx;
+    int    hashType;
 #endif
 
 #ifdef WC_C_DYNAMIC_FALLBACK
@@ -146,6 +162,7 @@ struct wc_Sha3 {
 #endif
 #if defined(STM32_HASH_SHA3)
     STM32_HASH_Context stmCtx;
+#endif
 #endif
 };
 
@@ -220,21 +237,32 @@ WOLFSSL_API int wc_Shake256_Copy(wc_Shake* src, wc_Sha3* dst);
     WOLFSSL_API int wc_Sha3_GetFlags(wc_Sha3* sha3, word32* flags);
 #endif
 
-#ifdef USE_INTEL_SPEEDUP
-WOLFSSL_LOCAL void sha3_block_n_bmi2(word64* s, const byte* data, word32 n,
-    word64 c);
-WOLFSSL_LOCAL void sha3_block_bmi2(word64* s);
-WOLFSSL_LOCAL void sha3_block_avx2(word64* s);
-WOLFSSL_LOCAL void sha3_blocksx4_avx2(word64* s);
 WOLFSSL_LOCAL void BlockSha3(word64 *s);
+
+#ifdef WC_SHA3_NO_ASM
+    /* asm speedups disabled */
+    #if defined(USE_INTEL_SPEEDUP) && !defined(WC_MLKEM_NO_ASM)
+        /* native ML-KEM uses this directly. */
+        WOLFSSL_LOCAL void sha3_blocksx4_avx2(word64* s);
+    #endif
+#elif defined(USE_INTEL_SPEEDUP)
+    WOLFSSL_LOCAL void sha3_block_n_bmi2(word64* s, const byte* data, word32 n,
+        word64 c);
+    WOLFSSL_LOCAL void sha3_block_bmi2(word64* s);
+    WOLFSSL_LOCAL void sha3_block_n_avx2(word64* s, const byte* data, word32 n,
+        word64 c);
+    WOLFSSL_LOCAL void sha3_block_avx2(word64* s);
+    WOLFSSL_LOCAL void sha3_blocksx4_avx2(word64* s);
+
+    WOLFSSL_LOCAL void sha3_128_blocksx4_seed_avx2(word64* s, byte* seed);
+    WOLFSSL_LOCAL void sha3_256_blocksx4_seed_avx2(word64* s, byte* seed);
+
+    WOLFSSL_LOCAL void sha3_256_blocksx4_seed_64_avx2(word64* s, byte* seed);
 #elif defined(__aarch64__) && defined(WOLFSSL_ARMASM)
-#ifdef WOLFSSL_ARMASM_CRYPTO_SHA3
-WOLFSSL_LOCAL void BlockSha3_crypto(word64 *s);
-#endif
-WOLFSSL_LOCAL void BlockSha3_base(word64 *s);
-WOLFSSL_LOCAL void BlockSha3(word64 *s);
-#elif defined(WOLFSSL_ARMASM) || defined(WOLFSSL_RISCV_ASM)
-WOLFSSL_LOCAL void BlockSha3(word64 *s);
+    #ifdef WOLFSSL_ARMASM_CRYPTO_SHA3
+        WOLFSSL_LOCAL void BlockSha3_crypto(word64 *s);
+    #endif
+    WOLFSSL_LOCAL void BlockSha3_base(word64 *s);
 #endif
 
 #ifdef __cplusplus

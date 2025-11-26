@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -30,6 +30,9 @@
 #include <wolfssl/wolfcrypt/random.h>
 
 #ifdef WOLFSSL_HAVE_LMS
+
+/* Length of the Key ID. */
+#define WC_LMS_I_LEN    16
 
 typedef struct LmsKey LmsKey;
 
@@ -187,6 +190,8 @@ WOLFSSL_API int  wc_LmsKey_Verify(LmsKey * key, const byte * sig, word32 sigSz,
 WOLFSSL_API const char * wc_LmsKey_ParmToStr(enum wc_LmsParm lmsParm);
 WOLFSSL_API const char * wc_LmsKey_RcToStr(enum wc_LmsRc lmsRc);
 
+WOLFSSL_API int wc_LmsKey_GetKid(LmsKey * key, const byte ** kid,
+    word32* kidSz);
 WOLFSSL_API const byte * wc_LmsKey_GetKidFromPrivRaw(const byte * priv,
     word32 privSz);
 #ifdef __cplusplus

@@ -154,6 +154,8 @@ EXTRA_DIST+= LPCExpresso.cproject
 EXTRA_DIST+= LPCExpresso.project
 EXTRA_DIST+= resource.h wolfssl.rc
 EXTRA_DIST+= CMakeLists.txt
+EXTRA_DIST+= CMakePresets.json
+EXTRA_DIST+= CMakeSettings.json
 EXTRA_DIST+= m4/ax_atomic.m4
 
 include cmake/include.am
@@ -175,6 +177,7 @@ include sslSniffer/sslSnifferTest/include.am
 include debian/include.am
 include rpm/include.am
 include linuxkm/include.am
+include bsdkm/include.am
 include zephyr/include.am
 include RTOS/nuttx/include.am
 
@@ -216,10 +219,13 @@ if BUILD_LINUXKM
         CFLAGS_FPU_DISABLE CFLAGS_FPU_ENABLE CFLAGS_SIMD_DISABLE CFLAGS_SIMD_ENABLE \
         CFLAGS_AUTO_VECTORIZE_DISABLE CFLAGS_AUTO_VECTORIZE_ENABLE \
         ASFLAGS_FPU_DISABLE_SIMD_ENABLE ASFLAGS_FPU_ENABLE_SIMD_DISABLE \
-        ASFLAGS_FPUSIMD_DISABLE ASFLAGS_FPUSIMD_ENABLE ENABLED_LINUXKM_BENCHMARKS
+        ASFLAGS_FPUSIMD_DISABLE ASFLAGS_FPUSIMD_ENABLE ENABLED_KERNEL_BENCHMARKS
 
 module:
 	+$(MAKE) -C linuxkm libwolfssl.ko
+
+module-update-fips-hash:
+	+$(MAKE) -C linuxkm module-update-fips-hash
 
 clean_module:
 	+$(MAKE) -C linuxkm clean
@@ -228,6 +234,20 @@ install_module modules_install:
 	+$(MAKE) -C linuxkm modules_install
 
 endif
+
+if BUILD_BSDKM
+    SUBDIRS_OPT += bsdkm
+    DIST_SUBDIRS_OPT += bsdkm
+
+.MAKE.EXPORTED = build_triplet host_triplet CC AS LD \
+        KERNEL_ROOT BSDKM_EXPORT_SYMS KERNEL_EXTRA_CFLAGS \
+        EXTRA_CFLAGS EXTRA_CPPFLAGS EXTRA_CCASFLAGS EXTRA_LDFLAGS \
+        AM_CPPFLAGS CPPFLAGS AM_CFLAGS CFLAGS \
+        AM_CCASFLAGS CCASFLAGS \
+        src_libwolfssl_la_OBJECTS ENABLED_CRYPT_TESTS
+
+endif
+
 
 if USE_VALGRIND
 TESTS_ENVIRONMENT=./valgrind-error.sh

@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -25,9 +25,33 @@
 /* Function to allow wolfcrypt to use Arduino Serial.print for debug messages.
  * See wolfssl/wolfcrypt/logging.c */
 
+#if defined(__AVR__)
+#include <avr/pgmspace.h>  /* Required for PROGMEM handling on AVR */
+#endif
+
 int wolfSSL_Arduino_Serial_Print(const char* const s)
 {
     /* Reminder: Serial.print is only available in C++ */
-    Serial.println(F(s));
+    int is_progmem = 0;
+
+#if defined(__AVR__)
+    const char* t;
+    t = s;
+
+    /* Safely check if `s` is in PROGMEM, 0x8000 is typical for AVR flash */
+    if (reinterpret_cast<uint16_t>(t) >= 0x8000) {
+        while (pgm_read_byte(t)) {
+            Serial.write(pgm_read_byte(t++));
+        }
+        Serial.println();
+        is_progmem = 1;
+    }
+#endif
+
+    /* Print normally for non-AVR boards or RAM-stored strings */
+    if (!is_progmem) {
+        Serial.println(s);
+    }
+
     return 0;
 };

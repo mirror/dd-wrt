@@ -61,7 +61,7 @@ int  wc_InitRsaKey(RsaKey* key, void* heap);
     \code
     RsaKey enc;
     unsigned char* id = (unsigned char*)"RSA2048";
-    int len = 6;
+    int len = 7;
     int devId = 1;
     int ret;
     ret = wc_CryptoDev_RegisterDevice(devId, wc_Pkcs11_CryptoDevCb,
@@ -173,7 +173,7 @@ int  wc_FreeRsaKey(RsaKey* key);
     \sa wc_RsaPublicEncrypt
     \sa wc_RsaPrivateDecrypt
 */
-int wc_RsaDirect(byte* in, word32 inLen, byte* out, word32* outSz,
+int wc_RsaDirect(const byte* in, word32 inLen, byte* out, word32* outSz,
         RsaKey* key, int type, WC_RNG* rng);
 
 /*!
@@ -185,8 +185,7 @@ int wc_RsaDirect(byte* in, word32 inLen, byte* out, word32* outSz,
     to out in outLen.
 
     \return Success Upon successfully encrypting the input message, returns
-    0 for success and less than zero for failure. Also returns the number
-    bytes written to out by storing the value in outLen
+    the number of bytes written on success and less than zero for failure.
     \return BAD_FUNC_ARG Returned if any of the input parameters are invalid
     \return RSA_BUFFER_E Returned if the output buffer is too small to store
     the ciphertext
@@ -1471,10 +1470,10 @@ int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 inLen,
     \brief This function generates a RSA private key of length size (in bits)
     and given exponent (e). It then stores this key in the provided RsaKey
     structure, so that it may be used for encryption/decryption. A secure
-    number to use for e is 65537. size is required to be greater than
-    RSA_MIN_SIZE and less than RSA_MAX_SIZE. For this function to be
-    available, the option WOLFSSL_KEY_GEN must be enabled at compile time.
-    This can be accomplished with --enable-keygen if using ./configure.
+    number to use for e is 65537. size is required to be greater than or equal
+    to RSA_MIN_SIZE and less than or equal to RSA_MAX_SIZE. For this function
+    to be available, the option WOLFSSL_KEY_GEN must be enabled at compile
+    time.  This can be accomplished with --enable-keygen if using ./configure.
 
     \return 0 Returned upon successfully generating a RSA private key
     \return BAD_FUNC_ARG Returned if any of the input arguments are NULL,
@@ -1514,7 +1513,7 @@ int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 inLen,
     \param e exponent parameter to use for generating the key. A secure
     choice is 65537
     \param rng pointer to an RNG structure to use for random number generation
-    while making the ke
+    while making the key
 
     _Example_
     \code

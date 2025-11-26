@@ -2847,7 +2847,7 @@ int wolfSSL_GetSessionIndex(WOLFSSL* ssl);
     \sa LockMutex
     \sa wolfSSL_GetSessionIndex
 */
-int wolfSSL_GetSessionAtIndex(int index, WOLFSSL_SESSION* session);
+int wolfSSL_GetSessionAtIndex(int idx, WOLFSSL_SESSION* session);
 
 /*!
     \ingroup IO
@@ -4115,7 +4115,7 @@ char* wolfSSL_ERR_error_string(unsigned long errNumber, char* data);
     \sa wolfSSL_load_error_strings
 */
 void  wolfSSL_ERR_error_string_n(unsigned long e, char* buf,
-                                           unsigned long sz);
+                                           unsigned long len);
 
 /*!
     \ingroup TLS
@@ -5409,6 +5409,236 @@ int  wolfSSL_CTX_set_read_ahead(WOLFSSL_CTX* ctx, int v);
     \sa wolfSSL_CTX_free
 */
 long wolfSSL_CTX_set_tlsext_status_arg(WOLFSSL_CTX* ctx, void* arg);
+
+/*!
+    \ingroup CertsKeys
+
+    \brief Sets a callback to select the client certificate and private key.
+
+    This function allows the application to register a callback that will be invoked
+    when a client certificate is requested during the handshake. The callback can
+    select and provide the certificate and key to use.
+
+    \param ctx The WOLFSSL_CTX object.
+    \param cb  The callback function to select the client certificate and key.
+
+    \return void
+
+    _Example_
+    \code
+    int my_client_cert_cb(WOLFSSL *ssl, WOLFSSL_X509 **x509, WOLFSSL_EVP_PKEY **pkey) { ... }
+    wolfSSL_CTX_set_client_cert_cb(ctx, my_client_cert_cb);
+    \endcode
+
+    \sa wolfSSL_CTX_set_cert_cb
+*/
+void wolfSSL_CTX_set_client_cert_cb(WOLFSSL_CTX *ctx, client_cert_cb cb);
+
+/*!
+    \ingroup CertsKeys
+
+    \brief Sets a generic certificate setup callback.
+
+    This function allows the application to register a callback that will be invoked
+    during certificate setup. The callback can perform custom certificate selection
+    or loading logic.
+
+    \param ctx The WOLFSSL_CTX object.
+    \param cb  The callback function for certificate setup.
+    \param arg User argument to pass to the callback.
+
+    \return void
+
+    _Example_
+    \code
+    int my_cert_setup_cb(WOLFSSL* ssl, void* arg) { ... }
+    wolfSSL_CTX_set_cert_cb(ctx, my_cert_setup_cb, NULL);
+    \endcode
+
+    \sa wolfSSL_CTX_set_client_cert_cb
+*/
+void wolfSSL_CTX_set_cert_cb(WOLFSSL_CTX* ctx, CertSetupCallback cb, void *arg);
+
+/*!
+    \ingroup OCSP
+
+    \brief Sets the callback to be used for handling OCSP status requests (OCSP stapling).
+
+    This function allows the application to register a callback that will be invoked
+    when an OCSP status request is received during the TLS handshake. The callback
+    can provide an OCSP response to be stapled to the handshake. This API is only
+    useful on the server side.
+
+    \param ctx The WOLFSSL_CTX object.
+    \param cb  The callback function to handle OCSP status requests.
+
+    \return SSL_SUCCESS on success, SSL_FAILURE otherwise.
+
+    _Example_
+    \code
+    int my_ocsp_status_cb(WOLFSSL* ssl, void* arg) { ... }
+    wolfSSL_CTX_set_tlsext_status_cb(ctx, my_ocsp_status_cb);
+    \endcode
+
+    \sa wolfSSL_CTX_get_tlsext_status_cb
+    \sa wolfSSL_CTX_set_tlsext_status_arg
+*/
+int wolfSSL_CTX_set_tlsext_status_cb(WOLFSSL_CTX* ctx, tlsextStatusCb cb);
+
+/*!
+    \ingroup OCSP
+
+    \brief Gets the currently set OCSP status callback for the context.
+
+    \param ctx The WOLFSSL_CTX object.
+    \param cb  Pointer to receive the callback function.
+
+    \return SSL_SUCCESS on success, SSL_FAILURE otherwise.
+
+    \sa wolfSSL_CTX_set_tlsext_status_cb
+*/
+int wolfSSL_CTX_get_tlsext_status_cb(WOLFSSL_CTX* ctx, tlsextStatusCb* cb);
+
+/*!
+    \ingroup OCSP
+
+    \brief Sets the argument to be passed to the OCSP status callback.
+
+    \param ctx The WOLFSSL_CTX object.
+    \param arg The user argument to pass to the callback.
+
+    \return SSL_SUCCESS on success, SSL_FAILURE otherwise.
+
+    \sa wolfSSL_CTX_set_tlsext_status_cb
+*/
+long wolfSSL_CTX_set_tlsext_status_arg(WOLFSSL_CTX* ctx, void* arg);
+
+/*!
+    \ingroup OCSP
+
+    \brief Gets the OCSP response that will be sent (stapled) to the peer.
+
+    \param ssl The WOLFSSL session.
+    \param resp Pointer to receive the response buffer.
+
+    \return Length of the response, or negative value on error.
+
+    \sa wolfSSL_set_tlsext_status_ocsp_resp
+*/
+long wolfSSL_get_tlsext_status_ocsp_resp(WOLFSSL *ssl, unsigned char **resp);
+
+/*!
+    \ingroup OCSP
+
+    \brief Sets the OCSP response to be sent (stapled) to the peer.
+
+    The buffer in resp becomes owned by wolfSSL and will be freed by
+    wolfSSL. The application must not free the buffer after calling this
+    function.
+
+    \param ssl The WOLFSSL session.
+    \param resp Pointer to the response buffer.
+    \param len  Length of the response buffer.
+
+    \return SSL_SUCCESS on success, SSL_FAILURE otherwise.
+
+    \sa wolfSSL_get_tlsext_status_ocsp_resp
+*/
+long wolfSSL_set_tlsext_status_ocsp_resp(WOLFSSL *ssl, unsigned char *resp, int len);
+
+/*!
+    \ingroup OCSP
+
+    \brief Sets multiple OCSP responses for TLS multi-certificate chains.
+
+    The buffer in resp becomes owned by wolfSSL and will be freed by
+    wolfSSL. The application must not free the buffer after calling this
+    function.
+
+    \param ssl The WOLFSSL session.
+    \param resp Pointer to the response buffer.
+    \param len  Length of the response buffer.
+    \param idx  Index of the certificate chain.
+
+    \return SSL_SUCCESS on success, SSL_FAILURE otherwise.
+*/
+int wolfSSL_set_tlsext_status_ocsp_resp_multi(WOLFSSL* ssl, unsigned char *resp, int len, word32 idx);
+
+/*!
+    \ingroup OCSP
+
+    \brief Sets a callback to verify the OCSP status response.
+
+    It is recommended to enable SESSION_CERTS in order to have access to the
+    peer's certificate chain during OCSP verification.
+
+    \param ctx   The WOLFSSL_CTX object.
+    \param cb    The callback function.
+    \param cbArg User argument to pass to the callback.
+
+    \return void
+
+    _Example_
+    \code
+    void my_ocsp_verify_cb(WOLFSSL* ssl, int err, byte* resp, word32 respSz, word32 idx, void* arg)
+    {
+        (void)arg;
+        if (err == 0 && staple && stapleSz > 0) {
+            printf("Client: OCSP staple received, size=%u\n", stapleSz);
+            return 0;
+        }
+        // Manual OCSP staple verification if err != 0
+        if (err != 0 && staple && stapleSz > 0) {
+            WOLFSSL_CERT_MANAGER* cm = NULL;
+            DecodedCert cert;
+            byte certInit = 0;
+            WOLFSSL_OCSP* ocsp = NULL;
+            WOLFSSL_X509_CHAIN* peerCerts;
+            int i;
+
+            cm = wolfSSL_CertManagerNew();
+            if (cm == NULL)
+                goto cleanup;
+            if (wolfSSL_CertManagerLoadCA(cm, CA_CERT, NULL) != WOLFSSL_SUCCESS)
+                goto cleanup;
+
+            peerCerts = wolfSSL_get_peer_chain(ssl);
+            if (peerCerts == NULL || wolfSSL_get_chain_count(peerCerts) <= (int)idx)
+                goto cleanup;
+
+            for (i = idx + 1; i < wolfSSL_get_chain_count(peerCerts); i++) {
+                if (wolfSSL_CertManagerLoadCABuffer(cm, wolfSSL_get_chain_cert(peerCerts, i),
+                        wolfSSL_get_chain_length(peerCerts, i), WOLFSSL_FILETYPE_ASN1) != WOLFSSL_SUCCESS)
+                    goto cleanup;
+            }
+
+            wc_InitDecodedCert(&cert, wolfSSL_get_chain_cert(peerCerts, idx), wolfSSL_get_chain_length(peerCerts, idx), NULL);
+            certInit = 1;
+            if (wc_ParseCert(&cert, CERT_TYPE, VERIFY, cm) != 0)
+                goto cleanup;
+            if ((ocsp = wc_NewOCSP(cm)) == NULL)
+                goto cleanup;
+            if (wc_CheckCertOcspResponse(ocsp, &cert, staple, stapleSz, NULL) != 0)
+                goto cleanup;
+
+            printf("Client: Manual OCSP staple verification succeeded for idx=%u\n", idx);
+            err = 0;
+    cleanup:
+            wc_FreeOCSP(ocsp);
+            if (certInit)
+                wc_FreeDecodedCert(&cert);
+            wolfSSL_CertManagerFree(cm);
+            if (err == 0)
+                return 0;
+            printf("Client: Manual OCSP staple verification failed for idx=%u\n", idx);
+        }
+        printf("Client: OCSP staple verify error=%d\n", err);
+        return err;
+    }
+    wolfSSL_CTX_set_ocsp_status_verify_cb(ctx, my_ocsp_verify_cb, NULL);
+    \endcode
+*/
+void wolfSSL_CTX_set_ocsp_status_verify_cb(WOLFSSL_CTX* ctx, ocspVerifyStatusCb cb, void* cbArg);
 
 /*!
     \ingroup Setup
@@ -7659,20 +7889,20 @@ int wolfSSL_SetMinEccKey_Sz(WOLFSSL* ssl, short keySz);
     \return MEMORY_E returned if there is an error with memory allocation.
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-    \param msk a void pointer variable that will hold the result
+    \param key a void pointer variable that will hold the result
     of the p_hash function.
     \param len an unsigned integer that represents the length of
-    the msk variable.
+    the key variable.
     \param label a constant char pointer that is copied from in wc_PRF().
 
     _Example_
     \code
     WOLFSSL* ssl = wolfSSL_new(ctx);;
-    void* msk;
+    void* key;
     unsigned int len;
     const char* label;
     …
-    return wolfSSL_make_eap_keys(ssl, msk, len, label);
+    return wolfSSL_make_eap_keys(ssl, key, len, label);
     \endcode
 
     \sa wc_PRF
@@ -9916,7 +10146,8 @@ int wolfSSL_CertManagerVerifyBuffer(WOLFSSL_CERT_MANAGER* cm,
 
     \param cm a pointer to a WOLFSSL_CERT_MANAGER structure, created using
     wolfSSL_CertManagerNew().
-    \param vc a VerifyCallback function pointer to the callback routine
+    \param verify_callback a VerifyCallback function pointer to the callback
+    routine
 
     _Example_
     \code
@@ -9935,7 +10166,7 @@ int wolfSSL_CertManagerVerifyBuffer(WOLFSSL_CERT_MANAGER* cm,
     \sa wolfSSL_CertManagerVerify
 */
 void wolfSSL_CertManagerSetVerify(WOLFSSL_CERT_MANAGER* cm,
-                                                             VerifyCallback vc);
+        VerifyCallback verify_callback);
 
 /*!
     \brief Check CRL if the option is enabled and compares the cert to the
@@ -11970,11 +12201,13 @@ int wolfSSL_CTX_UseSessionTicket(WOLFSSL_CTX* ctx);
     \ingroup IO
 
     \brief This function copies the ticket member of the Session structure to
-    the buffer.
+    the buffer. If buf is NULL and bufSz is non-NULL, bufSz will be set to the
+    ticket length.
 
     \return SSL_SUCCESS returned if the function executed without error.
-    \return BAD_FUNC_ARG returned if one of the arguments was NULL or if the
-    bufSz argument was 0.
+    \return BAD_FUNC_ARG returned if ssl or bufSz is NULL, or if bufSz
+    is non-NULL and buf is NULL
+
 
     \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
     \param buf a byte pointer representing the memory buffer.
@@ -14981,6 +15214,102 @@ int wolfSSL_set_client_cert_type(WOLFSSL* ssl, const char* buf, int len);
 int wolfSSL_set_server_cert_type(WOLFSSL* ssl, const char* buf, int len);
 
 /*!
+    \ingroup Setup
+
+    \brief Enables handshake message grouping for the given WOLFSSL_CTX context.
+
+    This function turns on handshake message grouping for all SSL objects created from the specified context.
+
+    \return WOLFSSL_SUCCESS on success.
+    \return BAD_FUNC_ARG if ctx is NULL.
+
+    \param ctx Pointer to the WOLFSSL_CTX structure.
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+    wolfSSL_CTX_set_group_messages(ctx);
+    \endcode
+
+    \sa wolfSSL_CTX_clear_group_messages
+    \sa wolfSSL_set_group_messages
+    \sa wolfSSL_clear_group_messages
+*/
+int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX* ctx);
+
+/*!
+    \ingroup Setup
+
+    \brief Disables handshake message grouping for the given WOLFSSL_CTX context.
+
+    This function turns off handshake message grouping for all SSL objects created from the specified context.
+
+    \return WOLFSSL_SUCCESS on success.
+    \return BAD_FUNC_ARG if ctx is NULL.
+
+    \param ctx Pointer to the WOLFSSL_CTX structure.
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+    wolfSSL_CTX_clear_group_messages(ctx);
+    \endcode
+
+    \sa wolfSSL_CTX_set_group_messages
+    \sa wolfSSL_set_group_messages
+    \sa wolfSSL_clear_group_messages
+*/
+int wolfSSL_CTX_clear_group_messages(WOLFSSL_CTX* ctx);
+
+/*!
+    \ingroup Setup
+
+    \brief Enables handshake message grouping for the given WOLFSSL object.
+
+    This function turns on handshake message grouping for the specified SSL object.
+
+    \return WOLFSSL_SUCCESS on success.
+    \return BAD_FUNC_ARG if ssl is NULL.
+
+    \param ssl Pointer to the WOLFSSL structure.
+
+    _Example_
+    \code
+    WOLFSSL* ssl = wolfSSL_new(ctx);
+    wolfSSL_set_group_messages(ssl);
+    \endcode
+
+    \sa wolfSSL_clear_group_messages
+    \sa wolfSSL_CTX_set_group_messages
+    \sa wolfSSL_CTX_clear_group_messages
+*/
+int wolfSSL_set_group_messages(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief Disables handshake message grouping for the given WOLFSSL object.
+
+    This function turns off handshake message grouping for the specified SSL object.
+
+    \return WOLFSSL_SUCCESS on success.
+    \return BAD_FUNC_ARG if ssl is NULL.
+
+    \param ssl Pointer to the WOLFSSL structure.
+
+    _Example_
+    \code
+    WOLFSSL* ssl = wolfSSL_new(ctx);
+    wolfSSL_clear_group_messages(ssl);
+    \endcode
+
+    \sa wolfSSL_set_group_messages
+    \sa wolfSSL_CTX_set_group_messages
+    \sa wolfSSL_CTX_clear_group_messages
+*/
+int wolfSSL_clear_group_messages(WOLFSSL* ssl);
+
+/*!
  \ingroup SSL
  \brief  This function returns the result of the client certificate type
  negotiation done in ClientHello and ServerHello. WOLFSSL_SUCCESS is returned as
@@ -15253,6 +15582,239 @@ RFC 9146 and RFC 9147.
 */
 const unsigned char* wolfSSL_dtls_cid_parse(const unsigned char* msg,
         unsigned int msgSz, unsigned int cidSz);
+
+/*!
+    \ingroup TLS
+    \brief On the server, this sets a list of CA names to be sent to clients in
+    certificate requests as a hint for which CA's are supported by the server.
+
+    On the client, this function has no effect.
+
+    \param [in] ctx Pointer to the wolfSSL context
+    \param [in] names List of names to be set
+
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+void wolfSSL_CTX_set_client_CA_list(WOLFSSL_CTX* ctx,
+                                    WOLF_STACK_OF(WOLFSSL_X509_NAME)* names);
+
+/*!
+    \ingroup TLS
+    \brief This retrieves the list previously set via
+     wolfSSL_CTX_set_client_CA_list, or NULL if no list has been set.
+
+    \param [in] ctx Pointer to the wolfSSL context
+    \return A stack of WOLFSSL_X509_NAMEs containing the CA names
+
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+WOLFSSL_STACK *wolfSSL_CTX_get_client_CA_list(
+        const WOLFSSL_CTX *ctx);
+
+/*!
+    \ingroup TLS
+    \brief Same as wolfSSL_CTX_set_client_CA_list, but specific to a session.
+    If a CA list is set on both the context and the session, the list on the
+    session is used.
+
+    \param [in] ssl Pointer to the WOLFSSL object
+    \param [in] names List of names to be set.
+
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+void wolfSSL_set_client_CA_list(WOLFSSL* ssl,
+                                    WOLF_STACK_OF(WOLFSSL_X509_NAME)* names);
+
+/*!
+    \ingroup TLS
+    \brief On the server, this retrieves the list previously set via
+    wolfSSL_set_client_CA_list. If none was set, returns the list previously
+    set via wolfSSL_CTX_set_client_CA_list. If no list at all was set, returns
+    NULL.
+
+    On the client, this retrieves the list that was received from the server,
+    or NULL if none was received. wolfSSL_CTX_set_cert_cb can be used to
+    register a callback to dynamically load certificates when a certificate
+    request is received from the server.
+
+    \param [in] ssl Pointer to the WOLFSSL object
+    \return A stack of WOLFSSL_X509_NAMEs containing the CA names
+
+    \sa wolfSSL_CTX_set_cert_cb
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+WOLFSSL_STACK* wolfSSL_get_client_CA_list(
+            const WOLFSSL* ssl);
+
+/*!
+    \ingroup TLS
+    \brief This function sets a list of CA names to be sent to the peer as a
+    hint for which CA's are supported for its authentication.
+
+    In TLS >= 1.3, this is supported in both directions between the client and
+    the server. On the server, the CA names will be sent as part of a
+    CertificateRequest, making this function an equivalent of *_set_client_CA_list;
+    on the client, these are sent as part of ClientHello.
+
+    In TLS < 1.3, sending CA names from the client to the server is not
+    supported, therefore this function is equivalent to
+    wolfSSL_CTX_set_client_CA_list.
+
+    Note that the lists set via *_set_client_CA_list and *_set0_CA_list are
+    separate internally, i.e. calling *_get_client_CA_list will not retrieve a
+    list set via *_set0_CA_list and vice versa. If both are set, the server will
+    ignore *_set0_CA_list when sending CA names to the client.
+
+    \param [in] ctx Pointer to the wolfSSL context
+    \param [in] names List of names to be set
+
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+void wolfSSL_CTX_set0_CA_list(WOLFSSL_CTX *ctx,
+        WOLF_STACK_OF(WOLFSSL_X509_NAME)* names);
+
+/*!
+    \ingroup TLS
+    \brief This retrieves the list previously set via
+    wolfSSL_CTX_set0_CA_list, or NULL if no list has been set.
+
+    \param [in] ctx Pointer to the wolfSSL context
+    \return A stack of WOLFSSL_X509_NAMEs containing the CA names
+
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+WOLFSSL_STACK *wolfSSL_CTX_get0_CA_list(
+        const WOLFSSL_CTX *ctx);
+
+/*!
+    \ingroup TLS
+    \brief Same as wolfSSL_CTX_set0_CA_list, but specific to a session.
+    If a CA list is set on both the context and the session, the list on the
+    session is used.
+
+    \param [in] ssl Pointer to the WOLFSSL object
+    \param [in] names List of names to be set.
+
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+void wolfSSL_set0_CA_list(WOLFSSL *ssl,
+        WOLF_STACK_OF(WOLFSSL_X509_NAME) *names);
+
+/*!
+    \ingroup TLS
+    \brief This retrieves the list previously set via wolfSSL_set0_CA_list. If
+    none was set, returns the list previously set via
+    wolfSSL_CTX_set0_CA_list. If no list at all was set, returns NULL.
+
+    \param [in] ssl Pointer to the WOLFSSL object
+    \return A stack of WOLFSSL_X509_NAMEs containing the CA names
+
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_peer_CA_list
+*/
+WOLFSSL_STACK *wolfSSL_get0_CA_list(
+        const WOLFSSL *ssl);
+
+/*!
+    \ingroup TLS
+    \brief This returns the CA list received from the peer.
+
+    On the client, this is the list sent by the server in a CertificateRequest,
+    and this function is equivalent to wolfSSL_get_client_CA_list.
+
+    On the server, this is the list sent by the client in the ClientHello message
+    in TLS >= 1.3; in TLS < 1.3, the function always returns NULL on the server
+    side.
+
+    wolfSSL_CTX_set_cert_cb can be used to register a callback to dynamically
+    load certificates when a CA list is received from the peer.
+
+    \param [in] ssl Pointer to the WOLFSSL object
+    \return A stack of WOLFSSL_X509_NAMEs containing the CA names
+
+    \sa wolfSSL_CTX_set_cert_cb
+    \sa wolfSSL_CTX_set_client_CA_list
+    \sa wolfSSL_set_client_CA_list
+    \sa wolfSSL_CTX_get_client_CA_list
+    \sa wolfSSL_get_client_CA_list
+    \sa wolfSSL_CTX_set0_CA_list
+    \sa wolfSSL_set0_CA_list
+    \sa wolfSSL_CTX_get0_CA_list
+    \sa wolfSSL_get0_CA_list
+*/
+WOLFSSL_STACK *wolfSSL_get0_peer_CA_list(const WOLFSSL *ssl);
+
+/*!
+    \ingroup TLS
+    \brief This function sets a callback that will be called whenever a
+    certificate is about to be used, to allow the application to inspect, set
+    or clear any certificates, for example to react to a CA list sent from the
+    peer.
+
+    \param [in] ctx Pointer to the wolfSSL context
+    \param [in] cb Function pointer to the callback
+    \param [in] arg Pointer that will be passed to the callback
+
+    \sa wolfSSL_get0_peer_CA_list
+    \sa wolfSSL_get_client_CA_list
+*/
+void wolfSSL_CTX_set_cert_cb(WOLFSSL_CTX* ctx,
+    int (*cb)(WOLFSSL *, void *), void *arg);
 
 /*!
     \ingroup TLS

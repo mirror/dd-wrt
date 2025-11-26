@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -44,6 +44,10 @@
     #define WOLFSSL_DEBUG_TRACE_ERROR_CODES_ALWAYS
 #endif
 
+#ifdef WOLFSSL_ASYNC_CRYPT
+    #define WOLFSSL_SMALL_STACK
+#endif
+
 #if !defined(NO_CRYPT_TEST) || defined(WC_TEST_EXPORT_SUBTESTS)
 
 #include <wolfssl/version.h>
@@ -66,7 +70,8 @@
 #endif
 
 #if defined(WC_ECC_NONBLOCK) && defined(WOLFSSL_PUBLIC_MP) && \
-    defined(HAVE_ECC_SIGN) && defined(HAVE_ECC_VERIFY)
+    defined(HAVE_ECC_SIGN) && defined(HAVE_ECC_VERIFY) && \
+    !defined(NO_STDINT_H)
     #include <stdint.h>
 #endif
 
@@ -79,7 +84,7 @@
 #endif
 #endif
 
-const byte const_byte_array[] = "A+Gd\0\0\0";
+static const byte const_byte_array[] = "A+Gd\0\0\0";
 #define CBPTR_EXPECTED 'A'
 
 #if defined(WOLFSSL_TRACK_MEMORY_VERBOSE) && !defined(WOLFSSL_STATIC_MEMORY)
@@ -111,6 +116,8 @@ const byte const_byte_array[] = "A+Gd\0\0\0";
     heap_baselineAllocs = wolfCrypt_heap_peakAllocs_checkpoint();            \
     heap_baselineBytes = wolfCrypt_heap_peakBytes_checkpoint();              \
     }
+#define PRINT_HEAP_ADDRESS(p)                                        \
+    printf("Allocated address: %p", (void *)(p));
 #else
     #define PRINT_HEAP_CHECKPOINT(b, i) WC_DO_NOTHING;
     #define PRINT_HEAP_ADDRESS(p) WC_DO_NOTHING;
@@ -262,7 +269,7 @@ const byte const_byte_array[] = "A+Gd\0\0\0";
     #include <printx.h>
     #undef printf
     #define printf printx
-#elif defined(WOLFSSL_RENESAS_RSIP)
+#elif defined(WOLFSSL_RENESAS_RSIP) || defined(WOLFSSL_RENESAS_RZN2L)
     #ifndef TEST_SLEEP
         #define TEST_SLEEP() vTaskDelay(50)
     #endif
@@ -283,11 +290,11 @@ const byte const_byte_array[] = "A+Gd\0\0\0";
     #ifdef XMALLOC_USER
         #include <stdlib.h>  /* we're using malloc / free direct here */
     #endif
-    #if !defined(STRING_USER) && !defined(WOLFSSL_LINUXKM)
+    #if !defined(STRING_USER) && !defined(NO_STDIO_FILESYSTEM)
         #include <stdio.h>
     #endif
 
-    #if defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_LINUXKM_VERBOSE_DEBUG)
+    #if defined(WOLFSSL_KERNEL_MODE) && !defined(WOLFSSL_KERNEL_VERBOSE_DEBUG)
         #undef printf
         #define printf(...) ({})
     #endif
@@ -296,7 +303,7 @@ const byte const_byte_array[] = "A+Gd\0\0\0";
     #ifdef XPRINTF
         #undef  printf
         #define printf XPRINTF
-    #elif !defined(printf)
+    #elif !defined(printf) && !defined(NO_STDIO_FILESYSTEM)
         /* arrange for printf() to flush after every message -- this assures
          * redirected output (to a log file) records progress right up to the
          * moment of a crash/abort(); otherwise anything queued in stdout would
@@ -562,6 +569,7 @@ typedef struct testVector {
     #define WOLFSSL_TEST_SUBROUTINE
 #endif
 
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  macro_test(void);
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  error_test(void);
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  base64_test(void);
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  base16_test(void);
@@ -606,26 +614,34 @@ static                  wc_test_ret_t  hkdf_test(void);
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  hkdf_test(void);
 #endif
 #endif /* HAVE_HKDF && ! NO_HMAC */
-#ifdef WOLFSSL_HAVE_PRF
-#if defined(HAVE_HKDF) && !defined(NO_HMAC)
-#ifdef WOLFSSL_BASE16
+#if defined(WOLFSSL_HAVE_PRF) && defined(HAVE_HKDF) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_BASE16) && !defined(WOLFSSL_NO_TLS12)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  tls12_kdf_test(void);
-#endif /* WOLFSSL_BASE16 */
-#endif /* WOLFSSL_HAVE_HKDF && !NO_HMAC */
-#endif /* WOLFSSL_HAVE_PRF */
-#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC) && defined(WOLFSSL_SHA384)
+#endif
+#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_SHA384) && !defined(WOLFSSL_NO_TLS12)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  prf_test(void);
 #endif
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  sshkdf_test(void);
-#ifdef WOLFSSL_TLS13
+#if defined(WOLFSSL_TLS13) && !defined(NO_HMAC)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  tls13_kdf_test(void);
 #endif
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  x963kdf_test(void);
-#if defined(HAVE_HPKE) && defined(HAVE_ECC) && defined(HAVE_AESGCM)
+#if defined(HAVE_HPKE) && defined(HAVE_ECC) && defined(HAVE_AESGCM) && \
+    defined(WOLFSSL_AES_256)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  hpke_test(void);
 #endif
 #ifdef WC_SRTP_KDF
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  srtpkdf_test(void);
+#endif
+
+#if defined(WC_KDF_NIST_SP_800_56C) && \
+    (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  nist_sp80056c_kdf_test(void);
+#endif
+#if defined(HAVE_CMAC_KDF) && (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  nist_sp800108_cmac(void);
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  nist_sp80056c_twostep_cmac(void);
 #endif
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  arc4_test(void);
 #ifdef WC_RC2
@@ -801,7 +817,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t memory_test(void);
      defined(USE_FAST_MATH))
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void);
 #endif
-#if defined(WOLFSSL_PUBLIC_MP) && defined(WOLFSSL_KEY_GEN)
+#if defined(WOLFSSL_PUBLIC_MP) && defined(WOLFSSL_KEY_GEN) && \
+    (!defined(NO_DH) || !defined(NO_DSA)) && !defined(WC_NO_RNG)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t prime_test(void);
 #endif
 #if defined(ASN_BER_TO_DER) && \
@@ -836,7 +853,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t cryptocb_test(void);
 #ifdef WOLFSSL_CERT_PIV
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t certpiv_test(void);
 #endif
-#ifdef WOLFSSL_AES_SIV
+#if defined(WOLFSSL_AES_SIV) && defined(WOLFSSL_AES_128)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_siv_test(void);
 #endif
 
@@ -887,8 +904,8 @@ void wc_test_render_error_message(const char* msg, wc_test_ret_t es)
     (void)msg;
     (void)es;
 
-#ifdef WOLFSSL_LINUXKM
-    #define err_sys_printf lkm_printf
+#ifdef WOLFSSL_KERNEL_MODE
+    #define err_sys_printf wc_km_printf
 #else
     #define err_sys_printf printf
 #endif
@@ -969,7 +986,7 @@ static wc_test_ret_t err_sys(const char* msg, wc_test_ret_t es)
 {
     wc_test_render_error_message(msg, es);
     print_fiducials();
-#ifdef WOLFSSL_LINUXKM
+#ifdef WOLFSSL_KERNEL_MODE
     EXIT_TEST(es);
 #else
     EXIT_TEST(-1);
@@ -985,7 +1002,10 @@ typedef struct func_args {
 } func_args;
 #endif /* !HAVE_WOLFCRYPT_TEST_OPTIONS */
 
-#if defined(HAVE_FIPS) && !defined(WOLFSSL_LINUXKM)
+/* Kernel modules implement and install their own FIPS callback with similar
+ * functionality.
+ */
+#if defined(HAVE_FIPS) && !defined(WOLFSSL_KERNEL_MODE)
 static void myFipsCb(int ok, int err, const char* hash)
 {
     printf("in my Fips callback, ok = %d, err = %d\n", ok, err);
@@ -997,7 +1017,7 @@ static void myFipsCb(int ok, int err, const char* hash)
         printf("into verifyCore[] in fips_test.c and rebuild\n");
     }
 }
-#endif /* HAVE_FIPS && !WOLFSSL_LINUXKM */
+#endif /* HAVE_FIPS && !WOLFSSL_KERNEL_MODE */
 
 #if defined(HAVE_FIPS) && FIPS_VERSION3_LT(6,0,0) && !defined(WC_NO_CONSTRUCTORS)
 
@@ -1072,6 +1092,15 @@ static WC_MAYBE_UNUSED int wc_DeleteRsaKey(RsaKey* key, RsaKey** key_p)
 #ifdef WOLFSSL_STATIC_MEMORY
     #if defined(WOLFSSL_STATIC_MEMORY_TEST_SZ)
         static byte gTestMemory[WOLFSSL_STATIC_MEMORY_TEST_SZ];
+    #elif defined(HAVE_DILITHIUM)
+        #if defined(WOLFSSL_DILITHIUM_VERIFY_SMALL_MEM) && \
+            defined(WOLFSSL_DILITHIUM_SIGN_SMALL_MEM) && \
+            defined(WOLFSSL_DILITHIUM_MAKE_KEY_SMALL_MEM) && \
+            defined(WOLFSSL_DILITHIUM_VERIFY_ONLY)
+            static byte gTestMemory[192*1024];  /* Dilithium low mem */
+        #else
+            static byte gTestMemory[576*1024];  /* Dilithium full mem */
+        #endif
     #elif defined(BENCH_EMBEDDED)
         static byte gTestMemory[14000];
     #elif defined(WOLFSSL_CERT_EXT)
@@ -1117,18 +1146,19 @@ static int rng_crypto_cb(int thisDevId, wc_CryptoInfo* info, void* ctx)
 }
 #endif
 
-#if defined(WC_KDF_NIST_SP_800_56C)
+#if defined(WC_KDF_NIST_SP_800_56C) && \
+    (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
 #define INIT_SP80056C_TEST_VECTOR(_z, _fixedInfo, _derivedKey, _hashType)      \
     {                                                                          \
-        .z = (const byte*)_z, .zSz = sizeof(_z) - 1,                           \
-        .fixedInfo = (const byte*)_fixedInfo,                                  \
+        .z = (const byte*)(_z), .zSz = sizeof(_z) - 1,                         \
+        .fixedInfo = (const byte*)(_fixedInfo),                                \
         .fixedInfoSz = sizeof(_fixedInfo) - 1,                                 \
-        .derivedKey = (const byte*)_derivedKey,                                \
-        .derivedKeySz = sizeof(_derivedKey) - 1, .hashType = _hashType,        \
+        .derivedKey = (const byte*)(_derivedKey),                              \
+        .derivedKeySz = sizeof(_derivedKey) - 1, .hashType = (_hashType),      \
     }
 
 #define SP800_56C_MAX_OUT 128
-static WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp80056c_kdf_test(void)
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp80056c_kdf_test(void)
 {
     struct sp800_56c_test_vector {
         const byte* z;
@@ -1440,6 +1470,10 @@ static WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp80056c_kdf_test(void)
         WC_HASH_TYPE_SHA256, output, 16);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_NC;
+    ret = wc_KDA_KDF_onestep((byte*)"secret", sizeof("secret"), NULL, 0, 16,
+        WC_HASH_TYPE_NONE, output, 16);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        return WC_TEST_RET_ENC_NC;
 
     /* allow empty FixedInfo */
     ret = wc_KDA_KDF_onestep((byte*)"secret", sizeof("secret"), NULL, 0, 16,
@@ -1449,7 +1483,323 @@ static WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp80056c_kdf_test(void)
 
     return 0;
 }
-#endif /* WC_KDF_NIST_SP_800_56C */
+#endif /* WC_KDF_NIST_SP_800_56C && (!HAVE_FIPS || FIPS_VERSION3_GE(7,0,0)) */
+
+#if defined(HAVE_CMAC_KDF) && (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
+/* test vectors from:
+ *   "SP 800-108 Key Derivation Using Pseudorandom Functions - Key-Based"
+ *   - https://csrc.nist.rip/groups/STM/cavp/key-derivation.html
+ *   - CounterMode/KDFCTR_gen.txt
+ * */
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp800108_cmac(void)
+{
+    struct sp800_108_test_vector {
+        const byte Kin[32];
+        word32     KinSz;
+        const byte fixedInfo[60];
+        word32     fixedInfoSz;
+        const byte Kout[40];
+        word32     KoutSz;
+    };
+    struct sp800_108_test_vector * v = NULL;
+    struct sp800_108_test_vector vctors[] = {
+        #if !defined(NO_AES_128)
+        {
+            /* [PRF=CMAC_AES128]
+             * [CTRLOCATION=BEFORE_FIXED]
+             * [RLEN=32_BITS]
+             * COUNT=0
+             * L = 128
+             * */
+            {0xc1, 0x0b, 0x15, 0x2e, 0x8c, 0x97, 0xb7, 0x7e,
+             0x18, 0x70, 0x4e, 0x0f, 0x0b, 0xd3, 0x83, 0x05},
+             16,
+            {0x98, 0xcd, 0x4c, 0xbb, 0xbe, 0xbe, 0x15, 0xd1,
+             0x7d, 0xc8, 0x6e, 0x6d, 0xba, 0xd8, 0x00, 0xa2,
+             0xdc, 0xbd, 0x64, 0xf7, 0xc7, 0xad, 0x0e, 0x78,
+             0xe9, 0xcf, 0x94, 0xff, 0xdb, 0xa8, 0x9d, 0x03,
+             0xe9, 0x7e, 0xad, 0xf6, 0xc4, 0xf7, 0xb8, 0x06,
+             0xca, 0xf5, 0x2a, 0xa3, 0x8f, 0x09, 0xd0, 0xeb,
+             0x71, 0xd7, 0x1f, 0x49, 0x7b, 0xcc, 0x69, 0x06,
+             0xb4, 0x8d, 0x36, 0xc4},
+             60,
+            {0x26, 0xfa, 0xf6, 0x19, 0x08, 0xad, 0x9e, 0xe8,
+             0x81, 0xb8, 0x30, 0x5c, 0x22, 0x1d, 0xb5, 0x3f},
+             16
+        },
+        {
+            /* [PRF=CMAC_AES128]
+             * [CTRLOCATION=BEFORE_FIXED]
+             * [RLEN=32_BITS]
+             * COUNT=10
+             * L = 256
+             * */
+            {0x69, 0x5f, 0x1b, 0x1a, 0x16, 0xc9, 0x49, 0xce,
+             0xa5, 0x1c, 0xdf, 0x25, 0x54, 0xec, 0x9d, 0x42},
+             16,
+            {0x4f, 0xce, 0x59, 0x42, 0x83, 0x2a, 0x39, 0x0a,
+             0xa1, 0xcb, 0xe8, 0xa0, 0xbf, 0x9d, 0x20, 0x2c,
+             0xb7, 0x99, 0xe9, 0x86, 0xc9, 0xd6, 0xb5, 0x1f,
+             0x45, 0xe4, 0xd5, 0x97, 0xa6, 0xb5, 0x7f, 0x06,
+             0xa4, 0xeb, 0xfe, 0xc6, 0x46, 0x73, 0x35, 0xd1,
+             0x16, 0xb7, 0xf5, 0xf9, 0xc5, 0xb9, 0x54, 0x06,
+             0x2f, 0x66, 0x18, 0x20, 0xf5, 0xdb, 0x2a, 0x5b,
+             0xbb, 0x3e, 0x06, 0x25},
+             60,
+            {0xd3, 0x4b, 0x60, 0x1e, 0xc1, 0x8c, 0x34, 0xdf,
+             0xa0, 0xf9, 0xe0, 0xb7, 0x52, 0x3e, 0x21, 0x8b,
+             0xdd, 0xdb, 0x9b, 0xef, 0xe8, 0xd0, 0x8b, 0x6c,
+             0x02, 0x02, 0xd7, 0x5a, 0xce, 0x0d, 0xba, 0x89},
+             32
+        },
+        #endif /* !NO_AES_128 */
+
+        #if !defined(NO_AES_192)
+        {
+            /* [PRF=CMAC_AES192]
+             * [CTRLOCATION=BEFORE_FIXED]
+             * [RLEN=32_BITS]
+             * COUNT=39
+             * L = 320
+             * */
+            {0x4c, 0x51, 0xbe, 0xa8, 0x97, 0x5b, 0xe9, 0xe5,
+             0xa0, 0xe4, 0x29, 0xa7, 0xfa, 0xc4, 0x0b, 0x66,
+             0x3f, 0x32, 0x99, 0x15, 0x7d, 0x1f, 0x5d, 0x67},
+             24,
+            {0xf8, 0x6e, 0x42, 0xc6, 0x6d, 0x49, 0xa8, 0xbe,
+             0xda, 0x81, 0x8e, 0x54, 0xd7, 0xc5, 0xa8, 0x1d,
+             0x00, 0xd0, 0x2f, 0xc8, 0x9d, 0x2a, 0x54, 0xe8,
+             0x0f, 0x19, 0xa8, 0x03, 0x4a, 0xd5, 0xe7, 0x0b,
+             0xb7, 0x3d, 0x03, 0x27, 0x54, 0x5a, 0xa5, 0xd5,
+             0x38, 0x7d, 0xff, 0x0a, 0x60, 0x3e, 0x16, 0x09,
+             0x33, 0xf8, 0x94, 0x82, 0x97, 0x71, 0x4d, 0x11,
+             0x23, 0x58, 0x55, 0x8f},
+             60,
+            {0x03, 0xae, 0x7b, 0xa3, 0xd2, 0x05, 0x0b, 0x18,
+             0x65, 0xfc, 0x4a, 0x77, 0x91, 0x8a, 0xd4, 0x90,
+             0x3a, 0xd5, 0xba, 0xf2, 0x6c, 0x02, 0x29, 0xa4,
+             0xda, 0xe4, 0xcc, 0x3b, 0xa6, 0x22, 0x32, 0x54,
+             0x7d, 0xcf, 0xbe, 0x65, 0xc1, 0xa2, 0x1e, 0x89},
+             40
+        },
+        #endif /* !NO_AES_192 */
+
+        #if !defined(NO_AES_256)
+        {
+            /* [PRF=CMAC_AES256]
+             * [CTRLOCATION=BEFORE_FIXED]
+             * [RLEN=32_BITS]
+             * COUNT=39
+             * L = 320
+             * */
+            {0x3a, 0x65, 0x76, 0xa1, 0x54, 0x1e, 0x07, 0xea,
+             0xbd, 0x47, 0xc3, 0x53, 0x4a, 0x43, 0x46, 0xab,
+             0x39, 0xf1, 0x5e, 0xb0, 0x1d, 0x83, 0xec, 0xf2,
+             0x31, 0x90, 0x81, 0xf6, 0xe7, 0xad, 0xa7, 0xe9},
+             32,
+            {0xa2, 0x59, 0xca, 0xe2, 0xc4, 0xa3, 0x6b, 0x89,
+             0x56, 0x3c, 0xb1, 0x48, 0xc7, 0x82, 0x51, 0x34,
+             0x3b, 0xbf, 0xab, 0xdc, 0x13, 0xca, 0x7a, 0xc2,
+             0x17, 0x1c, 0x2e, 0xb6, 0x02, 0x1f, 0x44, 0x77,
+             0xfe, 0xa3, 0x3b, 0x28, 0x72, 0x4d, 0xa7, 0x21,
+             0xee, 0x08, 0x7b, 0xff, 0xd7, 0x94, 0xa1, 0x56,
+             0x37, 0x54, 0xb4, 0x25, 0xa8, 0xd0, 0x9b, 0x3e,
+             0x0d, 0xa5, 0xff, 0xed},
+             60,
+            {0x99, 0xb7, 0x87, 0xef, 0x90, 0xa1, 0x33, 0xe5,
+             0x73, 0x6f, 0xdc, 0xf1, 0x75, 0xc3, 0xa3, 0x80,
+             0x50, 0x1f, 0x45, 0xde, 0xc8, 0xf0, 0x93, 0xec,
+             0xdd, 0x40, 0x00, 0x65, 0x2f, 0x4f, 0xf1, 0xc6,
+             0x57, 0x52, 0x48, 0xa3, 0x63, 0xd4, 0x5d, 0x18},
+             40
+        },
+        #endif /* !NO_AES_256 */
+    };
+    size_t i = 0;
+    int    ret = 0;
+    size_t num_vctors = sizeof(vctors) / sizeof(vctors[0]);
+
+    /* nist vectors tests */
+    for (i = 0; i < num_vctors; ++i) {
+        byte   test_Kout[40];
+        int    n_diff = 0;
+
+        v = &vctors[i];
+        XMEMSET(test_Kout, 0, sizeof(test_Kout));
+
+        ret = wc_KDA_KDF_PRF_cmac(v->Kin, v->KinSz, v->fixedInfo, v->fixedInfoSz,
+                                  test_Kout, v->KoutSz, WC_CMAC_AES,
+                                  HEAP_HINT, devId);
+
+        if (ret) {
+            return WC_TEST_RET_ENC_EC(ret);
+        }
+
+        n_diff = XMEMCMP(v->Kout, test_Kout, v->KoutSz);
+        if (n_diff) {
+            WOLFSSL_MSG_EX("error: nist_sp800108_cmac: %d", n_diff);
+            return WC_TEST_RET_ENC_NC;
+        }
+    }
+
+    /* misc tests */
+    {
+        byte   dummy_var[WC_AES_BLOCK_SIZE];
+        XMEMSET(dummy_var, 0, sizeof(dummy_var));
+
+        /* test invalid options */
+        ret = wc_KDA_KDF_PRF_cmac(NULL, 0, NULL, 0, NULL, 0,
+                                  (enum CmacType)0, HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_PRF_cmac(dummy_var, 0, dummy_var, 0, dummy_var, 0,
+                                  (enum CmacType)0, HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_PRF_cmac(dummy_var, 15, dummy_var, 1, dummy_var, 15,
+                                  WC_CMAC_AES, HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_PRF_cmac(dummy_var, 16, NULL, 1, dummy_var, 1,
+                                  WC_CMAC_AES, HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        /* test valid options */
+        ret = wc_KDA_KDF_PRF_cmac(dummy_var, 16, dummy_var, 1, dummy_var, 1,
+                                  WC_CMAC_AES, HEAP_HINT, devId);
+        if (ret) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_PRF_cmac(dummy_var, 16, NULL, 0, dummy_var, 1,
+                                  WC_CMAC_AES, HEAP_HINT, devId);
+        if (ret) {
+            return WC_TEST_RET_ENC_NC;
+        }
+    }
+
+    return 0;
+}
+
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp80056c_twostep_cmac(void)
+{
+    int ret = 0;
+
+    #if !defined(NO_AES_192)
+    {
+       /* From CMACGenAES192.rsp
+        * https://csrc.nist.rip/groups/STM/cavp/block-cipher-modes.html
+        * Count = 40
+        * Klen = 24
+        * Mlen = 32
+        * Tlen = 16
+        * produces this intermediate
+        * K_kdk = {74f74608c04f0f4e47fa640433b6e6fb},
+        * and this Kout. */
+        const byte salt[AES_192_KEY_SIZE] =
+            {0x20, 0x51, 0xaf, 0x34, 0x76, 0x2e, 0xbe, 0x55,
+             0x6f, 0x72, 0xa5, 0xc6, 0xed, 0xc7, 0x77, 0x1e,
+             0xb9, 0x24, 0x5f, 0xad, 0x76, 0xf0, 0x34, 0xbe};
+        const byte z[2 * WC_AES_BLOCK_SIZE] =
+            {0xae, 0x8e, 0x93, 0xc9, 0xc9, 0x91, 0xcf, 0x89,
+             0x6a, 0x49, 0x1a, 0x89, 0x07, 0xdf, 0x4e, 0x4b,
+             0xe5, 0x18, 0x6a, 0xe4, 0x96, 0xcd, 0x34, 0x0d,
+             0xc1, 0x9b, 0x23, 0x78, 0x21, 0xdb, 0x7b, 0x60};
+        const byte fixedInfo[60] =
+            {0xa2, 0x59, 0xca, 0xe2, 0xc4, 0xa3, 0x6b, 0x89,
+             0x56, 0x3c, 0xb1, 0x48, 0xc7, 0x82, 0x51, 0x34,
+             0x3b, 0xbf, 0xab, 0xdc, 0x13, 0xca, 0x7a, 0xc2,
+             0x17, 0x1c, 0x2e, 0xb6, 0x02, 0x1f, 0x44, 0x77,
+             0xfe, 0xa3, 0x3b, 0x28, 0x72, 0x4d, 0xa7, 0x21,
+             0xee, 0x08, 0x7b, 0xff, 0xd7, 0x94, 0xa1, 0x56,
+             0x37, 0x54, 0xb4, 0x25, 0xa8, 0xd0, 0x9b, 0x3e,
+             0x0d, 0xa5, 0xff, 0xed};
+        const byte Kout[40] =
+            {0xb4, 0x0c, 0x32, 0xbe, 0x01, 0x27, 0x93, 0xba,
+             0xfd, 0xf7, 0x78, 0xc5, 0xf4, 0x54, 0x43, 0xf4,
+             0xc9, 0x71, 0x23, 0x93, 0x17, 0x63, 0xd8, 0x3a,
+             0x59, 0x27, 0x07, 0xbf, 0xf2, 0xd3, 0x60, 0x59,
+             0x50, 0x27, 0x29, 0xca, 0xb8, 0x8b, 0x29, 0x38};
+        byte test_Kout[40];
+        int  n_diff = 0;
+
+        XMEMSET(test_Kout, 0, sizeof(Kout));
+
+        ret = wc_KDA_KDF_twostep_cmac(salt, sizeof(salt), z, sizeof(z),
+                                      fixedInfo, sizeof(fixedInfo),
+                                      test_Kout, sizeof(Kout),
+                                      HEAP_HINT, devId);
+        if (ret) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        n_diff = XMEMCMP(Kout, test_Kout, sizeof(Kout));
+        if (n_diff) {
+            WOLFSSL_MSG_EX("error: nist_sp80056c_cmac: %d", n_diff);
+            return WC_TEST_RET_ENC_NC;
+        }
+    }
+    #endif /* !NO_AES_192 */
+
+    {
+        byte   dummy_var[WC_AES_BLOCK_SIZE];
+        XMEMSET(dummy_var, 0, sizeof(dummy_var));
+
+        /* test invalid options */
+        ret = wc_KDA_KDF_twostep_cmac(NULL, 0, NULL, 0, NULL, 0, NULL, 0,
+                                      HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_twostep_cmac(dummy_var, 0, dummy_var, 0,
+                                      dummy_var, 0, dummy_var, 0,
+                                      HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_twostep_cmac(dummy_var, 15, dummy_var, 1,
+                                      dummy_var, 1, dummy_var, 1,
+                                      HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_twostep_cmac(dummy_var, 15, dummy_var, 1,
+                                      NULL, 1, dummy_var, 1,
+                                      HEAP_HINT, devId);
+        if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG)) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        /* test valid options */
+        ret = wc_KDA_KDF_twostep_cmac(dummy_var, 16, dummy_var, 1,
+                                      dummy_var, 1, dummy_var, 1,
+                                      HEAP_HINT, devId);
+        if (ret) {
+            return WC_TEST_RET_ENC_NC;
+        }
+
+        ret = wc_KDA_KDF_twostep_cmac(dummy_var, 16, dummy_var, 1,
+                                      NULL, 0, dummy_var, 1,
+                                      HEAP_HINT, devId);
+        if (ret) {
+            return WC_TEST_RET_ENC_NC;
+        }
+    }
+
+    return 0;
+}
+#endif /* HAVE_CMAC_KDF && (!HAVE_FIPS || FIPS_VERSION3_GE(7,0,0)) */
 
 /* optional macro to add sleep between tests */
 #ifndef TEST_SLEEP
@@ -1469,15 +1819,23 @@ static WOLFSSL_TEST_SUBROUTINE wc_test_ret_t nist_sp80056c_kdf_test(void)
     }
 #endif
 
+#ifdef TEST_ALWAYS_RUN_TO_END
+    #define TEST_PASS_stack_size_fail_clause last_failed_test_ret = \
+        WC_TEST_RET_ENC_EC(MEMORY_E)
+#else
+    #define TEST_PASS_stack_size_fail_clause \
+        return err_sys("post-test check failed", WC_TEST_RET_ENC_NC)
+#endif
+
 /* set test pass output to printf if not overridden */
 #ifndef TEST_PASS
     /* redirect to printf */
     #define TEST_PASS(...) {                                    \
         if (STACK_SIZE_CHECKPOINT_WITH_MAX_CHECK                \
             (max_relative_stack, printf(__VA_ARGS__)) < 0) {    \
-            return err_sys("post-test check failed", WC_TEST_RET_ENC_NC);\
+            TEST_PASS_stack_size_fail_clause;                   \
         }                                                       \
-        PRINT_HEAP_CHECKPOINT("TEST_PASS", 0)                            \
+        PRINT_HEAP_CHECKPOINT("TEST_PASS", 0)                   \
         ASSERT_RESTORED_VECTOR_REGISTERS(exit(1););             \
     }
 #endif
@@ -1511,7 +1869,7 @@ wc_test_ret_t wolfcrypt_test(void* args)
 #endif
 
 #ifdef WC_RNG_SEED_CB
-        wc_SetSeed_Cb(wc_GenerateSeed);
+        wc_SetSeed_Cb(WC_GENERATE_SEED_DEFAULT);
 #endif
 
     printf("------------------------------------------------------------------------------\n");
@@ -1581,7 +1939,7 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     wc_SetLoggingHeap(HEAP_HINT);
 #endif
 
-#if defined(HAVE_FIPS) && !defined(WOLFSSL_LINUXKM)
+#if defined(HAVE_FIPS) && !defined(WOLFSSL_KERNEL_MODE)
     wolfCrypt_SetCb_fips(myFipsCb);
     #if FIPS_VERSION3_GE(6,0,0)
         printf("FIPS module version in use: %s\n",
@@ -1656,6 +2014,11 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
         TEST_PASS("CAVP selftest passed!\n");
 #endif
 
+    if ( (ret = macro_test()) != 0)
+        TEST_FAIL("macro    test failed!\n", ret);
+    else
+        TEST_PASS("macro    test passed!\n");
+
     if ( (ret = error_test()) != 0)
         TEST_FAIL("error    test failed!\n", ret);
     else
@@ -1685,13 +2048,6 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     else
         TEST_PASS("asn      test passed!\n");
 #endif
-
-#ifndef WC_NO_RNG
-    if ( (ret = random_test()) != 0)
-        TEST_FAIL("RANDOM   test failed!\n", ret);
-    else
-        TEST_PASS("RANDOM   test passed!\n");
-#endif /* WC_NO_RNG */
 
 #ifndef NO_MD5
     if ( (ret = md5_test()) != 0)
@@ -1776,6 +2132,13 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     else
         TEST_PASS("SHA-3    test passed!\n");
 #endif
+
+#ifndef WC_NO_RNG
+    if ((ret = random_test()) != 0)
+        TEST_FAIL("RANDOM   test failed!\n", ret);
+    else
+        TEST_PASS("RANDOM   test passed!\n");
+#endif /* WC_NO_RNG */
 
 #ifdef WOLFSSL_SHAKE128
     if ( (ret = shake128_test()) != 0)
@@ -1897,36 +2260,35 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     PRIVATE_KEY_LOCK();
 #endif /* WOLFSSL_WOLFSSH */
 
-#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC) && defined(WOLFSSL_SHA384)
+#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_SHA384) && !defined(WOLFSSL_NO_TLS12)
     PRIVATE_KEY_UNLOCK();
     if ( (ret = prf_test()) != 0)
         TEST_FAIL("PRF         test failed!\n", ret);
     else
         TEST_PASS("PRF         test passed!\n");
     PRIVATE_KEY_LOCK();
-#endif
+#endif /* WOLFSSL_HAVE_PRF && !NO_HMAC && WOLFSSL_SHA384 && !WOLFSSL_NO_TLS12 */
 
-#ifdef WOLFSSL_HAVE_PRF
-#if defined (HAVE_HKDF) && !defined(NO_HMAC)
-#ifdef WOLFSSL_BASE16
+#if defined(WOLFSSL_HAVE_PRF) && defined(HAVE_HKDF) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_BASE16) && !defined(WOLFSSL_NO_TLS12)
     PRIVATE_KEY_UNLOCK();
     if ( (ret = tls12_kdf_test()) != 0)
         TEST_FAIL("TLSv1.2 KDF test failed!\n", ret);
     else
         TEST_PASS("TLSv1.2 KDF test passed!\n");
     PRIVATE_KEY_LOCK();
-#endif /* WOLFSSL_BASE16 */
-#endif /* WOLFSSL_HAVE_HKDF && !NO_HMAC */
-#endif /* WOLFSSL_HAVE_PRF */
+#endif /* WOLFSSL_HAVE_PRF && HAVE_HKDF && !NO_HMAC && */
+       /* WOLFSSL_BASE16 && !WOLFSSL_NO_TLS12 */
 
-#ifdef WOLFSSL_TLS13
+#if defined(WOLFSSL_TLS13) && !defined(NO_HMAC)
     PRIVATE_KEY_UNLOCK();
     if ( (ret = tls13_kdf_test()) != 0)
         TEST_FAIL("TLSv1.3 KDF test failed!\n", ret);
     else
         TEST_PASS("TLSv1.3 KDF test passed!\n");
     PRIVATE_KEY_LOCK();
-#endif /* WOLFSSL_TLS13 */
+#endif /* WOLFSSL_TLS13 && !NO_HMAC */
 
 #if defined(HAVE_X963_KDF) && defined(HAVE_ECC)
     if ( (ret = x963kdf_test()) != 0)
@@ -1935,7 +2297,8 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
         TEST_PASS("X963-KDF    test passed!\n");
 #endif
 
-#if defined(HAVE_HPKE) && defined(HAVE_ECC) && defined(HAVE_AESGCM)
+#if defined(HAVE_HPKE) && defined(HAVE_ECC) && defined(HAVE_AESGCM) && \
+    defined(WOLFSSL_AES_256)
     PRIVATE_KEY_UNLOCK();
     if ( (ret = hpke_test()) != 0)
         TEST_FAIL("HPKE     test failed!\n", ret);
@@ -1953,12 +2316,24 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     PRIVATE_KEY_LOCK();
 #endif
 
-#if defined(WC_KDF_NIST_SP_800_56C)
+#if defined(WC_KDF_NIST_SP_800_56C) && \
+    (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
     if ( (ret = nist_sp80056c_kdf_test()) != 0)
         TEST_FAIL("NIST SP 800-56C KDF test failed!\n", ret);
     else
         TEST_PASS("NIST SP 800-56C KDF test passed!\n");
 #endif
+
+#if defined(HAVE_CMAC_KDF) && (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
+    if ( (ret = nist_sp800108_cmac()) != 0)
+        TEST_FAIL("NIST SP 800-108 KDF test failed!\n", ret);
+    else
+        TEST_PASS("NIST SP 800-108 KDF test passed!\n");
+    if ( (ret = nist_sp80056c_twostep_cmac()) != 0)
+        TEST_FAIL("NIST SP 800-56C two-step KDF test failed!\n", ret);
+    else
+        TEST_PASS("NIST SP 800-56C two-step KDF test passed!\n");
+#endif /* HAVE_CMAC_KDF && (!HAVE_FIPS || FIPS_VERSION3_GE(7,0,0)) */
 
 #if defined(HAVE_AESGCM) && defined(WOLFSSL_AES_128) && \
    !defined(WOLFSSL_AFALG_XILINX_AES) && !defined(WOLFSSL_XILINX_CRYPT) && \
@@ -2132,7 +2507,7 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     else
         TEST_PASS("AES Key Wrap test passed!\n");
 #endif
-#ifdef WOLFSSL_AES_SIV
+#if defined(WOLFSSL_AES_SIV) && defined(WOLFSSL_AES_128)
     if ( (ret = aes_siv_test()) != 0)
         TEST_FAIL("AES-SIV  test failed!\n", ret);
     else
@@ -2472,7 +2847,8 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
         TEST_PASS("mp       test passed!\n");
 #endif
 
-#if defined(WOLFSSL_PUBLIC_MP) && defined(WOLFSSL_KEY_GEN)
+#if defined(WOLFSSL_PUBLIC_MP) && defined(WOLFSSL_KEY_GEN) && \
+    (!defined(NO_DH) || !defined(NO_DSA)) && !defined(WC_NO_RNG)
     if ( (ret = prime_test()) != 0)
         TEST_FAIL("prime    test failed!\n", ret);
     else
@@ -2546,6 +2922,9 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
 #ifdef HAVE_CAVIUM_OCTEON_SYNC
     wc_CryptoCb_CleanupOcteon(&devId);
 #endif
+#ifdef HAVE_RENESAS_SYNC
+    wc_CryptoCb_CleanupRenesasCmn(&devId);
+#endif
 #endif
 
 #ifdef WOLFSSL_ASYNC_CRYPT
@@ -2594,7 +2973,10 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
 #ifndef NO_MAIN_FUNCTION
     int main(int argc, char** argv)
     {
-        return (int)wolfcrypt_test_main(argc, argv);
+        if (wolfcrypt_test_main(argc, argv) >= 0)
+            return 0;
+        else
+            return 1;
     }
 #endif
 
@@ -2683,11 +3065,13 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
         printf("Math: %s\n", wc_GetMathInfo());
 #endif
 
+        if (ret == 0) {
 #ifdef HAVE_STACK_SIZE
-        StackSizeCheck(&args, wolfcrypt_test);
+            StackSizeCheck(&args, wolfcrypt_test);
 #else
-        wolfcrypt_test(&args);
+            wolfcrypt_test(&args);
 #endif
+        }
 
         if ((ret = wolfCrypt_Cleanup()) != 0) {
             printf("wolfCrypt_Cleanup failed %d\n", (int)ret);
@@ -2733,10 +3117,10 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
 
 #endif /* NO_MAIN_DRIVER */
 
+
 /* helper to save DER, convert to PEM and save PEM */
 #if !defined(NO_ASN) && (defined(HAVE_ECC) || !defined(NO_DSA) || \
-(!defined(NO_RSA) && (defined(WOLFSSL_KEY_GEN) || defined(WOLFSSL_CERT_GEN)))) \
-     && !defined(WOLF_CRYPTO_CB_ONLY_ECC)
+(!defined(NO_RSA) && (defined(WOLFSSL_KEY_GEN) || defined(WOLFSSL_CERT_GEN))))
 
 #if !defined(NO_FILESYSTEM) && !defined(NO_WRITE_TEMP_FILES)
 #define SaveDerAndPem(d, dSz, fD, fP, pT) _SaveDerAndPem(d, dSz, fD, fP, pT, WC_TEST_RET_LN)
@@ -2762,7 +3146,7 @@ static wc_test_ret_t _SaveDerAndPem(const byte* der, int derSz,
     }
 #endif
 
-#ifdef WOLFSSL_DER_TO_PEM
+#if defined(WOLFSSL_DER_TO_PEM) && !defined(NO_CERTS)
     if (filePem) {
     #if !defined(NO_FILESYSTEM) && !defined(NO_WRITE_TEMP_FILES)
         XFILE pemFile;
@@ -2831,10 +3215,368 @@ static wc_test_ret_t _SaveDerAndPem(const byte* der, int derSz,
 }
 #endif /* WOLFSSL_KEY_GEN || WOLFSSL_CERT_GEN */
 
+static wc_test_ret_t safe_sum_word32_test(void) {
+    word32 out;
+    int ret;
+    int i;
+
+    static const struct {
+        word32 a;
+        word32 b;
+        word32 e;
+        int t;
+    } cases[] = {
+    #define u_max 4294967295U
+    #define half (4294967295U / 2U)
+        { 0, 0, 0, 1 },
+        { 1, 1, 2, 1 },
+        { u_max, 0, u_max, 1 },
+        { u_max - 1, 1, u_max, 1 },
+        { u_max, 1, u_max, 0 },
+        { 0, u_max, u_max, 1 },
+        { half, half, half * 2U, 1 },
+        { u_max - 1, 2, u_max, 0 }
+    #undef half
+    #undef u_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUM_UNSIGNED_CLIP(word32, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUM_UNSIGNED(word32, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+static wc_test_ret_t safe_sub_word32_test(void) {
+    word32 out;
+    int ret;
+    int i;
+
+    static const struct {
+        word32 a;
+        word32 b;
+        word32 e;
+        int t;
+    } cases[] = {
+    #define u_max 4294967295U
+        { 5, 3, 2, 1 },
+        { 0, 0, 0, 1 },
+        { 1, 0, 1, 1 },
+        { 0, 1, 0, 0 },
+        { u_max, u_max, 0, 1 },
+        { u_max, 0, u_max, 1 },
+        { u_max, 1, u_max - 1, 1 },
+        { 1, 2, 0, 0 },
+    #undef u_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUB_UNSIGNED_CLIP(word32, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUB_UNSIGNED(word32, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+static wc_test_ret_t safe_sum_sword32_test(void) {
+    sword32 out;
+    int ret;
+    int i;
+
+    static const struct {
+        sword32 a;
+        sword32 b;
+        sword32 e;
+        int t;
+    } cases[] = {
+    #define i_max 2147483647
+    #define i_min (-i_max - 1)
+    #define half (i_max / 2)
+        { 0, 0, 0, 1 },
+        { 1, 1, 2, 1 },
+        { i_max, 0, i_max, 1 },
+        { i_max - 1, 1, i_max, 1 },
+        { i_max, 1, i_max, 0 },
+        { 0, i_max, i_max, 1 },
+        { -1, -1, -2, 1 },
+        { i_min, 0, i_min, 1 },
+        { i_min + 1, -1, i_min, 1 },
+        { i_min, -1, i_min, 0 },
+        { 1, -1, 0, 1 },
+        { -1, 1, 0, 1 },
+        { half, half + 1, i_max, 1 },
+        { half + 1, half + 1, i_max, 0 }
+    #undef half
+    #undef i_min
+    #undef i_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUM_SIGNED_CLIP(sword32, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUM_SIGNED(sword32, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+static wc_test_ret_t safe_sub_sword32_test(void) {
+    sword32 out;
+    int ret;
+    int i;
+
+    static const struct {
+        sword32 a;
+        sword32 b;
+        sword32 e;
+        int t;
+    } cases[] = {
+    #define i_max 2147483647
+    #define i_min (-i_max - 1)
+        { 0, 0, 0, 1 },
+        { 5, 3, 2, 1 },
+        { 1, -1, 2, 1 },
+        { i_max, 0, i_max, 1 },
+        { i_max, -1, i_max, 0 },
+        { -5, -3, -2, 1 },
+        { 0, 1, -1, 1 },
+        { i_min, 0, i_min, 1 },
+        { i_min + 1, 1, i_min, 1 },
+        { i_min, 1, i_min, 0 },
+        { 1, 2, -1, 1 },
+        { -1, -2, 1, 1 },
+        { -1, i_min, i_max, 1 },
+        { i_min, -1, i_min + 1, 1 },
+        { 2, -3, 5, 1 }
+    #undef i_min
+    #undef i_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUB_SIGNED_CLIP(sword32, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUB_SIGNED(sword32, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+#ifdef WORD64_AVAILABLE
+static wc_test_ret_t safe_sum_word64_test(void) {
+    word64 out;
+    int ret;
+    int i;
+
+    static const struct {
+        word64 a;
+        word64 b;
+        word64 e;
+        int t;
+    } cases[] = {
+    #define u_max W64LIT(18446744073709551615)
+    #define half (u_max / 2)
+        { 0, 0, 0, 1 },
+        { 1, 1, 2, 1 },
+        { u_max, 0, u_max, 1 },
+        { u_max - 1, 1, u_max, 1 },
+        { u_max, 1, u_max, 0 },
+        { 0, u_max, u_max, 1 },
+        { half, half, half * 2ULL, 1 },
+        { u_max - 1, 2, u_max, 0 }
+    #undef half
+    #undef u_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUM_UNSIGNED_CLIP(word64, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUM_UNSIGNED(word64, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+static wc_test_ret_t safe_sub_word64_test(void) {
+    word64 out;
+    int ret;
+    int i;
+
+    static const struct {
+        word64 a;
+        word64 b;
+        word64 e;
+        int t;
+    } cases[] = {
+    #define u_max W64LIT(18446744073709551615)
+        { 5, 3, 2, 1 },
+        { 0, 0, 0, 1 },
+        { 1, 0, 1, 1 },
+        { 0, 1, 0, 0 },
+        { u_max, u_max, 0, 1 },
+        { u_max, 0, u_max, 1 },
+        { u_max, 1, u_max - 1, 1 },
+        { 1, 2, 0, 0 }
+    #undef u_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUB_UNSIGNED_CLIP(word64, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUB_UNSIGNED(word64, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+static wc_test_ret_t safe_sum_sword64_test(void) {
+    sword64 out;
+    int ret;
+    int i;
+
+    static const struct {
+        sword64 a;
+        sword64 b;
+        sword64 e;
+        int t;
+    } cases[] = {
+    #define i_max SW64LIT(9223372036854775807)
+    #define i_min (-i_max-1)
+    #define half (i_max / 2)
+        { 0, 0, 0, 1 },
+        { 1, 1, 2, 1 },
+        { i_max, 0, i_max, 1 },
+        { i_max - 1, 1, i_max, 1 },
+        { i_max, 1, i_max, 0 },
+        { 0, i_max, i_max, 1 },
+        { -1, -1, -2, 1 },
+        { i_min, 0, i_min, 1 },
+        { i_min + 1, -1, i_min, 1 },
+        { i_min, -1, i_min, 0 },
+        { 1, -1, 0, 1 },
+        { -1, 1, 0, 1 },
+        { half, half + 1, i_max, 1 },
+        { half + 1, half + 1, i_max, 0 }
+    #undef half
+    #undef i_min
+    #undef i_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUM_SIGNED_CLIP(sword64, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUM_SIGNED(sword64, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+
+static wc_test_ret_t safe_sub_sword64_test(void) {
+    sword64 out;
+    int ret;
+    int i;
+
+    static const struct {
+        sword64 a;
+        sword64 b;
+        sword64 e;
+        int t;
+    } cases[] = {
+    #define i_max SW64LIT(9223372036854775807)
+    #define i_min (-i_max-1)
+        { 0, 0, 0, 1 },
+        { 5, 3, 2, 1 },
+        { 1, -1, 2, 1 },
+        { i_max, 0, i_max, 1 },
+        { i_max, -1, i_max, 0 },
+        { -5, -3, -2, 1 },
+        { 0, 1, -1, 1 },
+        { i_min, 0, i_min, 1 },
+        { i_min + 1, 1, i_min, 1 },
+        { i_min, 1, i_min, 0 },
+        { 1, 2, -1, 1 },
+        { -1, -2, 1, 1 },
+        { -1, i_min, i_max, 1 },
+        { i_min, -1, i_min + 1, 1 },
+        { 2, -3, 5, 1 }
+    #undef i_min
+    #undef i_max
+    };
+
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); ++i) {
+        ret = WC_SAFE_SUB_SIGNED_CLIP(sword64, cases[i].a, cases[i].b, out);
+        if (out != cases[i].e || ret != cases[i].t)
+            return WC_TEST_RET_ENC_I(i);
+        out = 10;
+        ret = WC_SAFE_SUB_SIGNED(sword64, cases[i].a, cases[i].b, out);
+        if ((ret != cases[i].t) || (ret && (out != cases[i].e)))
+            return WC_TEST_RET_ENC_I(i);
+    }
+
+    return 0;
+}
+#endif /* WORD64_AVAILABLE */
+
+WOLFSSL_TEST_SUBROUTINE wc_test_ret_t macro_test(void)
+{
+    wc_test_ret_t ret;
+
+    ret = safe_sum_word32_test();
+    if (ret == 0)
+        ret = safe_sub_word32_test();
+    if (ret == 0)
+        ret = safe_sum_sword32_test();
+    if (ret == 0)
+        ret = safe_sub_sword32_test();
+
+#ifdef WORD64_AVAILABLE
+    if (ret == 0)
+        ret = safe_sum_word64_test();
+    if (ret == 0)
+        ret = safe_sub_word64_test();
+    if (ret == 0)
+        ret = safe_sum_sword64_test();
+    if (ret == 0)
+        ret = safe_sub_sword64_test();
+#endif /* WORD64_AVAILABLE */
+
+    return ret;
+}
+
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t error_test(void)
 {
     const char* errStr;
-    char        out[WOLFSSL_MAX_ERROR_SZ];
+    char        out[WOLFSSL_MAX_ERROR_SZ]; /* test fails if too small, < 64 */
     const char* unknownStr = wc_GetErrorString(0);
 
 #ifdef NO_ERROR_STRINGS
@@ -2942,6 +3684,11 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t base64_test(void)
         "abcdefghijklmnopqrstuvwxyz"
         "0123456789+/;";
     static const byte charTest[] = "A+Gd\0\0\0";
+    static const byte oneByteTest[] = "YQ==";
+    static const byte twoByteTest[] = "YWE=";
+    static const byte threeByteTest[] = "YWFh";
+    static const byte fourByteTest[] = "YWFhYQ==";
+    static const byte byteTestOutput[] = "aaaa";
     int        i;
     WOLFSSL_ENTER("base64_test");
 
@@ -2969,7 +3716,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t base64_test(void)
     /* Bad parameters. */
     outLen = 1;
     ret = Base64_Decode(good, sizeof(good), out, &outLen);
-    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+    if (ret != WC_NO_ERR_TRACE(BUFFER_E))
         return WC_TEST_RET_ENC_EC(ret);
 
     outLen = sizeof(out);
@@ -3018,6 +3765,48 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t base64_test(void)
             return WC_TEST_RET_ENC_I(i);
     }
 
+    /* overrun/right-sized tests */
+#define N_BYTE_TEST(f, n, t) do {                               \
+    outLen = (n) - 1;                                           \
+    ret = (f)(t, sizeof(t), out, &outLen);                      \
+    if (ret != WC_NO_ERR_TRACE(BUFFER_E))                       \
+        return WC_TEST_RET_ENC_EC(ret);                         \
+    outLen = (n);                                               \
+    ret = (f)(t, sizeof(t), out, &outLen);                      \
+    if (ret != 0)                                               \
+        return WC_TEST_RET_ENC_EC(ret);                         \
+    if (outLen != (n))                                          \
+        return WC_TEST_RET_ENC_I(outLen);                       \
+    ret = XMEMCMP(out, byteTestOutput, (n));                    \
+    if (ret != 0)                                               \
+        return WC_TEST_RET_ENC_I(ret);                          \
+    ret = (f)(t, sizeof(t) - 1, out, &outLen);                  \
+    if (ret != 0)                                               \
+        return WC_TEST_RET_ENC_EC(ret);                         \
+    if (outLen != (n))                                          \
+        return WC_TEST_RET_ENC_I(outLen);                       \
+    ret = XMEMCMP(out, byteTestOutput, (n));                    \
+    if (ret != 0)                                               \
+        return WC_TEST_RET_ENC_I(ret);                          \
+    outLen = (n) + 1;                                           \
+    out[n] = 1;                                                 \
+    ret = (f)(t, sizeof(t), out, &outLen);                      \
+    if (ret != 0)                                               \
+        return WC_TEST_RET_ENC_EC(ret);                         \
+    if (outLen != (n))                                          \
+        return WC_TEST_RET_ENC_I(outLen);                       \
+    ret = XMEMCMP(out, byteTestOutput, (n));                    \
+    if (ret != 0)                                               \
+        return WC_TEST_RET_ENC_I(ret);                          \
+    if (out[n] != 0)                                            \
+        return WC_TEST_RET_ENC_NC;                              \
+    } while (0)
+
+    N_BYTE_TEST(Base64_Decode, 1, oneByteTest);
+    N_BYTE_TEST(Base64_Decode, 2, twoByteTest);
+    N_BYTE_TEST(Base64_Decode, 3, threeByteTest);
+    N_BYTE_TEST(Base64_Decode, 4, fourByteTest);
+
     /* Same tests again, using Base64_Decode_nonCT() */
 
     /* Good Base64 encodings. */
@@ -3044,7 +3833,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t base64_test(void)
     /* Bad parameters. */
     outLen = 1;
     ret = Base64_Decode_nonCT(good, sizeof(good), out, &outLen);
-    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+    if (ret != WC_NO_ERR_TRACE(BUFFER_E))
         return WC_TEST_RET_ENC_EC(ret);
 
     outLen = sizeof(out);
@@ -3093,6 +3882,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t base64_test(void)
             return WC_TEST_RET_ENC_I(i);
     }
 
+    N_BYTE_TEST(Base64_Decode_nonCT, 1, oneByteTest);
+    N_BYTE_TEST(Base64_Decode_nonCT, 2, twoByteTest);
+    N_BYTE_TEST(Base64_Decode_nonCT, 3, threeByteTest);
+    N_BYTE_TEST(Base64_Decode_nonCT, 4, fourByteTest);
 
 #ifdef WOLFSSL_BASE64_ENCODE
     /* Decode and encode all symbols - non-alphanumeric. */
@@ -3988,11 +4781,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t sha256_test(void)
 #endif
 #ifndef NO_LARGE_HASH_TEST
 #define LARGE_HASH_TEST_INPUT_SZ 1024
-#ifdef WOLFSSL_SMALL_STACK
-    byte *large_input = NULL;
-#else
-    byte large_input[LARGE_HASH_TEST_INPUT_SZ];
-#endif
+    WC_DECLARE_VAR(large_input, byte, LARGE_HASH_TEST_INPUT_SZ, 0);
 #endif
 
     int times = sizeof(test_sha) / sizeof(struct testVector), i;
@@ -4144,14 +4933,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t sha256_test(void)
            "\x4f\x45\x79\x7f\x67\x70\xbd\x63\x7f\xbf\x0d\x80\x7c\xbd\xba\xe0";
 #endif
 
-#ifdef WOLFSSL_SMALL_STACK
-    large_input = (byte *)XMALLOC(LARGE_HASH_TEST_INPUT_SZ, HEAP_HINT,
-                                  DYNAMIC_TYPE_TMP_BUFFER);
-
-    if (large_input == NULL) {
-        ERROR_OUT(WC_TEST_RET_ENC_EC(MEMORY_E), exit);
-    }
-#endif
+    WC_ALLOC_VAR_EX(large_input, byte, LARGE_HASH_TEST_INPUT_SZ, HEAP_HINT,
+        DYNAMIC_TYPE_TMP_BUFFER,
+        ERROR_OUT(WC_TEST_RET_ENC_EC(MEMORY_E),exit));
 
     for (i = 0; i < LARGE_HASH_TEST_INPUT_SZ; i++) {
         large_input[i] = (byte)(i & 0xFF);
@@ -4240,11 +5024,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t sha512_test(void)
 #endif
 #ifndef NO_LARGE_HASH_TEST
 #define LARGE_HASH_TEST_INPUT_SZ 1024
-#ifdef WOLFSSL_SMALL_STACK
-    byte *large_input = NULL;
-#else
-    byte large_input[LARGE_HASH_TEST_INPUT_SZ];
-#endif
+    WC_DECLARE_VAR(large_input, byte, LARGE_HASH_TEST_INPUT_SZ, 0);
 #endif
 
     int times = sizeof(test_sha) / sizeof(struct testVector), i;
@@ -4393,14 +5173,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t sha512_test(void)
         "\xa5\xdc\xfc\xfa\x9d\x1a\x4d\xc0\xfa\x3a\x14\xf6\x01\x51\x90\xa4";
 #endif
 
-#ifdef WOLFSSL_SMALL_STACK
-    large_input = (byte *)XMALLOC(LARGE_HASH_TEST_INPUT_SZ, HEAP_HINT,
-                                  DYNAMIC_TYPE_TMP_BUFFER);
-
-    if (large_input == NULL) {
-        ERROR_OUT(WC_TEST_RET_ENC_EC(MEMORY_E), exit);
-    }
-#endif
+    WC_ALLOC_VAR_EX(large_input, byte, LARGE_HASH_TEST_INPUT_SZ, HEAP_HINT,
+        DYNAMIC_TYPE_TMP_BUFFER,
+        ERROR_OUT(WC_TEST_RET_ENC_EC(MEMORY_E),exit));
 
     for (i = 0; i < LARGE_HASH_TEST_INPUT_SZ; i++) {
         large_input[i] = (byte)(i & 0xFF);
@@ -5113,7 +5888,7 @@ static wc_test_ret_t sha3_384_test(void)
     a.inLen  = XSTRLEN(a.input);
     a.outLen = WC_SHA3_384_DIGEST_SIZE;
 
-#if defined(WOLFSSL_AFALG_XILINX_SHA3) || defined(WOLFSSL_XILINX_CRYPT) && !defined(WOLFSSL_XILINX_CRYPT_VERSAL)
+#ifndef NO_INTM_HASH_TEST
     /* NIST test vector with a length that is a multiple of 4 */
     b.input  = "\x7d\x80\xb1\x60\xc4\xb5\x36\xa3\xbe\xb7\x99\x80\x59\x93\x44"
                "\x04\x7c\x5f\x82\xa1\xdf\xc3\xee\xd4";
@@ -5140,7 +5915,7 @@ static wc_test_ret_t sha3_384_test(void)
     c.inLen  = XSTRLEN(c.input);
     c.outLen = WC_SHA3_384_DIGEST_SIZE;
 
-#if defined(WOLFSSL_XILINX_CRYPT) && !defined(WOLFSSL_XILINX_CRYPT_VERSAL)
+#ifndef NO_INTM_HASH_TEST
     test_sha[0] = b; /* hardware acc. pre-Versal can not handle "" string */
 #else
     test_sha[0] = a;
@@ -6442,7 +7217,11 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t hash_test(void)
     if (ret != WC_NO_ERR_TRACE(HASH_TYPE_E))
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 #endif
+#ifdef WOLFSSL_OLD_OID_SUM
     hashType = wc_OidGetHash(646); /* Md2h */
+#else
+    hashType = wc_OidGetHash(0x044a8bdd); /* Md2h */
+#endif
 #ifdef WOLFSSL_MD2
     if (hashType != WC_HASH_TYPE_MD2)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
@@ -9661,9 +10440,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t des3_test(void)
 }
 #endif /* NO_DES3 */
 
-static const int fiducial1 = WC_TEST_RET_LN; /* source code reference point --
-                                              * see print_fiducials() below.
-                                              */
+ /* source code reference point -- see print_fiducials() below. */
+static WC_MAYBE_UNUSED const int fiducial1 = WC_TEST_RET_LN;
 
 #ifndef NO_AES
 
@@ -9895,11 +10673,11 @@ EVP_TEST_END:
     #ifdef HAVE_AES_DECRYPT
     XMEMSET(dec, 0, sizeof(Aes));
     #endif
-    ret = wc_AesInit(enc, HEAP_HINT, INVALID_DEVID);
+    ret = wc_AesInit(enc, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     #ifdef HAVE_AES_DECRYPT
-    ret = wc_AesInit(dec, HEAP_HINT, INVALID_DEVID);
+    ret = wc_AesInit(dec, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     #endif
@@ -10136,6 +10914,7 @@ EVP_TEST_END:
         if (XMEMCMP(plain + 6, plain1 + 6, WC_AES_BLOCK_SIZE))
             ERROR_OUT(WC_TEST_RET_ENC_NC, out);
     #endif /* HAVE_AES_DECRYPT */
+#endif /* WOLFSSL_AES_256 */
 
     out:
 
@@ -10152,7 +10931,6 @@ EVP_TEST_END:
         wc_AesFree(dec);
     #endif
     #endif
-#endif /* WOLFSSL_AES_256 */
 
         return ret;
     }
@@ -10500,7 +11278,9 @@ EVP_TEST_END:
 #else
         Aes dec[1];
 #endif
+#ifdef WOLFSSL_AES_128
         byte plain [WC_AES_BLOCK_SIZE];
+#endif
     #endif
         wc_test_ret_t ret = 0;
 
@@ -10761,7 +11541,9 @@ EVP_TEST_END:
 #else
         Aes dec[1];
 #endif
+#ifdef WOLFSSL_AES_128
         byte plain [WC_AES_BLOCK_SIZE];
+#endif
     #endif
         wc_test_ret_t ret = 0;
 
@@ -11398,6 +12180,7 @@ static wc_test_ret_t aes_xts_128_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif
 
+#ifdef HAVE_AES_DECRYPT
     /* partial block decrypt test */
     XMEMSET(buf, 0, sizeof(buf));
     ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
@@ -11539,6 +12322,7 @@ static wc_test_ret_t aes_xts_128_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     if (XMEMCMP(p2, buf, sizeof(p2)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif /* HAVE_AES_DECRYPT */
 
 #ifndef HAVE_FIPS
 
@@ -11583,6 +12367,7 @@ static wc_test_ret_t aes_xts_128_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif /* WOLFSSL_AESXTS_STREAM */
 
+#ifdef HAVE_AES_DECRYPT
     ret = wc_AesXtsSetKeyNoInit(aes, k3, sizeof(k3), AES_DECRYPTION);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -11624,6 +12409,7 @@ static wc_test_ret_t aes_xts_128_test(void)
     if (XMEMCMP(p3, buf, sizeof(p3)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif /* WOLFSSL_AESXTS_STREAM */
+#endif /* HAVE_AES_DECRYPT */
 
 #endif /* !HAVE_FIPS */
 
@@ -11657,6 +12443,7 @@ static wc_test_ret_t aes_xts_128_test(void)
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 
+    #ifdef HAVE_AES_DECRYPT
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -11677,6 +12464,7 @@ static wc_test_ret_t aes_xts_128_test(void)
                     ERROR_OUT(WC_TEST_RET_ENC_NC, out);
                 }
             }
+    #endif
         }
 
 #ifdef WOLFSSL_AESXTS_STREAM
@@ -11712,6 +12500,7 @@ static wc_test_ret_t aes_xts_128_test(void)
                     break;
             }
 
+    #ifdef HAVE_AES_DECRYPT
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -11733,8 +12522,10 @@ static wc_test_ret_t aes_xts_128_test(void)
                     ERROR_OUT(WC_TEST_RET_ENC_NC, out);
                 }
             }
+    #endif
         }
 
+    #ifdef HAVE_AES_DECRYPT
         /* second, encrypt with a one-shot call then decrypt block by block. */
         for (j = 16; j < (int)LARGE_XTS_SZ; j++) {
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_ENCRYPTION);
@@ -11787,6 +12578,7 @@ static wc_test_ret_t aes_xts_128_test(void)
                 }
             }
         }
+    #endif /* HAVE_AES_DECRYPT */
 #endif /* WOLFSSL_AESXTS_STREAM */
     }
 #endif /* !BENCH_EMBEDDED && !HAVE_CAVIUM &&
@@ -12102,6 +12894,7 @@ static wc_test_ret_t aes_xts_192_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif
 
+#ifdef HAVE_AES_DECRYPT
     /* partial block decrypt test */
     XMEMSET(buf, 0, sizeof(buf));
     ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
@@ -12243,6 +13036,7 @@ static wc_test_ret_t aes_xts_192_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     if (XMEMCMP(p2, buf, sizeof(p2)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif
 
     /* Test ciphertext stealing in-place. */
     XMEMCPY(buf, p3, sizeof(p3));
@@ -12285,6 +13079,7 @@ static wc_test_ret_t aes_xts_192_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif /* WOLFSSL_AESXTS_STREAM */
 
+#ifdef HAVE_AES_DECRYPT
     ret = wc_AesXtsSetKeyNoInit(aes, k3, sizeof(k3), AES_DECRYPTION);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -12326,6 +13121,7 @@ static wc_test_ret_t aes_xts_192_test(void)
     if (XMEMCMP(p3, buf, sizeof(p3)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif /* WOLFSSL_AESXTS_STREAM */
+#endif /* HAVE_AES_DECRYPT */
 
 #if !defined(BENCH_EMBEDDED) && !defined(HAVE_CAVIUM) && \
     !defined(WOLFSSL_AFALG)
@@ -12357,6 +13153,7 @@ static wc_test_ret_t aes_xts_192_test(void)
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 
+    #ifdef HAVE_AES_DECRYPT
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -12377,6 +13174,7 @@ static wc_test_ret_t aes_xts_192_test(void)
                     ERROR_OUT(WC_TEST_RET_ENC_NC, out);
                 }
             }
+    #endif
         }
 
 #ifdef WOLFSSL_AESXTS_STREAM
@@ -12412,6 +13210,7 @@ static wc_test_ret_t aes_xts_192_test(void)
                     break;
             }
 
+    #ifdef HAVE_AES_DECRYPT
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -12433,8 +13232,10 @@ static wc_test_ret_t aes_xts_192_test(void)
                     ERROR_OUT(WC_TEST_RET_ENC_NC, out);
                 }
             }
+    #endif
         }
 
+    #ifdef HAVE_AES_DECRYPT
         /* second, encrypt with a one-shot call then decrypt block by block. */
         for (j = 16; j < (int)LARGE_XTS_SZ; j++) {
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_ENCRYPTION);
@@ -12487,6 +13288,7 @@ static wc_test_ret_t aes_xts_192_test(void)
                 }
             }
         }
+    #endif /* HAVE_AES_DECRYPT */
 #endif /* WOLFSSL_AESXTS_STREAM */
     }
 #endif /* !BENCH_EMBEDDED && !HAVE_CAVIUM &&
@@ -12718,6 +13520,7 @@ static wc_test_ret_t aes_xts_256_test(void)
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 
+#ifdef HAVE_AES_DECRYPT
     /* partial block decrypt test */
     XMEMSET(buf, 0, sizeof(buf));
     ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
@@ -12786,6 +13589,7 @@ static wc_test_ret_t aes_xts_256_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     if (XMEMCMP(p2, buf, sizeof(p2)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif /* HAVE_AES_DECRYPT */
 
 #if !defined(BENCH_EMBEDDED) && !defined(HAVE_CAVIUM) && \
     !defined(WOLFSSL_AFALG)
@@ -12817,6 +13621,7 @@ static wc_test_ret_t aes_xts_256_test(void)
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 
+    #ifdef HAVE_AES_DECRYPT
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -12837,6 +13642,7 @@ static wc_test_ret_t aes_xts_256_test(void)
                     ERROR_OUT(WC_TEST_RET_ENC_NC, out);
                 }
             }
+    #endif /* HAVE_AES_DECRYPT */
         }
 
 #ifdef WOLFSSL_AESXTS_STREAM
@@ -12870,6 +13676,7 @@ static wc_test_ret_t aes_xts_256_test(void)
                     break;
             }
 
+    #ifdef HAVE_AES_DECRYPT
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
             if (ret != 0)
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -12890,8 +13697,10 @@ static wc_test_ret_t aes_xts_256_test(void)
                     ERROR_OUT(WC_TEST_RET_ENC_NC, out);
                 }
             }
+    #endif /* HAVE_AES_DECRYPT */
         }
 
+    #ifdef HAVE_AES_DECRYPT
         /* second, encrypt with a one-shot call then decrypt block by block. */
         for (j = 16; j < (int)LARGE_XTS_SZ; j++) {
             ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_ENCRYPTION);
@@ -12942,6 +13751,7 @@ static wc_test_ret_t aes_xts_256_test(void)
                 }
             }
         }
+    #endif /* HAVE_AES_DECRYPT */
 #endif /* WOLFSSL_AESXTS_STREAM */
     }
 #endif /* !BENCH_EMBEDDED && !HAVE_CAVIUM &&
@@ -13142,7 +13952,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
         0x24, 0xe7, 0x3d, 0x6f
     };
 
-    word64 s3 = 0x000000ffffffffff;
+    word64 s3 = W64LIT(0x000000ffffffffff);
 #endif
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
@@ -13170,6 +13980,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
     if (XMEMCMP(c1, buf, WC_AES_BLOCK_SIZE))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 
+#ifdef HAVE_AES_DECRYPT
     /* decrypt test */
     XMEMSET(buf, 0, sizeof(buf));
     ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
@@ -13187,6 +13998,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     if (XMEMCMP(p1, buf, WC_AES_BLOCK_SIZE))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif /* HAVE_AES_DECRYPT */
 
     /* 256 bit key tests */
     XMEMSET(buf, 0, sizeof(buf));
@@ -13202,6 +14014,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
     if (XMEMCMP(c2, buf, sizeof(c2)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 
+#ifdef HAVE_AES_DECRYPT
     /* decrypt test */
     XMEMSET(buf, 0, sizeof(buf));
     ret = wc_AesXtsSetKeyNoInit(aes, k2, sizeof(k2), AES_DECRYPTION);
@@ -13219,6 +14032,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     if (XMEMCMP(p2, buf, sizeof(p2)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif /* HAVE_AES_DECRYPT */
 
 #if !defined(BENCH_EMBEDDED) && \
     (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
@@ -13237,6 +14051,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
     if (XMEMCMP(c3, data, sizeof(c3)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 
+#ifdef HAVE_AES_DECRYPT
     /* decrypt consecutive sectors test */
     XMEMSET(data, 0, sizeof(buf));
     ret = wc_AesXtsSetKeyNoInit(aes, k3, sizeof(k3), AES_DECRYPTION);
@@ -13255,6 +14070,7 @@ static wc_test_ret_t aes_xts_sector_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     if (XMEMCMP(p3, data, sizeof(p3)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif /* HAVE_AES_DECRYPT */
 
 #endif /* !BENCH_EMBEDDED && (!HAVE_FIPS || FIPS_VERSION_GE(5, 3)) */
 
@@ -13298,10 +14114,12 @@ static wc_test_ret_t aes_xts_args_test(void)
         0xa6, 0x6a, 0xe5, 0xbb, 0x50, 0x0e, 0x56, 0x2c
     };
 
+#ifdef HAVE_AES_DECRYPT
     WOLFSSL_SMALL_STACK_STATIC unsigned char c1[] = {
         0x74, 0x62, 0x35, 0x51, 0x21, 0x02, 0x16, 0xac,
         0x92, 0x6b, 0x96, 0x50, 0xb6, 0xd3, 0xfa, 0x52
     };
+#endif
     word64 s1 = 141;
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
@@ -13339,6 +14157,7 @@ static wc_test_ret_t aes_xts_args_test(void)
     if (ret == 0)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 
+#ifdef HAVE_AES_DECRYPT
     /* decryption operations */
     ret = wc_AesXtsSetKeyNoInit(aes, k1, sizeof(k1), AES_DECRYPTION);
     if (ret != 0)
@@ -13364,6 +14183,7 @@ static wc_test_ret_t aes_xts_args_test(void)
 #endif
     if (ret == 0)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif
 
     ret = 0;
 
@@ -13507,13 +14327,13 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_ctr_test(void)
     };
 #endif
 
-#ifdef WOLFSSL_AES_128
     WOLFSSL_SMALL_STACK_STATIC const byte oddCipher[] =
     {
         0xb9,0xd7,0xcb,0x08,0xb0,0xe1,0x7b,0xa0,
         0xc2
     };
 
+#ifdef WOLFSSL_AES_128
     WOLFSSL_SMALL_STACK_STATIC const byte ctr128Key[] =
     {
         0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,
@@ -14157,30 +14977,40 @@ static wc_test_ret_t aes_ecb_test(Aes* enc, Aes* dec, byte* cipher, byte* plain)
 {
     wc_test_ret_t ret = 0;
     /* keys padded to block size (16 bytes) */
+#ifdef WOLFSSL_AES_128
     WOLFSSL_SMALL_STACK_STATIC const byte key_128[] =
         "0123456789abcdef   ";
+#endif
+#ifdef WOLFSSL_AES_192
     WOLFSSL_SMALL_STACK_STATIC const byte key_192[] =
         "0123456789abcdef01234567   ";
+#endif
+#ifdef WOLFSSL_AES_256
     WOLFSSL_SMALL_STACK_STATIC const byte key_256[] =
         "0123456789abcdef0123456789abcdef   ";
+#endif
     WOLFSSL_SMALL_STACK_STATIC const byte iv[]  = "1234567890abcdef   ";
     WOLFSSL_SMALL_STACK_STATIC const byte msg[] = {
         0x6e, 0x6f, 0x77, 0x20, 0x69, 0x73, 0x20, 0x74,
         0x68, 0x65, 0x20, 0x74, 0x69, 0x6d, 0x65, 0x20
     };
+#ifdef WOLFSSL_AES_128
     WOLFSSL_SMALL_STACK_STATIC const byte verify_ecb_128[WC_AES_BLOCK_SIZE] = {
         0xd0, 0xc9, 0xd9, 0xc9, 0x40, 0xe8, 0x97, 0xb6,
         0xc8, 0x8c, 0x33, 0x3b, 0xb5, 0x8f, 0x85, 0xd1
     };
+#endif
+#ifdef WOLFSSL_AES_192
     WOLFSSL_SMALL_STACK_STATIC const byte verify_ecb_192[WC_AES_BLOCK_SIZE] = {
         0x06, 0x57, 0xee, 0x78, 0x3f, 0x96, 0x00, 0xb1,
         0xec, 0x76, 0x94, 0x30, 0x29, 0xbe, 0x15, 0xab
     };
+#endif
+#ifdef WOLFSSL_AES_256
     WOLFSSL_SMALL_STACK_STATIC const byte verify_ecb_256[WC_AES_BLOCK_SIZE] = {
         0xcd, 0xf2, 0x81, 0x3e, 0x73, 0x3e, 0xf7, 0x33,
         0x3d, 0x18, 0xfd, 0x41, 0x85, 0x37, 0x04, 0x82
     };
-
     WOLFSSL_SMALL_STACK_STATIC const byte niKey[] = {
         0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,
         0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,
@@ -14195,6 +15025,7 @@ static wc_test_ret_t aes_ecb_test(Aes* enc, Aes* dec, byte* cipher, byte* plain)
         0xf3,0xee,0xd1,0xbd,0xb5,0xd2,0xa0,0x3c,
         0x06,0x4b,0x5a,0x7e,0x3d,0xb1,0x81,0xf8
     };
+#endif
 
     int i;
     struct {
@@ -14204,10 +15035,16 @@ static wc_test_ret_t aes_ecb_test(Aes* enc, Aes* dec, byte* cipher, byte* plain)
         const byte* plain;
         const byte* verify;
     } testVec[] = {
+#ifdef WOLFSSL_AES_128
         { key_128, 16, iv,   msg,     verify_ecb_128 },
+#endif
+#ifdef WOLFSSL_AES_192
         { key_192, 24, iv,   msg,     verify_ecb_192 },
+#endif
+#ifdef WOLFSSL_AES_256
         { key_256, 32, iv,   msg,     verify_ecb_256 },
         { niKey,   32, NULL, niPlain, niCipher }
+#endif
     };
     #define AES_ECB_TEST_LEN (int)(sizeof(testVec) / sizeof(*testVec))
 
@@ -14288,7 +15125,7 @@ static wc_test_ret_t aes_direct_test(Aes* enc, Aes* dec, byte* cipher, byte* pla
         if (ret != 0)
             ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 #if !defined(HAVE_SELFTEST) && \
-    (defined(WOLFSSL_LINUXKM) || \
+    (defined(WOLFSSL_KERNEL_MODE) || \
      !defined(HAVE_FIPS) || \
      (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)))
         ret = wc_AesEncryptDirect(enc, cipher, niPlain);
@@ -14306,7 +15143,7 @@ static wc_test_ret_t aes_direct_test(Aes* enc, Aes* dec, byte* cipher, byte* pla
         if (ret != 0)
             ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 #if !defined(HAVE_SELFTEST) && \
-    (defined(WOLFSSL_LINUXKM) || \
+    (defined(WOLFSSL_KERNEL_MODE) || \
      !defined(HAVE_FIPS) || \
      (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)))
         ret = wc_AesDecryptDirect(dec, plain, niCipher);
@@ -14345,9 +15182,11 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_cbc_test(void)
     Aes dec[1];
 #endif
 #endif
+#ifdef WOLFSSL_AES_128
     byte cipher[WC_AES_BLOCK_SIZE * 4];
 #ifdef HAVE_AES_DECRYPT
     byte plain [WC_AES_BLOCK_SIZE * 4];
+#endif
 #endif
     wc_test_ret_t ret = 0;
 
@@ -14393,7 +15232,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_cbc_test(void)
     #ifdef HAVE_RENESAS_SYNC
         const byte *key = (byte*)guser_PKCbInfo.wrapped_key_aes128;
     #else
-        /* padded to 16-byye */
+        /* padded to 16-bytes */
         WOLFSSL_SMALL_STACK_STATIC const byte key[] = "0123456789abcdef   ";
     #endif
         /* padded to 16-bytes */
@@ -14441,7 +15280,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_cbc_test(void)
     }
 #endif /* WOLFSSL_AES_128 */
 
-#if defined(WOLFSSL_AESNI) && defined(HAVE_AES_DECRYPT)
+#if defined(WOLFSSL_AESNI) && defined(HAVE_AES_DECRYPT) && \
+    defined(WOLFSSL_AES_192) && defined(WOLFSSL_AES_256)
     {
         WOLFSSL_SMALL_STACK_STATIC const byte bigMsg[] = {
             /* "All work and no play makes Jack a dull boy. " */
@@ -14622,7 +15462,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_cbc_test(void)
         if (ret != 0)
             goto out;
     }
-#endif /* WOLFSSL_AESNI && HAVE_AES_DECRYPT */
+#endif /* WOLFSSL_AESNI && HAVE_AES_DECRYPT && WOLFSSL_AES_192 && WOLFSSL_AES_256 */
 
     /* Test of AES IV state with encrypt/decrypt */
 #if defined(WOLFSSL_AES_128) && !defined(HAVE_RENESAS_SYNC)
@@ -15510,7 +16350,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
         0xde, 0xca, 0xf8, 0x88
     };
 
-#if defined(WOLFSSL_AES_256) || defined(WOLFSSL_AES_192)
+#if defined(WOLFSSL_AES_256) || (defined(WOLFSSL_AES_192) && \
+    defined(HAVE_AES_DECRYPT))
     WOLFSSL_SMALL_STACK_STATIC const byte c1[] =
     {
         0x52, 0x2d, 0xc1, 0xf0, 0x99, 0x56, 0x7d, 0x07,
@@ -15579,28 +16420,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
         0xb8, 0x56, 0x8f, 0xc3, 0xd3, 0x76, 0xa6, 0xd9
     };
 #endif /* WOLFSSL_AES_192 */
-#ifdef WOLFSSL_AES_128
+#if defined(WOLFSSL_AES_128) && !defined(WOLFSSL_AFALG_XILINX_AES)
     /* The following is an interesting test case from the example
-     * FIPS test vectors for AES-GCM. IVlen = 1 byte */
-    WOLFSSL_SMALL_STACK_STATIC const byte p3[] =
-    {
-        0x57, 0xce, 0x45, 0x1f, 0xa5, 0xe2, 0x35, 0xa5,
-        0x8e, 0x1a, 0xa2, 0x3b, 0x77, 0xcb, 0xaf, 0xe2
-    };
-
-#ifdef HAVE_RENESAS_SYNC
-    const byte *k3 =
-        (byte*)guser_PKCbInfo.wrapped_key_aes128;
-    int k3Sz = (int)(128/8);
-#else
-    WOLFSSL_SMALL_STACK_STATIC const byte k3[] =
-    {
-        0xbb, 0x01, 0xd7, 0x03, 0x81, 0x1c, 0x10, 0x1a,
-        0x35, 0xe0, 0xff, 0xd2, 0x91, 0xba, 0xf2, 0x4b
-    };
-    int k3Sz = (int)sizeof(k3);
-#endif
-
+     * FIPS test vectors for AES-GCM. IVlen = 1 byte
+     * k3 and p3 below, are also part of this. */
     WOLFSSL_SMALL_STACK_STATIC const byte iv3[] =
     {
         0xca
@@ -15628,6 +16451,39 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
     int ivlen;
 #endif
 #endif
+#if defined(WOLFSSL_AES_128) && !defined(WOLFSSL_AFALG_XILINX_AES)
+#ifdef HAVE_RENESAS_SYNC
+    const byte *k3 =
+        (byte*)guser_PKCbInfo.wrapped_key_aes128;
+    int k3Sz = (int)(128/8);
+#else
+    WOLFSSL_SMALL_STACK_STATIC const byte k3[] =
+    {
+        0xbb, 0x01, 0xd7, 0x03, 0x81, 0x1c, 0x10, 0x1a,
+        0x35, 0xe0, 0xff, 0xd2, 0x91, 0xba, 0xf2, 0x4b
+    };
+    int k3Sz = (int)sizeof(k3);
+#endif
+
+    WOLFSSL_SMALL_STACK_STATIC const byte p3[] =
+    {
+        0x57, 0xce, 0x45, 0x1f, 0xa5, 0xe2, 0x35, 0xa5,
+        0x8e, 0x1a, 0xa2, 0x3b, 0x77, 0xcb, 0xaf, 0xe2
+    };
+
+    WOLFSSL_SMALL_STACK_STATIC const byte c3_3[] =
+    {
+        0x79, 0xa7, 0x08, 0xd4, 0xad, 0x1f, 0x3b, 0xac,
+        0x70, 0x16, 0x64, 0x40, 0xde, 0x03, 0xed, 0xea
+    };
+
+    WOLFSSL_SMALL_STACK_STATIC const byte t3_3[] =
+    {
+        0x39, 0xb1, 0x1e, 0x73, 0x18, 0xda, 0x04, 0x75,
+        0xa1, 0xed, 0x52, 0xb9, 0x0d, 0x5c, 0xe7, 0x28
+    };
+#endif /* WOLFSSL_AES_128 */
+
 
     byte resultT[sizeof(t1) + WC_AES_BLOCK_SIZE];
     byte resultP[sizeof(p) + WC_AES_BLOCK_SIZE];
@@ -15636,6 +16492,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
 
     int  alen = 0;
     int  plen = 0;
+#if defined(ENABLE_NON_12BYTE_IV_TEST) && defined(WOLFSSL_AES_128)
+    int  tlen = 0;
+#endif
 #if defined(WOLFSSL_XILINX_CRYPT_VERSAL)
     byte buf[sizeof(p) + WC_AES_BLOCK_SIZE];
     byte bufA[sizeof(a) + 1];
@@ -15688,6 +16547,43 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
     ret = wc_AesInit(dec, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+#endif
+
+#if defined(WOLFSSL_AES_128) && !defined(WOLFSSL_AFALG_XILINX_AES)
+    ret = wc_AesGcmSetKey(enc, k3, (word32)k3Sz);
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    /* AES-GCM encrypt and decrypt both use AES encrypt internally */
+    ret = wc_AesGcmEncrypt(enc, resultC, p3, sizeof(p3), iv1, sizeof(iv1),
+                                        resultT, sizeof(t3_3), NULL, 0);
+#if defined(WOLFSSL_ASYNC_CRYPT)
+    ret = wc_AsyncWait(ret, &enc->asyncDev, WC_ASYNC_FLAG_NONE);
+#endif
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+#ifndef HAVE_RENESAS_SYNC
+    if (XMEMCMP(c3_3, resultC, sizeof(c3_3)))
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+    if (XMEMCMP(t3_3, resultT, sizeof(t3_3)))
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif
+
+#ifdef HAVE_AES_DECRYPT
+    ret = wc_AesGcmSetKey(dec, k3, (word32)k3Sz);
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    ret = wc_AesGcmDecrypt(dec, resultP, resultC, sizeof(c3_3),
+                      iv1, sizeof(iv1), resultT, sizeof(t3_3), NULL, 0);
+#if defined(WOLFSSL_ASYNC_CRYPT)
+    ret = wc_AsyncWait(ret, &dec->asyncDev, WC_ASYNC_FLAG_NONE);
+#endif
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    if (XMEMCMP(p3, resultP, sizeof(p3)))
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif /* HAVE_AES_DECRYPT */
 #endif
 
 #ifdef WOLFSSL_AES_256
@@ -15999,6 +16895,39 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 #endif /* HAVE_AES_DECRYPT */
 
+    for (tlen = WOLFSSL_MIN_AUTH_TAG_SZ; tlen < 16; tlen++) {
+        int ii;
+
+        XMEMSET(resultT, 0, sizeof(resultT));
+        wc_AesGcmSetKey(enc, k3, (word32)k3Sz);
+        /* AES-GCM encrypt and decrypt both use AES encrypt internally */
+        ret = wc_AesGcmEncrypt(enc, resultC, p3, sizeof(p3), iv3, sizeof(iv3),
+                                        resultT, tlen, a3, sizeof(a3));
+    #if defined(WOLFSSL_ASYNC_CRYPT)
+        ret = wc_AsyncWait(ret, &enc->asyncDev, WC_ASYNC_FLAG_NONE);
+    #endif
+        if (ret != 0)
+            ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    #ifndef HAVE_RENESAS_SYNC
+        if (XMEMCMP(c3, resultC, sizeof(c3)))
+            ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+        if (XMEMCMP(t3, resultT, tlen))
+            ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+        for (ii = tlen; ii < 16; ii++) {
+            if (resultT[ii] != 0)
+                ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+        }
+    #endif
+    #ifdef HAVE_AES_DECRYPT
+        ret = wc_AesGcmDecrypt(enc, resultP, resultC, sizeof(c3),
+                      iv3, sizeof(iv3), resultT, tlen, a3, sizeof(a3));
+        if (ret != 0)
+            ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+        if (XMEMCMP(p3, resultP, sizeof(p3)))
+            ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+    #endif
+    }
+
     /* Large buffer test */
 #ifdef BENCH_AESGCM_LARGE
     wc_AesGcmSetKey(enc, k3, (word32)k3Sz);
@@ -16288,7 +17217,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t gmac_test(void)
 {
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    Gmac *gmac;
+    Gmac *gmac = NULL;
 #else
     Gmac gmac[1];
 #endif
@@ -16313,6 +17242,11 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t gmac_test(void)
     {
         0x88, 0xdb, 0x9d, 0x62, 0x17, 0x2e, 0xd0, 0x43,
         0xaa, 0x10, 0xf1, 0x6d, 0x22, 0x7d, 0xc4, 0x1b
+    };
+    WOLFSSL_SMALL_STACK_STATIC const byte t1_15[] =
+    {
+        0x90, 0xda, 0xdf, 0xff, 0x3b, 0x24, 0x7d, 0x13,
+        0xbb, 0xb8, 0x1c, 0xca, 0x87, 0x9c, 0x9a, 0xa7
     };
 
 #if (!defined(HAVE_FIPS) ||                                             \
@@ -16343,6 +17277,122 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t gmac_test(void)
 #endif
 
     byte tag[16];
+#if !defined(BENCH_EMBEDDED) && !defined(HAVE_CAVIUM) && \
+    !defined(WOLFSSL_KCAPI)
+    #define BENCH_GMAC_LARGE 1024
+
+    WOLFSSL_SMALL_STACK_STATIC const byte t4_lb[16][16] = {
+        {
+            0x80, 0xb3, 0x59, 0x0c, 0xda, 0x18, 0x4c, 0x64,
+            0x6a, 0x30, 0x7c, 0xb6, 0xcc, 0x88, 0xd2, 0xae
+        },
+        {
+            0xa3, 0x28, 0x93, 0x97, 0x91, 0x91, 0xa1, 0x8d,
+            0xca, 0xdf, 0x58, 0xc7, 0x77, 0xa0, 0xa5, 0x6d
+        },
+        {
+            0x06, 0xcf, 0x52, 0x19, 0x15, 0x1e, 0x08, 0x62,
+            0x12, 0x93, 0xee, 0xbe, 0xf9, 0x41, 0x21, 0x2b
+        },
+        {
+            0x20, 0x5a, 0x0f, 0xbe, 0x18, 0x27, 0xce, 0xb4,
+            0x18, 0x0e, 0x31, 0x7a, 0x94, 0xee, 0x64, 0xd0
+        },
+        {
+            0xf5, 0xd6, 0xf3, 0xa2, 0x48, 0xff, 0xa7, 0x16,
+            0xda, 0xfc, 0x87, 0xa8, 0xda, 0x0a, 0xe7, 0x32
+        },
+        {
+            0x99, 0xd1, 0xd3, 0x24, 0x2d, 0x0e, 0xc7, 0x9f,
+            0x2c, 0x6c, 0xf7, 0x3c, 0x96, 0x49, 0x3d, 0xff
+        },
+        {
+            0x85, 0x9a, 0xf7, 0x59, 0x6b, 0xf1, 0x17, 0x0b,
+            0xf5, 0x1e, 0x7b, 0x2f, 0x87, 0xbb, 0x14, 0xfc
+        },
+        {
+            0xfe, 0x59, 0x87, 0x90, 0xbf, 0x6b, 0x43, 0xa6,
+            0x9e, 0x21, 0x22, 0x1e, 0xc2, 0x04, 0x6f, 0xe1
+        },
+        {
+            0xcd, 0xb1, 0x1a, 0x04, 0xa4, 0x3c, 0x39, 0x85,
+            0x21, 0x3d, 0x74, 0xaf, 0xe5, 0xb5, 0x38, 0xc0
+        },
+        {
+            0x4d, 0xfe, 0x5f, 0xbe, 0x48, 0x8c, 0x00, 0x56,
+            0xdd, 0x23, 0x4a, 0x1e, 0xf2, 0x63, 0xe6, 0xc8
+        },
+        {
+            0x9f, 0xc9, 0x6e, 0x0d, 0x51, 0x85, 0xe8, 0x82,
+            0x81, 0x05, 0x49, 0xb5, 0xa7, 0xa2, 0x1f, 0xf1
+        },
+        {
+            0xbe, 0xde, 0x0c, 0x37, 0xb6, 0xe5, 0xcb, 0x9c,
+            0x80, 0xde, 0xa6, 0x09, 0x40, 0xfa, 0xef, 0xf3
+        },
+        {
+            0x32, 0xa8, 0xb4, 0xb1, 0x5f, 0x65, 0x47, 0xfa,
+            0xf2, 0xc8, 0xe8, 0xdd, 0x32, 0x5c, 0x80, 0x28
+        },
+        {
+            0xa9, 0xa7, 0x01, 0x22, 0xdb, 0xd2, 0x62, 0xa2,
+            0x26, 0x82, 0xf2, 0x8b, 0xfb, 0xfd, 0x60, 0x4b
+        },
+        {
+            0x76, 0x59, 0xd6, 0x05, 0x4e, 0x69, 0xd0, 0xc1,
+            0x92, 0xf3, 0xdc, 0x1d, 0x96, 0xbc, 0xef, 0xba
+        },
+        {
+            0xd9, 0xbc, 0xb0, 0x33, 0x90, 0x6b, 0x2f, 0x63,
+            0xd9, 0x65, 0xe5, 0x07, 0x66, 0xbd, 0x7d, 0xcc
+        },
+    };
+    WOLFSSL_SMALL_STACK_STATIC const byte t4[7][16] = {
+        {
+            0xa6, 0xbd, 0x22, 0x9b, 0x37, 0x67, 0xd5, 0xd4,
+            0x43, 0x19, 0xe1, 0xec, 0xa0, 0xd1, 0x56, 0x01
+        },
+        {
+            0x3f, 0x09, 0x62, 0x3b, 0x04, 0x68, 0x31, 0x96,
+            0xd2, 0x1d, 0x99, 0x9c, 0xcb, 0xf1, 0x1d, 0xda
+        },
+        {
+            0x1d, 0xb2, 0x93, 0xfb, 0x6f, 0xce, 0x5d, 0x74,
+            0x0b, 0x91, 0x3b, 0x76, 0x5d, 0x6a, 0x51, 0x1d
+        },
+        {
+            0xe2, 0xfc, 0x83, 0x77, 0x86, 0xe5, 0x32, 0xcc,
+            0xcc, 0x3c, 0x86, 0x9f, 0x23, 0xa4, 0x2d, 0x96
+        },
+        {
+            0xb7, 0xbf, 0x08, 0x03, 0xde, 0x6c, 0x9a, 0x4e,
+            0xc0, 0xb5, 0xa5, 0xdb, 0x53, 0x92, 0x59, 0xab
+        },
+        {
+            0xd6, 0xce, 0x4b, 0x29, 0x05, 0x51, 0x10, 0x2d,
+            0x92, 0x35, 0x36, 0x97, 0x1a, 0xfa, 0x54, 0xf0
+        },
+        {
+            0xc9, 0xf6, 0x41, 0xd6, 0x4f, 0xb5, 0x08, 0x84,
+            0xcc, 0x6e, 0x47, 0x9c, 0x2a, 0xfa, 0xf5, 0x73
+        },
+    };
+    int i;
+#ifdef WOLFSSL_NO_MALLOC
+    byte large_input[BENCH_GMAC_LARGE];
+#else
+    byte *large_input = (byte *)XMALLOC(BENCH_AESGCM_LARGE, HEAP_HINT,
+        DYNAMIC_TYPE_TMP_BUFFER);
+
+    if (large_input == NULL)
+        ERROR_OUT(MEMORY_E, out);
+#endif
+
+    for (i = 0; i < BENCH_GMAC_LARGE; i++) {
+        large_input[i] = (byte)i;
+    }
+#endif
+
     WOLFSSL_ENTER("gmac_test");
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
@@ -16351,11 +17401,17 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t gmac_test(void)
 #endif
 
     XMEMSET(gmac, 0, sizeof *gmac); /* clear context */
-    (void)wc_AesInit(&gmac->aes, HEAP_HINT, INVALID_DEVID); /* Make sure devId updated */
+    (void)wc_AesInit(&gmac->aes, HEAP_HINT, devId); /* Make sure devId updated */
     XMEMSET(tag, 0, sizeof(tag));
     wc_GmacSetKey(gmac, k1, sizeof(k1));
     wc_GmacUpdate(gmac, iv1, sizeof(iv1), a1, sizeof(a1), tag, sizeof(t1));
     if (XMEMCMP(t1, tag, sizeof(t1)) != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+
+    XMEMSET(tag, 0, sizeof(tag));
+    wc_GmacSetKey(gmac, k1, sizeof(k1));
+    wc_GmacUpdate(gmac, iv1, sizeof(iv1), a1, sizeof(a1) - 1, tag, sizeof(t1));
+    if (XMEMCMP(t1_15, tag, sizeof(t1)) != 0)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 
 #if (!defined(HAVE_FIPS) ||                                  \
@@ -16416,12 +17472,47 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t gmac_test(void)
 #endif /* !WC_NO_RNG && !HAVE_SELFTEST && !NO_AES_DECRYPT */
 #endif /* HAVE_FIPS */
 
+#if !defined(BENCH_EMBEDDED) && !defined(HAVE_CAVIUM) && !defined(WOLFSSL_KCAPI)
+    for (i = 0; i < 16; i++) {
+        XMEMSET(tag, 0, sizeof(tag));
+        wc_GmacSetKey(gmac, k1, sizeof(k1));
+        wc_GmacUpdate(gmac, iv1, sizeof(iv1), large_input, i, tag,
+            sizeof(t4[0]));
+        if (XMEMCMP(t4_lb[i], tag, sizeof(t4_lb[i])) != 0)
+            ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+    #if !defined(WC_NO_RNG) && !defined(HAVE_SELFTEST) && !defined(NO_AES_DECRYPT)
+        ret = wc_GmacVerify(k1, sizeof(k1), iv1, sizeof(iv1), large_input, i,
+            tag, sizeof(t4_lb[i]));
+        if (ret != 0)
+            ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    #endif
+    }
+    for (i = 0; i < 7; i++) {
+        XMEMSET(tag, 0, sizeof(tag));
+        wc_GmacSetKey(gmac, k1, sizeof(k1));
+        wc_GmacUpdate(gmac, iv1, sizeof(iv1), large_input, 1 << (i + 4), tag,
+            sizeof(t4[0]));
+          if (XMEMCMP(t4[i], tag, sizeof(t4[i])) != 0)
+              ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+    #if !defined(WC_NO_RNG) && !defined(HAVE_SELFTEST) && !defined(NO_AES_DECRYPT)
+          ret = wc_GmacVerify(k1, sizeof(k1), iv1, sizeof(iv1), large_input,
+              1 << (i + 4), tag, sizeof(t4[i]));
+          if (ret != 0)
+              ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    #endif
+    }
+#endif
+
     ret = 0;
 
   out:
     wc_AesFree(&gmac->aes);
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     XFREE(gmac, HEAP_HINT, DYNAMIC_TYPE_AES);
+#endif
+#if !defined(BENCH_EMBEDDED) && !defined(HAVE_CAVIUM) && \
+    !defined(WOLFSSL_KCAPI) && !defined(WOLFSSL_NO_MALLOC)
+    XFREE(large_input, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
 
     return ret;
@@ -16653,10 +17744,12 @@ static wc_test_ret_t aesccm_128_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
 
     /* Clear c2 to compare against p2. p2 should be set to zero in case of
-     * authentication fail. */
+     * authentication fail. With ACVP_VECTOR_TESTING, this is not cleared */
+#ifndef ACVP_VECTOR_TESTING
     XMEMSET(c2, 0, sizeof(c2));
     if (XMEMCMP(p2, c2, sizeof(p2)))
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif
 #endif
 
     XMEMSET(t2, 0, sizeof(t2));
@@ -16845,6 +17938,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_eax_test(void)
      */
     WOLFSSL_SMALL_STACK_STATIC const AadVector vectors[] = {
         /* Vector from paper - empty message with auth data */
+    #ifdef WOLFSSL_AES_128
         {
             /* key, key length  */
             {0x23, 0x39, 0x52, 0xde, 0xe4, 0xd5, 0xed, 0x5f,
@@ -16912,6 +18006,150 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_eax_test(void)
             /* valid */
             0,
         },
+    #endif
+    #ifdef WOLFSSL_AES_192
+        {
+            /* key, key length  */
+            {0x50, 0x19, 0xeb, 0x9f, 0xef, 0x82, 0xe5, 0x75,
+             0x0b, 0x63, 0x17, 0x58, 0xf0, 0x21, 0x3e, 0x3e,
+             0x5f, 0xcc, 0xa1, 0x27, 0x48, 0xb4, 0x0e, 0xb4}, 24,
+            /* iv, iv length  */
+            {0xff, 0x0d, 0xdb, 0x0a, 0x0d, 0x7b, 0x36, 0xd2,
+             0x19, 0xda, 0x12, 0xb5}, 12,
+            /* aad, aad length */
+            {0}, 0,
+            /* msg, msg length */
+            {0}, 0,
+            /* ct, ct length */
+            {0}, 0,
+            /* tag, tag length */
+            {0xbc, 0xe2, 0x73, 0xd0, 0xe6, 0x81, 0x12, 0x37,
+             0x17, 0x45, 0xe6, 0x65, 0xec, 0xec, 0xa8, 0x23}, 16,
+            /* valid */
+            1,
+        },
+        {
+            /* key, key length */
+            {0x2b, 0xc9, 0x5c, 0x03, 0xe9, 0xc5, 0xb4, 0xb9,
+             0x5e, 0x30, 0xfb, 0x59, 0x7f, 0x7e, 0xa6, 0xdd,
+             0x1e, 0x8e, 0xaa, 0x68, 0x94, 0x0d, 0xa2, 0x36}, 24,
+            /* iv , iv length */
+            {0xa2, 0x35, 0x7e, 0x33, 0xef, 0x99, 0x92, 0xbe,
+             0x34, 0x14, 0x4d, 0x2e, 0x7e, 0x04, 0x32, 0x75}, 16,
+            /* aad, aad length */
+            {0}, 0,
+            /* msg, msg length */
+            {0x3a, 0xa2, 0x30, 0xf4, 0x52, 0x6b, 0x82, 0xff,
+             0x6e, 0xbc, 0x0b, 0x3b, 0x54, 0xe6, 0x10, 0x16,
+             0xad, 0x45, 0x9c, 0xa8, 0x68, 0x99}, 22,
+            /* ct, ct length */
+            {0xa4, 0xd8, 0x77, 0x92, 0xb6, 0x18, 0x83, 0x32,
+             0x27, 0x16, 0xb3, 0x45, 0xf9, 0xc2, 0x9b, 0x5a,
+             0x12, 0xa1, 0x04, 0x41, 0xd5, 0xe4}, 22,
+            /* tag, tag length */
+            {0x1c, 0xda, 0x87, 0xea, 0x66, 0xdf, 0xc3, 0x4a,
+             0x8d, 0x25, 0x58, 0xc0, 0x01, 0x99, 0x28, 0x63}, 16,
+            /* valid */
+            1,
+        },
+        {
+            /* key, key length */
+            {0xbf, 0xe0, 0x94, 0x53, 0x95, 0xca, 0x57, 0xa1,
+             0xc2, 0x36, 0x8f, 0x56, 0xbb, 0x60, 0x54, 0x75,
+             0x5f, 0x1f, 0x16, 0xe6, 0xd6, 0xdc, 0xe5, 0xdc}, 24,
+            /* iv, iv length */
+            {0xea, 0x8b, 0xc8, 0xbd, 0xe2, 0x9e, 0x05, 0x7e,
+             0xba, 0xa6, 0x7e, 0x35, 0x16, 0x29, 0x5d, 0x22}, 16,
+            /* aad, aad length */
+            {0x92, 0x2d, 0xc6, 0xf1, 0xed, 0x0d, 0xa9, 0xd2,
+             0x55, 0x00, 0xa0, 0xb7, 0x15, 0x7a, 0x10}, 15,
+            /* msg, msg length */
+            {0x21, 0x2b, 0x0b, 0x1f, 0x68, 0x53, 0x00, 0x65,
+             0x1e, 0xb4, 0x3b, 0x2e, 0xc0, 0x77, 0x91, 0x26}, 16,
+            /* ct , ct length */
+            {0x73, 0x42, 0x83, 0x85, 0x39, 0xec, 0x97, 0x5f,
+             0x2b, 0x4e, 0x3c, 0xf9, 0xa0, 0x8c, 0x86, 0x0e}, 16,
+            /* tag, tag length */
+            {0x1a, 0xb9, 0xc9, 0x2a, 0x3a, 0x2b, 0x2c, 0x0c,
+             0x79, 0x96, 0xc8, 0xa2, 0x57, 0x38, 0x95, 0x9c}, 16,
+            /* valid */
+            1,
+        },
+    #endif
+    #ifdef WOLFSSL_AES_256
+        {
+            /* key, key length  */
+            {0x4c, 0x01, 0x0d, 0x95, 0x61, 0xc7, 0x23, 0x4c,
+             0x30, 0x8c, 0x01, 0xce, 0xa3, 0x04, 0x0c, 0x92,
+             0x5a, 0x9f, 0x32, 0x4d, 0xc9, 0x58, 0xff, 0x90,
+             0x4a, 0xe3, 0x9b, 0x37, 0xe6, 0x0e, 0x1e, 0x03}, 32,
+            /* iv, iv length  */
+            {0x2a, 0x55, 0xca, 0xa1, 0x37, 0xc5, 0xb0, 0xb6,
+             0x6c, 0xf3, 0x80, 0x9e, 0xb8, 0xf7, 0x30, 0xc4}, 16,
+            /* aad, aad length */
+            {0}, 0,
+            /* msg, msg length */
+            {0x2a, 0x09, 0x3c, 0x9e, 0xd7, 0x2b, 0x8f, 0xf4,
+             0x99, 0x42, 0x01, 0xe9, 0xf9, 0xe0, 0x10}, 15,
+            /* ct, ct length */
+            {0xcb, 0xfc, 0xaa, 0x36, 0x34, 0xd6, 0xcf, 0xf5,
+             0x65, 0x6b, 0xc6, 0xbd, 0xa6, 0xab, 0x5f}, 15,
+            /* tag, tag length */
+            {0x01, 0x44, 0xbe, 0x06, 0x43, 0xb0, 0x36, 0xa8,
+             0x14, 0x7e, 0x19, 0xf4, 0xea, 0x9e, 0x7a, 0xf2}, 16,
+            /* valid */
+            1,
+        },
+        {
+            /* key, key length */
+            {0x2f, 0x6c, 0xfb, 0x7a, 0x21, 0x5a, 0x7b, 0xaf,
+             0xb6, 0x07, 0xc2, 0x73, 0xf7, 0xe6, 0x6f, 0x9a,
+             0x6d, 0x51, 0xd5, 0x7f, 0x9c, 0x29, 0x42, 0x2e,
+             0xc6, 0x46, 0x99, 0xba, 0xd0, 0xc6, 0xf3, 0x3b}, 32,
+            /* iv , iv length */
+            {0x21, 0xcb, 0xef, 0xf0, 0xb1, 0x23, 0x79, 0x9d,
+             0xa7, 0x4f, 0x4d, 0xaf, 0xf2, 0xe2, 0x79, 0xc5}, 16,
+            /* aad, aad length */
+            {0}, 0,
+            /* msg, msg length */
+            {0x39, 0xdb, 0xc7, 0x1f, 0x68, 0x38, 0xed, 0x6c,
+             0x6e, 0x58, 0x21, 0x37, 0x43, 0x6e, 0x1c, 0x61,
+             0xbb, 0xbf, 0xb8, 0x05, 0x31, 0xf4}, 22,
+            /* ct, ct length */
+            {0xf5, 0x31, 0x09, 0x7a, 0xa1, 0xbb, 0x35, 0xd9,
+             0xf4, 0x01, 0xd4, 0x59, 0x34, 0x0a, 0xfb, 0xd2,
+             0x7f, 0x9b, 0xdf, 0x72, 0xc5, 0x37}, 22,
+            /* tag, tag length */
+            {0xe4, 0xe1, 0x81, 0x70, 0xdc, 0xe4, 0xe1, 0xaf,
+             0x90, 0xb1, 0x5e, 0xae, 0x64, 0x35, 0x53, 0x31}, 16,
+            /* valid */
+            1,
+        },
+        {
+            /* key, key length */
+            {0x9f, 0x5c, 0x60, 0xfb, 0x5d, 0xf5, 0xcf, 0x2b,
+             0x1b, 0x39, 0x25, 0x4c, 0x3f, 0xa8, 0x0e, 0x51,
+             0xd3, 0x0d, 0x64, 0xe3, 0x44, 0xb3, 0xab, 0xa5,
+             0x95, 0x74, 0x30, 0x5b, 0x4d, 0x22, 0x12, 0xad}, 32,
+            /* iv, iv length */
+            {0xd4, 0xdf, 0x79, 0xc6, 0x9f, 0x73, 0xb2, 0x6a,
+             0x13, 0x59, 0x8a, 0xf0, 0x7e, 0xed, 0x6a, 0x77}, 16,
+            /* aad, aad length */
+            {0x81, 0x33, 0x99, 0xff, 0x1e, 0x1e, 0xf0, 0xb5,
+             0x8b, 0xb2, 0xbe, 0x13, 0x0c, 0xe5, 0xd4}, 15,
+            /* msg, msg length */
+            {0xa3, 0xca, 0x2e, 0xf9, 0xbd, 0x1f, 0xdb, 0xaa,
+             0x83, 0xdb, 0x4c, 0x7e, 0xae, 0x6d, 0xe9, 0x4e}, 16,
+            /* ct , ct length */
+            {0x65, 0x01, 0x92, 0x12, 0xcc, 0xbb, 0xd4, 0xcd,
+             0x2f, 0x99, 0x5c, 0xc5, 0x9d, 0x46, 0xfd, 0x27}, 16,
+            /* tag, tag length */
+            {0x40, 0x26, 0xc4, 0x86, 0x43, 0x0a, 0x1a, 0xe2,
+             0xa5, 0xfc, 0x40, 0x81, 0xcd, 0x66, 0x54, 0x68}, 16,
+            /* valid */
+            1,
+        },
+    #endif
     };
 
     WOLFSSL_SMALL_STACK_STATIC byte ciphertext[sizeof(vectors[0].ct)];
@@ -17505,7 +18743,7 @@ static int sm4_ecb_test(void)
     byte dec[SM4_BLOCK_SIZE * 4];
     int ret;
 
-    ret = wc_Sm4Init(&sm4, NULL, INVALID_DEVID);
+    ret = wc_Sm4Init(&sm4, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -17562,7 +18800,7 @@ static int sm4_cbc_test(void)
     byte dec[SM4_BLOCK_SIZE * 4];
     int ret;
 
-    ret = wc_Sm4Init(&sm4, NULL, INVALID_DEVID);
+    ret = wc_Sm4Init(&sm4, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -17659,7 +18897,7 @@ static int sm4_ctr_test(void)
     int i;
     int ret;
 
-    ret = wc_Sm4Init(&sm4, NULL, INVALID_DEVID);
+    ret = wc_Sm4Init(&sm4, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -17787,7 +19025,7 @@ static int sm4_gcm_test(void)
     byte tag[SM4_BLOCK_SIZE];
     int ret;
 
-    ret = wc_Sm4Init(&sm4, NULL, INVALID_DEVID);
+    ret = wc_Sm4Init(&sm4, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -17914,7 +19152,7 @@ static int sm4_ccm_test(void)
     byte tag[SM4_BLOCK_SIZE];
     int ret;
 
-    ret = wc_Sm4Init(&sm4, NULL, INVALID_DEVID);
+    ret = wc_Sm4Init(&sm4, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -18311,7 +19549,8 @@ static wc_test_ret_t random_rng_test(void)
 
 #if defined(HAVE_HASHDRBG) && !defined(CUSTOM_RAND_GENERATE_BLOCK)
 
-#ifdef WC_RNG_SEED_CB
+#if defined(WC_RNG_SEED_CB) && \
+    !(defined(ENTROPY_SCALE_FACTOR) || defined(SEED_BLOCK_SZ))
 static int seed_cb(OS_Seed* os, byte* output, word32 sz)
 {
     word32 i;
@@ -18324,22 +19563,99 @@ static int seed_cb(OS_Seed* os, byte* output, word32 sz)
 
 static wc_test_ret_t rng_seed_test(void)
 {
-#ifndef HAVE_FIPS
+    /* The expected PRNG block depends on ENTROPY_SCALE_FACTOR and
+     * SEED_BLOCK_SZ, which depend on which seed back end is configured.
+     */
+#if defined(HAVE_ENTROPY_MEMUSE) && defined(HAVE_AMD_RDSEED) && \
+    !(defined(HAVE_FIPS) && FIPS_VERSION_LT(6,0))
+    #ifdef HAVE_FIPS
     WOLFSSL_SMALL_STACK_STATIC const byte check[] =
     {
-        0x83, 0x46, 0x65, 0x2f, 0x5c, 0x44, 0x16, 0x5f,
-        0xb3, 0x89, 0x26, 0xde, 0x0b, 0x6b, 0xa2, 0x06,
-        0x7e, 0xa7, 0x9a, 0x55, 0x22, 0x01, 0xb0, 0x22,
-        0xf4, 0x7e, 0xa2, 0x66, 0xc4, 0x08, 0x6f, 0xba
+        0x35, 0x1e, 0xf9, 0xe8, 0x6b, 0x19, 0xe0, 0xe5,
+        0x32, 0xb3, 0x41, 0xe5, 0xc1, 0x35, 0x18, 0x35,
+        0x84, 0x2a, 0x3f, 0x84, 0x16, 0xc4, 0xf3, 0x50,
+        0xdd, 0x4b, 0xeb, 0xe4, 0xcd, 0xbe, 0x94, 0x84
     };
-#else
-    /* FIPS uses a longer seed, so different check value. */
+    #else
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0xb8, 0x3e, 0x23, 0xad, 0x34, 0xb6, 0x1e, 0xc7,
+        0x0f, 0xa6, 0x4a, 0x45, 0x12, 0x66, 0xfd, 0x4d,
+        0x97, 0xb2, 0x3d, 0xb3, 0xda, 0xcc, 0xed, 0x50,
+        0x2e, 0xe0, 0x51, 0x38, 0x1d, 0x0f, 0x81, 0x35
+    };
+    #endif
+#elif defined(HAVE_ENTROPY_MEMUSE) && \
+    (defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND))
+    #ifdef HAVE_FIPS
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0xba, 0xc3, 0x2f, 0xcf, 0xd2, 0x0e, 0xe1, 0x16,
+        0x45, 0xdc, 0xc2, 0x87, 0x0d, 0x70, 0xde, 0x5e,
+        0x2e, 0x2f, 0x0c, 0x7a, 0x1d, 0x04, 0x89, 0x0d,
+        0x0b, 0x9a, 0x51, 0x00, 0x4f, 0x7e, 0xce, 0xd6
+    };
+    #else
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0xa6, 0xfa, 0x3e, 0xb7, 0x66, 0x85, 0x96, 0x79,
+        0xef, 0x91, 0x26, 0xa1, 0xe8, 0x71, 0xa7, 0x13,
+        0x03, 0xea, 0xe5, 0x7b, 0x36, 0x52, 0x02, 0x39,
+        0x83, 0xbf, 0x41, 0xd1, 0x3e, 0x8f, 0xc0, 0x45
+    };
+    #endif
+#elif defined(HAVE_AMD_RDSEED) && \
+    !(defined(HAVE_FIPS) && FIPS_VERSION_LT(6,0))
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0x2c, 0xd4, 0x9b, 0x1e, 0x1e, 0xe7, 0xb0, 0xb0,
+        0xf9, 0xa0, 0xa9, 0xd5, 0x8d, 0xf9, 0x6d, 0x10,
+        0xf4, 0x77, 0xaf, 0xac, 0x3d, 0x2f, 0x6b, 0x1f,
+        0xa2, 0xe7, 0xe5, 0x90, 0x6d, 0x1f, 0x88, 0x98
+    };
+#elif (defined(HAVE_INTEL_RDSEED) || defined(HAVE_INTEL_RDRAND)) && \
+    !(defined(HAVE_FIPS) && FIPS_VERSION_LT(6,0))
+    #ifdef HAVE_FIPS
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0x27, 0xdd, 0xff, 0x5b, 0x21, 0x26, 0x0a, 0x48,
+        0xb3, 0x6b, 0xd8, 0x14, 0x00, 0x55, 0xe8, 0x39,
+        0x6d, 0x31, 0xf3, 0x6e, 0xe7, 0xbf, 0xce, 0x08,
+        0x1f, 0x61, 0x73, 0xe6, 0x3c, 0xb9, 0x12, 0xea
+    };
+    #else
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0x3b, 0x9d, 0x0d, 0xc8, 0x0e, 0xb4, 0x33, 0x0b,
+        0x50, 0x5f, 0x3a, 0xee, 0xc8, 0x68, 0x8d, 0x9f,
+        0xdf, 0x39, 0x06, 0x78, 0xf8, 0x6a, 0xd6, 0xc6,
+        0xd7, 0x63, 0x57, 0xe8, 0x6d, 0xf7, 0xc8, 0x6b
+    };
+    #endif
+#elif defined(HAVE_INTEL_RDSEED) && \
+    defined(HAVE_FIPS) && FIPS_VERSION_LT(6,0)
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0x27, 0xdd, 0xff, 0x5b, 0x21, 0x26, 0x0a, 0x48,
+        0xb3, 0x6b, 0xd8, 0x14, 0x00, 0x55, 0xe8, 0x39,
+        0x6d, 0x31, 0xf3, 0x6e, 0xe7, 0xbf, 0xce, 0x08,
+        0x1f, 0x61, 0x73, 0xe6, 0x3c, 0xb9, 0x12, 0xea
+    };
+#elif defined(HAVE_FIPS)
     WOLFSSL_SMALL_STACK_STATIC const byte check[] =
     {
         0xaf, 0x31, 0xcc, 0xef, 0xa9, 0x29, 0x4c, 0x24,
         0xbd, 0xa5, 0xa3, 0x52, 0x69, 0xf3, 0xb9, 0xb2,
         0x1e, 0xd4, 0x52, 0x3b, 0x9a, 0x96, 0x06, 0x20,
         0xc0, 0x5f, 0x44, 0x06, 0x1f, 0x80, 0xdf, 0xe0
+    };
+#else
+    WOLFSSL_SMALL_STACK_STATIC const byte check[] =
+    {
+        0x83, 0x46, 0x65, 0x2f, 0x5c, 0x44, 0x16, 0x5f,
+        0xb3, 0x89, 0x26, 0xde, 0x0b, 0x6b, 0xa2, 0x06,
+        0x7e, 0xa7, 0x9a, 0x55, 0x22, 0x01, 0xb0, 0x22,
+        0xf4, 0x7e, 0xa2, 0x66, 0xc4, 0x08, 0x6f, 0xba
     };
 #endif
     byte output[WC_SHA256_DIGEST_SIZE];
@@ -18366,7 +19682,7 @@ static wc_test_ret_t rng_seed_test(void)
     if (ret != 0) {
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     }
-    ret = wc_SetSeed_Cb(wc_GenerateSeed);
+    ret = wc_SetSeed_Cb(WC_GENERATE_SEED_DEFAULT);
     if (ret != 0) {
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     }
@@ -18374,7 +19690,7 @@ static wc_test_ret_t rng_seed_test(void)
 out:
     return ret;
 }
-#endif
+#endif /* WC_RNG_SEED_CB) && !(ENTROPY_SCALE_FACTOR || SEED_BLOCK_SZ) */
 
 
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t random_test(void)
@@ -18428,7 +19744,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t random_test(void)
         0xa1, 0x80, 0x18, 0x3a, 0x07, 0xdf, 0xae, 0x17
     };
 
-    byte output[WC_SHA256_DIGEST_SIZE * 4];
+    byte output[32 * 4];
     wc_test_ret_t ret;
     WOLFSSL_ENTER("random_test");
 
@@ -18485,7 +19801,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t random_test(void)
 #endif
 
     /* Test the seed callback. */
-#ifdef WC_RNG_SEED_CB
+#if defined(WC_RNG_SEED_CB) && \
+    !(defined(ENTROPY_SCALE_FACTOR) || defined(SEED_BLOCK_SZ))
     if ((ret = rng_seed_test()) != 0)
         return ret;
 #endif
@@ -18555,7 +19872,7 @@ static wc_test_ret_t const_byte_ptr_test(const byte* in, word32 *outJ)
     j = *outJ; /* Found index to use in const array. */
 
     if (j == 0) {
-#ifdef WOLFSSL_DEBUG
+#ifdef DEBUG_WOLFSSL
         printf("Testing const byte ptr reference...\n");
 #endif
         /* although j is zero, in[0] does not detect the Illegal instruction */
@@ -18730,6 +20047,100 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t memory_test(void)
         if (const_byte_ptr_test(const_byte_array, &j) != CBPTR_EXPECTED) {
             ret = 1;
         }
+        if (ret != 0)
+            return WC_TEST_RET_ENC_NC;
+    }
+
+    {
+
+#ifdef WOLFSSL_NO_ATOMICS
+        int a_int = WOLFSSL_ATOMIC_INITIALIZER(-2);
+        unsigned int a_uint = WOLFSSL_ATOMIC_INITIALIZER(2);
+#else
+        wolfSSL_Atomic_Int a_int = WOLFSSL_ATOMIC_INITIALIZER(-2);
+        wolfSSL_Atomic_Uint a_uint = WOLFSSL_ATOMIC_INITIALIZER(2);
+#endif
+        int int_expected;
+        unsigned int uint_expected;
+        void * a_ptr = NULL;
+        void * ptr_expected = NULL;
+
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -2)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 2)
+            return WC_TEST_RET_ENC_NC;
+        wolfSSL_Atomic_Int_Init(&a_int, -3);
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -3)
+            return WC_TEST_RET_ENC_NC;
+        wolfSSL_Atomic_Uint_Init(&a_uint, 3);
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 3)
+            return WC_TEST_RET_ENC_NC;
+        WOLFSSL_ATOMIC_STORE(a_int, -4);
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -4)
+            return WC_TEST_RET_ENC_NC;
+        WOLFSSL_ATOMIC_STORE(a_uint, 4);
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 4)
+            return WC_TEST_RET_ENC_NC;
+
+        if (wolfSSL_Atomic_Int_FetchAdd(&a_int, 2) != -4)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -2)
+            return WC_TEST_RET_ENC_NC;
+        if (wolfSSL_Atomic_Uint_FetchAdd(&a_uint, 2) != 4)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 6)
+            return WC_TEST_RET_ENC_NC;
+        if (wolfSSL_Atomic_Int_FetchSub(&a_int, 2) != -2)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -4)
+            return WC_TEST_RET_ENC_NC;
+        if (wolfSSL_Atomic_Uint_FetchSub(&a_uint, 2) != 6)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 4)
+            return WC_TEST_RET_ENC_NC;
+
+        if (wolfSSL_Atomic_Int_AddFetch(&a_int, 2) != -2)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -2)
+            return WC_TEST_RET_ENC_NC;
+        if (wolfSSL_Atomic_Uint_AddFetch(&a_uint, 2) != 6)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 6)
+            return WC_TEST_RET_ENC_NC;
+        if (wolfSSL_Atomic_Int_SubFetch(&a_int, 2) != -4)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -4)
+            return WC_TEST_RET_ENC_NC;
+        if (wolfSSL_Atomic_Uint_SubFetch(&a_uint, 2) != 4)
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 4)
+            return WC_TEST_RET_ENC_NC;
+
+        int_expected = -5;
+        if (wolfSSL_Atomic_Int_CompareExchange(&a_int, &int_expected, -7))
+            return WC_TEST_RET_ENC_NC;
+        if (int_expected != -4)
+            return WC_TEST_RET_ENC_NC;
+        if (! wolfSSL_Atomic_Int_CompareExchange(&a_int, &int_expected, -7))
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_int) != -7)
+            return WC_TEST_RET_ENC_NC;
+        uint_expected = 5;
+        if (wolfSSL_Atomic_Uint_CompareExchange(&a_uint, &uint_expected, 7))
+            return WC_TEST_RET_ENC_NC;
+        if (uint_expected != 4)
+            return WC_TEST_RET_ENC_NC;
+        if (! wolfSSL_Atomic_Uint_CompareExchange(&a_uint, &uint_expected, 7))
+            return WC_TEST_RET_ENC_NC;
+        if (WOLFSSL_ATOMIC_LOAD(a_uint) != 7)
+            return WC_TEST_RET_ENC_NC;
+
+        a_ptr = NULL;
+        ptr_expected = NULL;
+        if (! wolfSSL_Atomic_Ptr_CompareExchange(&a_ptr, &ptr_expected, &ret))
+            return WC_TEST_RET_ENC_NC;
+        if (a_ptr != &ret)
+            return WC_TEST_RET_ENC_NC;
     }
 
     return ret;
@@ -18926,7 +20337,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t memory_test(void)
 #endif /* !NO_RSA */
 
 #if !defined(NO_RSA) || !defined(NO_DSA)
-    #ifdef WOLFSSL_KEY_GEN
+    #if defined(WOLFSSL_KEY_GEN) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
         static const char* keyDerFile = CERT_WRITE_TEMP_DIR "key.der";
         static const char* keyPemFile = CERT_WRITE_TEMP_DIR "key.pem";
     #endif
@@ -20331,7 +21742,9 @@ done:
 }
 #endif
 
-#if defined(WC_RSA_PSS) && !defined(HAVE_FIPS_VERSION) /* not supported with FIPSv1 */
+#if defined(WC_RSA_PSS) && \
+    (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5,0)) && \
+    !defined(WC_NO_RNG)
 /* Need to create known good signatures to test with this. */
 #if !defined(WOLFSSL_RSA_VERIFY_ONLY) && !defined(WOLFSSL_RSA_PUBLIC_ONLY) && \
 !defined(WOLF_CRYPTO_CB_ONLY_RSA)
@@ -20359,7 +21772,9 @@ static wc_test_ret_t rsa_pss_test(WC_RNG* rng, RsaKey* key)
 #ifdef WOLFSSL_SHA224
                                  WC_MGF1SHA224,
 #endif
+#ifndef NO_SHA256
                                  WC_MGF1SHA256,
+#endif
 #ifdef WOLFSSL_SHA384
                                  WC_MGF1SHA384,
 #endif
@@ -20374,7 +21789,9 @@ static wc_test_ret_t rsa_pss_test(WC_RNG* rng, RsaKey* key)
 #ifdef WOLFSSL_SHA224
                                  WC_HASH_TYPE_SHA224,
 #endif
+#ifndef NO_SHA256
                                  WC_HASH_TYPE_SHA256,
+#endif
 #ifdef WOLFSSL_SHA384
                                  WC_HASH_TYPE_SHA384,
 #endif
@@ -20689,7 +22106,8 @@ exit_rsa_pss:
     return ret;
 }
 #endif /* !WOLFSSL_RSA_VERIFY_ONLY && !WOLFSSL_RSA_PUBLIC_ONLY */
-#endif
+#endif /* WC_RSA_PSS && (!HAVE_FIPS || FIPS_VERSION_GE(5,0)) && !WC_NO_RNG */
+
 
 #ifdef WC_RSA_NO_PADDING
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rsa_no_pad_test(void)
@@ -20737,11 +22155,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rsa_no_pad_test(void)
 #endif
 
     tmp = (byte*)XMALLOC(bytes, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (tmp == NULL
-    #ifdef WOLFSSL_ASYNC_CRYPT
-        || out == NULL || plain == NULL
-    #endif
-    ) {
+    if (tmp == NULL) {
         ERROR_OUT(WC_TEST_RET_ENC_NC, exit_rsa_nopadding);
     }
 
@@ -21666,7 +23080,7 @@ exit_rsa:
 }
 #endif /* !NO_RSA && HAVE_ECC && WOLFSSL_CERT_GEN */
 
-#ifdef WOLFSSL_KEY_GEN
+#if defined(WOLFSSL_KEY_GEN) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 static wc_test_ret_t rsa_keygen_test(WC_RNG* rng)
 {
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
@@ -21689,6 +23103,13 @@ static wc_test_ret_t rsa_keygen_test(WC_RNG* rng)
     int    keySz = 1024;
 #else
     int    keySz = 2048;
+#endif
+
+#ifdef WOLF_CRYPTO_CB_ONLY_RSA
+    if (devId == INVALID_DEVID) {
+        /* must call keygen with devId */
+        return 0;
+    }
 #endif
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
@@ -22600,7 +24021,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rsa_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), exit_rsa);
 #endif /* WOLFSSL_CERT_EXT */
 
-#ifdef WOLFSSL_KEY_GEN
+#if defined(WOLFSSL_KEY_GEN) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
     ret = rsa_keygen_test(&rng);
     if (ret != 0)
         goto exit_rsa;
@@ -22731,7 +24152,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rsa_test(void)
 #endif /* WOLFSSL_CERT_REQ */
 #endif /* WOLFSSL_CERT_GEN */
 
-#if defined(WC_RSA_PSS) && !defined(HAVE_FIPS_VERSION) /* not supported with FIPSv1 */
+#if defined(WC_RSA_PSS) && \
+    (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5,0)) && \
+    !defined(WC_NO_RNG)
 /* Need to create known good signatures to test with this. */
 #if !defined(WOLFSSL_RSA_VERIFY_ONLY) && !defined(WOLFSSL_RSA_PUBLIC_ONLY) && \
     !defined(WOLF_CRYPTO_CB_ONLY_RSA)
@@ -23349,6 +24772,50 @@ static wc_test_ret_t dh_ffdhe_test(WC_RNG *rng, int name)
         ERROR_OUT(WC_TEST_RET_ENC_NC, done);
     }
 
+    /* wc_DhGeneratePublic_fips() was added in 5.2.3, but some customers are
+     * building with configure scripts that set version to 5.2.1, but with 5.2.3
+     * wolfCrypt sources.  5.3.0 is used for both fips-v5-ready and v5-kcapi,
+     * and are also missing wc_DhGeneratePublic().
+     */
+#if !(defined(HAVE_SELFTEST) || \
+      (defined(HAVE_FIPS) && FIPS_VERSION3_LT(5,2,3)) || \
+      FIPS_VERSION3_EQ(5,3,0) || \
+      FIPS_VERSION3_EQ(6,0,0) || \
+      defined(NO_WC_DHGENERATEPUBLIC))
+
+    /* additional test for wc_DhGeneratePublic:
+     *   1. reset key2.
+     *   2. using priv from dh key 1, generate pub2 with
+     *      wc_DhGeneratePublic.
+     *   3. test equality pub2 == pub1. */
+    wc_FreeDhKey(key2);
+    pubSz2 = MAX_DH_KEY_SZ;
+    XMEMSET(pub2, 0, pubSz2);
+
+    ret = wc_InitDhKey_ex(key2, HEAP_HINT, devId);
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
+
+#ifdef HAVE_PUBLIC_FFDHE
+    ret = wc_DhSetKey_ex(key2, params->p, params->p_len, params->g,
+                         params->g_len, NULL /* q */, 0 /* qSz */);
+#else
+    ret = wc_DhSetNamedKey(key2, name);
+#endif
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
+
+    /* using key 1 private, generate key2 public and test equality. */
+    ret = wc_DhGeneratePublic(key2, priv, privSz, pub2, &pubSz2);
+    if (ret != 0) {
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
+    }
+
+    if (pubSz != pubSz2 || XMEMCMP(pub, pub2, pubSz)) {
+        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
+    }
+#endif /* !(NO_WC_DHGENERATEPUBLIC || HAVE_SELFTEST || FIPS <5.2.3 || == 5.3.0 || == 6.0.0 */
+
 #if (defined(WOLFSSL_HAVE_SP_DH) || defined(USE_FAST_MATH)) && \
     !defined(HAVE_INTEL_QA)
     /* Make p even */
@@ -23628,37 +25095,6 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dh_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_NC, done);
     }
 
-#if (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0)) && \
-            !defined(HAVE_SELFTEST)
-    agreeSz = DH_TEST_BUF_SIZE;
-    agreeSz2 = DH_TEST_BUF_SIZE;
-
-    ret = wc_DhAgree_ct(key, agree, &agreeSz, priv, privSz, pub2, pubSz2);
-    if (ret != 0)
-        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
-
-    ret = wc_DhAgree_ct(key2, agree2, &agreeSz2, priv2, privSz2, pub, pubSz);
-    if (ret != 0)
-        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
-
-#ifdef WOLFSSL_PUBLIC_MP
-    if (agreeSz != (word32)mp_unsigned_bin_size(&key->p))
-    {
-        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
-    }
-#endif
-
-    if (agreeSz != agreeSz2)
-    {
-        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
-    }
-
-    if (XMEMCMP(agree, agree2, agreeSz) != 0)
-    {
-        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
-    }
-#endif /* (!HAVE_FIPS || FIPS_VERSION_GE(7,0)) && !HAVE_SELFTEST */
-
 #endif /* !WC_NO_RNG */
 
 #if defined(WOLFSSL_KEY_GEN) && !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST)
@@ -23680,6 +25116,34 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dh_test(void)
             ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
     }
 #endif
+
+#if !defined(WC_NO_RNG) && (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0)) && \
+            !defined(HAVE_SELFTEST)
+    agreeSz = DH_TEST_BUF_SIZE;
+    agreeSz2 = DH_TEST_BUF_SIZE;
+
+    ret = wc_DhAgree_ct(key, agree, &agreeSz, priv, privSz, pub2, pubSz2);
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
+
+    ret = wc_DhAgree_ct(key2, agree2, &agreeSz2, priv2, privSz2, pub, pubSz);
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
+
+#ifdef WOLFSSL_PUBLIC_MP
+    if (agreeSz != (word32)mp_unsigned_bin_size(&key->p)) {
+        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
+    }
+#endif
+
+    if (agreeSz != agreeSz2) {
+        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
+    }
+
+    if (XMEMCMP(agree, agree2, agreeSz) != 0) {
+        ERROR_OUT(WC_TEST_RET_ENC_NC, done);
+    }
+#endif /* !WC_NO_RNG && (!HAVE_FIPS || FIPS_VERSION_GE(7,0)) && !HAVE_SELFTEST */
 
     /* Test DH key import / export */
 #if defined(WOLFSSL_DH_EXTRA) && !defined(NO_FILESYSTEM) && \
@@ -23907,21 +25371,31 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
     byte   signature[40];
     int key_inited = 0;
 #ifdef WOLFSSL_KEY_GEN
-    byte*  der = 0;
+    int    derSz = 0;
     int derIn_inited = 0;
     int genKey_inited = 0;
 #endif
 #define DSA_TEST_TMP_SIZE 1024
+
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    byte   *tmp = (byte *)XMALLOC(DSA_TEST_TMP_SIZE, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    DsaKey *key = (DsaKey *)XMALLOC(sizeof *key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#ifdef WOLFSSL_KEY_GEN
-    DsaKey *derIn = (DsaKey *)XMALLOC(sizeof *derIn, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    DsaKey *genKey = (DsaKey *)XMALLOC(sizeof *genKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    byte   *tmp = (byte*)XMALLOC(DSA_TEST_TMP_SIZE, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    DsaKey *key = (DsaKey*)XMALLOC(sizeof(*key), HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    #ifdef WOLFSSL_KEY_GEN
+    DsaKey *derIn = (DsaKey*)XMALLOC(sizeof(*derIn), HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    DsaKey *genKey = (DsaKey*)XMALLOC(sizeof(*genKey), HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    byte*  der = NULL;
+    #endif
+#else
+    byte   tmp[DSA_TEST_TMP_SIZE];
+    DsaKey key[1];
+    #ifdef WOLFSSL_KEY_GEN
+    DsaKey derIn[1];
+    DsaKey genKey[1];
+    byte   der[FOURK_BUF];
+    #endif
 #endif
-    WOLFSSL_ENTER("dsa_test");
 
-
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     if ((tmp == NULL) ||
         (key == NULL)
 #ifdef WOLFSSL_KEY_GEN
@@ -23932,14 +25406,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
         ret = WC_TEST_RET_ENC_NC;
         goto out;
     }
-#else
-    byte   tmp[1024];
-    DsaKey key[1];
-#ifdef WOLFSSL_KEY_GEN
-    DsaKey derIn[1];
-    DsaKey genKey[1];
 #endif
-#endif
+
+    WOLFSSL_ENTER("dsa_test");
 
 #ifdef USE_CERT_BUFFERS_1024
     XMEMCPY(tmp, dsa_key_der_1024, sizeof_dsa_key_der_1024);
@@ -23949,7 +25418,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
     bytes = sizeof_dsa_key_der_2048;
 #else
     {
-        XFILE  file = XFOPEN(dsaKey, "rb");
+        XFILE file = XFOPEN(dsaKey, "rb");
         if (!file)
             ERROR_OUT(WC_TEST_RET_ENC_ERRNO, out);
 
@@ -24004,9 +25473,6 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
     key_inited = 1;
 
 #ifdef WOLFSSL_KEY_GEN
-    {
-    int    derSz = 0;
-
     ret = wc_InitDsaKey(genKey);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -24020,9 +25486,11 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     der = (byte*)XMALLOC(FOURK_BUF, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     if (der == NULL)
         ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+#endif
 
     derSz = wc_DsaKeyToDer(genKey, der, FOURK_BUF);
     if (derSz < 0)
@@ -24042,14 +25510,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
     ret = wc_DsaPrivateKeyDecode(der, &idx, derIn, (word32)derSz);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
-    }
 #endif /* WOLFSSL_KEY_GEN */
 
-  out:
-
-#ifdef WOLFSSL_KEY_GEN
-    XFREE(der, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+out:
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
@@ -24058,7 +25521,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
             wc_FreeDsaKey(key);
         XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     }
-#ifdef WOLFSSL_KEY_GEN
+    #ifdef WOLFSSL_KEY_GEN
+    XFREE(der, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     if (derIn) {
         if (derIn_inited)
             wc_FreeDsaKey(derIn);
@@ -24069,20 +25533,17 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
             wc_FreeDsaKey(genKey);
         XFREE(genKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     }
-#endif
-
-#else /* !WOLFSSL_SMALL_STACK || WOLFSSL_NO_MALLOC */
-
+    #endif
+#else
     if (key_inited)
         wc_FreeDsaKey(key);
-#ifdef WOLFSSL_KEY_GEN
+    #ifdef WOLFSSL_KEY_GEN
     if (derIn_inited)
         wc_FreeDsaKey(derIn);
     if (genKey_inited)
         wc_FreeDsaKey(genKey);
-#endif
-
-#endif
+    #endif
+#endif /* WOLFSSL_SMALL_STACK && !WOLFSSL_NO_MALLOC */
 
     if (rng_inited)
         wc_FreeRng(&rng);
@@ -24090,10 +25551,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dsa_test(void)
     return ret;
 }
 
-#endif /* NO_DSA */
+#endif /* !NO_DSA */
 
 #ifdef WOLFCRYPT_HAVE_SRP
-
 static wc_test_ret_t generate_random_salt(byte *buf, word32 size)
 {
     wc_test_ret_t ret = WC_TEST_RET_ENC_NC;
@@ -24111,14 +25571,21 @@ static wc_test_ret_t generate_random_salt(byte *buf, word32 size)
     return ret;
 }
 
+#if ((defined(FP_MAX_BITS) && (FP_MAX_BITS >= 3072)) \
+  || (defined(SP_INT_BITS) && (SP_INT_BITS >= 3072)))
+    #define SRP_TEST_BUFFER_SIZE  192
+#else
+    #define SRP_TEST_BUFFER_SIZE  128
+#endif
+
 static wc_test_ret_t srp_test_digest(SrpType dgstType)
 {
     wc_test_ret_t r;
 
-    byte clientPubKey[192]; /* A */
-    byte serverPubKey[192]; /* B */
-    word32 clientPubKeySz = 192;
-    word32 serverPubKeySz = 192;
+    byte clientPubKey[SRP_TEST_BUFFER_SIZE]; /* A */
+    byte serverPubKey[SRP_TEST_BUFFER_SIZE]; /* B */
+    word32 clientPubKeySz = SRP_TEST_BUFFER_SIZE;
+    word32 serverPubKeySz = SRP_TEST_BUFFER_SIZE;
 
     byte username[] = "user";
     word32 usernameSz = 4;
@@ -24126,6 +25593,26 @@ static wc_test_ret_t srp_test_digest(SrpType dgstType)
     byte password[] = "password";
     word32 passwordSz = 8;
 
+#if SRP_TEST_BUFFER_SIZE == 128
+    WOLFSSL_SMALL_STACK_STATIC const byte N[] = {
+        0xEE, 0xAF, 0x0A, 0xB9, 0xAD, 0xB3, 0x8D, 0xD6,
+        0x9C, 0x33, 0xF8, 0x0A, 0xFA, 0x8F, 0xC5, 0xE8,
+        0x60, 0x72, 0x61, 0x87, 0x75, 0xFF, 0x3C, 0x0B,
+        0x9E, 0xA2, 0x31, 0x4C, 0x9C, 0x25, 0x65, 0x76,
+        0xD6, 0x74, 0xDF, 0x74, 0x96, 0xEA, 0x81, 0xD3,
+        0x38, 0x3B, 0x48, 0x13, 0xD6, 0x92, 0xC6, 0xE0,
+        0xE0, 0xD5, 0xD8, 0xE2, 0x50, 0xB9, 0x8B, 0xE4,
+        0x8E, 0x49, 0x5C, 0x1D, 0x60, 0x89, 0xDA, 0xD1,
+        0x5D, 0xC7, 0xD7, 0xB4, 0x61, 0x54, 0xD6, 0xB6,
+        0xCE, 0x8E, 0xF4, 0xAD, 0x69, 0xB1, 0x5D, 0x49,
+        0x82, 0x55, 0x9B, 0x29, 0x7B, 0xCF, 0x18, 0x85,
+        0xC5, 0x29, 0xF5, 0x66, 0x66, 0x0E, 0x57, 0xEC,
+        0x68, 0xED, 0xBC, 0x3C, 0x05, 0x72, 0x6C, 0xC0,
+        0x2F, 0xD4, 0xCB, 0xF4, 0x97, 0x6E, 0xAA, 0x9A,
+        0xFD, 0x51, 0x38, 0xFE, 0x83, 0x76, 0x43, 0x5B,
+        0x9F, 0xC6, 0x1D, 0x2F, 0xC0, 0xEB, 0x06, 0xE3
+    };
+#else
     WOLFSSL_SMALL_STACK_STATIC const byte N[] = {
         0xfc, 0x58, 0x7a, 0x8a, 0x70, 0xfb, 0x5a, 0x9a,
         0x5d, 0x39, 0x48, 0xbf, 0x1c, 0x46, 0xd8, 0x3b,
@@ -24152,15 +25639,17 @@ static wc_test_ret_t srp_test_digest(SrpType dgstType)
         0xb9, 0x26, 0x03, 0xba, 0xb5, 0x58, 0x6f, 0x6c,
         0x8b, 0x08, 0xa1, 0x7b, 0x6f, 0x42, 0xc9, 0x53
     };
+#endif
 
+    /* Generator is 2 for both cases. */
     WOLFSSL_SMALL_STACK_STATIC const byte g[] = {
         0x02
     };
 
     byte salt[10];
 
-    byte verifier[192];
-    word32 v_size = sizeof(verifier);
+    byte verifier[SRP_TEST_BUFFER_SIZE];
+    word32 v_size = (word32)sizeof(verifier);
 
     word32 clientProofSz = SRP_MAX_DIGEST_SIZE;
     word32 serverProofSz = SRP_MAX_DIGEST_SIZE;
@@ -24734,7 +26223,8 @@ static wc_test_ret_t openssl_aes_test(void)
 
 #ifndef WOLFSSL_NO_OPENSSL_AES_LOW_LEVEL_API
 
-#if defined(HAVE_AES_ECB) && defined(WOLFSSL_AES_256)
+#if defined(HAVE_AES_ECB) && defined(WOLFSSL_AES_DIRECT) && \
+    defined(WOLFSSL_AES_256)
     {  /* evp_cipher test: EVP_aes_256_ecb*/
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
         WOLFSSL_EVP_CIPHER_CTX *ctx = wolfSSL_EVP_CIPHER_CTX_new();
@@ -25779,7 +27269,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t openssl_test(void)
     }  /* end evp_cipher test: EVP_aes_128_cbc*/
 #endif /* WOLFSSL_AES_128 && HAVE_AES_CBC */
 
-#if defined(HAVE_AES_ECB) && defined(WOLFSSL_AES_256)
+#if defined(HAVE_AES_ECB) && defined(WOLFSSL_AES_DIRECT) && \
+    defined(WOLFSSL_AES_256)
     {   /* evp_cipher test: EVP_aes_256_ecb*/
         WOLFSSL_SMALL_STACK_STATIC const byte msg[] = {
           0x6b,0xc1,0xbe,0xe2,0x2e,0x40,0x9f,0x96,
@@ -27172,7 +28663,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void)
         0x83, 0x60, 0xcb, 0xdf, 0xa2, 0xcc, 0x06, 0x40
     };
 #endif
-#if !defined(BENCH_EMBEDDED) && !defined(WOLFSSL_LINUXKM) && !defined(HAVE_INTEL_QA)
+#if !defined(BENCH_EMBEDDED) && !defined(WOLFSSL_KERNEL_MODE) && !defined(HAVE_INTEL_QA)
     WOLFSSL_SMALL_STACK_STATIC const byte verify3[] = {
         0x70, 0x23, 0xbd, 0xcb, 0x3a, 0xfd, 0x73, 0x48,
         0x46, 0x1c, 0x06, 0xcd, 0x81, 0xfd, 0x38, 0xeb,
@@ -27223,7 +28714,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void)
         return WC_TEST_RET_ENC_EC(ret);
 
     /* Don't run these test on embedded, since they use large mallocs */
-#if !defined(BENCH_EMBEDDED) && !defined(WOLFSSL_LINUXKM) && !defined(HAVE_INTEL_QA)
+#if !defined(BENCH_EMBEDDED) && !defined(WOLFSSL_KERNEL_MODE) && !defined(HAVE_INTEL_QA)
     ret = wc_scrypt(derived, (byte*)"pleaseletmein", 13,
                     (byte*)"SodiumChloride", 14, 14, 8, 1, sizeof(verify3));
     if (ret != 0)
@@ -27238,12 +28729,17 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void)
         return WC_TEST_RET_ENC_EC(ret);
     if (XMEMCMP(derived, verify4, sizeof(verify4)) != 0)
         return WC_TEST_RET_ENC_NC;
+
+    ret = wc_scrypt(derived,(byte*)"pleaseletmein", 13,
+                    (byte*)"SodiumChloride", 14, 22, 8, 1, sizeof(derived));
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        return WC_TEST_RET_ENC_EC(ret);
 #endif
 #else
 #ifdef SCRYPT_TEST_ALL
     (void)verify4;
 #endif
-#endif /* !BENCH_EMBEDDED && !defined(WOLFSSL_LINUXKM) && !HAVE_INTEL_QA */
+#endif /* !BENCH_EMBEDDED && !defined(WOLFSSL_KERNEL_MODE) && !HAVE_INTEL_QA */
 
 #if !defined(BENCH_EMBEDDED)
     ret = wc_scrypt_ex(derived, (byte*)"password", 8, (byte*)"NaCl", 4, 1<<10,
@@ -27575,8 +29071,13 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t hkdf_test(void)
     L = (int)sizeof(okm1);
 
 #ifndef NO_SHA
+#if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0))
+    ret = wc_HKDF_ex(WC_SHA, ikm1, (word32)sizeof(ikm1), NULL, 0, NULL, 0,
+                     okm1, (word32)L, HEAP_HINT, devId);
+#else
     ret = wc_HKDF(WC_SHA, ikm1, (word32)sizeof(ikm1), NULL, 0, NULL, 0,
-        okm1, (word32)L);
+                  okm1, (word32)L);
+#endif
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -27586,8 +29087,13 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t hkdf_test(void)
 #ifndef HAVE_FIPS
     /* fips can't have key size under 14 bytes, salt is key too */
     L = (int)sizeof(okm1);
-    ret = wc_HKDF(WC_SHA, ikm1, 11, salt1, (word32)sizeof(salt1),
-        info1, (word32)sizeof(info1), okm1, (word32)L);
+#if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0))
+    ret = wc_HKDF_ex(WC_SHA, ikm1, 11, salt1, (word32)sizeof(salt1), info1,
+                     (word32)sizeof(info1), okm1, (word32)L, HEAP_HINT, devId);
+#else
+    ret = wc_HKDF(WC_SHA, ikm1, 11, salt1, (word32)sizeof(salt1), info1,
+                  (word32)sizeof(info1), okm1, (word32)L);
+#endif
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -27597,8 +29103,13 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t hkdf_test(void)
 #endif /* !NO_SHA */
 
 #ifndef NO_SHA256
+#if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0))
+    ret = wc_HKDF_ex(WC_SHA256, ikm1, (word32)sizeof(ikm1), NULL, 0, NULL, 0,
+        okm1, (word32)L, HEAP_HINT, devId);
+#else
     ret = wc_HKDF(WC_SHA256, ikm1, (word32)sizeof(ikm1), NULL, 0, NULL, 0,
-        okm1, (word32)L);
+                     okm1, (word32)L);
+#endif
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -27607,8 +29118,15 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t hkdf_test(void)
 
 #ifndef HAVE_FIPS
     /* fips can't have key size under 14 bytes, salt is key too */
-    ret = wc_HKDF(WC_SHA256, ikm1, (word32)sizeof(ikm1),
-        salt1, (word32)sizeof(salt1), info1, (word32)sizeof(info1), okm1, (word32)L);
+#if !defined(HAVE_SELFTEST)
+    ret = wc_HKDF_ex(WC_SHA256, ikm1, (word32)sizeof(ikm1),
+        salt1, (word32)sizeof(salt1), info1, (word32)sizeof(info1), okm1,
+        (word32)L, HEAP_HINT, devId);
+#else
+    ret = wc_HKDF(WC_SHA256, ikm1, (word32)sizeof(ikm1), salt1,
+                  (word32)sizeof(salt1), info1, (word32)sizeof(info1), okm1,
+                  (word32)L);
+#endif
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -27785,7 +29303,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t sshkdf_test(void)
 
 #endif /* WOLFSSL_WOLFSSH */
 
-#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC) && defined(WOLFSSL_SHA384)
+#if defined(WOLFSSL_HAVE_PRF) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_SHA384) && !defined(WOLFSSL_NO_TLS12)
 #define DIGL 12
 #define SECL 48
 #define LBSL 63
@@ -27821,7 +29340,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t prf_test(void)
 
     ret = wc_PRF(dig, (word32)digL, secret, (word32)secL, lablSd,
                  (word32)lblsdL, hash_type,
-                 HEAP_HINT, INVALID_DEVID);
+                 HEAP_HINT, devId);
     if (ret != 0) {
         printf("Failed w/ code: %d\n", ret);
         return WC_TEST_RET_ENC_EC(ret);
@@ -27834,11 +29353,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t prf_test(void)
 
     return 0;
 }
-#endif /* WOLFSSL_HAVE_PRF && !NO_HMAC */
+#endif /* WOLFSSL_HAVE_PRF && !NO_HMAC && WOLFSSL_SHA384 && !WOLFSSL_NO_TLS12 */
 
-#ifdef WOLFSSL_HAVE_PRF
-#if defined(HAVE_HKDF) && !defined(NO_HMAC)
-#ifdef WOLFSSL_BASE16
+#if defined(WOLFSSL_HAVE_PRF) && defined(HAVE_HKDF) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_BASE16) && !defined(WOLFSSL_NO_TLS12)
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t tls12_kdf_test(void)
 {
     const char* preMasterSecret = "D06F9C19BFF49B1E91E4EFE97345D089"
@@ -27878,23 +29396,22 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t tls12_kdf_test(void)
 
     ret = wc_PRF_TLS(result, msSz, pms, pmsSz,
             (const byte*)label, (word32)XSTRLEN(label), seed, seedSz,
-            1, sha256_mac, NULL, INVALID_DEVID);
+            1, sha256_mac, NULL, devId);
     if (ret != 0) {
         if (ret == WC_NO_ERR_TRACE(FIPS_PRIVATE_KEY_LOCKED_E)) {
             printf("    wc_PRF_TLSv12: Private key locked.\n");
         }
-        return WC_TEST_RET_ENC_NC;
+        return WC_TEST_RET_ENC_EC(ret);
     }
 
     if (XMEMCMP(result, ms, msSz) != 0)
         return WC_TEST_RET_ENC_NC;
     return 0;
 }
-#endif /* WOLFSSL_BASE16 */
-#endif /* WOLFSSL_HAVE_HKDF && !NO_HMAC */
-#endif /* WOLFSSL_HAVE_PRF */
+#endif /* WOLFSSL_HAVE_PRF && HAVE_HKDF && !NO_HMAC && */
+       /* WOLFSSL_BASE16 && !WOLFSSL_NO_TLS12 */
 
-#ifdef WOLFSSL_TLS13
+#if defined(WOLFSSL_TLS13) && !defined(NO_HMAC)
 
 #define TLSV13_PSK_DHE_SZ 40
 typedef struct {
@@ -27928,6 +29445,7 @@ typedef struct {
  * serverHelloRandom, serverFinishedRandom, and clietnFinishedRandom
  * hashed together. */
 static const Tls13KdfTestVector tls13KdfTestVectors[] = {
+#ifndef NO_SHA256
 { /* 1 */
     WC_HASH_TYPE_SHA256, 35, 35,
     { /* PSK */
@@ -28151,6 +29669,7 @@ static const Tls13KdfTestVector tls13KdfTestVectors[] = {
         0xa5, 0x7c, 0x50, 0x14, 0xfd, 0xe7, 0x5f, 0x8b, 0xd3, 0x2f, 0xdc, 0x9b,
         0xa9, 0x93, 0x22, 0x19, 0xe6, 0xf2, 0x0c, 0xd8 }
 },
+#endif
 #ifdef WOLFSSL_SHA384
 { /* 26 */
     WC_HASH_TYPE_SHA384, 35, 35,
@@ -28588,11 +30107,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t tls13_kdf_test(void)
     return ret;
 }
 
-#endif /* WOLFSSL_TLS13 */
+#endif /* WOLFSSL_TLS13 && !NO_HMAC */
 
-static const int fiducial2 = WC_TEST_RET_LN; /* source code reference point --
-                                              * see print_fiducials() below.
-                                              */
+ /* source code reference point -- see print_fiducials() below. */
+static WC_MAYBE_UNUSED const int fiducial2 = WC_TEST_RET_LN;
 
 #if defined(HAVE_ECC) && defined(HAVE_X963_KDF)
 
@@ -28743,7 +30261,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t x963kdf_test(void)
 
 #if defined(HAVE_HPKE) && \
     (defined(HAVE_ECC) || defined(HAVE_CURVE25519) || defined(HAVE_CURVE448)) && \
-    defined(HAVE_AESGCM)
+    defined(HAVE_AESGCM) && defined(WOLFSSL_AES_256)
 
 static wc_test_ret_t hpke_test_single(Hpke* hpke)
 {
@@ -28858,9 +30376,7 @@ static wc_test_ret_t hpke_test_single(Hpke* hpke)
     if (receiverKey != NULL)
         wc_HpkeFreeKey(hpke, hpke->kem, receiverKey, hpke->heap);
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(pubKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+    WC_FREE_VAR_EX(pubKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
 
     if (rngRet == 0)
         wc_FreeRng(rng);
@@ -29058,7 +30574,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t hpke_test(void)
 
     return ret;
 }
-#endif /* HAVE_HPKE && HAVE_ECC && HAVE_AESGCM */
+#endif /* HAVE_HPKE && HAVE_ECC && HAVE_AESGCM && WOLFSSL_AES_256 */
 
 #if defined(WC_SRTP_KDF)
 typedef struct Srtp_Kdf_Tv {
@@ -29610,7 +31126,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t srtpkdf_test(void)
 #define HAVE_ECC_DETERMINISTIC_K
 #define ECC_DIGEST_SIZE     WC_SHA256_DIGEST_SIZE
 #else
-#define ECC_DIGEST_SIZE     MAX_ECC_BYTES
+#define ECC_DIGEST_SIZE     WC_MAX_DIGEST_SIZE
 #endif
 #define ECC_SIG_SIZE        ECC_MAX_SIG_SIZE
 
@@ -30075,11 +31591,7 @@ done:
 static wc_test_ret_t ecc_test_deterministic_k(WC_RNG* rng)
 {
     wc_test_ret_t ret;
-#ifdef WOLFSSL_SMALL_STACK
-    ecc_key *key = NULL;
-#else
-    ecc_key key[1];
-#endif
+    WC_DECLARE_VAR(key, ecc_key, 1, 0);
     int key_inited = 0;
     WOLFSSL_SMALL_STACK_STATIC const char* msg = "sample";
     WOLFSSL_SMALL_STACK_STATIC const char* dIUT =
@@ -30137,11 +31649,8 @@ static wc_test_ret_t ecc_test_deterministic_k(WC_RNG* rng)
     };
 #endif
 
-#ifdef WOLFSSL_SMALL_STACK
-    key = (ecc_key *)XMALLOC(sizeof(*key), HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (key == NULL)
-        return MEMORY_E;
-#endif
+    WC_ALLOC_VAR_EX(key, ecc_key, 1, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER,
+        return MEMORY_E);
 
     ret = wc_ecc_init_ex(key, HEAP_HINT, devId);
     if (ret != 0)
@@ -30182,9 +31691,7 @@ static wc_test_ret_t ecc_test_deterministic_k(WC_RNG* rng)
 done:
     if (key_inited)
         wc_ecc_free(key);
- #ifdef WOLFSSL_SMALL_STACK
-    XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+    WC_FREE_VAR_EX(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
    return ret;
 }
 #endif /* NO_ECC256 || HAVE_ALL_CURVES */
@@ -30359,13 +31866,11 @@ done:
         mp_free(expR);
         mp_free(expS);
     }
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(r, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(s, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(expR, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(expS, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+    WC_FREE_VAR_EX(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(r, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(s, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(expR, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(expS, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
 
     return ret;
 }
@@ -30503,13 +32008,11 @@ done:
         mp_free(expR);
         mp_free(expS);
     }
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(r, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(s, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(expR, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(expS, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
+    WC_FREE_VAR_EX(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(r, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(s, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(expR, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    WC_FREE_VAR_EX(expS, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
 
     return ret;
 }
@@ -31008,6 +32511,7 @@ done:
 #else
     wc_ecc_free(key);
 #endif
+    (void)tmpSz;
 
     return ret;
 }
@@ -31965,9 +33469,11 @@ done:
 }
 #endif /* !WOLFSSL_ATECC508A && HAVE_ECC_KEY_IMPORT && HAVE_ECC_KEY_EXPORT */
 
-#if !defined(NO_SIG_WRAPPER) && !defined(WOLF_CRYPTO_CB_ONLY_ECC)
+#if !defined(NO_SIG_WRAPPER) && !defined(WOLF_CRYPTO_CB_ONLY_ECC) && \
+    !defined(NO_ECC_SIGN)
 static wc_test_ret_t ecc_sig_test(WC_RNG* rng, ecc_key* key)
 {
+#ifndef NO_SHA256
     wc_test_ret_t ret;
     word32  sigSz;
     int     size;
@@ -32012,6 +33518,10 @@ static wc_test_ret_t ecc_sig_test(WC_RNG* rng, ecc_key* key)
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
     TEST_SLEEP();
+#else
+    (void)rng;
+    (void)key;
+#endif
 
     return 0;
 }
@@ -32306,7 +33816,7 @@ static wc_test_ret_t ecc_def_curve_test(WC_RNG *rng)
         goto done;
     }
 
-    #ifndef NO_SIG_WRAPPER
+    #if !defined(NO_SIG_WRAPPER) && !defined(NO_ECC_SIGN)
     ret = ecc_sig_test(rng, key);
     if (ret < 0)
         goto done;
@@ -33675,9 +35185,9 @@ static const byte p521PubKey[] = {
 /* perform verify of signature and hash using public key */
 /* key is public Qx + public Qy */
 /* sig is r + s */
-static wc_test_ret_t crypto_ecc_verify(const byte *key, uint32_t keySz,
-    const byte *hash, uint32_t hashSz, const byte *sig, uint32_t sigSz,
-    uint32_t curveSz, int curveId)
+static wc_test_ret_t crypto_ecc_verify(const byte *key, word32 keySz,
+    const byte *hash, word32 hashSz, const byte *sig, word32 sigSz,
+    word32 curveSz, int curveId)
 {
     wc_test_ret_t ret;
     int verify_res = 0, count = 0;
@@ -33777,9 +35287,9 @@ static wc_test_ret_t crypto_ecc_verify(const byte *key, uint32_t keySz,
 }
 
 /* perform signature operation against hash using private key */
-static wc_test_ret_t crypto_ecc_sign(const byte *key, uint32_t keySz,
-    const byte *hash, uint32_t hashSz, byte *sig, uint32_t* sigSz,
-    uint32_t curveSz, int curveId, WC_RNG* rng)
+static wc_test_ret_t crypto_ecc_sign(const byte *key, word32 keySz,
+    const byte *hash, word32 hashSz, byte *sig, word32* sigSz,
+    word32 curveSz, int curveId, WC_RNG* rng)
 {
     wc_test_ret_t ret;
     int count = 0;
@@ -33914,6 +35424,7 @@ static wc_test_ret_t ecc_test_nonblock_dhe(int curveId, word32 curveSz,
 #if defined(DEBUG_WOLFSSL) || defined(WOLFSSL_DEBUG_NONBLOCK)
     fprintf(stderr, "ECC non-block key gen: %d times\n", count);
 #endif
+    (void)count;
     if (ret == 0) {
         ret = wc_ecc_check_key(&keyA);
         if (ret < 0)
@@ -34248,7 +35759,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ecc_test(void)
     }
 #endif
 
-#if defined(WOLFSSL_CUSTOM_CURVES)
+#if defined(WOLFSSL_CUSTOM_CURVES) && !defined(WOLFSSL_NO_MALLOC)
+    /* custom curves requires allocation of ecc_set_type in asn.c */
     ret = ecc_test_custom_curves(&rng);
     if (ret != 0) {
         printf("Custom\n");
@@ -35205,10 +36717,20 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ecc_test_buffers(void)
     word32 x;
     WOLFSSL_ENTER("ecc_test_buffers");
 
+    XMEMSET(&rng, 0, sizeof(WC_RNG));
+
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    if ((cliKey == NULL) || (servKey == NULL) || (tmpKey == NULL))
-        ERROR_OUT(MEMORY_E, done);
+    if ((cliKey == NULL) || (servKey == NULL) || (tmpKey == NULL)) {
+        XFREE(cliKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(servKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(tmpKey, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        return MEMORY_E;
+    }
 #endif
+
+    XMEMSET(cliKey, 0, sizeof(*cliKey));
+    XMEMSET(servKey, 0, sizeof(*servKey));
+    XMEMSET(tmpKey, 0, sizeof(*tmpKey));
 
     ret = wc_ecc_init_ex(cliKey, HEAP_HINT, devId);
     if (ret != 0)
@@ -39906,7 +41428,7 @@ static wc_test_ret_t mlkem512_kat(void)
 #endif
 
 #ifdef WOLFSSL_MLKEM_KYBER
-    ret = wc_KyberKey_Init(KYBER512, key, HEAP_HINT, INVALID_DEVID);
+    ret = wc_KyberKey_Init(KYBER512, key, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     else
@@ -39969,7 +41491,7 @@ static wc_test_ret_t mlkem512_kat(void)
 #endif
 #endif
 #ifndef WOLFSSL_NO_ML_KEM
-    ret = wc_MlKemKey_Init(key, WC_ML_KEM_512, HEAP_HINT, INVALID_DEVID);
+    ret = wc_MlKemKey_Init(key, WC_ML_KEM_512, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     else
@@ -41345,7 +42867,7 @@ static wc_test_ret_t mlkem768_kat(void)
 #endif
 
 #ifdef WOLFSSL_MLKEM_KYBER
-    ret = wc_KyberKey_Init(KYBER768, key, HEAP_HINT, INVALID_DEVID);
+    ret = wc_KyberKey_Init(KYBER768, key, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     else
@@ -41408,7 +42930,7 @@ static wc_test_ret_t mlkem768_kat(void)
 #endif
 #endif
 #ifndef WOLFSSL_NO_ML_KEM
-    ret = wc_MlKemKey_Init(key, WC_ML_KEM_768, HEAP_HINT, INVALID_DEVID);
+    ret = wc_MlKemKey_Init(key, WC_ML_KEM_768, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     else
@@ -43191,7 +44713,7 @@ static wc_test_ret_t mlkem1024_kat(void)
 #endif
 
 #ifdef WOLFSSL_MLKEM_KYBER
-    ret = wc_KyberKey_Init(KYBER1024, key, HEAP_HINT, INVALID_DEVID);
+    ret = wc_KyberKey_Init(KYBER1024, key, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     else
@@ -43254,7 +44776,7 @@ static wc_test_ret_t mlkem1024_kat(void)
 #endif
 #endif
 #ifndef WOLFSSL_NO_ML_KEM
-    ret = wc_MlKemKey_Init(key, WC_ML_KEM_1024, HEAP_HINT, INVALID_DEVID);
+    ret = wc_MlKemKey_Init(key, WC_ML_KEM_1024, HEAP_HINT, devId);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
     else
@@ -43379,6 +44901,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mlkem_test(void)
 #endif
 #endif
 #endif
+#if defined(WOLFSSL_WC_MLKEM) && !defined(WOLFSSL_NO_MALLOC) && \
+    !defined(WOLFSSL_MLKEM_NO_MAKE_KEY)
+    MlKemKey *tmpKey = NULL;
+#endif
     int key_inited = 0;
     static const int testData[][4] = {
 #ifndef WOLFSSL_NO_ML_KEM
@@ -43454,7 +44980,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mlkem_test(void)
 #endif
 
 #ifndef HAVE_FIPS
-    ret = wc_InitRng_ex(&rng, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitRng_ex(&rng, HEAP_HINT, devId);
 #else
     ret = wc_InitRng(&rng);
 #endif
@@ -43462,7 +44988,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mlkem_test(void)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
 
     for (i = 0; i < (int)(sizeof(testData) / sizeof(*testData)); i++) {
-        ret = wc_MlKemKey_Init(key, testData[i][0], HEAP_HINT, INVALID_DEVID);
+        ret = wc_MlKemKey_Init(key, testData[i][0], HEAP_HINT, devId);
         if (ret != 0)
             ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
         else
@@ -43481,7 +45007,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mlkem_test(void)
         if (ret != 0)
             ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
 
-        ret = wc_MlKemKey_Init(key, testData[i][0], HEAP_HINT, INVALID_DEVID);
+        ret = wc_MlKemKey_Init(key, testData[i][0], HEAP_HINT, devId);
         if (ret != 0)
             ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
 
@@ -43502,7 +45028,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mlkem_test(void)
         if (XMEMCMP(pub, pub2, testData[i][2]) != 0)
             ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
 
-        ret = wc_MlKemKey_Init(key, testData[i][0], HEAP_HINT, INVALID_DEVID);
+        ret = wc_MlKemKey_Init(key, testData[i][0], HEAP_HINT, devId);
         if (ret != 0)
             ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
 
@@ -43526,6 +45052,15 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mlkem_test(void)
 
         if (XMEMCMP(priv, priv2, testData[i][2]) != 0)
             ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
+
+#if defined(WOLFSSL_WC_MLKEM) && !defined(WOLFSSL_NO_MALLOC)
+        tmpKey = wc_MlKemKey_New(testData[i][0], HEAP_HINT, devId);
+        if (tmpKey == NULL)
+            ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+        ret = wc_MlKemKey_Delete(tmpKey, &tmpKey);
+        if (ret != 0)
+            ERROR_OUT(WC_TEST_RET_ENC_I(i), out);
+#endif
 #endif
     }
 
@@ -43580,29 +45115,38 @@ out:
 static wc_test_ret_t dilithium_param_vfy_test(int param, const byte* pubKey,
     word32 pubKeyLen, const byte* sig, word32 sigLen)
 {
-    byte msg[512];
-    dilithium_key* key;
-    byte * pubExported = NULL;
+    #ifndef DILITHIUM_TEST_MSG_SZ
+    #define DILITHIUM_TEST_MSG_SZ 512
+    #endif
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    byte* msg = NULL;
+    dilithium_key* key = NULL;
+    byte* pubExported = NULL;
+#else
+    byte msg[DILITHIUM_TEST_MSG_SZ];
+    dilithium_key key[1];
+    byte pubExported[DILITHIUM_MAX_PUB_KEY_SIZE];
+#endif
     wc_test_ret_t ret;
     int i;
     int res = 0;
     word32 lenExported = pubKeyLen;
     int n_diff = 0;
 
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    msg = (byte*)XMALLOC(DILITHIUM_TEST_MSG_SZ, HEAP_HINT,
+        DYNAMIC_TYPE_TMP_BUFFER);
     key = (dilithium_key*)XMALLOC(sizeof(*key), HEAP_HINT,
         DYNAMIC_TYPE_TMP_BUFFER);
-    if (key == NULL) {
-        ERROR_OUT(WC_TEST_RET_ENC_ERRNO, out);
-    }
-
     pubExported = (byte*)XMALLOC(pubKeyLen, HEAP_HINT,
         DYNAMIC_TYPE_TMP_BUFFER);
-    if (pubExported == NULL) {
+    if (msg == NULL || key == NULL || pubExported == NULL) {
         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, out);
     }
+#endif
 
     /* make dummy msg */
-    for (i = 0; i < (int)sizeof(msg); i++) {
+    for (i = 0; i < DILITHIUM_TEST_MSG_SZ; i++) {
         msg[i] = (byte)i;
     }
 
@@ -43621,14 +45165,14 @@ static wc_test_ret_t dilithium_param_vfy_test(int param, const byte* pubKey,
 
 #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
     if (param >= WC_ML_DSA_DRAFT) {
-        ret = wc_dilithium_verify_msg(sig, sigLen, msg, (word32)sizeof(msg),
+        ret = wc_dilithium_verify_msg(sig, sigLen, msg, DILITHIUM_TEST_MSG_SZ,
             &res, key);
     }
     else
 #endif
     {
         ret = wc_dilithium_verify_ctx_msg(sig, sigLen, NULL, 0, msg,
-            (word32)sizeof(msg), &res, key);
+            DILITHIUM_TEST_MSG_SZ, &res, key);
     }
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
@@ -43653,8 +45197,11 @@ static wc_test_ret_t dilithium_param_vfy_test(int param, const byte* pubKey,
 
 out:
     wc_dilithium_free(key);
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    XFREE(msg, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(pubExported, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
     return ret;
 }
 
@@ -46736,8 +48283,15 @@ static wc_test_ret_t dilithium_param_87_vfy_test(void)
 static wc_test_ret_t dilithium_param_test(int param, WC_RNG* rng)
 {
     wc_test_ret_t ret;
-    dilithium_key* key;
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    dilithium_key* key = NULL;
     byte* sig = NULL;
+#else
+    dilithium_key  key[1];
+#ifndef WOLFSSL_DILITHIUM_NO_SIGN
+    byte sig[DILITHIUM_MAX_SIG_SIZE];
+#endif
+#endif
 #ifndef WOLFSSL_DILITHIUM_NO_SIGN
     word32 sigLen;
     byte msg[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 };
@@ -46745,17 +48299,17 @@ static wc_test_ret_t dilithium_param_test(int param, WC_RNG* rng)
     int res = 0;
 #endif
 #endif
+    dilithium_key* tmpKey = NULL;
 
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     key = (dilithium_key*)XMALLOC(sizeof(*key), HEAP_HINT,
         DYNAMIC_TYPE_TMP_BUFFER);
-    if (key == NULL) {
-        ERROR_OUT(WC_TEST_RET_ENC_ERRNO, out);
-    }
     sig = (byte*)XMALLOC(DILITHIUM_MAX_SIG_SIZE, HEAP_HINT,
         DYNAMIC_TYPE_TMP_BUFFER);
-    if (sig == NULL) {
+    if (key == NULL || sig == NULL) {
         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, out);
     }
+#endif
 
     ret = wc_dilithium_init(key);
     if (ret != 0) {
@@ -46790,10 +48344,20 @@ static wc_test_ret_t dilithium_param_test(int param, WC_RNG* rng)
 #endif
 #endif
 
+    tmpKey = wc_dilithium_new(HEAP_HINT, devId);
+    if (tmpKey == NULL)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    ret = wc_dilithium_delete(tmpKey, &tmpKey);
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
 out:
     wc_dilithium_free(key);
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     XFREE(sig, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
     return ret;
 }
 #endif
@@ -46810,30 +48374,31 @@ static wc_test_ret_t test_dilithium_decode_level(const byte* rawKey,
                                                  int         isPublicOnlyKey)
 {
     int           ret = 0;
-#ifdef WOLFSSL_SMALL_STACK
-    dilithium_key *key = NULL;
-#else
-    dilithium_key key[1];
-#endif
-    byte*         der;
-#ifndef WOLFSSL_DILITHIUM_NO_ASN1
+#if !defined(WOLFSSL_DILITHIUM_NO_ASN1) && defined(WOLFSSL_ASN_TEMPLATE)
+    /* Size the buffer to accommodate the largest encoded key size */
+    const word32  maxDerSz = DILITHIUM_MAX_PRV_KEY_DER_SIZE;
     word32        derSz;
     word32        idx;
+    #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    byte*         der = NULL;
+    #else
+    byte          der[DILITHIUM_MAX_PRV_KEY_DER_SIZE];
+    #endif
+#endif
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    dilithium_key *key = NULL;
+#else
+    dilithium_key  key[1];
 #endif
 
-    /* Size the buffer to accommodate the largest encoded key size */
-    const word32 maxDerSz = DILITHIUM_MAX_PRV_KEY_DER_SIZE;
-
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     /* Allocate DER buffer */
     der = (byte*)XMALLOC(maxDerSz, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (der == NULL) {
-        return MEMORY_E;
-    }
-
-#ifdef WOLFSSL_SMALL_STACK
-    key = (dilithium_key *)XMALLOC(sizeof(*key), HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (key == NULL)
+    key = (dilithium_key *)XMALLOC(sizeof(*key), HEAP_HINT,
+        DYNAMIC_TYPE_TMP_BUFFER);
+    if (der == NULL || key == NULL) {
         ret = MEMORY_E;
+    }
 #endif
 
     /* Initialize key */
@@ -46859,7 +48424,7 @@ static wc_test_ret_t test_dilithium_decode_level(const byte* rawKey,
 #endif
     }
 
-#ifndef WOLFSSL_DILITHIUM_NO_ASN1
+#if !defined(WOLFSSL_DILITHIUM_NO_ASN1) && defined(WOLFSSL_ASN_TEMPLATE)
     /* Export raw key as DER */
     if (ret == 0) {
 #ifdef WOLFSSL_DILITHIUM_PUBLIC_KEY
@@ -46933,12 +48498,12 @@ static wc_test_ret_t test_dilithium_decode_level(const byte* rawKey,
         ret = WC_TEST_RET_ENC_NC;
     }
 #endif /* !WOLFSSL_DILITHIUM_FIPS204_DRAFT */
-#endif /* WOLFSSL_DILITHIUM_NO_ASN1 */
+#endif /* !WOLFSSL_DILITHIUM_NO_ASN1 && WOLFSSL_ASN_TEMPLATE */
 
     /* Cleanup */
-    XFREE(der, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     wc_dilithium_free(key);
-#ifdef WOLFSSL_SMALL_STACK
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    XFREE(der, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
     return ret;
@@ -47041,7 +48606,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t dilithium_test(void)
     WC_RNG rng;
 
 #ifndef HAVE_FIPS
-    ret = wc_InitRng_ex(&rng, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitRng_ex(&rng, HEAP_HINT, devId);
 #else
     ret = wc_InitRng(&rng);
 #endif
@@ -47165,16 +48730,16 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t xmss_test(void)
     WOLFSSL_ENTER("xmss_test");
 
 #ifndef HAVE_FIPS
-    ret = wc_InitRng_ex(&rng, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitRng_ex(&rng, HEAP_HINT, devId);
 #else
     ret = wc_InitRng(&rng);
 #endif
     if (ret != 0) { return WC_TEST_RET_ENC_EC(ret); }
 
-    ret = wc_XmssKey_Init(&signingKey, NULL, INVALID_DEVID);
+    ret = wc_XmssKey_Init(&signingKey, NULL, devId);
     if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
 
-    ret = wc_XmssKey_Init(&verifyKey, NULL, INVALID_DEVID);
+    ret = wc_XmssKey_Init(&verifyKey, NULL, devId);
     if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
 
     /* Set the parameter string to the signing key, and
@@ -47661,7 +49226,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t xmss_test_verify_only(void)
 
     XMEMSET(pub_raw, 0, sizeof(pub_raw));
 
-    ret = wc_XmssKey_Init(&verifyKey, NULL, INVALID_DEVID);
+    ret = wc_XmssKey_Init(&verifyKey, NULL, devId);
     if (ret != 0) { return WC_TEST_RET_ENC_EC(ret); }
 
     ret = wc_XmssKey_SetParamStr(&verifyKey, param);
@@ -47784,7 +49349,7 @@ static int lms_read_key_mem(byte * priv, word32 privSz, void *context)
 #ifndef WOLFSSL_NO_LMS_SHA256_256
 #define WC_TEST_LMS_SIG_LEN (8688)
 #else
-#define WC_TEST_LMS_SIG_LEN (4984)
+#define WC_TEST_LMS_SIG_LEN (4960)
 #endif
 
 WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test(void)
@@ -47800,18 +49365,31 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test(void)
     word32        sigSz = 0;
     const char *  msg = "LMS HSS post quantum signature test";
     word32        msgSz = (word32) XSTRLEN(msg);
+#ifndef WOLFSSL_WC_LMS_SERIALIZE_STATE
     unsigned char priv[HSS_MAX_PRIVATE_KEY_LEN];
     unsigned char old_priv[HSS_MAX_PRIVATE_KEY_LEN];
+#else
+    static unsigned char priv[64 * 1024 + HSS_MAX_PRIVATE_KEY_LEN];
+    static unsigned char old_priv[64 * 1024 + HSS_MAX_PRIVATE_KEY_LEN];
+#endif
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     byte *        sig = (byte*)XMALLOC(WC_TEST_LMS_SIG_LEN, HEAP_HINT,
                                 DYNAMIC_TYPE_TMP_BUFFER);
-    if (sig == NULL) {
-        return WC_TEST_RET_ENC_ERRNO;
-    }
 #else
     byte          sig[WC_TEST_LMS_SIG_LEN];
 #endif
+#if !defined(HAVE_LIBLMS)
+    const byte *  kid;
+    word32        kidSz;
+#endif
+
     WOLFSSL_ENTER("lms_test");
+
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    if (sig == NULL) {
+        return WC_TEST_RET_ENC_ERRNO;
+    }
+#endif
 
     XMEMSET(priv, 0, sizeof(priv));
     XMEMSET(old_priv, 0, sizeof(old_priv));
@@ -47821,7 +49399,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test(void)
     XMEMSET(&verifyKey, 0, sizeof(verifyKey));
 
 #ifndef HAVE_FIPS
-    ret = wc_InitRng_ex(&rng, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitRng_ex(&rng, HEAP_HINT, devId);
 #else
     ret = wc_InitRng(&rng);
 #endif
@@ -47836,10 +49414,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test(void)
     * signature length: 8688
     */
 
-    ret = wc_LmsKey_Init(&signingKey, NULL, INVALID_DEVID);
+    ret = wc_LmsKey_Init(&signingKey, NULL, devId);
     if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
 
-    ret = wc_LmsKey_Init(&verifyKey, NULL, INVALID_DEVID);
+    ret = wc_LmsKey_Init(&verifyKey, NULL, devId);
     if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
 
     ret = wc_LmsKey_SetParameters(&signingKey, 1, 5, 1);
@@ -47858,6 +49436,35 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test(void)
     if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
 
     XMEMCPY(old_priv, priv, sizeof(priv));
+
+#if !defined(HAVE_LIBLMS)
+    ret = wc_LmsKey_GetKid(NULL, NULL, NULL);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(&signingKey, NULL, NULL);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(NULL, &kid, NULL);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(NULL, NULL, &kidSz);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(&signingKey, &kid, NULL);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(&signingKey, NULL, &kidSz);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(NULL, &kid, &kidSz);
+    if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    ret = wc_LmsKey_GetKid(&signingKey, &kid, &kidSz);
+    if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
+    if (kidSz != WC_LMS_I_LEN) {
+        ERROR_OUT(WC_TEST_RET_ENC_I(kidSz), out);
+    }
+#endif
 
     ret = wc_LmsKey_ExportPub(&verifyKey, &signingKey);
     if (ret != 0) { ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out); }
@@ -48175,7 +49782,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test_verify_only(void)
 
     XMEMSET(pub_raw, 0, sizeof(pub_raw));
 
-    ret = wc_LmsKey_Init(&verifyKey, NULL, INVALID_DEVID);
+    ret = wc_LmsKey_Init(&verifyKey, NULL, devId);
     if (ret != 0) { return WC_TEST_RET_ENC_EC(ret); }
 
     ret = wc_LmsKey_SetParameters(&verifyKey, 1, 10, 8);
@@ -48281,9 +49888,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t lms_test_verify_only(void)
 #endif
 #endif /* if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_SMALL_STACK) */
 
-static const int fiducial3 = WC_TEST_RET_LN; /* source code reference point --
-                                              * see print_fiducials() below.
-                                              */
+ /* source code reference point -- see print_fiducials() below. */
+static WC_MAYBE_UNUSED const int fiducial3 = WC_TEST_RET_LN;
 
 #ifdef WOLFCRYPT_HAVE_ECCSI
 static wc_test_ret_t eccsi_api_test(WC_RNG* rng, EccsiKey* key, mp_int* ssk,
@@ -48299,24 +49905,24 @@ static wc_test_ret_t eccsi_api_test(WC_RNG* rng, EccsiKey* key, mp_int* ssk,
     byte sig[257];
     word32 sigSz;
 
-    ret = wc_InitEccsiKey_ex(NULL, 32, ECC_SECP256R1, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitEccsiKey_ex(NULL, 32, ECC_SECP256R1, HEAP_HINT, devId);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_EC(ret);
-    ret = wc_InitEccsiKey_ex(NULL, 32, ECC_SECP256R1, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitEccsiKey_ex(NULL, 32, ECC_SECP256R1, HEAP_HINT, devId);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_EC(ret);
 
-    ret = wc_InitEccsiKey(NULL, NULL, INVALID_DEVID);
+    ret = wc_InitEccsiKey(NULL, NULL, devId);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_EC(ret);
-    ret = wc_InitEccsiKey(NULL, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitEccsiKey(NULL, HEAP_HINT, devId);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_EC(ret);
 
     wc_FreeEccsiKey(NULL);
 
     /* Create a valid key. */
-    ret = wc_InitEccsiKey(key, NULL, INVALID_DEVID);
+    ret = wc_InitEccsiKey(key, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -49251,13 +50857,13 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t eccsi_test(void)
     }
 
     if (ret == 0) {
-        ret = wc_InitEccsiKey(pub, HEAP_HINT, INVALID_DEVID);
+        ret = wc_InitEccsiKey(pub, HEAP_HINT, devId);
         if (ret != 0)
             ret = WC_TEST_RET_ENC_EC(ret);
     }
 
     if (ret == 0) {
-        ret = wc_InitEccsiKey(priv, HEAP_HINT, INVALID_DEVID);
+        ret = wc_InitEccsiKey(priv, HEAP_HINT, devId);
         if (ret != 0)
             ret = WC_TEST_RET_ENC_EC(ret);
     }
@@ -49309,10 +50915,10 @@ static wc_test_ret_t sakke_api_test(WC_RNG* rng, SakkeKey* key, ecc_point* rsk)
     word16 ssvSz;
     word32 len;
 
-    ret = wc_InitSakkeKey_ex(NULL, 128, ECC_SAKKE_1, NULL, INVALID_DEVID);
+    ret = wc_InitSakkeKey_ex(NULL, 128, ECC_SAKKE_1, NULL, devId);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_EC(ret);
-    ret = wc_InitSakkeKey_ex(NULL, 128, ECC_SAKKE_1, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitSakkeKey_ex(NULL, 128, ECC_SAKKE_1, HEAP_HINT, devId);
     if (ret != WC_NO_ERR_TRACE(BAD_FUNC_ARG))
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -49321,7 +50927,7 @@ static wc_test_ret_t sakke_api_test(WC_RNG* rng, SakkeKey* key, ecc_point* rsk)
     XMEMSET(key, 0, sizeof(*key));
     wc_FreeSakkeKey(key);
 
-    ret = wc_InitSakkeKey_ex(key, 128, ECC_SAKKE_1, HEAP_HINT, INVALID_DEVID);
+    ret = wc_InitSakkeKey_ex(key, 128, ECC_SAKKE_1, HEAP_HINT, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -50091,7 +51697,7 @@ static wc_test_ret_t sakke_make_key_test(SakkeKey* priv, SakkeKey* pub, SakkeKey
     int valid;
     ecc_point* pubKey = rsk;
 
-    ret = wc_InitSakkeKey_ex(key, 128, ECC_SAKKE_1, NULL, INVALID_DEVID);
+    ret = wc_InitSakkeKey_ex(key, 128, ECC_SAKKE_1, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -50122,7 +51728,7 @@ static wc_test_ret_t sakke_make_key_test(SakkeKey* priv, SakkeKey* pub, SakkeKey
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
     wc_FreeSakkeKey(key);
-    ret = wc_InitSakkeKey_ex(key, 128, ECC_SAKKE_1, NULL, INVALID_DEVID);
+    ret = wc_InitSakkeKey_ex(key, 128, ECC_SAKKE_1, NULL, devId);
     if (ret != 0)
         return WC_TEST_RET_ENC_EC(ret);
 
@@ -50395,13 +52001,13 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t sakke_test(void)
     }
 
     if (ret == 0) {
-        ret = wc_InitSakkeKey(pub, HEAP_HINT, INVALID_DEVID);
+        ret = wc_InitSakkeKey(pub, HEAP_HINT, devId);
         if (ret != 0)
             ret = WC_TEST_RET_ENC_EC(ret);
     }
 
     if (ret == 0) {
-        ret = wc_InitSakkeKey(priv, HEAP_HINT, INVALID_DEVID);
+        ret = wc_InitSakkeKey(priv, HEAP_HINT, devId);
         if (ret != 0)
             ret = WC_TEST_RET_ENC_EC(ret);
     }
@@ -51920,7 +53526,7 @@ static int myDecryptionFunc(wc_PKCS7* pkcs7, int encryptOID, byte* iv, int ivSz,
             ERROR_OUT(ALGO_ID_E, out);
     };
 
-    ret = wc_AesInit(aes, HEAP_HINT, INVALID_DEVID);
+    ret = wc_AesInit(aes, HEAP_HINT, devId);
     if (ret == 0) {
         ret = wc_AesSetKey(aes, key, (word32)keySz, iv, AES_DECRYPTION);
         if (ret == 0)
@@ -51970,14 +53576,15 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
     };
 
 #if !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_256) && \
-    defined(HAVE_ECC) && defined(WOLFSSL_SHA512)
+    defined(HAVE_ECC) && defined(WOLFSSL_SHA512) && \
+    defined(HAVE_AES_KEYWRAP) && defined(HAVE_X963_KDF)
     byte optionalUkm[] = {
         0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07
     };
 #endif /* !NO_AES */
 
 #if !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128) && \
-    !defined(NO_SHA)
+    !defined(NO_SHA) && defined(HAVE_AES_KEYWRAP)
     /* encryption key for kekri recipient types */
     WOLFSSL_SMALL_STACK_STATIC const byte secretKey[] = {
         0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -51991,7 +53598,8 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
 #endif
 
 #if !defined(NO_PWDBASED) && !defined(NO_SHA) && \
-    !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128)
+    !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128) && \
+    defined(HAVE_AES_KEYWRAP)
 
     #ifndef HAVE_FIPS
     WOLFSSL_SMALL_STACK_STATIC const char password[] = "password"; /* NOTE: Password is too short for FIPS */
@@ -52038,7 +53646,7 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
          "pkcs7envelopedDataDES3.der");
     #endif
 
-    #if !defined(NO_AES) && defined(HAVE_AES_CBC)
+    #if !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(HAVE_AES_KEYWRAP)
         #ifdef WOLFSSL_AES_128
         ADD_PKCS7ENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128CBCb, 0, 0, rsaCert, rsaCertSz,
@@ -52074,11 +53682,11 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
          NULL, 0, NULL, 0, NULL, NULL, 0, NULL, 0, 0, NULL, 0, NULL, 0, 0, 0,
          0, 0, 0, 0, "pkcs7envelopedDataAES256CBC_IANDS.der");
         #endif
-    #endif /* !NO_AES && HAVE_AES_CBC */
+    #endif /* !NO_AES && HAVE_AES_CBC && HAVE_AES_KEYWRAP */
 #endif
 
         /* key agreement key encryption technique*/
-#ifdef HAVE_ECC
+#if defined(HAVE_ECC) && defined(HAVE_AES_KEYWRAP) && defined(HAVE_X963_KDF)
     #if !defined(NO_AES) && defined(HAVE_AES_CBC)
         #if !defined(NO_SHA) && defined(WOLFSSL_AES_128)
         ADD_PKCS7ENVELOPEDVECTOR(
@@ -52118,7 +53726,7 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
 #endif
 
         /* kekri (KEKRecipientInfo) recipient types */
-#if !defined(NO_AES) && defined(HAVE_AES_CBC)
+#if !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(HAVE_AES_KEYWRAP)
         #if !defined(NO_SHA) && defined(WOLFSSL_AES_128)
         ADD_PKCS7ENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128CBCb, AES128_WRAP, 0,
@@ -52127,11 +53735,12 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
          0, NULL, 0, NULL, 0, 0, 0, 0, 0, 0, 0,
          "pkcs7envelopedDataAES128CBC_KEKRI.der");
         #endif
-#endif /* !NO_AES && HAVE_AES_CBC */
+#endif /* !NO_AES && HAVE_AES_CBC && HAVE_AES_KEYWRAP */
 
         /* pwri (PasswordRecipientInfo) recipient types */
 #if !defined(NO_PWDBASED) && !defined(NO_AES) && defined(HAVE_AES_CBC)
-        #if !defined(NO_SHA) && defined(WOLFSSL_AES_128)
+        #if !defined(NO_SHA) && defined(WOLFSSL_AES_128) && \
+        defined(HAVE_AES_KEYWRAP)
         ADD_PKCS7ENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128CBCb, 0, 0,
          NULL, 0, NULL, 0, NULL, 0, 0, 0, NULL, 0,
@@ -52141,7 +53750,8 @@ static wc_test_ret_t pkcs7enveloped_run_vectors(byte* rsaCert, word32 rsaCertSz,
         #endif
 #endif
 
-#if !defined(NO_AES) && defined(HAVE_AES_CBC) && !defined(NO_AES_128)
+#if !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128) && \
+        defined(HAVE_AES_KEYWRAP)
         /* ori (OtherRecipientInfo) recipient types */
         ADD_PKCS7ENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128CBCb, 0, 0, NULL, 0, NULL, 0,
@@ -52587,7 +54197,8 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
     };
     byte senderNonce[PKCS7_NONCE_SZ + 2];
 #ifdef HAVE_ECC
-    #if !defined(NO_AES) && defined(HAVE_AESGCM)
+    #if !defined(NO_AES) && defined(HAVE_AESGCM) && \
+    defined(HAVE_AES_KEYWRAP) && defined(HAVE_X963_KDF)
     #if !defined(NO_SHA256) && defined(WOLFSSL_AES_256)
     WOLFSSL_SMALL_STACK_STATIC const byte senderNonceOid[] =
                { 0x06, 0x0a, 0x60, 0x86, 0x48, 0x01, 0x86, 0xF8, 0x45, 0x01,
@@ -52603,13 +54214,15 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
 #endif
 
 #if !defined(NO_AES) && defined(WOLFSSL_AES_256) && defined(HAVE_ECC) && \
-    defined(WOLFSSL_SHA512) && defined(HAVE_AESGCM)
+    defined(WOLFSSL_SHA512) && defined(HAVE_AESGCM) && \
+    defined(HAVE_AES_KEYWRAP) && defined(HAVE_X963_KDF)
     WOLFSSL_SMALL_STACK_STATIC const byte optionalUkm[] = {
         0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07
     };
 #endif /* !NO_AES */
 
-#if !defined(NO_AES) && !defined(NO_SHA) && defined(WOLFSSL_AES_128)
+#if !defined(NO_AES) && !defined(NO_SHA) && defined(WOLFSSL_AES_128) && \
+    defined(HAVE_AES_KEYWRAP)
     /* encryption key for kekri recipient types */
     WOLFSSL_SMALL_STACK_STATIC const byte secretKey[] = {
         0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -52623,7 +54236,8 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
 #endif
 
 #if !defined(NO_PWDBASED) && !defined(NO_AES) && defined(HAVE_AESGCM) && \
-    !defined(NO_SHA) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128)
+    !defined(NO_SHA) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128) && \
+    defined(HAVE_AES_KEYWRAP)
 
     #ifndef HAVE_FIPS
     WOLFSSL_SMALL_STACK_STATIC const char password[] = "password";
@@ -52661,7 +54275,7 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
     {
         /* key transport key encryption technique */
 #ifndef NO_RSA
-    #if !defined(NO_AES) && defined(HAVE_AESGCM)
+    #if !defined(NO_AES) && defined(HAVE_AESGCM) && defined(HAVE_AES_KEYWRAP)
         #ifdef WOLFSSL_AES_128
         ADD_PKCS7AUTHENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128GCMb, 0, 0, rsaCert, rsaCertSz,
@@ -52711,12 +54325,13 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
         (void)rsaCertSz;
         (void)rsaPrivKey;
         (void)rsaPrivKeySz;
-    #endif /* !NO_AES && !HAVE_AESGCM */
+    #endif /* !NO_AES && !HAVE_AESGCM && HAVE_AES_KEYWRAP */
 #endif
 
         /* key agreement key encryption technique*/
 #ifdef HAVE_ECC
-    #if !defined(NO_AES) && defined(HAVE_AESGCM)
+    #if !defined(NO_AES) && defined(HAVE_AESGCM) && \
+    defined(HAVE_AES_KEYWRAP) && defined(HAVE_X963_KDF)
         #if !defined(NO_SHA) && defined(WOLFSSL_AES_128)
         ADD_PKCS7AUTHENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128GCMb, AES128_WRAP,
@@ -52793,11 +54408,11 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
          0, 0, 0, 0, 0, 0,
          "pkcs7authEnvelopedDataAES256GCM_ECDH_SHA512KDF_ukm.der");
         #endif /* WOLFSSL_SHA512 && WOLFSSL_AES_256 */
-    #endif /* !NO_AES && HAVE_AESGCM */
+    #endif /* !NO_AES && HAVE_AESGCM && HAVE_AES_KEYWRAP */
 #endif
 
         /* kekri (KEKRecipientInfo) recipient types */
-#if !defined(NO_AES) && defined(HAVE_AESGCM)
+#if !defined(NO_AES) && defined(HAVE_AESGCM) && defined(HAVE_AES_KEYWRAP)
         #if !defined(NO_SHA) && defined(WOLFSSL_AES_128)
         ADD_PKCS7AUTHENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128GCMb, AES128_WRAP, 0,
@@ -52809,7 +54424,8 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
 #endif
 
         /* pwri (PasswordRecipientInfo) recipient types */
-#if !defined(NO_PWDBASED) && !defined(NO_AES) && defined(HAVE_AESGCM)
+#if !defined(NO_PWDBASED) && !defined(NO_AES) && defined(HAVE_AESGCM) && \
+        defined(HAVE_AES_KEYWRAP)
         #if !defined(NO_SHA) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128)
         ADD_PKCS7AUTHENVELOPEDVECTOR(
          data, (word32)sizeof(data), DATA, AES128GCMb, 0, 0,
@@ -52820,7 +54436,7 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
         #endif
 #endif
 
-#if !defined(NO_AES) && defined(HAVE_AESGCM)
+#if !defined(NO_AES) && defined(HAVE_AESGCM) && defined(HAVE_AES_KEYWRAP)
         #ifdef WOLFSSL_AES_128
         /* ori (OtherRecipientInfo) recipient types */
         ADD_PKCS7AUTHENVELOPEDVECTOR(
@@ -53106,7 +54722,8 @@ static wc_test_ret_t pkcs7authenveloped_run_vectors(byte* rsaCert, word32 rsaCer
     (void)eccCertSz;
     (void)eccPrivKey;
     (void)eccPrivKeySz;
-#if !defined(NO_AES) && !defined(NO_SHA) && defined(WOLFSSL_AES_128)
+#if !defined(NO_AES) && !defined(NO_SHA) && defined(WOLFSSL_AES_128) && \
+    defined(HAVE_AES_KEYWRAP)
     (void)secretKey;
     (void)secretKeyId;
 #endif
@@ -53216,7 +54833,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t pkcs7authenveloped_test(void)
 
 #endif /* HAVE_AESGCM || HAVE_AESCCM */
 
-#if !defined(NO_AES) && defined(HAVE_AES_CBC)
+#if !defined(NO_AES) && defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_256) && \
+    defined(HAVE_AES_KEYWRAP)
 static const byte p7DefKey[] = {
     0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,
     0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,
@@ -53335,7 +54953,7 @@ static wc_test_ret_t envelopedData_encrypt(byte* in, word32 inSz, byte* out,
     wc_PKCS7* pkcs7;
     WOLFSSL_SMALL_STACK_STATIC const byte keyId[] = { 0x00 };
 
-    pkcs7 = wc_PKCS7_New(NULL, INVALID_DEVID);
+    pkcs7 = wc_PKCS7_New(NULL, devId);
     if (pkcs7 == NULL)
         return WC_TEST_RET_ENC_ERRNO;
 
@@ -53422,7 +55040,7 @@ static wc_test_ret_t generateBundle(byte* out, word32 *outSz, const byte* encryp
     }
 
     /* init PKCS7 */
-    pkcs7 = wc_PKCS7_New(NULL, INVALID_DEVID);
+    pkcs7 = wc_PKCS7_New(NULL, devId);
     if (pkcs7 == NULL)
         return WC_TEST_RET_ENC_ERRNO;
 
@@ -53517,14 +55135,14 @@ static wc_test_ret_t verifyBundle(byte* derBuf, word32 derSz, int keyHint)
         goto out;
     }
 
-    pkcs7 = wc_PKCS7_New(HEAP_HINT, INVALID_DEVID);
+    pkcs7 = wc_PKCS7_New(HEAP_HINT, devId);
     if (pkcs7 == NULL) {
         ret = MEMORY_E;
         goto out;
     }
 
     /* Test verify */
-    ret = wc_PKCS7_Init(pkcs7, HEAP_HINT, INVALID_DEVID);
+    ret = wc_PKCS7_Init(pkcs7, HEAP_HINT, devId);
     if (ret != 0)
         goto out;
     ret = wc_PKCS7_InitWithCert(pkcs7, NULL, 0);
@@ -53648,7 +55266,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t pkcs7callback_test(byte* cert, word32 cert
 
     return ret;
 }
-#endif /* !NO_AES && HAVE_AES_CBC */
+#endif /* !NO_AES && HAVE_AES_CBC && WOLFSSL_AES_256 && HAVE_AES_KEYWRAP */
 
 #ifndef NO_PKCS7_ENCRYPTED_DATA
 
@@ -55251,7 +56869,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t pkcs7signed_test(void)
                             eccClientCertBuf, (word32)eccClientCertBufSz,
                             eccClientPrivKeyBuf, (word32)eccClientPrivKeyBufSz);
 
-#if !defined(NO_RSA) && !defined(NO_AES) && defined(HAVE_AES_CBC)
+#if !defined(NO_RSA) && !defined(NO_AES) && defined(HAVE_AES_CBC) && \
+    defined(WOLFSSL_AES_256) && defined(HAVE_AES_KEYWRAP)
     if (ret >= 0)
         ret = pkcs7callback_test(
                             rsaClientCertBuf, (word32)rsaClientCertBufSz,
@@ -55390,9 +57009,9 @@ static wc_test_ret_t mp_test_div_3(mp_int* a, mp_int* r, WC_RNG* rng)
 #endif /* WOLFSSL_SP_MATH || !USE_FAST_MATH */
 
 #if (defined(WOLFSSL_SP_MATH_ALL) && !defined(NO_RSA) && \
-    !defined(WOLFSSL_RSA_VERIFY_ONLY)) || \
+     !defined(WOLFSSL_RSA_VERIFY_ONLY)) || \
     (!defined WOLFSSL_SP_MATH && !defined(WOLFSSL_SP_MATH_ALL) && \
-    (defined(WOLFSSL_KEY_GEN) || defined(HAVE_COMP_KEY)))
+     (defined(OPENSSL_EXTRA) || !defined(NO_DSA) || defined(HAVE_ECC)))
 static wc_test_ret_t mp_test_radix_10(mp_int* a, mp_int* r, WC_RNG* rng)
 {
     wc_test_ret_t ret;
@@ -55605,6 +57224,8 @@ static wc_test_ret_t mp_test_shift(mp_int* a, mp_int* r1, WC_RNG* rng)
     return 0;
 }
 
+#if !(defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_MATH)) || \
+    (defined(WOLFSSL_SP_ADD_D) && defined(WOLFSSL_SP_SUB_D))
 static wc_test_ret_t mp_test_add_sub_d(mp_int* a, mp_int* r1)
 {
     int i, j;
@@ -55644,6 +57265,7 @@ static wc_test_ret_t mp_test_add_sub_d(mp_int* a, mp_int* r1)
 
     return 0;
 }
+#endif
 
 static wc_test_ret_t mp_test_read_to_bin(mp_int* a)
 {
@@ -55772,7 +57394,8 @@ static wc_test_ret_t mp_test_param(mp_int* a, mp_int* b, mp_int* r, WC_RNG* rng)
 
     mp_free(NULL);
 
-#if !defined(WOLFSSL_RSA_VERIFY_ONLY) || !defined(NO_DH) || defined(HAVE_ECC)
+#if (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY)) || \
+    !defined(NO_DH) || defined(HAVE_ECC)
     ret = mp_grow(NULL, 1);
     if (ret != WC_NO_ERR_TRACE(MP_VAL))
         return WC_TEST_RET_ENC_EC(ret);
@@ -55952,8 +57575,8 @@ static wc_test_ret_t mp_test_param(mp_int* a, mp_int* b, mp_int* r, WC_RNG* rng)
 
     mp_zero(NULL);
 
-#if !defined(NO_DH) || defined(HAVE_ECC) || defined(WC_RSA_BLINDING) || \
-    !defined(WOLFSSL_RSA_PUBLIC_ONLY)
+#if !defined(NO_DH) || defined(HAVE_ECC) || (!defined(NO_RSA) && \
+    (defined(WC_RSA_BLINDING) || !defined(WOLFSSL_RSA_PUBLIC_ONLY)))
     ret = mp_lshd(NULL, 0);
     if (ret != WC_NO_ERR_TRACE(MP_VAL))
         return WC_TEST_RET_ENC_EC(ret);
@@ -57860,8 +59483,8 @@ static wc_test_ret_t mp_test_exptmod(mp_int* b, mp_int* e, mp_int* m, mp_int* r)
 #endif /* !NO_RSA || !NO_DSA || !NO_DH || (HAVE_ECC && HAVE_COMP_KEY) ||
         * OPENSSL_EXTRA */
 
-#if defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_HAVE_SP_DH) || \
-    defined(HAVE_ECC) || (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY))
+#if defined(HAVE_ECC) || \
+    (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY))
 static wc_test_ret_t mp_test_mont(mp_int* a, mp_int* m, mp_int* n, mp_int* r, WC_RNG* rng)
 {
     wc_test_ret_t ret;
@@ -58110,6 +59733,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
          #endif
     #endif
 
+        #if !(defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_MATH)) || \
+            (defined(WOLFSSL_SP_ADD_D) && defined(WOLFSSL_SP_SUB_D) && \
+             defined(WOLFSSL_SP_INVMOD))
             /* Ensure add digit produce same result as sub digit. */
             ret = mp_add_d(a, d, r1);
             if (ret != 0)
@@ -58126,6 +59752,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
             ret = mp_invmod(a, p, r1);
             if (ret != 0 && ret != WC_NO_ERR_TRACE(MP_VAL))
                 ERROR_OUT(WC_TEST_RET_ENC_EC(ret), done);
+        #endif
 
         #ifndef WOLFSSL_SP_MATH
             /* Shift up and down number all bits in a digit. */
@@ -58144,6 +59771,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
         }
     }
 
+#if !(defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_MATH)) || \
+    (defined(WOLFSSL_SP_ADD_D) && defined(WOLFSSL_SP_SUB_D))
     /* Test adding and subtracting zero from zero. */
     mp_zero(a);
     ret = mp_add_d(a, 0, r1);
@@ -58158,6 +59787,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
     if (!mp_iszero(r2)) {
         ERROR_OUT(WC_TEST_RET_ENC_NC, done);
     }
+#endif
 
 #if DIGIT_BIT >= 32
     /* Check that setting a 32-bit digit works. */
@@ -58208,9 +59838,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
         goto done;
 #endif
 #if (defined(WOLFSSL_SP_MATH_ALL) && !defined(NO_RSA) && \
-    !defined(WOLFSSL_RSA_VERIFY_ONLY)) || \
+     !defined(WOLFSSL_RSA_VERIFY_ONLY)) || \
     (!defined WOLFSSL_SP_MATH && !defined(WOLFSSL_SP_MATH_ALL) && \
-    (defined(WOLFSSL_KEY_GEN) || defined(HAVE_COMP_KEY)))
+     (defined(OPENSSL_EXTRA) || !defined(NO_DSA) || defined(HAVE_ECC)))
     if ((ret = mp_test_radix_10(a, r1, &rng)) != 0)
         goto done;
 #endif
@@ -58222,8 +59852,11 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
 
     if ((ret = mp_test_shift(a, r1, &rng)) != 0)
         goto done;
+#if !(defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_MATH)) || \
+    (defined(WOLFSSL_SP_ADD_D) && defined(WOLFSSL_SP_SUB_D))
     if ((ret = mp_test_add_sub_d(a, r1)) != 0)
         goto done;
+#endif
     if ((ret = mp_test_read_to_bin(a)) != 0)
         goto done;
 #if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
@@ -58278,8 +59911,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mp_test(void)
     if ((ret = mp_test_exptmod(a, b, r1, r2)) != 0)
         goto done;
 #endif
-#if defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_HAVE_SP_DH) || \
-    defined(HAVE_ECC) || (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY))
+#if defined(HAVE_ECC) || \
+    (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY))
     if ((ret = mp_test_mont(a, b, r1, r2, &rng)) != 0)
         goto done;
 #endif
@@ -58333,6 +59966,7 @@ typedef struct pairs_t {
 } pairs_t;
 
 
+#if (!defined(NO_DH) || !defined(NO_DSA)) && !defined(WC_NO_RNG)
 /*
 n =p1p2p3, where pi = ki(p1-1)+1 with (k2,k3) = (173,293)
 p1 = 2^192 * 0x000000000000e24fd4f6d6363200bf2323ec46285cac1d3a
@@ -58520,6 +60154,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t prime_test(void)
     wc_test_ret_t ret;
     int isPrime = 0;
     WC_RNG rng;
+    int rng_inited = 0;
     WOLFSSL_ENTER("prime_test");
 
     ret = mp_init_multi(n, p1, p2, p3, NULL, NULL);
@@ -58535,7 +60170,9 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t prime_test(void)
 #endif
 
     ret = wc_InitRng(&rng);
-    if (ret != 0)
+    if (ret == 0)
+        rng_inited = 1;
+    else
         ret = WC_TEST_RET_ENC_EC(ret);
     if (ret == 0)
         ret = GenerateP(p1, p2, p3,
@@ -58639,10 +60276,12 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t prime_test(void)
     mp_clear(n);
 #endif
 
-    wc_FreeRng(&rng);
+    if (rng_inited)
+        wc_FreeRng(&rng);
 
     return ret;
 }
+#endif
 
 #endif /* WOLFSSL_PUBLIC_MP */
 
@@ -58919,7 +60558,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t mutex_test(void)
 
 #if defined(USE_WOLFSSL_MEMORY) && !defined(FREERTOS)
 
-#if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_LINUXKM) && \
+#if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_KERNEL_MODE) && \
     !defined(WOLFSSL_STATIC_MEMORY)
 static wc_test_ret_t malloc_cnt = 0;
 static wc_test_ret_t realloc_cnt = 0;
@@ -58987,7 +60626,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t memcb_test(void)
 {
     wc_test_ret_t ret = 0;
 #if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_NO_REALLOC) && \
-    !defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_STATIC_MEMORY)
+    !defined(WOLFSSL_KERNEL_MODE) && !defined(WOLFSSL_STATIC_MEMORY)
     byte* b = NULL;
 #endif
     wolfSSL_Malloc_cb  mc;
@@ -59001,7 +60640,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t memcb_test(void)
         return WC_TEST_RET_ENC_EC(ret);
 
 #if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_NO_REALLOC) && \
-    !defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_STATIC_MEMORY)
+    !defined(WOLFSSL_KERNEL_MODE) && !defined(WOLFSSL_STATIC_MEMORY)
 
     /* test realloc */
     b = (byte*)XREALLOC(b, 1024, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
@@ -59045,7 +60684,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t memcb_test(void)
 #endif /* !WOLFSSL_NO_MALLOC */
 
 #if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_NO_REALLOC) && \
-    !defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_STATIC_MEMORY)
+    !defined(WOLFSSL_KERNEL_MODE) && !defined(WOLFSSL_STATIC_MEMORY)
 exit_memcb:
 
     /* reset malloc/free/realloc counts */
@@ -59179,6 +60818,7 @@ static wc_test_ret_t rsa_onlycb_test(myCryptoDevCtx *ctx)
 
 #ifdef WOLFSSL_KEY_GEN
     WC_RNG rng;
+    word32 keySz = 2048;
 #endif
 
 #ifdef USE_CERT_BUFFERS_1024
@@ -59236,7 +60876,7 @@ static wc_test_ret_t rsa_onlycb_test(myCryptoDevCtx *ctx)
     * wc_MakeRsaKey(CBONLY_TEST_DEVID) expects to return 0(success)
     */
     ctx->exampleVar = 99;
-    ret = wc_MakeRsaKey(key, keySz, WC_RSA_EXPONENT, rng);
+    ret = wc_MakeRsaKey(key, keySz, WC_RSA_EXPONENT, &rng);
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), exit_onlycb);
    /* wc_MakeRsaKey() -> rsa cb ->
@@ -59244,7 +60884,7 @@ static wc_test_ret_t rsa_onlycb_test(myCryptoDevCtx *ctx)
     * wc_MakeRsaKey(CBONLY_TEST_DEVID) expects to return NO_VALID_DEVID(failure)
     */
     ctx->exampleVar = 1;
-    ret = wc_MakeRsaKey(key, keySz, WC_RSA_EXPONENT, rng);
+    ret = wc_MakeRsaKey(key, keySz, WC_RSA_EXPONENT, &rng);
     if (ret != WC_NO_ERR_TRACE(NO_VALID_DEVID)) {
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), exit_onlycb);
     } else
@@ -59316,29 +60956,28 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
 {
      wc_test_ret_t ret = 0;
 #if defined(HAVE_ECC)
-
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    ecc_key* key = (ecc_key *)XMALLOC(sizeof *key,
+    ecc_key* key = (ecc_key *)XMALLOC(sizeof(*key),
                                             HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    ecc_key* pub = (ecc_key *)XMALLOC(sizeof *pub,
+    ecc_key* pub = (ecc_key *)XMALLOC(sizeof(*pub),
                                             HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    byte* out = (byte*)XMALLOC(sizeof(byte),
-                                            HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    #ifdef OPENSSL_EXTRA
-    byte* check = (byte*)XMALLOC(sizeof(byte)*(256), HEAP_HINT,
-                                            DYNAMIC_TYPE_TMP_BUFFER);
-
+    byte* out = (byte*)XMALLOC(256, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    #if !defined(WOLFCRYPT_ONLY) && defined(OPENSSL_EXTRA)
+    byte* check = (byte*)XMALLOC(256, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     #endif
 #else
     ecc_key key[1];
+    #ifdef HAVE_ECC_DHE
     ecc_key pub[1];
-    byte    out[256];
-     #ifdef OPENSSL_EXTRA
-    unsigned char check[256];
+    #endif
+    #if defined(HAVE_ECC_SIGN) && defined(HAVE_ECC_VERIFY)
+    byte   out[256];
+    #endif
+    #if !defined(WOLFCRYPT_ONLY) && defined(OPENSSL_EXTRA)
+    byte check[256];
     #endif
 #endif
-
-    #ifdef OPENSSL_EXTRA
+#if !defined(WOLFCRYPT_ONLY) && defined(OPENSSL_EXTRA)
     WOLFSSL_EVP_PKEY* privKey = NULL;
     WOLFSSL_EVP_PKEY* pubKey = NULL;
     #ifdef USE_CERT_BUFFERS_256
@@ -59377,17 +61016,21 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
         0x94,0x1d,0x7a,0x66,0xf8,0xd1,0x1d,0xcf,0xb0,0x48,
         0xef,0x8c,0x94,0x6f,0xdd,0x62,
     };
-    #endif
-
+#endif
+#ifdef HAVE_ECC_DHE
     WC_RNG rng;
+#endif
     EncryptedInfo encInfo;
     int keyFormat = 0;
+#ifdef USE_CERT_BUFFERS_256
     word32 keyIdx = 0;
-
+#endif
+#if defined(HAVE_ECC_SIGN) && defined(HAVE_ECC_VERIFY)
     byte   in[] = "Everyone gets Friday off. ecc p";
     word32 inLen = (word32)XSTRLEN((char*)in);
     word32 outLen;
     int    verify;
+#endif
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     if (key == NULL || pub == NULL) {
@@ -59398,7 +61041,8 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), exit_onlycb);
 
-    /* wc_CryptoCb_MakeEccKey cb test, , no actual testing */
+    /* wc_CryptoCb_MakeEccKey cb test, no actual testing */
+#ifdef HAVE_ECC_DHE
     ctx->exampleVar = 99;
     ret = wc_ecc_make_key(&rng, ECC_KEYGEN_SIZE, key);
     if (ret != 0)
@@ -59410,7 +61054,7 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     } else
         /* reset return code */
         ret = 0;
-
+#endif
 #ifdef USE_CERT_BUFFERS_256
     if (ret == 0) {
         /* load ECC private key and perform private transform */
@@ -59419,6 +61063,9 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     }
     if (ret != 0)
         ERROR_OUT(WC_TEST_RET_ENC_EC(ret), exit_onlycb);
+#endif
+
+#ifdef HAVE_ECC_SIGN
     /* wc_CryptoCb_EccSign cb test, no actual testing */
     ctx->exampleVar = 99;
     if (ret == 0) {
@@ -59436,6 +61083,7 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     else
         ret = 0;
 
+#ifdef HAVE_ECC_VERIFY
     /* wc_CryptoCb_EccVerify cb test, no actual testing */
     ctx->exampleVar = 99;
     if (ret == 0) {
@@ -59453,7 +61101,10 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     }
     else
         ret = 0;
+#endif /* HAVE_ECC_VERIFY */
+#endif /* HAVE_ECC_SIGN */
 
+#ifdef HAVE_ECC_DHE
     /* wc_CryptoCb_Ecdh cb test, no actual testing */
 
     /* make public key for shared secret */
@@ -59475,9 +61126,9 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     else
         ret = 0;
 
+#endif /* HAVE_ECC_DHE */
 
-    #ifdef OPENSSL_EXTRA
-
+#if !defined(WOLFCRYPT_ONLY) && defined(OPENSSL_EXTRA)
     (void)pkey;
     cp = ecc_clikey_der_256;
     privKey = d2i_PrivateKey(WC_EVP_PKEY_EC, NULL, &cp,
@@ -59538,7 +61189,6 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     }
 
     /* verify */
-
     wolfSSL_EVP_MD_CTX_init(&mdCtx);
 
     if (ret == WOLFSSL_SUCCESS) {
@@ -59574,24 +61224,11 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
         ERROR_OUT(WC_TEST_RET_ENC_NC, exit_onlycb);
     } else
         ret = 0;
-    #endif
-#else
-    (void)verify;
-    (void)outLen;
-    (void)inLen;
-    (void)out;
-    (void)pub;
-    #ifdef OPENSSL_EXTRA
-    (void)privKey;
-    (void)pubKey;
-    (void)mdCtx;
-    (void)check;
-    (void)checkSz;
-    (void)p;
-     #endif
-#endif
+#endif /* !WOLFCRYPT_ONLY && OPENSSL_EXTRA */
+
     (void)keyFormat;
     (void)encInfo;
+    (void)ctx;
 
 exit_onlycb:
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
@@ -59601,14 +61238,14 @@ exit_onlycb:
     }
     XFREE(pub, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(out, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    #ifdef OPENSSL_EXTRA
+    #if !defined(WOLFCRYPT_ONLY) && defined(OPENSSL_EXTRA)
     if (check) {
         FREE(check, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     }
     #endif
 #else
     wc_ecc_free(key);
-    #ifdef OPENSSL_EXTRA
+    #if !defined(WOLFCRYPT_ONLY) && defined(OPENSSL_EXTRA)
     if (privKey)
         wolfSSL_EVP_PKEY_free(privKey);
     if (pubKey)
@@ -59743,6 +61380,7 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
     #endif /* !NO_RSA */
     #ifdef HAVE_ECC
         if (info->pk.type == WC_PK_TYPE_EC_KEYGEN) {
+        #ifdef HAVE_ECC_DHE
             /* set devId to invalid, so software is used */
             info->pk.eckg.key->devId = INVALID_DEVID;
             #if defined(WOLF_CRYPTO_CB_ONLY_ECC)
@@ -59759,8 +61397,10 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 
             /* reset devId */
             info->pk.eckg.key->devId = devIdArg;
+        #endif
         }
         else if (info->pk.type == WC_PK_TYPE_ECDSA_SIGN) {
+        #ifdef HAVE_ECC_SIGN
             /* set devId to invalid, so software is used */
             info->pk.eccsign.key->devId = INVALID_DEVID;
             #if defined(WOLF_CRYPTO_CB_ONLY_ECC)
@@ -59779,8 +61419,10 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 
             /* reset devId */
             info->pk.eccsign.key->devId = devIdArg;
+        #endif
         }
         else if (info->pk.type == WC_PK_TYPE_ECDSA_VERIFY) {
+        #ifdef HAVE_ECC_VERIFY
             /* set devId to invalid, so software is used */
             info->pk.eccverify.key->devId = INVALID_DEVID;
             #if defined(WOLF_CRYPTO_CB_ONLY_ECC)
@@ -59799,8 +61441,10 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 
             /* reset devId */
             info->pk.eccverify.key->devId = devIdArg;
+        #endif
         }
         else if (info->pk.type == WC_PK_TYPE_ECDH) {
+        #ifdef HAVE_ECC_DHE
             /* set devId to invalid, so software is used */
             info->pk.ecdh.private_key->devId = INVALID_DEVID;
             #if defined(WOLF_CRYPTO_CB_ONLY_ECC)
@@ -59818,6 +61462,7 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 
             /* reset devId */
             info->pk.ecdh.private_key->devId = devIdArg;
+        #endif
         }
     #endif /* HAVE_ECC */
     #ifdef HAVE_CURVE25519
@@ -60288,6 +61933,273 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
         }
     }
 #endif /* !NO_SHA || !NO_SHA256 */
+#ifdef WOLF_CRYPTO_CB_COPY
+    else if (info->algo_type == WC_ALGO_TYPE_COPY) {
+#ifdef DEBUG_WOLFSSL
+        WOLFSSL_MSG_EX("CryptoDevCb: Copy Algo=%d Type=%d\n",
+                       info->copy.algo, info->copy.type);
+#endif
+        if (info->copy.algo == WC_ALGO_TYPE_HASH) {
+            switch (info->copy.type) {
+#ifndef NO_SHA
+                case WC_HASH_TYPE_SHA:
+                {
+                    wc_Sha* src = (wc_Sha*)info->copy.src;
+                    wc_Sha* dst = (wc_Sha*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_ShaCopy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#ifdef WOLFSSL_SHA224
+                case WC_HASH_TYPE_SHA224:
+                {
+                    wc_Sha224* src = (wc_Sha224*)info->copy.src;
+                    wc_Sha224* dst = (wc_Sha224*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha224Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#ifndef NO_SHA256
+                case WC_HASH_TYPE_SHA256:
+                {
+                    /* Cast the source and destination to the correct type */
+                    /* Given as a void pointer initially for abstraction */
+                    wc_Sha256* src = (wc_Sha256*)info->copy.src;
+                    wc_Sha256* dst = (wc_Sha256*)info->copy.dst;
+                    /* set devId to invalid, so software is used */
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha256Copy(src, dst);
+
+                    /* reset devId */
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        /* Set the devId of the destination to the same as the */
+                        /* since we used the software implementation of copy */
+                        /* so dst would have been set to INVALID_DEVID */
+                        dst->devId = devIdArg;
+                    }
+
+                    break;
+                }
+#endif /* !NO_SHA256 */
+#ifdef WOLFSSL_SHA384
+                case WC_HASH_TYPE_SHA384:
+                {
+                    wc_Sha384* src = (wc_Sha384*)info->copy.src;
+                    wc_Sha384* dst = (wc_Sha384*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha384Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#ifdef WOLFSSL_SHA512
+                case WC_HASH_TYPE_SHA512:
+                {
+                    wc_Sha512* src = (wc_Sha512*)info->copy.src;
+                    wc_Sha512* dst = (wc_Sha512*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha512Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_224)
+                case WC_HASH_TYPE_SHA3_224:
+                {
+                    wc_Sha3* src = (wc_Sha3*)info->copy.src;
+                    wc_Sha3* dst = (wc_Sha3*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha3_224_Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_256)
+                case WC_HASH_TYPE_SHA3_256:
+                {
+                    wc_Sha3* src = (wc_Sha3*)info->copy.src;
+                    wc_Sha3* dst = (wc_Sha3*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha3_256_Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_384)
+                case WC_HASH_TYPE_SHA3_384:
+                {
+                    wc_Sha3* src = (wc_Sha3*)info->copy.src;
+                    wc_Sha3* dst = (wc_Sha3*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha3_384_Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_512)
+                case WC_HASH_TYPE_SHA3_512:
+                {
+                    wc_Sha3* src = (wc_Sha3*)info->copy.src;
+                    wc_Sha3* dst = (wc_Sha3*)info->copy.dst;
+                    src->devId = INVALID_DEVID;
+                    ret = wc_Sha3_512_Copy(src, dst);
+                    src->devId = devIdArg;
+                    if (ret == 0) {
+                        dst->devId = devIdArg;
+                    }
+                    break;
+                }
+#endif
+                default:
+                    ret = WC_NO_ERR_TRACE(NOT_COMPILED_IN);
+                    break;
+            }
+        }
+        else {
+            ret = WC_NO_ERR_TRACE(NOT_COMPILED_IN);
+        }
+    }
+#endif /* WOLF_CRYPTO_CB_COPY */
+#ifdef WOLF_CRYPTO_CB_FREE
+    else if (info->algo_type == WC_ALGO_TYPE_FREE) {
+#ifdef DEBUG_WOLFSSL
+        WOLFSSL_MSG_EX("CryptoDevCb: Free Algo=%d Type=%d\n",
+                       info->free.algo, info->free.type);
+#endif
+
+        if (info->free.algo == WC_ALGO_TYPE_HASH) {
+            switch (info->free.type) {
+#ifndef NO_SHA
+                case WC_HASH_TYPE_SHA:
+                {
+                    wc_Sha* sha = (wc_Sha*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_ShaFree(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#ifdef WOLFSSL_SHA224
+                case WC_HASH_TYPE_SHA224:
+                {
+                    wc_Sha224* sha = (wc_Sha224*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha224Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#ifndef NO_SHA256
+                case WC_HASH_TYPE_SHA256:
+                {
+                    wc_Sha256* sha = (wc_Sha256*)info->free.obj;
+                    /* set devId to invalid, so software is used */
+                    sha->devId = INVALID_DEVID;
+
+                    /* Call the actual free function */
+                    wc_Sha256Free(sha);
+
+                    /* Note: devId doesn't need to be restored as object is freed */
+                    ret = 0;
+                    break;
+                }
+#endif
+#ifdef WOLFSSL_SHA384
+                case WC_HASH_TYPE_SHA384:
+                {
+                    wc_Sha384* sha = (wc_Sha384*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha384Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#ifdef WOLFSSL_SHA512
+                case WC_HASH_TYPE_SHA512:
+                {
+                    wc_Sha512* sha = (wc_Sha512*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha512Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_224)
+                case WC_HASH_TYPE_SHA3_224:
+                {
+                    wc_Sha3* sha = (wc_Sha3*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha3_224_Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_256)
+                case WC_HASH_TYPE_SHA3_256:
+                {
+                    wc_Sha3* sha = (wc_Sha3*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha3_256_Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_384)
+                case WC_HASH_TYPE_SHA3_384:
+                {
+                    wc_Sha3* sha = (wc_Sha3*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha3_384_Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_512)
+                case WC_HASH_TYPE_SHA3_512:
+                {
+                    wc_Sha3* sha = (wc_Sha3*)info->free.obj;
+                    sha->devId = INVALID_DEVID;
+                    wc_Sha3_512_Free(sha);
+                    ret = 0;
+                    break;
+                }
+#endif
+                default:
+                    ret = WC_NO_ERR_TRACE(NOT_COMPILED_IN);
+                    break;
+            }
+        }
+        else {
+            ret = WC_NO_ERR_TRACE(NOT_COMPILED_IN);
+        }
+    }
+#endif /* WOLF_CRYPTO_CB_FREE */
 #ifndef NO_HMAC
     else if (info->algo_type == WC_ALGO_TYPE_HMAC) {
         if (info->hmac.hmac == NULL)
@@ -60355,6 +62267,40 @@ static int myCryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
         info->cmac.cmac->devId = devIdArg;
     }
 #endif /* WOLFSSL_CMAC && !(NO_AES) && WOLFSSL_AES_DIRECT */
+    else if (info->algo_type == WC_ALGO_TYPE_KDF) {
+    #if defined(HAVE_HKDF) && !defined(NO_HMAC)
+        if (info->kdf.type == WC_KDF_TYPE_HKDF) {
+            /* Redirect to software implementation for testing */
+        #if !defined(HAVE_SELFTEST) && \
+           (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0))
+            ret = wc_HKDF_ex(info->kdf.hkdf.hashType,
+                           info->kdf.hkdf.inKey, info->kdf.hkdf.inKeySz,
+                           info->kdf.hkdf.salt, info->kdf.hkdf.saltSz,
+                           info->kdf.hkdf.info, info->kdf.hkdf.infoSz,
+                           info->kdf.hkdf.out, info->kdf.hkdf.outSz,
+                           NULL, INVALID_DEVID);
+        #else
+            ret = wc_HKDF(info->kdf.hkdf.hashType,
+                          info->kdf.hkdf.inKey, info->kdf.hkdf.inKeySz,
+                          info->kdf.hkdf.salt, info->kdf.hkdf.saltSz,
+                          info->kdf.hkdf.info, info->kdf.hkdf.infoSz,
+                          info->kdf.hkdf.out, info->kdf.hkdf.outSz);
+        #endif
+        }
+    #endif /* HAVE_HKDF && !NO_HMAC */
+    #if defined(HAVE_CMAC_KDF)
+        if (info->kdf.type == WC_KDF_TYPE_TWOSTEP_CMAC) {
+            /* Redirect to software implementation for testing */
+            ret = wc_KDA_KDF_twostep_cmac(
+           info->kdf.twostep_cmac.salt, info->kdf.twostep_cmac.saltSz,
+           info->kdf.twostep_cmac.z, info->kdf.twostep_cmac.zSz,
+           info->kdf.twostep_cmac.fixedInfo, info->kdf.twostep_cmac.fixedInfoSz,
+           info->kdf.twostep_cmac.out, info->kdf.twostep_cmac.outSz,
+           NULL, INVALID_DEVID);
+        }
+    #endif /* HAVE_CMAC_KDF */
+    }
+
 
     (void)devIdArg;
     (void)myCtx;
@@ -60472,6 +62418,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t cryptocb_test(void)
     if (ret == 0)
         ret = sha_test();
 #endif
+#ifdef WOLFSSL_SHA224
+    if (ret == 0)
+        ret = sha224_test();
+#endif
 #ifndef NO_SHA256
     if (ret == 0)
         ret = sha256_test();
@@ -60502,6 +62452,14 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t cryptocb_test(void)
         ret = hmac_sha3_test();
     #endif
 #endif
+#if defined(HAVE_HKDF) && !defined(NO_HMAC)
+    if (ret == 0)
+        ret = hkdf_test();
+#endif
+#if defined(HAVE_CMAC_KDF)
+    if (ret == 0)
+        ret = nist_sp80056c_twostep_cmac();
+#endif /* HAVE_CMAC_KDF */
 #ifndef NO_PWDBASED
     #if defined(HAVE_PBKDF2) && !defined(NO_SHA256) && !defined(NO_HMAC)
     PRIVATE_KEY_UNLOCK();
@@ -60641,7 +62599,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t time_test(void)
 }
 #endif
 
-#ifdef WOLFSSL_AES_SIV
+#if defined(WOLFSSL_AES_SIV) && defined(WOLFSSL_AES_128)
 
 typedef struct {
   const byte key[33];
@@ -60880,7 +62838,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aes_siv_test(void)
 
 #undef ERROR_OUT
 
-static const int fiducial4 = WC_TEST_RET_LN;
+static WC_MAYBE_UNUSED const int fiducial4 = WC_TEST_RET_LN;
 
 /* print the fiducial line numbers assigned above, allowing confirmation of
  * source code version match when in doubt.

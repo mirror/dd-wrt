@@ -6,7 +6,7 @@
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -23,6 +23,10 @@
  /* Based On Daniel J Bernstein's curve25519 Public Domain ref10 work. */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
+
+#ifdef NO_CURVED25519_X64
+    #undef USE_INTEL_SPEEDUP
+#endif
 
 #ifdef HAVE_CURVE25519
 
@@ -53,12 +57,12 @@
     #endif
 #endif
 
-#if defined(WOLFSSL_LINUXKM) && !defined(USE_INTEL_SPEEDUP)
+#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(USE_INTEL_SPEEDUP)
     /* force off unneeded vector register save/restore. */
     #undef SAVE_VECTOR_REGISTERS
-    #define SAVE_VECTOR_REGISTERS(fail_clause) WC_DO_NOTHING
+    #define SAVE_VECTOR_REGISTERS(fail_clause) SAVE_NO_VECTOR_REGISTERS(fail_clause)
     #undef RESTORE_VECTOR_REGISTERS
-    #define RESTORE_VECTOR_REGISTERS() WC_DO_NOTHING
+    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
 #endif
 
 const curve25519_set_type curve25519_sets[] = {
@@ -194,11 +198,11 @@ static int curve25519_smul_blind(byte* rp, const byte* n, const byte* p,
         if (ret < 0) {
             return ret;
         }
-        for (i = CURVE25519_KEYSIZE; i > 0; i--) {
+        for (i = CURVE25519_KEYSIZE - 1; i >= 0; i--) {
             if (rz[i] != 0xff)
                 break;
         }
-        if ((i != 0) || (rz[0] <= 0xec)) {
+        if ((i >= 0) || (rz[0] <= 0xec)) {
             break;
         }
     }
@@ -212,11 +216,11 @@ static int curve25519_smul_blind(byte* rp, const byte* n, const byte* p,
         return ret;
     a[CURVE25519_KEYSIZE-1] &= 0x7f;
     /* k' = k ^ 2k ^ a */
-    n_a[0] = n[0] ^ (n[0] << 1) ^ a[0];
+    n_a[0] = n[0] ^ (byte)(n[0] << 1) ^ a[0];
     for (i = 1; i < CURVE25519_KEYSIZE; i++) {
         byte b1, b2, b3;
         b1 = n[i] ^ a[i];
-        b2 = (n[i] << 1) ^ a[i];
+        b2 = (byte)(n[i] << 1) ^ a[i];
         b3 = (n[i-1] >> 7) ^ a[i];
         n_a[i] = b1 ^ b2 ^ b3;
     }
@@ -422,6 +426,9 @@ int wc_curve25519_make_key(WC_RNG* rng, int keysize, curve25519_key* key)
         ret = wc_curve25519_make_pub_blind((int)sizeof(key->p.point),
                                            key->p.point, (int)sizeof(key->k),
                                            key->k, rng);
+        if (ret == 0) {
+            ret = wc_curve25519_set_rng(key, rng);
+        }
 #else
         ret = wc_curve25519_make_pub((int)sizeof(key->p.point), key->p.point,
                                      (int)sizeof(key->k), key->k);
