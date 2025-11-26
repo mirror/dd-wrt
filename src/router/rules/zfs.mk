@@ -8,7 +8,11 @@ zfs-configure: libtirpc libudev openssl zlib curl ncurses util-linux
 		--libdir=/usr/lib \
 		--host=$(ARCH)-linux \
 		--disable-pyzfs \
-		CC="ccache $(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LIBTIRPC_CFLAGS="-I$(TOP)/libtirpc" \
+		LIBTIRPC_LIBS="-L$(TOP)/libtirpc/src/.libs -ltirpc" \
+		LIBUDEV_CFLAGS="-I$(TOP)/libudev/src/libudev" \
+		LIBUDEV_LIBS="-L$(TOP)/libudev/src/libudev/.libs -ludev" \
+		CC="$(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/zlib/include -I$(TOP)/util-linux/include  -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src -I$(TOP)/curl/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(SSLPATH)/include  -I$(TOP)/libudev/src/libudev -D_GNU_SOURCE" \
 		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/util-linux/.libs -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfs/lib/libuutil/.libs -L$(SSLPATH) -L$(TOP)/libudev/src/libudev/.libs" \
 		--with-linux=$(LINUXDIR)
@@ -23,7 +27,7 @@ zfs: libtirpc libudev openssl zlib ncurses util-linux
 	cd zfs/$(KERNELVERSION) && find . -name "*.la" -exec touch {} +
 	touch $(TOP)/util-linux/libblkid/src/blkid.h
 	touch $(SSLPATH)/include/openssl/opensslconf.h
-	$(MAKE) -C zfs/$(KERNELVERSION) CROSS_COMPILE="ccache $(CROSS_COMPILE)"
+	$(MAKE) -C zfs/$(KERNELVERSION)
 
 zfs-clean:
 	if test -e "zfs/$(KERNELVERSION)/Makefile"; then make -C zfs/$(KERNELVERSION) clean; fi
