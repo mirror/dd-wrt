@@ -634,12 +634,14 @@ static int __init ar7240_flash_init(void)
 		dir_parts[FULLFLASH].offset = 0; // linux + nvram = phy size
 		dir_parts[FULLFLASH].size = mtd->size; // linux + nvram = phy size
 
+#ifdef CONFIG_MTD_OOPS
 		if (dir_parts[DDWRT].size > 0x20000) {
 			dir_parts[DDWRT].size -= 0x20000;
 			dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
 			dir_parts[OOPS].size = 0x20000;
 			numparts = 10;
 		}
+#endif
 
 		result = add_mtd_partitions(mtd, dir_parts, numparts);
 	}
