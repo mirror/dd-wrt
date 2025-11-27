@@ -488,7 +488,7 @@ static int __init ar7240_flash_init(void)
 			dir_parts[BOARD_CONFIG].size = mtd->erasesize;
 		}
 #if IS_ENABLED(CONFIG_MTD_OOPS)
-		printk(KERN_INFO "dd-wrt partition is %d\n", dir_parts[DDWRT].size);
+		printk(KERN_INFO "dd-wrt partition is %lld\n", dir_parts[DDWRT].size);
 		if (dir_parts[DDWRT].size > 0x20000) {
 			dir_parts[DDWRT].size -= 0x20000;
 			dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
