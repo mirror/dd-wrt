@@ -2712,8 +2712,12 @@ circuits_handle_oom(size_t current_allocation)
        * outbuf due to a malicious destination holding off the read on us. */
       if ((conn->type == CONN_TYPE_DIR && conn->linked_conn == NULL) ||
           CONN_IS_EDGE(conn)) {
-        if (!conn->marked_for_close)
+        if (!conn->marked_for_close) {
+          if (CONN_IS_EDGE(conn)) {
+            TO_EDGE_CONN(conn)->end_reason = END_STREAM_REASON_RESOURCELIMIT;
+          }
           connection_mark_for_close(conn);
+        }
         mem_recovered += single_conn_free_bytes(conn);
 
         if (conn->type == CONN_TYPE_DIR) {

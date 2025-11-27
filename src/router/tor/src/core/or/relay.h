@@ -62,7 +62,7 @@ extern uint64_t oom_stats_n_bytes_removed_hsdir;
 void dump_cell_pool_usage(int severity);
 size_t packed_cell_mem_cost(void);
 
-int have_been_under_memory_pressure(void);
+bool have_been_under_memory_pressure(void);
 
 /* For channeltls.c */
 void packed_cell_free_(packed_cell_t *cell);

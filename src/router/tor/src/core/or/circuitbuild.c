@@ -543,6 +543,12 @@ circuit_establish_circuit_conflux,(const uint8_t *conflux_nonce,
     return NULL;
   }
 
+  /* This can happen if the above triggered the OOM handler which in turn
+   * closed that very circuit. */
+  if (TO_CIRCUIT(circ)->marked_for_close) {
+    return NULL;
+  }
+
   tor_trace(TR_SUBSYS(circuit), TR_EV(establish), circ);
   return circ;
 }

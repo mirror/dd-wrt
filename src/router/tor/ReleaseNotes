@@ -2,6 +2,61 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.8.21 - 2025-11-17
+  This release is a continuation of the previous one and addresses additional
+  Conflux-related issues identified through further testing and feedback from
+  relay operators. We strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (conflux, exit):
+    - When dequeuing out-of-order conflux cells, the circuit could be
+      close in between two dequeue which could lead to a mishandling of
+      a NULL pointer. Fixes bug 41162; bugfix on 0.4.8.4.
+
+  o Minor feature (compiler flag):
+    - Add -mbranch-protection=standard for arm64.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 17, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/11/17.
+
+  o Minor bugfixes (bridges, pluggable transport):
+    - Fix a bug causing the initial tor process to hang intead of
+      exiting with RunAsDaemon, when pluggable transports are used.
+      Fixes bug 41088; bugfix on 0.4.8.1-alpha.
+
+
+Changes in version 0.4.8.20 - 2025-11-10
+  This release fixes several bugfixes related to Conflux edge cases as well as
+  adding a new hardening compiler flag if supported. We strongly recommend to
+  upgrade as soon as possible.
+
+  o Minor feature (compiler flag):
+    - Add -fcf-protection=full if supported by the compiler.
+      Fixes 41139.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 10, 2025.
+    - Regenerate fallback directories generated on October 06, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/10/06.
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/11/10.
+
+  o Minor bugfixes (conflux fragile asserts):
+    - Fix the root cause of some conflux fragile asserts when a control
+      port listener is attached. Fixes bug 41037; bugfix on 0.4.8.16.
+
+  o Minor bugfixes (conflux, relay):
+    - Fix a series of conflux edge cases about sequence number
+      arithmetic and OOM handler kicking in under heavy memory pressure.
+      Fixes bug 41155; bugfix on 0.4.8.4.
+
+
 Changes in version 0.4.8.19 - 2025-10-06
   This release fixes two major bugfixes for a LibreSSL issue and a flow control
   C-tor specific problem (not protocol). We strongly recommend you upgrade as
