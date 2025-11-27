@@ -20,16 +20,16 @@
 #include "ar7240_flash.h"
 #include "qca-sf.h"
 
-#define AR7240_SPI_CMD_WRITE_SR		0x01
+#define AR7240_SPI_CMD_WRITE_SR 0x01
 
-#define MXIC_JEDEC_ID        0xc2
-#define ATMEL_JEDEC_ID        0x1f
-#define SST_JEDEC_ID        0x20
-#define INTEL_JEDEC_ID        0x89
-#define WINB_JEDEC_ID        0xef
+#define MXIC_JEDEC_ID 0xc2
+#define ATMEL_JEDEC_ID 0x1f
+#define SST_JEDEC_ID 0x20
+#define INTEL_JEDEC_ID 0x89
+#define WINB_JEDEC_ID 0xef
 
-#define MXIC_ENSO            0xb1
-#define MXIC_EXSO            0xc1
+#define MXIC_ENSO 0xb1
+#define MXIC_EXSO 0xc1
 
 static flash_info_t flash_info;
 
@@ -43,31 +43,31 @@ static DECLARE_MUTEX(ar7240_flash_sem);
 /* GLOBAL FUNCTIONS */
 void ar7240_flash_spi_down(void)
 {
-//printk(KERN_INFO "spi down\n");
+	//printk(KERN_INFO "spi down\n");
 	down(&ar7240_flash_sem);
 }
 
 void ar7240_flash_spi_up(void)
 {
-//printk(KERN_INFO "spi up\n");
+	//printk(KERN_INFO "spi up\n");
 	up(&ar7240_flash_sem);
 }
 
 EXPORT_SYMBOL(ar7240_flash_spi_down);
 EXPORT_SYMBOL(ar7240_flash_spi_up);
 
-#define AR7240_FLASH_SIZE_2MB          (2*1024*1024)
-#define AR7240_FLASH_SIZE_4MB          (4*1024*1024)
-#define AR7240_FLASH_SIZE_8MB          (8*1024*1024)
-#define AR7240_FLASH_SIZE_16MB          (16*1024*1024)
+#define AR7240_FLASH_SIZE_2MB (2 * 1024 * 1024)
+#define AR7240_FLASH_SIZE_4MB (4 * 1024 * 1024)
+#define AR7240_FLASH_SIZE_8MB (8 * 1024 * 1024)
+#define AR7240_FLASH_SIZE_16MB (16 * 1024 * 1024)
 #ifndef ST25P28
-#define AR7240_FLASH_SECTOR_SIZE_64KB  (64*1024)
+#define AR7240_FLASH_SECTOR_SIZE_64KB (64 * 1024)
 #else
-#define AR7240_FLASH_SECTOR_SIZE_256KB  (256*1024)
+#define AR7240_FLASH_SECTOR_SIZE_256KB (256 * 1024)
 #endif
-#define AR7240_FLASH_SECTOR_SIZE_64KB  (64*1024)
-#define AR7240_FLASH_PG_SIZE_256B       256
-#define AR7240_FLASH_NAME               "ar7240-nor0"
+#define AR7240_FLASH_SECTOR_SIZE_64KB (64 * 1024)
+#define AR7240_FLASH_PG_SIZE_256B 256
+#define AR7240_FLASH_NAME "ar7240-nor0"
 
 static int zcom = 0;
 static int nocalibration = 0;
@@ -89,57 +89,57 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11) || !strncmp((char *)(ofsb + 0x2aba), "myloram.bin", 11)) {
 		printk(KERN_INFO "compex WP72E detected\n");
 		nocalibration = 1;
-		return 0x30000;	// compex, lzma image
+		return 0x30000; // compex, lzma image
 	}
 
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
 			printk(KERN_INFO "redboot or compatible detected\n");
-			return 0x70000;	// redboot, lzma image
+			return 0x70000; // redboot, lzma image
 		}
 		if (ofs[i] == 0x5ea3a417) {
 			printk(KERN_INFO "alpha SEAMA found\n");
-			return i * 4;	// redboot, lzma image
+			return i * 4; // redboot, lzma image
 		}
 		if (ofs[i] == 0x27051956) {
 			if (ofs[i + 0x8000] == 0x27051956) {
 				printk(KERN_INFO "uboot detected (MMS344 Quirk)\n");
-				return (i * 4) + 0x20000;	// uboot, lzma image            
+				return (i * 4) + 0x20000; // uboot, lzma image
 			}
-			if (!memcmp(&ofs[i+9], "ISQ-4000",8)) {
+			if (!memcmp(&ofs[i + 9], "ISQ-4000", 8)) {
 				printk(KERN_INFO "KT412H detected\n");
-//				return 0x50000;	// uboot, lzma image            
+				//				return 0x50000;	// uboot, lzma image
 			}
 			printk(KERN_INFO "uboot detected\n");
-			return i * 4;	// uboot, lzma image
+			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i] == 0x77617061) {
 			printk(KERN_INFO "DAP3662 bootloader\n");
-			return 0x70000;	// uboot, lzma image
+			return 0x70000; // uboot, lzma image
 		}
 		if (ofs[i] == 0x7761706e) {
 			printk(KERN_INFO "DAP2230 bootloader\n");
-			return 0x70000;	// uboot, lzma image
+			return 0x70000; // uboot, lzma image
 		}
 		if (ofs[i] == 0x32303033) {
 			printk(KERN_INFO "WNR2000 uboot detected\n");
-			return 0x50000;	// uboot, lzma image
+			return 0x50000; // uboot, lzma image
 		}
 		if (ofs[i] == 0x32323030) {
 			printk(KERN_INFO "WNR2200 uboot detected\n");
-			return 0x50000;	// uboot, lzma image
+			return 0x50000; // uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i + 1] == 0x44442d57) {
 			printk(KERN_INFO "tplink uboot detected\n");
-			return i * 4;	// uboot, lzma image
+			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i + 1] == 0x54502D4C) {
 			printk(KERN_INFO "tplink uboot detected\n");
-			return i * 4;	// uboot, lzma image
+			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i + 15] == 0x27051956) {
 			printk(KERN_INFO "WRT160NL uboot detected\n");
-			return i * 4;	// uboot, lzma image
+			return i * 4; // uboot, lzma image
 		}
 #ifndef CONFIG_ARCHERC25
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
@@ -150,12 +150,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 					printk(KERN_INFO "ZCom quirk kernel offset %d\n", a * 4);
 					zcomoffset = a * 4;
 				}
-
 			}
-			return i * 4;	// filesys starts earlier
+			return i * 4; // filesys starts earlier
 		}
 #endif
-
 	}
 	return -1;
 }
@@ -174,7 +172,7 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 	res = instr->len;
 	do_div(res, mtd->erasesize);
 	nsect = res;
-	if (((uint32_t) instr->len) % mtd->erasesize)
+	if (((uint32_t)instr->len) % mtd->erasesize)
 		nsect++;
 
 	res = instr->addr;
@@ -195,7 +193,7 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 	return 0;
 }
 
-static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char * buf)
+static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
 {
 	uint32_t addr = from | 0xbf000000;
 
@@ -210,14 +208,14 @@ static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size
 		preempt_enable();
 		ar7240_flash_spi_up();
 	} else {
-		memcpy(buf, (uint8_t *) (addr), len);
+		memcpy(buf, (uint8_t *)(addr), len);
 	}
 	*retlen = len;
 
 	return 0;
 }
 
-static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char * buf)
+static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
 {
 	ar7240_flash_spi_down();
 	preempt_disable();
@@ -230,28 +228,85 @@ static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_
 
 static struct mtd_partition dir_parts[] = {
 #if defined(CONFIG_MTD_FLASH_16MB)
-      { name: "RedBoot", offset: 0x30000, size:0x10000, },
+	{
+		name: "RedBoot",
+		offset: 0x30000,
+		size: 0x10000,
+	},
 	//, mask_flags: MTD_WRITEABLE, },
-      { name: "linux", offset: 0x50000, size:0xf90000, },
+	{
+		name: "linux",
+		offset: 0x50000,
+		size: 0xf90000,
+	},
 #elif defined(CONFIG_MTD_FLASH_8MB)
-      { name: "RedBoot", offset: 0x30000, size:0x10000, },
+	{
+		name: "RedBoot",
+		offset: 0x30000,
+		size: 0x10000,
+	},
 	//, mask_flags: MTD_WRITEABLE, },
-      { name: "linux", offset: 0x50000, size:0x790000, },
+	{
+		name: "linux",
+		offset: 0x50000,
+		size: 0x790000,
+	},
 #else
-      { name: "RedBoot", offset: 0, size:0x40000, },
+	{
+		name: "RedBoot",
+		offset: 0,
+		size: 0x40000,
+	},
 	//, mask_flags: MTD_WRITEABLE, },
-      { name: "linux", offset: 0x40000, size:0x3a0000, },
+	{
+		name: "linux",
+		offset: 0x40000,
+		size: 0x3a0000,
+	},
 #endif
-      { name: "rootfs", offset: 0x0, size:0x2b0000, },
+	{
+		name: "rootfs",
+		offset: 0x0,
+		size: 0x2b0000,
+	},
 	//must be detected
-      { name: "ddwrt", offset: 0x0, size:0x2b0000, },
+	{
+		name: "ddwrt",
+		offset: 0x0,
+		size: 0x2b0000,
+	},
 	//must be detected
-      { name: "nvram", offset: 0x3d0000, size:0x10000, },
-      { name: "board_config", offset: 0x3f0000, size:0x10000, },
-      { name: "fullflash", offset: 0x3f0000, size:0x10000, },
-      { name: "fullboot", offset: 0, size:0x30000, },
-      { name: "uboot-env", offset: 0x40000, size:0x10000, },
-      { name:NULL, },
+	{
+		name: "nvram",
+		offset: 0x3d0000,
+		size: 0x10000,
+	},
+	{
+		name: "board_config",
+		offset: 0x3f0000,
+		size: 0x10000,
+	},
+	{
+		name: "fullflash",
+		offset: 0x3f0000,
+		size: 0x10000,
+	},
+	{
+		name: "fullboot",
+		offset: 0,
+		size: 0x30000,
+	},
+	{
+		name: "uboot-env",
+		offset: 0x40000,
+		size: 0x10000,
+	},
+	{
+		name: "oops",
+	}, // reserved for oops
+	{
+		name: NULL,
+	},
 };
 
 #define BOOT 0
@@ -263,16 +318,17 @@ static struct mtd_partition dir_parts[] = {
 #define FULLFLASH 6
 #define FULLBOOT 7
 #define ENV 8
+#define OOPS 9
 struct fis_image_desc {
-	unsigned char name[16];	// Null terminated name
-	unsigned long flash_base;	// Address within FLASH of image
-	unsigned long mem_base;	// Address in memory where it executes
-	unsigned long size;	// Length of image
-	unsigned long entry_point;	// Execution entry point
-	unsigned long data_length;	// Length of actual data
+	unsigned char name[16]; // Null terminated name
+	unsigned long flash_base; // Address within FLASH of image
+	unsigned long mem_base; // Address in memory where it executes
+	unsigned long size; // Length of image
+	unsigned long entry_point; // Execution entry point
+	unsigned long data_length; // Length of actual data
 	unsigned char _pad[256 - (16 + 7 * sizeof(unsigned long))];
-	unsigned long desc_cksum;	// Checksum over image descriptor
-	unsigned long file_cksum;	// Checksum over image data
+	unsigned long desc_cksum; // Checksum over image descriptor
+	unsigned long file_cksum; // Checksum over image data
 };
 
 /*
@@ -291,6 +347,7 @@ static int __init ar7240_flash_init(void)
 	int fsize;
 	int inc = 0;
 	int guess;
+	int numparts = 9;
 	size_t origlen;
 	init_MUTEX(&ar7240_flash_sem);
 
@@ -311,7 +368,6 @@ static int __init ar7240_flash_init(void)
 	fsize = flash_get_geom(&flash_info);
 
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
-
 		mtd = kmalloc(sizeof(struct mtd_info), GFP_KERNEL);
 		if (!mtd) {
 			printk("Cant allocate mtd stuff\n");
@@ -351,10 +407,11 @@ static int __init ar7240_flash_init(void)
 		}
 		int sqsfound = 0;
 		while ((offset + mtd->erasesize) < mtd->size) {
-//                      printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+			//                      printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			__u32 *check2 = (__u32 *)&buf[0x60];
 			__u32 *check3 = (__u32 *)&buf[0xc0];
-			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *check2 == SQUASHFS_MAGIC_SWAP || *check3 == SQUASHFS_MAGIC_SWAP) {
+			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *check2 == SQUASHFS_MAGIC_SWAP ||
+			    *check3 == SQUASHFS_MAGIC_SWAP) {
 				printk(KERN_INFO "\nfound squashfs at %X\n", offset);
 				if (*check2 == SQUASHFS_MAGIC_SWAP) {
 					buf += 0x60;
@@ -389,23 +446,26 @@ static int __init ar7240_flash_init(void)
 
 				dir_parts[DDWRT].offset = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
 
-				dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;	//fis config
+				dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize; //fis config
 				dir_parts[BOARD_CONFIG].size = mtd->erasesize;
 #if defined(CONFIG_ARCHERC25)
-				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 3);	//nvram
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 3); //nvram
 				dir_parts[NVRAM].size = mtd->erasesize;
 #elif defined(CONFIG_ARCHERC7V4) || defined(CONFIG_WR1043V4) || defined(CONFIG_WR1043V5)
-				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 16);	//nvram
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 16); //nvram
 				dir_parts[NVRAM].size = mtd->erasesize;
-#elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
-				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 2);	//nvram
+#elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && \
+       !defined(CONFIG_UBNTXW)) ||                                                                                      \
+	defined(CONFIG_DIR862)
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 2); //nvram
 				dir_parts[NVRAM].size = mtd->erasesize;
 #else
-				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize - (nocalibration * mtd->erasesize));	//nvram
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset -
+							  (mtd->erasesize - (nocalibration * mtd->erasesize)); //nvram
 				dir_parts[NVRAM].size = mtd->erasesize;
 #endif
 				dir_parts[DDWRT].size = dir_parts[NVRAM].offset - dir_parts[DDWRT].offset;
-				rootsize = dir_parts[NVRAM].offset - offset;	//size of rootfs aligned to nvram offset
+				rootsize = dir_parts[NVRAM].offset - offset; //size of rootfs aligned to nvram offset
 				dir_parts[LINUX].size = (dir_parts[ROOTFS].offset - dir_parts[LINUX].offset) + rootsize;
 				//now scan for linux offset
 				break;
@@ -413,21 +473,27 @@ static int __init ar7240_flash_init(void)
 			offset += 4096;
 			buf += 4096;
 		}
-		dir_parts[FULLFLASH].offset = 0;	// linux + nvram = phy size
-		dir_parts[FULLFLASH].size = mtd->size;	// linux + nvram = phy size
+		dir_parts[FULLFLASH].offset = 0; // linux + nvram = phy size
+		dir_parts[FULLFLASH].size = mtd->size; // linux + nvram = phy size
 		if (!sqsfound) {
-//		dir_parts[BOOT].offset = 0;
-//		dir_parts[BOOT].size = 0x50000;
-		dir_parts[LINUX].name = "dummy";
-		dir_parts[DDWRT].name = "dummy2";
-		dir_parts[ENV].offset = 0x40000;
-		dir_parts[ENV].size = mtd->erasesize;
-		dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
-		dir_parts[NVRAM].size = mtd->erasesize*2;
-		dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
-		dir_parts[BOARD_CONFIG].size = mtd->erasesize;
+			//		dir_parts[BOOT].offset = 0;
+			//		dir_parts[BOOT].size = 0x50000;
+			dir_parts[LINUX].name = "dummy";
+			dir_parts[DDWRT].name = "dummy2";
+			dir_parts[ENV].offset = 0x40000;
+			dir_parts[ENV].size = mtd->erasesize;
+			dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
+			dir_parts[NVRAM].size = mtd->erasesize * 2;
+			dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
+			dir_parts[BOARD_CONFIG].size = mtd->erasesize;
 		}
-		result = add_mtd_partitions(mtd, dir_parts, 9);
+		if (dir_parts[DDWRT].size > 65536) {
+			dir_parts[DDWRT].size -= 65536;
+			dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
+			dir_parts[OOPS].size = 65536;
+			numparts = 10;
+		}
+		result = add_mtd_partitions(mtd, dir_parts, numparts);
 	}
 
 	return 0;
