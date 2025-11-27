@@ -1,12 +1,12 @@
-ifeq ($(ARCH),aarch64)
-NO_GLOBAL_REGS:=--disable-gcc-global-regs
-endif
-ifeq ($(ARCH),i386)
-NO_GLOBAL_REGS:=--disable-gcc-global-regs
-endif
-ifeq ($(ARCH),x86_64)
-NO_GLOBAL_REGS:=--disable-gcc-global-regs
-endif
+#ifeq ($(ARCH),aarch64)
+#NO_GLOBAL_REGS:=--disable-gcc-global-regs
+#endif
+#ifeq ($(ARCH),i386)
+#NO_GLOBAL_REGS:=--disable-gcc-global-regs
+#endif
+#ifeq ($(ARCH),x86_64)
+#NO_GLOBAL_REGS:=--disable-gcc-global-regs
+#endif
 
 icu-configure:
 	-make -C icu clean
@@ -198,11 +198,11 @@ PHP_CONFIGURE_ARGS= \
 	PHP_SETUP_OPENSSL="$(SSLPATH)" \
 	PHP_CURL="$(TOP)/curl" \
 	LIBS="-lc -lpthread -lm -lssl -lcrypto" \
-	CFLAGS="$(COPTS) $(LTO) -DNEED_PRINTF -fno-builtin -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" \
-	CXXFLAGS="$(COPTS) $(LTO) -DNEED_PRINTF -fno-builtin -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" \
-	EXTRA_CFLAGS=" $(LTO) -fno-builtin -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/sqlite -I$(TOP)/libmcrypt -I$(TOP)/zlib  -I$(TOP)/zlib/include -I$(TOP)/libpng -L$(SSLPATH) -I$(SSLPATH)/include  -I$(TOP)/curl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	EXTRA_LIBS="$(LDLTO) -L$(SSLPATH) -lsqlite3 -lcurl -lcrypto -lssl -lcrypt -lxml2 -lmcrypt -lpng16 -lgd -lz" \
-	EXTRA_LDFLAGS="$(LDLTO) -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) -DNEED_PRINTF -fno-builtin -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" \
+	CXXFLAGS="$(COPTS) -DNEED_PRINTF -fno-builtin -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" \
+	EXTRA_CFLAGS=" -fno-builtin -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/sqlite -I$(TOP)/libmcrypt -I$(TOP)/zlib  -I$(TOP)/zlib/include -I$(TOP)/libpng -L$(SSLPATH) -I$(SSLPATH)/include  -I$(TOP)/curl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	EXTRA_LIBS="-L$(SSLPATH) -lsqlite3 -lcurl -lcrypto -lssl -lcrypt -lxml2 -lmcrypt -lpng16 -lgd -lz" \
+	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs"
 
 ifeq ($(ARCH),mips64)
@@ -224,9 +224,9 @@ php8-configure: libpng libgd libxml2libxml2 zlibzlib curl curl glib20 glib20 lib
 	rm -rf php8/autom4te.cach
 	cd php8 && touch configure.ac && autoconf
 	cd php8 && './configure'  '--host=$(ARCH)-linux-uclibc' $(PHP_ENDIAN) $(PHP_CONFIGURE_ARGS) \
-	'CFLAGS=$(LTO) $(COPTS) -fno-builtin -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/zlib/include  -L$(TOP)/sqlite/.libs -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(SSLPATH)/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs  -I$(TOP)/libzip -I$(TOP)/libzip/lib' \
-	'LDFLAGS=$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs' \
-	'CXXFLAGS=$(LTO) $(COPTS) -fno-builtin -std=c++0x -DNEED_PRINTF'
+	'CFLAGS=$(COPTS) -fno-builtin -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/zlib/include  -L$(TOP)/sqlite/.libs -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(SSLPATH)/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs  -I$(TOP)/libzip -I$(TOP)/libzip/lib' \
+	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs' \
+	'CXXFLAGS=$(COPTS) -fno-builtin -std=c++0x -DNEED_PRINTF'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php8/main/php_config.h
 	sed -i 's/-L\/lib/-L\/dummy\/lib/g' $(TOP)/php8/Makefile
 	sed -i 's/-lltdl/ /g' $(TOP)/php8/Makefile
