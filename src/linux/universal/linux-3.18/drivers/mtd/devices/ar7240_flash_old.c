@@ -639,6 +639,7 @@ static int __init ar7240_flash_init(void)
 
 #if IS_ENABLED(CONFIG_MTD_OOPS)
 		printk(KERN_INFO "dd-wrt partition is %lld\n", dir_parts[DDWRT].size);
+		numparts = 9;
 		if (dir_parts[DDWRT].size > 0x20000) {
 			dir_parts[DDWRT].size -= 0x20000;
 			dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
@@ -647,7 +648,6 @@ static int __init ar7240_flash_init(void)
 		} else
 			dir_parts[OOPS].name = NULL;
 #endif
-
 		result = add_mtd_partitions(mtd, dir_parts, numparts);
 	}
 

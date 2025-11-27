@@ -38,3 +38,4 @@ obj-$(CONFIG_MTD_SPIFLASH_SELFMAP)	+= spiflash_selfmap.o
 obj-$(CONFIG_MTD_ST_SPI_FSM)    += st_spi_fsm.o
 
 CFLAGS_docg3.o			+= -I$(src)
+#CFLAGS_ar7240_flash_old.o			+= -g3
