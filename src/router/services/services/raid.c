@@ -170,6 +170,7 @@ void start_raid(void)
 #else
 		insmod("antfs");
 		insmod("ntfs3");
+		insmod("ntfsplus");
 		dd_loginfo("raid", "NTFS modules successfully loaded");
 #endif
 	}
@@ -378,7 +379,8 @@ void start_raid(void)
 				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 #else
 #ifdef HAVE_NTFS3
-				sysprintf("mount -t ntfs3 -o nls=utf8,noatime /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				if (sysprintf("mount -t ntfsplus -o nls=utf8,noatime /dev/md%d \"/tmp/mnt/%s\"", i, poolname))
+					sysprintf("mount -t ntfs3 -o nls=utf8,noatime /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 #else
 				sysprintf("mount -t antfs -o utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 #endif

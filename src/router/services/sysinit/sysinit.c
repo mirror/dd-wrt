@@ -3017,6 +3017,7 @@ void load_drivers(int boot)
 		rmmod("fuse");
 		rmmod("antfs");
 		rmmod("ntfs3");
+		rmmod("ntfsplus");
 #endif
 		eval("startservice_f", "cron");
 		eval("startservice_f", "samba3");

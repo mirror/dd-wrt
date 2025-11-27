@@ -309,6 +309,7 @@ static bool usb_load_modules(char *fs)
 #else
 		insmod("antfs");
 		insmod("ntfs3");
+		insmod("ntfsplus");
 #endif
 	}
 #endif
@@ -371,7 +372,9 @@ repeat:;
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
+		if (ret)
+			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
@@ -413,7 +416,9 @@ again:;
 			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+			ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
+			if (ret)
+				ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
