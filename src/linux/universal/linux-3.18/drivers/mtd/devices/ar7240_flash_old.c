@@ -249,6 +249,7 @@ static int ar7424_flash_spi_reset(void)
 	}
 #endif
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
+	return 0;
 }
 
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
@@ -455,9 +456,11 @@ static struct mtd_partition dir_parts[] = {
 		offset: 0x40000,
 		size: 0x10000,
 	},
+#if IS_ENABLED(CONFIG_MTD_OOPS)
 	{
 		name: "oops",
 	}, // reserved for oops
+#endif
 	{
 		name: NULL,
 	},
@@ -641,7 +644,8 @@ static int __init ar7240_flash_init(void)
 			dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
 			dir_parts[OOPS].size = 0x20000;
 			numparts = 10;
-		}
+		} else
+			dir_parts[OOPS].name = NULL;
 #endif
 
 		result = add_mtd_partitions(mtd, dir_parts, numparts);
