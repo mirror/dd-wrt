@@ -487,10 +487,10 @@ static int __init ar7240_flash_init(void)
 			dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
 			dir_parts[BOARD_CONFIG].size = mtd->erasesize;
 		}
-		if (dir_parts[DDWRT].size > 65536) {
-			dir_parts[DDWRT].size -= 65536;
+		if (dir_parts[DDWRT].size > 0x20000) {
+			dir_parts[DDWRT].size -= 0x20000;
 			dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
-			dir_parts[OOPS].size = 65536;
+			dir_parts[OOPS].size = 0x20000;
 			numparts = 10;
 		}
 		result = add_mtd_partitions(mtd, dir_parts, numparts);
