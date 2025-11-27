@@ -57,6 +57,7 @@ enum {
 	Opt_show_meta,
 	Opt_case_sensitive,
 	Opt_disable_sparse,
+	Opt_sparse,
 	Opt_mft_zone_multiplier,
 	Opt_preallocated_size,
 	Opt_sys_immutable,
@@ -64,6 +65,8 @@ enum {
 	Opt_hide_dot_files,
 	Opt_check_windows_names,
 	Opt_acl,
+	Opt_discard,
+	Opt_nocase,
 };
 
 static const struct fs_parameter_spec ntfs_parameters[] = {
@@ -86,6 +89,9 @@ static const struct fs_parameter_spec ntfs_parameters[] = {
 	fsparam_flag("hide_dot_files",		Opt_hide_dot_files),
 	fsparam_flag("windows_names",		Opt_check_windows_names),
 	fsparam_flag("acl",			Opt_acl),
+	fsparam_flag("discard",			Opt_discard),
+	fsparam_flag("sparse",			Opt_sparse),
+	fsparam_flag("nocase",			Opt_nocase),
 	{}
 };
 
@@ -120,6 +126,8 @@ static int ntfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
 		break;
 	case Opt_nls:
 	case Opt_charset:
+		if (vol->nls_map)
+			unload_nls(vol->nls_map);
 		vol->nls_map = load_nls(param->string);
 		if (!vol->nls_map) {
 			ntfs_error(vol->sb, "Failed to load NLS table '%s'.",
@@ -153,6 +161,12 @@ static int ntfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
 		else
 			NVolClearCaseSensitive(vol);
 		break;
+	case Opt_nocase:
+		if (result.boolean)
+			NVolClearCaseSensitive(vol);
+		else
+			NVolSetCaseSensitive(vol);
+		break;
 	case Opt_preallocated_size:
 		vol->preallocated_size = (loff_t)result.uint_64;
 		break;
@@ -185,6 +199,20 @@ static int ntfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
 			fc->sb_flags |= SB_POSIXACL;
 		else
 			fc->sb_flags &= ~SB_POSIXACL;
+		break;
+	case Opt_discard:
+		if (result.boolean)
+			NVolSetDiscard(vol);
+		else
+			NVolClearDiscard(vol);
+		break;
+	case Opt_disable_sparse:
+		if (result.boolean)
+			NVolSetDisableSparse(vol);
+		else
+			NVolClearDisableSparse(vol);
+		break;
+	case Opt_sparse:
 		break;
 	default:
 		return -EINVAL;
@@ -2341,6 +2369,15 @@ static int ntfs_fill_super(struct super_block *sb, struct fs_context *fc)
 
 	if (vol->nls_map && !strcmp(vol->nls_map->charset, "utf8"))
 		vol->nls_utf8 = true;
+	if (NVolDisableSparse(vol))
+		vol->preallocated_size = 0;
+
+	if (NVolDiscard(vol) && !bdev_max_discard_sectors(sb->s_bdev)) {
+		ntfs_warning(
+			sb,
+			"Discard requested but device does not support discard.  Discard disabled.");
+		NVolClearDiscard(vol);
+	}
 
 	/* We support sector sizes up to the PAGE_SIZE. */
 	if (bdev_logical_block_size(sb->s_bdev) > PAGE_SIZE) {
@@ -2670,6 +2707,7 @@ static int ntfs_init_fs_context(struct fs_context *fc)
 	};
 
 	NVolSetShowHiddenFiles(vol);
+	NVolSetCaseSensitive(vol);
 	init_rwsem(&vol->mftbmp_lock);
 	init_rwsem(&vol->lcnbmp_lock);
 

@@ -192,12 +192,13 @@ found_it:
 		 * only cache the mft reference and the file name type (we set
 		 * the name length to zero for simplicity).
 		 */
-		if (!NVolCaseSensitive(vol) &&
-				ie->key.file_name.file_name_type &&
-				ntfs_are_names_equal(uname, uname_len,
-				(__le16 *)&ie->key.file_name.file_name,
-				ie->key.file_name.file_name_length,
-				IGNORE_CASE, vol->upcase, vol->upcase_len)) {
+		if ((!NVolCaseSensitive(vol) ||
+		     ie->key.file_name.file_name_type == FILE_NAME_DOS) &&
+		    ntfs_are_names_equal(uname, uname_len,
+					 (__le16 *)&ie->key.file_name.file_name,
+					 ie->key.file_name.file_name_length,
+					 IGNORE_CASE, vol->upcase,
+					 vol->upcase_len)) {
 			int name_size = sizeof(struct ntfs_name);
 			u8 type = ie->key.file_name.file_name_type;
 			u8 len = ie->key.file_name.file_name_length;
@@ -462,12 +463,13 @@ found_it2:
 		 * only cache the mft reference and the file name type (we set
 		 * the name length to zero for simplicity).
 		 */
-		if (!NVolCaseSensitive(vol) &&
-				ie->key.file_name.file_name_type &&
-				ntfs_are_names_equal(uname, uname_len,
-				(__le16 *)&ie->key.file_name.file_name,
-				ie->key.file_name.file_name_length,
-				IGNORE_CASE, vol->upcase, vol->upcase_len)) {
+		if ((!NVolCaseSensitive(vol) ||
+		     ie->key.file_name.file_name_type == FILE_NAME_DOS) &&
+		    ntfs_are_names_equal(uname, uname_len,
+					 (__le16 *)&ie->key.file_name.file_name,
+					 ie->key.file_name.file_name_length,
+					 IGNORE_CASE, vol->upcase,
+					 vol->upcase_len)) {
 			int name_size = sizeof(struct ntfs_name);
 			u8 type = ie->key.file_name.file_name_type;
 			u8 len = ie->key.file_name.file_name_length;

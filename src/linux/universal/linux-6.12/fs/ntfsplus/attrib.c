@@ -4528,12 +4528,16 @@ int __ntfs_attr_truncate_vfs(struct ntfs_inode *ni, const s64 newsize,
 	if (NInoNonResident(ni)) {
 		if (newsize > i_size) {
 			down_write(&ni->runlist.lock);
-			err = ntfs_non_resident_attr_expand(ni, newsize, 0, HOLES_OK);
+			err = ntfs_non_resident_attr_expand(ni, newsize, 0,
+							    NVolDisableSparse(ni->vol) ?
+							    HOLES_NO : HOLES_OK);
 			up_write(&ni->runlist.lock);
 		} else
 			err = ntfs_non_resident_attr_shrink(ni, newsize);
 	} else
-		err = ntfs_resident_attr_resize(ni, newsize, 0, HOLES_OK);
+		err = ntfs_resident_attr_resize(ni, newsize, 0,
+						NVolDisableSparse(ni->vol) ?
+						HOLES_NO : HOLES_OK);
 	ntfs_debug("Return status %d\n", err);
 	return err;
 }
@@ -4567,9 +4571,13 @@ int ntfs_attr_expand(struct ntfs_inode *ni, const s64 newsize, const s64 preallo
 
 	if (NInoNonResident(ni)) {
 		if (newsize > ni->data_size)
-			err = ntfs_non_resident_attr_expand(ni, newsize, prealloc_size, HOLES_OK);
+			err = ntfs_non_resident_attr_expand(ni, newsize, prealloc_size,
+							    NVolDisableSparse(ni->vol) ?
+							    HOLES_NO : HOLES_OK);
 	} else
-		err = ntfs_resident_attr_resize(ni, newsize, prealloc_size, HOLES_OK);
+		err = ntfs_resident_attr_resize(ni, newsize, prealloc_size,
+						NVolDisableSparse(ni->vol) ?
+						HOLES_NO : HOLES_OK);
 	if (!err)
 		i_size_write(VFS_I(ni), newsize);
 	ntfs_debug("Return status %d\n", err);
@@ -4635,7 +4643,9 @@ int ntfs_attr_truncate_i(struct ntfs_inode *ni, const s64 newsize, unsigned int 
  */
 int ntfs_attr_truncate(struct ntfs_inode *ni, const s64 newsize)
 {
-	return ntfs_attr_truncate_i(ni, newsize, HOLES_OK);
+	return ntfs_attr_truncate_i(ni, newsize,
+				    NVolDisableSparse(ni->vol) ?
+				    HOLES_NO : HOLES_OK);
 }
 
 int ntfs_attr_map_cluster(struct ntfs_inode *ni, s64 vcn_start, s64 *lcn_start,

@@ -918,6 +918,11 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t offset, loff_t le
 						max_t(unsigned long, vol->cluster_size, PAGE_SIZE));
 		loff_t alloc_size;
 
+		if (NVolDisableSparse(vol)) {
+			err = -EOPNOTSUPP;
+			goto out;
+		}
+
 		if ((offset & vol->cluster_size_mask) ||
 		    (len & vol->cluster_size_mask) ||
 		    offset >= ni->allocated_size) {
@@ -986,6 +991,11 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t offset, loff_t le
 	} else if (mode & FALLOC_FL_PUNCH_HOLE) {
 		loff_t offset_down = round_down(offset, max_t(unsigned int,
 							      vol->cluster_size, PAGE_SIZE));
+
+		if (NVolDisableSparse(vol)) {
+			err = -EOPNOTSUPP;
+			goto out;
+		}
 
 		if (!(mode & FALLOC_FL_KEEP_SIZE)) {
 			err = -EINVAL;

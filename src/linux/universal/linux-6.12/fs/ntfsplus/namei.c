@@ -630,6 +630,7 @@ static struct ntfs_inode *__ntfs_create(struct mnt_idmap *idmap, struct inode *d
 		goto err_out;
 	}
 
+	fn->file_attributes |= ni->flags;
 	fn->parent_directory = parent_mft_ref;
 	fn->file_name_length = name_len;
 	fn->file_name_type = FILE_NAME_POSIX;
@@ -642,7 +643,7 @@ static struct ntfs_inode *__ntfs_create(struct mnt_idmap *idmap, struct inode *d
 		fn->allocated_size = cpu_to_le64(ni->allocated_size);
 	}
 	if (!S_ISREG(mode) && !S_ISDIR(mode))
-		fn->file_attributes = FILE_ATTR_SYSTEM;
+		fn->file_attributes |= FILE_ATTR_SYSTEM;
 	if (NVolHideDotFiles(vol) && (name_len > 0 && name[0] == '.'))
 		fn->file_attributes |= FILE_ATTR_HIDDEN;
 	fn->creation_time = fn->last_data_change_time = utc2ntfs(ni->i_crtime);

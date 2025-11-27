@@ -4,7 +4,7 @@
 #
 
 # to check robot warnings
-ccflags-y += -Wint-to-pointer-cast -g3 \
+ccflags-y += -Wint-to-pointer-cast \
         $(call cc-option,-Wunused-but-set-variable,-Wunused-const-variable) \
         $(call cc-option,-Wold-style-declaration,-Wout-of-line-declaration)
 

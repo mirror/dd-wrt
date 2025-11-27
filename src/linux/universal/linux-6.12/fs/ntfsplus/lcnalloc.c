@@ -943,6 +943,43 @@ s64 __ntfs_cluster_free(struct ntfs_inode *ni, const s64 start_vcn, s64 count,
 
 	WARN_ON(count > 0);
 
+	if (NVolDiscard(vol) && !is_rollback) {
+		s64 total_discarded = 0, rl_off;
+		u32 gran = bdev_discard_granularity(vol->sb->s_bdev);
+
+		rl = ntfs_attr_find_vcn_nolock(ni, start_vcn, ctx);
+		if (IS_ERR(rl))
+			return real_freed;
+		rl_off = start_vcn - rl->vcn;
+		while (rl->length && total_discarded < total_freed) {
+			s64 to_discard = rl->length - rl_off;
+
+			if (to_discard + total_discarded > total_freed)
+				to_discard = total_freed - total_discarded;
+			if (rl->lcn >= 0) {
+				sector_t start_sector, end_sector;
+				int ret;
+
+				start_sector = ALIGN((rl->lcn + rl_off) << vol->cluster_size_bits,
+						     gran) >> SECTOR_SHIFT;
+				end_sector = ALIGN_DOWN((rl->lcn + rl_off + to_discard) <<
+							vol->cluster_size_bits, gran) >>
+							SECTOR_SHIFT;
+				if (start_sector < end_sector) {
+					ret = blkdev_issue_discard(vol->sb->s_bdev, start_sector,
+								   end_sector - start_sector,
+								   GFP_NOFS);
+					if (ret)
+						break;
+				}
+			}
+
+			total_discarded += to_discard;
+			++rl;
+			rl_off = 0;
+		}
+	}
+
 	/* We are done.  Return the number of actually freed clusters. */
 	ntfs_debug("Done.");
 	return real_freed;
