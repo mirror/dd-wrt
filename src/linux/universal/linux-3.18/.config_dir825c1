@@ -903,7 +903,7 @@ CONFIG_MTD_BLOCK=y
 # CONFIG_RFD_FTL is not set
 # CONFIG_SSFDC is not set
 # CONFIG_SM_FTL is not set
-# CONFIG_MTD_OOPS is not set
+CONFIG_MTD_OOPS=m
 
 #
 # RAM/ROM/Flash chip drivers
