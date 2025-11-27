@@ -2982,6 +2982,7 @@ CONFIG_NETFS_SUPPORT=m
 # CONFIG_VFAT_FS is not set
 # CONFIG_EXFAT_FS is not set
 # CONFIG_NTFS3_FS is not set
+# CONFIG_NTFSPLUS_FS is not set
 # CONFIG_NTFS_FS is not set
 # CONFIG_APFS_FS is not set
 # end of DOS/FAT/EXFAT/NT Filesystems
