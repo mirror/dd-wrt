@@ -2920,7 +2920,6 @@ void run_wan(int status)
 			eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 		}
 	}
-	start_firewall();
 	eval("service", "firewall", "start");
 	// wan test mode
 	if (nvram_matchi("wan_testmode", 1)) {
