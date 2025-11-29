@@ -324,7 +324,7 @@ resume:
 	fd = mtd_check_open(mtd);
 	if (fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
-		exit(1);
+		return -1;
 	}
 	if (part_offset > 0) {
 		fprintf(stderr, "Seeking on mtd device '%s' to: %zu\n", mtd, part_offset);
@@ -676,6 +676,21 @@ int main(int argc, char **argv)
 	fprintf(stderr, "write rootfs with %d size\n", sizeof(rootfs));
 	mtd_write(rootfs, sizeof(rootfs), device, fis_layout, part_offset);
 #else
+	device = NULL;
+	int fd = mtd_open("kernel", false);
+	if (fd > 0) {
+		close(fd);
+		device = "kernel";
+	}
+	fd = mtd_open("kernel0", false);
+	if (fd > 0) {
+		close(fd);
+		device = "kernel0";
+	}
+	if (!device) {
+		fprintf(stderr, "cannot find valid kernel partition \"kernel\" or \"kernel0\"\n");
+		exit(-1);
+	}
 	mtd_write(image, sizeof(image), device, fis_layout, part_offset);
 #endif
 	fprintf(stderr, "\nDone. Please power cycle device now\n");
