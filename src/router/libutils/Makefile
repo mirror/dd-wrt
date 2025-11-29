@@ -1960,11 +1960,11 @@ libutils/mhz.o:
 
 libsharetools.so: $(SHARETOOLSOBJS)
 	@echo "[LD] $@"
-	echo "-L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm $(LDFLAGS)" > libqos_ld
 	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram -L. -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm
 
 libqos.so: libqos/qos.o
 	@echo "[LD] $@"
+	echo "-L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm $(LDFLAGS)" > libqos_ld
 	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libwireless.so: $(WOBJS) $(ATH9KOBJS)
