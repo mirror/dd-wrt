@@ -177,7 +177,7 @@ ospf_router_info_register (u_int8_t scope)
 }
 
 static int
-ospf_router_info_unregister ()
+ospf_router_info_unregister (void)
 {
 
   if ((OspfRI.scope != OSPF_OPAQUE_AS_LSA)
@@ -206,7 +206,7 @@ ospf_router_info_term (void)
   OspfRI.pce_info.pce_neighbor = NULL;
   OspfRI.status = disabled;
 
-  ospf_router_info_unregister (OspfRI.scope);
+  ospf_router_info_unregister ();
 
   return;
 }
