@@ -105,7 +105,7 @@ HCFLAGS  += -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(
 OBJS = init.o services.o network.o firewall.o mssid.o qos.o ddns.o devinit.o sysinit.o phase1.o phase2.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o defaults.o \
        igmp.o wpa.o vlanfiltering.o vlantagging.o httpd.o setuserpw.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o	\
        pppoe_dual.o pppoe.o pptpclient.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o processmanager.o \
-       utils.o iptable.o conntrack.o raid.o notifier.o watchdog.o
+       utils.o iptable.o conntrack.o raid.o notifier.o watchdog.o sysinit/bench/mhz.o
 
 
 ifeq ($(CONFIG_WHRAG108),y)
@@ -2100,11 +2100,14 @@ CFLAGS_EXTRA += $(DD_CFLAGS)
 CFLAGS += $(CFLAGS_EXTRA) $(MAD_FLAGS)
 HCFLAGS += $(CFLAGS_EXTRA)
 
+
 vpath %.c sysinit sysinit/switchlib sysinit/bench services tools networking networking/wifi networking/generic utils $(TOP)/shared $(SRCBASE)/rts/src
+
 
 %.o : %.c
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
+
 
 all: services_main
 ifeq ($(CONFIG_RT2880),y)
@@ -2122,6 +2125,7 @@ endif
 	@echo "[MAKEDEFAULTS] bin/defaults"
 	@gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
 	@cd bin && ./defaults
+
     
 clean:
 	rm -f *.o *.a *.so services_main
@@ -2164,3 +2168,8 @@ services.a: $(OBJS)
 #	$(CC) -o $@.test $^ $(LDFLAGS)
 
 $(OBJS): $(CY_DEPS)
+
+
+sysinit/bench/mhz.o:
+	@echo "[CC] $@"
+	@$(CC) -shared -c -fomit-frame-pointer $(CFLAGS) -O3 -o sysinit/bench/mhz.o sysinit/bench/mhz.c
