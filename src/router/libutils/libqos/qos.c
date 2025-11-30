@@ -1277,6 +1277,7 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 	}
 }
 
+#ifdef HAVE_REALTEK
 void rtl93xx_set_port_speed(const char *ifname, int downmbit, int upmbit)
 {
 	char up[32];
@@ -1290,4 +1291,5 @@ void rtl93xx_set_port_speed(const char *ifname, int downmbit, int upmbit)
 	eval("tc", "filter", "add", "dev", ifname, "egress", "flower", "skip_sw", "action", "police", "rate", up, "burst", "64k",
 	     "conform-exceed", "drop");
 }
+#endif
 #endif //","HAVE_SVQOS

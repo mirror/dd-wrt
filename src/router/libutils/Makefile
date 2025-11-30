@@ -1908,7 +1908,7 @@ endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
 
-A_LIBS :=libshutils.a libutils.a libwireless.a libqos.a
+A_LIBS :=libshutils.a libutils.a libwireless.a
 C_LIBS :=libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 ifeq ($(CONFIG_USB),y)
 ifneq ($(CONFIG_3G_ONLY),y)
@@ -1960,7 +1960,6 @@ libsharetools.so: $(SHARETOOLSOBJS)
 
 libqos.so: libqos/qos.o
 	@echo "[LD] $@"
-	echo "-L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm $(LDFLAGS)" > libqos_ld
 	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libwireless.so: $(WOBJS) $(ATH9KOBJS)
@@ -1985,10 +1984,6 @@ libdisc.so: $(DISCOBJS)
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	@echo "[CC] $@"
 	@$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) $(THUMB) -c -o $@ $^
-
-
-libqos.a: libqos/qos.o
-	$(AR) cr $@ $^
 
 libshutils.a: $(SHOBJS)
 	$(AR) cr $@ $^
