@@ -655,12 +655,12 @@ int main(int argc, char **argv)
 	system("echo 5edfacbf > /proc/ubnthal/.uf");
 	device = "kernel";
 	force = 1;
+#ifdef SPLIT
 	if (!mtd_check(device)) {
 		fprintf(stderr, "Can't open device for writing!\n");
 		exit(1);
 	}
 	mtd_unlock(device);
-#ifdef SPLIT
 	fprintf(stderr, "write kernel with %d size\n", sizeof(kernel));
 	if (sizeof(kernel) > 1024 * 1024) {
 		fprintf(stderr, "image cannot be flashed. kernel part to big!!!\n");
@@ -677,20 +677,17 @@ int main(int argc, char **argv)
 	mtd_write(rootfs, sizeof(rootfs), device, fis_layout, part_offset);
 #else
 	device = NULL;
-	int fd = mtd_open("kernel", false);
-	if (fd > 0) {
-		close(fd);
+	if (mtd_check("kernel")) {
 		device = "kernel";
 	}
-	fd = mtd_open("kernel0", false);
-	if (fd > 0) {
-		close(fd);
+	if (mtd_check("kernel0")) {
 		device = "kernel0";
 	}
 	if (!device) {
 		fprintf(stderr, "cannot find valid kernel partition \"kernel\" or \"kernel0\"\n");
 		exit(-1);
 	}
+	mtd_unlock(device);
 	mtd_write(image, sizeof(image), device, fis_layout, part_offset);
 #endif
 	fprintf(stderr, "\nDone. Please power cycle device now\n");
