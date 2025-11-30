@@ -1720,7 +1720,7 @@ int check_blocklist(const char *service, char *ip)
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
 			char check[INET6_ADDRSTRLEN];
-			int ipv6 = getipv4fromipv6(check, ip);
+			int ipv6 = getipv4fromipv6(check, &entry->ip[0]);
 			if (!ipv6)
 				eval(IPTABLES, "-D", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
 			else
